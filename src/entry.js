@@ -2,6 +2,8 @@
 
 'use strict';
 
+// TODO: rename entry to Entry
+
 const entry = {};
 
 entry.UNREAD_STATE = 0;
@@ -47,9 +49,9 @@ entry.sanitize = function(inputEntryObject) {
 
   if(outputEntry.author) {
     let author = outputEntry.author;
-    author = utils.filterControlCharacters(author);
+    author = filterControlCharacters(author);
     author = replaceHTML(author, '');
-    author = utils.condenseWhitespace(author);
+    author = condenseWhitespace(author);
     author = truncateHTML(author, authorMaxLength);
     outputEntry.author = author;
   }
@@ -64,12 +66,16 @@ entry.sanitize = function(inputEntryObject) {
 
   if(outputEntry.title) {
     let title = outputEntry.title;
-    title = utils.filterControlCharacters(title);
+    title = filterControlCharacters(title);
     title = replaceHTML(title, '');
-    title = utils.condenseWhitespace(title);
+    title = condenseWhitespace(title);
     title = truncateHTML(title, titleMaxLength);
     outputEntry.title = title;
   }
 
   return outputEntry;
 };
+
+function condenseWhitespace(string) {
+  return string.replace(/\s{2,}/g, ' ');
+}

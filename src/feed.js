@@ -2,39 +2,58 @@
 
 'use strict';
 
-const feed = {};
+// Utility functions related to working with feed objects
 
-// Get the url currently representing the feed
-feed.getURLString = function(feedObject) {
-  if(!feedObject.urls.length) {
-    throw new TypeError('feedObject urls array is invalid');
+// Get the url currently representing the feed, which is the final url in its
+// internal urls array.
+function getFeedURLString(feed) {
+  if(!feed.urls.length) {
+    throw new TypeError('feed urls array is invalid');
   }
 
-  return feedObject.urls[feedObject.urls.length - 1];
-};
+  return feed.urls[feed.urls.length - 1];
+}
 
-// Add a new url to the feed
-feed.addURLString = function(feedObject, url) {
-  if(!('urls' in feedObject)) {
-    feedObject.urls = [];
+// Add a new url to the feed. Lazily creates the urls property.
+function addFeedURLString(feed, urlString) {
+  if(!('urls' in feed)) {
+    feed.urls = [];
   }
-  const normalizedURLString = feed.normalizeURLString(url);
-  if(feedObject.urls.includes(normalizedURLString)) {
+  const normalizedURLString = normalizeFeedURLString(urlString);
+  if(feed.urls.includes(normalizedURLString)) {
     return false;
   }
-  feedObject.urls.push(normalizedURLString);
+  feed.urls.push(normalizedURLString);
   return true;
 };
 
-feed.normalizeURLString = function(urlString) {
+function normalizeFeedURLString(urlString) {
   const url = new URL(urlString);
   return url.href;
-};
+}
+
+// Creates a url object that can be used as input to favicon.lookup
+function createFeedIconLookupURL(feed) {
+  // Cannot assume the link is set nor valid
+  if(feed.link) {
+    try {
+      return new URL(feed.link);
+    } catch(error) {
+      console.warn(error);
+    }
+  }
+
+  // If the link is missing or invalid then use the origin
+  // Assume the feed always has a url.
+  const feedURLString = getFeedURLString(feed);
+  const feedURLObject = new URL(feedURLString);
+  const originString = feedURLObject.origin;
+  return new URL(originString);
+}
 
 // TODO: sanitize is not same as validate, this should not validate, this is
 // a conflation of functionality
-
-feed.sanitize = function(inputFeedObject) {
+function sanitizeFeed(inputFeedObject) {
   const outputFeedObject = Object.assign({}, inputFeedObject);
 
   if(outputFeedObject.id) {
@@ -50,7 +69,7 @@ feed.sanitize = function(inputFeedObject) {
 
   if(outputFeedObject.title) {
     let title = outputFeedObject.title;
-    title = utils.filterControlCharacters(title);
+    title = filterControlCharacters(title);
     title = replaceHTML(title, '');
     title = title.replace(/\s+/, ' ');
     const titleMaxLength = 1024;
@@ -60,7 +79,7 @@ feed.sanitize = function(inputFeedObject) {
 
   if(outputFeedObject.description) {
     let description = outputFeedObject.description;
-    description = utils.filterControlCharacters(description);
+    description = filterControlCharacters(description);
     description = replaceHTML(description, '');
     description = description.replace(/\s+/, ' ');
     const beforeLength = description.length;
@@ -75,18 +94,18 @@ feed.sanitize = function(inputFeedObject) {
   }
 
   return outputFeedObject;
-};
+}
 
-// Returns a new object of the old feed merged with the new feed. Fields from
-// the new feed take precedence, except for URLs, which are merged to generate
-// a distinct ordered set of oldest to newest url. Impure because of copying
-// by reference.
-feed.merge = function(oldFeedObject, newFeedObject) {
+// Returns a new object that results from merging the old feed with the new
+// feed. Fields from the new feed take precedence, except for URLs, which are
+// merged to generate a distinct ordered set of oldest to newest url. Impure
+// because of copying by reference.
+function mergeFeed(oldFeedObject, newFeedObject) {
   const mergedFeedObject = Object.assign({}, oldFeedObject, newFeedObject);
   mergedFeedObject.urls = [...oldFeedObject.urls];
 
   for(let urlString of newFeedObject.urls) {
-    feed.addURLString(mergedFeedObject, urlString);
+    addFeedURLString(mergedFeedObject, urlString);
   }
   return mergedFeedObject;
-};
+}

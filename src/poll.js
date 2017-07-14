@@ -2,8 +2,15 @@
 
 'use strict';
 
-// TODO: because there are no exports here other than one function this should
-// all be wrapped in a block, which means names can be simplified too
+// TODO: because there are no exports here this should all be wrapped in a block
+
+// Simple utility wrapper that turns the chrome.alarms.get callback style into
+// a promise so that this can be conveniently used with async
+function getAlarm(alarmNameString) {
+  return new Promise(function(resolve, reject) {
+    chrome.alarms.get(alarmNameString, resolve);
+  });
+}
 
 // Functionality that deals with html images will look for these attributes
 // containing an alternate url when an image is missing a src
@@ -83,27 +90,7 @@ const jrPollBoilerplateFilter = new BoilerplateFilter();
 
 
 
-async function jrPollCreateAlarm(periodInMinutes) {
-  const alarm = await utils.getAlarm('poll');
-  if(alarm)
-    return;
-  chrome.alarms.create('poll', {'periodInMinutes': periodInMinutes});
-}
 
-function jrPollRegisterAlarmListener() {
-  chrome.alarms.onAlarm.addListener(PollingService.onAlarm);
-}
-
-async function jrPollOnAlarm(alarm) {
-  if(alarm.name !== 'poll')
-    return;
-  const service = new PollingService();
-  try {
-    await service.jrPollFeeds();
-  } catch(error) {
-    console.warn(error);
-  }
-}
 
 function jrPollQueryIdleState(idlePeriodSeconds) {
   return new Promise(function(resolve) {
@@ -124,7 +111,7 @@ function jrPollIsFeedNotRecent(logObject, feedObject) {
     millisElapsedSinceLastPoll < jrPollRecencyPeriodMillis;
 
   if(logObject && wasPolledRecently) {
-    logObject.debug('Feed polled too recently', feed.getURLString(feedObject));
+    logObject.debug('Feed polled too recently', getFeedURLString(feedObject));
   }
 
   return !wasPolledRecently;
@@ -207,7 +194,7 @@ async function jrPollFeeds(logObject, options = jrDefaultPollOptions) {
 
     if(numAdded) {
       const entryStore = new EntryStore(jrPollReaderConn);
-      await updateBadgeText(entryStore);
+      await updateBadgeText(jrPollReaderConn);
     }
 
   } finally {
@@ -313,7 +300,7 @@ async function jrPollProcessFeed(localFeed) {
   let numAdded = 0;
 
   // TODO: use clearer name? is this string or object?
-  const url = feed.getURLString(localFeed);
+  const url = getFeedURLString(localFeed);
 
   // Explicit assignment due to strange destructuring rename behavior
   // TODO: ensure destructuring names are exact, this used to say feed but now
@@ -335,8 +322,8 @@ async function jrPollProcessFeed(localFeed) {
   }
 
   const mergedFeed = jrFeedMerge(localFeed, remoteFeed);
-  let storableFeed = feed.sanitize(mergedFeed);
-  storableFeed = utils.filterEmptyProperties(storableFeed);
+  let storableFeed = sanitizeFeed(mergedFeed);
+  storableFeed = filterEmptyProperties(storableFeed);
 
   remoteEntries = remoteEntries.filter(jrPollEntryHasURL);
   remoteEntries = remoteEntries.filter(jrPollEntryURLIsValid);
@@ -525,7 +512,7 @@ function jrPollShouldExcludeEntry(entryObject) {
   // these tests together, as an abstraction, is even warranted
 
   const pathname = urlObject.pathname;
-  if(utils.sniffNonHTMLPath(pathname)) {
+  if(sniffNonHTMLPath(pathname)) {
     return true;
   }
 
@@ -701,5 +688,190 @@ function jrPollRewriteURLString(urlString) {
     urlObject.searchParams.has('ncid')) {
     urlObject.searchParams.delete('ncid');
     return urlObject.href;
+  }
+}
+
+
+// Guess if the url path is not an html mime type
+function sniffNonHTMLPath(pathString) {
+  const typeString = sniffTypeFromPath(pathString);
+  if(typeString) {
+    const slashPosition = type.indexOf('/');
+    const superTypeString = typeString.substring(0, slashPosition);
+    const nonHTMLSuperTypes = ['application', 'audio', 'image', 'video'];
+    return nonHTMLSuperTypes.includes(superTypeString);
+  }
+}
+
+
+// Guess the mime type of the url path by looking at the filename extension
+function sniffTypeFromPath(pathString) {
+
+  const extensionMimeMap = {
+    'ai':   'application/postscript',
+    'aif':  'audio/aiff',
+    'atom': 'application/atom+xml',
+    'avi':  'video/avi',
+    'bin':  'application/octet-stream',
+    'bmp':  'image/bmp',
+    'c':    'text/plain',
+    'cc':   'text/plain',
+    'cgi':  'text/hml',
+    'class':'application/java',
+    'cpp':  'text/plain',
+    'css':  'text/css',
+    'doc':  'application/msword',
+    'docx':
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'exe':  'application/octet-stream',
+    'flac': 'audio/flac',
+    'fli':  'video/fli',
+    'gif':  'image/gif',
+    'gz':   'application/x-gzip',
+    'h':    'text/plain',
+    'htm':  'text/html',
+    'html': 'text/html',
+    'ico':  'image/x-icon',
+    'java': 'text/plain',
+    'jpg':  'image/jpg',
+    'js':   'application/javascript',
+    'json': 'application/json',
+    'jsp':  'text/html',
+    'log':  'text/plain',
+    'md':   'text/plain',
+    'midi': 'audio/midi',
+    'mov':  'video/quicktime',
+    'mp2':  'audio/mpeg', // can also be video
+    'mp3':  'audio/mpeg3', // can also be video
+    'mpg':  'audio/mpeg', // can also be video
+    'ogg':  'audio/ogg',
+    'ogv':  'video/ovg',
+    'pdf':  'application/pdf',
+    'php':  'text/html',
+    'pl':   'text/html',
+    'png':  'image/png',
+    'pps':  'application/vnd.ms-powerpoint',
+    'ppt':  'application/vnd.ms-powerpoint',
+    'pptx':
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'rar':  'application/octet-stream',
+    'rss':  'application/rss+xml',
+    'svg':  'image/svg+xml',
+    'swf':  'application/x-shockwave-flash',
+    'tiff': 'image/tiff',
+    'wav':  'audio/wav',
+    'xls':  'application/vnd.ms-excel',
+    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'xml':  'application/xml',
+    'zip':  'application/zip'
+  };
+
+  const extensionString = findPathExtension(pathString);
+  if(extensionString) {
+    return extensionMimeMap[extensionString];
+  }
+}
+
+
+// TODO: retest handling of 'foo.' input
+// Returns a file's extension. Some extensions are ignored because this must
+// differentiate between paths containing periods and file names, but this
+// favors reducing false positives (returning an extension that is not one) even
+// if there are false negatives (failing to return an extension when there is
+// one). The majority of inputs will pass, it is only the pathological cases
+// that are of any concern. The cost of returning the wrong extension is greater
+// than not returning the correct extension because this is a factor of deciding
+// whether to filter content.
+// @param pathString {String} path to analyze (paths should have leading /)
+// @returns {String} lowercase extension or undefined
+ function findPathExtension(pathString) {
+
+  // pathString is required
+  // TODO: allow an exception to happen instead of checking
+  if(!pathString) {
+    return;
+  }
+
+  // TODO: check that the first character is a '/' to partially validate path
+  // if not, throw a new TypeError
+  // I want validation here because the minimum length check below assumes the
+  // path starts with a '/', so this function has to assume that, but I do not
+  // want the caller have to explicitly check
+  // This implicitly also asserts the path is left-trimmed.
+
+  // TODO: check that the last character of the path is not a space. Paths
+  // should always be right trimmed.
+
+  // If the path is shorter than the smallest path that could contain an
+  // exception, then this will not be able to find an exception, so exit early
+  const minPathLength = '/a.b'.length;
+  if(pathString.length < minPathLength) {
+    return;
+  }
+
+  // Assume the absence of a period means no extension can be found
+  const lastDotPosition = pathString.lastIndexOf('.');
+  if(lastDotPosition === -1) {
+    return;
+  }
+
+  // The +1 skips past the period
+  const extensionString = pathString.substring(lastDotPosition + 1);
+
+  // If the pathString ended with a dot, then the extension string will be
+  // empty, so assume the path is malformed and no extension exists
+  // We do not even need to access the length property here, '' is falsy
+  if(!extensionString) {
+    return;
+  }
+
+  // If the extension has too many characters, assume it is probably not an
+  // extension and something else, so there is no extension
+  const maxExtensionLength = 6;
+  if(extensionString.length < maxExtensionLength) {
+    return;
+  }
+
+  // Require extensions to have at least one alphabetical character
+  if(/[a-z]/i.test(extensionString)) {
+    // Normalize the extension string to lowercase form. Corresponds to
+    // mime mapping table lookup case.
+    // Assume no trailing space, so no need to trim
+    return extensionString.toLowerCase();
+  }
+}
+
+
+
+function jrTemplatePrune(urlString, documentObject) {
+
+
+  const jrTemplateHostMap = {};
+
+  jrTemplateHostMap['www.washingtonpost.com'] = [
+    'header#wp-header',
+    'div.top-sharebar-wrapper',
+    'div.newsletter-inline-unit',
+    'div.moat-trackable'
+  ];
+
+  jrTemplateHostMap['theweek.com'] = ['div#head-wrap'];
+  jrTemplateHostMap['www.usnews.com'] = ['header.header'];
+
+
+
+  let urlObject;
+
+  try {
+    urlObject = new URL(urlString);
+  } catch(error) {
+    return;
+  }
+
+  const selectorsArray = jrTemplateHostMap[urlObject.hostname];
+  const selector = selectorsArray.join(',');
+  const elementList = documentObject.querySelectorAll(selector);
+  for(let element of elementList) {
+    element.remove();
   }
 }

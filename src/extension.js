@@ -1,41 +1,28 @@
 'use strict';
 
-// TODO: resolve bugs with binding listeners in both background and view
-// Certain listeners should only be bound once, to only the background page
-
 // Updates the number that appears on the icon in Chrome's toolbar
-// TODO: change all callers to pass in conn instead of deprecated entryStore
 async function updateBadgeText(conn) {
   const count = await db.countUnreadEntries(conn);
   const text = count > 999 ? '1k+' : '' + count;
   chrome.browserAction.setBadgeText({'text': text});
 }
 
-// The response to clicking on the button in Chrome's toolbar
-async function badgeOnClick(event) {
-  try {
-    await showSlideshowTab();
-  } catch(error) {
-    console.error(error);
-  }
-}
-
 async function showSlideshowTab() {
+  const viewURLString = chrome.extension.getURL('slideshow.html');
+  const newtabURLString = 'chrome://newtab/';
 
   // First try switching back to the extension's tab if open
-  const viewURLString = chrome.extension.getURL('slideshow.html');
-  let tabArray = await findTabsByURL(viewURLString);
-  if(tabArray && tabArray.length) {
-    chrome.tabs.update(tabArray[0].id, {'active': true});
+  let tabs = await findTabsByURL(viewURLString);
+  if(tabs && tabs.length) {
+    chrome.tabs.update(tabs[0].id, {'active': true});
     return;
   }
 
   // Next try replacing the new tab if open. If multiple new tab tabs are open
   // then the first is used.
-  const newtabURLString = 'chrome://newtab/';
-  tabArray = await findTabsByURL(newtabURLString);
-  if(tabArray && tabArray.length) {
-    chrome.tabs.update(tabArray[0].id, {'active': true, 'url': viewURLString});
+  tabs = await findTabsByURL(newtabURLString);
+  if(tabs && tabs.length) {
+    chrome.tabs.update(tabs[0].id, {'active': true, 'url': viewURLString});
     return;
   }
 
@@ -48,27 +35,6 @@ async function showSlideshowTab() {
 function findTabsByURL(url) {
   return new Promise((resolve) => chrome.tabs.query({'url': url}, resolve));
 }
-
-async function extensionOnInstalled(event) {
-  console.log('Received install event');
-
-  // Create or upgrade the database by connecting to it
-
-  let conn;
-  try {
-    conn = await db.connect();
-
-    // Initialize the app badge
-    await updateBadgeText(conn);
-  } catch(error) {
-    console.debug(error);
-  } finally {
-    if(conn)
-      conn.close();
-  }
-};
-
-// TODO: rather than bind every page load, only bind once
 
 // Shows a simple desktop notification with the given title and message.
 // Message and title are interpreted as plain text.

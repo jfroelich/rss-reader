@@ -101,8 +101,8 @@ db.addFeed = function(conn, feedObject) {
   return new Promise((resolve, reject) => {
     if('id' in feedObject)
       return reject(new TypeError());
-    let storable = feed.sanitize(feedObject);
-    storable = utils.filterEmptyProperties(storable);
+    let storable = sanitizeFeed(feedObject);
+    storable = filterEmptyProperties(storable);
     storable.dateCreated = new Date();
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
@@ -285,7 +285,7 @@ db.addEntry = function(conn, entryObject) {
     }
 
     const sanitized = entry.sanitize(entryObject);
-    const storable = utils.filterEmptyProperties(sanitized);
+    const storable = filterEmptyProperties(sanitized);
     storable.readState = entry.UNREAD_STATE;
     storable.archiveState = entry.UNARCHIVED_STATE;
     storable.dateCreated = new Date();

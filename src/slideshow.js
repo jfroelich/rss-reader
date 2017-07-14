@@ -7,14 +7,33 @@
 // Reference to element
 let currentSlideElement = null;
 
+// TODO: should poll channel really be distinct from db? Not so sure anymore.
+// Maybe I just want to use a general "extension" channel that handles all
+// extension related messages? Perhaps the only major qualifying characteristic
+// is the persistence of listening for messages for the lifetime of the page,
+// and organizing the logic according to the content of the response is done
+// with the conditions within the listener. There are different message
+// frequencies so some conditions are rarely true which means some wasted
+// checks, but on the other hand there are less channels. Would it be simpler,
+// and would the added simplicity outweight any performance benefit/cost, or
+// is there not even really much of a perf cost.
+
+const settingsChannel = new BroadcastChannel('settings');
+settingsChannel.onmessage = function(event) {
+  if(event.data === 'changed') {
+    updateEntryCSSRules(event);
+  }
+};
+
 const dbChannel = new BroadcastChannel('db');
-dbChannel.onmessage = function(message) {
-  if(message.data.type === 'entryArchived') {
+dbChannel.onmessage = function(event) {
+  if(event.data && event.data.type === 'entryArchived') {
     console.log('Received archive entry request message');
-  } else if(message.data.type === 'entryDeleted') {
+  } else if(event.data && event.data.type === 'entryDeleted') {
     console.log('Received entry delete request message');
   }
 };
+
 
 const pollChannel = new BroadcastChannel('poll');
 pollChannel.onmessage = function(event) {
@@ -325,6 +344,17 @@ function countUnreadSlides() {
   return unreadSlideList.length;
 }
 
+function formatDate(dateObject, delimiterString) {
+  const partArray = [];
+  if(dateObject) {
+    // getMonth is a zero based index
+    partArray.push(dateObject.getMonth() + 1);
+    partArray.push(dateObject.getDate());
+    partArray.push(dateObject.getFullYear());
+  }
+  return partArray.join(delimiterString || '/');
+}
+
 let navKeydownTimer = null;
 window.addEventListener('keydown', function(event) {
   // Redefine space from page down to navigate next
@@ -343,6 +373,7 @@ window.addEventListener('keydown', function(event) {
 });
 
 // Override built in keyboard scrolling
+// TODO: look into the new 'passive' flag for scroll listeners
 let scrollCallbackHandle;
 window.addEventListener('keydown', function(event) {
 
@@ -358,12 +389,16 @@ window.addEventListener('keydown', function(event) {
 
   event.preventDefault();
   cancelIdleCallback(scrollCallbackHandle);
-  scrollCallbackHandle = requestIdleCallback(() =>
-    document.activeElement.scrollTop += event.keyCode === UP ? -200 : 200);
+
+  scrollCallbackHandle = requestIdleCallback(function() {
+    document.activeElement.scrollTop += event.keyCode === UP ? -200 : 200;
+  });
 });
 
+
+
 document.addEventListener('DOMContentLoaded', function(event) {
-  styleOnLoad();
+  addEntryCSSRules();
   appendSlides();
 }, {'once': true});
 

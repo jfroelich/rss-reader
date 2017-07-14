@@ -55,11 +55,57 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
 ////////////////////////////////////////////////////////////////////////
 // BELOW IS OUTDATED CODE
 
+async function jrPollCreateAlarm(periodInMinutes) {
+  const alarm = await getAlarm('poll');
+  if(alarm)
+    return;
+  chrome.alarms.create('poll', {'periodInMinutes': periodInMinutes});
+}
+
+function jrPollRegisterAlarmListener() {
+  chrome.alarms.onAlarm.addListener(PollingService.onAlarm);
+}
+
+async function jrPollOnAlarm(alarm) {
+  if(alarm.name !== 'poll')
+    return;
+  const service = new PollingService();
+  try {
+    await service.jrPollFeeds();
+  } catch(error) {
+    console.warn(error);
+  }
+}
+
+
+
+async function jrFeedIconCreateAlarm(periodInMinutes) {
+  const alarm = await getAlarm('refresh-feed-icons');
+  if(alarm)
+    return;
+  chrome.alarms.create('refresh-feed-icons',
+    {'periodInMinutes': periodInMinutes});
+}
+
+function jrFeedIconRegisterAlarmListener() {
+  chrome.alarms.onAlarm.addListener(jrFeedIconOnAlarm);
+}
+
+async function jrFeedIconOnAlarm(alarm) {
+  if(alarm.name !== 'refresh-feed-icons')
+    return;
+
+  try {
+    await refreshFeedIcons();
+  } catch(error) {
+    console.warn(error);
+  }
+}
 
 
 
 async jrFaviconCreateAlarm(periodInMinutes) {
-  const alarm = await utils.getAlarm('compact-favicons');
+  const alarm = await getAlarm('compact-favicons');
   if(alarm)
     return;
   console.debug('Creating alarm compact-favicons');
@@ -111,14 +157,14 @@ async function alarmsOnLoad(event) {
     FeedFavicon.createAlarm(refreshFeedIconsPeriodInMinutes);
 
     // TODO: add to handler
-    let alarm = await utils.getAlarm('remove-orphan-entries');
+    let alarm = await getAlarm('remove-orphan-entries');
     if(!alarm) {
       console.debug('Creating remove-orphan-entries alarm');
       chrome.alarms.create('remove-orphan-entries',
         {'periodInMinutes': 60 * 24 * 7});
     }
 
-    alarm = await utils.getAlarm('remove-entries-missing-urls');
+    alarm = await getAlarm('remove-entries-missing-urls');
     if(!alarm) {
       console.debug('Creating remove-entries-missing-urls alarm');
       chrome.alarms.create('remove-entries-missing-urls',

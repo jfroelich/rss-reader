@@ -196,7 +196,6 @@ operations.removeOrphanedEntries = async function(conn) {
   }
 };
 
-
 operations.defaultSubscribeOptions = {
   'fetchFeedTimeoutMillis': 2000,
   'suppressNotifications': false
@@ -206,7 +205,7 @@ operations.defaultSubscribeOptions = {
 operations.subscribe = async function(dbConn, iconDbConn, feedObject,
   options = operations.defaultSubscribeOptions, logObject) {
 
-  const urlString = feed.getURLString(feedObject);
+  const urlString = getFeedURLString(feedObject);
 
   if(logObject) {
     logObject.log('Subscribing to feed with url', urlString);
@@ -248,7 +247,7 @@ operations.subscribe = async function(dbConn, iconDbConn, feedObject,
   // Check if redirect url exists
   const isRedirect = remoteFeedObject.urls.length > 1;
   if(isRedirect) {
-    const redirectURLString = feed.getURLString(remoteFeedObject);
+    const redirectURLString = getFeedURLString(remoteFeedObject);
     const isExistingRedirectURL = await db.containsFeedURL(dbConn,
       redirectURLString);
 
@@ -262,7 +261,7 @@ operations.subscribe = async function(dbConn, iconDbConn, feedObject,
     }
   }
 
-  const mergedFeedObject = feed.merge(feedObject, remoteFeedObject);
+  const mergedFeedObject = mergeFeed(feedObject, remoteFeedObject);
   await subscribeSetFeedFavicon(iconDbConn, mergedFeedObject, logObject);
   const addedFeed = await db.addFeed(dbConn, mergedFeedObject);
 
@@ -280,11 +279,8 @@ operations.subscribe = async function(dbConn, iconDbConn, feedObject,
 // - the params changed
 // - also for unsubscribe
 
-
-
-
 async subscribeSetFeedFavicon(iconDbConn, feedObject, logObject) {
-  const lookupURLObject = jrFeedIconGetLookupURL(feedObject);
+  const lookupURLObject = createFeedIconLookupURL(feedObject);
 
   // Lookup errors are not fatal so suppress any exceptions
   // TODO: should that be caller's responsibility?
@@ -300,12 +296,10 @@ async subscribeSetFeedFavicon(iconDbConn, feedObject, logObject) {
 
 function subscribeShowNotification(feedObject) {
   const title = 'Subscription complete';
-  const feedName = feedObject.title || feed.getURLString(feedObject);
+  const feedName = feedObject.title || getFeedURLString(feedObject);
   const message = 'Subscribed to ' + feedName;
   showNotification(title, message, feedObject.faviconURLString);
 }
-
-
 
 // Removes a feed and all of its associated entries from the database.
 operations.unsubscribe = async function(dbConn, feedId, logObject) {
@@ -366,4 +360,4 @@ operations.unsubscribe = async function(dbConn, feedId, logObject) {
 
   // Return the number of entries removed (assuming no errors)
   return entryIdsArray.length;
-}
+};

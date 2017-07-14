@@ -2,38 +2,12 @@
 
 'use strict';
 
-// TODO: logging broken
-// TODO: interaction with SubscriptionService broken
-// TODO: client calling code broken probably
-// TODO: reduce use of map/filter
+// TODO: update callsites
+// TODO: this is no longer general backup, this is now just importFiles.
+// Reorient by removing the backup namespace object, just export a single
+// public function named importOPMLFiles, rename file to import-opml-files.js
 
-backup.exportFile = function(feedArray = [], titleString = 'Subscriptions',
-  fileNameString = 'subscriptions.xml', logObject) {
-
-  if(logObject) {
-    logObject.log('Exporting %d feeds to file', feedArray.length,
-      fileNameString);
-  }
-
-  const documentObject = OPMLDocument.create(titleString);
-  for(let feedObject of feedArray) {
-    const outlineObject = backup.convertFeedToOutline(feedObject);
-    documentObject.appendOutlineObject(outlineObject);
-  }
-
-  const blobObject = documentObject.toBlob();
-  utils.download(blobObject, fileNameString);
-};
-
-backup.convertFeedToOutline = function(feedObject) {
-  const outlineObject = {};
-  outlineObject.type = feedObject.type;
-  outlineObject.xmlUrl = feed.getURLString(feedObject);
-  outlineObject.title = feedObject.title;
-  outlineObject.description = feedObject.description;
-  outlineObject.htmlUrl = feedObject.link;
-  return outlineObject;
-};
+const backup = {};
 
 // Import one or more files into the app
 // @param files {Iterable<File>} - e.g. FileList
@@ -110,7 +84,7 @@ backup.importFile = async function(dbConn, iconConn, fileObject, logObject) {
   }
 
   if(fileObject.size < 1) {
-    throw new TypeError(`The file named "${fileObject.name}" is empty`);
+    throw new TypeError(`The file "${fileObject.name}" is empty`);
   }
 
   if(!backup.isSupportedFileType(fileObject.type)) {
@@ -119,80 +93,106 @@ backup.importFile = async function(dbConn, iconConn, fileObject, logObject) {
   }
 
   const text = await backup.readFileAsText(fileObject);
-
   const document = OPMLDocument.parse(text);
-  const outlines = document.getOutlineObjects();
+  document.removeInvalidOutlineTypes();
+  document.normalizeOutlineXMLURLs();
+  document.removeOutlinesMissingXMLURLs();
 
-  const validOutlineArray = new Array(outlines.length);
-  for(let outlineObject of outlines) {
-    if(!/rss|rdf|feed/i.test(outlineObject.type)) {
-      continue;
+  const outlineArray = document.getOutlineObjects();
+  let numSubscribed = 0;
+  if(outlineArray.length) {
+    const uniqueOutlineArray = backup.aggregateOutlinesByXMLURL(outlineArray);
+
+    const duplicateCount = outlineArray.length - uniqueOutlineArray.length;
+    if(duplicateCount && logObject) {
+      logObject.log('Ignored %d duplicate feed(s) in file', duplicateCount,
+        fileObject.name);
     }
 
-    if(!outlineObject.xmlUrl) {
-      continue;
-    }
-
-    let urlObject;
-    try {
-      urlObject = new URL(outlineObject.xmlUrl);
-    } catch(error) {
-    }
-
-    if(urlObject) {
-      outlineObject.xmlUrl = urlObject.href;
-    } else {
-      continue;
-    }
-
-    validOutlineArray.push(outlineObject);
+    backup.normalizeOutlineLinks(uniqueOutlineArray);
+    const feedArray = backup.convertOutlines(uniqueOutlineArray);
+    numSubscribed = backup.batchSubscribe(feedArray, iconDbConn, feedObject,
+      logObject);
   }
 
-  if(!validOutlineArray.length) {
-    return 0;
+  if(logObject) {
+    logObject.log('Subscribed to %d feeds in file', numSubscribed,
+      fileObject.name);
   }
 
-  // Filter duplicates, favoring earlier in document order
-  const uniqueURLsArray = new Array(validOutlineArray.length);
-  const uniqueOutlineArray = new Array(validOutlineArray.length);
-  for(let outlineObject of validOutlineArray) {
+  return numSubscribed;
+};
+
+// Filter duplicates, favoring earlier in document order
+backup.aggregateOutlinesByXMLURL = function(outlineArray) {
+  const uniqueURLsArray = new Array(outlineArray.length);
+  const uniqueOutlineArray = new Array(outlineArray.length);
+  for(let outlineObject of outlineArray) {
     if(!uniqueURLsArray.includes(outlineObject.xmlUrl)) {
       uniqueOutlineArray.push(outlineObject);
       uniqueURLsArray.push(outlineObject.xmlUrl);
     }
   }
+};
 
-  // Normalize and validate each outline's link property
-  for(let outlineObject of uniqueOutlineArray) {
-    if(outlineObject.htmlUrl) {
-      try {
-        const urlObject = new URL(outlineObject.htmlUrl);
-        outlineObject.htmlUrl = urlObject.href;
-      } catch(error) {
-        outlineObject.htmlUrl = undefined;
-      }
+// Normalize and validate each outline's link property
+backup.normalizeOutlineLinks = function(outlineArray) {
+
+  // Setting to undefined is preferred over deleting in order to maintain v8
+  // object shape
+
+  for(let outlineObject of outlineArray) {
+
+    if(outlineObject.htmlUrl === '') {
+      outlineObject.htmlUrl = undefined;
+      continue;
+    }
+
+    if(outlineObject.htmlUrl === null) {
+      outlineObject.htmlUrl = undefined;
+      continue;
+    }
+
+    if(outlineObject.htmlUrl === undefined) {
+      continue;
+    }
+
+    try {
+      const urlObject = new URL(outlineObject.htmlUrl);
+      outlineObject.htmlUrl = urlObject.href;
+    } catch(error) {
+      outlineObject.htmlUrl = undefined;
     }
   }
+};
 
-  // Convert the outlines into feeds
-  const feedArray = new Array(uniqueOutlineArray.length);
-  for(let outlineObject of uniqueOutlineArray) {
+// Convert the outlines into feeds
+backup.convertOutlines = function(outlineArray) {
+  const feedArray = new Array(outlineArray.length);
+  for(let outlineObject of outlineArray) {
     const feedObject = backup.convertOutlineToFeed(outlineObject);
     feedArray.push(feedObject);
   }
+  return feedArray;
+};
 
-  // Attempt to subscribe to each of the feeds
-  const subscribePromiseArray = new Array(feedArray.length);
+// Attempt to subscribe to each of the feeds concurrently
+backup.batchSubscribe = async function(feedArray, dbConn, iconDbConn,
+  logObject) {
+
+  // Map
+  const promiseArray = new Array(feedArray.length);
   for(let feedObject of feedArray) {
     const promise = backup.subscribe(dbConn, iconDbConn, feedObject, logObject);
-    subscribePromiseArray.push(promise);
+    promiseArray.push(promise);
   }
 
-  const subscribeResolutionArray = await Promise.all(subscribePromiseArray);
+  const resolutionArray = await Promise.all(promiseArray);
 
+  // Reduce
   // Count the number of successful subscriptions
   let numSubscribed = 0;
-  for(let resolution of subscribeResolutionArray) {
+  for(let resolution of resolutionArray) {
     if(resolution) {
       numSubscribed++;
     }
@@ -200,6 +200,7 @@ backup.importFile = async function(dbConn, iconConn, fileObject, logObject) {
 
   return numSubscribed;
 };
+
 
 backup.convertOutlineToFeed = function(outlineObject) {
   const feedObject = {};
@@ -222,7 +223,7 @@ backup.convertOutlineToFeed = function(outlineObject) {
     feedObject.link = outlineObject.htmlUrl;
   }
 
-  feed.addURLString(feedObject, outlineObject.xmlUrl);
+  addFeedURLString(feedObject, outlineObject.xmlUrl);
 
   return feedObject;
 };

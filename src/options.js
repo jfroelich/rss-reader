@@ -2,66 +2,40 @@
 
 'use strict';
 
-// TODO: create issues for these todos and delete them here
 // TODO: remove subscription preview
 // TODO: lookup favicons after displaying search results, not before
 // TODO: listen for poll events, feed information may have updated
 // TODO: add back button behavior for switching sections (popstate stuff)
 // TODO: remove unreadable fonts
+// TODO: app wide, consider going back to a single page application and think
+// of how to integrate all of this into the slideshow page
 
 
-const optpg = {};
+{ // Begin file block scope
 
-optpg.fontsArray = [
-  'ArchivoNarrow-Regular',
-  'Arial, sans-serif',
-  'Calibri',
-  'Calibri Light',
-  'Cambria',
-  'CartoGothicStd',
-  'Clearly Different',
-  'Essays1743',
-  'FeltTip',
-  'Georgia',
-  'Montserrat',
-  'MS Sans Serif',
-  'News Cycle, sans-serif',
-  'Noto Sans',
-  'Open Sans Regular',
-  'PathwayGothicOne',
-  'PlayfairDisplaySC',
-  'Raleway, sans-serif',
-  'Roboto Regular'
-];
+// Open a connection to the settings channel that persists for as long as the
+// option page is open. Although this page primarily broadcasts messages, it
+// also listens because the article style preview feature uses the same elements
+// and settings.
+// This uses a channel because messages are sent across browser tabs, this is
+// simpler and less likely to involve security issues than using the postMessage
+// api.
+// Generally, messages are sent when changing a display settings.
+const settingsChannel = new BroadcastChannel('settings');
+settingsChannel.onmessage = function(event) {
+  if(event.data === 'changed') {
+    updateEntryCSSRules(event);
+  }
+};
 
-optpg.bgImagePathsArray = [
-  '/images/bgfons-paper_texture318.jpg',
-  '/images/CCXXXXXXI_by_aqueous.jpg',
-  '/images/paper-backgrounds-vintage-white.jpg',
-  '/images/pickering-texturetastic-gray.png',
-  '/images/reusage-recycled-paper-white-first.png',
-  '/images/subtle-patterns-beige-paper.png',
-  '/images/subtle-patterns-cream-paper.png',
-  '/images/subtle-patterns-exclusive-paper.png',
-  '/images/subtle-patterns-groove-paper.png',
-  '/images/subtle-patterns-handmade-paper.png',
-  '/images/subtle-patterns-paper-1.png',
-  '/images/subtle-patterns-paper-2.png',
-  '/images/subtle-patterns-paper.png',
-  '/images/subtle-patterns-rice-paper-2.png',
-  '/images/subtle-patterns-rice-paper-3.png',
-  '/images/subtle-patterns-soft-wallpaper.png',
-  '/images/subtle-patterns-white-wall.png',
-  '/images/subtle-patterns-witewall-3.png',
-  '/images/thomas-zucx-noise-lines.png'
-];
 
-optpg.settingsChannel = new BroadcastChannel('settings');
-optpg.currentMenuItem = null;
-optpg.currentSectionElement = null;
 
-optpg.showErrorMessage = function(messageString, shouldFadeIn) {
-  optpg.hideErrorMessage();
+// Navigation tracking
+let currentMenuItem = null;
+let currentSectionElement = null;
+
+function showErrorMessage(messageString, shouldFadeIn) {
+  hideErrorMessage();
 
   const errorElement = document.createElement('div');
   errorElement.setAttribute('id','options_error_message');
@@ -73,36 +47,34 @@ optpg.showErrorMessage = function(messageString, shouldFadeIn) {
   const dismissErrorButton = document.createElement('button');
   dismissErrorButton.setAttribute('id', 'dismiss-error-button');
   dismissErrorButton.textContent = 'Dismiss';
-  dismissErrorButton.onclick = optpg.hideErrorMessage;
+  dismissErrorButton.onclick = hideErrorMessage;
   errorElement.appendChild(dismissErrorButton);
 
   if(shouldFadeIn) {
     errorElement.style.opacity = '0';
     document.body.appendChild(errorElement);
-    utils.fadeElement(container, 1,0);
+    fadeElement(container, 1,0);
   } else {
     errorElement.style.opacity = '1';
-    utils.showElement(errorElement);
+    showElement(errorElement);
     document.body.appendChild(errorElement);
   }
-};
+}
 
-optpg.hideErrorMessage = function() {
+function hideErrorMessage() {
   const errorMessageElement = document.getElementById('options_error_message');
   if(errorMessageElement) {
-    const dismissErrorButton = document.getElementById(
-      'dismiss-error-button');
+    const dismissErrorButton = document.getElementById('dismiss-error-button');
     if(dismissErrorButton) {
-      dismissErrorButton.removeEventListener('click',
-      optpg.hideErrorMessage);
+      dismissErrorButton.removeEventListener('click', hideErrorMessage);
     }
 
     errorMessageElement.remove();
   }
-};
+}
 
 // TODO: instead of removing and re-adding, reset and reuse
-optpg.showSubscriptionMonitor = function() {
+function showSubscriptionMonitor() {
   let monitorElement = document.getElementById('submon');
   if(monitorElement) {
     monitorElement.remove();
@@ -116,79 +88,76 @@ optpg.showSubscriptionMonitor = function() {
   const progressElement = document.createElement('progress');
   progressElement.textContent = 'Working...';
   monitor.appendChild(progressElement);
-};
+}
 
-optpg.appendSubscriptionMonitorMessage = function(messageString) {
-  const monitorElement = document.getElementById('submon');
-  if(!monitorElement) {
-    throw new Error('Element with id "submon" not found');
-  }
-
+function appendSubscriptionMonitorMessage(messageString) {
   const messageElement = document.createElement('p');
   messageElement.textContent = messageString;
-  monitorElement.appendChild(messageElement);
-};
 
-optpg.showSection = function(menuItemElement) {
+  const monitorElement = document.getElementById('submon');
+  monitorElement.appendChild(messageElement);
+}
+
+function showSection(menuItemElement) {
   if(!menuItemElement) {
     throw new TypeError('Missing parameter menuItemElement');
   }
 
   // Do nothing if not switching sections
-  if(optpg.currentMenuItem === menuItemElement) {
+  if(currentMenuItem === menuItemElement) {
     return;
   }
 
   // Make the previous item appear de-selected
-  if(optpg.currentMenuItem) {
-    utils.removeElementClass(optpg.currentMenuItem,
+  if(currentMenuItem) {
+    removeElementClass(currentMenuItem,
       'navigation-item-selected');
   }
 
   // Hide the old section
-  if(optpg.currentSectionElement) {
-    utils.hideElement(optpg.currentSectionElement);
+  if(currentSectionElement) {
+    hideElement(currentSectionElement);
   }
 
   // Make the new item appear selected
-  utils.addElementClass(menuItemElement, 'navigation-item-selected');
+  addElementClass(menuItemElement, 'navigation-item-selected');
 
   // Show the new section
   const sectionIdString = menuItemElement.getAttribute('section');
   const sectionElement = document.getElementById(sectionIdString);
   if(sectionElement) {
-    utils.showElement(sectionElement);
+    showElement(sectionElement);
   }
 
   // Update the global tracking vars
-  optpg.currentMenuItem = menuItemElement;
-  optpg.currentSectionElement = sectionElement;
-};
+  currentMenuItem = menuItemElement;
+  currentSectionElement = sectionElement;
+}
 
 // TODO: also return the count so that caller does not need to potentially
 // do it again. Or, require count to be passed in and change this to just
 // options_set_feed_count (and create options_get_feed_count)
 // Then, also consider if options_get_feed_count should be using the UI as
 // its source of truth or should instead be using the database.
-optpg.updateFeedCount = function() {
+function updateFeedCount() {
   const feedListElement = document.getElementById('feedlist');
-  const feedCountElement = document.getElementById('subscription-count');
   const count = feedListElement.childElementCount;
 
+  const feedCountElement = document.getElementById('subscription-count');
   if(count > 1000) {
     feedCountElement.textContent = ' (999+)';
   } else {
     feedCountElement.textContent = ` (${count})`;
   }
-};
+}
 
 // TODO: this approach doesn't really work, I need to independently sort
 // on load because it should be case-insensitive.
 // TODO: rename, where is this appending, and to what? Maybe this should be a
-// member function of some type of feed menu object
+// member function of some type of feed menu object. Use a clearer name.
 // TODO: this should always use inserted sort, that should be invariant, and
 // so I shouldn't accept a parameter
-optpg.appendFeed = function(feedObject, maintainOrder) {
+function appendFeed(feedObject, maintainOrder) {
   const itemElement = document.createElement('li');
   itemElement.setAttribute('sort-key', feedObject.title);
 
@@ -199,7 +168,7 @@ optpg.appendFeed = function(feedObject, maintainOrder) {
   if(feedObject.description) {
     itemElement.setAttribute('title', feedObject.description);
   }
-  itemElement.onclick = optpg.feedListsItemOnClick;
+  itemElement.onclick = feedListItemOnClick;
 
   if(feedObject.faviconURLString) {
     const faviconElement = document.createElement('img');
@@ -238,44 +207,44 @@ optpg.appendFeed = function(feedObject, maintainOrder) {
   if(!didInsertElement) {
     feedListElement.appendChild(itemElement);
   }
-};
+}
 
 // TODO: deprecate
-optpg.showSubscriptionPreview = function(urlObject) {
-  optpg.startSubscription(urlObject);
-};
+function showSubscriptionPreview(urlObject) {
+  startSubscription(urlObject);
+}
 
-optpg.hideSubscriptionPreview = function() {
+function hideSubscriptionPreview() {
   const previewElement = document.getElementById('subscription-preview');
-  utils.hideElement(previewElement);
+  hideElement(previewElement);
   const resultsListElement = document.getElementById(
     'subscription-preview-entries');
 
   while(resultsListElement.firstChild) {
     resultsListElement.firstChild.remove();
   }
-};
+}
 
 // TODO: if subscribing from a discover search result, I already know some
 // of the feed's other properties, such as its title and link. I should be
-// passing those along to optpg.startSubscription and setting them here. Or
-// optpg.startSubscription should expect a feed object as a parameter.
-optpg.startSubscription = async function(urlObject) {
+// passing those along to startSubscription and setting them here. Or
+// startSubscription should expect a feed object as a parameter.
+async function startSubscription(urlObject) {
 
   // TODO: not really sure if this validation is correct to do, my thinking is
   // that it is overly defensive
-  if(!utils.isURLObject(urlObject)) {
+  if(!isURLObject(urlObject)) {
     throw new TypeError('Invalid urlObject parameter');
   }
 
   // TODO: remove this once preview is deprecated more fully
-  optpg.hideSubscriptionPreview();
+  hideSubscriptionPreview();
 
-  optpg.showSubscriptionMonitor();
-  optpg.appendSubscriptionMonitorMessage(`Subscribing to ${urlObject.href}`);
+  showSubscriptionMonitor();
+  appendSubscriptionMonitorMessage(`Subscribing to ${urlObject.href}`);
 
   const feedObject = {};
-  feed.addURLString(feedObject, urlObject.href);
+  addFeedURLString(feedObject, urlObject.href);
 
   // TODO: subscription service object is deprecated
 
@@ -301,38 +270,36 @@ optpg.startSubscription = async function(urlObject) {
   }
 
   // TODO: what is the second parameter? give it an express name here
-  optpg.appendFeed(subcribedFeedObject, true);
+  appendFeed(subcribedFeedObject, true);
 
   // TODO: rather than expressly updating the feed count here, this should
   // happen as a result of some update event that some listener reacts to
   // That event should probably be a BroadcastChannel message that is fired
   // by operations.subscribe
-  optpg.updateFeedCount();
+  updateFeedCount();
 
   // Show a brief message that the subscription was successful
-  const feedURLString = feed.getURLString(subcribedFeedObject);
-  optpg.appendSubscriptionMonitorMessage(`Subscribed to ${feedURLString}`);
+  const feedURLString = getFeedURLString(subcribedFeedObject);
+  appendSubscriptionMonitorMessage(`Subscribed to ${feedURLString}`);
 
   // Hide the sub monitor
   // TODO: this should be a call to a helper function
   const monitorElement = document.getElementById('submon');
   // TODO: the other parameters should be named expressly
-  await utils.fadeElement(monitorElement, 2, 1);
+  await fadeElement(monitorElement, 2, 1);
   monitorElement.remove();
 
   // After subscribing switch back to the feed list
   const subsSectionElement = document.getElementById('subs-list-section');
-  optpg.showSection(subsSectionElement);
-};
-
-
+  showSection(subsSectionElement);
+}
 
 // TODO: show num entries, num unread/red, etc
 // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 // TODO: react to errors
 // TODO: should this even catch?
 // TODO: this function is big, maybe add helpers
-optpg.feedListsItemOnClick = async function(event) {
+async function feedListItemOnClick(event) {
 
   // Use current target to capture the element with the feed attribute and
   // not a different element
@@ -383,19 +350,19 @@ optpg.feedListsItemOnClick = async function(event) {
   }
 
   const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = feed.getURLString(feedObject);
+  feedURLElement.textContent = getFeedURLString(feedObject);
   const feedLinkElement = document.getElementById('details-feed-link');
   feedLinkElement.textContent = feedObject.link || '';
   const unsubscribeButton = document.getElementById('details-unsubscribe');
   unsubscribeButton.value = '' + feedObject.id;
 
   const detailsElement = document.getElementById('mi-feed-details');
-  optpg.showSection(detailsElement);
+  showSection(detailsElement);
 
   // Scroll to the top to ensure that if a long feed list was shown and
   // the window was scrolled down that the details are immediately visible
   window.scrollTo(0,0);
-};
+}
 
 
 // TODO: this function is too large
@@ -404,7 +371,7 @@ optpg.feedListsItemOnClick = async function(event) {
 // task, try and replace the default icon with the proper icon.
 // TODO: Suppress resubmits if last query was a search and the
 // query did not change?
-optpg.subscribeFormOnSubmit = async function(event) {
+async function subscribeFormOnSubmit(event) {
   // Prevent normal form submission behavior
   event.preventDefault();
 
@@ -421,13 +388,13 @@ optpg.subscribeFormOnSubmit = async function(event) {
 
   // Do nothing if searching in progress
   const progressElement = document.getElementById('discover-in-progress');
-  if(utils.isElementVisible(progressElement)) {
+  if(isElementVisible(progressElement)) {
     return false;
   }
 
   // Do nothing if subscription in progress
   const monitorElement = document.getElementById('submon');
-  if(monitorElement && utils.isElementVisible(monitorElement)) {
+  if(monitorElement && isElementVisible(monitorElement)) {
     return false;
   }
 
@@ -438,7 +405,7 @@ optpg.subscribeFormOnSubmit = async function(event) {
   // Ensure the no-results-found message, if present from a prior search,
   // is hidden. This should never happen because we exit early if it is still
   // visible above.
-  utils.hideElement(progressElement);
+  hideElement(progressElement);
 
   let urlObject = null;
   try {
@@ -450,12 +417,12 @@ optpg.subscribeFormOnSubmit = async function(event) {
   if(urlObject) {
     queryElement.value = '';
     // TODO: this should go straight to sub, not call sub preview
-    optpg.showSubscriptionPreview(urlObject);
+    showSubscriptionPreview(urlObject);
     return false;
   }
 
   // Search for feeds
-  utils.showElement(progressElement);
+  showElement(progressElement);
 
   let iconURL, linkURL, entryArray, query;
   const searchTimeout = 5000;
@@ -466,7 +433,7 @@ optpg.subscribeFormOnSubmit = async function(event) {
     console.debug(error);
     return false;
   } finally {
-    utils.hideElement(progressElement);
+    hideElement(progressElement);
   }
 
   // Filter entries without urls
@@ -493,8 +460,8 @@ optpg.subscribeFormOnSubmit = async function(event) {
 
   // If, after filtering, there are no more entries, exit early
   if(!entryArray.length) {
-    utils.hideElement(resultsListElement);
-    utils.showElement(noResultsElement);
+    hideElement(resultsListElement);
+    showElement(noResultsElement);
     return false;
   }
 
@@ -504,7 +471,7 @@ optpg.subscribeFormOnSubmit = async function(event) {
   entryArray.forEach((entryObject) => {
     let title = entryObject.title;
     if(title) {
-      title = utils.filterControlCharacters(title);
+      title = filterControlCharacters(title);
       title = replaceHTML(title, '');
       title = truncateHTML(title, entryTitleMaxLength);
       entryObject.title = title;
@@ -518,7 +485,7 @@ optpg.subscribeFormOnSubmit = async function(event) {
   entryArray.forEach((entryObject) => {
     let snippet = entryObject.contentSnippet;
     if(snippet) {
-      snippet = utils.filterControlCharacters(snippet);
+      snippet = filterControlCharacters(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
       snippet = truncateHTML(
         snippet, entrySnippetMaxLength, replacement);
@@ -526,8 +493,8 @@ optpg.subscribeFormOnSubmit = async function(event) {
     }
   });
 
-  utils.showElement(resultsListElement);
-  utils.hideElement(noResultsElement);
+  showElement(resultsListElement);
+  hideElement(noResultsElement);
 
   const itemElement = document.createElement('li');
   itemElement.textContent = `Found ${entryArray.length} feeds.`;
@@ -545,20 +512,20 @@ optpg.subscribeFormOnSubmit = async function(event) {
   }
   fs.close();
 
-  const elementArray = entryArray.map(utils.createSearchResultElement);
+  const elementArray = entryArray.map(createSearchResultElement);
   elementArray.forEach((el) => resultsListElement.appendChild(el));
   return false;// Signal no submit
 }
 
 // Creates and returns a search result item to show in the list of search
 // results when searching for feeds.
-utils.createSearchResultElement = function(feedObject) {
+function createSearchResultElement(feedObject) {
   const itemElement = document.createElement('li');
   const subscribeButton = document.createElement('button');
   subscribeButton.value = feedObject.url.href;
   subscribeButton.title = feedObject.url.href;
   subscribeButton.textContent = 'Subscribe';
-  subscribeButton.onclick = utils.subscribeButtonOnClick;
+  subscribeButton.onclick = subscribeButtonOnClick;
   itemElement.appendChild(subscribeButton);
 
   if(feedObject.faviconURLString) {
@@ -591,9 +558,9 @@ utils.createSearchResultElement = function(feedObject) {
   urlElement.textContent = feedObject.url.href;
   itemElement.appendChild(urlElement);
   return itemElement;
-};
+}
 
-utils.subscribeButtonOnClick = function(event) {
+function subscribeButtonOnClick(event) {
   const subscribeButton = event.target;
   const feedURLString = subscribeButton.value;
 
@@ -608,7 +575,7 @@ utils.subscribeButtonOnClick = function(event) {
   // Ignore future clicks while subscription in progress
   // TODO: use a better element name here.
   const subMonitorElement = document.getElementById('submon');
-  if(subMonitorElement && utils.isElementVisible(subMonitorElement)) {
+  if(subMonitorElement && isElementVisible(subMonitorElement)) {
     return;
   }
 
@@ -618,10 +585,10 @@ utils.subscribeButtonOnClick = function(event) {
 
   // TODO: this should make a call directly to the step that starts the
   // subscription process.
-  optpg.showSubscriptionPreview(feedURLObject);
-};
+  showSubscriptionPreview(feedURLObject);
+}
 
-utils.removeFeedFromFeedList = function(feedIdNumber) {
+function removeFeedFromFeedList(feedIdNumber) {
   const feedElement = document.querySelector(
     `#feedlist li[feed="${feedIdNumber}"]`);
 
@@ -629,27 +596,27 @@ utils.removeFeedFromFeedList = function(feedIdNumber) {
     throw new Error('No feed element found with id ' + feedIdNumber);
   }
 
-  feedElement.removeEventListener('click', optpg.feedListsItemOnClick);
+  feedElement.removeEventListener('click', feedListItemOnClick);
   feedElement.remove();
 
   // Upon removing the feed, update the displayed number of feeds.
   // TODO: this should actually be called from some listener instead by a
   // BroadcastChannel message, the event should be fired by the actual
   // thing that removes the feed from storage
-  optpg.updateFeedCount();
+  updateFeedCount();
 
   // Upon removing the feed, update the state of the feed list.
   // If the feed list has no items, hide it and show a message instead
   const feedListElement = document.getElementById('feedlist');
   const noFeedsElement = document.getElementById('nosubs');
   if(!feedListElement.childElementCount) {
-    utils.hideElement(feedListElement);
-    utils.showElement(noFeedsElement);
+    hideElement(feedListElement);
+    showElement(noFeedsElement);
   }
-};
+}
 
 // TODO: visually react to unsubscribe error
-utils.unsubscribeButtonOnClick = function(event) {
+function unsubscribeButtonOnClick(event) {
   const feedIdString = event.target.value;
   const feedIdNumber = parseInt(feedIdString, 10);
 
@@ -666,10 +633,10 @@ utils.unsubscribeButtonOnClick = function(event) {
     }
   }
 
-  utils.removeFeedFromFeedList(feedIdNumber);
+  removeFeedFromFeedList(feedIdNumber);
   const subsListSection = document.getElementById('subs-list-section');
-  optpg.showSection(subsListSection);
-};
+  showSection(subsListSection);
+}
 
 // TODO: needs to notify the user of a successful
 // import. In the UI and maybe in a notification. Maybe also combine
@@ -678,43 +645,42 @@ utils.unsubscribeButtonOnClick = function(event) {
 // need to be cancelable.
 // TODO: after import the feeds list needs to be refreshed
 // TODO: notify the user if there was an error
-utils.importOPMLButtonOnClick = function(event) {
-  const uploader = document.createElement('input');
-  uploader.setAttribute('type', 'file');
-  uploader.setAttribute('accept', 'application/xml');
-  uploader.onchange = jrOptionsImportOPMLUploaderOnChange;
-  uploader.click();
-};
+function importOPMLButtonOnClick(event) {
+  const uploaderInput = document.createElement('input');
+  uploaderInput.setAttribute('type', 'file');
+  uploaderInput.setAttribute('accept', 'application/xml');
+  uploaderInput.addEventListener('change', importOPMLUploaderOnChange,
+    {'once':true});
+  uploaderInput.click();
+}
 
-async function jrOptionsImportOPMLUploaderOnChange(event) {
-  const uploader = event.target;
-  uploader.removeEventListener('change', jrOptionsImportOPMLUploaderOnChange);
+async function importOPMLUploaderOnChange(event) {
+  const uploaderInput = event.target;
+  let conn;
 
-  const importer = new OPMLImporter();
   try {
-    await importer.db.connect();
-    await importer.backup.importFiles(uploader.files);
+    conn = await db.connect();
+    await backup.importFiles(uploaderInput.files, console);
   } catch(error) {
-    console.debug(error);
+    console.warn(error);
   } finally {
-    importer.close();
+    if(conn) {
+      conn.close();
+    }
   }
 }
 
 // TODO: visual feedback
-async function jrOptionsExportOPMLButtonOnClick(event) {
+async function exportOPMLButtonOnClick(event) {
 
-  const titleString = 'Subscriptions';
-  const fileNameString = 'subscriptions.xml';
+  const opmlTitle = 'Subscriptions';
+  const fileName = 'subscriptions.xml';
 
-  const readerDb = new ReaderDb();
-  const feedStore = new FeedStore();
   let connection;
   let feedArray;
   try {
-    connection = await readerDb.db.connect();
-    feedStore.conn = connection;
-    feedArray = await feedStore.getAll();
+    connection = await db.connect();
+    feedArray = await db.getFeeds();
   } catch(error) {
     console.warn(error);
   } finally {
@@ -727,19 +693,37 @@ async function jrOptionsExportOPMLButtonOnClick(event) {
     return;
   }
 
-  backup.exportFile(feedArray, titleString, fileNameString);
+  const blobObject = createOPMLBlob(feedArray, opmlTitle);
+  const objectURL = URL.createObjectURL(blobObject);
+  const anchorElement = document.createElement('a');
+  anchorElement.setAttribute('download', fileName);
+  anchorElement.href = objectURL;
+  anchorElement.click();
+  URL.revokeObjectURL(objectURL);
 }
 
-
-
+function createOPMLBlob(feeds, title) {
+  const doc = OPMLDocument.create(title);
+  for(let feed of feeds) {
+    const outline = {};
+    outline.type = feed.type;
+    outline.xmlUrl = getFeedURLString(feed);
+    outline.title = feed.title;
+    outline.description = feed.description;
+    outline.htmlUrl = feed.link;
+    doc.appendOutlineObject(outline);
+  }
+  return new Blob([doc.toString()], {'type': 'application/xml'});
+}
 
 
 // TODO: sort feeds alphabetically
 // TODO: react to errors
-async function jrOptionsInitializeSubscriptionsSection() {
+async function initSubscriptionsSection() {
   const noFeedsElement = document.getElementById('nosubs');
   const feedListElement = document.getElementById('feedlist');
 
+  // TODO: refactor to use new syntax
   const readerDb = new ReaderDb();
   const feedStore = new FeedStore();
   let conn;
@@ -761,7 +745,6 @@ async function jrOptionsInitializeSubscriptionsSection() {
     return;
   }
 
-
   // Sort the feeds by title in memory using indexedDB.cmp
   feedArray.sort(function(a, b) {
     const atitle = a.title ? a.title.toLowerCase() : '';
@@ -770,29 +753,29 @@ async function jrOptionsInitializeSubscriptionsSection() {
   });
 
   for(let feedObject of feedArray) {
-    optpg.appendFeed(feedObject);
+    appendFeed(feedObject);
 
     // TODO: the update should happen as a result of call to append feed,
     // not here
-    optpg.updateFeedCount();
+    updateFeedCount();
   }
 
   if(!feedArray.length) {
-    utils.showElement(noFeedsElement);
-    utils.hideElement(feedListElement);
+    showElement(noFeedsElement);
+    hideElement(feedListElement);
   } else {
-    utils.hideElement(noFeedsElement);
-    utils.showElement(feedListElement);
+    hideElement(noFeedsElement);
+    showElement(feedListElement);
   }
 }
 
-function jrOptionsNavItemOnClick(event) {
+function navItemOnClick(event) {
   const clickedElement = event.target;
   const sectionElement = event.currentTarget;
-  optpg.showSection(sectionElement);
+  showSection(sectionElement);
 }
 
-function jrOptionsEnableNotificationsCheckboxOnClick(event) {
+function enableNotificationsCheckboxOnClick(event) {
   if(event.target.checked) {
     localStorage.SHOW_NOTIFICATIONS = '1';
   } else {
@@ -800,27 +783,27 @@ function jrOptionsEnableNotificationsCheckboxOnClick(event) {
   }
 }
 
-
-function jrOptionsEnableBackgroundProcessingCheckboxOnClick(event) {
+function enableBackgroundProcessingCheckboxOnClick(event) {
   if(event.target.checked) {
-    chrome.permissions.request({'permissions': ['background']}, jrOptionsNoop);
+    chrome.permissions.request({'permissions': ['background']}, noop);
   } else {
-    chrome.permissions.remove({'permissions': ['background']}, jrOptionsNoop);
+    chrome.permissions.remove({'permissions': ['background']}, noop);
   }
 }
 
-function jrOptionsNoop() {
+function noop() {
   // No operation
 }
 
-
-function jrOptionsEnableBackgroundProcessingOnCheckPermissions(isPermitted) {
+// TODO: use a promise and an async function call instead of this separate
+// helper, create a utility function for checking permission that returns a
+// promise
+function enableBackgroundProcessingOnCheckPermissions(isPermitted) {
   const checkbox = document.getElementById('enable-background');
   checkbox.checked = isPermitted;
 }
 
-
-function jrOptionsRestrictIdlePollingCheckboxOnClick(event) {
+function restrictIdlePollingCheckboxOnClick(event) {
   if(event.target.checked) {
     localStorage.ONLY_POLL_IF_IDLE = '1';
   } else {
@@ -828,9 +811,8 @@ function jrOptionsRestrictIdlePollingCheckboxOnClick(event) {
   }
 }
 
-
 // TODO: deprecate
-function jrOptionsEnableSubscriptionPreviewCheckboxOnChange(event) {
+function enableSubscriptionPreviewCheckboxOnChange(event) {
   if(event.target.checked) {
     localStorage.ENABLE_SUBSCRIBE_PREVIEW = '1';
   } else {
@@ -839,11 +821,11 @@ function jrOptionsEnableSubscriptionPreviewCheckboxOnChange(event) {
 }
 
 // TODO: deprecate
-function jrOptionsSubscriptionPreviewContinueButtonOnClick(event) {
+function subscriptionPreviewContinueButtonOnClick(event) {
   // TODO: why use currentTarget over target for no reason?
   const previewButton = event.currentTarget;
   const urlString = previewButton.value;
-  optpg.hideSubscriptionPreview();
+  hideSubscriptionPreview();
 
   if(!urlString) {
     console.debug('no url');
@@ -851,20 +833,20 @@ function jrOptionsSubscriptionPreviewContinueButtonOnClick(event) {
   }
 
   const feedURLObject = new URL(urlString);
-  optpg.startSubscription(feedURLObject);
+  startSubscription(feedURLObject);
 }
 
-function jrOptionsBackgroundImageMenuOnChange(event) {
+function backgroundImageMenuOnChange(event) {
   if(event.target.value) {
     localStorage.BACKGROUND_IMAGE = event.target.value;
   } else {
     delete localStorage.BACKGROUND_IMAGE;
   }
 
-  optpg.settingsChannel.postMessage('changed');
+  settingsChannel.postMessage('changed');
 }
 
-function jrOptionsHeaderFontMenuOnChange(event){
+function headerFontMenuOnChange(event){
   const selectedOption = event.target.value;
   if(selectedOption) {
     localStorage.HEADER_FONT_FAMILY = selectedOption;
@@ -872,31 +854,30 @@ function jrOptionsHeaderFontMenuOnChange(event){
     delete localStorage.HEADER_FONT_FAMILY;
   }
 
-  optpg.settingsChannel.postMessage('changed');
+  settingsChannel.postMessage('changed');
 }
 
-function jrOptionsBodyFontMenuOnChange(event) {
+function bodyFontMenuOnChange(event) {
   if(event.target.value) {
     localStorage.BODY_FONT_FAMILY = event.target.value;
   } else {
     delete localStorage.BODY_FONT_FAMILY;
   }
 
-  optpg.settingsChannel.postMessage('changed');
+  settingsChannel.postMessage('changed');
 }
 
-
-function jrOptionsColumnCountMenuOnChange(event) {
+function columnCountMenuOnChange(event) {
   if(event.target.value) {
     localStorage.COLUMN_COUNT = event.target.value;
   } else {
     delete localStorage.COLUMN_COUNT;
   }
 
-  optpg.settingsChannel.postMessage('changed');
+  settingsChannel.postMessage('changed');
 }
 
-function jrOptionsEntryBackgroundColorOnInput(event) {
+function entryBackgroundColorOnInput(event) {
   const element = event.target;
   const value = element.value;
   if(value) {
@@ -905,51 +886,115 @@ function jrOptionsEntryBackgroundColorOnInput(event) {
     delete localStorage.ENTRY_BACKGROUND_COLOR;
   }
 
-  optpg.settingsChannel.postMessage('changed');
+  settingsChannel.postMessage('changed');
 }
 
-
-function jrOptionsEntryMarginOnChange(event) {
+function entryMarginOnChange(event) {
   // TODO: why am i defaulting to 10 here?
   localStorage.ENTRY_MARGIN = event.target.value || '10';
 
-  optpg.settingsChannel.postMessage('changed');
+  settingsChannel.postMessage('changed');
 }
 
-function jrOptionsHeaderFontSizeOnChange(event) {
+function headerFontSizeOnChange(event) {
   localStorage.HEADER_FONT_SIZE = event.target.value || '1';
-  optpg.settingsChannel.postMessage('changed');
+  settingsChannel.postMessage('changed');
 }
 
-function jrOptionsBodyFontSizeOnChange(event) {
+function bodyFontSizeOnChange(event) {
   localStorage.BODY_FONT_SIZE = event.target.value || '1';
-  optpg.settingsChannel.postMessage('changed');
+  settingsChannel.postMessage('changed');
 }
 
-function jrOptionsJustifyCheckboxOnChange(event) {
+function justifyCheckboxOnChange(event) {
   if(event.target.checked)
     localStorage.JUSTIFY_TEXT = '1';
   else
     delete localStorage.JUSTIFY_TEXT;
-  optpg.settingsChannel.postMessage('changed');
+  settingsChannel.postMessage('changed');
 }
 
-function jrOptionsBodyHeightInputOnInput(event) {
+function bodyHeightOnInput(event) {
   localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
-  optpg.settingsChannel.postMessage('changed');
+  settingsChannel.postMessage('changed');
 }
 
-function jrOptionsOnDOMContentLoaded(event) {
+// TODO: this could use some cleanup or at least some clarifying comments
+function fadeElement(element, durationSeconds, delaySeconds) {
+  return new Promise(function(resolve, reject) {
+    const style = element.style;
+    if(style.display === 'none') {
+      style.display = '';
+      style.opacity = '0';
+    }
+
+    if(!style.opacity) {
+      style.opacity = style.display === 'none' ? '0' : '1';
+    }
+
+    element.addEventListener('webkitTransitionEnd', resolve, {'once': true});
+
+    // property duration function delay
+    style.transition = `opacity ${durationSeconds}s ease ${delaySeconds}s`;
+    style.opacity = style.opacity === '1' ? '0' : '1';
+  });
+}
+
+document.addEventListener('DOMContentLoaded', function(event) {
+
+  const fonts = [
+    'ArchivoNarrow-Regular',
+    'Arial, sans-serif',
+    'Calibri',
+    'Calibri Light',
+    'Cambria',
+    'CartoGothicStd',
+    'Clearly Different',
+    'Essays1743',
+    'FeltTip',
+    'Georgia',
+    'Montserrat',
+    'MS Sans Serif',
+    'News Cycle, sans-serif',
+    'Noto Sans',
+    'Open Sans Regular',
+    'PathwayGothicOne',
+    'PlayfairDisplaySC',
+    'Raleway, sans-serif',
+    'Roboto Regular'
+  ];
+
+  const imagePaths = [
+    '/images/bgfons-paper_texture318.jpg',
+    '/images/CCXXXXXXI_by_aqueous.jpg',
+    '/images/paper-backgrounds-vintage-white.jpg',
+    '/images/pickering-texturetastic-gray.png',
+    '/images/reusage-recycled-paper-white-first.png',
+    '/images/subtle-patterns-beige-paper.png',
+    '/images/subtle-patterns-cream-paper.png',
+    '/images/subtle-patterns-exclusive-paper.png',
+    '/images/subtle-patterns-groove-paper.png',
+    '/images/subtle-patterns-handmade-paper.png',
+    '/images/subtle-patterns-paper-1.png',
+    '/images/subtle-patterns-paper-2.png',
+    '/images/subtle-patterns-paper.png',
+    '/images/subtle-patterns-rice-paper-2.png',
+    '/images/subtle-patterns-rice-paper-3.png',
+    '/images/subtle-patterns-soft-wallpaper.png',
+    '/images/subtle-patterns-white-wall.png',
+    '/images/subtle-patterns-witewall-3.png',
+    '/images/thomas-zucx-noise-lines.png'
+  ];
 
   // Init CSS styles that affect the display preview area
-  styleOnLoad();
+  addEntryCSSRules();
 
   // Attach click handlers to feeds in the feed list on the left.
   // TODO: it would probably be easier and more efficient to attach a single
   // click handler that figures out which item was clicked.
   const navFeedItemList = document.querySelectorAll('#navigation-menu li');
   for(let navFeedItem of navFeedItemList) {
-    navFeedItem.onclick = jrOptionsNavItemOnClick;
+    navFeedItem.onclick = navItemOnClick;
   }
 
   // Setup the Enable Notifications checkbox in the General Settings section
@@ -958,9 +1003,7 @@ function jrOptionsOnDOMContentLoaded(event) {
   enableNotificationsCheckbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
   // TODO: should i be using on click or on change?
   enableNotificationsCheckbox.onclick =
-    jrOptionsEnableNotificationsCheckboxOnClick;
-
-
+    enableNotificationsCheckboxOnClick;
 
   // TODO: this should be using a local storage variable and instead the
   // permission should be permanently defined.
@@ -972,9 +1015,9 @@ function jrOptionsOnDOMContentLoaded(event) {
     'enable-background');
   // TODO: should i be using on click or on change?
   enableBackgroundProcessingCheckbox.onclick =
-    jrOptionsEnableBackgroundProcessingCheckboxOnClick;
+    enableBackgroundProcessingCheckboxOnClick;
   chrome.permissions.contains({'permissions': ['background']},
-    jrOptionsEnableBackgroundProcessingOnCheckPermissions);
+    enableBackgroundProcessingOnCheckPermissions);
 
   const enableRestrictIdlePollingCheckbox = document.getElementById(
     'enable-idle-check');
@@ -982,7 +1025,7 @@ function jrOptionsOnDOMContentLoaded(event) {
     'ONLY_POLL_IF_IDLE' in localStorage;
   // TODO: should i be using on click or on change
   enableRestrictIdlePollingCheckbox.onclick =
-    jrOptionsRestrictIdlePollingCheckboxOnClick;
+    restrictIdlePollingCheckboxOnClick;
 
 
   // TODO: deprecate this because I plan to deprecate the preview ability.
@@ -992,131 +1035,166 @@ function jrOptionsOnDOMContentLoaded(event) {
     'ENABLE_SUBSCRIBE_PREVIEW' in localStorage;
   // TODO: should i be using on click or on change?
   jrOptionsEnableSubscriptionPreviewCheckbox.onchange =
-    jrOptionsEnableSubscriptionPreviewCheckboxOnChange;
+    enableSubscriptionPreviewCheckboxOnChange;
 
-  const export_opml_btn = document.getElementById('button-export-opml');
-  export_opml_btn.onclick = jrOptionsExportOPMLButtonOnClick;
-  const import_opml_btn = document.getElementById('button-import-opml');
-  import_opml_btn.onclick = utils.importOPMLButtonOnClick;
+  const exportOPMLButton = document.getElementById('button-export-opml');
+  exportOPMLButton.onclick = exportOPMLButtonOnClick;
+  const importOPMLButton = document.getElementById('button-import-opml');
+  importOPMLButton.onclick = importOPMLButtonOnClick;
 
-  jrOptionsInitializeSubscriptionsSection();
+  initSubscriptionsSection();
 
   // Init feed details section unsubscribe button click handler
   const unsubscribeButton = document.getElementById('details-unsubscribe');
-  unsubscribeButton.onclick = utils.unsubscribeButtonOnClick;
+  unsubscribeButton.onclick = unsubscribeButtonOnClick;
 
   // Init the subscription form section
-  const sub_form = document.getElementById('subscription-form');
-  sub_form.onsubmit = optpg.subscribeFormOnSubmit;
-  const continue_preview_btn = document.getElementById(
+  const subscriptionForm = document.getElementById('subscription-form');
+  subscriptionForm.onsubmit = subscribeFormOnSubmit;
+  const continuePreviewButton = document.getElementById(
     'subscription-preview-continue');
-  continue_preview_btn.onclick = jrOptionsSubscriptionPreviewContinueButtonOnClick;
+  continuePreviewButton.onclick = subscriptionPreviewContinueButtonOnClick;
 
   // Init display settings
 
   // Setup the entry background image menu
-  const bg_img_menu = document.getElementById('entry-background-image');
-  bg_img_menu.onchange = jrOptionsBackgroundImageMenuOnChange;
+  const backgroundImageMenu = document.getElementById('entry-background-image');
+  backgroundImageMenu.onchange = backgroundImageMenuOnChange;
 
   // TODO: stop trying to reuse the option variable, create separate variables
   let option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
-  bg_img_menu.appendChild(option);
+  backgroundImageMenu.appendChild(option);
 
   // Load bgimages menu
-  const current_bg_image_path = localStorage.BACKGROUND_IMAGE;
-  const bg_img_path_offset = '/images/'.length;
-  for(let path of optpg.bgImagePathsArray) {
-    let path_option = document.createElement('option');
-    path_option.value = path;
-    path_option.textContent = path.substring(bg_img_path_offset);
-    path_option.selected = current_bg_image_path === path;
-    bg_img_menu.appendChild(path_option);
+  const currentBackgroundImagePath = localStorage.BACKGROUND_IMAGE;
+  const backgroundImagePathOffset = '/images/'.length;
+  for(let path of imagePaths) {
+    let pathOption = document.createElement('option');
+    pathOption.value = path;
+    pathOption.textContent = path.substring(backgroundImagePathOffset);
+    pathOption.selected = currentBackgroundImagePath === path;
+    backgroundImageMenu.appendChild(pathOption);
   }
 
   // Setup header font menu
-  const header_font_menu = document.getElementById('select_header_font');
-  header_font_menu.onchange = jrOptionsHeaderFontMenuOnChange;
+  const headerFontMenu = document.getElementById('select_header_font');
+  headerFontMenu.onchange = headerFontMenuOnChange;
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
-  header_font_menu.appendChild(option);
-  const selected_hf = localStorage.HEADER_FONT_FAMILY;
-  for(let ff of optpg.fontsArray) {
-    let ff_option = document.createElement('option');
-    ff_option.value = ff;
-    ff_option.selected = ff === selected_hf;
-    ff_option.textContent = ff;
-    header_font_menu.appendChild(ff_option);
+  headerFontMenu.appendChild(option);
+  const currentHeaderFont = localStorage.HEADER_FONT_FAMILY;
+  for(let ff of fonts) {
+    let headerFontOption = document.createElement('option');
+    headerFontOption.value = ff;
+    headerFontOption.selected = ff === currentHeaderFont;
+    headerFontOption.textContent = ff;
+    headerFontMenu.appendChild(headerFontOption);
   }
 
   // Setup the body font menu
-  const body_font_menu = document.getElementById('select_body_font');
-  body_font_menu.onchange = jrOptionsBodyFontMenuOnChange;
+  const bodyFontMenu = document.getElementById('select_body_font');
+  bodyFontMenu.onchange = bodyFontMenuOnChange;
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
-  body_font_menu.appendChild(option);
-  const current_bff = localStorage.BODY_FONT_FAMILY;
-  for(let bff of optpg.fontsArray) {
-    let bff_option = document.createElement('option');
-    bff_option.value = bff;
-    bff_option.selected = bff === current_bff;
-    bff_option.textContent = bff;
-    body_font_menu.appendChild(bff_option);
+  bodyFontMenu.appendChild(option);
+  const currentBodyFont = localStorage.BODY_FONT_FAMILY;
+  for(let bff of fonts) {
+    let bodyFontOption = document.createElement('option');
+    bodyFontOption.value = bff;
+    bodyFontOption.selected = bff === currentBodyFont;
+    bodyFontOption.textContent = bff;
+    bodyFontMenu.appendChild(bodyFontOption);
   }
 
-  const col_count_element = document.getElementById('column-count');
-  const col_counts = ['1', '2', '3'];
-  for(let col_count of col_counts) {
+  const columnCountElement = document.getElementById('column-count');
+  const columnCounts = ['1', '2', '3'];
+  for(let columnCount of columnCounts) {
     option = document.createElement('option');
-    option.value = col_count;
-    option.selected = col_count === localStorage.COLUMN_COUNT;
-    option.textContent = col_count;
-    col_count_element.appendChild(option);
+    option.value = columnCount;
+    option.selected = columnCount === localStorage.COLUMN_COUNT;
+    option.textContent = columnCount;
+    columnCountElement.appendChild(option);
   }
 
-  col_count_element.onchange = jrOptionsColumnCountMenuOnChange;
+  columnCountElement.onchange = columnCountMenuOnChange;
 
-  const bg_color_element = document.getElementById('entry-background-color');
-  bg_color_element.value = localStorage.ENTRY_BACKGROUND_COLOR || '';
-  bg_color_element.oninput = jrOptionsEntryBackgroundColorOnInput;
+  const backgroundColorInput = document.getElementById(
+    'entry-background-color');
+  backgroundColorInput.value = localStorage.ENTRY_BACKGROUND_COLOR || '';
+  backgroundColorInput.oninput = entryBackgroundColorOnInput;
 
-  const margin_element = document.getElementById('entry-margin');
-  margin_element.value = localStorage.ENTRY_MARGIN || '10';
-  margin_element.onchange = jrOptionsEntryMarginOnChange;
+  const marginInput = document.getElementById('entry-margin');
+  marginInput.value = localStorage.ENTRY_MARGIN || '10';
+  marginInput.onchange = entryMarginOnChange;
 
-  const header_font_size_element = document.getElementById('header-font-size');
-  header_font_size_element.value = localStorage.HEADER_FONT_SIZE || '1';
-  header_font_size_element.onchange = jrOptionsHeaderFontSizeOnChange;
+  const headerFontSizeInput = document.getElementById('header-font-size');
+  headerFontSizeInput.value = localStorage.HEADER_FONT_SIZE || '1';
+  headerFontSizeInput.onchange = headerFontSizeOnChange;
 
-  const body_font_size_element = document.getElementById('body-font-size');
-  body_font_size_element.value = localStorage.BODY_FONT_SIZE || '1';
-  body_font_size_element.onchange = jrOptionsBodyFontSizeOnChange;
+  const bodyFontSizeInput = document.getElementById('body-font-size');
+  bodyFontSizeInput.value = localStorage.BODY_FONT_SIZE || '1';
+  bodyFontSizeInput.onchange = bodyFontSizeOnChange;
 
-  const justify_checkbox = document.getElementById('justify-text');
-  justify_checkbox.checked = 'JUSTIFY_TEXT' in localStorage;
-  justify_checkbox.onchange = jrOptionsJustifyCheckboxOnChange;
+  const justifyTextCheckbox = document.getElementById('justify-text');
+  justifyTextCheckbox.checked = 'JUSTIFY_TEXT' in localStorage;
+  justifyTextCheckbox.onchange = justifyCheckboxOnChange;
 
-  const body_height_element = document.getElementById('body-line-height');
-  const line_height_int = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
-  body_height_element.value = (line_height_int / 10).toFixed(2);
-  body_height_element.oninput = jrOptionsBodyHeightInputOnInput;
+  const bodyLineHeightInput = document.getElementById('body-line-height');
+  const lineHeightAsNumber = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
+  bodyLineHeightInput.value = (lineHeightAsNumber / 10).toFixed(2);
+  bodyLineHeightInput.oninput = bodyHeightOnInput;
 
   const manifest = chrome.runtime.getManifest();
-  const ext_name_element = document.getElementById('extension-name');
-  ext_name_element.textContent = manifest.name;
-  const ext_version_element = document.getElementById('extension-version');
-  ext_version_element.textValue = manifest.version;
-  const ext_author_element = document.getElementById('extension-author');
-  ext_author_element.textContent = manifest.author;
-  const ext_desc_element = document.getElementById('extension-description');
-  ext_desc_element.textContent = manifest.description || '';
-  const ext_homepage_element = document.getElementById('extension-homepage');
-  ext_homepage_element.textContent = manifest.homepage_url;
+  const extensionNameElement = document.getElementById('extension-name');
+  extensionNameElement.textContent = manifest.name;
+  const extensionVersionElement = document.getElementById('extension-version');
+  extensionVersionElement.textValue = manifest.version;
+  const extensionAuthorElement = document.getElementById('extension-author');
+  extensionAuthorElement.textContent = manifest.author;
+  const extensionDescriptionElement = document.getElementById(
+    'extension-description');
+  extensionDescriptionElement.textContent = manifest.description || '';
+  const extensionHomepageElement = document.getElementById(
+    'extension-homepage');
+  extensionHomepageElement.textContent = manifest.homepage_url;
 
   const subsListSection = document.getElementById('subs-list-section');
-  optpg.showSection(subsListSection);
+  showSection(subsListSection);
+}, {'once': true});
+
+////////////////////////////////////////////////////////////////////////
+// Misc helper functions
+
+// TODO: just inline?
+function isURLObject(value) {
+  return Object.prototype.toString.call(value) === '[object URL]';
 }
 
-document.addEventListener('DOMContentLoaded', jrOptionsOnDOMContentLoaded,
-  {'once': true});
+// TODO: deprecate?
+function hideElement(element) {
+  element.style.display = 'none';
+}
+
+// TODO: deprecate?
+function showElement(element) {
+  element.style.display = 'block';
+}
+
+// TODO: deprecate?
+function addElementClass(element, className) {
+  element.classList.add(className);
+}
+
+// TODO: deprecate?
+function removeElementClass(element, className) {
+  element.classList.remove(className);
+}
+
+// TODO: deprecate?
+function isElementVisible(element) {
+  return element.style.display !== 'none';
+}
+
+} // End file block scope
