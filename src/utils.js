@@ -29,3 +29,25 @@ function filterEmptyProperties(object) {
 function filterControlCharacters(string) {
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }
+
+async function commandArchiveEntries() {
+  let conn;
+  let maxAge;// intentionally undefined
+  try {
+    conn = await db.connect();
+    const numArchived = await operations.archiveEntries(conn, maxAge, console);
+  } finally {
+    if(conn) {
+      conn.close();
+    }
+  }
+}
+
+async function commandPollFeeds(nolog) {
+  const options = {};
+  options.ignoreIdleState = true;
+  options.ignoreModifiedCheck = true;
+  options.ignoreRecencyCheck = true;
+  options.verbose = true;
+  await pollFeeds(options);
+}

@@ -2,41 +2,33 @@
 
 'use strict';
 
-// TODO: update callsites
-// TODO: this is no longer general backup, this is now just importFiles.
-// Reorient by removing the backup namespace object, just export a single
-// public function named importOPMLFiles, rename file to import-opml-files.js
+// Dependencies
+// /lib/opml-document/opml-document.js
+// /lib/favicon/favicon.js
+// /src/db/db.js
+// /src/operations.js
 
-const backup = {};
+{ // Begin file block scope
 
 // Import one or more files into the app
 // @param files {Iterable<File>} - e.g. FileList
-backup.importFiles = async function(fileList, logObject) {
+async function importOPMLFiles(files, verbose) {
 
-  if(logObject) {
-    logObject.log('Importing %d OPML XML files', fileList.length);
+  if(verbose) {
+    console.log('Importing %d OPML XML files', files.length);
   }
-
-  const importPromises = new Array(fileList.length);
 
   let dbConn;
   let iconConn;
   let importResolutions;
 
-  try {
+  // No catch - allow exceptions to bubbles
 
+  try {
     dbConn = await db.connect();
     iconConn = await favicon.connect();
-
-    for(let fileObject of fileList) {
-      const promise = backup.importFileSilently(dbConn, iconConn, fileObject,
-        logObject);
-      importPromises.push(promise);
-    }
-
-    importResolutions = await Promise.all(importPromises);
-  } catch(error) {
-    // ?
+    importResolutions = await importFilesInternal(dbConn, iconConn, files,
+      verbose);
   } finally {
     if(dbConn) {
       dbConn.close();
@@ -46,53 +38,64 @@ backup.importFiles = async function(fileList, logObject) {
     }
   }
 
-
   let numFeedsImported = 0;
   for(let perFileFeedCount of importResolutions) {
     numFeedsImported += perFileFeedCount;
   }
 
-  if(logObject) {
-    logObject.log('Imported %d feeds from %d files', numFeedsImported,
-    fileList.length);
+  if(verbose) {
+    console.log('Imported %d feeds from %d files', numFeedsImported,
+      files.length);
   }
 
   return numFeedsImported;
+}
+
+this.importOPMLFiles = importOPMLFiles;
+
+
+async function importFilesInternal(dbConn, iconConn, files, verbose) {
+  const promises = new Array(files.length);
+  for(let file of files) {
+    const promise = importFileSilently(dbConn, iconConn, file, verbose);
+    promises.push(promise);
+  }
+
+  return await Promise.all(promises);
 };
 
-// Decorates backup.importFile to avoid Promise.all failfast behavior
-backup.importFileSilently = async function(dbConn, iconConn, fileObject,
-  logObject) {
+// Decorates importFile to avoid Promise.all failfast behavior
+async function importFileSilently(dbConn, iconConn, fileObject, verbose) {
 
   let subscriptionCount = 0;
   try {
-    subscriptionCount = await backup.importFile(dbConn, iconConn, fileObject,
-      logObject);
+    subscriptionCount = await importFile(dbConn, iconConn, fileObject,
+      verbose);
   } catch(error) {
-    if(logObject) {
-      logObject.warn(error);
+    if(verbose) {
+      console.warn(error);
     }
   }
   return subscriptionCount;
-};
+}
 
 // Returns number of feeds added
-backup.importFile = async function(dbConn, iconConn, fileObject, logObject) {
+async function importFile(dbConn, iconConn, fileObject, verbose) {
 
-  if(logObject) {
-    logObject.log('Importing file:', fileObject.name);
+  if(verbose) {
+    console.log('Importing file', fileObject.name);
   }
 
   if(fileObject.size < 1) {
     throw new TypeError(`The file "${fileObject.name}" is empty`);
   }
 
-  if(!backup.isSupportedFileType(fileObject.type)) {
+  if(!isSupportedFileType(fileObject.type)) {
     throw new TypeError(
       `"${fileObject.name}" has unsupported type "${fileObject.type}"`);
   }
 
-  const text = await backup.readFileAsText(fileObject);
+  const text = await readFileAsText(fileObject);
   const document = OPMLDocument.parse(text);
   document.removeInvalidOutlineTypes();
   document.normalizeOutlineXMLURLs();
@@ -101,30 +104,29 @@ backup.importFile = async function(dbConn, iconConn, fileObject, logObject) {
   const outlineArray = document.getOutlineObjects();
   let numSubscribed = 0;
   if(outlineArray.length) {
-    const uniqueOutlineArray = backup.aggregateOutlinesByXMLURL(outlineArray);
+    const uniqueOutlineArray = aggregateOutlinesByXMLURL(outlineArray);
 
     const duplicateCount = outlineArray.length - uniqueOutlineArray.length;
-    if(duplicateCount && logObject) {
-      logObject.log('Ignored %d duplicate feed(s) in file', duplicateCount,
+    if(duplicateCount && verbose) {
+      console.log('Ignored %d duplicate feed(s) in file', duplicateCount,
         fileObject.name);
     }
 
-    backup.normalizeOutlineLinks(uniqueOutlineArray);
-    const feedArray = backup.convertOutlines(uniqueOutlineArray);
-    numSubscribed = backup.batchSubscribe(feedArray, iconDbConn, feedObject,
-      logObject);
+    normalizeOutlineLinks(uniqueOutlineArray);
+    const feedArray = convertOutlines(uniqueOutlineArray);
+    numSubscribed = batchSubscribe(feedArray, iconDbConn, feedObject, verbose);
   }
 
-  if(logObject) {
-    logObject.log('Subscribed to %d feeds in file', numSubscribed,
+  if(verbose) {
+    console.log('Subscribed to %d feeds in file', numSubscribed,
       fileObject.name);
   }
 
   return numSubscribed;
-};
+}
 
 // Filter duplicates, favoring earlier in document order
-backup.aggregateOutlinesByXMLURL = function(outlineArray) {
+function aggregateOutlinesByXMLURL(outlineArray) {
   const uniqueURLsArray = new Array(outlineArray.length);
   const uniqueOutlineArray = new Array(outlineArray.length);
   for(let outlineObject of outlineArray) {
@@ -133,10 +135,10 @@ backup.aggregateOutlinesByXMLURL = function(outlineArray) {
       uniqueURLsArray.push(outlineObject.xmlUrl);
     }
   }
-};
+}
 
 // Normalize and validate each outline's link property
-backup.normalizeOutlineLinks = function(outlineArray) {
+function normalizeOutlineLinks(outlineArray) {
 
   // Setting to undefined is preferred over deleting in order to maintain v8
   // object shape
@@ -164,26 +166,25 @@ backup.normalizeOutlineLinks = function(outlineArray) {
       outlineObject.htmlUrl = undefined;
     }
   }
-};
+}
 
 // Convert the outlines into feeds
-backup.convertOutlines = function(outlineArray) {
+function convertOutlines(outlineArray) {
   const feedArray = new Array(outlineArray.length);
   for(let outlineObject of outlineArray) {
-    const feedObject = backup.convertOutlineToFeed(outlineObject);
+    const feedObject = convertOutlineToFeed(outlineObject);
     feedArray.push(feedObject);
   }
   return feedArray;
-};
+}
 
 // Attempt to subscribe to each of the feeds concurrently
-backup.batchSubscribe = async function(feedArray, dbConn, iconDbConn,
-  logObject) {
+async function batchSubscribe(feedArray, dbConn, iconDbConn, verbose) {
 
   // Map
   const promiseArray = new Array(feedArray.length);
   for(let feedObject of feedArray) {
-    const promise = backup.subscribe(dbConn, iconDbConn, feedObject, logObject);
+    const promise = importSubscribe(dbConn, iconDbConn, feedObject, verbose);
     promiseArray.push(promise);
   }
 
@@ -199,10 +200,9 @@ backup.batchSubscribe = async function(feedArray, dbConn, iconDbConn,
   }
 
   return numSubscribed;
-};
+}
 
-
-backup.convertOutlineToFeed = function(outlineObject) {
+function convertOutlineToFeed(outlineObject) {
   const feedObject = {};
 
   if(outlineObject.type) {
@@ -226,11 +226,11 @@ backup.convertOutlineToFeed = function(outlineObject) {
   addFeedURLString(feedObject, outlineObject.xmlUrl);
 
   return feedObject;
-};
+}
 
 // Returns the result of subscribe, which is the added feed object, or null
 // if an error occurs. This wraps so that it can be used with Promise.all
-backup.subscribe = async function(dbConn, iconDbConn, feedObject, logObject) {
+async function importSubscribe(dbConn, iconDbConn, feedObject, verbose) {
 
   const options = {
     'suppressNotifications': true
@@ -238,17 +238,16 @@ backup.subscribe = async function(dbConn, iconDbConn, feedObject, logObject) {
 
   try {
     const subscribedFeedObject = await operations.subscribe(dbConn, iconDbConn,
-      feedObject, options, logObject);
-
+      feedObject, options, verbose ? console: null);
     return subscribedFeedObject;
   } catch(error) {
-    if(logObject) {
-      logObject.warn(error);
+    if(verbose) {
+      console.warn(error);
     }
   }
 };
 
-backup.isSupportedFileType = function(fileTypeString) {
+function isSupportedFileType(fileTypeString) {
 
   // Noramlize the type
   let normTypeString = fileTypeString || '';
@@ -257,13 +256,15 @@ backup.isSupportedFileType = function(fileTypeString) {
   // Check if the normalized type is supported
   const supportedTypes = ['application/xml', 'text/xml'];
   return supportedTypes.includes(normTypeString);
-};
+}
 
-backup.readFileAsText = function(fileObject) {
+function readFileAsText(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.readAsText(fileObject);
+    reader.readAsText(file);
     reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(reader.error);
   });
-};
+}
+
+} // End file block scope

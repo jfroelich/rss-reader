@@ -656,17 +656,11 @@ function importOPMLButtonOnClick(event) {
 
 async function importOPMLUploaderOnChange(event) {
   const uploaderInput = event.target;
-  let conn;
-
   try {
-    conn = await db.connect();
-    await backup.importFiles(uploaderInput.files, console);
+    await importOPMLFiles(uploaderInput.files, true);
   } catch(error) {
+    // TODO: visual feedback in event an error
     console.warn(error);
-  } finally {
-    if(conn) {
-      conn.close();
-    }
   }
 }
 

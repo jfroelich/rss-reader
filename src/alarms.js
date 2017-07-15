@@ -2,9 +2,23 @@
 
 'use strict';
 
-// This file should only be loaded in the background page of the extension.
-// In this file, alarms are registered in the browser, and the listeners for
-// each alarm are defined.
+// * This file contains all the code for managing the background processes that
+// run to make the extension work, such as checking for new articles, or
+// monitoring the health of the database.
+// * Certain bindings are made simply by loading this file, so this file should
+// only be loaded in the background page of the extension.
+// * There are no global variables created
+
+{ // Begin file block scope
+
+// Simple utility wrapper that turns the chrome.alarms.get callback style into
+// a promise so that this can be conveniently used with async
+function getAlarm(alarmNameString) {
+  return new Promise(function(resolve, reject) {
+    chrome.alarms.get(alarmNameString, resolve);
+  });
+}
+
 
 // Register an alarm for archive entries, once a day
 chrome.alarms.create('archive', {'periodInMinutes': 60 * 12});
@@ -29,6 +43,14 @@ chrome.alarms.onAlarm.addListener(async function(alarmObject) {
 });
 
 // TODO: where is remove missing entry urls alarm created? should be here
+
+/*
+alarm = await getAlarm('remove-entries-missing-urls');
+if(!alarm) {
+  console.debug('Creating remove-entries-missing-urls alarm');
+  chrome.alarms.create('remove-entries-missing-urls',
+    {'periodInMinutes': 60 * 24 * 7});
+*/
 
 // React to alarm for removing entries missing urls
 chrome.alarms.onAlarm.addListener(async function(alarm) {
@@ -67,11 +89,15 @@ function jrPollRegisterAlarmListener() {
 }
 
 async function jrPollOnAlarm(alarm) {
-  if(alarm.name !== 'poll')
+  if(alarm.name !== 'poll') {
     return;
-  const service = new PollingService();
+  }
+
+  const options = {};
+  options.verbose = false;
+
   try {
-    await service.jrPollFeeds();
+    await pollFeeds(options);
   } catch(error) {
     console.warn(error);
   }
@@ -138,12 +164,6 @@ chrome.alarms.onAlarm.addListener(jrFaviconOnAlarm);
 // background page is loaded
 async function alarmsOnLoad(event) {
 
-  // Remove missing entries background task
-  chrome.alarms.onAlarm.addListener(removeMissingEntriesOnAlarm);
-
-
-
-
   PollingService.registerAlarmListener();
   FaviconCache.registerAlarmListener();
   try {
@@ -164,11 +184,7 @@ async function alarmsOnLoad(event) {
         {'periodInMinutes': 60 * 24 * 7});
     }
 
-    alarm = await getAlarm('remove-entries-missing-urls');
-    if(!alarm) {
-      console.debug('Creating remove-entries-missing-urls alarm');
-      chrome.alarms.create('remove-entries-missing-urls',
-        {'periodInMinutes': 60 * 24 * 7});
+
     }
   } catch(error) {
     console.warn(error);
@@ -176,3 +192,5 @@ async function alarmsOnLoad(event) {
 }
 
 document.addEventListener('DOMContentLoaded', alarmsOnLoad, {'once': true});
+
+} // End file block scope

@@ -2,104 +2,155 @@
 
 'use strict';
 
-// TODO: because there are no exports here this should all be wrapped in a block
-
-// Simple utility wrapper that turns the chrome.alarms.get callback style into
-// a promise so that this can be conveniently used with async
-function getAlarm(alarmNameString) {
-  return new Promise(function(resolve, reject) {
-    chrome.alarms.get(alarmNameString, resolve);
-  });
-}
-
-// Functionality that deals with html images will look for these attributes
-// containing an alternate url when an image is missing a src
-const jrPollServiceLazyImageAttributes = [
-  'load-src',
-  'data-src',
-  'data-original-desktop',
-  'data-baseurl',
-  'data-lazy',
-  'data-img-src',
-  'data-original',
-  'data-adaptive-img',
-  'data-imgsrc',
-  'data-default-src'
-];
-
-const jrConfigTelemetryHosts = [
-  'ad.doubleclick.net',
-  'b.scorecardresearch.com',
-  'googleads.g.doubleclick.net',
-  'me.effectivemeasure.net',
-  'pagead2.googlesyndication.com',
-  'pixel.quantserve.com',
-  'pixel.wp.com',
-  'pubads.g.doubleclick.net',
-  'sb.scorecardresearch.com',
-  'stats.bbc.co.uk'
-];
-
-const jrPollPaywallHostsArray = [
-  'www.nytimes.com',
-  'myaccount.nytimes.com',
-  'open.blogs.nytimes.com'
-];
-
-const jrPollInterstitialHostsArray = [
-  'www.forbes.com',
-  'forbes.com'
-];
-
-const jrPollScriptGeneratedHostsArray = [
-  'productforums.google.com',
-  'groups.google.com'
-];
-
-const jrPollRequiresCookiesHostsArray = [
-  'www.heraldsun.com.au',
-  'ripe73.ripe.net'
-];
-
 // TODO: do something like a default options object, and have main entry point
 // accept an options parameter that defaults to the default options object
+// Do not use these semi-globals
+// TODO: use a verbose param instead of the log object
 
-const jrPollAllowMetered = true;
-const jrPollIgnoreIdleState = false;
-const jrPollSkipRecencyCheck = false;
-const jrPollSkipModifiedCheck = false;
+{ // Begin file block scope
 
+const defaults = {};
+// If true, then output log messages to the console
+defaults.verbose = false;
+// If true, then allow metered connections
+defaults.allowMetered = true;
+// If true, then allow polling even if not idle
+defaults.ignoreIdleState = false;
+// If true, whether to poll feeds that were recently polled
+defaults.skipRecencyCheck = false;
+// If true, whether to continue processing feeds not modified
+defaults.skipModifiedCheck = false;
 // Must idle for this many seconds before considered idle
-const jrPollIdlePeriodSeconds = 30;
-
+defaults.idlePeriodSeconds = 30;
 // Period (ms) during which feeds considered recently polled
-const jrPollRecencyPeriodMillis = 5 * 60 * 1000;
-
-// How many ms before feed fetch is considered timed out
-const jrPollFetchFeedTimeoutMillis = 5000;
-
-// How many ms before html fetch is considered timed out
-const jrPollFetchHTMLTimeoutMillis = 5000;
-
-const jrPollFetchImageTimeoutMillis = 3000;
-
-const jrPollDb = new ReaderDb();
-const jrPollReaderConn = null;
-const jrPollFaviconService = new FaviconService();
-const jrPollBoilerplateFilter = new BoilerplateFilter();
+defaults.recencyPeriodMillis = 5 * 60 * 1000;
+// How many ms before feed fetch times out
+defaults.fetchFeedTimeoutMillis = 5000;
+// How many ms before html fetch times out
+defaults.fetchHTMLTimeoutMillis = 5000;
+// How many ms before image fetch times out
+defaults.fetchImageTimeoutMillis = 3000;
 
 
+async function pollFeeds(options = defaults) {
 
+  initOptions(options);
 
+  if(options.verbose) {
+    console.log('Checking for new articles...');
+  }
 
-function jrPollQueryIdleState(idlePeriodSeconds) {
-  return new Promise(function(resolve) {
-    chrome.idle.queryState(idlePeriodSeconds, resolve);
-  });
+  const shouldStartPoll = await checkPollStartingConditions(options);
+  if(!shouldStartPoll) {
+    return;
+  }
+
+  // TODO: num WHAT added?
+  let numEntriesAdded = 0;
+
+  const connectionPromises = [db.connect(),
+    favicon.connect()];
+  let readerConn, iconConn;
+
+  try {
+    const connections = await Promise.all(connectionPromises);
+    readerConn = connections[0];
+    iconConn = connections[1];
+
+    let feeds = await db.getFeeds(readerConn);
+
+    if(!options.skipRecencyCheck) {
+      feeds = feeds.filter(isFeedNotRecent);
+    }
+
+    numEntriesAdded = processFeeds(readerConn, iconConn, feeds, options);
+
+    if(numEntriesAdded) {
+      await updateBadgeText(readerConn);
+    }
+
+  } finally {
+    if(readerConn) {
+      readerConn.close();
+    }
+    if(iconConn) {
+      iconConn.close();
+    }
+  }
+
+  if(numEntriesAdded) {
+    const title = 'Added articles';
+    const message = `Added ${numEntriesAdded} articles`;
+    showNotification(title, message);
+  }
+
+  broadcastCompletedMessage();
+
+  if(options.verbose) {
+    console.log('Polling completed');
+  }
+
+  return numEntriesAdded;
 }
 
+this.pollFeeds = pollFeeds;
+
+
+function initOptions(options) {
+  options.verbose = 'verbose' in options ? options.verbose : defaults.verbose;
+
+  // TODO: init the rest
+}
+
+// Concurrently process feeds
+async function processFeeds(readerConn, iconConn, feeds, options) {
+  const promises = new Array(feeds.length);
+  for(let feed of feeds) {
+    const promise = processFeedSilently(readerConn, iconConn, feed, options);
+    promises.push(promise);
+  }
+
+  const resolutions = await Promise.all(promises);
+  let totalEntriesAdded = 0;
+  for(let numEntriesAdded of resolutions) {
+    totalEntriesAdded += numEntriesAdded;
+  }
+  return totalEntriesAdded;
+}
+
+async function checkPollStartingConditions(options) {
+  if(isOffline()) {
+    if(options.verbose) {
+      console.warn('Polling canceled because offline');
+    }
+    return false;
+  }
+
+  if(!options.allowMeteredConnections && 'NO_POLL_METERED' in localStorage &&
+    isMeteredConnection()) {
+    if(options.verbose) {
+      console.warn('Polling canceled due to metered connection');
+    }
+    return false;
+  }
+
+  if(!options.ignoreIdleState && 'ONLY_POLL_IF_IDLE' in localStorage) {
+    const state = await queryIdleState(options.idlePeriodSeconds);
+    if(state !== 'locked' && state !== 'idle') {
+      if(options.verbose) {
+        console.warn('Polling canceled due to idle requirement');
+      }
+      return false;
+    }
+  }
+
+  return true;
+}
+
+
+
 // TODO: caller needs to pass in logObject
-function jrPollIsFeedNotRecent(logObject, feedObject) {
+function isFeedNotRecent(logObject, feedObject) {
 
   // Never considered feeds that have not been fetched as recent
   if(!feedObject.dateFetched) {
@@ -108,7 +159,7 @@ function jrPollIsFeedNotRecent(logObject, feedObject) {
 
   const millisElapsedSinceLastPoll = new Date() - feedObject.dateFetched;
   const wasPolledRecently =
-    millisElapsedSinceLastPoll < jrPollRecencyPeriodMillis;
+    millisElapsedSinceLastPoll < recencyPeriodMillis;
 
   if(logObject && wasPolledRecently) {
     logObject.debug('Feed polled too recently', getFeedURLString(feedObject));
@@ -117,113 +168,10 @@ function jrPollIsFeedNotRecent(logObject, feedObject) {
   return !wasPolledRecently;
 }
 
-const jrDefaultPollOptions = {};
 
-function jrPollIsOffline() {
-  return 'onLine' in navigator && !navigator.onLine;
-}
-
-function jrPollIsMeteredConnection() {
-  // experimental
-  return navigator.connection && navigator.connection.metered;
-}
-
-// TODO: this function is too long, break up into helpers
-// TODO: add in log parameter
-// TODO: add in options object
-async function jrPollFeeds(logObject, options = jrDefaultPollOptions) {
-  if(logObject) {
-    logObject.log('Checking for new articles...');
-  }
-
-  if(jrPollIsOffline()) {
-    if(logObject) {
-      logObject.debug('Polling canceled because offline');
-    }
-    return;
-  }
-
-  if(!options.allowMeteredConnections && 'NO_POLL_METERED' in localStorage &&
-    jrPollIsMeteredConnection()) {
-    if(logObject) {
-      logObject.debug('Polling canceled due to metered connection');
-    }
-    return;
-  }
-
-  if(!options.ignoreIdleState && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    const state = await jrPollQueryIdleState(options.idlePeriodSeconds);
-    if(state !== 'locked' && state !== 'idle') {
-      if(logObject) {
-        logObject.debug('Polling canceled due to idle requirement');
-      }
-      return;
-    }
-  }
-
-
-  // TODO: to reduce the size of this function, this might be a good spot
-  // to split this function in half, after the checks have been made
-  // Can make some helper function like processAllFeeds that returns
-  // num added
-
-  // TODO: num WHAT added?
-  let numAdded = 0;
-
-  // TODO: feed store object is deprecated
-  const feedStore = new FeedStore();
-
-  // TODO: objects deprecated
-  const connectionPromises = [jrPollDb.db.connect(),
-    jrPollFaviconService.db.connect()];
-
-  // TODO: break this up into separate try/catch if possible?
-
-  try {
-    const conns = await Promise.all(connectionPromises);
-    jrPollReaderConn = conns[0];
-    feedStore.conn = jrPollReaderConn;
-    let feeds = await feedStore.getAll();
-    if(!options.skipRecencyCheck) {
-      feeds = feeds.filter(jrPollIsFeedNotRecent);
-    }
-
-    const processFeedPromises = feeds.map(jrPollProcessFeedSilently);
-    const resolutions = await Promise.all(processFeedPromises);
-    numAdded = resolutions.reduce((sum, added) => sum + added, 0);
-
-    if(numAdded) {
-      const entryStore = new EntryStore(jrPollReaderConn);
-      await updateBadgeText(jrPollReaderConn);
-    }
-
-  } finally {
-    if(jrPollReaderConn) {
-      jrPollReaderConn.close();
-    }
-    jrPollFaviconService.close();
-  }
-
-  if(numAdded) {
-    showNotification('Updated articles',
-      `Added ${numAdded} new articles`);
-  }
-
-  const pollBroadcastChannel = new BroadcastChannel('poll');
-  pollBroadcastChannel.postMessage('completed');
-  pollBroadcastChannel.close();
-
-  if(logObject) {
-    logObject.log('Polling completed');
-  }
-
-  return numAdded;
-}
-
-
-// Suppresses jrPollProcessFeed exceptions to avoid Promise.all fail fast
+// Suppresses processFeed exceptions to avoid Promise.all fail fast
 // behavior
-async function jrPollProcessFeedSilently(logObject, feedObject) {
+async function processFeedSilently(readerConn, iconConn, feedObject, options) {
   let numEntriesAdded = 0;
   try {
     numEntriesAdded = await jrPollProcessFeed(logObject, feedObject);
@@ -306,11 +254,11 @@ async function jrPollProcessFeed(localFeed) {
   // TODO: ensure destructuring names are exact, this used to say feed but now
   // named feedObject
   const {feedObject, entries} = await fetchFeed(url,
-    jrPollFetchFeedTimeoutMillis);
+    fetchFeedTimeoutMillis);
   const remoteFeed = feedObject;
   let remoteEntries = entries;
 
-  if(!jrPollSkipModifiedCheck &&
+  if(!skipModifiedCheck &&
     jrPollIsFeedUnmodified(localFeed, remoteFeed)) {
 
     if(logObject) {
@@ -333,7 +281,7 @@ async function jrPollProcessFeed(localFeed) {
 
   // TODO: feedStore should be an instance variable
   const feedStore = new FeedStore();
-  feedStore.conn = jrPollReaderConn;
+  feedStore.conn = readerConn;
 
   // TODO: why pass feed? Maybe it isn't needed by jrProcessEntry? Can't I just
   // do any delegation of props now, so that jrProcessEntry does not need to
@@ -375,7 +323,7 @@ async function jrProcessEntry(logObject, feedObject, entryObject) {
 
   // TODO: entry store is deprecated
   // const entryStore = new EntryStore();
-  // entryStore.conn = jrPollReaderConn;
+  // entryStore.conn = readerConn;
 
   // First try and rewrite the url
   const didAppendRewrittenURL = jrPollRewriteEntryURL(entryObject);
@@ -422,7 +370,7 @@ async function jrProcessEntry(logObject, feedObject, entryObject) {
   try {
     // TODO: now that I renamed these variables, this will not work
     ({documentObject, responseURLString} = await fetchHTML(
-      fetchURLString, jrPollFetchHTMLTimeoutMillis));
+      fetchURLString, fetchHTMLTimeoutMillis));
   } catch(error) {
     if(logObject) {
       logObject.warn(error);
@@ -459,10 +407,10 @@ async function jrProcessEntry(logObject, feedObject, entryObject) {
   const baseURLObject = new URL(baseURLString);
   resolveDocumentURLs(documentObject, resolveBaseURLObject);
 
-  jrPollFilterTrackingImages(documentObject, jrPollTrackingHosts);
+  jrPollFilterTrackingImages(documentObject);
 
   await setImageDimensions(documentObject,
-    jrPollFetchImageTimeoutMillis);
+    fetchImageTimeoutMillis);
 
   const prepURLString = entry.getURLString(entryObject);
   jrPollPrepareDocument(prepURLString, documentObject);
@@ -490,19 +438,42 @@ function jrPollShouldExcludeEntry(entryObject) {
   // to ever worry about situations where I accidentally include the protocol
   // in the string
 
-  if(jrPollInterstitialHostsArray.includes(hostname)) {
+
+  const interstitialHosts = [
+    'www.forbes.com',
+    'forbes.com'
+  ];
+
+  if(interstitialHosts.includes(hostname)) {
     return true;
   }
 
-  if(jrPollScriptGeneratedHostsArray.includes(hostname)) {
+  const scriptedHosts = [
+    'productforums.google.com',
+    'groups.google.com'
+  ];
+
+  if(scriptedHosts.includes(hostname)) {
     return true;
   }
 
-  if(jrPollPaywallHostsArray.includes(hostname)) {
+  const paywallHosts = [
+    'www.nytimes.com',
+    'myaccount.nytimes.com',
+    'open.blogs.nytimes.com'
+  ];
+
+  if(paywallHosts.includes(hostname)) {
     return true;
   }
 
-  if(jrPollRequiresCookiesHostsArray.includes(hostname)) {
+
+  const cookieHosts = [
+    'www.heraldsun.com.au',
+    'ripe73.ripe.net'
+  ];
+
+  if(cookieHosts.includes(hostname)) {
     return true;
   }
 
@@ -525,7 +496,7 @@ async function jrPollAddEntry(logObject, entryObject) {
 
   // TODO: entry store is deprecated
   const entryStore = new EntryStore();
-  entryStore.conn = jrPollReaderConn;
+  entryStore.conn = readerConn;
 
   try {
     // TODO: entryStore.add is deprecated
@@ -602,9 +573,30 @@ function jrPollPrepareDocument(urlString, documentObject) {
   scrubby.addNoReferrer(documentObject);
 }
 
+function queryIdleState(idlePeriodSeconds) {
+  return new Promise(function(resolve) {
+    chrome.idle.queryState(idlePeriodSeconds, resolve);
+  });
+}
+
 // Scans the images in a document and modifies images that appear to be
 // lazily loaded images
 function jrPollTransformLazyImages(documentObject) {
+
+  const lazyImageAttributes = [
+    'load-src',
+    'data-src',
+    'data-original-desktop',
+    'data-baseurl',
+    'data-lazy',
+    'data-img-src',
+    'data-original',
+    'data-adaptive-img',
+    'data-imgsrc',
+    'data-default-src'
+  ];
+
+
   let numModified = 0;
   const imageList = documentObject.querySelectorAll('img');
 
@@ -616,7 +608,7 @@ function jrPollTransformLazyImages(documentObject) {
       continue;
     }
 
-    for(let alternateName of jrPollServiceLazyImageAttributes) {
+    for(let alternateName of lazyImageAttributes) {
       if(imageElement.hasAttribute(alternateName)) {
         const urlString = imageElement.getAttribute(alternateName);
         if(urlString && !urlString.trim().includes(' ')) {
@@ -632,7 +624,21 @@ function jrPollTransformLazyImages(documentObject) {
   return numModified;
 }
 
-function jrPollFilterTrackingImages(documentObject, hostnameArray) {
+function jrPollFilterTrackingImages(documentObject) {
+
+  const telemetryHosts = [
+    'ad.doubleclick.net',
+    'b.scorecardresearch.com',
+    'googleads.g.doubleclick.net',
+    'me.effectivemeasure.net',
+    'pagead2.googlesyndication.com',
+    'pixel.quantserve.com',
+    'pixel.wp.com',
+    'pubads.g.doubleclick.net',
+    'sb.scorecardresearch.com',
+    'stats.bbc.co.uk'
+  ];
+
   // 1char hostname . 1char domain
   const minValidURLLength = 3;
 
@@ -669,10 +675,25 @@ function jrPollFilterTrackingImages(documentObject, hostnameArray) {
       continue;
     }
 
-    if(hostnameArray.includes(url.hostname)) {
+    if(telemetryHosts.includes(url.hostname)) {
       imageElement.remove();
     }
   }
+}
+
+// experimental
+function isMeteredConnection() {
+  return navigator.connection && navigator.connection.metered;
+}
+
+function isOffline() {
+  return 'onLine' in navigator && !navigator.onLine;
+}
+
+function broadcastCompletedMessage() {
+  const channel = new BroadcastChannel('poll');
+  channel.postMessage('completed');
+  channel.close();
 }
 
 // Applies a set of rules to a url object and returns a modified url object
@@ -875,3 +896,5 @@ function jrTemplatePrune(urlString, documentObject) {
     element.remove();
   }
 }
+
+} // End file block scope
