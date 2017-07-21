@@ -10,7 +10,7 @@
 // The input string should be encoded, meaning that it should contain
 // character entity codes. The extension string should be decoded, meaning
 // that it should not contain character entries.
-// NOTE: Using var due to deopt warning "unsupported phi use of const", c55
+// Using var due to deopt warning "unsupported phi use of const", c55
 
 function truncateHTML(inputString, position, extensionString) {
 
