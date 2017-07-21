@@ -3,10 +3,10 @@
 'use strict';
 
 // Dependencies
-// /lib/opml-document/opml-document.js
-// /lib/favicon/favicon.js
-// /src/db/db.js
-// /src/operations.js
+// opml-document.js
+// favicon.js
+// db.js
+// subscribe.js
 
 { // Begin file block scope
 
@@ -25,7 +25,7 @@ async function importOPMLFiles(files, verbose) {
   // No catch - allow exceptions to bubbles
 
   try {
-    dbConn = await db.connect();
+    dbConn = await dbConnect();
     iconConn = await favicon.connect();
     importResolutions = await importFilesInternal(dbConn, iconConn, files,
       verbose);
@@ -237,7 +237,7 @@ async function importSubscribe(dbConn, iconDbConn, feedObject, verbose) {
   };
 
   try {
-    const subscribedFeedObject = await operations.subscribe(dbConn, iconDbConn,
+    const subscribedFeedObject = await subscribe(dbConn, iconDbConn,
       feedObject, options, verbose ? console: null);
     return subscribedFeedObject;
   } catch(error) {

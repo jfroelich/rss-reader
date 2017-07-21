@@ -66,8 +66,8 @@ async function markSlideRead(slideElement) {
   let conn;
 
   try {
-    conn = await db.connect();
-    await operations.markEntryRead(conn, entryIdInt);
+    conn = await dbConnect();
+    await markEntryRead(conn, entryIdInt);
     slideElement.setAttribute('read', '');
   } catch(error) {
     console.error(error);
@@ -76,6 +76,40 @@ async function markSlideRead(slideElement) {
       conn.close();
     }
   }
+}
+
+// TODO: use getAll, passing in a count parameter as an upper limit, and
+// then using slice or unshift or something to advance.
+// TODO: internally the parameter to getAll might be (offset+limit)
+function getUnarchivedUnreadEntries(conn, offset, limit) {
+  return new Promise((resolve, reject) => {
+    const entries = [];
+    let counter = 0;
+    let advanced = false;
+    const limited = limit > 0;
+    const tx = conn.transaction('entry');
+    tx.oncomplete = () => resolve(entries);
+    const store = tx.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
+    const request = index.openCursor(keyPath);
+    request.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if(!cursor) {
+        return;
+      }
+      if(offset && !advanced) {
+        advanced = true;
+        cursor.advance(offset);
+        return;
+      }
+      entries.push(cursor.value);
+      if(limited && ++counter < limit) {
+        cursor.continue();
+      }
+    };
+    request.onerror = () => reject(request.error);
+  });
 }
 
 // TODO: require caller to establish conn, do not do it here?
@@ -88,8 +122,8 @@ async function appendSlides() {
   let conn;
   let entryArray = [];
   try {
-    conn = await db.connect();
-    entryArray = await db.getUnarchivedUnreadEntryArray(conn, offset, limit);
+    conn = await dbConnect();
+    entryArray = await getUnarchivedUnreadEntries(conn, offset, limit);
   } catch(error) {
     console.error(error);
   } finally {
@@ -152,7 +186,7 @@ function appendSlide(entryObject) {
 
 function createArticleTitle(entryObject) {
   const titleElement = document.createElement('a');
-  titleElement.setAttribute('href', entry.getURLString(entryObject));
+  titleElement.setAttribute('href', getEntryURLString(entryObject));
   titleElement.setAttribute('class', 'entry-title');
   titleElement.setAttribute('target','_blank');
   titleElement.setAttribute('rel', 'noreferrer');

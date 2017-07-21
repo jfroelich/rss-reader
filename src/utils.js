@@ -4,7 +4,7 @@
 
 // Returns a new object that is a copy of the input less empty properties. A
 // property is empty if it is null, undefined, or an empty string. Ignores
-// prototype, deep objects, getters, etc. Impure.
+// prototype, deep objects, getters, etc. Shallow copy by reference.
 function filterEmptyProperties(object) {
   const outputObject = {};
   const hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -28,26 +28,4 @@ function filterEmptyProperties(object) {
 //  http://stackoverflow.com/questions/24229262
 function filterControlCharacters(string) {
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
-}
-
-async function commandArchiveEntries() {
-  let conn;
-  let maxAge;// intentionally undefined
-  try {
-    conn = await db.connect();
-    const numArchived = await operations.archiveEntries(conn, maxAge, console);
-  } finally {
-    if(conn) {
-      conn.close();
-    }
-  }
-}
-
-async function commandPollFeeds(nolog) {
-  const options = {};
-  options.ignoreIdleState = true;
-  options.ignoreModifiedCheck = true;
-  options.ignoreRecencyCheck = true;
-  options.verbose = true;
-  await pollFeeds(options);
 }

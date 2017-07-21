@@ -2,17 +2,48 @@
 
 'use strict';
 
-// * This file contains all the code for managing the background processes that
-// run to make the extension work, such as checking for new articles, or
-// monitoring the health of the database.
-// * Certain bindings are made simply by loading this file, so this file should
-// only be loaded in the background page of the extension.
-// * There are no global variables created
-
 { // Begin file block scope
 
+// Dependencies located in other files may not yet be available when files are
+// loaded in any order, so wait for all files to be loaded
+document.addEventListener('DOMContentLoaded', function(event) {
+
+  // React to the extension install event
+  chrome.runtime.onInstalled.addListener(async function(event) {
+
+    // Temp while debugging
+    console.debug('Received install event');
+
+    // Create or upgrade the database by connecting to it
+    // Also initialize the app badge text
+    let conn;
+    try {
+      conn = await dbConnect();
+      const verbose = true;
+      await updateBadgeText(conn, verbose);
+    } catch(error) {
+      console.warn(error);
+    } finally {
+      if(conn) {
+        conn.close();
+      }
+    }
+  });
+
+  // React to when the extension's badge is clicked
+  chrome.browserAction.onClicked.addListener(async function(event) {
+    try {
+      await showSlideshowTab();
+    } catch(error) {
+      console.warn(error);
+    }
+  });
+
+}, {'once': true});
+
 // Simple utility wrapper that turns the chrome.alarms.get callback style into
-// a promise so that this can be conveniently used with async
+// a promise so that this can be conveniently used with async await
+// TODO: this may no longer be in use and should be deleted
 function getAlarm(alarmNameString) {
   return new Promise(function(resolve, reject) {
     chrome.alarms.get(alarmNameString, resolve);
@@ -31,8 +62,8 @@ chrome.alarms.onAlarm.addListener(async function(alarmObject) {
 
   let conn;
   try {
-    conn = await db.connect();
-    const numEntriesArchived = await operations.archiveEntries(conn);
+    conn = await dbConnect();
+    const numEntriesArchived = await archiveEntries(conn);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -62,8 +93,8 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
 
   let conn;
   try {
-    conn = await db.connect();
-    operations.removeEntriesMissingURLs(conn);
+    conn = await dbConnect();
+    removeEntriesMissingURLs(conn);
   } catch(error) {
     console.warn(error);
   } finally {

@@ -2,6 +2,7 @@
 
 'use strict';
 
+// TODO: chrome now uses material design for options pages
 // TODO: remove subscription preview
 // TODO: lookup favicons after displaying search results, not before
 // TODO: listen for poll events, feed information may have updated
@@ -13,7 +14,7 @@
 
 { // Begin file block scope
 
-// Open a connection to the settings channel that persists for as long as the
+// Open a conn to the settings channel that persists for as long as the
 // option page is open. Although this page primarily broadcasts messages, it
 // also listens because the article style preview feature uses the same elements
 // and settings.
@@ -157,31 +158,31 @@ function updateFeedCount() {
 // member function of some type of feed menu object. Use a clearer name.
 // TODO: this should always use inserted sort, that should be invariant, and
 // so I shouldn't accept a parameter
-function appendFeed(feedObject, maintainOrder) {
+function appendFeed(feed, maintainOrder) {
   const itemElement = document.createElement('li');
-  itemElement.setAttribute('sort-key', feedObject.title);
+  itemElement.setAttribute('sort-key', feed.title);
 
   // TODO: stop using custom feed attribute?
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
-  itemElement.setAttribute('feed', feedObject.id);
-  if(feedObject.description) {
-    itemElement.setAttribute('title', feedObject.description);
+  itemElement.setAttribute('feed', feed.id);
+  if(feed.description) {
+    itemElement.setAttribute('title', feed.description);
   }
   itemElement.onclick = feedListItemOnClick;
 
-  if(feedObject.faviconURLString) {
+  if(feed.faviconURLString) {
     const faviconElement = document.createElement('img');
-    faviconElement.src = feedObject.faviconURLString;
-    if(feedObject.title)
-      faviconElement.title = feedObject.title;
+    faviconElement.src = feed.faviconURLString;
+    if(feed.title)
+      faviconElement.title = feed.title;
     faviconElement.setAttribute('width', '16');
     faviconElement.setAttribute('height', '16');
     itemElement.appendChild(faviconElement);
   }
 
   const titleElement = document.createElement('span');
-  let feedTitleString = feedObject.title || 'Untitled';
+  let feedTitleString = feed.title || 'Untitled';
   feedTitleString = truncateHTML(feedTitleString, 300);
   titleElement.textContent = feedTitleString;
   itemElement.appendChild(titleElement);
@@ -243,43 +244,43 @@ async function startSubscription(urlObject) {
   showSubscriptionMonitor();
   appendSubscriptionMonitorMessage(`Subscribing to ${urlObject.href}`);
 
-  const feedObject = {};
-  addFeedURLString(feedObject, urlObject.href);
+  const feed = {};
+  addFeedURLString(feed, urlObject.href);
 
   // TODO: subscription service object is deprecated
 
   const subService = new SubscriptionService();
   subService.verbose = true;
-  let subcribedFeedObject;
+  let subcribedfeed;
   try {
-    await subService.db.connect();
+    await subService.dbConnect();
 
     // TODO: this needs entirely different params
-    // dbConn, iconDbConn, feedObject, options, logObject
-    subcribedFeedObject = await operations.subscribe(feedObject);
+    // dbConn, iconDbConn, feed, options, logObject
+    subcribedfeed = await subscribe(feed);
   } catch(error) {
     console.debug(error);
   } finally {
     subService.close();
   }
 
-  if(!subcribedFeedObject) {
+  if(!subcribedfeed) {
     // TODO: is it correct to return here? shouldn't this be visible error or
     // something?
     return;
   }
 
   // TODO: what is the second parameter? give it an express name here
-  appendFeed(subcribedFeedObject, true);
+  appendFeed(subcribedfeed, true);
 
   // TODO: rather than expressly updating the feed count here, this should
   // happen as a result of some update event that some listener reacts to
   // That event should probably be a BroadcastChannel message that is fired
-  // by operations.subscribe
+  // by subscribe
   updateFeedCount();
 
   // Show a brief message that the subscription was successful
-  const feedURLString = getFeedURLString(subcribedFeedObject);
+  const feedURLString = getFeedURLString(subcribedfeed);
   appendSubscriptionMonitorMessage(`Subscribed to ${feedURLString}`);
 
   // Hide the sub monitor
@@ -298,69 +299,74 @@ async function startSubscription(urlObject) {
 // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 // TODO: react to errors
 // TODO: should this even catch?
-// TODO: this function is big, maybe add helpers
 async function feedListItemOnClick(event) {
 
-  // Use current target to capture the element with the feed attribute and
-  // not a different element
-  const feedListItemElement = event.currentTarget;
+  const findFeedById = function(conn, feedId) {
+    return new Promise((resolve, reject) => {
+      const tx = conn.transaction('feed');
+      const store = tx.objectStore('feed');
+      const request = store.get(feedId);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  };
 
+  const loadFeedFromDb = async function(feedId) {
+    let conn;
+    try {
+      conn = await dbConnect();
+      return await findFeedById(conn, feedIdNumber);
+    } catch(error) {
+      console.warn(error);
+    } finally {
+      if(conn) {
+        conn.close();
+      }
+    }
+  };
+
+  // Use current target to capture the element with the feed attribute
+  const feedListItemElement = event.currentTarget;
   const feedIdString = feedListItemElement.getAttribute('feed');
   const feedIdNumber = parseInt(feedIdString, 10);
-
-  // TODO: these are deprecated
-  const readerDb = new ReaderDb();
-  const feedStore = new FeedStore();
-
-  let feedObject;
-  let conn;
-  try {
-    conn = await readerDb.db.connect();
-    feedStore.conn = conn;
-    feedObject = await feedStore.findById(feedIdNumber);
-  } catch(error) {
-    console.warn(error);
-  } finally {
-    if(conn)
-      conn.close();
-  }
+  const feed = await loadFeedFromDb(feedIdNumber);
 
   // TODO: should this throw?
-  if(!feedObject) {
+  if(!feed) {
     console.error('No feed found with id', feedIdNumber);
     return;
   }
 
   const titleElement = document.getElementById('details-title');
-  titleElement.textContent = feedObject.title || 'Untitled';
+  titleElement.textContent = feed.title || 'Untitled';
 
   const faviconElement = document.getElementById('details-favicon');
-  if(feedObject.faviconURLString) {
-    faviconElement.setAttribute('src', feedObject.faviconURLString);
+  if(feed.faviconURLString) {
+    faviconElement.setAttribute('src', feed.faviconURLString);
   } else {
     faviconElement.removeAttribute('src');
   }
 
   const descriptionElement = document.getElementById(
     'details-feed-description');
-  if(feedObject.description) {
-    descriptionElement.textContent = feedObject.description;
+  if(feed.description) {
+    descriptionElement.textContent = feed.description;
   } else {
     descriptionElement.textContent = '';
   }
 
   const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = getFeedURLString(feedObject);
+  feedURLElement.textContent = getFeedURLString(feed);
   const feedLinkElement = document.getElementById('details-feed-link');
-  feedLinkElement.textContent = feedObject.link || '';
+  feedLinkElement.textContent = feed.link || '';
   const unsubscribeButton = document.getElementById('details-unsubscribe');
-  unsubscribeButton.value = '' + feedObject.id;
+  unsubscribeButton.value = '' + feed.id;
 
   const detailsElement = document.getElementById('mi-feed-details');
   showSection(detailsElement);
 
-  // Scroll to the top to ensure that if a long feed list was shown and
-  // the window was scrolled down that the details are immediately visible
+  // Ensure the details are visible (when the list is long the details may not
+  // be visible because of the scroll position)
   window.scrollTo(0,0);
 }
 
@@ -501,7 +507,7 @@ async function subscribeFormOnSubmit(event) {
   resultsListElement.appendChild(itemElement);
 
   const fs = new FaviconService();
-  await fs.db.connect();
+  await fs.dbConnect();
   for(let result of entryArray) {
     if(!result.link) {
       continue;
@@ -519,20 +525,20 @@ async function subscribeFormOnSubmit(event) {
 
 // Creates and returns a search result item to show in the list of search
 // results when searching for feeds.
-function createSearchResultElement(feedObject) {
+function createSearchResultElement(feed) {
   const itemElement = document.createElement('li');
   const subscribeButton = document.createElement('button');
-  subscribeButton.value = feedObject.url.href;
-  subscribeButton.title = feedObject.url.href;
+  subscribeButton.value = feed.url.href;
+  subscribeButton.title = feed.url.href;
   subscribeButton.textContent = 'Subscribe';
   subscribeButton.onclick = subscribeButtonOnClick;
   itemElement.appendChild(subscribeButton);
 
-  if(feedObject.faviconURLString) {
+  if(feed.faviconURLString) {
     const faviconElement = document.createElement('img');
-    faviconElement.setAttribute('src', feedObject.faviconURLString);
-    if(feedObject.link) {
-      faviconElement.setAttribute('title', feedObject.link);
+    faviconElement.setAttribute('src', feed.faviconURLString);
+    if(feed.link) {
+      faviconElement.setAttribute('title', feed.link);
     }
     faviconElement.setAttribute('width', '16');
     faviconElement.setAttribute('height', '16');
@@ -541,21 +547,21 @@ function createSearchResultElement(feedObject) {
 
   // TODO: don't allow for empty href value
   const titleElement = document.createElement('a');
-  if(feedObject.link) {
-    titleElement.setAttribute('href', feedObject.link);
+  if(feed.link) {
+    titleElement.setAttribute('href', feed.link);
   }
   titleElement.setAttribute('target', '_blank');
-  titleElement.title = feedObject.title;
-  titleElement.innerHTML = feedObject.title;
+  titleElement.title = feed.title;
+  titleElement.innerHTML = feed.title;
   itemElement.appendChild(titleElement);
 
   const snippetElement = document.createElement('span');
-  snippetElement.innerHTML = feedObject.contentSnippet;
+  snippetElement.innerHTML = feed.contentSnippet;
   itemElement.appendChild(snippetElement);
 
   const urlElement = document.createElement('span');
   urlElement.setAttribute('class', 'discover-search-result-url');
-  urlElement.textContent = feedObject.url.href;
+  urlElement.textContent = feed.url.href;
   itemElement.appendChild(urlElement);
   return itemElement;
 }
@@ -622,8 +628,8 @@ function unsubscribeButtonOnClick(event) {
 
   let feedDbConn;
   try {
-    feedDbConn = await db.connect();
-    const numEntriesDeleted = await operations.unsubscribe(feedDbConn,
+    feedDbConn = await dbConnect();
+    const numEntriesDeleted = await unsubscribe(feedDbConn,
       feedIdNumber);
   } catch(error) {
     console.warn('Unsubscribe error:', error);
@@ -667,27 +673,37 @@ async function importOPMLUploaderOnChange(event) {
 // TODO: visual feedback
 async function exportOPMLButtonOnClick(event) {
 
+  const loadAllFeedsFromDb = function(conn) {
+    return new Promise((resolve, reject) => {
+      const tx = conn.transaction('feed');
+      const store = tx.objectStore('feed');
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  };
+
   const opmlTitle = 'Subscriptions';
   const fileName = 'subscriptions.xml';
 
-  let connection;
-  let feedArray;
+  let conn;
+  let feeds;
   try {
-    connection = await db.connect();
-    feedArray = await db.getFeeds();
+    conn = await dbConnect();
+    feeds = await loadAllFeedsFromDb(conn);
   } catch(error) {
     console.warn(error);
   } finally {
-    if(connection) {
-      connection.close();
+    if(conn) {
+      conn.close();
     }
   }
 
-  if(!feedArray) {
+  if(!feeds) {
     return;
   }
 
-  const blobObject = createOPMLBlob(feedArray, opmlTitle);
+  const blobObject = createOPMLBlob(feeds, opmlTitle);
   const objectURL = URL.createObjectURL(blobObject);
   const anchorElement = document.createElement('a');
   anchorElement.setAttribute('download', fileName);
@@ -714,47 +730,53 @@ function createOPMLBlob(feeds, title) {
 // TODO: sort feeds alphabetically
 // TODO: react to errors
 async function initSubscriptionsSection() {
+
+  const loadAllFeedsFromDb = function(conn) {
+    return new Promise((resolve, reject) => {
+      const tx = conn.transaction('feed');
+      const store = tx.objectStore('feed');
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  };
+
   const noFeedsElement = document.getElementById('nosubs');
   const feedListElement = document.getElementById('feedlist');
-
-  // TODO: refactor to use new syntax
-  const readerDb = new ReaderDb();
-  const feedStore = new FeedStore();
   let conn;
-  let feedArray;
+  let feeds;
   try {
-    conn = await readerDb.db.connect();
-    feedStore.conn = conn;
-    feedArray = await feedStore.getAll();
+    conn = await dbConnect();
+    feeds = await loadAllFeedsFromDb(conn);
   } catch(error) {
-    console.debug(error);
+    console.warn(error);
   } finally {
     if(conn) {
       conn.close();
     }
   }
 
-  if(!feedArray) {
+  if(!feeds) {
     console.warn('feeds undefined');
     return;
   }
 
-  // Sort the feeds by title in memory using indexedDB.cmp
-  feedArray.sort(function(a, b) {
+  // Sort the feeds by title using indexedDB.cmp
+  feeds.sort(function(a, b) {
     const atitle = a.title ? a.title.toLowerCase() : '';
     const btitle = b.title ? b.title.toLowerCase() : '';
     return indexedDB.cmp(atitle, btitle);
   });
 
-  for(let feedObject of feedArray) {
-    appendFeed(feedObject);
+  for(let feed of feeds) {
+    appendFeed(feed);
 
     // TODO: the update should happen as a result of call to append feed,
     // not here
     updateFeedCount();
   }
 
-  if(!feedArray.length) {
+  if(!feeds.length) {
     showElement(noFeedsElement);
     hideElement(feedListElement);
   } else {

@@ -12,12 +12,12 @@ async function testArchiveEntries() {
   let conn;
 
   try {
-    conn = await db.connect(testDbName, testDbVersion);
-    const numEntriesModified = await operations.archiveEntries(conn, undefined, console);
+    conn = await dbConnect(testDbName, testDbVersion);
+    const numEntriesModified = await archiveEntries(conn, undefined, true);
     console.log('Num entries modified:', numEntriesModified);
     conn.close();
     isClosed = true;
-    await db.deleteDatabase(conn.name);
+    await deleteDatabase(conn.name);
   } catch(error) {
     console.error(error);
   } finally {
@@ -25,4 +25,12 @@ async function testArchiveEntries() {
       conn.close();
     }
   }
+}
+
+function deleteDatabase(name) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 }

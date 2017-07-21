@@ -59,3 +59,7 @@ on memory of the API
 # Recognize the difference between (1) glue code specific to your program and (2) modular library code that is more specific to a platform on which your glue code operates as an extension of the language's built in library.
 
 # Do not go too far/hard against the grain. Some languages want your code to work a certain way and do things a certain way.
+
+# Not all syntax improvements are good improvements. Like default parameter values.
+
+I think the language designers made a mistake here. This is an example of trying to make code more concise. The checks within the function body are clearer, and more explicit. I am not sure why someone tried to eliminate them, and for what benefit. The negatives outweigh the positives in this case. I would avoid the use of default parameter values.

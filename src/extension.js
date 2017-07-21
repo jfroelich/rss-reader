@@ -1,9 +1,40 @@
 'use strict';
 
-// Updates the number that appears on the icon in Chrome's toolbar
-async function updateBadgeText(conn) {
-  const count = await db.countUnreadEntries(conn);
-  const text = count > 999 ? '1k+' : '' + count;
+// Updates the text that appears on the extension's icon in Chrome's toolbar
+async function updateBadgeText(conn, verbose) {
+
+  const countResolver = function(resolve, reject) {
+    if(verbose) {
+      console.log('Counting unread entries in database');
+    }
+    const tx = conn.transaction('entry');
+    const store = tx.objectStore('entry');
+    const index = store.index('readState');
+    const request = index.count(ENTRY_STATE_UNREAD);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  };
+
+  if(verbose) {
+    console.log('Updating badge text');
+  }
+
+  let count = 0;
+  let text = '?';
+
+  try {
+    count = await new Promise(countResolver);
+    if(verbose) {
+      console.log('Counted %d unread entries in database', count);
+    }
+    text = count > 999 ? '1k+' : '' + count;
+  } catch(error) {
+    console.warn(error);
+  }
+
+  if(verbose) {
+    console.log('Setting extension badge text to', text);
+  }
   chrome.browserAction.setBadgeText({'text': text});
 }
 
