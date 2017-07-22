@@ -5,11 +5,11 @@
 { // Begin file block scope
 
 // Returns the feed that was added if successful
-async function subscribe(dbConn, iconConn, feed, options) {
+async function subscribe(readerConn, iconConn, feed, options) {
 
   options = options || {};
-  const fetchFeedTimeoutMillis = 'fetchFeedTimeoutMillis' in options ?
-    options.fetchFeedTimeoutMillis : 2000;
+  const timeoutMillis = 'timeoutMillis' in options ?
+    options.timeoutMillis : 2000;
   const suppressNotifications = 'suppressNotifications' in options ?
     options.suppressNotifications : false;
   const verbose = options.verbose;
@@ -19,7 +19,7 @@ async function subscribe(dbConn, iconConn, feed, options) {
     console.log('Subscribing to feed with url', urlString);
   }
 
-  const isExistingURL = await containsFeedURL(dbConn, urlString);
+  const isExistingURL = await containsFeedURL(readerConn, urlString);
   if(isExistingURL) {
     if(verbose) {
       console.warn('Already subscribed to feed with url', urlString);
@@ -33,17 +33,23 @@ async function subscribe(dbConn, iconConn, feed, options) {
       console.debug('Proceeding with offline subscription to', urlString);
     }
 
-    const addedFeed = await addFeedToDb(dbConn, feed);
+    const addedFeed = await addFeedToDb(readerConn, feed);
     return addedFeed;
   }
 
-  const remoteFeed = await fetchInternal(urlString);
-  if(await checkIfRedirectURLExists(remoteFeed, verbose)) {
+  const response = await fetchInternal(urlString, timeoutMillis,
+    verbose);
+  const responseURLString = response.responseURLString;
+  if(response.redirected &&
+    await checkIfRedirectURLExists(readerConn, responseURLString, verbose)) {
     return;
   }
+
+  const parseResult = parseFetchedFeed(response);
+  const remoteFeed = parseResult.feed;
   const mergedFeed = mergeFeeds(feed, remoteFeed);
   await setIcon(iconConn, mergedFeed, verbose);
-  const addedFeed = await addFeedToDb(dbConn, mergedFeed);
+  const addedFeed = await addFeedToDb(readerConn, mergedFeed);
   if(!suppressNotifications) {
     notify(addedFeed);
   }
@@ -51,7 +57,6 @@ async function subscribe(dbConn, iconConn, feed, options) {
 }
 
 this.subscribe = subscribe;
-
 
 // Looks up and set a feed's favicon
 async function setIcon(iconConn, feed, verbose) {
@@ -90,11 +95,16 @@ function notify(feed) {
   showNotification(title, message, feed.faviconURLString);
 }
 
-async function fetchInternal(urlString) {
-  let feed;
+async function fetchInternal(urlString, timeoutMillis, verbose) {
+
+  const fetchOptions = {};
+  fetchOptions.verbose = verbose;
+  fetchOptions.timeoutMillis = timeoutMillis;
+
   try {
-    const fetchResult = await fetchFeed(urlString, fetchFeedTimeoutMillis);
-    return fetchResult.feed;
+    const response = await fetchFeed(urlString, fetchOptions);
+
+    return response;
   } catch(error) {
     if(verbose) {
       console.warn(urlString, error);
@@ -102,17 +112,8 @@ async function fetchInternal(urlString) {
   }
 }
 
-// TODO: it would probably be better if fetchFeed exposed a redirected
-// property to test against and this took the fetch result as input instead
-async function checkIfRedirectURLExists(feed, verbose) {
-  if(feed.urls.length < 2) {
-    return false;
-  }
-
-  const urlString = getFeedURLString(feed);
-  const isExists = await containsFeedURL(dbConn, urlString);
-
-  if(isExists) {
+async function checkIfRedirectURLExists(readerConn, responseURLString, verbose) {
+  if(await containsFeedURL(readerConn, responseURLString)) {
     if(verbose) {
       console.warn('Already subscribed to feed with redirected url',
         redirectURLString);
@@ -120,7 +121,6 @@ async function checkIfRedirectURLExists(feed, verbose) {
 
     return true;
   }
-
   return false;
 }
 

@@ -39,6 +39,8 @@ async function unsubscribe(conn, feedId, verbose) {
   return entryIds.length;
 }
 
+this.unsubscribe = unsubscribe;
+
 function getEntryIds(tx, feedId) {
   return new Promise((resolve, reject) => {
     const store = tx.objectStore('entry');

@@ -13,7 +13,7 @@
 // @param timeoutMillis {Number} a positive integer, optional
 async function searchGoogleFeeds(queryString, timeoutMillis = 0) {
 
-  if(typeof queryString !== 'string' || ) {
+  if(typeof queryString !== 'string') {
     throw new TypeError('queryString is not a defined String object');
   }
 

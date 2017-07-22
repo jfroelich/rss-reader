@@ -33,9 +33,8 @@ async function pollFeeds(options) {
     const connections = await Promise.all(connectionPromises);
     readerConn = connections[0];
     iconConn = connections[1];
-
     const feeds = await loadPollableFeeds(readerConn, options);
-    numEntriesAdded = processFeeds(readerConn, iconConn, feeds, options);
+    numEntriesAdded = await processFeeds(readerConn, iconConn, feeds, options);
     if(numEntriesAdded) {
       await updateBadgeText(readerConn);
     }
@@ -65,10 +64,10 @@ function initOptions(options) {
     true;
   options.ignoreIdleState = 'ignoreIdleState' in options ?
     options.ignoreIdleState : false;
-  options.skipRecencyCheck = 'skipRecencyCheck' in options ?
-    options.skipRecencyCheck : false;
-  options.skipModifiedCheck = 'skipModifiedCheck' in options ?
-    options.skipModifiedCheck : false;
+  options.ignoreRecencyCheck = 'ignoreRecencyCheck' in options ?
+    options.ignoreRecencyCheck : false;
+  options.ignoreModifiedCheck = 'ignoreModifiedCheck' in options ?
+    options.ignoreModifiedCheck : false;
   options.idlePeriodSeconds = 'idlePeriodSeconds' in options ?
     options.idlePeriodSeconds : 30;
   options.recencyPeriodMillis = 'recencyPeriodMillis' in options ?
@@ -111,25 +110,33 @@ async function checkPollStartingConditions(options) {
   return true;
 }
 
+
+function loadAllFeedsFromDb(conn) {
+  return new Promise((resolve, reject) => {
+    const tx = conn.transaction('feed');
+    const store = tx.objectStore('feed');
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
 async function loadPollableFeeds(readerConn, options) {
 
-  const loadAllFeedsFromDb = function(conn) {
-    return new Promise((resolve, reject) => {
-      const tx = conn.transaction('feed');
-      const store = tx.objectStore('feed');
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  };
+  const feeds = await loadAllFeedsFromDb(readerConn);
 
-  const allFeeds = await loadAllFeedsFromDb(readerConn);
-  if(options.skipRecencyCheck) {
-    return allFeeds;
+  if(options.ignoreRecencyCheck) {
+    if(options.verbose) {
+      console.debug('Polling is skipping the recency check');
+    }
+
+    return feeds;
   }
 
-  const outputFeeds = new Array(allFeeds.length);
-  for(let feed of allFeeds) {
+  // NOTE: this must use a new array, because loadAllFeedsFromDb from return
+  // empty slots. I think. Testing.
+  const outputFeeds = [];
+  for(let feed of feeds) {
     if(isFeedPollEligible(feed, options)) {
       outputFeeds.push(feed);
     }
@@ -176,15 +183,13 @@ function isFeedPollEligible(feed, options) {
 
 // Concurrently process feeds
 async function processFeeds(readerConn, iconConn, feeds, options) {
+
   const promises = new Array(feeds.length);
   for(let feed of feeds) {
-    // Do not await the promise here, to allow for concurrency. This merely
-    // fires off requests for each feed to be eventually processed.
     const promise = processFeedSilently(readerConn, iconConn, feed, options);
     promises.push(promise);
   }
 
-  // Wait for all feeds processing to finish
   const resolutions = await Promise.all(promises);
 
   let totalEntriesAdded = 0;
@@ -194,8 +199,13 @@ async function processFeeds(readerConn, iconConn, feeds, options) {
   return totalEntriesAdded;
 }
 
-// Suppresses processFeed exceptions
 async function processFeedSilently(readerConn, iconConn, feed, options) {
+
+  if(typeof feed === 'undefined') {
+    throw new TypeError(
+      'feed is undefined in processFeedSilently params');
+  }
+
   let numEntriesAdded = 0;
   try {
     numEntriesAdded = await processFeed(readerConn, iconConn, feed, options);
@@ -207,26 +217,32 @@ async function processFeedSilently(readerConn, iconConn, feed, options) {
   return numEntriesAdded;
 }
 
-// TODO: the date the remote file has been modified can be gathered prior to
-// the feed being parsed. This means the modified check can happen before
-// parsing. This means that there is the potential of reducing the number of
-// operations performed. This means I properly should break apart fetch
-// feed into fetch feed xml and parse feed and post fetch feed processing
-// @throws {Error} any exception thrown by fetchFeed
+// @throws {Error} any exception thrown by fetchFeed is rethrown
 async function processFeed(readerConn, iconConn, localFeed, options) {
-  const urlString = getFeedURLString(localFeed);
-  const fetchResult = await fetchFeed(urlString,
-    options.fetchFeedTimeoutMillis);
-  const remoteFeed = fetchResult.feed;
 
-  if(!options.skipModifiedCheck && localFeed.dateUpdated &&
-    isFeedUnmodified(localFeed.dateLastModified, remoteFeed.dateLastModified)) {
+  if(typeof localFeed === 'undefined') {
+    throw new TypeError('localFeed is undefined in processFeed params');
+  }
+
+  const urlString = getFeedURLString(localFeed);
+
+  const fetchOptions = {};
+  fetchOptions.verbose = options.verbose;
+  fetchOptions.timeoutMillis = options.fetchFeedTimeoutMillis;
+  const response = await fetchFeed(urlString, fetchOptions);
+
+  // Before parsing, check if the feed was modified
+  if(!options.ignoreModifiedCheck && localFeed.dateUpdated &&
+    isFeedUnmodified(localFeed.dateLastModified, response.lastModifiedDate)) {
     if(options.verbose) {
       console.debug('Skipping unmodified feed', urlString,
-        localFeed.dateLastModified, remoteFeed.dateLastModified);
+        localFeed.dateLastModified, response.lastModifiedDate);
     }
     return 0;
   }
+
+  const parseResult = parseFetchedFeed(response);
+  const remoteFeed = parseResult.feed;
 
   const mergedFeed = mergeFeeds(localFeed, remoteFeed);
   let storableFeed = sanitizeFeed(mergedFeed);
@@ -235,7 +251,7 @@ async function processFeed(readerConn, iconConn, localFeed, options) {
   await putFeedInDb(readerConn, storableFeed);
 
   const numEntriesAdded = await processEntries(readerConn, iconConn,
-    storableFeed, fetchResult.entries, options);
+    storableFeed, parseResult.entries, options);
   return numEntriesAdded;
 }
 
@@ -243,15 +259,11 @@ async function processEntries(readerConn, iconConn, feed, entries, options) {
   entries = filterDuplicateEntries(entries);
   const promises = new Array(entries.length);
   for(let entry of entries) {
-    // Fire off concurrently without waiting
-    const promise = processEntry(readerConn, iconConn, storableFeed, entry,
-      options);
+    const promise = processEntry(readerConn, iconConn, feed, entry, options);
     promises.push(promise);
   }
 
-  // This fails fast because processEntry may throw
   const resolutions = await Promise.all(promises);
-
   let numEntriesAdded = 0;
   for(let resolution of resolutions) {
     if(resolution) {
@@ -291,7 +303,7 @@ async function processEntry(readerConn, iconConn, feed, entry,
 
   // Check if the initial url already exists in the database
   const originalURLString = entry.urls[0];
-  if(await entryStore.containsURL(originalURLString)) {
+  if(await findEntryByURLInDb(readerConn, originalURLString)) {
     return false;
   }
 
@@ -321,7 +333,7 @@ async function processEntry(readerConn, iconConn, feed, entry,
       fetchURLString, fetchHTMLTimeoutMillis));
   } catch(error) {
     if(options.verbose) {
-      logObject.warn(error);
+      console.warn(error);
     }
 
     // If there was a problem fetching, then we still want to store the content
@@ -339,7 +351,7 @@ async function processEntry(readerConn, iconConn, feed, entry,
     addEntryURLString(entry, responseURLString);
   }
 
-  prepareEntryFullText(entry, documentObject, options);
+  await prepareEntryFullText(entry, documentObject, options);
   await addEntry(entry);
   return true;
 }
@@ -358,7 +370,7 @@ function findEntryByURLInDb(conn, urlString) {
   });
 }
 
-function prepareEntryFullText(entry, documentObject, options) {
+async function prepareEntryFullText(entry, documentObject, options) {
   transformLazyImages(documentObject);
 
   // Must happen after lazy image transform, otherwise lazy images filtered

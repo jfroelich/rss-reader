@@ -104,9 +104,14 @@ function mergeFeeds(oldFeedObject, newFeedObject) {
   const mergedFeedObject = Object.assign({}, oldFeedObject, newFeedObject);
   mergedFeedObject.urls = [...oldFeedObject.urls];
 
-  for(let urlString of newFeedObject.urls) {
-    addFeedURLString(mergedFeedObject, urlString);
+  if(newFeedObject.urls) {
+    for(let urlString of newFeedObject.urls) {
+      addFeedURLString(mergedFeedObject, urlString);
+    }
+  } else {
+    console.warn('Did not merge any new feed urls', oldFeedObject, newFeedObject);
   }
+
   return mergedFeedObject;
 }
 

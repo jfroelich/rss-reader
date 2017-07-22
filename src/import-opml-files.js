@@ -18,20 +18,19 @@ async function importOPMLFiles(files, verbose) {
     console.log('Importing %d OPML XML files', files.length);
   }
 
-  let dbConn;
+  let readerConn;
   let iconConn;
   let importResolutions;
 
   // No catch - allow exceptions to bubbles
-
   try {
-    dbConn = await dbConnect();
+    readerConn = await dbConnect();
     iconConn = await favicon.connect();
-    importResolutions = await importFilesInternal(dbConn, iconConn, files,
+    importResolutions = await importFilesInternal(readerConn, iconConn, files,
       verbose);
   } finally {
-    if(dbConn) {
-      dbConn.close();
+    if(readerConn) {
+      readerConn.close();
     }
     if(iconConn) {
       iconConn.close();
@@ -53,11 +52,10 @@ async function importOPMLFiles(files, verbose) {
 
 this.importOPMLFiles = importOPMLFiles;
 
-
-async function importFilesInternal(dbConn, iconConn, files, verbose) {
+async function importFilesInternal(readerConn, iconConn, files, verbose) {
   const promises = new Array(files.length);
   for(let file of files) {
-    const promise = importFileSilently(dbConn, iconConn, file, verbose);
+    const promise = importFileSilently(readerConn, iconConn, file, verbose);
     promises.push(promise);
   }
 
@@ -65,11 +63,11 @@ async function importFilesInternal(dbConn, iconConn, files, verbose) {
 };
 
 // Decorates importFile to avoid Promise.all failfast behavior
-async function importFileSilently(dbConn, iconConn, fileObject, verbose) {
+async function importFileSilently(readerConn, iconConn, fileObject, verbose) {
 
   let subscriptionCount = 0;
   try {
-    subscriptionCount = await importFile(dbConn, iconConn, fileObject,
+    subscriptionCount = await importFile(readerConn, iconConn, fileObject,
       verbose);
   } catch(error) {
     if(verbose) {
@@ -80,7 +78,7 @@ async function importFileSilently(dbConn, iconConn, fileObject, verbose) {
 }
 
 // Returns number of feeds added
-async function importFile(dbConn, iconConn, fileObject, verbose) {
+async function importFile(readerConn, iconConn, fileObject, verbose) {
 
   if(verbose) {
     console.log('Importing file', fileObject.name);
@@ -101,20 +99,20 @@ async function importFile(dbConn, iconConn, fileObject, verbose) {
   document.normalizeOutlineXMLURLs();
   document.removeOutlinesMissingXMLURLs();
 
-  const outlineArray = document.getOutlineObjects();
+  const outlines = document.getOutlineObjects();
   let numSubscribed = 0;
-  if(outlineArray.length) {
-    const uniqueOutlineArray = aggregateOutlinesByXMLURL(outlineArray);
+  if(outlines.length) {
+    const uniqueOutlineArray = aggregateOutlinesByXMLURL(outlines);
 
-    const duplicateCount = outlineArray.length - uniqueOutlineArray.length;
+    const duplicateCount = outlines.length - uniqueOutlineArray.length;
     if(duplicateCount && verbose) {
       console.log('Ignored %d duplicate feed(s) in file', duplicateCount,
         fileObject.name);
     }
 
     normalizeOutlineLinks(uniqueOutlineArray);
-    const feedArray = convertOutlines(uniqueOutlineArray);
-    numSubscribed = batchSubscribe(feedArray, iconDbConn, feedObject, verbose);
+    const feeds = convertOutlines(uniqueOutlineArray);
+    numSubscribed = batchSubscribe(feeds, iconConn, feed, verbose);
   }
 
   if(verbose) {
@@ -126,10 +124,10 @@ async function importFile(dbConn, iconConn, fileObject, verbose) {
 }
 
 // Filter duplicates, favoring earlier in document order
-function aggregateOutlinesByXMLURL(outlineArray) {
-  const uniqueURLsArray = new Array(outlineArray.length);
-  const uniqueOutlineArray = new Array(outlineArray.length);
-  for(let outlineObject of outlineArray) {
+function aggregateOutlinesByXMLURL(outlines) {
+  const uniqueURLsArray = new Array(outlines.length);
+  const uniqueOutlineArray = new Array(outlines.length);
+  for(let outlineObject of outlines) {
     if(!uniqueURLsArray.includes(outlineObject.xmlUrl)) {
       uniqueOutlineArray.push(outlineObject);
       uniqueURLsArray.push(outlineObject.xmlUrl);
@@ -138,13 +136,11 @@ function aggregateOutlinesByXMLURL(outlineArray) {
 }
 
 // Normalize and validate each outline's link property
-function normalizeOutlineLinks(outlineArray) {
+function normalizeOutlineLinks(outlines) {
 
   // Setting to undefined is preferred over deleting in order to maintain v8
   // object shape
-
-  for(let outlineObject of outlineArray) {
-
+  for(let outlineObject of outlines) {
     if(outlineObject.htmlUrl === '') {
       outlineObject.htmlUrl = undefined;
       continue;
@@ -168,32 +164,32 @@ function normalizeOutlineLinks(outlineArray) {
   }
 }
 
-// Convert the outlines into feeds
-function convertOutlines(outlineArray) {
-  const feedArray = new Array(outlineArray.length);
-  for(let outlineObject of outlineArray) {
-    const feedObject = convertOutlineToFeed(outlineObject);
-    feedArray.push(feedObject);
+// Convert outlines into feeds
+function convertOutlines(outlines) {
+  const feeds = new Array(outlines.length);
+  for(let outlineObject of outlines) {
+    const feed = convertOutlineToFeed(outlineObject);
+    feeds.push(feed);
   }
-  return feedArray;
+  return feeds;
 }
 
 // Attempt to subscribe to each of the feeds concurrently
-async function batchSubscribe(feedArray, dbConn, iconDbConn, verbose) {
+async function batchSubscribe(feeds, readerConn, iconConn, verbose) {
 
-  // Map
-  const promiseArray = new Array(feedArray.length);
-  for(let feedObject of feedArray) {
-    const promise = importSubscribe(dbConn, iconDbConn, feedObject, verbose);
-    promiseArray.push(promise);
+  // Map feeds into subscribe promises
+  const promises = new Array(feeds.length);
+  for(let feed of feeds) {
+    const promise = subscribeSilently(readerConn, iconConn, feed, verbose);
+    promises.push(promise);
   }
 
-  const resolutionArray = await Promise.all(promiseArray);
+  const resolutions = await Promise.all(promises);
 
   // Reduce
   // Count the number of successful subscriptions
   let numSubscribed = 0;
-  for(let resolution of resolutionArray) {
+  for(let resolution of resolutions) {
     if(resolution) {
       numSubscribed++;
     }
@@ -203,43 +199,41 @@ async function batchSubscribe(feedArray, dbConn, iconDbConn, verbose) {
 }
 
 function convertOutlineToFeed(outlineObject) {
-  const feedObject = {};
+  const feed = {};
 
   if(outlineObject.type) {
-    feedObject.type = outlineObject.type;
+    feed.type = outlineObject.type;
   }
 
   if(outlineObject.title) {
-    feedObject.title = outlineObject.title;
+    feed.title = outlineObject.title;
   } else if(outlineObject.text) {
-    feedObject.text = outlineObject.text;
+    feed.text = outlineObject.text;
   }
 
   if(outlineObject.description) {
-    feedObject.description = outlineObject.description;
+    feed.description = outlineObject.description;
   }
 
   if(outlineObject.htmlUrl) {
-    feedObject.link = outlineObject.htmlUrl;
+    feed.link = outlineObject.htmlUrl;
   }
 
-  addFeedURLString(feedObject, outlineObject.xmlUrl);
+  addFeedURLString(feed, outlineObject.xmlUrl);
 
-  return feedObject;
+  return feed;
 }
 
 // Returns the result of subscribe, which is the added feed object, or null
 // if an error occurs. This wraps so that it can be used with Promise.all
-async function importSubscribe(dbConn, iconDbConn, feedObject, verbose) {
-
+async function subscribeSilently(readerConn, iconConn, feed, verbose) {
   const options = {
-    'suppressNotifications': true
+    'suppressNotifications': true,
+    'verbose': verbose
   };
 
   try {
-    const subscribedFeedObject = await subscribe(dbConn, iconDbConn,
-      feedObject, options, verbose ? console: null);
-    return subscribedFeedObject;
+    return await subscribe(readerConn, iconConn, feed, options);
   } catch(error) {
     if(verbose) {
       console.warn(error);

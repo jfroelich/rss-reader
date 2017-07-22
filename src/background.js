@@ -75,13 +75,18 @@ chrome.alarms.onAlarm.addListener(async function(alarmObject) {
 
 // TODO: where is remove missing entry urls alarm created? should be here
 
+
+////////////////////////////////////////////////////////////////////////
+// BELOW IS CODE THAT MUST BE REFACTORED
+
+
 /*
 alarm = await getAlarm('remove-entries-missing-urls');
 if(!alarm) {
   console.debug('Creating remove-entries-missing-urls alarm');
   chrome.alarms.create('remove-entries-missing-urls',
     {'periodInMinutes': 60 * 24 * 7});
-*/
+
 
 // React to alarm for removing entries missing urls
 chrome.alarms.onAlarm.addListener(async function(alarm) {
@@ -103,10 +108,6 @@ chrome.alarms.onAlarm.addListener(async function(alarm) {
     }
   }
 });
-
-
-////////////////////////////////////////////////////////////////////////
-// BELOW IS OUTDATED CODE
 
 async function jrPollCreateAlarm(periodInMinutes) {
   const alarm = await getAlarm('poll');
@@ -223,5 +224,7 @@ async function alarmsOnLoad(event) {
 }
 
 document.addEventListener('DOMContentLoaded', alarmsOnLoad, {'once': true});
+*/
+
 
 } // End file block scope

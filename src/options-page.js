@@ -2,34 +2,14 @@
 
 'use strict';
 
-// TODO: chrome now uses material design for options pages
-// TODO: remove subscription preview
-// TODO: lookup favicons after displaying search results, not before
-// TODO: listen for poll events, feed information may have updated
-// TODO: add back button behavior for switching sections (popstate stuff)
-// TODO: remove unreadable fonts
-// TODO: app wide, consider going back to a single page application and think
-// of how to integrate all of this into the slideshow page
-
-
 { // Begin file block scope
 
-// Open a conn to the settings channel that persists for as long as the
-// option page is open. Although this page primarily broadcasts messages, it
-// also listens because the article style preview feature uses the same elements
-// and settings.
-// This uses a channel because messages are sent across browser tabs, this is
-// simpler and less likely to involve security issues than using the postMessage
-// api.
-// Generally, messages are sent when changing a display settings.
 const settingsChannel = new BroadcastChannel('settings');
 settingsChannel.onmessage = function(event) {
   if(event.data === 'changed') {
     updateEntryCSSRules(event);
   }
 };
-
-
 
 // Navigation tracking
 let currentMenuItem = null;
@@ -232,12 +212,6 @@ function hideSubscriptionPreview() {
 // startSubscription should expect a feed object as a parameter.
 async function startSubscription(urlObject) {
 
-  // TODO: not really sure if this validation is correct to do, my thinking is
-  // that it is overly defensive
-  if(!isURLObject(urlObject)) {
-    throw new TypeError('Invalid urlObject parameter');
-  }
-
   // TODO: remove this once preview is deprecated more fully
   hideSubscriptionPreview();
 
@@ -246,22 +220,27 @@ async function startSubscription(urlObject) {
 
   const feed = {};
   addFeedURLString(feed, urlObject.href);
-
-  // TODO: subscription service object is deprecated
-
-  const subService = new SubscriptionService();
-  subService.verbose = true;
+  const options = {};
+  options.verbose = true;// temp
+  // Leaving other options to defaults for now
   let subcribedfeed;
+  let readerConn;
+  let iconConn;
   try {
-    await subService.dbConnect();
-
-    // TODO: this needs entirely different params
-    // dbConn, iconDbConn, feed, options, logObject
-    subcribedfeed = await subscribe(feed);
+    const promises = [dbConnect(), favicon.connect()];
+    const conns = await Promise.all(promises);
+    readerConn = conns[0];
+    iconConn = conns[1];
+    subcribedfeed = await subscribe(readerConn, iconConn, feed, options);
   } catch(error) {
-    console.debug(error);
+    console.warn(error);
   } finally {
-    subService.close();
+    if(readerConn) {
+      readerConn.close();
+    }
+    if(iconConn) {
+      iconConn.close();
+    }
   }
 
   if(!subcribedfeed) {
@@ -622,20 +601,19 @@ function removeFeedFromFeedList(feedIdNumber) {
 }
 
 // TODO: visually react to unsubscribe error
-function unsubscribeButtonOnClick(event) {
+async function unsubscribeButtonOnClick(event) {
   const feedIdString = event.target.value;
   const feedIdNumber = parseInt(feedIdString, 10);
 
-  let feedDbConn;
+  let readerConn;
   try {
-    feedDbConn = await dbConnect();
-    const numEntriesDeleted = await unsubscribe(feedDbConn,
-      feedIdNumber);
+    readerConn = await dbConnect();
+    const numEntriesDeleted = await unsubscribe(readerConn, feedIdNumber);
   } catch(error) {
     console.warn('Unsubscribe error:', error);
   } finally {
-    if(feedDbConn) {
-      feedDbConn.close();
+    if(readerConn) {
+      readerConn.close();
     }
   }
 

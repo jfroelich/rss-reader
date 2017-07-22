@@ -4,7 +4,7 @@
 
 async function fetchHTML(urlString, timeoutMillis) {
 
-  const fetchOptionsObject = {
+  const options = {
     'credentials': 'omit',
     'method': 'get',
     'headers': {'Accept': 'text/html'},
@@ -14,7 +14,7 @@ async function fetchHTML(urlString, timeoutMillis) {
     'referrer': 'no-referrer'
   };
 
-  const fetchPromise = fetch(urlString, fetchOptionsObject);
+  const fetchPromise = fetch(urlString, options);
 
   let responseObject;
 

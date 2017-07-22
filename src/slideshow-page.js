@@ -236,7 +236,7 @@ function createFeedSource(entryObject) {
   buffer.push(entryObject.author || 'Unknown author');
   if(entryObject.datePublished) {
     buffer.push(' on ');
-    buffer.push(utils.formatDate(entryObject.datePublished));
+    buffer.push(formatDate(entryObject.datePublished));
   }
   titleElement.textContent = buffer.join('');
   sourceElement.appendChild(titleElement);

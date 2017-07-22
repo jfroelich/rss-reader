@@ -19,11 +19,11 @@
       "/src/extension.js",
       "/src/favicon.js",
       "/src/feed.js",
-      "/src/feed-icon.js",
       "/src/fetch-feed.js",
       "/src/fetch-html.js",
       "/src/filter-boilerplate.js",
       "/src/parse-feed.js",
+      "/src/parse-fetched-feed.js",
       "/src/parse-srcset.js",
       "/src/poll.js",
       "/src/refresh-feed-icons.js",
@@ -35,7 +35,6 @@
       "/src/sizeof.js",
       "/src/sniff.js",
       "/src/subscribe.js",
-      "/src/template-filter.js",
       "/src/truncate-html.js",
       "/src/utils.js"
     ]

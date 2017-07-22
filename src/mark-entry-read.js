@@ -9,7 +9,7 @@ async function markEntryRead(conn, entryId, verbose) {
   const entry = await findEntryById(conn, entryId);
   assertUnread(entry, entryId);
   changeEntryPropsToRead(entry);
-  await overwriteEntryInDb(tx, entry);
+  await overwriteEntryInDb(conn, entry);
 
   if(verbose) {
     console.log('Updated database with read entry with id', entryId);

@@ -40,7 +40,7 @@ favicon.lookup = async function(conn, urlObject) {
   const currentDate = new Date();
 
   // Lookup the url in the cache
-  const entryObject = await favicon.findEntry(urlObject.href);
+  const entryObject = await favicon.findEntry(conn, urlObject.href);
   if(entryObject && !favicon.isEntryExpired(entryObject, currentDate)) {
     return entryObject.iconURLString;
   }
@@ -96,7 +96,7 @@ favicon.lookup = async function(conn, urlObject) {
   // redirect
   let redirectEntry;
   if(redirected) {
-    redirectEntry = await favicon.findEntry(responseURL.href);
+    redirectEntry = await favicon.findEntry(conn, responseURL.href);
   }
 
   // If the redirect exists and is not expired, then resolve
@@ -110,7 +110,7 @@ favicon.lookup = async function(conn, urlObject) {
   let originEntry;
   if(!uniqueURLsArray.includes(urlObject.origin)) {
     uniqueURLsArray.push(urlObject.origin);
-    originEntry = await favicon.findEntry(urlObject.origin);
+    originEntry = await favicon.findEntry(conn, urlObject.origin);
   }
 
   // If an origin entry exists and is not expired, then update entries for the
@@ -195,24 +195,22 @@ favicon.connect = function(name = favicon.dbName, version = favicon.dbVersion) {
 
 // Upgrades the internal database
 favicon.onUpgradeNeeded = function(event) {
-  const conn = event.target.result;
-  const tx = event.target.transaction;
-
-  let faviconCacheStore;
+  let store;
   if(!event.oldVersion || event.oldVersion < 1) {
     console.debug('Creating favicon-cache object store');
-    faviconCacheStore = conn.createObjectStore('favicon-cache', {
+    const conn = event.target.result;
+    store = conn.createObjectStore('favicon-cache', {
       'keyPath': 'pageURLString'
     });
   } else {
-    faviconCacheStore = tx.objectStore('favicon-cache');
+    const tx = event.target.transaction;
+    store = tx.objectStore('favicon-cache');
   }
 
   if(event.oldVersion < 2) {
-    faviconCacheStore.createIndex('dateUpdated', 'dateUpdated');
+    store.createIndex('dateUpdated', 'dateUpdated');
   }
 };
-
 
 // Returns true if the entry is expired. An entry is expired if the difference
 // between today's date and the date the entry was last updated is greater than
@@ -221,7 +219,6 @@ favicon.isEntryExpired = function(entryObject, currentDate) {
   const ageMillis = currentDate - entryObject.dateUpdated;
   return ageMillis > favicon.maxAgeMillis;
 };
-
 
 favicon.findEntry = function(conn, urlString) {
   return new Promise((resolve, reject) => {
@@ -295,7 +292,8 @@ favicon.removeEntriesWithURLs = async function(conn, urls) {
 favicon.compact = async function(conn) {
   const expiredEntries = await favicon.getExpiredEntryArray(conn);
   const expiredURLArray = expiredEntries.map((e) => e.pageURLString);
-  const resolutions = await favicon.removeEntriesWithURLs(conn, expiredURLArray);
+  const resolutions = await favicon.removeEntriesWithURLs(conn,
+    expiredURLArray);
   return resolutions.length;
 };
 
@@ -450,9 +448,7 @@ favicon.fetchDocument = async function(urlString) {
 // Sends a HEAD request for the given image. Ignores response body.
 // @param url {String}
 // @returns a simple object with props imageSize and imageResponseURL
-
 // TODO: rename param to urlString
-
 favicon.fetchImageHead = async function(url) {
 
   // TODO: rename to fetchOptions
@@ -465,7 +461,8 @@ favicon.fetchImageHead = async function(url) {
   opts.redirect = 'follow';
   opts.referrer = 'no-referrer';
 
-  const response = await favicon.fetch(url, opts, favicon.fetchImageTimeoutMillis);
+  const response = await favicon.fetch(url, opts, 
+    favicon.fetchImageTimeoutMillis);
   if(!response.ok) {
     throw new Error(`${response.status} ${response.statusText} ${url}`);
   }

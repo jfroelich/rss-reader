@@ -2,24 +2,20 @@
 
 'use strict';
 
-// Dependencies:
-// parseFeed
-// feed (for the moment)
+{ // Begin file block scope
 
-// TODO: remove all dependence on feed lib
-// TODO: maybe use an options object instead of just timeoutMillis, it is more
-// forward thinking?
-// TODO: all of this post fetch processing does not belong here. Even though
-// this always happens when fetching a feed, it is not intrinsic to fetching
-// Furthermore, the feed format should not matter. This just downloads its
-// own type of object that the caller is responsible for manipulating and
-// coercing into a known format
+async function fetchFeed(urlString, options) {
 
+  options = options || {};
+  const timeoutMillis = 'timeoutMillis' in options ? options.timeoutMillis : 0;
+  const acceptHTML = 'acceptHTML' in options ? options.acceptHTML : true;
+  const verbose = 'verbose' in options ? options.verbose : false;
 
-async function fetchFeed(urlString, timeoutMillis) {
+  if(verbose) {
+    console.log('Fetching feed xml at', urlString);
+  }
 
-  // Sent as a part of the http request header
-  const acceptHeaderString = [
+  const acceptHeader = [
     'application/rss+xml',
     'application/rdf+xml',
     'application/atom+xml',
@@ -27,147 +23,130 @@ async function fetchFeed(urlString, timeoutMillis) {
     'text/xml;q=0.8'
   ].join(',');
 
-  const fetchOptionsObject = {
+  const headers = {'Accept': acceptHeader};
+
+  const fetchOptions = {
     'credentials': 'omit',
     'method': 'get',
-    'headers': {'Accept': acceptHeaderString},
+    'headers': headers,
     'mode': 'cors',
     'cache': 'default',
     'redirect': 'follow',
     'referrer': 'no-referrer'
   };
 
-  const fetchPromise = fetch(urlString, fetchOptionsObject);
-  let responseObject;
-
-  // If a timeout is given then race a timeout promise against the fetch. This
-  // is done this way because fetch does not currently have native timeout
-  // functionality. If the timeout wins this throws an exception, which is
-  // intentionally not caught.
+  const fetchPromise = fetch(urlString, fetchOptions);
+  let response;
   if(timeoutMillis) {
-    const timeoutPromise = new Promise(function(resolve, reject) {
-      const timeoutError = new Error('Fetch timed out for url ' + urlString);
-      setTimeout(reject, timeoutMillis, timeoutError);
-    });
-
-    const promiseArray = [fetchPromise, timeoutPromise];
-    responseObject = await Promise.race(promiseArray);
+    const timeoutPromise = fetchTimeout(urlString, timeoutMillis);
+    const promises = [fetchPromise, timeoutPromise];
+    response = await Promise.race(promises);
   } else {
-    responseObject = await fetchPromise;
+    response = await fetchPromise;
   }
 
-  // Throw an exception for a non-ok response
-  if(!responseObject.ok) {
-    throw new Error(
-      `${responseObject.status} ${responseObject.statusText} ${urlString}`);
-  }
+  assertValidResponse(response, urlString);
+  assertValidContentType(response, urlString, acceptHTML);
 
-  // Throw an exception in the case of a no-content response
-  const httpStatusNoContent = 204;
-  if(responseObject.status === httpStatusNoContent) {
-    throw new Error(
-      `${responseObject.status} ${responseObject.statusText} ${urlString}`);
-  }
-
-  // Throw an exception is the response type is not accepted
-  let typeString = responseObject.headers.get('Content-Type');
-  if(typeString) {
-    // Discard the semicolon and trailing text
-    const semicolonPosition = typeString.indexOf(';');
-    if(semicolonPosition !== -1) {
-      typeString = typeString.substring(0, semicolonPosition);
-    }
-
-    // Normalize the type string
-    typeString = typeString.replace(/\s+/g, '');
-    typeString = typeString.trim();
-    typeString = typeString.toLowerCase();
-
-    const acceptedTypesArray = [
-      'application/rss+xml',
-      'application/rdf+xml',
-      'application/atom+xml',
-      'application/xml',
-      'text/xml',
-      'text/html'
-    ];
-
-    if(!acceptedTypesArray.includes(typeString)) {
-      throw new Error(
-        `Unacceptable content type ${typeString} ${urlString}`);
-    }
-  }
-
-  const responseText = await responseObject.text();
-
-  // Allow parseFeed exceptions to bubble
-
-  let feedObject = parseFeed(responseText);
-
-
-  // TODO: should just return feedObject at this point, along with
-  // fetch properties.
-  // TODO: move into function acclimateFeed
-
-
-  const entries = feedObject.entries;
-  delete feedObject.entries;
-
-  // Supply a default date for the feed
-  if(!feedObject.datePublished) {
-    feedObject.datePublished = new Date();
-  }
-
-  // Normalize the feed's link value. Not fatal if link invalid.
-  if(feedObject.link) {
-    try {
-      feedObject.link = new URL(feedObject.link).href;
-    } catch(error) {
-      // console.warn(error);
-      delete feedObject.link;
-    }
-  }
-
-  // Suppy a default date for entries
-  for(let entry of entries) {
-    if(!entry.datePublished) {
-      entry.datePublished = feedObject.datePublished;
-    }
-  }
-
-  // Convert entry link urls
-  for(let entry of entries) {
-    if(entry.link) {
-      addEntryURLString(entry, entry.link);
-      delete entry.link;
-    }
-  }
-
-  addFeedURLString(feedObject, urlString);
-
-  // Add the response url, which may be different
-  addFeedURLString(feedObject, responseObject.url);
-
-  feedObject.dateFetched = new Date();
-
-  // TODO: should this really be a property of the feed object, or a property
-  // of the result object?
-
-  const lastModifiedString = responseObject.headers.get('Last-Modified');
-  if(lastModifiedString) {
-    let lastModifiedDate;
-    try {
-      lastModifiedDate = new Date(lastModifiedString);
-    } catch(error) {
-    }
-
-    if(lastModifiedDate) {
-      feedObject.dateLastModified = lastModifiedDate;
-    }
-  }
-
-  const fetchResultObject = {};
-  fetchResultObject.feed = feedObject;
-  fetchResultObject.entries = entries;
-  return fetchResultObject;
+  const outputResponse = {};
+  outputResponse.text = await response.text();
+  outputResponse.requestURLString = urlString;
+  outputResponse.responseURLString = response.url;
+  outputResponse.lastModifiedDate = getLastModifiedDate(response);
+  outputResponse.redirected = checkIfRedirected(urlString, response.url);
+  return outputResponse;
 }
+
+this.fetchFeed = fetchFeed;
+
+function fetchTimeout(urlString, timeoutMillis) {
+  return new Promise(function(resolve, reject) {
+    const error = new Error('Fetch timed out for url ' + urlString);
+    setTimeout(reject, timeoutMillis, error);
+  });
+}
+
+function assertValidResponse(response, urlString) {
+
+  if(!response) {
+    throw new Error('Undefined response fetching ' + urlString);
+  }
+
+  if(!response.ok) {
+    throw new Error(
+      `${response.status} ${response.statusText} ${urlString}`);
+  }
+
+  const httpStatusNoContent = 204;
+  if(response.status === httpStatusNoContent) {
+    throw new Error(
+      `${response.status} ${response.statusText} ${urlString}`);
+  }
+}
+
+// Throw an exception is the response type is not accepted
+function assertValidContentType(response, urlString, acceptHTML) {
+  let typeString = response.headers.get('Content-Type');
+  if(!typeString) {
+    return;
+  }
+
+  const semicolonPosition = typeString.indexOf(';');
+  if(semicolonPosition !== -1) {
+    typeString = typeString.substring(0, semicolonPosition);
+  }
+
+  typeString = typeString.replace(/\s+/g, '');
+  typeString = typeString.toLowerCase();
+
+  const types = [
+    'application/rss+xml',
+    'application/rdf+xml',
+    'application/atom+xml',
+    'application/xml',
+    'text/xml'
+  ];
+
+  if(acceptHTML) {
+    types.push('text/html');
+  }
+
+  if(!types.includes(typeString)) {
+    throw new Error(`Unacceptable content type ${typeString} ${urlString}`);
+  }
+}
+
+function getLastModifiedDate(response) {
+  const lastModifiedString = response.headers.get('Last-Modified');
+  if(lastModifiedString) {
+    try {
+      return new Date(lastModifiedString);
+    } catch(error) {
+    }
+  }
+}
+
+// Due to quirks with fetch response.redirected not working, do a basic test
+// here
+function checkIfRedirected(requestURLString, responseURLString) {
+
+  // Fast path
+  if(requestURLString === responseURLString) {
+    return false;
+  }
+
+  // This should never throw because we know both urls are valid by now.
+  // Converting to a url object both normalizes the strings and allows for an
+  // easy way of removing the hash.
+  // I want to treat the situation where there is a request for a url with a
+  // hash, and a response url that is essentially the same but for the hash, as
+  // not a redirect.
+
+  const requestURLObject = new URL(requestURLString);
+  const responseURLObject = new URL(responseURLString);
+  requestURLObject.hash = '';
+  responseURLObject.hash = '';
+  return requestURLObject.href !== responseURLObject.href;
+}
+
+} // End file block scope
