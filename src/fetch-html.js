@@ -30,12 +30,12 @@ async function fetchHTML(urlString, timeoutMillis) {
   validateContentType(response, urlString);
 
   const outputResponse = {};
-  outputResponse.redirected = checkIfRedirected(urlString, response.url);
-  const responseText = await response.text();
-  const parser = new DOMParser();
-  const documentObject = parser.parseFromString(responseText, 'text/html');
-  outputResponse.documentObject = documentObject,
+  outputResponse.requestURLString = urlString;
   outputResponse.responseURLString = response.url;
+  outputResponse.redirected = checkIfRedirected(urlString, response.url);
+  outputResponse.text = async function() {
+    return await response.text();
+  };
   return outputResponse;
 }
 

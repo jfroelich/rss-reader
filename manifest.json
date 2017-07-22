@@ -26,6 +26,7 @@
       "/src/parse-fetched-feed.js",
       "/src/parse-srcset.js",
       "/src/poll.js",
+      "/src/poll-entry.js",
       "/src/refresh-feed-icons.js",
       "/src/remove-orphaned-entries.js",
       "/src/replace-html.js",
