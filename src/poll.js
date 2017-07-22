@@ -2,6 +2,10 @@
 
 'use strict';
 
+// FIXME: still not picking up new entries for some reason
+
+{ // Begin file block scope
+
 async function commandPollFeeds() {
   const options = {};
   options.ignoreIdleState = true;
@@ -11,10 +15,9 @@ async function commandPollFeeds() {
   await pollFeeds(options);
 }
 
-{ // Begin file block scope
+this.commandPollFeeds = commandPollFeeds;
 
 async function pollFeeds(options) {
-
   options = initOptions(options);
   if(options.verbose) {
     console.log('Checking for new articles...');
@@ -47,8 +50,10 @@ async function pollFeeds(options) {
     }
   }
 
-  showPollNotification(numEntriesAdded);
-  broadcastCompletedMessage();
+  if(numEntriesAdded) {
+    showPollNotification(numEntriesAdded);
+  }
+  broadcastCompletedMessage(numEntriesAdded);
   if(options.verbose) {
     console.log('Polling completed');
   }
@@ -92,7 +97,7 @@ async function checkPollStartingConditions(options) {
   if(!options.allowMeteredConnections && 'NO_POLL_METERED' in localStorage &&
     isMeteredConnection()) {
     if(options.verbose) {
-      console.warn('Polling canceled due to metered connection');
+      console.warn('Polling canceled because connection is metered');
     }
     return false;
   }
@@ -101,7 +106,7 @@ async function checkPollStartingConditions(options) {
     const state = await queryIdleState(options.idlePeriodSeconds);
     if(state !== 'locked' && state !== 'idle') {
       if(options.verbose) {
-        console.warn('Polling canceled due to idle requirement');
+        console.warn('Polling canceled because machine not idle');
       }
       return false;
     }
@@ -109,7 +114,6 @@ async function checkPollStartingConditions(options) {
 
   return true;
 }
-
 
 function loadAllFeedsFromDb(conn) {
   return new Promise((resolve, reject) => {
@@ -122,35 +126,24 @@ function loadAllFeedsFromDb(conn) {
 }
 
 async function loadPollableFeeds(readerConn, options) {
-
   const feeds = await loadAllFeedsFromDb(readerConn);
-
   if(options.ignoreRecencyCheck) {
-    if(options.verbose) {
-      console.debug('Polling is skipping the recency check');
-    }
-
     return feeds;
   }
 
-  // NOTE: this must use a new array, because loadAllFeedsFromDb from return
-  // empty slots. I think. Testing.
   const outputFeeds = [];
   for(let feed of feeds) {
     if(isFeedPollEligible(feed, options)) {
       outputFeeds.push(feed);
     }
   }
-
   return outputFeeds;
 }
 
 function showPollNotification(numEntriesAdded) {
-  if(numEntriesAdded) {
-    const title = 'Added articles';
-    const message = `Added ${numEntriesAdded} articles`;
-    showNotification(title, message);
-  }
+  const title = 'Added articles';
+  const message = `Added ${numEntriesAdded} articles`;
+  showNotification(title, message);
 }
 
 // Return true if the feed was polled recently.
@@ -184,7 +177,7 @@ function isFeedPollEligible(feed, options) {
 // Concurrently process feeds
 async function processFeeds(readerConn, iconConn, feeds, options) {
 
-  const promises = new Array(feeds.length);
+  const promises = [];
   for(let feed of feeds) {
     const promise = processFeedSilently(readerConn, iconConn, feed, options);
     promises.push(promise);
@@ -274,86 +267,70 @@ async function processEntries(readerConn, iconConn, feed, entries, options) {
 }
 
 // Resolve with true if entry was added, false if not added
-// TODO: favicon lookup should be deferred until after fetch to avoid
-// lookup of intermediate urls when possible
-// TODO: use helper functions to reduce function size
-async function processEntry(readerConn, iconConn, feed, entry,
-  options) {
+// TODO: break apart fetching html text and parsing, then the redirect exists
+// check could happen before parsing
+async function processEntry(readerConn, iconConn, feed, entry, options) {
 
   entry.feed = feed.id;
   entry.feedTitle = feed.title;
 
-  // Validate. Cannot assume remote entry is valid.
-  if(!entry.urls || !entry.urls.length) {
+  if(!isValidEntryURL(entry)) {
     return false;
   }
 
-  // Validate. Cannot assume remote entry is valid.
-  if(!isEntryURLValid(entry)) {
+  let urlString = getEntryURLString(entry);
+  if(shouldExcludeEntryBasedOnURL(urlString)) {
     return false;
   }
 
-  // First try and rewrite the url
-  const didAppendRewrittenURL = rewriteEntryURL(entry);
-
-  // Check if the entry should be ignored based on its url
-  if(shouldExcludeEntry(entry)) {
+  if(await findEntryByURLInDb(readerConn, urlString)) {
     return false;
   }
 
-  // Check if the initial url already exists in the database
-  const originalURLString = entry.urls[0];
-  if(await findEntryByURLInDb(readerConn, originalURLString)) {
-    return false;
-  }
-
-  // Check if the rewritten url already exists in the database
-  if(didAppendRewrittenURL) {
-    const rewrittenURLString = getEntryURLString(entry);
-    const isExistingRewrittenURL = await findEntryByURLInDb(readerConn,
-      rewrittenURLString);
-    if(isExistingRewrittenURL) {
+  const rewrittenURLString = rewriteURLString(urlString);
+  if(rewrittenURLString && urlString !== rewrittenURLString) {
+    addEntryURLString(entry, rewrittenURLString);
+    urlString = rewrittenURLString;
+    if(shouldExcludeEntryBasedOnURL(urlString)) {
       return false;
+    }
+
+    if(await findEntryByURLInDb(readerConn, urlString)) {
+      return false;
+    }
+  }
+
+  const response = await fetchEntry(urlString, options);
+  if(!response) {
+    await addEntry(prepareLocalEntry(entry));
+    return true;
+  }
+
+  if(response.redirected) {
+    urlString = response.responseURLString;
+    if(shouldExcludeEntryBasedOnURL(urlString)) {
+      return false;
+    } else if(await findEntryByURLInDb(readerConn, urlString)) {
+      return false;
+    } else {
+      addEntryURLString(entry, urlString);
     }
   }
 
   await setEntryIcon(entry, iconConn, feed.faviconURLString);
+  await prepareRemoteEntry(entry, response.documentObject, options);
+  await addEntry(entry);
+  return true;
+}
 
-  // Fetch the entry's full text
-  // TODO: a minor optimization. If I break apart fetching html text and parsing
-  // into a DOM, then the redirect exists check could happen before parsing
-  // into a DOM, saving processing
-  // TODO: avoid destructuring, use explicit assignment
-  // TODO: make this into a helper function?
-
-  const fetchURLString = getEntryURLString(entry);
-  let documentObject, responseURLString;
+async function fetchEntry(urlString, options) {
   try {
-    ({documentObject, responseURLString} = await fetchHTML(
-      fetchURLString, fetchHTMLTimeoutMillis));
+    return await fetchHTML(urlString, options.fetchHTMLTimeoutMillis);
   } catch(error) {
     if(options.verbose) {
       console.warn(error);
     }
-
-    // If there was a problem fetching, then we still want to store the content
-    // as is from within the feed's xml.
-    prepareLocalEntry(entry);
-    const storedEntry = await addEntry(entry);
-    return storedEntry;
   }
-
-  const didRedirect = didRedirect(entry.urls, responseURLString);
-  if(didRedirect) {
-    if(await findEntryByURLInDb(readerConn, responseURLString)) {
-      return false;
-    }
-    addEntryURLString(entry, responseURLString);
-  }
-
-  await prepareEntryFullText(entry, documentObject, options);
-  await addEntry(entry);
-  return true;
 }
 
 // Resolves with a boolean indicating whether an entry with the given url
@@ -370,23 +347,17 @@ function findEntryByURLInDb(conn, urlString) {
   });
 }
 
-async function prepareEntryFullText(entry, documentObject, options) {
+async function prepareRemoteEntry(entry, documentObject, options) {
+  const urlString = getEntryURLString(entry);
   transformLazyImages(documentObject);
-
-  // Must happen after lazy image transform, otherwise lazy images filtered
   scrubby.filterSourcelessImages(documentObject);
   scrubby.filterInvalidAnchors(documentObject);
 
-  const baseURLString = getEntryURLString(entry);
-  const baseURLObject = new URL(baseURLString);
+  const baseURLObject = new URL(urlString);
   resolveDocumentURLs(documentObject, baseURLObject);
-
   filterTrackingImages(documentObject);
-
   await setImageDimensions(documentObject, options.fetchImageTimeoutMillis);
-
-  const prepURLString = getEntryURLString(entry);
-  prepareDocument(prepURLString, documentObject);
+  prepareEntryDocument(urlString, documentObject);
 
   entry.content = documentObject.documentElement.outerHTML.trim();
 }
@@ -398,7 +369,12 @@ async function setEntryIcon(entry, iconConn, fallbackURLString) {
   entry.faviconURLString = iconURLString || fallbackURLString;
 }
 
-function isEntryURLValid(entry, verbose) {
+function isValidEntryURL(entry, verbose) {
+
+  if(!entry.urls || !entry.urls.length) {
+    return false;
+  }
+
   const urlString = entry.urls[0];
   let urlObject;
   try {
@@ -447,28 +423,13 @@ function filterDuplicateEntries(entries) {
   return distinctEntries;
 }
 
-// Rewrites the entry's url and then attempts to append the rewritten url to
-// the entry. Returns true if a new url was appended. Note a new url may have
-// been generated but if it already existed in urls then this still returns
-// false.
-function rewriteEntryURL(entry) {
-  const urlString = getEntryURLString(entry);
-  const rewrittenURLString = rewriteURLString(urlString);
-  return rewrittenURLString && addEntryURLString(entry, rewrittenURLString);
-}
-
 // Returns true if the entry should be excluded from processing
-function shouldExcludeEntry(entry) {
-
-  // Treat the latest url as representative of the entry
-  const urlString = getEntryURLString(entry);
-
-  // This should never throw because we know the url is valid
+// TODO: these should probably involve regular expressions so that
+// I do not need to test against url variations (like leading www.).
+function shouldExcludeEntryBasedOnURL(urlString) {
   const urlObject = new URL(urlString);
   const hostname = urlObject.hostname;
 
-  // TODO: these should probably involve regular expressions so that
-  // I do not need to test against url variations (like leading www.).
   const interstitialHosts = [
     'www.forbes.com',
     'forbes.com'
@@ -502,7 +463,7 @@ function shouldExcludeEntry(entry) {
     return true;
   }
 
-  if(sniff.sniffNonHTML(urlObject.pathname)) {
+  if(sniff.isProbablyBinary(urlObject.pathname)) {
     return true;
   }
 
@@ -571,19 +532,6 @@ function putFeedInDb(conn, feed) {
   });
 }
 
-// To determine where there was a redirect, compare the response url to the
-// entry's current urls, ignoring the hash.
-function didRedirect(urlArray, responseURLString) {
-
-  // Double check because includes below may not error out when undefined
-  if(!responseURLString) {
-    throw new TypeError('Invalid parameter responseURLString');
-  }
-
-  const normalizedURLArray = urlArray.map(stripURLHash);
-  return !normalizedURLArray.includes(responseURLString);
-}
-
 function parseHTML(htmlString) {
   const parser = new DOMParser();
   const document = parser.parseFromString(htmlString, 'text/html');
@@ -598,12 +546,10 @@ function parseHTML(htmlString) {
   return document;
 }
 
-// TODO: update caller to use logObject
 function prepareLocalEntry(entry, verbose) {
 
-  // Not all entries are guaranteed to have content, so exit early if possible
   if(!entry.content) {
-    return;
+    return entry;
   }
 
   let documentObject;
@@ -613,19 +559,19 @@ function prepareLocalEntry(entry, verbose) {
     if(verbose) {
       console.warn(error);
     }
-    return;
+    return entry;
   }
 
   const urlString = getEntryURLString(entry);
-  prepareDocument(urlString, documentObject);
-
+  prepareEntryDocument(urlString, documentObject);
   const content = documentObject.documentElement.outerHTML.trim();
   if(content) {
     entry.content = content;
   }
+  return entry;
 }
 
-function prepareDocument(urlString, documentObject) {
+function prepareEntryDocument(urlString, documentObject) {
   pruneWithTemplate(urlString, documentObject);
   filterBoilerplate(documentObject);
   scrubby.scrub(documentObject);
@@ -692,7 +638,7 @@ function filterTrackingImages(documentObject) {
       continue;
     }
 
-    if(telemetryHosts.includes(url.hostname)) {
+    if(telemetryHosts.includes(urlObject.hostname)) {
       imageElement.remove();
     }
   }
@@ -707,7 +653,7 @@ function isOffline() {
   return 'onLine' in navigator && !navigator.onLine;
 }
 
-function broadcastCompletedMessage() {
+function broadcastCompletedMessage(numEntriesAdded) {
   const channel = new BroadcastChannel('poll');
   channel.postMessage('completed');
   channel.close();
@@ -729,31 +675,45 @@ function rewriteURLString(urlString) {
   }
 }
 
-function pruneWithTemplate(urlString, documentObject) {
+function pruneWithTemplate(urlString, documentObject, verbose) {
   const templateHostMap = {};
-
   templateHostMap['www.washingtonpost.com'] = [
     'header#wp-header',
     'div.top-sharebar-wrapper',
     'div.newsletter-inline-unit',
     'div.moat-trackable'
   ];
-
   templateHostMap['theweek.com'] = ['div#head-wrap'];
   templateHostMap['www.usnews.com'] = ['header.header'];
 
-  let urlObject;
-  try {
-    urlObject = new URL(urlString);
-  } catch(error) {
+  const hostname = getURLHostname(urlString);
+  if(!hostname) {
     return;
   }
 
-  const selectorsArray = templateHostMap[urlObject.hostname];
-  const selector = selectorsArray.join(',');
-  const elementList = documentObject.querySelectorAll(selector);
-  for(let element of elementList) {
+  const selectors = templateHostMap[hostname];
+  if(!selectors) {
+    return;
+  }
+
+  if(verbose) {
+    console.debug('Template pruning', urlString);
+  }
+
+  const selector = selectors.join(',');
+  const elements = documentObject.querySelectorAll(selector);
+  for(let element of elements) {
     element.remove();
+  }
+}
+
+function getURLHostname(urlString) {
+  let urlObject;
+  try {
+    urlObject = new URL(urlString);
+    return urlObject.hostname;
+  } catch(error) {
+
   }
 }
 

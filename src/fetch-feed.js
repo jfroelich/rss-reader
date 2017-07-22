@@ -11,9 +11,10 @@ async function fetchFeed(urlString, options) {
   const acceptHTML = 'acceptHTML' in options ? options.acceptHTML : true;
   const verbose = 'verbose' in options ? options.verbose : false;
 
-  if(verbose) {
-    console.log('Fetching feed xml at', urlString);
-  }
+  // No need, devtools console provides option of logging http requests
+  //if(verbose) {
+  //  console.log('Fetching feed xml at', urlString);
+  //}
 
   const acceptHeader = [
     'application/rss+xml',
@@ -67,20 +68,17 @@ function fetchTimeout(urlString, timeoutMillis) {
 }
 
 function assertValidResponse(response, urlString) {
-
   if(!response) {
     throw new Error('Undefined response fetching ' + urlString);
   }
 
   if(!response.ok) {
-    throw new Error(
-      `${response.status} ${response.statusText} ${urlString}`);
+    throw new Error(`${response.status} ${response.statusText} ${urlString}`);
   }
 
   const httpStatusNoContent = 204;
   if(response.status === httpStatusNoContent) {
-    throw new Error(
-      `${response.status} ${response.statusText} ${urlString}`);
+    throw new Error(`${response.status} ${response.statusText} ${urlString}`);
   }
 }
 
@@ -129,18 +127,9 @@ function getLastModifiedDate(response) {
 // Due to quirks with fetch response.redirected not working, do a basic test
 // here
 function checkIfRedirected(requestURLString, responseURLString) {
-
-  // Fast path
   if(requestURLString === responseURLString) {
     return false;
   }
-
-  // This should never throw because we know both urls are valid by now.
-  // Converting to a url object both normalizes the strings and allows for an
-  // easy way of removing the hash.
-  // I want to treat the situation where there is a request for a url with a
-  // hash, and a response url that is essentially the same but for the hash, as
-  // not a redirect.
 
   const requestURLObject = new URL(requestURLString);
   const responseURLObject = new URL(responseURLString);

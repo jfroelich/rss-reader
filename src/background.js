@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function(event) {
 
   // React to the extension install event
   chrome.runtime.onInstalled.addListener(async function(event) {
+    const verbose = true;
 
     // Temp while debugging
     console.debug('Received install event');
@@ -19,7 +20,6 @@ document.addEventListener('DOMContentLoaded', function(event) {
     let conn;
     try {
       conn = await dbConnect();
-      const verbose = true;
       await updateBadgeText(conn, verbose);
     } catch(error) {
       console.warn(error);
@@ -28,6 +28,9 @@ document.addEventListener('DOMContentLoaded', function(event) {
         conn.close();
       }
     }
+
+    // Setup the favicon cache
+    await favicon.install(verbose);
   });
 
   // React to when the extension's badge is clicked

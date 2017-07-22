@@ -9,40 +9,41 @@
 // @param feedId {Number} id of feed to unscubscribe
 // @param verbose {Boolean} whether to print logging info
 async function unsubscribe(conn, feedId, verbose) {
-
   if(verbose) {
-    console.log('Unsubscribing from feed', feedId);
+    console.log('Unsubscribing feed with id', feedId);
   }
 
   if(!Number.isInteger(feedId) || feedId < 1) {
     throw new TypeError(`Invalid feed id ${feedId}`);
   }
 
-  const channel = new BroadcastChannel('db');
-  let entryIds;
-
-  // No catch block because I want exceptions to bubble
-  try {
-    const tx = conn.transaction(['feed', 'entry'], 'readwrite');
-    entryIds = await getEntryIds(tx, feedId);
-    await removeFeedAndEntries(tx, feedId, entryIds, channel);
-  } finally {
-    channel.close();
-  }
+  const entryIds = await loadEntryIdsForFeedFromDb(conn, feedId);
+  await removeFeedAndEntriesFromDb(conn, feedId, entryIds);
+  dispatchRemoveEvents(feedId, entryIds);
 
   if(verbose) {
-    console.debug('Unsubscribed from feed id', feedId, '. Deleted %d entries',
+    console.debug('Unsubscribed from feed id', feedId, ', deleted %d entries',
       entryIds.length);
   }
 
-  updateBadgeText(conn); // not awaited
+  await updateBadgeText(conn);
   return entryIds.length;
 }
 
 this.unsubscribe = unsubscribe;
 
-function getEntryIds(tx, feedId) {
+function dispatchRemoveEvents(feedId, entryIds) {
+  const channel = new BroadcastChannel('db');
+  channel.postMessage({'type': 'feedDeleted', 'id': feedId});
+  for(let entryId of entryIds) {
+    channel.postMessage({'type': 'entryDeleted', 'id': entryId});
+  }
+  channel.close();
+}
+
+function loadEntryIdsForFeedFromDb(conn, feedId) {
   return new Promise((resolve, reject) => {
+    const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('feed');
     const request = index.getAllKeys(feedId);
@@ -51,38 +52,19 @@ function getEntryIds(tx, feedId) {
   });
 }
 
-async function removeFeedAndEntries(tx, feedId, entryIds, channel) {
-  const promises = new Array(entryIds.length);
-  for(let entryId of entryIds) {
-    const promise = removeEntry(tx, entryId, channel);
-    promises.push(promise);
-  }
-
-  const promise = removeFeed(tx, feedId);
-  promises.push(promise);
-  return await Promise.all(promises);
-}
-
-function removeFeed(tx, feedId) {
+function removeFeedAndEntriesFromDb(conn, feedId, entryIds) {
   return new Promise((resolve, reject) => {
-    const store = tx.objectStore('feed');
-    const request = store.delete(feedId);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
+    const tx = conn.transaction(['feed', 'entry'], 'readwrite');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
 
-function removeEntry(tx, id, channel) {
-  return new Promise((resolve, reject) => {
-    const store = tx.objectStore('entry');
-    const request = store.delete(id);
-    request.onsuccess = () => {
-      if(channel) {
-        channel.postMessage({'type': 'entryDeleted', 'id': id});
-      }
-      resolve();
-    };
-    request.onerror = () => reject(request.error);
+    const feedStore = tx.objectStore('feed');
+    feedStore.delete(feedId);
+
+    const entryStore = tx.objectStore('entry');
+    for(let entryId of entryIds) {
+      entryStore.delete(entryId);
+    }
   });
 }
 

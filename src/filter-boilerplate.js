@@ -188,7 +188,7 @@ function deriveImageBias(parentElement) {
   let imageCount = 0;
   for(let node of parentElement.childNodes) {
     if(node.localName === 'img') {
-      bias += deriveImageAreaBias(image) + deriveImageTextBias(image);
+      bias += deriveImageAreaBias(node) + deriveImageTextBias(node);
       imageCount++;
     }
   }

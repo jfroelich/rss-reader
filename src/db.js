@@ -39,7 +39,7 @@ function dbConnect(inputName, inputVersion) {
       feedStore = tx.objectStore('feed');
       entryStore = tx.objectStore('entry');
     }
-  }
+  };
 
   const onBlocked = function() {
     console.warn('Waiting on blocked connection...');

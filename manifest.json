@@ -35,6 +35,7 @@
       "/src/sizeof.js",
       "/src/sniff.js",
       "/src/subscribe.js",
+      "/src/transform-lazy-images.js",
       "/src/truncate-html.js",
       "/src/utils.js"
     ]

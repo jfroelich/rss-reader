@@ -2,20 +2,9 @@
 
 'use strict';
 
-// TODO: use tokenizeHTML once implemented
-
-// Truncates a string containing some html, taking special care not to
-// truncate in the midst of a tag or an html entity. The transformation is
-// lossy as some entities are not re-encoded (e.g. &#32;).
-// The input string should be encoded, meaning that it should contain
-// character entity codes. The extension string should be decoded, meaning
-// that it should not contain character entries.
-// Using var due to deopt warning "unsupported phi use of const", c55
-
 function truncateHTML(inputString, position, extensionString) {
-
   if(!Number.isInteger(position) || position < 0) {
-    throw new TypeError();
+    throw new TypeError('Invalid position ' + position);
   }
 
   var ellipsis = '\u2026';
@@ -34,21 +23,17 @@ function truncateHTML(inputString, position, extensionString) {
       continue;
     }
 
-    // Accessing nodeValue yields a decoded string
     var value = node.nodeValue;
     var valueLength = value.length;
     if(totalLength + valueLength >= position) {
       acceptingText = false;
       var remaining = position - totalLength;
-      // Setting nodeValue will implicitly encode the string
       node.nodeValue = value.substr(0, remaining) + extension;
     } else {
       totalLength = totalLength + valueLength;
     }
   }
 
-  // If the document was an html fragment then exclude the tags implicitly
-  // inserted when setting innerHTML
   var outputString;
   if(/<html/i.test(inputString)) {
     outputString = documentObject.documentElement.outerHTML;

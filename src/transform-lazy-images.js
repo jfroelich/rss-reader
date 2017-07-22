@@ -1,19 +1,9 @@
 // See license.md
-
 'use strict';
 
-// Scans the images in a document and modifies images that appear to be
-// lazily loaded images
+{ // Begin file block scope
+
 function transformLazyImages(document) {
-
-  const isNotLazyImage = function(image) {
-    return image.hasAttribute('src') || image.hasAttribute('srcset');
-  };
-
-  const isValidURLString = function(urlString) {
-    return urlString && !urlString.trim().includes(' ');
-  };
-
   const lazyImageAttributes = [
     'load-src',
     'data-src',
@@ -28,13 +18,8 @@ function transformLazyImages(document) {
   ];
 
   let numModified = 0;
-
-  // TODO: would it be better to use a querySelectorAll that looks for images
-  // without certain attributes, instead of filtering in memory?
-  const images = document.getAttributesByTagName('img');
-
+  const images = document.getElementsByTagName('img');
   for(let image of images) {
-
     if(isNotLazyImage(image)) {
       continue;
     }
@@ -54,3 +39,15 @@ function transformLazyImages(document) {
 
   return numModified;
 }
+
+this.transformLazyImages = transformLazyImages;
+
+function isNotLazyImage(image) {
+  return image.hasAttribute('src') || image.hasAttribute('srcset');
+}
+
+function isValidURLString(urlString) {
+  return urlString && !urlString.trim().includes(' ');
+}
+
+} // End file block scope

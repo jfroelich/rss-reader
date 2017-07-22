@@ -2,11 +2,8 @@
 
 'use strict';
 
-// TODO: add an install hook so that the db can be setup at install time
-
 const favicon = {};
-favicon.dbName = 'favicon-cache';
-favicon.dbVersion = 2;
+
 
 // The time that elapses before entry is considered
 // expired, that is by default 30 days (in ms)
@@ -21,20 +18,21 @@ favicon.maxSize = 10 * 1024 + 1;
 favicon.fetchHTMLTimeoutMillis = 1000;
 favicon.fetchImageTimeoutMillis = 100;
 
-// TODO: this function is simply too large and needs to be broken up into
-// helper functions
-// TODO: logging should be optional, maybe have a console parameter where log
-// only occurs if parameter defined, or something like options.verbose
-// TODO: add an options object that is passed around instead of accessing
-// globals, get things like timeouts from the object
 // Given a url, lookup the associated favicon url. Tries to follow the spec by
 // first checking for the icon in the page, then checking in the domain root.
 // Tries to use a cache to speed up queries.
 // @param conn {IDBDatabase} an open indexedDB connection
 // @param urlObject {URL} the url to lookup
 // @returns {String} the icon url or null/undefined
-favicon.lookup = async function(conn, urlObject) {
-  console.log('LOOKUP', urlObject.href);
+favicon.lookup = async function(conn, urlObject, options) {
+
+  options = options || {};
+  const verbose = 'verbose in options' ? options.verbose : false;
+
+  if(verbose) {
+    console.log('LOOKUP', urlObject.href);
+  }
+
 
   const uniqueURLsArray = [urlObject.href];
   const currentDate = new Date();
@@ -61,7 +59,9 @@ favicon.lookup = async function(conn, urlObject) {
       await favicon.fetchDocument(urlObject.href));
     responseURL = new URL(responseURL);
   } catch(error) {
-    console.warn(error, urlObject.href);
+    if(verbose) {
+      console.warn(error, urlObject.href);
+    }
   }
 
   // If redirected, add the response url to unique urls
@@ -82,7 +82,10 @@ favicon.lookup = async function(conn, urlObject) {
   // TODO: can also store origin in cache if it distinct? would need to move
   // some origin url code upward
   if(docIconURL) {
-    console.debug('Found favicon <link>', urlObject.href, docIconURL.href);
+    if(verbose) {
+      console.debug('Found favicon <link>', urlObject.href, docIconURL.href);
+    }
+
 
     // TODO: these 3 statements should be a call to putAll
     const tx = conn.transaction('favicon-cache', 'readwrite');
@@ -140,7 +143,9 @@ favicon.lookup = async function(conn, urlObject) {
     ({imageSize, imageResponseURL} =
       await favicon.fetchImageHead(rootImageURL));
   } catch(error) {
-    console.warn(error);
+    if(verbose) {
+      console.warn(error);
+    }
   }
 
   const sizeInRange = imageSize === -1 ||
@@ -169,10 +174,10 @@ favicon.lookup = async function(conn, urlObject) {
     expiredURLArray.push(originEntry.pageURLString);
   }
 
-  await favicon.removeEntriesWithURLs(expiredURLArray);
+  await favicon.removeEntriesWithURLs(conn, expiredURLArray);
 };
 
-favicon.install = async function() {
+favicon.install = async function(verbose) {
   let conn;
   try {
     conn = await favicon.connect();
@@ -183,13 +188,27 @@ favicon.install = async function() {
   }
 };
 
-favicon.connect = function(name = favicon.dbName, version = favicon.dbVersion) {
+favicon.connect = function(options) {
   return new Promise((resolve, reject) => {
+
+    const defaultName = 'favicon-cache';
+    const defaultVersion = 2;
+    const defaultVerbose = false;
+
+    options = options || {};
+    const name = 'name' in options ? options.name : defaultName;
+    const version = 'version' in options ? options.version : defaultVersion;
+    const verbose = 'verbose' in options ? options.verbose : defaultVerbose;
+
     const request = indexedDB.open(name, version);
     request.onupgradeneeded = favicon.onUpgradeNeeded;
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-    request.onblocked = () => console.warn('Connection blocked');
+    request.onblocked = () => {
+      if(verbose) {
+        console.warn('Connection blocked');
+      }
+    };
   });
 };
 
@@ -461,7 +480,7 @@ favicon.fetchImageHead = async function(url) {
   opts.redirect = 'follow';
   opts.referrer = 'no-referrer';
 
-  const response = await favicon.fetch(url, opts, 
+  const response = await favicon.fetch(url, opts,
     favicon.fetchImageTimeoutMillis);
   if(!response.ok) {
     throw new Error(`${response.status} ${response.statusText} ${url}`);

@@ -4,15 +4,25 @@
 
 const sniff = {};
 
+// TODO: something is bugged with isProbablyBinary not picking up pdfs
+
 // Guess if the url path is not an html mime type
-sniff.sniffNonHTML = function(pathString) {
+sniff.isProbablyBinary = function(pathString) {
+
   const typeString = sniff.sniffType(pathString);
-  if(typeString) {
-    const slashPosition = type.indexOf('/');
-    const superTypeString = typeString.substring(0, slashPosition);
-    const nonHTMLSuperTypes = ['application', 'audio', 'image', 'video'];
-    return nonHTMLSuperTypes.includes(superTypeString);
+
+  if(!typeString) {
+    return;
   }
+
+  const slashPosition = typeString.indexOf('/');
+  if(slashPosition === -1) {
+    return;
+  }
+
+  const superTypeString = typeString.substring(0, slashPosition);
+  const binarySuperTypes = ['application', 'audio', 'image', 'video'];
+  return binarySuperTypes.includes(superTypeString);
 };
 
 // Guess the mime type of the url path by looking at the filename extension
@@ -140,7 +150,7 @@ sniff.findExtension = function(pathString) {
   // If the extension has too many characters, assume it is probably not an
   // extension and something else, so there is no extension
   const maxExtensionLength = 6;
-  if(extensionString.length < maxExtensionLength) {
+  if(extensionString.length > maxExtensionLength) {
     return;
   }
 
