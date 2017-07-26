@@ -3,15 +3,11 @@
 
 const scrubby = {};
 
-
-
 scrubby.scrub = function(documentObject) {
   scrubby.filterComments(documentObject);
   scrubby.filterFrames(documentObject);
   scrubby.filterNoscripts(documentObject);
-
   scrubby.filterScriptElements(documentObject);
-
   scrubby.filterBlacklist(documentObject);
   scrubby.filterHidden(documentObject);
   scrubby.adjustBlockInlines(documentObject);
@@ -35,8 +31,6 @@ scrubby.scrub = function(documentObject) {
 scrubby.filterScriptElements = function(documentObject) {
   const elements = documentObject.querySelectorAll('script');
   for(let element of elements) {
-    // NOTE: obversed in log, so not cause of bug
-    //console.debug('Removing <script>', element.outerHTML);
     element.remove();
   }
 };
@@ -117,7 +111,6 @@ scrubby.filterFormattingAnchors = function(documentObject) {
 // TODO: accept options parameter for custom blacklist that defaults to
 // built in list
 scrubby.filterBlacklist = function(documentObject) {
-
   const blacklist = [
     'applet', 'audio', 'base', 'basefont', 'bgsound', 'button', 'command',
     'datalist', 'dialog', 'embed', 'fieldset', 'frame', 'frameset', 'head',
@@ -128,7 +121,6 @@ scrubby.filterBlacklist = function(documentObject) {
   ];
 
   const blacklistSelector = blacklist.join(',');
-
   const documentElement = documentObject.documentElement;
   const elements = documentObject.querySelectorAll(blacklistSelector);
   for(let element of elements) {
@@ -399,8 +391,8 @@ scrubby.filterUnwrappables = function(documentObject) {
 };
 
 scrubby.filterHairspaces = function(documentObject) {
-  const iterator = documentObject.createNodeIterator(documentObject.documentElement,
-    NodeFilter.SHOW_TEXT);
+  const iterator = documentObject.createNodeIterator(
+    documentObject.documentElement, NodeFilter.SHOW_TEXT);
   for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
     const value = node.nodeValue;
     const modified = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');

@@ -4,9 +4,100 @@ This is a collection of tips, insights, style preferences, and other notes about
 writing Javascript code. I formed several of these opinions the hard way, by
 making mistakes when programming.
 
-# You're writing a book for both someone to read and some thing to process.
+# Code is written for two audiences: people and computers.
 
-# Moderate your use of optimization. There is a balance to be struck.
+For reasons that are not entirely clear to me, programmers tend to
+write dense, opaque code that makes clever use of syntax. I do not know this
+trait's origin. It is as if there are virtual nerd points for playing code
+golf, where the person to use fewer characters wins.
+
+Perhaps it is a remnant of the old restrictions on source code file size from
+the earliest days of computing.
+
+Perhaps it is because code written for only a computer tends to be more
+mathematical. Mathematicians prioritize rigor.
+
+Perhaps programmers hate language. The whole left brain right brain thing.
+
+Perhaps it is because some programmers simply hate prose. It is too verbose.
+Verbose text is annoying to read because of the amount of time it takes to
+consume the message. The extra amount of time it takes to digest the
+message when filtering out the supporting information from the actual message.
+Some feel that reading prose is inefficient. Programmers love efficiency.
+
+This objective of writing only for a computer is very off target. This style of
+code is difficult to interpret, difficult to maintain, and brittle.
+
+I myself am guilty on numerous counts.
+
+Code that is easy to interpret is not necessarily less performant. The idea that
+shorter code performs better is a myth. An algorithm that describes its steps
+more concisely and rigorously is no more efficient than one that uses prose.
+
+I think newer programmers fail to realize that a program is much like a book.
+Programs are intended to be read by other programmers. I would not go as far
+as to advocate or literate programming, as some amount of sophistication can
+be expected. Instead of file size, the objective should be organization, and
+clear communication.  Like a book, a program sends a message to the reader.
+That message should be easy to understand. That message should be accurate.
+
+Like writing a book, programs require drafts. It takes time and care to write
+a program that is easy to understand. Care must be taken when naming variables
+and functions. Writing well is not easy, even for the most masterful of
+programmers.
+
+To me, beautiful code is code that is simple to understand, accurately portrays
+its purpose, is suited to the job it is trying to do, is well organized, follows
+some set of conventions, and is consistent.
+
+Beautiful code may be difficult to refactor. I have no qualm with that. Real
+world problems are complex, unique, and require customization.
+
+So remember, you are an author. And, if the amount of utter crap programs found
+on the Internet is any clue, a rather shitty author. Your objective is
+to write an educational treatise, not a clever short story.
+
+Do not simply solve the immediate problem before you. Document your work, so
+that when the problem changes, as it inevitably does, you have a guide and
+can speedily move along.
+
+When writing code for a person, think about some of the same issues faced by an
+author writing a book. In fact, go and learn about how to become a good writer.
+It will make you a better programmer. Your colleagues, and your future self,
+will despise you less.
+
+# Optimize in moderation
+
+There is a balance to be struck between a completely naive and unoptimized
+approach to solving a problem and an extremely-carefully over-architected
+solution.
+
+Certain optimizations are good. For example, using the appropriate data
+structure is good. Some of this has to do with knowing how programming code
+is translated later into machine code, which is admittedly somewhat difficult
+to understand. But something like using an array in place of a list is better
+in many cases. This type of care should be paid during initial design.
+
+But many, if not most, optimizations are bad. Writing code that performs well is
+less important than writing code that is easy to understand.
+
+Once a program is laid out and well-organized, *then* it is time to optimize.
+And then, only the hotspots. Use profile-guided optimization.
+
+Here is some low hanging fruit. A function that runs very rarely, or only once,
+really does not need to be optimized. A rarely called function is not a hotspot.
+
+Basically, any time you are relying on your gut and not doing profile driven
+optimization, there should be an element of doubt.
+
+Real world problems are subject to dynamic conditions. Resilient programs can
+adapt to new requirements. Be wary of designing a very fast car if soon there
+may not be roads.
+
+Optimized code tends to be more difficult to understand. It tends to be more
+concise, written by more experienced developers who assume quite a lot of the
+reader and who tend to avoid comments. This is one reason to approach
+optimization with some reservation.
 
 # Use paragraphs to organize statements
 
