@@ -5,16 +5,21 @@
 { // Begin file block scope
 
 // TODO: only load entries missing urls instead of filtering after load
-async function removeEntriesMissingURLs(conn) {
+async function removeEntriesMissingURLs() {
   const channel = new BroadcastChannel('db');
   let numRemoved = 0;
+  let conn;
   try {
+    conn = await dbConnect();
     const entries = await loadAllEntriesFromDb(conn);
     const invalids = findInvalidEntries(entries);
     const entryIds = mapEntriesToIds(invalids);
     await removeEntries(conn, entryIds, channel);
     numRemoved = entryIds.length;
   } finally {
+    if(conn) {
+      conn.close();
+    }
     channel.close();
   }
   return numRemoved;

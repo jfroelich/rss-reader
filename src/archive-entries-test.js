@@ -1,9 +1,6 @@
 // See license.md
-
 'use strict';
 
-// TODO: insert test data, then run archive, make assertions about the
-// state of the database, then delete the database
 async function testArchiveEntries() {
   console.log('Running test testAchiveArchives');
   const testDbName = 'test-archive-entries';

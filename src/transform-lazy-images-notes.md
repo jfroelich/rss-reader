@@ -34,7 +34,7 @@ mapping, from one document into another. However, for performance reasons,
 creating an entirely new document is not reasonable. Therefore this modifies
 the input document in place.
 
-#NOTES
+# Notes
 
 This is designed as an independent lib. I do know of another area of the app
 that removes sourceless images. Generally, this should always be called prior
@@ -42,7 +42,7 @@ to that. However, this makes no assumptions. Similarly, this should always be
 called prior to any code the validates or works with the urls in the src
 attribute.
 
-#TODO
+# Todo
 
 * would it be better to use a querySelectorAll that looks for images without
 certain attributes, instead of filtering in memory?

@@ -4,6 +4,11 @@
 
 // Utility functions related to working with feeds and entries
 
+const ENTRY_STATE_UNREAD = 0;
+const ENTRY_STATE_READ = 1;
+const ENTRY_STATE_UNARCHIVED = 0;
+const ENTRY_STATE_ARCHIVED = 1;
+
 // Get the url currently representing the feed, which is the final url in its
 // internal urls array.
 function getFeedURLString(feed) {
@@ -25,7 +30,7 @@ function addFeedURLString(feed, urlString) {
   }
   feed.urls.push(normalizedURLString);
   return true;
-};
+}
 
 function normalizeFeedURLString(urlString) {
   const url = new URL(urlString);
@@ -114,17 +119,6 @@ function mergeFeeds(oldFeedObject, newFeedObject) {
 
   return mergedFeedObject;
 }
-
-
-
-// TODO: an entry should probably only have one url. Instead I should probably
-// be storing something external pertaining to polling requests or a list of
-// urls of some sort.
-
-const ENTRY_STATE_UNREAD = 0;
-const ENTRY_STATE_READ = 1;
-const ENTRY_STATE_UNARCHIVED = 0;
-const ENTRY_STATE_ARCHIVED = 1;
 
 // Get the last url in an entry's internal url list
 function getEntryURLString(entry) {

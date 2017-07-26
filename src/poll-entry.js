@@ -212,6 +212,11 @@ function prepareLocalEntry(entry, verbose) {
     return entry;
   }
 
+  const urlString = getEntryURLString(entry);
+  if(verbose) {
+    console.debug('Parsing html for url', urlString);
+  }
+
   let documentObject;
   try {
     documentObject = parseHTML(entry.content);
@@ -222,7 +227,6 @@ function prepareLocalEntry(entry, verbose) {
     return entry;
   }
 
-  const urlString = getEntryURLString(entry);
   prepareEntryDocument(urlString, documentObject);
   const content = documentObject.documentElement.outerHTML.trim();
   if(content) {

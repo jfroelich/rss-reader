@@ -1,41 +1,31 @@
 'use strict';
 
-// Updates the text that appears on the extension's icon in Chrome's toolbar
 async function updateBadgeText(conn, verbose) {
+  let count = 0;
+  let text = '?';
+  try {
+    count = await countUnreadEntries(conn);
+  } catch(error) {
+    console.warn(error);
+    return;
+  }
 
-  const countResolver = function(resolve, reject) {
-    if(verbose) {
-      console.log('Counting unread entries in database');
-    }
+  text = count > 999 ? '1k+' : '' + count;
+  if(verbose) {
+    console.log('Setting extension badge text to', text);
+  }
+  chrome.browserAction.setBadgeText({'text': text});
+}
+
+function countUnreadEntries(conn) {
+  return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('readState');
     const request = index.count(ENTRY_STATE_UNREAD);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  };
-
-  if(verbose) {
-    console.log('Updating badge text');
-  }
-
-  let count = 0;
-  let text = '?';
-
-  try {
-    count = await new Promise(countResolver);
-    if(verbose) {
-      console.log('Counted %d unread entries in database', count);
-    }
-    text = count > 999 ? '1k+' : '' + count;
-  } catch(error) {
-    console.warn(error);
-  }
-
-  if(verbose) {
-    console.log('Setting extension badge text to', text);
-  }
-  chrome.browserAction.setBadgeText({'text': text});
+  });
 }
 
 async function showSlideshowTab() {
@@ -73,17 +63,23 @@ function findTabsByURL(url) {
 // chrome://flags/#enable-native-notifications
 function showNotification(titleString, messageString, iconURLString) {
   if(typeof Notification === 'undefined') {
-    console.warn('Notification API not supported');
+    console.warn(
+      'Suppressed notification because Notification API not supported:',
+      titleString);
     return;
   }
 
   if(!('SHOW_NOTIFICATIONS' in localStorage)) {
-    console.warn('Notifications disabled in settings', titleString);
+    console.warn(
+      'Suppressed notification because notifications disabled in settings:',
+      titleString);
     return;
   }
 
   if(Notification.permission !== 'granted') {
-    console.warn('Notification permission not granted', titleString);
+    console.warn(
+      'Suppressed notification because notification permission not granted:',
+      titleString);
   }
 
   const defaultIconURLString =
@@ -102,17 +98,14 @@ function showNotification(titleString, messageString, iconURLString) {
 }
 
 async function notificationOnClick(event) {
-  // Ensure the browser is open to avoid mac chrome crash in 55
   try {
+    // Ensure the browser is open to avoid mac chrome crash in 55
+    // TODO: test if this behavior is still present in latest chrome and if
+    // not then remove the window stuff.
     const winObject = window.open();
     winObject.close();
-  } catch(error) {
-    console.warn(error);
-  }
-
-  try {
     await showSlideshowTab();
   } catch(error) {
-    console.error(error);
+    console.warn(error);
   }
 }

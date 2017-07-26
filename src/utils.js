@@ -1,5 +1,4 @@
 // See license.md
-
 'use strict';
 
 // Returns a new object that is a copy of the input less empty properties. A

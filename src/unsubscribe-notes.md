@@ -1,8 +1,8 @@
 
-#TODO
+# TODO
 
 
-#NOTES
+# NOTES
 
 It was tempting to not await updateBadgeText but I realized that it relies on
 the connection being open. If not awaited then the caller could close the

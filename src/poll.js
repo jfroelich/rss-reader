@@ -20,8 +20,7 @@ async function pollFeeds(options) {
     console.log('Checking for new articles...');
   }
 
-  const shouldStartPoll = await checkPollStartingConditions(options);
-  if(!shouldStartPoll) {
+  if(!await canStartPoll(options)) {
     return;
   }
 
@@ -83,7 +82,7 @@ function initOptions(options) {
   return options;
 }
 
-async function checkPollStartingConditions(options) {
+async function canStartPoll(options) {
   if(isOffline()) {
     if(options.verbose) {
       console.warn('Polling canceled because offline');

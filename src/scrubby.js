@@ -1,34 +1,17 @@
 // See license.md
-
 'use strict';
-
-// TODO: replace strong with b to shrink document size
-// TODO: replace em with i to shrink document size
-// TODO: replace entities with single unicode character where possible in order
-// to shrink document size?
-// TODO: fix things like <b><table></table></b>,
-// see https://html.spec.whatwg.org/multipage/parsing.html mentions of
-// adoption algorithm and its errata notes
-
 
 const scrubby = {};
 
-// Module for sanitizing the contents of a document
-scrubby.blacklist = [
-  'applet', 'audio', 'base', 'basefont', 'bgsound', 'button', 'command',
-  'datalist', 'dialog', 'embed', 'fieldset', 'frame', 'frameset', 'head',
-  'iframe', 'input', 'isindex', 'link', 'math', 'meta',
-  'object', 'output', 'optgroup', 'option', 'param', 'path', 'progress',
-  'script', 'select', 'spacer', 'style', 'svg', 'textarea', 'title',
-  'video', 'xmp'
-];
 
-scrubby.blacklistSelector = scrubby.blacklist.join(',');
 
 scrubby.scrub = function(documentObject) {
   scrubby.filterComments(documentObject);
   scrubby.filterFrames(documentObject);
   scrubby.filterNoscripts(documentObject);
+
+  scrubby.filterScriptElements(documentObject);
+
   scrubby.filterBlacklist(documentObject);
   scrubby.filterHidden(documentObject);
   scrubby.adjustBlockInlines(documentObject);
@@ -47,6 +30,15 @@ scrubby.scrub = function(documentObject) {
   scrubby.filterHRs(documentObject);
   scrubby.trimDocument(documentObject);
   scrubby.filterAttributes(documentObject);
+};
+
+scrubby.filterScriptElements = function(documentObject) {
+  const elements = documentObject.querySelectorAll('script');
+  for(let element of elements) {
+    // NOTE: obversed in log, so not cause of bug
+    //console.debug('Removing <script>', element.outerHTML);
+    element.remove();
+  }
 };
 
 scrubby.addNoReferrer = function(documentObject) {
@@ -122,9 +114,23 @@ scrubby.filterFormattingAnchors = function(documentObject) {
   }
 };
 
+// TODO: accept options parameter for custom blacklist that defaults to
+// built in list
 scrubby.filterBlacklist = function(documentObject) {
+
+  const blacklist = [
+    'applet', 'audio', 'base', 'basefont', 'bgsound', 'button', 'command',
+    'datalist', 'dialog', 'embed', 'fieldset', 'frame', 'frameset', 'head',
+    'iframe', 'input', 'isindex', 'link', 'math', 'meta',
+    'object', 'output', 'optgroup', 'option', 'param', 'path', 'progress',
+    'select', 'spacer', 'style', 'svg', 'textarea', 'title',
+    'video', 'xmp'
+  ];
+
+  const blacklistSelector = blacklist.join(',');
+
   const documentElement = documentObject.documentElement;
-  const elements = documentObject.querySelectorAll(scrubby.blacklistSelector);
+  const elements = documentObject.querySelectorAll(blacklistSelector);
   for(let element of elements) {
     if(documentElement.contains(element)) {
       element.remove();
@@ -169,7 +175,6 @@ scrubby.filterFrames = function(documentObject) {
   documentObject.documentElement.appendChild(body);
 };
 
-// TODO: cleanup, use helpler functions
 scrubby.filterAttributes = function(documentObject) {
   const elements = documentObject.getElementsByTagName('*');
   for(let element of elements) {
@@ -346,7 +351,6 @@ scrubby.isSingleColumnTable = function(table, limit) {
 scrubby.isSingleColumnRow = function(row) {
   const cells = row.cells;
   let numNonEmpty = 0;
-  // TODO: for .. of?
   for(let i = 0, len = cells.length; i < len; i++) {
     if(!scrubby.isLeaf(cells[i])) {
       if(++numNonEmpty > 1) {
@@ -358,8 +362,6 @@ scrubby.isSingleColumnRow = function(row) {
   return true;
 };
 
-// TODO: only pad if adjacent to text
-// TODO: can i use for..of over table.rows?
 scrubby.unwrapSingleColumnTable = function(table) {
   const rows = table.rows;
   const numRows = rows.length;

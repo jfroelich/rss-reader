@@ -4,15 +4,29 @@
 
 { // Begin file block scope
 
-async function removeOrphanedEntries(conn) {
-  const channel = new BroadcastChannel('db');
+async function removeOrphanedEntries(options) {
+  options = options || {};
+  let conn;
+  let ids;
   try {
+    conn = await dbConnect(options.dbName, options.dbVersion);
     const feedIds = await loadAllFeedIdsFromDb(conn);
     const entries = await loadAllEntriesFromDb(conn);
     const orphans = findOrphans(entries, feedIds);
-    const ids = mapEntriesToIds(orphans);
-    await removeEntriesWithIds(conn, ids, channel);
+    ids = mapEntriesToIds(orphans);
+    await removeEntriesWithIds(conn, ids);
   } finally {
+    if(conn) {
+      conn.close();
+    }
+  }
+
+  if(ids && ids.length) {
+    const channel = new BroadcastChannel('db');
+    for(let id of ids) {
+      const message = {'type': 'entryDeleted', 'id': id};
+      channel.postMessage(message);
+    }
     channel.close();
   }
 }
@@ -22,7 +36,7 @@ this.removeOrphanedEntries = removeOrphanedEntries;
 // Returns an array of all entries missing a feed id or have a feed id that
 // does not exist in the set of feed ids
 function findOrphans(entries, feedIds) {
-  const orphans = new Array(entries.length);
+  const orphans = [];
   for(let entry of entries) {
     if(!entry.feed) {
       orphans.push(entry);
@@ -34,7 +48,7 @@ function findOrphans(entries, feedIds) {
 }
 
 function mapEntriesToIds(entries) {
-  const ids = new Array(entries.length);
+  const ids = [];
   for(let entry of entries) {
     ids.push(entry.id);
   }
@@ -61,34 +75,15 @@ function loadAllEntriesFromDb(conn) {
   });
 }
 
-async function removeEntriesWithIds(conn, ids, channel) {
-  const tx = conn.transaction('entry', 'readwrite');
-  const promises = new Array(ids.length);
-
-  // Remove entries concurrently
-  for(let id of ids) {
-    const promise = removeEntryById(tx, id, channel);
-    promises.push(promise);
-  }
-
-  // Promise.all is fail fast. If any removeEntryById call throws an exception
-  // then all fail.
-  const resolutions = await Promise.all(proms);
-  return resolutions;
-}
-
-function removeEntryById(tx, id, channel) {
+function removeEntriesWithIds(conn, ids) {
   return new Promise((resolve, reject) => {
+    const tx = conn.transaction('entry', 'readwrite');
+    tx.oncomplete = () => resolve(ids);
+    tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('entry');
-    const request = store.delete(id);
-    request.onsuccess = () => {
-      if(channel) {
-        const message = {'type': 'entryDeleted', 'id': id};
-        channel.postMessage(message);
-      }
-      resolve();
-    };
-    request.onerror = () => reject(request.error);
+    for(let id of ids) {
+      store.delete(id);
+    }
   });
 }
 

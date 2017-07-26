@@ -2,12 +2,14 @@
 
 'use strict';
 
+{ // Begin file block scope
+
 async function commandArchiveEntries() {
-  let conn;
-  let maxAge;// intentionally undefined
+  const options = {};
+  options.verbose = true;
   try {
     conn = await dbConnect();
-    const numArchived = await archiveEntries(conn, maxAge, true);
+    const numArchived = await archiveEntries(options);
   } finally {
     if(conn) {
       conn.close();
@@ -15,13 +17,11 @@ async function commandArchiveEntries() {
   }
 }
 
-{ // Begin file block scope
+this.commandArchiveEntries = commandArchiveEntries;
 
-// @param conn {IDBDatabase} an open database connection
 // @param options {Object} verbose (boolean), maxAgeInMillis {Number}
 // @returns {Number} the new of archived entries
-async function archiveEntries(conn, options) {
-
+async function archiveEntries(options) {
   options = options || {};
   const oneDayInMillis = 1 * 24 * 60 * 60 * 1000;
   const maxAgeInMillis = 'maxAgeInMillis' in options ?
@@ -33,10 +33,18 @@ async function archiveEntries(conn, options) {
     console.log('Archiving entries older than %d ms', maxAgeInMillis);
   }
 
-  const entries = await getUnarchivedReadEntries(conn);
-  const archivableEntries = selectArchivableEntries(entries, maxAgeInMillis);
-  const compacts = compactEntries(archivableEntries, verbose);
-  const putResolutions = await putEntriesInDb(conn, compacts);
+  let conn;
+  try {
+    conn = await dbConnect();
+    const entries = await getUnarchivedReadEntries(conn);
+    const archivableEntries = selectArchivableEntries(entries, maxAgeInMillis);
+    const compacts = compactEntries(archivableEntries, verbose);
+    const putResolutions = await putEntriesInDb(conn, compacts);
+  } finally {
+    if(conn) {
+      conn.close();
+    }
+  }
 
   broadcastArchiveMessage(compacts);
   if(verbose) {
@@ -139,10 +147,11 @@ function compact(entry, archiveDate) {
   return compacted;
 }
 
-// TODO: consider imposing an upper bound on number of entry ids per message,
-// or instead sending one message per entry and passing the buck to the
-// browser
 const broadcastArchiveMessage = function(entries) {
+  if(!entries.length) {
+    return;
+  }
+
   const ids = new Array(entries.length);
   for(let entry of entries) {
     ids.push(entry.id);

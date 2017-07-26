@@ -1,27 +1,22 @@
 
-TODO: allow html comments in script text
-
-TODO: allow arbitrary whitespace in closing tags after name
-TODO: can - or _ be in tag name? what characters can be in tag name?
+# TODO
+* allow html comments in script text
+* allow arbitrary whitespace in closing tags after name
+* can - or _ be in tag name? what characters can be in tag name?
 https://www.w3.org/TR/REC-html40/interact/scripts.html#h-18.3.2
-TODO: maybe improve performance by use charCodeAt instead of charAt and then
+* maybe improve performance by use charCodeAt instead of charAt and then
 doing comparisons using numbers, or is v8 using interning strings?
-
-TODO: allow for re-entrance
---- means probably need to return multiple things, including end state
---- means not throwing if not in text state at end
-
-TODO: regarding whitespace in tag body, maybe it would make more sense to
+* allow for re-entrance
+** means probably need to return multiple things, including end state
+** means not throwing if not in text state at end
+* regarding whitespace in tag body, maybe it would make more sense to
 return a structured object (e.g. tag name property and attributes map
 property) instead of the whole tag name, because whitespace should be
 ignored. This involves some basic input normalization, maybe it is best to
 do it here.
-
-TODO: alternate script syntax like visual basic?
-
-TODO: fix bugs with regular expression literals
-
-TODO: maybe add an onToken callback instead of array, and pass in two params,
+* alternate script syntax like visual basic?
+* fix bugs with regular expression literals
+* maybe add an onToken callback instead of array, and pass in two params,
 one for token type, this simplifies handling. I don't like how the caller
 has to 'reparse' the string to determine the type. Also, it is kind of
 ambiguous like <script><!--, where <!-- leads off the script text token but
@@ -30,26 +25,22 @@ could emit a token type along with the token value. also, I dont like the
 idea of this controlling the buffering, by using a callback i let the caller
 decide how long to hold on to previous tokens, instead of this demanding to
 hold onto the entire thing.
-
-TODO: maybe provide conditional verbose param that if set provides detailed
+* maybe provide conditional verbose param that if set provides detailed
 logging to console?
-
-TODO: is this kind of brittle? Maybe a scanner generator tool would be
+* is this kind of brittle? Maybe a scanner generator tool would be
 better. Would need to research.
-
-TODO: isn't there a fundamental issue where if this differs from native
+* isn't there a fundamental issue where if this differs from native
 handling of html, then that is a massive security risk.
+* better handling of strings? From https://github.com/lydell/js-tokens,
+"JavaScript strings cannot contain (unescaped) newlines, so unterminated
+strings simply end at the end of the line. Unterminated template strings can
+contain unescaped newlines, though, so they go on to the end of input."
+
 
 NOTE: https://chromium.googlesource.com/chromium/blink.git/+/master/Source/core/html/parser/HTMLTokenizer.cpp
 NOTE: https://html.spec.whatwg.org/#tokenization
 
 
-TODO: better handling of strings?
-
-From https://github.com/lydell/js-tokens, "JavaScript strings cannot contain
-(unescaped) newlines, so unterminated strings simply end at the end of the line.
-Unterminated template strings can contain unescaped newlines, though, so they
-go on to the end of input."
 
 regular expression ambiguity:
 

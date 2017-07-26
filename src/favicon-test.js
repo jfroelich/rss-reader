@@ -2,34 +2,37 @@
 
 'use strict';
 
-// TODO: use a test db instead of the real db (and delete at end of test)
-// TODO: update to reflect new function api
-
-async function testFaviconLookup(urlString) {
+async function testLookup(urlString) {
   const url = new URL(urlString);
-  const fs = new FaviconService();
-  fs.log = console;
+  let conn;
+
+  const options = {};
+  options.verbose = true;
 
   try {
-    await fs.dbConnect();
-    console.debug(await fs.lookup(url));
+    conn = await favicon.connect();
+    const iconURLString = await favicon.lookup(conn, url, options);
+    console.debug('Icon url:', iconURLString);
   } catch(error) {
     console.warn(error);
   } finally {
-    fs.close();
+    if(conn) {
+      conn.close();
+    }
   }
 }
 
-async function testCompactFavicons() {
-  const fc = new FaviconCache();
-
+async function testCompact() {
+  let conn;
   try {
-    await fc.dbConnect();
-    const numDeleted = await fc.compact();
+    conn = await favicion.connect();
+    const numDeleted = await favicon.compact(conn);
     console.log('Deleted %d entries', numDeleted);
   } catch(error) {
     console.warn(error);
   } finally {
-    fc.close();
+    if(conn) {
+      conn.close();
+    }
   }
 }
