@@ -435,6 +435,7 @@ async function subscribeFormOnSubmit(event) {
   });
 
   // Filter entries with identical normalized urls, favoring earlier entries
+  // TODO: use a Set?
   const distinctURLStrings = [];
   entryArray = entryArray.filter((entryObject) => {
     if(distinctURLStrings.includes(entryObject.url.href))

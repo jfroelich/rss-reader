@@ -2,7 +2,7 @@
 
 'use strict';
 
-async function testLookup(urlString) {
+async function testLookup(urlString, isCacheless) {
   const url = new URL(urlString);
   let conn;
 
@@ -10,9 +10,29 @@ async function testLookup(urlString) {
   options.verbose = true;
 
   try {
-    conn = await favicon.connect();
+    if(!isCacheless) {
+      conn = await favicon.connect(options);
+    }
+
     const iconURLString = await favicon.lookup(conn, url, options);
     console.debug('Icon url:', iconURLString);
+  } catch(error) {
+    console.error(error);
+  } finally {
+    if(!isCacheless && conn) {
+      conn.close();
+    }
+  }
+}
+
+async function testClear() {
+  let conn;
+  const options = {};
+  options.verbose = true;
+
+  try {
+    conn = await favicon.connect(options);
+    await favicon.clearCache(conn);
   } catch(error) {
     console.warn(error);
   } finally {

@@ -33,7 +33,8 @@ async function fetchFeed(urlString, options) {
     'mode': 'cors',
     'cache': 'default',
     'redirect': 'follow',
-    'referrer': 'no-referrer'
+    'referrer': 'no-referrer',
+    'referrerPolicy': 'no-referrer'
   };
 
   const fetchPromise = fetch(urlString, fetchOptions);

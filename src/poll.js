@@ -254,6 +254,9 @@ function isFeedUnmodified(localDateModified, remoteDateModified) {
 }
 
 function filterDuplicateEntries(entries) {
+
+  // TODO: use a Set?
+
   const distinctEntries = [];
   const seenURLs = [];
 

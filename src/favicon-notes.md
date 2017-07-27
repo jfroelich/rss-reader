@@ -41,14 +41,30 @@ like iOS currently struggle with maintaining multiple indexedDB databases for
 a single origin. However, I am not really targeting those platforms right now
 so I do not think it is important enough to worry about it.
 
-# Primary todo: optional caching
+# About "Refused to load the script" errors that appear in the console
 
-Reintroduce support for optional caching. Change the internals of
-favicon.lookup to check if conn is defined, and if not defined then to skip
-cache lookups and updates.
+Occasionally I see the following messages appear in the console: Refused to
+load the script 'url' because it violates the following Content Security Policy
+directive: "script-src 'self'". The code internally calls fetch. fetch
+internally uses the Content Security Policy defined in the extension's
+manifest. This app's manifest provides: "content_security_policy":
+"... script-src 'self' ...". In the response headers I see the following:
+link:<path-to-script>; rel=preload; as=script.  The reason that the warning
+appears is because the script is pushed. To avoid this error I have to figure
+out how to signal that I have no interest at all in HTTP/2. For push help see
+section 3.3. of https://w3c.github.io/preload/, and also https://tools.ietf.org/html/rfc5988#section-5.
+
+I do not currently know how to signal no interest in preload. The RFC states
+that it is possible, but I am not sure I can do it from Javascript, and I have
+no idea how I would do it from Javascript.
+
+* Maybe I can set the user-agent? Maybe servers are checking user-agent to
+decide if preload supported?
+* Maybe it has something to do with CORS or caching?
 
 # General todo items
 
+* Add favicon.clearCache utility function to help testing
 * Revisit whether favicons are now supported from within a chrome
 extension. At least document very clearly why this library has to be used
 in the alternative. It may no longer need to exist. This time around, take

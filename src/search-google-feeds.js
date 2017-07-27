@@ -31,25 +31,28 @@ async function searchGoogleFeeds(queryString, timeoutMillis = 0) {
     'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
   const urlString =  baseString + encodeURIComponent(queryString);
 
+  const headers = {'Accept': 'application/json,text/javascript;q=0.9'};
+
   const fetchOptions = {
     'credentials': 'omit',
     'method': 'GET',
-    'headers': {'Accept': 'application/json,text/javascript;q=0.9'},
+    'headers': headers,
     'mode': 'cors',
     'cache': 'default',
     'redirect': 'follow',
-    'referrer': 'no-referrer'
+    'referrer': 'no-referrer',
+    'referrerPolicy': 'no-referrer'
   };
 
 
   // The new fetch api no longer supports timeouts. Fake a timeout by racing
   // a timeout promise against the fetch promise. If the timeout wins the race
   // then Promise.race throws an error in the context of an async function.
-
+  const fetchPromise = fetch(urlString, fetchOptions);
   let responseObject;
   if(timeoutMillis) {
     const promises = new Array(2);
-    promises[0] = fetch(urlString, fetchOptions);
+    promises[0] = fetchPromise;
     promises[1] = new Promise(function(resolve, reject) {
       const error = new Error('Request timed out');
       setTimeout(reject, timeoutMillis, error);
@@ -57,7 +60,7 @@ async function searchGoogleFeeds(queryString, timeoutMillis = 0) {
 
     responseObject = await Promise.race(promises);
   } else {
-    responseObject = await fetch(urlString, fetchOptions);
+    responseObject = await fetchPromise;
   }
 
   // Generally, ok is false if response code is not in range 200-299

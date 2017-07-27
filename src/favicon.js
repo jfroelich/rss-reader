@@ -7,92 +7,88 @@ const favicon = {};
 // 30 days in ms
 favicon.defaultMaxAgeMillis = 1000 * 60 * 60 * 24 * 30;
 
-// @param conn {IDBDatabase} an open indexedDB connection
+// @param conn {IDBDatabase} an open indexedDB connection, if left undefined
+// then database not used (cacheless)
 // @param urlObject {URL} the url to lookup
-// @returns {String} the icon url or null/undefined
+// @returns {String} the favicon url if found, otherwise undefined
 favicon.lookup = async function(conn, urlObject, options) {
 
   options = options || {};
   const verbose = 'verbose' in options ? options.verbose : false;
   const maxAgeMillis = 'maxAgeMillis' in options ? options.maxAgeMillis :
     favicon.defaultMaxAgeMillis;
+
   if(verbose) {
     console.log('LOOKUP', urlObject.href);
   }
 
-  // Lookup the url in the cache
   const currentDate = new Date();
-  const entry = await favicon.findEntry(conn, urlObject.href);
-  if(entry && !favicon.isEntryExpired(entry, currentDate, maxAgeMillis)) {
-    return entry.iconURLString;
+  // Contains distinct urls checked
+  const urlSet = new Set();
+
+  // Lookup the url in the cache
+  let entry;
+  if(conn) {
+    entry = await favicon.findEntry(conn, urlObject);
+    if(entry && !favicon.isEntryExpired(entry, currentDate, maxAgeMillis)) {
+      if(verbose) {
+        console.log('Found favicon of input url in cache', entry);
+      }
+      return entry.iconURLString;
+    }
   }
 
-  const uniqueURLStrings = [urlObject.href];
-
-  // If we did not find a cached entry, or if we found a cached entry but it
-  // is expired, then plan on fetching. Before fetching, check if we are
-  // offline so as to distinguish offline from other fetch errors.
+  // Before fetching, verify we can fetch so as to distinguish between
+  // network errors and other fetch errors, and to potentially avoid work
   if('onLine' in navigator && !navigator.onLine) {
+    if(verbose) {
+      console.warn('Canceled favicon lookup of url %s because offline',
+        urlObject.href);
+    }
     return;
   }
 
-  // Fetch errors are non-fatal.
-  // TODO: maybe make into a helper, fetchSilently
-  let responseURLObject;
-  let response;
-  try {
-    response = await favicon.fetchDocument(urlObject.href, options);
-    responseURLObject = new URL(response.responseURLString);
-  } catch(error) {
-    if(verbose) {
-      console.warn(error, urlObject.href);
-    }
-  }
+  // Add the input url to the distinct urls set
+  urlSet.add(urlObject.href);
 
-  // If the fetch failed and we have an expired entry, remove it and continue
-  if(entry && !response) {
+  const response = await favicon.fetchDocumentSilently(urlObject, options);
+
+  // When an entry is both expired and also we failed to fetch it, remove it.
+  if(conn && !response && entry) {
+    if(verbose) {
+      console.debug(
+        'Removing expired input entry from cache because of failed request',
+        urlObject.href);
+    }
+
     await favicon.removeEntry(conn, urlObject.href);
   }
 
-  if(response && response.redirected) {
-    uniqueURLStrings.push(responseURLObject.href);
-  }
-
-  // TODO: before parsing the page, we should be checking for a redirect
-  // entry as well. This way we can skip all the parsing and searching.
-  // Technically just the searching (for now). This assumes the db lookup
-  // is faster than the page searching.
-  const baseURLObject = response && response.redirected ? responseURLObject :
-    urlObject;
-
-  let docIconURL;
+  let responseURLObject;
   if(response) {
-    docIconURL = favicon.findIconInDocument(response.doc, baseURLObject);
-
-    // If we found an in page icon, update the cache and resolve
-    // TODO: can also store origin in cache if it distinct? would need to move
-    // some origin url code upward
-    if(docIconURL) {
-      if(verbose) {
-        console.debug('Found favicon <link>', uniqueURLStrings,
-          docIconURL.href);
-      }
-      await favicon.putEntries(conn, docIconURL.href, uniqueURLStrings);
-      return docIconURL.href;
-    }
+    responseURLObject = new URL(response.responseURLString);
   }
 
-  // If we did not find an in page icon, and we redirected, check cache for
-  // redirect
+  // If we redirected, check cache for redirect
   let redirectEntry;
   if(response && response.redirected) {
-    redirectEntry = await favicon.findEntry(conn, responseURLObject.href);
+    urlSet.add(responseURLObject.href);
+
+    if(conn) {
+      redirectEntry = await favicon.findEntry(conn, responseURLObject);
+    }
+
     if(redirectEntry && !favicon.isEntryExpired(redirectEntry, currentDate,
       maxAgeMillis)) {
+
+      if(verbose) {
+        console.debug('Found non-expired redirect in cache', redirectEntry);
+      }
+
       // If there was an entry but we did not resolve to it earlier it must
       // be expired. But the redirect is not. Update the original so that
       // future lookups are faster.
-      if(entry) {
+      if(conn && entry) {
         await favicon.putEntries(conn, redirectEntry.iconURLString,
           [urlObject.href]);
       }
@@ -101,67 +97,155 @@ favicon.lookup = async function(conn, urlObject, options) {
     }
   }
 
-  // If the origin is different from the request url and the redirect url,
-  // then check the cache for the origin
-  let originEntry;
-  if(!uniqueURLStrings.includes(urlObject.origin)) {
-    uniqueURLStrings.push(urlObject.origin);
-    originEntry = await favicon.findEntry(conn, urlObject.origin);
-  }
+  // At this point we requested the document. Neither the original url or the
+  // redirected url exist in the cache, or they do exist but are expired.
+  // Check the response
+  if(response) {
+    const responseDoc = await favicon.parseHTMLResponse(response, verbose);
+    if(responseDoc) {
+      let iconURLObject;
+      const baseURLObject = response.redirected ? responseURLObject :
+        urlObject;
+      iconURLObject = favicon.findIconInDocument(responseDoc, baseURLObject);
 
-  // If an origin entry exists and is not expired, then update entries for the
-  // other urls and resolve
-  if(originEntry && !favicon.isEntryExpired(originEntry, currentDate, maxAgeMillis)) {
-    const iconURLString = originEntry.iconURLString;
-    const tx = conn.transaction('favicon-cache', 'readwrite');
-    if(response && response.redirected) {
-      const urls = [urlObject.href, responseURLObject.href];
-      await favicon.putEntries(conn, iconURLString, urls);
-    } else {
-      await favicon.putEntry(tx, urlObject.href, iconURLString);
+      // If we found an in page icon, update the cache and resolve
+      // Do not also modify origin. Origin may have its own favicon.
+      if(iconURLObject) {
+        if(verbose) {
+          console.debug('Found favicon from <link>', Array.from(urlSet),
+            iconURLObject.href);
+        }
+
+        if(conn) {
+          await favicon.putEntries(conn, iconURLObject.href,
+            Array.from(urlSet));
+        }
+
+        return iconURLObject.href;
+      }
     }
-    return iconURLString;
   }
 
-  // Fall back to checking domain root
-  // TODO: this should be a call to a helper
-  const rootImageURL = urlObject.origin + '/favicon.ico';
-  let imageSize = -1, imageResponseURLString;
+  // If the origin is a distinct url, then check the cache for the origin
+  let originEntry;
+  if(!urlSet.has(urlObject.origin)) {
+    urlSet.add(urlObject.origin);
+    const originURLObject = new URL(urlObject.origin);
+
+    if(conn) {
+      originEntry = await favicon.findEntry(conn, originURLObject);
+    }
+
+    // If an origin entry exists and is not expired, then update entries for the
+    // other urls and resolve
+    if(originEntry && !favicon.isEntryExpired(originEntry, currentDate,
+      maxAgeMillis)) {
+      const iconURLString = originEntry.iconURLString;
+
+      if(conn) {
+        const pageURLStrings = [];
+        if(response && response.redirected) {
+          pageURLStrings.push(urlObject.href);
+          pageURLStrings.push(responseURLObject.href);
+        } else {
+          pageURLStrings.push(iconURLString);
+        }
+
+        await favicon.putEntries(conn, urlObject.href, pageURLStrings);
+      }
+
+      if(verbose) {
+        console.debug('Found non-expired origin entry in cache', urlObject.href,
+          originEntry);
+      }
+      return iconURLString;
+    }
+  }
+
+  // Input url, redirect url, and origin all failed. Check domain root.
+  const imageResponse = await favicon.fetchRootIconSilently(urlObject, options);
+  const minSize = 'minSize' in options ? options.minSize : 49;
+  const maxSize = 'maxSize' in options ? options.maxSize : 10 * 1024 + 1;
+  if(imageResponse && imageResponse.responseURLString &&
+    (imageResponse.size === -1 ||
+    (imageResponse.size > minSize && imageResponse.size < maxSize))) {
+
+    // Create or update entries for input, redirect, origin
+    if(conn) {
+      await favicon.putEntries(conn, imageResponse.responseURLString,
+        Array.from(urlSet));
+    }
+
+    if(verbose) {
+      console.debug('Found domain root favicon', urlObject.href,
+        imageResponse.responseURLString);
+    }
+
+    return imageResponse.responseURLString;
+  }
+
+  if(conn) {
+    // TODO: why not use urlSet instead of the individual entries here???
+    // Also, doing that would maybe allow me to write the above sections as
+    // helpers and not keep these variables around in function scope
+    await favicon.cleanupCacheOnFailedLookup(conn, entry, redirectEntry,
+      originEntry, verbose);
+  }
+};
+
+favicon.cleanupCacheOnFailedLookup = async function(conn, entry, redirectEntry,
+  originEntry, verbose) {
+  const urlStrings = [];
+  if(entry) {
+    urlStrings.push(entry.pageURLString);
+  }
+  if(redirectEntry) {
+    urlStrings.push(redirectEntry.pageURLString);
+  }
+  if(originEntry) {
+    urlStrings.push(originEntry.pageURLString);
+  }
+
+  if(verbose && urlStrings.length) {
+    console.log('Cleaning up cache on failed lookup, removing urls',
+      urlStrings);
+  }
+
+  await favicon.removeEntriesWithURLs(conn, urlStrings);
+};
+
+favicon.fetchDocumentSilently = async function(urlObject, options) {
   try {
-    const response = await favicon.fetchImageHead(rootImageURL, options);
-    imageSize = response.imageSize;
-    imageResponseURLString = response.imageResponseURLString;
+    return await favicon.fetchDocument(urlObject.href, options);
+  } catch(error) {
+    if(options.verbose) {
+      console.warn(error, urlObject.href);
+    }
+  }
+}
+
+favicon.fetchRootIconSilently = async function(urlObject, options) {
+  const rootImageURL = urlObject.origin + '/favicon.ico';
+  try {
+    return await favicon.fetchImageHead(rootImageURL, options);
+  } catch(error) {
+    if(options.verbose) {
+      console.warn(error);
+    }
+  }
+};
+
+favicon.parseHTMLResponse = async function(response, verbose) {
+  let doc;
+  try {
+    const text = await response.text();
+    return favicon.parseHTML(text);
   } catch(error) {
     if(verbose) {
       console.warn(error);
     }
   }
-
-  const minSize = 'minSize' in options ? options.minSize : 49;
-  const maxSize = 'maxSize' in options ? options.maxSize : 10 * 1024 + 1;
-
-  if(imageResponseURLString && (imageSize === -1 ||
-    (imageSize > minSize && imageSize < maxSize))) {
-    await favicon.putEntries(conn, imageResponseURLString, uniqueURLStrings);
-    return imageResponseURLString;
-  }
-
-  // Remove entries we know that exist but are expired
-  const expiredURLs = [];
-  if(entry) {
-    expiredURLs.push(entry.pageURLString);
-  }
-
-  if(redirectEntry) {
-    expiredURLs.push(redirectEntry.pageURLString);
-  }
-
-  if(originEntry) {
-    expiredURLs.push(originEntry.pageURLString);
-  }
-
-  await favicon.removeEntriesWithURLs(conn, expiredURLs);
-};
+}
 
 favicon.install = async function(options) {
   let conn;
@@ -239,11 +323,21 @@ favicon.isEntryExpired = function(entry, currentDate, maxAgeMillis) {
   return ageMillis > maxAgeMillis;
 };
 
-favicon.findEntry = function(conn, urlString) {
+favicon.clearCache = function(conn) {
+  return new Promise((resolve, reject) => {
+    const tx = conn.transaction('favicon-cache', 'readwrite');
+    const store = tx.objectStore('favicon-cache');
+    const request = store.clear();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+};
+
+favicon.findEntry = function(conn, urlObject) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
-    const request = store.get(urlString);
+    const request = store.get(urlObject.href);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -414,21 +508,26 @@ favicon.fetchWithTimeout = function(url, timeout) {
 // A timeout rejection results in this throwing an uncaught error
 // Timeout is optional
 favicon.fetch = async function(urlString, options, timeoutMillis) {
+
+  if(typeof urlString !== 'string') {
+    throw new TypeError('Invalid parameter urlString', urlString);
+  }
+
+  const fetchPromise = fetch(urlString, options);
   let response;
   if(timeoutMillis) {
     const promises = [
-      fetch(urlString, options),
+      fetchPromise,
       favicon.fetchWithTimeout(urlString, timeoutMillis)
     ];
     response = await Promise.race(promises);
   } else {
-    response = await fetch(urlString, options);
+    response = await fetchPromise;
   }
 
   if(!response.ok) {
     throw new Error(`${response.status} ${response.statusText} ${urlString}`);
   }
-
   return response;
 };
 
@@ -452,7 +551,9 @@ favicon.fetchDocument = async function(urlString, options) {
   fetchOptions.mode = 'cors';
   fetchOptions.cache = 'default';
   fetchOptions.redirect = 'follow';
+  //no-referrer
   fetchOptions.referrer = 'no-referrer';
+  fetchOptions.referrerPolicy = 'no-referrer';
 
   const response = await favicon.fetch(urlString, fetchOptions, timeoutMillis);
   const httpStatusNoContent = 204;
@@ -461,14 +562,10 @@ favicon.fetchDocument = async function(urlString, options) {
   }
 
   favicon.assertValidHTMLMimeType(response, urlString);
-
-  // TODO: defer text parsing till later in calling context
-  const text = await response.text();
-  const doc = favicon.parseHTML(text);
-
-  // TODO: name properties better
   const outputResponse = {};
-  outputResponse.doc = doc;
+  outputResponse.text = async function() {
+    return await response.text();
+  };
   outputResponse.responseURLString = response.url;
   outputResponse.redirected = favicon.detectRedirect(urlString, response.url);
   return outputResponse;
@@ -486,31 +583,31 @@ favicon.detectRedirect = function(requestURLString, responseURLString) {
 };
 
 favicon.parseHTML = function(htmlString) {
+
   const parser = new DOMParser();
-  const document = parser.parseFromString(text, 'text/html');
+  const doc = parser.parseFromString(htmlString, 'text/html');
 
-  const rootName = document.documentElement.localName.toLowerCase();
+  const parserErrors = doc.getElementsByTagName('parsererror');
+  if(parserErrors && parserErrors.length) {
+    throw new Error('Embedded html parser error text: ' +
+      parserErrors[0].textContent);
+  }
+
+  const rootName = doc.documentElement.localName.toLowerCase();
   if(rootName !== 'html') {
-    throw new Error(`Invalid document element ${rootName}`);
+    throw new Error(`Document element is not <html>: ${rootName}`);
   }
 
-  const parserErrorElement = document.getElementsByTagName('parsererror');
-  if(parserErrorElement) {
-    throw new Error(parserErrorElement.textContent);
-  }
-
-  return document;
+  return doc;
 };
 
 // Sends a HEAD request for the given image.
 // @param urlString {String}
 // @returns a simple object with props imageSize and imageResponseURLString
 favicon.fetchImageHead = async function(urlString, options) {
-
   const timeoutMillis = 'fetchImageTimeoutMillis' in options ?
-    options.fetchImageTimeoutMillis : 100;
-
-  const headers = {'accept': 'image/*'};
+    options.fetchImageTimeoutMillis : 200;
+  const headers = {'Accept': 'image/*'};
   const fetchOptions = {};
   fetchOptions.credentials = 'omit';
   fetchOptions.method = 'HEAD';
@@ -519,22 +616,27 @@ favicon.fetchImageHead = async function(urlString, options) {
   fetchOptions.cache = 'default';
   fetchOptions.redirect = 'follow';
   fetchOptions.referrer = 'no-referrer';
-
   const response = await favicon.fetch(urlString, fetchOptions, timeoutMillis);
   favicon.assertValidImageMimeType(response);
+  const outputResponse = {};
+  outputResponse.size = favicon.getContentLength(response, options.verbose);
+  outputResponse.responseURLString = response.url;
+  return outputResponse;
+};
 
-  // TODO: this should be a helper
-  const lenHeader = response.headers.get('Content-Length');
-  let lenInt = -1;
-  if(lenHeader) {
+favicon.getContentLength = function(response, verbose) {
+  const contentLengthString = response.headers.get('Content-Length');
+  if(contentLengthString) {
+    const radix = 10;
     try {
-      lenInt = parseInt(lenHeader, 10);
+      return parseInt(contentLengthString, radix);
     } catch(error) {
+      if(verbose) {
+        console.warn(error);
+      }
     }
   }
-
-  // TODO: rename to size and responseURLString`
-  return {'imageSize:': lenInt, 'imageResponseURLString': response.url};
+  return -1;
 };
 
 favicon.assertValidImageMimeType = function(response) {

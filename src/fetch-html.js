@@ -13,7 +13,8 @@ async function fetchHTML(urlString, timeoutMillis) {
     'mode': 'cors',
     'cache': 'default',
     'redirect': 'follow',
-    'referrer': 'no-referrer'
+    'referrer': 'no-referrer',
+    'referrerPolicy': 'no-referrer'
   };
 
   const fetchPromise = fetch(urlString, options);
