@@ -66,7 +66,7 @@ async function markSlideRead(slideElement) {
   let conn;
 
   try {
-    conn = await dbConnect();
+    conn = await openReaderDb();
     await markEntryRead(conn, entryIdInt);
     slideElement.setAttribute('read', '');
   } catch(error) {
@@ -122,7 +122,7 @@ async function appendSlides() {
   let conn;
   let entryArray = [];
   try {
-    conn = await dbConnect();
+    conn = await openReaderDb();
     entryArray = await getUnarchivedUnreadEntries(conn, offset, limit);
   } catch(error) {
     console.error(error);

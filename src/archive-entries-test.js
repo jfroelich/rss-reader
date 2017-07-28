@@ -6,10 +6,11 @@ async function testArchiveEntries() {
   const testDbName = 'test-archive-entries';
   const testDbVersion = 1;
   let isClosed = false;
-  let conn;
+  let conn, connTimeout;
 
   try {
-    conn = await dbConnect(testDbName, testDbVersion);
+    conn = await openReaderDb(testDbName, testDbVersion, connTimeout);
+    // TODO: what is undefined referring to? what is true referring to?
     const numEntriesModified = await archiveEntries(conn, undefined, true);
     console.log('Num entries modified:', numEntriesModified);
     conn.close();

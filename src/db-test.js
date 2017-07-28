@@ -5,12 +5,13 @@ async function testDb() {
 
   const dbName = 'test-feed-db';
   const dbVersion = 1;
+  let connTimeoutMillis;
   let isClosed = false;
 
   let conn;
   try {
     console.log('Connecting to database', dbName);
-    conn = await dbConnect(dbName, dbVersion);
+    conn = await openReaderDb(dbName, dbVersion, connTimeoutMillis);
     console.log('Closing connection to', dbName);
     conn.close();
     isClosed = true;

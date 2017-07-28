@@ -1,5 +1,12 @@
 'use strict';
 
+// TODO: callers should not need to await this. conn.close in calling context
+// implicitly waits for outstanding requests to complete so long as those
+// requests were issued while conn was active. Update all call sites to not
+// await this. Make a note at each call site to remember this, because this is
+// precisely what I keep forgetting. It is ok to call conn.close even if
+// requests are outstanding. All it does is enqueue a request to close that
+// starts once existing requests settle.
 async function updateBadgeText(conn, verbose) {
   let count = 0;
   let text = '?';
@@ -63,21 +70,21 @@ function findTabsByURL(url) {
 // chrome://flags/#enable-native-notifications
 function showNotification(titleString, messageString, iconURLString) {
   if(typeof Notification === 'undefined') {
-    console.warn(
+    console.log(
       'Suppressed notification because Notification API not supported:',
       titleString);
     return;
   }
 
   if(!('SHOW_NOTIFICATIONS' in localStorage)) {
-    console.warn(
+    console.log(
       'Suppressed notification because notifications disabled in settings:',
       titleString);
     return;
   }
 
   if(Notification.permission !== 'granted') {
-    console.warn(
+    console.log(
       'Suppressed notification because notification permission not granted:',
       titleString);
   }

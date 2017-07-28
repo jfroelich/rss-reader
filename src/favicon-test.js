@@ -8,21 +8,30 @@ TODO:
 delete the test db at the end of the test. openFaviconDb accepts an options
 object where I can define name/version, and I can custom code a simple delete
 database function
-* Implement testing code that actually runs tests instead of just lets me
-easily run from the command line
+* actually run tests instead of command line
+* test offline
+* test a non-existent host
+* test a known host with origin /favicon.ico
+* test a known host with <link> favicon
+* test a non-expired cached input url
+* test a non-expired cached redirect url
+* test a non-expired cached origin url
+* same as above 3 but expired
+* test against icon with byte size out of bounds
+* test cacheless versus caching?
+* test compact
 */
-
 
 async function testLookup(urlString, isCacheless) {
   const url = new URL(urlString);
   let conn, name, version;
   let maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
-    minImageByteSize, maxImageByteSize;
+    minImageByteSize, maxImageByteSize, connectTimeoutMillis;
   const verbose = true;
 
   try {
     if(!isCacheless) {
-      conn = await openFaviconDb(name, version, verbose);
+      conn = await openFaviconDb(name, version, connectTimeoutMillis, verbose);
     }
     const iconURLString = await lookupFavicon(conn, url, maxAgeMillis,
       fetchHTMLTimeoutMillis, fetchImageTimeoutMillis, minImageByteSize,
@@ -37,9 +46,9 @@ async function testLookup(urlString, isCacheless) {
 
 async function testClear() {
   const verbose = true;
-  let conn, name, version;
+  let conn, name, version, timeoutMillis;
   try {
-    conn = await openFaviconDb(name, version, verbose);
+    conn = await openFaviconDb(name, version, timeoutMillis, verbose);
     await clearFaviconDb(conn);
   } catch(error) {
     console.warn(error);

@@ -8,8 +8,10 @@ async function removeOrphanedEntries(options) {
   options = options || {};
   let conn;
   let ids;
+  let connTimeoutMillis;
   try {
-    conn = await dbConnect(options.dbName, options.dbVersion);
+    conn = await openReaderDb(options.dbName, options.dbVersion,
+      connTimeoutMillis);
     const feedIds = await loadAllFeedIdsFromDb(conn);
     const entries = await loadAllEntriesFromDb(conn);
     const orphans = findOrphans(entries, feedIds);

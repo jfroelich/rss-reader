@@ -227,10 +227,11 @@ async function startSubscription(urlObject) {
   let readerConn;
   let iconConn;
   const verbose = true; // temp, for now
-  let iconDbName, iconDbVersion;
+  let iconDbName, iconDbVersion, connectTimeoutMillis;
 
-  const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion, verbose);
-  const readerConnPromise = dbConnect();
+  const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion,
+    connectTimeoutMillis, verbose);
+  const readerConnPromise = openReaderDb();
   const connectionPromises = [readerConnPromise, iconConnPromise];
   const connectionPromise = Promise.all(connectionPromises);
 
@@ -300,7 +301,7 @@ async function feedListItemOnClick(event) {
   const loadFeedFromDb = async function(feedId) {
     let conn;
     try {
-      conn = await dbConnect();
+      conn = await openReaderDb();
       return await findFeedById(conn, feedIdNumber);
     } catch(error) {
       console.warn(error);
@@ -494,7 +495,7 @@ async function subscribeFormOnSubmit(event) {
   resultsListElement.appendChild(itemElement);
 
   const fs = new FaviconService();
-  await fs.dbConnect();
+  await fs.openReaderDb();
   for(let result of entryArray) {
     if(!result.link) {
       continue;
@@ -615,7 +616,7 @@ async function unsubscribeButtonOnClick(event) {
 
   let readerConn;
   try {
-    readerConn = await dbConnect();
+    readerConn = await openReaderDb();
     const numEntriesDeleted = await unsubscribe(readerConn, feedIdNumber);
   } catch(error) {
     console.warn('Unsubscribe error:', error);
@@ -675,7 +676,7 @@ async function exportOPMLButtonOnClick(event) {
   let conn;
   let feeds;
   try {
-    conn = await dbConnect();
+    conn = await openReaderDb();
     feeds = await loadAllFeedsFromDb(conn);
   } catch(error) {
     console.warn(error);
@@ -732,7 +733,7 @@ async function initSubscriptionsSection() {
   let conn;
   let feeds;
   try {
-    conn = await dbConnect();
+    conn = await openReaderDb();
     feeds = await loadAllFeedsFromDb(conn);
   } catch(error) {
     console.warn(error);

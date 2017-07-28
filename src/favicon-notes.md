@@ -64,11 +64,15 @@ Side note on disabling OPTIONS: https://stackoverflow.com/questions/29954037
 
 # General todo items
 
+* Spend more time thinking about the similarity of findLookupURLInCache,
+findRedirectInCache, and findOriginInCache. The similarity really suggests
+I should be using a single function.
+* Implement findUnexpiredEntry, then look at where I call findEntry and
+replace it
 * Revisit whether favicons are now supported from within a chrome
 extension. At least document very clearly why this library has to be used
 in the alternative. It may no longer need to exist. This time around, take
 better notes as to why I can or cannot use chrome internals.
-* lookup is simply too large and needs to be broken up into smaller functions
 * when checking image mime type, consider being more restrictive about allowed
 content type: image/vnd.microsoft.icon, image/png, image/x-icon,
 image/webp
@@ -85,16 +89,27 @@ the origin, but it seems like either the origin url is then not properly
 searched for in the cache, or is not properly added to the cache, or is somehow
 being inadvertently removed from the cache. Side note I may have resolved the
 error after recent changes.
-* Look for more opportunities for concurrency. Maybe cache lookups can happen
-concurrently with fetches, even if extra processing is done.
-* Maybe there is no need to cleanup at the end of the lookup if that is done
-by compact. Maybe the amortization cost is not worth it, because lookup is
-very time sensitive but compact is not at all, and because I must await the
-cleanup because it relies on the connection staying open. Although technically
-a connection can be declared as closed and it implicitly waits until pending
-operations eventually complete. It is possibly more of a question of how long
-the unwanted data should stick around in the database in between compactions,
-and the effect of junk entries on the speed of other lookups during that time.
+* Look for more opportunities for concurrency. Cache lookups can happen
+concurrently with fetches?
+* Spend some more time thinking about abstraction. I think I want to do more
+to abstract away the use of indexedDB. Like, maybe lookupFavicon should accept
+dbName/dbVersion params, and a dbConn param, and if dbConn not set, then
+connect on demand, or something to this effect. That conflicts with logic of
+cacheless lookup at the moment. There are my own use cases, one where i do not
+reuse the open conn across calls and one where i do. but if this library were
+ever used in other contexts, maybe there is no need for it. Also, maybe it is
+worth using an option like FaviconCache that abstracts away indexedDB itself.
+Not because I want to allow for swapping in other cache mechanisms. But because
+I don't want the caller to be concerned with how indexedDB works. But maybe
+this is over abstraction, and exposing indexedDB is a good thing?
+* Validate icons found from links in a similar manner to how the origin root
+icon is validated (using head, size, etc)
+* what if i stored 'expiresDate' property in entry instead of dateUpdated
+property? Keep in mind servers respond sometimes with an expires header. This
+seems better and probably more in line with other systems, the db would be
+more like other cache implementations this way, i am not making up my own
+custom expires date and instead trying to use whatever the remote server
+suggests, so it is more respectful
 
 # TODO: Better document fetching
 

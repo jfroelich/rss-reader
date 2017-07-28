@@ -8,7 +8,7 @@ async function commandArchiveEntries() {
   const options = {};
   options.verbose = true;
   try {
-    conn = await dbConnect();
+    conn = await openReaderDb();
     const numArchived = await archiveEntries(options);
   } finally {
     if(conn) {
@@ -35,7 +35,7 @@ async function archiveEntries(options) {
 
   let conn;
   try {
-    conn = await dbConnect();
+    conn = await openReaderDb();
     const entries = await getUnarchivedReadEntries(conn);
     const archivableEntries = selectArchivableEntries(entries, maxAgeInMillis);
     const compacts = compactEntries(archivableEntries, verbose);

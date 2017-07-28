@@ -7,17 +7,17 @@
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.
 async function refreshFeedIcons(verbose) {
-
   if(verbose) {
     console.log('Refreshing feed favicons...');
   }
 
   let numModified = 0;
   let readerConn, iconConn;
-  let iconDbName, iconDbVersion;
+  let iconDbName, iconDbVersion, connectTimeoutMillis;
 
-  const readerConnPromise = dbConnect();
-  const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion, verbose);
+  const readerConnPromise = openReaderDb();
+  const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion,
+    connectTimeoutMillis, verbose);
   const promises = [readerConnPromise, iconConnPromise];
   const connectionPromise = Promise.all(promises);
 

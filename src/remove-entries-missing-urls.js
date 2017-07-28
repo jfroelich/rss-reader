@@ -10,7 +10,7 @@ async function removeEntriesMissingURLs() {
   let numRemoved = 0;
   let conn;
   try {
-    conn = await dbConnect();
+    conn = await openReaderDb();
     const entries = await loadAllEntriesFromDb(conn);
     const invalids = findInvalidEntries(entries);
     const entryIds = mapEntriesToIds(invalids);

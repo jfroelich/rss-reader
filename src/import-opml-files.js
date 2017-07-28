@@ -11,7 +11,7 @@
 { // Begin file block scope
 
 // Import one or more files into the app
-// @param files {Iterable<File>} - e.g. FileList
+// @param files {Iterable<File>} a FileList of files to import
 async function importOPMLFiles(files, verbose) {
 
   if(verbose) {
@@ -21,14 +21,18 @@ async function importOPMLFiles(files, verbose) {
   let readerConn;
   let iconConn;
   let importResolutions;
-  let iconDbName, iconDbVersion;
 
-  // No catch - allow exceptions to bubbles
-  // TODO: open connections concurrently, use Promise.all
+  const readerConnPromise = openReaderDb();
+  let iconDbName, iconDbVersion, connectTimeoutMillis;
+  const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion,
+    connectTimeoutMillis, verbose);
+  const connectionPromises = [readerConnPromise, iconConnPromise];
+  const connectionPromise = Promise.all(connectionPromises);
 
   try {
-    readerConn = await dbConnect();
-    iconConn = await openFaviconDb(iconDbName, iconDbVersion, verbose);
+    const connections = await connectionPromise;
+    readerConn = connections[0];
+    iconConn = connections[1];
     importResolutions = await importFilesInternal(readerConn, iconConn, files,
       verbose);
   } finally {

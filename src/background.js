@@ -8,7 +8,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   let conn;
   try {
     // Create or upgrade the database by connecting to it
-    conn = await dbConnect();
+    conn = await openReaderDb();
     // Init app badge text
     await updateBadgeText(conn, verbose);
   } catch(error) {
