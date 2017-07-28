@@ -226,11 +226,18 @@ async function startSubscription(urlObject) {
   let subcribedfeed;
   let readerConn;
   let iconConn;
+  const verbose = true; // temp, for now
+  let iconDbName, iconDbVersion;
+
+  const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion, verbose);
+  const readerConnPromise = dbConnect();
+  const connectionPromises = [readerConnPromise, iconConnPromise];
+  const connectionPromise = Promise.all(connectionPromises);
+
   try {
-    const promises = [dbConnect(), openFaviconDb()];
-    const conns = await Promise.all(promises);
-    readerConn = conns[0];
-    iconConn = conns[1];
+    const connectionResolutions = await connectionPromise;
+    readerConn = connectionResolutions[0];
+    iconConn = connectionResolutions[1];
     subcribedfeed = await subscribe(readerConn, iconConn, feed, options);
   } catch(error) {
     console.warn(error);

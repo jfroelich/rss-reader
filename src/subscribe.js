@@ -60,20 +60,23 @@ this.subscribe = subscribe;
 
 // Looks up and set a feed's favicon
 async function setIcon(iconConn, feed, verbose) {
+  let maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
+    minImageByteSize, maxImageByteSize, iconURLString;
   const lookupURLObject = createFeedIconLookupURL(feed);
-  let didSetIcon = false;
+  const lookupPromise = lookupFavicon(iconConn, lookupURLObject, maxAgeMillis,
+    fetchHTMLTimeoutMillis, fetchImageTimeoutMillis, minImageByteSize,
+    maxImageByteSize, verbose);
   try {
-    const iconURLString = await lookupFavicon(iconConn, lookupURLObject);
-    if(iconURLString) {
-      feed.faviconURLString = iconURLString;
-      didSetIcon = true;
-    }
+    iconURLString = await lookupPromise;
   } catch(error) {
-    if(verbose) {
-      console.warn(error);
-    }
+    console.warn(error); // always warn
   }
-  return didSetIcon;
+
+  if(iconURLString) {
+    feed.faviconURLString = iconURLString;
+    return true;
+  }
+  return false;
 }
 
 // Returns true if a feed exists in the database with the given url

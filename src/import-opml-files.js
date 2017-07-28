@@ -21,11 +21,14 @@ async function importOPMLFiles(files, verbose) {
   let readerConn;
   let iconConn;
   let importResolutions;
+  let iconDbName, iconDbVersion;
 
   // No catch - allow exceptions to bubbles
+  // TODO: open connections concurrently, use Promise.all
+
   try {
     readerConn = await dbConnect();
-    iconConn = await openFaviconDb();
+    iconConn = await openFaviconDb(iconDbName, iconDbVersion, verbose);
     importResolutions = await importFilesInternal(readerConn, iconConn, files,
       verbose);
   } finally {

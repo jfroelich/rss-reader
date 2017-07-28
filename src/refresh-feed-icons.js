@@ -14,11 +14,17 @@ async function refreshFeedIcons(verbose) {
 
   let numModified = 0;
   let readerConn, iconConn;
-  const promises = [dbConnect(), openFaviconDb()];
+  let iconDbName, iconDbVersion;
+
+  const readerConnPromise = dbConnect();
+  const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion, verbose);
+  const promises = [readerConnPromise, iconConnPromise];
+  const connectionPromise = Promise.all(promises);
+
   try {
-    const conns = await Promise.all(promises);
-    readerConn = conns[0];
-    iconConn = conns[1];
+    const connections = await connectionPromise;
+    readerConn = connections[0];
+    iconConn = connections[1];
     const feeds = await loadAllFeedsFromDb(readerConn);
     const resolutions = await processFeeds(feeds, readerConn, iconConn);
     numModified = getNumModified(resolutions);
@@ -72,14 +78,19 @@ function loadAllFeedsFromDb(conn) {
 // Returns true if the feed was updated
 // TODO: separate into two functions, one that looks up, one that
 // does the update
-async function lookupFeedIconAndUpdateFeed(feed, readerConn,
-  iconConn) {
+async function lookupFeedIconAndUpdateFeed(feed, readerConn, iconConn) {
   const lookupURLObject = createFeedIconLookupURL(feed);
   if(!lookupURLObject) {
     return false;
   }
 
-  const iconURLString = await lookupFavicon(iconConn, lookupURLObject);
+  let maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
+    minImageByteSize, maxImageByteSize;
+  const verbose = false;// TODO: get from param
+
+  const iconURLString = await lookupFavicon(iconConn, lookupURLObject,
+    maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
+    minImageByteSize, maxImageByteSize, verbose);
   if(!iconURLString) {
     return false;
   }

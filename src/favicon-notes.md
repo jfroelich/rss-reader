@@ -43,7 +43,7 @@ connections.
 There may be an issue with some platforms not allowing for multiple, concurrent
 connections. I think on iOS. But I am not too concerned.
 
-# About "Refused to load the script" errors that appear in the console during the lookup function.
+# About "Refused to load the script" errors
 
 Occasionally I see the following messages appear in the console: Refused to
 load the script 'url' because it violates the following Content Security Policy
@@ -59,22 +59,17 @@ section 3.3. of https://w3c.github.io/preload/, and also https://tools.ietf.org/
 I do not currently know how to signal no interest in push. For now I must deal
 with wasted resources and strange console messages. I asked stackoverflow: https://stackoverflow.com/questions/45352300
 
-# General todo items
+Side note on disabling OPTIONS: https://stackoverflow.com/questions/29954037
+- maybe my setting of Accept is causing an issue?
 
-* revert to using file block scope and only exporting the 3 public functions,
-I think I just like the style more.
+# General todo items
 
 * Revisit whether favicons are now supported from within a chrome
 extension. At least document very clearly why this library has to be used
 in the alternative. It may no longer need to exist. This time around, take
 better notes as to why I can or cannot use chrome internals.
 * lookup is simply too large and needs to be broken up into smaller functions
-* Add more logging statements (checking verbose) in lookupFavicon
-* When testing, use a test db instead of the real db, and make sure to
-delete the test db at the end of the test. openFaviconDb accepts an options
-object where I can define name/version, and I can custom code a simple delete
-database function
-* when checking image mime type, maybe be more restrictive about allowed
+* when checking image mime type, consider being more restrictive about allowed
 content type: image/vnd.microsoft.icon, image/png, image/x-icon,
 image/webp
 * Should findIconInDocument use querySelectorAll?
@@ -88,9 +83,18 @@ the lookup function should find it, which means no fetching should occur at
 all. Well, it is happening for specific pages on github, which then default to
 the origin, but it seems like either the origin url is then not properly
 searched for in the cache, or is not properly added to the cache, or is somehow
-being inadvertently removed from the cache.
-* Implement testing code that actually runs tests instead of just lets me
-easily run from the command line
+being inadvertently removed from the cache. Side note I may have resolved the
+error after recent changes.
+* Look for more opportunities for concurrency. Maybe cache lookups can happen
+concurrently with fetches, even if extra processing is done.
+* Maybe there is no need to cleanup at the end of the lookup if that is done
+by compact. Maybe the amortization cost is not worth it, because lookup is
+very time sensitive but compact is not at all, and because I must await the
+cleanup because it relies on the connection staying open. Although technically
+a connection can be declared as closed and it implicitly waits until pending
+operations eventually complete. It is possibly more of a question of how long
+the unwanted data should stick around in the database in between compactions,
+and the effect of junk entries on the speed of other lookups during that time.
 
 # TODO: Better document fetching
 

@@ -9,17 +9,46 @@ const defaultMaxAgeMillis = 1000 * 60 * 60 * 24 * 30;
 
 // @param conn {IDBDatabase} an open indexedDB connection, if left undefined
 // then database not used (cacheless lookup)
-// @param urlObject {URL} the url to lookup
-// @param options {Object} verbose boolean if true then log some debugging
-// messages, maxAgeMillis if set then amount of time before entries in cache
-// considered expired, defaults to 30 days, fetchHTMLTimeoutMillis is timeout
-// when fetching html, fetchImageTimeoutMillis is timeout when fetching image
+// @param urlObject {URL} the url of a webpage to lookup and find the icon
+// @param maxAgeMillis {Number} optional, the amount of time before entries in
+// the cache are considered expired, defaults to 30 days
+// @param fetchHTMLTimeoutMillis {Number} optional, the amount of timed allowed
+// to elapse before considering a fetch for a document to have failed, defaults
+// to 1000 milliseconds.
+// @param fetchImageTimeoutMillis {Number} optional, the amount of time allowed
+// to elapse before considering a fetch for an image to have failed, defaults to
+// 200 milliseconds.
+// @param minImageByteSize {Number} optional, if the remote server reports the
+// image as less than or equal to this size then the candidate is rejected,
+// defaults to 50 bytes.
+// @param maxImageByteSize {Number} optional, if the remote server reports the
+// image as greater than or equal to this size then the candidate is rejected,
+// defaults to 10240 bytes.
+// @param verbose {Boolean} if true then log various messages
 // @returns {String} the favicon url if found, otherwise undefined
-async function lookupFavicon(conn, urlObject, options) {
-  options = options || {};
-  const verbose = 'verbose' in options ? options.verbose : false;
-  const maxAgeMillis = 'maxAgeMillis' in options ? options.maxAgeMillis :
-    defaultMaxAgeMillis;
+async function lookupFavicon(conn, urlObject, maxAgeMillis,
+  fetchHTMLTimeoutMillis, fetchImageTimeoutMillis, minImageByteSize,
+  maxImageByteSize, verbose) {
+
+  if(typeof maxAgeMillis === 'undefined') {
+    maxAgeMillis = defaultMaxAgeMillis;
+  }
+
+  if(typeof fetchHTMLTimeoutMillis === 'undefined') {
+    fetchHTMLTimeoutMillis = 1000;
+  }
+
+  if(typeof fetchImageTimeoutMillis === 'undefined') {
+    fetchImageTimeoutMillis = 200;
+  }
+
+  if(typeof minImageByteSize === 'undefined') {
+    minImageByteSize = 50;
+  }
+
+  if(typeof maxImageByteSize === 'undefined') {
+    maxImageByteSize = 10240;
+  }
 
   if(verbose) {
     console.log('LOOKUP', urlObject.href);
@@ -54,9 +83,12 @@ async function lookupFavicon(conn, urlObject, options) {
   // Add the input url to the distinct urls set
   urlSet.add(urlObject.href);
 
-  const response = await fetchDocumentSilently(urlObject, options);
+  const response = await fetchDocumentSilently(urlObject,
+    fetchHTMLTimeoutMillis, verbose);
 
-  // TODO: maybe this is best deferred until compact
+  // TODO: maybe this is best deferred until compact? But now we know the
+  // entry is invalid, and this info is not available to compact, because
+  // compact doesn't guarantee the remote url is reachable. Unsure.
   if(conn && !response && entry) {
     if(verbose) {
       console.debug(
@@ -166,15 +198,14 @@ async function lookupFavicon(conn, urlObject, options) {
   }
 
   // Input url, redirect url, and origin all failed. Check domain root.
-  const fetchImageTimeoutMillis = 'fetchImageTimeoutMillis' in options ?
-    options.fetchImageTimeoutMillis : 200;
   const imageResponse = await fetchRootIconSilently(urlObject,
     fetchImageTimeoutMillis, verbose);
-  const minSize = 'minSize' in options ? options.minSize : 49;
-  const maxSize = 'maxSize' in options ? options.maxSize : 10 * 1024 + 1;
+
+  // TODO: this condition got kind of big, use a helper function?
   if(imageResponse && imageResponse.responseURLString &&
     (imageResponse.size === -1 ||
-    (imageResponse.size > minSize && imageResponse.size < maxSize))) {
+    (imageResponse.size >= minImageByteSize &&
+      imageResponse.size <= maxImageByteSize))) {
 
     // Create or update entries for input, redirect, origin
     if(conn) {
@@ -221,11 +252,15 @@ async function cleanupDbOnFailedLookup(conn, entry, redirectEntry,
   await removeEntriesWithURLs(conn, urlStrings);
 }
 
-async function fetchDocumentSilently(urlObject, options) {
+async function fetchDocumentSilently(urlObject, fetchHTMLTimeoutMillis,
+  verbose) {
+
   try {
-    return await fetchDocument(urlObject.href, options);
+    return await fetchDocument(urlObject.href, fetchHTMLTimeoutMillis);
   } catch(error) {
-    if(options.verbose) {
+    // This type of error is routine, so reporting it should be conditioned
+    // on verbose. Not all fetches are expected to work.
+    if(verbose) {
       console.warn(error, urlObject.href);
     }
   }
@@ -236,6 +271,8 @@ async function fetchRootIconSilently(urlObject, timeoutMillis, verbose) {
   try {
     return await sendImageHeadRequest(rootImageURL, timeoutMillis, verbose);
   } catch(error) {
+    // Routine error, because the image may not exist, so only print the error
+    // if verbose
     if(verbose) {
       console.warn(error);
     }
@@ -248,16 +285,18 @@ async function parseHTMLResponse(response, verbose) {
     const text = await response.text();
     return parseHTML(text);
   } catch(error) {
+    // Parsing errors are routine given the dirtiness of data, so only
+    // print the error if verbose
     if(verbose) {
       console.warn(error);
     }
   }
 }
 
-async function setupFaviconDb(options) {
+async function setupFaviconDb(name, version, verbose) {
   let conn;
   try {
-    conn = await openFaviconDb(options);
+    conn = await openFaviconDb(name, version, verbose);
   } finally {
     if(conn) {
       conn.close();
@@ -275,24 +314,23 @@ async function putEntries(conn, iconURLString, pageURLStrings) {
   await Promise.all(promises);
 }
 
-function openFaviconDb(options) {
+function openFaviconDb(name, version, verbose) {
   return new Promise((resolve, reject) => {
-    const defaultName = 'favicon-cache';
-    const defaultVersion = 2;
-    const defaultVerbose = false;
-    options = options || {};
-    const name = 'name' in options ? options.name : defaultName;
-    const version = 'version' in options ? options.version : defaultVersion;
-    const verbose = 'verbose' in options ? options.verbose : defaultVerbose;
+    if(typeof name === 'undefined') {
+      name = 'favicon-cache';
+    }
+    if(typeof version === 'undefined') {
+      version = 2;
+    }
+
     const request = indexedDB.open(name, version);
     request.onupgradeneeded = onUpgradeNeeded.bind(request, verbose);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-    request.onblocked = () => {
-      if(verbose) {
-        console.warn('Connection blocked');
-      }
-    };
+
+    // Reporting an error in the console when the connection is blocked is
+    // not tied to the verbose parameter.
+    request.onblocked = console.warn;
   });
 }
 
@@ -418,13 +456,15 @@ function removeEntriesWithURLs(conn, urls) {
 }
 
 // Finds all expired entries in the database and removes them
-async function compactFaviconDb(options) {
-  options = options || {};
-  const maxAgeMillis = 'maxAgeMillis' in options ? options.maxAgeMillis :
-    defaultMaxAgeMillis;
+async function compactFaviconDb(name, version, maxAgeMillis, verbose) {
+
+  if(typeof maxAgeMillis === 'undefined') {
+    maxAgeMillis = defaultMaxAgeMillis;
+  }
+
   let conn;
   try {
-    conn = await openFaviconDb(options);
+    conn = await openFaviconDb(name, version, verbose);
     const expiredEntries = await getExpiredEntries(conn, maxAgeMillis);
     const urlStrings = [];
     for(let entry of expiredEntries) {
@@ -501,13 +541,13 @@ function rejectRequestAfterTimeout(url, timeoutMillis) {
 // A timeout will not cancel/abort the fetch, but will ignore it.
 // A timeout rejection results in this throwing an uncaught error
 // Timeout is optional
+// TODO: eventually use the cancelation token method or whatever it is to
+// actually abort the request/response in the case of a timeout
 async function fetchWithTimeout(urlString, options, timeoutMillis) {
   if(typeof urlString !== 'string') {
-    throw new TypeError('Invalid parameter urlString', urlString);
+    throw new TypeError('Parameter urlString is not a defined string: ' +
+      urlString);
   }
-
-  // TODO: eventually use the cancelation token method or whatever it is to
-  // actually abort the request/response in the case of a timeout
 
   const fetchPromise = fetch(urlString, options);
   let response;
@@ -525,10 +565,7 @@ async function fetchWithTimeout(urlString, options, timeoutMillis) {
   return response;
 }
 
-async function fetchDocument(urlString, options) {
-  const timeoutMillis = 'fetchHTMLTimeoutMillis' in options ?
-    options.fetchHTMLTimeoutMillis : 1000;
-
+async function fetchDocument(urlString, timeoutMillis) {
   const headers = {'Accept': 'text/html'};
   const fetchOptions = {};
   fetchOptions.credentials = 'omit';
@@ -539,11 +576,10 @@ async function fetchDocument(urlString, options) {
   fetchOptions.redirect = 'follow';
   fetchOptions.referrer = 'no-referrer';
   fetchOptions.referrerPolicy = 'no-referrer';
-
-  const response = await fetchWithTimeout(urlString, fetchOptions, timeoutMillis);
+  const response = await fetchWithTimeout(urlString, fetchOptions,
+    timeoutMillis);
   assertResponseHasContent(response, urlString);
   assertResponseHasHTMLType(response, urlString);
-
   const outputResponse = {};
   outputResponse.text = async function() {
     return await response.text();
@@ -610,6 +646,9 @@ function getResponseContentLength(response, verbose) {
     try {
       return parseInt(contentLengthString, radix);
     } catch(error) {
+      // Invalid content length is considered routine in the sense of dealing
+      // with unsanitized remote input, so reporting this error is conditional
+      // on the verbose flag.
       if(verbose) {
         console.warn(error);
       }

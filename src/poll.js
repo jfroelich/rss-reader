@@ -25,7 +25,12 @@ async function pollFeeds(options) {
   }
 
   let numEntriesAdded = 0;
-  const connectionPromises = [dbConnect(), openFaviconDb()];
+  let iconDbName, iconDbVersion;
+
+  const readerConnPromise = dbConnect();
+  const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion,
+    options.verbose);
+  const connectionPromises = [readerConnPromise, iconConnPromise];
   let readerConn, iconConn;
 
   try {

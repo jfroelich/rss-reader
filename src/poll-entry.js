@@ -97,7 +97,15 @@ async function prepareRemoteEntry(entry, documentObject, options) {
 async function setEntryIcon(entry, iconConn, fallbackURLString) {
   const lookupURLString = getEntryURLString(entry);
   const lookupURLObject = new URL(lookupURLString);
-  const iconURLString = await lookupFavicon(iconConn, lookupURLObject);
+  let maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
+    minImageByteSize, maxImageByteSize;
+
+  // TODO: get from poll options
+  const verbose = false;
+
+  const iconURLString = await lookupFavicon(iconConn, lookupURLObject,
+    maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
+    minImageByteSize, maxImageByteSize, verbose);
   entry.faviconURLString = iconURLString || fallbackURLString;
 }
 
