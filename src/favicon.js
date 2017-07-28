@@ -282,6 +282,11 @@ async function openFaviconDb(name, version, timeoutMillis, verbose) {
     version = 2;
   }
 
+  // Override the generic default with a longer time
+  if(typeof timeoutMillis === 'undefined') {
+    timeoutMillis = 50;
+  }
+
   // In the case of a connection blocked event, eventually timeout
   const connectPromise = openFaviconDbInternal(name, version, verbose);
   const errorMessage = 'Connecting to indexedDB database ' + name +

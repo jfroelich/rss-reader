@@ -14,7 +14,7 @@ async function openReaderDb(name, version, timeoutMillis) {
   // For app purposes use a custom default timeout over the generic timeout
   // policy in rejectAfterTimeout
   if(typeof timeoutMillis === 'undefined') {
-    timeoutMillis = 10;
+    timeoutMillis = 50;
   }
 
   // Race timeout against connect to avoid hanging indefinitely
