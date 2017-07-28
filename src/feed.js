@@ -37,7 +37,7 @@ function normalizeFeedURLString(urlString) {
   return url.href;
 }
 
-// Creates a url object that can be used as input to favicon.lookup
+// Creates a url object that can be used as input to lookupFavicon
 function createFeedIconLookupURL(feed) {
   // Cannot assume the link is set nor valid
   if(feed.link) {

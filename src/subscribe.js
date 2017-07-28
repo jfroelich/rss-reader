@@ -63,7 +63,7 @@ async function setIcon(iconConn, feed, verbose) {
   const lookupURLObject = createFeedIconLookupURL(feed);
   let didSetIcon = false;
   try {
-    const iconURLString = await favicon.lookup(iconConn, lookupURLObject);
+    const iconURLString = await lookupFavicon(iconConn, lookupURLObject);
     if(iconURLString) {
       feed.faviconURLString = iconURLString;
       didSetIcon = true;

@@ -25,7 +25,7 @@ async function importOPMLFiles(files, verbose) {
   // No catch - allow exceptions to bubbles
   try {
     readerConn = await dbConnect();
-    iconConn = await favicon.connect();
+    iconConn = await openFaviconDb();
     importResolutions = await importFilesInternal(readerConn, iconConn, files,
       verbose);
   } finally {

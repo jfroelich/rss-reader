@@ -2,21 +2,24 @@
 
 'use strict';
 
-const favicon = {};
+{ // Begin file block scope
 
-// 30 days in ms
-favicon.defaultMaxAgeMillis = 1000 * 60 * 60 * 24 * 30;
+// 30 days in ms, used by both lookup and compact
+const defaultMaxAgeMillis = 1000 * 60 * 60 * 24 * 30;
 
 // @param conn {IDBDatabase} an open indexedDB connection, if left undefined
-// then database not used (cacheless)
+// then database not used (cacheless lookup)
 // @param urlObject {URL} the url to lookup
+// @param options {Object} verbose boolean if true then log some debugging
+// messages, maxAgeMillis if set then amount of time before entries in cache
+// considered expired, defaults to 30 days, fetchHTMLTimeoutMillis is timeout
+// when fetching html, fetchImageTimeoutMillis is timeout when fetching image
 // @returns {String} the favicon url if found, otherwise undefined
-favicon.lookup = async function(conn, urlObject, options) {
-
+async function lookupFavicon(conn, urlObject, options) {
   options = options || {};
   const verbose = 'verbose' in options ? options.verbose : false;
   const maxAgeMillis = 'maxAgeMillis' in options ? options.maxAgeMillis :
-    favicon.defaultMaxAgeMillis;
+    defaultMaxAgeMillis;
 
   if(verbose) {
     console.log('LOOKUP', urlObject.href);
@@ -29,8 +32,8 @@ favicon.lookup = async function(conn, urlObject, options) {
   // Lookup the url in the cache
   let entry;
   if(conn) {
-    entry = await favicon.findEntry(conn, urlObject);
-    if(entry && !favicon.isEntryExpired(entry, currentDate, maxAgeMillis)) {
+    entry = await findEntry(conn, urlObject);
+    if(entry && !isEntryExpired(entry, currentDate, maxAgeMillis)) {
       if(verbose) {
         console.log('Found favicon of input url in cache', entry);
       }
@@ -51,9 +54,9 @@ favicon.lookup = async function(conn, urlObject, options) {
   // Add the input url to the distinct urls set
   urlSet.add(urlObject.href);
 
-  const response = await favicon.fetchDocumentSilently(urlObject, options);
+  const response = await fetchDocumentSilently(urlObject, options);
 
-  // When an entry is both expired and also we failed to fetch it, remove it.
+  // TODO: maybe this is best deferred until compact
   if(conn && !response && entry) {
     if(verbose) {
       console.debug(
@@ -61,7 +64,7 @@ favicon.lookup = async function(conn, urlObject, options) {
         urlObject.href);
     }
 
-    await favicon.removeEntry(conn, urlObject.href);
+    await removeEntry(conn, urlObject.href);
   }
 
   let responseURLObject;
@@ -75,12 +78,11 @@ favicon.lookup = async function(conn, urlObject, options) {
     urlSet.add(responseURLObject.href);
 
     if(conn) {
-      redirectEntry = await favicon.findEntry(conn, responseURLObject);
+      redirectEntry = await findEntry(conn, responseURLObject);
     }
 
-    if(redirectEntry && !favicon.isEntryExpired(redirectEntry, currentDate,
+    if(redirectEntry && !isEntryExpired(redirectEntry, currentDate,
       maxAgeMillis)) {
-
       if(verbose) {
         console.debug('Found non-expired redirect in cache', redirectEntry);
       }
@@ -89,8 +91,7 @@ favicon.lookup = async function(conn, urlObject, options) {
       // be expired. But the redirect is not. Update the original so that
       // future lookups are faster.
       if(conn && entry) {
-        await favicon.putEntries(conn, redirectEntry.iconURLString,
-          [urlObject.href]);
+        await putEntries(conn, redirectEntry.iconURLString, [urlObject.href]);
       }
 
       return redirectEntry.iconURLString;
@@ -101,12 +102,12 @@ favicon.lookup = async function(conn, urlObject, options) {
   // redirected url exist in the cache, or they do exist but are expired.
   // Check the response
   if(response) {
-    const responseDoc = await favicon.parseHTMLResponse(response, verbose);
+    const responseDoc = await parseHTMLResponse(response, verbose);
     if(responseDoc) {
       let iconURLObject;
       const baseURLObject = response.redirected ? responseURLObject :
         urlObject;
-      iconURLObject = favicon.findIconInDocument(responseDoc, baseURLObject);
+      iconURLObject = findIconInDocument(responseDoc, baseURLObject);
 
       // If we found an in page icon, update the cache and resolve
       // Do not also modify origin. Origin may have its own favicon.
@@ -117,8 +118,9 @@ favicon.lookup = async function(conn, urlObject, options) {
         }
 
         if(conn) {
-          await favicon.putEntries(conn, iconURLObject.href,
-            Array.from(urlSet));
+          // TODO: do I need to convert to array or can putEntries accept a
+          // set?
+          await putEntries(conn, iconURLObject.href, Array.from(urlSet));
         }
 
         return iconURLObject.href;
@@ -126,23 +128,24 @@ favicon.lookup = async function(conn, urlObject, options) {
     }
   }
 
-  // If the origin is a distinct url, then check the cache for the origin
+  // Check the cache for the origin
   let originEntry;
   if(!urlSet.has(urlObject.origin)) {
     urlSet.add(urlObject.origin);
     const originURLObject = new URL(urlObject.origin);
 
     if(conn) {
-      originEntry = await favicon.findEntry(conn, originURLObject);
+      originEntry = await findEntry(conn, originURLObject);
     }
 
     // If an origin entry exists and is not expired, then update entries for the
     // other urls and resolve
-    if(originEntry && !favicon.isEntryExpired(originEntry, currentDate,
+    if(originEntry && !isEntryExpired(originEntry, currentDate,
       maxAgeMillis)) {
       const iconURLString = originEntry.iconURLString;
 
       if(conn) {
+        // TODO: use a set?
         const pageURLStrings = [];
         if(response && response.redirected) {
           pageURLStrings.push(urlObject.href);
@@ -151,7 +154,7 @@ favicon.lookup = async function(conn, urlObject, options) {
           pageURLStrings.push(iconURLString);
         }
 
-        await favicon.putEntries(conn, urlObject.href, pageURLStrings);
+        await putEntries(conn, urlObject.href, pageURLStrings);
       }
 
       if(verbose) {
@@ -163,7 +166,10 @@ favicon.lookup = async function(conn, urlObject, options) {
   }
 
   // Input url, redirect url, and origin all failed. Check domain root.
-  const imageResponse = await favicon.fetchRootIconSilently(urlObject, options);
+  const fetchImageTimeoutMillis = 'fetchImageTimeoutMillis' in options ?
+    options.fetchImageTimeoutMillis : 200;
+  const imageResponse = await fetchRootIconSilently(urlObject,
+    fetchImageTimeoutMillis, verbose);
   const minSize = 'minSize' in options ? options.minSize : 49;
   const maxSize = 'maxSize' in options ? options.maxSize : 10 * 1024 + 1;
   if(imageResponse && imageResponse.responseURLString &&
@@ -172,7 +178,7 @@ favicon.lookup = async function(conn, urlObject, options) {
 
     // Create or update entries for input, redirect, origin
     if(conn) {
-      await favicon.putEntries(conn, imageResponse.responseURLString,
+      await putEntries(conn, imageResponse.responseURLString,
         Array.from(urlSet));
     }
 
@@ -188,13 +194,14 @@ favicon.lookup = async function(conn, urlObject, options) {
     // TODO: why not use urlSet instead of the individual entries here???
     // Also, doing that would maybe allow me to write the above sections as
     // helpers and not keep these variables around in function scope
-    await favicon.cleanupCacheOnFailedLookup(conn, entry, redirectEntry,
-      originEntry, verbose);
+    await cleanupDbOnFailedLookup(conn, entry, redirectEntry, originEntry,
+      verbose);
   }
-};
+}
 
-favicon.cleanupCacheOnFailedLookup = async function(conn, entry, redirectEntry,
+async function cleanupDbOnFailedLookup(conn, entry, redirectEntry,
   originEntry, verbose) {
+  // TODO: use a set
   const urlStrings = [];
   if(entry) {
     urlStrings.push(entry.pageURLString);
@@ -211,12 +218,12 @@ favicon.cleanupCacheOnFailedLookup = async function(conn, entry, redirectEntry,
       urlStrings);
   }
 
-  await favicon.removeEntriesWithURLs(conn, urlStrings);
-};
+  await removeEntriesWithURLs(conn, urlStrings);
+}
 
-favicon.fetchDocumentSilently = async function(urlObject, options) {
+async function fetchDocumentSilently(urlObject, options) {
   try {
-    return await favicon.fetchDocument(urlObject.href, options);
+    return await fetchDocument(urlObject.href, options);
   } catch(error) {
     if(options.verbose) {
       console.warn(error, urlObject.href);
@@ -224,22 +231,10 @@ favicon.fetchDocumentSilently = async function(urlObject, options) {
   }
 }
 
-favicon.fetchRootIconSilently = async function(urlObject, options) {
+async function fetchRootIconSilently(urlObject, timeoutMillis, verbose) {
   const rootImageURL = urlObject.origin + '/favicon.ico';
   try {
-    return await favicon.fetchImageHead(rootImageURL, options);
-  } catch(error) {
-    if(options.verbose) {
-      console.warn(error);
-    }
-  }
-};
-
-favicon.parseHTMLResponse = async function(response, verbose) {
-  let doc;
-  try {
-    const text = await response.text();
-    return favicon.parseHTML(text);
+    return await sendImageHeadRequest(rootImageURL, timeoutMillis, verbose);
   } catch(error) {
     if(verbose) {
       console.warn(error);
@@ -247,28 +242,40 @@ favicon.parseHTMLResponse = async function(response, verbose) {
   }
 }
 
-favicon.install = async function(options) {
+async function parseHTMLResponse(response, verbose) {
+  let doc;
+  try {
+    const text = await response.text();
+    return parseHTML(text);
+  } catch(error) {
+    if(verbose) {
+      console.warn(error);
+    }
+  }
+}
+
+async function setupFaviconDb(options) {
   let conn;
   try {
-    conn = await favicon.connect(options);
+    conn = await openFaviconDb(options);
   } finally {
     if(conn) {
       conn.close();
     }
   }
-};
+}
 
-favicon.putEntries = async function(conn, iconURLString, pageURLStrings) {
+async function putEntries(conn, iconURLString, pageURLStrings) {
   const tx = conn.transaction('favicon-cache', 'readwrite');
   const promises = [];
   for(let urlString of pageURLStrings) {
-    const promise = favicon.putEntry(tx, urlString, iconURLString);
+    const promise = putEntry(tx, urlString, iconURLString);
     promises.push(promise);
   }
   await Promise.all(promises);
-};
+}
 
-favicon.connect = function(options) {
+function openFaviconDb(options) {
   return new Promise((resolve, reject) => {
     const defaultName = 'favicon-cache';
     const defaultVersion = 2;
@@ -278,7 +285,7 @@ favicon.connect = function(options) {
     const version = 'version' in options ? options.version : defaultVersion;
     const verbose = 'verbose' in options ? options.verbose : defaultVerbose;
     const request = indexedDB.open(name, version);
-    request.onupgradeneeded = favicon.onUpgradeNeeded.bind(request, verbose);
+    request.onupgradeneeded = onUpgradeNeeded.bind(request, verbose);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
     request.onblocked = () => {
@@ -287,9 +294,9 @@ favicon.connect = function(options) {
       }
     };
   });
-};
+}
 
-favicon.onUpgradeNeeded = function(verbose, event) {
+function onUpgradeNeeded(verbose, event) {
   const conn = event.target.result;
   if(verbose) {
     console.log('Creating or upgrading favicon database', conn.name);
@@ -314,16 +321,16 @@ favicon.onUpgradeNeeded = function(verbose, event) {
     }
     store.createIndex('dateUpdated', 'dateUpdated');
   }
-};
+}
 
 // An entry is expired if the difference between today's date and the date the
 // entry was last updated is greater than max age.
-favicon.isEntryExpired = function(entry, currentDate, maxAgeMillis) {
+function isEntryExpired(entry, currentDate, maxAgeMillis) {
   const ageMillis = currentDate - entry.dateUpdated;
   return ageMillis > maxAgeMillis;
-};
+}
 
-favicon.clearCache = function(conn) {
+function clearFaviconDb(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
@@ -331,9 +338,9 @@ favicon.clearCache = function(conn) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-};
+}
 
-favicon.findEntry = function(conn, urlObject) {
+function findEntry(conn, urlObject) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
@@ -341,9 +348,10 @@ favicon.findEntry = function(conn, urlObject) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-};
+}
 
-favicon.putEntry = function(tx, pageURLString, iconURLString) {
+// TODO: revert to accepting conn, create tx locally.
+function putEntry(tx, pageURLString, iconURLString) {
   return new Promise((resolve, reject) => {
     const entry = {
       'pageURLString': pageURLString,
@@ -355,9 +363,9 @@ favicon.putEntry = function(tx, pageURLString, iconURLString) {
     request.onsuccess = resolve;
     request.onerror = () => reject(request.error);
   });
-};
+}
 
-favicon.removeEntry = function(conn, pageURL) {
+function removeEntry(conn, pageURL) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
@@ -365,9 +373,12 @@ favicon.removeEntry = function(conn, pageURL) {
     request.onsuccess = resolve;
     request.onerror = () => reject(request.error);
   });
-};
+}
 
-favicon.getEntries = function(conn) {
+/*
+// TODO: is this in use? cannot find where this is called
+// TODO: delete after further testing
+function getEntries(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
@@ -375,9 +386,10 @@ favicon.getEntries = function(conn) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-};
+}
+*/
 
-favicon.getExpiredEntries = function(conn, maxAgeMillis) {
+function getExpiredEntries(conn, maxAgeMillis) {
   return new Promise((resolve, reject) => {
     let cutoffTime = Date.now() - maxAgeMillis;
     cutoffTime = cutoffTime < 0 ? 0 : cutoffTime;
@@ -389,11 +401,11 @@ favicon.getExpiredEntries = function(conn, maxAgeMillis) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => resolve(request.error);
   });
-};
+}
 
 // @param urls {Array} an array of page url strings
 // @returns {Promise}
-favicon.removeEntriesWithURLs = function(conn, urls) {
+function removeEntriesWithURLs(conn, urls) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
@@ -403,33 +415,33 @@ favicon.removeEntriesWithURLs = function(conn, urls) {
       store.delete(url);
     }
   });
-};
+}
 
 // Finds all expired entries in the database and removes them
-favicon.compact = async function(options) {
+async function compactFaviconDb(options) {
   options = options || {};
   const maxAgeMillis = 'maxAgeMillis' in options ? options.maxAgeMillis :
-    favicon.defaultMaxAgeMillis;
+    defaultMaxAgeMillis;
   let conn;
   try {
-    conn = await favicon.connect(options);
-    const expiredEntries = await favicon.getExpiredEntries(conn, maxAgeMillis);
+    conn = await openFaviconDb(options);
+    const expiredEntries = await getExpiredEntries(conn, maxAgeMillis);
     const urlStrings = [];
     for(let entry of expiredEntries) {
       urlStrings.push(entry.pageURLString);
     }
-    const resolutions = await favicon.removeEntriesWithURLs(conn, urlStrings);
+    const resolutions = await removeEntriesWithURLs(conn, urlStrings);
     return resolutions.length;
   } finally {
     if(conn) {
       conn.close();
     }
   }
-};
+}
 
 // Search for icon links in the document, and ensure the links are absolute.
 // Use the first valid link found.
-favicon.findIconInDocument = function(document, baseURLObject) {
+function findIconInDocument(document, baseURLObject) {
   if(!document || !document.head) {
     throw new TypeError('Invalid document (undefined or no head)');
   }
@@ -441,15 +453,14 @@ favicon.findIconInDocument = function(document, baseURLObject) {
     'link[rel="apple-touch-icon-precomposed"][href]'
   ];
   let iconURLString;
-
   for(let selectorString of selectorStringArray) {
-    iconURLString = favicon.matchSelector(document.head, selectorString,
+    iconURLString = matchSelector(document.head, selectorString,
       baseURLObject);
     if(iconURLString) {
       return iconURLString;
     }
   }
-};
+}
 
 // Looks for a <link> tag within the ancestor element, and if found, get its
 // url value as a URL object. Simultaneously, when checking if the url is valid,
@@ -458,68 +469,51 @@ favicon.findIconInDocument = function(document, baseURLObject) {
 // search.
 // @param selectorString {String} the CSS selector condition
 // @param baseURLObject {URL} absolute form of the href values
-favicon.matchSelector = function(ancestorElement, selectorString,
-  baseURLObject) {
-
+function matchSelector(ancestorElement, selectorString, baseURLObject) {
   const element = ancestorElement.querySelector(selectorString);
   if(!element) {
     return;
   }
 
+  // Avoid passing an empty string to the URL constructor
   let hrefString = element.getAttribute('href');
-
-  // If the element did not have the attribute, return. Cannot rely on catching
-  // the error later when parsing the url
   if(!hrefString) {
     return;
   }
-
-  // Trimming may be necessary because I am not clear on the behavior of
-  // url parsing of whitespace only strings. So in order to avoid any
-  // ambiguity do it explicitly.
   hrefString = hrefString.trim();
-
-  // If the element is empty after trimming, return. Cannot rely on catching
-  // the error later when parsing the url
   if(!hrefString) {
     return;
   }
 
-  // Deserialize the url
-  let urlObject;
   try {
-    urlObject = new URL(hrefString, baseURLObject);
+    return new URL(hrefString, baseURLObject);
   } catch(error) {
-    //console.warn(error);
   }
+}
 
-  return urlObject;
-};
-
-// Rejects after a timeout (ms)
-favicon.fetchWithTimeout = function(url, timeout) {
+function rejectRequestAfterTimeout(url, timeoutMillis) {
   return new Promise((resolve, reject) => {
-    setTimeout(reject, timeout, new Error(`Request timed out ${url}`));
+    setTimeout(reject, timeoutMillis, new Error(`Request timed out ${url}`));
   });
-};
+}
 
 // Race a timeout against a fetch. fetch does not support timeout (yet?).
 // A timeout will not cancel/abort the fetch, but will ignore it.
 // A timeout rejection results in this throwing an uncaught error
 // Timeout is optional
-favicon.fetch = async function(urlString, options, timeoutMillis) {
-
+async function fetchWithTimeout(urlString, options, timeoutMillis) {
   if(typeof urlString !== 'string') {
     throw new TypeError('Invalid parameter urlString', urlString);
   }
 
+  // TODO: eventually use the cancelation token method or whatever it is to
+  // actually abort the request/response in the case of a timeout
+
   const fetchPromise = fetch(urlString, options);
   let response;
   if(timeoutMillis) {
-    const promises = [
-      fetchPromise,
-      favicon.fetchWithTimeout(urlString, timeoutMillis)
-    ];
+    const timeoutPromise = rejectRequestAfterTimeout(urlString, timeoutMillis);
+    const promises = [fetchPromise, timeoutPromise];
     response = await Promise.race(promises);
   } else {
     response = await fetchPromise;
@@ -529,20 +523,12 @@ favicon.fetch = async function(urlString, options, timeoutMillis) {
     throw new Error(`${response.status} ${response.statusText} ${urlString}`);
   }
   return response;
-};
+}
 
-favicon.assertValidHTMLMimeType = function(response, urlString) {
-  const typeHeader = response.headers.get('Content-Type');
-  if(!/^\s*text\/html/i.test(typeHeader)) {
-    throw new Error(`Invalid content type "${typeHeader}" ${urlString}`);
-  }
-};
-
-// Fetches the html Document for the given url
-// @param url {String}
-favicon.fetchDocument = async function(urlString, options) {
+async function fetchDocument(urlString, options) {
   const timeoutMillis = 'fetchHTMLTimeoutMillis' in options ?
     options.fetchHTMLTimeoutMillis : 1000;
+
   const headers = {'Accept': 'text/html'};
   const fetchOptions = {};
   fetchOptions.credentials = 'omit';
@@ -551,27 +537,23 @@ favicon.fetchDocument = async function(urlString, options) {
   fetchOptions.mode = 'cors';
   fetchOptions.cache = 'default';
   fetchOptions.redirect = 'follow';
-  //no-referrer
   fetchOptions.referrer = 'no-referrer';
   fetchOptions.referrerPolicy = 'no-referrer';
 
-  const response = await favicon.fetch(urlString, fetchOptions, timeoutMillis);
-  const httpStatusNoContent = 204;
-  if(response.status === httpStatusNoContent) {
-    throw new Error(`${response.status} ${response.statusText} ${urlString}`);
-  }
+  const response = await fetchWithTimeout(urlString, fetchOptions, timeoutMillis);
+  assertResponseHasContent(response, urlString);
+  assertResponseHasHTMLType(response, urlString);
 
-  favicon.assertValidHTMLMimeType(response, urlString);
   const outputResponse = {};
   outputResponse.text = async function() {
     return await response.text();
   };
   outputResponse.responseURLString = response.url;
-  outputResponse.redirected = favicon.detectRedirect(urlString, response.url);
+  outputResponse.redirected = detectRedirect(urlString, response.url);
   return outputResponse;
-};
+}
 
-favicon.detectRedirect = function(requestURLString, responseURLString) {
+function detectRedirect(requestURLString, responseURLString) {
   if(requestURLString === responseURLString) {
     return false;
   }
@@ -580,17 +562,14 @@ favicon.detectRedirect = function(requestURLString, responseURLString) {
   requestURLObject.hash = '';
   responseURLObject.hash = '';
   return requestURLObject.href !== responseURLObject.href;
-};
+}
 
-favicon.parseHTML = function(htmlString) {
-
+function parseHTML(htmlString) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlString, 'text/html');
-
-  const parserErrors = doc.getElementsByTagName('parsererror');
-  if(parserErrors && parserErrors.length) {
-    throw new Error('Embedded html parser error text: ' +
-      parserErrors[0].textContent);
+  const errors = doc.getElementsByTagName('parsererror');
+  if(errors && errors.length) {
+    throw new Error('Embedded html parser error: ' + errors[0].textContent);
   }
 
   const rootName = doc.documentElement.localName.toLowerCase();
@@ -599,14 +578,13 @@ favicon.parseHTML = function(htmlString) {
   }
 
   return doc;
-};
+}
 
 // Sends a HEAD request for the given image.
 // @param urlString {String}
 // @returns a simple object with props imageSize and imageResponseURLString
-favicon.fetchImageHead = async function(urlString, options) {
-  const timeoutMillis = 'fetchImageTimeoutMillis' in options ?
-    options.fetchImageTimeoutMillis : 200;
+async function sendImageHeadRequest(urlString, timeoutMillis, verbose) {
+
   const headers = {'Accept': 'image/*'};
   const fetchOptions = {};
   fetchOptions.credentials = 'omit';
@@ -616,15 +594,16 @@ favicon.fetchImageHead = async function(urlString, options) {
   fetchOptions.cache = 'default';
   fetchOptions.redirect = 'follow';
   fetchOptions.referrer = 'no-referrer';
-  const response = await favicon.fetch(urlString, fetchOptions, timeoutMillis);
-  favicon.assertValidImageMimeType(response);
+  const response = await fetchWithTimeout(urlString, fetchOptions,
+    timeoutMillis);
+  assertResponseHasImageType(response);
   const outputResponse = {};
-  outputResponse.size = favicon.getContentLength(response, options.verbose);
+  outputResponse.size = getResponseContentLength(response, verbose);
   outputResponse.responseURLString = response.url;
   return outputResponse;
-};
+}
 
-favicon.getContentLength = function(response, verbose) {
+function getResponseContentLength(response, verbose) {
   const contentLengthString = response.headers.get('Content-Length');
   if(contentLengthString) {
     const radix = 10;
@@ -637,11 +616,35 @@ favicon.getContentLength = function(response, verbose) {
     }
   }
   return -1;
-};
+}
 
-favicon.assertValidImageMimeType = function(response) {
+// Response.ok is true for 204, but I treat 204 as error.
+function assertResponseHasContent(response, urlString) {
+  const httpStatusNoContent = 204;
+  if(response.status === httpStatusNoContent) {
+    throw new Error(`${response.status} ${response.statusText} ${urlString}`);
+  }
+}
+
+function assertResponseHasHTMLType(response, urlString) {
+  const typeHeader = response.headers.get('Content-Type');
+  if(!/^\s*text\/html/i.test(typeHeader)) {
+    throw new Error(`Invalid content type "${typeHeader}" ${urlString}`);
+  }
+}
+
+function assertResponseHasImageType(response) {
   const typeHeader = response.headers.get('Content-Type');
   if(!/^\s*image\//i.test(typeHeader)) {
     throw new Error(`Invalid response type ${typeHeader}`);
   }
-};
+}
+
+// Export methods to outer (global) scope
+this.lookupFavicon = lookupFavicon;
+this.openFaviconDb = openFaviconDb;
+this.clearFaviconDb = clearFaviconDb;
+this.compactFaviconDb = compactFaviconDb;
+this.setupFaviconDb = setupFaviconDb;
+
+} // End file block scope

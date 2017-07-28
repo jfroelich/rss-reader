@@ -11,10 +11,10 @@ async function testLookup(urlString, isCacheless) {
 
   try {
     if(!isCacheless) {
-      conn = await favicon.connect(options);
+      conn = await openFaviconDb(options);
     }
 
-    const iconURLString = await favicon.lookup(conn, url, options);
+    const iconURLString = await lookupFavicon(conn, url, options);
     console.debug('Icon url:', iconURLString);
   } catch(error) {
     console.error(error);
@@ -31,8 +31,8 @@ async function testClear() {
   options.verbose = true;
 
   try {
-    conn = await favicon.connect(options);
-    await favicon.clearCache(conn);
+    conn = await openFaviconDb(options);
+    await clearFaviconDb(conn);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -46,7 +46,7 @@ async function testCompact() {
   let conn;
   try {
     conn = await favicion.connect();
-    const numDeleted = await favicon.compact(conn);
+    const numDeleted = await compactFaviconDb(conn);
     console.log('Deleted %d entries', numDeleted);
   } catch(error) {
     console.warn(error);

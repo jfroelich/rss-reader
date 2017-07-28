@@ -97,7 +97,7 @@ async function prepareRemoteEntry(entry, documentObject, options) {
 async function setEntryIcon(entry, iconConn, fallbackURLString) {
   const lookupURLString = getEntryURLString(entry);
   const lookupURLObject = new URL(lookupURLString);
-  const iconURLString = await favicon.lookup(iconConn, lookupURLObject);
+  const iconURLString = await lookupFavicon(iconConn, lookupURLObject);
   entry.faviconURLString = iconURLString || fallbackURLString;
 }
 

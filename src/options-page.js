@@ -227,7 +227,7 @@ async function startSubscription(urlObject) {
   let readerConn;
   let iconConn;
   try {
-    const promises = [dbConnect(), favicon.connect()];
+    const promises = [dbConnect(), openFaviconDb()];
     const conns = await Promise.all(promises);
     readerConn = conns[0];
     iconConn = conns[1];

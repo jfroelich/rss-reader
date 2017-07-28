@@ -14,7 +14,7 @@ async function refreshFeedIcons(verbose) {
 
   let numModified = 0;
   let readerConn, iconConn;
-  const promises = [dbConnect(), favicon.connect()];
+  const promises = [dbConnect(), openFaviconDb()];
   try {
     const conns = await Promise.all(promises);
     readerConn = conns[0];
@@ -79,7 +79,7 @@ async function lookupFeedIconAndUpdateFeed(feed, readerConn,
     return false;
   }
 
-  const iconURLString = await favicon.lookup(iconConn, lookupURLObject);
+  const iconURLString = await lookupFavicon(iconConn, lookupURLObject);
   if(!iconURLString) {
     return false;
   }

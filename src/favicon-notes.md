@@ -1,25 +1,23 @@
 
 # About
 
-Provides a simple way to quickly lookup the url of a favicon associated with a
-URL. The primary public function is `favicon.lookup`.
+The problem this library tries to solve is to provide a simple means of getting
+the url of the favicon associated with a given page url. At the time of writing
+this library there was no simple browser-oriented-js solution available, and
+Chrome appeared to be restricting access to its internal favicon cache.
 
-The lookup function makes an effort to follow the favicon spec, which sadly is
-not extremely well documented. Ignoring the cache lookups, the algorithm
-involves the following steps:
+The primary public function is `lookupFavicon`. lookup accepts a page url and
+returns a favicon url. The function tries to conform to the spec, which sadly is
+not extremely well documented, and has some inefficiency. Ignoring the cache
+lookups, the algorithm involves the following steps:
 
 1. Fetch the URL.
 2. Search the contents of the URL for a <link> specifying the icon.
-3. If no icon is found in step 2, check for the icon in the document root.
+3. If no icon is found, check for '/favicon.ico' in the document root.
 
-In addition to lookup, there are two other key functions, connect and compact.
-The favicon.connect function opens a connection to indexedDB. The connection is
-the first parameter to the lookup function. indexedDB is used to provide a
-simple caching mechanism for the lookup, that memoizes certain lookups.
-
-The compact function is a housekeeping function intended to be run rarely and
-periodically. It examines the cache for older entries and removes them, which
-serves to reduce the cache's size.
+The spec talks about how to choose the most appropriate icon when multiple icons
+are specified, based on size and other properties. I chose not to bother with
+choosing the best, just finding any of them.
 
 The lookup algorithm always checks the URL first, before checking for the
 favicon.ico file in the domain's root path, because my understanding of
@@ -28,20 +26,24 @@ that is unique to the page, and not site wide. Icons in the root are site
 wide. Most sites in fact use the site wide icon. But because each page can be
 different, I must always check the page, and this cannot be avoided.
 
-# Standalone indexedDB database
+In addition to lookup, there are two other key functions, connect and compact.
 
-indexedDB databases are installed specific to an origin.
+* `openFaviconDb` opens a connection to indexedDB. The connection
+is the first parameter to the lookup function. indexedDB is used to provide a
+simple caching mechanism for the lookup, that memoizes certain lookups.
+* `compactFaviconDb` function is a housekeeping function intended to run
+periodically. It examines the cache for older entries and removes them.
 
-This uses a separate database from the reader app. I chose to use a separate
-database because this makes this library completely independent of all other
-libraries and the app itself. It is less convenient when writing code in the
-reader app because I have to open two connections, but it keeps the code
-separate. I have some concern because I read somewhere that some platforms
-like iOS currently struggle with maintaining multiple indexedDB databases for
-a single origin. However, I am not really targeting those platforms right now
-so I do not think it is important enough to worry about it.
+# Why this uses a separate database from the app
 
-# About "Refused to load the script" errors that appear in the console
+This uses a separate database in order to remain independent of the app. The
+benefit of independence outweighs the cost of having to maintain separate
+connections.
+
+There may be an issue with some platforms not allowing for multiple, concurrent
+connections. I think on iOS. But I am not too concerned.
+
+# About "Refused to load the script" errors that appear in the console during the lookup function.
 
 Occasionally I see the following messages appear in the console: Refused to
 load the script 'url' because it violates the following Content Security Policy
@@ -54,25 +56,22 @@ appears is because the script is pushed. To avoid this error I have to figure
 out how to signal that I have no interest at all in HTTP/2. For push help see
 section 3.3. of https://w3c.github.io/preload/, and also https://tools.ietf.org/html/rfc5988#section-5.
 
-I do not currently know how to signal no interest in preload. The RFC states
-that it is possible, but I am not sure I can do it from Javascript, and I have
-no idea how I would do it from Javascript.
-
-* Maybe I can set the user-agent? Maybe servers are checking user-agent to
-decide if preload supported?
-* Maybe it has something to do with CORS or caching?
+I do not currently know how to signal no interest in push. For now I must deal
+with wasted resources and strange console messages. I asked stackoverflow: https://stackoverflow.com/questions/45352300
 
 # General todo items
 
-* Add favicon.clearCache utility function to help testing
+* revert to using file block scope and only exporting the 3 public functions,
+I think I just like the style more.
+
 * Revisit whether favicons are now supported from within a chrome
 extension. At least document very clearly why this library has to be used
 in the alternative. It may no longer need to exist. This time around, take
 better notes as to why I can or cannot use chrome internals.
 * lookup is simply too large and needs to be broken up into smaller functions
-* Add more logging statements (checking verbose) in favicon.lookup
+* Add more logging statements (checking verbose) in lookupFavicon
 * When testing, use a test db instead of the real db, and make sure to
-delete the test db at the end of the test. favicon.connect accepts an options
+delete the test db at the end of the test. openFaviconDb accepts an options
 object where I can define name/version, and I can custom code a simple delete
 database function
 * when checking image mime type, maybe be more restrictive about allowed

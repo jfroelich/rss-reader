@@ -20,7 +20,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   }
 
   try {
-    await favicon.install(verbose);
+    await setupFaviconDb(verbose);
   } catch(error) {
     console.warn(error);
   }
@@ -53,7 +53,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
       refreshFeedIcons().catch(console.warn);
       break;
     case 'compact-favicon-db':
-      favicon.compact().catch(console.warn);
+      compactFaviconDb().catch(console.warn);
       break;
     default:
       console.warn('Unknown alarm:', alarm.name);
