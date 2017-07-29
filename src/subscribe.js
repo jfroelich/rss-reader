@@ -99,15 +99,10 @@ function notify(feed) {
 }
 
 async function fetchInternal(urlString, timeoutMillis, verbose) {
-
-  const fetchOptions = {};
-  fetchOptions.verbose = verbose;
-  fetchOptions.timeoutMillis = timeoutMillis;
-
+  const acceptHTML = true;
+  const promise = fetchFeed(urlString, timeoutMillis, acceptHTML);
   try {
-    const response = await fetchFeed(urlString, fetchOptions);
-
-    return response;
+    return await promise;
   } catch(error) {
     if(verbose) {
       console.warn(urlString, error);

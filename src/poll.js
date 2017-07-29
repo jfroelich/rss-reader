@@ -3,33 +3,69 @@
 
 { // Begin file block scope
 
+const POLL_FEEDS_FLAGS = {};
+POLL_FEEDS_FLAGS.VERBOSE = 1; // 1
+POLL_FEEDS_FLAGS.ALLOW_METERED_CONNECTIONS = 2; // 10
+POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK = 4; // 100
+POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE = 8; // 1000
+POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK = 16; // 10000
+
 async function commandPollFeeds() {
-  const options = {};
-  options.ignoreIdleState = true;
-  options.ignoreModifiedCheck = true;
-  options.ignoreRecencyCheck = true;
-  options.verbose = true;
-  await pollFeeds(options);
+  const flags = POLL_FEEDS_FLAGS.ALLOW_METERED_CONNECTIONS |
+    POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE | POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK |
+    POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK | POLL_FEEDS_FLAGS.VERBOSE;
+  let recencyPeriodMillis, idlePeriodSeconds, fetchFeedTimeoutMillis,
+    fetchHTMLTimeoutMillis, fetchImageTimeoutMillis;
+  await pollFeeds(idlePeriodSeconds, recencyPeriodMillis,
+    fetchFeedTimeoutMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
+    flags);
 }
 
-this.commandPollFeeds = commandPollFeeds;
+async function pollFeeds(idlePeriodSeconds, recencyPeriodMillis,
+  fetchFeedTimeoutMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
+  flags) {
+  if(typeof idlePeriodSeconds === 'undefined') {
+    idlePeriodSeconds = 30;
+  }
+  if(typeof recencyPeriodMillis === 'undefined') {
+    recencyPeriodMillis = 5 * 60 * 1000;
+  }
+  if(typeof fetchFeedTimeoutMillis === 'undefined') {
+    fetchFeedTimeoutMillis = 5000;
+  }
+  if(typeof fetchHTMLTimeoutMillis === 'undefined') {
+    fetchHTMLTimeoutMillis = 5000;
+  }
+  if(typeof fetchImageTimeoutMillis === 'undefined') {
+    fetchImageTimeoutMillis = 3000;
+  }
+  if(typeof flags === 'undefined') {
+    flags = 0;
+  }
 
-async function pollFeeds(options) {
-  options = initOptions(options);
-  if(options.verbose) {
+  const allowMeteredConnections = flags &
+    POLL_FEEDS_FLAGS.ALLOW_METERED_CONNECTIONS;
+  const ignoreIdleState = flags & POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE;
+  const ignoreRecencyCheck = flags & POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK;
+  const ignoreModifiedCheck = flags & POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK;
+  const verbose = flags & POLL_FEEDS_FLAGS.VERBOSE;
+
+  if(verbose) {
     console.log('Checking for new articles...');
   }
 
-  if(!await canStartPoll(options)) {
+  if(!await canStartPoll(allowMeteredConnections, ignoreIdleState,
+    idlePeriodSeconds, verbose)) {
     return;
   }
 
   let numEntriesAdded = 0;
+  // TODO: these 3 should all probably be parameters to pollFeeds
   let iconDbName, iconDbVersion, connectTimeoutMillis;
 
   const readerConnPromise = openReaderDb();
   const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion,
-    connectTimeoutMillis, options.verbose);
+    connectTimeoutMillis, verbose);
   const connectionPromises = [readerConnPromise, iconConnPromise];
   let readerConn, iconConn;
 
@@ -37,8 +73,11 @@ async function pollFeeds(options) {
     const connections = await Promise.all(connectionPromises);
     readerConn = connections[0];
     iconConn = connections[1];
-    const feeds = await loadPollableFeeds(readerConn, options);
-    numEntriesAdded = await processFeeds(readerConn, iconConn, feeds, options);
+    const feeds = await loadPollableFeeds(readerConn,
+      ignoreRecencyCheck, recencyPeriodMillis, verbose);
+    numEntriesAdded = await processFeeds(readerConn, iconConn, feeds,
+      ignoreModifiedCheck, fetchFeedTimeoutMillis, fetchHTMLTimeoutMillis,
+      fetchImageTimeoutMillis, verbose);
     if(numEntriesAdded) {
       await updateBadgeText(readerConn);
     }
@@ -55,58 +94,34 @@ async function pollFeeds(options) {
     showPollNotification(numEntriesAdded);
   }
   broadcastCompletedMessage(numEntriesAdded);
-  if(options.verbose) {
+  if(verbose) {
     console.log('Polling completed');
   }
   return numEntriesAdded;
 }
 
-this.pollFeeds = pollFeeds;
+async function canStartPoll(allowMeteredConnections, ignoreIdleState,
+  idlePeriodSeconds, verbose) {
 
-function initOptions(options) {
-  options = options || {};
-  options.verbose = 'verbose' in options ? options.verbose : false;
-  options.allowMetered = 'allowMetered' in options ? options.allowMetered :
-    true;
-  options.ignoreIdleState = 'ignoreIdleState' in options ?
-    options.ignoreIdleState : false;
-  options.ignoreRecencyCheck = 'ignoreRecencyCheck' in options ?
-    options.ignoreRecencyCheck : false;
-  options.ignoreModifiedCheck = 'ignoreModifiedCheck' in options ?
-    options.ignoreModifiedCheck : false;
-  options.idlePeriodSeconds = 'idlePeriodSeconds' in options ?
-    options.idlePeriodSeconds : 30;
-  options.recencyPeriodMillis = 'recencyPeriodMillis' in options ?
-    options.recencyPeriodMillis : 5 * 60 * 1000;
-  options.fetchFeedTimeoutMillis = 'fetchFeedTimeoutMillis' in options ?
-    options.fetchFeedTimeoutMillis : 5000;
-  options.fetchHTMLTimeoutMillis = 'fetchHTMLTimeoutMillis' in options ?
-    options.fetchHTMLTimeoutMillis : 5000;
-  options.fetchImageTimeoutMillis = 'fetchImageTimeoutMillis' in options ?
-    options.fetchImageTimeoutMillis : 3000;
-  return options;
-}
-
-async function canStartPoll(options) {
   if(isOffline()) {
-    if(options.verbose) {
+    if(verbose) {
       console.warn('Polling canceled because offline');
     }
     return false;
   }
 
-  if(!options.allowMeteredConnections && 'NO_POLL_METERED' in localStorage &&
+  if(!allowMeteredConnections && 'NO_POLL_METERED' in localStorage &&
     isMeteredConnection()) {
-    if(options.verbose) {
+    if(verbose) {
       console.warn('Polling canceled because connection is metered');
     }
     return false;
   }
 
-  if(!options.ignoreIdleState && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    const state = await queryIdleState(options.idlePeriodSeconds);
+  if(!ignoreIdleState && 'ONLY_POLL_IF_IDLE' in localStorage) {
+    const state = await queryIdleState(idlePeriodSeconds);
     if(state !== 'locked' && state !== 'idle') {
-      if(options.verbose) {
+      if(verbose) {
         console.warn('Polling canceled because machine not idle');
       }
       return false;
@@ -126,15 +141,16 @@ function loadAllFeedsFromDb(conn) {
   });
 }
 
-async function loadPollableFeeds(readerConn, options) {
+async function loadPollableFeeds(readerConn, ignoreRecencyCheck,
+  recencyPeriodMillis, verbose) {
   const feeds = await loadAllFeedsFromDb(readerConn);
-  if(options.ignoreRecencyCheck) {
+  if(ignoreRecencyCheck) {
     return feeds;
   }
 
   const outputFeeds = [];
   for(let feed of feeds) {
-    if(isFeedPollEligible(feed, options)) {
+    if(isFeedPollEligible(feed, recencyPeriodMillis, verbose)) {
       outputFeeds.push(feed);
     }
   }
@@ -147,7 +163,7 @@ function showPollNotification(numEntriesAdded) {
   showNotification(title, message);
 }
 
-function isFeedPollEligible(feed, options) {
+function isFeedPollEligible(feed, recencyPeriodMillis, verbose) {
   // If we do not know when the feed was fetched, then assume it is a new feed
   // that has never been fetched. In this case, consider the feed to be
   // eligible
@@ -158,10 +174,10 @@ function isFeedPollEligible(feed, options) {
   // The amount of time that has elapsed, in milliseconds, from when the
   // feed was last polled.
   const elapsed = new Date() - feed.dateFetched;
-  if(elapsed < options.recencyPeriodMillis) {
+  if(elapsed < recencyPeriodMillis) {
     // A feed has been polled too recently if not enough time has elasped from
     // the last time the feed was polled.
-    if(options.verbose) {
+    if(verbose) {
       console.debug('Feed polled too recently', getFeedURLString(feed));
     }
     // In this case we do not want to poll the feed
@@ -172,10 +188,14 @@ function isFeedPollEligible(feed, options) {
   }
 }
 
-async function processFeeds(readerConn, iconConn, feeds, options) {
+async function processFeeds(readerConn, iconConn, feeds, ignoreModifiedCheck,
+  fetchFeedTimeoutMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
+  verbose) {
   const promises = [];
   for(let feed of feeds) {
-    const promise = processFeedSilently(readerConn, iconConn, feed, options);
+    const promise = processFeedSilently(readerConn, iconConn, feed,
+      fetchFeedTimeoutMillis, ignoreModifiedCheck, fetchHTMLTimeoutMillis,
+      fetchImageTimeoutMillis, verbose);
     promises.push(promise);
   }
 
@@ -187,12 +207,16 @@ async function processFeeds(readerConn, iconConn, feeds, options) {
   return totalEntriesAdded;
 }
 
-async function processFeedSilently(readerConn, iconConn, feed, options) {
+async function processFeedSilently(readerConn, iconConn, feed,
+  fetchFeedTimeoutMillis, ignoreModifiedCheck, fetchHTMLTimeoutMillis,
+  fetchImageTimeoutMillis, verbose) {
   let numEntriesAdded = 0;
   try {
-    numEntriesAdded = await processFeed(readerConn, iconConn, feed, options);
+    numEntriesAdded = await processFeed(readerConn, iconConn, feed,
+      fetchFeedTimeoutMillis, ignoreModifiedCheck, fetchHTMLTimeoutMillis,
+      fetchImageTimeoutMillis, verbose);
   } catch(error) {
-    if(options.verbose) {
+    if(verbose) {
       console.warn(error);
     }
   }
@@ -200,7 +224,9 @@ async function processFeedSilently(readerConn, iconConn, feed, options) {
 }
 
 // @throws {Error} any exception thrown by fetchFeed is rethrown
-async function processFeed(readerConn, iconConn, localFeed, options) {
+async function processFeed(readerConn, iconConn, localFeed,
+  fetchFeedTimeoutMillis, ignoreModifiedCheck, fetchHTMLTimeoutMillis,
+  fetchImageTimeoutMillis, verbose) {
 
   if(typeof localFeed === 'undefined') {
     throw new TypeError('localFeed is undefined in processFeed params');
@@ -208,15 +234,15 @@ async function processFeed(readerConn, iconConn, localFeed, options) {
 
   const urlString = getFeedURLString(localFeed);
 
-  const fetchOptions = {};
-  fetchOptions.verbose = options.verbose;
-  fetchOptions.timeoutMillis = options.fetchFeedTimeoutMillis;
-  const response = await fetchFeed(urlString, fetchOptions);
+  const timeoutMillis = fetchFeedTimeoutMillis;
+  const acceptHTML = true;
+
+  const response = await fetchFeed(urlString, timeoutMillis, acceptHTML);
 
   // Before parsing, check if the feed was modified
-  if(!options.ignoreModifiedCheck && localFeed.dateUpdated &&
+  if(!ignoreModifiedCheck && localFeed.dateUpdated &&
     isFeedUnmodified(localFeed.dateLastModified, response.lastModifiedDate)) {
-    if(options.verbose) {
+    if(verbose) {
       console.debug('Skipping unmodified feed', urlString,
         localFeed.dateLastModified, response.lastModifiedDate);
     }
@@ -231,15 +257,18 @@ async function processFeed(readerConn, iconConn, localFeed, options) {
   await putFeedInDb(readerConn, storableFeed);
 
   const numEntriesAdded = await processEntries(readerConn, iconConn,
-    storableFeed, parseResult.entries, options);
+    storableFeed, parseResult.entries, fetchHTMLTimeoutMillis,
+    fetchImageTimeoutMillis, verbose);
   return numEntriesAdded;
 }
 
-async function processEntries(readerConn, iconConn, feed, entries, options) {
+async function processEntries(readerConn, iconConn, feed, entries,
+  fetchHTMLTimeoutMillis, fetchImageTimeoutMillis, verbose) {
   entries = filterDuplicateEntries(entries);
   const promises = [];
   for(let entry of entries) {
-    const promise = pollEntry(readerConn, iconConn, feed, entry, options);
+    const promise = pollEntry(readerConn, iconConn, feed, entry,
+      fetchHTMLTimeoutMillis, fetchImageTimeoutMillis, verbose);
     promises.push(promise);
   }
 
@@ -259,9 +288,7 @@ function isFeedUnmodified(localDateModified, remoteDateModified) {
 }
 
 function filterDuplicateEntries(entries) {
-
   // TODO: use a Set?
-
   const distinctEntries = [];
   const seenURLs = [];
 
@@ -320,5 +347,9 @@ function broadcastCompletedMessage(numEntriesAdded) {
   channel.postMessage('completed');
   channel.close();
 }
+
+this.commandPollFeeds = commandPollFeeds;
+this.pollFeeds = pollFeeds;
+this.POLL_FEEDS_FLAGS = POLL_FEEDS_FLAGS;
 
 } // End file block scope

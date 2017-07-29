@@ -4,17 +4,14 @@
 
 { // Begin file block scope
 
-async function fetchFeed(urlString, options) {
+async function fetchFeed(urlString, timeoutMillis, acceptHTML) {
+  if(typeof timeoutMillis === 'undefined') {
+    timeoutMillis = 0;
+  }
 
-  options = options || {};
-  const timeoutMillis = 'timeoutMillis' in options ? options.timeoutMillis : 0;
-  const acceptHTML = 'acceptHTML' in options ? options.acceptHTML : true;
-  const verbose = 'verbose' in options ? options.verbose : false;
-
-  // No need, devtools console provides option of logging http requests
-  //if(verbose) {
-  //  console.log('Fetching feed xml at', urlString);
-  //}
+  if(typeof acceptHTML === 'undefined') {
+    acceptHTML = true;
+  }
 
   const acceptHeader = [
     'application/rss+xml',

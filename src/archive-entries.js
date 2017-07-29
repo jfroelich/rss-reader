@@ -1,15 +1,14 @@
 // See license.md
-
 'use strict';
 
 { // Begin file block scope
 
 async function commandArchiveEntries() {
-  const options = {};
-  options.verbose = true;
+  let maxAgeMillis;
+  const verbose = true;
   try {
     conn = await openReaderDb();
-    const numArchived = await archiveEntries(options);
+    const numArchived = await archiveEntries(maxAgeMillis, verbose);
   } finally {
     if(conn) {
       conn.close();
@@ -17,27 +16,24 @@ async function commandArchiveEntries() {
   }
 }
 
-this.commandArchiveEntries = commandArchiveEntries;
-
-// @param options {Object} verbose (boolean), maxAgeInMillis {Number}
+// @param maxAgeMillis {Number}
+// @param verbose {Boolean}
 // @returns {Number} the new of archived entries
-async function archiveEntries(options) {
-  options = options || {};
-  const oneDayInMillis = 1 * 24 * 60 * 60 * 1000;
-  const maxAgeInMillis = 'maxAgeInMillis' in options ?
-    options.maxAgeInMillis : oneDayInMillis;
-  const verbose = options.verbose;
+async function archiveEntries(maxAgeMillis, verbose) {
+  if(typeof maxAgeMillis === 'undefined') {
+    maxAgeMillis = 1 * 24 * 60 * 60 * 1000;
+  }
 
-  validateMaxAgeInMillis(maxAgeInMillis);
+  validateMaxAgeInMillis(maxAgeMillis);
   if(verbose) {
-    console.log('Archiving entries older than %d ms', maxAgeInMillis);
+    console.log('Archiving entries older than %d ms', maxAgeMillis);
   }
 
   let conn;
   try {
     conn = await openReaderDb();
-    const entries = await getUnarchivedReadEntries(conn);
-    const archivableEntries = selectArchivableEntries(entries, maxAgeInMillis);
+    const entries = await loadUnarchivedReadEntriesFromDb(conn);
+    const archivableEntries = selectArchivableEntries(entries, maxAgeMillis);
     const compacts = compactEntries(archivableEntries, verbose);
     const putResolutions = await putEntriesInDb(conn, compacts);
   } finally {
@@ -54,17 +50,15 @@ async function archiveEntries(options) {
   return compacts.length;
 }
 
-this.archiveEntries = archiveEntries;
-
-function validateMaxAgeInMillis(maxAgeInMillis) {
-  if(!Number.isInteger(maxAgeInMillis)) {
-    throw new TypeError(`Invalid maxAgeInMillis ${maxAgeInMillis}`);
-  } else if(maxAgeInMillis < 0) {
-    throw new TypeError(`Invalid maxAgeInMillis ${maxAgeInMillis}`);
+function validateMaxAgeInMillis(maxAgeMillis) {
+  if(!Number.isInteger(maxAgeMillis)) {
+    throw new TypeError(`Invalid maxAgeMillis ${maxAgeMillis}`);
+  } else if(maxAgeMillis < 0) {
+    throw new TypeError(`Invalid maxAgeMillis ${maxAgeMillis}`);
   }
 }
 
-function getUnarchivedReadEntries(conn) {
+function loadUnarchivedReadEntriesFromDb(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -76,12 +70,12 @@ function getUnarchivedReadEntries(conn) {
   });
 }
 
-function selectArchivableEntries(entries, maxAgeInMillis) {
+function selectArchivableEntries(entries, maxAgeMillis) {
   const archivableEntries = [];
   const currentDate = new Date();
   for(let entry of entries) {
     const entryAgeInMillis = currentDate - entry.dateCreated;
-    if(entryAgeInMillis > maxAgeInMillis) {
+    if(entryAgeInMillis > maxAgeMillis) {
       archivableEntries.push(entry);
     }
   }
@@ -147,16 +141,14 @@ function compact(entry, archiveDate) {
   return compacted;
 }
 
-const broadcastArchiveMessage = function(entries) {
+function broadcastArchiveMessage(entries) {
   if(!entries.length) {
     return;
   }
-
   const ids = new Array(entries.length);
   for(let entry of entries) {
     ids.push(entry.id);
   }
-
   const archiveMessage = {};
   archiveMessage.type = 'archivedEntries';
   archiveMessage.ids = ids;
@@ -164,6 +156,9 @@ const broadcastArchiveMessage = function(entries) {
   const dbChannel = new BroadcastChannel('db');
   dbChannel.postMessage(archiveMessage);
   dbChannel.close();
-};
+}
+
+this.archiveEntries = archiveEntries;
+this.commandArchiveEntries = commandArchiveEntries;
 
 } // End file block scope

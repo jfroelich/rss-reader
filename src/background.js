@@ -42,7 +42,13 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
       archiveEntries().catch(console.warn);
       break;
     case 'poll':
-      pollFeeds().catch(console.warn);
+      const flags = 0; // all off
+      let idlePeriodSeconds, recencyPeriodMillis, fetchFeedTimeoutMillis,
+        fetchHTMLTimeoutMillis, fetchImageTimeoutMillis;
+      const promise = pollFeeds(idlePeriodSeconds, recencyPeriodMillis,
+        fetchFeedTimeoutMillis, fetchHTMLTimeoutMillis,
+        fetchImageTimeoutMillis, flags);
+      promise.catch(console.warn);
       break;
     case 'remove-entries-missing-urls':
       removeEntriesMissingURLs().catch(console.warn);

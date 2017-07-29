@@ -3,10 +3,10 @@
 
 { // Begin file block scope
 
-async function pollEntry(readerConn, iconConn, feed, entry, options) {
+async function pollEntry(readerConn, iconConn, feed, entry,
+  fetchHTMLTimeoutMillis, fetchImageTimeoutMillis, verbose) {
   entry.feed = feed.id;
   entry.feedTitle = feed.title;
-
   if(!isValidEntryURL(entry)) {
     return false;
   }
@@ -33,9 +33,11 @@ async function pollEntry(readerConn, iconConn, feed, entry, options) {
     }
   }
 
-  const response = await fetchEntry(urlString, options);
+  const response = await fetchEntry(urlString, fetchHTMLTimeoutMillis,
+    verbose);
   if(!response) {
-    await putEntry(readerConn, prepareLocalEntry(entry), options.verbose);
+    const preparedEntry = prepareLocalEntry(entry);
+    await putEntry(readerConn, preparedEntry, verbose);
     return true;
   }
 
@@ -50,21 +52,22 @@ async function pollEntry(readerConn, iconConn, feed, entry, options) {
     }
   }
 
-  await setEntryIcon(entry, iconConn, feed.faviconURLString);
+  await setEntryIcon(entry, iconConn, feed.faviconURLString, verbose);
   const entryContentString = await response.text();
   const entryContentDocument = parseHTML(entryContentString);
-  await prepareRemoteEntry(entry, entryContentDocument, options);
-  await putEntry(readerConn, entry, options.verbose);
+  await prepareRemoteEntry(entry, entryContentDocument,
+    fetchImageTimeoutMillis);
+  await putEntry(readerConn, entry, verbose);
   return true;
 }
 
 this.pollEntry = pollEntry;
 
-async function fetchEntry(urlString, options) {
+async function fetchEntry(urlString, fetchHTMLTimeoutMillis, verbose) {
   try {
-    return await fetchHTML(urlString, options.fetchHTMLTimeoutMillis);
+    return await fetchHTML(urlString, fetchHTMLTimeoutMillis);
   } catch(error) {
-    if(options.verbose) {
+    if(verbose) {
       console.warn(error);
     }
   }
@@ -81,7 +84,8 @@ function findEntryByURLInDb(conn, urlString) {
   });
 }
 
-async function prepareRemoteEntry(entry, documentObject, options) {
+async function prepareRemoteEntry(entry, documentObject,
+  fetchImageTimeoutMillis) {
   const urlString = getEntryURLString(entry);
   transformLazyImages(documentObject);
   scrubby.filterSourcelessImages(documentObject);
@@ -89,20 +93,16 @@ async function prepareRemoteEntry(entry, documentObject, options) {
   const baseURLObject = new URL(urlString);
   resolveDocumentURLs(documentObject, baseURLObject);
   filterTrackingImages(documentObject);
-  await setImageDimensions(documentObject, options.fetchImageTimeoutMillis);
+  await setImageDimensions(documentObject, fetchImageTimeoutMillis);
   prepareEntryDocument(urlString, documentObject);
   entry.content = documentObject.documentElement.outerHTML.trim();
 }
 
-async function setEntryIcon(entry, iconConn, fallbackURLString) {
+async function setEntryIcon(entry, iconConn, fallbackURLString, verbose) {
   const lookupURLString = getEntryURLString(entry);
   const lookupURLObject = new URL(lookupURLString);
   let maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
     minImageByteSize, maxImageByteSize;
-
-  // TODO: get from poll options
-  const verbose = false;
-
   const iconURLString = await lookupFavicon(iconConn, lookupURLObject,
     maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
     minImageByteSize, maxImageByteSize, verbose);

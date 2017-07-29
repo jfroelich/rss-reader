@@ -4,11 +4,12 @@
 
 async function test(url) {
   console.log('Starting test, fetching', url);
-  const response = await fetchFeed(url);
+
+  let timeoutMillis;
+  const acceptHTML = true;
+  const response = await fetchFeed(url, timeoutMillis, acceptHTML);
   const feedText = response.text;
 
-  // NOTE: intentionally not using parseFetchedFeed, this only tests
-  // fetching
   const result = parseFeed(feedText);
   const feed = result.feed;
   const entries = result.entries;
