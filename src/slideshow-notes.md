@@ -1,6 +1,15 @@
-
-
 TODO: Convert the contents of this file to markdown syntax
+
+TODO: should poll channel really be distinct from db? Not so sure anymore.
+Maybe I just want to use a general "extension" channel that handles all
+extension related messages? Perhaps the only major qualifying characteristic
+is the persistence of listening for messages for the lifetime of the page,
+and organizing the logic according to the content of the response is done
+with the conditions within the listener. There are different message
+frequencies so some conditions are rarely true which means some wasted
+checks, but on the other hand there are less channels. Would it be simpler,
+and would the added simplicity outweight any performance benefit/cost, or
+is there not even really much of a perf cost.
 
 TODO: decouple loading of additional content with navigation. It causes
 lag. Instead, create a queue of articles, and refill it periodically on

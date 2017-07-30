@@ -1,22 +1,9 @@
 // See license.md
-
 'use strict';
 
 { // Begin file block scope
 
-// Reference to element
 let currentSlideElement = null;
-
-// TODO: should poll channel really be distinct from db? Not so sure anymore.
-// Maybe I just want to use a general "extension" channel that handles all
-// extension related messages? Perhaps the only major qualifying characteristic
-// is the persistence of listening for messages for the lifetime of the page,
-// and organizing the logic according to the content of the response is done
-// with the conditions within the listener. There are different message
-// frequencies so some conditions are rarely true which means some wasted
-// checks, but on the other hand there are less channels. Would it be simpler,
-// and would the added simplicity outweight any performance benefit/cost, or
-// is there not even really much of a perf cost.
 
 const settingsChannel = new BroadcastChannel('settings');
 settingsChannel.onmessage = function(event) {
@@ -39,9 +26,11 @@ const pollChannel = new BroadcastChannel('poll');
 pollChannel.onmessage = function(event) {
   if(event.data === 'completed') {
     console.debug('Received poll completed message, maybe appending slides');
-    const count = countUnreadSlides();
+    const count = countUnreadSlideElements();
+    let conn; // leave undefined
+    const verbose = true;// Temporarily true for debugging purposes
     if(count < 2) {
-      appendSlides();
+      appendSlides(conn, verbose);
     }
   }
 };
@@ -52,95 +41,113 @@ function removeSlide(slideElement) {
 }
 
 // TODO: visual feedback in event of an error?
-async function markSlideRead(slideElement) {
-
+async function markSlideRead(conn, slideElement, verbose) {
   // This is not an error. This happens routinely as a result of navigating
   // to prior articles then navigating forward. It is not the responsibility
-  // of the caller to only call markSlideRead on unread slides
+  // of the caller to only call on unread slides
   if(slideElement.hasAttribute('read')) {
     return;
   }
 
   const entryIdString = slideElement.getAttribute('entry');
-  const entryIdInt = parseInt(entryIdString, 10);
-  let conn;
-
+  const parseIntRadix = 10;
+  const entryIdNumber = parseInt(entryIdString, parseIntRadix);
+  let isLocallyCreatedConnection = false;
+  let name, version, connectTimeout;
   try {
-    conn = await openReaderDb();
-    await markEntryRead(conn, entryIdInt);
+    if(!conn) {
+      conn = await openReaderDb(name, version, connectTimeout, verbose);
+      isLocallyCreatedConnection = true;
+    }
+
+    await markEntryRead(conn, entryIdNumber, verbose);
     slideElement.setAttribute('read', '');
   } catch(error) {
+    // TODO: show an error message or something
     console.error(error);
   } finally {
-    if(conn) {
+    if(isLocallyCreatedConnection && conn) {
       conn.close();
     }
   }
 }
 
 // TODO: use getAll, passing in a count parameter as an upper limit, and
-// then using slice or unshift or something to advance.
-// TODO: internally the parameter to getAll might be (offset+limit)
-function getUnarchivedUnreadEntries(conn, offset, limit) {
-  return new Promise((resolve, reject) => {
+// then using slice or unshift or something to advance. The parameter to getAll
+// might be (offset+limit)
+function loadUnarchivedUnreadEntriesFromDb(conn, offset, limit, verbose) {
+  return new Promise(function(resolve, reject) {
     const entries = [];
     let counter = 0;
     let advanced = false;
-    const limited = limit > 0;
+    const isLimited = limit > 0;
     const tx = conn.transaction('entry');
-    tx.oncomplete = () => resolve(entries);
+    tx.oncomplete = function(event) {
+      if(verbose) {
+        console.log('Loaded %d entries from database', entries.length);
+      }
+      resolve(entries);
+    };
+    tx.onerror = function(event) {
+      reject(tx.error);
+    };
+
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
     const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
     const request = index.openCursor(keyPath);
-    request.onsuccess = (event) => {
+    request.onsuccess = function(event) {
       const cursor = event.target.result;
-      if(!cursor) {
-        return;
-      }
-      if(offset && !advanced) {
-        advanced = true;
-        cursor.advance(offset);
-        return;
-      }
-      entries.push(cursor.value);
-      if(limited && ++counter < limit) {
-        cursor.continue();
+      if(cursor) {
+        if(offset && !advanced) {
+          advanced = true;
+          cursor.advance(offset);
+        } else {
+          entries.push(cursor.value);
+          if(isLimited && ++counter < limit) {
+            cursor.continue();
+          }
+        }
       }
     };
-    request.onerror = () => reject(request.error);
   });
 }
 
 // TODO: require caller to establish conn, do not do it here?
 // TODO: visual feedback on error
-async function appendSlides() {
+async function appendSlides(conn, verbose) {
   const limit = 3;
-  const offset = countUnreadSlides();
+  let isLocallyCreatedConnection = false;
+  let entries = [];
+  let name, version, connectTimeout;
 
+  const offset = countUnreadSlideElements();
 
-  let conn;
-  let entryArray = [];
   try {
-    conn = await openReaderDb();
-    entryArray = await getUnarchivedUnreadEntries(conn, offset, limit);
+    if(!conn) {
+      conn = await openReaderDb(name, version, connectTimeout, verbose);
+      isLocallyCreatedConnection = true;
+    }
+
+    entries = await loadUnarchivedUnreadEntriesFromDb(conn, offset, limit,
+      verbose);
   } catch(error) {
     console.error(error);
   } finally {
-    if(conn) {
+    if(isLocallyCreatedConnection && conn) {
       conn.close();
     }
   }
 
-  for(let entryObject of entryArray) {
-    appendSlide(entryObject);
+  for(let entry of entries) {
+    appendSlide(entry);
   }
 
-  return entryArray.length;
+  return entries.length;
 }
 
 // Add a new slide to the view.
-function appendSlide(entryObject) {
+function appendSlide(entry) {
   const containerElement = document.getElementById('slideshow-container');
   const slideElement = document.createElement('div');
 
@@ -148,8 +155,8 @@ function appendSlide(entryObject) {
   // affect the active element
   slideElement.setAttribute('tabindex', '-1');
 
-  slideElement.setAttribute('entry', entryObject.id);
-  slideElement.setAttribute('feed', entryObject.feed);
+  slideElement.setAttribute('entry', entry.id);
+  slideElement.setAttribute('feed', entry.feed);
   slideElement.setAttribute('class','entry');
   slideElement.addEventListener('click', slideOnClick);
   slideElement.style.position = 'absolute';
@@ -167,11 +174,11 @@ function appendSlide(entryObject) {
   slideElement.style.bottom = '0';
   slideElement.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
-  const titleElement = createArticleTitle(entryObject);
+  const titleElement = createArticleTitle(entry);
   slideElement.appendChild(titleElement);
-  const contentElement = createArticleContent(entryObject);
+  const contentElement = createArticleContent(entry);
   slideElement.appendChild(contentElement);
-  const sourceElement = createFeedSource(entryObject);
+  const sourceElement = createFeedSource(entry);
   slideElement.appendChild(sourceElement);
 
   containerElement.appendChild(slideElement);
@@ -184,16 +191,16 @@ function appendSlide(entryObject) {
   }
 }
 
-function createArticleTitle(entryObject) {
+function createArticleTitle(entry) {
   const titleElement = document.createElement('a');
-  titleElement.setAttribute('href', getEntryURLString(entryObject));
+  titleElement.setAttribute('href', getEntryURLString(entry));
   titleElement.setAttribute('class', 'entry-title');
   titleElement.setAttribute('target','_blank');
   titleElement.setAttribute('rel', 'noreferrer');
-  titleElement.setAttribute('title', entryObject.title || 'Untitled');
-  if(entryObject.title) {
-    titleElement.setAttribute('title', entryObject.title);
-    let titleText = entryObject.title;
+  titleElement.setAttribute('title', entry.title || 'Untitled');
+  if(entry.title) {
+    titleElement.setAttribute('title', entry.title);
+    let titleText = entry.title;
     titleText = filterArticleTitle(titleText);
     titleText = truncateHTML(titleText, 300);
     titleElement.innerHTML = titleText;
@@ -205,38 +212,38 @@ function createArticleTitle(entryObject) {
   return titleElement;
 }
 
-function createArticleContent(entryObject) {
+function createArticleContent(entry) {
   const contentElement = document.createElement('span');
   contentElement.setAttribute('class', 'entry-content');
   // <html><body> will be implicitly stripped
-  contentElement.innerHTML = entryObject.content;
+  contentElement.innerHTML = entry.content;
   return contentElement;
 }
 
-function createFeedSource(entryObject) {
+function createFeedSource(entry) {
   const sourceElement = document.createElement('span');
   sourceElement.setAttribute('class','entrysource');
 
-  if(entryObject.faviconURLString) {
+  if(entry.faviconURLString) {
     const faviconElement = document.createElement('img');
-    faviconElement.setAttribute('src', entryObject.faviconURLString);
+    faviconElement.setAttribute('src', entry.faviconURLString);
     faviconElement.setAttribute('width', '16');
     faviconElement.setAttribute('height', '16');
     sourceElement.appendChild(faviconElement);
   }
 
   const titleElement = document.createElement('span');
-  if(entryObject.feedLink) {
-    titleElement.setAttribute('title', entryObject.feedLink);
+  if(entry.feedLink) {
+    titleElement.setAttribute('title', entry.feedLink);
   }
 
   const buffer = [];
-  buffer.push(entryObject.feedTitle || 'Unknown feed');
+  buffer.push(entry.feedTitle || 'Unknown feed');
   buffer.push(' by ');
-  buffer.push(entryObject.author || 'Unknown author');
-  if(entryObject.datePublished) {
+  buffer.push(entry.author || 'Unknown author');
+  if(entry.datePublished) {
     buffer.push(' on ');
-    buffer.push(formatDate(entryObject.datePublished));
+    buffer.push(formatDate(entry.datePublished));
   }
   titleElement.textContent = buffer.join('');
   sourceElement.appendChild(titleElement);
@@ -260,6 +267,7 @@ function filterArticleTitle(title) {
   }
 
   // todo: should this be +3 given the spaces wrapping the delim?
+  // TODO: maybe this should be a call to a helper about getting words array
   const tailString = title.substring(index + 1);
   const tailWords = tailString.split(/\s+/g);
   const nonEmptyTailWords = tailWords.filter((w) => w);
@@ -294,59 +302,82 @@ function slideOnClick(event) {
   const urlString = anchor.getAttribute('href');
 
   chrome.tabs.create({'active': true, 'url': urlString});
-
-  markSlideRead(currentSlideElement);
+  let conn;// undefined
+  const verbose = true;// temp
+  markSlideRead(conn, currentSlideElement, verbose);
   event.preventDefault();
   return false;
 }
 
-// TODO: this is connecting twice now, I want to be using only a single conn
-// for both append slides and markSlideRead
-// TODO: there is some minor annoyance, that in the case of append, this
-// does the animation super fast
 // TODO: visual feedback on error
 async function showNextSlide() {
 
-  // If slide count is 0, currentSlideElement may be undefined
+  // Temporarily true for debugging purposes
+  const verbose = true;
+
+  // currentSlideElement may be undefined
+  // This isn't actually an error. For example, when initially viewing the
+  // slideshow before subscribing when there are no feeds and entries, or
+  // initially viewing the slideshow when all entries are read.
   if(!currentSlideElement) {
     console.warn('No current slide');
     return;
   }
 
   const oldSlideElement = currentSlideElement;
+  const unreadSlideElementsCount = countUnreadSlideElements();
+  let numEntriesAppended = 0;
+  let conn, name, version, connectTimeout;
 
-  // Conditionally append more slides
-  const unreadCount = countUnreadSlides();
-  let numAppended = 0;
-  if(unreadCount < 2) {
-    numAppended = await appendSlides();
-  }
+  try {
+    conn = await openReaderDb(name, version, connectTimeout, verbose);
 
-  if(currentSlideElement.nextSibling) {
-    currentSlideElement.style.left = '-100%';
-    currentSlideElement.style.right = '100%';
-    currentSlideElement.nextSibling.style.left = '0px';
-    currentSlideElement.nextSibling.style.right = '0px';
-    currentSlideElement.scrollTop = 0;
-    currentSlideElement = currentSlideElement.nextSibling;
+    // Conditionally append more slides
+    if(unreadSlideElementsCount < 2) {
+      numEntriesAppended = await appendSlides(conn, verbose);
+    }
 
-    // Change the active element to the new current slide, so that scrolling
-    // using keyboard keys still works
-    currentSlideElement.focus();
+    if(currentSlideElement.nextSibling) {
+      currentSlideElement.style.left = '-100%';
+      currentSlideElement.style.right = '100%';
+      currentSlideElement.nextSibling.style.left = '0px';
+      currentSlideElement.nextSibling.style.right = '0px';
+      currentSlideElement.scrollTop = 0;
+      currentSlideElement = currentSlideElement.nextSibling;
 
-    // TODO: I don't think this should be awaited, it should be async
-    await markSlideRead(oldSlideElement);
-  }
+      // Change the active element to the new current slide, so that scrolling
+      // with keys works
+      currentSlideElement.focus();
 
-  // Shrink the number of slides
-  if(numAppended > 0) {
-    const containerElement = document.getElementById('slideshow-container');
-    while(containerElement.childElementCount > 6 &&
-      containerElement.firstChild !== currentSlideElement) {
-      removeSlide(containerElement.firstChild);
+      // Must be awaited to avoid error "DOMException: Failed to execute
+      // 'transaction' on 'IDBDatabase': The database connection is closing."
+      await markSlideRead(conn, oldSlideElement, verbose);
+    }
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    if(conn) {
+      conn.close();
     }
   }
+
+  if(numEntriesAppended > 0) {
+    cleanupOlderSlides();
+  }
 }
+
+function cleanupOlderSlides() {
+  // Weakly assert as this error is trivial
+  console.assert(currentSlideElement, 'currentSlideElement is undefined');
+
+  const maxSlidesLoadedCount = 6;
+  const containerElement = document.getElementById('slideshow-container');
+  while(containerElement.childElementCount > maxSlidesLoadedCount &&
+    containerElement.firstChild !== currentSlideElement) {
+    removeSlide(containerElement.firstChild);
+  }
+}
+
 
 // Move the current slide out of view to the right, and move the previous
 // slide into view, and then update the current slide.
@@ -372,7 +403,7 @@ function showPreviousSlide() {
   currentSlideElement.focus();
 }
 
-function countUnreadSlides() {
+function countUnreadSlideElements() {
   const unreadSlideList =
     document.body.querySelectorAll('div[entry]:not([read])');
   return unreadSlideList.length;
@@ -429,11 +460,12 @@ window.addEventListener('keydown', function(event) {
   });
 });
 
-
-
 document.addEventListener('DOMContentLoaded', function(event) {
   addEntryCSSRules();
-  appendSlides();
+
+  let conn;// leave as undefined, appendSlides will auto connect
+  const verbose = true; // Temporarily true for debugging
+  appendSlides(conn, verbose);
 }, {'once': true});
 
 } // End file block scope

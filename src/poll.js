@@ -79,7 +79,8 @@ async function pollFeeds(idlePeriodSeconds, recencyPeriodMillis,
       ignoreModifiedCheck, fetchFeedTimeoutMillis, fetchHTMLTimeoutMillis,
       fetchImageTimeoutMillis, verbose);
     if(numEntriesAdded) {
-      await updateBadgeText(readerConn);
+      // intentionally not awaited
+      updateBadgeText(readerConn).catch(console.warn);
     }
   } finally {
     if(readerConn) {
@@ -164,6 +165,7 @@ function showPollNotification(numEntriesAdded) {
 }
 
 function isFeedPollEligible(feed, recencyPeriodMillis, verbose) {
+
   // If we do not know when the feed was fetched, then assume it is a new feed
   // that has never been fetched. In this case, consider the feed to be
   // eligible
@@ -178,7 +180,8 @@ function isFeedPollEligible(feed, recencyPeriodMillis, verbose) {
     // A feed has been polled too recently if not enough time has elasped from
     // the last time the feed was polled.
     if(verbose) {
-      console.debug('Feed polled too recently', getFeedURLString(feed));
+      console.debug('Feed polled too recently',
+        Feed.prototype.getURL.call(feed));
     }
     // In this case we do not want to poll the feed
     return false;
@@ -227,13 +230,11 @@ async function processFeedSilently(readerConn, iconConn, feed,
 async function processFeed(readerConn, iconConn, localFeed,
   fetchFeedTimeoutMillis, ignoreModifiedCheck, fetchHTMLTimeoutMillis,
   fetchImageTimeoutMillis, verbose) {
-
   if(typeof localFeed === 'undefined') {
     throw new TypeError('localFeed is undefined in processFeed params');
   }
 
-  const urlString = getFeedURLString(localFeed);
-
+  const urlString = Feed.prototype.getURL.call(localFeed);
   const timeoutMillis = fetchFeedTimeoutMillis;
   const acceptHTML = true;
 
@@ -251,7 +252,7 @@ async function processFeed(readerConn, iconConn, localFeed,
 
   const parseResult = parseFetchedFeed(response);
   const mergedFeed = mergeFeeds(localFeed, parseResult.feed);
-  let storableFeed = sanitizeFeed(mergedFeed);
+  let storableFeed = Feed.prototype.sanitize.call(mergedFeed);
   storableFeed = filterEmptyProperties(storableFeed);
   storableFeed.dateUpdated = new Date();
   await putFeedInDb(readerConn, storableFeed);

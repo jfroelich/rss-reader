@@ -12,7 +12,6 @@ function updateEntryCSSRules(event) {
   updateEntryTitleCSSRule(sheet);
   updateEntryContentCSSRule(sheet);
 }
-this.updateEntryCSSRules = updateEntryCSSRules;
 
 // Get the current settings from local storage and then create css rules and
 // append them to the default style sheet.
@@ -22,7 +21,6 @@ function addEntryCSSRules() {
   addEntryTitleCSSRule(sheet);
   addEntryContentCSSRule(sheet);
 }
-this.addEntryCSSRules = addEntryCSSRules;
 
 function addEntryCSSRule(sheet) {
   let buffer = [];
@@ -195,5 +193,9 @@ function updateEntryContentCSSRule(sheet) {
   }
   rule.style.webkitColumnCount = columnCount;
 }
+
+// Globals
+this.updateEntryCSSRules = updateEntryCSSRules;
+this.addEntryCSSRules = addEntryCSSRules;
 
 } // End file block scope

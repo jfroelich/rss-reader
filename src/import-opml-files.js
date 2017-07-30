@@ -60,14 +60,14 @@ async function importOPMLFiles(files, verbose) {
 this.importOPMLFiles = importOPMLFiles;
 
 async function importFilesInternal(readerConn, iconConn, files, verbose) {
-  const promises = new Array(files.length);
+  const promises = [];
   for(let file of files) {
     const promise = importFileSilently(readerConn, iconConn, file, verbose);
     promises.push(promise);
   }
 
   return await Promise.all(promises);
-};
+}
 
 // Decorates importFile to avoid Promise.all failfast behavior
 async function importFileSilently(readerConn, iconConn, fileObject, verbose) {
@@ -132,8 +132,8 @@ async function importFile(readerConn, iconConn, fileObject, verbose) {
 
 // Filter duplicates, favoring earlier in document order
 function aggregateOutlinesByXMLURL(outlines) {
-  const uniqueURLsArray = new Array(outlines.length);
-  const uniqueOutlineArray = new Array(outlines.length);
+  const uniqueURLsArray = [];
+  const uniqueOutlineArray = [];
   for(let outlineObject of outlines) {
     if(!uniqueURLsArray.includes(outlineObject.xmlUrl)) {
       uniqueOutlineArray.push(outlineObject);
@@ -173,7 +173,7 @@ function normalizeOutlineLinks(outlines) {
 
 // Convert outlines into feeds
 function convertOutlines(outlines) {
-  const feeds = new Array(outlines.length);
+  const feeds = [];
   for(let outlineObject of outlines) {
     const feed = convertOutlineToFeed(outlineObject);
     feeds.push(feed);
@@ -185,7 +185,7 @@ function convertOutlines(outlines) {
 async function batchSubscribe(feeds, readerConn, iconConn, verbose) {
 
   // Map feeds into subscribe promises
-  const promises = new Array(feeds.length);
+  const promises = [];
   for(let feed of feeds) {
     const promise = subscribeSilently(readerConn, iconConn, feed, verbose);
     promises.push(promise);
@@ -226,7 +226,7 @@ function convertOutlineToFeed(outlineObject) {
     feed.link = outlineObject.htmlUrl;
   }
 
-  addFeedURLString(feed, outlineObject.xmlUrl);
+  Feed.prototype.addURL.call(feed, outlineObject.xmlUrl);
 
   return feed;
 }
@@ -234,19 +234,17 @@ function convertOutlineToFeed(outlineObject) {
 // Returns the result of subscribe, which is the added feed object, or null
 // if an error occurs. This wraps so that it can be used with Promise.all
 async function subscribeSilently(readerConn, iconConn, feed, verbose) {
-  const options = {
-    'suppressNotifications': true,
-    'verbose': verbose
-  };
-
+  let timeoutMillis, suppressNotifications;
+  const promise = subscribe(readerConn, iconConn, feed, timeoutMillis,
+    suppressNotifications, verbose);
   try {
-    return await subscribe(readerConn, iconConn, feed, options);
+    return await promise;
   } catch(error) {
     if(verbose) {
       console.warn(error);
     }
   }
-};
+}
 
 function isSupportedFileType(fileTypeString) {
 

@@ -1,5 +1,4 @@
 // See license.md
-
 'use strict';
 
 { // Begin file block scope
@@ -21,18 +20,18 @@ async function setImageDimensions(documentObject, timeoutMillis = 0) {
   const imageList = documentObject.getElementsByTagName('img');
 
   // Fetch and update all images, concurrently
-  const promiseArray = new Array(imageList.length);
+  const promises = [];
   for(let image of imageList) {
-    const promise = updateImageDimensionsNoRaise(image, timeoutMillis);
-    promiseArray.push(promise);
+    const promise = updateImageDimensionsSilently(image, timeoutMillis);
+    promises.push(promise);
   }
 
-  // Block until all images fetched
-  const resultArray = await Promise.all(promiseArray);
+  // Block until all images modified
+  const results = await Promise.all(promises);
 
-  // Reduce resultArray into a count of true values
+  // Reduce results into a count of true values
   let numModified = 0;
-  for(let result of resultArray) {
+  for(let result of results) {
     if(result) {
       numModified++;
     }
@@ -40,16 +39,16 @@ async function setImageDimensions(documentObject, timeoutMillis = 0) {
   return numModified;
 }
 
-this.setImageDimensions = setImageDimensions;
-
 // Allows updateImageDimensions to be used with Promise.all and avoid its
 // fail-fast behavior.
-async function updateImageDimensionsNoRaise(image, timeoutMillis) {
+async function updateImageDimensionsSilently(image, timeoutMillis) {
   let result = false;
+  const updatePromise = updateImageDimensions(image, timeoutMillis);
   try {
-    result = updateImageDimensions(image, timeoutMillis);
+    result = await updatePromise;
   } catch(error) {
     // Ignore, leave result as false
+    console.log('Set image dimensions error', image.getAttribute('src'), error);
   }
   return result;
 }
@@ -82,7 +81,6 @@ async function updateImageDimensions(image, timeoutMillis) {
   }
 
   // Assume the url, if present, is absolute.
-
   // Verify the url is syntactically valid and parse the url's protocol
   const urlObject = new URL(srcString);
 
@@ -92,19 +90,21 @@ async function updateImageDimensions(image, timeoutMillis) {
     return false;
   }
 
-  const fetchPromise = fetchImage(image, urlObject.href);
-
+  // Allow errors to bubble
+  const fetchPromise = fetchAndUpdateImage(image, urlObject.href);
+  let raceOrNonRacePromise;
   if(timeoutMillis) {
     // Race a timeoutMillis against a fetch attempt
-    const promiseArray = new Array(2);
-    promiseArray.push(fetchPromise);
+    const promises = [];
+    promises.push(fetchPromise);
     const timeoutPromise = rejectAfterTimeout(image, timeoutMillis);
-    promiseArray.push(timeoutPromise);
-    return await Promise.race(promiseArray);
+    promises.push(timeoutPromise);
+    raceOrNonRacePromise = Promise.race(promises);
   } else {
-
-    return await fetchPromise;
+    raceOrNonRacePromise = fetchPromise;
   }
+
+  return await raceOrNonRacePromise;
 }
 
 // Rejects with a time out error after a given number of ms
@@ -114,10 +114,9 @@ function rejectAfterTimeout(image, timeoutMillis) {
 }
 
 // Fetch an image element.
-// TODO: this is not clearly named, now that this updates props
-// TODO: Does a normal image request include cookie header? Minimize tracking
-// @param url {String} an image url
-function fetchImage(image, urlString) {
+// @param image {Element} an image element
+// @param urlString {String} an image url
+function fetchAndUpdateImage(image, urlString) {
   return new Promise((resolve, reject) => {
     // Create proxy image in document running this script
     const proxy = new Image();
@@ -132,14 +131,21 @@ function fetchImage(image, urlString) {
       return;
     }
 
-    proxy.onload = () => {
+    proxy.onload = function(event) {
       image.width = proxy.width;
       image.height = proxy.height;
       resolve(true);
     };
-    proxy.onerror = () => reject(
-      new Error(`Failed to fetch image ${urlString}`));
+
+    // TODO: is there an error property of the event this could use?
+    proxy.onerror = function(event) {
+      const errorMessage = `Failed to fetch image ${urlString}`;
+      const error = new Error(errorMessage);
+      reject(error);
+    };
   });
 }
+
+this.setImageDimensions = setImageDimensions;
 
 } // End file block scope

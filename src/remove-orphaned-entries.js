@@ -4,6 +4,8 @@
 
 { // Begin file block scope
 
+// TODO: use explicit options here
+
 async function removeOrphanedEntries(options) {
   options = options || {};
   let conn;

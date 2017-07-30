@@ -74,7 +74,7 @@ OPMLDocument.prototype.selectOutlineElements = function() {
 
 OPMLDocument.prototype.getOutlineObjects = function() {
   const elements = this.selectOutlineElements();
-  const objects = new Array(elements.length);
+  const objects = [];
   for(let element of elements) {
     const object = this.createOutlineObject(element);
     objects.push(object);

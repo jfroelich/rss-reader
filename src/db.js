@@ -3,7 +3,7 @@
 
 { // Begin file block scope
 
-async function openReaderDb(name, version, timeoutMillis) {
+async function openReaderDb(name, version, timeoutMillis, verbose) {
   if(typeof name === 'undefined') {
     name = 'reader';
   }
@@ -13,42 +13,72 @@ async function openReaderDb(name, version, timeoutMillis) {
 
   // For app purposes use a custom default timeout over the generic timeout
   // policy in rejectAfterTimeout
+  // I've lengthened it from 20 to 50 to 500. I've noticed it occassionally
+  // hangs, no clue.
   if(typeof timeoutMillis === 'undefined') {
-    timeoutMillis = 50;
+    timeoutMillis = 500;
   }
 
+  if(verbose) {
+    console.debug('Connecting to indexedDB', name, version);
+  }
+
+  const sharedState = {};
+  sharedState.didTimeout = false;
+
   // Race timeout against connect to avoid hanging indefinitely
-  const connectPromise = connectInternal(name, version);
+  const connectPromise = connectInternal(name, version, sharedState, verbose);
   const errorMessage = 'Connecting to indexedDB database ' + name +
     ' timed out.';
-  const timeoutPromise = rejectAfterTimeout(timeoutMillis, errorMessage);
+  const timeoutPromise = rejectAfterTimeout(timeoutMillis, errorMessage,
+    sharedState);
   const promises = [connectPromise, timeoutPromise];
   return await Promise.race(promises);
 }
 
-function connectInternal(name, version) {
+function connectInternal(name, version, sharedState, verbose) {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(name, version);
     request.onupgradeneeded = onUpgradeNeeded;
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = function() {
+      const conn = request.result;
+      if(sharedState.didTimeout) {
+        if(verbose) {
+          console.log('connectInternal eventually finished but after timeout');
+        }
+        // Close the connection as it will be ignored
+        conn.close();
+      } else {
+        if(verbose) {
+          console.log('Connected to indexedDB', name, version);
+        }
+      }
+
+      resolve(conn);
+    }
     request.onerror = () => reject(request.error);
     request.onblocked = console.warn;
   });
 }
 
-function rejectAfterTimeout(timeoutMillis, errorMessage) {
+function rejectAfterTimeout(timeoutMillis, errorMessage, sharedState) {
   if(typeof timeoutMillis === 'undefined') {
     timeoutMillis = 4;
   }
 
+  // Throw immediately, this is more like a syntax error
   if(timeoutMillis < 4) {
+    sharedState.didTimeout = true;
     throw new TypeError('timeoutMillis must be greater than 4: ' +
       timeoutMillis);
   }
 
   return new Promise((resolve, reject) => {
-    const error = new Error(errorMessage);
-    setTimeout(reject, timeoutMillis, error);
+    setTimeout(function() {
+      sharedState.didTimeout = true;
+      const error = new Error(errorMessage);
+      reject(error);
+    }, timeoutMillis);
   });
 }
 

@@ -2,12 +2,10 @@
 
 async function testDb() {
   console.log('Starting db test');
-
   const dbName = 'test-feed-db';
   const dbVersion = 1;
   let connTimeoutMillis;
   let isClosed = false;
-
   let conn;
   try {
     console.log('Connecting to database', dbName);

@@ -16,8 +16,6 @@ async function testArchiveEntries() {
     conn.close();
     isClosed = true;
     await deleteDatabase(conn.name);
-  } catch(error) {
-    console.error(error);
   } finally {
     if(conn && !isClosed) {
       conn.close();

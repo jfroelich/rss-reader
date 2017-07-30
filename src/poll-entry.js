@@ -188,7 +188,10 @@ function putEntryInDb(conn, entry) {
 }
 
 async function putEntry(readerConn, entry, verbose) {
-  const sanitized = sanitizeEntry(entry);
+
+  let authorMaxLength, titleMaxLength, contentMaxLength;
+  const sanitized = sanitizeEntry(entry, authorMaxLength, titleMaxLength,
+    contentMaxLength);
   const storable = filterEmptyProperties(sanitized);
   storable.readState = ENTRY_STATE_UNREAD;
   storable.archiveState = ENTRY_STATE_UNARCHIVED;

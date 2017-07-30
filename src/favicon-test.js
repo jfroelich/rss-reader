@@ -5,9 +5,7 @@
 /*
 TODO:
 * Use a test db instead of the real db, and make sure to
-delete the test db at the end of the test. openFaviconDb accepts an options
-object where I can define name/version, and I can custom code a simple delete
-database function
+delete the test db at the end of the test.
 * actually run tests instead of command line
 * test offline
 * test a non-existent host

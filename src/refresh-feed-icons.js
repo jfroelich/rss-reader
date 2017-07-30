@@ -15,18 +15,19 @@ async function refreshFeedIcons(verbose) {
   let readerConn, iconConn;
   let iconDbName, iconDbVersion, connectTimeoutMillis;
 
-  const readerConnPromise = openReaderDb();
-  const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion,
+  const openReaderDbPromise = openReaderDb();
+  const openFaviconDbPromise = openFaviconDb(iconDbName, iconDbVersion,
     connectTimeoutMillis, verbose);
-  const promises = [readerConnPromise, iconConnPromise];
-  const connectionPromise = Promise.all(promises);
+  const connectionPromises = [openReaderDbPromise, openFaviconDbPromise];
+  const openDatabasesPromise = Promise.all(connectionPromises);
 
   try {
-    const connections = await connectionPromise;
+    const connections = await openDatabasesPromise;
     readerConn = connections[0];
     iconConn = connections[1];
     const feeds = await loadAllFeedsFromDb(readerConn);
-    const resolutions = await processFeeds(feeds, readerConn, iconConn);
+    const resolutions = await processFeeds(feeds, readerConn, iconConn,
+      verbose);
     numModified = getNumModified(resolutions);
   } finally {
     if(readerConn) {
@@ -46,10 +47,11 @@ async function refreshFeedIcons(verbose) {
 
 this.refreshFeedIcons = refreshFeedIcons;
 
-async function processFeeds(feeds, readerConn, iconConn) {
-  const promises = new Array(feeds.length);
+async function processFeeds(feeds, readerConn, iconConn, verbose) {
+  const promises = [];
   for(let feed of feeds) {
-    const promise = lookupFeedIconAndUpdateFeed(feed, readerConn, iconConn);
+    const promise = lookupFeedIconAndUpdateFeed(feed, readerConn, iconConn,
+      verbose);
     promises.push(promise);
   }
   return await Promise.all(promises);
@@ -78,16 +80,15 @@ function loadAllFeedsFromDb(conn) {
 // Returns true if the feed was updated
 // TODO: separate into two functions, one that looks up, one that
 // does the update
-async function lookupFeedIconAndUpdateFeed(feed, readerConn, iconConn) {
-  const lookupURLObject = createFeedIconLookupURL(feed);
+async function lookupFeedIconAndUpdateFeed(feed, readerConn, iconConn, verbose) {
+  const lookupURLObject = Feed.prototype.createIconLookupURL.call(feed);
   if(!lookupURLObject) {
     return false;
   }
 
+  // TODO: should these be parameters to this function?
   let maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
     minImageByteSize, maxImageByteSize;
-  const verbose = false;// TODO: get from param
-
   const iconURLString = await lookupFavicon(iconConn, lookupURLObject,
     maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
     minImageByteSize, maxImageByteSize, verbose);
@@ -114,7 +115,7 @@ async function lookupFeedIconAndUpdateFeed(feed, readerConn, iconConn) {
   return true;
 }
 
-// Adds or overwrites a feed in storage. Resolves with the new feed id if add.
+// Overwrites a feed in the database.
 // There are no side effects other than the database modification.
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
@@ -123,10 +124,7 @@ function putFeedInDb(conn, feed) {
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
     const request = store.put(feed);
-    request.onsuccess = () => {
-      const feedId = request.result;
-      resolve(feedId);
-    };
+    request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
 }

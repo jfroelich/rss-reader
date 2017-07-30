@@ -26,8 +26,8 @@ function parseFetchedFeed(response) {
     }
   }
 
-  addFeedURLString(feed, response.requestURLString);
-  addFeedURLString(feed, response.responseURLString);
+  Feed.prototype.addURL.call(feed, response.requestURLString);
+  Feed.prototype.addURL.call(feed, response.responseURLString);
   feed.dateFetched = new Date();
   feed.dateLastModified = response.lastModifiedDate;
 

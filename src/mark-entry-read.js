@@ -1,5 +1,4 @@
 // See license.md
-
 'use strict';
 
 { // Begin file block scope
@@ -15,7 +14,8 @@ async function markEntryRead(conn, entryId, verbose) {
     console.log('Updated database with read entry with id', entryId);
   }
 
-  updateBadgeText(conn, verbose);// intentionally not awaited
+  // intentionally not awaited
+  updateBadgeText(conn, verbose).catch(console.warn);
 }
 
 this.markEntryRead = markEntryRead;
@@ -40,7 +40,6 @@ function assertUnread(entry, entryId) {
     throw new Error(`Already read entry with id ${entryId}`);
   }
 }
-
 
 function findEntryById(conn, id) {
   return new Promise((resolve, reject) => {

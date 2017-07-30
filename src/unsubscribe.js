@@ -25,7 +25,8 @@ async function unsubscribe(conn, feedId, verbose) {
       entryIds.length);
   }
 
-  await updateBadgeText(conn);
+  // Intentionally not awaited
+  updateBadgeText(conn).catch(console.warn);
   return entryIds.length;
 }
 

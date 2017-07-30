@@ -3,46 +3,40 @@
 'use strict';
 
 // Utility functions related to working with feeds and entries
-
-const ENTRY_STATE_UNREAD = 0;
-const ENTRY_STATE_READ = 1;
-const ENTRY_STATE_UNARCHIVED = 0;
-const ENTRY_STATE_ARCHIVED = 1;
+function Feed() {}
 
 // Get the url currently representing the feed, which is the final url in its
 // internal urls array.
-function getFeedURLString(feed) {
-  if(!feed.urls.length) {
-    throw new TypeError('feed urls array is invalid');
+// @returns {String}
+Feed.prototype.getURL = function() {
+  const urls = this.urls;
+  if(!urls.length) {
+    throw new Error('feed.urls is invalid');
   }
 
-  return feed.urls[feed.urls.length - 1];
-}
+  return urls[urls.length - 1];
+};
 
 // Add a new url to the feed. Lazily creates the urls property.
-function addFeedURLString(feed, urlString) {
-  if(!('urls' in feed)) {
-    feed.urls = [];
-  }
-  const normalizedURLString = normalizeFeedURLString(urlString);
-  if(feed.urls.includes(normalizedURLString)) {
+// @param urlString {String}
+Feed.prototype.addURL = function(urlString) {
+  this.urls = this.urls || [];
+  const urlObject = new URL(urlString);
+  const normalizedURLString = urlObject.href;
+  if(this.urls.includes(normalizedURLString)) {
     return false;
   }
-  feed.urls.push(normalizedURLString);
+  this.urls.push(normalizedURLString);
   return true;
-}
-
-function normalizeFeedURLString(urlString) {
-  const url = new URL(urlString);
-  return url.href;
-}
+};
 
 // Creates a url object that can be used as input to lookupFavicon
-function createFeedIconLookupURL(feed) {
+// @returns {URL}
+Feed.prototype.createIconLookupURL = function() {
   // Cannot assume the link is set nor valid
-  if(feed.link) {
+  if(this.link) {
     try {
-      return new URL(feed.link);
+      return new URL(this.link);
     } catch(error) {
       console.warn(error);
     }
@@ -50,16 +44,19 @@ function createFeedIconLookupURL(feed) {
 
   // If the link is missing or invalid then use the origin
   // Assume the feed always has a url.
-  const feedURLString = getFeedURLString(feed);
-  const feedURLObject = new URL(feedURLString);
-  const originString = feedURLObject.origin;
+  // Due to expected custom 'this' binding use call, because getURL may not
+  // exist on 'this' as a function
+  const urlString = Feed.prototype.getURL.call(this);
+  const urlObject = new URL(urlString);
+  const originString = urlObject.origin;
   return new URL(originString);
-}
+};
 
+// Returns a shallow copy of the input feed with sanitized properties
 // TODO: sanitize is not same as validate, this should not validate, this is
 // a conflation of functionality
-function sanitizeFeed(inputFeed) {
-  const outputFeed = Object.assign({}, inputFeed);
+Feed.prototype.sanitize = function() {
+  const outputFeed = Object.assign({}, this);
 
   if(outputFeed.id) {
     if(!Number.isInteger(outputFeed.id) || outputFeed.id < 1) {
@@ -99,7 +96,7 @@ function sanitizeFeed(inputFeed) {
   }
 
   return outputFeed;
-}
+};
 
 // Returns a new object that results from merging the old feed with the new
 // feed. Fields from the new feed take precedence, except for URLs, which are
@@ -111,7 +108,7 @@ function mergeFeeds(oldFeedObject, newFeedObject) {
 
   if(newFeedObject.urls) {
     for(let urlString of newFeedObject.urls) {
-      addFeedURLString(mergedFeedObject, urlString);
+      Feed.prototype.addURL.call(mergedFeedObject, urlString);
     }
   } else {
     console.warn('Did not merge any new feed urls', oldFeedObject, newFeedObject);
@@ -119,6 +116,11 @@ function mergeFeeds(oldFeedObject, newFeedObject) {
 
   return mergedFeedObject;
 }
+
+const ENTRY_STATE_UNREAD = 0;
+const ENTRY_STATE_READ = 1;
+const ENTRY_STATE_UNARCHIVED = 0;
+const ENTRY_STATE_ARCHIVED = 1;
 
 // Get the last url in an entry's internal url list
 function getEntryURLString(entry) {
@@ -147,19 +149,94 @@ function addEntryURLString(entry, urlString) {
   return true;
 }
 
+// Throws an exception if 'this' feed is not suitable for storage. The
+// objective is to prevent garbage data from entering the database.
+// @param minDate {Date} optional, the oldest date allowed for date properties,
+// defaults to Jan 1, 1970.
+// NOTE: not fully implemented
+// NOTE: only validating date objects, not fully validating actual dates such
+// as if day of month > 31 or whatever
+// TODO: assert required properties are present
+// TODO: assert dates are not in the future
+// TODO: assert dates are not too far in the past
+// TODO: assert type, if set, is one of the valid types
+// TODO: assert feed has one or more urls
+// TODO: assert the type of each property?
+// TODO: add to appropriate calling contexts (e.g. whereever prep for storage
+// is done).
+Feed.prototype.assertValidity = function(minDate, requireId) {
+  const defaultMinDate = new Date(0);
+  const toString = Object.prototype.toString;
+  const maxDate = new Date();
+
+  // minDate is optional
+  if(typeof minDate === 'undefined') {
+    minDate = defaultMinDate;
+  }
+
+  // Validate the minDate parameter itself before using it
+  if(toString.call(minDate) !== '[object Date]') {
+    throw new TypeError('minDate is not a date object: ' + minDate);
+  } else if(isNaN(minDate.getTime())) {
+    throw new TypeError('minDate.getTime() is nan: ' + minDate);
+  } else if(minDate < defaultMinDate) {
+    throw new TypeError('minDate is too old: ' + minDate);
+  } else if(minDate > maxDate) {
+    throw new TypeError('minDate > maxDate: ' + minDate);
+  }
+
+  if(typeof this !== 'object') {
+    throw new Error('this is not an object: ' + this);
+  }
+
+  // this.id is optional because it does not exist when adding a feed to the
+  // datababse.
+  if('id' in this) {
+    if(isNan(this.id)) {
+      throw new Error('id is not a number: ' + this.id);
+    } else if(id < 0) {
+      throw new Error('id is negative: ' + this.id);
+    } else if(!Number.isInteger(id)) {
+      throw new Error('id is not an integer: ' + this.id);
+    }
+  } else if(requireId) {
+    throw new Error('feed missing required id: ' + this);
+  }
+
+
+  // TODO: unsure whether this is even a property at the moment, just
+  // wondering about how the validation would look
+  if('dateUpdated' in this) {
+    if(toString.call(this.dateUpdated) !== '[object Date]') {
+      throw new Error('dateUpdated is not a date object: ' + this.dateUpdated);
+    } else if(isNaN(this.dateUpdated.getTime())) {
+      throw new Error('dateUpdated.getTime() is nan: ' + this.dateUpdated);
+    } else if(this.dateUpdated < minDate) {
+      throw new Error('dateUpdated < minDate: ' + this.dateUpdated);
+    } else if(this.dateUpdated > maxDate) {
+      throw new Error('dateUpdated > maxDate: ' + this.dateUpdated);
+    }
+  }
+
+};
+
+
 // Returns a new entry object where fields have been sanitized. Impure
-// TODO: ensure dates are not in the future, and not too old? Should this be
-// a separate function like validateEntry?
-function sanitizeEntry(inputentry, options) {
-
-  const condenseWhitespace = function(string) {
+function sanitizeEntry(inputentry, authorMaxLength, titleMaxLength,
+  contentMaxLength) {
+  function condenseWhitespace(string) {
     return string.replace(/\s{2,}/g, ' ');
-  };
+  }
 
-  options = options || {};
-  const authorMaxLength = options.authorMaxLength || 200;
-  const titleMaxLength = options.titleMaxLength || 1000;
-  const contentMaxLength = options.contentMaxLength || 50000;
+  if(typeof authorMaxLength === 'undefined') {
+    authorMaxLength = 200;
+  }
+  if(typeof titleMaxLength === 'undefined') {
+    titleMaxLength = 1000;
+  }
+  if(typeof contentMaxLength === 'undefined') {
+    contentMaxLength = 50000;
+  }
 
   const outputEntry = Object.assign({}, inputentry);
 

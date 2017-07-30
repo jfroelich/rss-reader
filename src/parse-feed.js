@@ -276,7 +276,7 @@ function findEntryContent(entryElement) {
     const content = findChildElementByName(entryElement, 'content');
     const nodes = content ? content.childNodes : [];
 
-    const texts = new Array(nodes.length);
+    const texts = [];
     for(let node of nodes) {
       const nodeText = getAtomNodeText(node);
       texts.push(nodeText);

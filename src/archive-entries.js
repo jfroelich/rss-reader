@@ -3,22 +3,28 @@
 
 { // Begin file block scope
 
+// Run archiveEntries from the command line with default parameters
 async function commandArchiveEntries() {
   let maxAgeMillis;
   const verbose = true;
+  let numArchived = 0;
+  let conn;
   try {
     conn = await openReaderDb();
-    const numArchived = await archiveEntries(maxAgeMillis, verbose);
+    numArchived = await archiveEntries(maxAgeMillis, verbose);
   } finally {
     if(conn) {
       conn.close();
     }
   }
+  return numArchived;
 }
 
-// @param maxAgeMillis {Number}
-// @param verbose {Boolean}
-// @returns {Number} the new of archived entries
+// Scans the database and compacts entries that have been read
+// @param maxAgeMillis {Number} how long before an entry is considered
+// archivable
+// @param verbose {Boolean} whether to log messages to console
+// @returns {Number} the number of archived entries
 async function archiveEntries(maxAgeMillis, verbose) {
   if(typeof maxAgeMillis === 'undefined') {
     maxAgeMillis = 1 * 24 * 60 * 60 * 1000;
@@ -30,12 +36,13 @@ async function archiveEntries(maxAgeMillis, verbose) {
   }
 
   let conn;
+  let compacts, entries;
   try {
     conn = await openReaderDb();
-    const entries = await loadUnarchivedReadEntriesFromDb(conn);
+    entries = await loadUnarchivedReadEntriesFromDb(conn);
     const archivableEntries = selectArchivableEntries(entries, maxAgeMillis);
-    const compacts = compactEntries(archivableEntries, verbose);
-    const putResolutions = await putEntriesInDb(conn, compacts);
+    compacts = compactEntries(archivableEntries, verbose);
+    await putEntriesInDb(conn, compacts);
   } finally {
     if(conn) {
       conn.close();
@@ -50,6 +57,7 @@ async function archiveEntries(maxAgeMillis, verbose) {
   return compacts.length;
 }
 
+// Throw errors if maxAgeMillis is invalid
 function validateMaxAgeInMillis(maxAgeMillis) {
   if(!Number.isInteger(maxAgeMillis)) {
     throw new TypeError(`Invalid maxAgeMillis ${maxAgeMillis}`);
@@ -58,6 +66,10 @@ function validateMaxAgeInMillis(maxAgeMillis) {
   }
 }
 
+// Get all entries from the database as an array where entries are not
+// archived and are read
+// @param conn {IDBDatabase}
+// @returns {Promise}
 function loadUnarchivedReadEntriesFromDb(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
@@ -70,6 +82,8 @@ function loadUnarchivedReadEntriesFromDb(conn) {
   });
 }
 
+// Acts as an array filter. Returns a new array consisting of only entries
+// that are archivable
 function selectArchivableEntries(entries, maxAgeMillis) {
   const archivableEntries = [];
   const currentDate = new Date();
@@ -82,8 +96,13 @@ function selectArchivableEntries(entries, maxAgeMillis) {
   return archivableEntries;
 }
 
+// Acts as an array map. Returns a new array of entry objects where each
+// entry has been compacted.
+// @param entries {Array}
+// @param verbose {Boolean}
 function compactEntries(entries, verbose) {
-  const compacts = new Array(entries.length);
+  const currentDate = new Date();
+  const compacts = [];
   for(let entry of entries) {
     const compacted = compact(entry, currentDate);
     compacts.push(compacted);
@@ -100,34 +119,10 @@ function compactEntries(entries, verbose) {
   return compacts;
 }
 
-// Promise.all is failfast so this aborts if any one entry fails
-async function putEntriesInDb(conn, entries) {
-  const tx = conn.transaction('entry', 'readwrite');
-  const promises = new Array(entries.length);
-  const currentDate = new Date();
-  for(let entry of entries) {
-    entry.dateUpdated = currentDate;
-    const promise = putEntry(tx, entry);
-    promises.push(promise);
-  }
-  return await Promise.all(promises);
-}
-
-// Resolves when the entry has been stored to the result of the request
-// If entry.id is not set this will result in adding
-// Sets dateUpdated before put. Impure.
-// @param tx {IDBTransaction}
-// @param entry {Object} the entry to store
-function putEntry(tx, entry) {
-  return new Promise((resolve, reject) => {
-    const store = tx.objectStore('entry');
-    const request = store.put(entry);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// Shallow copy certain properties into a new entry
+// Shallow copy certain properties into a new entry object
+// @param entry {Object}
+// @param archiveDate {Date}
+// @returns {Object} the compacted entry
 function compact(entry, archiveDate) {
   const compacted = {};
   compacted.dateCreated = entry.dateCreated;
@@ -141,23 +136,54 @@ function compact(entry, archiveDate) {
   return compacted;
 }
 
-function broadcastArchiveMessage(entries) {
-  if(!entries.length) {
-    return;
-  }
-  const ids = new Array(entries.length);
+// @param conn {IDBDatabase}
+// @param entries {Iterable}
+// TODO: is there a putAll?
+async function putEntriesInDb(conn, entries) {
+  const tx = conn.transaction('entry', 'readwrite');
+  const promises = [];
+  const currentDate = new Date();
   for(let entry of entries) {
-    ids.push(entry.id);
+    entry.dateUpdated = currentDate;
+    const promise = putEntry(tx, entry);
+    promises.push(promise);
   }
-  const archiveMessage = {};
-  archiveMessage.type = 'archivedEntries';
-  archiveMessage.ids = ids;
 
-  const dbChannel = new BroadcastChannel('db');
-  dbChannel.postMessage(archiveMessage);
-  dbChannel.close();
+  // Promise.all is failfast so this aborts if any one entry fails
+  return await Promise.all(promises);
 }
 
+// Resolves when the entry has been stored to the result of the request
+// If entry.id is not set this will result in adding
+// @param tx {IDBTransaction}
+// @param entry {Object} the entry to store
+function putEntry(tx, entry) {
+  return new Promise((resolve, reject) => {
+    const store = tx.objectStore('entry');
+    const request = store.put(entry);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+
+// Send a message to the "db" broadcast channel for each entry that was
+// archived.
+// @param entries {Iterable}
+function broadcastArchiveMessage(entries) {
+  if(entries.length) {
+    const dbChannel = new BroadcastChannel('db');
+    for(let entry of entries) {
+      const message = {};
+      message.type = 'archivedEntry';
+      message.id = entry.id;
+      dbChannel.postMessage(message);
+    }
+    dbChannel.close();
+  }
+}
+
+// Export to global scope
 this.archiveEntries = archiveEntries;
 this.commandArchiveEntries = commandArchiveEntries;
 

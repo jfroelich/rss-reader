@@ -219,7 +219,7 @@ async function startSubscription(urlObject) {
   appendSubscriptionMonitorMessage(`Subscribing to ${urlObject.href}`);
 
   const feed = {};
-  addFeedURLString(feed, urlObject.href);
+  Feed.prototype.addURL.call(feed, urlObject.href);
   const options = {};
   options.verbose = true;// temp
   // Leaving other options to defaults for now
@@ -228,6 +228,7 @@ async function startSubscription(urlObject) {
   let iconConn;
   const verbose = true; // temp, for now
   let iconDbName, iconDbVersion, connectTimeoutMillis;
+  let subscribeTimeoutMillis, suppressNotifications;
 
   const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion,
     connectTimeoutMillis, verbose);
@@ -239,7 +240,8 @@ async function startSubscription(urlObject) {
     const connectionResolutions = await connectionPromise;
     readerConn = connectionResolutions[0];
     iconConn = connectionResolutions[1];
-    subcribedfeed = await subscribe(readerConn, iconConn, feed, options);
+    subcribedfeed = await subscribe(readerConn, iconConn, feed,
+      subscribeTimeoutMillis, suppressNotifications, verbose);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -267,7 +269,7 @@ async function startSubscription(urlObject) {
   updateFeedCount();
 
   // Show a brief message that the subscription was successful
-  const feedURLString = getFeedURLString(subcribedfeed);
+  const feedURLString = Feed.prototype.getURL.call(subcribedfeed);
   appendSubscriptionMonitorMessage(`Subscribed to ${feedURLString}`);
 
   // Hide the sub monitor
@@ -343,7 +345,7 @@ async function feedListItemOnClick(event) {
   }
 
   const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = getFeedURLString(feed);
+  feedURLElement.textContent = Feed.prototype.getURL.call(feed);
   const feedLinkElement = document.getElementById('details-feed-link');
   feedLinkElement.textContent = feed.link || '';
   const unsubscribeButton = document.getElementById('details-unsubscribe');
@@ -704,7 +706,7 @@ function createOPMLBlob(feeds, title) {
   for(let feed of feeds) {
     const outline = {};
     outline.type = feed.type;
-    outline.xmlUrl = getFeedURLString(feed);
+    outline.xmlUrl = Feed.prototype.getURL.call(feed);
     outline.title = feed.title;
     outline.description = feed.description;
     outline.htmlUrl = feed.link;
