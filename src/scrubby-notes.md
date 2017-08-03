@@ -5,20 +5,10 @@ Helpers for sanitizing the contents of an HTMLDocument
 
 # TODO
 
-* For some reason I am seeing log messages in console while poll is running that
-indicate that scripts are failing to load due to a content security policy.
-Perhaps the document created by fetch is not inert.
-** I monitored removal of scripts, and scripts are certainly removed. Maybe
-something is happening with parsing somewhere, maybe I am setting
-document.innerHTML instead of doc.innerHTML or something like that.
-* I think it is better to explicitly remove scripts in a separate function
-rather than simply including it as a part of the blacklist filter. This will
-also make it simpler to test the above issue exclusively, and narrow down where
-there is a mistake in my assumptions.
-** Note that I do not recall ever seeing these, so it has to do with something
-that changes. New chrome version could have changed the fetch api internals.
-Switching from xmlhttprequest to fetch may contribute. I could have introduced
-a mistake somewhere when doing massive refactoring.
+* Create sanitize-html-document.js, move relevant code there out of scrubby
+* Create condense-html-document.hs, move relevant code there out of scrubby
+* Create secure-html-document.js, move relevant code there out of scrubby
+
 * Replace strong with b to shrink document size
 * Replace em with i to shrink document size
 * Replace entities with single unicode character where possible in order
@@ -33,3 +23,5 @@ algorithm and its errata notes
 
 * Ensure that the ping attribute of anchors is removed. Probably just do this
 explicitly even if it is redundant.
+* simarly probably move the add-no-ref and such to some other lib that deals
+with DNT code

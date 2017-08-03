@@ -4,31 +4,24 @@
 
 const sniff = {};
 
-// TODO: something is bugged with isProbablyBinary not picking up pdfs
+// TODO: something is bugged with is_probably_binary not picking up pdfs
 
 // Guess if the url path is not an html mime type
-sniff.isProbablyBinary = function(pathString) {
-
-  const typeString = sniff.sniffType(pathString);
-
-  if(!typeString) {
+sniff.is_probably_binary = function(path) {
+  const type_string = sniff.sniff_type(path);
+  if(!type_string)
     return;
-  }
-
-  const slashPosition = typeString.indexOf('/');
-  if(slashPosition === -1) {
+  const slash_position = type_string.indexOf('/');
+  if(slash_position === -1)
     return;
-  }
-
-  const superTypeString = typeString.substring(0, slashPosition);
-  const binarySuperTypes = ['application', 'audio', 'image', 'video'];
-  return binarySuperTypes.includes(superTypeString);
+  const super_type_string = type_string.substring(0, slash_position);
+  const binary_super_types = ['application', 'audio', 'image', 'video'];
+  return binary_super_types.includes(super_type_string);
 };
 
 // Guess the mime type of the url path by looking at the filename extension
-sniff.sniffType = function(pathString) {
-
-  const extensionMimeMap = {
+sniff.sniff_type = function(path) {
+  const extension_mime_map = {
     'ai':   'application/postscript',
     'aif':  'audio/aiff',
     'atom': 'application/atom+xml',
@@ -88,10 +81,9 @@ sniff.sniffType = function(pathString) {
     'zip':  'application/zip'
   };
 
-  const extensionString = sniff.findExtension(pathString);
-  if(extensionString) {
-    return extensionMimeMap[extensionString];
-  }
+  const extension_string = sniff.find_extension(path);
+  if(extension_string)
+    return extension_mime_map[extension_string];
 };
 
 
@@ -104,15 +96,14 @@ sniff.sniffType = function(pathString) {
 // that are of any concern. The cost of returning the wrong extension is greater
 // than not returning the correct extension because this is a factor of deciding
 // whether to filter content.
-// @param pathString {String} path to analyze (paths should have leading /)
+// @param path {String} path to analyze (paths should have leading /)
 // @returns {String} lowercase extension or undefined
-sniff.findExtension = function(pathString) {
+sniff.find_extension = function(path) {
 
-  // pathString is required
-  // TODO: allow an exception to happen instead of checking
-  if(!pathString) {
+  // path is required
+  // TODO: allow an exception to happen instead of checking?
+  if(!path)
     return;
-  }
 
   // TODO: check that the first character is a '/' to partially validate path
   // if not, throw a new TypeError
@@ -126,39 +117,36 @@ sniff.findExtension = function(pathString) {
 
   // If the path is shorter than the smallest path that could contain an
   // exception, then this will not be able to find an exception, so exit early
-  const minPathLength = '/a.b'.length;
-  if(pathString.length < minPathLength) {
+  const min_path_length = '/a.b'.length;
+  if(path.length < min_path_length)
     return;
-  }
 
   // Assume the absence of a period means no extension can be found
-  const lastDotPosition = pathString.lastIndexOf('.');
-  if(lastDotPosition === -1) {
+  const last_dot_position = path.lastIndexOf('.');
+  if(last_dot_position === -1)
     return;
-  }
 
   // The +1 skips past the period
-  const extensionString = pathString.substring(lastDotPosition + 1);
+  const extension_string = path.substring(last_dot_position + 1);
 
-  // If the pathString ended with a dot, then the extension string will be
+  // If the path ended with a dot, then the extension string will be
   // empty, so assume the path is malformed and no extension exists
   // We do not even need to access the length property here, '' is falsy
-  if(!extensionString) {
+  if(!extension_string)
     return;
-  }
 
   // If the extension has too many characters, assume it is probably not an
   // extension and something else, so there is no extension
-  const maxExtensionLength = 6;
-  if(extensionString.length > maxExtensionLength) {
+  const max_extension_string_length = 6;
+  if(extension_string.length > max_extension_string_length)
     return;
-  }
 
   // Require extensions to have at least one alphabetical character
-  if(/[a-z]/i.test(extensionString)) {
-    // Normalize the extension string to lowercase form. Corresponds to
-    // mime mapping table lookup case.
-    // Assume no trailing space, so no need to trim
-    return extensionString.toLowerCase();
-  }
+  // Normalize the extension string to lowercase form. Corresponds to
+  // mime mapping table lookup case.
+  // Assume no trailing space, so no need to trim
+  // TODO: if I am going to lowercase I can do it before the test and avoid
+  // the overhead of the i flag, trivial
+  if(/[a-z]/i.test(extension_string))
+    return extension_string.toLowerCase();
 };

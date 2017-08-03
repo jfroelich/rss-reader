@@ -6,216 +6,190 @@
 // document from an xml string or using a basic template, for appending
 // outline elements, and for serializing into a blob
 function OPMLDocument() {
-  this.documentObject = null;
+  this.doc = null;
 }
 
 // Creates and returns a new OPMLDocument instance.
 OPMLDocument.parse = function(string) {
   const parser = new DOMParser();
-  const documentObject = parser.parseFromString(string, 'application/xml');
+  const doc = parser.parseFromString(string, 'application/xml');
 
-  const errorElement = documentObject.querySelector('parsererror');
-  if(errorElement) {
-    throw new Error(errorElement.textContent);
-  }
+  const parser_error_element = doc.querySelector('parsererror');
+  if(parser_error_element)
+    throw new Error(parser_error_element.textContent);
 
-  const rootName = documentObject.documentElement.localName;
-  if(rootName !== 'opml') {
-    throw new Error(`Invalid document element: ${rootName}`);
-  }
+  const doc_element_name = doc.documentElement.localName.toLowerCase();
+  if(doc_element_name !== 'opml')
+    throw new Error(`Invalid document element: ${doc_element_name}`);
 
-  const opmlDocument = new OPMLDocument();
-  opmlDocument.documentObject = documentObject;
-  return opmlDocument;
+  const opml_doc = new OPMLDocument();
+  opml_doc.doc = doc;
+  return opml_doc;
 };
 
 // Create and return a new OPMLDocument instance with a default template
-OPMLDocument.create = function(titleString) {
-  const documentObject = document.implementation.createDocument(
-    null, 'opml', null);
+OPMLDocument.create = function(title) {
+  const doc = document.implementation.createDocument(null, 'opml', null);
+  doc.documentElement.setAttribute('version', '2.0');
+  const head_element = doc.createElement('head');
+  doc.documentElement.appendChild(head_element);
 
-  documentObject.documentElement.setAttribute('version', '2.0');
-
-  const headElement = documentObject.createElement('head');
-  documentObject.documentElement.appendChild(headElement);
-
-  if(titleString) {
-    const titleElement = documentObject.createElement('title');
-    titleElement.textContent = titleString;
-    headElement.appendChild(titleElement);
+  if(title) {
+    const title_element = doc.createElement('title');
+    title_element.textContent = title;
+    head_element.appendChild(title_element);
   }
 
-  const currentDate = new Date();
-  const currentDateUTCString = currentDate.toUTCString();
+  const current_date = new Date();
+  const current_utc_string = current_date.toUTCString();
 
-  const dateCreatedElement = documentObject.createElement('datecreated');
-  dateCreatedElement.textContent = currentDateUTCString;
-  headElement.appendChild(dateCreatedElement);
+  const date_created_element = doc.createElement('datecreated');
+  date_created_element.textContent = current_utc_string;
+  head_element.appendChild(date_created_element);
 
-  const dateModifiedElement = documentObject.createElement('datemodified');
-  dateModifiedElement.textContent = currentDateUTCString;
-  headElement.appendChild(dateModifiedElement);
+  const date_modified_element = doc.createElement('datemodified');
+  date_modified_element.textContent = current_utc_string;
+  head_element.appendChild(date_modified_element);
 
-  const docsElement = documentObject.createElement('docs');
-  docsElement.textContent = 'http://dev.opml.org/spec2.html';
-  headElement.appendChild(docsElement);
+  const docs_element = doc.createElement('docs');
+  docs_element.textContent = 'http://dev.opml.org/spec2.html';
+  head_element.appendChild(docs_element);
 
-  const bodyElement = documentObject.createElement('body');
-  documentObject.documentElement.appendChild(bodyElement);
+  const body_element = doc.createElement('body');
+  doc.documentElement.appendChild(body_element);
 
-  const opmlDocument = new OPMLDocument();
-  opmlDocument.documentObject = documentObject;
-  return opmlDocument;
+  const opml_doc = new OPMLDocument();
+  opml_doc.doc = doc;
+  return opml_doc;
 };
 
-OPMLDocument.prototype.selectOutlineElements = function() {
-  return this.documentObject.querySelectorAll('opml > body > outline');
+OPMLDocument.prototype.select_outline_elements = function() {
+  return this.doc.querySelectorAll('opml > body > outline');
 };
 
-OPMLDocument.prototype.getOutlineObjects = function() {
-  const elements = this.selectOutlineElements();
+OPMLDocument.prototype.get_outline_objects = function() {
+  const elements = this.select_outline_elements();
   const objects = [];
-  for(let element of elements) {
-    const object = this.createOutlineObject(element);
-    objects.push(object);
-  }
+  for(const element of elements)
+    objects.push(this.create_outline_object(element));
   return objects;
 };
 
-OPMLDocument.prototype.removeInvalidOutlineTypes = function() {
-  const elements = this.selectOutlineElements();
-  const initialLength = elements.length;
-  for(let element of elements) {
-    const typeString = element.getAttribute('type');
-    if(!typeString) {
+OPMLDocument.prototype.remove_invalid_outline_types = function() {
+  const elements = this.select_outline_elements();
+  const initial_length = elements.length;
+  for(const element of elements) {
+    const type_string = element.getAttribute('type');
+    if(!type_string) {
       element.remove();
       continue;
     }
 
-    typeString = typeString.trim();
-    if(!typeString) {
+    type_string = type_string.trim();
+    if(!type_string) {
       element.remove();
       continue;
     }
 
-    if(!/rss|rdf|feed/i.test(typeString)) {
-      element.remove();
-      continue;
-    }
-  }
-
-  const removeCount = initialLength - elements.length;
-  return removeCount;
-};
-
-OPMLDocument.prototype.removeOutlinesMissingXMLURLs = function() {
-
-  const elements = this.selectOutlineElements();
-  const initialLength = elements.length;
-  for(let element of elements) {
-    const xmlUrlString = element.getAttribute('xmlUrl');
-
-    if(!xmlUrlString) {
-      element.remove();
-      continue;
-    }
-    xmlUrlString = xmlUrlString.trim();
-    if(!xmlUrlString) {
+    if(!/rss|rdf|feed/i.test(type_string)) {
       element.remove();
       continue;
     }
   }
-  const removeCount = initialLength - elements.length;
-  return removeCount;
+
+  const remove_count = initial_length - elements.length;
+  return remove_count;
 };
 
-OPMLDocument.prototype.normalizeOutlineXMLURLs = function() {
-  const elements = this.selectOutlineElements();
-  const initialLength = elements.length;
-  for(let element of elements) {
-    const urlString = element.getAttribute('xmlUrl');
+OPMLDocument.prototype.remove_outlines_missing_xml_urls = function() {
+  const elements = this.select_outline_elements();
+  const initial_length = elements.length;
+  for(const element of elements) {
+    const xml_url_string = element.getAttribute('xmlUrl');
 
-    if(urlString === undefined || urlString === null) {
+    if(!xml_url_string) {
+      element.remove();
       continue;
     }
+    xml_url_string = xml_url_string.trim();
+    if(!xml_url_string) {
+      element.remove();
+      continue;
+    }
+  }
+  const remove_count = initial_length - elements.length;
+  return remove_count;
+};
 
-    urlString = urlString.trim();
-
-    if(!urlString.length) {
+OPMLDocument.prototype.normalize_outline_xml_urls = function() {
+  const elements = this.select_outline_elements();
+  const initial_length = elements.length;
+  for(const element of elements) {
+    const url_string = element.getAttribute('xmlUrl');
+    if(url_string === undefined || url_string === null)
+      continue;
+    url_string = url_string.trim();
+    if(!url_string.length) {
       element.removeAttribute('xmlUrl');
       continue;
     }
 
     try {
-      const urlObject = new URL(urlString);
-      const normalizedURLString = urlObject.href;
-      element.setAttribute('xmlUrl', normalizedURLString);
+      const url_object = new URL(url_string);
+      const normal_url_string = url_object.href;
+      element.setAttribute('xmlUrl', normal_url_string);
     } catch(error) {
       element.removeAttribute('xmlUrl');
     }
   }
 };
 
-
-
-OPMLDocument.prototype.appendOutlineObject = function(outlineObject) {
-  const outlineElement = this.createOutlineElement(outlineObject);
-  this.appendOutlineElement(outlineElement);
+OPMLDocument.prototype.append_outline_object = function(outline_object) {
+  const outline_element = this.create_outline_element(outline_object);
+  this.append_outline_element(outline_element);
 };
 
-OPMLDocument.prototype.appendOutlineElement = function(outlineElement) {
-  let bodyElement = this.documentObject.querySelector('body');
+OPMLDocument.prototype.append_outline_element = function(outline_element) {
+  let body_element = this.doc.querySelector('body');
 
-  if(!bodyElement) {
-    bodyElement = this.documentObject.createElement('body');
-    this.documentObject.documentElement.appendChild(bodyElement);
+  if(!body_element) {
+    body_element = this.doc.createElement('body');
+    this.doc.documentElement.appendChild(body_element);
   }
 
-  bodyElement.appendChild(outlineElement);
+  body_element.appendChild(outline_element);
 };
 
-OPMLDocument.prototype.createOutlineElement = function(outlineObject) {
-  const outlineElement = this.documentObject.createElement('outline');
-  if(outlineObject.type) {
-    outlineElement.setAttribute('type', outlineObject.type);
-  }
-
-  if(outlineObject.xmlUrl) {
-    outlineElement.setAttribute('xmlUrl', outlineObject.xmlUrl);
-  }
-
-  if(outlineObject.text) {
-    outlineElement.setAttribute('text', outlineObject.text);
-  }
-
-  if(outlineObject.title) {
-    outlineElement.setAttribute('title', outlineObject.title);
-  }
-
-  if(outlineObject.description) {
-    outlineElement.setAttribute('description', outlineObject.description);
-  }
-
-  if(outlineObject.htmlUrl) {
-    outlineElement.setAttribute('htmlUrl', outlineObject.htmlUrl);
-  }
-
-  return outlineElement;
+OPMLDocument.prototype.create_outline_element = function(outline_object) {
+  const outline_element = this.doc.createElement('outline');
+  if(outline_object.type)
+    outline_element.setAttribute('type', outline_object.type);
+  if(outline_object.xmlUrl)
+    outline_element.setAttribute('xmlUrl', outline_object.xmlUrl);
+  if(outline_object.text)
+    outline_element.setAttribute('text', outline_object.text);
+  if(outline_object.title)
+    outline_element.setAttribute('title', outline_object.title);
+  if(outline_object.description)
+    outline_element.setAttribute('description', outline_object.description);
+  if(outline_object.htmlUrl)
+    outline_element.setAttribute('htmlUrl', outline_object.htmlUrl);
+  return outline_element;
 };
 
-OPMLDocument.prototype.createOutlineObject = function(outlineElement) {
-  const outlineObject = {};
-  outlineObject.description = outlineElement.getAttribute('description');
-  outlineObject.htmlUrl = outlineElement.getAttribute('htmlUrl');
-  outlineObject.text = outlineElement.getAttribute('text');
-  outlineObject.title = outlineElement.getAttribute('title');
-  outlineObject.type = outlineElement.getAttribute('type');
-  outlineObject.xmlUrl = outlineElement.getAttribute('xmlUrl');
-  return outlineObject;
+OPMLDocument.prototype.create_outline_object = function(outline_element) {
+  const outline_object = {};
+  outline_object.description = outline_element.getAttribute('description');
+  outline_object.htmlUrl = outline_element.getAttribute('htmlUrl');
+  outline_object.text = outline_element.getAttribute('text');
+  outline_object.title = outline_element.getAttribute('title');
+  outline_object.type = outline_element.getAttribute('type');
+  outline_object.xmlUrl = outline_element.getAttribute('xmlUrl');
+  return outline_object;
 };
 
-OPMLDocument.prototype.toString = function() {
+OPMLDocument.prototype.to_string = function() {
   const writer = new XMLSerializer();
-  const opmlString = writer.serializeToString(this.documentObject);
+  const opmlString = writer.serializeToString(this.doc);
   return opmlString;
 };

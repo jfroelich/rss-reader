@@ -1,165 +1,124 @@
 // See license.md
-
 'use strict';
 
 { // Begin file block scope
 
 // 30 days in ms, used by both lookup and compact
-const defaultMaxAgeMillis = 1000 * 60 * 60 * 24 * 30;
+const default_max_age_ms = 1000 * 60 * 60 * 24 * 30;
+
+const IMG_SIZE_UNKNOWN = -1;
 
 // Looks up the favicon url for a given web page url
-// @param conn {IDBDatabase} optional, an open indexedDB connection, if
-// undefined a cacheless lookup is performed
-// @param urlObject {URL} the url of a webpage to lookup
-// @param maxAgeMillis {Number} optional, the amount of time before entries in
-// the cache are considered expired, defaults to 30 days
-// @param fetchHTMLTimeoutMillis {Number} optional, the amount of timed allowed
-// to elapse before considering a fetch for a document to have failed, defaults
-// to 1000 milliseconds.
-// @param fetchImageTimeoutMillis {Number} optional, the amount of time allowed
-// to elapse before considering a fetch for an image to have failed, defaults to
-// 200 milliseconds.
-// @param minImageByteSize {Number} optional, if the remote server reports the
-// image as less than or equal to this size then the candidate is rejected,
-// defaults to 50 bytes.
-// @param maxImageByteSize {Number} optional, if the remote server reports the
-// image as greater than or equal to this size then the candidate is rejected,
-// defaults to 10240 bytes.
-// @param verbose {Boolean} if true then log various messages
 // @returns {String} the favicon url if found, otherwise undefined
-async function lookupFavicon(conn, urlObject, maxAgeMillis,
-  fetchHTMLTimeoutMillis, fetchImageTimeoutMillis, minImageByteSize,
-  maxImageByteSize, verbose) {
-
-  if(verbose) {
-    console.log('LOOKUP', urlObject.href);
-  }
-  if(typeof maxAgeMillis === 'undefined') {
-    maxAgeMillis = defaultMaxAgeMillis;
-  }
-
-  if(typeof fetchHTMLTimeoutMillis === 'undefined') {
-    fetchHTMLTimeoutMillis = 1000;
-  }
-
-  if(typeof fetchImageTimeoutMillis === 'undefined') {
-    fetchImageTimeoutMillis = 200;
-  }
-
-  if(typeof minImageByteSize === 'undefined') {
-    minImageByteSize = 50;
-  }
-
-  if(typeof maxImageByteSize === 'undefined') {
-    maxImageByteSize = 10240;
-  }
+async function favicon_lookup(conn, url_object, max_age_ms,
+  fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size, max_img_size,
+  verbose) {
+  if(verbose)
+    console.log('Starting favicon_lookup for url', url_object.href);
+  if(typeof max_age_ms === 'undefined')
+    max_age_ms = default_max_age_ms;
+  if(typeof fetch_html_timeout_ms === 'undefined')
+    fetch_html_timeout_ms = 1000;
+  if(typeof fetch_img_timeout_ms === 'undefined')
+    fetch_img_timeout_ms = 200;
+  if(typeof min_img_size === 'undefined')
+    min_img_size = 50;
+  if(typeof max_img_size === 'undefined')
+    max_img_size = 10240;
 
   // TODO: maybe this is always overkill and not needed
   const urls = new Set();
-  urls.add(urlObject.href);
+  urls.add(url_object.href);
 
   // Step 1: check the cache for the input url
   if(conn) {
-    const iconURLString = await findLookupURLInCache(conn, urlObject,
-      maxAgeMillis, verbose);
-    if(iconURLString) {
-      return iconURLString;
-    }
+    const icon_url_string = await db_find_lookup_url(conn, url_object,
+      max_age_ms, verbose);
+    if(icon_url_string)
+      return icon_url_string;
   }
 
-  const response = await fetchDocumentSilently(urlObject,
-    fetchHTMLTimeoutMillis, verbose);
+  const response = await fetch_doc_silently(url_object, fetch_html_timeout_ms,
+    verbose);
   if(response) {
     // Step 2: check the cache for the redirect url
     if(conn && response.redirected) {
-      const responseURLObject = new URL(response.responseURLString);
-      urls.add(responseURLObject.href);
-      const iconURLString = await findRedirectInCache(conn, urlObject,
-        response, maxAgeMillis, verbose);
-      if(iconURLString) {
-        return iconURLString;
-      }
+      const response_url_object = new URL(response.response_url_string);
+      urls.add(response_url_object.href);
+      const icon_url_string = await db_find_redirect_url(conn, url_object,
+        response, max_age_ms, verbose);
+      if(icon_url_string)
+        return icon_url_string;
     }
 
     // Step 3: check the fetched document for a <link> tag
-    const iconURLString = await findIconInResponseText(conn, urlObject, urls,
+    const icon_url_string = await search_document(conn, url_object, urls,
       response, verbose);
-    if(iconURLString) {
-      return iconURLString;
-    }
+    if(icon_url_string)
+      return icon_url_string;
   }
 
   // Step 4: check the cache for the origin url
-  if(conn && !urls.has(urlObject.origin)) {
-    const iconURLString = await findOriginInCache(conn, urlObject.origin,
-      urls, maxAgeMillis);
-    if(iconURLString) {
-      return iconURLString;
-    }
+  if(conn && !urls.has(url_object.origin)) {
+    const icon_url_string = await db_find_origin_url(conn, url_object.origin,
+      urls, max_age_ms);
+    if(icon_url_string)
+      return icon_url_string;
   }
 
   // Step 5: check for /favicon.ico
-  const iconURLString = await lookupOrigin(conn, urlObject, urls,
-    fetchImageTimeoutMillis, minImageByteSize, maxImageByteSize, verbose);
-  return iconURLString;
+  const icon_url_string = await lookup_origin(conn, url_object, urls,
+    fetch_img_timeout_ms, min_img_size, max_img_size, verbose);
+  return icon_url_string;
 }
 
-async function findLookupURLInCache(conn, urlObject, maxAgeMillis, verbose) {
-  const entry = await findEntry(conn, urlObject);
-  if(!entry) {
+async function db_find_lookup_url(conn, url_object, max_age_ms, verbose) {
+  const entry = await db_find_entry(conn, url_object);
+  if(!entry)
     return;
-  }
-  const currentDate = new Date();
-  if(isEntryExpired(entry, currentDate, maxAgeMillis)) {
+  const current_date = new Date();
+  if(is_entry_expired(entry, current_date, max_age_ms))
     return;
-  }
-  if(verbose) {
+  if(verbose)
     console.log('Found favicon of input url in cache', entry);
-  }
   return entry.iconURLString;
 }
 
-// @returns {String}
-async function findRedirectInCache(conn, urlObject, response, maxAgeMillis,
+async function db_find_redirect_url(conn, url_object, response, max_age_ms,
   verbose) {
-  const responseURLObject = new URL(response.responseURLString);
-  const entry = await findEntry(conn, responseURLObject);
-  if(!entry) {
+  const response_url_object = new URL(response.response_url_string);
+  const entry = await db_find_entry(conn, response_url_object);
+  if(!entry)
     return;
-  }
-  const currentDate = new Date();
-  if(isEntryExpired(entry, currentDate, maxAgeMillis)) {
+  const current_date = new Date();
+  if(is_entry_expired(entry, current_date, max_age_ms))
     return;
-  }
-  if(verbose) {
+  if(verbose)
     console.debug('Found redirect in cache', entry);
-  }
-  await putEntries(conn, entry.iconURLString, [urlObject.href]);
+  const entries = [url_object.href];
+  await db_put_entries(conn, entry.iconURLString, entries);
   return entry.iconURLString;
 }
 
 // @returns {String} a favicon url
-async function findIconInResponseText(conn, urlObject, urls, response,
-  verbose) {
+async function search_document(conn, url_object, urls, response, verbose) {
   let document;
   try {
     const text = await response.text();
-    document = parseHTML(text);
+    document = parse_html(text);
   } catch(error) {
-    if(verbose) {
+    if(verbose)
       console.warn(error);
-    }
     return;
   }
 
-  if(!document.head) {
+  if(!document.head)
     return;
-  }
 
-  const baseURLObject = response.redirected ?
-    new URL(response.responseURLString) : urlObject;
+  const base_url_object = response.redirected ?
+    new URL(response.response_url_string) : url_object;
 
-  let iconURLObject;
+  let icon_url_object;
   const selectors = [
     'link[rel="icon"][href]',
     'link[rel="shortcut icon"][href]',
@@ -169,154 +128,137 @@ async function findIconInResponseText(conn, urlObject, urls, response,
 
   for(let selector of selectors) {
     const element = document.head.querySelector(selector);
-    if(!element) {
+    if(!element)
       continue;
-    }
+    // Avoid passing empty string to URL constructor
     let hrefString = element.getAttribute('href');
-    if(!hrefString) {
+    if(!hrefString)
       continue;
-    }
     hrefString = hrefString.trim();
-    if(!hrefString) {
+    if(!hrefString)
       continue;
-    }
     try {
-      iconURLObject = new URL(hrefString, baseURLObject);
+      icon_url_object = new URL(hrefString, base_url_object);
     } catch(error) {
       continue;
     }
-    if(verbose) {
-      console.debug('Found favicon from <link>', response.responseURLString,
-        iconURLObject.href);
-    }
-    if(conn) {
-      await putEntries(conn, iconURLObject.href, urls);
-    }
-    return iconURLObject.href;
+    if(verbose)
+      console.debug('Found favicon from <link>', response.response_url_string,
+        icon_url_object.href);
+    if(conn)
+      await db_put_entries(conn, icon_url_object.href, urls);
+    return icon_url_object.href;
   }
 }
 
-async function findOriginInCache(conn, originURLString, urls, maxAgeMillis) {
-  const originURLObject = new URL(originURLString);
-  const originEntry = await findEntry(conn, originURLObject);
-  const currentDate = new Date();
-  if(!originEntry) {
+async function db_find_origin_url(conn, origin_url_string, urls, max_age_ms) {
+  const origin_url_object = new URL(origin_url_string);
+  const origin_entry = await db_find_entry(conn, origin_url_object);
+  const current_date = new Date();
+  if(!origin_entry)
     return;
-  }
-  if(isEntryExpired(originEntry, currentDate, maxAgeMillis)) {
+  if(is_entry_expired(origin_entry, current_date, max_age_ms))
     return;
-  }
-  if(verbose) {
-    console.debug('Found non-expired origin entry in cache', originURLString,
-      originEntry.iconURLString);
-  }
-  // origin is not in urls, we know it is distinct from them
-  await putEntries(conn, originEntry.iconURLString, urls);
-  return originEntry.iconURLString;
+  if(verbose)
+    console.debug('Found non-expired origin entry in cache', origin_url_string,
+      origin_entry.iconURLString);
+  // origin is not in urls, and we know it is distinct, existing, and fresh
+  await db_put_entries(conn, origin_entry.iconURLString, urls);
+  return origin_entry.iconURLString;
 }
 
-async function lookupOrigin(conn, urlObject, urls, fetchImageTimeoutMillis,
-  minImageByteSize, maxImageByteSize, verbose) {
 
-  const rootImageURLString = urlObject.origin + '/favicon.ico';
-  const fetchPromise = sendImageHeadRequest(rootImageURLString,
-    fetchImageTimeoutMillis, verbose);
+
+async function lookup_origin(conn, url_object, urls, fetch_img_timeout_ms,
+  min_img_size, max_img_size, verbose) {
+  const img_url_string = url_object.origin + '/favicon.ico';
+  const fetch_promise = send_img_head_request(img_url_string,
+    fetch_img_timeout_ms, verbose);
   let response;
   try {
-    response = await fetchPromise;
+    response = await fetch_promise;
   } catch(error) {
-    if(verbose) {
+    if(verbose)
       console.warn(error);
-    }
     return;
   }
 
-  if(response.size === -1 || (response.size >= minImageByteSize &&
-      response.size <= maxImageByteSize)) {
-    if(conn) {
-      await putEntries(conn, response.responseURLString, urls);
-    }
-    if(verbose) {
-      console.debug('Found origin icon', urlObject.href,
-        response.responseURLString);
-    }
-    return response.responseURLString;
+  if(response.size === IMG_SIZE_UNKNOWN || (response.size >= min_img_size &&
+      response.size <= max_img_size)) {
+    if(conn)
+      await db_put_entries(conn, response.response_url_string, urls);
+    if(verbose)
+      console.debug('Found origin icon', url_object.href,
+        response.response_url_string);
+    return response.response_url_string;
   }
 }
 
-async function fetchDocumentSilently(urlObject, fetchHTMLTimeoutMillis,
-  verbose) {
+async function fetch_doc_silently(url_object, fetch_html_timeout_ms, verbose) {
+  const fetch_promise = fetch_doc(url_object.href, fetch_html_timeout_ms);
   try {
-    return await fetchDocument(urlObject.href, fetchHTMLTimeoutMillis);
+    return await fetch_promise;
   } catch(error) {
-    if(verbose) {
-      console.warn(error, urlObject.href);
-    }
+    if(verbose)
+      console.warn('An error occurred when fetching', url_object.href, error);
   }
 }
 
-async function setupFaviconDb(name, version, verbose) {
-  // TODO: timeoutMillis should be param
-  let conn, timeoutMillis;
+async function favicon_setup_db(name, version, verbose) {
+  // TODO: timeout_ms should be param
+  let conn, timeout_ms;
   try {
-    conn = await openFaviconDb(name, version, timeoutMillis, verbose);
+    conn = await favicon_open_db(name, version, timeout_ms, verbose);
   } finally {
-    if(conn) {
+    if(conn)
       conn.close();
-    }
   }
 }
 
 // @param name {String} optional, indexedDB database name
 // @param version {Number} optional, indexedDB database version
-// @param timeoutMillis {Number} optional, maximum amount of time to wait when
+// @param timeout_ms {Number} optional, maximum amount of time to wait when
 // connecting to indexedDB before failure
 // @param verbose {Boolean} optional, whether to log messages to console
 // @throws {TypeError} invalid timeout (any other errors occur within promise)
 // @returns {Promise} resolves to open IDBDatabase instance
-async function openFaviconDb(name, version, timeoutMillis, verbose) {
-  if(typeof name === 'undefined') {
+async function favicon_open_db(name, version, timeout_ms, verbose) {
+  if(typeof name === 'undefined')
     name = 'favicon-cache';
-  }
-  if(typeof version === 'undefined') {
+  if(typeof version === 'undefined')
     version = 2;
-  }
-
-  // Override the generic default with a longer time
-  if(typeof timeoutMillis === 'undefined') {
-    timeoutMillis = 50;
-  }
+  if(typeof timeout_ms === 'undefined')
+    timeout_ms = 100;
 
   // In the case of a connection blocked event, eventually timeout
-  const connectPromise = openFaviconDbInternal(name, version, verbose);
-  const errorMessage = 'Connecting to indexedDB database ' + name +
+  const connect_promise = favicon_open_db_internal(name, version, verbose);
+  const error_message = 'Connecting to indexedDB database ' + name +
     ' timed out.';
-  const timeoutPromise = rejectAfterTimeout(timeoutMillis, errorMessage);
-  const promises = [connectPromise, timeoutPromise];
+  const timeout_promise = reject_after_timeout(timeout_ms, error_message);
+  const promises = [connect_promise, timeout_promise];
   return await Promise.race(promises);
 }
 
-function openFaviconDbInternal(name, version, verbose) {
-  return new Promise((resolve, reject) => {
+function favicon_open_db_internal(name, version, verbose) {
+  function resolver(resolve, reject) {
     const request = indexedDB.open(name, version);
-    request.onupgradeneeded = onUpgradeNeeded.bind(request, verbose);
+    request.onupgradeneeded = favicon_db_upgrade.bind(request, verbose);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
     request.onblocked = console.warn;
-  });
+  }
+  return new Promise(resolver);
 }
 
-function onUpgradeNeeded(verbose, event) {
+function favicon_db_upgrade(verbose, event) {
   const conn = event.target.result;
-  if(verbose) {
+  if(verbose)
     console.log('Creating or upgrading database', conn.name);
-  }
 
   let store;
   if(!event.oldVersion || event.oldVersion < 1) {
-    if(verbose) {
+    if(verbose)
       console.log('Creating favicon-cache object store');
-    }
     store = conn.createObjectStore('favicon-cache', {
       'keyPath': 'pageURLString'
     });
@@ -326,313 +268,266 @@ function onUpgradeNeeded(verbose, event) {
   }
 
   if(event.oldVersion < 2) {
-    if(verbose) {
+    if(verbose)
       console.log('Creating dateUpdated index');
-    }
     store.createIndex('dateUpdated', 'dateUpdated');
   }
 }
 
 // An entry is expired if the difference between today's date and the date the
 // entry was last updated is greater than max age.
-// @param entry {Object}
-// @param currentDate {Date}
-// @param maxAgeMillis {Number}
-// @returns {Boolean} true if entry is expired
-function isEntryExpired(entry, currentDate, maxAgeMillis) {
+// TODO: maybe new Date() is not much of an optimization so current_date does
+// not need to be a param and instead create it locally per call
+function is_entry_expired(entry, current_date, max_age_ms) {
   // Subtracting a date from another date yields a difference in ms
-  const ageMillis = currentDate - entry.dateUpdated;
-  return ageMillis > maxAgeMillis;
+  const entry_age_ms = current_date - entry.dateUpdated;
+  return entry_age_ms > max_age_ms;
 }
 
-// @param conn {IDBDatabase}
-// @returns {Promise}
-function clearFaviconDb(conn) {
-  return new Promise((resolve, reject) => {
+function favicon_clear_db(conn) {
+  function resolver(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
     const request = store.clear();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  });
+  }
+  return new Promise(resolver);
 }
 
-async function findUnexpiredEntry(conn, urlObject, maxAgeMillis) {
+async function find_unexpired_entry(conn, url_object, max_age_ms) {
   throw new Error('Unimplemented');
 }
 
-// Returns a promise that resolves to the first matching entry in the object
-// store. An entry matches if its pageURLString property matches the input url.
-// @param conn {IDBDatabase}
-// @param urlObject {URL}
-// @returns {Promise}
-function findEntry(conn, urlObject) {
-  return new Promise((resolve, reject) => {
+function db_find_entry(conn, url_object) {
+  function resolver(resolve, reject) {
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
-    const request = store.get(urlObject.href);
+    const request = store.get(url_object.href);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  });
+  }
+  return new Promise(resolver);
 }
 
-// Returns a promise that resolves to an array of entry objects, where each
-// entry is expired
-// @param conn {IDBDatabase}
-// @param maxAgeMillis {Number}
-// @returns {Promise}
-function findExpiredEntries(conn, maxAgeMillis) {
-  return new Promise((resolve, reject) => {
-    let cutoffTime = Date.now() - maxAgeMillis;
-    cutoffTime = cutoffTime < 0 ? 0 : cutoffTime;
+function db_find_expired_entries(conn, max_age_ms) {
+  function resolver(resolve, reject) {
+    let cutoff_time_ms = Date.now() - max_age_ms;
+    cutoff_time_ms = cutoff_time_ms < 0 ? 0 : cutoff_time_ms;
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
     const index = store.index('dateUpdated');
-    const range = IDBKeyRange.upperBound(new Date(cutoffTime));
+    const cutoff_time_date = new Date(cutoff_time_ms);
+    const range = IDBKeyRange.upperBound(cutoff_time_date);
     const request = index.getAll(range);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => resolve(request.error);
-  });
+  }
+  return new Promise(resolver);
 }
 
-// @param conn {IDBDatabase}
-// @param pageURLStrings {Iterable}
-// @returns {Promise}
-function removeEntriesWithURLs(conn, pageURLStrings) {
-  return new Promise((resolve, reject) => {
+function db_remove_entries_with_urls(conn, page_urls) {
+  function resolver(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('favicon-cache');
-    for(let url of pageURLStrings) {
+    for(const url of page_urls)
       store.delete(url);
-    }
-  });
+  }
+  return new Promise(resolver);
 }
 
-// TODO: does indexedDB provide a putAll function?
-// @param conn {IDBDatabase}
-// @param iconURLString {String}
-// @param pageURLStrings {Iterable}
-// @returns {Promise}
-function putEntries(conn, iconURLString, pageURLStrings) {
-  return new Promise((resolve, reject) => {
+function db_put_entries(conn, icon_url_string, page_urls) {
+  function resolver(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('favicon-cache');
-    const currentDate = new Date();
-    for(let urlString of pageURLStrings) {
+    const current_date = new Date();
+    for(const url_string of page_urls) {
       const entry = {};
-      entry.pageURLString = urlString;
-      entry.iconURLString = iconURLString;
-      entry.dateUpdated = currentDate;
+      entry.pageURLString = url_string;
+      entry.iconURLString = icon_url_string;
+      entry.dateUpdated = current_date;
       store.put(entry);
     }
-  });
+  }
+  return new Promise(resolver);
 }
 
 // Finds all expired entries in the database and removes them
-// @param name {String} optional, indexedDB database name
-// @param version {Number} optional, indexedDB database version
-// @param maxAgeMillis {Number} optional, amount of time allowed to elapse
-// before an entry is considered expired
-// @param verbose {Boolean} optional, whether to log messages to console
-// @throws {Error} when any error occurs
-// @returns {Promise} resolves to number of entries removed
-async function compactFaviconDb(name, version, maxAgeMillis, verbose) {
-  if(typeof maxAgeMillis === 'undefined') {
-    maxAgeMillis = defaultMaxAgeMillis;
-  }
+async function favicon_compact_db(name, version, max_age_ms, verbose) {
+  if(typeof max_age_ms === 'undefined')
+    max_age_ms = default_max_age_ms;
 
-  let connectTimeoutMillis, conn;
+  let conn_timeout_ms, conn;
   try {
-    conn = await openFaviconDb(name, version, connectTimeoutMillis, verbose);
-    const expiredEntries = await findExpiredEntries(conn, maxAgeMillis);
-    const urlStrings = [];
-    for(let entry of expiredEntries) {
-      urlStrings.push(entry.pageURLString);
+    conn = await favicon_open_db(name, version, conn_timeout_ms, verbose);
+    const expired_entries = await db_find_expired_entries(conn, max_age_ms);
+    const urls = [];
+    for(const entry of expired_entries) {
+      urls.push(entry.pageURLString);
     }
-    const resolutions = await removeEntriesWithURLs(conn, urlStrings);
+    const resolutions = await db_remove_entries_with_urls(conn, urls);
     return resolutions.length;
   } finally {
-    if(conn) {
+    if(conn)
       conn.close();
-    }
   }
 }
 
-function rejectAfterTimeout(timeoutMillis, errorMessage) {
-  if(typeof timeoutMillis === 'undefined') {
-    timeoutMillis = 4;
-  }
-
+function reject_after_timeout(timeout_ms, error_message) {
+  if(typeof timeout_ms === 'undefined')
+    timeout_ms = 4;
   // Per MDN and Google, the minimum is 4ms.
   // Throw immediately as this is a static type error.
-  if(timeoutMillis < 4) {
-    throw new TypeError('timeoutMillis must be greater than 4: ' +
-      timeoutMillis);
+  if(timeout_ms < 4)
+    throw new TypeError('timeout_ms must be greater than 4');
+
+  function resolver(resolve, reject) {
+    const error = new Error(error_message);
+    setTimeout(reject, timeout_ms, error);
   }
 
-  return new Promise((resolve, reject) => {
-    const error = new Error(errorMessage);
-    setTimeout(reject, timeoutMillis, error);
-  });
+  return new Promise(resolver);
 }
 
-// Race a timeout against a fetch. fetch does not support timeout (yet?).
-// A timeout will not cancel/abort the fetch, but will ignore it.
-// A timeout rejection results in this throwing an uncaught error
-// Timeout is optional
-// TODO: eventually use the cancelation token method or whatever it is to
-// actually abort the request/response in the case of a timeout
-async function fetchWithTimeout(urlString, options, timeoutMillis) {
-  if(typeof urlString !== 'string') {
-    throw new TypeError('Parameter urlString is not a defined string: ' +
-      urlString);
-  }
+// Race a timeout against a fetch
+// TODO: cancel fetch once cancelation tokens supported
+async function fetch_with_timeout(url_string, options, timeout_ms) {
+  if(typeof url_string !== 'string')
+    throw new TypeError('Parameter url_string is not a defined string: ' +
+      url_string);
 
-  if('onLine' in navigator && !navigator.onLine) {
-    throw new Error('Cannot fetch url while offline ' + urlString);
-  }
+  if('onLine' in navigator && !navigator.onLine)
+    throw new Error('Cannot fetch url while offline ' + url_string);
 
-  const fetchPromise = fetch(urlString, options);
+  const fetch_promise = fetch(url_string, options);
   let response;
-  if(timeoutMillis) {
-    const errorMessage = 'Request timed out for url ' + urlString;
-    const timeoutPromise = rejectAfterTimeout(timeoutMillis, errorMessage);
-    const promises = [fetchPromise, timeoutPromise];
+  if(timeout_ms) {
+    const error_message = 'Request timed out for url ' + url_string;
+    const timeout_promise = reject_after_timeout(timeout_ms, error_message);
+    const promises = [fetch_promise, timeout_promise];
     response = await Promise.race(promises);
-  } else {
-    response = await fetchPromise;
-  }
+  } else
+    response = await fetch_promise;
 
-  if(!response.ok) {
-    throw new Error(`${response.status} ${response.statusText} ${urlString}`);
-  }
+  if(!response.ok)
+    throw new Error(`${response.status} ${response.statusText} ${url_string}`);
   return response;
 }
 
-async function fetchDocument(urlString, timeoutMillis) {
+async function fetch_doc(url_string, timeout_ms) {
   const headers = {'Accept': 'text/html'};
-  const fetchOptions = {};
-  fetchOptions.credentials = 'omit';
-  fetchOptions.method = 'get';
-  fetchOptions.headers = headers;
-  fetchOptions.mode = 'cors';
-  fetchOptions.cache = 'default';
-  fetchOptions.redirect = 'follow';
-  fetchOptions.referrer = 'no-referrer';
-  fetchOptions.referrerPolicy = 'no-referrer';
-  const response = await fetchWithTimeout(urlString, fetchOptions,
-    timeoutMillis);
-  assertResponseHasContent(response, urlString);
-  assertResponseHasHTMLType(response, urlString);
-  const outputResponse = {};
-  outputResponse.text = async function() {
+  const options = {};
+  options.credentials = 'omit';
+  options.method = 'get';
+  options.headers = headers;
+  options.mode = 'cors';
+  options.cache = 'default';
+  options.redirect = 'follow';
+  options.referrer = 'no-referrer';
+  options.referrerPolicy = 'no-referrer';
+  const response = await fetch_with_timeout(url_string, options, timeout_ms);
+  assert_response_has_content(response, url_string);
+  assert_response_is_html(response, url_string);
+  const output_response = {};
+  output_response.text = async function() {
     return await response.text();
   };
-  outputResponse.responseURLString = response.url;
-  outputResponse.redirected = detectRedirect(urlString, response.url);
-  return outputResponse;
+  output_response.response_url_string = response.url;
+  output_response.redirected = detect_redirect(url_string, response.url);
+  return output_response;
 }
 
-function detectRedirect(requestURLString, responseURLString) {
+function detect_redirect(request_url_string, response_url_string) {
   // A redirected url is never the same as the request url. Regardless of
-  // what happens in the underlying opaque request.
-  if(requestURLString === responseURLString) {
+  // what happens in the underlying opaque request, or whatever
+  // Response.prototype.redirected is
+  if(request_url_string === response_url_string)
     return false;
-  }
-  const requestURLObject = new URL(requestURLString);
-  const responseURLObject = new URL(responseURLString);
-  requestURLObject.hash = '';
-  responseURLObject.hash = '';
-  return requestURLObject.href !== responseURLObject.href;
+  const request_url_object = new URL(request_url_string);
+  const response_url_object = new URL(response_url_string);
+  request_url_object.hash = '';
+  response_url_object.hash = '';
+  return request_url_object.href !== response_url_object.href;
 }
 
-function parseHTML(htmlString) {
+function parse_html(html_string) {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlString, 'text/html');
+  const doc = parser.parseFromString(html_string, 'text/html');
   const errors = doc.getElementsByTagName('parsererror');
-  if(errors && errors.length) {
+  if(errors && errors.length)
     throw new Error('Embedded html parser error: ' + errors[0].textContent);
-  }
-
   const rootName = doc.documentElement.localName.toLowerCase();
-  if(rootName !== 'html') {
+  if(rootName !== 'html')
     throw new Error(`Document element is not <html>: ${rootName}`);
-  }
-
   return doc;
 }
 
 // Sends a HEAD request for the given image.
-// @param urlString {String}
-// @returns a simple object with props imageSize and responseURLString
-async function sendImageHeadRequest(urlString, timeoutMillis, verbose) {
+// @param url_string {String}
+// @returns a simple object with props imageSize and response_url_string
+async function send_img_head_request(url_string, timeout_ms, verbose) {
   const headers = {'Accept': 'image/*'};
-  const fetchOptions = {};
-  fetchOptions.credentials = 'omit';
-  fetchOptions.method = 'HEAD';
-  fetchOptions.headers = headers;
-  fetchOptions.mode = 'cors';
-  fetchOptions.cache = 'default';
-  fetchOptions.redirect = 'follow';
-  fetchOptions.referrer = 'no-referrer';
-  const response = await fetchWithTimeout(urlString, fetchOptions,
-    timeoutMillis);
-  assertResponseHasImageType(response);
-  const outputResponse = {};
-  outputResponse.size = getResponseContentLength(response, verbose);
-  outputResponse.responseURLString = response.url;
-  return outputResponse;
+  const options = {};
+  options.credentials = 'omit';
+  options.method = 'HEAD';
+  options.headers = headers;
+  options.mode = 'cors';
+  options.cache = 'default';
+  options.redirect = 'follow';
+  options.referrer = 'no-referrer';
+  const response = await fetch_with_timeout(url_string, options, timeout_ms);
+  assert_response_is_img(response);
+  const output_response = {};
+  output_response.size = get_response_content_length(response, verbose);
+  output_response.response_url_string = response.url;
+  return output_response;
 }
 
-function getResponseContentLength(response, verbose) {
-  const contentLengthString = response.headers.get('Content-Length');
-  if(contentLengthString) {
+function get_response_content_length(response, verbose) {
+  const content_length_string = response.headers.get('Content-Length');
+  if(content_length_string) {
     const radix = 10;
     try {
-      return parseInt(contentLengthString, radix);
+      return parseInt(content_length_string, radix);
     } catch(error) {
       // Invalid content length is considered routine in the sense of dealing
       // with unsanitized remote input, so reporting this error is conditional
       // on the verbose flag.
-      if(verbose) {
+      if(verbose)
         console.warn(error);
-      }
     }
   }
-  return -1;
+  return IMG_SIZE_UNKNOWN;
 }
 
 // Response.ok is true for 204, but I treat 204 as error.
-function assertResponseHasContent(response, urlString) {
-  const httpStatusNoContent = 204;
-  if(response.status === httpStatusNoContent) {
-    throw new Error(`${response.status} ${response.statusText} ${urlString}`);
-  }
+function assert_response_has_content(response, url_string) {
+  const no_content_http_status = 204;
+  if(response.status === no_content_http_status)
+    throw new Error(`${response.status} ${response.statusText} ${url_string}`);
 }
 
-function assertResponseHasHTMLType(response, urlString) {
-  const typeHeader = response.headers.get('Content-Type');
-  if(!/^\s*text\/html/i.test(typeHeader)) {
-    throw new Error(`Invalid content type "${typeHeader}" ${urlString}`);
-  }
+function assert_response_is_html(response, url_string) {
+  const type_header = response.headers.get('Content-Type');
+  if(!/^\s*text\/html/i.test(type_header))
+    throw new Error(`Invalid content type "${type_header}" ${url_string}`);
 }
 
-function assertResponseHasImageType(response) {
-  const typeHeader = response.headers.get('Content-Type');
-  if(!/^\s*image\//i.test(typeHeader)) {
-    throw new Error(`Invalid response type ${typeHeader}`);
-  }
+function assert_response_is_img(response) {
+  const type_header = response.headers.get('Content-Type');
+  if(!/^\s*image\//i.test(type_header))
+    throw new Error(`Invalid response type ${type_header}`);
 }
 
 // Export methods to outer (global) scope
-this.lookupFavicon = lookupFavicon;
-this.openFaviconDb = openFaviconDb;
-this.clearFaviconDb = clearFaviconDb;
-this.compactFaviconDb = compactFaviconDb;
-this.setupFaviconDb = setupFaviconDb;
+this.favicon_lookup = favicon_lookup;
+this.favicon_open_db = favicon_open_db;
+this.favicon_clear_db = favicon_clear_db;
+this.favicon_compact_db = favicon_compact_db;
+this.favicon_setup_db = favicon_setup_db;
 
 } // End file block scope

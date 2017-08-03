@@ -4,115 +4,108 @@
 
 { // Begin file block scope
 
-const settingsChannel = new BroadcastChannel('settings');
-settingsChannel.onmessage = function(event) {
-  if(event.data === 'changed') {
-    updateEntryCSSRules(event);
-  }
-};
+function settings_channel_onmessage(event) {
+  if(event.data === 'changed')
+    update_entry_css_rules(event);
+}
+
+const settings_channel = new BroadcastChannel('settings');
+settings_channel.onmessage = settings_channel_onmessage;
 
 // Navigation tracking
-let currentMenuItem = null;
-let currentSectionElement = null;
+let current_menu_item = null;
+let current_section_element = null;
 
-function showErrorMessage(messageString, shouldFadeIn) {
-  hideErrorMessage();
+function show_error_msg(msg, should_fade_in) {
+  hide_error_msg();
 
-  const errorElement = document.createElement('div');
-  errorElement.setAttribute('id','options_error_message');
+  const error_element = document.createElement('div');
+  error_element.setAttribute('id','options_error_message');
 
-  const messageElement = document.createElement('span');
-  messageElement.textContent = messageString;
-  errorElement.appendChild(messageElement);
+  const msg_element = document.createElement('span');
+  msg_element.textContent = msg;
+  error_element.appendChild(msg_element);
 
-  const dismissErrorButton = document.createElement('button');
-  dismissErrorButton.setAttribute('id', 'dismiss-error-button');
-  dismissErrorButton.textContent = 'Dismiss';
-  dismissErrorButton.onclick = hideErrorMessage;
-  errorElement.appendChild(dismissErrorButton);
+  const dismiss_error_button = document.createElement('button');
+  dismiss_error_button.setAttribute('id', 'dismiss-error-button');
+  dismiss_error_button.textContent = 'Dismiss';
+  dismiss_error_button.onclick = hide_error_msg;
+  error_element.appendChild(dismiss_error_button);
 
-  if(shouldFadeIn) {
-    errorElement.style.opacity = '0';
-    document.body.appendChild(errorElement);
-    fadeElement(container, 1,0);
+  if(should_fade_in) {
+    error_element.style.opacity = '0';
+    document.body.appendChild(error_element);
+    fade_element(container, 1,0);
   } else {
-    errorElement.style.opacity = '1';
-    showElement(errorElement);
-    document.body.appendChild(errorElement);
+    error_element.style.opacity = '1';
+    show_element(error_element);
+    document.body.appendChild(error_element);
   }
 }
 
-function hideErrorMessage() {
-  const errorMessageElement = document.getElementById('options_error_message');
-  if(errorMessageElement) {
-    const dismissErrorButton = document.getElementById('dismiss-error-button');
-    if(dismissErrorButton) {
-      dismissErrorButton.removeEventListener('click', hideErrorMessage);
-    }
-
-    errorMessageElement.remove();
+function hide_error_msg() {
+  const error_msg_element = document.getElementById('options_error_message');
+  if(error_msg_element) {
+    const dismiss_error_button =
+      document.getElementById('dismiss-error-button');
+    if(dismiss_error_button)
+      dismiss_error_button.removeEventListener('click', hide_error_msg);
+    error_msg_element.remove();
   }
 }
 
 // TODO: instead of removing and re-adding, reset and reuse
-function showSubscriptionMonitor() {
-  let monitorElement = document.getElementById('submon');
-  if(monitorElement) {
-    monitorElement.remove();
+function show_subscription_monitor() {
+  let monitor_element = document.getElementById('submon');
+  if(monitor_element) {
+    monitor_element.remove();
   }
 
-  monitorElement = document.createElement('div');
-  monitorElement.setAttribute('id', 'submon');
-  monitorElement.style.opacity = '1';
-  document.body.appendChild(monitorElement);
+  monitor_element = document.createElement('div');
+  monitor_element.setAttribute('id', 'submon');
+  monitor_element.style.opacity = '1';
+  document.body.appendChild(monitor_element);
 
-  const progressElement = document.createElement('progress');
-  progressElement.textContent = 'Working...';
-  monitor.appendChild(progressElement);
+  const progress_element = document.createElement('progress');
+  progress_element.textContent = 'Working...';
+  monitor.appendChild(progress_element);
 }
 
-function appendSubscriptionMonitorMessage(messageString) {
-  const messageElement = document.createElement('p');
-  messageElement.textContent = messageString;
-
-  const monitorElement = document.getElementById('submon');
-  monitorElement.appendChild(messageElement);
+function append_subscription_monitor_msg(msg) {
+  const msg_element = document.createElement('p');
+  msg_element.textContent = msg;
+  const monitor_element = document.getElementById('submon');
+  monitor_element.appendChild(msg_element);
 }
 
-function showSection(menuItemElement) {
-  if(!menuItemElement) {
-    throw new TypeError('Missing parameter menuItemElement');
-  }
-
-  // Do nothing if not switching sections
-  if(currentMenuItem === menuItemElement) {
+function show_section(menu_item_element) {
+  if(typeof menu_item_element === 'undefined')
+    throw new TypeError('Missing parameter menu_item_element');
+  if(current_menu_item === menu_item_element)
     return;
-  }
 
   // Make the previous item appear de-selected
-  if(currentMenuItem) {
-    removeElementClass(currentMenuItem,
-      'navigation-item-selected');
-  }
+  if(current_menu_item)
+    remove_element_class(current_menu_item, 'navigation-item-selected');
 
   // Hide the old section
-  if(currentSectionElement) {
-    hideElement(currentSectionElement);
-  }
+  if(current_section_element)
+    hide_element(current_section_element);
 
   // Make the new item appear selected
-  addElementClass(menuItemElement, 'navigation-item-selected');
+  add_element_class(menu_item_element, 'navigation-item-selected');
 
   // Show the new section
-  const sectionIdString = menuItemElement.getAttribute('section');
-  const sectionElement = document.getElementById(sectionIdString);
-  if(sectionElement) {
-    showElement(sectionElement);
-  }
+  const section_id_string = menu_item_element.getAttribute('section');
+  const section_element = document.getElementById(section_id_string);
+  if(section_element)
+    show_element(section_element);
+  else
+    throw new Error('No matching section element for id', section_id_string);
 
   // Update the global tracking vars
-  currentMenuItem = menuItemElement;
-  currentSectionElement = sectionElement;
+  current_menu_item = menu_item_element;
+  current_section_element = section_element;
 }
 
 // TODO: also return the count so that caller does not need to potentially
@@ -120,16 +113,14 @@ function showSection(menuItemElement) {
 // options_set_feed_count (and create options_get_feed_count)
 // Then, also consider if options_get_feed_count should be using the UI as
 // its source of truth or should instead be using the database.
-function updateFeedCount() {
-  const feedListElement = document.getElementById('feedlist');
-  const count = feedListElement.childElementCount;
-
-  const feedCountElement = document.getElementById('subscription-count');
-  if(count > 1000) {
-    feedCountElement.textContent = ' (999+)';
-  } else {
-    feedCountElement.textContent = ` (${count})`;
-  }
+function update_feed_count() {
+  const feed_list_element = document.getElementById('feedlist');
+  const count = feed_list_element.childElementCount;
+  const feed_count_element = document.getElementById('subscription-count');
+  if(count > 1000)
+    feed_count_element.textContent = ' (999+)';
+  else
+    feed_count_element.textContent = ` (${count})`;
 }
 
 // TODO: this approach doesn't really work, I need to independently sort
@@ -138,221 +129,214 @@ function updateFeedCount() {
 // member function of some type of feed menu object. Use a clearer name.
 // TODO: this should always use inserted sort, that should be invariant, and
 // so I shouldn't accept a parameter
-function appendFeed(feed, maintainOrder) {
-  const itemElement = document.createElement('li');
-  itemElement.setAttribute('sort-key', feed.title);
+function append_feed_to_feed_list(feed, should_maintain_order) {
+  const item_element = document.createElement('li');
+  item_element.setAttribute('sort-key', feed.title);
 
   // TODO: stop using custom feed attribute?
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
-  itemElement.setAttribute('feed', feed.id);
-  if(feed.description) {
-    itemElement.setAttribute('title', feed.description);
-  }
-  itemElement.onclick = feedListItemOnClick;
+  item_element.setAttribute('feed', feed.id);
+  if(feed.description)
+    item_element.setAttribute('title', feed.description);
+  item_element.onclick = feed_list_item_onclick;
 
   if(feed.faviconURLString) {
-    const faviconElement = document.createElement('img');
-    faviconElement.src = feed.faviconURLString;
+    const favicon_element = document.createElement('img');
+    favicon_element.src = feed.faviconURLString;
     if(feed.title)
-      faviconElement.title = feed.title;
-    faviconElement.setAttribute('width', '16');
-    faviconElement.setAttribute('height', '16');
-    itemElement.appendChild(faviconElement);
+      favicon_element.title = feed.title;
+    favicon_element.setAttribute('width', '16');
+    favicon_element.setAttribute('height', '16');
+    item_element.appendChild(favicon_element);
   }
 
-  const titleElement = document.createElement('span');
-  let feedTitleString = feed.title || 'Untitled';
-  feedTitleString = truncateHTML(feedTitleString, 300);
-  titleElement.textContent = feedTitleString;
-  itemElement.appendChild(titleElement);
-  const feedListElement = document.getElementById('feedlist');
-  const normalizedTitleString = feedTitleString.toLowerCase();
+  const title_element = document.createElement('span');
+  let feed_title = feed.title || 'Untitled';
+  feed_title = truncate_html(feed_title, 300);
+  title_element.textContent = feed_title;
+  item_element.appendChild(title_element);
+  const feed_list_element = document.getElementById('feedlist');
+  const normal_title = feed_title.toLowerCase();
 
-  if(!maintainOrder) {
-    feedListElement.appendChild(itemElement);
+  if(!should_maintain_order) {
+    feed_list_element.appendChild(item_element);
     return;
   }
 
   // Insert the feed element into the proper position in the list
-  let didInsertElement = false;
-  for(let childNode of feedListElement.childNodes) {
-    const keyString = (childNode.getAttribute('sort-key') || '').toLowerCase();
-    if(indexedDB.cmp(normalizedTitleString, keyString) < 1) {
-      feedListElement.insertBefore(itemElement, childNode);
-      didInsertElement = true;
+  let did_insert_element = false;
+  for(const child_node of feed_list_element.childNodes) {
+    const key_string =
+      (child_node.getAttribute('sort-key') || '').toLowerCase();
+    if(indexedDB.cmp(normal_title, key_string) < 1) {
+      feed_list_element.insertBefore(item_element, child_node);
+      did_insert_element = true;
       break;
     }
   }
 
-  if(!didInsertElement) {
-    feedListElement.appendChild(itemElement);
-  }
+  if(!did_insert_element)
+    feed_list_element.appendChild(item_element);
 }
 
 // TODO: deprecate
-function showSubscriptionPreview(urlObject) {
-  startSubscription(urlObject);
+function show_subscription_preview(url_object) {
+  start_subscription(url_object);
 }
 
-function hideSubscriptionPreview() {
-  const previewElement = document.getElementById('subscription-preview');
-  hideElement(previewElement);
-  const resultsListElement = document.getElementById(
+function hide_subscription_preview() {
+  const preview_element = document.getElementById('subscription-preview');
+  hide_element(preview_element);
+  const results_list_element = document.getElementById(
     'subscription-preview-entries');
-
-  while(resultsListElement.firstChild) {
-    resultsListElement.firstChild.remove();
-  }
+  while(results_list_element.firstChild)
+    results_list_element.firstChild.remove();
 }
 
 // TODO: if subscribing from a discover search result, I already know some
 // of the feed's other properties, such as its title and link. I should be
-// passing those along to startSubscription and setting them here. Or
-// startSubscription should expect a feed object as a parameter.
-async function startSubscription(urlObject) {
+// passing those along to start_subscription and setting them here. Or
+// start_subscription should expect a feed object as a parameter.
+async function start_subscription(url_object) {
 
   // TODO: remove this once preview is deprecated more fully
-  hideSubscriptionPreview();
+  hide_subscription_preview();
 
-  showSubscriptionMonitor();
-  appendSubscriptionMonitorMessage(`Subscribing to ${urlObject.href}`);
+  show_subscription_monitor();
+  append_subscription_monitor_msg(`Subscribing to ${url_object.href}`);
 
   const feed = {};
-  Feed.prototype.addURL.call(feed, urlObject.href);
+  Feed.prototype.add_url.call(feed, url_object.href);
   const options = {};
   options.verbose = true;// temp
   // Leaving other options to defaults for now
-  let subcribedfeed;
-  let readerConn;
-  let iconConn;
+  let subscribed_feed;
+  let reader_conn;
+  let icon_conn;
   const verbose = true; // temp, for now
-  let iconDbName, iconDbVersion, connectTimeoutMillis;
-  let subscribeTimeoutMillis, suppressNotifications;
+  let icon_db_name, icon_db_version, connect_timeout_ms;
+  let subscribe_timeout_ms, mute_notifications;
 
-  const iconConnPromise = openFaviconDb(iconDbName, iconDbVersion,
-    connectTimeoutMillis, verbose);
-  const readerConnPromise = openReaderDb();
-  const connectionPromises = [readerConnPromise, iconConnPromise];
-  const connectionPromise = Promise.all(connectionPromises);
+  const icon_conn_promise = favicon_open_db(icon_db_name, icon_db_version,
+    connect_timeout_ms, verbose);
+  const reader_conn_promise = reader_open_db();
+  const conn_promises = [reader_conn_promise, icon_conn_promise];
+  const conn_promise = Promise.all(conn_promises);
 
   try {
-    const connectionResolutions = await connectionPromise;
-    readerConn = connectionResolutions[0];
-    iconConn = connectionResolutions[1];
-    subcribedfeed = await subscribe(readerConn, iconConn, feed,
-      subscribeTimeoutMillis, suppressNotifications, verbose);
+    const conn_resolutions = await conn_promise;
+    reader_conn = conn_resolutions[0];
+    icon_conn = conn_resolutions[1];
+    subscribed_feed = await subscribe(reader_conn, icon_conn, feed,
+      subscribe_timeout_ms, mute_notifications, verbose);
   } catch(error) {
     console.warn(error);
   } finally {
-    if(readerConn) {
-      readerConn.close();
-    }
-    if(iconConn) {
-      iconConn.close();
-    }
+    if(reader_conn)
+      reader_conn.close();
+    if(icon_conn)
+      icon_conn.close();
   }
 
-  if(!subcribedfeed) {
-    // TODO: is it correct to return here? shouldn't this be visible error or
-    // something?
+  // TODO: is it correct to return here? shouldn't this be visible error or
+  // something?
+  if(!subscribed_feed)
     return;
-  }
 
   // TODO: what is the second parameter? give it an express name here
-  appendFeed(subcribedfeed, true);
+  append_feed_to_feed_list(subscribed_feed, true);
 
   // TODO: rather than expressly updating the feed count here, this should
   // happen as a result of some update event that some listener reacts to
   // That event should probably be a BroadcastChannel message that is fired
   // by subscribe
-  updateFeedCount();
+  update_feed_count();
 
   // Show a brief message that the subscription was successful
-  const feedURLString = Feed.prototype.getURL.call(subcribedfeed);
-  appendSubscriptionMonitorMessage(`Subscribed to ${feedURLString}`);
+  const feed_url_string = Feed.prototype.get_url.call(subscribed_feed);
+  append_subscription_monitor_msg(`Subscribed to ${feed_url_string}`);
 
   // Hide the sub monitor
   // TODO: this should be a call to a helper function
-  const monitorElement = document.getElementById('submon');
+  const monitor_element = document.getElementById('submon');
   // TODO: the other parameters should be named expressly
-  await fadeElement(monitorElement, 2, 1);
-  monitorElement.remove();
+  await fade_element(monitor_element, 2, 1);
+  monitor_element.remove();
 
   // After subscribing switch back to the feed list
-  const subsSectionElement = document.getElementById('subs-list-section');
-  showSection(subsSectionElement);
+  const subs_section_element = document.getElementById('subs-list-section');
+  show_section(subs_section_element);
 }
+
+function db_find_feed_by_id(conn, feed_id) {
+  function resolver(resolve, reject) {
+    const tx = conn.transaction('feed');
+    const store = tx.objectStore('feed');
+    const request = store.get(feed_id);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  }
+  return new Promise(resolver);
+}
+
+async function db_connect_then_find_feed_by_id(feed_id) {
+  let conn;
+  try {
+    conn = await reader_open_db();
+    return await db_find_feed_by_id(conn, feed_id);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    if(conn)
+      conn.close();
+  }
+}
+
 
 // TODO: show num entries, num unread/red, etc
 // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 // TODO: react to errors
 // TODO: should this even catch?
-async function feedListItemOnClick(event) {
-
-  const findFeedById = function(conn, feedId) {
-    return new Promise((resolve, reject) => {
-      const tx = conn.transaction('feed');
-      const store = tx.objectStore('feed');
-      const request = store.get(feedId);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  };
-
-  const loadFeedFromDb = async function(feedId) {
-    let conn;
-    try {
-      conn = await openReaderDb();
-      return await findFeedById(conn, feedIdNumber);
-    } catch(error) {
-      console.warn(error);
-    } finally {
-      if(conn) {
-        conn.close();
-      }
-    }
-  };
+async function feed_list_item_onclick(event) {
 
   // Use current target to capture the element with the feed attribute
-  const feedListItemElement = event.currentTarget;
-  const feedIdString = feedListItemElement.getAttribute('feed');
-  const feedIdNumber = parseInt(feedIdString, 10);
-  const feed = await loadFeedFromDb(feedIdNumber);
+  const feed_list_item_element = event.currentTarget;
+  const feed_id_string = feed_list_item_element.getAttribute('feed');
+  const feed_id_number = parseInt(feed_id_string, 10);
+  const feed = await db_connect_then_find_feed_by_id(feed_id_number);
 
   // TODO: should this throw?
   if(!feed) {
-    console.error('No feed found with id', feedIdNumber);
+    console.error('No feed found with id', feed_id_number);
     return;
   }
 
-  const titleElement = document.getElementById('details-title');
-  titleElement.textContent = feed.title || 'Untitled';
+  const title_element = document.getElementById('details-title');
+  title_element.textContent = feed.title || 'Untitled';
 
-  const faviconElement = document.getElementById('details-favicon');
-  if(feed.faviconURLString) {
-    faviconElement.setAttribute('src', feed.faviconURLString);
-  } else {
-    faviconElement.removeAttribute('src');
-  }
+  const favicon_element = document.getElementById('details-favicon');
+  if(feed.faviconURLString)
+    favicon_element.setAttribute('src', feed.faviconURLString);
+  else
+    favicon_element.removeAttribute('src');
 
-  const descriptionElement = document.getElementById(
+  const description_element = document.getElementById(
     'details-feed-description');
-  if(feed.description) {
-    descriptionElement.textContent = feed.description;
-  } else {
-    descriptionElement.textContent = '';
-  }
+  if(feed.description)
+    description_element.textContent = feed.description;
+  else
+    description_element.textContent = '';
 
-  const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = Feed.prototype.getURL.call(feed);
-  const feedLinkElement = document.getElementById('details-feed-link');
-  feedLinkElement.textContent = feed.link || '';
-  const unsubscribeButton = document.getElementById('details-unsubscribe');
-  unsubscribeButton.value = '' + feed.id;
+  const feed_url_element = document.getElementById('details-feed-url');
+  feed_url_element.textContent = Feed.prototype.get_url.call(feed);
+  const feed_link_element = document.getElementById('details-feed-link');
+  feed_link_element.textContent = feed.link || '';
+  const unsubscribe_button = document.getElementById('details-unsubscribe');
+  unsubscribe_button.value = '' + feed.id;
 
-  const detailsElement = document.getElementById('mi-feed-details');
-  showSection(detailsElement);
+  const details_element = document.getElementById('mi-feed-details');
+  show_section(details_element);
 
   // Ensure the details are visible (when the list is long the details may not
   // be visible because of the scroll position)
@@ -366,78 +350,81 @@ async function feedListItemOnClick(event) {
 // task, try and replace the default icon with the proper icon.
 // TODO: Suppress resubmits if last query was a search and the
 // query did not change?
-async function subscribeFormOnSubmit(event) {
+async function subscribe_form_on_submit(event) {
   // Prevent normal form submission behavior
   event.preventDefault();
 
-  const queryElement = document.getElementById('subscribe-discover-query');
-  let queryString = queryElement.value;
-  queryString = queryString || '';
-  queryString = queryString.trim();
+  const query_element = document.getElementById('subscribe-discover-query');
+  let query_string = query_element.value;
+  query_string = query_string || '';
+  query_string = query_string.trim();
 
-  if(!queryString) {
+  if(!query_string)
     return false;
-  }
 
-  const noResultsElement = document.getElementById('discover-no-results');
+  const no_results_element = document.getElementById('discover-no-results');
 
   // Do nothing if searching in progress
-  const progressElement = document.getElementById('discover-in-progress');
-  if(isElementVisible(progressElement)) {
+  const progress_element = document.getElementById('discover-in-progress');
+  if(is_visible_element(progress_element))
     return false;
-  }
 
   // Do nothing if subscription in progress
-  const monitorElement = document.getElementById('submon');
-  if(monitorElement && isElementVisible(monitorElement)) {
+  const monitor_element = document.getElementById('submon');
+  if(monitor_element && is_visible_element(monitor_element))
     return false;
-  }
 
   // Clear the previous results list
-  const resultsListElement = document.getElementById('discover-results-list');
-  resultsListElement.innerHTML  = '';
+  const results_list_element = document.getElementById('discover-results-list');
+  results_list_element.innerHTML  = '';
 
   // Ensure the no-results-found message, if present from a prior search,
   // is hidden. This should never happen because we exit early if it is still
   // visible above.
-  hideElement(progressElement);
+  hide_element(progress_element);
 
-  let urlObject = null;
+  let url_object = null;
   try {
-    urlObject = new URL(queryString);
+    url_object = new URL(query_string);
   } catch(exception) {
   }
 
   // If it is a URL, subscribe
-  if(urlObject) {
-    queryElement.value = '';
+  if(url_object) {
+    query_element.value = '';
     // TODO: this should go straight to sub, not call sub preview
-    showSubscriptionPreview(urlObject);
+    show_subscription_preview(url_object);
     return false;
   }
 
   // Search for feeds
-  showElement(progressElement);
+  show_element(progress_element);
 
-  let iconURL, linkURL, entryArray, query;
-  const searchTimeout = 5000;
+  // TODO: are these vars objects or strings? rename to clarify
+  let icon_url, link_url, entries, query;
+  const search_timeout_ms = 5000;
+
+  // TODO: avoid destructuring
+
   try {
-    ({query, entryArray} =
-      await searchGoogleFeeds(queryString, searchTimeout));
+    ({query, entries} =
+      await search_google_feeds(query_string, search_timeout_ms));
   } catch(error) {
     console.debug(error);
     return false;
   } finally {
-    hideElement(progressElement);
+    hide_element(progress_element);
   }
 
+  // TODO: use explicit loops
+
   // Filter entries without urls
-  entryArray = entryArray.filter((entryObject) => entryObject.url);
+  entries = entries.filter((entry_object) => entry_object.url);
 
   // Convert to URL objects, filter entries with invalid urls
-  entryArray = entryArray.filter((entryObject) => {
+  entries = entries.filter((entry_object) => {
     try {
-      entryObject.url = new URL(entryObject.url);
+      entry_object.url = new URL(entry_object.url);
       return true;
     } catch(error) {
       return false;
@@ -446,191 +433,189 @@ async function subscribeFormOnSubmit(event) {
 
   // Filter entries with identical normalized urls, favoring earlier entries
   // TODO: use a Set?
-  const distinctURLStrings = [];
-  entryArray = entryArray.filter((entryObject) => {
-    if(distinctURLStrings.includes(entryObject.url.href))
+  const distinct_urls = [];
+  entries = entries.filter((entry_object) => {
+    if(distinct_urls.includes(entry_object.url.href))
       return false;
-    distinctURLStrings.push(entryObject.url.href);
+    distinct_urls.push(entry_object.url.href);
     return true;
   });
 
   // If, after filtering, there are no more entries, exit early
-  if(!entryArray.length) {
-    hideElement(resultsListElement);
-    showElement(noResultsElement);
+  if(!entries.length) {
+    hide_element(results_list_element);
+    show_element(no_results_element);
     return false;
   }
 
   // Sanitize entry title
   // TODO: use for..of
-  const entryTitleMaxLength = 200;
-  entryArray.forEach((entryObject) => {
-    let title = entryObject.title;
+  const entry_title_max_length = 200;
+  entries.forEach((entry_object) => {
+    let title = entry_object.title;
     if(title) {
-      title = filterControlCharacters(title);
-      title = replaceHTML(title, '');
-      title = truncateHTML(title, entryTitleMaxLength);
-      entryObject.title = title;
+      title = filter_control_chars(title);
+      title = replace_html(title, '');
+      title = truncate_html(title, entry_title_max_length);
+      entry_object.title = title;
     }
   });
 
   // Sanitize content snippet
-  const replacement = '\u2026';
-  const entrySnippetMaxLength = 400;
+  const replacement_string = '\u2026';
+  const entry_snippet_max_length = 400;
   // TODO: use for..of
-  entryArray.forEach((entryObject) => {
-    let snippet = entryObject.contentSnippet;
+  entries.forEach((entry_object) => {
+    let snippet = entry_object.contentSnippet;
     if(snippet) {
-      snippet = filterControlCharacters(snippet);
+      snippet = filter_control_chars(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
-      snippet = truncateHTML(
-        snippet, entrySnippetMaxLength, replacement);
-      entryObject.contentSnippet = snippet;
+      snippet = truncate_html(
+        snippet, entry_snippet_max_length, replacement_string);
+      entry_object.contentSnippet = snippet;
     }
   });
 
-  showElement(resultsListElement);
-  hideElement(noResultsElement);
+  show_element(results_list_element);
+  hide_element(no_results_element);
 
-  const itemElement = document.createElement('li');
-  itemElement.textContent = `Found ${entryArray.length} feeds.`;
-  resultsListElement.appendChild(itemElement);
+  const item_element = document.createElement('li');
+  item_element.textContent = `Found ${entries.length} feeds.`;
+  results_list_element.appendChild(item_element);
 
-  const fs = new FaviconService();
-  await fs.openReaderDb();
-  for(let result of entryArray) {
-    if(!result.link) {
+  // TODO: use try/catch
+
+  let icon_conn;
+
+  icon_conn = await favicon_open_db();
+  for(let result of entries) {
+    if(!result.link)
       continue;
-    }
-    linkURL = new URL(result.link);
-    iconURL = await fs.lookup(linkURL);
-    result.faviconURLString = iconURL;
-  }
-  fs.close();
 
-  const elementArray = entryArray.map(createSearchResultElement);
-  elementArray.forEach((el) => resultsListElement.appendChild(el));
+    link_url = new URL(result.link);
+    // TODO: properly call with all parameteres
+    icon_url = await lookup_favicon(icon_conn, link_url);
+    result.faviconURLString = icon_url;
+  }
+  icon_conn.close();
+
+  // TODO: use explicit loops
+  const elements = entries.map(create_search_result_element);
+  elements.forEach((el) => results_list_element.appendChild(el));
   return false;// Signal no submit
 }
 
 // Creates and returns a search result item to show in the list of search
 // results when searching for feeds.
-function createSearchResultElement(feed) {
-  const itemElement = document.createElement('li');
-  const subscribeButton = document.createElement('button');
-  subscribeButton.value = feed.url.href;
-  subscribeButton.title = feed.url.href;
-  subscribeButton.textContent = 'Subscribe';
-  subscribeButton.onclick = subscribeButtonOnClick;
-  itemElement.appendChild(subscribeButton);
+function create_search_result_element(feed) {
+  const item_element = document.createElement('li');
+  const subscribe_button = document.createElement('button');
+  subscribe_button.value = feed.url.href;
+  subscribe_button.title = feed.url.href;
+  subscribe_button.textContent = 'Subscribe';
+  subscribe_button.onclick = subscribe_button_on_click;
+  item_element.appendChild(subscribe_button);
 
   if(feed.faviconURLString) {
-    const faviconElement = document.createElement('img');
-    faviconElement.setAttribute('src', feed.faviconURLString);
-    if(feed.link) {
-      faviconElement.setAttribute('title', feed.link);
-    }
-    faviconElement.setAttribute('width', '16');
-    faviconElement.setAttribute('height', '16');
-    itemElement.appendChild(faviconElement);
+    const favicon_element = document.createElement('img');
+    favicon_element.setAttribute('src', feed.faviconURLString);
+    if(feed.link)
+      favicon_element.setAttribute('title', feed.link);
+    favicon_element.setAttribute('width', '16');
+    favicon_element.setAttribute('height', '16');
+    item_element.appendChild(favicon_element);
   }
 
   // TODO: don't allow for empty href value
-  const titleElement = document.createElement('a');
-  if(feed.link) {
-    titleElement.setAttribute('href', feed.link);
-  }
-  titleElement.setAttribute('target', '_blank');
-  titleElement.title = feed.title;
-  titleElement.innerHTML = feed.title;
-  itemElement.appendChild(titleElement);
+  const title_element = document.createElement('a');
+  if(feed.link)
+    title_element.setAttribute('href', feed.link);
+  title_element.setAttribute('target', '_blank');
+  title_element.title = feed.title;
+  title_element.innerHTML = feed.title;
+  item_element.appendChild(title_element);
 
-  const snippetElement = document.createElement('span');
-  snippetElement.innerHTML = feed.contentSnippet;
-  itemElement.appendChild(snippetElement);
+  const snippet_element = document.createElement('span');
+  snippet_element.innerHTML = feed.contentSnippet;
+  item_element.appendChild(snippet_element);
 
-  const urlElement = document.createElement('span');
-  urlElement.setAttribute('class', 'discover-search-result-url');
-  urlElement.textContent = feed.url.href;
-  itemElement.appendChild(urlElement);
-  return itemElement;
+  const url_element = document.createElement('span');
+  url_element.setAttribute('class', 'discover-search-result-url');
+  url_element.textContent = feed.url.href;
+  item_element.appendChild(url_element);
+  return item_element;
 }
 
-function subscribeButtonOnClick(event) {
-  const subscribeButton = event.target;
-  const feedURLString = subscribeButton.value;
+function subscribe_button_on_click(event) {
+  const subscribe_button = event.target;
+  const feed_url_string = subscribe_button.value;
 
   // TODO: this will always be defined, so this check isn't necessary, but I
   // tentatively leaving it in here
-  if(!feedURLString) {
+  if(!feed_url_string)
     return;
-  }
 
   // TODO: Ignore future clicks if an error was displayed?
 
   // Ignore future clicks while subscription in progress
   // TODO: use a better element name here.
-  const subMonitorElement = document.getElementById('submon');
-  if(subMonitorElement && isElementVisible(subMonitorElement)) {
+  const sub_monitor_element = document.getElementById('submon');
+  if(sub_monitor_element && is_visible_element(sub_monitor_element))
     return;
-  }
 
-  // Show subscription preview expects a URL object, so convert. This can
-  // throw but never should so I do not use try/catch.
-  const feedURLObject = new URL(feedURLString);
+  // Should never throw
+  const feed_url_object = new URL(feed_url_string);
 
   // TODO: this should make a call directly to the step that starts the
   // subscription process.
-  showSubscriptionPreview(feedURLObject);
+  show_subscription_preview(feed_url_object);
 }
 
-function removeFeedFromFeedList(feedIdNumber) {
-  const feedElement = document.querySelector(
-    `#feedlist li[feed="${feedIdNumber}"]`);
+function remove_feed_from_feed_list(feed_id_number) {
+  const feed_element = document.querySelector(
+    `#feedlist li[feed="${feed_id_number}"]`);
 
-  if(!feedElement) {
-    throw new Error('No feed element found with id ' + feedIdNumber);
-  }
+  if(!feed_element)
+    throw new Error('No feed element found with id ' + feed_id_number);
 
-  feedElement.removeEventListener('click', feedListItemOnClick);
-  feedElement.remove();
+  feed_element.removeEventListener('click', feed_list_item_onclick);
+  feed_element.remove();
 
   // Upon removing the feed, update the displayed number of feeds.
   // TODO: this should actually be called from some listener instead by a
   // BroadcastChannel message, the event should be fired by the actual
   // thing that removes the feed from storage
-  updateFeedCount();
+  update_feed_count();
 
   // Upon removing the feed, update the state of the feed list.
   // If the feed list has no items, hide it and show a message instead
-  const feedListElement = document.getElementById('feedlist');
-  const noFeedsElement = document.getElementById('nosubs');
-  if(!feedListElement.childElementCount) {
-    hideElement(feedListElement);
-    showElement(noFeedsElement);
+  const feed_list_element = document.getElementById('feedlist');
+  const no_feeds_element = document.getElementById('nosubs');
+  if(!feed_list_element.childElementCount) {
+    hide_element(feed_list_element);
+    show_element(no_feeds_element);
   }
 }
 
 // TODO: visually react to unsubscribe error
-async function unsubscribeButtonOnClick(event) {
-  const feedIdString = event.target.value;
-  const feedIdNumber = parseInt(feedIdString, 10);
+async function unsubscribe_button_on_click(event) {
+  const feed_id_string = event.target.value;
+  const feed_id_number = parseInt(feed_id_string, 10);
 
-  let readerConn;
+  let reader_conn;
   try {
-    readerConn = await openReaderDb();
-    const numEntriesDeleted = await unsubscribe(readerConn, feedIdNumber);
+    reader_conn = await reader_open_db();
+    const num_entries_deleted = await unsubscribe(reader_conn, feed_id_number);
   } catch(error) {
     console.warn('Unsubscribe error:', error);
   } finally {
-    if(readerConn) {
-      readerConn.close();
-    }
+    if(reader_conn)
+      reader_conn.close();
   }
 
-  removeFeedFromFeedList(feedIdNumber);
-  const subsListSection = document.getElementById('subs-list-section');
-  showSection(subsListSection);
+  remove_feed_from_feed_list(feed_id_number);
+  const subs_list_section = document.getElementById('subs-list-section');
+  show_section(subs_list_section);
 }
 
 // TODO: needs to notify the user of a successful
@@ -640,109 +625,96 @@ async function unsubscribeButtonOnClick(event) {
 // need to be cancelable.
 // TODO: after import the feeds list needs to be refreshed
 // TODO: notify the user if there was an error
-function importOPMLButtonOnClick(event) {
-  const uploaderInput = document.createElement('input');
-  uploaderInput.setAttribute('type', 'file');
-  uploaderInput.setAttribute('accept', 'application/xml');
-  uploaderInput.addEventListener('change', importOPMLUploaderOnChange,
+function import_opml_button_on_click(event) {
+  const uploader_input = document.createElement('input');
+  uploader_input.setAttribute('type', 'file');
+  uploader_input.setAttribute('accept', 'application/xml');
+  uploader_input.addEventListener('change', import_opml_uploader_on_change,
     {'once':true});
-  uploaderInput.click();
+  uploader_input.click();
 }
 
-async function importOPMLUploaderOnChange(event) {
-  const uploaderInput = event.target;
+// TODO: visual feedback in event an error
+async function import_opml_uploader_on_change(event) {
+  const uploader_input = event.target;
   try {
-    await importOPMLFiles(uploaderInput.files, true);
+    // TODO: be explicit about naming second parameter here
+    await import_opml_files(uploader_input.files, true);
   } catch(error) {
-    // TODO: visual feedback in event an error
     console.warn(error);
   }
+}
+
+function db_load_all_feeds(conn) {
+  function resolver(resolve, reject) {
+    const tx = conn.transaction('feed');
+    const store = tx.objectStore('feed');
+    const request = store.getAll();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  }
+  return new Promise(resolver);
 }
 
 // TODO: visual feedback
 async function exportOPMLButtonOnClick(event) {
-
-  const loadAllFeedsFromDb = function(conn) {
-    return new Promise((resolve, reject) => {
-      const tx = conn.transaction('feed');
-      const store = tx.objectStore('feed');
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  };
-
-  const opmlTitle = 'Subscriptions';
-  const fileName = 'subscriptions.xml';
+  const opml_title = 'Subscriptions';
+  const opml_file_name = 'subscriptions.xml';
 
   let conn;
   let feeds;
   try {
-    conn = await openReaderDb();
-    feeds = await loadAllFeedsFromDb(conn);
+    conn = await reader_open_db();
+    feeds = await db_load_all_feeds(conn);
   } catch(error) {
     console.warn(error);
   } finally {
-    if(conn) {
+    if(conn)
       conn.close();
-    }
   }
 
-  if(!feeds) {
+  if(!feeds)
     return;
-  }
 
-  const blobObject = createOPMLBlob(feeds, opmlTitle);
-  const objectURL = URL.createObjectURL(blobObject);
-  const anchorElement = document.createElement('a');
-  anchorElement.setAttribute('download', fileName);
-  anchorElement.href = objectURL;
-  anchorElement.click();
-  URL.revokeObjectURL(objectURL);
+  const blob = create_opml_blob(feeds, opml_title);
+  const object_url = URL.createObjectURL(blob);
+  const anchor_element = document.createElement('a');
+  anchor_element.setAttribute('download', opml_file_name);
+  anchor_element.href = object_url;
+  anchor_element.click();
+  URL.revokeObjectURL(object_url);
 }
 
-function createOPMLBlob(feeds, title) {
+function create_opml_blob(feeds, title) {
   const doc = OPMLDocument.create(title);
-  for(let feed of feeds) {
+  for(const feed of feeds) {
     const outline = {};
     outline.type = feed.type;
-    outline.xmlUrl = Feed.prototype.getURL.call(feed);
+    outline.xmlUrl = Feed.prototype.get_url.call(feed);
     outline.title = feed.title;
     outline.description = feed.description;
     outline.htmlUrl = feed.link;
-    doc.appendOutlineObject(outline);
+    doc.append_outline_object(outline);
   }
-  return new Blob([doc.toString()], {'type': 'application/xml'});
+  return new Blob([doc.to_string()], {'type': 'application/xml'});
 }
 
 
 // TODO: sort feeds alphabetically
 // TODO: react to errors
-async function initSubscriptionsSection() {
-
-  const loadAllFeedsFromDb = function(conn) {
-    return new Promise((resolve, reject) => {
-      const tx = conn.transaction('feed');
-      const store = tx.objectStore('feed');
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  };
-
-  const noFeedsElement = document.getElementById('nosubs');
-  const feedListElement = document.getElementById('feedlist');
+async function init_subscriptions_section() {
+  const no_feeds_element = document.getElementById('nosubs');
+  const feed_list_element = document.getElementById('feedlist');
   let conn;
   let feeds;
   try {
-    conn = await openReaderDb();
-    feeds = await loadAllFeedsFromDb(conn);
+    conn = await reader_open_db();
+    feeds = await db_load_all_feeds(conn);
   } catch(error) {
     console.warn(error);
   } finally {
-    if(conn) {
+    if(conn)
       conn.close();
-    }
   }
 
   if(!feeds) {
@@ -758,42 +730,41 @@ async function initSubscriptionsSection() {
   });
 
   for(let feed of feeds) {
-    appendFeed(feed);
-
+    append_feed_to_feed_list(feed);
     // TODO: the update should happen as a result of call to append feed,
     // not here
-    updateFeedCount();
+    update_feed_count();
   }
 
   if(!feeds.length) {
-    showElement(noFeedsElement);
-    hideElement(feedListElement);
+    show_element(no_feeds_element);
+    hide_element(feed_list_element);
   } else {
-    hideElement(noFeedsElement);
-    showElement(feedListElement);
+    hide_element(no_feeds_element);
+    show_element(feed_list_element);
   }
 }
 
-function navItemOnClick(event) {
+function nav_item_on_click(event) {
   const clickedElement = event.target;
-  const sectionElement = event.currentTarget;
-  showSection(sectionElement);
+  const section_element = event.currentTarget;
+  show_section(section_element);
 }
 
-function enableNotificationsCheckboxOnClick(event) {
-  if(event.target.checked) {
+// TODO: this should be on change
+function enable_notifications_checkbox_on_click(event) {
+  if(event.target.checked)
     localStorage.SHOW_NOTIFICATIONS = '1';
-  } else {
+  else
     delete localStorage.SHOW_NOTIFICATIONS;
-  }
 }
 
-function enableBackgroundProcessingCheckboxOnClick(event) {
-  if(event.target.checked) {
+// TODO: this should be on change
+function enable_bg_processing_checkbox_on_click(event) {
+  if(event.target.checked)
     chrome.permissions.request({'permissions': ['background']}, noop);
-  } else {
+  else
     chrome.permissions.remove({'permissions': ['background']}, noop);
-  }
 }
 
 function noop() {
@@ -803,149 +774,136 @@ function noop() {
 // TODO: use a promise and an async function call instead of this separate
 // helper, create a utility function for checking permission that returns a
 // promise
-function enableBackgroundProcessingOnCheckPermissions(isPermitted) {
+function enable_bg_processing_on_check_permission(is_permitted) {
   const checkbox = document.getElementById('enable-background');
-  checkbox.checked = isPermitted;
+  checkbox.checked = is_permitted;
 }
 
-function restrictIdlePollingCheckboxOnClick(event) {
-  if(event.target.checked) {
+// TODO: should this be on change instead of on click?
+function restrict_idle_polling_checkbox_on_click(event) {
+  if(event.target.checked)
     localStorage.ONLY_POLL_IF_IDLE = '1';
-  } else {
+  else
     delete localStorage.ONLY_POLL_IF_IDLE;
-  }
 }
 
 // TODO: deprecate
-function enableSubscriptionPreviewCheckboxOnChange(event) {
-  if(event.target.checked) {
+function enable_subscription_preview_checkbox_on_change(event) {
+  if(event.target.checked)
     localStorage.ENABLE_SUBSCRIBE_PREVIEW = '1';
-  } else {
+  else
     delete localStorage.ENABLE_SUBSCRIBE_PREVIEW;
-  }
 }
 
 // TODO: deprecate
-function subscriptionPreviewContinueButtonOnClick(event) {
+function subscription_preview_continue_button_on_click(event) {
   // TODO: why use currentTarget over target for no reason?
-  const previewButton = event.currentTarget;
-  const urlString = previewButton.value;
-  hideSubscriptionPreview();
+  const preview_button = event.currentTarget;
+  const url_string = preview_button.value;
+  hide_subscription_preview();
 
-  if(!urlString) {
+  if(!url_string) {
     console.debug('no url');
     return;
   }
 
-  const feedURLObject = new URL(urlString);
-  startSubscription(feedURLObject);
+  const feed_url_object = new URL(url_string);
+  start_subscription(feed_url_object);
 }
 
-function backgroundImageMenuOnChange(event) {
-  if(event.target.value) {
+function background_img_menu_on_change(event) {
+  if(event.target.value)
     localStorage.BACKGROUND_IMAGE = event.target.value;
-  } else {
+  else
     delete localStorage.BACKGROUND_IMAGE;
-  }
-
-  settingsChannel.postMessage('changed');
+  settings_channel.postMessage('changed');
 }
 
-function headerFontMenuOnChange(event){
-  const selectedOption = event.target.value;
-  if(selectedOption) {
-    localStorage.HEADER_FONT_FAMILY = selectedOption;
-  } else {
+function header_font_menu_on_change(event){
+  const selected_option = event.target.value;
+  if(selected_option)
+    localStorage.HEADER_FONT_FAMILY = selected_option;
+  else
     delete localStorage.HEADER_FONT_FAMILY;
-  }
-
-  settingsChannel.postMessage('changed');
+  settings_channel.postMessage('changed');
 }
 
-function bodyFontMenuOnChange(event) {
-  if(event.target.value) {
+function body_font_menu_on_change(event) {
+  if(event.target.value)
     localStorage.BODY_FONT_FAMILY = event.target.value;
-  } else {
+  else
     delete localStorage.BODY_FONT_FAMILY;
-  }
-
-  settingsChannel.postMessage('changed');
+  settings_channel.postMessage('changed');
 }
 
-function columnCountMenuOnChange(event) {
-  if(event.target.value) {
+function column_count_menu_on_change(event) {
+  if(event.target.value)
     localStorage.COLUMN_COUNT = event.target.value;
-  } else {
+  else
     delete localStorage.COLUMN_COUNT;
-  }
-
-  settingsChannel.postMessage('changed');
+  settings_channel.postMessage('changed');
 }
 
-function entryBackgroundColorOnInput(event) {
-  const element = event.target;
-  const value = element.value;
-  if(value) {
+function entry_bg_color_input_on_input(event) {
+  const value = event.target.value;
+  if(value)
     localStorage.ENTRY_BACKGROUND_COLOR = value;
-  } else {
+  else
     delete localStorage.ENTRY_BACKGROUND_COLOR;
-  }
-
-  settingsChannel.postMessage('changed');
+  settings_channel.postMessage('changed');
 }
 
-function entryMarginOnChange(event) {
+function entry_margin_slider_on_change(event) {
   // TODO: why am i defaulting to 10 here?
   localStorage.ENTRY_MARGIN = event.target.value || '10';
-
-  settingsChannel.postMessage('changed');
+  settings_channel.postMessage('changed');
 }
 
-function headerFontSizeOnChange(event) {
+function header_font_size_slider_on_change(event) {
   localStorage.HEADER_FONT_SIZE = event.target.value || '1';
-  settingsChannel.postMessage('changed');
+  settings_channel.postMessage('changed');
 }
 
-function bodyFontSizeOnChange(event) {
+function body_font_size_slider_on_change(event) {
   localStorage.BODY_FONT_SIZE = event.target.value || '1';
-  settingsChannel.postMessage('changed');
+  settings_channel.postMessage('changed');
 }
 
-function justifyCheckboxOnChange(event) {
+function justify_text_checkbox_on_change(event) {
   if(event.target.checked)
     localStorage.JUSTIFY_TEXT = '1';
   else
     delete localStorage.JUSTIFY_TEXT;
-  settingsChannel.postMessage('changed');
+  settings_channel.postMessage('changed');
 }
 
-function bodyHeightOnInput(event) {
+function body_height_input_on_input(event) {
   localStorage.BODY_LINE_HEIGHT = event.target.value || '10';
-  settingsChannel.postMessage('changed');
+  settings_channel.postMessage('changed');
 }
 
 // TODO: this could use some cleanup or at least some clarifying comments
-function fadeElement(element, durationSeconds, delaySeconds) {
-  return new Promise(function(resolve, reject) {
+function fade_element(element, duration_secs, delay_secs) {
+  function resolver(resolve, reject) {
     const style = element.style;
     if(style.display === 'none') {
       style.display = '';
       style.opacity = '0';
     }
 
-    if(!style.opacity) {
+    if(!style.opacity)
       style.opacity = style.display === 'none' ? '0' : '1';
-    }
 
     element.addEventListener('webkitTransitionEnd', resolve, {'once': true});
 
     // property duration function delay
-    style.transition = `opacity ${durationSeconds}s ease ${delaySeconds}s`;
+    style.transition = `opacity ${duration_secs}s ease ${delay_secs}s`;
     style.opacity = style.opacity === '1' ? '0' : '1';
-  });
+  }
+  return new Promise(resolver);
 }
 
-document.addEventListener('DOMContentLoaded', function(event) {
+document.addEventListener('DOMContentLoaded', function on_dcl(event) {
 
   const fonts = [
     'ArchivoNarrow-Regular',
@@ -969,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function(event) {
     'Roboto Regular'
   ];
 
-  const imagePaths = [
+  const img_paths = [
     '/images/bgfons-paper_texture318.jpg',
     '/images/CCXXXXXXI_by_aqueous.jpg',
     '/images/paper-backgrounds-vintage-white.jpg',
@@ -992,23 +950,22 @@ document.addEventListener('DOMContentLoaded', function(event) {
   ];
 
   // Init CSS styles that affect the display preview area
-  addEntryCSSRules();
+  add_entry_css_rules();
 
   // Attach click handlers to feeds in the feed list on the left.
   // TODO: it would probably be easier and more efficient to attach a single
   // click handler that figures out which item was clicked.
-  const navFeedItemList = document.querySelectorAll('#navigation-menu li');
-  for(let navFeedItem of navFeedItemList) {
-    navFeedItem.onclick = navItemOnClick;
-  }
+  const nav_feed_item_list = document.querySelectorAll('#navigation-menu li');
+  for(const nav_feed_item of nav_feed_item_list)
+    nav_feed_item.onclick = nav_item_on_click;
 
   // Setup the Enable Notifications checkbox in the General Settings section
-  const enableNotificationsCheckbox = document.getElementById(
+  const enable_notifications_checkbox = document.getElementById(
     'enable-notifications');
-  enableNotificationsCheckbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
-  // TODO: should i be using on click or on change?
-  enableNotificationsCheckbox.onclick =
-    enableNotificationsCheckboxOnClick;
+  enable_notifications_checkbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
+  // TODO: on change
+  enable_notifications_checkbox.onclick =
+    enable_notifications_checkbox_on_click;
 
   // TODO: this should be using a local storage variable and instead the
   // permission should be permanently defined.
@@ -1016,189 +973,177 @@ document.addEventListener('DOMContentLoaded', function(event) {
   // function onchange but was listening to onclick
   // TODO: use the new, more global, navigator.permission check instead of
   // the extension API ?
-  const enableBackgroundProcessingCheckbox = document.getElementById(
+  const enable_bg_processing_checkbox = document.getElementById(
     'enable-background');
   // TODO: should i be using on click or on change?
-  enableBackgroundProcessingCheckbox.onclick =
-    enableBackgroundProcessingCheckboxOnClick;
+  enable_bg_processing_checkbox.onclick =
+    enable_bg_processing_checkbox_on_click;
   chrome.permissions.contains({'permissions': ['background']},
-    enableBackgroundProcessingOnCheckPermissions);
+    enable_bg_processing_on_check_permission);
 
-  const enableRestrictIdlePollingCheckbox = document.getElementById(
+  const enable_restrict_idle_polling_checkbox = document.getElementById(
     'enable-idle-check');
-  enableRestrictIdlePollingCheckbox.checked =
+  enable_restrict_idle_polling_checkbox.checked =
     'ONLY_POLL_IF_IDLE' in localStorage;
-  // TODO: should i be using on click or on change
-  enableRestrictIdlePollingCheckbox.onclick =
-    restrictIdlePollingCheckboxOnClick;
-
+  // TODO: on change
+  enable_restrict_idle_polling_checkbox.onclick =
+    restrict_idle_polling_checkbox_on_click;
 
   // TODO: deprecate this because I plan to deprecate the preview ability.
-  const jrOptionsEnableSubscriptionPreviewCheckbox =
+  const enable_subscription_preview_checkbox =
     document.getElementById('enable-subscription-preview');
-  jrOptionsEnableSubscriptionPreviewCheckbox.checked =
+  enable_subscription_preview_checkbox.checked =
     'ENABLE_SUBSCRIBE_PREVIEW' in localStorage;
   // TODO: should i be using on click or on change?
-  jrOptionsEnableSubscriptionPreviewCheckbox.onchange =
-    enableSubscriptionPreviewCheckboxOnChange;
+  enable_subscription_preview_checkbox.onchange =
+    enable_subscription_preview_checkbox_on_change;
 
-  const exportOPMLButton = document.getElementById('button-export-opml');
-  exportOPMLButton.onclick = exportOPMLButtonOnClick;
-  const importOPMLButton = document.getElementById('button-import-opml');
-  importOPMLButton.onclick = importOPMLButtonOnClick;
+  const export_opml_button = document.getElementById('button-export-opml');
+  export_opml_button.onclick = exportOPMLButtonOnClick;
+  const import_opml_button = document.getElementById('button-import-opml');
+  import_opml_button.onclick = import_opml_button_on_click;
 
-  initSubscriptionsSection();
+  init_subscriptions_section();
 
   // Init feed details section unsubscribe button click handler
-  const unsubscribeButton = document.getElementById('details-unsubscribe');
-  unsubscribeButton.onclick = unsubscribeButtonOnClick;
+  const unsubscribe_button = document.getElementById('details-unsubscribe');
+  unsubscribe_button.onclick = unsubscribe_button_on_click;
 
   // Init the subscription form section
-  const subscriptionForm = document.getElementById('subscription-form');
-  subscriptionForm.onsubmit = subscribeFormOnSubmit;
-  const continuePreviewButton = document.getElementById(
+  const subscription_form = document.getElementById('subscription-form');
+  subscription_form.onsubmit = subscribe_form_on_submit;
+  const continue_preview_button = document.getElementById(
     'subscription-preview-continue');
-  continuePreviewButton.onclick = subscriptionPreviewContinueButtonOnClick;
+  continue_preview_button.onclick = subscription_preview_continue_button_on_click;
 
   // Init display settings
 
   // Setup the entry background image menu
-  const backgroundImageMenu = document.getElementById('entry-background-image');
-  backgroundImageMenu.onchange = backgroundImageMenuOnChange;
+  const background_image_menu = document.getElementById(
+    'entry-background-image');
+  background_image_menu.onchange = background_img_menu_on_change;
 
   // TODO: stop trying to reuse the option variable, create separate variables
   let option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
-  backgroundImageMenu.appendChild(option);
+  background_image_menu.appendChild(option);
 
   // Load bgimages menu
-  const currentBackgroundImagePath = localStorage.BACKGROUND_IMAGE;
-  const backgroundImagePathOffset = '/images/'.length;
-  for(let path of imagePaths) {
-    let pathOption = document.createElement('option');
-    pathOption.value = path;
-    pathOption.textContent = path.substring(backgroundImagePathOffset);
-    pathOption.selected = currentBackgroundImagePath === path;
-    backgroundImageMenu.appendChild(pathOption);
+  const current_bg_img_path = localStorage.BACKGROUND_IMAGE;
+  const bg_img_path_offset = '/images/'.length;
+  for(const path of img_paths) {
+    let path_option = document.createElement('option');
+    path_option.value = path;
+    path_option.textContent = path.substring(bg_img_path_offset);
+    path_option.selected = current_bg_img_path === path;
+    background_image_menu.appendChild(path_option);
   }
 
-  // Setup header font menu
-  const headerFontMenu = document.getElementById('select_header_font');
-  headerFontMenu.onchange = headerFontMenuOnChange;
+  const header_font_menu = document.getElementById('select_header_font');
+  header_font_menu.onchange = header_font_menu_on_change;
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
-  headerFontMenu.appendChild(option);
-  const currentHeaderFont = localStorage.HEADER_FONT_FAMILY;
-  for(let ff of fonts) {
-    let headerFontOption = document.createElement('option');
-    headerFontOption.value = ff;
-    headerFontOption.selected = ff === currentHeaderFont;
-    headerFontOption.textContent = ff;
-    headerFontMenu.appendChild(headerFontOption);
+  header_font_menu.appendChild(option);
+  const current_header_font = localStorage.HEADER_FONT_FAMILY;
+  for(const font of fonts) {
+    let header_font_option = document.createElement('option');
+    header_font_option.value = font;
+    header_font_option.selected = font === current_header_font;
+    header_font_option.textContent = font;
+    header_font_menu.appendChild(header_font_option);
   }
 
-  // Setup the body font menu
-  const bodyFontMenu = document.getElementById('select_body_font');
-  bodyFontMenu.onchange = bodyFontMenuOnChange;
+  const body_font_menu = document.getElementById('select_body_font');
+  body_font_menu.onchange = body_font_menu_on_change;
   option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
-  bodyFontMenu.appendChild(option);
-  const currentBodyFont = localStorage.BODY_FONT_FAMILY;
-  for(let bff of fonts) {
-    let bodyFontOption = document.createElement('option');
-    bodyFontOption.value = bff;
-    bodyFontOption.selected = bff === currentBodyFont;
-    bodyFontOption.textContent = bff;
-    bodyFontMenu.appendChild(bodyFontOption);
+  body_font_menu.appendChild(option);
+  const current_body_font = localStorage.BODY_FONT_FAMILY;
+  for(const body_font of fonts) {
+    let body_font_option = document.createElement('option');
+    body_font_option.value = body_font;
+    body_font_option.selected = body_font === current_body_font;
+    body_font_option.textContent = body_font;
+    body_font_menu.appendChild(body_font_option);
   }
 
-  const columnCountElement = document.getElementById('column-count');
-  const columnCounts = ['1', '2', '3'];
-  for(let columnCount of columnCounts) {
+  const column_count_element = document.getElementById('column-count');
+  column_count_element.onchange = column_count_menu_on_change;
+  const column_counts = ['1', '2', '3'];
+  const current_column_count = localStorage.COLUMN_COUNT
+  for(const column_count of column_counts) {
     option = document.createElement('option');
-    option.value = columnCount;
-    option.selected = columnCount === localStorage.COLUMN_COUNT;
-    option.textContent = columnCount;
-    columnCountElement.appendChild(option);
+    option.value = column_count;
+    option.selected = column_count === current_column_count;
+    option.textContent = column_count;
+    column_count_element.appendChild(option);
   }
 
-  columnCountElement.onchange = columnCountMenuOnChange;
+  const bg_color_input = document.getElementById('entry-background-color');
+  bg_color_input.value = localStorage.ENTRY_BACKGROUND_COLOR || '';
+  bg_color_input.oninput = entry_bg_color_input_on_input;
 
-  const backgroundColorInput = document.getElementById(
-    'entry-background-color');
-  backgroundColorInput.value = localStorage.ENTRY_BACKGROUND_COLOR || '';
-  backgroundColorInput.oninput = entryBackgroundColorOnInput;
+  const margin_input = document.getElementById('entry-margin');
+  margin_input.value = localStorage.ENTRY_MARGIN || '10';
+  margin_input.onchange = entry_margin_slider_on_change;
 
-  const marginInput = document.getElementById('entry-margin');
-  marginInput.value = localStorage.ENTRY_MARGIN || '10';
-  marginInput.onchange = entryMarginOnChange;
+  const header_font_size_input = document.getElementById('header-font-size');
+  header_font_size_input.value = localStorage.HEADER_FONT_SIZE || '1';
+  header_font_size_input.onchange = header_font_size_slider_on_change;
 
-  const headerFontSizeInput = document.getElementById('header-font-size');
-  headerFontSizeInput.value = localStorage.HEADER_FONT_SIZE || '1';
-  headerFontSizeInput.onchange = headerFontSizeOnChange;
+  const body_font_size_input = document.getElementById('body-font-size');
+  body_font_size_input.value = localStorage.BODY_FONT_SIZE || '1';
+  body_font_size_input.onchange = body_font_size_slider_on_change;
 
-  const bodyFontSizeInput = document.getElementById('body-font-size');
-  bodyFontSizeInput.value = localStorage.BODY_FONT_SIZE || '1';
-  bodyFontSizeInput.onchange = bodyFontSizeOnChange;
+  const justify_text_checkbox = document.getElementById('justify-text');
+  justify_text_checkbox.checked = 'JUSTIFY_TEXT' in localStorage;
+  justify_text_checkbox.onchange = justify_text_checkbox_on_change;
 
-  const justifyTextCheckbox = document.getElementById('justify-text');
-  justifyTextCheckbox.checked = 'JUSTIFY_TEXT' in localStorage;
-  justifyTextCheckbox.onchange = justifyCheckboxOnChange;
-
-  const bodyLineHeightInput = document.getElementById('body-line-height');
-  const lineHeightAsNumber = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
-  bodyLineHeightInput.value = (lineHeightAsNumber / 10).toFixed(2);
-  bodyLineHeightInput.oninput = bodyHeightOnInput;
+  const body_line_height_input = document.getElementById('body-line-height');
+  const body_line_height_number = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
+  body_line_height_input.value = (body_line_height_number / 10).toFixed(2);
+  body_line_height_input.oninput = body_height_input_on_input;
 
   const manifest = chrome.runtime.getManifest();
-  const extensionNameElement = document.getElementById('extension-name');
-  extensionNameElement.textContent = manifest.name;
-  const extensionVersionElement = document.getElementById('extension-version');
-  extensionVersionElement.textValue = manifest.version;
-  const extensionAuthorElement = document.getElementById('extension-author');
-  extensionAuthorElement.textContent = manifest.author;
-  const extensionDescriptionElement = document.getElementById(
+  const ext_name_element = document.getElementById('extension-name');
+  ext_name_element.textContent = manifest.name;
+  const ext_version_element = document.getElementById('extension-version');
+  ext_version_element.textValue = manifest.version;
+  const ext_author_element = document.getElementById('extension-author');
+  ext_author_element.textContent = manifest.author;
+  const ext_description_element = document.getElementById(
     'extension-description');
-  extensionDescriptionElement.textContent = manifest.description || '';
-  const extensionHomepageElement = document.getElementById(
-    'extension-homepage');
-  extensionHomepageElement.textContent = manifest.homepage_url;
+  ext_description_element.textContent = manifest.description || '';
+  const ext_url_element = document.getElementById('extension-homepage');
+  ext_url_element.textContent = manifest.homepage_url;
 
-  const subsListSection = document.getElementById('subs-list-section');
-  showSection(subsListSection);
+  const subs_list_section = document.getElementById('subs-list-section');
+  show_section(subs_list_section);
 }, {'once': true});
 
-////////////////////////////////////////////////////////////////////////
-// Misc helper functions
-
-// TODO: just inline?
-function isURLObject(value) {
-  return Object.prototype.toString.call(value) === '[object URL]';
-}
-
 // TODO: deprecate?
-function hideElement(element) {
+function hide_element(element) {
   element.style.display = 'none';
 }
 
 // TODO: deprecate?
-function showElement(element) {
+function show_element(element) {
   element.style.display = 'block';
 }
 
 // TODO: deprecate?
-function addElementClass(element, className) {
+function add_element_class(element, className) {
   element.classList.add(className);
 }
 
 // TODO: deprecate?
-function removeElementClass(element, className) {
+function remove_element_class(element, className) {
   element.classList.remove(className);
 }
 
 // TODO: deprecate?
-function isElementVisible(element) {
+function is_visible_element(element) {
   return element.style.display !== 'none';
 }
 

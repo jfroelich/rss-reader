@@ -77,7 +77,7 @@ not to cause lag while blocking, because this is synchronous.
 todo: rename title variable, use better variable names in this function
   TODO: use section instead of span for article content section
 
-- regarding addNoReferrer
+- regarding add_no_referrer
 I would rather do this at the time of storing, but attributes are filtered
 In order to move it i have to refactor that
 Current based on the following post:

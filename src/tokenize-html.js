@@ -6,24 +6,21 @@
 // standards but does not fully comply.
 // Entities are not distinguished from text and are not validated.
 // To determine if a token is a tag, check if its first character is '<'
-// @param inputString {String} any string
-// @param inputState {Number} optional starting state
+// @param html_string {String} any string
+// @param input_state {Number} optional starting state
 // @returns {Array} an array of strings, each is a token
-// @throws {TypeError} is inputString is not a defined string-like object
+// @throws {TypeError} is html_string is not a defined string-like object
 // @throws {Error} if tokenization does not end in the default state, such as
 // within a tag
-function tokenizeHTML(inputString, inputState = 0) {
+function tokenize_html(html_string, input_state = 0) {
 
   // TODO: consider relaxing this type check to allow for string-like input
-  if(typeof inputString !== 'string') {
-    throw new TypeError('inputString must be of type "string", not "' +
-      typeof inputString + '"');
-  }
+  if(typeof html_string !== 'string')
+    throw new TypeError('html_string is not a string');
 
-  const inputStringLength = inputString.length;
-  if(inputStringLength < 1) {
+  const input_string_length = html_string.length;
+  if(input_string_length < 1)
     return [];
-  }
 
   let counter = 1;
 
@@ -94,52 +91,47 @@ function tokenizeHTML(inputString, inputState = 0) {
   const STATE_SCRIPT_REGULAR_EXPRESS_LITERAL_ESCAPE = counter++;
 
   // Set the initial state
-  let state = inputState || STATE_TEXT;
+  let state = input_state || STATE_TEXT;
 
   // Buffer of all output tokens
-  const tokenArray = [];
+  const tokens = [];
 
   // Buffer of characters of current token
   let token = [];
 
-  for(let index = 0; index < inputStringLength; index++) {
-
-    const cursor = inputString.charAt(index);
+  for(let index = 0; index < input_string_length; index++) {
+    const cursor = html_string.charAt(index);
 
     switch(state) {
       case STATE_TEXT:
         if(cursor === '<') {
           if(token.length) {
-            tokenArray.push(token.join(''));
+            tokens.push(token.join(''));
             token.length = 0;
           }
           state = STATE_TAG_OPEN;
           token.push(cursor);
-        } else {
+        } else
           token.push(cursor);
-        }
         break;
       case STATE_TAG_OPEN:
         token.push(cursor);
 
         if(cursor === '>') {
           // <>
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '/') {
-          // </
-          state = STATE_TAG_CLOSE;
-        } else if(cursor === '!') {
+        } else if(cursor === '/')
+
+          state = STATE_TAG_CLOSE;// </
+        else if(cursor === '!')
           state = STATE_TAG_OPEN_BANG;
-        } else if(cursor === '?') {
-          // <?
-          // Start of processing instruction
-          state = STATE_TAG_OPEN_NAME;
-        } else if(/[a-z]/i.test(cursor)) {
-          // <character
-          state = STATE_TAG_OPEN_NAME;
-        } else {
+        else if(cursor === '?')
+          state = STATE_TAG_OPEN_NAME;// <? Start of pi
+        else if(/[a-z]/i.test(cursor))
+          state = STATE_TAG_OPEN_NAME;// <character
+        else {
           // We do not allow leading spaces before a tag name, so if this
           // is a space it is not valid. Possibly an unencoded < in plain text
           state = STATE_TEXT;
@@ -150,34 +142,27 @@ function tokenizeHTML(inputString, inputState = 0) {
         token.push(cursor);
         if(cursor === '>') {
           // <!>
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '-') {
-          // <!-
-          state = STATE_TAG_OPEN_BANG_DASH;
-        } else if(cursor === '[') {
-          // <![
-          state = STATE_TAG_OPEN_BANG_BRACKET;
-        } else if(/[a-z]/i.test(cursor)) {
-          // <!DOCTYPE
-          state = STATE_TAG_OPEN_NAME;
-        } else {
+        } else if(cursor === '-')
+          state = STATE_TAG_OPEN_BANG_DASH;// <!-
+        else if(cursor === '[')
+          state = STATE_TAG_OPEN_BANG_BRACKET;// <![
+        else if(/[a-z]/i.test(cursor))
+          state = STATE_TAG_OPEN_NAME;// <!DOCTYPE
+        else
           state = STATE_TAG_OPEN_AFTER_NAME;
-        }
         break;
       case STATE_TAG_OPEN_BANG_DASH:
-        // <!-
-        token.push(cursor);
-
+        token.push(cursor);// <!-
         if(cursor === '>') {
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '-') {
-          // <!--
-          state = STATE_COMMENT;
-        } else {
+        } else if(cursor === '-')
+          state = STATE_COMMENT;// <!--
+        else {
           // <!-? Malformed?
           // TODO: should i distinguish between open name and open after name
           // here based on whether it is whitespace?
@@ -189,12 +174,12 @@ function tokenizeHTML(inputString, inputState = 0) {
         token.push(cursor);
         if(cursor === '>') {
           // <![>
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === 'c' || cursor === 'C') {
+        } else if(cursor === 'c' || cursor === 'C')
           state = STATE_TAG_OPEN_BANG_BRACKET_C;
-        } else {
+        else {
           // TODO: distinguish between name and after name states here?
           state = STATE_TAG_OPEN_NAME;
         }
@@ -204,7 +189,7 @@ function tokenizeHTML(inputString, inputState = 0) {
         token.push(cursor);
         if(cursor === '>') {
           // <![c>
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
         } else if(cursor === 'd' || cursor === 'D') {
@@ -221,7 +206,7 @@ function tokenizeHTML(inputString, inputState = 0) {
         token.push(cursor);
         if(cursor === '>') {
           // <![cd>
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
         } else if(cursor === 'a' || cursor === 'A') {
@@ -236,7 +221,7 @@ function tokenizeHTML(inputString, inputState = 0) {
       case STATE_TAG_OPEN_BANG_BRACKET_CDA:
         token.push(cursor);
         if(cursor === '>') {
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
         } else if(cursor === 't' || cursor === 'T') {
@@ -249,7 +234,7 @@ function tokenizeHTML(inputString, inputState = 0) {
       case STATE_TAG_OPEN_BANG_BRACKET_CDAT:
         token.push(cursor);
         if(cursor === '>') {
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
         } else if(cursor === 'a' || cursor === 'A'){
@@ -265,7 +250,7 @@ function tokenizeHTML(inputString, inputState = 0) {
         // space
         token.push(cursor);
         if(cursor === '>') {
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
         } else if(cursor === '[') {
@@ -293,7 +278,7 @@ function tokenizeHTML(inputString, inputState = 0) {
         if(cursor === '>') {
           // ]]>
           // End of CDATA section
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
         } else if(cursor === ']') {
@@ -323,7 +308,7 @@ function tokenizeHTML(inputString, inputState = 0) {
             /<script>/i.test(tagNameWithSigns)) {
 
             // Emit the <script> token
-            tokenArray.push(token.join(''));
+            tokens.push(token.join(''));
             token.length = 0;
 
             state = STATE_SCRIPT_TEXT;
@@ -331,13 +316,13 @@ function tokenizeHTML(inputString, inputState = 0) {
             /<style>/i.test(tagNameWithSigns)) {
 
             // Emit the <style> token
-            tokenArray.push(token.join(''));
+            tokens.push(token.join(''));
             token.length = 0;
             state = STATE_STYLE_TEXT;
 
           } else {
             // Closing of a general named tag
-            tokenArray.push(token.join(''));
+            tokens.push(token.join(''));
             token.length = 0;
             state = STATE_TEXT;
           }
@@ -353,7 +338,7 @@ function tokenizeHTML(inputString, inputState = 0) {
         token.push(cursor);
 
         if(cursor === '>') {
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
         } else if(cursor === '"') {
@@ -369,7 +354,7 @@ function tokenizeHTML(inputString, inputState = 0) {
         // TODO: whitespace after tag name
 
         if(cursor === '>') {
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
         }
@@ -393,7 +378,7 @@ function tokenizeHTML(inputString, inputState = 0) {
         token.push(cursor);
         if(cursor === '>') {
           // -->
-          tokenArray.push(token.join(''));
+          tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
         } else if(cursor === '-') {
@@ -539,12 +524,12 @@ function tokenizeHTML(inputString, inputState = 0) {
           // We only have some text if the token is longer than the end tag
           if(token.length > styleEndTagLength) {
             const styleText = token.slice(0, -1 * styleEndTagLength);
-            tokenArray.push(styleText.join(''));
+            tokens.push(styleText.join(''));
           }
 
           // Append the closing tag token
           const closingTagText = token.slice(-1 * styleEndTagLength);
-          tokenArray.push(closingTagText.join(''));
+          tokens.push(closingTagText.join(''));
 
           // Reset the token
           token.length = 0;
@@ -781,11 +766,11 @@ function tokenizeHTML(inputString, inputState = 0) {
 
           if(token.length > scriptCloseTagLength) {
             const scriptText = token.slice(0, -1 * scriptCloseTagLength);
-            tokenArray.push(scriptText.join(''));
+            tokens.push(scriptText.join(''));
           }
 
           const closeTagText = token.slice(-1 * scriptCloseTagLength);
-          tokenArray.push(closeTagText.join(''));
+          tokens.push(closeTagText.join(''));
           token.length = 0;
           state = STATE_TEXT;
         } else if(/\s/.test(cursor)) {
@@ -856,14 +841,10 @@ function tokenizeHTML(inputString, inputState = 0) {
   } // end for loop
 
   // Handle the final token
-  if(token.length) {
-    tokenArray.push(token.join(''));
-  }
-
-  if(state !== STATE_TEXT) {
+  if(token.length)
+    tokens.push(token.join(''));
+  if(state !== STATE_TEXT)
     throw new Error('Ended in invalid state ' + state + ' with token ' +
       token.join(''));
-  }
-
-  return tokenArray;
+  return tokens;
 }

@@ -4,20 +4,19 @@
 // Returns a new object that is a copy of the input less empty properties. A
 // property is empty if it is null, undefined, or an empty string. Ignores
 // prototype, deep objects, getters, etc. Shallow copy by reference.
-function filterEmptyProperties(object) {
-  const outputObject = {};
-  const hasOwnProperty = Object.prototype.hasOwnProperty;
+function filter_empty_props(object) {
+  const output_object = {};
+  const has_own_prop = Object.prototype.hasOwnProperty;
 
-  for(let prop in object) {
-    if(hasOwnProperty.call(object, prop)) {
-      const value = object[prop];
-      if(value !== undefined && value !== null && value !== '') {
-        outputObject[prop] = value;
-      }
+  for(const key in object) {
+    if(has_own_prop.call(object, key)) {
+      const value = object[key];
+      if(value !== undefined && value !== null && value !== '')
+        output_object[key] = value;
     }
   }
 
-  return outputObject;
+  return output_object;
 }
 
 // Returns a new string where Unicode Cc-class characters have been removed
@@ -25,6 +24,6 @@ function filterEmptyProperties(object) {
 //  http://stackoverflow.com/questions/4324790
 //  http://stackoverflow.com/questions/21284228
 //  http://stackoverflow.com/questions/24229262
-function filterControlCharacters(string) {
+function filter_control_chars(string) {
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }

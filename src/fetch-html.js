@@ -1,11 +1,9 @@
 // See license.md
-
 'use strict';
 
 { // Begin file block scope
 
-async function fetchHTML(urlString, timeoutMillis) {
-
+async function fetch_html(url_string, timeout_ms) {
   const options = {
     'credentials': 'omit',
     'method': 'get',
@@ -17,85 +15,70 @@ async function fetchHTML(urlString, timeoutMillis) {
     'referrerPolicy': 'no-referrer'
   };
 
-  const fetchPromise = fetch(urlString, options);
+  const fetch_promise = fetch(url_string, options);
   let response;
-  if(timeoutMillis) {
-    const timeoutPromise = rejectAfterTimeout(urlString, timeoutMillis);
-    const promises = [fetchPromise, timeoutPromise];
+  if(timeout_ms) {
+    const timeout_promise = reject_after_timeout(url_string, timeout_ms);
+    const promises = [fetch_promise, timeout_promise];
     response = await Promise.race(promises);
-  } else {
-    response = await fetchPromise;
-  }
+  } else
+    response = await fetch_promise;
 
-  validateResponse(response, urlString);
-  validateContentType(response, urlString);
+  validateResponse(response, url_string);
+  validate_content_type(response, url_string);
 
-  const outputResponse = {};
-  outputResponse.requestURLString = urlString;
-  outputResponse.responseURLString = response.url;
-  outputResponse.redirected = checkIfRedirected(urlString, response.url);
-  outputResponse.text = async function() {
+  const output_response = {};
+  output_response.requestURLString = url_string;
+  output_response.responseURLString = response.url;
+  output_response.redirected = detect_redirect(url_string, response.url);
+  output_response.text = async function() {
     return await response.text();
   };
-  return outputResponse;
+  return output_response;
 }
 
-this.fetchHTML = fetchHTML;
-
-function rejectAfterTimeout(urlString, timeoutMillis) {
-  return new Promise(function(resolve, reject) {
-    const error = new Error(`Request timed out ${urlString}`);
-    setTimeout(reject, timeoutMillis, error);
-  });
+function reject_after_timeout(url_string, timeout_ms) {
+  function resolver(resolve, reject) {
+    const error = new Error(`Request timed out ${url_string}`);
+    setTimeout(reject, timeout_ms, error);
+  }
+  return new Promise(resolver);
 }
 
-function validateResponse(response, urlString) {
-  if(!response) {
-    throw new Error(`${response.status} ${response.statusText} ${urlString}`);
-  }
-
-  // Throw an exception for a non-ok response
-  if(!response.ok) {
-    throw new Error(`${response.status} ${response.statusText} ${urlString}`);
-  }
-
-  // Throw an exception in the case of a no-content response
-  const httpStatusNoContent = 204;
-  if(response.status === httpStatusNoContent) {
-    throw new Error(
-      `${response.status} ${response.statusText} ${urlString}`);
-  }
+function validateResponse(response, url_string) {
+  if(!response)
+    throw new Error(`${response.status} ${response.statusText} ${url_string}`);
+  if(!response.ok)
+    throw new Error(`${response.status} ${response.statusText} ${url_string}`);
+  const no_content_http_status = 204;
+  if(response.status === no_content_http_status)
+    throw new Error(`${response.status} ${response.statusText} ${url_string}`);
 }
 
-function checkIfRedirected(requestURLString, responseURLString) {
-  if(requestURLString === responseURLString) {
+function detect_redirect(request_url_string, response_url_string) {
+  if(request_url_string === response_url_string)
     return false;
-  }
-
-  const requestURLObject = new URL(requestURLString);
-  const responseURLObject = new URL(responseURLString);
-  requestURLObject.hash = '';
-  responseURLObject.hash = '';
-  return requestURLObject.href !== responseURLObject.href;
+  const request_url_object = new URL(request_url_string);
+  const response_url_object = new URL(response_url_string);
+  request_url_object.hash = '';
+  response_url_object.hash = '';
+  return request_url_object.href !== response_url_object.href;
 }
 
-function validateContentType(response, urlString) {
-  let typeString = response.headers.get('Content-Type');
-  if(!typeString) {
+function validate_content_type(response, url_string) {
+  let type_string = response.headers.get('Content-Type');
+  if(!type_string)
     return;
-  }
-
-  const semicolonPosition = typeString.indexOf(';');
-  if(semicolonPosition !== -1) {
-    typeString = typeString.substring(0, semicolonPosition);
-  }
-
-  typeString = typeString.replace(/\s+/g, '');
-  typeString = typeString.toLowerCase();
-  const acceptedTypes = ['text/html'];
-  if(!acceptedTypes.includes(typeString)) {
-    throw new Error(`Unacceptable content type ${typeString} ${urlString}`);
-  }
+  const semicolon_position = type_string.indexOf(';');
+  if(semicolon_position !== -1)
+    type_string = type_string.substring(0, semicolon_position);
+  type_string = type_string.replace(/\s+/g, '');
+  type_string = type_string.toLowerCase();
+  const accepted_types = ['text/html'];
+  if(!accepted_types.includes(type_string))
+    throw new Error(`Unacceptable content type ${type_string} ${url_string}`);
 }
+
+this.fetch_html = fetch_html;
 
 } // End file block scope

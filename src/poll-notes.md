@@ -18,7 +18,7 @@ undocumented changes in Chrome's behavior.
 sanitization and default props out, maybe make a helper function
 * ensure entries added by putEntryInDb, if not have id, have unread flag and
 date created
-* filterTrackingImages should accept a base url parameter, and should not
+* filter_tracking_imgs should accept a base url parameter, and should not
 filter images from that host. This way, feeds from that host still work
 * regarding shouldExcludeEntryBasedOnURL, the individual tests should probably
 involve regular expressions so that I do not need to test against url
@@ -26,7 +26,7 @@ variations (like leading www.).
 * is isValidEntryURL, think of a better way to implement the hack for a bad feed
 that includes extra slashes in its url. maybe it does not belong in this
 function
-* think of a way to allow easier configuration of filterTrackingImages instead
+* think of a way to allow easier configuration of filter_tracking_imgs instead
 of hardcoding the arrays
 
 # NOTES

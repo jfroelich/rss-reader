@@ -3,89 +3,82 @@
 
 { // Begin file block scope
 
-let currentSlideElement = null;
+let current_slide_element = null;
 
-const settingsChannel = new BroadcastChannel('settings');
-settingsChannel.onmessage = function(event) {
-  if(event.data === 'changed') {
-    updateEntryCSSRules(event);
-  }
+const settings_channel = new BroadcastChannel('settings');
+settings_channel.onmessage = function settings_channel_onmessage(event) {
+  if(event.data === 'changed')
+    update_entry_css_rules(event);
 };
 
-const dbChannel = new BroadcastChannel('db');
-dbChannel.onmessage = function(event) {
-  if(event.data && event.data.type === 'entryArchived') {
+const db_channel = new BroadcastChannel('db');
+db_channel.onmessage = function db_channel_onmessage(event) {
+  if(event.data && event.data.type === 'entryArchived')
     console.log('Received archive entry request message');
-  } else if(event.data && event.data.type === 'entryDeleted') {
+  else if(event.data && event.data.type === 'entryDeleted')
     console.log('Received entry delete request message');
-  }
 };
 
-
-const pollChannel = new BroadcastChannel('poll');
-pollChannel.onmessage = function(event) {
+const poll_channel = new BroadcastChannel('poll');
+poll_channel.onmessage = function poll_channel_onmessage(event) {
   if(event.data === 'completed') {
     console.debug('Received poll completed message, maybe appending slides');
-    const count = countUnreadSlideElements();
+    const count = count_unread_slide_elements();
     let conn; // leave undefined
     const verbose = true;// Temporarily true for debugging purposes
-    if(count < 2) {
-      appendSlides(conn, verbose);
-    }
+    if(count < 2)
+      append_slides(conn, verbose);
   }
 };
 
-function removeSlide(slideElement) {
-  slideElement.removeEventListener('click', slideOnClick);
-  slideElement.remove();
+function remove_slide(slide_element) {
+  slide_element.removeEventListener('click', slide_on_click);
+  slide_element.remove();
 }
 
 // TODO: visual feedback in event of an error?
-async function markSlideRead(conn, slideElement, verbose) {
+async function mark_slide_read(conn, slide_element, verbose) {
   // This is not an error. This happens routinely as a result of navigating
   // to prior articles then navigating forward. It is not the responsibility
   // of the caller to only call on unread slides
-  if(slideElement.hasAttribute('read')) {
+  if(slide_element.hasAttribute('read'))
     return;
-  }
 
-  const entryIdString = slideElement.getAttribute('entry');
-  const parseIntRadix = 10;
-  const entryIdNumber = parseInt(entryIdString, parseIntRadix);
-  let isLocallyCreatedConnection = false;
-  let name, version, connectTimeout;
+  const entry_id_string = slide_element.getAttribute('entry');
+  const radix = 10;
+  const entry_id_number = parseInt(entry_id_string, radix);
+  let is_local_conn = false;
+  let name, version, conn_timeout_ms;
   try {
     if(!conn) {
-      conn = await openReaderDb(name, version, connectTimeout, verbose);
-      isLocallyCreatedConnection = true;
+      conn = await reader_open_db(name, version, conn_timeout_ms, verbose);
+      is_local_conn = true;
     }
 
-    await markEntryRead(conn, entryIdNumber, verbose);
-    slideElement.setAttribute('read', '');
+    await mark_entry_read(conn, entry_id_number, verbose);
+    slide_element.setAttribute('read', '');
   } catch(error) {
     // TODO: show an error message or something
     console.error(error);
   } finally {
-    if(isLocallyCreatedConnection && conn) {
+    if(is_local_conn && conn)
       conn.close();
-    }
   }
 }
 
 // TODO: use getAll, passing in a count parameter as an upper limit, and
 // then using slice or unshift or something to advance. The parameter to getAll
 // might be (offset+limit)
-function loadUnarchivedUnreadEntriesFromDb(conn, offset, limit, verbose) {
-  return new Promise(function(resolve, reject) {
+function db_load_unarchived_unread_entries(conn, offset, limit, verbose) {
+  function resolver(resolve, reject) {
     const entries = [];
     let counter = 0;
     let advanced = false;
-    const isLimited = limit > 0;
+    const is_limited = limit > 0;
     const tx = conn.transaction('entry');
     tx.oncomplete = function(event) {
-      if(verbose) {
+      if(verbose)
         console.log('Loaded %d entries from database', entries.length);
-      }
       resolve(entries);
     };
     tx.onerror = function(event) {
@@ -94,9 +87,9 @@ function loadUnarchivedUnreadEntriesFromDb(conn, offset, limit, verbose) {
 
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
-    const request = index.openCursor(keyPath);
-    request.onsuccess = function(event) {
+    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
+    const request = index.openCursor(key_path);
+    request.onsuccess = function request_onsuccess(event) {
       const cursor = event.target.result;
       if(cursor) {
         if(offset && !advanced) {
@@ -104,138 +97,134 @@ function loadUnarchivedUnreadEntriesFromDb(conn, offset, limit, verbose) {
           cursor.advance(offset);
         } else {
           entries.push(cursor.value);
-          if(isLimited && ++counter < limit) {
+          if(is_limited && ++counter < limit)
             cursor.continue();
-          }
         }
       }
     };
-  });
+  }
+  return new Promise(resolver);
 }
 
 // TODO: require caller to establish conn, do not do it here?
 // TODO: visual feedback on error
-async function appendSlides(conn, verbose) {
+async function append_slides(conn, verbose) {
   const limit = 3;
-  let isLocallyCreatedConnection = false;
+  let is_local_conn = false;
   let entries = [];
-  let name, version, connectTimeout;
+  let name, version, conn_timeout_ms;
 
-  const offset = countUnreadSlideElements();
+  const offset = count_unread_slide_elements();
 
   try {
     if(!conn) {
-      conn = await openReaderDb(name, version, connectTimeout, verbose);
-      isLocallyCreatedConnection = true;
+      conn = await reader_open_db(name, version, conn_timeout_ms, verbose);
+      is_local_conn = true;
     }
 
-    entries = await loadUnarchivedUnreadEntriesFromDb(conn, offset, limit,
+    entries = await db_load_unarchived_unread_entries(conn, offset, limit,
       verbose);
   } catch(error) {
     console.error(error);
   } finally {
-    if(isLocallyCreatedConnection && conn) {
+    if(is_local_conn && conn)
       conn.close();
-    }
   }
 
-  for(let entry of entries) {
-    appendSlide(entry);
-  }
-
+  for(const entry of entries)
+    append_slide(entry);
   return entries.length;
 }
 
 // Add a new slide to the view.
-function appendSlide(entry) {
-  const containerElement = document.getElementById('slideshow-container');
-  const slideElement = document.createElement('div');
+function append_slide(entry) {
+  const container_element = document.getElementById('slideshow-container');
+  const slide_element = document.createElement('div');
 
-  // tabindex must be explicitly defined on a div in order for div.focus() to
-  // affect the active element
-  slideElement.setAttribute('tabindex', '-1');
+  // tabindex must be explicitly defined for div.focus()
+  slide_element.setAttribute('tabindex', '-1');
+  slide_element.setAttribute('entry', entry.id);
+  slide_element.setAttribute('feed', entry.feed);
+  slide_element.setAttribute('class','entry');
+  slide_element.addEventListener('click', slide_on_click);
+  // Bind to slide, not window, because only slide scrolls, not window
+  slide_element.addEventListener('scroll', slide_on_scroll);
+  slide_element.style.position = 'absolute';
 
-  slideElement.setAttribute('entry', entry.id);
-  slideElement.setAttribute('feed', entry.feed);
-  slideElement.setAttribute('class','entry');
-  slideElement.addEventListener('click', slideOnClick);
-  slideElement.style.position = 'absolute';
-
-  if(containerElement.childElementCount) {
-    slideElement.style.left = '100%';
-    slideElement.style.right = '-100%';
+  if(container_element.childElementCount) {
+    slide_element.style.left = '100%';
+    slide_element.style.right = '-100%';
   } else {
-    slideElement.style.left = '0%';
-    slideElement.style.right = '0%';
+    slide_element.style.left = '0%';
+    slide_element.style.right = '0%';
   }
 
-  slideElement.style.overflowX = 'hidden';
-  slideElement.style.top = '0';
-  slideElement.style.bottom = '0';
-  slideElement.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
+  slide_element.style.overflowX = 'hidden';
+  slide_element.style.top = '0';
+  slide_element.style.bottom = '0';
+  slide_element.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
-  const titleElement = createArticleTitle(entry);
-  slideElement.appendChild(titleElement);
-  const contentElement = createArticleContent(entry);
-  slideElement.appendChild(contentElement);
-  const sourceElement = createFeedSource(entry);
-  slideElement.appendChild(sourceElement);
+  const title_element = create_article_title_element(entry);
+  slide_element.appendChild(title_element);
+  const content_element = create_article_content_element(entry);
+  slide_element.appendChild(content_element);
+  const source_element = create_feed_source_element(entry);
+  slide_element.appendChild(source_element);
 
-  containerElement.appendChild(slideElement);
+  container_element.appendChild(slide_element);
 
   // TODO: this might be wrong if multiple unread slides are initially appended
-  // I need to ensure currentSlideElement is always set. Where do I do this?
-  if(containerElement.childElementCount === 1) {
-    currentSlideElement = slideElement;
-    currentSlideElement.focus();
+  // I need to ensure current_slide_element is always set. Where do I do this?
+  if(container_element.childElementCount === 1) {
+    current_slide_element = slide_element;
+    current_slide_element.focus();
   }
 }
 
-function createArticleTitle(entry) {
-  const titleElement = document.createElement('a');
-  titleElement.setAttribute('href', getEntryURLString(entry));
-  titleElement.setAttribute('class', 'entry-title');
-  titleElement.setAttribute('target','_blank');
-  titleElement.setAttribute('rel', 'noreferrer');
-  titleElement.setAttribute('title', entry.title || 'Untitled');
+function create_article_title_element(entry) {
+  const title_element = document.createElement('a');
+  title_element.setAttribute('href', entry_get_url_string(entry));
+  title_element.setAttribute('class', 'entry-title');
+  title_element.setAttribute('target','_blank');
+  title_element.setAttribute('rel', 'noreferrer');
+  title_element.setAttribute('title', entry.title || 'Untitled');
   if(entry.title) {
-    titleElement.setAttribute('title', entry.title);
+    title_element.setAttribute('title', entry.title);
     let titleText = entry.title;
-    titleText = filterArticleTitle(titleText);
-    titleText = truncateHTML(titleText, 300);
-    titleElement.innerHTML = titleText;
+    titleText = filter_article_title(titleText);
+    titleText = truncate_html(titleText, 300);
+    title_element.innerHTML = titleText;
   } else {
-    titleElement.setAttribute('title', 'Untitled');
-    titleElement.textContent = 'Untitled';
+    title_element.setAttribute('title', 'Untitled');
+    title_element.textContent = 'Untitled';
   }
 
-  return titleElement;
+  return title_element;
 }
 
-function createArticleContent(entry) {
-  const contentElement = document.createElement('span');
-  contentElement.setAttribute('class', 'entry-content');
+function create_article_content_element(entry) {
+  const content_element = document.createElement('span');
+  content_element.setAttribute('class', 'entry-content');
   // <html><body> will be implicitly stripped
-  contentElement.innerHTML = entry.content;
-  return contentElement;
+  content_element.innerHTML = entry.content;
+  return content_element;
 }
 
-function createFeedSource(entry) {
-  const sourceElement = document.createElement('span');
-  sourceElement.setAttribute('class','entrysource');
+function create_feed_source_element(entry) {
+  const source_element = document.createElement('span');
+  source_element.setAttribute('class','entrysource');
 
   if(entry.faviconURLString) {
-    const faviconElement = document.createElement('img');
-    faviconElement.setAttribute('src', entry.faviconURLString);
-    faviconElement.setAttribute('width', '16');
-    faviconElement.setAttribute('height', '16');
-    sourceElement.appendChild(faviconElement);
+    const favicon_element = document.createElement('img');
+    favicon_element.setAttribute('src', entry.faviconURLString);
+    favicon_element.setAttribute('width', '16');
+    favicon_element.setAttribute('height', '16');
+    source_element.appendChild(favicon_element);
   }
 
-  const titleElement = document.createElement('span');
-  if(entry.feedLink) {
-    titleElement.setAttribute('title', entry.feedLink);
-  }
+  const title_element = document.createElement('span');
+  if(entry.feedLink)
+    title_element.setAttribute('title', entry.feedLink);
 
   const buffer = [];
   buffer.push(entry.feedTitle || 'Unknown feed');
@@ -243,229 +232,199 @@ function createFeedSource(entry) {
   buffer.push(entry.author || 'Unknown author');
   if(entry.datePublished) {
     buffer.push(' on ');
-    buffer.push(formatDate(entry.datePublished));
+    buffer.push(format_date(entry.datePublished));
   }
-  titleElement.textContent = buffer.join('');
-  sourceElement.appendChild(titleElement);
+  title_element.textContent = buffer.join('');
+  source_element.appendChild(title_element);
 
-  return sourceElement;
+  return source_element;
 }
 
-function filterArticleTitle(title) {
+function filter_article_title(title) {
   let index = title.lastIndexOf(' - ');
-
-  if(index === -1) {
+  if(index === -1)
     index = title.lastIndexOf(' | ');
-  }
-
-  if(index === -1) {
+  if(index === -1)
     index = title.lastIndexOf(' : ');
-  }
-
-  if(index === -1) {
+  if(index === -1)
     return title;
-  }
 
   // todo: should this be +3 given the spaces wrapping the delim?
   // TODO: maybe this should be a call to a helper about getting words array
-  const tailString = title.substring(index + 1);
-  const tailWords = tailString.split(/\s+/g);
-  const nonEmptyTailWords = tailWords.filter((w) => w);
-  const wordCount = nonEmptyTailWords.length;
-
-  let outputTitle;
-
-  if(wordCount < 5) {
-    outputTitle = title.substring(0, index);
-    outputTitle = outputTitle.trim();
+  const tail_string = title.substring(index + 1);
+  const tail_words = tail_string.split(/\s+/g);
+  const non_empty_tail_words = tail_words.filter((w) => w);
+  let output_title;
+  if(non_empty_tail_words.length < 5) {
+    output_title = title.substring(0, index);
+    output_title = output_title.trim();
   } else {
-    outputTitle = title;
+    output_title = title;
   }
-
-  return outputTitle;
+  return output_title;
 }
 
-function slideOnClick(event) {
-  const leftMouseButtonCode = 1;
-  if(event.which !== leftMouseButtonCode) {
+function slide_on_click(event) {
+  const LEFT_MOUSE_BUTTON_CODE = 1;
+  if(event.which !== LEFT_MOUSE_BUTTON_CODE)
     return true;
-  }
-
   const anchor = event.target.closest('a');
-  if(!anchor) {
+  if(!anchor)
     return true;
-  }
-  if(!anchor.hasAttribute('href')) {
+  if(!anchor.hasAttribute('href'))
     return true;
-  }
 
-  const urlString = anchor.getAttribute('href');
-
-  chrome.tabs.create({'active': true, 'url': urlString});
+  const url_string = anchor.getAttribute('href');
+  chrome.tabs.create({'active': true, 'url': url_string});
   let conn;// undefined
   const verbose = true;// temp
-  markSlideRead(conn, currentSlideElement, verbose);
+  mark_slide_read(conn, current_slide_element, verbose).catch(console.warn);
   event.preventDefault();
   return false;
 }
 
 // TODO: visual feedback on error
-async function showNextSlide() {
+async function show_next_slide() {
+  const verbose = true;// Temporarily true for debugging purposes
 
-  // Temporarily true for debugging purposes
-  const verbose = true;
-
-  // currentSlideElement may be undefined
+  // current_slide_element may be undefined
   // This isn't actually an error. For example, when initially viewing the
   // slideshow before subscribing when there are no feeds and entries, or
   // initially viewing the slideshow when all entries are read.
-  if(!currentSlideElement) {
+  if(!current_slide_element) {
     console.warn('No current slide');
     return;
   }
 
-  const oldSlideElement = currentSlideElement;
-  const unreadSlideElementsCount = countUnreadSlideElements();
-  let numEntriesAppended = 0;
-  let conn, name, version, connectTimeout;
+  const old_slide_element = current_slide_element;
+  const unread_slide_element_count = count_unread_slide_elements();
+  let num_slides_appended = 0;
+  let conn, name, version, conn_timeout_ms;
 
   try {
-    conn = await openReaderDb(name, version, connectTimeout, verbose);
+    conn = await reader_open_db(name, version, conn_timeout_ms, verbose);
 
     // Conditionally append more slides
-    if(unreadSlideElementsCount < 2) {
-      numEntriesAppended = await appendSlides(conn, verbose);
-    }
+    if(unread_slide_element_count < 2)
+      num_slides_appended = await append_slides(conn, verbose);
 
-    if(currentSlideElement.nextSibling) {
-      currentSlideElement.style.left = '-100%';
-      currentSlideElement.style.right = '100%';
-      currentSlideElement.nextSibling.style.left = '0px';
-      currentSlideElement.nextSibling.style.right = '0px';
-      currentSlideElement.scrollTop = 0;
-      currentSlideElement = currentSlideElement.nextSibling;
+    if(current_slide_element.nextSibling) {
+      current_slide_element.style.left = '-100%';
+      current_slide_element.style.right = '100%';
+      current_slide_element.nextSibling.style.left = '0px';
+      current_slide_element.nextSibling.style.right = '0px';
+      current_slide_element.scrollTop = 0;
+      current_slide_element = current_slide_element.nextSibling;
 
       // Change the active element to the new current slide, so that scrolling
       // with keys works
-      currentSlideElement.focus();
+      current_slide_element.focus();
 
-      // Must be awaited to avoid error "DOMException: Failed to execute
-      // 'transaction' on 'IDBDatabase': The database connection is closing."
-      await markSlideRead(conn, oldSlideElement, verbose);
+      // Must be awaited
+      await mark_slide_read(conn, old_slide_element, verbose);
     }
   } catch(error) {
     console.warn(error);
   } finally {
-    if(conn) {
+    if(conn)
       conn.close();
-    }
   }
 
-  if(numEntriesAppended > 0) {
-    cleanupOlderSlides();
-  }
+  if(num_slides_appended > 0)
+    cleanup_slideshow_on_append();
 }
 
-function cleanupOlderSlides() {
-  // Weakly assert as this error is trivial
-  console.assert(currentSlideElement, 'currentSlideElement is undefined');
+function cleanup_slideshow_on_append() {
+  // Weakly assert as this is trivial
+  console.assert(current_slide_element, 'current_slide_element is undefined');
 
-  const maxSlidesLoadedCount = 6;
-  const containerElement = document.getElementById('slideshow-container');
-  while(containerElement.childElementCount > maxSlidesLoadedCount &&
-    containerElement.firstChild !== currentSlideElement) {
-    removeSlide(containerElement.firstChild);
-  }
+  const max_slide_count = 6;
+  const container_element = document.getElementById('slideshow-container');
+  while(container_element.childElementCount > max_slide_count &&
+    container_element.firstChild !== current_slide_element)
+    remove_slide(container_element.firstChild);
 }
 
 
 // Move the current slide out of view to the right, and move the previous
 // slide into view, and then update the current slide.
-function showPreviousSlide() {
-
-  if(!currentSlideElement) {
+function show_prev_slide() {
+  if(!current_slide_element)
     return;
-  }
-
-  const previousSlideElement = currentSlideElement.previousSibling;
-  if(!previousSlideElement) {
+  const prev_slide_element = current_slide_element.previousSibling;
+  if(!prev_slide_element)
     return;
-  }
-
-  currentSlideElement.style.left = '100%';
-  currentSlideElement.style.right = '-100%';
-  previousSlideElement.style.left = '0px';
-  previousSlideElement.style.right = '0px';
-  currentSlideElement = previousSlideElement;
-
+  current_slide_element.style.left = '100%';
+  current_slide_element.style.right = '-100%';
+  prev_slide_element.style.left = '0px';
+  prev_slide_element.style.right = '0px';
+  current_slide_element = prev_slide_element;
   // Change the active element to the new current slide, so that scrolling
   // using keyboard keys still works
-  currentSlideElement.focus();
+  current_slide_element.focus();
 }
 
-function countUnreadSlideElements() {
-  const unreadSlideList =
+function count_unread_slide_elements() {
+  const unread_slides =
     document.body.querySelectorAll('div[entry]:not([read])');
-  return unreadSlideList.length;
+  return unread_slides.length;
 }
 
-function formatDate(dateObject, delimiterString) {
-  const partArray = [];
-  if(dateObject) {
+function format_date(date_object, delimiter) {
+  const parts = [];
+  if(date_object) {
     // getMonth is a zero based index
-    partArray.push(dateObject.getMonth() + 1);
-    partArray.push(dateObject.getDate());
-    partArray.push(dateObject.getFullYear());
+    parts.push(date_object.getMonth() + 1);
+    parts.push(date_object.getDate());
+    parts.push(date_object.getFullYear());
   }
-  return partArray.join(delimiterString || '/');
+  return parts.join(delimiter || '/');
 }
 
-let navKeydownTimer = null;
-window.addEventListener('keydown', function(event) {
+let keydown_timer = null;
+window.addEventListener('keydown', function on_key_down(event) {
   // Redefine space from page down to navigate next
   const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
   const code = event.keyCode;
 
   if(code === RIGHT || code === N || code === SPACE) {
     event.preventDefault();
-    cancelIdleCallback(navKeydownTimer);
-    navKeydownTimer = requestIdleCallback(showNextSlide);
+    cancelIdleCallback(keydown_timer);
+    keydown_timer = requestIdleCallback(show_next_slide);
   } else if(code === LEFT || code === P) {
     event.preventDefault();
-    cancelIdleCallback(navKeydownTimer);
-    navKeydownTimer = requestIdleCallback(showPreviousSlide);
+    cancelIdleCallback(keydown_timer);
+    keydown_timer = requestIdleCallback(show_prev_slide);
   }
 });
 
 // Override built in keyboard scrolling
 // TODO: look into the new 'passive' flag for scroll listeners
-let scrollCallbackHandle;
-window.addEventListener('keydown', function(event) {
-
+let scroll_callback_handle;
+function slide_on_scroll(event) {
   const DOWN = 40, UP = 38;
-
-  if(event.keyCode !== DOWN && event.keyCode !== UP) {
-    return;
+  function on_idle_callback() {
+    const delta = event.keyCode === UP ? -200 : 200;
+    document.activeElement.scrollTop += delta;
   }
 
-  if(!document.activeElement) {
+  if(event.keyCode !== DOWN && event.keyCode !== UP)
     return;
-  }
-
+  if(!document.activeElement)
+    return;
   event.preventDefault();
-  cancelIdleCallback(scrollCallbackHandle);
+  cancelIdleCallback(scroll_callback_handle);
+  scroll_callback_handle = requestIdleCallback(on_idle_callback);
+}
 
-  scrollCallbackHandle = requestIdleCallback(function() {
-    document.activeElement.scrollTop += event.keyCode === UP ? -200 : 200;
-  });
-});
-
-document.addEventListener('DOMContentLoaded', function(event) {
-  addEntryCSSRules();
-
-  let conn;// leave as undefined, appendSlides will auto connect
+function on_dom_content_loaded(event) {
+  add_entry_css_rules();
+  let conn;// leave as undefined
   const verbose = true; // Temporarily true for debugging
-  appendSlides(conn, verbose);
-}, {'once': true});
+  append_slides(conn, verbose).catch(console.warn);
+}
+
+document.addEventListener('DOMContentLoaded', on_dom_content_loaded,
+  {'once': true});
 
 } // End file block scope

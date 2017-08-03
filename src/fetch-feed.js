@@ -4,14 +4,11 @@
 
 { // Begin file block scope
 
-async function fetchFeed(urlString, timeoutMillis, acceptHTML) {
-  if(typeof timeoutMillis === 'undefined') {
-    timeoutMillis = 0;
-  }
-
-  if(typeof acceptHTML === 'undefined') {
-    acceptHTML = true;
-  }
+async function fetch_feed(url_string, timeout_ms, is_accept_html) {
+  if(typeof timeout_ms === 'undefined')
+    timeout_ms = 0;
+  if(typeof is_accept_html === 'undefined')
+    is_accept_html = true;
 
   const acceptHeader = [
     'application/rss+xml',
@@ -23,7 +20,7 @@ async function fetchFeed(urlString, timeoutMillis, acceptHTML) {
 
   const headers = {'Accept': acceptHeader};
 
-  const fetchOptions = {
+  const options = {
     'credentials': 'omit',
     'method': 'get',
     'headers': headers,
@@ -34,66 +31,57 @@ async function fetchFeed(urlString, timeoutMillis, acceptHTML) {
     'referrerPolicy': 'no-referrer'
   };
 
-  const fetchPromise = fetch(urlString, fetchOptions);
+  const fetch_promise = fetch(url_string, options);
   let response;
-  if(timeoutMillis) {
-    const timeoutPromise = fetchTimeout(urlString, timeoutMillis);
-    const promises = [fetchPromise, timeoutPromise];
+  if(timeout_ms) {
+    const timeout_promise = reject_after_timeout(url_string, timeout_ms);
+    const promises = [fetch_promise, timeout_promise];
     response = await Promise.race(promises);
   } else {
-    response = await fetchPromise;
+    response = await fetch_promise;
   }
 
-  assertValidResponse(response, urlString);
-  assertValidContentType(response, urlString, acceptHTML);
+  assert_response_valid(response, url_string);
+  assert_response_type_valid(response, url_string, is_accept_html);
 
-  const outputResponse = {};
-  outputResponse.text = await response.text();
-  outputResponse.requestURLString = urlString;
-  outputResponse.responseURLString = response.url;
-  outputResponse.lastModifiedDate = getLastModifiedDate(response);
-  outputResponse.redirected = checkIfRedirected(urlString, response.url);
-  return outputResponse;
+  const output_response = {};
+  output_response.text = await response.text();
+  output_response.requestURLString = url_string;
+  output_response.responseURLString = response.url;
+  output_response.lastModifiedDate = get_last_modified_date(response);
+  output_response.redirected = detect_redirect(url_string, response.url);
+  return output_response;
 }
 
-this.fetchFeed = fetchFeed;
+function reject_after_timeout(url_string, timeout_ms) {
+  function resolver(resolve, reject) {
+    const error = new Error('Fetch timed out for url ' + url_string);
+    setTimeout(reject, timeout_ms, error);
+  }
 
-function fetchTimeout(urlString, timeoutMillis) {
-  return new Promise(function(resolve, reject) {
-    const error = new Error('Fetch timed out for url ' + urlString);
-    setTimeout(reject, timeoutMillis, error);
-  });
+  return new Promise(resolver);
 }
 
-function assertValidResponse(response, urlString) {
-  if(!response) {
-    throw new Error('Undefined response fetching ' + urlString);
-  }
-
-  if(!response.ok) {
-    throw new Error(`${response.status} ${response.statusText} ${urlString}`);
-  }
-
-  const httpStatusNoContent = 204;
-  if(response.status === httpStatusNoContent) {
-    throw new Error(`${response.status} ${response.statusText} ${urlString}`);
-  }
+function assert_response_valid(response, url_string) {
+  if(!response)
+    throw new Error('Undefined response fetching ' + url_string);
+  if(!response.ok)
+    throw new Error(`${response.status} ${response.statusText} ${url_string}`);
+  const no_content_http_status = 204;
+  if(response.status === no_content_http_status)
+    throw new Error(`${response.status} ${response.statusText} ${url_string}`);
 }
 
 // Throw an exception is the response type is not accepted
-function assertValidContentType(response, urlString, acceptHTML) {
-  let typeString = response.headers.get('Content-Type');
-  if(!typeString) {
+function assert_response_type_valid(response, url_string, allow_html) {
+  let type_string = response.headers.get('Content-Type');
+  if(!type_string)
     return;
-  }
-
-  const semicolonPosition = typeString.indexOf(';');
-  if(semicolonPosition !== -1) {
-    typeString = typeString.substring(0, semicolonPosition);
-  }
-
-  typeString = typeString.replace(/\s+/g, '');
-  typeString = typeString.toLowerCase();
+  const semicolon_position = type_string.indexOf(';');
+  if(semicolon_position !== -1)
+    type_string = type_string.substring(0, semicolon_position);
+  type_string = type_string.replace(/\s+/g, '');
+  type_string = type_string.toLowerCase();
 
   const types = [
     'application/rss+xml',
@@ -102,38 +90,33 @@ function assertValidContentType(response, urlString, acceptHTML) {
     'application/xml',
     'text/xml'
   ];
-
-  if(acceptHTML) {
+  if(allow_html)
     types.push('text/html');
-  }
-
-  if(!types.includes(typeString)) {
-    throw new Error(`Unacceptable content type ${typeString} ${urlString}`);
-  }
+  if(!types.includes(type_string))
+    throw new Error(`Unacceptable content type ${type_string} ${url_string}`);
 }
 
-function getLastModifiedDate(response) {
-  const lastModifiedString = response.headers.get('Last-Modified');
-  if(lastModifiedString) {
+function get_last_modified_date(response) {
+  const last_modified_string = response.headers.get('Last-Modified');
+  if(last_modified_string)
     try {
-      return new Date(lastModifiedString);
+      return new Date(last_modified_string);
     } catch(error) {
     }
-  }
 }
 
 // Due to quirks with fetch response.redirected not working, do a basic test
 // here
-function checkIfRedirected(requestURLString, responseURLString) {
-  if(requestURLString === responseURLString) {
+function detect_redirect(request_url_string, response_url_string) {
+  if(request_url_string === response_url_string)
     return false;
-  }
-
-  const requestURLObject = new URL(requestURLString);
-  const responseURLObject = new URL(responseURLString);
-  requestURLObject.hash = '';
-  responseURLObject.hash = '';
-  return requestURLObject.href !== responseURLObject.href;
+  const request_url_object = new URL(request_url_string);
+  const response_url_object = new URL(response_url_string);
+  request_url_object.hash = '';
+  response_url_object.hash = '';
+  return request_url_object.href !== response_url_object.href;
 }
+
+this.fetch_feed = fetch_feed;
 
 } // End file block scope

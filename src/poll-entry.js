@@ -3,258 +3,229 @@
 
 { // Begin file block scope
 
-async function pollEntry(readerConn, iconConn, feed, entry,
-  fetchHTMLTimeoutMillis, fetchImageTimeoutMillis, verbose) {
+async function poll_entry(reader_conn, icon_conn, feed, entry,
+  fetch_html_timeout_ms, fetch_img_timeout_ms, verbose) {
   entry.feed = feed.id;
   entry.feedTitle = feed.title;
-  if(!isValidEntryURL(entry)) {
+  if(!is_valid_entry_url(entry))
     return false;
-  }
 
-  let urlString = getEntryURLString(entry);
-  if(shouldExcludeEntryBasedOnURL(urlString)) {
+  let url_string = entry_get_url_string(entry);
+  if(is_excluded_entry_url_string(url_string))
     return false;
-  }
-
-  if(await findEntryByURLInDb(readerConn, urlString)) {
+  if(await db_find_entry_by_url(reader_conn, url_string))
     return false;
-  }
 
-  const rewrittenURLString = rewriteURLString(urlString);
-  if(rewrittenURLString && urlString !== rewrittenURLString) {
-    addEntryURLString(entry, rewrittenURLString);
-    urlString = rewrittenURLString;
-    if(shouldExcludeEntryBasedOnURL(urlString)) {
+  const rewritten_url_string = rewrite_url_string(url_string);
+  if(rewritten_url_string && url_string !== rewritten_url_string) {
+    entry_add_url_string(entry, rewritten_url_string);
+    url_string = rewritten_url_string;
+    if(is_excluded_entry_url_string(url_string))
       return false;
-    }
-
-    if(await findEntryByURLInDb(readerConn, urlString)) {
+    if(await db_find_entry_by_url(reader_conn, url_string))
       return false;
-    }
   }
 
-  const response = await fetchEntry(urlString, fetchHTMLTimeoutMillis,
+  const response = await fetch_entry(url_string, fetch_html_timeout_ms,
     verbose);
   if(!response) {
-    const preparedEntry = prepareLocalEntry(entry);
-    await putEntry(readerConn, preparedEntry, verbose);
+    const prepared_entry = prepare_local_entry(entry);
+    await db_prep_then_put_entry(reader_conn, prepared_entry, verbose);
     return true;
   }
 
   if(response.redirected) {
-    urlString = response.responseURLString;
-    if(shouldExcludeEntryBasedOnURL(urlString)) {
+    url_string = response.responseURLString;
+    if(is_excluded_entry_url_string(url_string))
       return false;
-    } else if(await findEntryByURLInDb(readerConn, urlString)) {
+    else if(await db_find_entry_by_url(reader_conn, url_string))
       return false;
-    } else {
-      addEntryURLString(entry, urlString);
-    }
+    else
+      entry_add_url_string(entry, url_string);
   }
 
-  await setEntryIcon(entry, iconConn, feed.faviconURLString, verbose);
-  const entryContentString = await response.text();
-  const entryContentDocument = parseHTML(entryContentString);
-  await prepareRemoteEntry(entry, entryContentDocument,
-    fetchImageTimeoutMillis);
-  await putEntry(readerConn, entry, verbose);
+  await set_entry_icon(entry, icon_conn, feed.faviconURLString, verbose);
+  const entry_content = await response.text();
+  const entry_document = parse_html(entry_content);
+  await prepare_remote_entry(entry, entry_document, fetch_img_timeout_ms);
+  await db_prep_then_put_entry(reader_conn, entry, verbose);
   return true;
 }
 
-this.pollEntry = pollEntry;
-
-async function fetchEntry(urlString, fetchHTMLTimeoutMillis, verbose) {
+async function fetch_entry(url_string, fetch_html_timeout_ms, verbose) {
   try {
-    return await fetchHTML(urlString, fetchHTMLTimeoutMillis);
+    return await fetch_html(url_string, fetch_html_timeout_ms);
   } catch(error) {
-    if(verbose) {
+    if(verbose)
       console.warn(error);
-    }
   }
 }
 
-function findEntryByURLInDb(conn, urlString) {
-  return new Promise((resolve, reject) => {
+function db_find_entry_by_url(conn, url_string) {
+  function resolver(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('urls');
-    const request = index.getKey(urlString);
+    const request = index.getKey(url_string);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  });
-}
-
-async function prepareRemoteEntry(entry, documentObject,
-  fetchImageTimeoutMillis) {
-  const urlString = getEntryURLString(entry);
-  transformLazyImages(documentObject);
-  scrubby.filterSourcelessImages(documentObject);
-  scrubby.filterInvalidAnchors(documentObject);
-  const baseURLObject = new URL(urlString);
-  resolveDocumentURLs(documentObject, baseURLObject);
-  filterTrackingImages(documentObject);
-  await setImageDimensions(documentObject, fetchImageTimeoutMillis);
-  prepareEntryDocument(urlString, documentObject);
-  entry.content = documentObject.documentElement.outerHTML.trim();
-}
-
-async function setEntryIcon(entry, iconConn, fallbackURLString, verbose) {
-  const lookupURLString = getEntryURLString(entry);
-  const lookupURLObject = new URL(lookupURLString);
-  let maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
-    minImageByteSize, maxImageByteSize;
-  const iconURLString = await lookupFavicon(iconConn, lookupURLObject,
-    maxAgeMillis, fetchHTMLTimeoutMillis, fetchImageTimeoutMillis,
-    minImageByteSize, maxImageByteSize, verbose);
-  entry.faviconURLString = iconURLString || fallbackURLString;
-}
-
-function isValidEntryURL(entry, verbose) {
-  if(!entry.urls || !entry.urls.length) {
-    return false;
   }
+  return new Promise(resolver);
+}
 
-  const urlString = entry.urls[0];
-  let urlObject;
+async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms) {
+  const url_string = entry_get_url_string(entry);
+  transform_lazy_imgs(doc);
+  scrubby.filter_sourceless_imgs(doc);
+  scrubby.filter_invalid_anchors(doc);
+  const base_url_object = new URL(url_string);
+  resolve_document_urls(doc, base_url_object);
+  filter_tracking_imgs(doc);
+  await set_img_dimensions(doc, fetch_img_timeout_ms);
+  prepare_entry_document(url_string, doc);
+  entry.content = doc.documentElement.outerHTML.trim();
+}
+
+async function set_entry_icon(entry, icon_conn, fallback_url_string, verbose) {
+  const lookup_url_string = entry_get_url_string(entry);
+  const lookup_url_object = new URL(lookup_url_string);
+  let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
+    max_img_size;
+  const icon_url_string = await favicon_lookup(icon_conn, lookup_url_object,
+    max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
+    min_img_size, max_img_size, verbose);
+  entry.faviconURLString = icon_url_string || fallback_url_string;
+}
+
+function is_valid_entry_url(entry, verbose) {
+  if(!entry.urls || !entry.urls.length)
+    return false;
+  const url_string = entry.urls[0];
+  let url_object;
   try {
-    urlObject = new URL(urlString);
+    url_object = new URL(url_string);
   } catch(error) {
-    if(verbose) {
+    if(verbose)
       console.warn(error);
-    }
-
     return false;
   }
 
-  if(urlObject.pathname.startsWith('//')) {
+  if(url_object.pathname.startsWith('//'))
     return false;
-  }
-
   return true;
 }
 
-function shouldExcludeEntryBasedOnURL(urlString) {
-  const urlObject = new URL(urlString);
-  const hostname = urlObject.hostname;
+function is_excluded_entry_url_string(url_string) {
+  const url_object = new URL(url_string);
+  const hostname = url_object.hostname;
 
-  const interstitialHosts = [
+  const interstitial_hosts = [
     'www.forbes.com',
     'forbes.com'
   ];
-  if(interstitialHosts.includes(hostname)) {
+  if(interstitial_hosts.includes(hostname))
     return true;
-  }
 
-  const scriptedHosts = [
+  const scripted_hosts = [
     'productforums.google.com',
     'groups.google.com'
   ];
-  if(scriptedHosts.includes(hostname)) {
+  if(scripted_hosts.includes(hostname))
     return true;
-  }
 
-  const paywallHosts = [
+  const paywall_hosts = [
     'www.nytimes.com',
     'myaccount.nytimes.com',
     'open.blogs.nytimes.com'
   ];
-  if(paywallHosts.includes(hostname)) {
+  if(paywall_hosts.includes(hostname))
     return true;
-  }
 
-  const cookieHosts = [
+  const cookie_hosts = [
     'www.heraldsun.com.au',
     'ripe73.ripe.net'
   ];
-  if(cookieHosts.includes(hostname)) {
+  if(cookie_hosts.includes(hostname))
     return true;
-  }
 
-  if(sniff.isProbablyBinary(urlObject.pathname)) {
+  if(sniff.is_probably_binary(url_object.pathname))
     return true;
-  }
-
   return false;
 }
 
-function putEntryInDb(conn, entry) {
-  return new Promise((resolve, reject) => {
+function db_put_entry(conn, entry) {
+  function resolver(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
     const request = store.put(entry);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  });
+  }
+  return new Promise(resolver);
 }
 
-async function putEntry(readerConn, entry, verbose) {
-
-  let authorMaxLength, titleMaxLength, contentMaxLength;
-  const sanitized = sanitizeEntry(entry, authorMaxLength, titleMaxLength,
-    contentMaxLength);
-  const storable = filterEmptyProperties(sanitized);
-  storable.readState = ENTRY_STATE_UNREAD;
-  storable.archiveState = ENTRY_STATE_UNARCHIVED;
-  storable.dateCreated = new Date();
+async function db_prep_then_put_entry(reader_conn, entry, verbose) {
+  let author_max_length, title_max_length, content_max_length;
+  const sanitized_entry = entry_sanitize(entry, author_max_length,
+    title_max_length, content_max_length);
+  const storable_entry = filter_empty_props(sanitized_entry);
+  storable_entry.readState = ENTRY_STATE_UNREAD;
+  storable_entry.archiveState = ENTRY_STATE_UNARCHIVED;
+  storable_entry.dateCreated = new Date();
 
   try {
-    let addedEntry = await putEntryInDb(readerConn, storable);
+    const added_entry = await db_put_entry(reader_conn, storable_entry);
     return true;
   } catch(error) {
     if(verbose) {
-      console.warn(error, getEntryURLString(entry));
+      console.warn(error, entry_get_url_string(entry));
     }
   }
   return false;
 }
 
-function parseHTML(htmlString) {
+function parse_html(html) {
   const parser = new DOMParser();
-  const document = parser.parseFromString(htmlString, 'text/html');
-  const parserErrorElement = document.querySelector('parsererror');
-  if(parserErrorElement) {
-    throw new Error(parserErrorElement.textContent);
-  }
+  const document = parser.parseFromString(html, 'text/html');
+  const parser_error_element = document.querySelector('parsererror');
+  if(parser_error_element)
+    throw new Error(parser_error_element.textContent);
   return document;
 }
 
-function prepareLocalEntry(entry, verbose) {
-  if(!entry.content) {
+function prepare_local_entry(entry, verbose) {
+  if(!entry.content)
     return entry;
-  }
 
-  const urlString = getEntryURLString(entry);
-  if(verbose) {
-    console.debug('Parsing html for url', urlString);
-  }
+  const url_string = entry_get_url_string(entry);
+  if(verbose)
+    console.debug('Parsing html for url', url_string);
 
-  let documentObject;
+  let doc;
   try {
-    documentObject = parseHTML(entry.content);
+    doc = parse_html(entry.content);
   } catch(error) {
-    if(verbose) {
+    if(verbose)
       console.warn(error);
-    }
     return entry;
   }
 
-  prepareEntryDocument(urlString, documentObject);
-  const content = documentObject.documentElement.outerHTML.trim();
-  if(content) {
+  prepare_entry_document(url_string, doc);
+  const content = doc.documentElement.outerHTML.trim();
+  if(content)
     entry.content = content;
-  }
   return entry;
 }
 
-function prepareEntryDocument(urlString, documentObject) {
-  pruneWithTemplate(urlString, documentObject);
-  filterBoilerplate(documentObject);
-  scrubby.scrub(documentObject);
-  scrubby.addNoReferrer(documentObject);
+function prepare_entry_document(url_string, doc) {
+  prune_doc_using_host_template(url_string, doc);
+  filter_boilerplate(doc);
+  scrubby.scrub(doc);
+  scrubby.add_no_referrer(doc);
 }
 
-function filterTrackingImages(documentObject) {
-  const telemetryHosts = [
+function filter_tracking_imgs(doc) {
+  const telemetry_hosts = [
     'ad.doubleclick.net',
     'b.scorecardresearch.com',
     'googleads.g.doubleclick.net',
@@ -267,35 +238,31 @@ function filterTrackingImages(documentObject) {
     'stats.bbc.co.uk'
   ];
 
-  const minValidURLLength = 3;// 1char hostname . 1char domain
-  const images = documentObject.querySelectorAll('img[src]');
-  for(let imageElement of images) {
-    let urlString = imageElement.getAttribute('src');
-    if(!urlString) {
+  const min_url_length = 3;// 1char hostname . 1char domain
+  const images = doc.querySelectorAll('img[src]');
+  for(const img_element of images) {
+    let url_string = img_element.getAttribute('src');
+    if(!url_string)
       continue;
-    }
+    url_string = url_string.trim();
+    if(!url_string)
+      continue;
+    else if(url_string.length < min_url_length)
+      continue;
+    else if(url_string.includes(' '))
+      continue;
+    else if(!/^https?:/i.test(url_string))
+      continue;
 
-    urlString = urlString.trim();
-    if(!urlString) {
-      continue;
-    } else if(urlString.length < minValidURLLength) {
-      continue;
-    } else if(urlString.includes(' ')) {
-      continue;
-    } else if(!/^https?:/i.test(urlString)) {
-      continue;
-    }
-
-    let urlObject;
+    let url_object;
     try {
-      urlObject = new URL(urlString);
+      url_object = new URL(url_string);
     } catch(error) {
       continue;
     }
 
-    if(telemetryHosts.includes(urlObject.hostname)) {
-      imageElement.remove();
-    }
+    if(telemetry_hosts.includes(url_object.hostname))
+      img_element.remove();
   }
 }
 
@@ -304,58 +271,55 @@ function filterTrackingImages(documentObject) {
 // Returns undefined if no rewriting occurred
 // @param url {String}
 // @returns {String}
-function rewriteURLString(urlString) {
-  const urlObject = new URL(urlString);
-  if(urlObject.hostname === 'news.google.com' &&
-    urlObject.pathname === '/news/url') {
-    return urlObject.searchParams.get('url');
-  } else if(urlObject.hostname === 'techcrunch.com' &&
-    urlObject.searchParams.has('ncid')) {
-    urlObject.searchParams.delete('ncid');
-    return urlObject.href;
+function rewrite_url_string(url_string) {
+  const url_object = new URL(url_string);
+  if(url_object.hostname === 'news.google.com' &&
+    url_object.pathname === '/news/url') {
+    return url_object.searchParams.get('url');
+  } else if(url_object.hostname === 'techcrunch.com' &&
+    url_object.searchParams.has('ncid')) {
+    url_object.searchParams.delete('ncid');
+    return url_object.href;
   }
 }
 
-function pruneWithTemplate(urlString, documentObject, verbose) {
-  const templateHostMap = {};
-  templateHostMap['www.washingtonpost.com'] = [
+function prune_doc_using_host_template(url_string, doc, verbose) {
+  const host_selector_map = {};
+  host_selector_map['www.washingtonpost.com'] = [
     'header#wp-header',
     'div.top-sharebar-wrapper',
     'div.newsletter-inline-unit',
     'div.moat-trackable'
   ];
-  templateHostMap['theweek.com'] = ['div#head-wrap'];
-  templateHostMap['www.usnews.com'] = ['header.header'];
+  host_selector_map['theweek.com'] = ['div#head-wrap'];
+  host_selector_map['www.usnews.com'] = ['header.header'];
 
-  const hostname = getURLHostname(urlString);
-  if(!hostname) {
+  const hostname = get_url_hostname(url_string);
+  if(!hostname)
     return;
-  }
 
-  const selectors = templateHostMap[hostname];
-  if(!selectors) {
+  const selectors = host_selector_map[hostname];
+  if(!selectors)
     return;
-  }
 
-  if(verbose) {
-    console.debug('Template pruning', urlString);
-  }
+  if(verbose)
+    console.debug('Template pruning', url_string);
 
   const selector = selectors.join(',');
-  const elements = documentObject.querySelectorAll(selector);
-  for(let element of elements) {
+  const elements = doc.querySelectorAll(selector);
+  for(const element of elements)
     element.remove();
-  }
 }
 
-function getURLHostname(urlString) {
-  let urlObject;
+function get_url_hostname(url_string) {
+  let url_object;
   try {
-    urlObject = new URL(urlString);
-    return urlObject.hostname;
+    url_object = new URL(url_string);
+    return url_object.hostname;
   } catch(error) {
-
   }
 }
+
+this.poll_entry = poll_entry;
 
 } // End file block scope

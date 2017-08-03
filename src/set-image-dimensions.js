@@ -3,66 +3,56 @@
 
 { // Begin file block scope
 
+// TODO: add verbose param back in
+
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.
 // Assumes that if an image has a src attribute value that is a url, that the
 // url is absolute.
-// @param documentObject {Document}
-// @param timeoutMillis {Number} optional, if not set or 0 then no timeout
+// @param doc {Document}
+// @param timeout_ms {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
-async function setImageDimensions(documentObject, timeoutMillis = 0) {
-  if(!Number.isInteger(timeoutMillis) || timeoutMillis < 0) {
-    throw new TypeError(`Invalid timeoutMillis parameter ${timeoutMillis}`);
-  }
+async function set_img_dimensions(doc, timeout_ms) {
+  if(typeof timeout_ms === 'undefined')
+    timeout_ms = 0;
+  if(!Number.isInteger(timeout_ms))
+    throw new TypeError('timeout_ms is not an integer');
+  if(timeout_ms < 0)
+    throw new TypeError('timeout_ms is negative')
 
-  // Find all images in the document.
-  const imageList = documentObject.getElementsByTagName('img');
+  if(!doc.body)
+    return 0;
 
-  // Fetch and update all images, concurrently
+  const images = doc.body.getElementsByTagName('img');
   const promises = [];
-  for(let image of imageList) {
-    const promise = updateImageDimensionsSilently(image, timeoutMillis);
+  for(const image of images) {
+    const promise = update_img_dims_silently(image, timeout_ms);
     promises.push(promise);
   }
 
-  // Block until all images modified
   const results = await Promise.all(promises);
-
-  // Reduce results into a count of true values
-  let numModified = 0;
-  for(let result of results) {
-    if(result) {
-      numModified++;
-    }
-  }
-  return numModified;
+  let num_imgs_modified = 0;
+  for(let result of results)
+    if(result)
+      num_imgs_modified++;
+  return num_imgs_modified;
 }
 
-// Allows updateImageDimensions to be used with Promise.all and avoid its
-// fail-fast behavior.
-async function updateImageDimensionsSilently(image, timeoutMillis) {
-  let result = false;
-  const updatePromise = updateImageDimensions(image, timeoutMillis);
+async function update_img_dims_silently(image, timeout_ms) {
   try {
-    result = await updatePromise;
-  } catch(error) {
-    // Ignore, leave result as false
-    console.log('Set image dimensions error', image.getAttribute('src'), error);
-  }
-  return result;
+    return await update_img_dims(image, timeout_ms);
+  } catch(error) {}
 }
 
 // Updates the dimensions of a given image object. Returns true if the image
 // was modified.
 // @param image {HTMLImageElement}
-// @param timeoutMillis {Number}
-async function updateImageDimensions(image, timeoutMillis) {
-
+// @param timeout_ms {Number}
+async function update_img_dims(image, timeout_ms) {
   // If both attributes are set then assume no work needs to be done.
-  if(image.hasAttribute('width') && image.hasAttribute('height')) {
+  if(image.hasAttribute('width') && image.hasAttribute('height'))
     return false;
-  }
 
   // Infer from inline style. Because the assumption is that the input document
   // was inert, there is no guarantee that the style props initialized the
@@ -73,55 +63,46 @@ async function updateImageDimensions(image, timeoutMillis) {
     return true;
   }
 
-  const srcString = image.getAttribute('src');
-
-  // If the image does not have a src value, then there is nothing we can do
-  if(!srcString) {
+  const src_url_string = image.getAttribute('src');
+  if(!src_url_string)
     return false;
-  }
 
-  // Assume the url, if present, is absolute.
-  // Verify the url is syntactically valid and parse the url's protocol
-  const urlObject = new URL(srcString);
-
-  // Only try to fetch these protocols
-  // This also avoids trying to fetch a data url.
-  if(urlObject.protocol !== 'http:' && urlObject.protocol !== 'https:') {
+  const src_url_object = new URL(src_url_string);
+  const allowed_protocols = ['http:', 'https:'];
+  if(!allowed_protocols.includes(src_url_object.protocol))
     return false;
-  }
 
-  // Allow errors to bubble
-  const fetchPromise = fetchAndUpdateImage(image, urlObject.href);
-  let raceOrNonRacePromise;
-  if(timeoutMillis) {
-    // Race a timeoutMillis against a fetch attempt
+  const fetch_promise = fetch_and_update_img(image, src_url_object.href);
+  let promise;
+  if(timeout_ms) {
     const promises = [];
-    promises.push(fetchPromise);
-    const timeoutPromise = rejectAfterTimeout(image, timeoutMillis);
-    promises.push(timeoutPromise);
-    raceOrNonRacePromise = Promise.race(promises);
+    promises.push(fetch_promise);
+    const timeout_promise = reject_after_timeout(image, timeout_ms);
+    promises.push(timeout_promise);
+    promise = Promise.race(promises);
   } else {
-    raceOrNonRacePromise = fetchPromise;
+    promise = fetch_promise;
   }
 
-  return await raceOrNonRacePromise;
+  return await promise;
 }
 
 // Rejects with a time out error after a given number of ms
-function rejectAfterTimeout(image, timeoutMillis) {
-  return new Promise((resolve, reject) =>
-    setTimeout(reject, timeoutMillis, new Error('Timed out')));
+function reject_after_timeout(image, timeout_ms) {
+  function resolver(resolve, reject) {
+    const error = new Error('Timed out');
+    return setTimeout(reject, timeout_ms, error);
+  }
+  return new Promise(resolver);
 }
 
 // Fetch an image element.
 // @param image {Element} an image element
 // @param urlString {String} an image url
-function fetchAndUpdateImage(image, urlString) {
-  return new Promise((resolve, reject) => {
-    // Create proxy image in document running this script
-    const proxy = new Image();
-    // Trigger the fetch
-    proxy.src = urlString;
+function fetch_and_update_img(image, urlString) {
+  function resolver(resolve, reject) {
+    const proxy = new Image();// In document running this script
+    proxy.src = urlString;// Trigger the fetch
 
     // Resolve immediately if cached
     if(proxy.complete) {
@@ -143,9 +124,10 @@ function fetchAndUpdateImage(image, urlString) {
       const error = new Error(errorMessage);
       reject(error);
     };
-  });
+  }
+  return new Promise(resolver);
 }
 
-this.setImageDimensions = setImageDimensions;
+this.set_img_dimensions = set_img_dimensions;
 
 } // End file block scope

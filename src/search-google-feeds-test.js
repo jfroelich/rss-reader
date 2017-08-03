@@ -1,11 +1,7 @@
 // See license.md
 
-async function test(query) {
-  try {
-    const timeout = 10000;
-    let result = await searchGoogleFeeds(query, timeout);
-    console.dir(result);
-  } catch(error) {
-    console.debug(error);
-  }
+async function test_sgf(query) {
+  const timeout_ms = 10000;
+  let result = await search_google_feeds(query, timeout_ms);
+  console.dir(result);
 }

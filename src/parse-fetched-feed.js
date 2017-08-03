@@ -1,46 +1,39 @@
 // See license.md
-
 'use strict';
 
-// Common post fetch processing. Returns a result object with properties feed
-// and entries.
-
-// @param response {Object} the result of calling fetchFeed
-function parseFetchedFeed(response) {
-
+// Post fetch processing that coerces a fetched feed into the app's storage
+// format.
+// @param response {Object} the result of calling fetch_feed
+function parse_fetched_feed(response) {
   // Allow parse error to bubble
-  const result = parseFeed(response.text);
-
+  const result = parse_feed(response.text);
   const feed = result.feed;
 
-  if(!feed.datePublished) {
+  if(!feed.datePublished)
     feed.datePublished = new Date();
-  }
 
   if(feed.link) {
     try {
-      feed.link = new URL(feed.link).href;
+      const feed_link_object = new URL(feed.link);
+      feed.link = feed_link_object.href;
     } catch(error) {
-      // console.warn(error);
-      delete feed.link;
+      feed.link = undefined;
     }
   }
 
-  Feed.prototype.addURL.call(feed, response.requestURLString);
-  Feed.prototype.addURL.call(feed, response.responseURLString);
+  Feed.prototype.add_url.call(feed, response.requestURLString);
+  Feed.prototype.add_url.call(feed, response.responseURLString);
   feed.dateFetched = new Date();
   feed.dateLastModified = response.lastModifiedDate;
 
   const entries = result.entries;
-  for(let entry of entries) {
-    if(!entry.datePublished) {
+  for(const entry of entries)
+    if(!entry.datePublished)
       entry.datePublished = feed.datePublished;
-    }
-  }
 
-  for(let entry of entries) {
+  for(const entry of entries) {
     if(entry.link) {
-      addEntryURLString(entry, entry.link);
+      entry_add_url_string(entry, entry.link);
       delete entry.link;
     }
   }

@@ -3,61 +3,48 @@
 
 { // Begin file block scope
 
-async function markEntryRead(conn, entryId, verbose) {
-  assertValidEntryId(entryId);
-  const entry = await findEntryById(conn, entryId);
-  assertUnread(entry, entryId);
-  changeEntryPropsToRead(entry);
-  await overwriteEntryInDb(conn, entry);
+async function mark_entry_read(conn, entry_id, verbose) {
+  if(!Number.isInteger(entry_id) || entry_id < 1)
+    throw new TypeError(`Invalid entry id ${entry_id}`);
+  const entry = await db_find_entry_by_id(conn, entry_id);
+  if(!entry)
+    throw new Error(`No entry found with id ${entry_id}`);
+  else if(entry.readState === ENTRY_STATE_READ)
+    throw new Error(`Already read entry with id ${entry_id}`);
 
-  if(verbose) {
-    console.log('Updated database with read entry with id', entryId);
-  }
-
-  // intentionally not awaited
-  updateBadgeText(conn, verbose).catch(console.warn);
-}
-
-this.markEntryRead = markEntryRead;
-
-function changeEntryPropsToRead(entry) {
   entry.readState = ENTRY_STATE_READ;
-  const currentDate = new Date();
-  entry.dateRead = currentDate;
-  entry.dateUpdated = currentDate;
+  const current_date = new Date();
+  entry.dateRead = current_date;
+  entry.dateUpdated = current_date;
+  await db_put_entry(conn, entry);
+  if(verbose)
+    console.log('Updated database with read entry with id', entry_id);
+
+  // Non awaited
+  ext_update_badge(verbose).catch(console.warn);
 }
 
-function assertValidEntryId(entryId) {
-  if(!Number.isInteger(entryId) || entryId < 1) {
-    throw new TypeError(`Invalid entry id ${entryId}`);
-  }
-}
-
-function assertUnread(entry, entryId) {
-  if(!entry) {
-    throw new Error(`No entry found with id ${entryId}`);
-  } else if(entry.readState === ENTRY_STATE_READ) {
-    throw new Error(`Already read entry with id ${entryId}`);
-  }
-}
-
-function findEntryById(conn, id) {
-  return new Promise((resolve, reject) => {
+function db_find_entry_by_id(conn, id) {
+  function resolver(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const request = store.get(id);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  });
+  }
+  return new Promise(resolver);
 }
 
-function overwriteEntryInDb(conn, entry) {
-  return new Promise((resolve, reject) => {
+function db_put_entry(conn, entry) {
+  function resolver(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
     const request = tx.objectStore('entry').put(entry);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  });
+  }
+  return new Promise(resolver);
 }
+
+this.mark_entry_read = mark_entry_read;
 
 } // End file block scope

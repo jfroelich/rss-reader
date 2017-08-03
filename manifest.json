@@ -15,13 +15,13 @@
     "scripts": [
       "/src/archive-entries.js",
       "/src/background.js",
-      "/src/db.js",
       "/src/extension.js",
       "/src/favicon.js",
       "/src/feed.js",
       "/src/fetch-feed.js",
       "/src/fetch-html.js",
       "/src/filter-boilerplate.js",
+      "/src/open-reader-db.js",
       "/src/parse-feed.js",
       "/src/parse-fetched-feed.js",
       "/src/parse-srcset.js",
@@ -44,6 +44,7 @@
   "options_page": "options.html",
   "permissions": [
     "alarms",
+    "declarativeWebRequest",
     "http://*/*",
     "https://*/*",
     "idle",

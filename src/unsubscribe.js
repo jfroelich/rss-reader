@@ -5,67 +5,57 @@
 
 // Removes a feed and all of its associated entries from the database.
 // @param conn {IDBDatabase} an open database connection
-// @param feedId {Number} id of feed to unscubscribe
+// @param feed_id {Number} id of feed to unscubscribe
 // @param verbose {Boolean} whether to print logging info
-async function unsubscribe(conn, feedId, verbose) {
-  if(verbose) {
-    console.log('Unsubscribing feed with id', feedId);
-  }
-
-  if(!Number.isInteger(feedId) || feedId < 1) {
-    throw new TypeError(`Invalid feed id ${feedId}`);
-  }
-
-  const entryIds = await loadEntryIdsForFeedFromDb(conn, feedId);
-  await removeFeedAndEntriesFromDb(conn, feedId, entryIds);
-  dispatchRemoveEvents(feedId, entryIds);
-
-  if(verbose) {
-    console.debug('Unsubscribed from feed id', feedId, ', deleted %d entries',
-      entryIds.length);
-  }
-
-  // Intentionally not awaited
-  updateBadgeText(conn).catch(console.warn);
-  return entryIds.length;
+async function unsubscribe(conn, feed_id, verbose) {
+  if(!Number.isInteger(feed_id) || feed_id < 1)
+    throw new TypeError(`Invalid feed id ${feed_id}`);
+  if(verbose)
+    console.log('Unsubscribing from feed with id', feed_id);
+  const entry_ids = await db_load_entry_ids_for_feed(conn, feed_id);
+  await db_remove_feed_and_entries(conn, feed_id, entry_ids);
+  dispatch_remove_events(feed_id, entry_ids);
+  if(verbose)
+    console.debug('Unsubscribed from feed id', feed_id, ', deleted %d entries',
+      entry_ids.length);
+  ext_update_badge(verbose).catch(console.warn);
+  return entry_ids.length;
 }
 
-this.unsubscribe = unsubscribe;
-
-function dispatchRemoveEvents(feedId, entryIds) {
+function dispatch_remove_events(feed_id, entry_ids) {
   const channel = new BroadcastChannel('db');
-  channel.postMessage({'type': 'feedDeleted', 'id': feedId});
-  for(let entryId of entryIds) {
-    channel.postMessage({'type': 'entryDeleted', 'id': entryId});
-  }
+  channel.postMessage({'type': 'feedDeleted', 'id': feed_id});
+  for(const entry_id of entry_ids)
+    channel.postMessage({'type': 'entryDeleted', 'id': entry_id});
   channel.close();
 }
 
-function loadEntryIdsForFeedFromDb(conn, feedId) {
-  return new Promise((resolve, reject) => {
+function db_load_entry_ids_for_feed(conn, feed_id) {
+  function resolver(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('feed');
-    const request = index.getAllKeys(feedId);
+    const request = index.getAllKeys(feed_id);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  });
+  }
+  return new Promise(resolver);
 }
 
-function removeFeedAndEntriesFromDb(conn, feedId, entryIds) {
-  return new Promise((resolve, reject) => {
+function db_remove_feed_and_entries(conn, feed_id, entry_ids) {
+  function resolver(resolve, reject) {
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
-
-    const feedStore = tx.objectStore('feed');
-    feedStore.delete(feedId);
-
-    const entryStore = tx.objectStore('entry');
-    for(let entryId of entryIds) {
-      entryStore.delete(entryId);
-    }
-  });
+    const feed_store = tx.objectStore('feed');
+    feed_store.delete(feed_id);
+    const entry_store = tx.objectStore('entry');
+    for(const entry_id of entry_ids)
+      entry_store.delete(entry_id);
+  }
+  return new Promise(resolver);
 }
+
+this.unsubscribe = unsubscribe;
 
 } // End file block scope

@@ -9,31 +9,30 @@
 // title, link, and contentSnippet, which are all strings.
 // Google formally deprecated this service in 2015 but apparently it is still
 // working.
-// @param queryString {String} a search string using Google search syntax
-// @param timeoutMillis {Number} a positive integer, optional
-async function searchGoogleFeeds(queryString, timeoutMillis = 0) {
+// @param query_string {String} a search string using Google search syntax
+// @param timeout_ms {Number} a positive integer, optional
+async function search_google_feeds(query_string, timeout_ms) {
+  if(typeof query_string !== 'string')
+    throw new TypeError('query_string is not a String');
+  query_string = query_string.trim();
+  if(!query_string.length)
+    throw new TypeError('query_string is empty');
 
-  if(typeof queryString !== 'string') {
-    throw new TypeError('queryString is not a defined String object');
-  }
+  if(typeof timeout_ms === 'undefined')
+    timeout_ms = 0;
+  if(!Number.isInteger(timeout_ms))
+    throw new TypeError('timeout_ms is not an integer');
+  if(timeout_ms < 0)
+    throw new TypeError('timeout_ms is negative');
 
-  // It is faster to check it here than to wait until the request fails. It
-  // also avoids the number of bad queries sent to Google.
-  if(!queryString.trim().length) {
-    throw new TypeError('queryString is empty');
-  }
-
-  // TODO: use the new URL object and set the parameter using searchParams
-  // which I think does the encoding for me, so there is no need to use
-  // encodeURIComponent
-
-  const baseString =
+  const base_url_string =
     'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
-  const urlString =  baseString + encodeURIComponent(queryString);
+  const request_url_string =  base_url_string +
+    encodeURIComponent(query_string);
 
   const headers = {'Accept': 'application/json,text/javascript;q=0.9'};
 
-  const fetchOptions = {
+  const fetch_options = {
     'credentials': 'omit',
     'method': 'GET',
     'headers': headers,
@@ -44,48 +43,42 @@ async function searchGoogleFeeds(queryString, timeoutMillis = 0) {
     'referrerPolicy': 'no-referrer'
   };
 
+  const standard_fetch_error_message = request_url_string + ' ' +
+    response.status + ' ' + response.statusText
 
-  // The new fetch api no longer supports timeouts. Fake a timeout by racing
-  // a timeout promise against the fetch promise. If the timeout wins the race
-  // then Promise.race throws an error in the context of an async function.
-  const fetchPromise = fetch(urlString, fetchOptions);
-  let responseObject;
-  if(timeoutMillis) {
-    const promises = new Array(2);
-    promises[0] = fetchPromise;
-    promises[1] = new Promise(function(resolve, reject) {
+  const fetch_promise = fetch(request_url_string, fetch_options);
+  let response;
+  if(timeout_ms) {
+    const promises = [];
+    promises[0] = fetch_promise;
+    promises[1] = new Promise(function resolver(resolve, reject) {
       const error = new Error('Request timed out');
-      setTimeout(reject, timeoutMillis, error);
+      setTimeout(reject, timeout_ms, error);
     });
 
-    responseObject = await Promise.race(promises);
+    response = await Promise.race(promises);
   } else {
-    responseObject = await fetchPromise;
+    response = await fetch_promise;
   }
 
-  // Generally, ok is false if response code is not in range 200-299
-  if(!responseObject.ok) {
-    throw new Error('searchGoogleFeeds fetch error ' + responseObject.status +
-      ' ' + responseObject.statusText);
-  }
+  if(!response.ok)
+    throw new Error(standard_fetch_error_message);
 
-  // Treat 204 No content response as an error. The ok variable above considers
-  // a 204 response as ok, but my policy is different.
-  if(responseObject.status === 204) {
-    throw new Error(`searchGoogleFeeds received a response without content`);
-  }
+  const response_status_code = response.status;
+  const no_content_status_code = 204;
+  if(response_status_code === no_content_status_code)
+    throw new Error(standard_fetch_error_message);
 
-  // Parse the json-formatted response text into a javascript object
-  const jsonResultObject = await responseObject.json();
+  const json_result = await response.json();
+  console.assert(typeof json_result === 'object');
+  if(typeof json_result.responseData !== 'object')
+    throw new Error('responseData is not an object');
+  if(!Array.isArray(json_result.responseData.entries))
+    throw new Error('responseData.entries is not an array');
 
-  // Google wraps the data in an outer object, so get the data within
-  const responseDataObject = jsonResultObject.responseData;
-
-  // Rather than return the raw data, I keep only the properties I want, and
-  // I also ensure they are not undefined to increase caller convenience.
-
-  const outputObject = {};
-  outputObject.query = responseDataObject.query || '';
-  outputObject.entries = responseDataObject.entries || [];
-  return outputObject;
+  const output_response = {};
+  output_response.query = json_result.responseData.query || query_string;
+  output_response.entries = json_result.responseData.entries || [];
+  output_response.url = response.url;
+  return output_response;
 }

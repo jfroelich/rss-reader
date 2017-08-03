@@ -6,7 +6,7 @@ the url of the favicon associated with a given page url. At the time of writing
 this library there was no simple browser-oriented-js solution available, and
 Chrome appeared to be restricting access to its internal favicon cache.
 
-The primary public function is `lookupFavicon`. lookup accepts a page url and
+The primary public function is `favicon_lookup`. lookup accepts a page url and
 returns a favicon url. The function tries to conform to the spec, which sadly is
 not extremely well documented, and has some inefficiency. Ignoring the cache
 lookups, the algorithm involves the following steps:
@@ -28,10 +28,10 @@ different, I must always check the page, and this cannot be avoided.
 
 In addition to lookup, there are two other key functions, connect and compact.
 
-* `openFaviconDb` opens a connection to indexedDB. The connection
+* `favicon_open_db` opens a connection to indexedDB. The connection
 is the first parameter to the lookup function. indexedDB is used to provide a
 simple caching mechanism for the lookup, that memoizes certain lookups.
-* `compactFaviconDb` function is a housekeeping function intended to run
+* `favicon_compact_db` function is a housekeeping function intended to run
 periodically. It examines the cache for older entries and removes them.
 
 # Why this uses a separate database from the app
@@ -92,7 +92,7 @@ error after recent changes.
 * Look for more opportunities for concurrency. Cache lookups can happen
 concurrently with fetches?
 * Spend some more time thinking about abstraction. I think I want to do more
-to abstract away the use of indexedDB. Like, maybe lookupFavicon should accept
+to abstract away the use of indexedDB. Like, maybe favicon_lookup should accept
 dbName/dbVersion params, and a dbConn param, and if dbConn not set, then
 connect on demand, or something to this effect. That conflicts with logic of
 cacheless lookup at the moment. There are my own use cases, one where i do not

@@ -7,61 +7,60 @@
 // Adapted from http://stackoverflow.com/questions/1248302
 // Generally does not work on built-ins (dom, XMLHttpRequest, etc)
 // This uses a stack internally to avoid recursion
-// @param inputValue any input value
+// @param input_value any input value
 // @returns an integer representing the approximate byte size of the input
 // value
-function sizeof(inputValue) {
-  const visitedObjectsArray = [];
-  const stack = [inputValue];
-  const hasOwnProp = Object.prototype.hasOwnProperty;
-  const toString = Object.prototype.toString;
+function sizeof(input_value) {
+  const visited_objects = [];
+  const stack = [input_value];
+  const has_own_prop = Object.prototype.hasOwnProperty;
+  const to_string = Object.prototype.toString;
 
-  let byteSize = 0;
+  let byte_size = 0;
 
   while(stack.length) {
     const value = stack.pop();
 
     // typeof null === 'object'
-    if(value === null) {
+    if(value === null)
       continue;
-    }
 
     switch(typeof value) {
       case 'undefined':
         break;
       case 'boolean':
-        byteSize += 4;
+        byte_size += 4;
         break;
       case 'string':
-        byteSize += value.length * 2;
+        byte_size += value.length * 2;
         break;
       case 'number':
-        byteSize += 8;
+        byte_size += 8;
         break;
       case 'function':
         // Treat as some kind of function identifier
-        byteSize += 8;
+        byte_size += 8;
         break;
       case 'object':
-        if(visitedObjectsArray.indexOf(value) === -1) {
-          visitedObjectsArray.push(value);
+        if(visited_objects.indexOf(value) === -1) {
+          visited_objects.push(value);
 
-          if(ArrayBuffer.isView(value)) {
-            byteSize += value.length;
-          } else if(Array.isArray(value)) {
+          if(ArrayBuffer.isView(value))
+            byte_size += value.length;
+          else if(Array.isArray(value))
             stack.push(...value);
-          } else {
-            const toStringOutput = toString.call(value);
-            if(toStringOutput === '[object Date]') {
-              byteSize += 8;// guess
-            } else if(toStringOutput === '[object URL]') {
-              byteSize += 2 * value.href.length;// guess
-            } else {
-              for(let propertyName in value) {
-                if(hasOwnProp.call(value, propertyName)) {
+          else {
+            const to_string_output = to_string.call(value);
+            if(to_string_output === '[object Date]')
+              byte_size += 8;// guess
+            else if(to_string_output === '[object URL]')
+              byte_size += 2 * value.href.length;// guess
+            else {
+              for(let prop_name in value) {
+                if(has_own_prop.call(value, prop_name)) {
                   // Add size of the property name string itself
-                  byteSize += propertyName.length * 2;
-                  stack.push(value[propertyName]);
+                  byte_size += prop_name.length * 2;
+                  stack.push(value[prop_name]);
                 }
               }
             }
@@ -73,5 +72,5 @@ function sizeof(inputValue) {
     }
   }
 
-  return byteSize;
+  return byte_size;
 }

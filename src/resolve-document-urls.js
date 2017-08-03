@@ -1,212 +1,173 @@
 // See license.md
-
 'use strict';
-
-// TODO: test again if function declaration is limited to block scope. It may
-// not be the case.
-
-// Dependencies:
-// parseSrcset
 
 { // Begin file block scope
 
-// The sole public method. Modifies a document object in place. Looks for
-// urls in the document and ensures they are absolute.
-function resolveDocumentURLs(documentObject, baseURLObject) {
+// Looks for urls in the document and ensures they are absolute.
+function resolve_document_urls(doc, base_url_object) {
+  if(Object.prototype.toString.call(base_url_object) !== '[object URL]')
+    throw new TypeError('base_url_object is not of type URL');
 
-  if(!isURLObject(baseURLObject)) {
-    throw new TypeError('baseURLObject should be of type URL');
-  }
+  const element_attr_map = {
+    'a': 'href',
+    'applet': 'codebase',
+    'area': 'href',
+    'audio': 'src',
+    'base': 'href',
+    'blockquote': 'cite',
+    'body': 'background',
+    'button': 'formaction',
+    'del': 'cite',
+    'embed': 'src',
+    'frame': 'src',
+    'head': 'profile',
+    'html': 'manifest',
+    'iframe': 'src',
+    'form': 'action',
+    'img': 'src',
+    'input': 'src',
+    'ins': 'cite',
+    'link': 'href',
+    'object': 'data',
+    'q': 'cite',
+    'script': 'src',
+    'source': 'src',
+    'track': 'src',
+    'video': 'src'
+  };
 
-  const baseList = documentObject.querySelectorAll('base');
-  for(let baseElement of baseList) {
-    baseElement.remove();
-  }
+  const base_elements = doc.querySelectorAll('base');
+  for(const base_element of base_elements)
+    base_element.remove();
 
-  const tagNameArray = Object.keys(elementAttributeMap);
-  const selectPartArray = tagNameArray.map(buildSelectorPart);
-  const selectorString = selectPartArray.join(',');
-  const elementList = documentObject.querySelectorAll(selectorString);
-  for(let element of elementList) {
-    resolveMappedAttribute(element, baseURLObject);
-  }
+  const src_selector = create_src_selector(element_attr_map);
+  const src_elements = doc.querySelectorAll(src_selector);
+  for(const src_element of src_elements)
+    resolve_mapped_attr(src_element, element_attr_map, base_url_object);
 
-  const srcsetList = documentObject.querySelectorAll(
-    'img[srcset], source[srcset]');
-  for(let element of srcsetList) {
-    resolveSrcsetAttribute(element, baseURLObject);
-  }
+  const srcset_elements = doc.querySelectorAll('img[srcset], source[srcset]');
+  for(const srcset_element of srcset_elements)
+    resolve_srcset_attr(srcset_element, base_url_object);
 }
 
-// Define in outer scope
-this.resolveDocumentURLs = resolveDocumentURLs;
-
-const elementAttributeMap = {
-  'a': 'href',
-  'applet': 'codebase',
-  'area': 'href',
-  'audio': 'src',
-  'base': 'href',
-  'blockquote': 'cite',
-  'body': 'background',
-  'button': 'formaction',
-  'del': 'cite',
-  'embed': 'src',
-  'frame': 'src',
-  'head': 'profile',
-  'html': 'manifest',
-  'iframe': 'src',
-  'form': 'action',
-  'img': 'src',
-  'input': 'src',
-  'ins': 'cite',
-  'link': 'href',
-  'object': 'data',
-  'q': 'cite',
-  'script': 'src',
-  'source': 'src',
-  'track': 'src',
-  'video': 'src'
-};
-
-function buildSelectorPart(key) {
-  return `${key}[${elementAttributeMap[key]}]`;
+function create_src_selector(element_attr_map) {
+  const tag_names = Object.keys(element_attr_map);
+  const parts = [];
+  for(const tag_name of tag_names)
+    parts.push(`${tag_name}[${element_attr_map[tag_name]}]`);
+  return parts.join(',');
 }
 
-// TODO: decide whether to inline this function given its simplicity, it is
-// not more idiomatic that the statement it encloses
-function isURLObject(value) {
-  return Object.prototype.toString.call(value) === '[object URL]';
-}
-
-function resolveMappedAttribute(element, baseURLObject) {
-  const elementName = element.localName;
-  const attributeName = elementAttributeMap[elementName];
-  if(!attributeName) {
+function resolve_mapped_attr(element, element_attr_map, base_url_object) {
+  const attr_name = element_attr_map[element.localName];
+  if(!attr_name)
     return;
-  }
 
-  const urlString = element.getAttribute(attributeName);
-  if(!urlString) {
+  const url_string = element.getAttribute(attr_name);
+  if(!url_string)
     return;
-  }
 
-  const resolvedURLObject = resolveURL(urlString, baseURLObject);
-  if(!resolvedURLObject) {
+  const resolved_url_object = resolve_url(url_string, base_url_object);
+  if(!resolved_url_object)
     return;
-  }
 
-  const resolvedURLString = resolvedURLObject.href;
-  if(resolvedURLString !== urlString) {
-    element.setAttribute(attributeName, resolvedURLString);
-  }
+  const resolved_url_string = resolved_url_object.href;
+  if(resolved_url_string.length !== url_string.length)
+    element.setAttribute(attr_name, resolved_url_string);
 }
 
-function resolveSrcsetAttribute(element, baseURLObject) {
-
+function resolve_srcset_attr(element, base_url_object) {
   // The element has the attribute, but the attribute may not have a value.
   // parseSrcset requires a value or it may throw. While I catch exceptions
   // later I'd rather avoid exceptions where feasible
-  const srcsetAttributeValue = element.getAttribute('srcset');
-  if(!srcsetAttributeValue) {
+  const srcset_attr_value = element.getAttribute('srcset');
+  if(!srcset_attr_value)
     return;
-  }
 
-  let descriptorArray;
+  let descriptors;
   try {
-    descriptorArray = parseSrcset(srcsetAttributeValue);
+    descriptors = parseSrcset(srcset_attr_value);
   } catch(error) {
-    //console.warn(error);
     return;
   }
 
-  // Working with 3rd party code so extra precaution
-  if(!descriptorArray || !descriptorArray.length) {
+  // extra precaution due to 3rd party
+  if(!descriptors || !descriptors.length)
     return;
-  }
 
   // Resolve the urls of each descriptor. Set dirtied to true if at least
   // one url was resolved.
   let dirtied = false;
-  for(let descriptor of descriptorArray) {
-    const descriptorURLString = descriptor.url;
-    const resolvedURLObject = resolveURL(descriptorURLString, baseURLObject);
-
-    if(!resolvedURLObject) {
+  for(const descriptor of descriptors) {
+    const descriptor_url_string = descriptor.url;
+    const resolved_url_object = resolve_url(descriptor_url_string,
+      base_url_object);
+    if(!resolved_url_object)
       continue;
-    }
-
-    if(resolvedURLObject.href !== descriptorURLString) {
+    if(resolved_url_object.href !== descriptor_url_string) {
       dirtied = true;
-      descriptor.url = resolvedURLObject.href;
+      descriptor.url = resolved_url_object.href;
     }
   }
 
-  if(!dirtied) {
+  if(!dirtied)
     return;
-  }
 
-  const newSrcsetAttributeValue = serializeSrcset(descriptorArray);
-  if(newSrcsetAttributeValue) {
-    element.setAttribute('srcset', newSrcsetAttributeValue);
-  }
+  const new_srcset_attr_value = serialize_srcset(descriptors);
+  if(new_srcset_attr_value)
+    element.setAttribute('srcset', new_srcset_attr_value);
 }
 
-// @param descriptorArray {Array} an array of descriptor objects
-function serializeSrcset(descriptorArray) {
-  const outputArray = [];
-
-  for(let descriptorObject of descriptorArray) {
-    let stringArray = [descriptorObject.url];
-    if(descriptorObject.d) {
-      stringArray.push(' ');
-      stringArray.push(descriptorObject.d);
-      stringArray.push('x');
-    } else if(descriptorObject.w) {
-      stringArray.push(' ');
-      stringArray.push(descriptorObject.w);
-      stringArray.push('w');
-    } else if(descriptorObject.h) {
-      stringArray.push(' ');
-      stringArray.push(descriptorObject.h);
-      stringArray.push('h');
+// @param descriptors {Array} an array of descriptor objects
+function serialize_srcset(descriptors) {
+  const descriptor_strings = [];
+  for(let descriptor of descriptors) {
+    const strings = [descriptor.url];
+    if(descriptor.d) {
+      strings.push(' ');
+      strings.push(descriptor.d);
+      strings.push('x');
+    } else if(descriptor.w) {
+      strings.push(' ');
+      strings.push(descriptor.w);
+      strings.push('w');
+    } else if(descriptor.h) {
+      strings.push(' ');
+      strings.push(descriptor.h);
+      strings.push('h');
     }
 
-    const descriptorString = stringArray.join('');
-    outputArray.push(descriptorString);
+    const descriptor_string = strings.join('');
+    descriptor_strings.push(descriptor_string);
   }
 
-  const descriptorsString = outputArray.join(', ');
-  return descriptorsString;
+  return descriptor_strings.join(', ');
 }
 
-// Returns the absolute (aka canonical) form the input url
-// @param urlString {String}
-// @param baseURLObject {URL}
-function resolveURL(urlString, baseURLObject) {
-  if(!isURLObject(baseURLObject)) {
-    throw new TypeError('baseURLObject must be of type URL');
-  }
+// Returns the absolute form the input url
+function resolve_url(url_string, base_url_object) {
+  if(Object.prototype.toString.call(base_url_object) !== '[object URL]')
+    throw new TypeError('base_url_object is not of type URL');
 
   // TODO: use a single regex for speed? Or maybe get the protocol,
   // normalize it, and check against a list of bad protocols?
   // TODO: or if it has any protocol, then just return the url as is?
   // - but that would still require a call to new URL
   // Or can we just check for the presence of any colon?
-  if(/^\s*javascript:/i.test(urlString) ||
-    /^\s*data:/i.test(urlString) ||
-    /^\s*mailto:/i.test(urlString)) {
+  if(/^\s*javascript:/i.test(url_string) ||
+    /^\s*data:/i.test(url_string) ||
+    /^\s*mailto:/i.test(url_string)) {
     return;
   }
 
-  let absoluteURLObject;
+  let absolute_url_object;
   try {
-    absoluteURLObject = new URL(urlString, baseURLObject);
+    absolute_url_object = new URL(url_string, base_url_object);
   } catch(error) {
-    // console.warn(error, urlString, baseURLObject.href);
   }
-
-  return absoluteURLObject;
+  return absolute_url_object;
 }
+
+this.resolve_document_urls = resolve_document_urls;
 
 } // End file block scope

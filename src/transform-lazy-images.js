@@ -3,8 +3,8 @@
 
 { // Begin file block scope
 
-function transformLazyImages(document) {
-  const lazyImageAttributes = [
+function transform_lazy_imgs(doc) {
+  const lazy_img_attrs = [
     'load-src',
     'data-src',
     'data-original-desktop',
@@ -17,37 +17,37 @@ function transformLazyImages(document) {
     'data-default-src'
   ];
 
-  let numModified = 0;
-  const images = document.getElementsByTagName('img');
-  for(let image of images) {
-    if(isNotLazyImage(image)) {
+  let num_imgs_modified = 0;
+  const images = doc.getElementsByTagName('img');
+  for(const img of images) {
+    if(is_not_lazy_img(img))
       continue;
-    }
 
-    for(let lazySrcAttrName of lazyImageAttributes) {
-      if(image.hasAttribute(lazySrcAttrName)) {
-        const urlString = image.getAttribute(lazySrcAttrName);
-        if(isValidURLString(urlString)) {
-          image.removeAttribute(lazySrcAttrName);
-          image.setAttribute('src', urlString);
-          numModified++;
+    for(const lazy_src_attr_name of lazy_img_attrs) {
+      if(img.hasAttribute(lazy_src_attr_name)) {
+        const url_string = img.getAttribute(lazy_src_attr_name);
+        if(is_valid_url_string(url_string)) {
+          img.removeAttribute(lazy_src_attr_name);
+          img.setAttribute('src', url_string);
+          num_imgs_modified++;
           break;
         }
       }
     }
   }
 
-  return numModified;
+  return num_imgs_modified;
 }
 
-this.transformLazyImages = transformLazyImages;
-
-function isNotLazyImage(image) {
-  return image.hasAttribute('src') || image.hasAttribute('srcset');
+function is_not_lazy_img(img) {
+  return img.hasAttribute('src') || img.hasAttribute('srcset');
 }
 
-function isValidURLString(urlString) {
-  return urlString && !urlString.trim().includes(' ');
+// Only minor validation for speed
+function is_valid_url_string(url_string) {
+  return url_string && !url_string.trim().includes(' ');
 }
+
+this.transform_lazy_imgs = transform_lazy_imgs;
 
 } // End file block scope

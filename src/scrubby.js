@@ -3,114 +3,106 @@
 
 const scrubby = {};
 
-scrubby.scrub = function(documentObject) {
-  scrubby.filterComments(documentObject);
-  scrubby.filterFrames(documentObject);
-  scrubby.filterNoscripts(documentObject);
-  scrubby.filterScriptElements(documentObject);
-  scrubby.filterBlacklist(documentObject);
-  scrubby.filterHidden(documentObject);
-  scrubby.adjustBlockInlines(documentObject);
-  scrubby.filterBRs(documentObject);
-  scrubby.filterAnchors(documentObject);
-  scrubby.filterFormattingAnchors(documentObject);
-  scrubby.filterSmallImages(documentObject, 2);
-  scrubby.filterSourcelessImages(documentObject);
-  scrubby.filterUnwrappables(documentObject);
-  scrubby.filterFigures(documentObject);
-  scrubby.filterHairspaces(documentObject);
-  scrubby.condenseNodeWhitespace(documentObject);
-  scrubby.filterSingleItemLists(documentObject);
-  scrubby.filterTables(documentObject, 20);
-  scrubby.filterLeaves(documentObject);
-  scrubby.filterHRs(documentObject);
-  scrubby.trimDocument(documentObject);
-  scrubby.filterAttributes(documentObject);
+scrubby.scrub = function(doc) {
+  scrubby.filter_comments(doc);
+  scrubby.filter_frames(doc);
+  scrubby.filter_noscripts(doc);
+  scrubby.filter_scripts(doc);
+  scrubby.filter_blacklist(doc);
+  scrubby.filter_hidden(doc);
+  scrubby.adjust_block_inlines(doc);
+  scrubby.filter_brs(doc);
+  scrubby.filter_anchors(doc);
+  scrubby.filter_formatting_anchors(doc);
+  scrubby.filter_small_images(doc, 2);
+  scrubby.filter_sourceless_imgs(doc);
+  scrubby.filter_unwrappables(doc);
+  scrubby.filter_figures(doc);
+  scrubby.filter_hairspaces(doc);
+  scrubby.condense_node_whitespace(doc);
+  scrubby.filter_single_item_lists(doc);
+  scrubby.filter_tables(doc, 20);
+  scrubby.filter_leaves(doc);
+  scrubby.filter_hrs(doc);
+  scrubby.trim_document(doc);
+  scrubby.filter_attrs(doc);
 };
 
-scrubby.filterScriptElements = function(documentObject) {
-  const elements = documentObject.querySelectorAll('script');
-  for(let element of elements) {
+scrubby.filter_scripts = function(doc) {
+  const elements = doc.querySelectorAll('script');
+  for(const element of elements)
     element.remove();
-  }
 };
 
-scrubby.addNoReferrer = function(documentObject) {
-  const anchors = documentObject.querySelectorAll('a');
-  for(let anchor of anchors) {
+scrubby.add_no_referrer = function(doc) {
+  const anchors = doc.querySelectorAll('a');
+  for(const anchor of anchors)
     anchor.setAttribute('rel', 'noreferrer');
-  }
 };
 
 // Looks for cases such as <a><p>text</p></a> and transforms them into
 // <p><a>text</a></p>.
-scrubby.adjustBlockInlines = function(documentObject) {
-  const blockSelector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
-  const inlineSelector = 'a';
-  const blocks = documentObject.querySelectorAll(blockSelector);
-  for(let block of blocks) {
-    const ancestor = block.closest(inlineSelector);
+scrubby.adjust_block_inlines = function(doc) {
+  const block_selector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
+  const inline_selector = 'a';
+  const blocks = doc.querySelectorAll(block_selector);
+  for(const block of blocks) {
+    const ancestor = block.closest(inline_selector);
     if(ancestor && ancestor.parentNode) {
       ancestor.parentNode.insertBefore(block, ancestor);
-      for(let node = block.firstChild; node; node = block.firstChild) {
+      for(let node = block.firstChild; node; node = block.firstChild)
         ancestor.appendChild(node);
-      }
       block.appendChild(ancestor);
     }
   }
 };
 
-scrubby.condenseNodeWhitespace = function(documentObject) {
-  const iterator = documentObject.createNodeIterator(
-    documentObject.documentElement, NodeFilter.SHOW_TEXT);
+scrubby.condense_node_whitespace = function(doc) {
+  const iterator = doc.createNodeIterator(doc.documentElement,
+    NodeFilter.SHOW_TEXT);
   for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
     const value = node.nodeValue;
-    if(value.length > 3 && !scrubby.isSensitiveDescendant(node)) {
-      const condensed = scrubby.condenseWhitespace(value);
-      if(condensed.length !== value.length) {
-        node.nodeValue = condensed;
-      }
+    if(value.length > 3 && !scrubby.is_whitespace_sensitive_descendant(node)) {
+      const condensed_value = scrubby.condense_whitespace(value);
+      if(condensed_value.length !== value.length)
+        node.nodeValue = condensed_value;
     }
   }
 };
 
 // Find any sequence of 2 or more whitespace characters and replace with a
 // single space
-scrubby.condenseWhitespace = function(string) {
+scrubby.condense_whitespace = function(string) {
   return string.replace(/\s{2,}/g, ' ');
 };
 
 // Returns true if the node lies within a whitespace sensitive element
-scrubby.isSensitiveDescendant = function(node) {
+scrubby.is_whitespace_sensitive_descendant = function(node) {
   return node.parentNode.closest('code, pre, ruby, textarea, xmp');
 };
 
-scrubby.filterAnchors = function(documentObject) {
-  const anchors = documentObject.querySelectorAll('a');
-  for(let anchor of anchors) {
-    if(scrubby.isScriptURL(anchor.getAttribute('href'))) {
+scrubby.filter_anchors = function(doc) {
+  const anchors = doc.querySelectorAll('a');
+  for(const anchor of anchors)
+    if(scrubby.is_script_url(anchor.getAttribute('href')))
       scrubby.unwrap(anchor);
-    }
-  }
 };
 
-scrubby.isScriptURL = function(urlString) {
-  return urlString && urlString.length > 11 &&
-    /^\s*javascript:/i.test(urlString);
+scrubby.is_script_url = function(url_string) {
+  return url_string && url_string.length > 11 &&
+    /^\s*javascript:/i.test(url_string);
 };
 
-scrubby.filterFormattingAnchors = function(documentObject) {
-  const anchors = documentObject.querySelectorAll('a');
-  for(let anchor of anchors) {
-    if(!anchor.hasAttribute('href') && !anchor.hasAttribute('name')) {
+scrubby.filter_formatting_anchors = function(doc) {
+  const anchors = doc.querySelectorAll('a');
+  for(const anchor of anchors)
+    if(!anchor.hasAttribute('href') && !anchor.hasAttribute('name'))
       scrubby.unwrap(anchor);
-    }
-  }
 };
 
 // TODO: accept options parameter for custom blacklist that defaults to
 // built in list
-scrubby.filterBlacklist = function(documentObject) {
+scrubby.filter_blacklist = function(doc) {
   const blacklist = [
     'applet', 'audio', 'base', 'basefont', 'bgsound', 'button', 'command',
     'datalist', 'dialog', 'embed', 'fieldset', 'frame', 'frameset', 'head',
@@ -120,103 +112,92 @@ scrubby.filterBlacklist = function(documentObject) {
     'video', 'xmp'
   ];
 
-  const blacklistSelector = blacklist.join(',');
-  const documentElement = documentObject.documentElement;
-  const elements = documentObject.querySelectorAll(blacklistSelector);
-  for(let element of elements) {
-    if(documentElement.contains(element)) {
+  const selector = blacklist.join(',');
+  const doc_element = doc.documentElement;
+  const elements = doc.querySelectorAll(selector);
+  for(const element of elements)
+    if(doc_element.contains(element))
       element.remove();
-    }
-  }
 };
 
-scrubby.filterBRs = function(documentObject) {
-  const elements = documentObject.querySelectorAll('br + br');
-  for(let element of elements) {
+scrubby.filter_brs = function(doc) {
+  const elements = doc.querySelectorAll('br + br');
+  for(const element of elements)
     element.remove();
-  }
 };
 
-scrubby.filterComments = function(documentObject) {
-  const documentElement = documentObject.documentElement;
-  const iterator = documentObject.createNodeIterator(documentElement,
+scrubby.filter_comments = function(doc) {
+  const iterator = doc.createNodeIterator(doc.documentElement,
     NodeFilter.SHOW_COMMENT);
   for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
     node.remove();
   }
 };
 
-scrubby.filterFrames = function(documentObject) {
-  const frameset = documentObject.body;
-  if(!frameset || frameset.localName !== 'frameset') {
+// TODO: async merge frames into single document instead
+scrubby.filter_frames = function(doc) {
+  const frameset = doc.body;
+  if(!frameset || frameset.localName !== 'frameset')
     return;
-  }
 
-  const body = documentObject.createElement('body');
-  const noframes = documentObject.querySelector('noframes');
+  const body = doc.createElement('body');
+  const noframes = doc.querySelector('noframes');
   if(noframes) {
-    for(let node = noframes.firstChild; node; node = noframes.firstChild) {
+    for(let node = noframes.firstChild; node; node = noframes.firstChild)
       body.appendChild(node);
-    }
   } else {
-    const error = documentObject.createTextNode('Unable to display framed document.');
-    body.appendChild(error);
+    const error_node = doc.createTextNode('Unable to display framed document.');
+    body.appendChild(error_node);
   }
 
   frameset.remove();
-  documentObject.documentElement.appendChild(body);
+  doc.documentElement.appendChild(body);
 };
 
-scrubby.filterAttributes = function(documentObject) {
-  const elements = documentObject.getElementsByTagName('*');
-  for(let element of elements) {
-    let localName = element.localName;
+scrubby.filter_attrs = function(doc) {
+  const elements = doc.getElementsByTagName('*');
+  for(const element of elements) {
+    let local_name = element.localName;
     let attributes = element.attributes;
-    if(!attributes || !attributes.length) {
+    if(!attributes || !attributes.length)
       continue;
-    }
 
-    if(localName === 'source') {
+    if(local_name === 'source') {
       for(let i = attributes.length - 1; i > -1; i--) {
-        let attributeName = attributes[i].name;
-        if(attributeName !== 'type' && attributeName !== 'srcset' &&
-          attributeName !== 'sizes' && attributeName !== 'media' &&
-          attributeName !== 'src') {
-          element.removeAttribute(attributeName);
-        }
+        const attr_name = attributes[i].name;
+        if(attr_name !== 'type' && attr_name !== 'srcset' &&
+          attr_name !== 'sizes' && attr_name !== 'media' &&
+          attr_name !== 'src')
+          element.removeAttribute(attr_name);
       }
-    } else if(localName === 'a') {
+    } else if(local_name === 'a') {
       for(let i = attributes.length - 1; i > -1; i--) {
-        let attributeName = attributes[i].name;
-        if(attributeName !== 'href' && attributeName !== 'name' &&
-          attributeName !== 'title') {
-          element.removeAttribute(attributeName);
-        }
+        const attr_name = attributes[i].name;
+        if(attr_name !== 'href' && attr_name !== 'name' &&
+          attr_name !== 'title')
+          element.removeAttribute(attr_name);
       }
-    } else if(localName === 'iframe') {
+    } else if(local_name === 'iframe') {
       for(let i = attributes.length - 1; i > -1; i--) {
-        let attributeName = attributes[i].name;
-        if(attributeName !== 'src') {
-          element.removeAttribute(attributeName);
-        }
+        const attr_name = attributes[i].name;
+        if(attr_name !== 'src')
+          element.removeAttribute(attr_name);
       }
-    } else if(localName === 'img') {
+    } else if(local_name === 'img') {
       for(let i = attributes.length - 1; i > -1; i--) {
-        let attributeName = attributes[i].name;
-        if(attributeName !== 'src' && attributeName !== 'alt' &&
-          attributeName !== 'srcset' && attributeName !== 'title') {
-          element.removeAttribute(attributeName);
-        }
+        const attr_name = attributes[i].name;
+        if(attr_name !== 'src' && attr_name !== 'alt' &&
+          attr_name !== 'srcset' && attr_name !== 'title')
+          element.removeAttribute(attr_name);
       }
     } else {
-      for(let i = attributes.length - 1; i > -1; i--) {
+      for(let i = attributes.length - 1; i > -1; i--)
         element.removeAttribute(attributes[i].name);
-      }
     }
   }
 };
 
-scrubby.filterHidden = function(documentObject) {
+scrubby.filter_hidden = function(doc) {
   const selector = [
     '[style*="display:none"]',
     '[style*="visibility:hidden"]',
@@ -224,90 +205,73 @@ scrubby.filterHidden = function(documentObject) {
     '[aria-hidden="true"]'
   ].join(',');
 
-  const elements = documentObject.querySelectorAll(selector);
-  const documentElement = documentObject.documentElement;
-  for(let element of elements) {
-    if(element !== documentElement && documentElement.contains(element)) {
+  const elements = doc.querySelectorAll(selector);
+  const doc_element = doc.documentElement;
+  for(const element of elements)
+    if(element !== doc_element && doc_element.contains(element))
       scrubby.unwrap(element);
-    }
-  }
 };
 
-scrubby.filterHRs = function(documentObject) {
-  const elements = documentObject.querySelectorAll('hr + hr, ul > hr, ol > hr');
-  for(let element of elements) {
+scrubby.filter_hrs = function(doc) {
+  const elements = doc.querySelectorAll('hr + hr, ul > hr, ol > hr');
+  for(const element of elements)
     element.remove();
-  }
 };
 
-scrubby.filterSmallImages = function(documentObject, minDimValue) {
-  const images = documentObject.querySelectorAll('img');
-  for(let image of images) {
-    if(image.width < minDimValue || image.height < minDimValue) {
+scrubby.filter_small_images = function(doc, min_dimension_value) {
+  const images = doc.querySelectorAll('img');
+  for(const img of images)
+    if(img.width < min_dimension_value || img.height < min_dimension_value)
+      img.remove();
+};
+
+scrubby.filter_sourceless_imgs = function(doc) {
+  const images = doc.querySelectorAll('img');
+  for(const image of images)
+    if(!image.hasAttribute('src') && !image.hasAttribute('srcset'))
       image.remove();
-    }
-  }
 };
 
-scrubby.filterSourcelessImages = function(documentObject) {
-  const images = documentObject.querySelectorAll('img');
-  for(let image of images) {
-    if(!image.hasAttribute('src') && !image.hasAttribute('srcset')) {
-      image.remove();
-    }
-  }
-};
-
-scrubby.filterInvalidAnchors = function(documentObject) {
-  const anchors = documentObject.querySelectorAll('a');
-  for(let anchor of anchors) {
-    if(scrubby.isInvalidAnchor(anchor)) {
+scrubby.filter_invalid_anchors = function(doc) {
+  const anchors = doc.querySelectorAll('a');
+  for(const anchor of anchors)
+    if(scrubby.is_invalid_anchor(anchor))
       anchor.remove();
-    }
-  }
 };
 
-scrubby.isInvalidAnchor = function(anchor) {
+scrubby.is_invalid_anchor = function(anchor) {
   const href = anchor.getAttribute('href');
   return href && /^\s*https?:\/\/#/i.test(href);
 };
 
-scrubby.filterLeaves = function(documentObject) {
-  if(!documentObject.body) {
+scrubby.filter_leaves = function(doc) {
+  if(!doc.body)
     return;
-  }
-
-  const documentElement = documentObject.documentElement;
-  const elements = documentObject.body.querySelectorAll('*');
-  for(let element of elements) {
-    if(documentElement.contains(element) && scrubby.isLeaf(element)) {
+  const doc_element = doc.documentElement;
+  const elements = doc.body.querySelectorAll('*');
+  for(const element of elements)
+    if(doc_element.contains(element) && scrubby.is_leaf(element))
       element.remove();
-    }
-  }
 };
 
-scrubby.isLeafException = function(element) {
+scrubby.is_leaf_exception = function(element) {
   const exceptions = {
     'area': 0, 'audio': 0, 'base': 0, 'col': 0, 'command': 0, 'br': 0,
     'canvas': 0, 'col': 0, 'hr': 0, 'iframe': 0, 'img': 0, 'input': 0,
     'keygen': 0, 'meta': 0, 'nobr': 0, 'param': 0, 'path': 0, 'source': 0,
     'sbg': 0, 'textarea': 0, 'track': 0, 'video': 0, 'wbr': 0
   };
-
   return element.localName in exceptions;
 };
 
-scrubby.isLeaf = function(node) {
+scrubby.is_leaf = function(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:
-      if(scrubby.isLeafException(node)) {
+      if(scrubby.is_leaf_exception(node))
         return false;
-      }
-      for(let child = node.firstChild; child; child = child.nextSibling) {
-        if(!scrubby.isLeaf(child)) {
+      for(let child = node.firstChild; child; child = child.nextSibling)
+        if(!scrubby.is_leaf(child))
           return false;
-        }
-      }
       break;
     case Node.TEXT_NODE:
       return !node.nodeValue.trim();
@@ -320,63 +284,54 @@ scrubby.isLeaf = function(node) {
   return true;
 };
 
-scrubby.filterTables = function(documentObject, limit) {
-  const tables = documentObject.querySelectorAll('table');
-  for(let table of tables) {
-    if(scrubby.isSingleColumnTable(table, limit)) {
-      scrubby.unwrapSingleColumnTable(table);
-    }
-  }
+scrubby.filter_tables = function(doc, row_scan_limit) {
+  const tables = doc.querySelectorAll('table');
+  for(const table of tables)
+    if(scrubby.is_single_column_table(table, row_scan_limit))
+      scrubby.unwrap_single_column_table(table);
 };
 
-scrubby.isSingleColumnTable = function(table, limit) {
+scrubby.is_single_column_table = function(table, row_scan_limit) {
   const rows = table.rows;
-  const upper = Math.min(rows.length, limit);
-  for(let i = 0; i < upper; i++) {
-    if(!scrubby.isSingleColumnRow(rows[i])) {
+  const safe_row_scan_limit = Math.min(rows.length, row_scan_limit);
+  for(let i = 0; i < safe_row_scan_limit; i++)
+    if(!scrubby.is_single_column_row(rows[i]))
       return false;
-    }
-  }
   return true;
 };
 
-scrubby.isSingleColumnRow = function(row) {
+scrubby.is_single_column_row = function(row) {
   const cells = row.cells;
-  let numNonEmpty = 0;
-  for(let i = 0, len = cells.length; i < len; i++) {
-    if(!scrubby.isLeaf(cells[i])) {
-      if(++numNonEmpty > 1) {
-        return false;
-      }
-    }
-  }
-
+  let non_empty_cell_count = 0;
+  for(let i = 0, len = cells.length; i < len; i++)
+    if(!scrubby.is_leaf(cells[i]) && ++non_empty_cell_count > 1)
+      return false;
   return true;
 };
 
-scrubby.unwrapSingleColumnTable = function(table) {
+scrubby.unwrap_single_column_table = function(table) {
   const rows = table.rows;
-  const numRows = rows.length;
+  const row_count = rows.length;
   const parent = table.parentNode;
-  const documentObject = table.ownerDocument;
+  const doc = table.ownerDocument;
 
-  parent.insertBefore(documentObject.createTextNode(' '), table);
-  for(let i = 0; i < numRows; i++) {
+  parent.insertBefore(doc.createTextNode(' '), table);
+  for(let i = 0; i < row_count; i++) {
     const row = rows[i];
     // TODO: if the cell is a leaf, skip iterator and do not add a paragraph
     for(let k = 0, clen = row.cells.length; k < clen; k++) {
       const cell = row.cells[k];
-      scrubby.insertChildrenBefore(cell, table);
+      scrubby.insert_children_before(cell, table);
     }
 
-    parent.insertBefore(documentObject.createElement('p'), table);
+    parent.insertBefore(doc.createElement('p'), table);
   }
 
-  parent.insertBefore(documentObject.createTextNode(' '), table);
+  parent.insertBefore(doc.createTextNode(' '), table);
   table.remove();
 };
 
-scrubby.filterUnwrappables = function(documentObject) {
+scrubby.filter_unwrappables = function(doc) {
   const selector = [
     'abbr', 'acronym', 'article', 'aside', 'center', 'colgroup', 'data',
     'details', 'div', 'footer', 'header', 'help', 'hgroup', 'ilayer',
@@ -384,112 +339,98 @@ scrubby.filterUnwrappables = function(documentObject) {
     'multicol', 'nobr', 'section', 'span', 'tbody', 'tfoot', 'thead', 'form',
     'label', 'big', 'blink', 'font', 'plaintext', 'small', 'tt'
   ].join(',');
-  const elements = documentObject.querySelectorAll(selector);
-  for(let element of elements) {
+  const elements = doc.querySelectorAll(selector);
+  for(const element of elements)
     scrubby.unwrap(element);
-  }
 };
 
-scrubby.filterHairspaces = function(documentObject) {
-  const iterator = documentObject.createNodeIterator(
-    documentObject.documentElement, NodeFilter.SHOW_TEXT);
+scrubby.filter_hairspaces = function(doc) {
+  const iterator = doc.createNodeIterator(
+    doc.documentElement, NodeFilter.SHOW_TEXT);
   for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
     const value = node.nodeValue;
-    const modified = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');
-    if(modified.length !== value.length) {
-      node.nodeValue = modified;
-    }
+    const modified_value = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');
+    if(modified_value.length !== value.length)
+      node.nodeValue = modified_value;
   }
 };
 
-scrubby.filterNoscripts = function(documentObject) {
-  const elements = documentObject.querySelectorAll('noscript');
-  for(let element of elements) {
+scrubby.filter_noscripts = function(doc) {
+  const elements = doc.querySelectorAll('noscript');
+  for(const element of elements)
     scrubby.unwrap(element);
-  }
 };
 
-scrubby.filterFigures = function(documentObject) {
-  const figures = documentObject.querySelectorAll('figure');
-  for(let figure of figures) {
-    if(figure.childElementCount === 1) {
+scrubby.filter_figures = function(doc) {
+  const figures = doc.querySelectorAll('figure');
+  for(const figure of figures)
+    if(figure.childElementCount === 1)
       scrubby.unwrap(figure);
-    }
-  }
 };
 
-scrubby.trimDocument = function(documentObject) {
-  if(!documentObject.body) {
+scrubby.trim_document = function(doc) {
+  if(!doc.body)
     return;
-  }
-
-  const firstChild = documentObject.body.firstChild;
-  if(firstChild) {
-    scrubby.trimWalk(firstChild, 'nextSibling');
-    const lastChild = documentObject.body.lastChild;
-    if(lastChild && lastChild !== firstChild) {
-      scrubby.trimWalk(lastChild, 'previousSibling');
-    }
+  const first_child = doc.body.firstChild;
+  if(first_child) {
+    scrubby.trim_doc_step(first_child, 'nextSibling');
+    const last_child = doc.body.lastChild;
+    if(last_child && last_child !== first_child)
+      scrubby.trim_doc_step(last_child, 'previousSibling');
   }
 };
 
-scrubby.canTrim = function(node) {
-  const elements = ['br', 'hr', 'nobr'];
-  return node && (elements.includes(node.localName) ||
-    (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
-};
-
-scrubby.trimWalk = function(startNode, edge) {
-  let node = startNode;
-  while(scrubby.canTrim(node)) {
-    let sibling = node[edge];
+scrubby.trim_doc_step = function(starting_node, edge) {
+  let node = starting_node;
+  while(scrubby.is_trimmable_node(node)) {
+    const sibling = node[edge];
     node.remove();
     node = sibling;
   }
 };
 
-scrubby.unwrap = function(element, referenceNode) {
-  const target = referenceNode || element;
+scrubby.is_trimmable_node = function(node) {
+  const elements = ['br', 'hr', 'nobr'];
+  return node && (elements.includes(node.localName) ||
+    (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
+};
+
+scrubby.unwrap = function(element, reference_node) {
+  const target = reference_node || element;
   const parent = target.parentNode;
 
-  if(!parent) {
-    throw new TypeError();
-  }
+  if(!parent)
+    throw new TypeError('element missing parent element');
 
-  const documentObject = element.ownerDocument;
-  const previousSibling = target.previousSibling;
-  if(previousSibling && previousSibling.nodeType === Node.TEXT_NODE) {
-    parent.insertBefore(documentObject.createTextNode(' '), target);
-  }
+  const doc = element.ownerDocument;
+  const prev_sibling = target.previousSibling;
+  if(prev_sibling && prev_sibling.nodeType === Node.TEXT_NODE)
+    parent.insertBefore(doc.createTextNode(' '), target);
 
-  scrubby.insertChildrenBefore(element, target);
+  scrubby.insert_children_before(element, target);
 
-  const nextSibling = target.nextSibling;
-  if(nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
-    parent.insertBefore(documentObject.createTextNode(' '), target);
-  }
-
+  const next_sibling = target.nextSibling;
+  if(next_sibling && next_sibling.nodeType === Node.TEXT_NODE)
+    parent.insertBefore(doc.createTextNode(' '), target);
   target.remove();
 };
 
-scrubby.insertChildrenBefore = function(parentNode, referenceNode) {
-  const refParent = referenceNode.parentNode;
-  for(let node = parentNode.firstChild; node; node = parentNode.firstChild) {
-    refParent.insertBefore(node, referenceNode);
-  }
+scrubby.insert_children_before = function(parent_node, reference_node) {
+  const ref_parent = reference_node.parentNode;
+  for(let node = parent_node.firstChild; node; node = parent_node.firstChild)
+    ref_parent.insertBefore(node, reference_node);
 };
 
-scrubby.filterSingleItemLists = function(documentObject) {
-  const lists = documentObject.querySelectorAll('ul, ol, dl');
-  for(let list of lists) {
-    scrubby.filterSingleItemList(documentObject, list);
-  }
+scrubby.filter_single_item_lists = function(doc) {
+  const list_elements = doc.querySelectorAll('ul, ol, dl');
+  for(const list_element of list_elements)
+    scrubby.filter_single_item_list(doc, list_element);
 };
 
 // Unwraps single item or empty list elements
-scrubby.filterSingleItemList = function(documentObject, list) {
-  const listParent = list.parentNode;
-  if(!listParent)
+scrubby.filter_single_item_list = function(doc, list) {
+  const list_parent = list.parentNode;
+  if(!list_parent)
     return;
 
   const item = list.firstElementChild;
@@ -504,13 +445,12 @@ scrubby.filterSingleItemList = function(documentObject, list) {
     }
     // The list has no child elements, but the list has one or more child
     // nodes. Move the nodes to before the list. Add padding if needed.
-    if(scrubby.isTextNode(list.previousSibling))
-      listParent.insertBefore(documentObject.createTextNode(' '), list);
-    for(let node = list.firstChild; node; node = list.firstChild) {
-      listParent.insertBefore(node, list);
-    }
-    if(scrubby.isTextNode(list.nextSibling))
-      listParent.insertBefore(documentObject.createTextNode(' '), list);
+    if(scrubby.is_text_node(list.previousSibling))
+      list_parent.insertBefore(doc.createTextNode(' '), list);
+    for(let node = list.firstChild; node; node = list.firstChild)
+      list_parent.insertBefore(node, list);
+    if(scrubby.is_text_node(list.nextSibling))
+      list_parent.insertBefore(doc.createTextNode(' '), list);
     list.remove();
     return;
   }
@@ -528,9 +468,9 @@ scrubby.filterSingleItemList = function(documentObject, list) {
   // any non-element nodes within the list outside of the child element.
   if(!item.firstChild) {
     // If removing the list, avoid the possible merging of adjacent text nodes
-    if(scrubby.isTextNode(list.previousSibling) &&
-      scrubby.isTextNode(list.nextSibling))
-      listParent.replaceChild(documentObject.createTextNode(' '), list);
+    if(scrubby.is_text_node(list.previousSibling) &&
+      scrubby.is_text_node(list.nextSibling))
+      list_parent.replaceChild(doc.createTextNode(' '), list);
     else
       list.remove();
     return;
@@ -538,21 +478,19 @@ scrubby.filterSingleItemList = function(documentObject, list) {
 
   // The list has one child element with one or more child nodes. Move the
   // child nodes to before the list and then remove iterator. Add padding if needed.
-  if(scrubby.isTextNode(list.previousSibling) &&
-    scrubby.isTextNode(item.firstChild)) {
-    listParent.insertBefore(documentObject.createTextNode(' '), list);
-  }
+  if(scrubby.is_text_node(list.previousSibling) &&
+    scrubby.is_text_node(item.firstChild))
+    list_parent.insertBefore(doc.createTextNode(' '), list);
 
-  scrubby.insertChildrenBefore(item, list);
+  scrubby.insert_children_before(item, list);
 
-  if(scrubby.isTextNode(list.nextSibling) &&
-    scrubby.isTextNode(list.previousSibling)) {
-    listParent.insertBefore(documentObject.createTextNode(' '), list);
-  }
+  if(scrubby.is_text_node(list.nextSibling) &&
+    scrubby.is_text_node(list.previousSibling))
+    list_parent.insertBefore(doc.createTextNode(' '), list);
 
   list.remove();
 };
 
-scrubby.isTextNode = function(node) {
+scrubby.is_text_node = function(node) {
   return node && node.nodeType === Node.TEXT_NODE;
 };
