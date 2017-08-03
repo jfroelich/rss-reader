@@ -6,14 +6,6 @@ Checks for new feed content in the background.
 # TODO
 
 * Document functions with comments
-* Figure out why I am seeing log messages like the following: Refused to load
-the script '<some url>' because it violates the following Content Security
-Policy directive: "script-src 'self'". My understanding is that fetch does not
-do this as a result of calling response.text(), that DOMParser.parseFromString
-does not do this, and that I am removing <script> tags with scrubby. So how in
-the hell does it show up? One of my assumptions is wrong. It is either due to
-recent code changes, because this was not happening before, or because of
-undocumented changes in Chrome's behavior.
 * regarding addEntryToDb, deprecate in favor of put, and after moving
 sanitization and default props out, maybe make a helper function
 * ensure entries added by putEntryInDb, if not have id, have unread flag and

@@ -75,9 +75,12 @@ function db_find_entry_by_url(conn, url_string) {
 
 async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms) {
   const url_string = entry_get_url_string(entry);
+
+  // This must occur before sanitize_html_document is called on the
+  // document because that removes sourceless images
   transform_lazy_imgs(doc);
-  scrubby.filter_sourceless_imgs(doc);
-  scrubby.filter_invalid_anchors(doc);
+
+
   const base_url_object = new URL(url_string);
   resolve_document_urls(doc, base_url_object);
   filter_tracking_imgs(doc);
@@ -218,10 +221,25 @@ function prepare_local_entry(entry, verbose) {
 }
 
 function prepare_entry_document(url_string, doc) {
+  ensure_document_has_body(doc);
+  process_framed_document(doc);
+
   prune_doc_using_host_template(url_string, doc);
   filter_boilerplate(doc);
-  scrubby.scrub(doc);
-  scrubby.add_no_referrer(doc);
+  secure_html_document(doc);
+  sanitize_html_document(doc);
+  condense_html_document(doc);
+  filter_html_attrs(doc);
+  dnt_html_document(doc);
+}
+
+function ensure_document_has_body(doc) {
+  if(doc.body)
+    return;
+  const body_element = doc.createElement('body');
+  const text_node = doc.createTextNode('Error empty document (no body found)');
+  body_element.appendChild(text_node);
+  doc.documentElement.appendChild(body_element);
 }
 
 function filter_tracking_imgs(doc) {
