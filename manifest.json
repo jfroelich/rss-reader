@@ -50,7 +50,7 @@
   "options_page": "options.html",
   "permissions": [
     "alarms",
-    "declarativeWebRequest",
+
     "http://*/*",
     "https://*/*",
     "idle",

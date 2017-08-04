@@ -61,7 +61,7 @@ async function favicon_lookup(conn, url_object, max_age_ms,
   // Step 4: check the cache for the origin url
   if(conn && !urls.has(url_object.origin)) {
     const icon_url_string = await db_find_origin_url(conn, url_object.origin,
-      urls, max_age_ms);
+      urls, max_age_ms, verbose);
     if(icon_url_string)
       return icon_url_string;
   }
@@ -151,7 +151,7 @@ async function search_document(conn, url_object, urls, response, verbose) {
   }
 }
 
-async function db_find_origin_url(conn, origin_url_string, urls, max_age_ms) {
+async function db_find_origin_url(conn, origin_url_string, urls, max_age_ms, verbose) {
   const origin_url_object = new URL(origin_url_string);
   const origin_entry = await db_find_entry(conn, origin_url_object);
   const current_date = new Date();
@@ -200,7 +200,7 @@ async function fetch_doc_silently(url_object, fetch_html_timeout_ms, verbose) {
     return await fetch_promise;
   } catch(error) {
     if(verbose)
-      console.warn('An error occurred when fetching', url_object.href, error);
+      console.log(error);
   }
 }
 

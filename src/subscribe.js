@@ -30,12 +30,21 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms,
   }
 
   const response = await fetch_internal(url_string, timeout_ms, verbose);
-  const response_url_string = response.responseURLString;
-  if(response.redirected &&
-    await check_redirect_url_exists(reader_conn, response_url_string,
-      verbose))
-    return;
 
+  // TODO: handle undefined response? I thought this never happened, but maybe
+  // it makes sense. What happens if response is undefined? I suppose just
+  // return. Maybe should add the feed? Not sure. Should it be an exception
+  // instead that occurs as a result of fetch_internal?
+  if(!response) {
+    if(verbose)
+      console.warn('response undefined in subscribe for url', url_string);
+    return;
+  }
+
+  const response_url_string = response.responseURLString;
+  if(response.redirected && await check_redirect_url_exists(reader_conn,
+    response_url_string, verbose))
+    return;
 
   const parse_result = parse_fetched_feed(response);
   const remote_feed = parse_result.feed;
@@ -104,8 +113,8 @@ function show_subscribe_notification(feed) {
 }
 
 async function fetch_internal(url_string, timeout_ms, verbose) {
-  const accept_html = true;
-  const promise = fetch_feed(url_string, timeout_ms, accept_html);
+  const is_accept_html = true;
+  const promise = fetch_feed(url_string, timeout_ms, is_accept_html);
   try {
     return await promise;
   } catch(error) {

@@ -79,7 +79,7 @@ OPMLDocument.prototype.remove_invalid_outline_types = function() {
   const elements = this.select_outline_elements();
   const initial_length = elements.length;
   for(const element of elements) {
-    const type_string = element.getAttribute('type');
+    let type_string = element.getAttribute('type');
     if(!type_string) {
       element.remove();
       continue;
@@ -105,7 +105,7 @@ OPMLDocument.prototype.remove_outlines_missing_xml_urls = function() {
   const elements = this.select_outline_elements();
   const initial_length = elements.length;
   for(const element of elements) {
-    const xml_url_string = element.getAttribute('xmlUrl');
+    let xml_url_string = element.getAttribute('xmlUrl');
 
     if(!xml_url_string) {
       element.remove();
@@ -125,7 +125,7 @@ OPMLDocument.prototype.normalize_outline_xml_urls = function() {
   const elements = this.select_outline_elements();
   const initial_length = elements.length;
   for(const element of elements) {
-    const url_string = element.getAttribute('xmlUrl');
+    let url_string = element.getAttribute('xmlUrl');
     if(url_string === undefined || url_string === null)
       continue;
     url_string = url_string.trim();

@@ -3,7 +3,6 @@
 
 { // Begin file block scope
 
-// @param files {Iterable<File>} a FileList of files to import
 async function import_opml_files(files, verbose) {
   if(verbose)
     console.log('Importing %d OPML XML files', files.length);
@@ -12,7 +11,10 @@ async function import_opml_files(files, verbose) {
   let icon_conn;
   let import_resolutions;
 
-  const reader_conn_promise = reader_open_db();
+  let reader_db_name, reader_db_version, reader_db_connect_timeout_ms;
+
+  const reader_conn_promise = reader_open_db(reader_db_name, reader_db_version,
+    reader_db_connect_timeout_ms, verbose);
   let icon_db_name, icon_db_version, connect_timeout_ms;
   const icon_conn_promise = favicon_open_db(icon_db_name, icon_db_version,
     connect_timeout_ms, verbose);
@@ -85,6 +87,10 @@ async function import_file(reader_conn, icon_conn, file, verbose) {
   let num_feeds_added = 0;
   if(outlines.length) {
     const unique_outlines = aggregate_outlines_by_xmlurl(outlines);
+
+    console.assert(typeof unique_outlines !== 'undefined');
+    console.assert(typeof outlines !== 'undefined');
+
     const dup_count = outlines.length - unique_outlines.length;
     if(dup_count && verbose)
       console.log('Ignored %d duplicate feed(s) in file', dup_count,
@@ -92,7 +98,7 @@ async function import_file(reader_conn, icon_conn, file, verbose) {
 
     normalize_outline_links(unique_outlines);
     const feeds = convert_outlines_to_feeds(unique_outlines);
-    num_feeds_added = batch_subscribe(feeds, icon_conn, feed, verbose);
+    num_feeds_added = batch_subscribe(feeds, reader_conn, icon_conn, verbose);
   }
 
   if(verbose)
@@ -104,12 +110,13 @@ async function import_file(reader_conn, icon_conn, file, verbose) {
 function aggregate_outlines_by_xmlurl(outlines) {
   const unique_urls = [];
   const unique_outlines = [];
-  for(let outline of outlines) {
+  for(const outline of outlines) {
     if(!unique_urls.includes(outline.xmlUrl)) {
       unique_outlines.push(outline);
       unique_urls.push(outline.xmlUrl);
     }
   }
+  return unique_outlines;
 }
 
 // Normalize and validate each outline's link property

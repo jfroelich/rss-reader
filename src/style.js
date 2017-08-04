@@ -28,6 +28,8 @@ function add_entry_css_rule(sheet) {
   else if(localStorage.ENTRY_BACKGROUND_COLOR)
     buffer.push(`background: ${localStorage.ENTRY_BACKGROUND_COLOR};`);
 
+  // TODO: top/bottom margin works when initializing but not when changing
+
   buffer.push('margin:0px;');
   const entry_margin = localStorage.ENTRY_MARGIN;
   if(entry_margin)
@@ -127,9 +129,15 @@ function update_entry_css_rule(sheet) {
     entry_rule.style.backgroundImage = '';
   }
 
-  const entry_margin = localStorage.ENTRY_MARGIN || '10';
-  entry_rule.style.paddingLeft = `${entry_margin}px`;
-  entry_rule.style.paddingRight = `${entry_margin}px`;
+  const entry_margin = localStorage.ENTRY_MARGIN || '0';
+  if(entry_margin) {
+    // TODO: just set padding? why is this being done this way?
+    const formatted_margin = `${entry_margin}px`;
+    entry_rule.style.paddingTop = formatted_margin;
+    entry_rule.style.paddingBottom = formatted_margin;
+    entry_rule.style.paddingLeft = formatted_margin;
+    entry_rule.style.paddingRight = formatted_margin;
+  }
 }
 
 function update_entry_title_css_rule(sheet) {

@@ -186,7 +186,8 @@ ul#navigation-menu li.navigation-item-selected {
 }
 
 #discover-in-progress {
-  display:none;
+  /* This component is initially hidden */
+  display: none;
   font-family: 'Segoe UI', Tahoma, sans-serif;
 }
 

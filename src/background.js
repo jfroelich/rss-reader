@@ -17,7 +17,7 @@
 /*
 // Disabled until I see how to restrict to requests made by this extension
 // only. Not sure but this may be intercepting all requests in chrome
-
+//    "declarativeWebRequest",
 var link_matcher = new chrome.declarativeWebRequest.RequestMatcher({
   'resourceType': ['xmlhttprequest'],
   'contentType': ['text/html']

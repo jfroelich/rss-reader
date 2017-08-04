@@ -68,7 +68,7 @@ function show_subscription_monitor() {
 
   const progress_element = document.createElement('progress');
   progress_element.textContent = 'Working...';
-  monitor.appendChild(progress_element);
+  monitor_element.appendChild(progress_element);
 }
 
 function append_subscription_monitor_msg(msg) {
@@ -180,11 +180,6 @@ function append_feed_to_feed_list(feed, should_maintain_order) {
     feed_list_element.appendChild(item_element);
 }
 
-// TODO: deprecate
-function show_subscription_preview(url_object) {
-  start_subscription(url_object);
-}
-
 function hide_subscription_preview() {
   const preview_element = document.getElementById('subscription-preview');
   hide_element(preview_element);
@@ -199,6 +194,8 @@ function hide_subscription_preview() {
 // passing those along to start_subscription and setting them here. Or
 // start_subscription should expect a feed object as a parameter.
 async function start_subscription(url_object) {
+
+  console.debug('Starting subscription to', url_object.href);
 
   // TODO: remove this once preview is deprecated more fully
   hide_subscription_preview();
@@ -359,20 +356,30 @@ async function subscribe_form_on_submit(event) {
   query_string = query_string || '';
   query_string = query_string.trim();
 
-  if(!query_string)
+  if(!query_string) {
+    console.debug('canceling submit, query is empty');
     return false;
+  }
 
   const no_results_element = document.getElementById('discover-no-results');
 
   // Do nothing if searching in progress
   const progress_element = document.getElementById('discover-in-progress');
-  if(is_visible_element(progress_element))
+
+  // BUG: progress_element.style.display is empty when I expect it to be
+  // 'none'. I specified #discover-in-progress { display: none; } in options.css
+  // if(is_visible_element(progress_element)){
+  if(progress_element.style.display === 'block') {
+    console.debug('canceling submit event, search in progress');
     return false;
+  }
 
   // Do nothing if subscription in progress
   const monitor_element = document.getElementById('submon');
-  if(monitor_element && is_visible_element(monitor_element))
+  if(monitor_element && is_visible_element(monitor_element)) {
+    console.debug('canceling submit, subscription in progress');
     return false;
+  }
 
   // Clear the previous results list
   const results_list_element = document.getElementById('discover-results-list');
@@ -391,9 +398,10 @@ async function subscribe_form_on_submit(event) {
 
   // If it is a URL, subscribe
   if(url_object) {
+    console.debug('form submit detected url input, not doing search');
     query_element.value = '';
-    // TODO: this should go straight to sub, not call sub preview
-    show_subscription_preview(url_object);
+
+    start_subscription(url_object);
     return false;
   }
 
@@ -415,6 +423,8 @@ async function subscribe_form_on_submit(event) {
   } finally {
     hide_element(progress_element);
   }
+
+  // TODO: do i need to still hide progress element then?
 
   // TODO: use explicit loops
 
@@ -568,7 +578,7 @@ function subscribe_button_on_click(event) {
 
   // TODO: this should make a call directly to the step that starts the
   // subscription process.
-  show_subscription_preview(feed_url_object);
+  start_subscription(feed_url_object);
 }
 
 function remove_feed_from_feed_list(feed_id_number) {
@@ -626,23 +636,41 @@ async function unsubscribe_button_on_click(event) {
 // TODO: after import the feeds list needs to be refreshed
 // TODO: notify the user if there was an error
 function import_opml_button_on_click(event) {
+  console.log('Creating hidden file uploader element');
+
   const uploader_input = document.createElement('input');
   uploader_input.setAttribute('type', 'file');
   uploader_input.setAttribute('accept', 'application/xml');
-  uploader_input.addEventListener('change', import_opml_uploader_on_change,
-    {'once':true});
+
+  console.debug('Adding change listener to file input');
+  uploader_input.addEventListener('change', import_opml_uploader_on_change);
+
+  console.log('Pseudo-clicking hidden file uploader element');
   uploader_input.click();
 }
 
 // TODO: visual feedback in event an error
 async function import_opml_uploader_on_change(event) {
+
+  // Testing bug
+  console.log('Received event', event);
+
+
+  const verbose = true;
   const uploader_input = event.target;
+
+  if(verbose)
+    console.log('import_opml_uploader_on_change event', event);
+
   try {
-    // TODO: be explicit about naming second parameter here
-    await import_opml_files(uploader_input.files, true);
+    await import_opml_files(uploader_input.files, verbose);
   } catch(error) {
     console.warn(error);
   }
+
+  // TODO: need to update feed list for each added feed
+  // Maybe something like 'refresh feed list' would be easier than incrementally
+  // updating it
 }
 
 function db_load_all_feeds(conn) {
