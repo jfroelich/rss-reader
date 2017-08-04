@@ -12,8 +12,11 @@ POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK = 16; // 10000
 
 async function cmd_poll_feeds() {
   const flags = POLL_FEEDS_FLAGS.ALLOW_METERED_CONNECTIONS |
-    POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE | POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK |
-    POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK | POLL_FEEDS_FLAGS.VERBOSE;
+    POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE |
+    POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK |
+    POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK |
+    POLL_FEEDS_FLAGS.VERBOSE;
+
   let recency_period_ms, idle_period_secs, fetch_feed_timeout_ms,
     fetch_html_timeout_ms, fetch_img_timeout_ms;
   await poll_feeds(idle_period_secs, recency_period_ms,
@@ -52,10 +55,13 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
     return;
 
   let num_entries_added = 0;
-  // TODO: these 3 should all probably be parameters to poll_feeds
-  let icon_db_name, icon_db_version, conn_timeout_ms;
 
-  const reader_open_promise = reader_open_db();
+  // TODO: these should probably be parameters to poll_feeds
+  let icon_db_name, icon_db_version, conn_timeout_ms;
+  let reader_db_name, reader_db_version;
+
+  const reader_open_promise = reader_open_db(reader_db_name, reader_db_version,
+    conn_timeout_ms, verbose);
   const icon_open_promise = favicon_open_db(icon_db_name, icon_db_version,
     conn_timeout_ms, verbose);
   const open_promises = [reader_open_promise, icon_open_promise];
