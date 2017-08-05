@@ -154,3 +154,5 @@ on memory of the API
 # Not all syntax improvements are good improvements. Like default parameter values.
 
 I think the language designers made a mistake here. This is an example of trying to make code more concise. The checks within the function body are clearer, and more explicit. I am not sure why someone tried to eliminate them, and for what benefit. The negatives outweigh the positives in this case. I would avoid the use of default parameter values.
+
+# Code is commentary, and commentary is code

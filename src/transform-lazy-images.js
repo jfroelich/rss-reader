@@ -3,7 +3,7 @@
 
 { // Begin file block scope
 
-function transform_lazy_imgs(doc) {
+function transform_lazy_imgs(doc, verbose) {
   const lazy_img_attrs = [
     'load-src',
     'data-src',
@@ -27,8 +27,11 @@ function transform_lazy_imgs(doc) {
       if(img.hasAttribute(lazy_src_attr_name)) {
         const url_string = img.getAttribute(lazy_src_attr_name);
         if(is_valid_url_string(url_string)) {
+
           img.removeAttribute(lazy_src_attr_name);
           img.setAttribute('src', url_string);
+          if(verbose)
+            console.debug('Transformed lazily loaded image', img);
           num_imgs_modified++;
           break;
         }

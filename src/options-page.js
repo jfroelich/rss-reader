@@ -237,9 +237,17 @@ async function start_subscription(url_object) {
   }
 
   // TODO: is it correct to return here? shouldn't this be visible error or
-  // something?
-  if(!subscribed_feed)
+  // something? Also, still need to cleanup the subscription monitor.
+  if(!subscribed_feed) {
+    console.log('subscribed_feed is undefined, just exiting');
+    // TODO: this should be a call to a helper function
+    const monitor_element = document.getElementById('submon');
+    await fade_element(monitor_element, 2, 1);
+    monitor_element.remove();
+
+    // TODO: show an error message.
     return;
+  }
 
   // TODO: what is the second parameter? give it an express name here
   append_feed_to_feed_list(subscribed_feed, true);

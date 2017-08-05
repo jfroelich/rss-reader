@@ -129,3 +129,67 @@ Research notes on streaming fetch responses:
 * https://jakearchibald.com/2016/streams-ftw/
 * https://jsbin.com/gameboy/edit?js,console
 * https://github.com/whatwg/fetch/issues/447
+
+# TODO: Reduce favicon cache size
+
+Caching by page url could lead to a huge cache. Maybe I should only be caching origins or domains or hostnames and never cache individual pages.
+
+think this should depart from the spec. Or maybe make it an option on whether to be compliant, or even have two functions one that is compliant and one that is not.
+
+The proposed algorithm:
+
+The lookup function should take an optional document object that contains the html of the lookup url
+If the document is provided, search it. If found icon, store in cache and return icon.
+If the document has not been fetched, do not fetch it.
+Get the origin of the url
+Check if the origin is cached and if so return that
+If the origin is not cached, lookup the root icon.
+If a root icon is found, store an entry linking the origin url to the root icon url, then return the icon url.
+If a root icon is not found, return null.
+This would avoid the need to perform a fetch of the document in many cases. For example, when there are several urls per origin, which is quite often given that a website's feed generally points to articles from that website. But also in the case of meta feeds like Google news, it points to articles from the same site several times.
+
+I am concerned right now that the double request isn't respecting the cache, even though I would assume the requests are coalesced. This is something to also look into.
+
+The net result would be less network overhead per lookup, and a significantly reduced cache size. There would be some inaccuracy when a single page's custom favicon differs from the origin's favicon, but I think for the purposes of this app that is fine. The generality of the favicon module should favor its purpose in this app over being accurate and spec compliant across all projects.
+
+# TODO: Check reachability of in page favicons
+
+If i find favicon in page, I currently do not send a HEAD request for it, and this leads to not actually finding the url. This means I have to actually ping in page urls and check if they are valid. Which means I think that find in page icon url function needs to also be async.
+
+I might also need to use Promise.all or Promise.race, to more easily fallback to other possible candidate link elements.
+
+# TODO: Improve favicon lookup failure behavior
+
+Problem with not finding favicons. If there is no favicon for page or its redirect url or its domain, I still keep sending out HEAD requests every single time, indefinitely. This is horrible. I need a way to prevent future requests for some period of time, so that such requests auto fail without any network activity for some period of time.
+
+What about storing a request failure count per icon or something to that effect. Then when failing to fetch, updating the request failure count. Then if count reaches 10 or something, then delete or store a permanently unreachable flagged entry. This would tolerate being temporarily unreachable better?
+
+# Think about revealing API surface pattern
+
+Similar to how you do something like:
+
+  const server = createServer(...);
+  server.doStuff();
+
+I could do something like:
+
+  const fi_service = open_fi_service();
+  fi_service.lookup();
+  fi_service.compact();
+  fi_service.close();
+
+Then, the only global exported is open_fi_service.
+
+I kind of like it.
+
+* I tied into how lookup, compact and close are dependent on open.
+* It minimizes globals
+* It is consistent with how other APIs approach things, it has been done before
+* It restricts access to functionality correctly, e.g. cannot call compact
+before open ...
+* It encapsulates indexedDB. The returned object has an api that wraps calls
+so there is no need to pass around the instance of IDBDatabase, or expose it
+in any way. It does not even need to be a parameter to later function calls
+because it becomes part of the internal state.
+* On the other hand it demands indexedB? I dunno maybe all the other functions
+can check if conn is present and react accordingly.

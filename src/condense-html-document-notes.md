@@ -8,3 +8,4 @@ node.nodeValue auto encodes
 * For isSingleColumnRow, check if row.cells supports for..of
 * For unwrapSingleColumnTable, check if table.rows supports for..of
 * For unwrapSingleColumnTable, only pad if adjacent to text
+* Remove processing instructions and doc type stuff

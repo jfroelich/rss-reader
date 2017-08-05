@@ -47,7 +47,8 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
   await set_entry_icon(entry, icon_conn, feed.faviconURLString, verbose);
   const entry_content = await response.text();
   const entry_document = parse_html(entry_content);
-  await prepare_remote_entry(entry, entry_document, fetch_img_timeout_ms);
+  await prepare_remote_entry(entry, entry_document, fetch_img_timeout_ms,
+    verbose);
   await db_prep_then_put_entry(reader_conn, entry, verbose);
   return true;
 }
@@ -73,18 +74,24 @@ function db_find_entry_by_url(conn, url_string) {
   return new Promise(resolver);
 }
 
-async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms) {
+async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms, verbose) {
   const url_string = entry_get_url_string(entry);
 
   // This must occur before sanitize_html_document is called on the
   // document because that removes sourceless images
   transform_lazy_imgs(doc);
 
-
   const base_url_object = new URL(url_string);
   resolve_document_urls(doc, base_url_object);
-  filter_tracking_imgs(doc);
-  await set_img_dimensions(doc, fetch_img_timeout_ms);
+
+  // This must occur before settings image dimensions
+  filter_tracking_imgs(doc, verbose);
+
+  // This must occur after urls are resolved
+  let allowed_protocols;
+  await set_img_dimensions(doc, allowed_protocols, fetch_img_timeout_ms,
+    verbose);
+
   prepare_entry_document(url_string, doc);
   entry.content = doc.documentElement.outerHTML.trim();
 }
@@ -242,52 +249,8 @@ function ensure_document_has_body(doc) {
   doc.documentElement.appendChild(body_element);
 }
 
-function filter_tracking_imgs(doc) {
-  const telemetry_hosts = [
-    'ad.doubleclick.net',
-    'b.scorecardresearch.com',
-    'googleads.g.doubleclick.net',
-    'me.effectivemeasure.net',
-    'pagead2.googlesyndication.com',
-    'pixel.quantserve.com',
-    'pixel.wp.com',
-    'pubads.g.doubleclick.net',
-    'sb.scorecardresearch.com',
-    'stats.bbc.co.uk'
-  ];
-
-  const min_url_length = 3;// 1char hostname . 1char domain
-  const images = doc.querySelectorAll('img[src]');
-  for(const img_element of images) {
-    let url_string = img_element.getAttribute('src');
-    if(!url_string)
-      continue;
-    url_string = url_string.trim();
-    if(!url_string)
-      continue;
-    else if(url_string.length < min_url_length)
-      continue;
-    else if(url_string.includes(' '))
-      continue;
-    else if(!/^https?:/i.test(url_string))
-      continue;
-
-    let url_object;
-    try {
-      url_object = new URL(url_string);
-    } catch(error) {
-      continue;
-    }
-
-    if(telemetry_hosts.includes(url_object.hostname))
-      img_element.remove();
-  }
-}
-
-
 // Applies a set of rules to a url object and returns a modified url object
 // Returns undefined if no rewriting occurred
-// @param url {String}
 // @returns {String}
 function rewrite_url_string(url_string) {
   const url_object = new URL(url_string);

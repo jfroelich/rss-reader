@@ -3,11 +3,16 @@
 
 { // Begin file block scope
 
+// TODO: maybe this should just throw and require caller to handle errors, I am
+// not entirely sure why I am trapping errors here
+
 // Returns the feed that was added if successful
 async function subscribe(reader_conn, icon_conn, feed, timeout_ms,
   mute_notifications, verbose) {
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 2000;
+  if(!Number.isInteger(timeout_ms))
+    throw new TypeError('timeout_ms not an integer');
 
   const url_string = Feed.prototype.get_url.call(feed);
   if(verbose)
@@ -35,6 +40,9 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms,
   // it makes sense. What happens if response is undefined? I suppose just
   // return. Maybe should add the feed? Not sure. Should it be an exception
   // instead that occurs as a result of fetch_internal?
+  // Basically I think this should never happen, instead what should happen
+  // is that fetch internal throws an error, and this function rethrows the
+  // error. Or rather, just inline fetch_internal here without a try/catch
   if(!response) {
     if(verbose)
       console.warn('response undefined in subscribe for url', url_string);
@@ -119,7 +127,7 @@ async function fetch_internal(url_string, timeout_ms, verbose) {
     return await promise;
   } catch(error) {
     if(verbose)
-      console.warn(url_string, error);
+      console.warn(error);
   }
 }
 

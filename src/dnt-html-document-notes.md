@@ -19,6 +19,7 @@ the document's own request url in order to compare it against the src url
 of each image. This would also make it easier to filter tracking images.
 Maybe that functionality should be merged with this
 
+* Should this be accessing image size using getAttribute instead of property?
 
 # NOTES
 

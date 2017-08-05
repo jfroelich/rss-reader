@@ -48,3 +48,8 @@ attribute.
 certain attributes, instead of filtering in memory?
 * Provide options to allow caller to easily change which attributes are used
 instead of using a hardcoded list.
+* add verbose param again
+
+# Strange cases to look into
+
+* &lt;img style="background-image:url(url);" src="https://s.yimg.com/g/images/spaceball.gif" data-reactid="10" width="1" height="1"&gt;

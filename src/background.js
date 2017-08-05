@@ -43,8 +43,9 @@ function remove_dw_rules(ids) {
 
 this.register_dw_link_filter_rule = register_dw_link_filter_rule;
 
-// Every page load
-register_dw_link_filter_rule();
+// Every page load for now
+// Disabled for now as buggy
+//register_dw_link_filter_rule();
 
 async function unregister_dw_link_filter_rule() {
   if(localStorage.DW_LINK_RULE_ID) {
