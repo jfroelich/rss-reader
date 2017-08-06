@@ -10,6 +10,8 @@ The block scope syntax is strange. It requires global strict mode. Maybe
 Move all 'use strict' out of global scope and into IIFE, similar to how
 other libs do it. Or give up and switch to browserify and all that.
 
+Delayed because it looks like modules are coming. Still not working in 61.
+
 # Coding style
 
 * No need for brackets for single line if statements
@@ -29,11 +31,9 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for
 
 Can use const instead of let e.g. (const var of iterator) ...
 
-
 # Add support for &lt;picture&gt;
 
 See https://googlechrome.github.io/samples/picture-element/
-
 
 # Consider a single page application without an options page
 
