@@ -30,8 +30,9 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
     verbose);
   if(!response) {
     const prepared_entry = prepare_local_entry(entry);
-    await db_prep_then_put_entry(reader_conn, prepared_entry, verbose);
-    return true;
+    const put_result = await db_prep_then_put_entry(reader_conn, prepared_entry,
+      verbose);
+    return put_result;
   }
 
   if(response.redirected) {
@@ -49,8 +50,8 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
   const entry_document = parse_html(entry_content);
   await prepare_remote_entry(entry, entry_document, fetch_img_timeout_ms,
     verbose);
-  await db_prep_then_put_entry(reader_conn, entry, verbose);
-  return true;
+  const put_result = await db_prep_then_put_entry(reader_conn, entry, verbose);
+  return put_result;
 }
 
 async function fetch_entry(url_string, fetch_html_timeout_ms, verbose) {
@@ -92,7 +93,7 @@ async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms, verbose) {
   await set_img_dimensions(doc, allowed_protocols, fetch_img_timeout_ms,
     verbose);
 
-  prepare_entry_document(url_string, doc);
+  prepare_entry_document(url_string, doc, verbose);
   entry.content = doc.documentElement.outerHTML.trim();
 }
 
@@ -187,9 +188,8 @@ async function db_prep_then_put_entry(reader_conn, entry, verbose) {
     const added_entry = await db_put_entry(reader_conn, storable_entry);
     return true;
   } catch(error) {
-    if(verbose) {
-      console.warn(error, entry_get_url_string(entry));
-    }
+    if(verbose)
+      console.warn(entry_get_url_string(entry), error);
   }
   return false;
 }
@@ -220,24 +220,24 @@ function prepare_local_entry(entry, verbose) {
     return entry;
   }
 
-  prepare_entry_document(url_string, doc);
+  prepare_entry_document(url_string, doc, verbose);
   const content = doc.documentElement.outerHTML.trim();
   if(content)
     entry.content = content;
   return entry;
 }
 
-function prepare_entry_document(url_string, doc) {
+function prepare_entry_document(url_string, doc, verbose) {
   ensure_document_has_body(doc);
-  process_framed_document(doc);
+  process_framed_document(doc, verbose);
 
-  prune_doc_using_host_template(url_string, doc);
+  prune_doc_using_host_template(url_string, doc, verbose);
   filter_boilerplate(doc);
   secure_html_document(doc);
-  sanitize_html_document(doc);
+  sanitize_html_document(doc, verbose);
   condense_html_document(doc);
   filter_html_attrs(doc);
-  dnt_html_document(doc);
+  dnt_html_document(doc, verbose);
 }
 
 function ensure_document_has_body(doc) {

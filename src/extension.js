@@ -5,10 +5,9 @@ async function ext_update_badge(verbose) {
   if(verbose)
     console.log('Updating badge text');
   let count = 0;
-  let conn;
-  let name, version, timeout_ms;
+  let conn, db_name, db_version, conn_timeout_ms;
   try {
-    conn = await reader_open_db(name, version, timeout_ms, verbose);
+    conn = await reader_open_db(db_name, db_version, conn_timeout_ms, verbose);
     if(verbose)
       console.log('Counting unread entries in db', conn.name);
     count = await db_count_unread_entries(conn);
@@ -27,17 +26,17 @@ async function ext_update_badge(verbose) {
 }
 
 function db_count_unread_entries(conn) {
-  return new Promise((resolve, reject) => {
+  function executor(resolve, reject) {
     if(typeof ENTRY_STATE_UNREAD === 'undefined')
-      throw new ReferenceError('ENTRY_STATE_UNREAD is undefed');
-
+      throw new ReferenceError('ENTRY_STATE_UNREAD is undefined');
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('readState');
     const request = index.count(ENTRY_STATE_UNREAD);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  });
+  }
+  return new Promise(executor);
 }
 
 async function ext_show_slideshow_tab() {
@@ -86,9 +85,6 @@ function ext_show_notification(title, message, icon_url_string) {
 
   // Instantiation also shows
   const notification = new Notification(title, details);
-
-  // Attach a click listener that opens the extension
-  // Note: on Mac Chrome 55, double click triggers click event
   notification.addEventListener('click', ext_notification_on_click);
 }
 

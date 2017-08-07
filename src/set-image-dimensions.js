@@ -77,6 +77,9 @@ async function update_img_dims(image, allowed_protocols, timeout_ms, verbose) {
     return false;
   }
 
+  // TODO: when accessing style prop it returns units. Strip the units from
+  // the attribute value. E.g. instead of 100px, set to 100.
+
   // Infer from inline style. Because the assumption is that the input document
   // was inert, there is no guarantee that the style props initialized the
   // width and height properties, and we know that style wasn't computed

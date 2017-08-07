@@ -106,7 +106,6 @@ function get_last_modified_date(response) {
 }
 
 // Due to quirks with fetch response.redirected not working, do a basic test
-// here
 function detect_redirect(request_url_string, response_url_string) {
   if(request_url_string === response_url_string)
     return false;

@@ -50,5 +50,12 @@ concern, the concern is regarding other functionality that relies on image
 dimensions, such as code that filters tiny images, or boilerplate filter code that
 calculates boilerplate bias based on image dimensions.
 
+* is there a simple way to obtain the dimensions of an image with a src value
+that is a data url? synchronously, with high perf?
+
+* create a section that infers size from url. create a special transform for
+wordpress urls that grabs the url. For example could grab the w param in the
+following &lt;img src="....wordpress.com/......img.jpg?w=150" &gt;
+
 
 # cases to fix

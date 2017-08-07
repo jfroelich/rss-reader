@@ -6,21 +6,22 @@
 // removing
 // TODO: write tests
 
-function process_framed_document(doc) {
+function process_framed_document(doc, verbose) {
 
   let body_element = doc.body;
   if(!body_element)
     return;
 
   // Remove iframes
-  let elements = doc.querySelectorAll('iframe');
-  for(const element of elements)
-    element.remove();
+  const iframe_elements = doc.querySelectorAll('iframe');
+  for(const iframe_element of iframe_elements)
+    iframe_element.remove();
 
+  // If document is not framed, then nothing else to do
   if(body_element.localName !== 'frameset')
     return;
 
-
+  // The document is framed, transform into unframed
   let new_body_element = doc.createElement('body');
 
   // If available, move noframes content into the new body.
@@ -39,11 +40,12 @@ function process_framed_document(doc) {
   }
 
   // Replace the old frameset body with the new body
+  // NOTE: this assumes the body is always located under the doc element,
+  // i think that is ok? should maybe be stricter.
   doc.documentElement.replaceChild(new_body_element, body_element);
 
   // Remove any frame or frameset elements if somehow any remain
-  elements = doc.querySelectorAll('frame, frameset');
-  for(const element of elements)
-    element.remove();
-
+  const frame_elements = doc.querySelectorAll('frame, frameset');
+  for(const frame_element of frame_elements)
+    frame_element.remove();
 }

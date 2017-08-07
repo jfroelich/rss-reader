@@ -3,14 +3,14 @@
 
 { // Begin file block scope
 
-function sanitize_html_document(doc) {
+function sanitize_html_document(doc, verbose) {
   remove_form_elements(doc);
   unwrap_hidden_elements(doc);
   remove_consecutive_br_elements(doc);
   remove_consecutive_hr_elements(doc);
   remove_anchors_with_invalid_urls(doc);
   unwrap_non_link_anchors(doc);
-  filter_sourceless_imgs(doc);
+  filter_sourceless_imgs(doc, verbose);
 
   // Deal with out of place elements
   filter_hr_children_of_lists(doc);
@@ -109,11 +109,15 @@ function unwrap_non_link_anchors(doc) {
 }
 
 
-function filter_sourceless_imgs(doc) {
+function filter_sourceless_imgs(doc, verbose) {
   const imgs = doc.querySelectorAll('img');
-  for(const img of imgs)
-    if(!img.hasAttribute('src') && !img.hasAttribute('srcset'))
+  for(const img of imgs) {
+    if(!img.hasAttribute('src') && !img.hasAttribute('srcset')) {
+      if(verbose)
+        console.debug('Removing srcless img', img);
       img.remove();
+    }
+  }
 }
 
 // Looks for cases such as <a><p>text</p></a> and transforms them into

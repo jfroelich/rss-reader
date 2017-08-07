@@ -44,7 +44,7 @@ async function search_google_feeds(query_string, timeout_ms) {
   };
 
   const standard_fetch_error_message = request_url_string + ' ' +
-    response.status + ' ' + response.statusText
+    response.status + ' ' + response.statusText;
 
   const fetch_promise = fetch(request_url_string, fetch_options);
   let response;

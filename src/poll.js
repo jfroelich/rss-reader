@@ -10,20 +10,6 @@ POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK = 4; // 100
 POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE = 8; // 1000
 POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK = 16; // 10000
 
-async function cmd_poll_feeds() {
-  const flags = POLL_FEEDS_FLAGS.ALLOW_METERED_CONNECTIONS |
-    POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE |
-    POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK |
-    POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK |
-    POLL_FEEDS_FLAGS.VERBOSE;
-
-  let recency_period_ms, idle_period_secs, fetch_feed_timeout_ms,
-    fetch_html_timeout_ms, fetch_img_timeout_ms;
-  await poll_feeds(idle_period_secs, recency_period_ms,
-    fetch_feed_timeout_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
-    flags);
-}
-
 async function poll_feeds(idle_period_secs, recency_period_ms,
   fetch_feed_timeout_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, flags) {
   if(typeof idle_period_secs === 'undefined')
@@ -330,7 +316,6 @@ function broadcast_poll_completed_message(num_entries_added) {
   channel.close();
 }
 
-this.cmd_poll_feeds = cmd_poll_feeds;
 this.poll_feeds = poll_feeds;
 this.POLL_FEEDS_FLAGS = POLL_FEEDS_FLAGS;
 

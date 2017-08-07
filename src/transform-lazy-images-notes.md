@@ -49,7 +49,11 @@ certain attributes, instead of filtering in memory?
 * Provide options to allow caller to easily change which attributes are used
 instead of using a hardcoded list.
 * add verbose param again
+* If an image has a srcset, then try and use that instead.
+* If an image is within a picture, look for associated source
+
 
 # Strange cases to look into
 
-* &lt;img style="background-image:url(url);" src="https://s.yimg.com/g/images/spaceball.gif" data-reactid="10" width="1" height="1"&gt;
+* &lt;img style="background-image:url(url);" src="url" data-reactid="10" width="1" height="1"&gt;
+* &lt;img class="responsive-image" srcset="url" alt="" title=""&gt;

@@ -13,11 +13,11 @@ function rename_element(element, new_element_name, is_ignore_attrs) {
   const parent_element = element.parentNode;
   if(!parent_element)
     return;
-  const next_node = element.nextSibling;
+  const next_node = element.nextSibling;// may be undef, that is ok
   element.remove();
   const new_element = element.ownerDocument.createElement(new_element_name);
   if(!is_ignore_attrs)
-    copy_element_attributes(from_element, to_element);
+    copy_element_attributes(element, new_element);
   move_child_nodes(element, new_element);
   parent_element.insertBefore(new_element, next_node);
 }

@@ -52,6 +52,21 @@ the main page.
 This was originally there so that I could load feed without having to explicitly
 sort. This caused a lot of headache. I'd rather sort in the options page view.
 
+Note this may have been done, this is just the text of an issue copied from an
+old github issue.
+
+# TODO: defer to chrome's favicon services
+
+* Not certain but I might be able to use chrome://favicons service in an extension?
+* It seems to require a permission?
+* It looks like this is not reliable? only works for pages in history?
+* For now I have rolled my own.
+* It seems like Google does not want extensions to use the service.
+* Then again there seems to be a changing api and now it is supported? Do not
+have enough clear info
+* Then again, I generally want to avoid deep browser reliance? Or should I just
+give up on that.
+
 # TODO: Add limits to string lengths in various places
 
 Need to pay more attention to sanitization of inputs. For example, the maximum
@@ -124,3 +139,12 @@ This applies to several areas
 Do not allow subscribing to a feed with a url with file:// protocol
 Do not allow subscribing to a feed with a url with localhost
 Do not allow fetching of a url with either
+
+# TODO: bug with tables
+
+My general css styles for entries do not seem to properly be applying to
+nested tables. Somehow the nested tables on default implicit properties trump
+the explicit container properties that I assume should be inherited. I can try
+ensuring that relevant table properties are set to inherit, or instead just
+explicitly apply the entry properties to tables as well. Note it could be
+cells (td) or tables (table), unsure.

@@ -3,21 +3,12 @@
 
 { // Begin file block scope
 
-// console helper
-async function cmd_archive_entries() {
-  let max_age_ms;
-  const verbose = true;
-  return await archive_entries(max_age_ms, verbose);
-}
-
 // @param max_age_ms {Number} how long before an entry is considered
-// archivable
+// archivable (diff compared using date entry created)
 // @returns number of archived entries
 async function archive_entries(max_age_ms, verbose) {
-  let conn, compacted_entries;
-
   if(typeof max_age_ms === 'undefined')
-    max_age_ms = 1000 * 60 * 60 * 24 * 2; // 2 days
+    max_age_ms = 1000 * 60 * 60 * 24 * 2; // 2 days in ms
   else if(!Number.isInteger(max_age_ms))
     throw new TypeError(`max_age_ms is not an integer`);
   else if(max_age_ms < 0)
@@ -26,8 +17,10 @@ async function archive_entries(max_age_ms, verbose) {
   if(verbose)
     console.log('Archiving entries older than %d ms', max_age_ms);
 
+  let db_name, db_version, db_conn_timeout;
+  let conn, compacted_entries;
   try {
-    conn = await reader_open_db();
+    conn = await reader_open_db(db_name, db_version, db_conn_timeout, verbose);
     const entries = await db_load_archivable_entries(conn, max_age_ms);
     compacted_entries = compact_entries(entries, verbose);
     await db_put_entries(conn, compacted_entries);
@@ -36,10 +29,29 @@ async function archive_entries(max_age_ms, verbose) {
       conn.close();
   }
 
-  broadcast_archive_message(compacted_entries);
+  // After the transaction commits. Use small messages to scale independently
+  // of the number of entries.
+  const db_channel = new BroadcastChannel('db');
+  for(const entry of compacted_entries) {
+    const message = {};
+    message.type = 'archived-entry';
+    message.id = entry.id;
+    db_channel.postMessage(message);
+  }
+  db_channel.close();
+
   if(verbose)
     console.log('Compacted %d entries', compacted_entries.length);
   return compacted_entries.length;
+}
+
+function compact_entries(entries, verbose) {
+  const compacted_entries = [];
+  for(const entry of entries) {
+    const compacted_entry = compact_entry(entry, verbose);
+    compacted_entries.push(compacted_entry);
+  }
+  return compacted_entries;
 }
 
 async function db_load_archivable_entries(conn, max_age_ms) {
@@ -47,6 +59,7 @@ async function db_load_archivable_entries(conn, max_age_ms) {
   const archivable_entries = [];
   const current_date = new Date();
   for(const entry of entries) {
+    console.assert(entry.dateCreated);
     const entry_age_ms = current_date - entry.dateCreated;
     if(entry_age_ms > max_age_ms)
       archivable_entries.push(entry);
@@ -56,7 +69,7 @@ async function db_load_archivable_entries(conn, max_age_ms) {
 
 // Returns a Promise that resolves to an array
 function db_load_unarchived_unread_entries(conn) {
-  function resolver(resolve, reject) {
+  function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
@@ -65,46 +78,15 @@ function db_load_unarchived_unread_entries(conn) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   }
-
-  return new Promise(resolver);
-}
-
-function compact_entries(entries, verbose) {
-  const current_date = new Date();
-  const compacted_entries = [];
-  for(const entry of entries) {
-    const compacted_entry = compact_entry(entry, current_date);
-    if(verbose) {
-      const before_sz = sizeof(entry);
-      const after_sz = sizeof(compacted_entry);
-      console.debug('Entry: before byte size', before_sz, 'after byte size',
-        after_sz);
-    }
-    compacted_entries.push(compacted_entry);
-  }
-  return compacted_entries;
-}
-
-// Shallow copy
-function compact_entry(entry, archive_date) {
-  const compacted_entry = {};
-  compacted_entry.dateCreated = entry.dateCreated;
-  compacted_entry.dateRead = entry.dateRead;
-  compacted_entry.feed = entry.feed;
-  compacted_entry.id = entry.id;
-  compacted_entry.readState = entry.readState;
-  compacted_entry.urls = entry.urls;
-  compacted_entry.archiveState = ENTRY_STATE_ARCHIVED;
-  compacted_entry.dateArchived = archive_date;
-  return compacted_entry;
+  return new Promise(executor);
 }
 
 function db_put_entries(conn, entries) {
-  return new Promise(function(resolve, reject) {
+  function executor(resolve, reject) {
     const current_date = new Date();
     const tx = conn.transaction('entry', 'readwrite');
     tx.oncomplete = resolve;
-    tx.onerror = function(event) {
+    tx.onerror = function tx_onerror(event) {
       reject(tx.error);
     };
     const entry_store = tx.objectStore('entry');
@@ -112,21 +94,10 @@ function db_put_entries(conn, entries) {
       entry.dateUpdated = current_date;
       entry_store.put(entry);
     }
-  });
-}
-
-function broadcast_archive_message(entries) {
-  const db_channel = new BroadcastChannel('db');
-  for(const entry of entries) {
-    const message = {};
-    message.type = 'archivedEntry';
-    message.id = entry.id;
-    db_channel.postMessage(message);
   }
-  db_channel.close();
+  return new Promise(executor);
 }
 
 this.archive_entries = archive_entries;
-this.cmd_archive_entries = cmd_archive_entries;
 
 } // End file block scope

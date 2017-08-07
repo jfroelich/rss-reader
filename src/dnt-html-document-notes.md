@@ -18,8 +18,13 @@ kind of needs to happen before.
 the document's own request url in order to compare it against the src url
 of each image. This would also make it easier to filter tracking images.
 Maybe that functionality should be merged with this
-
 * Should this be accessing image size using getAttribute instead of property?
+* This should have been caught either here or in filter tracking
+&lt;img height="1" width="1" src="http://insight.adsrvr.org/track/evnt/..."&gt;
+
+* If this adds no referrer then filter attributes processing needs to retain
+that element, otherwise it is truly stupid and pointless
+
 
 # NOTES
 
