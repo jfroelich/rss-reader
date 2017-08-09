@@ -28,7 +28,7 @@ function filter_element_attrs(element, verbose) {
     'a': ['href', 'name', 'title', 'rel'],
     'iframe': ['src'],
     'source': ['media', 'sizes', 'srcset', 'src', 'type'],
-    'img': ['src', 'alt', 'title', 'srcset']
+    'img': ['src', 'alt', 'title', 'srcset', 'width', 'height']
   };
 
   const allowed_attrs = type_attrs_map[local_name];

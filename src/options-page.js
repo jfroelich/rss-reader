@@ -309,6 +309,13 @@ async function feed_list_item_onclick(event) {
   const feed_list_item_element = event.currentTarget;
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id_number = parseInt(feed_id_string, 10);
+
+  if(isNaN(feed_id_number)) {
+    // TODO: throw? visible error?
+    console.error('feed_id_number is nan, parsed from ' + feed_id_string);
+    return;
+  }
+
   const feed = await db_connect_then_find_feed_by_id(feed_id_number);
 
   // TODO: should this throw?
@@ -619,6 +626,12 @@ function remove_feed_from_feed_list(feed_id_number) {
 async function unsubscribe_button_on_click(event) {
   const feed_id_string = event.target.value;
   const feed_id_number = parseInt(feed_id_string, 10);
+
+  if(isNaN(feed_id_number)) {
+    // TODO: throw? show error?
+    console.error('feed_id_number is nan, parsed from ' + feed_id_string);
+    return;
+  }
 
   let reader_conn;
   try {
@@ -1137,9 +1150,10 @@ document.addEventListener('DOMContentLoaded', function on_dcl(event) {
   justify_text_checkbox.onchange = justify_text_checkbox_on_change;
 
   const body_line_height_input = document.getElementById('body-line-height');
-  const body_line_height_number = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
-  body_line_height_input.value = (body_line_height_number / 10).toFixed(2);
   body_line_height_input.oninput = body_height_input_on_input;
+  const body_line_height_number = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
+  if(!isNaN(body_line_height_number))
+    body_line_height_input.value = (body_line_height_number / 10).toFixed(2);
 
   const manifest = chrome.runtime.getManifest();
   const ext_name_element = document.getElementById('extension-name');

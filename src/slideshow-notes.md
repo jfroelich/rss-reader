@@ -26,6 +26,8 @@ slide, or have the removeSlide function do it
 - in onUnsubscribe, I still need to implement how the UI updates if the slide
 currently shown was removed.
 
+* TODO: enable swipe left and right for navigation
+
 # Notes on broadcast channels
 
 Should poll channel really be distinct from db? Not so sure anymore.
@@ -94,7 +96,6 @@ own custom list?
 * instead of binding onKeyDown to window, bind to each slide? That way
 we don't have to use a global tracking variable like Slideshow.currentSlide,
 which feels hackish.
-
 
 # Notes on scrollToY
 

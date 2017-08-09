@@ -148,3 +148,5 @@ the explicit container properties that I assume should be inherited. I can try
 ensuring that relevant table properties are set to inherit, or instead just
 explicitly apply the entry properties to tables as well. Note it could be
 cells (td) or tables (table), unsure.
+
+# TODO: prohibit use of username:password in all requests?

@@ -47,18 +47,10 @@ function filter_tracking_images_by_visibility(doc, verbose) {
 // but I think it is harmless at the moment and am choosing to leave it in
 // at least a reminder.
 function is_offscreen_element(element) {
-  if(!element.hasAttribute('style'))
-    return;
-  const style = element.style;
-  if(style.position !== 'absolute')
-    return;
-
-  let left = 0;
-  try {
-    left = parseInt(style.left, 10);
-  } catch(error) {}
-
-  return left < 0;
+  if(element.hasAttribute('style') && element.style.position === 'absolute') {
+    const left = parseInt(style.left, 10);
+    return !isNaN(left) && left < 0;
+  }
 }
 
 function is_hidden_element(element) {

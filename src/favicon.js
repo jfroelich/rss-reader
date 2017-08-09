@@ -489,19 +489,9 @@ async function send_img_head_request(url_string, timeout_ms, verbose) {
 
 function get_response_content_length(response, verbose) {
   const content_length_string = response.headers.get('Content-Length');
-  if(content_length_string) {
-    const radix = 10;
-    try {
-      return parseInt(content_length_string, radix);
-    } catch(error) {
-      // Invalid content length is considered routine in the sense of dealing
-      // with unsanitized remote input, so reporting this error is conditional
-      // on the verbose flag.
-      if(verbose)
-        console.warn(error);
-    }
-  }
-  return IMG_SIZE_UNKNOWN;
+  const radix = 10;
+  const content_length = parseInt(content_length_string, radix);
+  return isNaN(content_length) ? IMG_SIZE_UNKNOWN : content_length;
 }
 
 // Response.ok is true for 204, but I treat 204 as error.

@@ -75,15 +75,10 @@ async function update_img_dims(image, allowed_protocols, timeout_ms, verbose) {
   if(image.hasAttribute('width') && image.hasAttribute('height'))
     return false;
 
-  // TODO: when accessing style prop it returns units. Strip the units from
-  // the attribute value. E.g. instead of 100px, set to 100.
-
-  // Infer from inline style. Because the assumption is that the input document
-  // was inert, there is no guarantee that the style props initialized the
-  // width and height properties, and we know that style wasn't computed
-  if(image.hasAttribute('style') && image.style.width && image.style.height) {
-    image.setAttribute('width', '' + image.style.width);
-    image.setAttribute('height', '' + image.style.height);
+  const style_dimensions = extract_element_dimensions_from_inline_style(image);
+  if(style_dimensions) {
+    image.setAttribute('width', '' + style_dimensions.width);
+    image.setAttribute('height', '' + style_dimensions.height);
     if(verbose)
       console.debug('Inferred image dimensions from style', image.outerHTML);
     return true;
@@ -101,6 +96,16 @@ async function update_img_dims(image, allowed_protocols, timeout_ms, verbose) {
     return false;
   }
 
+  const url_dimensions = sniff_image_dimensions_from_url(src_url_object);
+  if(url_dimensions) {
+    image.setAttribute('width', '' + url_dimensions.width);
+    image.setAttribute('height', '' + url_dimensions.height);
+    if(verbose)
+      console.debug('Inferred image dimensions from url', image.outerHTML);
+    return true;
+  }
+
+
   const fetch_promise = fetch_and_update_img(image, src_url_object.href,
     verbose);
   let promise;
@@ -116,6 +121,63 @@ async function update_img_dims(image, allowed_protocols, timeout_ms, verbose) {
   return await promise;
 }
 
+// Returns {'width': int, 'height': int} or undefined
+function extract_element_dimensions_from_inline_style(element) {
+  if(element.hasAttribute('style')) {
+    const dimensions = {}, radix = 10;
+    dimensions.width = parseInt(element.style.width, radix);
+    dimensions.height = parseInt(element.style.height, radix);
+    return (isNaN(dimensions.width) || isNaN(dimensions.height)) ?
+      undefined : dimensions;
+  }
+}
+
+function sniff_image_dimensions_from_url(url_object) {
+  // Try and grab from parameters
+  const params = url_object.searchParams;
+  const dimensions = {}, radix = 10;
+  if(params.has('w') && params.has('h')) {
+    dimensions.width = parseInt(params.get('w'), radix);
+    dimensions.height = parseInt(params.get('h'), radix);
+    if(!isNaN(dimensions.width) && !isNaN(dimensions.height))
+      return dimensions;
+  }
+
+  if(params.has('width') && params.has('height')) {
+    dimensions.width = parseInt(params.get('width'), radix);
+    dimensions.height = parseInt(params.get('height'), radix);
+    if(!isNaN(dimensions.width) && !isNaN(dimensions.height))
+      return dimensions;
+  }
+
+  // TODO: grab from file name (e.g. 100x100.jpg)
+  const path = url_object.pathname;
+  const file_name = extract_file_name_from_path(path);
+  if(file_name) {
+    const file_name_no_extension = filter_file_name_extension(file_name);
+    if(file_name_no_extension) {
+      // TODO: parse using delim like "x" or "-", then parseInt
+      // TODO: check that extension is an image extension?
+    }
+  }
+}
+
+// Returns a file name without its extension
+function filter_file_name_extension(file_name) {
+  const index = file_name.lastIndexOf('.');
+  return index < 0 ? file_name : file_name.substring(0, index);
+}
+
+function extract_file_name_from_path(path) {
+  console.assert(path.charAt(0) === '/');
+  const index = path.lastIndexOf('/');
+  if(index > -1) {
+    const index_plus_1 = index + 1;
+    if(index_plus_1 < path.length)
+      return path.substring(index_plus_1);
+  }
+  return path;
+}
 
 function reject_after_timeout(timeout_ms, error_msg) {
   function resolver(resolve, reject) {
@@ -127,7 +189,7 @@ function reject_after_timeout(timeout_ms, error_msg) {
 }
 
 function fetch_and_update_img(image, url_string, verbose) {
-  function resolver(resolve, reject) {
+  function executor(resolve, reject) {
     const proxy = new Image();// In document running this script
     proxy.src = url_string;// Trigger the fetch
 
@@ -154,10 +216,15 @@ function fetch_and_update_img(image, url_string, verbose) {
     proxy.onerror = function(event) {
       const error_msg = `Failed to fetch image ${url_string}`;
       const error = new Error(error_msg);
+
+      // Temp, looking into whether there is an error object to grab
+      // instead of creating one
+      console.dir(event);
+
       reject(error);
     };
   }
-  return new Promise(resolver);
+  return new Promise(executor);
 }
 
 this.set_img_dimensions = set_img_dimensions;
