@@ -19,6 +19,12 @@ present in Chrome 55
 will not contain entities. Similarly, setting node.nodeValue will implicitly
 encode.
 
+# Note in splitting in entities concern
+
+Remember, nodeValue implicitly decodes, and the split occurs on decoded
+content. When re-encoded the actual length can be off because the entity gets
+re-encoded and can exceed specified truncation length.
+
 # TODO
 
 * use tokenize_html once implemented, this will avoid the entity decoding issue

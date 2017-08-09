@@ -47,3 +47,24 @@ maybe return [feed,entries] so i can use destructuring
 ** walking children seems to be slower than querySelector, revert to using it,
 but think of a way to maintain strictness
 ** will get a nominal perf benefit, this is not crucial
+
+# Improve entity handling
+
+I am occassionally seeing an error like the following in the console:
+
+Error: This page contains the following errors:error on line 803 at column 54:
+Entity 'mdash' not defined
+at parse_xml (parse-feed.js:19)
+at parse_feed (parse-feed.js:10)
+at parse_fetched_feed (parse-fetched-feed.js:9)
+at poll_feed (poll.js:219)
+
+It may be because I am allowing for the html mime type for xml, then trying to
+parse the html as xml, and this is the cause of the error. If that is the case
+I suppose I could try a few alternatives. I could parse feeds as html. I could
+disallow the html mime type. I could switch between parsing as html or xml
+depending on the server's response type.
+
+Or, I could preprocess the text and try to fix entities. For example, see https://stackoverflow.com/questions/5972143 . The second answer provides that
+"HTML entity names are not valid in XML without defining them with <!ENTITY name ...> as you pointed out. But numeric entities will do the trick." This means I could run
+through all the named entities and convert them into numeric entities.

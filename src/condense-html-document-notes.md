@@ -14,6 +14,19 @@ because units are implied in many places
 * Can reduce the size of attribute values by trimming them
 * Can remove attributes that do not have values that are non-unary attributes
 * Can remove attributes that equal the default values
+* Preprocess all entities like nbsp, and convert each one into its numeric
+equivalent. On average the numeric entities use fewer characters. And possibly
+go further given that it is utf8 encoding, do things like convert copy into
+actual copyright utf character. Also consider the option to use whichever has
+fewer characters, the named encoding or the numeric encoding. Also consider
+working with a TextEncoder/Decoder api if appropriate. Also see https://github.com/mathiasbynens/he for ideas. Also, there is an issue with
+the fact that condense takes a document but this would be maybe be easier on
+raw text? See also https://github.com/kangax/html-minifier with its option
+to use unicode char when possible
+* If an image is a known square with equal attribute values, can maybe remove
+one of the dimensions?
+* actually, just take a look at https://github.com/kangax/html-minifier and
+think about some similar options 
 
 # Try and improve table unwrapping algorithm
 
@@ -35,3 +48,5 @@ Specifically I think it is not counting the following as an empty cell:
 The image gets filtered later, which is why I am seeing the empty cell. This is
 from before that image gets filtered. It would be nice if the is empty could
 also pick up the spacer image and still treat it as empty.
+
+This may just get fixed if i fix the remove tiny images stuff

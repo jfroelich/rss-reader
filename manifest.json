@@ -25,7 +25,6 @@
       "/src/fetch-html.js",
       "/src/filter-boilerplate.js",
       "/src/filter-html-attrs.js",
-      "/src/filter-tracking-imgs.js",
       "/src/open-reader-db.js",
       "/src/parse-feed.js",
       "/src/parse-fetched-feed.js",

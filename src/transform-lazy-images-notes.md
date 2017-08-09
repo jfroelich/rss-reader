@@ -1,26 +1,25 @@
 
 # About
 
-Lazily loaded images are img elements specified in the html source that, once
+Lazily loaded images are image elements specified in the html source that, once
 the browser both loads the script and the html, runs a script on load handler
 that transforms the elements into valid ones. This technique is done to ensure
 that the html is loaded first and prevents the browser from loading images until
-the html is loaded.
+after the html is loaded.
 
-When working with a Document object where script was removed/disabled, one of
+When working with a Document object where script is removed/disabled, one of
 the problems is that several lazily-loaded images are left in the document.
 If and when the document is later displayed, the images all have loading errors.
 Or, because the images do not have a src attribute, the images are removed
-when filtering out sourceless images, which kind of destroys the integrity of
-some documents.
+when filtering out sourceless images.
 
 This attempts to convert lazy-loaded images back into normal image elements.
 
-It is not entirely accurate. It only handles situations where the image is
+It is not entirely accurate. It handles situations where the image is
 missing a src. Some approaches to lazy loading provide both a src attribute and
 an alternative attribute. Furthermore, of those approaches, one approach will
 provide a valid looking src value that points to a place holder image, so that
-it sort of still works in a scriptless environment.
+it sort of still works in a noscript environment.
 
 There are also situations where even the alternate value is not an actual url
 but instead some type of seed parameter to a lazy loading method that turns the
@@ -42,7 +41,7 @@ to that. However, this makes no assumptions. Similarly, this should always be
 called prior to any code the validates or works with the urls in the src
 attribute.
 
-# Todo
+# TODO
 
 * would it be better to use a querySelectorAll that looks for images without
 certain attributes, instead of filtering in memory?
@@ -52,8 +51,18 @@ instead of using a hardcoded list.
 * If an image has a srcset, then try and use that instead.
 * If an image is within a picture, look for associated source
 
+# Strange cases to look into and possibly handle better
 
-# Strange cases to look into
+* &lt;img data-src="url" src=""&gt; - note empty source
+* &lt;img style="background-image:url(url);" src="url"&gt;
+* &lt;img class="responsive-image" srcset="url"&gt;
+* &gt;img class="lazyload" src="data:..." data-src="url"&gt;
+* &lt;img data-path="url"&gt;
+* &lt;img data-flickity-lazyload="url"&gt;
+* &lt;img class=​"media__image media__image--responsive"  data-src-mini=​"url" data-src-xsmall=​"url" data-src-small=​"url" data-src-medium=​"url" data-src-large=​"url" data-src-full16x9=​"url" data-src-mini1x1=​"url" src=​"data-url"&gt;​
+* &lt;img data-baseurl="url"  srcset="url 350w, url 400w" sizes="(min-width: 1260px) 750px, (min-width: 1060px) calc(100vw - 559px), (min-width: 840px) calc(100vw - 419px), (min-width: 800px) 800px, 100.1vw"&gt;
 
-* &lt;img style="background-image:url(url);" src="url" data-reactid="10" width="1" height="1"&gt;
-* &lt;img class="responsive-image" srcset="url" alt="" title=""&gt;
+
+# TODO: Images using a data url object placeholder and a normal image in alt attr
+
+&lt;img data-lazy-img="https://...jpg" src="data:..."&gt;

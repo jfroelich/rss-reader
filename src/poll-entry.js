@@ -76,20 +76,27 @@ function db_find_entry_by_url(conn, url_string) {
 }
 
 async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms, verbose) {
+
+  // This must occur before setting image dimensions to avoid sending pings
+  const min_dimension = 2;
+  dnt_html_document(doc, min_dimension, verbose);
+
   const url_string = entry_get_url_string(entry);
 
+  // TODO: this probably is a part of prepare_entry_document
   // This must occur before sanitize_html_document is called on the
   // document because that removes sourceless images
   transform_lazy_imgs(doc);
 
+  // TODO: this probably is a part of prepare_entry_document
   const base_url_object = new URL(url_string);
   resolve_document_urls(doc, base_url_object);
 
-  // This must occur before settings image dimensions
-  filter_tracking_imgs(doc, verbose);
-
   // This must occur after urls are resolved
   let allowed_protocols;
+
+  // TODO: this should be occurring AFTER filtering tracking info
+  // TODO: this probably is a part of prepare_entry_document, right?
   await set_img_dimensions(doc, allowed_protocols, fetch_img_timeout_ms,
     verbose);
 
@@ -209,7 +216,7 @@ function prepare_local_entry(entry, verbose) {
 
   const url_string = entry_get_url_string(entry);
   if(verbose)
-    console.debug('Parsing html for url', url_string);
+    console.debug('Parsing local feed entry html for url', url_string);
 
   let doc;
   try {
@@ -220,6 +227,8 @@ function prepare_local_entry(entry, verbose) {
     return entry;
   }
 
+  const min_dimension = 2;
+  dnt_html_document(doc, min_dimension, verbose);
   prepare_entry_document(url_string, doc, verbose);
   const content = doc.documentElement.outerHTML.trim();
   if(content)
@@ -237,7 +246,7 @@ function prepare_entry_document(url_string, doc, verbose) {
   sanitize_html_document(doc, verbose);
   condense_html_document(doc);
   filter_html_attrs(doc);
-  dnt_html_document(doc, verbose);
+
 }
 
 function ensure_document_has_body(doc) {

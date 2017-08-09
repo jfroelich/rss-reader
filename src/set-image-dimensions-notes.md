@@ -1,6 +1,10 @@
 
 # TODO
 
+* Change to not fetch if only one dimension is set. In this case just assume the
+image is a square and set the missing dimension to the known dimension. I think
+this is accurate most of the time.
+
 * I reverted the code to use setAttribute instead of setting property. I am not
 sure what I was thinking. I am fairly confident that I always want to be
 setting attributes, not properties. When setting an attribute the property will
@@ -50,12 +54,28 @@ concern, the concern is regarding other functionality that relies on image
 dimensions, such as code that filters tiny images, or boilerplate filter code that
 calculates boilerplate bias based on image dimensions.
 
-* is there a simple way to obtain the dimensions of an image with a src value
-that is a data url? synchronously, with high perf?
-
 * create a section that infers size from url. create a special transform for
 wordpress urls that grabs the url. For example could grab the w param in the
 following &lt;img src="....wordpress.com/......img.jpg?w=150" &gt;
 
 
 # cases to fix
+
+* &lt;img class="responsive-image" srcset="url"&gt;  in this case i should be
+able to try and infer from srcset? is this a job for transform-lazy or here?
+what is also interesting is that no dimensions are given, srcset contains only
+a single img url
+
+* Incorrectly inferring from style:
+&lt;img src="url" width="100%" style="width:100%; max-width:542px;" height="auto"&gt;
+
+# Notes on conventions regarding fetching images
+
+See https://stackoverflow.com/questions/4776670 . Apparently the proper convention
+is to always trigger the fetch after attaching the handlers?
+
+# Notes on data uris
+
+Allow browser to fetch. Not available sync immediately on setting img.src, but
+is available after fetch. In this case browser will do some alternative internal
+fetch that parses the data uri, but this is unfortunately opaque to me.

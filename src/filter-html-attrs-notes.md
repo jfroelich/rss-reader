@@ -1,10 +1,12 @@
 
 # TODO
 
-* needs cleanup, add helper functions
 * should be optionally parameterizable somehow, like accept the map of allowed
 attributes as a parameter, and default to the current map
-* should have a verbose parameter
+
+* note it is not this responsibility to remove empty attributes, that is a
+concern for condense_html_document, this is only a security pass/sanity pass,
+make embeddable pass
 
 # Why this function currently stands alone from other html document transformations
 
@@ -25,3 +27,13 @@ I cannot have certain functions only remove certain attributes. There is an
 XSS concern due to the possible presence of unknown attributes. This is why
 a blacklist approach does not work. I have to use a whitelist approach, and
 remove all unrecognized/non-whitelisted attributes.
+
+One idea is related to the issue of how sanitizing is doing things in addition
+to sanitizing. The core concern is basically that I want to do things like
+strip style information because I want to make the document *embeddable*. All
+these other libraries are sort of skirting around the edges of the issue. The
+most direct and clear reason is so that the document can be embedded. This is
+distinct from compression, from sanitizing bad html, from removing tracking
+data, etc. It is purely for embedding purposes. So what I really want is a
+make-document-embeddable transformation. Then this filtering of attributes with
+its cross-cutting concerns makes more sense.

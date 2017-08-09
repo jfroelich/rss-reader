@@ -12,17 +12,18 @@
 // @param timeout_ms {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
 async function set_img_dimensions(doc, allowed_protocols, timeout_ms, verbose) {
-  const default_allowed_protocols = ['http:', 'https:'];
+  const default_allowed_protocols = ['data:', 'http:', 'https:'];
 
   if(typeof allowed_protocols === 'undefined')
     allowed_protocols = default_allowed_protocols;
-  if(!('includes' in allowed_protocols))
-    throw new TypeError('allowed_protocols missing property method "includes"');
+  else if(typeof allowed_protocols.includes !== 'function')
+    throw new TypeError('allowed_protocols.includes is not a function');
+
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 0;
-  if(!Number.isInteger(timeout_ms))
+  else if(!Number.isInteger(timeout_ms))
     throw new TypeError('timeout_ms is not an integer');
-  if(timeout_ms < 0)
+  else if(timeout_ms < 0)
     throw new TypeError('timeout_ms is negative')
 
   if(verbose)
@@ -71,11 +72,8 @@ async function update_img_dims_silently(image, allowed_protocols, timeout_ms,
 // was modified.
 async function update_img_dims(image, allowed_protocols, timeout_ms, verbose) {
   // If both attributes are set then assume no work needs to be done.
-  if(image.hasAttribute('width') && image.hasAttribute('height')) {
-    if(verbose)
-      console.log('Leaving image unmodified, has dimension attributes', image);
+  if(image.hasAttribute('width') && image.hasAttribute('height'))
     return false;
-  }
 
   // TODO: when accessing style prop it returns units. Strip the units from
   // the attribute value. E.g. instead of 100px, set to 100.
@@ -84,26 +82,22 @@ async function update_img_dims(image, allowed_protocols, timeout_ms, verbose) {
   // was inert, there is no guarantee that the style props initialized the
   // width and height properties, and we know that style wasn't computed
   if(image.hasAttribute('style') && image.style.width && image.style.height) {
-    //image.width = image.style.width;
-    //image.height = image.style.height;
     image.setAttribute('width', '' + image.style.width);
     image.setAttribute('height', '' + image.style.height);
     if(verbose)
-      console.debug('Inferred image dimensions from style attribute', image);
+      console.debug('Inferred image dimensions from style', image.outerHTML);
     return true;
   }
 
   const src_url_string = image.getAttribute('src');
-  if(!src_url_string) {
-    if(verbose)
-      console.debug('Cannot determine size for image missing src', image);
+  if(!src_url_string)
     return false;
-  }
 
   const src_url_object = new URL(src_url_string);
   if(!allowed_protocols.includes(src_url_object.protocol)) {
     if(verbose)
-      console.debug('Cannot determine size for non-http image src', image);
+      console.debug('Cannot set image dimensions due to src url protocol',
+        image.outerHTML);
     return false;
   }
 
@@ -122,6 +116,7 @@ async function update_img_dims(image, allowed_protocols, timeout_ms, verbose) {
   return await promise;
 }
 
+
 function reject_after_timeout(timeout_ms, error_msg) {
   function resolver(resolve, reject) {
     error_msg = error_msg || 'Operation timed out';
@@ -133,30 +128,26 @@ function reject_after_timeout(timeout_ms, error_msg) {
 
 function fetch_and_update_img(image, url_string, verbose) {
   function resolver(resolve, reject) {
-    if(verbose)
-      console.debug('Fetching image to obtain dimensions', image);
     const proxy = new Image();// In document running this script
     proxy.src = url_string;// Trigger the fetch
 
     // Resolve immediately if cached
     if(proxy.complete) {
-      //image.width = proxy.width;
-      //image.height = proxy.height;
       image.setAttribute('width', '' + proxy.width);
       image.setAttribute('height', '' + proxy.height);
       if(verbose)
-        console.debug('Inferred image size from cached image', image);
+        console.debug('Set image size from cache', image.outerHTML);
       resolve(true);
+
+      // Avoid binding listeners and also avoid the second resolve call.
       return;
     }
 
     proxy.onload = function(event) {
-      //image.width = proxy.width;
-      //image.height = proxy.height;
       image.setAttribute('width', '' + proxy.width);
       image.setAttribute('height', '' + proxy.height);
-      if(verbose)
-        console.debug('Set image size from fetched image', image);
+      //if(verbose)
+      //  console.debug('Set image size from fetch', image.outerHTML);
       resolve(true);
     };
 
