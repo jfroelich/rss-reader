@@ -298,7 +298,6 @@ async function db_connect_then_find_feed_by_id(feed_id) {
   }
 }
 
-
 // TODO: show num entries, num unread/red, etc
 // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 // TODO: react to errors
@@ -325,7 +324,7 @@ async function feed_list_item_onclick(event) {
   }
 
   const title_element = document.getElementById('details-title');
-  title_element.textContent = feed.title || 'Untitled';
+  title_element.textContent = feed.title || feed.link || 'Untitled';
 
   const favicon_element = document.getElementById('details-favicon');
   if(feed.faviconURLString)
@@ -769,6 +768,11 @@ async function init_subscriptions_section() {
   if(!feeds) {
     console.warn('feeds undefined');
     return;
+  }
+
+  // Ensure feeds have titles
+  for(const feed of feeds) {
+    feed.title = feed.title || feed.link || 'Untitled';
   }
 
   // Sort the feeds by title using indexedDB.cmp

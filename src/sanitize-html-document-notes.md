@@ -18,3 +18,11 @@ getAttribute or other methods.
 
 - not using element.style is resulting in what appears to be a large number of
 false positives. perhaps the perf increase is not worth it.
+
+# Filtering tiny images
+
+Removing telemetry image <img src="s.gif" height="1" width="0">
+
+I am requiring both dimensions in transform_telemetry_elements now, so it
+will no longer catch these. That means sanitize has to look for these and
+remove them if desired.

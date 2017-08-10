@@ -179,7 +179,7 @@ async function lookup_origin(conn, url_object, urls, fetch_img_timeout_ms,
     response = await fetch_promise;
   } catch(error) {
     if(verbose)
-      console.warn(error);
+      console.debug(error);
     return;
   }
 

@@ -59,7 +59,7 @@ async function mark_slide_read(conn, slide_element, verbose) {
     slide_element.setAttribute('read', '');
   } catch(error) {
     // TODO: show an error message or something
-    console.error(error);
+    console.warn(error);
   } finally {
     if(is_local_conn && conn)
       conn.close();

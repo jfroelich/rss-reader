@@ -82,8 +82,7 @@ function db_find_entry_by_url(conn, url_string) {
 async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms, verbose) {
 
   // This must occur before setting image dimensions
-  const min_dimension = 2;
-  remove_telemtry_elements(doc, min_dimension, verbose);
+  transform_telemetry_elements(doc, verbose);
 
   // This should generally occur prior to transform_lazy_imgs, and it should
   // definitely occur prior to setting image dimensions. Does not matter if
@@ -232,8 +231,7 @@ function prepare_local_entry(entry, verbose) {
     return entry;
   }
 
-  const min_dimension = 2;
-  remove_telemtry_elements(doc, min_dimension, verbose);
+  transform_telemetry_elements(doc, verbose);
   prepare_entry_document(url_string, doc, verbose);
   const content = doc.documentElement.outerHTML.trim();
   if(content)

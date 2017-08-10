@@ -16,7 +16,6 @@
       "/src/archive-entries.js",
       "/src/background.js",
       "/src/condense-html-document.js",
-      "/src/dnt-html-document.js",
       "/src/entry.js",
       "/src/extension.js",
       "/src/favicon.js",
@@ -46,6 +45,7 @@
       "/src/subscribe.js",
       "/src/transform-lazy-images.js",
       "/src/transform-responsive-images.js",
+      "/src/transform-telemetry-elements.js",
       "/src/truncate-html.js",
       "/src/unwrap-element.js",
       "/src/utils.js"
