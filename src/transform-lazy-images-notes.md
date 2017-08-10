@@ -52,7 +52,8 @@ instead of using a hardcoded list.
 * If an image is within a picture, look for associated source
 
 # Strange cases to look into and possibly handle better
-
+* &lt;img class="responsive-image" srcset="url"&gt;  in this case i should be
+able to try and infer from srcset?
 * &lt;img data-src="url" src=""&gt; - note empty source
 * &lt;img style="background-image:url(url);" src="url"&gt;
 * &lt;img class="responsive-image" srcset="url"&gt;

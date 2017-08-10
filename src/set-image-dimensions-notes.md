@@ -3,53 +3,28 @@
 
 * Change to not fetch if only one dimension is set. In this case just assume the
 image is a square and set the missing dimension to the known dimension. I think
-this is accurate most of the time.
-* I reverted the code to use setAttribute instead of setting property. I am not
-sure what I was thinking. I am fairly confident that I always want to be
-setting attributes, not properties. When setting an attribute the property will
-be implicitly updated. But now I need to test the new approach
-* Eventually remove the commented out set property code after further testing
-* fetch_and_update_img may need to use the fetch library internally, because
+this is accurate most of the time. Or make it a parameter, a policy parameter
+on whether to allow for either one or to require both. Also no need to even
+modify if one is present. Instead make the area algorithm assume square.
+* fetch img may need to use the fetch library internally, because
 I want to avoid sending cookies and such.
-* infer from url params, like image.jpg?w=1234&h=5678. This is a common
-case for wordpress. Could also check for width,height. This would reduce the
-number of fetches made in some cases.
-* Can derive from srcset as well, dimensions are available there for
-width and height sometimes, for example, could grab one of the sizes
-<img src="url" srcset="url 640w, url 680w, url 840w"> and assume the image is
-a square, or at least set one of the sizes and avoid fetch?
-* I think I want to refactor fetch_and_update_img so that it only fetches, and
-do any updating in caller context. This makes the function have a purer purpose,
-more of a single purpose, and do only one thing instead of two so that the
-function is more composable.
-* Undecided on whether fetch_and_update_img should accept a doc parameter so
+* Undecided on whether fetch should accept a doc parameter so
 that where the image element is created is configurable. Maybe it is a security
 concern if loading an image is somehow XSS vulnerable? Maybe it is not safe to
 assume that new Image() works in all contexts?
 * This needs testing library that isolates specific branches of the code and
 asserts that each section works as expected.
-* Rather than use a custom error message when failing to fetch an image when
-calling fetch_and_update_img, look into whether there is some error property
-of the image or the event that can be used instead. I think it would be better
-to use the built in error message. This would also be more consistent with out
-other errors are created/accessed such as in the various functions that access
-indexedDB that reject with result.error.
-* Try to infer from srcset?
+* Rather than use a custom error message when failing to fetch an image, look
+into whether there is some error property of the image or the event that can be
+used instead.
+* Finish the infer from filename stuff
 
-# cases to fix
+# Notes on possible fetch image issue
 
-* &lt;img class="responsive-image" srcset="url"&gt;  in this case i should be
-able to try and infer from srcset? is this a job for transform-lazy or here?
-what is also interesting is that no dimensions are given, srcset contains only
-a single img url
-
-# Notes on conventions regarding fetching images
-
-See https://stackoverflow.com/questions/4776670 . Apparently the proper convention
-is to always trigger the fetch after attaching the handlers?
+See https://stackoverflow.com/questions/4776670 . Apparently the proper
+convention is to always trigger the fetch after attaching the handlers?
 
 # Notes on data uris
 
-Allow browser to fetch. Not available sync immediately on setting img.src, but
-is available after fetch. In this case browser will do some alternative internal
-fetch that parses the data uri, but this is unfortunately opaque to me.
+fetch works with data uris. Can use the same proxy technique as fetch to
+get the dimensions.

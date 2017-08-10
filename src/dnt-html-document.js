@@ -3,12 +3,12 @@
 
 { // Begin file block scope
 
-function dnt_html_document(doc, min_dimension, verbose) {
+function remove_telemtry_elements(doc, min_dimension, verbose) {
   remove_ping_attr_from_anchor_elements(doc);
   add_no_referrer_to_anchor_elements(doc);
-  filter_tracking_images_by_visibility(doc, verbose);
-  filter_images_by_size(doc, min_dimension, verbose);
-  filter_images_by_url(doc, verbose);
+  remove_images_by_visibility(doc, verbose);
+  remove_images_by_size(doc, min_dimension, verbose);
+  remove_images_by_url(doc, verbose);
 }
 
 function remove_ping_attr_from_anchor_elements(doc) {
@@ -23,11 +23,14 @@ function add_no_referrer_to_anchor_elements(doc) {
     anchor.setAttribute('rel', 'noreferrer');
 }
 
-// It may be redundant with other sanity filtering but I want to be explicit and
-// make no assumptions.
-// In general, images that are explicitly hidden are assumed to be tracking
-// images.
-function filter_tracking_images_by_visibility(doc, verbose) {
+// Telemetry images are usually hidden, so treat visibility as a perfect
+// indicator of telemetry. False positives are probably not too harmful as
+// they do not add noise to the message.
+// Removing images based on visibility may be redundant with some of the
+// operations done when sanitizing a document. However, I am trying to make
+// this function completely independent, and not assume this is done anywhere
+// else.
+function remove_images_by_visibility(doc, verbose) {
   const img_elements = doc.querySelectorAll('img');
   for(const img_element of img_elements) {
     if(is_hidden_element(img_element)) {
@@ -48,20 +51,19 @@ function filter_tracking_images_by_visibility(doc, verbose) {
 // at least a reminder.
 function is_offscreen_element(element) {
   if(element.hasAttribute('style') && element.style.position === 'absolute') {
-    const left = parseInt(style.left, 10);
+    const radix = 10;
+    const left = parseInt(element.style.left, radix);
     return !isNaN(left) && left < 0;
   }
 }
 
 function is_hidden_element(element) {
-  // The attr check possibly short circuits the implicit style calculations
-  // that happen when invoking the implicit getter img_element.style.
   return element.hasAttribute('style') &&
     (element.style.display === 'none' ||
     element.style.visibility === 'hidden');
 }
 
-function filter_images_by_size(doc, min_dimension, verbose) {
+function remove_images_by_size(doc, min_dimension, verbose) {
   const img_elements = doc.querySelectorAll('img');
   for(const img_element of img_elements) {
     if(is_tracking_img_from_size(img_element, min_dimension)) {
@@ -130,7 +132,7 @@ function is_tracking_img_from_size(img_element, min_dimension) {
   return false;
 }
 
-function filter_images_by_url(doc, verbose) {
+function remove_images_by_url(doc, verbose) {
   const img_elements = doc.querySelectorAll('img[src]');
   for(const img_element of img_elements) {
     if(is_tracking_img_from_url(img_element)) {
@@ -179,22 +181,15 @@ function is_tracking_img_from_url(img_element) {
 
   if(is_telemetry_hostname(url_object.hostname))
     return true;
-
-  if(/cloudfront\.net$/.test(url_object.hostname)) {
-    console.log('Removing cloudfront telemetry image', img_element.outerHTML);
+  if(/cloudfront\.net$/.test(url_object.hostname))
     return true;
-  }
-
-  if(/moatads\.com$/i.test(url_object.hostname)) {
-    console.log('Removing moatads telemetry image', img_element.outerHTML);
+  if(/moatads\.com$/i.test(url_object.hostname))
     return true;
-  }
-
+  if(/2o7\.net$/i.test(url_object.hostname))
+    return true;
   if(url_object.hostname === 'www.facebook.com' &&
-    url_object.pathname === '/tr') {
-    console.log('Removing facebook telemetry image', img_element.outerHTML);
+    url_object.pathname === '/tr')
     return true;
-  }
 
   return false;
 }
@@ -203,6 +198,7 @@ function is_telemetry_hostname(hostname) {
   const telemetry_hosts = [
     'ad.doubleclick.net',
     'ad.linksynergy.com',
+    'analytics.twitter.com',
     'anon-stats.eff.org',
     'bat.bing.com',
     'b.scorecardresearch.com',
@@ -216,7 +212,8 @@ function is_telemetry_hostname(hostname) {
     'pixel.wp.com',
     'pubads.g.doubleclick.net',
     'sb.scorecardresearch.com',
-    'stats.bbc.co.uk'
+    'stats.bbc.co.uk',
+    't.co'
   ];
   return telemetry_hosts.includes(hostname);
 }
@@ -231,6 +228,6 @@ function parse_url(url_string) {
   return url_object;
 }
 
-this.dnt_html_document = dnt_html_document;
+this.remove_telemtry_elements = remove_telemtry_elements;
 
 } // End file block scope

@@ -5,6 +5,7 @@ Removes ping attributes, adds no referrer, removes some tracking images
 
 # TODO
 
+* rename files to match main public function
 * write tests
 * instead of strings for hosts, should maybe accept a set of regexes, or somehow
 accept a combined set of regexes that is merged into a single regex for speed, or
@@ -30,3 +31,9 @@ document which is currently not available.
 # TODO: improve the offscreen detection
 
 Probably need to test width + left, instead of just left.
+
+# Why is_hidden_element checks style attribute
+
+The attr check possibly short circuits the implicit style calculations
+that happen when invoking the implicit getter img_element.style. I have not
+tested this, just an assumption.

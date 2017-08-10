@@ -45,6 +45,7 @@
       "/src/sniff.js",
       "/src/subscribe.js",
       "/src/transform-lazy-images.js",
+      "/src/transform-responsive-images.js",
       "/src/truncate-html.js",
       "/src/unwrap-element.js",
       "/src/utils.js"

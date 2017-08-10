@@ -11,7 +11,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
     return false;
 
   let url_string = entry_get_url_string(entry);
-  if(is_excluded_entry_url_string(url_string))
+  if(is_unpollable_entry(url_string))
     return false;
   if(await db_find_entry_by_url(reader_conn, url_string))
     return false;
@@ -20,7 +20,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
   if(rewritten_url_string && url_string !== rewritten_url_string) {
     entry_add_url_string(entry, rewritten_url_string);
     url_string = rewritten_url_string;
-    if(is_excluded_entry_url_string(url_string))
+    if(is_unpollable_entry(url_string))
       return false;
     if(await db_find_entry_by_url(reader_conn, url_string))
       return false;
@@ -37,7 +37,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
 
   if(response.redirected) {
     url_string = response.responseURLString;
-    if(is_excluded_entry_url_string(url_string))
+    if(is_unpollable_entry(url_string))
       return false;
     else if(await db_find_entry_by_url(reader_conn, url_string))
       return false;
@@ -48,6 +48,10 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
   await set_entry_icon(entry, icon_conn, feed.faviconURLString, verbose);
   const entry_content = await response.text();
   const entry_document = parse_html(entry_content);
+
+  // TODO: the functions prepare_local_entry and prepare_remote_entry should
+  // be merged into a single function that varies its behavior according to
+  // parameters
   await prepare_remote_entry(entry, entry_document, fetch_img_timeout_ms,
     verbose);
   const put_result = await db_prep_then_put_entry(reader_conn, entry, verbose);
@@ -77,28 +81,25 @@ function db_find_entry_by_url(conn, url_string) {
 
 async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms, verbose) {
 
-  // This must occur before setting image dimensions to avoid sending pings
+  // This must occur before setting image dimensions
   const min_dimension = 2;
-  dnt_html_document(doc, min_dimension, verbose);
+  remove_telemtry_elements(doc, min_dimension, verbose);
 
-  const url_string = entry_get_url_string(entry);
+  // This should generally occur prior to transform_lazy_imgs, and it should
+  // definitely occur prior to setting image dimensions. Does not matter if
+  // before or after resolving urls.
+  transform_responsive_images(doc);
 
-  // TODO: this probably is a part of prepare_entry_document
-  // This must occur before sanitize_html_document is called on the
-  // document because that removes sourceless images
+  // This must occur before removing sourceless images
   transform_lazy_imgs(doc);
 
-  // TODO: this probably is a part of prepare_entry_document
+  const url_string = entry_get_url_string(entry);
   const base_url_object = new URL(url_string);
   resolve_document_urls(doc, base_url_object);
 
-  // This must occur after urls are resolved
+  // This must occur after urls are resolved and after filtering tracking info
   let allowed_protocols;
-
-  // TODO: this should be occurring AFTER filtering tracking info
-  // TODO: this probably is a part of prepare_entry_document, right?
-  await set_img_dimensions(doc, allowed_protocols, fetch_img_timeout_ms,
-    verbose);
+  await set_img_dimensions(doc, allowed_protocols, fetch_img_timeout_ms);
 
   prepare_entry_document(url_string, doc, verbose);
   entry.content = doc.documentElement.outerHTML.trim();
@@ -133,7 +134,7 @@ function is_valid_entry_url(entry, verbose) {
   return true;
 }
 
-function is_excluded_entry_url_string(url_string) {
+function is_unpollable_entry(url_string) {
   const url_object = new URL(url_string);
   const hostname = url_object.hostname;
 
@@ -182,6 +183,10 @@ function db_put_entry(conn, entry) {
   return new Promise(resolver);
 }
 
+// TODO: the prep work should actually be a separate function decoupled from
+// this function. It creates more boilerplate in the caller context but it
+// seems like a better design.
+
 async function db_prep_then_put_entry(reader_conn, entry, verbose) {
   let author_max_length, title_max_length, content_max_length;
   const sanitized_entry = entry_sanitize(entry, author_max_length,
@@ -228,7 +233,7 @@ function prepare_local_entry(entry, verbose) {
   }
 
   const min_dimension = 2;
-  dnt_html_document(doc, min_dimension, verbose);
+  remove_telemtry_elements(doc, min_dimension, verbose);
   prepare_entry_document(url_string, doc, verbose);
   const content = doc.documentElement.outerHTML.trim();
   if(content)

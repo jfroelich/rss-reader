@@ -24,11 +24,13 @@ function filter_element_attrs(element, verbose) {
   // Using plain object over Set/Map for speed
   // Using simple array for speed too (over Set)
   // allow 'rel' for anchor to allow for no-referrer
+  // do not allow width/height for image because of inaccurate guesses earlier
+  // leading to skewed images, leave unset so browser uses natural dimensions
   const type_attrs_map = {
     'a': ['href', 'name', 'title', 'rel'],
     'iframe': ['src'],
     'source': ['media', 'sizes', 'srcset', 'src', 'type'],
-    'img': ['src', 'alt', 'title', 'srcset', 'width', 'height']
+    'img': ['src', 'alt', 'title', 'srcset']
   };
 
   const allowed_attrs = type_attrs_map[local_name];
@@ -36,17 +38,15 @@ function filter_element_attrs(element, verbose) {
   // Walk backwards because attributes is live and each removal during iteration
   // shortens the list.
   if(allowed_attrs) {
-    // Remove if not in whitelist
-    for(let i = attrs.length - 1; i; i--) {
+    // Remove attrs not in whitelist
+    for(let i = attrs.length - 1; i > -1; i--) {
       const attr_name = attrs[i].name;
       if(!allowed_attrs.includes(attr_name))
         element.removeAttribute(attr_name);
-      else if(verbose)
-        console.debug('Retaining attribute', local_name, attr_name, '=',
-          attrs[i].value);
     }
   } else {
-    for(let i = attrs.length - 1; i; i--)
+    // Remove all attrs
+    for(let i = attrs.length - 1; i > -1; i--)
       element.removeAttribute(attrs[i].name);
   }
 }

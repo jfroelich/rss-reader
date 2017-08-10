@@ -11,9 +11,11 @@
 // @param doc {Document}
 // @param timeout_ms {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
-async function set_img_dimensions(doc, allowed_protocols, timeout_ms, verbose) {
-  const default_allowed_protocols = ['data:', 'http:', 'https:'];
+async function set_img_dimensions(doc, allowed_protocols, timeout_ms) {
+  if(!doc.body)
+    return 0;
 
+  const default_allowed_protocols = ['data:', 'http:', 'https:'];
   if(typeof allowed_protocols === 'undefined')
     allowed_protocols = default_allowed_protocols;
   else if(typeof allowed_protocols.includes !== 'function')
@@ -26,99 +28,75 @@ async function set_img_dimensions(doc, allowed_protocols, timeout_ms, verbose) {
   else if(timeout_ms < 0)
     throw new TypeError('timeout_ms is negative')
 
-  if(verbose)
-    console.debug('Starting set_img_dimensions...');
-
-  if(!doc.body) {
-    if(verbose)
-      console.debug(
-        'Cannot modify image dimensions of document missing body element');
-    return 0;
+  const image_elements = doc.body.getElementsByTagName('img');
+  const derive_promises = [];
+  for(const image_element of image_elements) {
+    const promise = derive_img_dims_silently(image_element, allowed_protocols,
+      timeout_ms);
+    derive_promises.push(promise);
   }
 
-  // Because this does not remove images while iterating, use
-  // getElementsByTagName for better performance
-  const images = doc.body.getElementsByTagName('img');
-  const promises = [];
-  for(const image of images) {
-    const promise = update_img_dims_silently(image, allowed_protocols,
-      timeout_ms, verbose);
-    promises.push(promise);
+  const results = await Promise.all(derive_promises);
+  let modified_image_count = 0;
+  for(const result of results) {
+    if(result) {
+      result.image.setAttribute('width', '' + result.width);
+      result.image.setAttribute('height', '' + result.height);
+      modified_image_count++;
+    }
   }
-
-  const results = await Promise.all(promises);
-  let num_imgs_modified = 0;
-  for(let result of results)
-    if(result)
-      num_imgs_modified++;
-
-  if(verbose)
-    console.debug('Modified %s images in document', num_imgs_modified);
-
-  return num_imgs_modified;
+  return modified_image_count;
 }
 
-async function update_img_dims_silently(image, allowed_protocols, timeout_ms,
-  verbose) {
+async function derive_img_dims_silently(image, allowed_protocols, timeout_ms) {
   try {
-    return await update_img_dims(image, allowed_protocols, timeout_ms, verbose);
-  } catch(error) {
-    if(verbose)
-      console.debug(error);
-  }
+    return await derive_img_dims(image, allowed_protocols, timeout_ms);
+  } catch(error) {}
 }
 
-// Updates the dimensions of a given image object. Returns true if the image
-// was modified.
-async function update_img_dims(image, allowed_protocols, timeout_ms, verbose) {
-  // If both attributes are set then assume no work needs to be done.
+async function derive_img_dims(image, allowed_protocols, timeout_ms) {
+  const result = {
+    'image': image,
+    'width': undefined,
+    'height': undefined,
+    'hint': undefined
+  };
+
   if(image.hasAttribute('width') && image.hasAttribute('height'))
-    return false;
+    return;
 
   const style_dimensions = extract_element_dimensions_from_inline_style(image);
   if(style_dimensions) {
-    image.setAttribute('width', '' + style_dimensions.width);
-    image.setAttribute('height', '' + style_dimensions.height);
-    if(verbose)
-      console.debug('Inferred image dimensions from style', image.outerHTML);
-    return true;
+    result.width = style_dimensions.width;
+    result.height = style_dimensions.height;
+    result.hint = 'style';
+    return result;
   }
 
-  const src_url_string = image.getAttribute('src');
-  if(!src_url_string)
-    return false;
+  const url_string = image.getAttribute('src');
+  if(!url_string)
+    return;
 
-  const src_url_object = new URL(src_url_string);
-  if(!allowed_protocols.includes(src_url_object.protocol)) {
-    if(verbose)
-      console.debug('Cannot set image dimensions due to src url protocol',
-        image.outerHTML);
-    return false;
-  }
+  const url_object = new URL(url_string);
+  if(!allowed_protocols.includes(url_object.protocol))
+    return;
 
-  const url_dimensions = sniff_image_dimensions_from_url(src_url_object);
+  const url_dimensions = sniff_image_dimensions_from_url(url_object);
   if(url_dimensions) {
-    image.setAttribute('width', '' + url_dimensions.width);
-    image.setAttribute('height', '' + url_dimensions.height);
-    if(verbose)
-      console.debug('Inferred image dimensions from url', image.outerHTML);
-    return true;
+    result.width = url_dimensions.width;
+    result.height = url_dimensions.height;
+    result.hint = 'url';
+    return result;
   }
 
-
-  const fetch_promise = fetch_and_update_img(image, src_url_object.href,
-    verbose);
-  let promise;
-  if(timeout_ms) {
-    const error_msg = 'Timed out fetching image ' + image.getAttribute('src');
-    const timeout_promise = reject_after_timeout(timeout_ms, error_msg);
-    const promises = [fetch_promise, timeout_promise];
-    promise = Promise.race(promises);
-  } else {
-    promise = fetch_promise;
+  const fetched_dimensions = await fetch_image_dimensions_with_timeout(
+    url_object, timeout_ms);
+  if(fetched_dimensions) {
+    result.width = fetched_dimensions.width;
+    result.height = fetched_dimensions.height;
+    result.hint = 'fetch';
+    return result;
   }
-
-  return await promise;
 }
 
 // Returns {'width': int, 'height': int} or undefined
@@ -133,6 +111,9 @@ function extract_element_dimensions_from_inline_style(element) {
 }
 
 function sniff_image_dimensions_from_url(url_object) {
+  if(url_object.protocol === 'data:')
+    return;
+
   // Try and grab from parameters
   const params = url_object.searchParams;
   const dimensions = {}, radix = 10;
@@ -150,6 +131,9 @@ function sniff_image_dimensions_from_url(url_object) {
       return dimensions;
   }
 
+  // TODO: this is currently difficult to test, and would be more appropriate
+  // to develop by using a test instead of poll. So this is kind of blocked
+  // on actually writing proper tests.
   // TODO: grab from file name (e.g. 100x100.jpg)
   const path = url_object.pathname;
   const file_name = extract_file_name_from_path(path);
@@ -158,6 +142,8 @@ function sniff_image_dimensions_from_url(url_object) {
     if(file_name_no_extension) {
       // TODO: parse using delim like "x" or "-", then parseInt
       // TODO: check that extension is an image extension?
+      //console.debug('Inspecting file name for dimensions',
+      //  file_name_no_extension);
     }
   }
 }
@@ -169,7 +155,7 @@ function filter_file_name_extension(file_name) {
 }
 
 function extract_file_name_from_path(path) {
-  console.assert(path.charAt(0) === '/');
+  console.assert(path.charAt(0) === '/', 'invalid path: ' + path);
   const index = path.lastIndexOf('/');
   if(index > -1) {
     const index_plus_1 = index + 1;
@@ -188,39 +174,37 @@ function reject_after_timeout(timeout_ms, error_msg) {
   return new Promise(resolver);
 }
 
-function fetch_and_update_img(image, url_string, verbose) {
+function fetch_image_dimensions_with_timeout(url_object, timeout_ms) {
+  const fetch_promise = fetch_image_dimensions(url_object);
+  if(timeout_ms) {
+    const error_msg = 'Timed out loading image ' + url_object.href;
+    const timeout_promise = reject_after_timeout(timeout_ms, error_msg);
+    const promises = [fetch_promise, timeout_promise];
+    return Promise.race(promises);
+  } else {
+    return fetch_promise;
+  }
+}
+
+function fetch_image_dimensions(url_object) {
   function executor(resolve, reject) {
     const proxy = new Image();// In document running this script
-    proxy.src = url_string;// Trigger the fetch
+    proxy.src = url_object.href;// Trigger the fetch
 
     // Resolve immediately if cached
     if(proxy.complete) {
-      image.setAttribute('width', '' + proxy.width);
-      image.setAttribute('height', '' + proxy.height);
-      if(verbose)
-        console.debug('Set image size from cache', image.outerHTML);
-      resolve(true);
-
-      // Avoid binding listeners and also avoid the second resolve call.
+      resolve({'width': proxy.width, 'height': proxy.height});
       return;
     }
 
     proxy.onload = function(event) {
-      image.setAttribute('width', '' + proxy.width);
-      image.setAttribute('height', '' + proxy.height);
-      //if(verbose)
-      //  console.debug('Set image size from fetch', image.outerHTML);
-      resolve(true);
+      resolve({'width': proxy.width, 'height': proxy.height});
     };
 
     proxy.onerror = function(event) {
-      const error_msg = `Failed to fetch image ${url_string}`;
-      const error = new Error(error_msg);
-
-      // Temp, looking into whether there is an error object to grab
-      // instead of creating one
-      console.dir(event);
-
+      // There is no useful error object in the event, so construct our own
+      const error_message = `Failed to fetch ${url_object.href}`;
+      const error = new Error(error_message);
       reject(error);
     };
   }
