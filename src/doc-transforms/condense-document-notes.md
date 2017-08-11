@@ -26,9 +26,9 @@ to use unicode char when possible
 * If an image is a known square with equal attribute values, can maybe remove
 one of the dimensions?
 * actually, just take a look at https://github.com/kangax/html-minifier and
-think about some similar options 
+think about some similar options
 
-# Try and improve table unwrapping algorithm
+# TODO: Try and improve the table unwrapping algorithm
 
 It seems to be missing hacker news blog comments section. It might be that the
 first column is not empty, and only later becomes empty because of other

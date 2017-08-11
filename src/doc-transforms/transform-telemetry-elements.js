@@ -11,6 +11,7 @@ const DEFAULT_PATTERNS = [
   /\/\/anon-stats\.eff\.org\//i,
   /\/\/bat\.bing\.com\//i,
   /\/\/b\.scorecardresearch\.com\//i,
+  /\/\/beacon\.gu-web\.net\//i,
   /\/\/.*cloudfront\.net\//,
   /\/\/googleads\.g\.doubleclick\.net\//i,
   /\/\/in\.getclicky\.com\//i,

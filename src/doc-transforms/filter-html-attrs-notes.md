@@ -5,14 +5,14 @@
 attributes as a parameter, and default to the current map
 
 * note it is not this responsibility to remove empty attributes, that is a
-concern for condense_html_document, this is only a security pass/sanity pass,
+concern for condense_document, this is only a security pass/sanity pass,
 make embeddable pass
 
 # Why this function currently stands alone from other html document transformations
 
 Basically I split up scrubby.js into separately concerned functions
 such as secure_html_document, sanitize_html_document,
-and condense_html_document. When splitting up that function I could not decide
+and condense_document. When splitting up that function I could not decide
 where to place this functionality. The issue is that this function has multiple
 concerns:
 

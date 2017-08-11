@@ -247,7 +247,7 @@ function prepare_entry_document(url_string, doc, verbose) {
   filter_boilerplate(doc);
   secure_html_document(doc);
   sanitize_html_document(doc, verbose);
-  condense_html_document(doc);
+  condense_document(doc);
   filter_html_attrs(doc);
 
 }

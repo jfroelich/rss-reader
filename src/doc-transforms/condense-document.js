@@ -3,7 +3,7 @@
 
 { // Begin file block scope
 
-function condense_html_document(doc) {
+function condense_document(doc) {
   remove_comment_nodes(doc);
   rename_elements(doc, 'strong', 'b');
   rename_elements(doc, 'em', 'i');
@@ -275,6 +275,6 @@ function is_trimmable_node(node) {
     (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
 }
 
-this.condense_html_document = condense_html_document;
+this.condense_document = condense_document;
 
 } // End file block scope
