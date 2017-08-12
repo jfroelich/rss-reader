@@ -31,7 +31,7 @@ function truncate_html(html_string, position, extension_string) {
       total_length = total_length + value_length;
   }
 
-  var output_html = /<html/i.test(html_string) ? doc.documentElement.outerHTML :
-    doc.body.innerHTML;
+  var output_html = /<html/i.test(html_string) ?
+    doc.documentElement.outerHTML : doc.body.innerHTML;
   return output_html;
 }

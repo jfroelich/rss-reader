@@ -6,7 +6,7 @@
 // Removes a feed and all of its associated entries from the database.
 // @param conn {IDBDatabase} an open database connection
 // @param feed_id {Number} id of feed to unscubscribe
-// @param verbose {Boolean} whether to print logging info
+// @param verbose {Boolean} optional, whether to print logging info
 async function unsubscribe(conn, feed_id, verbose) {
   if(!Number.isInteger(feed_id))
     throw new TypeError('feed id is not an integer');
@@ -18,9 +18,9 @@ async function unsubscribe(conn, feed_id, verbose) {
   await db_remove_feed_and_entries(conn, feed_id, entry_ids);
   dispatch_remove_events(feed_id, entry_ids);
   if(verbose)
-    console.debug('Unsubscribed from feed id', feed_id, ', deleted %d entries',
-      entry_ids.length);
-  ext_update_badge(verbose).catch(console.warn);
+    console.debug('Unsubscribed from feed with id', feed_id,
+      ', deleted %d entries', entry_ids.length);
+  ext_update_badge(verbose);
   return entry_ids.length;
 }
 

@@ -94,17 +94,19 @@ async function browser_action_on_click(event) {
 chrome.browserAction.onClicked.addListener(browser_action_on_click);
 
 function on_alarm(alarm) {
+  console.log('Alarm wokeup:', alarm.name);
+
   switch(alarm.name) {
   case 'archive':
     archive_entries().catch(console.warn);
     break;
   case 'poll':
     const flags = 0; // all off
-    let idlePeriodSeconds, recencyPeriodMillis, fetchFeedTimeoutMillis,
-      fetchHTMLTimeoutMillis, fetchImageTimeoutMillis;
-    const promise = poll_feeds(idlePeriodSeconds, recencyPeriodMillis,
-      fetchFeedTimeoutMillis, fetchHTMLTimeoutMillis,
-      fetchImageTimeoutMillis, flags);
+    let idle_period_secs, recency_period_ms, fetch_feed_timeout_ms,
+      fetch_html_timeout_ms, fetch_image_timeout_ms;
+    const promise = poll_feeds(idle_period_secs, recency_period_ms,
+      fetch_feed_timeout_ms, fetch_html_timeout_ms,
+      fetch_image_timeout_ms, flags);
     promise.catch(console.warn);
     break;
   case 'remove-entries-missing-urls':
@@ -117,8 +119,8 @@ function on_alarm(alarm) {
     refresh_feed_icons().catch(console.warn);
     break;
   case 'compact-favicon-db':
-    let name, version, maxAgeMillis, verbose;
-    favicon_compact_db(name, version, maxAgeMillis, verbose).catch(
+    let name, version, max_age_ms, verbose;
+    favicon_compact_db(name, version, max_age_ms, verbose).catch(
       console.warn);
     break;
   default:

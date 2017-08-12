@@ -9,23 +9,24 @@ rename_element works by creating a new element, then, moving and copying over
 some information from the old element, and then replacing the old element with
 the new element.
 
-# Event listeners are not maintained
+unwrap_element solves a similar problem in that the dom does not provide a
+simple way of removing a node from the dom, but keeping its children within
+the dom in the same location.
 
-See https://stackoverflow.com/questions/15408394 for a basic explanation of
+# Event listeners are not maintained on rename
+
+* See https://stackoverflow.com/questions/15408394 for a basic explanation of
 why event listeners are lost on rename.
+* See also https://stackoverflow.com/questions/9046741
 
-See also https://stackoverflow.com/questions/9046741
-
-# Why parent element is required
-
-Two reasons:
+# Why parent element is required when renaming/unwrapping
 
 1. A removed element has no parent element. Renaming a removed element is
 generally pointless.
 2. This needs a way to re-insert an element back into the document, which
-involves the parent element.
+requires a parent element.
 
-# An explanation for why the new element name is sanity checked
+# Why the new element name is sanity checked when renaming
 
 According to MDN docs, createElement(null) works like createElement("null")
 so these guards avoid that.
@@ -45,7 +46,7 @@ For example, see
 https://www.quora.com/How-do-I-change-HTML-tag-name-in-JavaScript for what I
 think is probably a slower implementation.
 
-# Why this uses insertBefore at the end of the function
+# About insertBefore's second argument
 
 insertBefore's second argument is the reference node. According to MDN,
 if the reference node is null, the new node (the 1st argument) is inserted
@@ -55,22 +56,15 @@ Therefore, there is no need to explicitly test whether the reference node is
 defined and use appendChild instead of insertBefore. insertBefore takes care
 of the decision for us.
 
-# Why attributes are copied instead of moved
+# Notes on batch moving of nodes
 
-This is copy instead of move because there is no need to remove
-attributes from the old even though it will be discarded, that would just be
-a waste of resources.
-
-# About move_child_nodes
-
-There does not appear to be a batch move operation available in the dom api.
-I spent some time looking and trying to come up with clever alternatives, such
-as to_element.innerHTML = from_element.innerHTML.
+There does not appear to be a batch node move operation available in the dom
+api. I spent some time looking and trying to come up with clever alternatives,
+such as to_element.innerHTML = from_element.innerHTML, but nothing was better.
 
 # TODO
 
 * write tests
 * research an authoritative resource on renaming elements and why this
 function has to exist as opposed to some native functionality
-* research whether I can use for..of on a NamedNodeMap in
-copy_element_attributes
+* research whether I can use for..of on a NamedNodeMap when copying attributes

@@ -78,25 +78,20 @@ function entry_sanitize(input_entry, author_max_length, title_max_length,
 // Returns a new entry object that is in a compacted form. The new entry is a
 // shallow copy of the input entry, where only certain properties are kept, and
 // a couple properties are changed.
-// NOTE: used by archive_entries pretty much exclusively, but because it
+// Used by archive_entries pretty much exclusively, but because it
 // requires so much knowledge of an entry's properties I think it belongs here.
 
 function compact_entry(entry, verbose) {
-  const compacted_entry = {};
-  compacted_entry.dateCreated = entry.dateCreated;
-  compacted_entry.dateRead = entry.dateRead;
-  compacted_entry.feed = entry.feed;
-  compacted_entry.id = entry.id;
-  compacted_entry.readState = entry.readState;
-  compacted_entry.urls = entry.urls;
-  compacted_entry.archiveState = ENTRY_STATE_ARCHIVED;
-  compacted_entry.dateArchived = new Date();
-
-  if(verbose) {
-    const before_sz = sizeof(entry);
-    const after_sz = sizeof(compacted_entry);
-    console.debug('compact_entry before', before_sz, 'after', after_sz);
-  }
-
-  return compacted_entry;
+  const ce = {};
+  ce.dateCreated = entry.dateCreated;
+  ce.dateRead = entry.dateRead;
+  ce.feed = entry.feed;
+  ce.id = entry.id;
+  ce.readState = entry.readState;
+  ce.urls = entry.urls;
+  ce.archiveState = ENTRY_STATE_ARCHIVED;
+  ce.dateArchived = new Date();
+  if(verbose)
+    console.debug('before', sizeof(entry), 'after', sizeof(ce));
+  return ce;
 }

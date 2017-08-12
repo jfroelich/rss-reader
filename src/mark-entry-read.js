@@ -19,30 +19,28 @@ async function mark_entry_read(conn, entry_id, verbose) {
   await db_put_entry(conn, entry);
   if(verbose)
     console.log('Updated database with read entry with id', entry_id);
-
-  // Non awaited
-  ext_update_badge(verbose).catch(console.warn);
+  ext_update_badge(verbose);
 }
 
 function db_find_entry_by_id(conn, id) {
-  function resolver(resolve, reject) {
+  function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const request = store.get(id);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   }
-  return new Promise(resolver);
+  return new Promise(executor);
 }
 
 function db_put_entry(conn, entry) {
-  function resolver(resolve, reject) {
+  function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
     const request = tx.objectStore('entry').put(entry);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   }
-  return new Promise(resolver);
+  return new Promise(executor);
 }
 
 this.mark_entry_read = mark_entry_read;

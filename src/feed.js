@@ -50,7 +50,6 @@ Feed.prototype.create_icon_lookup_url = function() {
 // TODO: sanitize is not same as validate, this should not validate, this is
 // a conflation of functionality
 Feed.prototype.sanitize = function(title_max_length, desc_max_length) {
-
   if(typeof title_max_length === 'undefined')
     title_max_length = 1024;
   if(typeof desc_max_length === 'undefined')
@@ -83,11 +82,6 @@ Feed.prototype.sanitize = function(title_max_length, desc_max_length) {
     description = description.replace(/\s+/, ' ');
     const before_length = description.length;
     description = truncate_html(description, desc_max_length, '');
-
-    //if(before_length > description.length) {
-      // console.warn('Truncated description', description);
-    //}
-
     output_feed.description = description;
   }
 
@@ -109,6 +103,7 @@ Feed.prototype.sanitize = function(title_max_length, desc_max_length) {
 // TODO: assert the type of each property?
 // TODO: add to appropriate calling contexts (e.g. whereever prep for storage
 // is done).
+// TODO: rename to validate
 Feed.prototype.assert_valid = function(min_date, is_id_required) {
   const default_min_date = new Date(0);
   const to_string = Object.prototype.toString;
@@ -141,8 +136,6 @@ Feed.prototype.assert_valid = function(min_date, is_id_required) {
       throw new Error('id is not an integer');
   } else if(is_id_required)
     throw new Error('feed missing required id');
-
-
 
   // TODO: unsure whether this is even a property at the moment, just
   // wondering about how the validation would look

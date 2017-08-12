@@ -7,22 +7,9 @@ async function import_opml_files(files, verbose) {
   if(verbose)
     console.log('Importing %d OPML XML files', files.length);
 
-  let reader_conn;
-  let icon_conn;
-  let import_resolutions;
-
-  let reader_db_name, reader_db_version, reader_db_connect_timeout_ms;
-
-  const reader_conn_promise = reader_open_db(reader_db_name, reader_db_version,
-    reader_db_connect_timeout_ms, verbose);
-  let icon_db_name, icon_db_version, connect_timeout_ms;
-  const icon_conn_promise = favicon_open_db(icon_db_name, icon_db_version,
-    connect_timeout_ms, verbose);
-  const conn_promises = [reader_conn_promise, icon_conn_promise];
-  const conn_promise = Promise.all(conn_promises);
-
+  let reader_conn, icon_conn, import_resolutions;
   try {
-    const connections = await conn_promise;
+    const connections = await open_dbs();
     reader_conn = connections[0];
     icon_conn = connections[1];
     import_resolutions = await import_files_internal(reader_conn, icon_conn,
@@ -43,6 +30,21 @@ async function import_opml_files(files, verbose) {
       files.length);
 
   return num_feeds_imported;
+}
+
+// Returns promise resolving to [open_reader_conn, open_icon_conn]
+function open_dbs() {
+  let reader_db_name, reader_db_version, reader_db_connect_timeout_ms;
+  let icon_db_name, icon_db_version, icon_db_conn_timeout_ms;
+
+  const reader_conn_promise = reader_open_db(reader_db_name, reader_db_version,
+    reader_db_connect_timeout_ms, verbose);
+  const icon_conn_promise = favicon_open_db(icon_db_name, icon_db_version,
+    icon_db_conn_timeout_ms, verbose);
+  const conn_promises = [reader_conn_promise, icon_conn_promise];
+  const conn_promise = Promise.all(conn_promises);
+
+  return conn_promise;
 }
 
 async function import_files_internal(reader_conn, icon_conn, files, verbose) {

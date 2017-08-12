@@ -23,6 +23,7 @@
       "/src/doc-transforms/secure-html-document.js",
       "/src/doc-transforms/set-image-dimensions.js",
       "/src/doc-transforms/transform-framed-document.js",
+      "/src/doc-transforms/transform-helpers.js",
       "/src/doc-transforms/transform-lazy-images.js",
       "/src/doc-transforms/transform-responsive-images.js",
       "/src/doc-transforms/transform-telemetry-elements.js",
@@ -41,13 +42,11 @@
       "/src/reader-console-api.js",
       "/src/refresh-feed-icons.js",
       "/src/remove-orphaned-entries.js",
-      "/src/rename-element.js",
       "/src/replace-html.js",
       "/src/sizeof.js",
       "/src/sniff.js",
       "/src/subscribe.js",
       "/src/truncate-html.js",
-      "/src/unwrap-element.js",
       "/src/utils.js"
     ]
   },

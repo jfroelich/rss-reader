@@ -3,20 +3,21 @@
 
 { // Begin file block scope
 
-// TODO: maybe this should just throw and require caller to handle errors, I am
-// not entirely sure why I am trapping errors here
-
 // Returns the feed that was added if successful
-async function subscribe(reader_conn, icon_conn, feed, timeout_ms,
-  mute_notifications, verbose) {
+async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
+  verbose) {
+  // Default to a reasonable timeout. To avoid timeout specify 0.
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 2000;
+  // Default to allow notifications
+  if(typeof notify === 'undefined')
+    notify = true;
   if(!Number.isInteger(timeout_ms))
     throw new TypeError('timeout_ms not an integer');
 
   const url_string = Feed.prototype.get_url.call(feed);
   if(verbose)
-    console.log('Subscribing to feed with url', url_string);
+    console.log('Subscribing to feed', url_string);
 
   if(await db_contains_feed_url(reader_conn, url_string)) {
     if(verbose)
@@ -29,25 +30,14 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms,
       console.debug('Proceeding with offline subscription to', url_string);
     const storable_feed = prep_feed_for_db(feed);
     const added_feed = await db_add_feed(reader_conn, storable_feed);
-    if(!mute_notifications)
+    if(notify)
       show_subscribe_notification(added_feed);
     return added_feed;
   }
 
-  const response = await fetch_internal(url_string, timeout_ms, verbose);
-
-  // TODO: handle undefined response? I thought this never happened, but maybe
-  // it makes sense. What happens if response is undefined? I suppose just
-  // return. Maybe should add the feed? Not sure. Should it be an exception
-  // instead that occurs as a result of fetch_internal?
-  // Basically I think this should never happen, instead what should happen
-  // is that fetch internal throws an error, and this function rethrows the
-  // error. Or rather, just inline fetch_internal here without a try/catch
-  if(!response) {
-    if(verbose)
-      console.warn('response undefined in subscribe for url', url_string);
-    return;
-  }
+  // Allow fetch errors to bubble. Response is guaranteed defined if no error.
+  const is_accept_html = true;
+  const response = await fetch_feed(url_string, timeout_ms, is_accept_html);
 
   const response_url_string = response.responseURLString;
   if(response.redirected && await check_redirect_url_exists(reader_conn,
@@ -60,7 +50,7 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms,
   await set_feed_icon(icon_conn, merged_feed, verbose);
   const storable_feed = prep_feed_for_db(merged_feed);
   const added_feed = await db_add_feed(reader_conn, storable_feed);
-  if(!mute_notifications)
+  if(notify)
     show_subscribe_notification(added_feed);
   return added_feed;
 }
@@ -118,17 +108,6 @@ function show_subscribe_notification(feed) {
   const feed_name = feed.title || Feed.prototype.get_url.call(feed);
   const message = 'Subscribed to ' + feed_name;
   ext_show_notification(title, message, feed.faviconURLString);
-}
-
-async function fetch_internal(url_string, timeout_ms, verbose) {
-  const is_accept_html = true;
-  const promise = fetch_feed(url_string, timeout_ms, is_accept_html);
-  try {
-    return await promise;
-  } catch(error) {
-    if(verbose)
-      console.warn(error);
-  }
 }
 
 // Returns a basic copy of the input feed that is suitable for storage in

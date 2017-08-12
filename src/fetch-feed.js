@@ -1,5 +1,4 @@
 // See license.md
-
 'use strict';
 
 { // Begin file block scope
@@ -31,10 +30,13 @@ async function fetch_feed(url_string, timeout_ms, is_accept_html) {
     'referrerPolicy': 'no-referrer'
   };
 
+  // TODO: if the non-timeout promise wins the race, cancel the timeout.
+
   const fetch_promise = fetch(url_string, options);
   let response;
   if(timeout_ms) {
-    const timeout_promise = reject_after_timeout(url_string, timeout_ms);
+    const error_message = 'Fetch timed out for url ' + url_string;
+    const timeout_promise = reject_after_timeout(timeout_ms, error_message);
     const promises = [fetch_promise, timeout_promise];
     response = await Promise.race(promises);
   } else {
@@ -53,13 +55,13 @@ async function fetch_feed(url_string, timeout_ms, is_accept_html) {
   return output_response;
 }
 
-function reject_after_timeout(url_string, timeout_ms) {
-  function resolver(resolve, reject) {
-    const error = new Error('Fetch timed out for url ' + url_string);
-    setTimeout(reject, timeout_ms, error);
+// Returns a promise that resolves to a setTimeout timer identifier
+function reject_after_timeout(timeout_ms, error_message) {
+  function executor(resolve, reject) {
+    const error = new Error(error_message);
+    return setTimeout(reject, timeout_ms, error);
   }
-
-  return new Promise(resolver);
+  return new Promise(executor);
 }
 
 function assert_response_valid(response, url_string) {

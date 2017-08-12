@@ -1,10 +1,10 @@
 // See license.md
-
 'use strict';
 
 const sniff = {};
 
-// TODO: something is bugged with is_probably_binary not picking up pdfs
+// TODO: something is bugged with is_probably_binary not picking up pdfs, I
+// may have fixed this but did not record so
 
 // Guess if the url path is not an html mime type
 sniff.is_probably_binary = function(path) {
