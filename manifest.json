@@ -33,6 +33,7 @@
       "/src/feed.js",
       "/src/fetch-feed.js",
       "/src/fetch-html.js",
+      "/src/is-probably-binary-path.js",
       "/src/open-reader-db.js",
       "/src/parse-feed.js",
       "/src/parse-fetched-feed.js",
@@ -44,7 +45,6 @@
       "/src/remove-orphaned-entries.js",
       "/src/replace-html.js",
       "/src/sizeof.js",
-      "/src/sniff.js",
       "/src/subscribe.js",
       "/src/truncate-html.js",
       "/src/utils.js"

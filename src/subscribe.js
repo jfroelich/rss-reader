@@ -6,14 +6,16 @@
 // Returns the feed that was added if successful
 async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
   verbose) {
+
   // Default to a reasonable timeout. To avoid timeout specify 0.
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 2000;
+  if(!Number.isInteger(timeout_ms))
+    throw new TypeError('timeout_ms not an integer');
+
   // Default to allow notifications
   if(typeof notify === 'undefined')
     notify = true;
-  if(!Number.isInteger(timeout_ms))
-    throw new TypeError('timeout_ms not an integer');
 
   const url_string = Feed.prototype.get_url.call(feed);
   if(verbose)
@@ -29,10 +31,13 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
     if(verbose)
       console.debug('Proceeding with offline subscription to', url_string);
     const storable_feed = prep_feed_for_db(feed);
-    const added_feed = await db_add_feed(reader_conn, storable_feed);
+
+    const new_feed_id = await db_put_feed(reader_conn, storable_feed);
+    storable_feed.id = new_feed_id;
+
     if(notify)
-      show_subscribe_notification(added_feed);
-    return added_feed;
+      show_subscribe_notification(storable_feed);
+    return storable_feed;
   }
 
   // Allow fetch errors to bubble. Response is guaranteed defined if no error.
@@ -49,10 +54,12 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
   const merged_feed = merge_feeds(feed, remote_feed);
   await set_feed_icon(icon_conn, merged_feed, verbose);
   const storable_feed = prep_feed_for_db(merged_feed);
-  const added_feed = await db_add_feed(reader_conn, storable_feed);
+
+  const new_feed_id = await db_put_feed(reader_conn, storable_feed);
+  storable_feed.id = new_feed_id;
   if(notify)
-    show_subscribe_notification(added_feed);
-  return added_feed;
+    show_subscribe_notification(storable_feed);
+  return storable_feed;
 }
 
 // Looks up and set a feed's favicon
@@ -92,6 +99,7 @@ function db_contains_feed_url(conn, url_string) {
 
 // TODO: this is so similar to db_contains_feed_url that it should be deprecated,
 // the only difference is basically the log message, which isn't important
+// TODO: this does not really merit being a helper function
 async function check_redirect_url_exists(reader_conn,
   response_url_string, verbose) {
   if(await db_contains_feed_url(reader_conn, response_url_string)) {
@@ -119,20 +127,19 @@ function prep_feed_for_db(feed) {
   return storable;
 }
 
-function db_add_feed(conn, feed) {
-  function resolver(resolve, reject) {
+function db_put_feed(conn, feed) {
+  function executor(resolve, reject) {
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
     const request = store.put(feed);
     request.onsuccess = function req_onsuccess() {
-      feed.id = request.result;
-      resolve(feed);
+      resolve(request.result);
     };
     request.onerror = function req_onerror() {
       reject(request.error);
     };
   }
-  return new Promise(resolver);
+  return new Promise(executor);
 }
 
 this.subscribe = subscribe;

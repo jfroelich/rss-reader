@@ -5,8 +5,11 @@
 
 function condense_document(doc) {
   remove_comment_nodes(doc);
-  rename_elements(doc, 'strong', 'b');
-  rename_elements(doc, 'em', 'i');
+
+  // Use shorter names for common elements
+  const copy_attrs_on_rename = false;
+  rename_elements(doc, 'strong', 'b', copy_attrs_on_rename);
+  rename_elements(doc, 'em', 'i', copy_attrs_on_rename);
 
   unwrap_captionless_figure_elements(doc.body);
 
@@ -16,15 +19,6 @@ function condense_document(doc) {
   unwrap_elements(doc.body, 'colgroup, hgroup, multicol, tbody, tfoot, thead');
   // Unwrap generic containers
   unwrap_elements(doc.body, 'div, ilayer, layer');
-
-  // TODO: this needs some cleanup, more organization
-  // TODO: some of this should be done in sanitize, not condense
-  const misc_selector = [
-    'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend',
-    'mark', 'marquee', 'meter', 'nobr', 'span', 'big', 'blink',
-    'font', 'plaintext', 'small', 'tt'
-  ].join(',');
-  unwrap_elements(doc.body, misc_selector);
 
   unwrap_single_item_lists(doc);
   unwrap_single_column_tables(doc, 20);
@@ -48,21 +42,6 @@ function unwrap_captionless_figure_elements(ancestor_element) {
     for(const figure_element of figure_elements)
       if(figure_element.childElementCount === 1)
         unwrap_element(figure_element);
-  }
-}
-
-function rename_elements(doc, old_element_name, new_element_name) {
-  const elements = doc.querySelectorAll(old_element_name);
-  const is_ignore_attrs = false;// maintain fidelity
-  for(const element of elements)
-    rename_element(element, new_element_name, is_ignore_attrs);
-}
-
-function unwrap_elements(ancestor_element, selector) {
-  if(ancestor_element && selector) {
-    const elements = ancestor_element.querySelectorAll(selector);
-    for(const element of elements)
-      unwrap_element(element);
   }
 }
 

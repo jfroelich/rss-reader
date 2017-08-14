@@ -25,3 +25,4 @@ It should probably run before the lazy image transform.
 
 * create and use a wrapper around parseSrcset that traps errors
 and never returns undefined/null
+* Is this close enough to transform-lazy-images that the two should be merged?

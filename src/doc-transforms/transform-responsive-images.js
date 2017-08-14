@@ -1,11 +1,6 @@
 // See license.md
 'use strict';
 
-// TODO: add to manifest.json
-// TODO: insert in proper place in poll-entry before img dimensions
-// TODO: create notes file, move the paragraph of notes from the set-img-dims
-// notes page
-
 { // Begin file block scope
 
 function transform_responsive_images(doc) {
@@ -46,6 +41,8 @@ function image_element_has_valid_src_attr(image_element) {
 
 function transform_responsive_image(image_element, srcset_value) {
   let descriptors;
+
+  // Try/catch is extra precaution due to use of 3rd party
   try {
     descriptors = parseSrcset(srcset_value);
   } catch(error) {
@@ -76,28 +73,26 @@ function transform_responsive_image(image_element, srcset_value) {
 
   const previous_src = image_element.getAttribute('src');
   const previous_width = image_element.getAttribute('width');
-  const previous_heigh = image_element.getAttribute('height');
+  const previous_height = image_element.getAttribute('height');
 
   // Temp, monitoring transform
+  // NOTE: it is ok if these are null, that is normal given that it is the
+  // whole reason I am looking at srcset.
   console.log('Responsive image transform from', {
-    'src': image_element.getAttribute('src'),
-    'width': image_element.getAttribute('width'),
-    'height': image_element.getAttribute('height')
+    'src': previous_src,
+    'width': previous_width,
+    'height': previous_height
   }, 'to', {
     'src': target_descriptor.url,
-    'width': descriptor.w,
-    'height': descriptor.h
+    'width': target_descriptor.w,
+    'height': target_descriptor.h
   });
 
-  // TODO: need to use parseInt from descriptor dimensions? Or are the
-  // properties integers or strings containing only integers?
-
   image_element.setAttribute('src', target_descriptor.url);
-  if(descriptor.w)
-    image_element.setAttribute('width', descriptor.w);
-  if(descriptor.h)
-    image_element.setAttribute('height', descriptor.h);
-
+  if(target_descriptor.w)
+    image_element.setAttribute('width', '' + target_descriptor.w);
+  if(target_descriptor.h)
+    image_element.setAttribute('height', '' + target_descriptor.h);
 }
 
 this.transform_responsive_images = transform_responsive_images;

@@ -4,7 +4,17 @@
 { // Begin file block scope
 
 function sanitize_html_document(doc, verbose) {
-  remove_form_elements(doc);
+
+  // Remove misc elements, generally style elements
+  const misc_selector = [
+    'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend',
+    'mark', 'marquee', 'meter', 'nobr', 'span', 'big', 'blink',
+    'font', 'plaintext', 'small', 'tt'
+  ].join(',');
+  unwrap_elements(doc.body, misc_selector);
+
+
+  transform_form_elements(doc);
   unwrap_hidden_elements(doc);
   remove_consecutive_br_elements(doc);
   remove_consecutive_hr_elements(doc);
@@ -19,7 +29,7 @@ function sanitize_html_document(doc, verbose) {
   replace_hairspace_entities(doc);
 }
 
-function remove_form_elements(doc) {
+function transform_form_elements(doc) {
   if(!doc.body)
     return;
 

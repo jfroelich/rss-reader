@@ -29,6 +29,14 @@ function unwrap_element(element) {
   parent_element.insertBefore(frag, next_sibling);
 }
 
+function unwrap_elements(ancestor_element, selector) {
+  if(ancestor_element && selector) {
+    const elements = ancestor_element.querySelectorAll(selector);
+    for(const element of elements)
+      unwrap_element(element);
+  }
+}
+
 // TODO: left this in global scope for now due to some odd dependencies. Remove
 // the dependencies. Inline this function
 function insert_children_before(parent_node, reference_node) {
@@ -74,4 +82,10 @@ function rename_element(element, new_element_name, copy_attrs) {
 
   // If next_sibling is undefined then insertBefore simply appends
   return parent_element.insertBefore(new_element, next_sibling);
+}
+
+function rename_elements(doc, old_element_name, new_element_name, copy_attrs) {
+  const elements = doc.querySelectorAll(old_element_name);
+  for(const element of elements)
+    rename_element(element, new_element_name, copy_attrs);
 }

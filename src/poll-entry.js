@@ -166,7 +166,7 @@ function is_unpollable_entry(url_string) {
   if(cookie_hosts.includes(hostname))
     return true;
 
-  if(sniff.is_probably_binary(url_object.pathname))
+  if(is_probably_binary_path(url_object.pathname))
     return true;
   return false;
 }
@@ -249,7 +249,6 @@ function prepare_entry_document(url_string, doc, verbose) {
   sanitize_html_document(doc, verbose);
   condense_document(doc);
   filter_html_attrs(doc);
-
 }
 
 function ensure_document_has_body(doc) {
