@@ -381,16 +381,16 @@ function reject_after_timeout(timeout_ms, error_message) {
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 4;
   // Per MDN and Google, the minimum is 4ms.
-  // Throw immediately as this is a static type error.
+  // Throw immediately as this is a static error.
   if(timeout_ms < 4)
     throw new TypeError('timeout_ms must be greater than 4');
 
-  function resolver(resolve, reject) {
+  function executor(resolve, reject) {
     const error = new Error(error_message);
     setTimeout(reject, timeout_ms, error);
   }
 
-  return new Promise(resolver);
+  return new Promise(executor);
 }
 
 // Race a timeout against a fetch

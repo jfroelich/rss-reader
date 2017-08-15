@@ -274,12 +274,15 @@ function slide_on_click(event) {
   if(!anchor.hasAttribute('href'))
     return true;
 
+  event.preventDefault();
+
   const url_string = anchor.getAttribute('href');
   chrome.tabs.create({'active': true, 'url': url_string});
+
   let conn;// undefined
   const verbose = true;// temp
   mark_slide_read(conn, current_slide_element, verbose).catch(console.warn);
-  event.preventDefault();
+
   return false;
 }
 

@@ -22,3 +22,9 @@ check if image has inline style, and if so, inspect the style property, and if i
 what about the fact that style is removed from all attributes when scrubbing the dom. This makes this operation seem pointless.
 
 I could revise the attribute filtering part to allow for style background image. But then I need to think more about how that can affect a rendered article
+
+# TODO: support background images (copied from old github issue )
+
+For example:
+
+&lt;img src="url" osrc="url" style="background: url(url); background-position: 0px -5422px;width:270px;height:87px"&gt;

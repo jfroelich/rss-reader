@@ -193,3 +193,11 @@ in any way. It does not even need to be a parameter to later function calls
 because it becomes part of the internal state.
 * On the other hand it demands indexedB? I dunno maybe all the other functions
 can check if conn is present and react accordingly.
+
+# TODO: think about storing lookup failures in cache 
+
+Store failure cases too, that way i stop trying to refetch the same thing repeatedly, use something like failure counter, once it reaches 10 then delete, something like that.
+
+Modify other checks to consider if matched failure case. If successful make sure to delete failure cases.
+
+This also fixes ephemeral errors (site temp offline, temp unreachable).

@@ -150,3 +150,20 @@ explicitly apply the entry properties to tables as well. Note it could be
 cells (td) or tables (table), unsure.
 
 # TODO: prohibit use of username:password in all requests?
+
+# Article thumbnails
+
+Would be neat to preview a screenshot of an article.
+
+# Add a way to view articles that have been read (history)
+
+Add a read articles history view
+
+If I do this, the archiving of entries will need to retain additional information like date read and title and the entry's favicon
+Do I revise the slideshow entirely so that it can just list articles and then the list can be switched from unread to read, or do I create an entirely separate page devoted to history.
+
+need search ability similar to chrome history tab to view recently read articles
+
+if integrated into main view, main view would need to be able to load recently read instead of unread
+
+or a ui like apple's new news app

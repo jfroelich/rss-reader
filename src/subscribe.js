@@ -13,7 +13,6 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
   if(!Number.isInteger(timeout_ms))
     throw new TypeError('timeout_ms not an integer');
 
-  // Default to allow notifications
   if(typeof notify === 'undefined')
     notify = true;
 

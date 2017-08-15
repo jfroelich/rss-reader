@@ -51,7 +51,7 @@ async function search_google_feeds(query_string, timeout_ms) {
   if(timeout_ms) {
     const promises = [];
     promises[0] = fetch_promise;
-    promises[1] = new Promise(function resolver(resolve, reject) {
+    promises[1] = new Promise(function executor(resolve, reject) {
       const error = new Error('Request timed out');
       setTimeout(reject, timeout_ms, error);
     });

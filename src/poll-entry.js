@@ -247,7 +247,16 @@ function prepare_entry_document(url_string, doc, verbose) {
   filter_boilerplate(doc);
   secure_html_document(doc);
   sanitize_html_document(doc, verbose);
-  condense_document(doc);
+
+  // Because we are stripping attributes, there is no need to keep them when
+  // condensing.
+  const copy_attrs_on_rename = false;
+  // How many rows to check when unwrapping single column tables
+  const row_scan_limit = 20;
+  condense_document(doc, copy_attrs_on_rename, row_scan_limit);
+
+  // Do this last, this is one of the slower operations, and is sped up when
+  // there are fewer elements to process
   filter_html_attrs(doc);
 }
 

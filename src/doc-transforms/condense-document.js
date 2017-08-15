@@ -3,33 +3,39 @@
 
 { // Begin file block scope
 
-function condense_document(doc) {
-  remove_comment_nodes(doc);
+function condense_document(doc, copy_attrs_on_rename, row_scan_limit) {
+  remove_comment_nodes(doc.documentElement);
+
+  const body_element = doc.body;
+  if(!body_element)
+    return;
 
   // Use shorter names for common elements
-  const copy_attrs_on_rename = false;
-  rename_elements(doc, 'strong', 'b', copy_attrs_on_rename);
-  rename_elements(doc, 'em', 'i', copy_attrs_on_rename);
+  rename_elements(body_element, 'strong', 'b', copy_attrs_on_rename);
+  rename_elements(body_element, 'em', 'i', copy_attrs_on_rename);
 
-  unwrap_captionless_figure_elements(doc.body);
+  unwrap_captionless_figure_elements(body_element);
 
   // Unwrap semantic container sections
-  unwrap_elements(doc.body, 'article, aside, footer, header, main, section');
+  unwrap_elements(body_element,
+    'article, aside, footer, header, main, section');
   // Unwrap table sections
-  unwrap_elements(doc.body, 'colgroup, hgroup, multicol, tbody, tfoot, thead');
+  unwrap_elements(body_element,
+    'colgroup, hgroup, multicol, tbody, tfoot, thead');
   // Unwrap generic containers
-  unwrap_elements(doc.body, 'div, ilayer, layer');
+  unwrap_elements(body_element, 'div, ilayer, layer');
 
-  unwrap_single_item_lists(doc);
-  unwrap_single_column_tables(doc, 20);
-  remove_leaf_nodes(doc.body);
+  unwrap_single_item_lists(body_element);
+  unwrap_single_column_tables(body_element, row_scan_limit);
+  remove_leaf_nodes(body_element);
 
-  condense_text_nodes_whitespace(doc);
-  trim_document(doc);
+  condense_text_nodes_whitespace(doc.documentElement);
+  trim_document(body_element);
 }
 
-function remove_comment_nodes(doc) {
-  const iterator = doc.createNodeIterator(doc.documentElement,
+function remove_comment_nodes(ancestor_element) {
+  const doc = ancestor_element.ownerDocument;
+  const iterator = doc.createNodeIterator(ancestor_element,
     NodeFilter.SHOW_COMMENT);
   for(let node = iterator.nextNode(); node; node = iterator.nextNode())
     node.remove();
@@ -85,8 +91,8 @@ function is_leaf_exception(element) {
   return exceptions.includes(element.localName);
 }
 
-function unwrap_single_column_tables(doc, row_scan_limit) {
-  const tables = doc.querySelectorAll('table');
+function unwrap_single_column_tables(ancestor_element, row_scan_limit) {
+  const tables = ancestor_element.querySelectorAll('table');
   for(const table of tables)
     if(is_single_column_table(table, row_scan_limit))
       unwrap_single_column_table(table);
@@ -132,18 +138,18 @@ function unwrap_single_column_table(table) {
   table.remove();
 }
 
-function unwrap_single_item_lists(doc) {
-  const list_elements = doc.querySelectorAll('ul, ol, dl');
+function unwrap_single_item_lists(ancestor_element) {
+  const list_elements = ancestor_element.querySelectorAll('ul, ol, dl');
   for(const list_element of list_elements)
-    unwrap_single_item_list(doc, list_element);
+    unwrap_single_item_list(ancestor_element, list_element);
 }
 
 // Unwraps single item or empty list elements
-function unwrap_single_item_list(doc, list) {
+function unwrap_single_item_list(ancestor_element, list) {
   const list_parent = list.parentNode;
   if(!list_parent)
     return;
-
+  const doc = ancestor_element.ownerDocument;
   const item = list.firstElementChild;
 
   // If the list has no child elements then move its child nodes out of the
@@ -201,8 +207,9 @@ function is_text_node(node) {
   return node && node.nodeType === Node.TEXT_NODE;
 }
 
-function condense_text_nodes_whitespace(doc) {
-  const iterator = doc.createNodeIterator(doc.documentElement,
+function condense_text_nodes_whitespace(ancestor_element) {
+  const doc = ancestor_element.ownerDocument;
+  const iterator = doc.createNodeIterator(ancestor_element,
     NodeFilter.SHOW_TEXT);
   for(let node = iterator.nextNode(); node; node = iterator.nextNode()) {
     const value = node.nodeValue;
@@ -215,8 +222,12 @@ function condense_text_nodes_whitespace(doc) {
 }
 
 // Returns true if the node lies within a whitespace sensitive element
-function is_whitespace_sensitive_descendant(node) {
-  return node.parentNode.closest('code, pre, ruby, textarea, xmp');
+function is_whitespace_sensitive_descendant(text_node) {
+  // The closest method only exists on elements, so use the text node's
+  // parent element. The closest method also tests against the element itself,
+  // so the parent element is checked.
+  const parent_element = text_node.parentNode;
+  return parent_element.closest('code, pre, ruby, textarea, xmp');
 }
 
 // Find any sequence of 2 or more whitespace characters and replace with a
@@ -227,13 +238,13 @@ function condense_whitespace(string) {
 
 // Remove whitespace and whitespace-like content from the start and end of
 // the document's body.
-function trim_document(doc) {
-  if(!doc.body)
+function trim_document(body_element) {
+  if(!body_element)
     return;
-  const first_child = doc.body.firstChild;
+  const first_child = body_element.firstChild;
   if(first_child) {
     trim_doc_step(first_child, 'nextSibling');
-    const last_child = doc.body.lastChild;
+    const last_child = body_element.lastChild;
     if(last_child && last_child !== first_child)
       trim_doc_step(last_child, 'previousSibling');
   }

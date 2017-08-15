@@ -84,8 +84,11 @@ function rename_element(element, new_element_name, copy_attrs) {
   return parent_element.insertBefore(new_element, next_sibling);
 }
 
-function rename_elements(doc, old_element_name, new_element_name, copy_attrs) {
-  const elements = doc.querySelectorAll(old_element_name);
-  for(const element of elements)
-    rename_element(element, new_element_name, copy_attrs);
+function rename_elements(ancestor_element, old_element_name, new_element_name,
+  copy_attrs) {
+  if(ancestor_element) {
+    const elements = ancestor_element.querySelectorAll(old_element_name);
+    for(const element of elements)
+      rename_element(element, new_element_name, copy_attrs);
+  }
 }
