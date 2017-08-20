@@ -214,6 +214,7 @@ function parse_html(html) {
   return document;
 }
 
+// TODO: is this even in use?
 function prepare_local_entry(entry, verbose) {
   if(!entry.content)
     return entry;
@@ -255,9 +256,16 @@ function prepare_entry_document(url_string, doc, verbose) {
   const row_scan_limit = 20;
   condense_document(doc, copy_attrs_on_rename, row_scan_limit);
 
-  // Do this last, this is one of the slower operations, and is sped up when
-  // there are fewer elements to process
-  filter_html_attrs(doc);
+  // Filter element attributes last because it is so slow and is sped up by
+  // processing fewer elements.
+  const attribute_whitelist = {
+    'a': ['href', 'name', 'title', 'rel'],
+    'iframe': ['src'],
+    'source': ['media', 'sizes', 'srcset', 'src', 'type'],
+    'img': ['src', 'alt', 'title', 'srcset']
+  };
+
+  remove_element_attributes(doc, attribute_whitelist);
 }
 
 function ensure_document_has_body(doc) {
@@ -284,6 +292,7 @@ function rewrite_url_string(url_string) {
   }
 }
 
+// TODO: make this into a doc transform
 function prune_doc_using_host_template(url_string, doc, verbose) {
   const host_selector_map = {};
   host_selector_map['www.washingtonpost.com'] = [

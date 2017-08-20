@@ -1,24 +1,49 @@
 // See license.md
 'use strict';
 
-{ // Begin file block scope
+{
 
-function filter_boilerplate(doc) {
-  if(!doc.body)
-    return;
-  const best_element = find_high_score_element(doc);
-  prune(doc, best_element);
+// Returns a boilerplate model
+// TODO: Right now this just returns defaults
+function bp_create_model(options) {
+  const model = {};
+  model.candidate_selecotr =
+    'article, content, div, layer, main, section, span, td';
+  model.evaluate = get_element_score;
+  return model;
+}
+
+function get_element_score(element) {
+  const list_selector = 'li, ol, ul, dd, dl, dt';
+  const nav_selector = 'aside, header, footer, nav, menu, menuitem';
+  let score = 0;
+
+  score = derive_text_bias(element);
+  if(element.closest(list_selector))
+    score -= 200;
+  if(element.closest(nav_selector))
+    score -= 500;
+  score += derive_ancestor_bias(element);
+  score += derive_child_images_bias(element);
+  score += derive_element_attribute_bias(element);
+  return score;
+}
+
+function condense_whitespace(string) {
+  return string.replace(/\s+/g, '');
 }
 
 // Bias an element based on the text it contains and the ratio of the text
 // outside of anchors to text inside of anchors.
-// Returns the bias as a double
+// Returns the bias as a int
 // For speed this compares approximate char count instead of word count
 function derive_text_bias(element) {
   const text = condense_whitespace(element.textContent);
   const text_length = text.length;
   const anchor_length = derive_anchor_length(element);
-  return (0.25 * text_length) - (0.7 * anchor_length);
+  const bias_float = (0.25 * text_length) - (0.7 * anchor_length);
+  const bias_int = bias_float | 0;
+  return bias_int;
 }
 
 // Assumes document is well-formed, meaning no nested anchors.
@@ -31,6 +56,7 @@ function derive_anchor_length(element) {
   }
   return anchor_length;
 }
+
 
 // Returns the bias for an element based on its child elements
 function derive_ancestor_bias(element) {
@@ -65,9 +91,10 @@ function derive_ancestor_bias(element) {
   return total_bias;
 }
 
+
 // Calculates and returns the bias for an element based on the values of
 // some of its attributes
-function derive_attr_bias(element) {
+function derive_element_attribute_bias(element) {
   var token_weight_map = {
     'ad': -500,
     'ads': -500,
@@ -128,110 +155,76 @@ function derive_attr_bias(element) {
   return total_bias;
 }
 
-function find_high_score_element(doc) {
-  var candidate_selector =
-    'article, content, div, layer, main, section, span, td';
-  var list_selector = 'li, ol, ul, dd, dl, dt';
-  var nav_selector = 'aside, header, footer, nav, menu, menuitem';
-  var best_element = doc.documentElement;
-  if(!doc.body)
-    return best_element;
-  var elements = doc.body.querySelectorAll(candidate_selector);
-  var high_score = 0.0;
-  for(var element of elements) {
-    var score = derive_text_bias(element);
-    if(element.closest(list_selector))
-      score -= 200.0;
-    if(element.closest(nav_selector))
-      score -= 500.0;
-    score += derive_ancestor_bias(element);
-    score += derive_img_bias(element);
-    score += derive_attr_bias(element);
-    if(score > high_score) {
-      best_element = element;
-      high_score = score;
-    }
-  }
-
-  return best_element;
-}
-
-function derive_img_bias(parent_element) {
-  let bias = 0.0;
+function derive_child_images_bias(parent_element) {
+  let bias = 0;
   let image_count = 0;
   for(let node of parent_element.childNodes) {
     if(node.localName === 'img') {
-      bias += derive_img_area_bias(node) + derive_img_text_bias(node);
+      bias += derive_image_area_bias(node) + derive_image_text_bias(node);
       image_count++;
     }
   }
 
-  // Penalize carousels
+  const carousel_penalty = -50;
   if(image_count > 1)
-    bias += -50 * (image_count - 1);
+    bias += carousel_penalty * (image_count - 1);
   return bias;
 }
 
 // Reward supporting text of images
-function derive_img_text_bias(img_element) {
+function derive_image_text_bias(image_element) {
   let bias = 0;
-  if(img_element.hasAttribute('alt'))
+  if(image_element.hasAttribute('alt'))
     bias += 20;
-  if(img_element.hasAttribute('title'))
+  if(image_element.hasAttribute('title'))
     bias += 30;
-  if(find_img_caption(img_element))
+  if(find_img_caption(image_element))
     bias += 100;
   return bias;
 }
 
 // Reward large images
-function derive_img_area_bias(img_element) {
-  let bias = 0.0;
-  const max_area = 100000;
-  const damp_coef = 0.0015;
-  const area = img_element.width * img_element.height;
-  if(area)
-    bias = damp_coef * Math.min(max_area, area);
-  return bias;
+function derive_image_area_bias(image_element) {
+
+  // Init width and height. If one is missing then assume square image
+  let width = 0, height = 0;
+  if(image_element.hasAttribute('width')) {
+    width = image_element.width;
+    if(image_element.hasAttribute('height'))
+      height = image_element.height;
+    else
+      height = width;
+  } else if(image_element.hasAttribute('height')) {
+    height = image_element.height;
+    width = height;
+  }
+
+  const original_area = image_element.width * image_element.height;
+  if(original_area) {
+    // Clamp to prevent overly large bias
+    const max_area = 100000;
+    const clamped_area = Math.min(max_area, original_area);
+
+    // Dampen to give a proportional strength relative to other hard coded
+    // empiraclly collected scores
+    const damp_coef = 0.0015;
+    const dampened_bias_float = damp_coef * clamped_area;
+    // Return the value as an integer
+    return dampened_bias_float | 0;
+  } else {
+    return 0;
+  }
 }
 
-function find_img_caption(img_element) {
-  const figure_element = img_element.closest('figure');
+function find_img_caption(image_element) {
+  const figure_element = image_element.closest('figure');
   let caption_element;
   if(figure_element)
     caption_element = figure_element.querySelector('figcaption');
   return caption_element;
 }
 
-// Detach elements that do not intersect with the best element
-function prune(doc, best_element) {
-  if(best_element === doc.documentElement)
-    return;
-  if(best_element === doc.body)
-    return;
-  if(!doc.documentElement.contains(best_element))
-    throw new TypeError('best element not attached to document');
 
-  const elements = doc.body.querySelectorAll('*');
-  for(let element of elements) {
-    // Keep ancestors of best element
-    if(element.contains(best_element))
-      continue;
-    // Keep descendants of best element
-    if(best_element.contains(element))
-      continue;
-    // Ignore children of removed elements
-    if(!doc.documentElement.contains(element))
-      continue;
-    element.remove();
-  }
+this.bp_create_model = bp_create_model;
+
 }
-
-function condense_whitespace(string) {
-  return string.replace(/\s+/g, '');
-}
-
-// Public exports
-this.filter_boilerplate = filter_boilerplate;
-
-} // End file scope

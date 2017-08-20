@@ -17,7 +17,7 @@
       "/src/background.js",
       "/src/doc-transforms/condense-document.js",
       "/src/doc-transforms/filter-boilerplate.js",
-      "/src/doc-transforms/filter-element-attributes.js",
+      "/src/doc-transforms/remove-element-attributes.js",
       "/src/doc-transforms/resolve-document-urls.js",
       "/src/doc-transforms/sanitize-html-document.js",
       "/src/doc-transforms/secure-html-document.js",

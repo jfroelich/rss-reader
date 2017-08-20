@@ -19,11 +19,13 @@ async function archive_entries(max_age_ms, verbose) {
 
   let db_name, db_version, db_conn_timeout;
   let conn, compacted_entries;
+  let did_put_entries = false;
   try {
     conn = await reader_open_db(db_name, db_version, db_conn_timeout, verbose);
     const entries = await db_load_archivable_entries(conn, max_age_ms);
     compacted_entries = compact_entries(entries, verbose);
     await db_put_entries(conn, compacted_entries);
+    did_put_entries = true;
   } finally {
     if(conn)
       conn.close();
@@ -31,17 +33,20 @@ async function archive_entries(max_age_ms, verbose) {
 
   // After the transaction commits. Use small messages to scale independently
   // of the number of entries.
-  const db_channel = new BroadcastChannel('db');
-  for(const entry of compacted_entries) {
-    const message = {};
-    message.type = 'archived-entry';
-    message.id = entry.id;
-    db_channel.postMessage(message);
-  }
-  db_channel.close();
+  if(did_put_entries) {
+    const db_channel = new BroadcastChannel('db');
+    for(const entry of compacted_entries) {
+      const message = {};
+      message.type = 'archived-entry';
+      message.id = entry.id;
+      db_channel.postMessage(message);
+    }
+    db_channel.close();
 
-  if(verbose)
-    console.log('Compacted %d entries', compacted_entries.length);
+    if(verbose)
+      console.log('Compacted %d entries', compacted_entries.length);
+  }
+
   return compacted_entries.length;
 }
 

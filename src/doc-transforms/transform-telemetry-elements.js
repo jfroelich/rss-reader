@@ -59,14 +59,6 @@ function is_telemetry_image(image_element) {
     has_telemetry_src_url(image_element);
 }
 
-function is_hidden_element(element) {
-  return element.hasAttribute('style') &&
-    (element.style.display === 'none' ||
-     element.style.visibility === 'hidden' ||
-     (element.style.position === 'absolute' &&
-      parseInt(element.style.left, 10) < 0));
-}
-
 function is_pixel_image(image_element) {
   return image_element.hasAttribute('src') &&
     image_element.hasAttribute('width') && image_element.width < 2 &&
@@ -83,7 +75,6 @@ function has_telemetry_src_url(image_element) {
         return true;
   }
 }
-
 
 this.transform_telemetry_elements = transform_telemetry_elements;
 

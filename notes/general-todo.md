@@ -31,6 +31,11 @@ https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/for
 
 Can use const instead of let e.g. (const var of iterator) ...
 
+# Reconsider use of for..of due to current performance
+
+See http://incaseofstairs.com/six-speed/ . For a basic array it is reportedly
+17x slower. As cool as the new syntax is, it may not be worth it.
+
 # Add support for &lt;picture&gt;
 
 See https://googlechrome.github.io/samples/picture-element/

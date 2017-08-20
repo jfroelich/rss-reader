@@ -92,3 +92,11 @@ function rename_elements(ancestor_element, old_element_name, new_element_name,
       rename_element(element, new_element_name, copy_attrs);
   }
 }
+
+function is_hidden_element(element) {
+  return element.hasAttribute('style') &&
+    (element.style.display === 'none' ||
+     element.style.visibility === 'hidden' ||
+     (element.style.position === 'absolute' &&
+      parseInt(element.style.left, 10) < 0));
+}
