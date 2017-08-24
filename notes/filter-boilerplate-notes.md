@@ -10,14 +10,14 @@ http://www.l3s.de/~kohlschuetter/boilerplate
 * create tests
 * refactor prune to use compareDocumentPosition because I assume the performance
 is better
-* reintroduce support for verbose parameter
 * reintroduce support for annotating output
 * Instead of finding the best element, gather elements containing text, and
 return all above a threshold. Maybe just create a new document, which also
 helps with purity. But make sure to somehow not doubly include nested elements.
 Kind of like the block approach of a very old version of this?
 * Reintroduce support for merging a multi-page article, probably requires an
-async function and html fetching ability
+async function and html fetching ability. Actually this belongs somewhere
+else
 * When calculating image bias, round to an integer, stop using floats
 * When calculating image size, if one dimension is missing but other is present,
 then maybe can simply assume the image is a square and use the same size for

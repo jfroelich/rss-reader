@@ -11,11 +11,5 @@ A Parser-blocking, cross-origin script, http://connect.decknetwork.net/deckDF_js
 for more details. (anonymous) @ intel-mbp-ram:112
 
 The site is using a file name mint.js, and mint.js has some funky document.write stuff.
-
 This is on Chrome 55, which I believe just mentioned something about this happening.
-
-The strange part is that I am on broadband.
-
-Just encountered this error in the log:
-
-Failed to load resource: the server responded with a status of 406 (Not Acceptable)
+I am on broadband.

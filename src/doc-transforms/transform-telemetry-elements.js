@@ -25,6 +25,7 @@ const DEFAULT_PATTERNS = [
   /\/\/pubads\.g\.doubleclick\.net\//i,
   /\/\/sb\.scorecardresearch\.com\//i,
   /\/\/stats\.bbc\.co\.uk\//i,
+  /\/\/statse\.webtrendslive\.com\//i,
   /\/\/pixel\.wp\.com\//i,
   /\/\/t\.co\//i,
   /\/\/www\.facebook\.com\/tr/i
@@ -55,14 +56,17 @@ function transform_telemetry_elements(doc, verbose) {
 }
 
 function is_telemetry_image(image_element) {
-  return is_hidden_element(image_element) || is_pixel_image(image_element) ||
+  return is_hidden_element(image_element) ||
+    is_pixel_image(image_element) ||
     has_telemetry_src_url(image_element);
 }
 
 function is_pixel_image(image_element) {
   return image_element.hasAttribute('src') &&
-    image_element.hasAttribute('width') && image_element.width < 2 &&
-    image_element.hasAttribute('height') && image_element.height < 2;
+    image_element.hasAttribute('width') &&
+    image_element.width < 2 &&
+    image_element.hasAttribute('height') &&
+    image_element.height < 2;
 }
 
 const URL_START_PATTERN = /^(http:\/\/|https:\/\/|\/\/)/i;

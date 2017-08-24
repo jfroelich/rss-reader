@@ -24,7 +24,7 @@ async function fetch_html(url_string, timeout_ms) {
   } else
     response = await fetch_promise;
 
-  validateResponse(response, url_string);
+  validate_response(response, url_string);
   validate_content_type(response, url_string);
 
   const output_response = {};
@@ -45,7 +45,7 @@ function reject_after_timeout(url_string, timeout_ms) {
   return new Promise(resolver);
 }
 
-function validateResponse(response, url_string) {
+function validate_response(response, url_string) {
   if(!response)
     throw new Error(`${response.status} ${response.statusText} ${url_string}`);
   if(!response.ok)

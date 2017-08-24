@@ -3,7 +3,9 @@
 
 { // Begin file block scope
 
-// Looks for urls in the document and ensures they are absolute.
+// Looks for urls in the document and ensures they are absolute. Updates the
+// attribute values by replacing any relative urls with absolute urls.
+// Does not currently handle background props in inline css
 function resolve_document_urls(doc, base_url_object) {
   if(Object.prototype.toString.call(base_url_object) !== '[object URL]')
     throw new TypeError('base_url_object is not of type URL');
