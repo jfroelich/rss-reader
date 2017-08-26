@@ -7,123 +7,209 @@
 // is a single page, the input document is left as is. If the document is a
 // multipage document, the other pages are merged into the document. Pagination
 // elements are removed.
-async function merge_multipage_document(html_document, url_string,
-  per_fetch_timeout_ms) {
-  const pager = find_pager(html_document, url_string);
-  if(!pager)
+// @param doc {HTMLDocument} the document
+// @param location {String} url of the document
+async function merge_multipage_document(doc, location, timeout_ms) {
+  // The maximum distance between any two anchors that may form a part of a
+  // pagination sequence, as a count of node edge traverse steps
+  const max_distance = 4;
+  const anchors = find_pagination_anchors(doc, location, max_distance);
+  if(!anchors.length)
     return;
 
-  const docs = await fetch_docs(pager.urls, per_fetch_timeout_ms);
-  merge_docs(html_document, docs);
-  remove_pager_elements(html_document, pager);
-}
+  const urls = [];
+  for(const anchor of anchors)
+    urls.push(anchor.getAttribute('href'));
 
-function fetch_docs(urls, timeout_ms) {
-  const fetch_promises = [];
-  for(const url of urls) {
-    const fetch_promise = fetch_html_silently(url, timeout_ms);
-    fetch_promises.push(fetch_promise);
-  }
-  return Promise.all(fetch_promises);
-}
-
-// Traps errors so that fetch does not fail fast when used with Promise.all
-async function fetch_html_silently(url, timeout_ms) {
-  const parser = new DOMParser();
+  let docs;
   try {
-    const response = await fetch_html(url, timeout_ms);
-    const text = await response.text();
-
-    const html_document = parser.parseFromString(text, 'text/html');
-    return html_document;
+    docs = await fetch_docs(urls, timeout_ms);
   } catch(error) {
+    // On fetch error, the merge fails
     console.debug(error);
+    return;
   }
+
+  merge_docs(doc, docs);
+  remove_pagination_anchors(doc, anchors);
+}
+
+// Concurrently fetch the array of urls. If any fetch fails then this fails.
+// If no failure then this completes whenever the last fetch completes.
+function fetch_docs(urls, timeout_ms) {
+  const promises = [];
+  for(const url of urls) {
+    const promise = fetch_and_parse_html(url, timeout_ms);
+    promises.push(fetch_promise);
+  }
+  return Promise.all(promise);
+}
+
+async function fetch_and_parse_html(url, timeout_ms) {
+  const parser = new DOMParser();
+  const response = await fetch_html(url, timeout_ms);
+  const text = await response.text();
+  return parser.parseFromString(text, 'text/html');
 }
 
 // Return a basic object with a property container_element that points to the
 // containing element of the pager, and an array of other page urls.
 // Maybe something that tracks how pager was found, so it can be found again?
-function find_pager(html_document, initial_url_string) {
-  const body_element = html_document.body;
-  if(!body_element)
-    return;
+// TODO: guarantee return a defined array
+// @param doc {HTMLDocument}
+// @param location {String} url location of the document
+function find_pagination_anchors(doc, location, max_distance) {
+  const candidates = find_candidate_anchors(doc, location);
+  if(!candidates.length)
+    return [];
 
-  // 1. Get all anchors
-  let anchor_elements = body_element.getElementsByTagName('a');
-  if(!anchor_elements.length)
-    return;
-
-  // 2. Filter out anchors that are unlikely candidates
-  anchor_elements = filter_candidate_anchors(anchor_elements,
-    initial_url_string);
-  if(!anchor_elements.length)
-    return;
-
-  // 3. Find sequences of anchor elements
-  const max_distance = 4;
-  const sequences = find_anchor_sequences(anchor_elements, max_distance);
+  const sequences = find_anchor_sequences(candidates, max_distance);
   if(!sequences.length)
-    return;
+    return [];
 
   // Filter out sequences? E.g. too short, too long, cumulative distance
   // too great?
   // NOTE: this is where I am stuck on what to do next
 
-  // 4. Find a good sequence and return it.
+  // Look at each sequence, and try to find a sequence that is suitable
+
   throw new Error('Not yet implemented');
 
+  //return [];
 }
 
-// Returns a new array of anchors that may be useful for sequence analysis
-// e.g. similar to initial url (except for file name), on same domain
-function filter_candidate_anchors(anchor_elements, initial_url_string) {
+// Search for anchors within the ancestor element. Return an array
+// of those anchors that may be pagination. Does not return undefined. If no
+// candidates found then an empty array is returned. Is not concerned with
+// sequence-related criteria for anchors, just the minimal criteria for any
+// anchor
+function find_candidate_anchors(doc, location) {
+  const body_element = doc.body;
+  if(!body_element)
+    return [];
+
+  const anchors = body_element.getElementsByTagName('a');
+  if(!anchors.length)
+    return [];
+
   const candidates = [];
-  const initial_url_object = new URL(initial_url_string);
-  for(const anchor_element of anchor_elements)
-    if(is_candidate_anchor(anchor_element, initial_url_object))
-      candidates.push(anchor_element);
+  const location_url = new URL(location);
+  for(const anchor of anchors)
+    if(is_candidate_anchor(anchor, location_url))
+      candidates.push(anchor);
   return candidates;
 }
 
 // Return true if the anchor element may be part of a pager sequence
-function is_candidate_anchor(anchor_element, initial_url_object) {
-  const href = anchor_element.getAttribute('href');
+// @param anchor_element {Element} an anchor element
+// @param base_url {URL}
+function is_candidate_anchor(anchor_element, base_url) {
+  // Although the following conditions are generally associative, they are
+  // ordered so as to reduce the chance of performing more expensive operations
+
+  if(!anchor_element.firstChild)
+    return false;
+
+  const max_text_length = 30;
+  const text_content = anchor_element.textContent || '';
+  if(text_content.trim().length > max_text_length)
+    return false;
+
+  if(is_hidden_element(anchor_element))
+    return false;
+
+  const href_url = get_href_url(anchor_element, base_url);
+  if(!href_url)
+    return false;
+
+  const allowed_protocols = ['https:', 'http:'];
+  if(!allowed_protocols.includes(href_url.protocol))
+    return false;
+
+  if(href_url.href === base_url.href)
+    return false;
+
+  // Check for digits somewhere in the anchor. At least one feature must have
+  // digits (or the name like one/two)
+  // Check id, class, href filename, href params, text
+
+  return are_similar_urls(base_url, href_url);
+}
+
+// Returns the anchor's href attribute value as a URL object, or undefined
+function get_href_url(anchor_element, base_url) {
+  let href = anchor_element.getAttribute('href');
 
   // The anchor's href value will eventually be used as the first parameter to
   // new URL, so it is important to avoid passing in an empty string because
   // when calling new URL(empty string, base url), the result is a copy of
-  // the base url, not an error. This is also cheaper.
+  // the base url, not an error.
   if(!href)
-    return false;
-  const trimmed_href = href.trim();
-  if(!trimmed_href)
-    return false;
+    return;
+  href = href.trim();
+  if(!href)
+    return;
 
-  // Although this could be tested later, I prefer doing this explicitly and
-  // reducing calls to new URL
-  if(!/^https?:\/\//i.test(trimmed_href))
-    return false;
-
-  // Validate the href url, and resolve the url, and get the object form of
-  // the url for inspecting its parts
-  let href_url_object;
+  let href_url;
   try {
-    href_url_object = new URL(trimmed_href, initial_url_object);
+    href_url = new URL(href, base_url);
   } catch(error) {
+    return;
+  }
+  return href_url;
+}
+
+// NOTE: only looks at inline style, assumes document is inert so cannot use
+// offset width/height, also inspects parents (up to body), does not run the
+// full range of tricks for hiding nodes (e.g occlusion/clipping/out of view)
+function is_hidden_element(element) {
+  const doc = element.ownerDocument;
+  const body = doc.body;
+  // Without a body, everything is hidden
+  if(!body)
+    return true;
+
+  // This avoids infinite loop below, and also is just a shortcut
+  if(element === body)
     return false;
+
+  // This avoids infinite loop below, and avoids processing detached anchors
+  if(!body.contains(element))
+    throw new TypeError('element is not a descendant of body');
+
+  // Get a list of parents of the element up to but excluding body
+  // Including the input element itself. List is ordered from input node up to
+  // highest node under body.
+  const ancestors = [];
+  let node = element;
+
+  while(node !== body) {
+    ancestors.push(node);
+    node = node.parentNode;
   }
 
-  return are_similar_urls(initial_url_object, href_url_object);
+  // Now we want to traverse from the top down, and stop upon finding the
+  // first node that is hidden. Rather than use unshift to build the parent
+  // array in reverse, we just iterate in reverse.
+  const num_ancestors = ancestors.length;
+  for(let i = num_ancestors - 1; i > -1; i--) {
+    const ancestor = ancestors[i];
+    const style = ancestor.style;
+    if(style.display === 'none')
+      return true;
+    if(style.visibility === 'hidden')
+      return true;
+    if(parseInt(style.opacity) < 0.3)
+      return true;
+  }
+  return false;
 }
 
 // Expects 2 URL objects. Return true if the second is similar to the first
 function are_similar_urls(url1, url2) {
-  throw new Error('Not yet implemented');
 
-  // NOTE: once url strings are unmarshalled into URL objects, accessing props
-  // of the URL object returns normalized strings. Therefore there is no need
-  // to worry about case-sensitivity.
+  // Once url strings are unmarshalled, properties yield normalized values.
+  // Therefore there is no need to worry about case.
 
   // Cross origin links are never similar
   if(url1.origin !== url2.origin)
@@ -168,6 +254,7 @@ function get_partial_path(path) {
 // from the other links in the sequence. More specifically, in an a-b-c
 // relation, a is within a certain threshold of b, and b is within a threshold
 // of c.
+// TODO: limit sequence member count?
 function find_anchor_sequences(anchor_elements, max_distance) {
   const num_anchors = anchor_elements.length;
   if(!num_anchors)
@@ -231,14 +318,14 @@ function calc_node_distance(node1, node2) {
 }
 
 
-// Copies the contents of each one of the docs into the html_document. Assume
-// the html_document is the first one
-function merge_docs(html_document, docs) {
+// Copies the contents of each one of the docs into the doc. Assume
+// the doc is the first one
+function merge_docs(doc, docs) {
   throw new Error('Not yet implemented');
 }
 
-// Remove all occurrences of the pager container elements from the html_document
-function remove_pager_elements(html_document, pager) {
+// Remove all occurrences of the pager container elements from the doc
+function remove_pagination_anchors(doc, pager) {
   throw new Error('Not yet implemented');
 }
 

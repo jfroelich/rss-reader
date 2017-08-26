@@ -92,3 +92,25 @@ as sequence labeling.
 I do not want to use a testing dataset, and I do not want to use probabilities.
 I want just a hackish quick solution that is mostly rule based and extremely
 fast.
+
+
+Instead of using a pager, return an array of link nodes in the doc.
+
+TODO:
+review
+https://github.com/chromium/dom-distiller/blob/master/java/org/chromium/distiller/PagingLinksFinder.java
+
+- require number text in features
+- find lowest common parent for links, and if links consume majority of the html
+then consider that is the pager
+
+One key thing that this does it is also finds pagination that is not numbered,
+like just the presence of a "next" link in a document. This is kind of different
+than what I was initially going for, in that i was looking for a sequence of
+numbers. The algorithm just focuses on finding the 'next' link in the sequence,
+rather than all page links at once.
+
+Side thought: maybe just finding pagination elements if useful even without
+merging. Maybe it is just another boilerplate category.  So maybe the merge
+functionality should be optional, and the default is to not merge and just return
+the pagination info found.
