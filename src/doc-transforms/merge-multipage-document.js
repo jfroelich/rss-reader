@@ -10,10 +10,10 @@
 // @param doc {HTMLDocument} the document
 // @param location {String} url of the document
 async function merge_multipage_document(doc, location, timeout_ms) {
-  // The maximum distance between any two anchors that may form a part of a
-  // pagination sequence, as a count of node edge traverse steps
-  const max_distance = 4;
-  const anchors = find_pagination_anchors(doc, location, max_distance);
+  // The maximum distance between any anchor in a sequence and the sequence's
+  // lowest common ancestor
+  const lca_max_distance = 3;
+  const anchors = find_pagination_anchors(doc, location, lca_max_distance);
   if(!anchors.length)
     return;
 
@@ -58,12 +58,12 @@ async function fetch_and_parse_html(url, timeout_ms) {
 // TODO: guarantee return a defined array
 // @param doc {HTMLDocument}
 // @param location {String} url location of the document
-function find_pagination_anchors(doc, location, max_distance) {
+function find_pagination_anchors(doc, location, lca_max_distance) {
   const candidates = find_candidate_anchors(doc, location);
   if(!candidates.length)
     return [];
 
-  const sequences = find_anchor_sequences(candidates, max_distance);
+  const sequences = find_anchor_sequences(candidates, lca_max_distance);
   if(!sequences.length)
     return [];
 
@@ -237,65 +237,65 @@ function are_similar_urls(url1, url2) {
 // Assume's input path string is defined, trimmed, and normalized.
 function get_partial_path(path) {
   const index = path.lastIndexOf('/');
-
-  // All paths must have a forward slash somewhere. It may only be the
-  // starting slash, but at least one exists. It is more appropriate to error
-  // out here because this means the function was called incorrectly. Also want
-  // to avoid calling substring with a negative second parameter.
   if(index === -1)
     throw new TypeError('path missing forward slash');
-
-  const part = path.substring(0, index);
-  return part;
+  return path.substring(0, index);
 }
 
 // Create an array of sequences, where each sequence is an array of links,
-// where each link in a sequence is within a certain tolerable "distance"
-// from the other links in the sequence. More specifically, in an a-b-c
-// relation, a is within a certain threshold of b, and b is within a threshold
-// of c.
-// TODO: limit sequence member count?
-function find_anchor_sequences(anchor_elements, max_distance) {
+// where each link in a sequence is within a certain tolerable distance
+// from the lowest common ancestor of a sequence.
+// Conditions for not a subsequent anchor in sequence:
+// * The lowest common ancestor changed
+// * Not equidistant from lowest common ancestor
+// * Too distant from lowest common ancestor
+// TODO: the lca change check may be implicit in the unequal distances
+// check, I just have not fully thought it through.
+// TODO: maybe store the LCA within each sequence as each sequence's first value
+// before returning, as this may help avoid having to find it again later
+// TODO: if I am using a max distance to lca, then why not just restrict search
+// distance in find_lca and return null when no lca found within distance?
+function find_anchor_sequences(anchor_elements, lca_max_distance) {
   const num_anchors = anchor_elements.length;
   if(!num_anchors)
     throw new TypeError('anchor_elements is empty');
-  if(max_distance < 2)
-    throw new TypeError('max_distance < 2');
-
-  const sequences = [];
-  const min_sequence_length = 1;
-  const max_distance_minus1 = max_distance - 1;
-  let prev_a = anchor_elements[0];
-  let sequence = [prev_a];
+  const minlen = 1, maxlen = 51; // exclusive end points
+  const seqs = [];
+  const maxd = lca_max_distance - 1;
+  let a1 = anchor_elements[0], a2 = null;
+  let seq = [a1];
+  let lca1, lca2;
 
   for(let i = 1; i < num_anchors; i++) {
-    const a = anchor_elements[i];
-    const distance = calc_node_distance(prev_a, a);
-    if(distance > max_distance_minus1) {
-      if(sequence.length > min_sequence_length)
-        sequences.push(sequence);
-      sequence = [];
+    a2 = anchor_elements[i];
+    lca2 = find_lca(a1, a2);
+    if((lca1 && (lca2.ancestor !== lca1.ancestor)) ||
+      (lca2.d1 !== lca2.d2) || (lca2.d1 > maxd)) {
+      if(seq.length > minlen && seq.length < maxlen)
+        seqs.push(seq);
+      seq = [a2];
+      a1 = a2;
+      lca1 = null;
+    } else {
+      lca1 = lca2;
+      seq.push(a2);
+      a1 = a2;
     }
-
-    sequence.push(a);
-    prev_a = a;
   }
 
-  // Do not forget the remaining sequence
-  if(sequence.length > min_sequence_length)
-    sequences.push(sequence);
-
-  return sequences;
+  if(seq.length > minlen && seq.length < maxlen)
+    seqs.push(seq);
+  return seqs;
 }
 
 // Find the lowest common ancestor and then return total path length. Assumes
 // node1 does not contain node2, and node2 does not contain node1.
 // Adapted from https://stackoverflow.com/questions/3960843
-function calc_node_distance(node1, node2) {
+function find_lca(node1, node2) {
   if(node1 === node2)
-    throw new Error('node1 === node2, not allowed');
+    throw new TypeError('node1 === node2');
   if(node1.ownerDocument !== node2.ownerDocument)
-    throw new Error('node1 and node2 are not from same document');
+    throw new TypeError('node1 not in same document as node2');
 
   const ancestors1 = [];
   for(let node = node1.parentNode; node; node = node.parentNode)
@@ -304,13 +304,19 @@ function calc_node_distance(node1, node2) {
   for(let node = node2.parentNode; node; node = node.parentNode)
     ancestors2.push(node);
 
-  const immediate_parent_lengths = 2;
+  // The +1s are for the immediate parent steps of each node
+
   const len1 = ancestors1.length, len2 = ancestors2.length;
   for(let i = 0; i < len1; i++) {
     const ancestor1 = ancestors1[i];
     for(let j = 0; j < len2; j++) {
-      if(ancestor1 === ancestors2[j])
-        return i + j + immediate_parent_lengths;
+      if(ancestor1 === ancestors2[j]) {
+        return {
+          'ancestor': ancestor1,
+          'd1': i + 1,
+          'd2': j + 1
+        };
+      }
     }
   }
 
@@ -320,18 +326,20 @@ function calc_node_distance(node1, node2) {
 
 // Copies the contents of each one of the docs into the doc. Assume
 // the doc is the first one
+// TODO: maybe it would be better to accept an array and expect the first
+// item of the array to be the target document
 function merge_docs(doc, docs) {
   throw new Error('Not yet implemented');
 }
 
 // Remove all occurrences of the pager container elements from the doc
-function remove_pagination_anchors(doc, pager) {
+function remove_pagination_anchors(doc, anchors) {
   throw new Error('Not yet implemented');
 }
 
 // Export
 this.merge_multipage_document = merge_multipage_document;
-this.calc_node_distance = calc_node_distance;
+this.find_lca = find_lca;
 this.find_anchor_sequences = find_anchor_sequences;
 
 } // End file block scope

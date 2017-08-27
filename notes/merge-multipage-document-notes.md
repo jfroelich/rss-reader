@@ -93,16 +93,14 @@ I do not want to use a testing dataset, and I do not want to use probabilities.
 I want just a hackish quick solution that is mostly rule based and extremely
 fast.
 
-
 Instead of using a pager, return an array of link nodes in the doc.
 
 TODO:
 review
 https://github.com/chromium/dom-distiller/blob/master/java/org/chromium/distiller/PagingLinksFinder.java
 
-- require number text in features
-- find lowest common parent for links, and if links consume majority of the html
-then consider that is the pager
+Side thought: find lowest common parent for links, and if links consume majority
+of the html then consider that is the pager
 
 One key thing that this does it is also finds pagination that is not numbered,
 like just the presence of a "next" link in a document. This is kind of different
@@ -114,3 +112,23 @@ Side thought: maybe just finding pagination elements if useful even without
 merging. Maybe it is just another boilerplate category.  So maybe the merge
 functionality should be optional, and the default is to not merge and just return
 the pagination info found.
+
+- require number text in features
+It is not just that the sequence links have to have digits, they have to have
+monotonically increasing digits in the same place. E.g. in the same place in
+the url path, or in the url params, or in the url text. All the links must
+follow the same pattern to be considered a sequence.
+
+we may not even need to require digits, just an ascii monotonic increase, like
+a-b-c or 1-2-3 or something. Also it is not always an increase by 1. It could
+be an increase by 5, or 10, or whatever.
+
+Also I may only want to impose the increasing-pattern requirement on a portion
+of the links in a sequence, e.g. say 80% of the links, or tolerate
+2 links of the sequence to be violations.
+
+note i can also use the same pattern approach to node positioning. rather than
+an abstract distance parameter between links, i can assert that paging
+links all share the same positioning pattern. therefore, all page links must
+be equidistant from the lowest common ancestor. this would also be a
+requirement to impose.
