@@ -93,7 +93,12 @@ I do not want to use a testing dataset, and I do not want to use probabilities.
 I want just a hackish quick solution that is mostly rule based and extremely
 fast.
 
-Instead of using a pager, return an array of link nodes in the doc.
+Instead of using a pager, return an array of link nodes in the doc?
+
+TODO: split up functionality into two separate files. One file is concerned
+with transforming paginated documents. The other is concerned purely with
+pagination functionality, like finding pagination.
+
 
 TODO:
 review
@@ -132,3 +137,16 @@ an abstract distance parameter between links, i can assert that paging
 links all share the same positioning pattern. therefore, all page links must
 be equidistant from the lowest common ancestor. this would also be a
 requirement to impose.
+
+todo: think about a one pass approach, maybe i can do the anchor validation in
+the sequence building step instead of before it. develop an explanation for why
+one approach is better or worse.
+
+Next thing to do after migrate to pagination module:
+- look for digit patterns in url path, url params, or anchor text. If one is
+found then record it for that url. then when building a sequence, get the
+pattern for a sequence's initial anchor. Then, when processing the next anchor,
+check if the same pattern exists (and maybe also is +1).  If it exists then
+append to sequence. If it does not exist then restart sequence.
+
+- the pagination lib should return a pager object instead of raw urls
