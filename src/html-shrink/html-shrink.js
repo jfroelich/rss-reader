@@ -3,7 +3,7 @@
 
 { // Begin file block scope
 
-function condense_document(doc, copy_attrs_on_rename, row_scan_limit) {
+function html_shrink(doc, copy_attrs_on_rename, row_scan_limit) {
   remove_comment_nodes(doc.documentElement);
 
   const body_element = doc.body;
@@ -265,6 +265,6 @@ function is_trimmable_node(node) {
     (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
 }
 
-this.condense_document = condense_document;
+this.html_shrink = html_shrink;
 
 } // End file block scope

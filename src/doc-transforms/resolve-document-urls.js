@@ -6,9 +6,9 @@
 // Looks for urls in the document and ensures they are absolute. Updates the
 // attribute values by replacing any relative urls with absolute urls.
 // Does not currently handle background props in inline css
-function resolve_document_urls(doc, base_url_object) {
-  if(Object.prototype.toString.call(base_url_object) !== '[object URL]')
-    throw new TypeError('base_url_object is not of type URL');
+function resolve_document_urls(doc, base_url) {
+  if(Object.prototype.toString.call(base_url) !== '[object URL]')
+    throw new TypeError('base_url is not of type URL');
 
   const element_attr_map = {
     'a': 'href',
@@ -45,11 +45,11 @@ function resolve_document_urls(doc, base_url_object) {
   const src_selector = create_src_selector(element_attr_map);
   const src_elements = doc.querySelectorAll(src_selector);
   for(const src_element of src_elements)
-    resolve_mapped_attr(src_element, element_attr_map, base_url_object);
+    resolve_mapped_attr(src_element, element_attr_map, base_url);
 
   const srcset_elements = doc.querySelectorAll('img[srcset], source[srcset]');
   for(const srcset_element of srcset_elements)
-    resolve_srcset_attr(srcset_element, base_url_object);
+    resolve_srcset_attr(srcset_element, base_url);
 }
 
 function create_src_selector(element_attr_map) {
@@ -60,7 +60,7 @@ function create_src_selector(element_attr_map) {
   return parts.join(',');
 }
 
-function resolve_mapped_attr(element, element_attr_map, base_url_object) {
+function resolve_mapped_attr(element, element_attr_map, base_url) {
   const attr_name = element_attr_map[element.localName];
   if(!attr_name)
     return;
@@ -69,7 +69,7 @@ function resolve_mapped_attr(element, element_attr_map, base_url_object) {
   if(!url_string)
     return;
 
-  const resolved_url_object = resolve_url(url_string, base_url_object);
+  const resolved_url_object = resolve_url(url_string, base_url);
   if(!resolved_url_object)
     return;
 
@@ -78,7 +78,7 @@ function resolve_mapped_attr(element, element_attr_map, base_url_object) {
     element.setAttribute(attr_name, resolved_url_string);
 }
 
-function resolve_srcset_attr(element, base_url_object) {
+function resolve_srcset_attr(element, base_url) {
   // The element has the attribute, but the attribute may not have a value.
   // parseSrcset requires a value or it may throw. While I catch exceptions
   // later I'd rather avoid exceptions where feasible
@@ -102,8 +102,7 @@ function resolve_srcset_attr(element, base_url_object) {
   let dirtied = false;
   for(const descriptor of descriptors) {
     const descriptor_url_string = descriptor.url;
-    const resolved_url_object = resolve_url(descriptor_url_string,
-      base_url_object);
+    const resolved_url_object = resolve_url(descriptor_url_string, base_url);
     if(!resolved_url_object)
       continue;
     if(resolved_url_object.href !== descriptor_url_string) {
@@ -147,9 +146,9 @@ function serialize_srcset(descriptors) {
 }
 
 // Returns the absolute form the input url
-function resolve_url(url_string, base_url_object) {
-  if(Object.prototype.toString.call(base_url_object) !== '[object URL]')
-    throw new TypeError('base_url_object is not of type URL');
+function resolve_url(url_string, base_url) {
+  if(Object.prototype.toString.call(base_url) !== '[object URL]')
+    throw new TypeError('base_url is not of type URL');
 
   // TODO: use a single regex for speed? Or maybe get the protocol,
   // normalize it, and check against a list of bad protocols?
@@ -164,7 +163,7 @@ function resolve_url(url_string, base_url_object) {
 
   let absolute_url_object;
   try {
-    absolute_url_object = new URL(url_string, base_url_object);
+    absolute_url_object = new URL(url_string, base_url);
   } catch(error) {
   }
   return absolute_url_object;

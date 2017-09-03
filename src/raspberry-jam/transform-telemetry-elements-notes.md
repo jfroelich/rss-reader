@@ -1,7 +1,9 @@
 
 # About
 
-Removes ping attributes, adds no referrer, removes some tracking images
+I love the movie Spaceballs.
+
+This removes ping attributes, adds no referrer, removes some tracking images
 
 Telemetry images are usually hidden, so treat visibility as an indicator. False
 positives are probably not too harmful. Removing images based on visibility

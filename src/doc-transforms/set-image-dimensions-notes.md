@@ -1,4 +1,8 @@
 
+# About
+
+Ensures all images have width and height attributes
+
 # TODO
 
 * Change to not fetch if only one dimension is set. In this case just assume the

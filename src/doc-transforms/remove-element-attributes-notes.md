@@ -7,7 +7,7 @@
 
 Basically I split up DOM scrubbing into separately concerned functions
 such as secure_html_document, sanitize_html_document,
-and condense_document. When splitting up that function I could not decide
+and html_shrink. When splitting up that function I could not decide
 where to place this functionality. The issue is that this function has multiple
 concerns:
 
@@ -34,7 +34,7 @@ make-document-embeddable transformation. Then this filtering of attributes with
 its cross-cutting concerns makes more sense.
 
 It is not this responsibility to remove empty attributes, that is a
-concern for condense_document, this is only a security pass/sanity pass,
+concern for html_shrink, this is only a security pass/sanity pass,
 make embeddable pass
 
 # Notes on getElementsByTagName

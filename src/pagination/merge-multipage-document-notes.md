@@ -7,6 +7,9 @@ how I filter boilerplate though. Or maybe I should be separately filtering
 boilerplate per doc, not sure. Also, the pager is boilerplate, so maybe there
 is sufficient overlapping concern that this should not be a separate transform.
 
+TODO: when testing, mock the fetches. So the merge function must be
+mockable
+
 Test page
 
 http://investingchannel.com/article/433394/One-Statistics-Professor-Was-Just-Banned-By-Google-Here-Is-His-Story

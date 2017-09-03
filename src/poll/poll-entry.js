@@ -240,6 +240,10 @@ function prepare_local_entry(entry, verbose) {
   return entry;
 }
 
+
+// TODO: this should be a call to a function defined in a separate file that
+// represents a module for document processing
+
 function prepare_entry_document(url_string, doc, verbose) {
   ensure_document_has_body(doc);
   process_framed_document(doc, verbose);
@@ -254,7 +258,7 @@ function prepare_entry_document(url_string, doc, verbose) {
   const copy_attrs_on_rename = false;
   // How many rows to check when unwrapping single column tables
   const row_scan_limit = 20;
-  condense_document(doc, copy_attrs_on_rename, row_scan_limit);
+  html_shrink(doc, copy_attrs_on_rename, row_scan_limit);
 
   // Filter element attributes last because it is so slow and is sped up by
   // processing fewer elements.
@@ -277,6 +281,7 @@ function ensure_document_has_body(doc) {
   doc.documentElement.appendChild(body_element);
 }
 
+// TODO: this belongs in a separate file and should be more customizable
 // Applies a set of rules to a url object and returns a modified url object
 // Returns undefined if no rewriting occurred
 // @returns {String}
@@ -293,6 +298,10 @@ function rewrite_url_string(url_string) {
 }
 
 // TODO: make this into a doc transform
+// TODO: this belongs ina separate file
+// TODO: host_selector_map should be a parameter to this function so that
+// configuration is defined externally so that it can be changed without
+// needing to modify its internals (open-closed principle)
 function prune_doc_using_host_template(url_string, doc, verbose) {
   const host_selector_map = {};
   host_selector_map['www.washingtonpost.com'] = [
