@@ -11,6 +11,7 @@
 // for removal. Or ... remove on find, e.g. have a bool param
 // If returning a pager should probably be renamed to something like
 // find_pager
+// TODO: maybe try using a "pagination" namespace object
 
 // @param doc {HTMLDocument}
 // @param location {String} url location of the document
@@ -65,7 +66,7 @@ function is_candidate_anchor(anchor_element, base_url) {
   if(text_content.trim().length > max_text_length)
     return false;
 
-  if(is_hidden_element(anchor_element))
+  if(domviz.is_hidden_element(anchor_element))
     return false;
 
   const href_url = get_href_url(anchor_element, base_url);
@@ -80,9 +81,9 @@ function is_candidate_anchor(anchor_element, base_url) {
   if(href_url.href === base_url.href)
     return false;
 
-  // Check for digits somewhere in the anchor. At least one feature must have
-  // digits (or the name like one/two)
-  // Check id, class, href filename, href params, text
+  // TODO: Check for digits somewhere in the anchor. At least one feature must
+  // have digits (or the name like one/two)
+  // TODO: Check id, class, href filename, href params, text
   return are_similar_urls(base_url, href_url);
 }
 
@@ -109,52 +110,8 @@ function get_href_url(anchor_element, base_url) {
   return href_url;
 }
 
-// NOTE: only looks at inline style, assumes document is inert so cannot use
-// offset width/height, also inspects parents (up to body), does not run the
-// full range of tricks for hiding nodes (e.g occlusion/clipping/out of view)
-function is_hidden_element(element) {
-  const doc = element.ownerDocument;
-  const body = doc.body;
-  // Without a body, everything is hidden
-  if(!body)
-    return true;
-
-  // This avoids infinite loop below, and also is just a shortcut
-  if(element === body)
-    return false;
-
-  // This avoids infinite loop below, and avoids processing detached anchors
-  if(!body.contains(element))
-    throw new TypeError('element is not a descendant of body');
-
-  // Get a list of parents of the element up to but excluding body
-  // Including the input element itself. List is ordered from input node up to
-  // highest node under body.
-  const ancestors = [];
-  let node = element;
-
-  while(node !== body) {
-    ancestors.push(node);
-    node = node.parentNode;
-  }
-
-  // Now we want to traverse from the top down, and stop upon finding the
-  // first node that is hidden. Rather than use unshift to build the parent
-  // array in reverse, we just iterate in reverse.
-  const num_ancestors = ancestors.length;
-  for(let i = num_ancestors - 1; i > -1; i--) {
-    const ancestor = ancestors[i];
-    const style = ancestor.style;
-    if(style.display === 'none')
-      return true;
-    if(style.visibility === 'hidden')
-      return true;
-    if(parseInt(style.opacity) < 0.3)
-      return true;
-  }
-  return false;
-}
-
+// TODO: actually I think this can be inlined. Also, this is really just
+// comparing path so this name is not great
 // Expects 2 URL objects. Return true if the second is similar to the first
 function are_similar_urls(url1, url2) {
   if(url1.origin !== url2.origin)

@@ -1,7 +1,5 @@
 // See license.md
 
-'use strict';
-
 // Sends a search request to Google and yields a resulting object consisting
 // the properties 'query' and 'entries'. query is a formatted HTML
 // string. entries is an array. entries may be empty but is always defined.
@@ -12,6 +10,7 @@
 // @param query_string {String} a search string using Google search syntax
 // @param timeout_ms {Number} a positive integer, optional
 async function search_google_feeds(query_string, timeout_ms) {
+  'use strict';
   if(typeof query_string !== 'string')
     throw new TypeError('query_string is not a String');
   query_string = query_string.trim();

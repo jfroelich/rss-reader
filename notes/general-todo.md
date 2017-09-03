@@ -172,3 +172,12 @@ need search ability similar to chrome history tab to view recently read articles
 if integrated into main view, main view would need to be able to load recently read instead of unread
 
 or a ui like apple's new news app
+
+# Support basic browser features better in slideshow
+
+* Support backward forward buttons (history and state)
+* Support CTRL+Click
+* Maybe support print mode somehow
+* Support page refresh maybe
+* Support bookmarking better (e.g. bookmark original article)
+* Support sending link of current article somehow

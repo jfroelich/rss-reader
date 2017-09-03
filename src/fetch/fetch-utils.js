@@ -10,7 +10,7 @@
 
 // NOTE: this is not currently in use, nor tested
 
-async function tfetch(url_string, options, timeout_ms) {
+async function timed_fetch(url_string, options, timeout_ms) {
 
   // Returns a promise that resolves to a setTimeout timer identifier
   function reject_after_timeout(timeout_ms, error_message) {
