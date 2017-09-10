@@ -181,3 +181,9 @@ or a ui like apple's new news app
 * Support page refresh maybe
 * Support bookmarking better (e.g. bookmark original article)
 * Support sending link of current article somehow
+
+# additional doc transform
+
+Transform special big initial letter of article , change into normal letter.
+
+See e.g. https://www.statnews.com/2017/09/05/watson-ibm-cancer/

@@ -78,3 +78,16 @@ contains is checked first because it is a native method that is faster than is_l
 This is not currently using for..of to iterate over the node list because of a V8 deoptimization warning (something about a try catch), my guess is that it has to do with how it is desugared
 
 Think of a better way to avoid revisiting nodes
+
+
+# TODO: improve criteria for leaf filtering
+
+Do not always filter empty table cells. Cells in some cases are important to
+the structure of the table even if empty.
+
+But if I implement this in isLeaf, be wary of the fact that the single column
+table transformation also does leaf checking and does want to know if a cell is
+empty.
+
+Therefore, probably need to a parameter to is leaf that determines whether or
+not an empty cell should be considered a leaf.
