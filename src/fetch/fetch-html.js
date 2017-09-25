@@ -1,7 +1,5 @@
-// See license.md
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 async function fetch_html(url_string, timeout_ms) {
   const options = {
@@ -79,6 +77,6 @@ function validate_content_type(response, url_string) {
     throw new Error(`Unacceptable content type ${type_string} ${url_string}`);
 }
 
-this.fetch_html = fetch_html;
+exports.fetch_html = fetch_html;
 
-} // End file block scope
+}(this));

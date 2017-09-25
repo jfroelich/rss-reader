@@ -1,4 +1,8 @@
 
+#security issue with templates
+look at what just happened with struts. no user inputs into templates or
+error messages that may be appended to dom.
+
 # Use explicit parameters instead of options object for functions
 
 The language provides parameters, use them. Do not try and adopt a style less

@@ -1,7 +1,5 @@
-// See license.md
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
@@ -211,6 +209,6 @@ function fetch_image_dimensions(url_object) {
   return new Promise(executor);
 }
 
-this.set_img_dimensions = set_img_dimensions;
+exports.set_img_dimensions = set_img_dimensions;
 
-} // End file block scope
+}(this));

@@ -1,6 +1,12 @@
 
 # TODO
 
+* Rename to "mangle"
+
+* Maybe this is too opaque and composes too much functionality together and
+it would be better to implement smaller, more granular modules that do one
+thing
+
 * write tests
 * Fix things like <b><table></table></b>, see https://html.spec.whatwg.org/multipage/parsing.html mentions of adoption
 algorithm and its errata notes

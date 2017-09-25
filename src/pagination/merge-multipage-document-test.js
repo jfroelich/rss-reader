@@ -1,5 +1,3 @@
-
-
 function test() {
 
   const c = document.getElementById('c');

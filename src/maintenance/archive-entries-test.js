@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 async function test_archive_entries() {

@@ -194,10 +194,28 @@ because it becomes part of the internal state.
 * On the other hand it demands indexedB? I dunno maybe all the other functions
 can check if conn is present and react accordingly.
 
-# TODO: think about storing lookup failures in cache 
+# TODO: think about storing lookup failures in cache
 
 Store failure cases too, that way i stop trying to refetch the same thing repeatedly, use something like failure counter, once it reaches 10 then delete, something like that.
 
 Modify other checks to consider if matched failure case. If successful make sure to delete failure cases.
 
 This also fixes ephemeral errors (site temp offline, temp unreachable).
+
+# todo items copied from test file
+
+
+* Use a test db instead of the real db, and make sure to
+delete the test db at the end of the test.
+* actually run tests instead of command line
+* test offline
+* test a non-existent host
+* test a known host with origin /favicon.ico
+* test a known host with <link> favicon
+* test a non-expired cached input url
+* test a non-expired cached redirect url
+* test a non-expired cached origin url
+* same as above 3 but expired
+* test against icon with byte size out of bounds
+* test cacheless versus caching?
+* test compact

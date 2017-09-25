@@ -1,8 +1,6 @@
-// See license.md
-
-'use strict';
 
 document.addEventListener('DOMContentLoaded', function(event) {
+  'use strict';
   const ext = '...';
   const input1 = 'a<p>b</p>c';
   console.debug(input1, '=>', truncate_html(input1, 2, ext));

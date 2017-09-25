@@ -1,5 +1,3 @@
-// See license.md
-
 // Sends a search request to Google and yields a resulting object consisting
 // the properties 'query' and 'entries'. query is a formatted HTML
 // string. entries is an array. entries may be empty but is always defined.

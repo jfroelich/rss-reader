@@ -1,7 +1,5 @@
-// See license.md
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 // 30 days in ms, used by both lookup and compact
 const default_max_age_ms = 1000 * 60 * 60 * 24 * 30;
@@ -513,11 +511,10 @@ function assert_response_is_img(response) {
     throw new Error(`Invalid response type ${type_header}`);
 }
 
-// Export methods to outer (global) scope
-this.favicon_lookup = favicon_lookup;
-this.favicon_open_db = favicon_open_db;
-this.favicon_clear_db = favicon_clear_db;
-this.favicon_compact_db = favicon_compact_db;
-this.favicon_setup_db = favicon_setup_db;
+exports.favicon_lookup = favicon_lookup;
+exports.favicon_open_db = favicon_open_db;
+exports.favicon_clear_db = favicon_clear_db;
+exports.favicon_compact_db = favicon_compact_db;
+exports.favicon_setup_db = favicon_setup_db;
 
-} // End file block scope
+}(this));

@@ -1,7 +1,5 @@
-// See license.md
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 // Looks for urls in the document and ensures they are absolute. Updates the
 // attribute values by replacing any relative urls with absolute urls.
@@ -169,6 +167,6 @@ function resolve_url(url_string, base_url) {
   return absolute_url_object;
 }
 
-this.resolve_document_urls = resolve_document_urls;
+exports.resolve_document_urls = resolve_document_urls;
 
-} // End file block scope
+}(this));

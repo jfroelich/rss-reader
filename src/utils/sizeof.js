@@ -1,15 +1,15 @@
-// See license.md
-'use strict';
-
 // Calculates the approximate byte size of a value. This should only be
 // used for basic testing because it is hilariously inaccurate.
+//
 // Adapted from http://stackoverflow.com/questions/1248302
+//
 // Generally does not work on built-ins (dom, XMLHttpRequest, etc)
 // This uses a stack internally to avoid recursion
-// @param input_value any input value
+// @param input_value a value of any type
 // @returns an integer representing the approximate byte size of the input
 // value
 function sizeof(input_value) {
+  'use strict';
   const visited_objects = [];
   const stack = [input_value];
   const has_own_prop = Object.prototype.hasOwnProperty;

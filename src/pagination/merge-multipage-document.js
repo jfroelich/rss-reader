@@ -1,4 +1,3 @@
-// See license.md
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a
 // multipage document, the other pages are merged into the document and

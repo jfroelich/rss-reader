@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 const cli = {};

@@ -1,5 +1,3 @@
-// See license.md
-
 'use strict';
 
 const ENTRY_STATE_UNREAD = 0;

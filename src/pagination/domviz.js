@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 // NOTE: I decided to store within pagination module for now as that is the

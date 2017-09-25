@@ -1,7 +1,5 @@
-// See license.md
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 async function reader_open_db(name, version, timeout_ms, verbose) {
   if(typeof name === 'undefined')
@@ -105,6 +103,6 @@ function on_upgrade_needed(event) {
 }
 
 // Exports
-this.reader_open_db = reader_open_db;
+exports.reader_open_db = reader_open_db;
 
-} // End file block scope
+} (this));

@@ -1,7 +1,3 @@
-// See license.md
-
-'use strict';
-
 // Tokenizes an arbitrary string of html. Makes some effort to comply with
 // standards but does not fully comply.
 // Entities are not distinguished from text and are not validated.
@@ -13,7 +9,7 @@
 // @throws {Error} if tokenization does not end in the default state, such as
 // within a tag
 function tokenize_html(html_string, input_state = 0) {
-
+  'use strict';
   // TODO: consider relaxing this type check to allow for string-like input
   if(typeof html_string !== 'string')
     throw new TypeError('html_string is not a string');

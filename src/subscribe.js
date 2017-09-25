@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 { // Begin file block scope
@@ -7,12 +6,14 @@
 async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
   verbose) {
 
-  // Default to a reasonable timeout. To avoid timeout specify 0.
+  // Default to a reasonable timeout
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 2000;
+
   if(!Number.isInteger(timeout_ms))
     throw new TypeError('timeout_ms not an integer');
 
+  // Default to showing notifications
   if(typeof notify === 'undefined')
     notify = true;
 
@@ -65,12 +66,12 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
 async function set_feed_icon(icon_conn, feed, verbose) {
   let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
     min_img_size, max_img_size, icon_url_string;
-  const lookupURLObject = Feed.prototype.create_icon_lookup_url.call(feed);
-  const lookupPromise = favicon_lookup(icon_conn, lookupURLObject, max_age_ms,
-    fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
+  const lookup_url_object = Feed.prototype.create_icon_lookup_url.call(feed);
+  const lookup_promise = favicon_lookup(icon_conn, lookup_url_object,
+    max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
     max_img_size, verbose);
   try {
-    icon_url_string = await lookupPromise;
+    icon_url_string = await lookup_promise;
   } catch(error) {
     if(verbose)
       console.warn(error);
@@ -141,6 +142,42 @@ function db_put_feed(conn, feed) {
   return new Promise(executor);
 }
 
+// Concurrently subscribe to each feed in the feeds iterable. Returns a promise
+// that resolves to an array of subscribed feeds. If any subscription fails
+// the element in the resolved array is undefined but the rest continue
+// TODO: better handling of notifications, like it would be nice maybe to do a
+// single notification
+function subscribe_all(feeds, reader_conn, icon_conn, timeout_ms, verbose) {
+  let suppress_notifications = true;
+
+  // Map feeds into subscribe promises
+  const promises = [];
+  for(const feed of feeds) {
+    const promise = subscribe_silently(reader_conn, icon_conn, feed, timeout_ms,
+      suppress_notifications, verbose);
+    promises.push(promise);
+  }
+
+  return Promise.all(promises);
+}
+
+// Calls subscribe while trapping any exceptions
+// TODO: compose timeout, suppress, verbose into options param?
+async function subscribe_silently(reader_conn, icon_conn, feed, timeout_ms,
+  suppress_notifications, verbose) {
+
+  const promise = subscribe(reader_conn, icon_conn, feed, timeout_ms,
+    suppress_notifications, verbose);
+  try {
+    return await promise;
+  } catch(error) {
+    if(verbose)
+      console.warn(error);
+  }
+}
+
+
 this.subscribe = subscribe;
+this.subscribe_all = subscribe_all;
 
 } // End file block scope

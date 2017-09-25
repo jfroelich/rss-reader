@@ -1,7 +1,5 @@
-// See license.md
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 async function fetch_feed(url_string, timeout_ms, is_accept_html) {
   if(typeof timeout_ms === 'undefined')
@@ -118,6 +116,6 @@ function detect_redirect(request_url_string, response_url_string) {
   return request_url_object.href !== response_url_object.href;
 }
 
-this.fetch_feed = fetch_feed;
+exports.fetch_feed = fetch_feed;
 
-} // End file block scope
+}(this));

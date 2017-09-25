@@ -1,5 +1,3 @@
-// See license.md
-
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).

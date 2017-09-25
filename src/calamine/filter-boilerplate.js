@@ -1,7 +1,5 @@
-// See license.md
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 function filter_boilerplate(doc) {
   if(!doc.body)
@@ -231,7 +229,6 @@ function condense_whitespace(string) {
   return string.replace(/\s+/g, '');
 }
 
-// Public exports
-this.filter_boilerplate = filter_boilerplate;
+exports.filter_boilerplate = filter_boilerplate;
 
-} // End file scope
+}(this));

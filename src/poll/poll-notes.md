@@ -1,17 +1,24 @@
 
 # About
 
-Checks for new feed content in the background.
+Checks for new content
 
 # TODO
+
+* create a separate module that does the document prep and call it from
+poll entry, instead of having all that code (some of which is partly duped and
+not DRY) in poll entry
+
+* it was wrong to move db connect into poll, it should be caller's job, and
+also this reduces params and changes params so that more params pertain to
+poll and less to db connect. this was db connect wraps up its params as a group
 
 * Document functions with comments
 * regarding addEntryToDb, deprecate in favor of put, and after moving
 sanitization and default props out, maybe make a helper function
 * ensure entries added by putEntryInDb, if not have id, have unread flag and
 date created
-* filter_tracking_imgs should accept a base url parameter, and should not
-filter images from that host. This way, feeds from that host still work
+
 * regarding shouldExcludeEntryBasedOnURL, the individual tests should probably
 involve regular expressions so that I do not need to test against url
 variations (like leading www.).

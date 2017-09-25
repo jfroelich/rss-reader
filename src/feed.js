@@ -1,5 +1,3 @@
-// See license.md
-
 'use strict';
 
 // Utility functions related to working with feeds and entries

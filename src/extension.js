@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 async function ext_update_badge(verbose) {

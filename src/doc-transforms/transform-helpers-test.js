@@ -1,7 +1,7 @@
-'use strict';
+
 
 document.addEventListener('DOMContentLoaded', function() {
-
+  'use strict';
   // TODO: setup the test. create a basic document
   // attach some nodes to it.
   // For unwrap, test basic unwrap.

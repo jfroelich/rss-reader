@@ -1,7 +1,6 @@
-// See license.md
-'use strict';
+(function(exports) {
 
-{ // Begin file block scope
+'use strict';
 
 function sanitize_html_document(doc, verbose) {
 
@@ -149,6 +148,6 @@ function normalize_hairspace_entities(doc) {
   }
 }
 
-this.sanitize_html_document = sanitize_html_document;
+exports.sanitize_html_document = sanitize_html_document;
 
-} // End file block scope
+}(this));

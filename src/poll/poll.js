@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 { // Begin file block scope
@@ -272,7 +271,6 @@ function is_feed_unmodified(local_modified_date, remote_modified_date) {
 }
 
 function filter_dup_entries(entries) {
-  // TODO: use a Set?
   const distinct_entries = [];
   const seen_urls = [];
 

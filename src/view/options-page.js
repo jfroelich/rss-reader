@@ -1,5 +1,3 @@
-// See license.md
-
 'use strict';
 
 { // Begin file block scope
@@ -733,8 +731,11 @@ async function exportOPMLButtonOnClick(event) {
   URL.revokeObjectURL(object_url);
 }
 
+// TODO: this should be a helper function located somewhere else
 function create_opml_blob(feeds, title) {
-  const doc = OPMLDocument.create(title);
+  const doc = new OPMLDocument();
+  doc.updateTitle(title);
+
   for(const feed of feeds) {
     const outline = {};
     outline.type = feed.type;
@@ -742,9 +743,12 @@ function create_opml_blob(feeds, title) {
     outline.title = feed.title;
     outline.description = feed.description;
     outline.htmlUrl = feed.link;
-    doc.append_outline_object(outline);
+    doc.appendOutlineObject(outline);
   }
-  return new Blob([doc.to_string()], {'type': 'application/xml'});
+
+  const serializer = new XMLSerializer();
+  const xml_string = serializer.serializeToString(doc.doc);
+  return new Blob([xml_string], {'type': 'application/xml'});
 }
 
 

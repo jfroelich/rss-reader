@@ -1,4 +1,3 @@
-// See license.md
 
 function remove_element_attributes(doc, attribute_whitelist) {
   'use strict';

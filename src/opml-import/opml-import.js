@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 { // Begin file block scope
@@ -36,25 +35,23 @@ async function import_opml_files(files, verbose) {
 function open_dbs() {
   let reader_db_name, reader_db_version, reader_db_connect_timeout_ms;
   let icon_db_name, icon_db_version, icon_db_conn_timeout_ms;
-
   const reader_conn_promise = reader_open_db(reader_db_name, reader_db_version,
     reader_db_connect_timeout_ms, verbose);
   const icon_conn_promise = favicon_open_db(icon_db_name, icon_db_version,
     icon_db_conn_timeout_ms, verbose);
   const conn_promises = [reader_conn_promise, icon_conn_promise];
-  const conn_promise = Promise.all(conn_promises);
-
-  return conn_promise;
+  return Promise.all(conn_promises);
 }
 
-async function import_files_internal(reader_conn, icon_conn, files, verbose) {
+// Concurrently import files
+function import_files_internal(reader_conn, icon_conn, files, verbose) {
   const promises = [];
   for(const file of files) {
     const promise = import_file_silently(reader_conn, icon_conn, file, verbose);
     promises.push(promise);
   }
 
-  return await Promise.all(promises);
+  return Promise.all(promises);
 }
 
 // Decorates import_file to avoid Promise.all failfast behavior
@@ -80,27 +77,38 @@ async function import_file(reader_conn, icon_conn, file, verbose) {
     throw new TypeError(`"${file.name}" has unsupported type "${file.type}"`);
 
   const text = await read_file_as_text(file);
-  const document = OPMLDocument.parse(text);
-  document.remove_invalid_outline_types();
-  document.normalize_outline_xml_urls();
-  document.remove_outlines_missing_xml_urls();
 
-  const outlines = document.get_outline_objects();
-  let num_feeds_added = 0;
+  // Allow parse errors to bubble
+  const document = parse_opml(text);
+
+  document.removeInvalidOutlineTypes();
+  document.normalizeOutlineXMLUrls();
+  document.removeOutlinesMissingXMLUrls();
+
+  const outlines = document.getOutlineObjects();
+  let resolutions;
   if(outlines.length) {
     const unique_outlines = aggregate_outlines_by_xmlurl(outlines);
 
-    console.assert(typeof unique_outlines !== 'undefined');
-    console.assert(typeof outlines !== 'undefined');
-
+    // TODO: only calc dup_count if verbose
     const dup_count = outlines.length - unique_outlines.length;
     if(dup_count && verbose)
-      console.log('Ignored %d duplicate feed(s) in file', dup_count,
-        file.name);
+      console.log('Ignored %d duplicate feed(s) in file', dup_count, file.name);
 
     normalize_outline_links(unique_outlines);
     const feeds = convert_outlines_to_feeds(unique_outlines);
-    num_feeds_added = batch_subscribe(feeds, reader_conn, icon_conn, verbose);
+
+    let subscribe_timeout_ms;
+    resolutions = await subscribe_all(feeds, reader_conn, icon_conn,
+      subscribe_timeout_ms, verbose);
+  }
+
+  let num_feeds_added = 0;
+  if(resolutions) {
+    for(let resolution of resolutions) {
+      if(resolution)
+        num_feeds_added++;
+    }
   }
 
   if(verbose)
@@ -157,24 +165,6 @@ function convert_outlines_to_feeds(outlines) {
   return feeds;
 }
 
-// Attempt to subscribe to each of the feeds concurrently
-async function batch_subscribe(feeds, reader_conn, icon_conn, verbose) {
-  // Map feeds into subscribe promises
-  const promises = [];
-  for(const feed of feeds) {
-    const promise = subscribe_silently(reader_conn, icon_conn, feed, verbose);
-    promises.push(promise);
-  }
-
-  const resolutions = await Promise.all(promises);
-
-  let num_feeds_added = 0;
-  for(let resolution of resolutions)
-    if(resolution)
-      num_feeds_added++;
-
-  return num_feeds_added;
-}
 
 function convert_outline_to_feed(outline) {
   const feed = {};
@@ -202,19 +192,6 @@ function convert_outline_to_feed(outline) {
   return feed;
 }
 
-// Returns the result of subscribe, which is the added feed object, or null
-// if an error occurs. This wraps so that it can be used with Promise.all
-async function subscribe_silently(reader_conn, icon_conn, feed, verbose) {
-  let timeout_ms, suppress_notifications;
-  const promise = subscribe(reader_conn, icon_conn, feed, timeout_ms,
-    suppress_notifications, verbose);
-  try {
-    return await promise;
-  } catch(error) {
-    if(verbose)
-      console.warn(error);
-  }
-}
 
 function is_supported_file_type(file_type) {
   let normal_type = file_type || '';

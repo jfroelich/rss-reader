@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 // Post fetch processing that coerces a fetched feed into the app's storage

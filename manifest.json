@@ -34,6 +34,7 @@
       "/src/maintenance/remove-entries-missing-urls.js",
       "/src/maintenance/remove-orphaned-entries.js",
       "/src/parse-feed/parse-feed.js",
+      "/src/parse-xml/parse-xml.js",
       "/src/poll/poll.js",
       "/src/poll/poll-entry.js",
       "/src/raspberry-jam/transform-telemetry-elements.js",

@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 // TODO: maybe unwrap any non-whitelisted elements?

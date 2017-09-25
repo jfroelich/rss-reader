@@ -1,5 +1,3 @@
-// See license.md
-
 // Return true if the path probably represents a binary resource
 // TODO: test input 'foo.'
 // TODO: write tests

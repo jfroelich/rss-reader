@@ -1,38 +1,38 @@
-// See license.md
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 function transform_responsive_images(doc) {
   if(!doc.body)
     return;
   const image_elements = doc.body.getElementsByTagName('img');
   for(const image_element of image_elements) {
-    transform_image_if_responsive(image_element);
+    if(!image_has_valid_src(image_element) && image_has_srcset(image_element)) {
+      transform_responsive_image(image_element);
+    }
   }
 }
 
-function transform_image_if_responsive(image_element) {
-  // If the image has a valid source then ignore it
+// Return true if image has a valid src attribute value
+function image_has_valid_src(image) {
+  const min_url_length = 2;
   let src_value = image_element.getAttribute('src');
   if(src_value) {
     src_value = src_value.trim();
-    const min_url_length = 2;
-    if(src_value.length > min_url_length && !src_value.includes(' ')) {
-      return;
-    }
+    return src_value.length > min_url_length && !src_value.includes(' '));
   }
+}
 
-  // If the image does not have a srcset then ignore it
-  let srcset_value = image_element.getAttribute('srcset');
-  if(!srcset_value)
-    return;
-  srcset_value = srcset_value.trim();
-  if(!srcset_value)
-    return;
+// Return true if image has a srcset attribute value
+function image_has_srcset(image) {
+  const srcset_value = image_element.getAttribute('srcset');
+  return srcset_value && srcset_value.trim();
+}
 
-  // Grab the descriptors. The try/catch is merely due to mistrust of 3rd party
-  // and not because it is needed
+function transform_responsive_image(image_element) {
+  const srcset_value = image_element.getAttribute('srcset');
+
+  // The try/catch is due to mistrust of third party code,
+  // not because it is needed
   let descriptors;
   try {
     descriptors = parseSrcset(srcset_value);
@@ -62,6 +62,6 @@ function select_preferred_descriptor(descriptors) {
         return d;
 }
 
-this.transform_responsive_images = transform_responsive_images;
+exports.transform_responsive_images = transform_responsive_images;
 
-} // End file block scope
+}(this));

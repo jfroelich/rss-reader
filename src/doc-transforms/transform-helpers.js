@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 // This lib contains helpers for document transforms
@@ -55,7 +54,8 @@ function rename_element(element, new_element_name, copy_attrs) {
     copy_attrs = true;
   if(!new_element_name)
     throw new TypeError('new_element_name is falsy');
-  // NOOP (not an error for caller convenience)
+  // Treat attempting to rename an element to the same name as a noop instead
+  // of as an error for caller convenience.
   if(element.localName === new_element_name.trim().toLowerCase())
     return;
 

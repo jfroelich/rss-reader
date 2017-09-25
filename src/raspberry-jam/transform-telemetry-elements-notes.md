@@ -27,7 +27,8 @@ that happen when invoking the implicit getter img_element.style. I have not
 tested this recently, just an assumption.
 
 # TODO
-
+* filter_tracking_imgs should accept a base url parameter, and should not
+filter images from that host. This way, feeds from that host still work
 * Write tests
 * It should be possible to detect cross-origin or cross-domain requests and
 possibly treat those differently. This requires knowledge of the url of the

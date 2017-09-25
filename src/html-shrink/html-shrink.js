@@ -1,7 +1,5 @@
-// See license.md
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 function html_shrink(doc, copy_attrs_on_rename, row_scan_limit) {
   remove_comment_nodes(doc.documentElement);
@@ -259,12 +257,13 @@ function trim_doc_step(starting_node, edge) {
   }
 }
 
+// TODO: return true for is_leaf_node?
 function is_trimmable_node(node) {
   const elements = ['br', 'hr', 'nobr'];
   return node && (elements.includes(node.localName) ||
     (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
 }
 
-this.html_shrink = html_shrink;
+exports.html_shrink = html_shrink;
 
-} // End file block scope
+}(this));

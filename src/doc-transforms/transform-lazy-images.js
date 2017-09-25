@@ -1,7 +1,5 @@
-// See license.md
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 function transform_lazy_imgs(doc, verbose) {
   const lazy_img_attrs = [
@@ -51,6 +49,6 @@ function is_valid_url_string(url_string) {
   return url_string && !url_string.trim().includes(' ');
 }
 
-this.transform_lazy_imgs = transform_lazy_imgs;
+exports.transform_lazy_imgs = transform_lazy_imgs;
 
-} // End file block scope
+}(this));

@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 { // Begin file block scope

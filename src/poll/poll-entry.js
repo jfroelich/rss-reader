@@ -1,4 +1,3 @@
-// See license.md
 'use strict';
 
 { // Begin file block scope
@@ -246,7 +245,7 @@ function prepare_local_entry(entry, verbose) {
 
 function prepare_entry_document(url_string, doc, verbose) {
   ensure_document_has_body(doc);
-  process_framed_document(doc, verbose);
+  transform_framed_document(doc, verbose);
 
   prune_doc_using_host_template(url_string, doc, verbose);
   filter_boilerplate(doc);

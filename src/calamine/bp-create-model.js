@@ -1,10 +1,8 @@
-// See license.md
+(function(exports) {
 'use strict';
 
-{
-
 // Returns a boilerplate model
-// TODO: Right now this just returns defaults
+// TODO: right now this just returns defaults
 function bp_create_model(options) {
   const model = {};
   model.candidate_selecotr =
@@ -225,6 +223,6 @@ function find_img_caption(image_element) {
 }
 
 
-this.bp_create_model = bp_create_model;
+exports.bp_create_model = bp_create_model;
 
-}
+}(this));

@@ -1,23 +1,18 @@
-// See license.md
 'use strict';
+
+// Dependencies:
+// parse_xml
 
 { // Begin file block scope
 
 // Parses the input string into a feed object
 // @param string {String} the text to parse
+// @throws error {Error} if a parsing error occurs or another type of error
 // @returns {Object} an object representing the parsed feed and its entries
 function parse_feed(string) {
+  // Allow exceptions to bubble
   const doc = parse_xml(string);
   return convert_doc_to_feed(doc);
-}
-
-function parse_xml(string) {
-  const parser = new DOMParser();
-  const document = parser.parseFromString(string, 'application/xml');
-  const error_element = document.querySelector('parsererror');
-  if(error_element)
-    throw new Error(error_element.textContent);
-  return document;
 }
 
 // @param document {Document} an XML document representing a feed

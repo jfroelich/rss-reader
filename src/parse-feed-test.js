@@ -1,5 +1,3 @@
-// See license.md
-
 'use strict';
 
 async function test(url) {
