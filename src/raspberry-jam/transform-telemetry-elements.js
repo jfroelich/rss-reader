@@ -1,6 +1,5 @@
+(function(exports){
 'use strict';
-
-{ // Begin file block scope
 
 const DEFAULT_PATTERNS = [
   /\/\/.*2o7\.net\//i,
@@ -79,6 +78,6 @@ function has_telemetry_src_url(image_element) {
   }
 }
 
-this.transform_telemetry_elements = transform_telemetry_elements;
+exports.transform_telemetry_elements = transform_telemetry_elements;
 
-} // End file block scope
+}(this));

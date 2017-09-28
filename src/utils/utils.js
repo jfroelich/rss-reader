@@ -1,9 +1,8 @@
-'use strict';
-
 // Returns a new object that is a copy of the input less empty properties. A
 // property is empty if it is null, undefined, or an empty string. Ignores
 // prototype, deep objects, getters, etc. Shallow copy by reference.
 function filter_empty_props(object) {
+  'use strict';
   const output_object = {};
   const has_own_prop = Object.prototype.hasOwnProperty;
 
@@ -24,5 +23,6 @@ function filter_empty_props(object) {
 //  http://stackoverflow.com/questions/21284228
 //  http://stackoverflow.com/questions/24229262
 function filter_control_chars(string) {
+  'use strict';
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }

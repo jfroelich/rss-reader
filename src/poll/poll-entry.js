@@ -1,6 +1,5 @@
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 async function poll_entry(reader_conn, icon_conn, feed, entry,
   fetch_html_timeout_ms, fetch_img_timeout_ms, verbose) {
@@ -12,7 +11,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
   let url_string = entry_get_url_string(entry);
   if(is_unpollable_entry(url_string))
     return false;
-  if(await db_find_entry_by_url(reader_conn, url_string))
+  if(await reader_db.find_entry_by_url(reader_conn, url_string))
     return false;
 
   const rewritten_url_string = rewrite_url_string(url_string);
@@ -21,7 +20,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
     url_string = rewritten_url_string;
     if(is_unpollable_entry(url_string))
       return false;
-    if(await db_find_entry_by_url(reader_conn, url_string))
+    if(await reader_db.find_entry_by_url(reader_conn, url_string))
       return false;
   }
 
@@ -29,7 +28,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
     verbose);
   if(!response) {
     const prepared_entry = prepare_local_entry(entry);
-    const put_result = await db_prep_then_put_entry(reader_conn, prepared_entry,
+    const put_result = await prep_and_store_entry(reader_conn, prepared_entry,
       verbose);
     return put_result;
   }
@@ -38,7 +37,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
     url_string = response.responseURLString;
     if(is_unpollable_entry(url_string))
       return false;
-    else if(await db_find_entry_by_url(reader_conn, url_string))
+    else if(await reader_db.find_entry_by_url(reader_conn, url_string))
       return false;
     else
       entry_add_url_string(entry, url_string);
@@ -53,7 +52,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
   // parameters
   await prepare_remote_entry(entry, entry_document, fetch_img_timeout_ms,
     verbose);
-  const put_result = await db_prep_then_put_entry(reader_conn, entry, verbose);
+  const put_result = await prep_and_store_entry(reader_conn, entry, verbose);
   return put_result;
 }
 
@@ -66,20 +65,7 @@ async function fetch_entry(url_string, fetch_html_timeout_ms, verbose) {
   }
 }
 
-function db_find_entry_by_url(conn, url_string) {
-  function resolver(resolve, reject) {
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const index = store.index('urls');
-    const request = index.getKey(url_string);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  }
-  return new Promise(resolver);
-}
-
 async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms, verbose) {
-
   // This must occur before setting image dimensions
   transform_telemetry_elements(doc, verbose);
 
@@ -170,22 +156,11 @@ function is_unpollable_entry(url_string) {
   return false;
 }
 
-function db_put_entry(conn, entry) {
-  function resolver(resolve, reject) {
-    const tx = conn.transaction('entry', 'readwrite');
-    const store = tx.objectStore('entry');
-    const request = store.put(entry);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  }
-  return new Promise(resolver);
-}
-
 // TODO: the prep work should actually be a separate function decoupled from
 // this function. It creates more boilerplate in the caller context but it
-// seems like a better design.
-
-async function db_prep_then_put_entry(reader_conn, entry, verbose) {
+// seems like a better design. The caller should call prep, get a prepped
+// entry object, then call reader_db.put_entry directly
+async function prep_and_store_entry(reader_conn, entry, verbose) {
   let author_max_length, title_max_length, content_max_length;
   const sanitized_entry = entry_sanitize(entry, author_max_length,
     title_max_length, content_max_length);
@@ -195,7 +170,7 @@ async function db_prep_then_put_entry(reader_conn, entry, verbose) {
   storable_entry.dateCreated = new Date();
 
   try {
-    const added_entry = await db_put_entry(reader_conn, storable_entry);
+    const added_entry = await reader_db.put_entry(reader_conn, storable_entry);
     return true;
   } catch(error) {
     if(verbose)
@@ -338,6 +313,6 @@ function get_url_hostname(url_string) {
   }
 }
 
-this.poll_entry = poll_entry;
+exports.poll_entry = poll_entry;
 
-} // End file block scope
+}(this));

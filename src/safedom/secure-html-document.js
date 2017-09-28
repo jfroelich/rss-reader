@@ -1,8 +1,7 @@
+(function(exports){
 'use strict';
 
 // TODO: maybe unwrap any non-whitelisted elements?
-
-{ // Begin file block scope
 
 function secure_html_document(doc) {
   unwrap_noscript_elements(doc);
@@ -58,6 +57,6 @@ function is_script_url(url_string) {
     /^\s*javascript:/i.test(url_string);
 }
 
-this.secure_html_document = secure_html_document;
+exports.secure_html_document = secure_html_document;
 
-} // End file block scope
+}(this));

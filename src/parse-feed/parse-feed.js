@@ -1,9 +1,8 @@
+(function(exports) {
 'use strict';
 
 // Dependencies:
 // parse_xml
-
-{ // Begin file block scope
 
 // Parses the input string into a feed object
 // @param string {String} the text to parse
@@ -291,6 +290,6 @@ function find_child_element_text(parent_element, element_name) {
   }
 }
 
-this.parse_feed = parse_feed;
+exports.parse_feed = parse_feed;
 
-} // End file block scope
+}(this));

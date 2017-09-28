@@ -1,6 +1,6 @@
+(function(exports) {
 'use strict';
 
-{ // Begin file block scope
 
 function settings_channel_onmessage(event) {
   if(event.data === 'changed')
@@ -213,6 +213,7 @@ async function start_subscription(url_object) {
   let icon_db_name, icon_db_version, connect_timeout_ms;
   let subscribe_timeout_ms, mute_notifications;
 
+  // TODO: make this into a helper function that opens both connections
   const icon_conn_promise = favicon_open_db(icon_db_name, icon_db_version,
     connect_timeout_ms, verbose);
   const reader_conn_promise = reader_open_db();
@@ -272,22 +273,13 @@ async function start_subscription(url_object) {
   show_section(subs_section_element);
 }
 
-function db_find_feed_by_id(conn, feed_id) {
-  function resolver(resolve, reject) {
-    const tx = conn.transaction('feed');
-    const store = tx.objectStore('feed');
-    const request = store.get(feed_id);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  }
-  return new Promise(resolver);
-}
 
+// TODO: inline this
 async function db_connect_then_find_feed_by_id(feed_id) {
   let conn;
   try {
     conn = await reader_open_db();
-    return await db_find_feed_by_id(conn, feed_id);
+    return await reader_db.find_feed_by_id(conn, feed_id);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -691,16 +683,7 @@ async function import_opml_uploader_on_change(event) {
   // updating it
 }
 
-function db_load_all_feeds(conn) {
-  function resolver(resolve, reject) {
-    const tx = conn.transaction('feed');
-    const store = tx.objectStore('feed');
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  }
-  return new Promise(resolver);
-}
+
 
 // TODO: visual feedback
 async function exportOPMLButtonOnClick(event) {
@@ -711,7 +694,7 @@ async function exportOPMLButtonOnClick(event) {
   let feeds;
   try {
     conn = await reader_open_db();
-    feeds = await db_load_all_feeds(conn);
+    feeds = await reader_db.get_feeds(conn);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -761,7 +744,7 @@ async function init_subscriptions_section() {
   let feeds;
   try {
     conn = await reader_open_db();
-    feeds = await db_load_all_feeds(conn);
+    feeds = await reader_db.get_feeds(conn);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -1205,4 +1188,4 @@ function is_visible_element(element) {
   return element.style.display !== 'none';
 }
 
-} // End file block scope
+}(this));

@@ -1,4 +1,10 @@
 
+# simplify storage
+
+do not store feeds store. just store everything in an entries store. store
+feed data redundantly per entry. rethink how to do queries like get all feeds,
+how to archive, etc
+
 #security issue with templates
 look at what just happened with struts. no user inputs into templates or
 error messages that may be appended to dom.

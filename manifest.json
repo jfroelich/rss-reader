@@ -38,6 +38,7 @@
       "/src/poll/poll.js",
       "/src/poll/poll-entry.js",
       "/src/raspberry-jam/transform-telemetry-elements.js",
+      "/src/reader-db/reader-db.js",
       "/src/safedom/secure-html-document.js",
       "/src/third-party/parse-srcset.js",
       "/src/utils/is-probably-binary-path.js",

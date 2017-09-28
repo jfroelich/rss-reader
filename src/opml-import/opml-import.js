@@ -1,6 +1,5 @@
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 async function import_opml_files(files, verbose) {
   if(verbose)
@@ -210,6 +209,6 @@ function read_file_as_text(file) {
   return new Promise(resolver);
 }
 
-this.import_opml_files = import_opml_files;
+exports.import_opml_files = import_opml_files;
 
-} // End file block scope
+}(this));

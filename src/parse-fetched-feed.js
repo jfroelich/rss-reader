@@ -1,9 +1,8 @@
-'use strict';
-
 // Post fetch processing that coerces a fetched feed into the app's storage
 // format.
 // @param response {Object} the result of calling fetch_feed
 function parse_fetched_feed(response) {
+  'use strict';
   // Allow parse error to bubble
   const result = parse_feed(response.text);
   const feed = result.feed;

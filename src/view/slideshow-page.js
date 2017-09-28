@@ -1,6 +1,6 @@
+(function(exports){
 'use strict';
 
-{ // Begin file block scope
 
 let current_slide_element = null;
 
@@ -65,45 +65,6 @@ async function mark_slide_read(conn, slide_element, verbose) {
   }
 }
 
-// TODO: use getAll, passing in a count parameter as an upper limit, and
-// then using slice or unshift or something to advance. The parameter to getAll
-// might be (offset+limit)
-function db_load_unarchived_unread_entries(conn, offset, limit, verbose) {
-  function resolver(resolve, reject) {
-    const entries = [];
-    let counter = 0;
-    let advanced = false;
-    const is_limited = limit > 0;
-    const tx = conn.transaction('entry');
-    tx.oncomplete = function(event) {
-      if(verbose)
-        console.log('Loaded %d entries from database', entries.length);
-      resolve(entries);
-    };
-    tx.onerror = function(event) {
-      reject(tx.error);
-    };
-
-    const store = tx.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
-    const request = index.openCursor(key_path);
-    request.onsuccess = function request_onsuccess(event) {
-      const cursor = event.target.result;
-      if(cursor) {
-        if(offset && !advanced) {
-          advanced = true;
-          cursor.advance(offset);
-        } else {
-          entries.push(cursor.value);
-          if(is_limited && ++counter < limit)
-            cursor.continue();
-        }
-      }
-    };
-  }
-  return new Promise(resolver);
-}
 
 // TODO: require caller to establish conn, do not do it here?
 // TODO: visual feedback on error
@@ -121,8 +82,8 @@ async function append_slides(conn, verbose) {
       is_local_conn = true;
     }
 
-    entries = await db_load_unarchived_unread_entries(conn, offset, limit,
-      verbose);
+    entries = await reader_db.load_unarchived_unread_entries(conn, offset,
+      limit);
   } catch(error) {
     console.error(error);
   } finally {
@@ -429,4 +390,4 @@ function on_dom_content_loaded(event) {
 document.addEventListener('DOMContentLoaded', on_dom_content_loaded,
   {'once': true});
 
-} // End file block scope
+}(this));

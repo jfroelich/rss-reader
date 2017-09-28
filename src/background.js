@@ -1,6 +1,7 @@
+(function(exports) {
+
 'use strict';
 
-{ // Begin file block scope
 
 async function register_dw_link_filter_rule() {
   if(localStorage.DW_LINK_RULE_ID)
@@ -40,7 +41,6 @@ function remove_dw_rules(ids) {
   });
 }
 
-this.register_dw_link_filter_rule = register_dw_link_filter_rule;
 
 // Every page load for now
 // Disabled for now as buggy
@@ -62,7 +62,6 @@ async function unregister_dw_link_filter_rule() {
   }
 }
 
-this.unregister_dw_link_filter_rule = unregister_dw_link_filter_rule;
 
 async function on_installed(event) {
   console.debug('chrome.runtime.onInstalled'); // Temp, debugging
@@ -140,4 +139,8 @@ chrome.alarms.create('refresh-feed-icons',
   {'periodInMinutes': 60 * 24 * 7 * 2});
 chrome.alarms.create('compact-favicon-db', {'periodInMinutes': 60 * 24 * 7});
 
-} // End file block scope
+
+exports.register_dw_link_filter_rule = register_dw_link_filter_rule;
+exports.unregister_dw_link_filter_rule = unregister_dw_link_filter_rule;
+
+}(this));

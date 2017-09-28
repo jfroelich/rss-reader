@@ -9,7 +9,7 @@ async function ext_update_badge(verbose) {
     conn = await reader_open_db(db_name, db_version, conn_timeout_ms, verbose);
     if(verbose)
       console.log('Counting unread entries in db', conn.name);
-    count = await db_count_unread_entries(conn);
+    count = await reader_db.count_unread_entries(conn);
   } catch(error) {
     console.warn(error);
     return;
@@ -22,20 +22,6 @@ async function ext_update_badge(verbose) {
   if(verbose)
     console.log('Setting extension badge text to', text);
   chrome.browserAction.setBadgeText({'text': text});
-}
-
-function db_count_unread_entries(conn) {
-  function executor(resolve, reject) {
-    if(typeof ENTRY_STATE_UNREAD === 'undefined')
-      throw new ReferenceError('ENTRY_STATE_UNREAD is undefined');
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const index = store.index('readState');
-    const request = index.count(ENTRY_STATE_UNREAD);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  }
-  return new Promise(executor);
 }
 
 async function ext_show_slideshow_tab() {

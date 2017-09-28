@@ -1,6 +1,5 @@
-'use strict';
-
 async function test(url) {
+  'use strict';
   console.log('Starting test, fetching', url);
 
   let timeout_ms;

@@ -1,6 +1,6 @@
+(function(exports) {
 'use strict';
 
-{ // Begin file block scope
 
 // Returns an array
 // TODO: update notes document
@@ -214,8 +214,8 @@ function find_lca(node1, node2) {
   throw new Error('reached unreachable');
 }
 
-this.find_pagination_anchors = find_pagination_anchors;
-this.find_lca = find_lca;
-this.find_anchor_sequences = find_anchor_sequences;
+exports.find_pagination_anchors = find_pagination_anchors;
+exports.find_lca = find_lca;
+exports.find_anchor_sequences = find_anchor_sequences;
 
-} // End file block scope
+}(this));

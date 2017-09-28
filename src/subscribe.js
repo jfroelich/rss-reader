@@ -1,6 +1,7 @@
+(function(exports){
 'use strict';
 
-{ // Begin file block scope
+
 
 // Returns the feed that was added if successful
 async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
@@ -21,7 +22,7 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
   if(verbose)
     console.log('Subscribing to feed', url_string);
 
-  if(await db_contains_feed_url(reader_conn, url_string)) {
+  if(await reader_db.contains_feed_url(reader_conn, url_string)) {
     if(verbose)
       console.warn('Already subscribed to feed with url', url_string);
     return;
@@ -32,7 +33,7 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
       console.debug('Proceeding with offline subscription to', url_string);
     const storable_feed = prep_feed_for_db(feed);
 
-    const new_feed_id = await db_put_feed(reader_conn, storable_feed);
+    const new_feed_id = await reader_db.put_feed(reader_conn, storable_feed);
     storable_feed.id = new_feed_id;
 
     if(notify)
@@ -55,7 +56,7 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
   await set_feed_icon(icon_conn, merged_feed, verbose);
   const storable_feed = prep_feed_for_db(merged_feed);
 
-  const new_feed_id = await db_put_feed(reader_conn, storable_feed);
+  const new_feed_id = await reader_db.put_feed(reader_conn, storable_feed);
   storable_feed.id = new_feed_id;
   if(notify)
     show_subscribe_notification(storable_feed);
@@ -84,25 +85,13 @@ async function set_feed_icon(icon_conn, feed, verbose) {
   return false;
 }
 
-// Returns true if a feed exists in the database with the given url
-function db_contains_feed_url(conn, url_string) {
-  function resolver(resolve, reject) {
-    const tx = conn.transaction('feed');
-    const store = tx.objectStore('feed');
-    const index = store.index('urls');
-    const request = index.getKey(url_string);
-    request.onsuccess = () => resolve(!!request.result);
-    request.onerror = () => reject(request.error);
-  }
-  return new Promise(resolver);
-}
-
-// TODO: this is so similar to db_contains_feed_url that it should be deprecated,
-// the only difference is basically the log message, which isn't important
+// TODO: this is so similar to reader_db.contains_feed_url that it should be
+// deprecated, the only difference is basically the log message, which isn't
+// important
 // TODO: this does not really merit being a helper function
 async function check_redirect_url_exists(reader_conn,
   response_url_string, verbose) {
-  if(await db_contains_feed_url(reader_conn, response_url_string)) {
+  if(await reader_db.contains_feed_url(reader_conn, response_url_string)) {
     if(verbose)
       console.warn('Already subscribed to feed with redirected url',
         response_url_string);
@@ -127,26 +116,11 @@ function prep_feed_for_db(feed) {
   return storable;
 }
 
-function db_put_feed(conn, feed) {
-  function executor(resolve, reject) {
-    const tx = conn.transaction('feed', 'readwrite');
-    const store = tx.objectStore('feed');
-    const request = store.put(feed);
-    request.onsuccess = function req_onsuccess() {
-      resolve(request.result);
-    };
-    request.onerror = function req_onerror() {
-      reject(request.error);
-    };
-  }
-  return new Promise(executor);
-}
-
 // Concurrently subscribe to each feed in the feeds iterable. Returns a promise
 // that resolves to an array of subscribed feeds. If any subscription fails
 // the element in the resolved array is undefined but the rest continue
-// TODO: better handling of notifications, like it would be nice maybe to do a
-// single notification
+// TODO: better handling of notifications, it would be nice maybe to do a
+// single notification for batch
 function subscribe_all(feeds, reader_conn, icon_conn, timeout_ms, verbose) {
   let suppress_notifications = true;
 
@@ -176,8 +150,7 @@ async function subscribe_silently(reader_conn, icon_conn, feed, timeout_ms,
   }
 }
 
+exports.subscribe = subscribe;
+exports.subscribe_all = subscribe_all;
 
-this.subscribe = subscribe;
-this.subscribe_all = subscribe_all;
-
-} // End file block scope
+}(this));

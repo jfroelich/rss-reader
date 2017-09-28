@@ -1,6 +1,5 @@
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 // @param max_age_ms {Number} how long before an entry is considered
 // archivable (diff compared using date entry created)
@@ -21,9 +20,9 @@ async function archive_entries(max_age_ms, verbose) {
   let did_put_entries = false;
   try {
     conn = await reader_open_db(db_name, db_version, db_conn_timeout, verbose);
-    const entries = await db_load_archivable_entries(conn, max_age_ms);
+    const entries = await find_archivable_entries(conn, max_age_ms);
     compacted_entries = compact_entries(entries, verbose);
-    await db_put_entries(conn, compacted_entries);
+    await reader_db.put_entries(conn, compacted_entries);
     did_put_entries = true;
   } finally {
     if(conn)
@@ -41,10 +40,10 @@ async function archive_entries(max_age_ms, verbose) {
       db_channel.postMessage(message);
     }
     db_channel.close();
-
-    if(verbose)
-      console.log('Compacted %d entries', compacted_entries.length);
   }
+
+  if(verbose)
+    console.log('Compacted %d entries', compacted_entries.length);
 
   return compacted_entries.length;
 }
@@ -58,8 +57,13 @@ function compact_entries(entries, verbose) {
   return compacted_entries;
 }
 
-async function db_load_archivable_entries(conn, max_age_ms) {
-  const entries = await db_load_unarchived_unread_entries(conn);
+// TODO: think of how to optimize this, instead of loading more entries than
+// is needed and then filtering. There should be a simply way to query against
+// date created as well as the other state properties
+// TODO: maybe this should be in the database layer (in reader_db), even if
+// not optimized
+async function find_archivable_entries(conn, max_age_ms) {
+  const entries = await reader_db.load_unarchived_unread_entries2(conn);
   const archivable_entries = [];
   const current_date = new Date();
   for(const entry of entries) {
@@ -71,37 +75,6 @@ async function db_load_archivable_entries(conn, max_age_ms) {
   return archivable_entries;
 }
 
-// Returns a Promise that resolves to an array
-function db_load_unarchived_unread_entries(conn) {
-  function executor(resolve, reject) {
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
-    const request = index.getAll(key_path);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  }
-  return new Promise(executor);
-}
+exports.archive_entries = archive_entries;
 
-function db_put_entries(conn, entries) {
-  function executor(resolve, reject) {
-    const current_date = new Date();
-    const tx = conn.transaction('entry', 'readwrite');
-    tx.oncomplete = resolve;
-    tx.onerror = function tx_onerror(event) {
-      reject(tx.error);
-    };
-    const entry_store = tx.objectStore('entry');
-    for(const entry of entries) {
-      entry.dateUpdated = current_date;
-      entry_store.put(entry);
-    }
-  }
-  return new Promise(executor);
-}
-
-this.archive_entries = archive_entries;
-
-} // End file block scope
+}(this));

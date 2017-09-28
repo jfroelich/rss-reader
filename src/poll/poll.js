@@ -1,6 +1,6 @@
+(function(exports) {
 'use strict';
 
-{ // Begin file block scope
 
 const POLL_FEEDS_FLAGS = {};
 POLL_FEEDS_FLAGS.VERBOSE = 1; // 1
@@ -56,7 +56,7 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
     const conns = await Promise.all(open_promises);
     reader_conn = conns[0];
     icon_conn = conns[1];
-    const feeds = await db_find_pollable_feeds(reader_conn,
+    const feeds = await find_pollable_feeds(reader_conn,
       ignore_recency_check, recency_period_ms, verbose);
     num_entries_added = await process_feeds(reader_conn, icon_conn, feeds,
       ignore_modified_check, fetch_feed_timeout_ms, fetch_html_timeout_ms,
@@ -107,21 +107,10 @@ async function is_poll_startable(allow_metered_connections, ignore_idle_state,
   return true;
 }
 
-function db_load_feeds(conn) {
-  function resolver(resolve, reject) {
-    const tx = conn.transaction('feed');
-    const store = tx.objectStore('feed');
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  }
-  return new Promise(resolver);
-}
-
 // TODO: should just accept flags variable
-async function db_find_pollable_feeds(reader_conn, ignore_recency_check,
+async function find_pollable_feeds(reader_conn, ignore_recency_check,
   recency_period_ms, verbose) {
-  const feeds = await db_load_feeds(reader_conn);
+  const feeds = await reader_db.get_feeds(reader_conn);
   if(ignore_recency_check)
     return feeds;
   const output_feeds = [];
@@ -217,10 +206,13 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
 
   const parse_feed_result = parse_fetched_feed(response);
   const merged_feed = merge_feeds(local_feed, parse_feed_result.feed);
+
+  // Prepare the feed for storage
   let storable_feed = Feed.prototype.sanitize.call(merged_feed);
   storable_feed = filter_empty_props(storable_feed);
   storable_feed.dateUpdated = new Date();
-  await db_put_feed(reader_conn, storable_feed);
+
+  await reader_db.put_feed(reader_conn, storable_feed);
 
   const num_entries_added = await poll_feed_entries(reader_conn, icon_conn,
     storable_feed, parse_feed_result.entries, fetch_html_timeout_ms,
@@ -228,23 +220,7 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
   return num_entries_added;
 }
 
-// Adds or overwrites a feed in storage. Resolves with the new feed id if add.
-// There are no side effects other than the database modification.
-// @param conn {IDBDatabase} an open database connection
-// @param feed {Object} the feed object to add
-function db_put_feed(conn, feed) {
-  function resolver(resolve, reject) {
-    const tx = conn.transaction('feed', 'readwrite');
-    const store = tx.objectStore('feed');
-    const request = store.put(feed);
-    request.onsuccess = () => {
-      const feedId = request.result;
-      resolve(feedId);
-    };
-    request.onerror = () => reject(request.error);
-  }
-  return new Promise(resolver);
-}
+
 
 async function poll_feed_entries(reader_conn, icon_conn, feed, entries,
   fetch_html_timeout_ms, fetch_img_timeout_ms, verbose) {
@@ -314,7 +290,7 @@ function broadcast_poll_completed_message(num_entries_added) {
   channel.close();
 }
 
-this.poll_feeds = poll_feeds;
-this.POLL_FEEDS_FLAGS = POLL_FEEDS_FLAGS;
+exports.poll_feeds = poll_feeds;
+exports.POLL_FEEDS_FLAGS = POLL_FEEDS_FLAGS;
 
-} // End file block scope
+}(this));
