@@ -4,7 +4,7 @@ async function remove_entries_missing_urls() {
   let count = 0;
   let conn;
   try {
-    conn = await reader_open_db();
+    conn = await reader_db.open();
     const invalid_entries = await reader_db.find_entries_missing_urls(conn);
     const entry_ids = [];
     for(const entry of invalid_entries)

@@ -19,7 +19,7 @@ async function archive_entries(max_age_ms, verbose) {
   let conn, compacted_entries;
   let did_put_entries = false;
   try {
-    conn = await reader_open_db(db_name, db_version, db_conn_timeout, verbose);
+    conn = await reader_db.open(db_name, db_version, db_conn_timeout, verbose);
     const entries = await find_archivable_entries(conn, max_age_ms);
     compacted_entries = compact_entries(entries, verbose);
     await reader_db.put_entries(conn, compacted_entries);

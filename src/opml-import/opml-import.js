@@ -34,7 +34,7 @@ async function import_opml_files(files, verbose) {
 function open_dbs() {
   let reader_db_name, reader_db_version, reader_db_connect_timeout_ms;
   let icon_db_name, icon_db_version, icon_db_conn_timeout_ms;
-  const reader_conn_promise = reader_open_db(reader_db_name, reader_db_version,
+  const reader_conn_promise = reader_db.open(reader_db_name, reader_db_version,
     reader_db_connect_timeout_ms, verbose);
   const icon_conn_promise = favicon_open_db(icon_db_name, icon_db_version,
     icon_db_conn_timeout_ms, verbose);

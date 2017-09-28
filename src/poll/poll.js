@@ -45,7 +45,7 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
   let icon_db_name, icon_db_version, conn_timeout_ms;
   let reader_db_name, reader_db_version;
 
-  const reader_open_promise = reader_open_db(reader_db_name, reader_db_version,
+  const reader_open_promise = reader_db.open(reader_db_name, reader_db_version,
     conn_timeout_ms, verbose);
   const icon_open_promise = favicon_open_db(icon_db_name, icon_db_version,
     conn_timeout_ms, verbose);

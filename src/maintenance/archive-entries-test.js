@@ -7,7 +7,7 @@ async function test_archive_entries() {
   let was_conn_close_requested = false;
   let conn, conn_timeout_ms, entry_max_age_ms;
   const verbose = true;
-  const open_promise = reader_open_db(test_db_name, test_db_version,
+  const open_promise = reader_db.open(test_db_name, test_db_version,
     conn_timeout_ms);
 
   try {

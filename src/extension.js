@@ -6,7 +6,7 @@ async function ext_update_badge(verbose) {
   let count = 0;
   let conn, db_name, db_version, conn_timeout_ms;
   try {
-    conn = await reader_open_db(db_name, db_version, conn_timeout_ms, verbose);
+    conn = await reader_db.open(db_name, db_version, conn_timeout_ms, verbose);
     if(verbose)
       console.log('Counting unread entries in db', conn.name);
     count = await reader_db.count_unread_entries(conn);

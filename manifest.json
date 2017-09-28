@@ -16,7 +16,6 @@
       "/src/calamine/filter-boilerplate.js",
       "/src/cleandom/sanitize-html-document.js",
       "/src/cli/cli.js",
-      "/src/db/open-reader-db.js",
       "/src/doc-transforms/remove-element-attributes.js",
       "/src/doc-transforms/resolve-document-urls.js",
       "/src/doc-transforms/set-image-dimensions.js",

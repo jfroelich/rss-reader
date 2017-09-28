@@ -216,7 +216,7 @@ async function start_subscription(url_object) {
   // TODO: make this into a helper function that opens both connections
   const icon_conn_promise = favicon_open_db(icon_db_name, icon_db_version,
     connect_timeout_ms, verbose);
-  const reader_conn_promise = reader_open_db();
+  const reader_conn_promise = reader_db.open();
   const conn_promises = [reader_conn_promise, icon_conn_promise];
   const conn_promise = Promise.all(conn_promises);
 
@@ -278,7 +278,7 @@ async function start_subscription(url_object) {
 async function db_connect_then_find_feed_by_id(feed_id) {
   let conn;
   try {
-    conn = await reader_open_db();
+    conn = await reader_db.open();
     return await reader_db.find_feed_by_id(conn, feed_id);
   } catch(error) {
     console.warn(error);
@@ -624,7 +624,7 @@ async function unsubscribe_button_on_click(event) {
 
   let reader_conn;
   try {
-    reader_conn = await reader_open_db();
+    reader_conn = await reader_db.open();
     const num_entries_deleted = await unsubscribe(reader_conn, feed_id_number);
   } catch(error) {
     console.warn('Unsubscribe error:', error);
@@ -693,7 +693,7 @@ async function exportOPMLButtonOnClick(event) {
   let conn;
   let feeds;
   try {
-    conn = await reader_open_db();
+    conn = await reader_db.open();
     feeds = await reader_db.get_feeds(conn);
   } catch(error) {
     console.warn(error);
@@ -743,7 +743,7 @@ async function init_subscriptions_section() {
   let conn;
   let feeds;
   try {
-    conn = await reader_open_db();
+    conn = await reader_db.open();
     feeds = await reader_db.get_feeds(conn);
   } catch(error) {
     console.warn(error);

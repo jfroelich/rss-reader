@@ -3,7 +3,7 @@ async function remove_orphaned_entries(options) {
   options = options || {};
   let conn, ids, conn_timeout_ms;
   try {
-    conn = await reader_open_db(options.dbName, options.dbVersion,
+    conn = await reader_db.open(options.dbName, options.dbVersion,
       conn_timeout_ms);
     const orphans = await reader_db.find_orphaned_entries(conn);
     ids = [];

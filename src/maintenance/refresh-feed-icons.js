@@ -31,7 +31,7 @@ async function refresh_feed_icons(verbose) {
 
 function open_dbs() {
   let icon_db_name, icon_db_version, conn_timeout_ms;
-  const reader_open_promise = reader_open_db();
+  const reader_open_promise = reader_db.open();
   const icon_open_promise = favicon_open_db(icon_db_name, icon_db_version,
     conn_timeout_ms, verbose);
   const conn_promises = [reader_open_promise, icon_open_promise];

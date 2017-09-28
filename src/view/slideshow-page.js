@@ -50,7 +50,7 @@ async function mark_slide_read(conn, slide_element, verbose) {
   let name, version, conn_timeout_ms;
   try {
     if(!conn) {
-      conn = await reader_open_db(name, version, conn_timeout_ms, verbose);
+      conn = await reader_db.open(name, version, conn_timeout_ms, verbose);
       is_local_conn = true;
     }
 
@@ -78,7 +78,7 @@ async function append_slides(conn, verbose) {
 
   try {
     if(!conn) {
-      conn = await reader_open_db(name, version, conn_timeout_ms, verbose);
+      conn = await reader_db.open(name, version, conn_timeout_ms, verbose);
       is_local_conn = true;
     }
 
@@ -107,7 +107,7 @@ function append_slide(entry) {
   slide_element.setAttribute('feed', entry.feed);
   slide_element.setAttribute('class','entry');
   slide_element.addEventListener('click', slide_on_click);
-  // Bind to slide, not window, because only slide scrolls, not window
+  // Bind to slide, not window, because only slide scrolls
   slide_element.addEventListener('scroll', slide_on_scroll);
   slide_element.style.position = 'absolute';
 
@@ -265,7 +265,7 @@ async function show_next_slide() {
   let conn, name, version, conn_timeout_ms;
 
   try {
-    conn = await reader_open_db(name, version, conn_timeout_ms, verbose);
+    conn = await reader_db.open(name, version, conn_timeout_ms, verbose);
 
     // Conditionally append more slides
     if(unread_slide_element_count < 2)
