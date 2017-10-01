@@ -1,5 +1,5 @@
 
-# truncate_html issues
+# html_truncate issues
 
 * Using the native parsing is lossy because of encoding. Certain entities like
 &amp;#32; are decoded back into spaces. I would prefer a lossless transform.
@@ -24,7 +24,7 @@ avoid using native parsing. This avoids the lossy issue, and possibly avoids
 the inaccurate position issue.
 * Write tests
 
-# replace_html issues
+# html_replace_tags issues
 
 * Consider allowing certain tags when replacing html tags in a string. Maybe
 accept a whitelist of tags to keep in the output. This might promote more reuse.

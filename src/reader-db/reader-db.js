@@ -128,7 +128,15 @@ function count_unread_entries(conn) {
 }
 
 function find_entry_by_id(conn, id) {
+  // It is important to explicitily guard against the use of an invalid id
+  // as otherwise it ambiguous whether a failure is because an entry does not
+  // exist or because the id was incorrect
+  // This is done outside of the promise because this is static
+  ASSERT(entry_is_valid_id(id), 'Invalid entry id');
+
   return new Promise(function(resolve, reject) {
+    // If conn is undefined the next line fails. In the context of a promise
+    // this is a swallowed exception that is equivalent to a rejection.
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const request = store.get(id);

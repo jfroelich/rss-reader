@@ -47,7 +47,7 @@ function is_probably_binary_path(path) {
 
   // Defined inline so as to avoid having the table persist in memory
   // indefinitely. Let v8 worry about optimization. Also avoids global scope
-  // pollution
+  // pollution, and makes the list private.
   const extension_mime_map = {
     'ai':   'application/postscript',
     'aif':  'audio/aiff',

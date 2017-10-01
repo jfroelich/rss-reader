@@ -68,7 +68,7 @@ async function set_feed_icon(icon_conn, feed, verbose) {
   let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
     min_img_size, max_img_size, icon_url_string;
   const lookup_url_object = Feed.prototype.create_icon_lookup_url.call(feed);
-  const lookup_promise = favicon_lookup(icon_conn, lookup_url_object,
+  const lookup_promise = favicon.lookup(icon_conn, lookup_url_object,
     max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
     max_img_size, verbose);
   try {
@@ -111,7 +111,7 @@ function show_subscribe_notification(feed) {
 // indexedDB
 function prep_feed_for_db(feed) {
   let storable = Feed.prototype.sanitize.call(feed);
-  storable = filter_empty_props(storable);
+  storable = object_filter_empty_props(storable);
   storable.dateCreated = new Date();
   return storable;
 }

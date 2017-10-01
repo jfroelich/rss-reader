@@ -1,18 +1,25 @@
+// Utilities for working with html strings
+
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).
-function replace_html(input_string, replacement_string) {
+function html_replace_tags(input_string, replacement_string) {
   'use strict';
-  if(typeof input_string !== 'string')
-    throw new TypeError('input_string is not a string');
+
+  ASSERT(typeof input_string === 'string');
+
+  // Fast case for empty strings
+  // Because of the assert this basically only checks 0 length
   if(!input_string)
     return input_string;
+
+  // Parse the html into a Document object
   const doc = document.implementation.createHTMLDocument();
   const body_element = doc.body;
   body_element.innerHTML = input_string;
 
   // The native solution is faster but its behavior may not be
-  // perfectly reproduced
+  // perfectly reproduced by the non native code below
   if(!replacement_string)
     return body_element.textContent;
 
@@ -29,14 +36,14 @@ function replace_html(input_string, replacement_string) {
 // while maintaining a higher level of well-formedness over a naive truncation.
 // This is currently a lossy transformation because certain entities that are
 // decoded while processing are not properly re-encoded.
-function truncate_html(html_string, position, extension_string) {
+function html_truncate(html_string, position, extension_string) {
   'use strict';
+
+  ASSERT(Number.isInteger(position));
+  ASSERT(position >= 0);
+
   if(!html_string)
     return '';
-  if(!Number.isInteger(position))
-    throw new TypeError('position is not an integer: ' + position);
-  if(position < 0)
-    throw new TypeError('position is negative: ' + position);
 
   const ellipsis = '\u2026';
   const extension = typeof extension_string === 'string' ?
@@ -45,8 +52,11 @@ function truncate_html(html_string, position, extension_string) {
   let is_past_position = false;
   let total_length = 0;
 
+  // Parse the html into a Document object
   const doc = document.implementation.createHTMLDocument();
   doc.documentElement.innerHTML = html_string;
+
+  // Create an iterator for iterating over text nodes
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
 
   for(let node = it.nextNode(); node; node = it.nextNode()) {

@@ -1,6 +1,5 @@
+(function(exports) {
 'use strict';
-
-{ // Begin file block scope
 
 // Get the current settings from local storage and then modify the css rules
 // in the default style sheet
@@ -188,8 +187,7 @@ function update_entry_content_css_rule(sheet) {
   rule.style.webkitColumnCount = column_count_string;
 }
 
-// Globals
-this.update_entry_css_rules = update_entry_css_rules;
-this.add_entry_css_rules = add_entry_css_rules;
+exports.update_entry_css_rules = update_entry_css_rules;
+exports.add_entry_css_rules = add_entry_css_rules;
 
-} // End file block scope
+}(this));

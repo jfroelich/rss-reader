@@ -73,7 +73,7 @@ async function on_installed(event) {
 
   let icon_db_name, icon_db_version;
   try {
-    await favicon_setup_db(icon_db_name, icon_db_version, verbose);
+    await favicon.setup(icon_db_name, icon_db_version, verbose);
   } catch(error) {
     console.warn(error);
   }
@@ -118,8 +118,7 @@ function on_alarm(alarm) {
     break;
   case 'compact-favicon-db':
     let name, version, max_age_ms, verbose;
-    favicon_compact_db(name, version, max_age_ms, verbose).catch(
-      console.warn);
+    favicon.compact(name, version, max_age_ms, verbose).catch(console.warn);
     break;
   default:
     console.warn('Unknown alarm:', alarm.name);

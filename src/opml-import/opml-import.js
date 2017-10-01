@@ -36,7 +36,7 @@ function open_dbs() {
   let icon_db_name, icon_db_version, icon_db_conn_timeout_ms;
   const reader_conn_promise = reader_db.open(reader_db_name, reader_db_version,
     reader_db_connect_timeout_ms, verbose);
-  const icon_conn_promise = favicon_open_db(icon_db_name, icon_db_version,
+  const icon_conn_promise = favicon.open(icon_db_name, icon_db_version,
     icon_db_conn_timeout_ms, verbose);
   const conn_promises = [reader_conn_promise, icon_conn_promise];
   return Promise.all(conn_promises);

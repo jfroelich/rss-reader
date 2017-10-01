@@ -8,11 +8,11 @@ const IMG_SIZE_UNKNOWN = -1;
 
 // Looks up the favicon url for a given web page url
 // @returns {String} the favicon url if found, otherwise undefined
-async function favicon_lookup(conn, url_object, max_age_ms,
+async function lookup(conn, url_object, max_age_ms,
   fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size, max_img_size,
   verbose) {
   if(verbose)
-    console.log('Starting favicon_lookup for url', url_object.href);
+    console.log('Starting lookup for url', url_object.href);
   if(typeof max_age_ms === 'undefined')
     max_age_ms = default_max_age_ms;
   if(typeof fetch_html_timeout_ms === 'undefined')
@@ -165,8 +165,6 @@ async function db_find_origin_url(conn, origin_url_string, urls, max_age_ms, ver
   return origin_entry.iconURLString;
 }
 
-
-
 async function lookup_origin(conn, url_object, urls, fetch_img_timeout_ms,
   min_img_size, max_img_size, verbose) {
   const img_url_string = url_object.origin + '/favicon.ico';
@@ -202,11 +200,11 @@ async function fetch_doc_silently(url_object, fetch_html_timeout_ms, verbose) {
   }
 }
 
-async function favicon_setup_db(name, version, verbose) {
+async function setup(name, version, verbose) {
   // TODO: timeout_ms should be param
   let conn, timeout_ms;
   try {
-    conn = await favicon_open_db(name, version, timeout_ms, verbose);
+    conn = await favicon.open(name, version, timeout_ms, verbose);
   } finally {
     if(conn)
       conn.close();
@@ -220,7 +218,7 @@ async function favicon_setup_db(name, version, verbose) {
 // @param verbose {Boolean} optional, whether to log messages to console
 // @throws {TypeError} invalid timeout (any other errors occur within promise)
 // @returns {Promise} resolves to open IDBDatabase instance
-async function favicon_open_db(name, version, timeout_ms, verbose) {
+async function open(name, version, timeout_ms, verbose) {
   if(typeof name === 'undefined')
     name = 'favicon-cache';
   if(typeof version === 'undefined')
@@ -229,7 +227,7 @@ async function favicon_open_db(name, version, timeout_ms, verbose) {
     timeout_ms = 100;
 
   // In the case of a connection blocked event, eventually timeout
-  const connect_promise = favicon_open_db_internal(name, version, verbose);
+  const connect_promise = create_open_promise(name, version, verbose);
   const error_message = 'Connecting to indexedDB database ' + name +
     ' timed out.';
   const timeout_promise = reject_after_timeout(timeout_ms, error_message);
@@ -237,15 +235,14 @@ async function favicon_open_db(name, version, timeout_ms, verbose) {
   return await Promise.race(promises);
 }
 
-function favicon_open_db_internal(name, version, verbose) {
-  function resolver(resolve, reject) {
+function create_open_promise(name, version, verbose) {
+  return new Promise(function(resolve, reject) {
     const request = indexedDB.open(name, version);
     request.onupgradeneeded = favicon_db_upgrade.bind(request, verbose);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
     request.onblocked = console.warn;
-  }
-  return new Promise(resolver);
+  });
 }
 
 function favicon_db_upgrade(verbose, event) {
@@ -282,15 +279,14 @@ function is_entry_expired(entry, current_date, max_age_ms) {
   return entry_age_ms > max_age_ms;
 }
 
-function favicon_clear_db(conn) {
-  function resolver(resolve, reject) {
+function clear(conn) {
+  return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
     const request = store.clear();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  }
-  return new Promise(resolver);
+  });
 }
 
 async function find_unexpired_entry(conn, url_object, max_age_ms) {
@@ -298,18 +294,17 @@ async function find_unexpired_entry(conn, url_object, max_age_ms) {
 }
 
 function db_find_entry(conn, url_object) {
-  function resolver(resolve, reject) {
+  return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
     const request = store.get(url_object.href);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  }
-  return new Promise(resolver);
+  });
 }
 
 function db_find_expired_entries(conn, max_age_ms) {
-  function resolver(resolve, reject) {
+  return new Promise(function(resolve, reject) {
     let cutoff_time_ms = Date.now() - max_age_ms;
     cutoff_time_ms = cutoff_time_ms < 0 ? 0 : cutoff_time_ms;
     const tx = conn.transaction('favicon-cache');
@@ -320,24 +315,22 @@ function db_find_expired_entries(conn, max_age_ms) {
     const request = index.getAll(range);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => resolve(request.error);
-  }
-  return new Promise(resolver);
+  });
 }
 
 function db_remove_entries_with_urls(conn, page_urls) {
-  function resolver(resolve, reject) {
+  return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('favicon-cache');
     for(const url of page_urls)
       store.delete(url);
-  }
-  return new Promise(resolver);
+  });
 }
 
 function db_put_entries(conn, icon_url_string, page_urls) {
-  function resolver(resolve, reject) {
+  return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
@@ -350,18 +343,17 @@ function db_put_entries(conn, icon_url_string, page_urls) {
       entry.dateUpdated = current_date;
       store.put(entry);
     }
-  }
-  return new Promise(resolver);
+  });
 }
 
 // Finds all expired entries in the database and removes them
-async function favicon_compact_db(name, version, max_age_ms, verbose) {
+async function compact(name, version, max_age_ms, verbose) {
   if(typeof max_age_ms === 'undefined')
     max_age_ms = default_max_age_ms;
 
   let conn_timeout_ms, conn;
   try {
-    conn = await favicon_open_db(name, version, conn_timeout_ms, verbose);
+    conn = await open(name, version, conn_timeout_ms, verbose);
     const expired_entries = await db_find_expired_entries(conn, max_age_ms);
     const urls = [];
     for(const entry of expired_entries) {
@@ -382,13 +374,10 @@ function reject_after_timeout(timeout_ms, error_message) {
   // Throw immediately as this is a static error.
   if(timeout_ms < 4)
     throw new TypeError('timeout_ms must be greater than 4');
-
-  function executor(resolve, reject) {
+  return new Promise(function(resolve, reject) {
     const error = new Error(error_message);
     setTimeout(reject, timeout_ms, error);
-  }
-
-  return new Promise(executor);
+  });
 }
 
 // Race a timeout against a fetch
@@ -508,13 +497,15 @@ function assert_response_is_html(response, url_string) {
 function assert_response_is_img(response) {
   const type_header = response.headers.get('Content-Type');
   if(!/^\s*image\//i.test(type_header))
-    throw new Error(`Invalid response type ${type_header}`);
+    throw new Error('Invalid response type');
 }
 
-exports.favicon_lookup = favicon_lookup;
-exports.favicon_open_db = favicon_open_db;
-exports.favicon_clear_db = favicon_clear_db;
-exports.favicon_compact_db = favicon_compact_db;
-exports.favicon_setup_db = favicon_setup_db;
+exports.favicon = {
+  'lookup': lookup,
+  'open': open,
+  'clear': clear,
+  'compact': compact,
+  'setup': setup
+};
 
 }(this));

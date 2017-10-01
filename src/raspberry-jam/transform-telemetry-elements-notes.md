@@ -1,7 +1,7 @@
 
 # About
 
-I love the movie Spaceballs.
+
 
 This removes ping attributes, adds no referrer, removes some tracking images
 
@@ -27,6 +27,7 @@ that happen when invoking the implicit getter img_element.style. I have not
 tested this recently, just an assumption.
 
 # TODO
+* Rename module to lonestar
 * filter_tracking_imgs should accept a base url parameter, and should not
 filter images from that host. This way, feeds from that host still work
 * Write tests

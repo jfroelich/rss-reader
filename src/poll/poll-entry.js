@@ -8,7 +8,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
   if(!is_valid_entry_url(entry))
     return false;
 
-  let url_string = entry_get_url_string(entry);
+  let url_string = entry_get_top_url(entry);
   if(is_unpollable_entry(url_string))
     return false;
   if(await reader_db.find_entry_by_url(reader_conn, url_string))
@@ -16,7 +16,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
 
   const rewritten_url_string = rewrite_url_string(url_string);
   if(rewritten_url_string && url_string !== rewritten_url_string) {
-    entry_add_url_string(entry, rewritten_url_string);
+    entry_append_url(entry, rewritten_url_string);
     url_string = rewritten_url_string;
     if(is_unpollable_entry(url_string))
       return false;
@@ -40,7 +40,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
     else if(await reader_db.find_entry_by_url(reader_conn, url_string))
       return false;
     else
-      entry_add_url_string(entry, url_string);
+      entry_append_url(entry, url_string);
   }
 
   await set_entry_icon(entry, icon_conn, feed.faviconURLString, verbose);
@@ -77,7 +77,7 @@ async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms, verbose) {
   // This must occur before removing sourceless images
   transform_lazy_imgs(doc);
 
-  const url_string = entry_get_url_string(entry);
+  const url_string = entry_get_top_url(entry);
   const base_url_object = new URL(url_string);
   resolve_document_urls(doc, base_url_object);
 
@@ -90,11 +90,11 @@ async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms, verbose) {
 }
 
 async function set_entry_icon(entry, icon_conn, fallback_url_string, verbose) {
-  const lookup_url_string = entry_get_url_string(entry);
+  const lookup_url_string = entry_get_top_url(entry);
   const lookup_url_object = new URL(lookup_url_string);
   let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
     max_img_size;
-  const icon_url_string = await favicon_lookup(icon_conn, lookup_url_object,
+  const icon_url_string = await favicon.lookup(icon_conn, lookup_url_object,
     max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
     min_img_size, max_img_size, verbose);
   entry.faviconURLString = icon_url_string || fallback_url_string;
@@ -164,7 +164,7 @@ async function prep_and_store_entry(reader_conn, entry, verbose) {
   let author_max_length, title_max_length, content_max_length;
   const sanitized_entry = entry_sanitize(entry, author_max_length,
     title_max_length, content_max_length);
-  const storable_entry = filter_empty_props(sanitized_entry);
+  const storable_entry = object_filter_empty_props(sanitized_entry);
   storable_entry.readState = ENTRY_STATE_UNREAD;
   storable_entry.archiveState = ENTRY_STATE_UNARCHIVED;
   storable_entry.dateCreated = new Date();
@@ -174,7 +174,7 @@ async function prep_and_store_entry(reader_conn, entry, verbose) {
     return true;
   } catch(error) {
     if(verbose)
-      console.warn(entry_get_url_string(entry), error);
+      console.warn(entry_get_top_url(entry), error);
   }
   return false;
 }
@@ -193,7 +193,7 @@ function prepare_local_entry(entry, verbose) {
   if(!entry.content)
     return entry;
 
-  const url_string = entry_get_url_string(entry);
+  const url_string = entry_get_top_url(entry);
   if(verbose)
     console.debug('Parsing local feed entry html for url', url_string);
 

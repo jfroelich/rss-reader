@@ -1,7 +1,6 @@
 (function(exports){
 'use strict';
 
-
 let current_slide_element = null;
 
 const settings_channel = new BroadcastChannel('settings');
@@ -22,7 +21,7 @@ const poll_channel = new BroadcastChannel('poll');
 poll_channel.onmessage = function poll_channel_onmessage(event) {
   if(event.data === 'completed') {
     console.debug('Received poll completed message, maybe appending slides');
-    const count = count_unread_slide_elements();
+    const count = count_unread_slides();
     let conn; // leave undefined
     const verbose = true;// Temporarily true for debugging purposes
     if(count < 2)
@@ -30,16 +29,15 @@ poll_channel.onmessage = function poll_channel_onmessage(event) {
   }
 };
 
-function remove_slide(slide_element) {
+function slide_remove(slide_element) {
   slide_element.removeEventListener('click', slide_on_click);
   slide_element.remove();
 }
 
 // TODO: visual feedback in event of an error?
-async function mark_slide_read(conn, slide_element, verbose) {
-  // This is not an error. This happens routinely as a result of navigating
-  // to prior articles then navigating forward. It is not the responsibility
-  // of the caller to only call on unread slides
+async function slide_mark_read(conn, slide_element, verbose) {
+  console.debug('slide_mark_read begin');
+  // This is normal and not an error
   if(slide_element.hasAttribute('read'))
     return;
 
@@ -54,17 +52,25 @@ async function mark_slide_read(conn, slide_element, verbose) {
       is_local_conn = true;
     }
 
-    await mark_entry_read(conn, entry_id_number, verbose);
+
+    console.debug('Before call entry_mark_read');
+    const status = await entry_mark_read(conn, entry_id_number);
+    if(status !== STATUS.OK) {
+      // TODO: handle error
+      console.warn('Failed to mark entry as read');
+    } else {
+      console.log('Marked as read');
+    }
+
     slide_element.setAttribute('read', '');
   } catch(error) {
-    // TODO: show an error message or something
+    // TODO: handle error
     console.warn(error);
   } finally {
     if(is_local_conn && conn)
       conn.close();
   }
 }
-
 
 // TODO: require caller to establish conn, do not do it here?
 // TODO: visual feedback on error
@@ -74,7 +80,7 @@ async function append_slides(conn, verbose) {
   let entries = [];
   let name, version, conn_timeout_ms;
 
-  const offset = count_unread_slide_elements();
+  const offset = count_unread_slides();
 
   try {
     if(!conn) {
@@ -108,6 +114,7 @@ function append_slide(entry) {
   slide_element.setAttribute('class','entry');
   slide_element.addEventListener('click', slide_on_click);
   // Bind to slide, not window, because only slide scrolls
+  // TODO: look into the new 'passive' flag for scroll listeners
   slide_element.addEventListener('scroll', slide_on_scroll);
   slide_element.style.position = 'absolute';
 
@@ -143,7 +150,7 @@ function append_slide(entry) {
 
 function create_article_title_element(entry) {
   const title_element = document.createElement('a');
-  title_element.setAttribute('href', entry_get_url_string(entry));
+  title_element.setAttribute('href', entry_get_top_url(entry));
   title_element.setAttribute('class', 'entry-title');
   title_element.setAttribute('target','_blank');
   title_element.setAttribute('rel', 'noreferrer');
@@ -152,7 +159,7 @@ function create_article_title_element(entry) {
     title_element.setAttribute('title', entry.title);
     let titleText = entry.title;
     titleText = filter_article_title(titleText);
-    titleText = truncate_html(titleText, 300);
+    titleText = html_truncate(titleText, 300);
     title_element.innerHTML = titleText;
   } else {
     title_element.setAttribute('title', 'Untitled');
@@ -200,30 +207,6 @@ function create_feed_source_element(entry) {
   return source_element;
 }
 
-function filter_article_title(title) {
-  let index = title.lastIndexOf(' - ');
-  if(index === -1)
-    index = title.lastIndexOf(' | ');
-  if(index === -1)
-    index = title.lastIndexOf(' : ');
-  if(index === -1)
-    return title;
-
-  // todo: should this be +3 given the spaces wrapping the delim?
-  // TODO: maybe this should be a call to a helper about getting words array
-  const tail_string = title.substring(index + 1);
-  const tail_words = tail_string.split(/\s+/g);
-  const non_empty_tail_words = tail_words.filter((w) => w);
-  let output_title;
-  if(non_empty_tail_words.length < 5) {
-    output_title = title.substring(0, index);
-    output_title = output_title.trim();
-  } else {
-    output_title = title;
-  }
-  return output_title;
-}
-
 function slide_on_click(event) {
   const LEFT_MOUSE_BUTTON_CODE = 1;
   if(event.which !== LEFT_MOUSE_BUTTON_CODE)
@@ -241,7 +224,7 @@ function slide_on_click(event) {
 
   let conn;// undefined
   const verbose = true;// temp
-  mark_slide_read(conn, current_slide_element, verbose).catch(console.warn);
+  slide_mark_read(conn, current_slide_element, verbose).catch(console.warn);
 
   return false;
 }
@@ -260,7 +243,7 @@ async function show_next_slide() {
   }
 
   const old_slide_element = current_slide_element;
-  const unread_slide_element_count = count_unread_slide_elements();
+  const unread_slide_element_count = count_unread_slides();
   let num_slides_appended = 0;
   let conn, name, version, conn_timeout_ms;
 
@@ -284,7 +267,8 @@ async function show_next_slide() {
       current_slide_element.focus();
 
       // Must be awaited
-      await mark_slide_read(conn, old_slide_element, verbose);
+      console.debug('before call slide_mark_read');
+      await slide_mark_read(conn, old_slide_element, verbose);
     }
   } catch(error) {
     console.warn(error);
@@ -305,9 +289,8 @@ function cleanup_slideshow_on_append() {
   const container_element = document.getElementById('slideshow-container');
   while(container_element.childElementCount > max_slide_count &&
     container_element.firstChild !== current_slide_element)
-    remove_slide(container_element.firstChild);
+    slide_remove(container_element.firstChild);
 }
-
 
 // Move the current slide out of view to the right, and move the previous
 // slide into view, and then update the current slide.
@@ -327,21 +310,10 @@ function show_prev_slide() {
   current_slide_element.focus();
 }
 
-function count_unread_slide_elements() {
+function count_unread_slides() {
   const unread_slides =
     document.body.querySelectorAll('div[entry]:not([read])');
   return unread_slides.length;
-}
-
-function format_date(date_object, delimiter) {
-  const parts = [];
-  if(date_object) {
-    // getMonth is a zero based index
-    parts.push(date_object.getMonth() + 1);
-    parts.push(date_object.getDate());
-    parts.push(date_object.getFullYear());
-  }
-  return parts.join(delimiter || '/');
 }
 
 let keydown_timer = null;
@@ -362,7 +334,6 @@ window.addEventListener('keydown', function on_key_down(event) {
 });
 
 // Override built in keyboard scrolling
-// TODO: look into the new 'passive' flag for scroll listeners
 let scroll_callback_handle;
 function slide_on_scroll(event) {
   const DOWN = 40, UP = 38;

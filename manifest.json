@@ -13,6 +13,15 @@
   "background": {
     "persistent": false,
     "scripts": [
+      "/src/assert.js",
+      "/src/background.js",
+      "/src/entry.js",
+      "/src/extension.js",
+      "/src/feed.js",
+      "/src/object.js",
+      "/src/parse-fetched-feed.js",
+      "/src/string.js",
+      "/src/subscribe.js",
       "/src/calamine/filter-boilerplate.js",
       "/src/cleandom/sanitize-html-document.js",
       "/src/cli/cli.js",
@@ -41,14 +50,7 @@
       "/src/safedom/secure-html-document.js",
       "/src/third-party/parse-srcset.js",
       "/src/utils/is-probably-binary-path.js",
-      "/src/utils/sizeof.js",
-      "/src/utils/utils.js",
-      "/src/background.js",
-      "/src/entry.js",
-      "/src/extension.js",
-      "/src/feed.js",
-      "/src/parse-fetched-feed.js",
-      "/src/subscribe.js"
+      "/src/utils/sizeof.js"
     ]
   },
   "options_page": "options.html",

@@ -4,6 +4,10 @@
 * this should throw if input not a string. does it?
 * test whether doc is guaranteed defined regardless of input
 
+* think of a way to differentiate between a parser introduced parsererror element
+and an input document containing a parsererror element. One is an error and one
+is not.
+
 # Notes on throwing parser errors
 
 Instead of throwing an exception, parseFromString embeds a parse error as

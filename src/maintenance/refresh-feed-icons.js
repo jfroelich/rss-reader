@@ -32,7 +32,7 @@ async function refresh_feed_icons(verbose) {
 function open_dbs() {
   let icon_db_name, icon_db_version, conn_timeout_ms;
   const reader_open_promise = reader_db.open();
-  const icon_open_promise = favicon_open_db(icon_db_name, icon_db_version,
+  const icon_open_promise = favicon.open(icon_db_name, icon_db_version,
     conn_timeout_ms, verbose);
   const conn_promises = [reader_open_promise, icon_open_promise];
   return Promise.all(conn_promises);
@@ -64,7 +64,7 @@ async function process_feed(feed, reader_conn, icon_conn, verbose) {
   // TODO: should these be parameters to this function?
   let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
     min_img_size, max_img_size;
-  const icon_url_string = await favicon_lookup(icon_conn, lookup_url_object,
+  const icon_url_string = await favicon.lookup(icon_conn, lookup_url_object,
     max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
     min_img_size, max_img_size, verbose);
 

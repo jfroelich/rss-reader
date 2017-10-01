@@ -22,7 +22,7 @@ Feed.prototype.add_url = function(url_string) {
   return true;
 };
 
-// Creates a url object that can be used as input to favicon_lookup
+// Creates a url object that can be used as input to favicon.lookup
 // @returns {URL}
 Feed.prototype.create_icon_lookup_url = function() {
   // Cannot assume the link is set nor valid
@@ -66,20 +66,20 @@ Feed.prototype.sanitize = function(title_max_length, desc_max_length) {
 
   if(output_feed.title) {
     let title = output_feed.title;
-    title = filter_control_chars(title);
-    title = replace_html(title, '');
+    title = string_filter_control_chars(title);
+    title = html_replace_tags(title, '');
     title = title.replace(/\s+/, ' ');
-    title = truncate_html(title, title_max_length, '');
+    title = html_truncate(title, title_max_length, '');
     output_feed.title = title;
   }
 
   if(output_feed.description) {
     let description = output_feed.description;
-    description = filter_control_chars(description);
-    description = replace_html(description, '');
+    description = string_filter_control_chars(description);
+    description = html_replace_tags(description, '');
     description = description.replace(/\s+/, ' ');
     const before_length = description.length;
-    description = truncate_html(description, desc_max_length, '');
+    description = html_truncate(description, desc_max_length, '');
     output_feed.description = description;
   }
 

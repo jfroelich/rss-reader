@@ -1,3 +1,6 @@
+
+// Requires assert.js
+
 // Sends a search request to Google and yields a resulting object consisting
 // the properties 'query' and 'entries'. query is a formatted HTML
 // string. entries is an array. entries may be empty but is always defined.
@@ -9,18 +12,21 @@
 // @param timeout_ms {Number} a positive integer, optional
 async function search_google_feeds(query_string, timeout_ms) {
   'use strict';
-  if(typeof query_string !== 'string')
-    throw new TypeError('query_string is not a String');
+  ASSERT(typeof query_string === 'string');
+
   query_string = query_string.trim();
-  if(!query_string.length)
+
+  // TODO: is this really a type error?
+  if(!query_string)
     throw new TypeError('query_string is empty');
 
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 0;
-  if(!Number.isInteger(timeout_ms))
-    throw new TypeError('timeout_ms is not an integer');
-  if(timeout_ms < 0)
-    throw new TypeError('timeout_ms is negative');
+
+  ASSERT(Number.isInteger(timeout_ms));
+  ASSERT(timeout_ms >= 0);
+
+  // TODO: this should probably delegate to a fetch_json function
 
   const base_url_string =
     'https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
@@ -42,6 +48,8 @@ async function search_google_feeds(query_string, timeout_ms) {
 
   const standard_fetch_error_message = request_url_string + ' ' +
     response.status + ' ' + response.statusText;
+
+  // TODO: delegate timed fetching to timed-fetch.js
 
   const fetch_promise = fetch(request_url_string, fetch_options);
   let response;

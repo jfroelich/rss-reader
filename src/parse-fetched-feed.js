@@ -31,7 +31,7 @@ function parse_fetched_feed(response) {
 
   for(const entry of entries) {
     if(entry.link) {
-      entry_add_url_string(entry, entry.link);
+      entry_append_url(entry, entry.link);
       delete entry.link;
     }
   }

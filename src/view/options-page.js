@@ -1,7 +1,6 @@
 (function(exports) {
 'use strict';
 
-
 function settings_channel_onmessage(event) {
   if(event.data === 'changed')
     update_entry_css_rules(event);
@@ -151,7 +150,7 @@ function append_feed_to_feed_list(feed, should_maintain_order) {
 
   const title_element = document.createElement('span');
   let feed_title = feed.title || 'Untitled';
-  feed_title = truncate_html(feed_title, 300);
+  feed_title = html_truncate(feed_title, 300);
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
   const feed_list_element = document.getElementById('feedlist');
@@ -214,7 +213,7 @@ async function start_subscription(url_object) {
   let subscribe_timeout_ms, mute_notifications;
 
   // TODO: make this into a helper function that opens both connections
-  const icon_conn_promise = favicon_open_db(icon_db_name, icon_db_version,
+  const icon_conn_promise = favicon.open(icon_db_name, icon_db_version,
     connect_timeout_ms, verbose);
   const reader_conn_promise = reader_db.open();
   const conn_promises = [reader_conn_promise, icon_conn_promise];
@@ -468,9 +467,9 @@ async function subscribe_form_on_submit(event) {
   entries.forEach((entry_object) => {
     let title = entry_object.title;
     if(title) {
-      title = filter_control_chars(title);
-      title = replace_html(title, '');
-      title = truncate_html(title, entry_title_max_length);
+      title = string_filter_control_chars(title);
+      title = html_replace_tags(title, '');
+      title = html_truncate(title, entry_title_max_length);
       entry_object.title = title;
     }
   });
@@ -482,9 +481,9 @@ async function subscribe_form_on_submit(event) {
   entries.forEach((entry_object) => {
     let snippet = entry_object.contentSnippet;
     if(snippet) {
-      snippet = filter_control_chars(snippet);
+      snippet = string_filter_control_chars(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
-      snippet = truncate_html(
+      snippet = html_truncate(
         snippet, entry_snippet_max_length, replacement_string);
       entry_object.contentSnippet = snippet;
     }
@@ -501,7 +500,7 @@ async function subscribe_form_on_submit(event) {
 
   let icon_conn;
 
-  icon_conn = await favicon_open_db();
+  icon_conn = await favicon.open();
   for(let result of entries) {
     if(!result.link)
       continue;
