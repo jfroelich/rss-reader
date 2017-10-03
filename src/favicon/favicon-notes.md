@@ -64,8 +64,13 @@ Side note on disabling OPTIONS: https://stackoverflow.com/questions/29954037
 
 # General todo items
 
+* Reintroduce parameter that is the fetched document, optional. When the doc
+is specified, do not fetch the document. One of the big problems with polling
+right now is that I am seeing duplicate requests. Even though each second
+request might be cached, I'd rather just not even do it.
+
 * Spend more time thinking about the similarity of findLookupURLInCache,
-findRedirectInCache, and findOriginInCache. The similarity really suggests
+findRedirectInCache, and findOriginInCache. The similarity suggests
 I should be using a single function.
 * Implement findUnexpiredEntry, then look at where I call findEntry and
 replace it

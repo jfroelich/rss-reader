@@ -3,9 +3,10 @@
 // @param response {Object} the result of calling fetch_feed
 function parse_fetched_feed(response) {
   'use strict';
+
   // Allow parse error to bubble
-  const result = parse_feed(response.text);
-  const feed = result.feed;
+  const parse_result = parse_feed(response.text);
+  const feed = parse_result.feed;
 
   if(!feed.datePublished)
     feed.datePublished = new Date();
@@ -19,12 +20,12 @@ function parse_fetched_feed(response) {
     }
   }
 
-  Feed.prototype.add_url.call(feed, response.requestURLString);
-  Feed.prototype.add_url.call(feed, response.responseURLString);
+  feed_append_url(feed, response.requestURLString);
+  feed_append_url(feed, response.responseURLString);
   feed.dateFetched = new Date();
   feed.dateLastModified = response.lastModifiedDate;
 
-  const entries = result.entries;
+  const entries = parse_result.entries;
   for(const entry of entries)
     if(!entry.datePublished)
       entry.datePublished = feed.datePublished;

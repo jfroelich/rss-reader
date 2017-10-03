@@ -1,3 +1,12 @@
+// Dependencies:
+// file.js
+// reader-db.js
+// favicon.js
+// feed.js
+// opml-parser.js
+// opml-document.js
+// subscribe.js
+
 (function(exports) {
 'use strict';
 
@@ -7,9 +16,9 @@ async function import_opml_files(files, verbose) {
 
   let reader_conn, icon_conn, import_resolutions;
   try {
-    const connections = await open_dbs();
-    reader_conn = connections[0];
-    icon_conn = connections[1];
+    const conns = await open_dbs();
+    reader_conn = conns[0];
+    icon_conn = conns[1];
     import_resolutions = await import_files_internal(reader_conn, icon_conn,
       files, verbose);
   } finally {
@@ -22,11 +31,6 @@ async function import_opml_files(files, verbose) {
   let num_feeds_imported = 0;
   for(const per_file_feed_count of import_resolutions)
     num_feeds_imported += per_file_feed_count;
-
-  if(verbose)
-    console.log('Imported %d feeds from %d files', num_feeds_imported,
-      files.length);
-
   return num_feeds_imported;
 }
 
@@ -45,11 +49,8 @@ function open_dbs() {
 // Concurrently import files
 function import_files_internal(reader_conn, icon_conn, files, verbose) {
   const promises = [];
-  for(const file of files) {
-    const promise = import_file_silently(reader_conn, icon_conn, file, verbose);
-    promises.push(promise);
-  }
-
+  for(const file of files)
+    promises.push(import_file_silently(reader_conn, icon_conn, file, verbose));
   return Promise.all(promises);
 }
 
@@ -75,7 +76,7 @@ async function import_file(reader_conn, icon_conn, file, verbose) {
   if(!is_supported_file_type(file.type))
     throw new TypeError(`"${file.name}" has unsupported type "${file.type}"`);
 
-  const text = await read_file_as_text(file);
+  const text = await file_read_as_text(file);
 
   // Allow parse errors to bubble
   const document = parse_opml(text);
@@ -89,10 +90,10 @@ async function import_file(reader_conn, icon_conn, file, verbose) {
   if(outlines.length) {
     const unique_outlines = aggregate_outlines_by_xmlurl(outlines);
 
-    // TODO: only calc dup_count if verbose
-    const dup_count = outlines.length - unique_outlines.length;
-    if(dup_count && verbose)
-      console.log('Ignored %d duplicate feed(s) in file', dup_count, file.name);
+    if(verbose) {
+      const dup_count = outlines.length - unique_outlines.length;
+      console.log('Ignored %d duplicate feeds in file', dup_count, file.name);
+    }
 
     normalize_outline_links(unique_outlines);
     const feeds = convert_outlines_to_feeds(unique_outlines);
@@ -164,7 +165,6 @@ function convert_outlines_to_feeds(outlines) {
   return feeds;
 }
 
-
 function convert_outline_to_feed(outline) {
   const feed = {};
 
@@ -186,27 +186,16 @@ function convert_outline_to_feed(outline) {
     feed.link = outline.htmlUrl;
   }
 
-  Feed.prototype.add_url.call(feed, outline.xmlUrl);
+  feed_append_url(feed, outline.xmlUrl);
 
   return feed;
 }
-
 
 function is_supported_file_type(file_type) {
   let normal_type = file_type || '';
   normal_type = normal_type.trim().toLowerCase();
   const supported_types = ['application/xml', 'text/xml'];
   return supported_types.includes(normal_type);
-}
-
-function read_file_as_text(file) {
-  function resolver(resolve, reject) {
-    const reader = new FileReader();
-    reader.readAsText(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-  }
-  return new Promise(resolver);
 }
 
 exports.import_opml_files = import_opml_files;

@@ -18,7 +18,7 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
   if(typeof notify === 'undefined')
     notify = true;
 
-  const url_string = Feed.prototype.get_url.call(feed);
+  const url_string = feed_get_top_url(feed);
   if(verbose)
     console.log('Subscribing to feed', url_string);
 
@@ -67,7 +67,7 @@ async function subscribe(reader_conn, icon_conn, feed, timeout_ms, notify,
 async function set_feed_icon(icon_conn, feed, verbose) {
   let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
     min_img_size, max_img_size, icon_url_string;
-  const lookup_url_object = Feed.prototype.create_icon_lookup_url.call(feed);
+  const lookup_url_object = feed_create_icon_lookup_url(feed);
   const lookup_promise = favicon.lookup(icon_conn, lookup_url_object,
     max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
     max_img_size, verbose);
@@ -102,7 +102,7 @@ async function check_redirect_url_exists(reader_conn,
 
 function show_subscribe_notification(feed) {
   const title = 'Subscription complete';
-  const feed_name = feed.title || Feed.prototype.get_url.call(feed);
+  const feed_name = feed.title || feed_get_top_url(feed);
   const message = 'Subscribed to ' + feed_name;
   ext_show_notification(title, message, feed.faviconURLString);
 }
@@ -110,7 +110,7 @@ function show_subscribe_notification(feed) {
 // Returns a basic copy of the input feed that is suitable for storage in
 // indexedDB
 function prep_feed_for_db(feed) {
-  let storable = Feed.prototype.sanitize.call(feed);
+  let storable = feed_sanitize(feed);
   storable = object_filter_empty_props(storable);
   storable.dateCreated = new Date();
   return storable;

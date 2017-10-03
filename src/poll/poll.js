@@ -42,6 +42,8 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
   let num_entries_added = 0;
 
   // TODO: these should probably be parameters to poll_feeds
+  // TODO: actually, the conns should be parameters instead and this should
+  // not be responsible for creating conns
   let icon_db_name, icon_db_version, conn_timeout_ms;
   let reader_db_name, reader_db_version;
 
@@ -58,9 +60,15 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
     icon_conn = conns[1];
     const feeds = await find_pollable_feeds(reader_conn,
       ignore_recency_check, recency_period_ms, verbose);
-    num_entries_added = await process_feeds(reader_conn, icon_conn, feeds,
+    const resolutions = await process_feeds(reader_conn, icon_conn, feeds,
       ignore_modified_check, fetch_feed_timeout_ms, fetch_html_timeout_ms,
       fetch_img_timeout_ms, verbose);
+
+    // TODO: this can occur outside of the try/catch
+    for(const resolution of resolutions)
+      num_entries_added += resolution;
+
+
   } finally {
     if(reader_conn)
       reader_conn.close();
@@ -80,6 +88,7 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
   return num_entries_added;
 }
 
+// TODO: inline this function
 async function is_poll_startable(allow_metered_connections, ignore_idle_state,
   idle_period_secs, verbose) {
   if(is_offline()) {
@@ -128,8 +137,7 @@ function show_poll_notification(num_entries_added) {
 
 function is_pollable_feed(feed, recency_period_ms, verbose) {
   // If we do not know when the feed was fetched, then assume it is a new feed
-  // that has never been fetched. In this case, consider the feed to be
-  // eligible
+  // that has never been fetched, so pollable
   if(!feed.dateFetched)
     return true;
 
@@ -140,17 +148,15 @@ function is_pollable_feed(feed, recency_period_ms, verbose) {
     // A feed has been polled too recently if not enough time has elasped from
     // the last time the feed was polled.
     if(verbose)
-      console.debug('Feed polled too recently',
-        Feed.prototype.get_url.call(feed));
-    // In this case we do not want to poll the feed
+      console.debug('Feed polled too recently', feed_get_top_url(feed));
     return false;
-  } else
-    return true;// Otherwise we do want to poll the feed
+  }
+
+  return true;
 }
 
-async function process_feeds(reader_conn, icon_conn, feeds,
-  ignore_modified_check, fetch_feed_timeout_ms, fetch_html_timeout_ms,
-  fetch_img_timeout_ms, verbose) {
+function process_feeds(reader_conn, icon_conn, feeds, ignore_modified_check,
+  fetch_feed_timeout_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, verbose) {
   const promises = [];
   for(const feed of feeds) {
     const promise = poll_feed_silently(reader_conn, icon_conn, feed,
@@ -158,12 +164,7 @@ async function process_feeds(reader_conn, icon_conn, feeds,
       fetch_img_timeout_ms, verbose);
     promises.push(promise);
   }
-
-  const resolutions = await Promise.all(promises);
-  let total_entries_added = 0;
-  for(const num_entries_added of resolutions)
-    total_entries_added += num_entries_added;
-  return total_entries_added;
+  return Promise.all(promises);
 }
 
 async function poll_feed_silently(reader_conn, icon_conn, feed,
@@ -185,13 +186,14 @@ async function poll_feed_silently(reader_conn, icon_conn, feed,
 async function poll_feed(reader_conn, icon_conn, local_feed,
   fetch_feed_timeout_ms, ignore_modified_check, fetch_html_timeout_ms,
   fetch_img_timeout_ms, verbose) {
-  if(typeof local_feed === 'undefined')
-    throw new TypeError('local_feed is undefined');
 
-  const url_string = Feed.prototype.get_url.call(local_feed);
+  ASSERT(local_feed);
+
+  const url_string = feed_get_top_url(local_feed);
   const timeout_ms = fetch_feed_timeout_ms;
   const is_accept_html = true;
 
+  // Allow exceptions to bubble
   const response = await fetch_feed(url_string, timeout_ms, is_accept_html);
 
   // Before parsing, check if the feed was modified
@@ -208,21 +210,27 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
   const merged_feed = merge_feeds(local_feed, parse_feed_result.feed);
 
   // Prepare the feed for storage
-  let storable_feed = Feed.prototype.sanitize.call(merged_feed);
+  let storable_feed = feed_sanitize(merged_feed);
   storable_feed = object_filter_empty_props(storable_feed);
   storable_feed.dateUpdated = new Date();
 
   await reader_db.put_feed(reader_conn, storable_feed);
 
-  const num_entries_added = await poll_feed_entries(reader_conn, icon_conn,
+  const resolutions = await poll_feed_entries(reader_conn, icon_conn,
     storable_feed, parse_feed_result.entries, fetch_html_timeout_ms,
     fetch_img_timeout_ms, verbose);
+
+  let num_entries_added = 0;
+  for(const resolution of resolutions) {
+    if(resolution)
+      num_entries_added++;
+  }
   return num_entries_added;
 }
 
-
-
-async function poll_feed_entries(reader_conn, icon_conn, feed, entries,
+// TODO: this should call out to poll_entry_silently to avoid the
+// failfast behavior of Promise.all
+function poll_feed_entries(reader_conn, icon_conn, feed, entries,
   fetch_html_timeout_ms, fetch_img_timeout_ms, verbose) {
   entries = filter_dup_entries(entries);
   const promises = [];
@@ -231,14 +239,7 @@ async function poll_feed_entries(reader_conn, icon_conn, feed, entries,
       fetch_html_timeout_ms, fetch_img_timeout_ms, verbose);
     promises.push(promise);
   }
-
-  const resolutions = await Promise.all(promises);
-  let num_entries_added = 0;
-  for(const resolution of resolutions) {
-    if(resolution)
-      num_entries_added++;
-  }
-  return num_entries_added;
+  return Promise.all(promises);
 }
 
 function is_feed_unmodified(local_modified_date, remote_modified_date) {
@@ -269,17 +270,18 @@ function filter_dup_entries(entries) {
 }
 
 function query_idle_state(idle_period_secs) {
-  function resolver(resolve) {
+  return new Promise(function(resolve) {
     chrome.idle.queryState(idle_period_secs, resolve);
-  }
-  return new Promise(resolver);
+  });
 }
 
 // experimental
+// TODO: inline
 function is_metered_connection() {
   return navigator.connection && navigator.connection.metered;
 }
 
+// TODO: inline
 function is_offline() {
   return 'onLine' in navigator && !navigator.onLine;
 }

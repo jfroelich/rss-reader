@@ -44,6 +44,25 @@ function entry_append_url(entry, url_string) {
   return true;
 }
 
+// Checks the initial url
+function entry_has_valid_url(entry, verbose) {
+  if(!entry.urls || !entry.urls.length)
+    return false;
+  const url_string = entry.urls[0];
+  let url_object;
+  try {
+    url_object = new URL(url_string);
+  } catch(error) {
+    if(verbose)
+      console.warn(error);
+    return false;
+  }
+
+  if(url_object.pathname.startsWith('//'))
+    return false;
+  return true;
+}
+
 // Returns a new entry object where fields have been sanitized. Impure
 function entry_sanitize(input_entry, author_max_len, title_max_len,
   content_max_length) {

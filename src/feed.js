@@ -1,168 +1,119 @@
-'use strict';
+// Feed utilities
 
-// Utility functions related to working with feeds and entries
-function Feed() {}
+// Returns the last url in the feed's url list as a string
+// @param feed {Object} a feed object
+// @returns {String} the last url in the feed's url list
+function feed_get_top_url(feed) {
+  'use strict';
+  ASSERT(feed && feed.urls && feed.urls.length);
+  return feed.urls[feed.urls.length - 1];
+}
 
-// Get the url currently representing the feed, which is the final url in its
-// internal urls array.
-Feed.prototype.get_url = function() {
-  const urls = this.urls;
-  if(!urls.length)
-    throw new Error('feed.urls is empty');
-  return urls[urls.length - 1];
-};
-
-Feed.prototype.add_url = function(url_string) {
-  this.urls = this.urls || [];
+// Appends a url to the feed's internal list. Lazily creates the list if needed
+// @param feed {Object} a feed object
+// @param url_string {String}
+function feed_append_url(feed, url_string) {
+  'use strict';
+  feed.urls = feed.urls || [];
   const url_object = new URL(url_string);
   const norm_url_string = url_object.href;
-  if(this.urls.includes(norm_url_string))
+  if(feed.urls.includes(norm_url_string))
     return false;
-  this.urls.push(norm_url_string);
+  feed.urls.push(norm_url_string);
   return true;
-};
+}
 
 // Creates a url object that can be used as input to favicon.lookup
 // @returns {URL}
-Feed.prototype.create_icon_lookup_url = function() {
+function feed_create_icon_lookup_url(feed) {
+  'use strict';
+  ASSERT(feed);
+
   // Cannot assume the link is set nor valid
-  if(this.link) {
+  if(feed.link) {
     try {
-      return new URL(this.link);
+      return new URL(feed.link);
     } catch(error) {
-      // console.warn(error);
     }
   }
 
   // If the link is missing or invalid then use the origin
   // Assume the feed always has a url.
-  // Due to expected custom 'this' binding use call, because getURL may not
-  // exist on 'this' as a function
-  const url_string = Feed.prototype.get_url.call(this);
+  const url_string = feed_get_top_url(feed);
   const url_object = new URL(url_string);
   const origin_url_string = url_object.origin;
   return new URL(origin_url_string);
-};
+}
 
-// Returns a shallow copy of the input feed with sanitized properties
-// TODO: sanitize is not same as validate, this should not validate, this is
-// a conflation of functionality
-Feed.prototype.sanitize = function(title_max_length, desc_max_length) {
-  if(typeof title_max_length === 'undefined')
-    title_max_length = 1024;
-  if(typeof desc_max_length === 'undefined')
-    desc_max_length = 1024 * 10;
+// TODO: include this in places where sanitize is called
+function feed_has_valid_props(feed) {
+  'use strict';
+  ASSERT(feed);
 
-  const output_feed = Object.assign({}, this);
-
-  if(output_feed.id) {
-    if(!Number.isInteger(output_feed.id) || output_feed.id < 1)
-      throw new TypeError('Invalid feed id');
+  if('id' in feed) {
+    ASSERT(Number.isInteger(feed.id));
+    ASSERT(feed.id > 0);
   }
 
-  const types = {'feed': 1, 'rss': 1, 'rdf': 1};
-  if(output_feed.type && !(output_feed.type in types))
-    throw new TypeError();
+  if('type' in feed) {
+    const types = ['feed', 'rss', 'rdf'];
+    ASSERT(types.includes(feed.type));
+  }
+}
 
+// Returns a shallow copy of the input feed with sanitized properties
+function feed_sanitize(feed, title_max_length, desc_max_length) {
+  'use strict';
+  ASSERT(feed);
+
+  const DEFAULT_TITLE_MAX_LEN = 1024;
+  const DEFAULT_DESC_MAX_LEN = 1024 * 10;
+
+  if(typeof title_max_length === 'undefined')
+    title_max_length = DEFAULT_TITLE_MAX_LEN;
+  if(typeof desc_max_length === 'undefined')
+    desc_max_length = DEFAULT_DESC_MAX_LEN;
+
+  const output_feed = Object.assign({}, feed);
+  const empty_tag_replacement = '';
   if(output_feed.title) {
     let title = output_feed.title;
     title = string_filter_control_chars(title);
-    title = html_replace_tags(title, '');
-    title = title.replace(/\s+/, ' ');
-    title = html_truncate(title, title_max_length, '');
+    title = html_replace_tags(title, empty_tag_replacement);
+    title = string_condense_whitespace(title);
+    const truncated_title_suffix = '';
+    title = html_truncate(title, title_max_length, truncated_title_suffix);
     output_feed.title = title;
   }
 
   if(output_feed.description) {
-    let description = output_feed.description;
-    description = string_filter_control_chars(description);
-    description = html_replace_tags(description, '');
-    description = description.replace(/\s+/, ' ');
-    const before_length = description.length;
-    description = html_truncate(description, desc_max_length, '');
-    output_feed.description = description;
+    let desc = output_feed.description;
+    desc = string_filter_control_chars(desc);
+    desc = html_replace_tags(desc, empty_tag_replacement);
+    desc = string_condense_whitespace(desc);
+    const truncated_desc_suffix = '';
+    desc = html_truncate(desc, desc_max_length, truncated_desc_suffix);
+    output_feed.description = desc;
   }
 
   return output_feed;
-};
-
-// Throws an exception if 'this' feed is not suitable for storage. The
-// objective is to prevent garbage data from entering the database.
-// @param min_date {Date} optional, the oldest date allowed for date properties,
-// defaults to Jan 1, 1970.
-// NOTE: not fully implemented
-// NOTE: only validating date objects, not fully validating actual dates such
-// as if day of month > 31 or whatever
-// TODO: assert required properties are present
-// TODO: assert dates are not in the future
-// TODO: assert dates are not too far in the past
-// TODO: assert type, if set, is one of the valid types
-// TODO: assert feed has one or more urls
-// TODO: assert the type of each property?
-// TODO: add to appropriate calling contexts (e.g. whereever prep for storage
-// is done).
-// TODO: rename to validate
-Feed.prototype.assert_valid = function(min_date, is_id_required) {
-  const default_min_date = new Date(0);
-  const to_string = Object.prototype.toString;
-  const max_date = new Date();
-
-  if(typeof min_date === 'undefined')
-    min_date = default_min_date;
-
-  // Validate the min_date parameter itself before using it
-  if(to_string.call(min_date) !== '[object Date]')
-    throw new TypeError('min_date is not a date object');
-  else if(isNaN(min_date.getTime()))
-    throw new TypeError('min_date.getTime() is nan');
-  else if(min_date < default_min_date)
-    throw new TypeError('min_date is too old');
-  else if(min_date > max_date)
-    throw new TypeError('min_date > max_date');
-
-  if(typeof this !== 'object')
-    throw new Error('this is not an object' );
-
-  // this.id is optional because it does not exist when adding a feed to the
-  // datababse.
-  if('id' in this) {
-    if(isNan(this.id))
-      throw new Error('id is not a number');
-    else if(id < 0)
-      throw new Error('id is negative');
-    else if(!Number.isInteger(id))
-      throw new Error('id is not an integer');
-  } else if(is_id_required)
-    throw new Error('feed missing required id');
-
-  // TODO: unsure whether this is even a property at the moment, just
-  // wondering about how the validation would look
-  if('dateUpdated' in this) {
-    if(to_string.call(this.dateUpdated) !== '[object Date]') {
-      throw new Error('dateUpdated is not a date object: ' + this.dateUpdated);
-    } else if(isNaN(this.dateUpdated.getTime())) {
-      throw new Error('dateUpdated.getTime() is nan: ' + this.dateUpdated);
-    } else if(this.dateUpdated < min_date) {
-      throw new Error('dateUpdated < min_date: ' + this.dateUpdated);
-    } else if(this.dateUpdated > max_date) {
-      throw new Error('dateUpdated > max_date: ' + this.dateUpdated);
-    }
-  }
-};
+}
 
 // Returns a new object that results from merging the old feed with the new
-// feed. Fields from the new feed take precedence, except for URLs, which are
+// feed. Fields from the new feed take precedence, except for urls, which are
 // merged to generate a distinct ordered set of oldest to newest url. Impure
 // because of copying by reference.
-function merge_feeds(old_feed_object, new_feed_object) {
-  const merged_feed_object = Object.assign({}, old_feed_object,
-    new_feed_object);
-  merged_feed_object.urls = [...old_feed_object.urls];
-  if(new_feed_object.urls)
-    for(const url_string of new_feed_object.urls)
-      Feed.prototype.add_url.call(merged_feed_object, url_string);
-  else
-    console.warn('Did not merge any new feed urls', old_feed_object,
-      new_feed_object);
+function merge_feeds(old_feed, new_feed) {
+  'use strict';
+  const merged_feed_object = Object.assign({}, old_feed, new_feed);
+
+  // After assignment, the merged feed has only the urls from the new feed.
+  // So the output feed's url list needs to be fixed. First copy over the old
+  // feed's urls, then try and append each new feed url.
+  merged_feed_object.urls = [...old_feed.urls];
+  if(new_feed.urls)
+    for(const url_string of new_feed.urls)
+      feed_append_url(merged_feed_object, url_string);
+
   return merged_feed_object;
 }

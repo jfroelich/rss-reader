@@ -3,7 +3,7 @@
 //
 // Adapted from http://stackoverflow.com/questions/1248302
 //
-// Generally does not work on built-ins (dom, XMLHttpRequest, etc)
+// Generally does not work on built-ins (Document, Element, XMLHttpRequest, etc)
 // This uses a stack internally to avoid recursion
 // @param input_value a value of any type
 // @returns an integer representing the approximate byte size of the input

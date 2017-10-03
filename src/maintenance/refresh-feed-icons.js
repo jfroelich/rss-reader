@@ -57,7 +57,7 @@ function count_num_modified(resolutions) {
 
 // Lookup the feed's icon, update the feed in db. Return true if updated.
 async function process_feed(feed, reader_conn, icon_conn, verbose) {
-  const lookup_url_object = Feed.prototype.create_icon_lookup_url.call(feed);
+  const lookup_url_object = feed_create_icon_lookup_url(feed);
   if(!lookup_url_object)
     return false;
 

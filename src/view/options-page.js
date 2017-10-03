@@ -201,7 +201,7 @@ async function start_subscription(url_object) {
   append_subscription_monitor_msg(`Subscribing to ${url_object.href}`);
 
   const feed = {};
-  Feed.prototype.add_url.call(feed, url_object.href);
+  feed_append_url(feed, url_object.href);
   const options = {};
   options.verbose = true;// temp
   // Leaving other options to defaults for now
@@ -257,7 +257,7 @@ async function start_subscription(url_object) {
   update_feed_count();
 
   // Show a brief message that the subscription was successful
-  const feed_url_string = Feed.prototype.get_url.call(subscribed_feed);
+  const feed_url_string = feed_get_top_url(subscribed_feed);
   append_subscription_monitor_msg(`Subscribed to ${feed_url_string}`);
 
   // Hide the sub monitor
@@ -329,7 +329,7 @@ async function feed_list_item_onclick(event) {
     description_element.textContent = '';
 
   const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = Feed.prototype.get_url.call(feed);
+  feed_url_element.textContent = feed_get_top_url(feed);
   const feed_link_element = document.getElementById('details-feed-link');
   feed_link_element.textContent = feed.link || '';
   const unsubscribe_button = document.getElementById('details-unsubscribe');
@@ -682,57 +682,17 @@ async function import_opml_uploader_on_change(event) {
   // updating it
 }
 
+// TODO: visual feedback in event of an error
+async function export_opml_button_onclick(event) {
+  const title = 'Subscriptions';
+  const file_name = 'subscriptions.xml';
 
-
-// TODO: visual feedback
-async function exportOPMLButtonOnClick(event) {
-  const opml_title = 'Subscriptions';
-  const opml_file_name = 'subscriptions.xml';
-
-  let conn;
-  let feeds;
   try {
-    conn = await reader_db.open();
-    feeds = await reader_db.get_feeds(conn);
+    await opml_export(title, file_name);
   } catch(error) {
     console.warn(error);
-  } finally {
-    if(conn)
-      conn.close();
   }
-
-  if(!feeds)
-    return;
-
-  const blob = create_opml_blob(feeds, opml_title);
-  const object_url = URL.createObjectURL(blob);
-  const anchor_element = document.createElement('a');
-  anchor_element.setAttribute('download', opml_file_name);
-  anchor_element.href = object_url;
-  anchor_element.click();
-  URL.revokeObjectURL(object_url);
 }
-
-// TODO: this should be a helper function located somewhere else
-function create_opml_blob(feeds, title) {
-  const doc = new OPMLDocument();
-  doc.updateTitle(title);
-
-  for(const feed of feeds) {
-    const outline = {};
-    outline.type = feed.type;
-    outline.xmlUrl = Feed.prototype.get_url.call(feed);
-    outline.title = feed.title;
-    outline.description = feed.description;
-    outline.htmlUrl = feed.link;
-    doc.appendOutlineObject(outline);
-  }
-
-  const serializer = new XMLSerializer();
-  const xml_string = serializer.serializeToString(doc.doc);
-  return new Blob([xml_string], {'type': 'application/xml'});
-}
-
 
 // TODO: sort feeds alphabetically
 // TODO: react to errors
@@ -1038,7 +998,7 @@ document.addEventListener('DOMContentLoaded', function on_dcl(event) {
     enable_subscription_preview_checkbox_on_change;
 
   const export_opml_button = document.getElementById('button-export-opml');
-  export_opml_button.onclick = exportOPMLButtonOnClick;
+  export_opml_button.onclick = export_opml_button_onclick;
   const import_opml_button = document.getElementById('button-import-opml');
   import_opml_button.onclick = import_opml_button_on_click;
 
