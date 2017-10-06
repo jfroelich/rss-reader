@@ -11,8 +11,7 @@
 function tokenize_html(html_string, input_state = 0) {
   'use strict';
   // TODO: consider relaxing this type check to allow for string-like input
-  if(typeof html_string !== 'string')
-    throw new TypeError('html_string is not a string');
+  ASSERT(typeof html_string === 'string');
 
   const input_string_length = html_string.length;
   if(input_string_length < 1)

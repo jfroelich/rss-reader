@@ -7,6 +7,9 @@ async function fetch_feed(url_string, timeout_ms, is_accept_html) {
   if(typeof is_accept_html === 'undefined')
     is_accept_html = true;
 
+  ASSERT(Number.isInteger(timeout_ms));
+  ASSERT(timeout_ms >= 0);
+
   const acceptHeader = [
     'application/rss+xml',
     'application/rdf+xml',
@@ -41,6 +44,7 @@ async function fetch_feed(url_string, timeout_ms, is_accept_html) {
     response = await fetch_promise;
   }
 
+  // TODO: use ASSERT, like ASSERT(response_is_valid);
   assert_response_valid(response, url_string);
   assert_response_type_valid(response, url_string, is_accept_html);
 
@@ -62,16 +66,19 @@ function reject_after_timeout(timeout_ms, error_message) {
   return new Promise(executor);
 }
 
+// TODO: inline
+// TODO: these should not be asserts because not violation of invariant
 function assert_response_valid(response, url_string) {
-  if(!response)
-    throw new Error('Undefined response fetching ' + url_string);
-  if(!response.ok)
-    throw new Error(`${response.status} ${response.statusText} ${url_string}`);
+  ASSERT(response);
+  ASSERT(response.ok);
   const no_content_http_status = 204;
-  if(response.status === no_content_http_status)
-    throw new Error(`${response.status} ${response.statusText} ${url_string}`);
+  ASSERT(response.status !== no_content_http_status);
 }
 
+// TODO: should not be an ASSERT because not a violation of an invariant.
+// Instead this should nullify the response or something
+// TODO: inline into caller, so it is more like
+// ASSERT(response_has_valid_type)
 // Throw an exception is the response type is not accepted
 function assert_response_type_valid(response, url_string, allow_html) {
   let type_string = response.headers.get('Content-Type');
@@ -92,8 +99,8 @@ function assert_response_type_valid(response, url_string, allow_html) {
   ];
   if(allow_html)
     types.push('text/html');
-  if(!types.includes(type_string))
-    throw new Error(`Unacceptable content type ${type_string} ${url_string}`);
+
+  ASSERT(types.includes(type_string));
 }
 
 function get_last_modified_date(response) {

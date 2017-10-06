@@ -11,10 +11,8 @@ async function testPreloadIssue() {
   options.referrerPolicy = 'no-referrer';
 
   const url = 'https://www.yahoo.com';
-
   const response = await fetch(url, options);
-  if(!response.ok)
-    throw new Error('Response not ok');
+  ASSERT(response.ok);
   const text = await response.text();
   console.log('Text:', {'text': text});
   return 'Test completed, request may be pending';

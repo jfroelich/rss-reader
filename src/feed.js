@@ -1,5 +1,9 @@
 // Feed utilities
 
+function feed_is_valid_feed_id(id) {
+  return Number.isInteger(id) && id > 0;
+}
+
 // Returns the last url in the feed's url list as a string
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
@@ -43,6 +47,20 @@ function feed_create_icon_lookup_url(feed) {
   const url_object = new URL(url_string);
   const origin_url_string = url_object.origin;
   return new URL(origin_url_string);
+}
+
+// Update's a feed's faviconURLString property (not persisted to db)
+async function feed_update_favicon(feed, icon_conn) {
+  const lookup_url_object = feed_create_icon_lookup_url(feed);
+  let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
+    min_img_size, max_img_size;
+  // TODO: modify favicon.lookup to not require verbose flag
+  let verbose = false;
+  // Allow exceptions to bubble
+  const icon_url_string = await favicon.lookup(icon_conn, lookup_url_object,
+    max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
+    max_img_size, verbose);
+  feed.faviconURLString = icon_url_string;
 }
 
 // TODO: include this in places where sanitize is called

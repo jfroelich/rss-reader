@@ -10,14 +10,18 @@ function is_probably_binary_path(path) {
   // 4. Get the super type of the mime type.
   // 5. Return true if the super type is one of the binary super types.
 
-  if(typeof path !== 'string')
-    throw new TypeError('path is not a defined string: ' + path);
+  ASSERT(typeof path === 'string');
 
-  if(path.charAt(0) !== '/')
-    throw new TypeError('path missing leading slash: ' + path);
+  // Any string that does not start with a leading slash is not a path. This is
+  // an invariant condition of the path type. The caller should never call this
+  // function on a string that is not a path.
+  ASSERT(path.charAt(0) === '/');
 
-  if(path.includes(' '))
-    throw new TypeError('path contains space: ' + path);
+  // Any string that contains a space cannot be a path. This is an invariant
+  // condition of the path type. The caller should never call this function
+  // on a string that is not a path.
+  ASSERT(!path.includes(' '));
+
 
   const min_path_length = '/a.b'.length;
   if(path.length < min_path_length)
@@ -26,6 +30,8 @@ function is_probably_binary_path(path) {
   const last_dot_position = path.lastIndexOf('.');
   if(last_dot_position === -1)
     return false;
+
+  // A path that ends with a period is a valid path.
 
   // The +1 skips past the period itself.
   // TODO: this should avoid out of bounds error? What if dot is final position?
@@ -44,6 +50,75 @@ function is_probably_binary_path(path) {
   extension = extension.toLowerCase();
   if(!/[a-z]/.test(extension))
     return false;
+
+
+/*
+TODO: update the map content to reflect some of Google's own classifications
+as shown by the following url
+https://chromium.googlesource.com/chromium/src/+/net/base/mime_util.cc
+
+Turns out that idea of sniffing via extension is very common. In
+fact the comments in that source say it reflects how mozilla does it.
+
+
+{"video/webm", "webm"},
+{"application/x-chrome-extension", "crx"},
+{"application/xhtml+xml", "xhtml,xht,xhtm"},
+{"audio/flac", "flac"},
+{"audio/mp3", "mp3"},
+{"audio/ogg", "ogg,oga,opus"},
+{"audio/wav", "wav"},
+{"audio/webm", "webm"},
+{"audio/x-m4a", "m4a"},
+{"image/gif", "gif"},
+{"image/jpeg", "jpeg,jpg"},
+{"image/png", "png"},
+{"image/webp", "webp"},
+{"multipart/related", "mht,mhtml"},
+{"text/css", "css"},
+{"text/html", "html,htm,shtml,shtm"},
+{"text/xml", "xml"},
+{"video/mp4", "mp4,m4v"},
+{"video/ogg", "ogv,ogm"},
+
+{"image/x-icon", "ico"},
+{"application/epub+zip", "epub"},
+{"application/font-woff", "woff"},
+{"application/gzip", "gz,tgz"},
+{"application/javascript", "js"},
+{"application/octet-stream", "bin,exe,com"},
+{"application/pdf", "pdf"},
+{"application/pkcs7-mime", "p7m,p7c,p7z"},
+{"application/pkcs7-signature", "p7s"},
+{"application/postscript", "ps,eps,ai"},
+{"application/rdf+xml", "rdf"},
+{"application/rss+xml", "rss"},
+{"application/vnd.android.package-archive", "apk"},
+{"application/vnd.mozilla.xul+xml", "xul"},
+{"application/x-gzip", "gz,tgz"},
+{"application/x-mpegurl", "m3u8"},
+{"application/x-shockwave-flash", "swf,swl"},
+{"application/x-tar", "tar"},
+{"application/zip", "zip"},
+{"audio/mpeg", "mp3"},
+{"image/bmp", "bmp"},
+{"image/jpeg", "jfif,pjpeg,pjp"},
+{"image/svg+xml", "svg,svgz"},
+{"image/tiff", "tiff,tif"},
+{"image/vnd.microsoft.icon", "ico"},
+{"image/x-png", "png"},
+{"image/x-xbitmap", "xbm"},
+{"message/rfc822", "eml"},
+{"text/calendar", "ics"},
+{"text/html", "ehtml"},
+{"text/plain", "txt,text"},
+{"text/x-sh", "sh"},
+{"text/xml", "xsl,xbl,xslt"},
+{"video/mpeg", "mpeg,mpg"},
+
+
+
+*/
 
   // Defined inline so as to avoid having the table persist in memory
   // indefinitely. Let v8 worry about optimization. Also avoids global scope

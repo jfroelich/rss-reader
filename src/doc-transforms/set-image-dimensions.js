@@ -16,15 +16,12 @@ async function set_img_dimensions(doc, allowed_protocols, timeout_ms) {
   const default_allowed_protocols = ['data:', 'http:', 'https:'];
   if(typeof allowed_protocols === 'undefined')
     allowed_protocols = default_allowed_protocols;
-  else if(typeof allowed_protocols.includes !== 'function')
-    throw new TypeError('allowed_protocols.includes is not a function');
+  ASSERT(typeof allowed_protocols.includes === 'function');
 
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 0;
-  else if(!Number.isInteger(timeout_ms))
-    throw new TypeError('timeout_ms is not an integer');
-  else if(timeout_ms < 0)
-    throw new TypeError('timeout_ms is negative')
+  ASSERT(Number.isInteger(timeout_ms));
+  ASSERT(timeout_ms >= 0);
 
   const image_elements = doc.body.getElementsByTagName('img');
   const derive_promises = [];

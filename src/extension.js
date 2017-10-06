@@ -1,27 +1,28 @@
 'use strict';
 
-async function ext_update_badge(verbose) {
-  if(verbose)
-    console.log('Updating badge text');
+// TODO: reintroduce conn param, do not connect locally
+async function extension_update_badge_text() {
+  DEBUG('updating badge text');
   let count = 0;
   let conn, db_name, db_version, conn_timeout_ms;
+
   try {
+    const verbose = false;
+    // TODO: deprecate verbose param to open
     conn = await reader_db.open(db_name, db_version, conn_timeout_ms, verbose);
-    if(verbose)
-      console.log('Counting unread entries in db', conn.name);
     count = await reader_db.count_unread_entries(conn);
   } catch(error) {
-    console.warn(error);
-    return;
+    DEBUG(error);
+    return STATUS.ERR_DB_OP;
   } finally {
     if(conn)
       conn.close();
   }
 
   const text = count > 999 ? '1k+' : '' + count;
-  if(verbose)
-    console.log('Setting extension badge text to', text);
+  DEBUG('setting badge text to', text);
   chrome.browserAction.setBadgeText({'text': text});
+  return STATUS.OK;
 }
 
 async function ext_show_slideshow_tab() {
@@ -51,7 +52,7 @@ function ext_find_tabs_by_url(url_string) {
   return new Promise(resolver);
 }
 
-function ext_show_notification(title, message, icon_url_string) {
+function extension_notify(title, message, icon_url_string) {
   if(typeof Notification === 'undefined')
     return;
 

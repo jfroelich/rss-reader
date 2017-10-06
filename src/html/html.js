@@ -9,9 +9,11 @@ function html_replace_tags(input_string, replacement_string) {
   ASSERT(typeof input_string === 'string');
 
   // Fast case for empty strings
-  // Because of the assert this basically only checks 0 length
+  // Because of the above assert this basically only checks 0 length
   if(!input_string)
     return input_string;
+
+  // TODO: use parse_html
 
   // Parse the html into a Document object
   const doc = document.implementation.createHTMLDocument();
@@ -51,6 +53,8 @@ function html_truncate(html_string, position, extension_string) {
 
   let is_past_position = false;
   let total_length = 0;
+
+  // TODO: use parse_html
 
   // Parse the html into a Document object
   const doc = document.implementation.createHTMLDocument();

@@ -150,8 +150,7 @@ async function entry_mark_read(conn, id) {
     return STATUS.ERR_DB_OP;
   }
 
-  const verbose = false;
-  ext_update_badge(verbose);
+  extension_update_badge_text();
 
   return STATUS.OK;
 }

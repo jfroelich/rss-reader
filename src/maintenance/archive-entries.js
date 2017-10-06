@@ -7,10 +7,9 @@
 async function archive_entries(max_age_ms, verbose) {
   if(typeof max_age_ms === 'undefined')
     max_age_ms = 1000 * 60 * 60 * 24 * 2; // 2 days in ms
-  else if(!Number.isInteger(max_age_ms))
-    throw new TypeError(`max_age_ms is not an integer`);
-  else if(max_age_ms < 0)
-    throw new TypeError(`max_age_ms is negative`);
+
+  ASSERT(Number.isInteger(max_age_ms));
+  ASSERT(max_age_ms >= 0);
 
   if(verbose)
     console.log('Archiving entries older than %d ms', max_age_ms);
@@ -41,9 +40,6 @@ async function archive_entries(max_age_ms, verbose) {
     }
     db_channel.close();
   }
-
-  if(verbose)
-    console.log('Compacted %d entries', compacted_entries.length);
 
   return compacted_entries.length;
 }

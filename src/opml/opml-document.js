@@ -1,5 +1,7 @@
 'use strict';
 
+// TODO: in hindsight, deprecate. This feels not the C way.
+
 // Represents an OPML document and provides utilities for working with opml
 // documents. Essentially wraps an XML document.
 class OPMLDocument {

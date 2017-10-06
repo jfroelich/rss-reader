@@ -13,10 +13,10 @@
 async function search_google_feeds(query_string, timeout_ms) {
   'use strict';
   ASSERT(typeof query_string === 'string');
-
   query_string = query_string.trim();
 
-  // TODO: is this really a type error?
+  // TODO: is this worthy of an exception? If so it should instead be an
+  // assert. If not, it should do something like return null.
   if(!query_string)
     throw new TypeError('query_string is empty');
 
@@ -46,8 +46,6 @@ async function search_google_feeds(query_string, timeout_ms) {
     'referrerPolicy': 'no-referrer'
   };
 
-  const standard_fetch_error_message = request_url_string + ' ' +
-    response.status + ' ' + response.statusText;
 
   // TODO: delegate timed fetching to timed-fetch.js
 
@@ -66,23 +64,37 @@ async function search_google_feeds(query_string, timeout_ms) {
     response = await fetch_promise;
   }
 
+  // TODO: this should not use user supplied values in an error message
+  // because it is insecure.
+  const standard_fetch_error_message = request_url_string + ' ' +
+    response.status + ' ' + response.statusText;
+
+
+  // TODO: this should not be thrown as an exception because it is not an
+  // invariant condition violation. Or is it? If it is, then it should be
+  // an ASSERT call. If not, then it should return null or something.
   if(!response.ok)
     throw new Error(standard_fetch_error_message);
 
   const response_status_code = response.status;
+
+  // TODO: same situation as above, should probably not be an exception
   const no_content_status_code = 204;
   if(response_status_code === no_content_status_code)
     throw new Error(standard_fetch_error_message);
 
   const json_result = await response.json();
-  console.assert(typeof json_result === 'object');
-  if(typeof json_result.responseData !== 'object')
-    throw new Error('responseData is not an object');
-  if(!Array.isArray(json_result.responseData.entries))
-    throw new Error('responseData.entries is not an array');
+
+  // If Google's service did respond, then we expect Google to always produce
+  // the same data structure.
+  ASSERT(typeof json_result === 'object');
+  ASSERT(typeof json_result.responseData === 'object');
+  ASSERT(Array.isArray(json_result.responseData.entries));
 
   const output_response = {};
   output_response.query = json_result.responseData.query || query_string;
+
+  // TODO: given the above assert I do not think the || [] is needed?
   output_response.entries = json_result.responseData.entries || [];
   output_response.url = response.url;
   return output_response;

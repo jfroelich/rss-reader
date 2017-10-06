@@ -207,8 +207,7 @@ function prune(doc, best_element) {
     return;
   if(best_element === doc.body)
     return;
-  if(!doc.documentElement.contains(best_element))
-    throw new TypeError('best element not attached to document');
+  ASSERT(doc.documentElement.contains(best_element));
 
   const elements = doc.body.querySelectorAll('*');
   for(let element of elements) {

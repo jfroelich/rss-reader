@@ -59,7 +59,7 @@ but think of a way to maintain strictness
 I am occasionally seeing an error like the following in the console:
 
 Error: This page contains the following errors:error on line 803 at column 54:
-Entity 'mdash' not defined at parse_xml (parse-feed.js:19)
+Entity 'mdash' not defined at xml_parse_from_string (parse-feed.js:19)
 
 
 It may be because I am allowing for the html mime type for xml, then trying to

@@ -1,7 +1,6 @@
 (function(exports) {
 'use strict';
 
-
 const POLL_FEEDS_FLAGS = {};
 POLL_FEEDS_FLAGS.VERBOSE = 1; // 1
 POLL_FEEDS_FLAGS.ALLOW_METERED_CONNECTIONS = 2; // 10
@@ -78,13 +77,12 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
 
   // Non-awaited, this uses its own conn
   if(num_entries_added)
-    ext_update_badge(verbose).catch(console.warn);
+    extension_update_badge_text();
 
   if(num_entries_added)
     show_poll_notification(num_entries_added);
   broadcast_poll_completed_message(num_entries_added);
-  if(verbose)
-    console.log('Polling completed');
+  DEBUG('Polling completed');
   return num_entries_added;
 }
 
@@ -132,7 +130,7 @@ async function find_pollable_feeds(reader_conn, ignore_recency_check,
 function show_poll_notification(num_entries_added) {
   const title = 'Added articles';
   const message = `Added ${num_entries_added} articles`;
-  ext_show_notification(title, message);
+  extension_notify(title, message);
 }
 
 function is_pollable_feed(feed, recency_period_ms, verbose) {

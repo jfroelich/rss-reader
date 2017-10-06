@@ -1,3 +1,8 @@
+
+// Requires
+// html-parse.js
+
+
 (function(exports) {
 'use strict';
 
@@ -100,15 +105,21 @@ async function db_find_redirect_url(conn, url_object, response, max_age_ms,
 
 // @returns {String} a favicon url
 async function search_document(conn, url_object, urls, response, verbose) {
-  let document;
+  let text;
   try {
-    const text = await response.text();
-    document = parse_html(text);
+    text = await response.text();
   } catch(error) {
     if(verbose)
       console.warn(error);
     return;
   }
+
+  const document = parse_html(text);
+
+  // parse_html is not guaranteed to return a document. It returns null when
+  // an error occurred.
+  if(!document)
+    return;
 
   if(!document.head)
     return;
@@ -200,6 +211,7 @@ async function fetch_doc_silently(url_object, fetch_html_timeout_ms, verbose) {
   }
 }
 
+// TODO: rename to something like db_setup
 async function setup(name, version, verbose) {
   // TODO: timeout_ms should be param
   let conn, timeout_ms;
@@ -211,6 +223,7 @@ async function setup(name, version, verbose) {
   }
 }
 
+// TODO: rename to something like db_open
 // @param name {String} optional, indexedDB database name
 // @param version {Number} optional, indexedDB database version
 // @param timeout_ms {Number} optional, maximum amount of time to wait when
@@ -235,6 +248,7 @@ async function open(name, version, timeout_ms, verbose) {
   return await Promise.race(promises);
 }
 
+// TODO: improve this function name to clarify it is related to db
 function create_open_promise(name, version, verbose) {
   return new Promise(function(resolve, reject) {
     const request = indexedDB.open(name, version);
@@ -245,6 +259,7 @@ function create_open_promise(name, version, verbose) {
   });
 }
 
+// TODO: simplify this function name?
 function favicon_db_upgrade(verbose, event) {
   const conn = event.target.result;
   if(verbose)
@@ -289,8 +304,9 @@ function clear(conn) {
   });
 }
 
+// TODO: should probably delete this, cannot recall why it is here
 async function find_unexpired_entry(conn, url_object, max_age_ms) {
-  throw new Error('Unimplemented');
+  ASSERT(false, 'not implemented');
 }
 
 function db_find_entry(conn, url_object) {
@@ -351,44 +367,48 @@ async function compact(name, version, max_age_ms, verbose) {
   if(typeof max_age_ms === 'undefined')
     max_age_ms = default_max_age_ms;
 
-  let conn_timeout_ms, conn;
+  let conn_timeout_ms, conn, resolutions;
+
   try {
+
     conn = await open(name, version, conn_timeout_ms, verbose);
     const expired_entries = await db_find_expired_entries(conn, max_age_ms);
     const urls = [];
-    for(const entry of expired_entries) {
+    for(const entry of expired_entries)
       urls.push(entry.pageURLString);
-    }
-    const resolutions = await db_remove_entries_with_urls(conn, urls);
-    return resolutions.length;
+
+    resolutions = await db_remove_entries_with_urls(conn, urls);
+
   } finally {
     if(conn)
       conn.close();
   }
+
+  return resolutions.length;
 }
 
 function reject_after_timeout(timeout_ms, error_message) {
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 4;
   // Per MDN and Google, the minimum is 4ms.
-  // Throw immediately as this is a static error.
-  if(timeout_ms < 4)
-    throw new TypeError('timeout_ms must be greater than 4');
+  ASSERT(timeout_ms > 3);
+
   return new Promise(function(resolve, reject) {
     const error = new Error(error_message);
     setTimeout(reject, timeout_ms, error);
   });
 }
 
+// TODO: this functionality belongs in a separate module
 // Race a timeout against a fetch
 // TODO: cancel fetch once cancelation tokens supported
 async function fetch_with_timeout(url_string, options, timeout_ms) {
-  if(typeof url_string !== 'string')
-    throw new TypeError('Parameter url_string is not a defined string: ' +
-      url_string);
+  ASSERT(typeof url_string === 'string');
 
+  // TODO: this should not be an error, this should be some type of early
+  // return.
   if('onLine' in navigator && !navigator.onLine)
-    throw new Error('Cannot fetch url while offline ' + url_string);
+    throw new Error('offline');
 
   const fetch_promise = fetch(url_string, options);
   let response;
@@ -397,14 +417,19 @@ async function fetch_with_timeout(url_string, options, timeout_ms) {
     const timeout_promise = reject_after_timeout(timeout_ms, error_message);
     const promises = [fetch_promise, timeout_promise];
     response = await Promise.race(promises);
-  } else
+  } else {
     response = await fetch_promise;
+  }
 
+  // TODO: this should not be an exception, this should be some type of
+  // early return
+  // TODO: this is insecure, never use user-supplied values in a template
   if(!response.ok)
     throw new Error(`${response.status} ${response.statusText} ${url_string}`);
   return response;
 }
 
+// TODO: this functionality belongs in a separate module
 async function fetch_doc(url_string, timeout_ms) {
   const headers = {'Accept': 'text/html'};
   const options = {};
@@ -417,8 +442,15 @@ async function fetch_doc(url_string, timeout_ms) {
   options.referrer = 'no-referrer';
   options.referrerPolicy = 'no-referrer';
   const response = await fetch_with_timeout(url_string, options, timeout_ms);
-  assert_response_has_content(response, url_string);
-  assert_response_is_html(response, url_string);
+
+
+  // TODO: this should not throw because not invariant.
+  ASSERT(response_has_content);
+
+  // TODO: this should not throw because this is not an invariant. Instead
+  // should return undefined?
+  ASSERT(response_is_type_html);
+
   const output_response = {};
   output_response.text = async function() {
     return await response.text();
@@ -441,18 +473,9 @@ function detect_redirect(request_url_string, response_url_string) {
   return request_url_object.href !== response_url_object.href;
 }
 
-function parse_html(html_string) {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html_string, 'text/html');
-  const errors = doc.getElementsByTagName('parsererror');
-  if(errors && errors.length)
-    throw new Error('Embedded html parser error: ' + errors[0].textContent);
-  const rootName = doc.documentElement.localName.toLowerCase();
-  if(rootName !== 'html')
-    throw new Error(`Document element is not <html>: ${rootName}`);
-  return doc;
-}
 
+
+// TODO: this functionality probably belongs in a separate module
 // Sends a HEAD request for the given image.
 // @param url_string {String}
 // @returns a simple object with props imageSize and response_url_string
@@ -467,7 +490,12 @@ async function send_img_head_request(url_string, timeout_ms, verbose) {
   options.redirect = 'follow';
   options.referrer = 'no-referrer';
   const response = await fetch_with_timeout(url_string, options, timeout_ms);
-  assert_response_is_img(response);
+
+  // TODO: this should not throw, because this is not a test of an invariant.
+  // Instead the function should return null in this case or something along
+  // those lines.
+  ASSERT(response_is_type_image);
+
   const output_response = {};
   output_response.size = get_response_content_length(response, verbose);
   output_response.response_url_string = response.url;
@@ -481,23 +509,17 @@ function get_response_content_length(response, verbose) {
   return isNaN(content_length) ? IMG_SIZE_UNKNOWN : content_length;
 }
 
-// Response.ok is true for 204, but I treat 204 as error.
-function assert_response_has_content(response, url_string) {
-  const no_content_http_status = 204;
-  if(response.status === no_content_http_status)
-    throw new Error(`${response.status} ${response.statusText} ${url_string}`);
+function response_has_content(response) {
+  const STATUS_NO_CONTENT = 204;
+  return response.status !== STATUS_NO_CONTENT;
 }
 
-function assert_response_is_html(response, url_string) {
-  const type_header = response.headers.get('Content-Type');
-  if(!/^\s*text\/html/i.test(type_header))
-    throw new Error(`Invalid content type "${type_header}" ${url_string}`);
+function response_is_type_html(response) {
+  return /^\s*text\/html/i.test(response.headers.get('Content-Type'));
 }
 
-function assert_response_is_img(response) {
-  const type_header = response.headers.get('Content-Type');
-  if(!/^\s*image\//i.test(type_header))
-    throw new Error('Invalid response type');
+function response_is_type_image(response) {
+  return /^\s*image\//i.test(response.headers.get('Content-Type'));
 }
 
 exports.favicon = {

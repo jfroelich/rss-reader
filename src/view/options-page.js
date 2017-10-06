@@ -76,8 +76,8 @@ function append_subscription_monitor_msg(msg) {
 }
 
 function show_section(menu_item_element) {
-  if(typeof menu_item_element === 'undefined')
-    throw new TypeError('Missing parameter menu_item_element');
+  ASSERT(menu_item_element);
+
   if(current_menu_item === menu_item_element)
     return;
 
@@ -95,10 +95,10 @@ function show_section(menu_item_element) {
   // Show the new section
   const section_id_string = menu_item_element.getAttribute('section');
   const section_element = document.getElementById(section_id_string);
-  if(section_element)
-    show_element(section_element);
-  else
-    throw new Error('No matching section element for id', section_id_string);
+
+  ASSERT(section_element, 'No matching section for id ' + section_id_string);
+
+  show_element(section_element);
 
   // Update the global tracking vars
   current_menu_item = menu_item_element;
@@ -223,10 +223,19 @@ async function start_subscription(url_object) {
     const conn_resolutions = await conn_promise;
     reader_conn = conn_resolutions[0];
     icon_conn = conn_resolutions[1];
-    subscribed_feed = await subscribe(reader_conn, icon_conn, feed,
-      subscribe_timeout_ms, mute_notifications, verbose);
+
+    // TODO: rather than throw, move the subfeed = subresult.feed stuff
+    // to after the try/catch
+    const sub_result = await subscription.add(feed, reader_conn, icon_conn,
+      subscribe_timeout_ms, mute_notifications);
+
+    if(sub_result.status !== subscription.OK)
+      throw new Error('subscription result not ok: ' + sub_result.status);
+
+    subscribed_feed = sub_result.feed;
+
   } catch(error) {
-    console.warn(error);
+    DEBUG(error);
   } finally {
     if(reader_conn)
       reader_conn.close();
@@ -236,14 +245,15 @@ async function start_subscription(url_object) {
 
   // TODO: is it correct to return here? shouldn't this be visible error or
   // something? Also, still need to cleanup the subscription monitor.
+  // TODO: this should be in the catch block above
   if(!subscribed_feed) {
-    console.log('subscribed_feed is undefined, just exiting');
     // TODO: this should be a call to a helper function
     const monitor_element = document.getElementById('submon');
     await fade_element(monitor_element, 2, 1);
     monitor_element.remove();
 
     // TODO: show an error message.
+    // TODO: return an error code?
     return;
   }
 
@@ -588,8 +598,7 @@ function remove_feed_from_feed_list(feed_id_number) {
   const feed_element = document.querySelector(
     `#feedlist li[feed="${feed_id_number}"]`);
 
-  if(!feed_element)
-    throw new Error('No feed element found with id ' + feed_id_number);
+  ASSERT(feed_element, 'no feed with id ' + feed_id_number);
 
   feed_element.removeEventListener('click', feed_list_item_onclick);
   feed_element.remove();
@@ -613,20 +622,22 @@ function remove_feed_from_feed_list(feed_id_number) {
 // TODO: visually react to unsubscribe error
 async function unsubscribe_button_on_click(event) {
   const feed_id_string = event.target.value;
-  const feed_id_number = parseInt(feed_id_string, 10);
+  const radix = 10;
+  const feed_id_number = parseInt(feed_id_string, radix);
 
   if(isNaN(feed_id_number)) {
     // TODO: throw? show error?
-    console.error('feed_id_number is nan, parsed from ' + feed_id_string);
+    DEBUG('feed_id_number is nan, parsed from ' + feed_id_string);
     return;
   }
 
   let reader_conn;
   try {
     reader_conn = await reader_db.open();
-    const num_entries_deleted = await unsubscribe(reader_conn, feed_id_number);
+    const num_entries_deleted = await subscription.remove(feed_id_number,
+      reader_conn);
   } catch(error) {
-    console.warn('Unsubscribe error:', error);
+    DEBUG(error);
   } finally {
     if(reader_conn)
       reader_conn.close();

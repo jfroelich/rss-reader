@@ -19,8 +19,8 @@ async function import_opml_files(files, verbose) {
     const conns = await open_dbs();
     reader_conn = conns[0];
     icon_conn = conns[1];
-    import_resolutions = await import_files_internal(reader_conn, icon_conn,
-      files, verbose);
+    import_resolutions = await import_files_internal(files, reader_conn,
+      icon_conn);
   } finally {
     if(reader_conn)
       reader_conn.close();
@@ -47,73 +47,92 @@ function open_dbs() {
 }
 
 // Concurrently import files
-function import_files_internal(reader_conn, icon_conn, files, verbose) {
+function import_files_internal(files, reader_conn, icon_conn) {
   const promises = [];
   for(const file of files)
-    promises.push(import_file_silently(reader_conn, icon_conn, file, verbose));
+    promises.push(import_file_silently(file, reader_conn, icon_conn));
   return Promise.all(promises);
 }
 
 // Decorates import_file to avoid Promise.all failfast behavior
-async function import_file_silently(reader_conn, icon_conn, file, verbose) {
+async function import_file_silently(file, reader_conn, icon_conn) {
   let num_feeds_added = 0;
   try {
-    num_feeds_added = await import_file(reader_conn, icon_conn, file, verbose);
+    num_feeds_added = await import_file(file, reader_conn, icon_conn);
   } catch(error) {
-    if(verbose)
-      console.warn(error);
+    DEBUG(error);
   }
   return num_feeds_added;
 }
 
 // Returns number of feeds added
-async function import_file(reader_conn, icon_conn, file, verbose) {
-  if(verbose)
-    console.log('Importing file', file.name);
-  if(file.size < 1)
-    throw new TypeError(`The file "${file.name}" is empty`);
+// TODO: if this no longer throws in the normal case, maybe I no longer need
+// import_file_silently? Because now the Promise.all behavior would only
+// failfast if there was a real, unexpected error
+// TODO: instead of returning 0, return -1 to indicate error, and ensure
+// caller is aware and does not naively sum result. Or return identified
+// error codes? But it could also be 0 in case of no error but no new
+// subscriptions.
+async function import_file(file, reader_conn, icon_conn) {
+  ASSERT(file);
+  DEBUG('Importing opml file', file.name);
 
-  if(!is_supported_file_type(file.type))
-    throw new TypeError(`"${file.name}" has unsupported type "${file.type}"`);
+  if(file.size < 1) {
+    DEBUG('file %s is 0 bytes', file.name);
+    return 0;
+  }
 
-  const text = await file_read_as_text(file);
+  if(!file_is_xml_type(file)) {
+    DEBUG('file %s is not mime type xml', file.type);
+    return 0;
+  }
 
-  // Allow parse errors to bubble
-  const document = parse_opml(text);
+  let file_content_string;
+  try {
+    file_content_string = await file_read_as_text(file);
+  } catch(error) {
+    DEBUG(error);
+    return 0;
+  }
 
+  // opml_parse returns null on error and does not throw in the normal case
+  const document = opml_parse(file_content_string);
+  if(!document) {
+    DEBUG('error parsing opml file', file.name);
+    return 0;
+  }
+
+  // TODO: this should be calls to local helper functions and probably do not
+  // belong as functionality within OPMLDocument
   document.removeInvalidOutlineTypes();
   document.normalizeOutlineXMLUrls();
   document.removeOutlinesMissingXMLUrls();
 
   const outlines = document.getOutlineObjects();
-  let resolutions;
-  if(outlines.length) {
-    const unique_outlines = aggregate_outlines_by_xmlurl(outlines);
-
-    if(verbose) {
-      const dup_count = outlines.length - unique_outlines.length;
-      console.log('Ignored %d duplicate feeds in file', dup_count, file.name);
-    }
-
-    normalize_outline_links(unique_outlines);
-    const feeds = convert_outlines_to_feeds(unique_outlines);
-
-    let subscribe_timeout_ms;
-    resolutions = await subscribe_all(feeds, reader_conn, icon_conn,
-      subscribe_timeout_ms, verbose);
+  if(!outlines.length) {
+    DEBUG('file %s contained 0 outlines', file.name);
+    return 0;
   }
 
-  let num_feeds_added = 0;
-  if(resolutions) {
-    for(let resolution of resolutions) {
-      if(resolution)
-        num_feeds_added++;
-    }
+  const unique_outlines = aggregate_outlines_by_xmlurl(outlines);
+  const dup_count = outlines.length - unique_outlines.length;
+  if(dup_count)
+    DEBUG('found %d duplicates in file', dup_count, file.name);
+
+  normalize_outline_links(unique_outlines);
+  const feeds = convert_outlines_to_feeds(unique_outlines);
+
+  const sub_results = await subscription.add_all(feeds, reader_conn, icon_conn);
+
+  // Tally successful subscriptions
+  let sub_count = 0;
+  for(const sub_result of sub_results) {
+    if(sub_result.status === subscription.OK)
+      sub_count++;
   }
 
-  if(verbose)
-    console.log('Subscribed to %d feeds in file', num_feeds_added, file.name);
-  return num_feeds_added;
+  DEBUG('subbed to %d of %d feeds in file', sub_count, feeds.length, file.name);
+  return sub_count;
 }
 
 // Filter duplicates, favoring earlier in document order
@@ -189,13 +208,6 @@ function convert_outline_to_feed(outline) {
   feed_append_url(feed, outline.xmlUrl);
 
   return feed;
-}
-
-function is_supported_file_type(file_type) {
-  let normal_type = file_type || '';
-  normal_type = normal_type.trim().toLowerCase();
-  const supported_types = ['application/xml', 'text/xml'];
-  return supported_types.includes(normal_type);
 }
 
 exports.import_opml_files = import_opml_files;

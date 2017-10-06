@@ -1,4 +1,4 @@
-# TODO
+# Unsubscribe todos
 
 * Rather than request badge update, maybe it would be better if badge update
 responded to a broadcasted message about the change in entry store state. Like

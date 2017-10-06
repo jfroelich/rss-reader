@@ -2,7 +2,7 @@
 'use strict';
 
 // Dependencies:
-// parse_xml
+// xml_parse_from_string
 
 // Parses the input string into a feed object
 // @param string {String} the text to parse
@@ -10,7 +10,15 @@
 // @returns {Object} an object representing the parsed feed and its entries
 function parse_feed(string) {
   // Allow exceptions to bubble
-  const doc = parse_xml(string);
+  const doc = xml_parse_from_string(string);
+
+  // If xml_parse_from_string returns undefined it means there was a parsingerror.
+  // TODO: should not be an exception. also in the interim this would be
+  // more correct as an assert
+  if(!doc) {
+    throw new Error('parsing error');
+  }
+
   return convert_doc_to_feed(doc);
 }
 
@@ -19,11 +27,19 @@ function parse_feed(string) {
 function convert_doc_to_feed(document) {
   const doc_element = document.documentElement;
   const doc_element_name = doc_element.localName.toLowerCase();
+
+
+  // TODO: I don't think this should be an exception. This is a typical case
+  // of bad untrusted input. So this needs to be able to return an error code
+  // or something to that effect because exceptions should be reserved for
+  // unexpected violations of invariant conditions.
   if(doc_element_name !== 'feed' && doc_element_name !== 'rss' &&
     doc_element_name !== 'rdf')
     throw new TypeError('document contains invalid document element');
 
   const channel_element = find_channel_element(doc_element);
+
+  // TODO: like above, this should not be a thrown exception
   if(!channel_element)
     throw new TypeError('document does not contain channel element');
 

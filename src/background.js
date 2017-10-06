@@ -65,17 +65,17 @@ async function unregister_dw_link_filter_rule() {
 
 async function on_installed(event) {
   console.debug('chrome.runtime.onInstalled'); // Temp, debugging
-  const verbose = true;
 
-  // Set the badge text. As a side effect this will create the database
+  // Init the badge text. As a side effect this will create the database
   // Non-awaited.
-  ext_update_badge(verbose).catch(console.warn);
+  extension_update_badge_text();
 
+  const verbose = true;
   let icon_db_name, icon_db_version;
   try {
     await favicon.setup(icon_db_name, icon_db_version, verbose);
   } catch(error) {
-    console.warn(error);
+    DEBUG(error);
   }
 }
 

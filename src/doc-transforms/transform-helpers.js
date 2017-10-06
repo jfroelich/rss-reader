@@ -6,8 +6,8 @@
 // if the operation would result in adjacent text nodes.
 function unwrap_element(element) {
   const parent_element = element.parentNode;
-  if(!parent_element)
-    throw new TypeError('Cannot unwrap orphaned element', element.outerHTML);
+  ASSERT(parent_element, 'Cannot unwrap orphaned element');
+
   const prev_sibling = element.previousSibling;
   const next_sibling = element.nextSibling;
   const first_child = element.firstChild;
@@ -50,12 +50,13 @@ function insert_children_before(parent_node, reference_node) {
 // defaults to true.
 // @returns {Element} the new element that replaces the old one
 function rename_element(element, new_element_name, copy_attrs) {
+  ASSERT(new_element_name);
+
   if(typeof copy_attrs === 'undefined')
     copy_attrs = true;
-  if(!new_element_name)
-    throw new TypeError('new_element_name is falsy');
+
   // Treat attempting to rename an element to the same name as a noop instead
-  // of as an error for caller convenience.
+  // of as a fatal assertion for caller convenience.
   if(element.localName === new_element_name.trim().toLowerCase())
     return;
 

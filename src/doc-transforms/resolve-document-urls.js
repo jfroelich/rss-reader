@@ -5,8 +5,7 @@
 // attribute values by replacing any relative urls with absolute urls.
 // Does not currently handle background props in inline css
 function resolve_document_urls(doc, base_url) {
-  if(Object.prototype.toString.call(base_url) !== '[object URL]')
-    throw new TypeError('base_url is not of type URL');
+  ASSERT(Object.prototype.toString.call(base_url) === '[object URL]');
 
   const element_attr_map = {
     'a': 'href',
@@ -145,8 +144,7 @@ function serialize_srcset(descriptors) {
 
 // Returns the absolute form the input url
 function resolve_url(url_string, base_url) {
-  if(Object.prototype.toString.call(base_url) !== '[object URL]')
-    throw new TypeError('base_url is not of type URL');
+  ASSERT(Object.prototype.toString.call(base_url) === '[object URL]');
 
   // TODO: use a single regex for speed? Or maybe get the protocol,
   // normalize it, and check against a list of bad protocols?

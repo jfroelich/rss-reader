@@ -49,7 +49,10 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
 
   await entry_update_favicon(entry, icon_conn, feed.faviconURLString, verbose);
   const entry_content = await response.text();
+
   const entry_document = parse_html(entry_content);
+  if(!entry_document)
+    return false;
 
   // TODO: the functions prepare_local_entry and prepare_remote_entry should
   // be merged into a single function that varies its behavior according to

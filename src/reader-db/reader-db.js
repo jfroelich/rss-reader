@@ -11,7 +11,7 @@ async function open(name, version, timeout_ms, verbose) {
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 500;
   if(verbose)
-    console.debug('Connecting to indexedDB', name, version);
+    console.log('Connecting to indexedDB', name, version);
 
   const shared_state = {};
   shared_state.is_timed_out = false;

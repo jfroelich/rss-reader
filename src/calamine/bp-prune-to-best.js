@@ -37,8 +37,11 @@ function bp_prune_internal(doc, best_element) {
     return;
   if(best_element === doc.body)
     return;
-  if(!doc.documentElement.contains(best_element))
-    throw new TypeError('best element not attached to document');
+
+  // This should always be true. If the caller managed to call this function
+  // with out this being true that is a clear violation of an invariant
+  // requirement.
+  ASSERT(doc.documentElement.contains(best_element));
 
   const elements = doc.body.querySelectorAll('*');
   for(let element of elements) {
