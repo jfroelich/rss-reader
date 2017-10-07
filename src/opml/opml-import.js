@@ -122,7 +122,7 @@ async function import_file(file, reader_conn, icon_conn) {
   normalize_outline_links(unique_outlines);
   const feeds = convert_outlines_to_feeds(unique_outlines);
 
-  const sub_results = await subscription.add_all(feeds, reader_conn, icon_conn);
+  const sub_results = await sub_add_all(feeds, reader_conn, icon_conn);
 
   // Tally successful subscriptions
   let sub_count = 0;

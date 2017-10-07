@@ -1,6 +1,8 @@
 (function(exports) {
 'use strict';
-
+// TODO: rename fetch_feed response property responseURLString to
+// response_url
+// TODO: change fetch_feed to not throw in the usual case.
 async function fetch_feed(url_string, timeout_ms, is_accept_html) {
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 0;

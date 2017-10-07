@@ -1,13 +1,12 @@
+// Status codes
 
-const STATUS = {
-  // Normal status
-  'OK': 0,
+'use strict';
 
-  // TODO: should have a general DB error class, no need for separate
-  // errors. E.g. delete DB_OP, rename DB_STATE to DB
+// Represents a successful operation
+const STATUS_OK = 0;
 
-  // The database was not in the expected state
-  'ERR_DB_STATE': -2,
-  // A database operation failed for some reason
-  'ERR_DB_OP': -3
-};
+// TODO: merge db state and op
+const ERR_DB_STATE = -2;
+const ERR_DB_OP = -3;
+const ERR_FETCH = -4;
+const ERR_PARSE = -5;

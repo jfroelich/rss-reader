@@ -16,7 +16,7 @@ this causes some type of bug.
 post message api. it is cross platform and lower level and seems like an
 interesting challenge.
 * react to entryDeleteRequestedByUnsubscribe message sent from
-Subscription.remove
+sub_remove
 * react to entry archive message sent from ArchiveService
 * the unsubscribe event was deprecated, why do i even have onUnsubscribe? it
 is never called. maybe i should just remove it

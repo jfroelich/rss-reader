@@ -50,6 +50,8 @@ function feed_create_icon_lookup_url(feed) {
 }
 
 // Update's a feed's faviconURLString property (not persisted to db)
+// TODO: change this to not throw an error so that caller
+// try/catch is not needed in the usual case
 async function feed_update_favicon(feed, icon_conn) {
   const lookup_url_object = feed_create_icon_lookup_url(feed);
   let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
@@ -121,6 +123,7 @@ function feed_sanitize(feed, title_max_length, desc_max_length) {
 // feed. Fields from the new feed take precedence, except for urls, which are
 // merged to generate a distinct ordered set of oldest to newest url. Impure
 // because of copying by reference.
+// TODO: rename to feed_merge
 function merge_feeds(old_feed, new_feed) {
   'use strict';
   const merged_feed_object = Object.assign({}, old_feed, new_feed);

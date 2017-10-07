@@ -13,7 +13,7 @@ async function extension_update_badge_text() {
     count = await reader_db.count_unread_entries(conn);
   } catch(error) {
     DEBUG(error);
-    return STATUS.ERR_DB_OP;
+    return ERR_DB_OP;
   } finally {
     if(conn)
       conn.close();
@@ -22,7 +22,7 @@ async function extension_update_badge_text() {
   const text = count > 999 ? '1k+' : '' + count;
   DEBUG('setting badge text to', text);
   chrome.browserAction.setBadgeText({'text': text});
-  return STATUS.OK;
+  return STATUS_OK;
 }
 
 async function ext_show_slideshow_tab() {

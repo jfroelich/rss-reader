@@ -55,7 +55,7 @@ async function slide_mark_read(conn, slide_element, verbose) {
 
     console.debug('Before call entry_mark_read');
     const status = await entry_mark_read(conn, entry_id_number);
-    if(status !== STATUS.OK) {
+    if(status !== STATUS_OK) {
       // TODO: handle error
       console.warn('Failed to mark entry as read');
     } else {

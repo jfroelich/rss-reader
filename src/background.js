@@ -62,7 +62,6 @@ async function unregister_dw_link_filter_rule() {
   }
 }
 
-
 async function on_installed(event) {
   console.debug('chrome.runtime.onInstalled'); // Temp, debugging
 

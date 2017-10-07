@@ -226,7 +226,7 @@ async function start_subscription(url_object) {
 
     // TODO: rather than throw, move the subfeed = subresult.feed stuff
     // to after the try/catch
-    const sub_result = await subscription.add(feed, reader_conn, icon_conn,
+    const sub_result = await sub_add(feed, reader_conn, icon_conn,
       subscribe_timeout_ms, mute_notifications);
 
     if(sub_result.status !== subscription.OK)
@@ -634,7 +634,7 @@ async function unsubscribe_button_on_click(event) {
   let reader_conn;
   try {
     reader_conn = await reader_db.open();
-    const num_entries_deleted = await subscription.remove(feed_id_number,
+    const num_entries_deleted = await sub_remove(feed_id_number,
       reader_conn);
   } catch(error) {
     DEBUG(error);

@@ -134,11 +134,11 @@ async function entry_mark_read(conn, id) {
   try {
     entry = await reader_db.find_entry_by_id(conn, id);
   } catch(error) {
-    return STATUS.ERR_DB_OP;
+    return ERR_DB_OP;
   }
 
   if(!entry || entry.readState === ENTRY_STATE_READ)
-    return STATUS.ERR_DB_STATE;
+    return ERR_DB_STATE;
 
   entry.readState = ENTRY_STATE_READ;
   entry.dateUpdated = new Date();
@@ -147,10 +147,10 @@ async function entry_mark_read(conn, id) {
   try {
     await reader_db.put_entry(conn, entry);
   } catch(error) {
-    return STATUS.ERR_DB_OP;
+    return ERR_DB_OP;
   }
 
   extension_update_badge_text();
 
-  return STATUS.OK;
+  return STATUS_OK;
 }
