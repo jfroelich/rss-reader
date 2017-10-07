@@ -12,12 +12,10 @@ function parse_feed(string) {
   // Allow exceptions to bubble
   const doc = xml_parse_from_string(string);
 
-  // If xml_parse_from_string returns undefined it means there was a parsingerror.
-  // TODO: should not be an exception. also in the interim this would be
-  // more correct as an assert
-  if(!doc) {
-    throw new Error('parsing error');
-  }
+  // If xml_parse_from_string returns undefined it means there was a
+  // parsing error.
+  // TODO: should not be an assert
+  ASSERT(doc);
 
   return convert_doc_to_feed(doc);
 }
@@ -27,7 +25,6 @@ function parse_feed(string) {
 function convert_doc_to_feed(document) {
   const doc_element = document.documentElement;
   const doc_element_name = doc_element.localName.toLowerCase();
-
 
   // TODO: I don't think this should be an exception. This is a typical case
   // of bad untrusted input. So this needs to be able to return an error code

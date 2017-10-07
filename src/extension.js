@@ -7,9 +7,7 @@ async function extension_update_badge_text() {
   let conn, db_name, db_version, conn_timeout_ms;
 
   try {
-    const verbose = false;
-    // TODO: deprecate verbose param to open
-    conn = await reader_db.open(db_name, db_version, conn_timeout_ms, verbose);
+    conn = await reader_db.open(db_name, db_version, conn_timeout_ms);
     count = await reader_db.count_unread_entries(conn);
   } catch(error) {
     DEBUG(error);

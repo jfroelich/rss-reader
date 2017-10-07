@@ -69,10 +69,9 @@ async function on_installed(event) {
   // Non-awaited.
   extension_update_badge_text();
 
-  const verbose = true;
   let icon_db_name, icon_db_version;
   try {
-    await favicon.setup(icon_db_name, icon_db_version, verbose);
+    await favicon.setup(icon_db_name, icon_db_version);
   } catch(error) {
     DEBUG(error);
   }
@@ -116,8 +115,8 @@ function on_alarm(alarm) {
     refresh_feed_icons().catch(console.warn);
     break;
   case 'compact-favicon-db':
-    let name, version, max_age_ms, verbose;
-    favicon.compact(name, version, max_age_ms, verbose).catch(console.warn);
+    let name, version, max_age_ms;
+    favicon.compact(name, version, max_age_ms).catch(console.warn);
     break;
   default:
     console.warn('Unknown alarm:', alarm.name);

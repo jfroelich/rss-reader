@@ -2,9 +2,8 @@
 
 // Need to do a review of bitwise, 2s complement, and all that. Seems I have
 // forgotten some of it.
-
 function itoa(i){
-    return (i >>> 0).toString(2);
+  return (i >>> 0).toString(2);
 }
 
 

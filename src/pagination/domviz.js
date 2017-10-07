@@ -14,7 +14,7 @@ const domviz = {};
 // offset width/height, also inspects parents (up to body), does not run the
 // full range of tricks for hiding nodes (e.g occlusion/clipping/out of view),
 // does not check if foreground color too similar to background color
-domviz.is_hidden_element = function(element) {
+domviz.element_is_hidden = function(element) {
   const doc = element.ownerDocument;
   const body = doc.body;
   // Without a body, assume everything is hidden
@@ -26,6 +26,7 @@ domviz.is_hidden_element = function(element) {
     return false;
 
   // Ignore detached elements
+  // TODO: change to ASSERT
   if(!body.contains(element))
     throw new TypeError('element is not a descendant of body');
 
@@ -46,6 +47,7 @@ domviz.is_hidden_element = function(element) {
   return false;
 };
 
+// TODO: rename
 domviz.is_inline_hidden_element = function(element) {
   return element && element.style && element.style.length &&
     (element.style.display === 'none' ||

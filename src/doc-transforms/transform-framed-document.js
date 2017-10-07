@@ -1,5 +1,5 @@
 
-function transform_framed_document(doc, verbose) {
+function transform_framed_document(doc) {
   'use strict';
 
   let body_element = doc.body;

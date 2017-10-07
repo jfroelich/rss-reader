@@ -1,6 +1,6 @@
 
 
-function poll_doc_prep(doc, url_string, verbose) {
+function poll_doc_prep(doc, url_string) {
   'use strict';
 
   // TODO: inline
@@ -14,11 +14,11 @@ function poll_doc_prep(doc, url_string, verbose) {
   }
 
   ensure_document_has_body(doc);
-  transform_framed_document(doc, verbose);
-  host_template_prune(url_string, doc, verbose);
+  transform_framed_document(doc);
+  host_template_prune(url_string, doc);
   filter_boilerplate(doc);
   secure_html_document(doc);
-  sanitize_html_document(doc, verbose);
+  sanitize_html_document(doc);
 
   // Because we are stripping attributes, there is no need to keep them when
   // condensing.

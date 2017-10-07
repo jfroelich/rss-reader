@@ -1,18 +1,19 @@
+// Library for importing an opml file into the database
+
 // Dependencies:
-// file.js
-// reader-db.js
 // favicon.js
 // feed.js
-// opml-parser.js
-// opml-document.js
+// file.js
+// opml.js
+// reader-db.js
 // subscribe.js
 
 (function(exports) {
 'use strict';
 
-async function import_opml_files(files, verbose) {
-  if(verbose)
-    console.log('Importing %d OPML XML files', files.length);
+async function import_opml_files(files) {
+  ASSERT(files);
+  DEBUG('importing %d files', files.length);
 
   let reader_conn, icon_conn, import_resolutions;
   try {
@@ -39,9 +40,9 @@ function open_dbs() {
   let reader_db_name, reader_db_version, reader_db_connect_timeout_ms;
   let icon_db_name, icon_db_version, icon_db_conn_timeout_ms;
   const reader_conn_promise = reader_db.open(reader_db_name, reader_db_version,
-    reader_db_connect_timeout_ms, verbose);
+    reader_db_connect_timeout_ms);
   const icon_conn_promise = favicon.open(icon_db_name, icon_db_version,
-    icon_db_conn_timeout_ms, verbose);
+    icon_db_conn_timeout_ms);
   const conn_promises = [reader_conn_promise, icon_conn_promise];
   return Promise.all(conn_promises);
 }
@@ -87,37 +88,39 @@ async function import_file(file, reader_conn, icon_conn) {
     return 0;
   }
 
-  let file_content_string;
+  let file_content; // String
   try {
-    file_content_string = await file_read_as_text(file);
+    file_content = await file_read_as_text(file);
   } catch(error) {
     DEBUG(error);
     return 0;
   }
 
-  // opml_parse returns null on error and does not throw in the normal case
-  const document = opml_parse(file_content_string);
+  // opml_parse_from_string returns null on error and does not throw in the
+  // normal case
+
+  const document = opml_parse_from_string(file_content);
   if(!document) {
     DEBUG('error parsing opml file', file.name);
     return 0;
   }
 
-  // TODO: this should be calls to local helper functions and probably do not
-  // belong as functionality within OPMLDocument
-  document.removeInvalidOutlineTypes();
-  document.normalizeOutlineXMLUrls();
-  document.removeOutlinesMissingXMLUrls();
+  // TODO: these should be calls to local helper functions instead of in the
+  // general library. These functions are specific to import and are not
+  // general purpose functions.
+  opml_remove_outlines_with_invalid_types(document);
+  opml_normalize_outline_xmlurls(document);
+  opml_remove_outlines_missing_xmlurls(document);
 
-  const outlines = document.getOutlineObjects();
+  const outlines = opml_get_outline_objects(document);
   if(!outlines.length) {
     DEBUG('file %s contained 0 outlines', file.name);
     return 0;
   }
 
   const unique_outlines = aggregate_outlines_by_xmlurl(outlines);
-  const dup_count = outlines.length - unique_outlines.length;
-  if(dup_count)
-    DEBUG('found %d duplicates in file', dup_count, file.name);
+  const dup_outline_count = outlines.length - unique_outlines.length;
+  DEBUG('found %d duplicates in file', dup_outline_count, file.name);
 
   normalize_outline_links(unique_outlines);
   const feeds = convert_outlines_to_feeds(unique_outlines);
@@ -127,7 +130,7 @@ async function import_file(file, reader_conn, icon_conn) {
   // Tally successful subscriptions
   let sub_count = 0;
   for(const sub_result of sub_results) {
-    if(sub_result.status === subscription.OK)
+    if(sub_result.status === STATUS_OK)
       sub_count++;
   }
 

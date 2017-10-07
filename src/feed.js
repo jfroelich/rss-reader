@@ -56,12 +56,11 @@ async function feed_update_favicon(feed, icon_conn) {
   const lookup_url_object = feed_create_icon_lookup_url(feed);
   let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
     min_img_size, max_img_size;
-  // TODO: modify favicon.lookup to not require verbose flag
-  let verbose = false;
+
   // Allow exceptions to bubble
   const icon_url_string = await favicon.lookup(icon_conn, lookup_url_object,
     max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
-    max_img_size, verbose);
+    max_img_size);
   feed.faviconURLString = icon_url_string;
 }
 

@@ -43,6 +43,7 @@ function reject_after_timeout(url_string, timeout_ms) {
   return new Promise(resolver);
 }
 
+// TODO: inline, use asserts or something, do not report error in template
 function validate_response(response, url_string) {
   if(!response)
     throw new Error(`${response.status} ${response.statusText} ${url_string}`);
@@ -63,6 +64,8 @@ function detect_redirect(request_url_string, response_url_string) {
   return request_url_object.href !== response_url_object.href;
 }
 
+// TODO: do not throw, use ASSERT(response_is_valid_type) or something,
+// move to repsonse.js
 function validate_content_type(response, url_string) {
   let type_string = response.headers.get('Content-Type');
   if(!type_string)

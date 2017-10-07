@@ -1,10 +1,12 @@
 'use strict';
 
-// Requires status.js
-// Requires string.js
-// Requires reader-db.js
-// TODO: reader-db.js is a circular dependency
+// Dependencies:
+// debug.js
+// reader-db.js
+// status.js
+// string.js
 
+// TODO: reader-db.js is a circular dependency
 
 const ENTRY_STATE_UNREAD = 0;
 const ENTRY_STATE_READ = 1;
@@ -45,7 +47,7 @@ function entry_append_url(entry, url_string) {
 }
 
 // Checks the initial url
-function entry_has_valid_url(entry, verbose) {
+function entry_has_valid_url(entry) {
   if(!entry.urls || !entry.urls.length)
     return false;
   const url_string = entry.urls[0];
@@ -53,14 +55,11 @@ function entry_has_valid_url(entry, verbose) {
   try {
     url_object = new URL(url_string);
   } catch(error) {
-    if(verbose)
-      console.warn(error);
+    DEBUG(error);
     return false;
   }
 
-  if(url_object.pathname.startsWith('//'))
-    return false;
-  return true;
+  return !url_object.pathname.startsWith('//');
 }
 
 // Returns a new entry object where fields have been sanitized. Impure
@@ -108,10 +107,7 @@ function entry_sanitize(input_entry, author_max_len, title_max_len,
 // Returns a new entry object that is in a compacted form. The new entry is a
 // shallow copy of the input entry, where only certain properties are kept, and
 // a couple properties are changed.
-// Used by archive_entries pretty much exclusively, but because it
-// requires so much knowledge of an entry's properties I think it belongs here.
-
-function compact_entry(entry, verbose) {
+function compact_entry(entry) {
   const ce = {};
   ce.dateCreated = entry.dateCreated;
   ce.dateRead = entry.dateRead;
@@ -121,19 +117,20 @@ function compact_entry(entry, verbose) {
   ce.urls = entry.urls;
   ce.archiveState = ENTRY_STATE_ARCHIVED;
   ce.dateArchived = new Date();
-  if(verbose)
-    console.debug('before', sizeof(entry), 'after', sizeof(ce));
+  DEBUG('before', sizeof(entry), 'after', sizeof(ce));
   return ce;
 }
 
 // Mark the corresponding entry as read in the database
 // @param conn {IDBDatabase} an open database connection
 // @param id {Number} the entry id
+// TODO: causes circular dependency
 async function entry_mark_read(conn, id) {
   let entry;
   try {
     entry = await reader_db.find_entry_by_id(conn, id);
   } catch(error) {
+    DEBUG(error);
     return ERR_DB_OP;
   }
 
@@ -147,10 +144,11 @@ async function entry_mark_read(conn, id) {
   try {
     await reader_db.put_entry(conn, entry);
   } catch(error) {
+    DEBUG(error);
     return ERR_DB_OP;
   }
 
-  extension_update_badge_text();
+  extension_update_badge_text();// ignore error
 
   return STATUS_OK;
 }

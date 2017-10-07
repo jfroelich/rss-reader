@@ -1,10 +1,4 @@
 
-# simpler debugging
-
-instead of passing around verbose. create a debug function that wraps
-console.debug. Then in that function have a boolean. Then, call that function
-always everywhere i want to print something. then stop passing around verbose
-param to functions, and instead just toggle the boolean on/off
 
 # simplify storage
 

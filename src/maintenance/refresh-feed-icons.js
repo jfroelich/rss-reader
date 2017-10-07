@@ -3,9 +3,8 @@
 
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.
-async function refresh_feed_icons(verbose) {
-  if(verbose)
-    console.log('Refreshing feed favicons...');
+async function refresh_feed_icons() {
+  DEBUG('Refreshing feed favicons...');
 
   let count = 0;
   let reader_conn, icon_conn;
@@ -16,8 +15,7 @@ async function refresh_feed_icons(verbose) {
     reader_conn = conns[0];
     icon_conn = conns[1];
     const feeds = await reader_db.get_feeds(reader_conn);
-    const resolutions = await process_feeds(feeds, reader_conn, icon_conn,
-      verbose);
+    const resolutions = await process_feeds(feeds, reader_conn, icon_conn);
     count = count_num_modified(resolutions);
   } finally {
     if(reader_conn)
@@ -33,17 +31,15 @@ function open_dbs() {
   let icon_db_name, icon_db_version, conn_timeout_ms;
   const reader_open_promise = reader_db.open();
   const icon_open_promise = favicon.open(icon_db_name, icon_db_version,
-    conn_timeout_ms, verbose);
+    conn_timeout_ms);
   const conn_promises = [reader_open_promise, icon_open_promise];
   return Promise.all(conn_promises);
 }
 
-function process_feeds(feeds, reader_conn, icon_conn, verbose) {
+function process_feeds(feeds, reader_conn, icon_conn) {
   const promises = [];
-  for(const feed of feeds) {
-    const promise = process_feed(feed, reader_conn, icon_conn, verbose);
-    promises.push(promise);
-  }
+  for(const feed of feeds)
+    promises.push(process_feed(feed, reader_conn, icon_conn));
   return Promise.all(promises);
 }
 
@@ -56,7 +52,7 @@ function count_num_modified(resolutions) {
 }
 
 // Lookup the feed's icon, update the feed in db. Return true if updated.
-async function process_feed(feed, reader_conn, icon_conn, verbose) {
+async function process_feed(feed, reader_conn, icon_conn) {
   const lookup_url_object = feed_create_icon_lookup_url(feed);
   if(!lookup_url_object)
     return false;
@@ -66,7 +62,7 @@ async function process_feed(feed, reader_conn, icon_conn, verbose) {
     min_img_size, max_img_size;
   const icon_url_string = await favicon.lookup(icon_conn, lookup_url_object,
     max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
-    min_img_size, max_img_size, verbose);
+    min_img_size, max_img_size);
 
   // If we could not find an icon, then leave the feed as is. The feed may
   // have an icon but prefer to leave it over remove it.
@@ -79,9 +75,8 @@ async function process_feed(feed, reader_conn, icon_conn, verbose) {
   if(feed.faviconURLString === icon_url_string)
     return false;
 
-  if(verbose)
-    console.log('Changing feed icon url from %s to %s', feed.faviconURLString,
-      icon_url_string);
+  DEBUG('Changing feed icon url from %s to %s', feed.faviconURLString,
+    icon_url_string);
 
   // Otherwise the icon changed
   feed.faviconURLString = icon_url_string;

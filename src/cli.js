@@ -5,8 +5,7 @@ const cli = {};
 // Archive entries from the console
 cli.archive_entries = async function() {
   let max_age_ms;
-  const verbose = true;
-  return await archive_entries(max_age_ms, verbose);
+  return await archive_entries(max_age_ms);
 };
 
 // Check for updated console from the console
@@ -14,8 +13,7 @@ cli.poll_feeds = async function() {
   const flags = POLL_FEEDS_FLAGS.ALLOW_METERED_CONNECTIONS |
     POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE |
     POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK |
-    POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK |
-    POLL_FEEDS_FLAGS.VERBOSE;
+    POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK;
 
   let recency_period_ms, idle_period_secs, fetch_feed_timeout_ms,
     fetch_html_timeout_ms, fetch_img_timeout_ms;

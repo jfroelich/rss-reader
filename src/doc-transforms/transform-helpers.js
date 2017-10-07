@@ -6,6 +6,8 @@
 // if the operation would result in adjacent text nodes.
 function unwrap_element(element) {
   const parent_element = element.parentNode;
+
+  // This is a violation of an invariant. Caller should never do this.
   ASSERT(parent_element, 'Cannot unwrap orphaned element');
 
   const prev_sibling = element.previousSibling;

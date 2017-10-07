@@ -23,9 +23,8 @@ poll_channel.onmessage = function poll_channel_onmessage(event) {
     console.debug('Received poll completed message, maybe appending slides');
     const count = count_unread_slides();
     let conn; // leave undefined
-    const verbose = true;// Temporarily true for debugging purposes
     if(count < 2)
-      append_slides(conn, verbose);
+      append_slides(conn);
   }
 };
 
@@ -35,7 +34,7 @@ function slide_remove(slide_element) {
 }
 
 // TODO: visual feedback in event of an error?
-async function slide_mark_read(conn, slide_element, verbose) {
+async function slide_mark_read(conn, slide_element) {
   console.debug('slide_mark_read begin');
   // This is normal and not an error
   if(slide_element.hasAttribute('read'))
@@ -48,7 +47,7 @@ async function slide_mark_read(conn, slide_element, verbose) {
   let name, version, conn_timeout_ms;
   try {
     if(!conn) {
-      conn = await reader_db.open(name, version, conn_timeout_ms, verbose);
+      conn = await reader_db.open(name, version, conn_timeout_ms);
       is_local_conn = true;
     }
 
@@ -74,7 +73,7 @@ async function slide_mark_read(conn, slide_element, verbose) {
 
 // TODO: require caller to establish conn, do not do it here?
 // TODO: visual feedback on error
-async function append_slides(conn, verbose) {
+async function append_slides(conn) {
   const limit = 3;
   let is_local_conn = false;
   let entries = [];
@@ -84,14 +83,14 @@ async function append_slides(conn, verbose) {
 
   try {
     if(!conn) {
-      conn = await reader_db.open(name, version, conn_timeout_ms, verbose);
+      conn = await reader_db.open(name, version, conn_timeout_ms);
       is_local_conn = true;
     }
 
     entries = await reader_db.load_unarchived_unread_entries(conn, offset,
       limit);
   } catch(error) {
-    console.error(error);
+    DEBUG(error);
   } finally {
     if(is_local_conn && conn)
       conn.close();
@@ -223,15 +222,13 @@ function slide_on_click(event) {
   chrome.tabs.create({'active': true, 'url': url_string});
 
   let conn;// undefined
-  const verbose = true;// temp
-  slide_mark_read(conn, current_slide_element, verbose).catch(console.warn);
+  slide_mark_read(conn, current_slide_element).catch(console.warn);
 
   return false;
 }
 
 // TODO: visual feedback on error
 async function show_next_slide() {
-  const verbose = true;// Temporarily true for debugging purposes
 
   // current_slide_element may be undefined
   // This isn't actually an error. For example, when initially viewing the
@@ -248,11 +245,11 @@ async function show_next_slide() {
   let conn, name, version, conn_timeout_ms;
 
   try {
-    conn = await reader_db.open(name, version, conn_timeout_ms, verbose);
+    conn = await reader_db.open(name, version, conn_timeout_ms);
 
     // Conditionally append more slides
     if(unread_slide_element_count < 2)
-      num_slides_appended = await append_slides(conn, verbose);
+      num_slides_appended = await append_slides(conn);
 
     if(current_slide_element.nextSibling) {
       current_slide_element.style.left = '-100%';
@@ -268,7 +265,7 @@ async function show_next_slide() {
 
       // Must be awaited
       console.debug('before call slide_mark_read');
-      await slide_mark_read(conn, old_slide_element, verbose);
+      await slide_mark_read(conn, old_slide_element);
     }
   } catch(error) {
     console.warn(error);
@@ -354,8 +351,7 @@ function slide_on_scroll(event) {
 function on_dom_content_loaded(event) {
   add_entry_css_rules();
   let conn;// leave as undefined
-  const verbose = true; // Temporarily true for debugging
-  append_slides(conn, verbose).catch(console.warn);
+  append_slides(conn).catch(console.warn);
 }
 
 document.addEventListener('DOMContentLoaded', on_dom_content_loaded,

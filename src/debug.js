@@ -1,9 +1,11 @@
 
-var DEBUG_STATE = 1;
+// Global use strict requires for spread args operator
+'use strict';
 
-function DEBUG() {
-  'use strict';
-  if(DEBUG_STATE) {
-    console.debug(...arguments);
-  }
+const DEBUG_STATE = true;
+
+// This uses the ES6 spread operator to avoid touching the arguments object
+function DEBUG(...args) {
+  if(DEBUG_STATE)
+    console.debug(...args);
 }

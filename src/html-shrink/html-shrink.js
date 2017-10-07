@@ -54,19 +54,19 @@ function remove_leaf_nodes(ancestor_element) {
     const doc_element = ancestor_element.ownerDocument.documentElement;
     const elements = ancestor_element.querySelectorAll('*');
     for(const element of elements)
-      if(doc_element.contains(element) && is_leaf_node(element))
+      if(doc_element.contains(element) && node_is_leaf(element))
         element.remove();
   }
 }
 
 // Recursive
-function is_leaf_node(node) {
+function node_is_leaf(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:
-      if(is_leaf_exception(node))
+      if(element_is_leaf_exception(node))
         return false;
       for(let child = node.firstChild; child; child = child.nextSibling)
-        if(!is_leaf_node(child))
+        if(!node_is_leaf(child))
           return false;
       break;
     case Node.TEXT_NODE:
@@ -80,7 +80,7 @@ function is_leaf_node(node) {
   return true;
 }
 
-function is_leaf_exception(element) {
+function element_is_leaf_exception(element) {
   const exceptions = [
     'area', 'audio', 'base', 'col', 'command', 'br', 'canvas', 'col', 'hr',
     'iframe', 'img', 'input', 'keygen', 'meta', 'nobr', 'param', 'path',
@@ -92,24 +92,24 @@ function is_leaf_exception(element) {
 function unwrap_single_column_tables(ancestor_element, row_scan_limit) {
   const tables = ancestor_element.querySelectorAll('table');
   for(const table of tables)
-    if(is_single_column_table(table, row_scan_limit))
+    if(table_is_single_column(table, row_scan_limit))
       unwrap_single_column_table(table);
 }
 
-function is_single_column_table(table, row_scan_limit) {
+function table_is_single_column(table, row_scan_limit) {
   const rows = table.rows;
   const safe_row_scan_limit = Math.min(rows.length, row_scan_limit);
   for(let i = 0; i < safe_row_scan_limit; i++)
-    if(!is_single_column_row(rows[i]))
+    if(!row_is_single_column(rows[i]))
       return false;
   return true;
 }
 
-function is_single_column_row(row) {
+function row_is_single_column(row) {
   const cells = row.cells;
   let non_empty_cell_count = 0;
   for(let i = 0, len = cells.length; i < len; i++)
-    if(!is_leaf_node(cells[i]) && ++non_empty_cell_count > 1)
+    if(!node_is_leaf(cells[i]) && ++non_empty_cell_count > 1)
       return false;
   return true;
 }
@@ -161,11 +161,11 @@ function unwrap_single_item_list(ancestor_element, list) {
     }
     // The list has no child elements, but the list has one or more child
     // nodes. Move the nodes to before the list. Add padding if needed.
-    if(is_text_node(list.previousSibling))
+    if(node_is_text(list.previousSibling))
       list_parent.insertBefore(doc.createTextNode(' '), list);
     for(let node = list.firstChild; node; node = list.firstChild)
       list_parent.insertBefore(node, list);
-    if(is_text_node(list.nextSibling))
+    if(node_is_text(list.nextSibling))
       list_parent.insertBefore(doc.createTextNode(' '), list);
     list.remove();
     return;
@@ -184,7 +184,7 @@ function unwrap_single_item_list(ancestor_element, list) {
   // any non-element nodes within the list outside of the child element.
   if(!item.firstChild) {
     // If removing the list, avoid the possible merging of adjacent text nodes
-    if(is_text_node(list.previousSibling) && is_text_node(list.nextSibling))
+    if(node_is_text(list.previousSibling) && node_is_text(list.nextSibling))
       list_parent.replaceChild(doc.createTextNode(' '), list);
     else
       list.remove();
@@ -193,15 +193,15 @@ function unwrap_single_item_list(ancestor_element, list) {
 
   // The list has one child element with one or more child nodes. Move the
   // child nodes to before the list and then remove iterator. Add padding.
-  if(is_text_node(list.previousSibling) && is_text_node(item.firstChild))
+  if(node_is_text(list.previousSibling) && node_is_text(item.firstChild))
     list_parent.insertBefore(doc.createTextNode(' '), list);
   insert_children_before(item, list);
-  if(is_text_node(list.nextSibling) && is_text_node(list.previousSibling))
+  if(node_is_text(list.nextSibling) && node_is_text(list.previousSibling))
     list_parent.insertBefore(doc.createTextNode(' '), list);
   list.remove();
 }
 
-function is_text_node(node) {
+function node_is_text(node) {
   return node && node.nodeType === Node.TEXT_NODE;
 }
 
@@ -250,15 +250,15 @@ function trim_document(body_element) {
 
 function trim_doc_step(starting_node, edge) {
   let node = starting_node;
-  while(is_trimmable_node(node)) {
+  while(node_is_trimmable(node)) {
     const sibling = node[edge];
     node.remove();
     node = sibling;
   }
 }
 
-// TODO: return true for is_leaf_node?
-function is_trimmable_node(node) {
+// TODO: return true for node_is_leaf?
+function node_is_trimmable(node) {
   const elements = ['br', 'hr', 'nobr'];
   return node && (elements.includes(node.localName) ||
     (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));

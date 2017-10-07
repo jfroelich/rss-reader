@@ -7,6 +7,7 @@
 // function in a try/catch.
 // In the event of a parsing error, this returns undefined.
 // TODO: clarify behavior in event of html fragment instead of full doc input
+// TODO: rename to html_parse_from_string
 function parse_html(html_string) {
   'use strict';
 

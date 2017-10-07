@@ -3,22 +3,21 @@
 
 // TODO: cancel/close the conn if timeout occurred
 // TODO: cancel the timeout if connected
-async function open(name, version, timeout_ms, verbose) {
+async function open(name, version, timeout_ms) {
   if(typeof name === 'undefined')
     name = 'reader';
   if(typeof version === 'undefined')
     version = 20;
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 500;
-  if(verbose)
-    console.log('Connecting to indexedDB', name, version);
+  DEBUG('Connecting to indexedDB', name, version);
 
   const shared_state = {};
   shared_state.is_timed_out = false;
 
   // Race timeout against connect to avoid hanging indefinitely on block and
   // to set an upper bound
-  const conn_promise = open_internal(name, version, shared_state, verbose);
+  const conn_promise = open_internal(name, version, shared_state);
   const error_msg = 'Connecting to indexedDB database ' + name + ' timed out.';
   const timeout_promise = reject_after_timeout(timeout_ms, error_msg,
     shared_state);
@@ -26,20 +25,19 @@ async function open(name, version, timeout_ms, verbose) {
   return await Promise.race(promises);
 }
 
-function open_internal(name, version, shared_state, verbose) {
+function open_internal(name, version, shared_state) {
   return new Promise(function(resolve, reject) {
     const request = indexedDB.open(name, version);
     request.onupgradeneeded = on_upgrade_needed;
     request.onsuccess = function() {
       const conn = request.result;
       if(shared_state.is_timed_out) {
-        if(verbose)
-          console.log('open_internal eventually finished but after timeout');
+        DEBUG('open_internal eventually finished but after timeout');
         conn.close();
         // TODO: reject and exit here?
-      } else if(verbose)
-          console.log('Connected to indexedDB', name, version);
+      }
 
+      DEBUG('connected to indexedDB', name, version);
       resolve(conn);
     }
     request.onerror = () => reject(request.error);

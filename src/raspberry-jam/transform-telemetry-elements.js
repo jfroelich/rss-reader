@@ -29,7 +29,7 @@ const DEFAULT_PATTERNS = [
   /\/\/www\.facebook\.com\/tr/i
 ];
 
-function transform_telemetry_elements(doc, verbose) {
+function transform_telemetry_elements(doc) {
   let num_elements_modified = 0;
   if(!doc.body)
     return num_elements_modified;
@@ -43,9 +43,8 @@ function transform_telemetry_elements(doc, verbose) {
 
   const image_elements = doc.body.querySelectorAll('img');
   for(const image_element of image_elements) {
-    if(is_telemetry_image(image_element)) {
-      if(verbose)
-        console.debug('Removing telemetry image', image_element.outerHTML);
+    if(image_has_telemetry(image_element)) {
+      DEBUG('removing telemetry image', image_element.outerHTML);
       image_element.remove();
       num_elements_modified++;
     }
@@ -53,24 +52,23 @@ function transform_telemetry_elements(doc, verbose) {
   return num_elements_modified;
 }
 
-function is_telemetry_image(image_element) {
-  return is_hidden_element(image_element) ||
-    is_pixel_image(image_element) ||
-    has_telemetry_src_url(image_element);
+function image_has_telemetry(image) {
+  return is_hidden_element(image) || image_is_pixel(image) ||
+    image_has_telemetry_source(image);
 }
 
-function is_pixel_image(image_element) {
-  return image_element.hasAttribute('src') &&
-    image_element.hasAttribute('width') &&
-    image_element.width < 2 &&
-    image_element.hasAttribute('height') &&
-    image_element.height < 2;
+function image_is_pixel(image) {
+  return image.hasAttribute('src') &&
+    image.hasAttribute('width') &&
+    image.width < 2 &&
+    image.hasAttribute('height') &&
+    image.height < 2;
 }
 
-const URL_START_PATTERN = /^(http:\/\/|https:\/\/|\/\/)/i;
+function image_has_telemetry_source(image) {
+  const URL_START_PATTERN = /^(http:\/\/|https:\/\/|\/\/)/i;
 
-function has_telemetry_src_url(image_element) {
-  const src = (image_element.getAttribute('src') || '').trim();
+  const src = (image.getAttribute('src') || '').trim();
   if(src.length > 2 && !src.includes(' ') && URL_START_PATTERN.test(src)) {
     for(const pattern of DEFAULT_PATTERNS)
       if(pattern.test(src))

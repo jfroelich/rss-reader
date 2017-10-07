@@ -203,18 +203,18 @@ async function start_subscription(url_object) {
   const feed = {};
   feed_append_url(feed, url_object.href);
   const options = {};
-  options.verbose = true;// temp
+
   // Leaving other options to defaults for now
   let subscribed_feed;
   let reader_conn;
   let icon_conn;
-  const verbose = true; // temp, for now
+
   let icon_db_name, icon_db_version, connect_timeout_ms;
   let subscribe_timeout_ms, mute_notifications;
 
   // TODO: make this into a helper function that opens both connections
   const icon_conn_promise = favicon.open(icon_db_name, icon_db_version,
-    connect_timeout_ms, verbose);
+    connect_timeout_ms);
   const reader_conn_promise = reader_db.open();
   const conn_promises = [reader_conn_promise, icon_conn_promise];
   const conn_promise = Promise.all(conn_promises);
@@ -507,7 +507,7 @@ async function subscribe_form_on_submit(event) {
   results_list_element.appendChild(item_element);
 
   // TODO: use try/catch
-
+  // TODO: explicit defaults
   let icon_conn;
 
   icon_conn = await favicon.open();
@@ -671,26 +671,18 @@ function import_opml_button_on_click(event) {
 
 // TODO: visual feedback in event an error
 async function import_opml_uploader_on_change(event) {
-
-  // Testing bug
-  console.log('Received event', event);
-
-
-  const verbose = true;
   const uploader_input = event.target;
-
-  if(verbose)
-    console.log('import_opml_uploader_on_change event', event);
+  DEBUG('import_opml_uploader_on_change event', event);
 
   try {
-    await import_opml_files(uploader_input.files, verbose);
+    await import_opml_files(uploader_input.files);
   } catch(error) {
     console.warn(error);
   }
 
   // TODO: need to update feed list for each added feed
-  // Maybe something like 'refresh feed list' would be easier than incrementally
-  // updating it
+  // Maybe something like 'refresh feed list' would be easier than
+  // incrementally updating it
 }
 
 // TODO: visual feedback in event of an error

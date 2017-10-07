@@ -15,10 +15,10 @@ async function search_google_feeds(query_string, timeout_ms) {
   ASSERT(typeof query_string === 'string');
   query_string = query_string.trim();
 
-  // TODO: is this worthy of an exception? If so it should instead be an
-  // assert. If not, it should do something like return null.
-  if(!query_string)
-    throw new TypeError('query_string is empty');
+  // The caller should never call this with an empty string (after trim)
+  // TODO: maybe this should be tolerated and just return undefined or
+  // empty result
+  ASSERT(query_string.length);
 
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 0;
@@ -73,6 +73,7 @@ async function search_google_feeds(query_string, timeout_ms) {
   // TODO: this should not be thrown as an exception because it is not an
   // invariant condition violation. Or is it? If it is, then it should be
   // an ASSERT call. If not, then it should return null or something.
+  // Should not be an assert. Should return ERR_FETCH
   if(!response.ok)
     throw new Error(standard_fetch_error_message);
 

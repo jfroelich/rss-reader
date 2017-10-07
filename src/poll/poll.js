@@ -2,7 +2,6 @@
 'use strict';
 
 const POLL_FEEDS_FLAGS = {};
-POLL_FEEDS_FLAGS.VERBOSE = 1; // 1
 POLL_FEEDS_FLAGS.ALLOW_METERED_CONNECTIONS = 2; // 10
 POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK = 4; // 100
 POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE = 8; // 1000
@@ -28,14 +27,12 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
   const ignore_idle_state = flags & POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE;
   const ignore_recency_check = flags & POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK;
   const ignore_modified_check = flags & POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK;
-  const verbose = flags & POLL_FEEDS_FLAGS.VERBOSE;
 
-  if(verbose)
-    console.log('Checking for new articles...');
+  DEBUG('Checking for new articles...');
 
   // TODO: it would make more sense to just pass flags here
   if(!await is_poll_startable(allow_metered_connections, ignore_idle_state,
-    idle_period_secs, verbose))
+    idle_period_secs))
     return;
 
   let num_entries_added = 0;
@@ -47,9 +44,9 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
   let reader_db_name, reader_db_version;
 
   const reader_open_promise = reader_db.open(reader_db_name, reader_db_version,
-    conn_timeout_ms, verbose);
+    conn_timeout_ms);
   const icon_open_promise = favicon.open(icon_db_name, icon_db_version,
-    conn_timeout_ms, verbose);
+    conn_timeout_ms);
   const open_promises = [reader_open_promise, icon_open_promise];
   let reader_conn, icon_conn;
 
@@ -58,10 +55,10 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
     reader_conn = conns[0];
     icon_conn = conns[1];
     const feeds = await find_pollable_feeds(reader_conn,
-      ignore_recency_check, recency_period_ms, verbose);
+      ignore_recency_check, recency_period_ms);
     const resolutions = await process_feeds(reader_conn, icon_conn, feeds,
       ignore_modified_check, fetch_feed_timeout_ms, fetch_html_timeout_ms,
-      fetch_img_timeout_ms, verbose);
+      fetch_img_timeout_ms);
 
     // TODO: this can occur outside of the try/catch
     for(const resolution of resolutions)
@@ -88,25 +85,22 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
 
 // TODO: inline this function
 async function is_poll_startable(allow_metered_connections, ignore_idle_state,
-  idle_period_secs, verbose) {
+  idle_period_secs) {
   if(is_offline()) {
-    if(verbose)
-      console.warn('Polling canceled because offline');
+    DEBUG('Polling canceled because offline');
     return false;
   }
 
   if(!allow_metered_connections && 'NO_POLL_METERED' in localStorage &&
     is_metered_connection()) {
-    if(verbose)
-      console.warn('Polling canceled because connection is metered');
+    DEBUG('Polling canceled because connection is metered');
     return false;
   }
 
   if(!ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
     const state = await query_idle_state(idle_period_secs);
     if(state !== 'locked' && state !== 'idle') {
-      if(verbose)
-        console.warn('Polling canceled because machine not idle');
+      DEBUG('Polling canceled because machine not idle');
       return false;
     }
   }
@@ -116,13 +110,13 @@ async function is_poll_startable(allow_metered_connections, ignore_idle_state,
 
 // TODO: should just accept flags variable
 async function find_pollable_feeds(reader_conn, ignore_recency_check,
-  recency_period_ms, verbose) {
+  recency_period_ms) {
   const feeds = await reader_db.get_feeds(reader_conn);
   if(ignore_recency_check)
     return feeds;
   const output_feeds = [];
   for(const feed of feeds)
-    if(is_pollable_feed(feed, recency_period_ms, verbose))
+    if(feed_is_pollable(feed, recency_period_ms))
       output_feeds.push(feed);
   return output_feeds;
 }
@@ -133,7 +127,7 @@ function show_poll_notification(num_entries_added) {
   extension_notify(title, message);
 }
 
-function is_pollable_feed(feed, recency_period_ms, verbose) {
+function feed_is_pollable(feed, recency_period_ms) {
   // If we do not know when the feed was fetched, then assume it is a new feed
   // that has never been fetched, so pollable
   if(!feed.dateFetched)
@@ -145,8 +139,7 @@ function is_pollable_feed(feed, recency_period_ms, verbose) {
   if(elapsed < recency_period_ms) {
     // A feed has been polled too recently if not enough time has elasped from
     // the last time the feed was polled.
-    if(verbose)
-      console.debug('Feed polled too recently', feed_get_top_url(feed));
+    DEBUG('feed polled too recently', feed_get_top_url(feed));
     return false;
   }
 
@@ -154,12 +147,12 @@ function is_pollable_feed(feed, recency_period_ms, verbose) {
 }
 
 function process_feeds(reader_conn, icon_conn, feeds, ignore_modified_check,
-  fetch_feed_timeout_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, verbose) {
+  fetch_feed_timeout_ms, fetch_html_timeout_ms, fetch_img_timeout_ms) {
   const promises = [];
   for(const feed of feeds) {
     const promise = poll_feed_silently(reader_conn, icon_conn, feed,
       fetch_feed_timeout_ms, ignore_modified_check, fetch_html_timeout_ms,
-      fetch_img_timeout_ms, verbose);
+      fetch_img_timeout_ms);
     promises.push(promise);
   }
   return Promise.all(promises);
@@ -167,23 +160,23 @@ function process_feeds(reader_conn, icon_conn, feeds, ignore_modified_check,
 
 async function poll_feed_silently(reader_conn, icon_conn, feed,
   fetch_feed_timeout_ms, ignore_modified_check, fetch_html_timeout_ms,
-  fetch_img_timeout_ms, verbose) {
+  fetch_img_timeout_ms) {
   let num_entries_added = 0;
   try {
     num_entries_added = await poll_feed(reader_conn, icon_conn, feed,
       fetch_feed_timeout_ms, ignore_modified_check, fetch_html_timeout_ms,
-      fetch_img_timeout_ms, verbose);
+      fetch_img_timeout_ms);
   } catch(error) {
-    if(verbose)
-      console.warn(error);
+    DEBUG(error);
   }
   return num_entries_added;
 }
 
 // @throws {Error} any exception thrown by fetch_feed is rethrown
+// TODO: move to poll-feed.js
 async function poll_feed(reader_conn, icon_conn, local_feed,
   fetch_feed_timeout_ms, ignore_modified_check, fetch_html_timeout_ms,
-  fetch_img_timeout_ms, verbose) {
+  fetch_img_timeout_ms) {
 
   ASSERT(local_feed);
 
@@ -198,8 +191,7 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
   if(!ignore_modified_check && local_feed.dateUpdated &&
     is_feed_unmodified(local_feed.dateLastModified,
       response.lastModifiedDate)) {
-    if(verbose)
-      console.debug('Skipping unmodified feed', url_string,
+    DEBUG('skipping unmodified feed', url_string,
         local_feed.dateLastModified, response.lastModifiedDate);
     return 0;
   }
@@ -216,7 +208,7 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
 
   const resolutions = await poll_feed_entries(reader_conn, icon_conn,
     storable_feed, parse_feed_result.entries, fetch_html_timeout_ms,
-    fetch_img_timeout_ms, verbose);
+    fetch_img_timeout_ms);
 
   let num_entries_added = 0;
   for(const resolution of resolutions) {
@@ -229,12 +221,12 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
 // TODO: this should call out to poll_entry_silently to avoid the
 // failfast behavior of Promise.all
 function poll_feed_entries(reader_conn, icon_conn, feed, entries,
-  fetch_html_timeout_ms, fetch_img_timeout_ms, verbose) {
+  fetch_html_timeout_ms, fetch_img_timeout_ms) {
   entries = filter_dup_entries(entries);
   const promises = [];
   for(const entry of entries) {
     const promise = poll_entry(reader_conn, icon_conn, feed, entry,
-      fetch_html_timeout_ms, fetch_img_timeout_ms, verbose);
+      fetch_html_timeout_ms, fetch_img_timeout_ms);
     promises.push(promise);
   }
   return Promise.all(promises);
@@ -267,6 +259,7 @@ function filter_dup_entries(entries) {
   return distinct_entries;
 }
 
+// TODO: move to extension.js
 function query_idle_state(idle_period_secs) {
   return new Promise(function(resolve) {
     chrome.idle.queryState(idle_period_secs, resolve);

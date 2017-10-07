@@ -6,14 +6,12 @@ async function test_archive_entries() {
   const test_db_version = 20;
   let was_conn_close_requested = false;
   let conn, conn_timeout_ms, entry_max_age_ms;
-  const verbose = true;
   const open_promise = reader_db.open(test_db_name, test_db_version,
     conn_timeout_ms);
 
   try {
     conn = await open_promise;
-    const num_entries_compacted = await archive_entries(entry_max_age_ms,
-      verbose);
+    const num_entries_compacted = await archive_entries(entry_max_age_ms);
     conn.close();
     was_conn_close_requested = true;
     await test_delete_database(conn.name);
@@ -24,10 +22,9 @@ async function test_archive_entries() {
 }
 
 function test_delete_database(name) {
-  function resolver(resolve, reject) {
+  return new Promise(function(resolve, reject) {
     const request = indexedDB.deleteDatabase(name);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
-  }
-  return new Promise(resolver);
+  });
 }

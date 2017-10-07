@@ -14,10 +14,8 @@ const IMG_SIZE_UNKNOWN = -1;
 // Looks up the favicon url for a given web page url
 // @returns {String} the favicon url if found, otherwise undefined
 async function lookup(conn, url_object, max_age_ms,
-  fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size, max_img_size,
-  verbose) {
-  if(verbose)
-    console.log('Starting lookup for url', url_object.href);
+  fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size, max_img_size) {
+  DEBUG('Starting lookup for url', url_object.href);
   if(typeof max_age_ms === 'undefined')
     max_age_ms = default_max_age_ms;
   if(typeof fetch_html_timeout_ms === 'undefined')
@@ -36,27 +34,26 @@ async function lookup(conn, url_object, max_age_ms,
   // Step 1: check the cache for the input url
   if(conn) {
     const icon_url_string = await db_find_lookup_url(conn, url_object,
-      max_age_ms, verbose);
+      max_age_ms);
     if(icon_url_string)
       return icon_url_string;
   }
 
-  const response = await fetch_doc_silently(url_object, fetch_html_timeout_ms,
-    verbose);
+  const response = await fetch_doc_silently(url_object, fetch_html_timeout_ms);
   if(response) {
     // Step 2: check the cache for the redirect url
     if(conn && response.redirected) {
       const response_url_object = new URL(response.response_url_string);
       urls.add(response_url_object.href);
       const icon_url_string = await db_find_redirect_url(conn, url_object,
-        response, max_age_ms, verbose);
+        response, max_age_ms);
       if(icon_url_string)
         return icon_url_string;
     }
 
     // Step 3: check the fetched document for a <link> tag
     const icon_url_string = await search_document(conn, url_object, urls,
-      response, verbose);
+      response);
     if(icon_url_string)
       return icon_url_string;
   }
@@ -64,31 +61,29 @@ async function lookup(conn, url_object, max_age_ms,
   // Step 4: check the cache for the origin url
   if(conn && !urls.has(url_object.origin)) {
     const icon_url_string = await db_find_origin_url(conn, url_object.origin,
-      urls, max_age_ms, verbose);
+      urls, max_age_ms);
     if(icon_url_string)
       return icon_url_string;
   }
 
   // Step 5: check for /favicon.ico
   const icon_url_string = await lookup_origin(conn, url_object, urls,
-    fetch_img_timeout_ms, min_img_size, max_img_size, verbose);
+    fetch_img_timeout_ms, min_img_size, max_img_size);
   return icon_url_string;
 }
 
-async function db_find_lookup_url(conn, url_object, max_age_ms, verbose) {
+async function db_find_lookup_url(conn, url_object, max_age_ms) {
   const entry = await db_find_entry(conn, url_object);
   if(!entry)
     return;
   const current_date = new Date();
   if(is_entry_expired(entry, current_date, max_age_ms))
     return;
-  if(verbose)
-    console.log('Found favicon of input url in cache', entry);
+  DEBUG('Found favicon of input url in cache', entry);
   return entry.iconURLString;
 }
 
-async function db_find_redirect_url(conn, url_object, response, max_age_ms,
-  verbose) {
+async function db_find_redirect_url(conn, url_object, response, max_age_ms) {
   const response_url_object = new URL(response.response_url_string);
   const entry = await db_find_entry(conn, response_url_object);
   if(!entry)
@@ -96,21 +91,19 @@ async function db_find_redirect_url(conn, url_object, response, max_age_ms,
   const current_date = new Date();
   if(is_entry_expired(entry, current_date, max_age_ms))
     return;
-  if(verbose)
-    console.debug('Found redirect in cache', entry);
+  DEBUG('Found redirect in cache', entry);
   const entries = [url_object.href];
   await db_put_entries(conn, entry.iconURLString, entries);
   return entry.iconURLString;
 }
 
 // @returns {String} a favicon url
-async function search_document(conn, url_object, urls, response, verbose) {
+async function search_document(conn, url_object, urls, response) {
   let text;
   try {
     text = await response.text();
   } catch(error) {
-    if(verbose)
-      console.warn(error);
+    DEBUG(error);
     return;
   }
 
@@ -151,16 +144,15 @@ async function search_document(conn, url_object, urls, response, verbose) {
     } catch(error) {
       continue;
     }
-    if(verbose)
-      console.debug('Found favicon from <link>', response.response_url_string,
-        icon_url_object.href);
+    DEBUG('Found favicon from <link>', response.response_url_string,
+      icon_url_object.href);
     if(conn)
       await db_put_entries(conn, icon_url_object.href, urls);
     return icon_url_object.href;
   }
 }
 
-async function db_find_origin_url(conn, origin_url_string, urls, max_age_ms, verbose) {
+async function db_find_origin_url(conn, origin_url_string, urls, max_age_ms) {
   const origin_url_object = new URL(origin_url_string);
   const origin_entry = await db_find_entry(conn, origin_url_object);
   const current_date = new Date();
@@ -168,25 +160,23 @@ async function db_find_origin_url(conn, origin_url_string, urls, max_age_ms, ver
     return;
   if(is_entry_expired(origin_entry, current_date, max_age_ms))
     return;
-  if(verbose)
-    console.debug('Found non-expired origin entry in cache', origin_url_string,
-      origin_entry.iconURLString);
+  DEBUG('Found non-expired origin entry in cache', origin_url_string,
+    origin_entry.iconURLString);
   // origin is not in urls, and we know it is distinct, existing, and fresh
   await db_put_entries(conn, origin_entry.iconURLString, urls);
   return origin_entry.iconURLString;
 }
 
 async function lookup_origin(conn, url_object, urls, fetch_img_timeout_ms,
-  min_img_size, max_img_size, verbose) {
+  min_img_size, max_img_size) {
   const img_url_string = url_object.origin + '/favicon.ico';
-  const fetch_promise = send_img_head_request(img_url_string,
-    fetch_img_timeout_ms, verbose);
+  const fetch_promise = fetch_image_head(img_url_string,
+    fetch_img_timeout_ms);
   let response;
   try {
     response = await fetch_promise;
   } catch(error) {
-    if(verbose)
-      console.debug(error);
+    DEBUG(error);
     return;
   }
 
@@ -194,29 +184,28 @@ async function lookup_origin(conn, url_object, urls, fetch_img_timeout_ms,
       response.size <= max_img_size)) {
     if(conn)
       await db_put_entries(conn, response.response_url_string, urls);
-    if(verbose)
-      console.debug('Found origin icon', url_object.href,
-        response.response_url_string);
+    DEBUG('Found origin icon', url_object.href,
+      response.response_url_string);
     return response.response_url_string;
   }
 }
 
-async function fetch_doc_silently(url_object, fetch_html_timeout_ms, verbose) {
+async function fetch_doc_silently(url_object, fetch_html_timeout_ms) {
   const fetch_promise = fetch_doc(url_object.href, fetch_html_timeout_ms);
   try {
     return await fetch_promise;
   } catch(error) {
-    if(verbose)
-      console.log(error);
+    DEBUG(error);
   }
 }
 
 // TODO: rename to something like db_setup
-async function setup(name, version, verbose) {
+// TODO: use local variable, not favicon.open
+async function setup(name, version) {
   // TODO: timeout_ms should be param
   let conn, timeout_ms;
   try {
-    conn = await favicon.open(name, version, timeout_ms, verbose);
+    conn = await favicon.open(name, version, timeout_ms);
   } finally {
     if(conn)
       conn.close();
@@ -228,10 +217,9 @@ async function setup(name, version, verbose) {
 // @param version {Number} optional, indexedDB database version
 // @param timeout_ms {Number} optional, maximum amount of time to wait when
 // connecting to indexedDB before failure
-// @param verbose {Boolean} optional, whether to log messages to console
 // @throws {TypeError} invalid timeout (any other errors occur within promise)
 // @returns {Promise} resolves to open IDBDatabase instance
-async function open(name, version, timeout_ms, verbose) {
+async function open(name, version, timeout_ms) {
   if(typeof name === 'undefined')
     name = 'favicon-cache';
   if(typeof version === 'undefined')
@@ -240,7 +228,7 @@ async function open(name, version, timeout_ms, verbose) {
     timeout_ms = 100;
 
   // In the case of a connection blocked event, eventually timeout
-  const connect_promise = create_open_promise(name, version, verbose);
+  const connect_promise = create_open_promise(name, version);
   const error_message = 'Connecting to indexedDB database ' + name +
     ' timed out.';
   const timeout_promise = reject_after_timeout(timeout_ms, error_message);
@@ -249,10 +237,10 @@ async function open(name, version, timeout_ms, verbose) {
 }
 
 // TODO: improve this function name to clarify it is related to db
-function create_open_promise(name, version, verbose) {
+function create_open_promise(name, version) {
   return new Promise(function(resolve, reject) {
     const request = indexedDB.open(name, version);
-    request.onupgradeneeded = favicon_db_upgrade.bind(request, verbose);
+    request.onupgradeneeded = favicon_db_upgrade;
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
     request.onblocked = console.warn;
@@ -260,15 +248,13 @@ function create_open_promise(name, version, verbose) {
 }
 
 // TODO: simplify this function name?
-function favicon_db_upgrade(verbose, event) {
+function favicon_db_upgrade(event) {
   const conn = event.target.result;
-  if(verbose)
-    console.log('Creating or upgrading database', conn.name);
+  DEBUG('creating or upgrading database', conn.name);
 
   let store;
   if(!event.oldVersion || event.oldVersion < 1) {
-    if(verbose)
-      console.log('Creating favicon-cache object store');
+    DEBUG('Creating favicon-cache object store');
     store = conn.createObjectStore('favicon-cache', {
       'keyPath': 'pageURLString'
     });
@@ -278,8 +264,7 @@ function favicon_db_upgrade(verbose, event) {
   }
 
   if(event.oldVersion < 2) {
-    if(verbose)
-      console.log('Creating dateUpdated index');
+    DEBUG('Creating dateUpdated index');
     store.createIndex('dateUpdated', 'dateUpdated');
   }
 }
@@ -363,7 +348,7 @@ function db_put_entries(conn, icon_url_string, page_urls) {
 }
 
 // Finds all expired entries in the database and removes them
-async function compact(name, version, max_age_ms, verbose) {
+async function compact(name, version, max_age_ms) {
   if(typeof max_age_ms === 'undefined')
     max_age_ms = default_max_age_ms;
 
@@ -371,7 +356,7 @@ async function compact(name, version, max_age_ms, verbose) {
 
   try {
 
-    conn = await open(name, version, conn_timeout_ms, verbose);
+    conn = await open(name, version, conn_timeout_ms);
     const expired_entries = await db_find_expired_entries(conn, max_age_ms);
     const urls = [];
     for(const entry of expired_entries)
@@ -473,13 +458,11 @@ function detect_redirect(request_url_string, response_url_string) {
   return request_url_object.href !== response_url_object.href;
 }
 
-
-
 // TODO: this functionality probably belongs in a separate module
 // Sends a HEAD request for the given image.
 // @param url_string {String}
 // @returns a simple object with props imageSize and response_url_string
-async function send_img_head_request(url_string, timeout_ms, verbose) {
+async function fetch_image_head(url_string, timeout_ms) {
   const headers = {'Accept': 'image/*'};
   const options = {};
   options.credentials = 'omit';
@@ -497,12 +480,13 @@ async function send_img_head_request(url_string, timeout_ms, verbose) {
   ASSERT(response_is_type_image);
 
   const output_response = {};
-  output_response.size = get_response_content_length(response, verbose);
+  output_response.size = response_get_content_length(response);
   output_response.response_url_string = response.url;
   return output_response;
 }
 
-function get_response_content_length(response, verbose) {
+// TODO: move to response.js in fetch or net folder
+function response_get_content_length(response) {
   const content_length_string = response.headers.get('Content-Length');
   const radix = 10;
   const content_length = parseInt(content_length_string, radix);
@@ -510,8 +494,8 @@ function get_response_content_length(response, verbose) {
 }
 
 function response_has_content(response) {
-  const STATUS_NO_CONTENT = 204;
-  return response.status !== STATUS_NO_CONTENT;
+  const HTTP_STATUS_NO_CONTENT = 204;
+  return response.status !== HTTP_STATUS_NO_CONTENT;
 }
 
 function response_is_type_html(response) {

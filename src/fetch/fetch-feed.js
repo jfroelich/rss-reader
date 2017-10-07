@@ -54,7 +54,7 @@ async function fetch_feed(url_string, timeout_ms, is_accept_html) {
   output_response.text = await response.text();
   output_response.requestURLString = url_string;
   output_response.responseURLString = response.url;
-  output_response.lastModifiedDate = get_last_modified_date(response);
+  output_response.lastModifiedDate = response_get_last_modified_date(response);
   output_response.redirected = detect_redirect(url_string, response.url);
   return output_response;
 }
@@ -105,7 +105,8 @@ function assert_response_type_valid(response, url_string, allow_html) {
   ASSERT(types.includes(type_string));
 }
 
-function get_last_modified_date(response) {
+// TODO: move to response.js
+function response_get_last_modified_date(response) {
   const last_modified_string = response.headers.get('Last-Modified');
   if(last_modified_string)
     try {

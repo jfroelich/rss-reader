@@ -2,7 +2,7 @@
 
 'use strict';
 
-function sanitize_html_document(doc, verbose) {
+function sanitize_html_document(doc) {
 
   // Remove misc elements, generally style elements
   const misc_selector = [
@@ -11,7 +11,6 @@ function sanitize_html_document(doc, verbose) {
     'font', 'plaintext', 'small', 'tt'
   ].join(',');
   unwrap_elements(doc.body, misc_selector);
-
 
   transform_form_elements(doc.body);
   unwrap_hidden_elements(doc.body);

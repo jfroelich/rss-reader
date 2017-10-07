@@ -25,8 +25,6 @@ could emit a token type along with the token value. also, I dont like the
 idea of this controlling the buffering, by using a callback i let the caller
 decide how long to hold on to previous tokens, instead of this demanding to
 hold onto the entire thing.
-* maybe provide conditional verbose param that if set provides detailed
-logging to console?
 * is this kind of brittle? Maybe a scanner generator tool would be
 better. Would need to research.
 * isn't there a fundamental issue where if this differs from native

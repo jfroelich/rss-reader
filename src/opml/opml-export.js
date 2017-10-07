@@ -1,36 +1,42 @@
+// Library for exporting feeds to opml file
+
 // Dependencies
-// reader-db.js
-// opml-document.js
 // feed.js
+// opml.js
+// reader-db.js
+// xml.js
 
-
-(function(exports) {
-'use strict';
-
-// Downloads an xml file that is an opml file containing the feeds from
-// the database
+// Triggers the download of an xml file that is an opml file containing the
+// feeds from the reader database
+// @param title {String} optional, value of the <title> element in the file
+// @param file_name {String} optional, suggested file name
+// TODO: do not throw in the usual case, and return status/error codes instead
+// TODO: reintroduce database connection as parameter, instead of hard coding.
+// This requires more work and boilerplate for the caller, but it is the
+// caller's job to manage that complexity, and the convenience here is not
+// worth it because the hard coupling leads to overly rigid constraints
 async function opml_export(title, file_name) {
-  // Allow exceptions to bubble
-  const feeds = await load_feeds();
+  'use strict';
 
-  // This does not check the array length, just its definedness
+  // Allow exceptions to bubble
+  const feeds = await opml_export_db_get_feeds();
   ASSERT(feeds);
 
-  const opml_doc = create_opml_document(feeds, title);
-  const xml_doc = opml_doc.doc;
-  const xml_blob = create_opml_blob(xml_doc);
+  const xml_doc = opml_export_create_document(feeds, title);
+  const xml_blob = xml_to_blob(xml_doc);
   const object_url = URL.createObjectURL(xml_blob);
   const anchor_element = document.createElement('a');
   anchor_element.setAttribute('download', file_name);
   anchor_element.href = object_url;
-
-  // Note there is no need to attach the anchor prior to click
+  // There is no need to attach the anchor prior to click
   anchor_element.click();
   URL.revokeObjectURL(object_url);
 }
 
-// May throw an exception
-async function load_feeds() {
+// Helper function that loads feeds from the database
+// NOTE: may throw
+async function opml_export_db_get_feeds() {
+  'use strict';
   let conn;
   let feeds = [];
   try {
@@ -44,25 +50,24 @@ async function load_feeds() {
   return feeds;
 }
 
-// Given an array of feed objects, create a new OPMLDocument instance
-function create_opml_document(feeds, title) {
+// Creates an opml document
+// @param feeds {Array} an array of feed objects
+// @param title {String} optional value to store in <title> element
+// @returns {Document} an opml document
+function opml_export_create_document(feeds, title) {
+  'use strict';
   ASSERT(feeds);
-
-  const doc = new OPMLDocument();
-
-  if(title)
-    doc.updateTitle(title);
-
-  for(const feed of feeds) {
-    const outline = create_outline(feed);
-    doc.appendOutlineObject(outline);
-  }
-
+  const doc = opml_create_document();
+  opml_update_title(doc, title);
+  for(const feed of feeds)
+    opml_append_outline_object(doc, opml_export_feed_to_outline(feed));
   return doc;
 }
 
 // Convert a feed object into an outline object
-function create_outline(feed) {
+function opml_export_feed_to_outline(feed) {
+  'use strict';
+  ASSERT(feed);
   const outline = {};
   outline.type = feed.type;
   outline.xmlUrl = feed_get_top_url(feed);
@@ -71,14 +76,3 @@ function create_outline(feed) {
   outline.htmlUrl = feed.link;
   return outline;
 }
-
-// Expects an xml document object as input (not an OPMLDocument)
-function create_opml_blob(doc) {
-  const serializer = new XMLSerializer();
-  const xml_string = serializer.serializeToString(doc);
-  return new Blob([xml_string], {'type': 'application/xml'});
-}
-
-exports.opml_export = opml_export;
-
-}(this));

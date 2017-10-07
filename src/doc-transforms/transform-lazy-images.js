@@ -1,7 +1,7 @@
 (function(exports) {
 'use strict';
 
-function transform_lazy_imgs(doc, verbose) {
+function transform_lazy_images(doc) {
   const lazy_img_attrs = [
     'load-src',
     'data-src',
@@ -18,7 +18,7 @@ function transform_lazy_imgs(doc, verbose) {
   let num_imgs_modified = 0;
   const images = doc.getElementsByTagName('img');
   for(const img of images) {
-    if(is_not_lazy_img(img))
+    if(image_has_source(img))
       continue;
 
     for(const lazy_src_attr_name of lazy_img_attrs) {
@@ -28,8 +28,7 @@ function transform_lazy_imgs(doc, verbose) {
 
           img.removeAttribute(lazy_src_attr_name);
           img.setAttribute('src', url_string);
-          if(verbose)
-            console.debug('Transformed lazily loaded image', img);
+          DEBUG('transformed lazily loaded image', img);
           num_imgs_modified++;
           break;
         }
@@ -40,15 +39,17 @@ function transform_lazy_imgs(doc, verbose) {
   return num_imgs_modified;
 }
 
-function is_not_lazy_img(img) {
+// TODO: also has source if within picture and picture has <source>
+function image_has_source(img) {
   return img.hasAttribute('src') || img.hasAttribute('srcset');
 }
 
 // Only minor validation for speed
+// TODO: move to url.js
 function is_valid_url_string(url_string) {
   return url_string && !url_string.trim().includes(' ');
 }
 
-exports.transform_lazy_imgs = transform_lazy_imgs;
+exports.transform_lazy_images = transform_lazy_images;
 
 }(this));
