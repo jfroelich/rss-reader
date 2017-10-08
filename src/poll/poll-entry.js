@@ -1,15 +1,20 @@
 (function(exports) {
 'use strict';
 
-async function poll_entry(reader_conn, icon_conn, feed, entry,
+async function poll_entry(entry, reader_conn, icon_conn, feed,
   fetch_html_timeout_ms, fetch_img_timeout_ms) {
 
+  // Cascade properties from feed to entry
+  // TODO: I do not feel like it is this function's responsibility to do this.
+  // I think the caller should be doing this prior to calling this function.
+  // In fact, I would go as far as to say that feed should not be a parameter
+  // to this function.
   entry.feed = feed.id;
   entry.feedTitle = feed.title;
 
-  // TODO: this should actually be an assert, I think. Or not? Where is entry
-  // initially validated? This might be the first or only place, in which
-  // case this is definitely not an assert, just a basic filter.
+  // This is the first validation of the entry from the fetched xml document.
+  // The entry may be invalid. Validate it. This is not a programming error,
+  // just bad data, so it would be wrong to assert.
   if(!entry_has_valid_url(entry))
     return false;
 
@@ -17,7 +22,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
 
   if(is_unpollable_url(url_string))
     return false;
-  if(await reader_db.find_entry_by_url(reader_conn, url_string))
+  if(await reader_db_find_entry_by_url(reader_conn, url_string))
     return false;
 
   const rewritten_url_string = rewrite_url(url_string);
@@ -26,7 +31,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
     url_string = rewritten_url_string;
     if(is_unpollable_url(url_string))
       return false;
-    if(await reader_db.find_entry_by_url(reader_conn, url_string))
+    if(await reader_db_find_entry_by_url(reader_conn, url_string))
       return false;
   }
 
@@ -43,7 +48,7 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
     url_string = response.responseURLString;
     if(is_unpollable_url(url_string))
       return false;
-    if(await reader_db.find_entry_by_url(reader_conn, url_string))
+    if(await reader_db_find_entry_by_url(reader_conn, url_string))
       return false;
     entry_append_url(entry, url_string);
   }
@@ -51,8 +56,8 @@ async function poll_entry(reader_conn, icon_conn, feed, entry,
   await entry_update_favicon(entry, icon_conn, feed.faviconURLString);
   const entry_content = await response.text();
 
-  const entry_document = parse_html(entry_content);
-  if(!entry_document)
+  const [status, entry_document] = html_parse_from_string(entry_content);
+  if(status !== STATUS_OK)
     return false;
 
   // TODO: the functions prepare_local_entry and prepare_remote_entry should
@@ -69,12 +74,12 @@ async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms) {
   // TODO: several of these calls should be moved into poll_doc_prep
 
   // This must occur before setting image dimensions
-  transform_telemetry_elements(doc);
+  lonestar_transform_document(doc);
 
   // This should generally occur prior to transform_lazy_images, and it should
   // definitely occur prior to setting image dimensions. Does not matter if
   // before or after resolving urls.
-  transform_responsive_images(doc);
+  responsive_transform_document(doc);
 
   // This must occur before removing sourceless images
   transform_lazy_images(doc);
@@ -150,7 +155,7 @@ function is_unpollable_url(url_string) {
 // TODO: the prep work should actually be a separate function decoupled from
 // this function. It creates more boilerplate in the caller context but it
 // seems like a better design. The caller should call prep, get a prepped
-// entry object, then call reader_db.put_entry directly
+// entry object, then call reader_db_put_entry directly
 // TODO: rename, entry prefix
 // TODO: entry should be first param
 async function prep_and_store_entry(reader_conn, entry) {
@@ -163,7 +168,7 @@ async function prep_and_store_entry(reader_conn, entry) {
   storable_entry.dateCreated = new Date();
 
   try {
-    const added_entry = await reader_db.put_entry(reader_conn, storable_entry);
+    const added_entry = await reader_db_put_entry(reader_conn, storable_entry);
     return true;
   } catch(error) {
     DEBUG(entry_get_top_url(entry), error);
@@ -180,14 +185,14 @@ function prepare_local_entry(entry) {
 
   let doc;
   try {
-    doc = parse_html(entry.content);
+    doc = html_parse_from_string(entry.content);
   } catch(error) {
     DEBUG(error);
     return entry;
   }
 
   // TODO: this should be part of poll_doc_prep not external
-  transform_telemetry_elements(doc);
+  lonestar_transform_document(doc);
 
   poll_doc_prep(doc, url_string);
   const content = doc.documentElement.outerHTML.trim();

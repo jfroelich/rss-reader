@@ -2,7 +2,6 @@
 
 'use strict';
 
-
 async function register_dw_link_filter_rule() {
   if(localStorage.DW_LINK_RULE_ID)
     return;
@@ -89,55 +88,57 @@ async function browser_action_on_click(event) {
 
 chrome.browserAction.onClicked.addListener(browser_action_on_click);
 
-function on_alarm(alarm) {
-  console.log('Alarm wokeup:', alarm.name);
-
-  switch(alarm.name) {
-  case 'archive':
-    archive_entries().catch(console.warn);
-    break;
-  case 'poll':
-    const flags = 0; // all off
-    let idle_period_secs, recency_period_ms, fetch_feed_timeout_ms,
-      fetch_html_timeout_ms, fetch_image_timeout_ms;
-    const promise = poll_feeds(idle_period_secs, recency_period_ms,
-      fetch_feed_timeout_ms, fetch_html_timeout_ms,
-      fetch_image_timeout_ms, flags);
-    promise.catch(console.warn);
-    break;
-  case 'remove-entries-missing-urls':
-    remove_entries_missing_urls().catch(console.warn);
-    break;
-  case 'remove-orphaned-entries':
-    remove_orphaned_entries().catch(console.warn);
-    break;
-  case 'refresh-feed-icons':
-    refresh_feed_icons().catch(console.warn);
-    break;
-  case 'compact-favicon-db':
-    let name, version, max_age_ms;
-    favicon.compact(name, version, max_age_ms).catch(console.warn);
-    break;
-  default:
-    console.warn('Unknown alarm:', alarm.name);
-    break;
-  }
-}
-
-chrome.alarms.onAlarm.addListener(on_alarm);
-
-chrome.alarms.create('archive', {'periodInMinutes': 60 * 12});
-chrome.alarms.create('poll', {'periodInMinutes': 60});
-chrome.alarms.create('remove-entries-missing-urls',
-  {'periodInMinutes': 60 * 24 * 7});
-chrome.alarms.create('remove-orphaned-entries',
-  {'periodInMinutes': 60 * 24 * 7});
-chrome.alarms.create('refresh-feed-icons',
-  {'periodInMinutes': 60 * 24 * 7 * 2});
-chrome.alarms.create('compact-favicon-db', {'periodInMinutes': 60 * 24 * 7});
-
-
 exports.register_dw_link_filter_rule = register_dw_link_filter_rule;
 exports.unregister_dw_link_filter_rule = unregister_dw_link_filter_rule;
 
 }(this));
+
+/*
+
+# About
+
+This file should only be loaded in the background page of the extension. This
+installs hooks in Chrome to allow the extension to respond various events.
+
+* Sets up the indexedDB databases
+* Registers alarms
+* Sets up declarativeWebRequest filters
+
+# TODO
+
+* Change alarm code so that alarms are only registered upon install
+event instead of on every background page load?
+* Make it easy to remove alarms
+* maybe rename to background-page.js to clarify
+
+# Link header issue
+
+See https://stackoverflow.com/questions/45352300
+See https://developer.chrome.com/extensions/declarativeWebRequest
+
+NOTE: need to add declarativeWebRequest permission to manifest otherwise
+chrome.declarativeWebRequest is undefined
+
+Copied text from google documentation: Rules are persistent across browsing
+sessions. Therefore, you should install rules during extension installation
+time using the runtime.onInstalled event. Note that this event is also
+triggered when an extension is updated. Therefore, you should first clear
+previously installed rules and then register new rules.
+
+TODO: I am occasionally seeing failed fetch messages. The rule may be doing
+something strange.
+TODO: restrict to only requests made by this extension, or find out if this is
+by default
+
+TODO: restrict to preventing script, allow css and image, because some of my
+fetches are for that purpose
+
+NOTE: even with current code active the errors still appear.
+
+# TODO: Try not to rely on chrome extension features
+
+* Avoid relying on chrome.alarms if possible. Is there a non chrome specific
+way to do alarms? setInterval would not allow the page to unload. Nor would it
+wake up the background page?
+
+*/

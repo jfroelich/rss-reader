@@ -10,7 +10,17 @@
 // working.
 // @param query_string {String} a search string using Google search syntax
 // @param timeout_ms {Number} a positive integer, optional
-async function search_google_feeds(query_string, timeout_ms) {
+
+/*
+# TODO
+
+* Based on errors in the console Chrome may implicitly be treating
+204 as a network error, based on seeing "no content errors" that occur
+sometimes when doing fetch. There may not be a need to explicitly check for
+this error code. I would need to test further.
+*/
+
+async function google_feeds_api_search(query_string, timeout_ms) {
   'use strict';
   ASSERT(typeof query_string === 'string');
   query_string = query_string.trim();

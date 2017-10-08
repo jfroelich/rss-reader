@@ -11,7 +11,7 @@ async function test_db() {
   let conn;
   try {
     console.log('Connecting to database', name);
-    conn = await reader_db.open(name, version, timeout_ms);
+    conn = await reader_db_open(name, version, timeout_ms);
     console.log('Closing connection to', name);
     conn.close();
     is_conn_closed = true;

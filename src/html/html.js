@@ -1,11 +1,25 @@
 // Utilities for working with html strings
 
+// Dependencies:
+// assert.js
+// debug.js
+// mime.js
+// status.js
+
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
 // replaced, like &#32; with space).
+// TODO: maybe allow some tags to stay but others not, like a whitelist
+// TODO: write tests
+// TODO: make lossless. right now entities are sometimes lost.
+// TODO: once tokenize_html is settled, migrate to tokenizer approach instead
+// of using html_parse_from_string, due to the lossy transform issue
 function html_replace_tags(input_string, replacement_string) {
   'use strict';
 
+  // TODO: not sure this assert is needed if html_parse_from_string can
+  // handle it
+  // TODO: this assert may belong after the !input_string check
   ASSERT(typeof input_string === 'string');
 
   // Fast case for empty strings
@@ -13,26 +27,47 @@ function html_replace_tags(input_string, replacement_string) {
   if(!input_string)
     return input_string;
 
-  // TODO: use parse_html
+  const [status, doc] = html_parse_from_string(input_string);
+  if(status !== STATUS_OK) {
+    DEBUG('failed to parse html when replacing tags');
+    // Brick wall the input due to XSS vulnerability
+    return 'Unsafe HTML redacted';
+  }
 
-  // Parse the html into a Document object
-  const doc = document.implementation.createHTMLDocument();
-  const body_element = doc.body;
-  body_element.innerHTML = input_string;
-
-  // The native solution is faster but its behavior may not be
-  // perfectly reproduced by the non native code below
+  // If there is no replacement_string, then use the built in serialization
+  // functionality of the textContent property getter. This is faster than
+  // a non-native solution, although it is opaque and therefore may have
+  // different behavior.
   if(!replacement_string)
-    return body_element.textContent;
+    return doc.body.textContent;
 
-  const node_iterator = doc.createNodeIterator(body_element,
-    NodeFilter.SHOW_TEXT);
+  // Shove the text nodes into an array and then join by replacement
+  const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   const node_values = [];
-  for(let node = node_iterator.nextNode(); node;
-    node = node_iterator.nextNode())
+  for(let node = it.nextNode(); node; node = it.nextNode())
     node_values.push(node.nodeValue);
   return node_values.join(replacement_string);
 }
+
+/*
+* I do not like how I have to do a regex test at the end of the function, this
+is yet another pass over the input. I would prefer a single pass algorithm.
+* I do not like how using the native parser at all is basically an XSS issue.
+It feels like there is a better approach that avoids XSS issues.
+* Using let/const caused deopt warnings about "unsupported phi use of const" in
+Chrome 55. This may no longer be an issue and I would prefer to use a consistent
+declaration style.
+* Double check the behavior of setting nodeValue or reading nodeValue. Clearly
+understand how it encodes or decodes implicitly.
+* There is an issue with truncation when the input string contains entities
+because of the implicit decoding that occurs. The truncation position is
+inaccurate. This currently truncates the decoded position, which is different
+than the nearest legal position in the encoded raw input.
+* If tokenize_html is implemented, this should probably switch to that and
+avoid using native parsing. This avoids the lossy issue, and possibly avoids
+the inaccurate position issue.
+* Write tests
+*/
 
 // Accepts an html input string and returns a truncated version of the input,
 // while maintaining a higher level of well-formedness over a naive truncation.
@@ -54,7 +89,7 @@ function html_truncate(html_string, position, extension_string) {
   let is_past_position = false;
   let total_length = 0;
 
-  // TODO: use parse_html
+  // TODO: use html_parse_from_string
 
   // Parse the html into a Document object
   const doc = document.implementation.createHTMLDocument();
@@ -81,4 +116,44 @@ function html_truncate(html_string, position, extension_string) {
 
   return /<html/i.test(html_string) ?
     doc.documentElement.outerHTML : doc.body.innerHTML;
+}
+
+
+
+// When html_string is a fragment, it will be inserted into a new document
+// using a default template provided by the browser, that includes a document
+// element and usually a body. If not a fragment, then it is merged into a
+// document with a default template.
+//
+// This does not throw when there is a syntax error, only when there is a
+// violation of an invariant condition. So unless there is a need to absolutely
+// guarantee trapping of exceptions, there is no need to enclose a call to this
+// function in a try/catch.
+// In the event of a parsing error, this returns undefined.
+function html_parse_from_string(html_string) {
+  'use strict';
+
+  const parser = new DOMParser();
+
+  // doc is guaranteed defined regardless of the validity of html_string
+  const doc = parser.parseFromString(html_string, MIME_TYPE_HTML);
+
+  const error_element = doc.querySelector('parsererror');
+  if(error_element) {
+    const unsafe_message = error_element.textContent;
+    DEBUG(unsafe_message);
+    return [ERR_PARSE];
+  }
+
+  // TODO: is this check appropriate? can an html document exist and be valid
+  // if this is ever not the case, under the terms of this app?
+  const lc_root_name = doc.documentElement.localName;
+  if(lc_root_name !== 'html') {
+    const unsafe_message = 'html parsing error: ' + lc_root_name +
+      ' is not html';
+    DEBUG(unsafe_message);
+    return [ERR_PARSE];
+  }
+
+  return [STATUS_OK, doc];
 }

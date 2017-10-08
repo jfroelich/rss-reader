@@ -128,7 +128,7 @@ function compact_entry(entry) {
 async function entry_mark_read(conn, id) {
   let entry;
   try {
-    entry = await reader_db.find_entry_by_id(conn, id);
+    entry = await reader_db_find_entry_by_id(conn, id);
   } catch(error) {
     DEBUG(error);
     return ERR_DB_OP;
@@ -142,7 +142,7 @@ async function entry_mark_read(conn, id) {
   entry.dateRead = entry.dateUpdated;
 
   try {
-    await reader_db.put_entry(conn, entry);
+    await reader_db_put_entry(conn, entry);
   } catch(error) {
     DEBUG(error);
     return ERR_DB_OP;

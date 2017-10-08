@@ -43,7 +43,7 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
   let icon_db_name, icon_db_version, conn_timeout_ms;
   let reader_db_name, reader_db_version;
 
-  const reader_open_promise = reader_db.open(reader_db_name, reader_db_version,
+  const reader_open_promise = reader_db_open(reader_db_name, reader_db_version,
     conn_timeout_ms);
   const icon_open_promise = favicon.open(icon_db_name, icon_db_version,
     conn_timeout_ms);
@@ -111,7 +111,7 @@ async function is_poll_startable(allow_metered_connections, ignore_idle_state,
 // TODO: should just accept flags variable
 async function find_pollable_feeds(reader_conn, ignore_recency_check,
   recency_period_ms) {
-  const feeds = await reader_db.get_feeds(reader_conn);
+  const feeds = await reader_db_get_feeds(reader_conn);
   if(ignore_recency_check)
     return feeds;
   const output_feeds = [];
@@ -204,7 +204,7 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
   storable_feed = object_filter_empty_props(storable_feed);
   storable_feed.dateUpdated = new Date();
 
-  await reader_db.put_feed(reader_conn, storable_feed);
+  await reader_db_put_feed(reader_conn, storable_feed);
 
   const resolutions = await poll_feed_entries(reader_conn, icon_conn,
     storable_feed, parse_feed_result.entries, fetch_html_timeout_ms,
@@ -225,7 +225,7 @@ function poll_feed_entries(reader_conn, icon_conn, feed, entries,
   entries = filter_dup_entries(entries);
   const promises = [];
   for(const entry of entries) {
-    const promise = poll_entry(reader_conn, icon_conn, feed, entry,
+    const promise = poll_entry(entry, reader_conn, icon_conn, feed,
       fetch_html_timeout_ms, fetch_img_timeout_ms);
     promises.push(promise);
   }

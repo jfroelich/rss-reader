@@ -8,19 +8,21 @@
 // reader-db.js
 // subscribe.js
 
-(function(exports) {
-'use strict';
 
-async function import_opml_files(files) {
+// Import the collection of opml files
+// @param files {FileList}
+// TODO: reintroduce conn parameters
+async function opml_import(files) {
+  'use strict';
   ASSERT(files);
   DEBUG('importing %d files', files.length);
 
   let reader_conn, icon_conn, import_resolutions;
   try {
-    const conns = await open_dbs();
+    const conns = await opml_import_open_dbs();
     reader_conn = conns[0];
     icon_conn = conns[1];
-    import_resolutions = await import_files_internal(files, reader_conn,
+    import_resolutions = await opml_import_files(files, reader_conn,
       icon_conn);
   } finally {
     if(reader_conn)
@@ -36,10 +38,11 @@ async function import_opml_files(files) {
 }
 
 // Returns promise resolving to [open_reader_conn, open_icon_conn]
-function open_dbs() {
+function opml_import_open_dbs() {
+  'use strict';
   let reader_db_name, reader_db_version, reader_db_connect_timeout_ms;
   let icon_db_name, icon_db_version, icon_db_conn_timeout_ms;
-  const reader_conn_promise = reader_db.open(reader_db_name, reader_db_version,
+  const reader_conn_promise = reader_db_open(reader_db_name, reader_db_version,
     reader_db_connect_timeout_ms);
   const icon_conn_promise = favicon.open(icon_db_name, icon_db_version,
     icon_db_conn_timeout_ms);
@@ -47,19 +50,20 @@ function open_dbs() {
   return Promise.all(conn_promises);
 }
 
-// Concurrently import files
-function import_files_internal(files, reader_conn, icon_conn) {
+function opml_import_files(files, reader_conn, icon_conn) {
+  'use strict';
   const promises = [];
   for(const file of files)
-    promises.push(import_file_silently(file, reader_conn, icon_conn));
+    promises.push(opml_import_file_silently(file, reader_conn, icon_conn));
   return Promise.all(promises);
 }
 
-// Decorates import_file to avoid Promise.all failfast behavior
-async function import_file_silently(file, reader_conn, icon_conn) {
+// Decorates opml_import_file to avoid Promise.all failfast behavior
+async function opml_import_file_silently(file, reader_conn, icon_conn) {
+  'use strict';
   let num_feeds_added = 0;
   try {
-    num_feeds_added = await import_file(file, reader_conn, icon_conn);
+    num_feeds_added = await opml_import_file(file, reader_conn, icon_conn);
   } catch(error) {
     DEBUG(error);
   }
@@ -68,13 +72,14 @@ async function import_file_silently(file, reader_conn, icon_conn) {
 
 // Returns number of feeds added
 // TODO: if this no longer throws in the normal case, maybe I no longer need
-// import_file_silently? Because now the Promise.all behavior would only
-// failfast if there was a real, unexpected error
+// opml_import_file_silently? Because now the Promise.all behavior would
+// only fail fast if there was a real, unexpected error
 // TODO: instead of returning 0, return -1 to indicate error, and ensure
 // caller is aware and does not naively sum result. Or return identified
 // error codes? But it could also be 0 in case of no error but no new
 // subscriptions.
-async function import_file(file, reader_conn, icon_conn) {
+async function opml_import_file(file, reader_conn, icon_conn) {
+  'use strict';
   ASSERT(file);
   DEBUG('Importing opml file', file.name);
 
@@ -96,11 +101,8 @@ async function import_file(file, reader_conn, icon_conn) {
     return 0;
   }
 
-  // opml_parse_from_string returns null on error and does not throw in the
-  // normal case
-
-  const document = opml_parse_from_string(file_content);
-  if(!document) {
+  let [status, document] = opml_parse_from_string(file_content);
+  if(status !== STATUS_OK) {
     DEBUG('error parsing opml file', file.name);
     return 0;
   }
@@ -118,12 +120,12 @@ async function import_file(file, reader_conn, icon_conn) {
     return 0;
   }
 
-  const unique_outlines = aggregate_outlines_by_xmlurl(outlines);
+  const unique_outlines = opml_import_group_outlines(outlines);
   const dup_outline_count = outlines.length - unique_outlines.length;
   DEBUG('found %d duplicates in file', dup_outline_count, file.name);
 
-  normalize_outline_links(unique_outlines);
-  const feeds = convert_outlines_to_feeds(unique_outlines);
+  opml_import_normalize_links(unique_outlines);
+  const feeds = opml_import_outlines_to_feeds(unique_outlines);
 
   const sub_results = await sub_add_all(feeds, reader_conn, icon_conn);
 
@@ -139,7 +141,8 @@ async function import_file(file, reader_conn, icon_conn) {
 }
 
 // Filter duplicates, favoring earlier in document order
-function aggregate_outlines_by_xmlurl(outlines) {
+function opml_import_group_outlines(outlines) {
+  'use strict';
   const unique_urls = [];
   const unique_outlines = [];
   for(const outline of outlines) {
@@ -152,7 +155,8 @@ function aggregate_outlines_by_xmlurl(outlines) {
 }
 
 // Normalize and validate each outline's link property
-function normalize_outline_links(outlines) {
+function opml_import_normalize_links(outlines) {
+  'use strict';
   // Setting to undefined is preferred over deleting in order to maintain v8
   // object shape
   for(let outline of outlines) {
@@ -178,41 +182,27 @@ function normalize_outline_links(outlines) {
   }
 }
 
-function convert_outlines_to_feeds(outlines) {
+function opml_import_outlines_to_feeds(outlines) {
+  'use strict';
   const feeds = [];
-  for(const outline of outlines) {
-    const feed = convert_outline_to_feed(outline);
-    feeds.push(feed);
-  }
+  for(const outline of outlines)
+    feeds.push(opml_import_outline_to_feed(outline));
   return feeds;
 }
 
-function convert_outline_to_feed(outline) {
+function opml_import_outline_to_feed(outline) {
+  'use strict';
   const feed = {};
-
-  if(outline.type) {
+  if(outline.type)
     feed.type = outline.type;
-  }
-
-  if(outline.title) {
+  if(outline.title)
     feed.title = outline.title;
-  } else if(outline.text) {
+  if(outline.text)
     feed.text = outline.text;
-  }
-
-  if(outline.description) {
+  if(outline.description)
     feed.description = outline.description;
-  }
-
-  if(outline.htmlUrl) {
+  if(outline.htmlUrl)
     feed.link = outline.htmlUrl;
-  }
-
   feed_append_url(feed, outline.xmlUrl);
-
   return feed;
 }
-
-exports.import_opml_files = import_opml_files;
-
-}(this));

@@ -60,7 +60,7 @@ async function derive_img_dims(image, allowed_protocols, timeout_ms) {
   if(image.hasAttribute('width') && image.hasAttribute('height'))
     return;
 
-  const style_dimensions = extract_element_dimensions_from_inline_style(image);
+  const style_dimensions = element_get_dimensions(image);
   if(style_dimensions) {
     result.width = style_dimensions.width;
     result.height = style_dimensions.height;
@@ -91,17 +91,6 @@ async function derive_img_dims(image, allowed_protocols, timeout_ms) {
     result.height = fetched_dimensions.height;
     result.hint = 'fetch';
     return result;
-  }
-}
-
-// Returns {'width': int, 'height': int} or undefined
-function extract_element_dimensions_from_inline_style(element) {
-  if(element.hasAttribute('style')) {
-    const dimensions = {}, radix = 10;
-    dimensions.width = parseInt(element.style.width, radix);
-    dimensions.height = parseInt(element.style.height, radix);
-    return (isNaN(dimensions.width) || isNaN(dimensions.height)) ?
-      undefined : dimensions;
   }
 }
 
@@ -181,6 +170,7 @@ function fetch_image_dimensions_with_timeout(url_object, timeout_ms) {
   }
 }
 
+// TODO: this should be in fetch lib
 function fetch_image_dimensions(url_object) {
   function executor(resolve, reject) {
     const proxy = new Image();// In document running this script
@@ -209,3 +199,40 @@ function fetch_image_dimensions(url_object) {
 exports.set_img_dimensions = set_img_dimensions;
 
 }(this));
+
+/*
+
+# About
+
+Ensures all images have width and height attributes
+
+# TODO
+
+* Change to not fetch if only one dimension is set. In this case just assume the
+image is a square and set the missing dimension to the known dimension. I think
+this is accurate most of the time. Or make it a parameter, a policy parameter
+on whether to allow for either one or to require both. Also no need to even
+modify if one is present. Instead make the area algorithm assume square.
+* fetch img may need to use the fetch library internally, because
+I want to avoid sending cookies and such.
+* Undecided on whether fetch should accept a doc parameter so
+that where the image element is created is configurable. Maybe it is a security
+concern if loading an image is somehow XSS vulnerable? Maybe it is not safe to
+assume that new Image() works in all contexts?
+* This needs testing library that isolates specific branches of the code and
+asserts that each section works as expected.
+* Rather than use a custom error message when failing to fetch an image, look
+into whether there is some error property of the image or the event that can be
+used instead.
+* Finish the infer from filename stuff
+
+# Notes on possible fetch image issue
+
+See https://stackoverflow.com/questions/4776670 . Apparently the proper
+convention is to always trigger the fetch after attaching the handlers?
+
+# Notes on data uris
+
+fetch works with data uris. Can use the same proxy technique as fetch to
+get the dimensions.
+*/

@@ -5,7 +5,19 @@ const cli = {};
 // Archive entries from the console
 cli.archive_entries = async function() {
   let max_age_ms;
-  return await archive_entries(max_age_ms);
+  let conn;
+  let status;
+  try {
+    conn = await reader_db_open();
+    status = await archive_entries(conn, max_age_ms);
+  } finally {
+    if(conn)
+      conn.close();
+  }
+
+  if(status !== STATUS_OK) {
+    DEBUG('archive_entries failed with status', status);
+  }
 };
 
 // Check for updated console from the console

@@ -1,3 +1,12 @@
+// Lazy image handling lib
+
+// Dependencies:
+// assert.js
+// debug.js
+// image.js
+// url.js
+
+/*
 
 # About
 
@@ -59,10 +68,58 @@ able to try and infer from srcset?
 * &gt;img class="lazyload" src="data:..." data-src="url"&gt;
 * &lt;img data-path="url"&gt;
 * &lt;img data-flickity-lazyload="url"&gt;
-* &lt;img class=​"media__image media__image--responsive"  data-src-mini=​"url" data-src-xsmall=​"url" data-src-small=​"url" data-src-medium=​"url" data-src-large=​"url" data-src-full16x9=​"url" data-src-mini1x1=​"url" src=​"data-url"&gt;​
-* &lt;img data-baseurl="url"  srcset="url 350w, url 400w" sizes="(min-width: 1260px) 750px, (min-width: 1060px) calc(100vw - 559px), (min-width: 840px) calc(100vw - 419px), (min-width: 800px) 800px, 100.1vw"&gt;
+* &lt;img class=​"media__image media__image--responsive"
+data-src-mini=​"url" data-src-xsmall=​"url" data-src-small=​"url"
+data-src-medium=​"url" data-src-large=​"url" data-src-full16x9=​"url"
+data-src-mini1x1=​"url" src=​"data-url"&gt;​
+* &lt;img data-baseurl="url"  srcset="url 350w, url 400w"
+sizes="(min-width: 1260px) 750px, (min-width: 1060px)
+calc(100vw - 559px), (min-width: 840px) calc(100vw - 419px),
+(min-width: 800px) 800px, 100.1vw"&gt;
 
 
-# TODO: Images using a data url object placeholder and a normal image in alt attr
+# TODO: Images using a data url object placeholder and a normal image in alt
+attr
 
 &lt;img data-lazy-img="https://...jpg" src="data:..."&gt;
+
+*/
+
+function transform_lazy_images(doc) {
+  'use strict';
+  ASSERT(doc);
+  const lazy_img_attrs = [
+    'load-src',
+    'data-src',
+    'data-original-desktop',
+    'data-baseurl',
+    'data-lazy',
+    'data-img-src',
+    'data-original',
+    'data-adaptive-img',
+    'data-imgsrc',
+    'data-default-src'
+  ];
+
+  let num_imgs_modified = 0;
+  const images = doc.getElementsByTagName('img');
+  for(const img of images) {
+    if(image_has_source(img))
+      continue;
+
+    for(const lazy_src_attr_name of lazy_img_attrs) {
+      if(img.hasAttribute(lazy_src_attr_name)) {
+        const url_string = img.getAttribute(lazy_src_attr_name);
+        if(url_is_valid(url_string)) {
+          img.removeAttribute(lazy_src_attr_name);
+          img.setAttribute('src', url_string);
+          DEBUG('transformed lazily loaded image', img);
+          num_imgs_modified++;
+          break;
+        }
+      }
+    }
+  }
+
+  return num_imgs_modified;
+}

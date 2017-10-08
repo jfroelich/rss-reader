@@ -1,5 +1,8 @@
 // File utilities
 
+// Dependencies
+// assert.js
+
 // Returns a promise that resolves to the text of the file
 function file_read_as_text(file) {
   'use strict';
@@ -11,11 +14,13 @@ function file_read_as_text(file) {
   });
 }
 
+// Returns true if the file has an xml mime type
 // TODO: this should be better implemented as something like
 // file_type_is_supported with param file, and param that is array of strings
 // of mime types. That way a single function is used instead of several for
 // every mime type
 function file_is_xml_type(file) {
+  'use strict';
   ASSERT(file);
   const file_type = file.type;
   let normal_type = file_type || '';

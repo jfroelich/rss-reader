@@ -47,7 +47,7 @@ async function slide_mark_read(conn, slide_element) {
   let name, version, conn_timeout_ms;
   try {
     if(!conn) {
-      conn = await reader_db.open(name, version, conn_timeout_ms);
+      conn = await reader_db_open(name, version, conn_timeout_ms);
       is_local_conn = true;
     }
 
@@ -83,11 +83,11 @@ async function append_slides(conn) {
 
   try {
     if(!conn) {
-      conn = await reader_db.open(name, version, conn_timeout_ms);
+      conn = await reader_db_open(name, version, conn_timeout_ms);
       is_local_conn = true;
     }
 
-    entries = await reader_db.load_unarchived_unread_entries(conn, offset,
+    entries = await reader_db_get_unarchived_unread_entries(conn, offset,
       limit);
   } catch(error) {
     DEBUG(error);
@@ -245,7 +245,7 @@ async function show_next_slide() {
   let conn, name, version, conn_timeout_ms;
 
   try {
-    conn = await reader_db.open(name, version, conn_timeout_ms);
+    conn = await reader_db_open(name, version, conn_timeout_ms);
 
     // Conditionally append more slides
     if(unread_slide_element_count < 2)

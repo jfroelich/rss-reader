@@ -3,10 +3,13 @@
 // NOTE: I decided to store within pagination module for now as that is the
 // only dependency. Eventually this should be a global module to have less DRY
 
+
+
 const domviz = {};
 
 // Returns true if an element is hidden. An element is hidden if any of its
 // ancestor nodes are hidden, or it is hidden due to its style properties.
+// TODO: deprecate, merge with element.js function element_is_hidden
 // TODO: look into whether inlie style is computed. E.g. if parent is hidden, then
 // does style of element itself inherit when accessed via style prop? Pretty sure
 // no inheritance but I should write an explicit test.
@@ -25,7 +28,7 @@ domviz.element_is_hidden = function(element) {
   if(element === body)
     return false;
 
-  // Ignore detached elements
+  // Ignore detached elements and elements outside of body
   // TODO: change to ASSERT
   if(!body.contains(element))
     throw new TypeError('element is not a descendant of body');

@@ -2,27 +2,27 @@
 'use strict';
 
 // Dependencies:
-// xml_parse_from_string
+// assert.js
+// status.js
+// xml.js
 
 // Parses the input string into a feed object
-// @param string {String} the text to parse
-// @throws error {Error} if a parsing error occurs or another type of error
+// @param xml_string {String} the text to parse
 // @returns {Object} an object representing the parsed feed and its entries
-function parse_feed(string) {
-  // Allow exceptions to bubble
-  const doc = xml_parse_from_string(string);
+function parse_feed(xml_string) {
+  let [status, doc] = xml_parse_from_string(xml_string);
+  if(status !== STATUS_OK) {
+    DEBUG('parse feed error');
+    return;
+  }
 
-  // If xml_parse_from_string returns undefined it means there was a
-  // parsing error.
-  // TODO: should not be an assert
-  ASSERT(doc);
-
-  return convert_doc_to_feed(doc);
+  return unmarshall_xml(doc);
 }
 
 // @param document {Document} an XML document representing a feed
 // @returns {Object} a simple object with properties feed and entries
-function convert_doc_to_feed(document) {
+function unmarshall_xml(document) {
+  ASSERT(document);
   const doc_element = document.documentElement;
   const doc_element_name = doc_element.localName.toLowerCase();
 

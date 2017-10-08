@@ -215,7 +215,7 @@ async function start_subscription(url_object) {
   // TODO: make this into a helper function that opens both connections
   const icon_conn_promise = favicon.open(icon_db_name, icon_db_version,
     connect_timeout_ms);
-  const reader_conn_promise = reader_db.open();
+  const reader_conn_promise = reader_db_open();
   const conn_promises = [reader_conn_promise, icon_conn_promise];
   const conn_promise = Promise.all(conn_promises);
 
@@ -287,8 +287,8 @@ async function start_subscription(url_object) {
 async function db_connect_then_find_feed_by_id(feed_id) {
   let conn;
   try {
-    conn = await reader_db.open();
-    return await reader_db.find_feed_by_id(conn, feed_id);
+    conn = await reader_db_open();
+    return await reader_db_find_feed_by_id(conn, feed_id);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -429,7 +429,7 @@ async function subscribe_form_on_submit(event) {
 
   try {
     ({query, entries} =
-      await search_google_feeds(query_string, search_timeout_ms));
+      await google_feeds_api_search(query_string, search_timeout_ms));
   } catch(error) {
     console.debug(error);
     return false;
@@ -633,7 +633,7 @@ async function unsubscribe_button_on_click(event) {
 
   let reader_conn;
   try {
-    reader_conn = await reader_db.open();
+    reader_conn = await reader_db_open();
     const num_entries_deleted = await sub_remove(feed_id_number,
       reader_conn);
   } catch(error) {
@@ -675,7 +675,7 @@ async function import_opml_uploader_on_change(event) {
   DEBUG('import_opml_uploader_on_change event', event);
 
   try {
-    await import_opml_files(uploader_input.files);
+    await opml_import(uploader_input.files);
   } catch(error) {
     console.warn(error);
   }
@@ -685,15 +685,24 @@ async function import_opml_uploader_on_change(event) {
   // incrementally updating it
 }
 
-// TODO: visual feedback in event of an error
+
 async function export_opml_button_onclick(event) {
   const title = 'Subscriptions';
   const file_name = 'subscriptions.xml';
-
+  let conn, status;
   try {
-    await opml_export(title, file_name);
+    conn = await reader_db_open();
+    status = await opml_export(conn, title, file_name);
   } catch(error) {
-    console.warn(error);
+    DEBUG(error);
+  } finally {
+    if(conn)
+      conn.close();
+  }
+
+  if(status !== STATUS_OK) {
+    // TODO: visual feedback in event of an error
+    console.warn('export failed with status', status);
   }
 }
 
@@ -705,8 +714,8 @@ async function init_subscriptions_section() {
   let conn;
   let feeds;
   try {
-    conn = await reader_db.open();
-    feeds = await reader_db.get_feeds(conn);
+    conn = await reader_db_open();
+    feeds = await reader_db_get_feeds(conn);
   } catch(error) {
     console.warn(error);
   } finally {

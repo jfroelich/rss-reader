@@ -5,22 +5,22 @@
 // status.js
 // xml.js
 
-// Parses the input string and returns a document. Returns undefined on error.
+// Parses the input string and returns a document
 function opml_parse_from_string(xml_string) {
   'use strict';
-  const doc = xml_parse_from_string(xml_string);
-  if(!doc) {
+  let [status, doc] = xml_parse_from_string(xml_string);
+  if(status !== STATUS_OK) {
     DEBUG('xml parse error');
-    return;
+    return [status];
   }
 
   const name = doc.documentElement.localName.toLowerCase();
   if(name !== 'opml') {
     DEBUG('documentElement not opml:', name);
-    return;
+    return [ERR_DOM];
   }
 
-  return doc;
+  return [STATUS_OK, doc];
 }
 
 // Updates the title of an opml document
@@ -181,7 +181,7 @@ function opml_normalize_outline_xmlurls(doc) {
 
 function opml_append_outline_object(doc, outline) {
   'use strict';
-  const element = opml_create_outline_element(outline);
+  const element = opml_create_outline_element(doc, outline);
   opml_append_outline_element(doc, element);
 }
 

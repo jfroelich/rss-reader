@@ -1,76 +1,116 @@
-(function(exports) {
-'use strict';
+// Library for working with the reader app's database
 
+// Dependencies:
+// debug.js
+
+// @private
+const READER_DB_DEBUG = true;
+
+// Opens a connection to the database. If version is greater than current
+// version then database upgrades. If timeout given then open fails if database
+// does not open within a certain amount of time.
+// @param name {String} database name
+// @param version {Number} optional version number
+// @param timeout_ms {Number} optional timeout in milliseconds
+// @return {IDBDatabase} an open database connection handle
 // TODO: cancel/close the conn if timeout occurred
 // TODO: cancel the timeout if connected
-async function open(name, version, timeout_ms) {
+// TODO: make a promise utils library that does a timed operation promise,
+// then delegate the race boilerplate to that library. Look further into
+// whether cancelable promises have been implemented. Or, at least create
+// a generic indexedDB lib that helps with this and delegate to that?
+async function reader_db_open(name, version, timeout_ms) {
+  'use strict';
   if(typeof name === 'undefined')
     name = 'reader';
   if(typeof version === 'undefined')
     version = 20;
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 500;
-  DEBUG('Connecting to indexedDB', name, version);
+  if(READER_DB_DEBUG)
+    DEBUG('connecting to database', name, version);
 
   const shared_state = {};
   shared_state.is_timed_out = false;
 
   // Race timeout against connect to avoid hanging indefinitely on block and
   // to set an upper bound
-  const conn_promise = open_internal(name, version, shared_state);
-  const error_msg = 'Connecting to indexedDB database ' + name + ' timed out.';
-  const timeout_promise = reject_after_timeout(timeout_ms, error_msg,
+  const conn_promise = reader_db_open_internal(name, version, shared_state);
+  const error_msg = 'connecting to indexedDB database ' + name + ' timed out.';
+  const timeout_promise = reader_db_reject_after_timeout(timeout_ms, error_msg,
     shared_state);
   const promises = [conn_promise, timeout_promise];
   return await Promise.race(promises);
 }
 
-function open_internal(name, version, shared_state) {
+// Helper for reader_db_open. Wraps indexedDB.open in a promise.
+// @private
+function reader_db_open_internal(name, version, shared_state) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const request = indexedDB.open(name, version);
-    request.onupgradeneeded = on_upgrade_needed;
+    request.onupgradeneeded = reader_db_onupgradeneeded;
     request.onsuccess = function() {
       const conn = request.result;
       if(shared_state.is_timed_out) {
-        DEBUG('open_internal eventually finished but after timeout');
+        if(READER_DB_DEBUG)
+          DEBUG('opened db but after timeout');
         conn.close();
         // TODO: reject and exit here?
       }
 
-      DEBUG('connected to indexedDB', name, version);
+      if(READER_DB_DEBUG)
+        DEBUG('connected to indexedDB', name, version);
       resolve(conn);
-    }
+    };
     request.onerror = () => reject(request.error);
+
+    // When open blocks, it blocks indefinitely. Therefore the promise cannot
+    // resolve. This is primarily why I've implemented a timeout scheme, to
+    // avoid the indefiniteness.
     request.onblocked = console.warn;
   });
 }
 
-function reject_after_timeout(timeout_ms, error_msg, shared_state) {
+// Helper for reader_db_open. Return a promise that rejects after a given
+// amount of time.
+// @private
+// @param timeout_ms {Number} timeout in milliseconds, optional
+// @param error_msg {String} optional, error message
+// @param shared_state {Object} helps coordinate between the two concurrent
+// processes of opening the database and a timed rejection.
+function reader_db_reject_after_timeout(timeout_ms, error_msg, shared_state) {
+  'use strict';
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 4;
 
   if(timeout_ms < 4) {
+    // TODO: why am I doing this? I don't think this is relevant
     shared_state.is_timed_out = true;
+
     const msg = 'timeout_ms must be greater than 4: ' + timeout_ms;
     throw new TypeError(msg);
   }
 
-  return new Promise(function(resolve, reject) {
-    setTimeout(function() {
+  return new Promise(function set_timeout_executor(resolve, reject) {
+    setTimeout(function set_timeout_callback() {
       shared_state.is_timed_out = true;
-      const error = new Error(error_msg);
-      reject(error);
+      reject(new Error(error_msg));
     }, timeout_ms);
   });
 }
 
-function on_upgrade_needed(event) {
+// Helper for reader_db_open. Does the database upgrade. This should never be
+// called directly. To do an upgrade, call open with a higher version number.
+// @private
+function reader_db_onupgradeneeded(event) {
+  'use strict';
   const conn = event.target.result;
   const tx = event.target.transaction;
   let feed_store, entry_store;
   const stores = conn.objectStoreNames;
 
-  console.log('Upgrading database %s to version %s from version', conn.name,
+  DEBUG('upgrading database %s to version %s from version', conn.name,
     conn.version, event.oldVersion);
 
   if(event.oldVersion < 20) {
@@ -101,9 +141,9 @@ function on_upgrade_needed(event) {
   }
 }
 
-// TODO: rename to find_feed_id_by_url
-// Returns truthy if a feed exists in the database with the given url
-function contains_feed_url(conn, url_string) {
+// Returns feed id if a feed with the given url exists in the database
+function reader_db_find_feed_id_by_url(conn, url_string) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -114,7 +154,8 @@ function contains_feed_url(conn, url_string) {
   });
 }
 
-function count_unread_entries(conn) {
+function reader_db_count_unread_entries(conn) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -125,11 +166,19 @@ function count_unread_entries(conn) {
   });
 }
 
-function find_entry_by_id(conn, id) {
+// Searches for and returns an entry object matching the id
+// @param conn {IDBDatabase} an open database connection
+// @param id {Number} id of entry to find
+// @return {Promise} a promise that resolves to an entry object, or undefined
+// if no matching entry was found
+// @throws {Error} if there was a database error
+function reader_db_find_entry_by_id(conn, id) {
+  'use strict';
   // It is important to explicitily guard against the use of an invalid id
   // as otherwise it ambiguous whether a failure is because an entry does not
   // exist or because the id was incorrect
-  // This is done outside of the promise because this is static
+  // This is done outside of the promise because this is a violation of an
+  // invariant condition.
   ASSERT(entry_is_valid_id(id), 'Invalid entry id');
 
   return new Promise(function(resolve, reject) {
@@ -144,6 +193,7 @@ function find_entry_by_id(conn, id) {
 }
 
 function find_entry_by_url(conn, url_string) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -154,8 +204,8 @@ function find_entry_by_url(conn, url_string) {
   });
 }
 
-// TODO: rename to find_entry_ids_by_feed
-function find_entry_ids_for_feed(conn, feed_id) {
+function reader_db_find_entry_ids_for_feed(conn, feed_id) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -170,8 +220,10 @@ function find_entry_ids_for_feed(conn, feed_id) {
 // involves too much processing. It probably easily triggers a violation
 // message that appears in the console for taking too long.
 // Maybe using a cursor walk instead of get all avoids this?
-async function find_entries_missing_urls(conn) {
-  const entries = await reader_db.get_entries(conn);
+// Maybe introduce a limit on the number of entries fetched
+async function reader_db_find_entries_missing_urls(conn) {
+  'use strict';
+  const entries = await reader_db_get_entries(conn);
   const invalid_entries = [];
   for(const entry of entries)
     if(!entry.urls || !entry.urls.length)
@@ -179,7 +231,8 @@ async function find_entries_missing_urls(conn) {
   return invalid_entries;
 }
 
-function find_feed_by_id(conn, feed_id) {
+function reader_db_find_feed_by_id(conn, feed_id) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -197,8 +250,9 @@ function find_feed_by_id(conn, feed_id) {
 // missing values are not indexed ...
 // TODO: think of how to make this more scalable, e.g. use a cursor over
 // feeds? Maybe it doesn't matter.
-async function find_orphaned_entries(conn) {
-  const feed_ids = await get_feed_ids(conn);
+async function reader_db_find_orphaned_entries(conn) {
+  'use strict';
+  const feed_ids = await reader_db_get_feed_ids(conn);
   const entries = await get_entries(conn);
   const orphans = [];
   for(const entry of entries)
@@ -207,7 +261,28 @@ async function find_orphaned_entries(conn) {
   return orphans;
 }
 
-function get_entries(conn) {
+
+// TODO: Optimize. So not load all entries. Once, I observed the
+// following error for the call to load entries
+// [Violation] 'success' handler took 164ms
+async function reader_db_find_archivable_entries(conn, max_age_ms) {
+  'use strict';
+  ASSERT(Number.isInteger(max_age_ms));
+  ASSERT(max_age_ms >= 0);
+
+  const entries = await reader_db_get_unarchived_unread_entries2(conn);
+  const archivable_entries = [];
+  const current_date = new Date();
+  for(const entry of entries) {
+    const entry_age_ms = current_date - entry.dateCreated;
+    if(entry_age_ms > max_age_ms)
+      archivable_entries.push(entry);
+  }
+  return archivable_entries;
+}
+
+function reader_db_get_entries(conn) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -217,7 +292,8 @@ function get_entries(conn) {
   });
 }
 
-function get_feeds(conn) {
+function reader_db_get_feeds(conn) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -227,7 +303,8 @@ function get_feeds(conn) {
   });
 }
 
-function get_feed_ids(conn) {
+function reader_db_get_feed_ids(conn) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -241,7 +318,8 @@ function get_feed_ids(conn) {
 // TODO: use getAll, passing in a count parameter as an upper limit, and
 // then using slice or unshift or something to advance. The parameter to getAll
 // might be (offset+limit)
-function load_unarchived_unread_entries(conn, offset, limit) {
+function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const entries = [];
     let counter = 0;
@@ -277,7 +355,8 @@ function load_unarchived_unread_entries(conn, offset, limit) {
 
 // Returns a Promise that resolves to an array
 // TODO: think of how to merge with load_unarchived_unread_entries
-function load_unarchived_unread_entries2(conn) {
+function reader_db_get_unarchived_unread_entries2(conn) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -289,7 +368,8 @@ function load_unarchived_unread_entries2(conn) {
   });
 }
 
-function remove_feed_and_entries(conn, feed_id, entry_ids) {
+function reader_db_remove_feed_and_entries(conn, feed_id, entry_ids) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');
     tx.oncomplete = () => resolve();
@@ -302,7 +382,8 @@ function remove_feed_and_entries(conn, feed_id, entry_ids) {
   });
 }
 
-function put_entry(conn, entry) {
+function reader_db_put_entry(conn, entry) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
@@ -312,7 +393,8 @@ function put_entry(conn, entry) {
   });
 }
 
-function put_entries(conn, entries) {
+function reader_db_put_entries(conn, entries) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const current_date = new Date();
     const tx = conn.transaction('entry', 'readwrite');
@@ -332,7 +414,8 @@ function put_entries(conn, entries) {
 // There are no side effects other than the database modification.
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
-function put_feed(conn, feed) {
+function reader_db_put_feed(conn, feed) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
@@ -345,7 +428,19 @@ function put_feed(conn, feed) {
   });
 }
 
-function remove_entry(tx, id, channel) {
+function reader_db_remove_entries(conn, ids, channel) {
+  'use strict';
+  const tx = conn.transaction('entry', 'readwrite');
+  const promises = [];
+  for(const id of ids) {
+    const promise = reader_db_remove_entry(tx, id, channel);
+    promises.push(promise);
+  }
+  return Promise.all(promises);
+}
+
+function reader_db_remove_entry(tx, id, channel) {
+  'use strict';
   return new Promise(function(resolve, reject) {
     const store = tx.objectStore('entry');
     const request = store.delete(id);
@@ -357,38 +452,3 @@ function remove_entry(tx, id, channel) {
     request.onerror = () => reject(request.error);
   });
 }
-
-function remove_entries(conn, ids, channel) {
-  const tx = conn.transaction('entry', 'readwrite');
-  const promises = [];
-  for(const id of ids) {
-    const promise = remove_entry(tx, id, channel);
-    promises.push(promise);
-  }
-  return Promise.all(promises);
-}
-
-exports.reader_db = {
-  'contains_feed_url': contains_feed_url,
-  'count_unread_entries': count_unread_entries,
-  'find_entry_by_id': find_entry_by_id,
-  'find_entry_by_url': find_entry_by_url,
-  'find_entry_ids_for_feed': find_entry_ids_for_feed,
-  'find_entries_missing_urls': find_entries_missing_urls,
-  'find_feed_by_id': find_feed_by_id,
-  'find_orphaned_entries': find_orphaned_entries,
-  'get_entries': get_entries,
-  'get_feed_ids': get_feed_ids,
-  'get_feeds': get_feeds,
-  'load_unarchived_unread_entries': load_unarchived_unread_entries,
-  'load_unarchived_unread_entries2': load_unarchived_unread_entries2,
-  'remove_feed_and_entries': remove_feed_and_entries,
-  'open': open,
-  'put_entry': put_entry,
-  'put_entries': put_entries,
-  'put_feed': put_feed,
-  'remove_entry': remove_entry,
-  'remove_entries': remove_entries
-};
-
-}(this));

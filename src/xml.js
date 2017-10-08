@@ -1,42 +1,53 @@
-// Parses a string containing XML into a Document object. Throws an exception
-// when there on bad input.
-function xml_parse_from_string(string) {
+// Library for working with xml
+
+// Dependencies
+// assert.js
+// debug.js
+// mime.js
+// status.js
+
+// Parses an xml string into a document
+function xml_parse_from_string(xml_string) {
   'use strict';
   const parser = new DOMParser();
-  const mime_type = 'application/xml';
 
-  // TODO: test whether doc is guaranteed defined regardless of input
-  const doc = parser.parseFromString(string, mime_type);
+  // parseFromString always yields a defined document, regardless of the
+  // validity of the input value (e.g. null, wrong type)
+  const doc = parser.parseFromString(xml_string, MIME_TYPE_XML);
 
-  // TODO: think of a way to differentiate between a parser introduced
-  // parsererror element and an input document containing a parsererror element.
-  // One is an error and one is not.
+  // This cannot tell the difference between documents where the parser
+  // introduced a new element and documents containing the element in the
+  // input. In the interest of safety, this always fails.
   const error_element = doc.querySelector('parsererror');
   if(error_element) {
-    // As tempting as it is to show the parsererror text, this is untrusted
-    // user input. It is safe to send to DEBUG but not to the browser.
     DEBUG(error_element.textContent);
-    return;
+    return [ERR_PARSE];
   }
 
-  return doc;
+  return [STATUS_OK, doc];
 }
 
 // Serializes an xml document into a string
+// @param doc {Document}
+// @returns {String}
 function xml_to_string(doc) {
   'use strict';
+  ASSERT(doc);
   const serializer = new XMLSerializer();
   const xml_string = serializer.serializeToString(doc);
   return xml_string;
 }
 
-// Returns a new blob of the xml document
+// Converts an xml document into a blob
 // @param doc {Document}
 // @returns {Blob}
 function xml_to_blob(doc) {
   'use strict';
+  ASSERT(doc);
   const mime_type = 'application/xml';
   const xml_string = xml_to_string(doc);
-  const blob_constructor_options = {'type': mime_type};
-  return new Blob([xml_string], blob_constructor_options);
+  const options = {'type': mime_type};
+
+  // TODO: is the [] required?
+  return new Blob([xml_string], options);
 }

@@ -14,7 +14,7 @@ async function refresh_feed_icons() {
     const conns = await open_dbs_promise;
     reader_conn = conns[0];
     icon_conn = conns[1];
-    const feeds = await reader_db.get_feeds(reader_conn);
+    const feeds = await reader_db_get_feeds(reader_conn);
     const resolutions = await process_feeds(feeds, reader_conn, icon_conn);
     count = count_num_modified(resolutions);
   } finally {
@@ -29,7 +29,7 @@ async function refresh_feed_icons() {
 
 function open_dbs() {
   let icon_db_name, icon_db_version, conn_timeout_ms;
-  const reader_open_promise = reader_db.open();
+  const reader_open_promise = reader_db_open();
   const icon_open_promise = favicon.open(icon_db_name, icon_db_version,
     conn_timeout_ms);
   const conn_promises = [reader_open_promise, icon_open_promise];
@@ -81,7 +81,7 @@ async function process_feed(feed, reader_conn, icon_conn) {
   // Otherwise the icon changed
   feed.faviconURLString = icon_url_string;
   feed.dateUpdated = new Date();
-  await reader_db.put_feed(reader_conn, feed);
+  await reader_db_put_feed(reader_conn, feed);
   return true;
 }
 

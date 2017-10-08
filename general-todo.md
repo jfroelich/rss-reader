@@ -1,4 +1,11 @@
 
+# simplify tests and notes
+
+moving test and note files back in with source led to large amounts of
+source. i think it would be better to just use separate folders. fold notes
+in most places into the source. move tests to a test folder. this keeps src
+lean and also centralizes the tests.
+
 
 # simplify storage
 

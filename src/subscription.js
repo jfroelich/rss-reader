@@ -89,7 +89,7 @@ async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
 // Return the status. Return ok if not already exists
 async function sub_url_is_unique(url_string, reader_conn) {
   try {
-    if(await reader_db.contains_feed_url(reader_conn, url_string))
+    if(await reader_db_find_feed_id_by_url(reader_conn, url_string))
       return ERR_DB_OP;
   } catch(error) {
     DEBUG(error);
@@ -102,7 +102,7 @@ async function sub_put_feed(feed, reader_conn, notify) {
   const storable_feed = sub_feed_prep(feed);
   let new_id;
   try {
-    new_id = await reader_db.put_feed(reader_conn, storable_feed);
+    new_id = await reader_db_put_feed(reader_conn, storable_feed);
   } catch(error) {
     DEBUG(error);
     return {'status': ERR_DB_OP};
@@ -171,8 +171,8 @@ async function sub_remove(feed_id, conn) {
 
   let entry_ids;
   try {
-    entry_ids = await reader_db.find_entry_ids_for_feed(conn, feed_id);
-    await reader_db.remove_feed_and_entries(conn, feed_id, entry_ids);
+    entry_ids = await reader_db_find_entry_ids_by_feed(conn, feed_id);
+    await reader_db_remove_feed_and_entries(conn, feed_id, entry_ids);
   } catch(error) {
     DEBUG(error);
     // TODO: return something clearer, right now this is ambiguous as to

@@ -1,34 +1,54 @@
-(function(exports) {
-'use strict';
+// Lib for archiving entries
 
+// Dependencies:
+// assert.js
+// debug.js
+// entry.js
+// reader-db.js
+
+// Scans the database for archivable entries and archives them
 // @param max_age_ms {Number} how long before an entry is considered
-// archivable (diff compared using date entry created)
-// @returns number of archived entries
-async function archive_entries(max_age_ms) {
+// archivable (using date entry created)
+// @returns {Number} the number of archived entries
+// TODO: write tests, create and connect to a test database, insert test data,
+// test the archive, assert against the expected results, and then cleanup
+async function archive_entries(conn, max_age_ms) {
+  'use strict';
   if(typeof max_age_ms === 'undefined')
     max_age_ms = 1000 * 60 * 60 * 24 * 2; // 2 days in ms
-
-  ASSERT(Number.isInteger(max_age_ms));
-  ASSERT(max_age_ms >= 0);
-
   DEBUG('Archiving entries older than %d ms', max_age_ms);
 
-  let db_name, db_version, db_conn_timeout;
-  let conn, compacted_entries;
+/*
+TODO:
+Loading archivable entries from the database may be optimizable using the
+right type of query, such as an index over entry state, read state, and date
+created. Then again, maybe there is no need to optimize this particular type
+of query if the tradeoff is a massive persistent index. The index is always
+present but this operation runs in the background and rarely. Maybe it would
+be better to just allow this operation to be slower. Therefore, the better
+approach would just make this operation batchable. Therefore, I should look
+more into setting a limit on the number of entries fetched per run, and remove
+the guarantee that all archivable entries get processed per run, and shorten
+the alarm period. Therefore the better thing to research is just how to set
+a native limit. I think in indexedDB 2.0 if I recall there is a limit parameter
+to getAll or something similar.
+
+*/
+
+  let compacted_entries = [];
   let did_put_entries = false;
   try {
-    conn = await reader_db.open(db_name, db_version, db_conn_timeout);
-    const entries = await find_archivable_entries(conn, max_age_ms);
-    compacted_entries = compact_entries(entries);
-    await reader_db.put_entries(conn, compacted_entries);
+    const entries = await reader_db_find_archivable_entries(conn, max_age_ms);
+    for(const entry of entries)
+      compacted_entries.push(compact_entry(entry));
+    await reader_db_put_entries(conn, compacted_entries);
     did_put_entries = true;
-  } finally {
-    if(conn)
-      conn.close();
+  } catch(error) {
+    return ERR_DB_OP;
   }
 
-  // After the transaction commits. Use small messages to scale independently
-  // of the number of entries.
+  // Notify observers once the transaction commits. Individual messages are
+  // dispatched in order to scale.
   if(did_put_entries) {
     const db_channel = new BroadcastChannel('db');
     for(const entry of compacted_entries) {
@@ -40,33 +60,6 @@ async function archive_entries(max_age_ms) {
     db_channel.close();
   }
 
-  return compacted_entries.length;
+  DEBUG('compacted %s entries', compacted_entries.length);
+  return STATUS_OK;
 }
-
-function compact_entries(entries) {
-  const compacted_entries = [];
-  for(const entry of entries)
-    compacted_entries.push(compact_entry(entry));
-  return compacted_entries;
-}
-
-// TODO: think of how to optimize this, instead of loading more entries than
-// is needed and then filtering. There should be a simply way to query against
-// date created as well as the other state properties
-// TODO: maybe this should be in the database layer (in reader_db), even if
-// not optimized
-async function find_archivable_entries(conn, max_age_ms) {
-  const entries = await reader_db.load_unarchived_unread_entries2(conn);
-  const archivable_entries = [];
-  const current_date = new Date();
-  for(const entry of entries) {
-    const entry_age_ms = current_date - entry.dateCreated;
-    if(entry_age_ms > max_age_ms)
-      archivable_entries.push(entry);
-  }
-  return archivable_entries;
-}
-
-exports.archive_entries = archive_entries;
-
-}(this));
