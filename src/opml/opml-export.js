@@ -1,5 +1,7 @@
 // Library for exporting feeds to opml file
 
+'use strict';
+
 // Dependencies
 // feed.js
 // opml.js
@@ -11,7 +13,6 @@
 // @param title {String} optional, value of the <title> element in the file
 // @param file_name {String} optional, suggested file name
 async function opml_export(conn, title, file_name) {
-  'use strict';
   const [status, feeds] = await opml_export_db_get_feeds(conn);
   if(status !== STATUS_OK)
     return status;
@@ -42,7 +43,6 @@ async function opml_export_db_get_feeds(conn) {
 // @param title {String} optional value to store in title element
 // @returns {Document} an opml document
 function opml_export_create_document(feeds, title) {
-  'use strict';
   ASSERT(feeds);
   const doc = opml_create_document();
   opml_update_title(doc, title);
@@ -53,7 +53,6 @@ function opml_export_create_document(feeds, title) {
 
 // Convert a feed object into an outline object
 function opml_export_feed_to_outline(feed) {
-  'use strict';
   ASSERT(feed);
   const outline = {};
   outline.type = feed.type;

@@ -1,5 +1,6 @@
-(function(exports){
 'use strict';
+
+(function(exports){
 
 // TODO: maybe unwrap any non-whitelisted elements?
 

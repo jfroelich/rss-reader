@@ -1,6 +1,6 @@
-(function(exports) {
-
 'use strict';
+
+(function(exports) {
 
 async function register_dw_link_filter_rule() {
   if(localStorage.DW_LINK_RULE_ID)

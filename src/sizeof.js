@@ -1,4 +1,6 @@
-// TODO: move file out of utils folder
+// memory usage lib
+
+'use strict';
 
 // Calculates the approximate byte size of a value. This should only be
 // used for basic testing because it is hilariously inaccurate.
@@ -11,8 +13,6 @@
 // @returns an integer representing the approximate byte size of the input
 // value
 function sizeof(input_value) {
-  'use strict';
-
   // Visited is a memoization of previously visited objects. In theory
   // a repeated object just means enough bytes to store a reference value,
   // and only the first object actually allocates additional memory.

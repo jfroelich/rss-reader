@@ -1,4 +1,4 @@
-
+'use strict';
 
 function foo(doc) {
   const model_options = {};

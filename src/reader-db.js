@@ -1,4 +1,5 @@
 // Library for working with the reader app's database
+'use strict';
 
 // Dependencies:
 // assert.js
@@ -21,7 +22,6 @@ const READER_DB_DEBUG = false;
 // whether cancelable promises have been implemented. Or, at least create
 // a generic indexedDB lib that helps with this and delegate to that?
 async function reader_db_open(name, version, timeout_ms) {
-  'use strict';
   if(typeof name === 'undefined')
     name = 'reader';
   if(typeof version === 'undefined')
@@ -47,8 +47,7 @@ async function reader_db_open(name, version, timeout_ms) {
 // Helper for reader_db_open. Wraps indexedDB.open in a promise.
 // @private
 function reader_db_open_internal(name, version, shared_state) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const request = indexedDB.open(name, version);
     request.onupgradeneeded = reader_db_onupgradeneeded;
     request.onsuccess = function() {
@@ -81,7 +80,6 @@ function reader_db_open_internal(name, version, shared_state) {
 // @param shared_state {Object} helps coordinate between the two concurrent
 // processes of opening the database and a timed rejection.
 function reader_db_reject_after_timeout(timeout_ms, error_msg, shared_state) {
-  'use strict';
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 4;
 
@@ -105,7 +103,6 @@ function reader_db_reject_after_timeout(timeout_ms, error_msg, shared_state) {
 // called directly. To do an upgrade, call open with a higher version number.
 // @private
 function reader_db_onupgradeneeded(event) {
-  'use strict';
   const conn = event.target.result;
   const tx = event.target.transaction;
   let feed_store, entry_store;
@@ -146,7 +143,6 @@ function reader_db_onupgradeneeded(event) {
 
 // Returns feed id if a feed with the given url exists in the database
 function reader_db_find_feed_id_by_url(conn, url_string) {
-  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -158,7 +154,6 @@ function reader_db_find_feed_id_by_url(conn, url_string) {
 }
 
 function reader_db_count_unread_entries(conn) {
-  'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -176,7 +171,6 @@ function reader_db_count_unread_entries(conn) {
 // if no matching entry was found
 // @throws {Error} if there was a database error
 function reader_db_find_entry_by_id(conn, id) {
-  'use strict';
   // It is important to explicitily guard against the use of an invalid id
   // as otherwise it ambiguous whether a failure is because an entry does not
   // exist or because the id was incorrect
@@ -196,8 +190,7 @@ function reader_db_find_entry_by_id(conn, id) {
 }
 
 function reader_db_find_entry_by_url(conn, url_string) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('urls');
@@ -208,8 +201,7 @@ function reader_db_find_entry_by_url(conn, url_string) {
 }
 
 function reader_db_find_entry_ids_for_feed(conn, feed_id) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('feed');
@@ -225,7 +217,6 @@ function reader_db_find_entry_ids_for_feed(conn, feed_id) {
 // Maybe using a cursor walk instead of get all avoids this?
 // Maybe introduce a limit on the number of entries fetched
 async function reader_db_find_entries_missing_urls(conn) {
-  'use strict';
   const entries = await reader_db_get_entries(conn);
   const invalid_entries = [];
   for(const entry of entries)
@@ -235,8 +226,7 @@ async function reader_db_find_entries_missing_urls(conn) {
 }
 
 function reader_db_find_feed_by_id(conn, feed_id) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.get(feed_id);
@@ -254,7 +244,6 @@ function reader_db_find_feed_by_id(conn, feed_id) {
 // TODO: think of how to make this more scalable, e.g. use a cursor over
 // feeds? Maybe it doesn't matter.
 async function reader_db_find_orphaned_entries(conn) {
-  'use strict';
   const feed_ids = await reader_db_get_feed_ids(conn);
   const entries = await get_entries(conn);
   const orphans = [];
@@ -269,7 +258,6 @@ async function reader_db_find_orphaned_entries(conn) {
 // following error for the call to load entries
 // [Violation] 'success' handler took 164ms
 async function reader_db_find_archivable_entries(conn, max_age_ms) {
-  'use strict';
   ASSERT(Number.isInteger(max_age_ms));
   ASSERT(max_age_ms >= 0);
 
@@ -285,8 +273,7 @@ async function reader_db_find_archivable_entries(conn, max_age_ms) {
 }
 
 function reader_db_get_entries(conn) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const request = store.getAll();
@@ -296,8 +283,7 @@ function reader_db_get_entries(conn) {
 }
 
 function reader_db_get_feeds(conn) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.getAll();
@@ -307,8 +293,7 @@ function reader_db_get_feeds(conn) {
 }
 
 function reader_db_get_feed_ids(conn) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.getAllKeys();
@@ -322,8 +307,7 @@ function reader_db_get_feed_ids(conn) {
 // then using slice or unshift or something to advance. The parameter to getAll
 // might be (offset+limit)
 function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const entries = [];
     let counter = 0;
     let advanced = false;
@@ -359,8 +343,7 @@ function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
 // Returns a Promise that resolves to an array
 // TODO: think of how to merge with load_unarchived_unread_entries
 function reader_db_get_unarchived_unread_entries2(conn) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
@@ -372,8 +355,7 @@ function reader_db_get_unarchived_unread_entries2(conn) {
 }
 
 function reader_db_remove_feed_and_entries(conn, feed_id, entry_ids) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
@@ -386,8 +368,7 @@ function reader_db_remove_feed_and_entries(conn, feed_id, entry_ids) {
 }
 
 function reader_db_put_entry(conn, entry) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
     const request = store.put(entry);
@@ -397,8 +378,7 @@ function reader_db_put_entry(conn, entry) {
 }
 
 function reader_db_put_entries(conn, entries) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const current_date = new Date();
     const tx = conn.transaction('entry', 'readwrite');
     tx.oncomplete = resolve;
@@ -418,8 +398,7 @@ function reader_db_put_entries(conn, entries) {
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
 function reader_db_put_feed(conn, feed) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
     const request = store.put(feed);
@@ -435,19 +414,15 @@ function reader_db_put_feed(conn, feed) {
 // TODO: wait to post messages until transaction completes, to avoid
 // premature notification
 function reader_db_remove_entries(conn, ids, channel) {
-  'use strict';
   const tx = conn.transaction('entry', 'readwrite');
   const promises = [];
-  for(const id of ids) {
-    const promise = reader_db_remove_entry(tx, id, channel);
-    promises.push(promise);
-  }
+  for(const id of ids)
+    promises.push(reader_db_remove_entry(tx, id, channel));
   return Promise.all(promises);
 }
 
 function reader_db_remove_entry(tx, id, channel) {
-  'use strict';
-  return new Promise(function(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     const store = tx.objectStore('entry');
     const request = store.delete(id);
     request.onsuccess = () => {

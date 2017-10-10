@@ -1,4 +1,5 @@
 // DOM frame utilities
+'use strict';
 
 // Dependencies:
 // assert.js
@@ -9,7 +10,6 @@
 // TODO: maybe inline iframes or replace with a message
 // TODO: write tests
 function frame_transform_document(doc) {
-  'use strict';
   ASSERT(doc);
 
   let body_element = doc.body;

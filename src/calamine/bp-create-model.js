@@ -1,5 +1,7 @@
-(function(exports) {
 'use strict';
+
+(function(exports) {
+
 
 // Returns a boilerplate model
 // TODO: right now this just returns defaults

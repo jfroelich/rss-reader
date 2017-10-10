@@ -1,4 +1,4 @@
-// Library for working with strings
+// string lib
 
 'use strict';
 

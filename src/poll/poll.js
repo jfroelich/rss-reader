@@ -1,5 +1,6 @@
-(function(exports) {
 'use strict';
+
+(function(exports) {
 
 const POLL_FEEDS_FLAGS = {};
 POLL_FEEDS_FLAGS.ALLOW_METERED_CONNECTIONS = 2; // 10

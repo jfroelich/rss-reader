@@ -1,5 +1,6 @@
-(function(exports) {
 'use strict';
+
+(function(exports) {
 
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.

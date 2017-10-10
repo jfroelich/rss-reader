@@ -1,5 +1,10 @@
 // Feed utilities
 
+'use strict';
+
+// Dependencies:
+// assert.js
+
 function feed_is_valid_feed_id(id) {
   return Number.isInteger(id) && id > 0;
 }
@@ -8,7 +13,6 @@ function feed_is_valid_feed_id(id) {
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
 function feed_get_top_url(feed) {
-  'use strict';
   ASSERT(feed && feed.urls && feed.urls.length);
   return feed.urls[feed.urls.length - 1];
 }
@@ -17,7 +21,6 @@ function feed_get_top_url(feed) {
 // @param feed {Object} a feed object
 // @param url_string {String}
 function feed_append_url(feed, url_string) {
-  'use strict';
   feed.urls = feed.urls || [];
   const url_object = new URL(url_string);
   const norm_url_string = url_object.href;
@@ -30,7 +33,6 @@ function feed_append_url(feed, url_string) {
 // Creates a url object that can be used as input to favicon.lookup
 // @returns {URL}
 function feed_create_icon_lookup_url(feed) {
-  'use strict';
   ASSERT(feed);
 
   // Cannot assume the link is set nor valid
@@ -66,7 +68,6 @@ async function feed_update_favicon(feed, icon_conn) {
 
 // TODO: include this in places where sanitize is called
 function feed_has_valid_props(feed) {
-  'use strict';
   ASSERT(feed);
 
   if('id' in feed) {
@@ -82,7 +83,6 @@ function feed_has_valid_props(feed) {
 
 // Returns a shallow copy of the input feed with sanitized properties
 function feed_sanitize(feed, title_max_length, desc_max_length) {
-  'use strict';
   ASSERT(feed);
 
   const DEFAULT_TITLE_MAX_LEN = 1024;
@@ -124,7 +124,6 @@ function feed_sanitize(feed, title_max_length, desc_max_length) {
 // because of copying by reference.
 // TODO: rename to feed_merge
 function merge_feeds(old_feed, new_feed) {
-  'use strict';
   const merged_feed_object = Object.assign({}, old_feed, new_feed);
 
   // After assignment, the merged feed has only the urls from the new feed.

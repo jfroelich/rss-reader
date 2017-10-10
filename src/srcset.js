@@ -1,4 +1,5 @@
 // srcset utilities
+'use strict';
 
 // TODO: function names should have the srcset prefix here. rename
 // serialize_srcset to srcset_serialize, rename parse_srcset to
@@ -8,7 +9,6 @@
 // by parseSrcset (third party library)
 // @returns {String} a string suitable for storing as srcset attribute value
 function serialize_srcset(descriptors) {
-  'use strict';
   const descriptor_strings = [];
   for(const descriptor of descriptors) {
     const strings = [descriptor.url];
@@ -40,6 +40,5 @@ function serialize_srcset(descriptors) {
 // TODO: use try/catch and such to avoid any issues with 3rd party lib. Also
 // provide a warranty as to whether the return value is defined
 function parse_srcset(srcset_string) {
-  'use strict';
   throw new Error('Not implemented');
 }

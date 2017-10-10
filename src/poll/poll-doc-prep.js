@@ -1,8 +1,6 @@
-
+'use strict';
 
 function poll_doc_prep(doc, url_string) {
-  'use strict';
-
   // TODO: inline
   function ensure_document_has_body(doc) {
     if(doc.body)

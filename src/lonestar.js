@@ -1,4 +1,5 @@
 // Schwartz-wielding anti-telemetry lib
+'use strict';
 
 // Dependencies:
 // debug.js
@@ -47,7 +48,6 @@ const LONESTAR_PATTERNS = [
 // TODO: deal with the new <picture> element
 // TODO: rename to something like lonestar prefix
 function lonestar_transform_document(doc) {
-  'use strict';
   let num_elements_modified = 0;
 
   // Analysis is limited to descendants of body, as the document is assumed
@@ -71,7 +71,6 @@ function lonestar_transform_document(doc) {
 }
 
 function lonestar_filter_telemetry_images(doc) {
-  'use strict';
   let num_elements_modified = 0;
   const image_elements = doc.body.querySelectorAll('img');
   for(const image_element of image_elements) {
@@ -89,7 +88,6 @@ function lonestar_filter_telemetry_images(doc) {
 }
 
 function lonestar_image_is_telemetry(image) {
-  'use strict';
   // Telemetry images are usually hidden, so treat visibility as an indicator.
   // False positives are probably not too harmful. Removing images based on
   // visibility overlaps with sanitization, but this is intentionally naive.
@@ -98,7 +96,6 @@ function lonestar_image_is_telemetry(image) {
 }
 
 function lonestar_image_is_pixel(image) {
-  'use strict';
   return image.hasAttribute('src') &&
     image.hasAttribute('width') &&
     image.width < 2 &&
@@ -113,7 +110,6 @@ function lonestar_image_is_pixel(image) {
 // pattern beforehand (using strings and the RegExp constructor). See
 // https://www.reddit.com/r/programming/comments/3c3vl0
 function lonestar_image_has_telemetry_source(image) {
-  'use strict';
   const URL_START_PATTERN = /^(http:\/\/|https:\/\/|\/\/)/i;
 
   const src = (image.getAttribute('src') || '').trim();

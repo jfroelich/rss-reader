@@ -1,5 +1,7 @@
 // Fetch html lib
 
+'use strict';
+
 // TODO: completely rewrite. Once this is rewritten I can merge fetch-feed,
 // fetch_with_timeout, and this into a single fetch.js file. The rationale is
 // that most of these are one function files, which just feels kind of like
@@ -7,8 +9,6 @@
 
 // Dependencies
 // assert.js
-
-'use strict';
 
 // Fetches the html content of the given url
 // @param url {String} the url to fetch
@@ -53,9 +53,8 @@ async function fetch_html(url, timeout_ms) {
 }
 
 function fetch_html_reject_after_timeout(url, timeout_ms) {
-  function resolver(resolve, reject) {
-    const error = new Error(`Request timed out ${url}`);
+  return new Promise(function executor(resolve, reject) {
+    const error = new Error('Request timed out');
     setTimeout(reject, timeout_ms, error);
-  }
-  return new Promise(resolver);
+  });
 }

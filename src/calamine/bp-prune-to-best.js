@@ -1,3 +1,4 @@
+'use strict';
 
 function bp_prune_to_best(doc, score_result) {
 

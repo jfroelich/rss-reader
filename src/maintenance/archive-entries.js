@@ -1,5 +1,7 @@
 // Lib for archiving entries
 
+'use strict';
+
 // Dependencies:
 // assert.js
 // debug.js
@@ -13,7 +15,6 @@
 // TODO: write tests, create and connect to a test database, insert test data,
 // test the archive, assert against the expected results, and then cleanup
 async function archive_entries(conn, max_age_ms) {
-  'use strict';
   if(typeof max_age_ms === 'undefined')
     max_age_ms = 1000 * 60 * 60 * 24 * 2; // 2 days in ms
   DEBUG('Archiving entries older than %d ms', max_age_ms);

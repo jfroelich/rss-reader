@@ -7,7 +7,6 @@
 
 // Returns true if a response is valid (ok).
 function response_is_valid(response) {
-
   // response should always be defined when calling this function.
   // TODO: make this check stricter and check type?
   ASSERT(response);
@@ -52,7 +51,6 @@ function response_get_last_modified_date(response) {
 // Response object produced by calling fetch.
 
 function response_is_redirect(request_url, response_url) {
-
   ASSERT(typeof request_url === 'string');
 
   // TODO: validate response_url? Is it required? I've forgotten.

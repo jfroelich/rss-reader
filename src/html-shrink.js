@@ -1,5 +1,6 @@
-(function(exports) {
 'use strict';
+
+(function(exports) {
 
 function html_shrink(doc, copy_attrs_on_rename, row_scan_limit) {
   remove_comment_nodes(doc.documentElement);

@@ -1,6 +1,7 @@
+'use strict';
+
 // TODO: reintroduce conn as a parameter
 async function remove_orphaned_entries(options) {
-  'use strict';
   options = options || {};
   let conn, ids, conn_timeout_ms;
   try {

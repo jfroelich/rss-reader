@@ -1,5 +1,6 @@
-(function(exports) {
 'use strict';
+
+(function(exports) {
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions

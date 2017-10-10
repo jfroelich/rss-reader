@@ -1,10 +1,15 @@
+// Favicon lib
+
+'use strict';
 
 // Requires
 // html-parse.js
 
+// TODO: deprecate IIFE (again)
+
 
 (function(exports) {
-'use strict';
+
 
 // 30 days in ms, used by both lookup and compact
 const default_max_age_ms = 1000 * 60 * 60 * 24 * 30;

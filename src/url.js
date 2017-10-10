@@ -1,10 +1,8 @@
 // Library for working with urls
+'use strict';
 
 // Dependencies
 // assert.js
-
-
-
 
 // Returns the absolute form the input url
 // @param url_string {String}
@@ -35,7 +33,6 @@ function resolve_url(url_string, base_url) {
 
 
 function url_get_hostname(url_string) {
-  'use strict';
   ASSERT(url_string);
   try {
     const url_object = new URL(url_string);
@@ -48,7 +45,6 @@ function url_get_hostname(url_string) {
 // Assumes canonical/absolute
 // TODO: add min length check
 function url_is_valid(url_string) {
-  'use strict';
   return url_string && !url_string.trim().includes(' ');
 }
 
@@ -60,8 +56,6 @@ function url_path_is_valid(path) {
 }
 
 function url_path_get_extension(path) {
-  'use strict';
-
   ASSERT(url_path_is_valid(path));
 
   // Fail if the path is probably too short to contain an extension
@@ -101,8 +95,6 @@ function url_path_get_extension(path) {
 // TODO: write tests
 // TODO: maybe make this a helper to url_sniff_is_binary(url)
 function url_path_sniff_is_binary(path) {
-  'use strict';
-
   const extension = url_path_get_extension(path);
   if(!extension)
     return false;

@@ -1,3 +1,4 @@
+'use strict';
 
 // TODO: change fetch_feed to not throw in the usual case.
 // TODO: this should defer to timed_fetch instead of re-implementing all the
@@ -19,7 +20,6 @@
 // affect the request Accept header because servers do not appear to always
 // honor Accept headers.
 async function fetch_feed(url, timeout_ms, accept_html) {
-  'use strict';
   ASSERT(typeof url === 'string');
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 0;
@@ -94,7 +94,6 @@ async function fetch_feed(url, timeout_ms, accept_html) {
 // to difficult to cancel the timeout if the fetch succeeds, or cancel the
 // fetch if the timeout succeeds.
 function fetch_feed_reject_after_timeout(timeout_ms, error_message) {
-  'use strict';
   return new Promise(function executor(resolve, reject) {
     const error = new Error(error_message);
     return setTimeout(reject, timeout_ms, error);

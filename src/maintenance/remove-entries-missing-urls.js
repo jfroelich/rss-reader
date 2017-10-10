@@ -1,5 +1,5 @@
+'use strict';
 async function remove_entries_missing_urls() {
-  'use strict';
   const channel = new BroadcastChannel('db');
   let count = 0;
   let conn;

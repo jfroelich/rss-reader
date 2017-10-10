@@ -1,5 +1,6 @@
-(function(exports) {
 'use strict';
+
+(function(exports) {
 
 // Dependencies:
 // assert.js

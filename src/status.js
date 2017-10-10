@@ -1,4 +1,4 @@
-// Status codes
+// Global status codes
 
 'use strict';
 

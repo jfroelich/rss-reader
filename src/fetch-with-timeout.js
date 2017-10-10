@@ -1,4 +1,5 @@
 // Add support for timeout to fetch API
+'use strict';
 
 // Dependencies:
 // assert.js
@@ -18,8 +19,6 @@
 // TODO: if fetch succeeds, cancel the timeout
 // TODO: if timeout succeeds first, cancel the fetch
 function fetch_with_timeout(url, options, timeout_ms) {
-  'use strict';
-
   ASSERT(typeof url === 'string');
 
 

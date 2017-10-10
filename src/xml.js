@@ -1,4 +1,5 @@
 // Library for working with xml
+'use strict';
 
 // Dependencies
 // assert.js
@@ -8,7 +9,6 @@
 
 // Parses an xml string into a document
 function xml_parse_from_string(xml_string) {
-  'use strict';
   const parser = new DOMParser();
 
   // parseFromString always yields a defined document, regardless of the
@@ -31,7 +31,6 @@ function xml_parse_from_string(xml_string) {
 // @param doc {Document}
 // @returns {String}
 function xml_to_string(doc) {
-  'use strict';
   ASSERT(doc);
   const serializer = new XMLSerializer();
   const xml_string = serializer.serializeToString(doc);
@@ -42,7 +41,6 @@ function xml_to_string(doc) {
 // @param doc {Document}
 // @returns {Blob}
 function xml_to_blob(doc) {
-  'use strict';
   ASSERT(doc);
   const mime_type = 'application/xml';
   const xml_string = xml_to_string(doc);

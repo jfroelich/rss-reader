@@ -1,5 +1,7 @@
 // Library for importing an opml file into the database
 
+'use strict';
+
 // Dependencies:
 // favicon.js
 // feed.js
@@ -13,7 +15,6 @@
 // @param files {FileList}
 // TODO: reintroduce conn parameters
 async function opml_import(files) {
-  'use strict';
   ASSERT(files);
   DEBUG('importing %d files', files.length);
 
@@ -39,7 +40,6 @@ async function opml_import(files) {
 
 // Returns promise resolving to [open_reader_conn, open_icon_conn]
 function opml_import_open_dbs() {
-  'use strict';
   let reader_db_name, reader_db_version, reader_db_connect_timeout_ms;
   let icon_db_name, icon_db_version, icon_db_conn_timeout_ms;
   const reader_conn_promise = reader_db_open(reader_db_name, reader_db_version,
@@ -51,7 +51,6 @@ function opml_import_open_dbs() {
 }
 
 function opml_import_files(files, reader_conn, icon_conn) {
-  'use strict';
   const promises = [];
   for(const file of files)
     promises.push(opml_import_file_silently(file, reader_conn, icon_conn));
@@ -60,7 +59,6 @@ function opml_import_files(files, reader_conn, icon_conn) {
 
 // Decorates opml_import_file to avoid Promise.all failfast behavior
 async function opml_import_file_silently(file, reader_conn, icon_conn) {
-  'use strict';
   let num_feeds_added = 0;
   try {
     num_feeds_added = await opml_import_file(file, reader_conn, icon_conn);
@@ -79,7 +77,6 @@ async function opml_import_file_silently(file, reader_conn, icon_conn) {
 // error codes? But it could also be 0 in case of no error but no new
 // subscriptions.
 async function opml_import_file(file, reader_conn, icon_conn) {
-  'use strict';
   ASSERT(file);
   DEBUG('Importing opml file', file.name);
 
@@ -142,7 +139,6 @@ async function opml_import_file(file, reader_conn, icon_conn) {
 
 // Filter duplicates, favoring earlier in document order
 function opml_import_group_outlines(outlines) {
-  'use strict';
   const unique_urls = [];
   const unique_outlines = [];
   for(const outline of outlines) {
@@ -156,7 +152,6 @@ function opml_import_group_outlines(outlines) {
 
 // Normalize and validate each outline's link property
 function opml_import_normalize_links(outlines) {
-  'use strict';
   // Setting to undefined is preferred over deleting in order to maintain v8
   // object shape
   for(let outline of outlines) {
@@ -183,7 +178,6 @@ function opml_import_normalize_links(outlines) {
 }
 
 function opml_import_outlines_to_feeds(outlines) {
-  'use strict';
   const feeds = [];
   for(const outline of outlines)
     feeds.push(opml_import_outline_to_feed(outline));
@@ -191,7 +185,6 @@ function opml_import_outlines_to_feeds(outlines) {
 }
 
 function opml_import_outline_to_feed(outline) {
-  'use strict';
   const feed = {};
   if(outline.type)
     feed.type = outline.type;

@@ -1,4 +1,7 @@
 // Functions for subscribing to and unsubscribing from feeds
+'use strict';
+
+// TODO: if the prefix is sub, then the file should be called sub.js
 
 // Dependencies:
 // assert.js
@@ -20,7 +23,6 @@
 // to indexedDB built in functionality. However, the lookup also reduces
 // later work. Unsure of how to proceed. Maybe redundancy is good.
 async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
-  'use strict';
   DEBUG('subscription_create', feed);
   ASSERT(feed);
   // TODO: assert reader_conn and icon_conn are open connections
@@ -133,8 +135,6 @@ function sub_feed_prep(feed) {
 // but earlier ones are committed. If a subscription fails but not for an
 // exceptional reason, then it is skipped.
 function sub_add_all(feeds, reader_conn, icon_conn, timeout_ms) {
-  'use strict';
-
   // TODO: better handling of notifications, maybe a single batch notification
   // For now, no notifications for batch subscriptions
   const notify = false;
@@ -152,7 +152,6 @@ function sub_add_all(feeds, reader_conn, icon_conn, timeout_ms) {
 // @param feed_id {Number} id of feed to unscubscribe
 // TODO: return a subscription result object instead of number of entries
 async function sub_remove(feed_id, conn) {
-  'use strict';
   DEBUG('unsub', feed_id);
   ASSERT(feed_is_valid_feed_id(feed_id));
 

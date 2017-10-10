@@ -1,4 +1,5 @@
 // Lazy image handling lib
+'use strict';
 
 // Dependencies:
 // assert.js
@@ -88,7 +89,6 @@ attr
 const DEBUG_LAZY_IMAGE = false;
 
 function transform_lazy_images(doc) {
-  'use strict';
   ASSERT(doc);
   const lazy_img_attrs = [
     'load-src',

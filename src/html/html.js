@@ -1,4 +1,5 @@
 // Utilities for working with html strings
+'use strict';
 
 // Dependencies:
 // assert.js
@@ -15,8 +16,6 @@
 // TODO: once tokenize_html is settled, migrate to tokenizer approach instead
 // of using html_parse_from_string, due to the lossy transform issue
 function html_replace_tags(input_string, replacement_string) {
-  'use strict';
-
   // TODO: not sure this assert is needed if html_parse_from_string can
   // handle it
   // TODO: this assert may belong after the !input_string check
@@ -74,8 +73,6 @@ the inaccurate position issue.
 // This is currently a lossy transformation because certain entities that are
 // decoded while processing are not properly re-encoded.
 function html_truncate(html_string, position, extension_string) {
-  'use strict';
-
   ASSERT(Number.isInteger(position));
   ASSERT(position >= 0);
 
@@ -131,7 +128,9 @@ function html_truncate(html_string, position, extension_string) {
 // function in a try/catch.
 // In the event of a parsing error, this returns undefined.
 function html_parse_from_string(html_string) {
-  'use strict';
+
+  // The caller is responsible for always calling this with a defined string
+  ASSERT(typeof html_string === 'string');
 
   const parser = new DOMParser();
 

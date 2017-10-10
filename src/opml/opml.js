@@ -1,4 +1,7 @@
 // Library for working with opml documents
+
+'use strict';
+
 // Dependencies:
 // assert.js
 // debug.js
@@ -7,7 +10,6 @@
 
 // Parses the input string and returns a document
 function opml_parse_from_string(xml_string) {
-  'use strict';
   let [status, doc] = xml_parse_from_string(xml_string);
   if(status !== STATUS_OK) {
     DEBUG('xml parse error');
@@ -27,7 +29,6 @@ function opml_parse_from_string(xml_string) {
 // @param doc {Document} an opml document
 // @param title {String} optional
 function opml_update_title(doc, title) {
-  'use strict';
   ASSERT(doc);
   let title_element = doc.querySelector('title');
   if(title) {
@@ -57,7 +58,6 @@ function opml_update_title(doc, title) {
 
 // Returns a new xml document containing basic xml tags and no outlines
 function opml_create_document() {
-  'use strict';
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
@@ -90,13 +90,11 @@ function opml_create_document() {
 // @param doc {Document}
 // @returns {NodeList}
 function opml_get_outline_elements(doc) {
-  'use strict';
   ASSERT(doc);
   return doc.querySelectorAll('opml > body > outline');
 }
 
 function opml_get_outline_objects(doc) {
-  'use strict';
   const elements = opml_get_outline_elements(doc);
   const objects = [];
   for(const element of elements)
@@ -105,7 +103,6 @@ function opml_get_outline_objects(doc) {
 }
 
 function opml_remove_outlines_with_invalid_types(doc) {
-  'use strict';
   ASSERT(doc);
 
   const elements = opml_get_outline_elements(doc);
@@ -134,7 +131,6 @@ function opml_remove_outlines_with_invalid_types(doc) {
 }
 
 function opml_remove_outlines_missing_xmlurls(doc) {
-  'use strict';
   const elements = opml_get_outline_elements(doc);
 
   const initial_length = elements.length;
@@ -155,7 +151,6 @@ function opml_remove_outlines_missing_xmlurls(doc) {
 }
 
 function opml_normalize_outline_xmlurls(doc) {
-  'use strict';
   const elements = opml_get_outline_elements(doc);
 
   const initial_length = elements.length;
@@ -180,13 +175,11 @@ function opml_normalize_outline_xmlurls(doc) {
 }
 
 function opml_append_outline_object(doc, outline) {
-  'use strict';
   const element = opml_create_outline_element(doc, outline);
   opml_append_outline_element(doc, element);
 }
 
 function opml_append_outline_element(doc, element) {
-  'use strict';
   let body_element = doc.querySelector('body');
   if(!body_element) {
     body_element = doc.createElement('body');
@@ -197,7 +190,6 @@ function opml_append_outline_element(doc, element) {
 }
 
 function opml_create_outline_element(doc, object) {
-  'use strict';
   const element = doc.createElement('outline');
   if(object.type)
     element.setAttribute('type', object.type);
@@ -220,7 +212,6 @@ function opml_create_outline_element(doc, object) {
 // This coerces as is, if there are bad values in the element then bad values
 // will be in the object
 function opml_create_outline_object(element) {
-  'use strict';
   const object = {};
   object.description = element.getAttribute('description');
   object.htmlUrl = element.getAttribute('htmlUrl');

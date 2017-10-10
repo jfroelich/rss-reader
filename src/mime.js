@@ -135,6 +135,5 @@ function mime_get_type_for_extension(extension) {
   };
 
   const mime_type = extension_mime_map[extension];
-
   return mime_type;
 }

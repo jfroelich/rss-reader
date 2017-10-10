@@ -1,3 +1,4 @@
+'use strict';
 
 /*
 TODO: Gracefully manage background alarms. Create a graceful way to
@@ -5,14 +6,12 @@ rename/remove alarms. Right now if I stop using an alarm it remains silently
 persistent somewhere in chrome.alarms internal state, indefinitely.
 
 Maybe keep track of registered alarms in localStorage. This might also help
-avoid repeated registration (although it still performs repeated checks  
+avoid repeated registration (although it still performs repeated checks
 every page load)
 */
 
 
 async function alarms_on_archive_alarm() {
-  'use strict';
-
   let conn;
   let db_name, db_version, db_conn_timeout;
   let max_age_ms;
@@ -33,8 +32,6 @@ async function alarms_on_archive_alarm() {
 }
 
 async function alarms_on_alarm_wakeup(alarm) {
-  'use strict';
-
   DEBUG('alarm wokeup:', alarm.name);
 
   switch(alarm.name) {

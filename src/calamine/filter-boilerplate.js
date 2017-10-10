@@ -1,5 +1,7 @@
-(function(exports) {
 'use strict';
+
+(function(exports) {
+
 
 function filter_boilerplate(doc) {
   if(!doc.body)

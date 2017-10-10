@@ -1,6 +1,6 @@
-(function(exports) {
 'use strict';
 
+(function(exports) {
 
 // Returns an array
 // TODO: update notes document

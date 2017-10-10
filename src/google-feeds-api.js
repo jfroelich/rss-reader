@@ -1,5 +1,8 @@
+// Google Feeds API library
+'use strict';
 
-// Requires assert.js
+// Dependencies:
+// assert.js
 
 // Sends a search request to Google and yields a resulting object consisting
 // the properties 'query' and 'entries'. query is a formatted HTML
@@ -25,7 +28,6 @@ gfa_search
 */
 
 async function google_feeds_api_search(query_string, timeout_ms) {
-  'use strict';
   ASSERT(typeof query_string === 'string');
   query_string = query_string.trim();
 

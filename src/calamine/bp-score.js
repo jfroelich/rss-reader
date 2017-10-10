@@ -1,3 +1,4 @@
+'use strict';
 
 // Returns a datastructure containing references to elements and associated
 // scores.

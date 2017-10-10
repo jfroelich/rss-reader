@@ -1,5 +1,6 @@
+'use strict';
+
 function filter_article_title(title) {
-  'use strict';
   let index = title.lastIndexOf(' - ');
   if(index === -1)
     index = title.lastIndexOf(' | ');

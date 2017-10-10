@@ -1,5 +1,6 @@
-(function(exports) {
 'use strict';
+
+(function(exports) {
 
 async function poll_entry(entry, reader_conn, icon_conn, feed,
   fetch_html_timeout_ms, fetch_img_timeout_ms) {

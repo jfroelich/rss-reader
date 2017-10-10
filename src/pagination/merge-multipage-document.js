@@ -1,3 +1,5 @@
+'use strict';
+
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a
 // multipage document, the other pages are merged into the document and
@@ -6,8 +8,6 @@
 // @param location {String} url of the document
 // @param timeout_ms {Number} timeout per page fetch
 async function merge_multipage_document(doc, location, timeout_ms) {
-  'use strict';
-
   const lca_max_distance = 3;
   const anchors = find_pagination_anchors(doc, location, lca_max_distance);
   if(!anchors.length)

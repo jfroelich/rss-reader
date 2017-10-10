@@ -1,4 +1,5 @@
 // Lib for working with responsive techniques in html documents
+'use strict';
 
 // Dependencies:
 // assert.js
@@ -28,7 +29,6 @@ It should probably run before the lazy image transform.
 
 // @param doc {Document} the document to modify
 function responsive_transform_document(doc) {
-  'use strict';
   ASSERT(doc);
   if(!doc.body)
     return;
@@ -42,7 +42,6 @@ function responsive_transform_document(doc) {
 
 
 function responsive_transform_image(image_element) {
-  'use strict';
   const srcset_value = image_element.getAttribute('srcset');
 
   // The try/catch is due to mistrust of third party code,

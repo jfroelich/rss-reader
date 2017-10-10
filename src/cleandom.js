@@ -1,6 +1,6 @@
-(function(exports) {
-
 'use strict';
+
+(function(exports) {
 
 function sanitize_html_document(doc) {
 

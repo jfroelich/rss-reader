@@ -1,5 +1,6 @@
-(function(exports) {
 'use strict';
+
+(function(exports) {
 
 function settings_channel_onmessage(event) {
   if(event.data === 'changed')
