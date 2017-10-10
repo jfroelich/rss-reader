@@ -15,16 +15,11 @@
 // @param timeout_ms {Number} a positive integer, optional
 
 /*
-# TODO
-
-* Based on errors in the console Chrome may implicitly be treating
-204 as a network error, based on seeing "no content errors" that occur
-sometimes when doing fetch. There may not be a need to explicitly check for
-this error code. I would need to test further.
-
 TODO: i think it would be acceptable and more convenient to just
 use an acronym in this case. Rename file to gfa.js, rename function to
 gfa_search
+
+TODO: create a fetch_json function in fetch file somewhere, then defer to that
 */
 
 async function google_feeds_api_search(query_string, timeout_ms) {

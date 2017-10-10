@@ -13,6 +13,15 @@ function response_is_valid(response) {
 
   // The spec says 204 is ok, because response.ok is true for status codes
   // 200-299, but I consider 204 to be an error.
+
+/*
+Comment moved from google feeds api code:
+Based on errors in the console Chrome may implicitly be treating
+204 as a network error, based on seeing "no content errors" that occur
+sometimes when doing fetch. There may not be a need to explicitly check for
+this error code. I would need to test further.
+*/
+
   const HTTP_STATUS_NO_CONTENT = 204;
   return response.ok && response.status !== HTTP_STATUS_NO_CONTENT;
 }
