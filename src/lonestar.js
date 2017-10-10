@@ -8,6 +8,8 @@
 // TODO: move patterns into an external configuration file of some sort? or
 // see if patterns can be configured within manifest.json and loaded from there?
 
+const LONESTAR_DEBUG = false;
+
 const LONESTAR_PATTERNS = [
   /\/\/.*2o7\.net\//i,
   /\/\/ad\.doubleclick\.net\//i,
@@ -74,7 +76,11 @@ function lonestar_filter_telemetry_images(doc) {
   const image_elements = doc.body.querySelectorAll('img');
   for(const image_element of image_elements) {
     if(lonestar_image_is_telemetry(image_element)) {
-      DEBUG('removing telemetry image', image_element.outerHTML);
+
+      if(LONESTAR_DEBUG) {
+        DEBUG('removing telemetry image', image_element.outerHTML);
+      }
+
       image_element.remove();
       num_elements_modified++;
     }

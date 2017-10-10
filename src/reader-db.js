@@ -1,6 +1,7 @@
 // Library for working with the reader app's database
 
 // Dependencies:
+// assert.js
 // debug.js
 
 // @private
@@ -60,7 +61,7 @@ function reader_db_open_internal(name, version, shared_state) {
       }
 
       if(READER_DB_DEBUG)
-        DEBUG('connected to indexedDB', name, version);
+        DEBUG('connected to database %s v', name, version);
       resolve(conn);
     };
     request.onerror = () => reject(request.error);
@@ -192,7 +193,7 @@ function reader_db_find_entry_by_id(conn, id) {
   });
 }
 
-function find_entry_by_url(conn, url_string) {
+function reader_db_find_entry_by_url(conn, url_string) {
   'use strict';
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -428,6 +429,9 @@ function reader_db_put_feed(conn, feed) {
   });
 }
 
+// TODO: do it all here, do not delegate to reader_db_remove_entry
+// TODO: wait to post messages until transaction completes, to avoid
+// premature notification
 function reader_db_remove_entries(conn, ids, channel) {
   'use strict';
   const tx = conn.transaction('entry', 'readwrite');

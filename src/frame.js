@@ -1,16 +1,16 @@
+// DOM frame utilities
 
-/*
+// Dependencies:
+// assert.js
 
-# TODO
-
-* maybe eventually make async and merge frames into single document
-* maybe inline iframes somehow, or replace with a message instead of
-removing
-* write tests
-*/
-
-function transform_framed_document(doc) {
+// Removes frame content from a document
+// @param doc {Document} the document to inspect and modify
+// TODO: consider making async and merging frame content to a single document
+// TODO: maybe inline iframes or replace with a message
+// TODO: write tests
+function frame_transform_document(doc) {
   'use strict';
+  ASSERT(doc);
 
   let body_element = doc.body;
   if(!body_element)
@@ -45,7 +45,7 @@ function transform_framed_document(doc) {
 
   // Replace the old frameset body with the new body
   // NOTE: this assumes the body is always located under the doc element,
-  // i think that is ok? should maybe be stricter.
+  // i think that is ok? Should maybe be stricter.
   doc.documentElement.replaceChild(new_body_element, body_element);
 
   // Remove any frame or frameset elements if somehow any remain

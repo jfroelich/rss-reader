@@ -133,11 +133,13 @@ function sniff_image_dimensions_from_url(url_object) {
 }
 
 // Returns a file name without its extension
+// TODO: move to url.js
 function filter_file_name_extension(file_name) {
   const index = file_name.lastIndexOf('.');
   return index < 0 ? file_name : file_name.substring(0, index);
 }
 
+// TODO: move to url.js
 function extract_file_name_from_path(path) {
   console.assert(path.charAt(0) === '/', 'invalid path: ' + path);
   const index = path.lastIndexOf('/');
@@ -158,6 +160,7 @@ function reject_after_timeout(timeout_ms, error_msg) {
   return new Promise(resolver);
 }
 
+// TODO: this should be in fetch lib
 function fetch_image_dimensions_with_timeout(url_object, timeout_ms) {
   const fetch_promise = fetch_image_dimensions(url_object);
   if(timeout_ms) {

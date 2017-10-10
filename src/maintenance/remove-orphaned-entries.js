@@ -1,8 +1,10 @@
+// TODO: reintroduce conn as a parameter
 async function remove_orphaned_entries(options) {
   'use strict';
   options = options || {};
   let conn, ids, conn_timeout_ms;
   try {
+    // TODO: are these even the correct property names?
     conn = await reader_db_open(options.dbName, options.dbVersion,
       conn_timeout_ms);
     const orphans = await reader_db_find_orphaned_entries(conn);

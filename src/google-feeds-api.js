@@ -18,6 +18,10 @@
 204 as a network error, based on seeing "no content errors" that occur
 sometimes when doing fetch. There may not be a need to explicitly check for
 this error code. I would need to test further.
+
+TODO: i think it would be acceptable and more convenient to just
+use an acronym in this case. Rename file to gfa.js, rename function to
+gfa_search
 */
 
 async function google_feeds_api_search(query_string, timeout_ms) {

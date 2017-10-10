@@ -35,7 +35,6 @@ function slide_remove(slide_element) {
 
 // TODO: visual feedback in event of an error?
 async function slide_mark_read(conn, slide_element) {
-  console.debug('slide_mark_read begin');
   // This is normal and not an error
   if(slide_element.hasAttribute('read'))
     return;
@@ -51,14 +50,12 @@ async function slide_mark_read(conn, slide_element) {
       is_local_conn = true;
     }
 
-
-    console.debug('Before call entry_mark_read');
     const status = await entry_mark_read(conn, entry_id_number);
     if(status !== STATUS_OK) {
-      // TODO: handle error
-      console.warn('Failed to mark entry as read');
+      // TODO: react to error
+      DEBUG('Failed to mark entry as read');
     } else {
-      console.log('Marked as read');
+      DEBUG('Marked as read');
     }
 
     slide_element.setAttribute('read', '');
@@ -264,7 +261,6 @@ async function show_next_slide() {
       current_slide_element.focus();
 
       // Must be awaited
-      console.debug('before call slide_mark_read');
       await slide_mark_read(conn, old_slide_element);
     }
   } catch(error) {

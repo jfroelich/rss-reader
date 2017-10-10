@@ -51,14 +51,10 @@ async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
   }
 
   // If fetch_feed did not throw then response should always be defined.
-  // NOTE: this may not be the case if I later modify fetch_feed to return
-  // undefined instead of throw in the usual case. If that is later changed I
-  // need to remember to change this to check if response is defined
   ASSERT(response);
 
   if(response.redirected) {
-    status = await sub_url_is_unique(response.responseURLString,
-      reader_conn);
+    status = await sub_url_is_unique(response.response_url, reader_conn);
     if(status !== STATUS_OK)
       return {'status' : status};
 

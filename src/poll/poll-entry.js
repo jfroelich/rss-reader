@@ -66,6 +66,12 @@ async function poll_entry(entry, reader_conn, icon_conn, feed,
   // TODO: prepare_remote_entry should return a new entry, not operate on an
   // entry
   await prepare_remote_entry(entry, entry_document, fetch_img_timeout_ms);
+
+  // BUG: when polling several feeds I occassionally see a bug, where this
+  // tries to execute after the connection has been closed. Not sure why.
+  // "Failed to execute 'transaction' on 'IDBDatabase': The database connection
+  // is closing." Also I am not sure on whether it is this line or the previous
+  // call
   return await prep_and_store_entry(reader_conn, entry);
 }
 
@@ -147,7 +153,7 @@ function is_unpollable_url(url_string) {
   if(cookie_hosts.includes(hostname))
     return true;
 
-  if(is_probably_binary_path(url_object.pathname))
+  if(url_path_sniff_is_binary(url_object.pathname))
     return true;
   return false;
 }

@@ -85,6 +85,8 @@ attr
 
 */
 
+const DEBUG_LAZY_IMAGE = false;
+
 function transform_lazy_images(doc) {
   'use strict';
   ASSERT(doc);
@@ -113,7 +115,11 @@ function transform_lazy_images(doc) {
         if(url_is_valid(url_string)) {
           img.removeAttribute(lazy_src_attr_name);
           img.setAttribute('src', url_string);
-          DEBUG('transformed lazily loaded image', img);
+
+          if(DEBUG_LAZY_IMAGE) {
+            DEBUG('transformed lazily loaded image', img);
+          }
+
           num_imgs_modified++;
           break;
         }

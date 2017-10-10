@@ -1,3 +1,8 @@
+// Dependencies
+// assert.js
+// srcset.js
+// url.js
+
 (function(exports) {
 'use strict';
 
@@ -116,82 +121,37 @@ function resolve_srcset_attr(element, base_url) {
     element.setAttribute('srcset', new_srcset_attr_value);
 }
 
-// @param descriptors {Array} an array of descriptor objects
-function serialize_srcset(descriptors) {
-  const descriptor_strings = [];
-  for(let descriptor of descriptors) {
-    const strings = [descriptor.url];
-    if(descriptor.d) {
-      strings.push(' ');
-      strings.push(descriptor.d);
-      strings.push('x');
-    } else if(descriptor.w) {
-      strings.push(' ');
-      strings.push(descriptor.w);
-      strings.push('w');
-    } else if(descriptor.h) {
-      strings.push(' ');
-      strings.push(descriptor.h);
-      strings.push('h');
-    }
-
-    const descriptor_string = strings.join('');
-    descriptor_strings.push(descriptor_string);
-  }
-
-  return descriptor_strings.join(', ');
-}
-
-// Returns the absolute form the input url
-function resolve_url(url_string, base_url) {
-  ASSERT(Object.prototype.toString.call(base_url) === '[object URL]');
-
-  // TODO: use a single regex for speed? Or maybe get the protocol,
-  // normalize it, and check against a list of bad protocols?
-  // TODO: or if it has any protocol, then just return the url as is?
-  // - but that would still require a call to new URL
-  // Or can we just check for the presence of any colon?
-  if(/^\s*javascript:/i.test(url_string) ||
-    /^\s*data:/i.test(url_string) ||
-    /^\s*mailto:/i.test(url_string)) {
-    return;
-  }
-
-  let absolute_url_object;
-  try {
-    absolute_url_object = new URL(url_string, base_url);
-  } catch(error) {
-  }
-  return absolute_url_object;
-}
-
 exports.resolve_document_urls = resolve_document_urls;
 
 }(this));
 
 /*
 
-# Misc. improvements to resolving document urls
+* Should probably be rewritten to only inspect relevant attributes per
+element type, instead of a general map?
+* use a more qualified or clearer function name for resolveElement, this
+resolves the value for a particular url-containing attribute of the element
+* not entirely sure why i have this see also comment, i think it was help in
+defining the attribute map
 
-* Should probably be rewritten to only inspect relevant attributes per element type, instead of a general map?
-* use a more qualified or clearer function name for resolveElement, this resolves the value for a particular url-containing attribute of the element
-* not entirely sure why i have this see also comment, i think it was help in defining the attribute map
--- See also https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
+See also https://github.com/kangax/html-minifier/blob/gh-pages/src/htmlminifier.js
 
 Regarding resolving doc urls
 
-* think of what do about the common 'http://#fragment' url value found on various sites
-the removal of http://# probably belongs in a separate filter pass or should not be done, or it should at least be unwrapping instead of removing possibly valuable content
-* think about what to do about the common '#' url. Usually these are just links back to the top, or have an onclick handler. maybe these should be treated specially by a separate transform.
+
+* think about what to do about the common '#' url. Usually these are just
+links back to the top, or have an onclick handler. maybe these should be
+treated specially by a separate transform.
 * resolve xlink type simple (on any attribute) in xml docs
 
-# TODO: Support style images when resolving document urls
+# TODO: Support css background-image/background urls
+check if image has inline style, and if so, inspect the style property, and if
+it has a background or background image property, and that property has a url,
+then ensure the url is absolute.
 
-style.backgroundImage
+what about the fact that style is removed from all attributes when scrubbing
+ the dom. This makes this operation seem pointless.
 
-check if image has inline style, and if so, inspect the style property, and if it has a background or background image property, and that property has a url, then ensure the url is absolute.
-
-what about the fact that style is removed from all attributes when scrubbing the dom. This makes this operation seem pointless.
-
-I could revise the attribute filtering part to allow for style background image. But then I need to think more about how that can affect a rendered article
+I could revise the attribute filtering part to allow for style background image.
+But then I need to think more about how that can affect a rendered article
 */

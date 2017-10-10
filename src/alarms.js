@@ -3,6 +3,10 @@
 TODO: Gracefully manage background alarms. Create a graceful way to
 rename/remove alarms. Right now if I stop using an alarm it remains silently
 persistent somewhere in chrome.alarms internal state, indefinitely.
+
+Maybe keep track of registered alarms in localStorage. This might also help
+avoid repeated registration (although it still performs repeated checks  
+every page load)
 */
 
 

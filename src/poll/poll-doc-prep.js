@@ -14,7 +14,7 @@ function poll_doc_prep(doc, url_string) {
   }
 
   ensure_document_has_body(doc);
-  transform_framed_document(doc);
+  frame_transform_document(doc);
   host_template_prune(url_string, doc);
   filter_boilerplate(doc);
   secure_html_document(doc);

@@ -1,3 +1,5 @@
+// TODO: move file out of utils folder
+
 // Calculates the approximate byte size of a value. This should only be
 // used for basic testing because it is hilariously inaccurate.
 //
@@ -10,6 +12,10 @@
 // value
 function sizeof(input_value) {
   'use strict';
+
+  // Visited is a memoization of previously visited objects. In theory
+  // a repeated object just means enough bytes to store a reference value,
+  // and only the first object actually allocates additional memory.
   const visited_objects = [];
   const stack = [input_value];
   const has_own_prop = Object.prototype.hasOwnProperty;

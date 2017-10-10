@@ -20,8 +20,8 @@ function parse_fetched_feed(response) {
     }
   }
 
-  feed_append_url(feed, response.requestURLString);
-  feed_append_url(feed, response.responseURLString);
+  feed_append_url(feed, response.request_url);
+  feed_append_url(feed, response.response_url);
   feed.dateFetched = new Date();
   feed.dateLastModified = response.lastModifiedDate;
 
