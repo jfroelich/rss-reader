@@ -46,7 +46,6 @@ const LONESTAR_PATTERNS = [
 // http://w3c.github.io/html/links.html#link-type-noreferrer
 // TODO: tests
 // TODO: deal with the new <picture> element
-// TODO: rename to something like lonestar prefix
 function lonestar_transform_document(doc) {
   let num_elements_modified = 0;
 

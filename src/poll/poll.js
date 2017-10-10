@@ -182,11 +182,11 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
   ASSERT(local_feed);
 
   const url_string = feed_get_top_url(local_feed);
-  const timeout_ms = fetch_feed_timeout_ms;
-  const is_accept_html = true;
+  const accept_html = true;
 
   // Allow exceptions to bubble
-  const response = await fetch_feed(url_string, timeout_ms, is_accept_html);
+  const response = await fetch_feed(url_string, fetch_feed_timeout_ms,
+    accept_html);
 
   // Before parsing, check if the feed was modified
   if(!ignore_modified_check && local_feed.dateUpdated &&

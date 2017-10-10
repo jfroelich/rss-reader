@@ -43,12 +43,23 @@ function url_get_hostname(url_string) {
 
 // Only minor validation for speed
 // Assumes canonical/absolute
-// TODO: add min length check
-function url_is_valid(url_string) {
-  return url_string && !url_string.trim().includes(' ');
+// @param url {String}
+function url_is_valid(url) {
+  // TODO: choose a more accurate minimum length
+  const URL_MIN_LENGTH = 1;
+
+  if(typeof url === 'string') {
+    url = url.trim();
+    if(url.length >= URL_MIN_LENGTH) {
+      return !url.includes(' ');
+    }
+  }
+  return false;
 }
 
 function url_path_is_valid(path) {
+  // NOTE: it is not obvious but path.length means that path has 1 or more
+  // characters, not that path has 0 or more
   return typeof path === 'string' &&
     path.length &&
     path.charAt(0) === '/' &&
@@ -90,10 +101,12 @@ function url_path_get_extension(path) {
 }
 
 
-// Return true if the path probably represents a binary resource
+// Return true if the path probably represents a binary resource. The sniff
+// keyword indicates this does not actually inspect the bytes of the resource,
+// this makes a guess based on the extension alone.
 // TODO: test input 'foo.'
 // TODO: write tests
-// TODO: maybe make this a helper to url_sniff_is_binary(url)
+// TODO: incorrect in several cases (e.g. application/javascript is text)
 function url_path_sniff_is_binary(path) {
   const extension = url_path_get_extension(path);
   if(!extension)

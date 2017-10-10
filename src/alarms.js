@@ -10,6 +10,7 @@ avoid repeated registration (although it still performs repeated checks
 every page load)
 */
 
+const ALARMS_DEBUG = false;
 
 async function alarms_on_archive_alarm() {
   let conn;
@@ -20,19 +21,22 @@ async function alarms_on_archive_alarm() {
     conn = await reader_db_open(db_name, db_version, db_conn_timeout);
     status = await archive_entries(conn, max_age_ms);
   } catch(error) {
-    DEBUG(error);
+    if(ALARMS_DEBUG)
+      DEBUG(error);
   } finally {
     if(conn)
       conn.close();
   }
 
   if(status !== STATUS_OK) {
-    DEBUG('archive entries failed status', status);
+    if(ALARMS_DEBUG)
+      DEBUG('archive entries failed status', status);
   }
 }
 
 async function alarms_on_alarm_wakeup(alarm) {
-  DEBUG('alarm wokeup:', alarm.name);
+  if(ALARMS_DEBUG)
+    DEBUG('alarm wokeup:', alarm.name);
 
   switch(alarm.name) {
   case 'archive':
@@ -61,17 +65,19 @@ async function alarms_on_alarm_wakeup(alarm) {
     favicon.compact(name, version, max_age_ms).catch(console.warn);
     break;
   default:
-    DEBUG('Unknown alarm:', alarm.name);
+    if(ALARMS_DEBUG)
+      DEBUG('Unknown alarm:', alarm.name);
     break;
   }
 }
 
 function alarms_register_all() {
+  // TODO: because this is currently called on script load, this may be before
+  // other libs loaded. Therefore cannot use debug.js calls. That or I should
+  // only call it after dom content loaded (that sounds better)
+  if(ALARMS_DEBUG)
+    console.debug('registering alarms');
 
-  // NOTE: because this is currently called on script load, this may be before
-  // other libs loaded. Therefore cannot use debug.js calls
-
-  console.debug('registering alarms');
   chrome.alarms.create('archive',
     {'periodInMinutes': 60 * 12});
   chrome.alarms.create('poll',

@@ -1,5 +1,7 @@
 'use strict';
 
+// TODO: maybe rename to coerce-feed or something?
+
 // Post fetch processing that coerces a fetched feed into the app's storage
 // format.
 // @param response {Object} the result of calling fetch_feed

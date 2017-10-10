@@ -2,62 +2,26 @@
 
 'use strict';
 
+// Dependencies:
+// assert.js
+// string.js
+
+// Some global mime types commonly used
 const MIME_TYPE_HTML = 'text/html';
 const MIME_TYPE_XML = 'application/xml';
 
-// TODO: integrate part of the sniff stuff here
-
+// Return a mime type corresponding a file name extension
+// @param extension {String}
+// @returns {String} a mime type, or undefined on error or failed lookup
 function mime_get_type_for_extension(extension) {
+  const t_extension = typeof extension;
+  if(t_extension === 'undefined')
+    return;
 
-  /*
-  TODO: update the map content to reflect some of Google's own classifications
-  as shown by the following url
-  https://chromium.googlesource.com/chromium/src/+/net/base/mime_util.cc
+  ASSERT(t_extension === 'string');
 
-  {"application/x-chrome-extension", "crx"},
-  {"application/xhtml+xml", "xhtml,xht,xhtm"},
-  {"audio/flac", "flac"},
-  {"audio/mp3", "mp3"},
-  {"audio/ogg", "ogg,oga,opus"},
-  {"audio/wav", "wav"},
-  {"audio/webm", "webm"},
-  {"audio/x-m4a", "m4a"},
-  {"image/gif", "gif"},
-  {"image/jpeg", "jpeg,jpg"},
-  {"image/png", "png"},
-  {"image/webp", "webp"},
-  {"multipart/related", "mht,mhtml"},
-  {"text/css", "css"},
-  {"text/html", "html,htm,shtml,shtm"},
-  {"text/xml", "xml"},
-  {"video/mp4", "mp4,m4v"},
-  {"video/ogg", "ogv,ogm"},
-
-  {"image/x-icon", "ico"},
-  {"application/epub+zip", "epub"},
-  {"application/font-woff", "woff"},
-  {"application/gzip", "gz,tgz"},
-  {"application/javascript", "js"},
-  {"application/octet-stream", "bin,exe,com"},
-  {"application/pdf", "pdf"},
-  {"application/pkcs7-mime", "p7m,p7c,p7z"},
-  {"application/pkcs7-signature", "p7s"},
-  {"application/postscript", "ps,eps,ai"},
-  {"application/rdf+xml", "rdf"},
-  {"application/rss+xml", "rss"},
-  {"application/vnd.android.package-archive", "apk"},
-  {"application/vnd.mozilla.xul+xml", "xul"},
-  {"application/x-gzip", "gz,tgz"},
-  {"application/x-mpegurl", "m3u8"},
-  {"application/x-shockwave-flash", "swf,swl"},
-  {"application/x-tar", "tar"},
-  {"application/zip", "zip"},
-  {"audio/mpeg", "mp3"},
-  {"image/bmp", "bmp"},
-  {"image/jpeg", "jfif,pjpeg,pjp"},
-  {"image/svg+xml", "svg,svgz"},
-
-  */
+  // List adapted from
+  // https://chromium.googlesource.com/chromium/src/+/net/base/mime_util.cc
 
   // Defined inline so as to avoid having the table persist in memory
   // indefinitely. Let v8 worry about optimization. Also avoids global scope
@@ -73,39 +37,54 @@ function mime_get_type_for_extension(extension) {
     'cc':   'text/plain',
     'cgi':  'text/hml',
     'class':'application/java',
+    'com':  'application/octet-stream',
     'cpp':  'text/plain',
     'css':  'text/css',
     'doc':  'application/msword',
     'docx':
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'eml':  'message/rfc822',
+    'eps':  'application/postscript',
     'exe':  'application/octet-stream',
     'flac': 'audio/flac',
     'fli':  'video/fli',
     'gif':  'image/gif',
-    'gz':   'application/x-gzip',
+    'gz':   'application/gzip',
     'h':    'text/plain',
     'htm':  'text/html',
     'html': 'text/html',
-    'ico':  'image/vnd.microsoft.icon', // image/x-icon
+    'ico':  'image/x-icon', // image/vnd.microsoft.icon
     'ics':  'text/calendar',
     'java': 'text/plain',
-    'jpg':  'image/jpg',
+    'jfif': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'jpg':  'image/jpeg',
     'js':   'application/javascript',
     'json': 'application/json',
     'jsp':  'text/html',
     'log':  'text/plain',
+    'm3u8': 'application/x-mpegurl',
+    'm4a':  'audio/x-m4a',
+    'm4v':  'video/mp4',
     'md':   'text/plain',
+    'mth':  'multipart/related',
+    'mhtml': 'multipart/related',
     'midi': 'audio/midi',
     'mov':  'video/quicktime',
-    'mp2':  'audio/mpeg', // can also be video
-    'mp3':  'audio/mpeg3', // can also be video
+    'mp2':  'audio/mpeg',
+    'mp3':  'audio/mpeg',
+    'mp4':  'video/mp4',
     'mpeg': 'video/mpeg',
     'mpg':  'video/mpeg',
+    'oga':  'audio/ogg',
     'ogg':  'audio/ogg',
+    'ogm':  'video/ogg',
     'ogv':  'video/ovg',
+    'opus': 'audio/ogg',
     'pdf':  'application/pdf',
     'php':  'text/html',
+    'pjp':  'image/jpeg',
+    'pjpeg': 'image/jpeg',
     'pl':   'text/html',
     'png':  'image/x-png',
     'pps':  'application/vnd.ms-powerpoint',
@@ -113,27 +92,65 @@ function mime_get_type_for_extension(extension) {
     'pptx':
       'application/vnd.openxmlformats-officedocument.presentationml.' +
       'presentation',
+    'ps':  'application/postscript',
     'rar':  'application/octet-stream',
-    'rss':  'application/rss+xml',
+
+    // TODO: need to fix binary guessing to uncomment
+    // 'rdf': 'application/rdf+xml',
+    // 'rss':  'application/rss+xml',
+
     'sh' :  'text/x-sh',
+    'shtm': 'text/html',
+    'shtml': 'text/html',
     'svg':  'image/svg+xml',
+    'svgz': 'image/svg+xml',
     'swf':  'application/x-shockwave-flash',
+    'swl':  'application/x-shockwave-flash',
+    'tar':  'application/x-tar',
     'text': 'text/plain',
     'tif':  'image/tiff',
     'tiff': 'image/tiff',
+    'tgz':  'application/gzip',
     'txt':  'text/plain',
     'wav':  'audio/wav',
-    'webm': 'video/webm',
+    'webm': 'audio/webm',
+    'webp': 'image/webp',
+    'woff': 'application/font-woff',
     'xbl':  'text/xml',
+    'xht':  'application/xhtml+xml',
+    'xhtm': 'application/xhtml+xml',
+    'xhtml': 'application/xhtml+xml',
     'xmb':  'image/x-xbitmap',
     'xls':  'application/vnd.ms-excel',
     'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'xml':  'application/xml',
+    'xml':  'text/xml',
     'xsl':  'text/xml',
     'xslt': 'text/xml',
+    'xul':  'application/vnd.mozilla.xul+xml',
     'zip':  'application/zip'
   };
 
-  const mime_type = extension_mime_map[extension];
-  return mime_type;
+  return extension_mime_map[extension];
+}
+
+// Returns a normalized mime type from a content type
+// @param content_type {String} an http response header value, optional
+// @returns {String} a mime type, or undefined if error
+function mime_from_content_type(content_type) {
+  const t_content_type = typeof content_type;
+  if(t_content_type === 'undefined')
+    return;
+  ASSERT(t_content_type === 'string');
+  let mime_type = content_type;
+
+  // Strip the character encoding, if present. The substring gets all
+  // characters up to but excluding the semicolon. I understand the coding
+  // to be optional, so leave the type as is if no semicolon is present.
+  const from_index = 0;
+  const semicolon_position = content_type.indexOf(';');
+  if(semicolon_position !== -1)
+    mime_type = content_type.substring(from_index, semicolon_position);
+
+  // Normalize and return, the trim is implicit
+  return string_remove_whitespace(mime_type).toLowerCase();
 }

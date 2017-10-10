@@ -36,7 +36,6 @@
       "/src/parse-feed.js",
       "/src/parse-fetched-feed.js",
       "/src/reader-db.js",
-      "/src/response.js",
       "/src/responsive.js",
       "/src/rewrite-url.js",
       "/src/secure-html-document.js",
