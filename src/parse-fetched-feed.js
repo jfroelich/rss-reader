@@ -1,13 +1,16 @@
 'use strict';
 
 // TODO: maybe rename to coerce-feed or something?
+// TODO: change parse_fetched_feed to not throw in the usual case
 
 // Post fetch processing that coerces a fetched feed into the app's storage
 // format.
 // @param response {Object} the result of calling fetch_feed
-function parse_fetched_feed(response) {
+async function parse_fetched_feed(response) {
+  const feed_xml_string = await response.text();
+
   // Allow parse error to bubble
-  const parse_result = parse_feed(response.text);
+  const parse_result = parse_feed(feed_xml_string);
   const feed = parse_result.feed;
 
   if(!feed.datePublished)

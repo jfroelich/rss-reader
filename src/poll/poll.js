@@ -197,7 +197,16 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
     return 0;
   }
 
-  const parse_feed_result = parse_fetched_feed(response);
+  // TODO: provide an option to do a crc32 check for whether feed content
+  // has changed instead of relying on date modified header, because date
+  // modified header may not be trustworthy?
+
+  // Now that we know the feed has been modified according to its header,
+  // fetch and parse the body of the response into a feed object
+  // Must be awaited because internally parse_fetched_feed fetches the body
+  // of the response
+  const parse_feed_result = await parse_fetched_feed(response);
+
   const merged_feed = merge_feeds(local_feed, parse_feed_result.feed);
 
   // Prepare the feed for storage

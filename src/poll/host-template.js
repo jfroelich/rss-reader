@@ -1,5 +1,7 @@
 'use strict';
 
+const HOST_TEMPLATE_DEBUG = false;
+
 // TODO: doc should be first parameter
 // TODO: host_selector_map should be a parameter to this function so that
 // configuration is defined externally so that it can be changed without
@@ -23,7 +25,9 @@ function host_template_prune(url_string, doc) {
   if(!selectors)
     return;
 
-  DEBUG('template pruning', url_string);
+  if(HOST_TEMPLATE_DEBUG) {
+    DEBUG('template pruning', url_string);
+  }
 
   const selector = selectors.join(',');
   const elements = doc.querySelectorAll(selector);

@@ -66,10 +66,14 @@ async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
     // here.
   }
 
-  // TODO: change parse_fetched_feed to not throw in the usual case
+  // Now that we know the redirect does not exist, parse the remainder of the
+  // response into a feed object.
+
   let parse_result;
   try {
-    parse_result = parse_fetched_feed(response);
+    // Must be awaited because internally parse_fetched_feed fetches the body
+    // of the response
+    parse_result = await parse_fetched_feed(response);
   } catch(error) {
     DEBUG(error);
     return {'status': ERR_PARSE};

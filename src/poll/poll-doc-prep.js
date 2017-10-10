@@ -1,17 +1,20 @@
 'use strict';
 
+// Dependencies:
+// assert.js
+
 function poll_doc_prep(doc, url_string) {
-  // TODO: inline
-  function ensure_document_has_body(doc) {
-    if(doc.body)
-      return;
+  ASSERT(doc);
+
+  // Ensure the document has a body element
+  if(!doc.body) {
+    const error_message = 'Error empty document (no body found)';
     const body_element = doc.createElement('body');
-    const text_node = doc.createTextNode('Error empty document (no body found)');
+    const text_node = doc.createTextNode(error_message);
     body_element.appendChild(text_node);
     doc.documentElement.appendChild(body_element);
   }
 
-  ensure_document_has_body(doc);
   frame_transform_document(doc);
   host_template_prune(url_string, doc);
   filter_boilerplate(doc);

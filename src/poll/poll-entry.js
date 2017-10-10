@@ -46,7 +46,7 @@ async function poll_entry(entry, reader_conn, icon_conn, feed,
   }
 
   if(response.redirected) {
-    url_string = response.responseURLString;
+    url_string = response.response_url;
     if(is_unpollable_url(url_string))
       return false;
     if(await reader_db_find_entry_by_url(reader_conn, url_string))
@@ -184,6 +184,8 @@ async function prep_and_store_entry(reader_conn, entry) {
 }
 
 function prepare_local_entry(entry) {
+  ASSERT(entry);
+
   if(!entry.content)
     return entry;
 
@@ -198,8 +200,17 @@ function prepare_local_entry(entry) {
     return entry;
   }
 
+  // TEMP: tracking issue with poll_doc_prep saying doc.createElement is not
+  // a function
+  // If above failed, doc should be defined
+  ASSERT(doc);
+
   // TODO: this should be part of poll_doc_prep not external
   lonestar_transform_document(doc);
+
+  // TEMP: this is to track issue with bug in poll_doc_prep where doc
+  // was undefined
+  ASSERT(doc);
 
   poll_doc_prep(doc, url_string);
   const content = doc.documentElement.outerHTML.trim();

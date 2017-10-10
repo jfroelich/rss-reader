@@ -7,24 +7,64 @@
 // mime.js
 // url.js
 
-// TODO: fetch_feed and fetch_html share so much logic, I think it makes sense
-// to consider designing a helper function like fetch_internal that both use.
-// The only differences are basically the response content type validation,
-// and how and when body content is accessed. I think this should maybe be the
-// top priority to implement. It will also make it very simple to implement
-// the various other fetches (json/image/etc). Then each fetch_type function
-// becomes simple a parameterized call to fetch_internal
 
-// TODO: change fetch functions to not throw in the usual case. In other words,
-// a network error or a 404 type response should not cause exceptions to be
-// thrown.
-// NOTE: I should wait on implementing the other fetch functions until I see
-// the typical pattern from refactoring fetch_feed and fetch_html
+// TODO: change functions to return status instead of throwing exceptions
 // TODO: implement fetch_json and have google feeds call it
 // TODO: implement fetch_image_head and move it out of favicon.js
 // TODO: implement fetch_image_element and move it out of set-image-dimensions
 // TODO: favicon I think also needs to switch to using fetch_html
 
+// A 'private' helper function for other fetch functions
+// @param url {String} request url
+// @param options {Object} optional, fetch options parameter
+// @param timeout_ms {Number} optional, timeout in milliseconds
+// @param accept_response {Function} optional, if specified then is passed the
+// response, and then the return value is asserted
+// @returns {Object} a Response-like object
+async function fetch_internal(url, options, timeout_ms, accept_response) {
+  // Allow exception to bubble
+  // TODO: trap exception. should return error code instead
+  const response = await fetch_with_timeout(url, options, timeout_ms);
+
+  // TODO: instead of assert, return error
+  // TODO: check typeof === whatever response type should be, be more strict
+  // in the assertion. Or maybe that is stupid.
+  ASSERT(response);
+
+  // TODO: instead of assert, return error
+  ASSERT(response.ok);
+
+  // The spec says 204 is ok, because response.ok is true for status codes
+  // 200-299, but I consider 204 to be an error.
+  // NOTE: based on errors in the console Chrome may implicitly be treating
+  // 204 as a network error, based on seeing "no content errors" that occur
+  // sometimes when doing fetch. There may not be a need to explicitly check for
+  // this error code. I would need to test further.
+  const HTTP_STATUS_NO_CONTENT = 204;
+  // TODO: instead of assert, return error
+  ASSERT(response.status !== HTTP_STATUS_NO_CONTENT);
+
+  // TODO: instead of assert, return error
+  if(accept_response) {
+    ASSERT(accept_response(response));
+  }
+
+  const response_wrapper = {};
+
+  response_wrapper.text = function() {
+    return response.text();
+  };
+
+  response_wrapper.request_url = url;
+  response_wrapper.response_url = response.url;
+
+  // TODO: rename this property to last_modified_date
+  response_wrapper.lastModifiedDate = fetch_get_last_modified_date(response);
+  response_wrapper.redirected = fetch_did_redirect(url, response.url);
+
+  // TODO: return [STATUS_OK, response_wrapper];
+  return response_wrapper;
+}
 
 
 // Fetches a feed. Returns a basic object, similar to Response, with custom
@@ -36,10 +76,8 @@
 // accept html when validating the mime type of the response. This does not
 // affect the request Accept header because servers do not appear to always
 // honor Accept headers.
-async function fetch_feed(url, timeout_ms, accept_html) {
-  // Default to accepting html mime type
-  if(typeof accept_html === 'undefined')
-    accept_html = true;
+// @returns {Promise} a promise that resolves to a Response-like object
+function fetch_feed(url, timeout_ms, accept_html) {
 
   const ACCEPT_HEADER = [
     'application/rss+xml',
@@ -61,45 +99,24 @@ async function fetch_feed(url, timeout_ms, accept_html) {
     'referrerPolicy': 'no-referrer'
   };
 
-  const response = await fetch_with_timeout(url, options, timeout_ms);
-
-  // TODO: should not assert. should return error code
-  ASSERT(fetch_response_is_valid(response));
-
-  // Validate the content type of the response
   const types = ['application/rss+xml', 'application/rdf+xml',
     'application/atom+xml', 'application/xml', 'text/xml'];
-  if(accept_html)
+  if(accept_html || typeof accept_html === 'undefined')
     types.push('text/html');
-  const content_type = response.headers.get('Content-Type');
-  const mime_type = mime_from_content_type(content_type);
 
-  // TODO: also should not assert
-  ASSERT(types.includes(mime_type));
+  function accept_response(response) {
+    const content_type = response.headers.get('Content-Type');
+    const mime_type = mime_from_content_type(content_type);
+    return types.includes(mime_type);
+  }
 
-  const response_wrapper = {};
-
-  // TODO: change this to not eagerly fetch text, but instead provide a function
-  // that later does it. There are times when I do not want to also read in the
-  // text. See how I did this in fetch_html
-  // TODO: in order to write fetch_internal and have this share the same
-  // helper logic as fetch_html this needs to migrate to the deferred text
-  // retrieval
-  response_wrapper.text = await response.text();
-  response_wrapper.request_url = url;
-  response_wrapper.response_url = response.url;
-
-  // TODO: rename this property to last_modified_date
-  response_wrapper.lastModifiedDate = fetch_get_last_modified_date(response);
-  response_wrapper.redirected = fetch_did_redirect(url, response.url);
-  return response_wrapper;
+  return fetch_internal(url, options, timeout_ms, accept_response);
 }
 
 // Fetches the html content of the given url
 // @param url {String} the url to fetch
 // @param timeout_ms {Number} optional, timeout in milliseconds
-// TODO: use fetch_with_timeout
-async function fetch_html(url, timeout_ms) {
+function fetch_html(url, timeout_ms) {
   const options = {
     'credentials': 'omit',
     'method': 'get',
@@ -111,30 +128,13 @@ async function fetch_html(url, timeout_ms) {
     'referrerPolicy': 'no-referrer'
   };
 
-  const response = await fetch_with_timeout(url, options, timeout_ms);
+  function accept_response_html_impl(response) {
+    const content_type = response.headers.get('Content-Type');
+    const mime_type = mime_from_content_type(content_type);
+    return mime_type === 'text/html';
+  }
 
-  // TODO: should not be assert
-  ASSERT(fetch_response_is_valid(response));
-
-  const content_type = response.headers.get('Content-Type');
-  const mime_type = mime_from_content_type(content_type);
-  // TODO: should not be assert
-  ASSERT(mime_type === 'text/html');
-
-  const response_wrapper = {};
-
-  // TODO: rename to request_url
-  response_wrapper.requestURLString = url;
-  // TODO: rename to response_url
-  response_wrapper.responseURLString = response.url;
-  response_wrapper.redirected = fetch_did_redirect(url, response.url);
-
-  // TODO: why async/await? Just return the promise?
-  response_wrapper.text = async function() {
-    return await response.text();
-  };
-
-  return response_wrapper;
+  return fetch_internal(url, options, timeout_ms, accept_response_html_impl);
 }
 
 
@@ -188,23 +188,6 @@ function fetch_with_timeout(url, options, timeout_ms, error_message) {
   const promises = [fetch_promise, timeout_promise];
 
   return Promise.race(promises);
-}
-
-// Returns true if a response is valid (ok), which generally means the response
-// has a status code in the range 200..299, except for 204.
-function fetch_response_is_valid(response) {
-  // TODO: check typeof === whatever response type should be
-  ASSERT(response);
-
-  // The spec says 204 is ok, because response.ok is true for status codes
-  // 200-299, but I consider 204 to be an error.
-  // NOTE: based on errors in the console Chrome may implicitly be treating
-  // 204 as a network error, based on seeing "no content errors" that occur
-  // sometimes when doing fetch. There may not be a need to explicitly check for
-  // this error code. I would need to test further.
-
-  const HTTP_STATUS_NO_CONTENT = 204;
-  return response.ok && response.status !== HTTP_STATUS_NO_CONTENT;
 }
 
 // Returns the value of the Last-Modified header as a Date object
