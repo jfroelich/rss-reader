@@ -5,7 +5,7 @@
 // debug.js
 
 // @private
-const READER_DB_DEBUG = true;
+const READER_DB_DEBUG = false;
 
 // Opens a connection to the database. If version is greater than current
 // version then database upgrades. If timeout given then open fails if database
@@ -111,8 +111,10 @@ function reader_db_onupgradeneeded(event) {
   let feed_store, entry_store;
   const stores = conn.objectStoreNames;
 
-  DEBUG('upgrading database %s to version %s from version', conn.name,
-    conn.version, event.oldVersion);
+  if(READER_DB_DEBUG) {
+    DEBUG('upgrading database %s to version %s from version', conn.name,
+      conn.version, event.oldVersion);
+  }
 
   if(event.oldVersion < 20) {
     feed_store = conn.createObjectStore('feed', {

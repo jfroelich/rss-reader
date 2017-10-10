@@ -80,7 +80,7 @@ chrome.runtime.onInstalled.addListener(on_installed);
 
 async function browser_action_on_click(event) {
   try {
-    await ext_show_slideshow_tab();
+    await extension_show_slideshow_tab();
   } catch(error) {
     console.warn(error);
   }

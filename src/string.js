@@ -1,13 +1,18 @@
 // Library for working with strings
 
+'use strict';
+
 // Returns a new string object where sequences of whitespace characters in the
 // input string are replaced with a single space character. Throws an error if
 // string is not a defined string.
 // TODO: there are a few places that use a similar function that
 // instead should depend on this function
 function string_condense_whitespace(string) {
-  'use strict';
   return string.replace(/\s{2,}/g, ' ');
+}
+
+function string_remove_whitespace(string) {
+  return string.replace(/\s+/g, '');
 }
 
 // Returns a new string where Unicode Cc-class characters have been removed.
@@ -17,6 +22,5 @@ function string_condense_whitespace(string) {
 // http://stackoverflow.com/questions/21284228
 // http://stackoverflow.com/questions/24229262
 function string_filter_control_chars(string) {
-  'use strict';
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }

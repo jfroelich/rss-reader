@@ -65,7 +65,12 @@ async function fetch_feed(url, timeout_ms, accept_html) {
 
   // TODO: these should not be asserts. should return error code instead
   ASSERT(response_is_valid(response));
-  ASSERT(response_is_valid_feed_type(response, accept_html));
+
+  const types = ['application/rss+xml', 'application/rdf+xml',
+    'application/atom+xml', 'application/xml', 'text/xml'];
+  if(accept_html)
+    types.push('text/html');
+  ASSERT( types.includes( response_get_type(response) ) );
 
   const output = {};
 

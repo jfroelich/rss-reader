@@ -3,10 +3,10 @@
 // Dependencies:
 // assert.js
 
+'use strict';
 
 // Returns true if a response is valid (ok).
 function response_is_valid(response) {
-  'use strict';
 
   // response should always be defined when calling this function.
   // TODO: make this check stricter and check type?
@@ -20,7 +20,6 @@ function response_is_valid(response) {
 
 
 function response_get_last_modified_date(response) {
-  'use strict';
   ASSERT(response);
 
   const last_modified_string = response.headers.get('Last-Modified');
@@ -30,8 +29,6 @@ function response_get_last_modified_date(response) {
   try {
     return new Date(last_modified_string);
   } catch(error) {
-    // This error is not interesting so no debug
-    // Return undefined
   }
 }
 
@@ -55,7 +52,6 @@ function response_get_last_modified_date(response) {
 // Response object produced by calling fetch.
 
 function response_is_redirect(request_url, response_url) {
-  'use strict';
 
   ASSERT(typeof request_url === 'string');
 
@@ -91,35 +87,25 @@ function response_is_redirect(request_url, response_url) {
   return request_url_object.href !== response_url_object.href;
 }
 
-
-function response_is_valid_feed_type(response, allow_html) {
-  'use strict';
-
+// Returns the mime type of the response
+// @param response {Response}
+// @returns {String} the mime type, normalized, or undefined if no type was
+// found
+function response_get_type(response) {
+  ASSERT(response);
   let type_string = response.headers.get('Content-Type');
-
-  // Treat unknown type as invalid
   if(!type_string)
-    return false;
+    return;
 
-  // Strip the character encoding, if present
+  // TODO: this should be a call to a helper in mime.js
+  // Strip the character encoding, if present. The substring gets all
+  // characters up to but excluding the semicolon. I understand the coding
+  // to be optional, so leave the type as is if no semicolon is present.
+  const from_index = 0;
   const semicolon_position = type_string.indexOf(';');
   if(semicolon_position !== -1)
-    type_string = type_string.substring(0, semicolon_position);
+    type_string = type_string.substring(from_index, semicolon_position);
 
-  // Normalize the type
-  type_string = type_string.replace(/\s+/g, '');
-  type_string = type_string.toLowerCase();
-
-  const types = [
-    'application/rss+xml',
-    'application/rdf+xml',
-    'application/atom+xml',
-    'application/xml',
-    'text/xml'
-  ];
-
-  if(allow_html)
-    types.push('text/html');
-
-  return types.includes(type_string);
+  // Normalize and return the type. The trim is implicit
+  return string_remove_whitespace(type_string).toLowerCase();
 }

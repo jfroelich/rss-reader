@@ -1,4 +1,9 @@
 
+# use global strict mode
+
+Treat it like a pragma. When am I ever going to use a library otherwise? It
+will make the code much more compact in several places too
+
 # simplify tests and notes
 
 moving test and note files back in with source led to large amounts of

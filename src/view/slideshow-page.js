@@ -1,6 +1,8 @@
 (function(exports){
 'use strict';
 
+const SLIDESHOW_DEBUG = false;
+
 let current_slide_element = null;
 
 const settings_channel = new BroadcastChannel('settings');
@@ -53,15 +55,18 @@ async function slide_mark_read(conn, slide_element) {
     const status = await entry_mark_read(conn, entry_id_number);
     if(status !== STATUS_OK) {
       // TODO: react to error
-      DEBUG('Failed to mark entry as read');
+      if(SLIDESHOW_DEBUG)
+        DEBUG('Failed to mark entry as read');
     } else {
-      DEBUG('Marked as read');
+      if(SLIDESHOW_DEBUG)
+        DEBUG('Marked as read');
     }
 
     slide_element.setAttribute('read', '');
   } catch(error) {
     // TODO: handle error
-    console.warn(error);
+    if(SLIDESHOW_DEBUG)
+      DEBUG(error);
   } finally {
     if(is_local_conn && conn)
       conn.close();
@@ -87,7 +92,8 @@ async function append_slides(conn) {
     entries = await reader_db_get_unarchived_unread_entries(conn, offset,
       limit);
   } catch(error) {
-    DEBUG(error);
+    if(SLIDESHOW_DEBUG)
+      DEBUG(error);
   } finally {
     if(is_local_conn && conn)
       conn.close();
