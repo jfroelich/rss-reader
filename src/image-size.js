@@ -2,12 +2,20 @@
 
 // Dependencies
 // assert.js
+// debug.js
 // fetch.js
 // url.js
 
-// TODO: deprecate IIFE
+// TODO: i notice that for documents containing the same image multiple times,
+// where a fetch is needed, I trigger multiple fetches. I wonder if there is
+// a better way of avoiding multiple fetches. yes, there is caching so after
+// the first fetch resolves all the rest should resolve, but I am worried that
+// i am sending repeated requests and I'd rather not do that. Maybe I should
+// do one pass that collects the images that need to be fetched, then a pass
+// over those that groups the elements by src url, then a pass over the distinct
+// src urls, then a pass over the elements updating them.
 
-(function(exports) {
+
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.
@@ -17,7 +25,9 @@
 // @param timeout_ms {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
 // TODO: write tests
-async function set_img_dimensions(doc, allowed_protocols, timeout_ms) {
+async function image_size_transform_document(doc, allowed_protocols,
+  timeout_ms) {
+
   ASSERT(doc);
 
   if(!doc.body)
@@ -35,7 +45,7 @@ async function set_img_dimensions(doc, allowed_protocols, timeout_ms) {
   const image_elements = doc.body.getElementsByTagName('img');
   const derive_promises = [];
   for(const image_element of image_elements) {
-    const promise = derive_img_dims_silently(image_element, allowed_protocols,
+    const promise = image_size_process_image_silently(image_element, allowed_protocols,
       timeout_ms);
     derive_promises.push(promise);
   }
@@ -52,14 +62,17 @@ async function set_img_dimensions(doc, allowed_protocols, timeout_ms) {
   return modified_image_count;
 }
 
-async function derive_img_dims_silently(image, allowed_protocols, timeout_ms) {
+// TODO: deprecate once image_size_process_image no longer throws exceptions
+// except for assertion failures
+async function image_size_process_image_silently(image, allowed_protocols,
+  timeout_ms) {
   try {
-    return await derive_img_dims(image, allowed_protocols, timeout_ms);
+    return await image_size_process_image(image, allowed_protocols, timeout_ms);
   } catch(error) {}
 }
 
 // TODO: change to never throw exception except in rare case
-async function derive_img_dims(image, allowed_protocols, timeout_ms) {
+async function image_size_process_image(image, allowed_protocols, timeout_ms) {
   // A template of the output produced by this function
   const result = {
     'image': image,
@@ -99,7 +112,7 @@ async function derive_img_dims(image, allowed_protocols, timeout_ms) {
   if(!allowed_protocols.includes(url_object.protocol))
     return;
 
-  const url_dimensions = sniff_image_dimensions_from_url(url_object);
+  const url_dimensions = image_size_sniff(url_object);
   if(url_dimensions) {
     result.width = url_dimensions.width;
     result.height = url_dimensions.height;
@@ -131,7 +144,7 @@ async function derive_img_dims(image, allowed_protocols, timeout_ms) {
 }
 
 // TODO: support "http://cdn.washingtonexaminer.biz/cache/730x420-asdf.jpg"
-function sniff_image_dimensions_from_url(url_object) {
+function image_size_sniff(url_object) {
   // Defer to fetch_image
   if(url_object.protocol === 'data:')
     return;
@@ -169,8 +182,3 @@ function sniff_image_dimensions_from_url(url_object) {
     }
   }
 }
-
-
-exports.set_img_dimensions = set_img_dimensions;
-
-}(this));

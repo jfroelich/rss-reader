@@ -141,6 +141,7 @@ function fetch_html(url, timeout_ms) {
 // @param timeout_ms {Number}
 // @returns {Promise}
 // NOTE: urls with data: protocol are fine
+// NOTE: timeout of 0 is equivalent to undefined, or untimed fetch
 // TODO: should this accept a host document parameter in which to create
 // the element (instead of new Image() using document.createElement('img'))
 // TODO: it is possible this should be using the fetch API to avoid cookies?
@@ -162,12 +163,14 @@ function fetch_image(url, timeout_ms) {
   // a timeout parameter.
   // NOTE: there is no penalty for calling clearTimeout with an invalid timer
 
-  // TODO: if the fetch wins, cancel the timeout
-  // TODO: if the timeout wins, cancel the fetch somehow
-
   const fetch_promise = new Promise(function(resolve, reject) {
 
     // Create an image element within the document running this script
+    // TODO: if this promise is to be cancelable I think I might need to
+    // define proxy in outer scope of promise, so I can do things like
+    // unregister the callback listeners. But how do I ever force the promise
+    // to settle? Just leave it unsettled? Isn't that a mem leak? Would that
+    // prevent background.js from ever being unloaded?
     const proxy = new Image();
     // Trigger the fetch
     // NOTE: using the old code, url_object.href, was probably the source
@@ -205,9 +208,18 @@ function fetch_image(url, timeout_ms) {
   }
 
   // There is a timeout, so we are going to race
-  const timeout_promise = new Promise(function(resolve, reject) {
-    timer_id = setTimeout(reject, timeout_ms,
-      new Error('Fetching image timed out ' + url));
+  // TODO: think about binds to reduce callback hell
+  const timeout_promise = new Promise(function time_exec(resolve, reject) {
+    timer_id = setTimeout(function on_timeout() {
+      // The timeout triggered.
+      // TODO: prior to settling, cancel the fetch somehow
+      // TODO: it could actually be after settling too I think?
+      // TODO: i want to cancel the fetch promise itself, and also the
+      // fetch_promise promise. actually there is no fetch promise in this
+      // context, just the Image.src assignment call. Maybe setting proxy.src
+      // to null does the trick?
+      reject(new Error('Fetching image timed out ' + url));
+    }, timeout_ms);
   });
 
   return Promise.race([fetch_promise, timeout_promise]);
@@ -261,7 +273,6 @@ function fetch_with_timeout(url, options, timeout_ms, error_message) {
   });
 
   const promises = [fetch_promise, timeout_promise];
-
   return Promise.race(promises);
 }
 

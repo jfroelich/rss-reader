@@ -97,7 +97,7 @@ async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms) {
 
   // This must occur after urls are resolved and after filtering tracking info
   let allowed_protocols;
-  await set_img_dimensions(doc, allowed_protocols, fetch_img_timeout_ms);
+  await image_size_transform_document(doc, allowed_protocols, fetch_img_timeout_ms);
 
   // Investing rare bug, TypeError: doc.createElement in poll_doc_prep
   ASSERT(doc);

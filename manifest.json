@@ -30,6 +30,7 @@
       "/src/html.js",
       "/src/html-shrink.js",
       "/src/image.js",
+      "/src/image-size.js",
       "/src/lazy-image.js",
       "/src/lonestar.js",
       "/src/mime.js",
@@ -50,7 +51,7 @@
       "/src/calamine/filter-boilerplate.js",
       "/src/doc-transforms/remove-element-attributes.js",
 
-      "/src/doc-transforms/set-image-dimensions.js",
+
       "/src/doc-transforms/transform-helpers.js",
 
       "/src/maintenance/archive-entries.js",
