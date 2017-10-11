@@ -1,7 +1,13 @@
 'use strict';
 
-(function(exports) {
+// Dependencies
+// assert.js
+// fetch.js
+// url.js
 
+// TODO: deprecate IIFE
+
+(function(exports) {
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.
@@ -10,19 +16,21 @@
 // @param doc {Document}
 // @param timeout_ms {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
+// TODO: write tests
 async function set_img_dimensions(doc, allowed_protocols, timeout_ms) {
+  ASSERT(doc);
+
   if(!doc.body)
     return 0;
 
   const default_allowed_protocols = ['data:', 'http:', 'https:'];
   if(typeof allowed_protocols === 'undefined')
     allowed_protocols = default_allowed_protocols;
-  ASSERT(typeof allowed_protocols.includes === 'function');
 
-  if(typeof timeout_ms === 'undefined')
-    timeout_ms = 0;
-  ASSERT(Number.isInteger(timeout_ms));
-  ASSERT(timeout_ms >= 0);
+  // Duck typing assertion, I believe includes is the only functionality of
+  // the parameter we care about. So if this trait is present we can infer the
+  // rest and assume the parameter is usable.
+  ASSERT(typeof allowed_protocols.includes === 'function');
 
   const image_elements = doc.body.getElementsByTagName('img');
   const derive_promises = [];
@@ -50,13 +58,27 @@ async function derive_img_dims_silently(image, allowed_protocols, timeout_ms) {
   } catch(error) {}
 }
 
+// TODO: change to never throw exception except in rare case
 async function derive_img_dims(image, allowed_protocols, timeout_ms) {
+  // A template of the output produced by this function
   const result = {
     'image': image,
     'width': undefined,
     'height': undefined,
     'hint': undefined
   };
+
+  // TODO: do not fetch if only one dimension is set. In this case just
+  // assume the image is a square and set the missing dimension to the known
+  // dimension. I think this is accurate most of the time. Or make it a
+  // parameter, a policy parameter on whether to allow for either one or to
+  // require both. No need to even modify if one is present. Instead make
+  // the area algorithm assume square.
+  // To do this, I need to check if one attribute is present but the other
+  // is not. In that case, just copy the attribute value to the other.
+  // For policy, add a infer_square boolean flag to the parameters list,
+  // If true, then only require 1 to sort of exit early (after setting other).
+  // If false, require both to exit early.
 
   if(image.hasAttribute('width') && image.hasAttribute('height'))
     return;
@@ -85,17 +107,32 @@ async function derive_img_dims(image, allowed_protocols, timeout_ms) {
     return result;
   }
 
-  const fetched_dimensions = await fetch_image_dimensions_with_timeout(
-    url_object, timeout_ms);
-  if(fetched_dimensions) {
-    result.width = fetched_dimensions.width;
-    result.height = fetched_dimensions.height;
-    result.hint = 'fetch';
-    return result;
-  }
+  // Allow exceptions to bubble. If fetch_image succeeds without exception
+  // then response is the new Image element.
+  const response = await fetch_image(url_object.href, timeout_ms);
+
+  // This was to solve a bug earlier, and am leaving it here for now because
+  // I plan to change this function to use this code eventually
+  /*let response;
+  try {
+    response = await fetch_image(url_object.href, timeout_ms);
+  } catch(error) {
+    console.error(error);
+    return;
+  }*/
+
+  // Access the new image element information using properties, because
+  // attributes are not initialized
+  result.width = response.width;
+  result.height = response.height;
+  result.hint = 'fetch';
+  return result;
+
 }
 
+// TODO: support "http://cdn.washingtonexaminer.biz/cache/730x420-asdf.jpg"
 function sniff_image_dimensions_from_url(url_object) {
+  // Defer to fetch_image
   if(url_object.protocol === 'data:')
     return;
 
@@ -121,9 +158,9 @@ function sniff_image_dimensions_from_url(url_object) {
   // on actually writing proper tests.
   // TODO: grab from file name (e.g. 100x100.jpg)
   const path = url_object.pathname;
-  const file_name = extract_file_name_from_path(path);
+  const file_name = url_path_get_file_name(path);
   if(file_name) {
-    const file_name_no_extension = filter_file_name_extension(file_name);
+    const file_name_no_extension = url_file_name_filter_extension(file_name);
     if(file_name_no_extension) {
       // TODO: parse using delim like "x" or "-", then parseInt
       // TODO: check that extension is an image extension?
@@ -133,110 +170,7 @@ function sniff_image_dimensions_from_url(url_object) {
   }
 }
 
-// Returns a file name without its extension
-// TODO: move to url.js
-function filter_file_name_extension(file_name) {
-  const index = file_name.lastIndexOf('.');
-  return index < 0 ? file_name : file_name.substring(0, index);
-}
-
-// TODO: move to url.js
-function extract_file_name_from_path(path) {
-  console.assert(path.charAt(0) === '/', 'invalid path: ' + path);
-  const index = path.lastIndexOf('/');
-  if(index > -1) {
-    const index_plus_1 = index + 1;
-    if(index_plus_1 < path.length)
-      return path.substring(index_plus_1);
-  }
-  return path;
-}
-
-function reject_after_timeout(timeout_ms, error_msg) {
-  function resolver(resolve, reject) {
-    error_msg = error_msg || 'Operation timed out';
-    const error = new Error(error_msg);
-    return setTimeout(reject, timeout_ms, error);
-  }
-  return new Promise(resolver);
-}
-
-// TODO: this should be in fetch lib
-function fetch_image_dimensions_with_timeout(url_object, timeout_ms) {
-  const fetch_promise = fetch_image_dimensions(url_object);
-  if(timeout_ms) {
-    const error_msg = 'Timed out loading image ' + url_object.href;
-    const timeout_promise = reject_after_timeout(timeout_ms, error_msg);
-    const promises = [fetch_promise, timeout_promise];
-    return Promise.race(promises);
-  } else {
-    return fetch_promise;
-  }
-}
-
-// TODO: this should be in fetch lib
-function fetch_image_dimensions(url_object) {
-  function executor(resolve, reject) {
-    const proxy = new Image();// In document running this script
-    proxy.src = url_object.href;// Trigger the fetch
-
-    // Resolve immediately if cached
-    if(proxy.complete) {
-      resolve({'width': proxy.width, 'height': proxy.height});
-      return;
-    }
-
-    proxy.onload = function(event) {
-      resolve({'width': proxy.width, 'height': proxy.height});
-    };
-
-    proxy.onerror = function(event) {
-      // There is no useful error object in the event, so construct our own
-      const error_message = `Failed to fetch ${url_object.href}`;
-      const error = new Error(error_message);
-      reject(error);
-    };
-  }
-  return new Promise(executor);
-}
 
 exports.set_img_dimensions = set_img_dimensions;
 
 }(this));
-
-/*
-
-# About
-
-Ensures all images have width and height attributes
-
-# TODO
-
-* Change to not fetch if only one dimension is set. In this case just assume the
-image is a square and set the missing dimension to the known dimension. I think
-this is accurate most of the time. Or make it a parameter, a policy parameter
-on whether to allow for either one or to require both. Also no need to even
-modify if one is present. Instead make the area algorithm assume square.
-* fetch img may need to use the fetch library internally, because
-I want to avoid sending cookies and such.
-* Undecided on whether fetch should accept a doc parameter so
-that where the image element is created is configurable. Maybe it is a security
-concern if loading an image is somehow XSS vulnerable? Maybe it is not safe to
-assume that new Image() works in all contexts?
-* This needs testing library that isolates specific branches of the code and
-asserts that each section works as expected.
-* Rather than use a custom error message when failing to fetch an image, look
-into whether there is some error property of the image or the event that can be
-used instead.
-* Finish the infer from filename stuff
-
-# Notes on possible fetch image issue
-
-See https://stackoverflow.com/questions/4776670 . Apparently the proper
-convention is to always trigger the fetch after attaching the handlers?
-
-# Notes on data uris
-
-fetch works with data uris. Can use the same proxy technique as fetch to
-get the dimensions.
-*/

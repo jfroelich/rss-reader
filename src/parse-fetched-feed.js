@@ -28,7 +28,7 @@ async function parse_fetched_feed(response) {
   feed_append_url(feed, response.request_url);
   feed_append_url(feed, response.response_url);
   feed.dateFetched = new Date();
-  feed.dateLastModified = response.lastModifiedDate;
+  feed.dateLastModified = response.last_modified_date;
 
   const entries = parse_result.entries;
   for(const entry of entries)

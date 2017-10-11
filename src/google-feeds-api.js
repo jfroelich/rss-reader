@@ -1,3 +1,7 @@
+
+// TODO: deprecate entirely, no longer works
+
+
 // Google Feeds API library
 'use strict';
 
@@ -99,9 +103,15 @@ async function google_feeds_api_search(query_string, timeout_ms) {
 
   // If Google's service did respond, then we expect Google to always produce
   // the same data structure.
-  ASSERT(typeof json_result === 'object');
-  ASSERT(typeof json_result.responseData === 'object');
-  ASSERT(Array.isArray(json_result.responseData.entries));
+
+  console.dir(json_result);
+  ASSERT(json_result);
+  ASSERT(json_result.responseData);
+  ASSERT(json_result.responseData.entries);
+
+  //ASSERT(typeof json_result === 'object');
+  //ASSERT(typeof json_result.responseData === 'object');
+  //ASSERT(Array.isArray(json_result.responseData.entries));
 
   const output_response = {};
   output_response.query = json_result.responseData.query || query_string;

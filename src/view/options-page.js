@@ -230,7 +230,7 @@ async function start_subscription(url_object) {
     const sub_result = await sub_add(feed, reader_conn, icon_conn,
       subscribe_timeout_ms, mute_notifications);
 
-    if(sub_result.status !== subscription.OK)
+    if(sub_result.status !== STATUS_OK)
       throw new Error('subscription result not ok: ' + sub_result.status);
 
     subscribed_feed = sub_result.feed;

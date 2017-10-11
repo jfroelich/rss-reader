@@ -93,13 +93,17 @@ async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms) {
 
   const url_string = entry_get_top_url(entry);
   const base_url_object = new URL(url_string);
-  resolve_document_urls(doc, base_url_object);
+  canonicalize_document(doc, base_url_object);
 
   // This must occur after urls are resolved and after filtering tracking info
   let allowed_protocols;
   await set_img_dimensions(doc, allowed_protocols, fetch_img_timeout_ms);
 
+  // Investing rare bug, TypeError: doc.createElement in poll_doc_prep
+  ASSERT(doc);
+  ASSERT(url_string);
   poll_doc_prep(doc, url_string);
+
   entry.content = doc.documentElement.outerHTML.trim();
 }
 
@@ -190,7 +194,13 @@ function prepare_local_entry(entry) {
     return entry;
 
   const url_string = entry_get_top_url(entry);
-  DEBUG('Parsing local feed entry html for url', url_string);
+
+
+  ASSERT(url_string);
+
+  // TODO: I am seeing this in the console, for the first time, and not entirely
+  // sure why. This may be a bug.
+  DEBUG('parsing local feed entry html for url', url_string);
 
   let doc;
   try {

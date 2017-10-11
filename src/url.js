@@ -8,8 +8,7 @@
 // @param url_string {String}
 // @param base_url {URL}
 // @returns {URL}
-// TODO: rename to url_resolve
-function resolve_url(url_string, base_url) {
+function url_resolve(url_string, base_url) {
   ASSERT(Object.prototype.toString.call(base_url) === '[object URL]');
 
   // TODO: use a single regex for speed? Or maybe get the protocol,
@@ -100,13 +99,13 @@ function url_path_get_extension(path) {
   return extension;
 }
 
-
 // Return true if the path probably represents a binary resource. The sniff
 // keyword indicates this does not actually inspect the bytes of the resource,
 // this makes a guess based on the extension alone.
-// TODO: test input 'foo.'
+// @param path {String} path component of url to sniff
+// @returns {Boolean} true if probably binary, otherewise false
+// TODO: test input 'foo.', I suspect it is incorrect
 // TODO: write tests
-// TODO: incorrect in several cases (e.g. application/javascript is text)
 function url_path_sniff_is_binary(path) {
   const extension = url_path_get_extension(path);
   if(!extension)
@@ -117,9 +116,60 @@ function url_path_sniff_is_binary(path) {
     return false;
 
   const slash_position = mime_type.indexOf('/');
+  // All mime types resulting from the lookup should contain a slash.
+  // This is an extra check
   ASSERT(slash_position !== -1);
+
+  // TODO: incorrect in several cases (e.g. application/javascript is text)
+  // Basically, testing against the super type is too simple of a solution to
+  // the problem, because it is ignoring the fact that certain generally
+  // binary super types correspond to textual resources. Not a high priority
+  // because of how mime types are checked when fetching, the cost of false
+  // positives or false negatives is not high, it simply prevents some
+  // function in the poll module from exiting earlier than it could. However,
+  // I want to be correct.
 
   const super_type = mime_type.substring(0, slash_position);
   const bin_super_types = ['application', 'audio', 'image', 'video'];
   return bin_super_types.includes(super_type);
+}
+
+// Returns a file name without its extension (and without the '.')
+function url_file_name_filter_extension(file_name) {
+  const index = file_name.lastIndexOf('.');
+  return index < 0 ? file_name : file_name.substring(0, index);
+}
+
+function url_path_get_file_name(path) {
+  ASSERT(typeof path === 'string');
+  ASSERT(path.charAt(0) === '/');
+  const index = path.lastIndexOf('/');
+  if(index > -1) {
+    const index_plus_1 = index + 1;
+    if(index_plus_1 < path.length)
+      return path.substring(index_plus_1);
+  }
+  return path;
+}
+
+// Returns true if url is a URL object
+function url_is_url_object(url) {
+  return Object.prototype.toString.call(url) === '[object URL]';
+}
+
+// Compares two urls for equality, after normalization and removing the hash
+// from each url, if present. Both urls must be defined strings.
+// @param url1 {String}
+// @param url2 {String}
+// @returns Boolean
+function url_equals_no_hash(url1, url2) {
+  ASSERT(typeof url1 === 'string');
+  ASSERT(typeof url2 === 'string');
+
+  // Unmarshalling enables normalization and simple hash filtering
+  const url1_object = new URL(url1);
+  const url2_object = new URL(url2);
+  url1_object.hash = '';
+  url2_object.hash = '';
+  return url1_object.href === url2_object.href;
 }

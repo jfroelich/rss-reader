@@ -200,7 +200,7 @@ function reader_db_find_entry_by_url(conn, url_string) {
   });
 }
 
-function reader_db_find_entry_ids_for_feed(conn, feed_id) {
+function reader_db_find_entry_ids_by_feed(conn, feed_id) {
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');

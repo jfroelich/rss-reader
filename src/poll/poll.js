@@ -191,9 +191,9 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
   // Before parsing, check if the feed was modified
   if(!ignore_modified_check && local_feed.dateUpdated &&
     is_feed_unmodified(local_feed.dateLastModified,
-      response.lastModifiedDate)) {
+      response.last_modified_date)) {
     DEBUG('skipping unmodified feed', url_string,
-        local_feed.dateLastModified, response.lastModifiedDate);
+        local_feed.dateLastModified, response.last_modified_date);
     return 0;
   }
 

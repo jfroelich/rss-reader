@@ -6,13 +6,13 @@
 // url.js
 
 (function(exports) {
-'use strict';
+
 
 // Looks for urls in the document and ensures they are absolute. Updates the
 // attribute values by replacing any relative urls with absolute urls.
 // Does not currently handle background props in inline css
-function resolve_document_urls(doc, base_url) {
-  ASSERT(Object.prototype.toString.call(base_url) === '[object URL]');
+function canonicalize_document(doc, base_url) {
+  ASSERT(url_is_url_object(base_url));
 
   const element_attr_map = {
     'a': 'href',
@@ -73,7 +73,7 @@ function resolve_mapped_attr(element, element_attr_map, base_url) {
   if(!url_string)
     return;
 
-  const resolved_url_object = resolve_url(url_string, base_url);
+  const resolved_url_object = url_resolve(url_string, base_url);
   if(!resolved_url_object)
     return;
 
@@ -106,7 +106,7 @@ function resolve_srcset_attr(element, base_url) {
   let dirtied = false;
   for(const descriptor of descriptors) {
     const descriptor_url_string = descriptor.url;
-    const resolved_url_object = resolve_url(descriptor_url_string, base_url);
+    const resolved_url_object = url_resolve(descriptor_url_string, base_url);
     if(!resolved_url_object)
       continue;
     if(resolved_url_object.href !== descriptor_url_string) {
@@ -123,7 +123,7 @@ function resolve_srcset_attr(element, base_url) {
     element.setAttribute('srcset', new_srcset_attr_value);
 }
 
-exports.resolve_document_urls = resolve_document_urls;
+exports.canonicalize_document = canonicalize_document;
 
 }(this));
 

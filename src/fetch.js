@@ -7,7 +7,6 @@
 // mime.js
 // url.js
 
-
 // TODO: change functions to return status instead of throwing exceptions
 // TODO: implement fetch_json and have google feeds call it
 // TODO: implement fetch_image_head and move it out of favicon.js
@@ -57,9 +56,7 @@ async function fetch_internal(url, options, timeout_ms, accept_response) {
 
   response_wrapper.request_url = url;
   response_wrapper.response_url = response.url;
-
-  // TODO: rename this property to last_modified_date
-  response_wrapper.lastModifiedDate = fetch_get_last_modified_date(response);
+  response_wrapper.last_modified_date = fetch_get_last_modified_date(response);
   response_wrapper.redirected = fetch_did_redirect(url, response.url);
 
   // TODO: return [STATUS_OK, response_wrapper];
@@ -78,7 +75,6 @@ async function fetch_internal(url, options, timeout_ms, accept_response) {
 // honor Accept headers.
 // @returns {Promise} a promise that resolves to a Response-like object
 function fetch_feed(url, timeout_ms, accept_html) {
-
   const ACCEPT_HEADER = [
     'application/rss+xml',
     'application/rdf+xml',
@@ -138,6 +134,85 @@ function fetch_html(url, timeout_ms) {
 }
 
 
+
+// Fetches an image element. Returns a promise that resolves to a fetched
+// image element.
+// @param url {String}
+// @param timeout_ms {Number}
+// @returns {Promise}
+// NOTE: urls with data: protocol are fine
+// TODO: should this accept a host document parameter in which to create
+// the element (instead of new Image() using document.createElement('img'))
+// TODO: it is possible this should be using the fetch API to avoid cookies?
+function fetch_image(url, timeout_ms) {
+  ASSERT(url);
+
+  if(typeof timeout_ms === 'undefined')
+    timeout_ms = 0;
+
+  ASSERT(Number.isInteger(timeout_ms));
+  ASSERT(timeout_ms >= 0);
+
+  // There is no simply way to share information between the promises, so
+  // define this in outer scope shared between both promise bodies.
+  let timer_id;
+
+  // There is no native way to provide a timeout parameter when fetching an
+  // image. So, race a fetch promise against a timeout promise to simulate
+  // a timeout parameter.
+  // NOTE: there is no penalty for calling clearTimeout with an invalid timer
+
+  // TODO: if the fetch wins, cancel the timeout
+  // TODO: if the timeout wins, cancel the fetch somehow
+
+  const fetch_promise = new Promise(function(resolve, reject) {
+
+    // Create an image element within the document running this script
+    const proxy = new Image();
+    // Trigger the fetch
+    // NOTE: using the old code, url_object.href, was probably the source
+    // of the bug. This was getting swallowed by the promise.
+    proxy.src = url;
+
+    // Resolve to the proxy immediately if the image is 'cached'
+    if(proxy.complete) {
+      clearTimeout(timer_id);
+      resolve(proxy);
+      return;
+    }
+
+    // TODO: handler attachment order may be an issue. Look into it more.
+    // I don't think so, but not sure.
+    // See https://stackoverflow.com/questions/4776670 . Apparently the proper
+    // convention is to always trigger the fetch after attaching the handlers?
+    // This should not matter.
+
+    proxy.onload = function proxy_onload(event) {
+      clearTimeout(timer_id);
+      resolve(proxy);
+    };
+
+    proxy.onerror = function proxy_onerror(event) {
+      clearTimeout(timer_id);
+      // There is no useful error object in the event, so construct our own
+      reject(new Error('Failed to fetch ' + url));
+    };
+  });
+
+  // If no timeout specified then exit early with the fetch promise.
+  if(!timeout_ms) {
+    return fetch_promise;
+  }
+
+  // There is a timeout, so we are going to race
+  const timeout_promise = new Promise(function(resolve, reject) {
+    timer_id = setTimeout(reject, timeout_ms,
+      new Error('Fetching image timed out ' + url));
+  });
+
+  return Promise.race([fetch_promise, timeout_promise]);
+}
+
 // Returns a promise. If no timeout is given the promise is the same promise
 // as yielded by calling fetch. If a timeout is given, then a timeout promise
 // is raced against the fetch, and whichever promise wins the race is returned.
@@ -195,7 +270,6 @@ function fetch_with_timeout(url, options, timeout_ms, error_message) {
 // @returns {Date} the value of Last-Modified, or undefined if error such as
 // no header present or bad date
 function fetch_get_last_modified_date(response) {
-  // TODO: check typeof === whatever response type should be
   ASSERT(response);
 
   const last_modified_string = response.headers.get('Last-Modified');
@@ -209,16 +283,37 @@ function fetch_get_last_modified_date(response) {
 }
 
 // Return true if the response url is 'different' than the request url, which
-// indicates a redirect in the sense used by this library.
-// Due to quirks with fetch response.redirected not working as expected. That
+// indicates a redirect in the sense used by this library. This test is done
+// due to quirks with fetch response.redirected not working as expected. That
 // may be just because I started using the new fetch API as soon as it
-// became available and there was a bug that has since been fixed. I am talking
-// about using response.redirected. When first using it I witnessed many times
-// that it was false, even though a redirect occurred.
+// became available and there was a bug that has since been fixed. When first
+// using it I witnessed many times that it was false, even though a redirect
+// had occurred. I never witnessed it return true.
+//
+// If the two are exactly equal, then not a redirect. Even if some chain
+// of redirects occurred and the terminal url was the same as the initial
+// url. If the two are not equal, then a redirect occurred unless the only
+// difference is the hash value.
+//
+// Note there are issues with this hashless comparison, when the '#' symbol
+// in the url carries additional meaning, such as when it used like the symbol
+// '?'. If I recall this is a simple setting in Apache. I've witnessed it
+// in action at Google groups. Simply stripping the hash from the input
+// request url when fetching would lead to possibly fetching the wrong
+// response (which is how I learned about this, because fetches to Google
+// groups all failed in strange ways). This is why fetches occur on urls as is,
+// without any hash filtering. So I must pass the hash to fetch, but then I must
+// deal with the fact that fetch automatically strips hash information from
+// response.url, regardless of how response.redirected is derived.
+//
+// The response.url yielded by fetch discards the hash, leading to a url that
+// is not exactly equal to the input url. This results in something that
+// appears to be a new url, that is sometimes in fact still the same url, which
+// means no redirect.
 //
 // TODO: given that it is not identical to the meaning of redirect in the
 // spec, or that I am not really clear on it, maybe just be exact in naming.
-// Maybe name the function something like response_is_new_url? Focusing only
+// Maybe name the function something like fetch_did_url_change? Focusing only
 // on how I use urls, instead of whatever a redirect technically is, may be
 // a better way to frame the problem.
 //
@@ -226,36 +321,6 @@ function fetch_get_last_modified_date(response) {
 // @param response_url {String} the value of the response.url property of the
 // Response object produced by calling fetch.
 function fetch_did_redirect(request_url, response_url) {
-  ASSERT(typeof request_url === 'string');
-
-  // TODO: validate response_url? Is it required? I've forgotten.
-
-  // If the two are exactly equal, then not a redirect. Even if some chain
-  // of redirects occurred and the terminal url was the same as the initial
-  // url, this is not a redirect.
-  if(request_url === response_url)
-    return false;
-
-  // Note there are issues with this hashless comparison, when the '#' symbol
-  // in the url carries additional meaning, such as when it used to indicate
-  // '?'. If I recall this is a simple setting in Apache. I've witnessed it
-  // in action at Google groups. Simply stripping the hash from the input
-  // request url when fetching would lead to possibly fetching the wrong
-  // response (which is how I learned about this, because fetches to Google
-  // groups all failed in strange ways).
-
-  // Normalize each url, and then compare the urls excluding the value of the
-  // hash, if present. The response.url yielded by fetch discards this value,
-  // leading to a url that is not exactly equal to the input url. This results
-  // in something that appears to be a new url, that is in fact still the same
-  // url, which means no redirect.
-
-  // TODO: maybe this should be a call to a function in url.js, like
-  // a url_ncmp kind of thing (similar to strncmp in c stdlib)
-
-  const request_url_object = new URL(request_url);
-  const response_url_object = new URL(response_url);
-  request_url_object.hash = '';
-  response_url_object.hash = '';
-  return request_url_object.href !== response_url_object.href;
+  return request_url !== response_url &&
+    !url_equals_no_hash(request_url, response_url);
 }

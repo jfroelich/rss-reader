@@ -23,8 +23,10 @@
 // to indexedDB built in functionality. However, the lookup also reduces
 // later work. Unsure of how to proceed. Maybe redundancy is good.
 async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
-  DEBUG('subscription_create', feed);
   ASSERT(feed);
+
+  DEBUG('called sub_add with feed', feed);
+
   // TODO: assert reader_conn and icon_conn are open connections
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 2000;
