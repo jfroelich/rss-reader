@@ -70,7 +70,7 @@ async function on_installed(event) {
 
   let icon_db_name, icon_db_version;
   try {
-    await favicon.setup(icon_db_name, icon_db_version);
+    await favicon_setup_db(icon_db_name, icon_db_version);
   } catch(error) {
     DEBUG(error);
   }

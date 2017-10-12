@@ -17,11 +17,6 @@
 // Returns a result object with properties status and feed. feed is only defined
 // if status === STATUS_OK. feed is a copy of the inserted feed, which
 // includes its new id.
-// TODO: the db exists call and the db put call technically should belong
-// to the same transaction? Like an insert if not exists single call.
-// Which happens with the implicit unique requirement if I want to defer
-// to indexedDB built in functionality. However, the lookup also reduces
-// later work. Unsure of how to proceed. Maybe redundancy is good.
 async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
   ASSERT(feed);
 

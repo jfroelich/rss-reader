@@ -115,7 +115,7 @@ async function entry_update_favicon(entry, icon_conn, fallback_url) {
   const lookup_url_object = new URL(lookup_url_string);
   let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
     max_img_size;
-  const icon_url_string = await favicon.lookup(icon_conn, lookup_url_object,
+  const icon_url_string = await favicon_lookup(icon_conn, lookup_url_object,
     max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
     min_img_size, max_img_size);
   entry.faviconURLString = icon_url_string || fallback_url;

@@ -30,7 +30,7 @@ function feed_append_url(feed, url_string) {
   return true;
 }
 
-// Creates a url object that can be used as input to favicon.lookup
+// Creates a url object that can be used as input to favicon_lookup
 // @returns {URL}
 function feed_create_icon_lookup_url(feed) {
   ASSERT(feed);
@@ -60,7 +60,7 @@ async function feed_update_favicon(feed, icon_conn) {
     min_img_size, max_img_size;
 
   // Allow exceptions to bubble
-  const icon_url_string = await favicon.lookup(icon_conn, lookup_url_object,
+  const icon_url_string = await favicon_lookup(icon_conn, lookup_url_object,
     max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
     max_img_size);
   feed.faviconURLString = icon_url_string;

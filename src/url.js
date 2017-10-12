@@ -106,6 +106,8 @@ function url_path_get_extension(path) {
 // @returns {Boolean} true if probably binary, otherewise false
 // TODO: test input 'foo.', I suspect it is incorrect
 // TODO: write tests
+// TODO: ensure the caller does not call on data: urls, or refactor this to
+// accept url and do the check here.
 function url_path_sniff_is_binary(path) {
   const extension = url_path_get_extension(path);
   if(!extension)

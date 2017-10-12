@@ -154,3 +154,11 @@ function mime_from_content_type(content_type) {
   // Normalize and return, the trim is implicit
   return string_remove_whitespace(mime_type).toLowerCase();
 }
+
+function mime_is_html(content_type) {
+  return /^\s*text\/html/i.test(content_type);
+}
+
+function mime_is_image(content_type) {
+  return /^\s*image\//i.test(content_type);
+}

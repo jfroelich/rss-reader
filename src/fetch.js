@@ -133,7 +133,39 @@ function fetch_html(url, timeout_ms) {
   return fetch_internal(url, options, timeout_ms, accept_response_html_impl);
 }
 
+// TODO: move to fetch.js
+// Sends a HEAD request for the given image.
+// @param url_string {String}
+// @returns a simple object with props imageSize and response_url_string
+async function fetch_image_head(url_string, timeout_ms) {
+  const headers = {'Accept': 'image/*'};
 
+  // TODO: set properties in a consistent manner, like I do in other fetch
+  // functions
+  const options = {};
+  options.credentials = 'omit';
+  options.method = 'HEAD';
+  options.headers = headers;
+  options.mode = 'cors';
+  options.cache = 'default';
+  options.redirect = 'follow';
+  options.referrer = 'no-referrer';
+
+  // TODO: this should be refactored to use fetch_internal. But I need to
+  // calculate content length. So fetch_internal first needs to be refactored
+  // to also calculate content length because response is not exposed, just
+  // wrapped response.
+
+  // In the interim this call creates a circular dependency
+
+  const response = await favicon_fetch_with_timeout(url_string, options,
+    timeout_ms);
+  ASSERT(mime_is_image(response.headers.get('Content-Type'));
+  const output_response = {};
+  output_response.size = fetch_get_content_length(response);
+  output_response.response_url_string = response.url;
+  return output_response;
+}
 
 // Fetches an image element. Returns a promise that resolves to a fetched
 // image element.
@@ -144,6 +176,8 @@ function fetch_html(url, timeout_ms) {
 // NOTE: timeout of 0 is equivalent to undefined, or untimed fetch
 // TODO: should this accept a host document parameter in which to create
 // the element (instead of new Image() using document.createElement('img'))
+// TODO: maybe rename to fetch_image_element so that separate fetch_image
+// that works more like other fetches can be created, and to avoid confusion
 // TODO: it is possible this should be using the fetch API to avoid cookies?
 function fetch_image(url, timeout_ms) {
   ASSERT(url);
@@ -334,4 +368,20 @@ function fetch_get_last_modified_date(response) {
 function fetch_did_redirect(request_url, response_url) {
   return request_url !== response_url &&
     !url_equals_no_hash(request_url, response_url);
+}
+
+// TODO: this is so simple it should be inlined
+function fetch_response_is_type_html(response) {
+  return mime_is_html(response.headers.get('Content-Type'));
+}
+
+
+// TODO: instead of returning an invalid value, return both an error code and
+// the value. This way there is no ambiguity, or need for this constant
+const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
+function fetch_get_content_length(response) {
+  const content_length_string = response.headers.get('Content-Length');
+  const radix = 10;
+  const content_length = parseInt(content_length_string, radix);
+  return isNaN(content_length) ? FETCH_UNKNOWN_CONTENT_LENGTH : content_length;
 }

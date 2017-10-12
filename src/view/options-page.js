@@ -214,7 +214,7 @@ async function start_subscription(url_object) {
   let subscribe_timeout_ms, mute_notifications;
 
   // TODO: make this into a helper function that opens both connections
-  const icon_conn_promise = favicon.open(icon_db_name, icon_db_version,
+  const icon_conn_promise = favicon_open_db(icon_db_name, icon_db_version,
     connect_timeout_ms);
   const reader_conn_promise = reader_db_open();
   const conn_promises = [reader_conn_promise, icon_conn_promise];
@@ -511,7 +511,7 @@ async function subscribe_form_on_submit(event) {
   // TODO: explicit defaults
   let icon_conn;
 
-  icon_conn = await favicon.open();
+  icon_conn = await favicon_open_db();
   for(let result of entries) {
     if(!result.link)
       continue;

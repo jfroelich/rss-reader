@@ -62,7 +62,7 @@ async function alarms_on_alarm_wakeup(alarm) {
     break;
   case 'compact-favicon-db':
     let name, version, max_age_ms;
-    favicon.compact(name, version, max_age_ms).catch(console.warn);
+    favicon_compact_db(name, version, max_age_ms).catch(console.warn);
     break;
   default:
     if(ALARMS_DEBUG)
