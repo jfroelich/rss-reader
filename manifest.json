@@ -29,6 +29,8 @@
       "/src/frame.js",
       "/src/html.js",
       "/src/html-shrink.js",
+      "/src/html-list-filter.js",
+      "/src/html-table-filter.js",
       "/src/image.js",
       "/src/image-size.js",
       "/src/lazy-image.js",

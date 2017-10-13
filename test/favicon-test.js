@@ -42,7 +42,7 @@ async function test_clear_icon_db() {
   let conn, db_name, db_version, conn_timeout_ms;
   try {
     conn = await favicon_open_db(db_name, db_version, conn_timeout_ms);
-    await favicon_clear(conn);
+    await favicon_db_clear(conn);
   } catch(error) {
     console.warn(error);
   } finally {

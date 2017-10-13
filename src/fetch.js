@@ -133,11 +133,10 @@ function fetch_html(url, timeout_ms) {
   return fetch_internal(url, options, timeout_ms, accept_response_html_impl);
 }
 
-// TODO: move to fetch.js
 // Sends a HEAD request for the given image.
-// @param url_string {String}
+// @param url {String}
 // @returns a simple object with props imageSize and response_url_string
-async function fetch_image_head(url_string, timeout_ms) {
+async function fetch_image_head(url, timeout_ms) {
   const headers = {'Accept': 'image/*'};
 
   // TODO: set properties in a consistent manner, like I do in other fetch
@@ -156,14 +155,15 @@ async function fetch_image_head(url_string, timeout_ms) {
   // to also calculate content length because response is not exposed, just
   // wrapped response.
 
-  // In the interim this call creates a circular dependency
-
-  const response = await favicon_fetch_with_timeout(url_string, options,
-    timeout_ms);
-  ASSERT(mime_is_image(response.headers.get('Content-Type'));
+  const response = await fetch_with_timeout(url, options,
+    timeout_ms, 'Fetch timed out ' + url);
+  ASSERT(mime_is_image(response.headers.get('Content-Type')));
   const output_response = {};
+
+  // TODO: rename to content_length
   output_response.size = fetch_get_content_length(response);
-  output_response.response_url_string = response.url;
+
+  output_response.response_url = response.url;
   return output_response;
 }
 
@@ -370,10 +370,7 @@ function fetch_did_redirect(request_url, response_url) {
     !url_equals_no_hash(request_url, response_url);
 }
 
-// TODO: this is so simple it should be inlined
-function fetch_response_is_type_html(response) {
-  return mime_is_html(response.headers.get('Content-Type'));
-}
+
 
 
 // TODO: instead of returning an invalid value, return both an error code and

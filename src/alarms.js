@@ -34,6 +34,22 @@ async function alarms_on_archive_alarm() {
   }
 }
 
+async function alarms_on_compact_favicons_alarm() {
+  let name, version, conn_timeout_ms, max_age_ms;
+  let conn;
+  try {
+    conn = await favicon_open_db(name, version, conn_timeout_ms);
+    await favicon_compact_db(conn, max_age_ms);
+  } catch(error) {
+    if(ALARMS_DEBUG)
+      DEBUG(error);
+  } finally {
+    if(conn)
+      conn.close();
+  }
+}
+
+
 async function alarms_on_alarm_wakeup(alarm) {
   if(ALARMS_DEBUG)
     DEBUG('alarm wokeup:', alarm.name);
@@ -61,8 +77,7 @@ async function alarms_on_alarm_wakeup(alarm) {
     refresh_feed_icons().catch(console.warn);
     break;
   case 'compact-favicon-db':
-    let name, version, max_age_ms;
-    favicon_compact_db(name, version, max_age_ms).catch(console.warn);
+    alarms_on_compact_favicons_alarm();
     break;
   default:
     if(ALARMS_DEBUG)

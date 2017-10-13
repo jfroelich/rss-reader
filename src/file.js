@@ -15,13 +15,16 @@ function file_read_as_text(file) {
 }
 
 // Returns true if the file has an xml mime type
-// TODO: this should be better implemented as something like
-// file_type_is_supported with param file, and param that is array of strings
-// of mime types. That way a single function is used instead of several for
-// every mime type
+// TODO: rename to file_is_type_xml
 function file_is_xml_type(file) {
   ASSERT(file);
+
   const file_type = file.type;
+
+  // TODO: actually the rest of this should defer to a function in
+  // mime.js. Also, that function should tolerate other mime types,
+  // like feed mime types
+
   let normal_type = file_type || '';
   normal_type = normal_type.trim().toLowerCase();
   const supported_types = ['application/xml', 'text/xml'];

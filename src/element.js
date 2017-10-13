@@ -1,6 +1,39 @@
 // Functions related to DOM elements
 'use strict';
 
+
+
+// Recursive
+function node_is_leaf(node) {
+  switch(node.nodeType) {
+    case Node.ELEMENT_NODE:
+      if(element_is_leaf_exception(node))
+        return false;
+      for(let child = node.firstChild; child; child = child.nextSibling)
+        if(!node_is_leaf(child))
+          return false;
+      break;
+    case Node.TEXT_NODE:
+      return !node.nodeValue.trim();
+    case Node.COMMENT_NODE:
+      return true;
+    default:
+      return false;
+  }
+
+  return true;
+}
+
+function element_is_leaf_exception(element) {
+  const exceptions = [
+    'area', 'audio', 'base', 'col', 'command', 'br', 'canvas', 'col', 'hr',
+    'iframe', 'img', 'input', 'keygen', 'meta', 'nobr', 'param', 'path',
+    'source', 'sbg', 'textarea', 'track', 'video', 'wbr'
+  ];
+  return exceptions.includes(element.localName);
+}
+
+
 // Returns true if an element is hidden
 // TODO: rename this to element_is_hidden_inline, and create
 // a more general function that inspects ancestors too
