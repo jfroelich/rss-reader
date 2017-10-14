@@ -2,11 +2,14 @@
 
 'use strict';
 
+// Depedencies:
+// none
+
 // Returns a new string object where sequences of whitespace characters in the
-// input string are replaced with a single space character. Throws an error if
-// string is not a defined string.
-// TODO: there are a few places that use a similar function that
-// instead should depend on this function
+// input string are replaced with a single space character.
+// @param {String} an input string
+// @throws {Error} if input is not a string
+// @returns {String} a condensed string
 function string_condense_whitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
 }

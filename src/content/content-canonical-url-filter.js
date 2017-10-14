@@ -122,7 +122,7 @@ function resolve_srcset_attr(element, base_url) {
   if(!dirtied)
     return;
 
-  const new_srcset_attr_value = serialize_srcset(descriptors);
+  const new_srcset_attr_value = srcset_serialize(descriptors);
   if(new_srcset_attr_value)
     element.setAttribute('srcset', new_srcset_attr_value);
 }

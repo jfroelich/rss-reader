@@ -4,6 +4,10 @@
 // Dependencies:
 // assert.js
 // image.js
+// parseSrcset.js
+// srcset.js
+
+// TODO: rename to something like html-responsive-image-filter.js
 
 /*
 Misc notes:

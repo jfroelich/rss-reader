@@ -1,6 +1,8 @@
+// Date object utilities
+
 'use strict';
 
-function format_date(date_object, delimiter) {
+function date_format(date_object, delimiter) {
   const parts = [];
   if(date_object) {
     // getMonth is a zero based index

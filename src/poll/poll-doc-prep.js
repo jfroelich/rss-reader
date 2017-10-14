@@ -1,12 +1,21 @@
+// document filtering during polling
+
 'use strict';
 
 // Dependencies:
 // assert.js
+// /content/*
 
-function poll_doc_prep(doc, url_string) {
-  ASSERT(doc);
+function poll_doc_prep(doc, url) {
+  ASSERT(typeof doc === 'object');
+
+  // BUG: the line below, body_element = doc.createElement,
+  // occassionally fails saying createElement is not a function
+  ASSERT(doc.createElement);
+  ASSERT(typeof doc.createElement === 'function')
 
   // Ensure the document has a body element
+  // TODO: make this into its own filter function
   if(!doc.body) {
     const error_message = 'Error empty document (no body found)';
     const body_element = doc.createElement('body');
@@ -16,13 +25,12 @@ function poll_doc_prep(doc, url_string) {
   }
 
   frame_transform_document(doc);
-  host_template_prune(url_string, doc);
+  host_template_prune(url, doc);
   filter_boilerplate(doc);
   html_security_transform_document(doc);
   sanitize_html_document(doc);
 
-  // Because we are stripping attributes, there is no need to keep them when
-  // condensing.
+  // Because we are stripping attributes, there is no need to keep them
   const copy_attrs_on_rename = false;
   // How many rows to check when unwrapping single column tables
   const row_scan_limit = 20;

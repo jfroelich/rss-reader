@@ -67,6 +67,10 @@ async function feed_update_favicon(feed, icon_conn) {
 }
 
 // TODO: include this in places where sanitize is called
+// TODO: assert required properties are present
+// TODO: assert type, if set, is one of the valid types
+// TODO: assert feed has one or more urls
+// TODO: assert the type of each property?
 function feed_has_valid_props(feed) {
   ASSERT(feed);
 
@@ -122,8 +126,7 @@ function feed_sanitize(feed, title_max_length, desc_max_length) {
 // feed. Fields from the new feed take precedence, except for urls, which are
 // merged to generate a distinct ordered set of oldest to newest url. Impure
 // because of copying by reference.
-// TODO: rename to feed_merge
-function merge_feeds(old_feed, new_feed) {
+function feed_merge(old_feed, new_feed) {
   const merged_feed_object = Object.assign({}, old_feed, new_feed);
 
   // After assignment, the merged feed has only the urls from the new feed.
@@ -136,31 +139,3 @@ function merge_feeds(old_feed, new_feed) {
 
   return merged_feed_object;
 }
-
-
-
-/*
-
-# TODO
-
-* An entry should probably only have one url. Instead I should probably
-be storing something external pertaining to polling requests or a list of
-urls of some sort.
-* Consider revising entry flags to be a single property. Instead of two entry
-properties, readState and archiveState, consider a single property. For example, UNREAD_UNARCHIVED. This would speed up querying of entries by both states.
-Admittedly this is not currently a performance concern. Performance really isn't
-the reason. The focus should be on ergonomics.
-
-# Validation todo
-
-NOTE: only validating date objects, not fully validating actual dates such
-as if day of month > 31 or whatever
-TODO: assert required properties are present
-TODO: assert dates are not in the future
-TODO: assert dates are not too far in the past
-TODO: assert type, if set, is one of the valid types
-TODO: assert feed has one or more urls
-TODO: assert the type of each property?
-TODO: add to appropriate calling contexts (e.g. whereever prep for storage
-
-*/

@@ -1,4 +1,4 @@
-// Global status codes
+// Global app status codes
 
 'use strict';
 

@@ -1,34 +1,40 @@
-// Library for exporting feeds to opml file
+// Library for exporting feeds from the database to an opml file
 
 'use strict';
 
 // Dependencies
+// assert.js
 // feed.js
 // opml.js
 // reader-db.js
 // xml.js
 
-// Triggers the download of an xml file that is an opml file containing the
-// feeds from the reader database
+// Triggers the download of an OPML-formatted file containing the feeds from
+// the reader database
+// @param conn {IDBDatabase} an open connection to the reader database
 // @param title {String} optional, value of the <title> element in the file
 // @param file_name {String} optional, suggested file name
-async function opml_export(conn, title, file_name) {
-  const [status, feeds] = await opml_export_db_get_feeds(conn);
+async function reader_export_feeds(conn, title, file_name) {
+  const [status, feeds] = await reader_export_db_get_feeds(conn);
   if(status !== STATUS_OK)
     return status;
 
-  const xml_doc = opml_export_create_document(feeds, title);
+  const xml_doc = reader_export_create_document(feeds, title);
   const xml_blob = xml_to_blob(xml_doc);
   const object_url = URL.createObjectURL(xml_blob);
-  const anchor_element = document.createElement('a');
-  anchor_element.setAttribute('download', file_name);
-  anchor_element.href = object_url;
-  anchor_element.click();
+
+  const anchor = document.createElement('a');
+  anchor.setAttribute('download', file_name);
+  anchor.href = object_url;
+  anchor.click();
+
   URL.revokeObjectURL(object_url);
   return STATUS_OK;
 }
 
-async function opml_export_db_get_feeds(conn) {
+async function reader_export_db_get_feeds(conn) {
+  ASSERT(conn);
+
   try {
     const feeds = await reader_db_get_feeds(conn);
     return [STATUS_OK, feeds];
@@ -42,17 +48,20 @@ async function opml_export_db_get_feeds(conn) {
 // @param feeds {Array} an array of basic feed objects
 // @param title {String} optional value to store in title element
 // @returns {Document} an opml document
-function opml_export_create_document(feeds, title) {
+function reader_export_create_document(feeds, title) {
   ASSERT(feeds);
   const doc = opml_create_document();
   opml_update_title(doc, title);
-  for(const feed of feeds)
-    opml_append_outline_object(doc, opml_export_feed_to_outline(feed));
+
+  for(const feed of feeds) {
+    opml_append_outline_object(doc, reader_export_feed_to_outline(feed));
+  }
+
   return doc;
 }
 
 // Convert a feed object into an outline object
-function opml_export_feed_to_outline(feed) {
+function reader_export_feed_to_outline(feed) {
   ASSERT(feed);
   const outline = {};
   outline.type = feed.type;

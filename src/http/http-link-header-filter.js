@@ -61,32 +61,6 @@ async function unregister_dw_link_filter_rule() {
   }
 }
 
-async function on_installed(event) {
-  console.debug('chrome.runtime.onInstalled'); // Temp, debugging
-
-  // Init the badge text. As a side effect this will create the database
-  // Non-awaited.
-  extension_update_badge_text();
-
-  let icon_db_name, icon_db_version;
-  try {
-    await favicon_setup_db(icon_db_name, icon_db_version);
-  } catch(error) {
-    DEBUG(error);
-  }
-}
-
-chrome.runtime.onInstalled.addListener(on_installed);
-
-async function browser_action_on_click(event) {
-  try {
-    await extension_show_slideshow_tab();
-  } catch(error) {
-    console.warn(error);
-  }
-}
-
-chrome.browserAction.onClicked.addListener(browser_action_on_click);
 
 exports.register_dw_link_filter_rule = register_dw_link_filter_rule;
 exports.unregister_dw_link_filter_rule = unregister_dw_link_filter_rule;
@@ -94,22 +68,8 @@ exports.unregister_dw_link_filter_rule = unregister_dw_link_filter_rule;
 }(this));
 
 /*
+NOTE: not currently included in manifest.json, never got it working
 
-# About
-
-This file should only be loaded in the background page of the extension. This
-installs hooks in Chrome to allow the extension to respond various events.
-
-* Sets up the indexedDB databases
-* Registers alarms
-* Sets up declarativeWebRequest filters
-
-# TODO
-
-* Change alarm code so that alarms are only registered upon install
-event instead of on every background page load?
-* Make it easy to remove alarms
-* maybe rename to background-page.js to clarify
 
 # Link header issue
 
@@ -134,11 +94,4 @@ TODO: restrict to preventing script, allow css and image, because some of my
 fetches are for that purpose
 
 NOTE: even with current code active the errors still appear.
-
-# TODO: Try not to rely on chrome extension features
-
-* Avoid relying on chrome.alarms if possible. Is there a non chrome specific
-way to do alarms? setInterval would not allow the page to unload. Nor would it
-wake up the background page?
-
 */

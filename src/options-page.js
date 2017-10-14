@@ -1,5 +1,19 @@
 'use strict';
 
+/*
+# TODO
+
+* chrome now uses material design for options pages
+* remove subscription preview
+* lookup favicons after displaying search results, not before
+* listen for poll events, feed information may have updated
+* add back button behavior for switching sections (history.popstate stuff)
+* remove unreadable fonts
+* app wide, consider going back to a single page application and think of how
+to integrate all of this into the slideshow page
+
+*/
+
 (function(exports) {
 
 function settings_channel_onmessage(event) {
@@ -676,7 +690,7 @@ async function import_opml_uploader_on_change(event) {
   DEBUG('import_opml_uploader_on_change event', event);
 
   try {
-    await opml_import(uploader_input.files);
+    await reader_import_files(uploader_input.files);
   } catch(error) {
     console.warn(error);
   }
@@ -693,7 +707,7 @@ async function export_opml_button_onclick(event) {
   let conn, status;
   try {
     conn = await reader_db_open();
-    status = await opml_export(conn, title, file_name);
+    status = await reader_export_feeds(conn, title, file_name);
   } catch(error) {
     DEBUG(error);
   } finally {

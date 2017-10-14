@@ -207,7 +207,7 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
   // of the response
   const parse_feed_result = await parse_fetched_feed(response);
 
-  const merged_feed = merge_feeds(local_feed, parse_feed_result.feed);
+  const merged_feed = feed_merge(local_feed, parse_feed_result.feed);
 
   // Prepare the feed for storage
   let storable_feed = feed_sanitize(merged_feed);

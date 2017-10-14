@@ -76,7 +76,7 @@ async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
     return {'status': ERR_PARSE};
   }
 
-  const merged_feed = merge_feeds(feed, parse_result.feed);
+  const merged_feed = feed_merge(feed, parse_result.feed);
   try {
     await feed_update_favicon(merged_feed, icon_conn);
   } catch(error) {

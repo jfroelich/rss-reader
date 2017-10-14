@@ -69,6 +69,7 @@ function url_get_hostname(url) {
 // Only minor validation for speed
 // Assumes canonical url
 // @param url {String}
+// @returns {Boolean}
 function url_is_valid(url) {
   // TODO: choose a more accurate minimum length
   const URL_MIN_LENGTH = 1;
@@ -92,6 +93,8 @@ function url_path_is_valid(path) {
     !path.includes(' ');
 }
 
+// @param path {String}
+// @returns {String}
 function url_path_get_extension(path) {
   ASSERT(url_path_is_valid(path));
 

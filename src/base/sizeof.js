@@ -1,4 +1,4 @@
-// memory usage lib
+// Memory usage lib
 
 'use strict';
 
@@ -7,13 +7,16 @@
 //
 // Adapted from http://stackoverflow.com/questions/1248302
 //
-// Generally does not work on built-ins (Document, Element, XMLHttpRequest, etc)
+// Does not work with built-ins, which are objects that are a part of the
+// basic Javascript library, like Document, or Element.
+//
 // This uses a stack internally to avoid recursion
-// @param input_value a value of any type
-// @returns an integer representing the approximate byte size of the input
-// value
+//
+// @param input_value {Any} a value of any type
+// @returns {Number} an integer representing the approximate byte size of the
+// input value
 function sizeof(input_value) {
-  // Visited is a memoization of previously visited objects. In theory
+  // visited_objects is a memoization of previously visited objects. In theory
   // a repeated object just means enough bytes to store a reference value,
   // and only the first object actually allocates additional memory.
   const visited_objects = [];
@@ -56,11 +59,11 @@ function sizeof(input_value) {
             stack.push(...value);
           else {
             const to_string_output = to_string.call(value);
-            if(to_string_output === '[object Date]')
-              byte_size += 8;// guess
-            else if(to_string_output === '[object URL]')
-              byte_size += 2 * value.href.length;// guess
-            else {
+            if(to_string_output === '[object Date]') {
+              byte_size += 8; // guess
+            } else if(to_string_output === '[object URL]') {
+              byte_size += 2 * value.href.length; // guess
+            } else {
               for(let prop_name in value) {
                 if(has_own_prop.call(value, prop_name)) {
                   // Add size of the property name string itself

@@ -7,13 +7,7 @@
 // mime.js
 // url.js
 
-// TODO: move to net folder along with url and mime
-
 // TODO: change functions to return status instead of throwing exceptions
-// TODO: implement fetch_json and have google feeds call it
-// TODO: implement fetch_image_head and move it out of favicon.js
-// TODO: implement fetch_image_element and move it out of set-image-dimensions
-// TODO: favicon I think also needs to switch to using fetch_html
 
 // A 'private' helper function for other fetch functions
 // @param url {String} request url

@@ -14,6 +14,9 @@ function html_security_transform_document(doc) {
   html_security_unwrap_script_anchors(doc);
 }
 
+// TODO: move into content-visibiility-filter, along with
+// the code in sanity-filter that does visibility related stuff. This is less
+// about security and more about visibility.
 function html_security_unwrap_noscripts(doc) {
   const elements = doc.querySelectorAll('noscript');
   for(const element of elements)

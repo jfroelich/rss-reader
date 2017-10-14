@@ -1,15 +1,5 @@
 'use strict';
 
-/*
-TODO: Gracefully manage background alarms. Create a graceful way to
-rename/remove alarms. Right now if I stop using an alarm it remains silently
-persistent somewhere in chrome.alarms internal state, indefinitely.
-
-Maybe keep track of registered alarms in localStorage. This might also help
-avoid repeated registration (although it still performs repeated checks
-every page load)
-*/
-
 const ALARMS_DEBUG = false;
 
 async function alarms_on_archive_alarm() {
@@ -87,9 +77,6 @@ async function alarms_on_alarm_wakeup(alarm) {
 }
 
 function alarms_register_all() {
-  // TODO: because this is currently called on script load, this may be before
-  // other libs loaded. Therefore cannot use debug.js calls. That or I should
-  // only call it after dom content loaded (that sounds better)
   if(ALARMS_DEBUG)
     console.debug('registering alarms');
 
@@ -107,8 +94,6 @@ function alarms_register_all() {
     {'periodInMinutes': 60 * 24 * 7});
 }
 
-// TODO: avoid doing this on every page load
 chrome.alarms.onAlarm.addListener(alarms_on_alarm_wakeup);
 
-// TODO: avoid doing this on every page load
 alarms_register_all();
