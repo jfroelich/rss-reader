@@ -33,6 +33,7 @@
       "/src/fetch.js",
       "/src/frame.js",
       "/src/html.js",
+      "/src/html-boilerplate-filter.js",
       "/src/html-list-filter.js",
       "/src/html-security-filter.js",
       "/src/html-shrink.js",
@@ -55,7 +56,7 @@
       "/src/subscription.js",
       "/src/url.js",
       "/src/xml.js",
-      "/src/calamine/filter-boilerplate.js",
+
       "/src/doc-transforms/remove-element-attributes.js",
       "/src/doc-transforms/transform-helpers.js",
       "/src/maintenance/archive-entries.js",
