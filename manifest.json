@@ -14,12 +14,17 @@
     "persistent": false,
     "scripts": [
       "/src/alarms.js",
-      "/src/assert.js",
+      "/src/base/assert.js",
+      "/src/base/debug.js",
+      "/src/base/object.js",
+      "/src/base/status.js",
+      "/src/base/string.js",
+
       "/src/background.js",
       "/src/canonicalize-document.js",
       "/src/cleandom.js",
       "/src/cli.js",
-      "/src/debug.js",
+
       "/src/element.js",
       "/src/entry.js",
       "/src/extension.js",
@@ -37,26 +42,22 @@
       "/src/lazy-image.js",
       "/src/lonestar.js",
       "/src/mime.js",
-      "/src/object.js",
+
       "/src/parse-feed.js",
       "/src/parse-fetched-feed.js",
       "/src/reader-db.js",
       "/src/responsive.js",
       "/src/rewrite-url.js",
 
-      "/src/sizeof.js",
+      "/src/base/sizeof.js",
       "/src/srcset.js",
-      "/src/status.js",
-      "/src/string.js",
+
       "/src/subscription.js",
       "/src/url.js",
       "/src/xml.js",
       "/src/calamine/filter-boilerplate.js",
       "/src/doc-transforms/remove-element-attributes.js",
-
-
       "/src/doc-transforms/transform-helpers.js",
-
       "/src/maintenance/archive-entries.js",
       "/src/maintenance/refresh-feed-icons.js",
       "/src/maintenance/remove-entries-missing-urls.js",
