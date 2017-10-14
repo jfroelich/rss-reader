@@ -5,6 +5,10 @@
 // srcset.js
 // url.js
 
+// TODO:
+// * remove IIAFE
+// * rename to html-url-filter or something like this?
+
 (function(exports) {
 
 

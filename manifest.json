@@ -17,14 +17,13 @@
       "/src/base/assert.js",
       "/src/base/debug.js",
       "/src/base/object.js",
+      "/src/base/sizeof.js",
       "/src/base/status.js",
       "/src/base/string.js",
-
       "/src/background.js",
       "/src/canonicalize-document.js",
       "/src/cleandom.js",
       "/src/cli.js",
-
       "/src/element.js",
       "/src/entry.js",
       "/src/extension.js",
@@ -43,20 +42,16 @@
       "/src/lazy-image.js",
       "/src/lonestar.js",
       "/src/mime.js",
-
       "/src/parse-feed.js",
       "/src/parse-fetched-feed.js",
       "/src/reader-db.js",
       "/src/responsive.js",
       "/src/rewrite-url.js",
 
-      "/src/base/sizeof.js",
       "/src/srcset.js",
-
       "/src/subscription.js",
       "/src/url.js",
       "/src/xml.js",
-
       "/src/doc-transforms/remove-element-attributes.js",
       "/src/doc-transforms/transform-helpers.js",
       "/src/maintenance/archive-entries.js",

@@ -2,12 +2,14 @@
 
 'use strict';
 
-// TODO: also has source if within picture and picture has <source>
+// TODO: also has source if within picture and picture has <source>, or
+// alternatively rename to image_has_src_attribute
 function image_has_source(img) {
   return img.hasAttribute('src') || img.hasAttribute('srcset');
 }
 
 // Return true if image has a valid src attribute value
+// TODO: use fn and param names consistent with image_has_source
 function image_has_valid_src(image_element) {
   const min_url_length = 2;
   let src_value = image_element.getAttribute('src');

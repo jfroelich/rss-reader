@@ -7,6 +7,8 @@
 // mime.js
 // url.js
 
+// TODO: move to net folder along with url and mime
+
 // TODO: change functions to return status instead of throwing exceptions
 // TODO: implement fetch_json and have google feeds call it
 // TODO: implement fetch_image_head and move it out of favicon.js

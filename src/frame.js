@@ -4,6 +4,8 @@
 // Dependencies:
 // assert.js
 
+// TODO: rename to html-frame-filter
+
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
 // TODO: consider making async and merging frame content to a single document

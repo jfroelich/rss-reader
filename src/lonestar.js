@@ -5,6 +5,8 @@
 // debug.js
 // element.js
 
+// TODO: rename to html-lonestar-filter
+
 // TODO: put element_is_hidden into its own lib and include only it?
 // TODO: move patterns into an external configuration file of some sort? or
 // see if patterns can be configured within manifest.json and loaded from there?

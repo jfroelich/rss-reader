@@ -6,6 +6,8 @@
 // fetch.js
 // url.js
 
+// TODO: rename to html-image-size-filter
+
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.
@@ -19,8 +21,10 @@ async function image_size_transform_document(doc, allowed_protocols,
 
   ASSERT(doc);
 
+  let modified_image_count = 0;
+
   if(!doc.body)
-    return 0;
+    return modified_image_count;
 
   const default_allowed_protocols = ['data:', 'http:', 'https:'];
   if(typeof allowed_protocols === 'undefined')
@@ -40,7 +44,7 @@ async function image_size_transform_document(doc, allowed_protocols,
   }
 
   const results = await Promise.all(derive_promises);
-  let modified_image_count = 0;
+
   for(const result of results) {
     if(result) {
       result.image.setAttribute('width', '' + result.width);

@@ -7,6 +7,8 @@
 // image.js
 // url.js
 
+// TODO: rename to html-lazy-image-filter
+
 /*
 
 # About

@@ -1,5 +1,6 @@
 
-// TODO: deprecate entirely, no longer works
+// TODO: deprecate entirely, no longer works at all, Google returns 403
+// forbidden response code
 
 
 // Google Feeds API library
