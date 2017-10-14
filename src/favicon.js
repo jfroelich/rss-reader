@@ -8,7 +8,7 @@
 // fetch.js
 // html-parse.js
 
-const FAVICON_DEBUG = false;
+const FAVICON_DEBUG = true;
 
 // 30 days in ms, used by both lookup and compact to determine whether a
 // cache entry expired

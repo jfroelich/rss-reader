@@ -4,44 +4,70 @@
 // Dependencies
 // assert.js
 
-// Returns the absolute form the input url
-// @param url_string {String}
-// @param base_url {URL}
-// @returns {URL}
-function url_resolve(url_string, base_url) {
-  ASSERT(Object.prototype.toString.call(base_url) === '[object URL]');
+const URL_DEBUG = true;
 
-  // TODO: use a single regex for speed? Or maybe get the protocol,
-  // normalize it, and check against a list of bad protocols?
-  // TODO: or if it has any protocol, then just return the url as is?
-  // - but that would still require a call to new URL
-  // Or can we just check for the presence of any colon?
-  if(/^\s*javascript:/i.test(url_string) ||
-    /^\s*data:/i.test(url_string) ||
-    /^\s*mailto:/i.test(url_string)) {
-    return;
-  }
+// @param url {String}
+function url_is_canonical(url) {
+  // Allow for leading whitespace characters
+  // Returns true for javascript: and mailto: and data:
+  // Returns true for https:// and http://
+  // Returns false for // (which is preferable)
+  return /^\s*[a-z]+:/i.test(url);
+}
 
-  let absolute_url_object;
-  try {
-    absolute_url_object = new URL(url_string, base_url);
-  } catch(error) {
-  }
-  return absolute_url_object;
+// A url must be at least this long to be a script url
+const URL_MIN_SCRIPT_LENGTH = 'javascript:'.length;
+
+// Returns true if the url has the 'javascript:' protocol
+// @param url {String}
+// @returns {Boolean}
+function url_is_script(url) {
+  // Check url to avoid throwing and reduce calls to regex test
+  // Check len to reduce calls to regex test
+  return url &&
+    url.length > URL_MIN_SCRIPT_LENGTH &&
+    /^\s*javascript:/i.test(url);
 }
 
 
-function url_get_hostname(url_string) {
-  ASSERT(url_string);
+// Returns the absolute form the input url
+// @param url {String}
+// @param base_url {URL}
+// @returns {URL} either the input url as an object if the url was already
+// absolute, or the absolute url, or undefined if a parsing error occurred
+function url_resolve(url, base_url) {
+  ASSERT(url_is_url_object(base_url));
+
+  let canonical_url;
+
+  if(url_is_canonical(url)) {
+    try {
+      canonical_url = new URL(url);
+    } catch(error) {
+    }
+    return canonical_url;
+  }
+
   try {
-    const url_object = new URL(url_string);
+    canonical_url = new URL(url, base_url);
+  } catch(error) {
+  }
+  return canonical_url;
+}
+
+// @param url {String}
+// @returns {String}
+function url_get_hostname(url) {
+  ASSERT(url);
+  try {
+    const url_object = new URL(url);
     return url_object.hostname;
   } catch(error) {
   }
 }
 
 // Only minor validation for speed
-// Assumes canonical/absolute
+// Assumes canonical url
 // @param url {String}
 function url_is_valid(url) {
   // TODO: choose a more accurate minimum length
@@ -56,11 +82,12 @@ function url_is_valid(url) {
   return false;
 }
 
+// Returns true if the input string appears to be a valid path
+// @param path {String} a path component of a url
+// @returns {Boolean} true if the path appears valid, otherwise false
 function url_path_is_valid(path) {
-  // NOTE: it is not obvious but path.length means that path has 1 or more
-  // characters, not that path has 0 or more
   return typeof path === 'string' &&
-    path.length &&
+    path.length > 0 &&
     path.charAt(0) === '/' &&
     !path.includes(' ');
 }
@@ -143,8 +170,8 @@ function url_file_name_filter_extension(file_name) {
 }
 
 function url_path_get_file_name(path) {
-  ASSERT(typeof path === 'string');
-  ASSERT(path.charAt(0) === '/');
+  ASSERT(url_path_is_valid(path));
+
   const index = path.lastIndexOf('/');
   if(index > -1) {
     const index_plus_1 = index + 1;
@@ -163,12 +190,14 @@ function url_is_url_object(url) {
 // from each url, if present. Both urls must be defined strings.
 // @param url1 {String}
 // @param url2 {String}
+// @throws {Error} if either url is not a valid url
 // @returns Boolean
 function url_equals_no_hash(url1, url2) {
   ASSERT(typeof url1 === 'string');
   ASSERT(typeof url2 === 'string');
 
   // Unmarshalling enables normalization and simple hash filtering
+  // Allow url parsing errors to bubble.
   const url1_object = new URL(url1);
   const url2_object = new URL(url2);
   url1_object.hash = '';

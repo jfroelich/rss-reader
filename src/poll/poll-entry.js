@@ -5,6 +5,10 @@
 async function poll_entry(entry, reader_conn, icon_conn, feed,
   fetch_html_timeout_ms, fetch_img_timeout_ms) {
 
+
+  // TEMP:
+  console.log('entry', entry_get_top_url(entry));
+
   // Cascade properties from feed to entry
   // TODO: I do not feel like it is this function's responsibility to do this.
   // I think the caller should be doing this prior to calling this function.

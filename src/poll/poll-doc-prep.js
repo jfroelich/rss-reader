@@ -18,7 +18,7 @@ function poll_doc_prep(doc, url_string) {
   frame_transform_document(doc);
   host_template_prune(url_string, doc);
   filter_boilerplate(doc);
-  secure_html_document(doc);
+  html_security_transform_document(doc);
   sanitize_html_document(doc);
 
   // Because we are stripping attributes, there is no need to keep them when
