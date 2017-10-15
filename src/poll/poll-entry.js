@@ -1,4 +1,22 @@
+// Lib for polling an rss feed entry
+
 'use strict';
+
+// Dependencies:
+// assert.js
+// debug.js
+// entry.js
+// favicon.js
+// feed.js
+// fetch.js
+// reader-db.js
+// url.js
+
+
+
+// TODO: remove IIAFE
+// TODO: move comments to github
+
 
 (function(exports) {
 
@@ -73,6 +91,10 @@ async function poll_entry(entry, reader_conn, icon_conn, feed,
   // "Failed to execute 'transaction' on 'IDBDatabase': The database connection
   // is closing." Also I am not sure on whether it is this line or the previous
   // call
+  // NOTE: this may have been fixed, I was not properly handling the return
+  // value of html_parse_from_string above, leading to an assertion failure
+  // that was within a try/catch
+
   return await prep_and_store_entry(reader_conn, entry);
 }
 
@@ -97,7 +119,8 @@ async function prepare_remote_entry(entry, doc, fetch_img_timeout_ms) {
 
   // This must occur after urls are resolved and after filtering tracking info
   let allowed_protocols;
-  await image_size_transform_document(doc, allowed_protocols, fetch_img_timeout_ms);
+  await image_size_transform_document(doc, allowed_protocols,
+    fetch_img_timeout_ms);
 
   // Investing rare bug, TypeError: doc.createElement in poll_doc_prep
   ASSERT(doc);
@@ -194,33 +217,18 @@ function prepare_local_entry(entry) {
     return entry;
 
   const url_string = entry_get_top_url(entry);
-
-
   ASSERT(url_string);
 
-  // TODO: I am seeing this in the console, for the first time, and not entirely
-  // sure why. This may be a bug.
-  DEBUG('parsing local feed entry html for url', url_string);
-
-  let doc;
-  try {
-    doc = html_parse_from_string(entry.content);
-  } catch(error) {
-    DEBUG(error);
+  const [status, doc] = html_parse_from_string(entry.content);
+  if(status !== STATUS_OK) {
     return entry;
   }
 
-  // TEMP: tracking issue with poll_doc_prep saying doc.createElement is not
-  // a function
-  // If above failed, doc should be defined
+  // If status is STATUS_OK then doc should always be defined
   ASSERT(doc);
 
   // TODO: this should be part of poll_doc_prep not external
   lonestar_transform_document(doc);
-
-  // TEMP: this is to track issue with bug in poll_doc_prep where doc
-  // was undefined
-  ASSERT(doc);
 
   poll_doc_prep(doc, url_string);
   const content = doc.documentElement.outerHTML.trim();
