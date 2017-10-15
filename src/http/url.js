@@ -6,12 +6,14 @@
 
 const URL_DEBUG = true;
 
-// @param url {String}
+// Returns true if the given url is canonical (absolute).
+// Allow for leading whitespace characters
+// Returns true for javascript: and mailto: and data:
+// Returns true for https:// and http://
+// Returns false for // (which is preferable)
+// @param url {String} input url
+// @returns {Boolean} true if the url is canonical, otherwise false
 function url_is_canonical(url) {
-  // Allow for leading whitespace characters
-  // Returns true for javascript: and mailto: and data:
-  // Returns true for https:// and http://
-  // Returns false for // (which is preferable)
   return /^\s*[a-z]+:/i.test(url);
 }
 
@@ -93,6 +95,7 @@ function url_path_is_valid(path) {
     !path.includes(' ');
 }
 
+// TODO: test input 'foo.', I suspect it is incorrect
 // @param path {String}
 // @returns {String}
 function url_path_get_extension(path) {
@@ -129,16 +132,19 @@ function url_path_get_extension(path) {
   return extension;
 }
 
-// Return true if the path probably represents a binary resource. The sniff
-// keyword indicates this does not actually inspect the bytes of the resource,
-// this makes a guess based on the extension alone.
-// @param path {String} path component of url to sniff
+// Return true if url probably represents a binary resource. This does not
+// actually inspect the bytes of the resource. This makes a guess based on the
+// extension of the file name in the url.
+// @param url {URL} url object
 // @returns {Boolean} true if probably binary, otherewise false
-// TODO: test input 'foo.', I suspect it is incorrect
-// TODO: write tests
-// TODO: ensure the caller does not call on data: urls, or refactor this to
-// accept url and do the check here.
-function url_path_sniff_is_binary(path) {
+function url_sniff_is_binary(url) {
+  const path = url.pathname;
+
+  // Auto-classify all data url objects are probably non binary
+  if(url.protocol === 'data:') {
+    return false;
+  }
+
   const extension = url_path_get_extension(path);
   if(!extension)
     return false;

@@ -20,7 +20,7 @@ function mime_get_type_for_extension(extension) {
 
   ASSERT(t_extension === 'string');
 
-  // List adapted from
+  // List adapted partly from
   // https://chromium.googlesource.com/chromium/src/+/net/base/mime_util.cc
 
   // Defined inline so as to avoid having the table persist in memory
@@ -95,7 +95,8 @@ function mime_get_type_for_extension(extension) {
     'ps':  'application/postscript',
     'rar':  'application/octet-stream',
 
-    // TODO: need to fix binary guessing to uncomment
+    // TODO: need to fix url sniffing to uncomment
+    // See url.js
     // 'rdf': 'application/rdf+xml',
     // 'rss':  'application/rss+xml',
 

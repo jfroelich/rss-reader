@@ -158,7 +158,7 @@ function is_unpollable_url(url_string) {
   if(cookie_hosts.includes(hostname))
     return true;
 
-  if(url_path_sniff_is_binary(url_object.pathname))
+  if(url_sniff_is_binary(url_object))
     return true;
   return false;
 }

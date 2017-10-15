@@ -38,7 +38,7 @@ function responsive_transform_document(doc) {
     return;
   const image_elements = doc.body.getElementsByTagName('img');
   for(const image_element of image_elements) {
-    if(!image_has_valid_src(image_element) && image_has_srcset(image_element)) {
+    if(!image_has_valid_source(image_element) && image_has_srcset(image_element)) {
       responsive_transform_image(image_element);
     }
   }

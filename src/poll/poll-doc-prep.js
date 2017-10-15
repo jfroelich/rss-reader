@@ -26,7 +26,7 @@ function poll_doc_prep(doc, url) {
 
   frame_transform_document(doc);
   host_template_prune(url, doc);
-  filter_boilerplate(doc);
+  boilerplate_filter(doc);
   html_security_transform_document(doc);
   sanitize_html_document(doc);
 

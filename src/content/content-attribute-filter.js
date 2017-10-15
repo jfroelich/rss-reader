@@ -4,7 +4,6 @@
 // @param doc {Document}
 // @param attribute_whitelist {Object} a basic object where each property is
 // the name of a permitted element
-// TODO: write tests
 function remove_element_attributes(doc, attribute_whitelist) {
   // Using getElementsByTagName as opposed to querySelectorAll for speed given
   // no elemental removal during iteration

@@ -16,9 +16,7 @@
 // TODO: once tokenize_html is settled, migrate to tokenizer approach instead
 // of using html_parse_from_string, due to the lossy transform issue
 function html_replace_tags(input_string, replacement_string) {
-  // TODO: not sure this assert is needed if html_parse_from_string can
-  // handle it
-  // TODO: this assert may belong after the !input_string check
+  // The caller is responsible for calling this function with a defined string
   ASSERT(typeof input_string === 'string');
 
   // Fast case for empty strings
