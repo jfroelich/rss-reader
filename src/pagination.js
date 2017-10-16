@@ -1,25 +1,28 @@
+// Pagination library
+
 'use strict';
 
-(function(exports) {
+// Dependencies:
+// node.js
+// domvis.js
+
 
 // Returns an array
-// TODO: update notes document
 // TODO: maybe revert to returning an object that abstracts the urls and other
 // properties
 // TODO: something that tracks how pager was found, so it can be found again
 // for removal. Or ... remove on find, e.g. have a bool param
 // If returning a pager should probably be renamed to something like
 // find_pager
-// TODO: maybe try using a "pagination" namespace object
 
 // @param doc {HTMLDocument}
 // @param location {String} url location of the document
-function find_pagination_anchors(doc, location, lca_max_distance) {
-  const candidates = find_candidate_anchors(doc, location);
+function pagination_find_anchors(doc, location, lca_max_distance) {
+  const candidates = pagination_find_candidate_anchors(doc, location);
   if(!candidates.length)
     return [];
 
-  const sequences = find_anchor_sequences(candidates, lca_max_distance);
+  const sequences = pagination_find_anchor_sequences(candidates, lca_max_distance);
   if(!sequences.length)
     return [];
 
@@ -33,7 +36,7 @@ function find_pagination_anchors(doc, location, lca_max_distance) {
 // candidates found then an empty array is returned. Is not concerned with
 // sequence-related criteria for anchors, just the minimal criteria for any
 // anchor
-function find_candidate_anchors(doc, location) {
+function pagination_find_candidate_anchors(doc, location) {
   const body_element = doc.body;
   if(!body_element)
     return [];
@@ -45,7 +48,7 @@ function find_candidate_anchors(doc, location) {
   const candidates = [];
   const location_url = new URL(location);
   for(const anchor of anchors)
-    if(is_candidate_anchor(anchor, location_url))
+    if(pagination_is_candidate_anchor(anchor, location_url))
       candidates.push(anchor);
   return candidates;
 }
@@ -53,7 +56,7 @@ function find_candidate_anchors(doc, location) {
 // Return true if the anchor element may be part of a pager sequence
 // @param anchor_element {Element} an anchor element
 // @param base_url {URL}
-function is_candidate_anchor(anchor_element, base_url) {
+function pagination_is_candidate_anchor(anchor_element, base_url) {
   // Although the following conditions are generally associative, they are
   // ordered so as to reduce the chance of performing more expensive operations
 
@@ -68,7 +71,7 @@ function is_candidate_anchor(anchor_element, base_url) {
   if(domviz.element_is_hidden(anchor_element))
     return false;
 
-  const href_url = get_href_url(anchor_element, base_url);
+  const href_url = pagination_get_href_url(anchor_element, base_url);
   if(!href_url)
     return false;
 
@@ -83,11 +86,13 @@ function is_candidate_anchor(anchor_element, base_url) {
   // TODO: Check for digits somewhere in the anchor. At least one feature must
   // have digits (or the name like one/two)
   // TODO: Check id, class, href filename, href params, text
-  return are_similar_urls(base_url, href_url);
+  return pagination_are_similar_urls(base_url, href_url);
 }
 
 // Returns the anchor's href attribute value as a URL object, or undefined
-function get_href_url(anchor_element, base_url) {
+function pagination_get_href_url(anchor_element, base_url) {
+  ASSERT(base_url);
+
   let href = anchor_element.getAttribute('href');
 
   // The anchor's href value will eventually be used as the first parameter to
@@ -104,7 +109,6 @@ function get_href_url(anchor_element, base_url) {
   try {
     href_url = new URL(href, base_url);
   } catch(error) {
-    return;
   }
   return href_url;
 }
@@ -112,21 +116,22 @@ function get_href_url(anchor_element, base_url) {
 // TODO: actually I think this can be inlined. Also, this is really just
 // comparing path so this name is not great
 // Expects 2 URL objects. Return true if the second is similar to the first
-function are_similar_urls(url1, url2) {
+function pagination_are_similar_urls(url1, url2) {
   if(url1.origin !== url2.origin)
     return false;
   let path1 = url1.pathname, path2 = url2.pathname;
   if(path1 === path2)
     return true;
-  path1 = get_partial_path(url1.pathname);
-  path2 = get_partial_path(url2.pathname);
+  path1 = pagination_get_partial_path(url1.pathname);
+  path2 = pagination_get_partial_path(url2.pathname);
   return path1 === path2;
 }
 
+// TODO: move to url.js
 // Returns a path string without the "filename" segment of the path
 // Note that for basic path like '/' this may return an empty string.
 // Assume's input path string is defined, trimmed, and normalized.
-function get_partial_path(path) {
+function pagination_get_partial_path(path) {
   const index = path.lastIndexOf('/');
   if(index === -1)
     throw new TypeError('path missing forward slash');
@@ -145,11 +150,13 @@ function get_partial_path(path) {
 // TODO: maybe store the LCA within each sequence as each sequence's first value
 // before returning, as this may help avoid having to find it again later
 // TODO: if I am using a max distance to lca, then why not just restrict search
-// distance in find_lca and return null when no lca found within distance?
-function find_anchor_sequences(anchor_elements, lca_max_distance) {
+// distance in node_find_lca and return null when no lca found within distance?
+function pagination_find_anchor_sequences(anchor_elements, lca_max_distance) {
   const num_anchors = anchor_elements.length;
-  if(!num_anchors)
-    throw new TypeError('anchor_elements is empty');
+
+  ASSERT(num_anchors > 0);
+
+
   const minlen = 1, maxlen = 51; // exclusive end points
   const seqs = [];
   const maxd = lca_max_distance - 1;
@@ -159,7 +166,7 @@ function find_anchor_sequences(anchor_elements, lca_max_distance) {
 
   for(let i = 1; i < num_anchors; i++) {
     a2 = anchor_elements[i];
-    lca2 = find_lca(a1, a2);
+    lca2 = node_find_lca(a1, a2);
     if((lca1 && (lca2.ancestor !== lca1.ancestor)) ||
       (lca2.d1 !== lca2.d2) || (lca2.d1 > maxd)) {
       if(seq.length > minlen && seq.length < maxlen)
@@ -178,44 +185,3 @@ function find_anchor_sequences(anchor_elements, lca_max_distance) {
     seqs.push(seq);
   return seqs;
 }
-
-// Find the lowest common ancestor and then return total path length. Assumes
-// node1 does not contain node2, and node2 does not contain node1.
-// Adapted from https://stackoverflow.com/questions/3960843
-function find_lca(node1, node2) {
-  if(node1 === node2)
-    throw new TypeError('node1 === node2');
-  if(node1.ownerDocument !== node2.ownerDocument)
-    throw new TypeError('node1 not in same document as node2');
-
-  const ancestors1 = [];
-  for(let node = node1.parentNode; node; node = node.parentNode)
-    ancestors1.push(node);
-  const ancestors2 = [];
-  for(let node = node2.parentNode; node; node = node.parentNode)
-    ancestors2.push(node);
-
-  // The +1s are for the immediate parent steps of each node
-
-  const len1 = ancestors1.length, len2 = ancestors2.length;
-  for(let i = 0; i < len1; i++) {
-    const ancestor1 = ancestors1[i];
-    for(let j = 0; j < len2; j++) {
-      if(ancestor1 === ancestors2[j]) {
-        return {
-          'ancestor': ancestor1,
-          'd1': i + 1,
-          'd2': j + 1
-        };
-      }
-    }
-  }
-
-  throw new Error('reached unreachable');
-}
-
-exports.find_pagination_anchors = find_pagination_anchors;
-exports.find_lca = find_lca;
-exports.find_anchor_sequences = find_anchor_sequences;
-
-}(this));

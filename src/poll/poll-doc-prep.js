@@ -24,7 +24,7 @@ function poll_doc_prep(doc, url) {
     doc.documentElement.appendChild(body_element);
   }
 
-  frame_transform_document(doc);
+  content_frame_filter(doc);
   host_template_prune(url, doc);
   boilerplate_filter(doc);
   html_security_transform_document(doc);
@@ -45,5 +45,5 @@ function poll_doc_prep(doc, url) {
     'img': ['src', 'alt', 'title', 'srcset']
   };
 
-  remove_element_attributes(doc, attribute_whitelist);
+  content_attribute_filter(doc, attribute_whitelist);
 }

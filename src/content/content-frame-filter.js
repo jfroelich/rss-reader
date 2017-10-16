@@ -4,24 +4,23 @@
 // Dependencies:
 // assert.js
 
-// TODO: rename to html-frame-filter
-
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
 // TODO: consider making async and merging frame content to a single document
 // TODO: maybe inline iframes or replace with a message
 // TODO: write tests
-function frame_transform_document(doc) {
+function content_frame_filter(doc) {
   ASSERT(doc);
-
-  let body_element = doc.body;
-  if(!body_element)
-    return;
 
   // Remove iframes
   const iframe_elements = doc.querySelectorAll('iframe');
   for(const iframe_element of iframe_elements)
     iframe_element.remove();
+
+
+  let body_element = doc.body;
+  if(!body_element)
+    return;
 
   // If document is not framed, then nothing else to do
   if(body_element.localName !== 'frameset')

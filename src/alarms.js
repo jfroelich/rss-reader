@@ -39,7 +39,6 @@ async function alarms_on_compact_favicons_alarm() {
   }
 }
 
-
 async function alarms_on_alarm_wakeup(alarm) {
   if(ALARMS_DEBUG)
     DEBUG('alarm wokeup:', alarm.name);

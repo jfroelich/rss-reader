@@ -1,7 +1,7 @@
 {
   "version": "3",
   "manifest_version": 2,
-  "minimum_chrome_version" : "60",
+  "minimum_chrome_version" : "61",
   "name": "Josh's RSS Reader",
   "author": "Josh Froelich",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
@@ -34,6 +34,7 @@
       "/src/base/status.js",
       "/src/base/string.js",
 
+      "/src/content/content-base-filter.js",
       "/src/content/content-canonical-url-filter.js",
       "/src/content/content-sanity-filter.js",
       "/src/content/content-frame-filter.js",

@@ -7,7 +7,6 @@
 // image.js
 // string.js
 
-
 // Based on boilerpipe and BTE
 // http://www.l3s.de/~kohlschuetter/boilerplate
 function boilerplate_filter(doc) {
@@ -195,8 +194,18 @@ function boilerplate_derive_image_text_bias(image) {
 }
 
 // Reward large images
-// TODO: work with and return an integer, floored
+
 function boilerplate_derive_image_area_bias(image) {
+
+  // TODO: work with and return an integer, floored
+  //
+  // TODO: rather than using area as a simple coeffient, use binning.
+  // Basically, categorize into small image, medium image, large image.
+  // Each bin has a score. Use the bin score.
+  //
+  // The bin score is a predictor that the element containing the image is
+  // the root of the document
+
   let bias = 0.0;
   const max_area = 100000;
   const damp_coef = 0.0015;

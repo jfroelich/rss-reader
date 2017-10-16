@@ -33,6 +33,29 @@ function srcset_serialize(descriptors) {
   return descriptor_strings.join(', ');
 }
 
+// Returns an array of descriptor objects
+// Does not throw. Any errors result in an empty array returned instead.
 function srcset_parse_from_string(srcset_string) {
-  throw new Error('Not implemented');
+  // Tolerate invalid inputs
+  if(typeof srcset_string !== 'string') {
+    return [];
+  }
+
+  // Embed the call to parseSrcset in a try/catch due to mistrust
+  // of third party library
+
+  let descriptors;
+  try {
+    descriptors = parseSrcset(srcset_string);
+  } catch(error) {
+    return [];
+  }
+
+  // Sanity check the output of the third party library call. Only provide
+  // output if descriptors is a non empty array.
+  if(!Array.isArray(descriptors)) {
+    return [];
+  }
+
+  return descriptors;
 }

@@ -9,7 +9,7 @@
 // @param timeout_ms {Number} timeout per page fetch
 async function merge_multipage_document(doc, location, timeout_ms) {
   const lca_max_distance = 3;
-  const anchors = find_pagination_anchors(doc, location, lca_max_distance);
+  const anchors = pagination_find_anchors(doc, location, lca_max_distance);
   if(!anchors.length)
     return;
 

@@ -4,6 +4,9 @@
 
 // Dependencies:
 // assert.js
+// content-filter-helpers.js
+// element.js
+
 
 // Replace an element with its children. Special care is taken to add spaces
 // if the operation would result in adjacent text nodes.
@@ -73,15 +76,14 @@ function insert_children_before(parent_node, reference_node) {
 function rename_element(element, new_element_name, copy_attrs) {
 
   // According to MDN docs, createElement(null) works like createElement("null")
-  // so avoid that.
+  // so to avoid that treat missing name as an error
   ASSERT(typeof new_element_name === 'string');
   ASSERT(!new_element_name.includes(' '));
 
   if(typeof copy_attrs === 'undefined')
     copy_attrs = true;
 
-  // Treat attempting to rename an element to the same name as a noop instead
-  // of as a fatal assertion for caller convenience.
+  // Treat attempting to rename an element to the same name as a noop
   if(element.localName === new_element_name.toLowerCase())
     return element;
 
@@ -100,13 +102,8 @@ function rename_element(element, new_element_name, copy_attrs) {
   // Create the replacement
   const new_element = element.ownerDocument.createElement(new_element_name);
 
-  // TODO: use getAttributeNames instead of attributes and for..of
   if(copy_attrs) {
-    const attrs = element.attributes;
-    for(let i = 0, length = attrs.length; i < length; i++) {
-      const attr = attrs[i];
-      new_element.setAttribute(attr.name, attr.value);
-    }
+    element_copy_attributes(element, new_element);
   }
 
   // Move children

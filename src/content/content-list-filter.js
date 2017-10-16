@@ -4,52 +4,108 @@
 // assert.js
 // transform-helpers.js // for insert_children_before
 
-// TODO: use html_list prefix for globals
+// TODO: revert to accepting doc as parameter and checking for doc.body within.
+// Now that this is global we cannot rely on caller knowledge of this. Also
+// will be more consistent.
 
-function unwrap_single_item_lists(ancestor_element) {
+// TODO: restrict children of list to proper child type. E.g. only allow li
+// or form within ul/ol, and dd/dt/form within dl. Do some type of transform
+// like move such items to within a new child
+
+function list_filter(ancestor_element) {
   ASSERT(ancestor_element);
 
-  const list_elements = ancestor_element.querySelectorAll('ul, ol, dl');
-  for(const list_element of list_elements)
-    unwrap_single_item_list(ancestor_element, list_element);
+  const lists = ancestor_element.querySelectorAll('ul, ol, dl');
+
+  // TODO: maybe this empty checking should be moved into the
+  // node_is_leaf logic as a special case for list elements. That way it
+  // will be recursive. But this does a moving of children where as the
+  // leaf code just removes. So that would also entail changing the meaning
+  // of leaf filtering from filter to transform.
+  for(const list of lists) {
+    if(list_filter_is_empty(list)) {
+      list_filter_remove_empty_list(list);
+    }
+  }
+
+  for(const list of lists) {
+    list_filter_unwrap_single_item_list(list);
+  }
+}
+
+// Return true if list is 'empty'
+function list_filter_is_empty(list) {
+  // Return true if the list has no child nodes. This is redundant with
+  // leaf filtering but I think it is ok and prefer to not make assumptions
+  // about composition with other filters
+  if(!list.firstChild) {
+    return true;
+  }
+
+  const item = list.firstElementChild;
+
+  // If the list has no elements, only nodes, then return true.
+  if(!item) {
+    return true;
+  }
+
+  // TODO: this check is too simple, because it ignores tolerable intermediate
+  // elements, such as <ul><form><li/><li/></form></ul>. That is not empty.
+  // And I believe it is still well-formed.
+
+  // If this is the only element in the list, then check if it is empty.
+  // NOTE: the first child check is admittedly simplistic and easily defeated
+  // even just by a whitespace text node. But the goal I think is not to
+  // be perfect and just grab low hanging fruit.
+  if(!item.nextElementSibling && !item.firstChild) {
+    return true;
+  }
+
+  // The list is not empty
+  return false;
+}
+
+function list_filter_remove_empty_list(list) {
+  // Add leading padding
+  if(list.previousSibling &&
+    list.previousSibling.nodeType === Node.TEXT_NODE) {
+    list.parentNode.insertBefore(doc.createTextNode(' '), list);
+  }
+
+  const first_child = list.firstChild;
+
+  // Move any child nodes (there may be none). As each first child is moved,
+  // the next child becomes the first child.
+  for(let node = first_child; node; node = list.firstChild) {
+    list.parentNode.insertBefore(node, list);
+  }
+
+  // Add trailing padding if needed. Also check if there were children,
+  // so as to not add padding on top of the leading padding when there is
+  // no need.
+  if(first_child && list.nextSibling &&
+    list.nextSibling.nodeType === Node.TEXT_NODE) {
+    list.parentNode.insertBefore(doc.createTextNode(' '), list);
+  }
+
+  list.remove();
 }
 
 // Unwraps single item or empty list elements
-// TODO: I do not need the parameter ancestor_element, I can use
-// list.ownerDocument. The parameter is probably still here just as an artifact
-// of some previous approach. It looks like there is only reference to it
-// within the function.
-function unwrap_single_item_list(ancestor_element, list) {
-
-  // TODO: inline
-  function node_is_text(node) {
-    return node && node.nodeType === Node.TEXT_NODE;
-  }
-
+function list_filter_unwrap_single_item_list(list) {
 
   const list_parent = list.parentNode;
   if(!list_parent)
     return;
-  const doc = ancestor_element.ownerDocument;
+  const doc = list.ownerDocument;
   const item = list.firstElementChild;
 
-  // If the list has no child elements then move its child nodes out of the
-  // list and remove iterator
-  // TODO: this is unexpected, probably should be separate function
+  // If the list has no child elements then just remove
+  // This is overly simple and could lead to data loss, but it is based
+  // on the assumption that empty lists are properly handled in the first
+  // place earlier. Basically, this should never happen and should almost
+  // be an ASSERT.
   if(!item) {
-    // If iterator is just <list>...<item/>...<list> then remove
-    if(!list.firstChild) {
-      list.remove();
-      return;
-    }
-    // The list has no child elements, but the list has one or more child
-    // nodes. Move the nodes to before the list. Add padding if needed.
-    if(node_is_text(list.previousSibling))
-      list_parent.insertBefore(doc.createTextNode(' '), list);
-    for(let node = list.firstChild; node; node = list.firstChild)
-      list_parent.insertBefore(node, list);
-    if(node_is_text(list.nextSibling))
-      list_parent.insertBefore(doc.createTextNode(' '), list);
     list.remove();
     return;
   }
@@ -67,19 +123,43 @@ function unwrap_single_item_list(ancestor_element, list) {
   // any non-element nodes within the list outside of the child element.
   if(!item.firstChild) {
     // If removing the list, avoid the possible merging of adjacent text nodes
-    if(node_is_text(list.previousSibling) && node_is_text(list.nextSibling))
+    if(list.previousSibling &&
+      list.previousSibling.nodeType === Node.TEXT_NODE &&
+      list.nextSibling &&
+      list.nextSibling.nodeType === Node.TEXT_NODE) {
+
       list_parent.replaceChild(doc.createTextNode(' '), list);
-    else
+
+    } else {
       list.remove();
+    }
+
     return;
   }
 
   // The list has one child element with one or more child nodes. Move the
-  // child nodes to before the list and then remove iterator. Add padding.
-  if(node_is_text(list.previousSibling) && node_is_text(item.firstChild))
+  // child nodes to before the list and then remove iterator.
+
+  // Add leading padding
+  if(list.previousSibling &&
+    list.previousSibling.nodeType === Node.TEXT_NODE &&
+    item.firstChild &&
+    item.firstChild.nodeType === Node.TEXT_NODE) {
+
     list_parent.insertBefore(doc.createTextNode(' '), list);
+  }
+
+  // TODO: inline this call to decrease coupling??
   insert_children_before(item, list);
-  if(node_is_text(list.nextSibling) && node_is_text(list.previousSibling))
+
+  // Add trailing padding
+  if(list.nextSibling &&
+    list.nextSibling.nodeType === Node.TEXT_NODE &&
+    list.previousSibling &&
+    list.previousSibling.nodeType === Node.TEXT_NODE) {
+
     list_parent.insertBefore(doc.createTextNode(' '), list);
+  }
+
   list.remove();
 }

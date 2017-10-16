@@ -161,7 +161,7 @@ function create_article_title_element(entry) {
   if(entry.title) {
     title_element.setAttribute('title', entry.title);
     let titleText = entry.title;
-    titleText = filter_article_title(titleText);
+    titleText = article_title_filter_publisher(titleText);
     titleText = html_truncate(titleText, 300);
     title_element.innerHTML = titleText;
   } else {

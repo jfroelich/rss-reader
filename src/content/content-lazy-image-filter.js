@@ -7,51 +7,9 @@
 // image.js
 // url.js
 
-// TODO: rename to html-lazy-image-filter
+// TODO: rename to content-lazy-image-filter
 
 /*
-
-# About
-
-Lazily loaded images are image elements specified in the html source that, once
-the browser both loads the script and the html, runs a script on load handler
-that transforms the elements into valid ones. This technique is done to ensure
-that the html is loaded first and prevents the browser from loading images until
-after the html is loaded.
-
-When working with a Document object where script is removed/disabled, one of
-the problems is that several lazily-loaded images are left in the document.
-If and when the document is later displayed, the images all have loading errors.
-Or, because the images do not have a src attribute, the images are removed
-when filtering out sourceless images.
-
-This attempts to convert lazy-loaded images back into normal image elements.
-
-It is not entirely accurate. It handles situations where the image is
-missing a src. Some approaches to lazy loading provide both a src attribute and
-an alternative attribute. Furthermore, of those approaches, one approach will
-provide a valid looking src value that points to a place holder image, so that
-it sort of still works in a noscript environment.
-
-There are also situations where even the alternate value is not an actual url
-but instead some type of seed parameter to a lazy loading method that turns the
-image into one with a valid source.
-
-In other words, it is a problem of ambiguity. I cannot correctly distinguish
-between a normal image and a lazily loaded one in all cases.
-
-As a whole, this function is essentially a functional transformation, or
-mapping, from one document into another. However, for performance reasons,
-creating an entirely new document is not reasonable. Therefore this modifies
-the input document in place.
-
-# Notes
-
-This is designed as an independent lib. I do know of another area of the app
-that removes sourceless images. Generally, this should always be called prior
-to that. However, this makes no assumptions. Similarly, this should always be
-called prior to any code the validates or works with the urls in the src
-attribute.
 
 # TODO
 
@@ -88,10 +46,11 @@ attr
 
 */
 
-const DEBUG_LAZY_IMAGE = false;
+const LAZY_IMAGE_FILTER_DEBUG = false;
 
-function transform_lazy_images(doc) {
+function lazy_image_filter(doc) {
   ASSERT(doc);
+
   const lazy_img_attrs = [
     'load-src',
     'data-src',
@@ -118,7 +77,7 @@ function transform_lazy_images(doc) {
           img.removeAttribute(lazy_src_attr_name);
           img.setAttribute('src', url_string);
 
-          if(DEBUG_LAZY_IMAGE) {
+          if(LAZY_IMAGE_FILTER_DEBUG) {
             DEBUG('transformed lazily loaded image', img);
           }
 

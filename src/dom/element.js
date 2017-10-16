@@ -1,9 +1,28 @@
 // Functions related to DOM elements
 'use strict';
 
+// Dependencies:
+// assert.js
 
+// Copies the attributes of an element to another element. Overwrites any
+// existing attributes in the other element.
+// @param from_element {Element}
+// @param to_element {Element}
+// @throws {Error} if either element is not an Element
+// @returns void
+function element_copy_attributes(from_element, to_element) {
+  // Use getAttributeNames in preference to element.attributes due to
+  // performance issues with element.attributes, and to allow unencumbered use
+  // of the for..of syntax (I had issues with NamedNodeMap and for..of).
+  const names = from_element.getAttributeNames();
+  for(const name of names) {
+    const value = from_element.getAttribute(name);
+    to_element.setAttribute(name, value);
+  }
+}
 
 // Recursive
+// TODO: move to node.js
 function node_is_leaf(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:
@@ -49,15 +68,20 @@ function element_is_hidden(element) {
 // Only looks at inline style.
 // Returns {'width': int, 'height': int} or undefined
 function element_get_dimensions(element) {
+
+  // Accessing element.style is a performance heavy operation sometimes, so
+  // try and avoid calling it.
   if(!element.hasAttribute('style'))
     return;
 
-  // TODO: percents?
+  // TODO: support percents and other strange values?
 
   const dimensions = {};
   const radix = 10;
   dimensions.width = parseInt(element.style.width, radix);
   dimensions.height = parseInt(element.style.height, radix);
+
+  // TODO: this could be written more clearly
   return (isNaN(dimensions.width) || isNaN(dimensions.height)) ?
     undefined : dimensions;
 }

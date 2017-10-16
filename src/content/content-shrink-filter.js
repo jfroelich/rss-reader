@@ -24,7 +24,7 @@ function html_shrink(doc, copy_attrs_on_rename, row_scan_limit) {
   // Unwrap generic containers
   unwrap_elements(body_element, 'div, ilayer, layer');
 
-  unwrap_single_item_lists(body_element);
+  list_filter(body_element);
   table_filter_transform_document(body_element, row_scan_limit);
   remove_leaf_nodes(body_element);
 
