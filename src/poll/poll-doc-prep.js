@@ -5,18 +5,12 @@
 // Dependencies:
 // assert.js
 // filters/*
+// status.js
 
 // TODO: rename to poll_apply_document_filters
 
 function poll_doc_prep(doc, url) {
   ASSERT(typeof doc === 'object');
-
-
-  // NOTE: these asserts are remnants of a bug that was fixed, I am leaving
-  // them in for a little while longer, eventually will remove
-  ASSERT(doc.createElement);
-  ASSERT(typeof doc.createElement === 'function');
-
 
   // TODO: what is proper order of these two filters?
   frame_filter(doc);
@@ -27,15 +21,15 @@ function poll_doc_prep(doc, url) {
   iframe_filter(doc);
 
   // TODO: reverse arg order, rename to filter-like name
+  // TODO: is this the proper place to call this in filter order?
   host_template_prune(url, doc);
 
   hidden_filter(doc);
   noscript_filter(doc);
 
+  blacklist_filter(doc);
 
-  security_filter(doc);
-
-
+  script_anchor_filter(doc);
 
   boilerplate_filter(doc);
 
@@ -51,12 +45,23 @@ function poll_doc_prep(doc, url) {
   adoption_agency_filter(doc);
   hairspace_filter(doc);
 
-  // Because we are stripping attributes, there is no need to keep them
-  const copy_attrs_on_rename = false;
+  comment_filter(doc);
+
+  list_filter(doc);
+
   const row_scan_limit = 20;
+  table_filter(doc, row_scan_limit);
 
-  shrink_filter(doc, copy_attrs_on_rename, row_scan_limit);
 
+  // TODO: finish deprecation
+  shrink_filter(doc);
+
+  // Better to call later than earlier to reduce number of text nodes visited
+  node_whitespace_filter(doc);
+
+  // Should be called near end because its behavior changes based on
+  // what content remains
+  trim_document_filter(doc);
 
   // Filter element attributes last because it is so slow and is sped up by
   // processing fewer elements.
@@ -68,4 +73,6 @@ function poll_doc_prep(doc, url) {
   };
 
   attribute_filter(doc, attribute_whitelist);
+
+  return STATUS_OK;
 }
