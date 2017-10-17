@@ -7,8 +7,6 @@
 // image.js
 // url.js
 
-// TODO: rename to content-lazy-image-filter
-
 /*
 
 # TODO

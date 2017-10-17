@@ -36,25 +36,26 @@ function srcset_serialize(descriptors) {
 // Returns an array of descriptor objects
 // Does not throw. Any errors result in an empty array returned instead.
 function srcset_parse_from_string(srcset_string) {
-  // Tolerate invalid inputs
+  const fallback_output = [];
+
+  // Tolerate invalid inputs. Even though third party might catch this, and
+  // the try/catch certainly does, I'd prefer to avoid the function call.
   if(typeof srcset_string !== 'string') {
-    return [];
+    return fallback_output;
   }
 
-  // Embed the call to parseSrcset in a try/catch due to mistrust
-  // of third party library
-
+  // Catch exceptions due to mistrust of third party
   let descriptors;
   try {
     descriptors = parseSrcset(srcset_string);
   } catch(error) {
-    return [];
+    return fallback_output;
   }
 
   // Sanity check the output of the third party library call. Only provide
-  // output if descriptors is a non empty array.
+  // third party output if it is an array.
   if(!Array.isArray(descriptors)) {
-    return [];
+    return fallback_output;
   }
 
   return descriptors;

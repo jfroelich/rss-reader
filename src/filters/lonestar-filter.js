@@ -5,9 +5,6 @@
 // debug.js
 // element.js
 
-// TODO: rename to html-lonestar-filter
-
-// TODO: put element_is_hidden into its own lib and include only it?
 // TODO: move patterns into an external configuration file of some sort? or
 // see if patterns can be configured within manifest.json and loaded from there?
 
@@ -41,28 +38,15 @@ const LONESTAR_PATTERNS = [
   /\/\/www\.facebook\.com\/tr/i
 ];
 
-// Removes telemetry information from a document. This includes ping attributes,
-// sets link rel attribute to noreferrer, and removes various suspicious images
-// See also:
-// https://blog.fastmail.com/2016/06/20/everything-you-could-ever-want-to-know-and-more-about-controlling-the-referer-header/
-// http://w3c.github.io/html/links.html#link-type-noreferrer
+// Removes telemetry images from a document.
 // TODO: tests
 // TODO: deal with the new <picture> element
-function lonestar_transform_document(doc) {
+function lonestar_filter(doc) {
   let num_elements_modified = 0;
 
-  // Analysis is limited to descendants of body, as the document is assumed
-  // to be well-formed
-  if(!doc.body)
+  // Analysis is limited to descendants of body
+  if(!doc.body) {
     return num_elements_modified;
-
-  // Using getElementsByTagName over querySelectorAll for alleged speed and
-  // because this does not remove elements while iterating
-  const anchor_elements = doc.body.getElementsByTagName('a');
-  for(const anchor_element of anchor_elements) {
-    anchor_element.removeAttribute('ping');
-    anchor_element.setAttribute('rel', 'noreferrer');
-    num_elements_modified++;
   }
 
   const num_images_removed = lonestar_filter_telemetry_images(doc);

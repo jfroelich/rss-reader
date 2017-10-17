@@ -6,8 +6,6 @@
 // fetch.js
 // url.js
 
-// TODO: rename to content-image-size-filter
-
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.
@@ -16,15 +14,13 @@
 // @param doc {Document}
 // @param timeout_ms {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
-async function image_size_transform_document(doc, allowed_protocols,
+async function image_size_filter(doc, allowed_protocols,
   timeout_ms) {
 
+  // TODO: this should assert typeof, not just definedness
   ASSERT(doc);
 
-  let modified_image_count = 0;
-
-  if(!doc.body)
-    return modified_image_count;
+  // timeout_ms sanity assertion is delegated to fetch function
 
   const default_allowed_protocols = ['data:', 'http:', 'https:'];
   if(typeof allowed_protocols === 'undefined')
@@ -35,15 +31,16 @@ async function image_size_transform_document(doc, allowed_protocols,
   // rest and assume the parameter is usable.
   ASSERT(typeof allowed_protocols.includes === 'function');
 
-  const image_elements = doc.body.getElementsByTagName('img');
-  const derive_promises = [];
-  for(const image_element of image_elements) {
-    const promise = image_size_process_image_silently(image_element,
-      allowed_protocols, timeout_ms);
-    derive_promises.push(promise);
-  }
+  // TODO: returning count isn't that important. Maybe just return status
+  // code.
 
-  const results = await Promise.all(derive_promises);
+  let modified_image_count = 0;
+  if(!doc.body)
+    return modified_image_count;
+
+  const images = doc.body.getElementsByTagName('img');
+  const results = await image_size_filter_get_all_dimensions(images,
+    allowed_protocols, timeout_ms);
 
   for(const result of results) {
     if(result) {
@@ -55,14 +52,29 @@ async function image_size_transform_document(doc, allowed_protocols,
   return modified_image_count;
 }
 
-async function image_size_process_image_silently(image, allowed_protocols,
+// Concurrently process each image
+function image_size_filter_get_all_dimensions(images, allowed_protocols,
   timeout_ms) {
+  const promises = [];
+  for(const image of images) {
+    const promise = image_size_filter_get_dimensions_silently(image,
+      allowed_protocols, timeout_ms);
+    promises.push(promise);
+  }
+  return Promise.all(promises);
+}
+
+async function image_size_filter_get_dimensions_silently(image,
+  allowed_protocols, timeout_ms) {
   try {
-    return await image_size_process_image(image, allowed_protocols, timeout_ms);
+    return await image_size_filter_get_dimensions(image, allowed_protocols,
+      timeout_ms);
   } catch(error) {}
 }
 
-async function image_size_process_image(image, allowed_protocols, timeout_ms) {
+async function image_size_filter_get_dimensions(image, allowed_protocols,
+  timeout_ms) {
+
   // A template of the output produced by this function
   const result = {
     'image': image,
@@ -90,7 +102,7 @@ async function image_size_process_image(image, allowed_protocols, timeout_ms) {
   if(!allowed_protocols.includes(url_object.protocol))
     return;
 
-  const url_dimensions = image_size_sniff(url_object);
+  const url_dimensions = image_size_filter_sniff(url_object);
   if(url_dimensions) {
     result.width = url_dimensions.width;
     result.height = url_dimensions.height;
@@ -108,12 +120,18 @@ async function image_size_process_image(image, allowed_protocols, timeout_ms) {
   return result;
 }
 
-function image_size_sniff(url_object) {
+function image_size_filter_sniff(url_object) {
   // data urls will not contain useful information so ignore them
   if(url_object.protocol === 'data:')
     return;
 
+  // TODO: make the w/h and width/height search params check into a helper
+  // function?
+
   // Try and grab from parameters
+  // TODO: defer height has check and parseInt height until width processed,
+  // can avoid processing in some cases
+
   const params = url_object.searchParams;
   const dimensions = {}, radix = 10;
   if(params.has('w') && params.has('h')) {
@@ -128,6 +146,10 @@ function image_size_sniff(url_object) {
 
   // Check has because the cost is less than the cost of calling parseInt
   // (untested assumption)
+
+  // TODO: defer height has check and parseInt height until width processed,
+  // can avoid processing in some cases
+
   if(params.has('width') && params.has('height')) {
 
     dimensions.width = parseInt(params.get('width'), radix);
@@ -138,6 +160,7 @@ function image_size_sniff(url_object) {
     }
   }
 
+  // TODO: make a helper function
   // Grab from file name (e.g. 100x100.jpg => [100,100])
   const path = url_object.pathname;
   const file_name = url_path_get_file_name(path);

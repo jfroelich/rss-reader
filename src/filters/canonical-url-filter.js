@@ -5,8 +5,10 @@
 // srcset.js
 // url.js
 
+// TODO: there are no other url filters, maybe simplify to just name
+// url filter?
 
-const CONTENT_CANONICAL_URL_FILTER_ELEMENT_ATTRIBUTE_MAP = {
+const CANONICAL_URL_FILTER_ELEMENT_ATTRIBUTE_MAP = {
   'a': 'href',
   'applet': 'codebase',
   'area': 'href',
@@ -37,30 +39,30 @@ const CONTENT_CANONICAL_URL_FILTER_ELEMENT_ATTRIBUTE_MAP = {
 // Looks for urls in the document and ensures they are absolute. Updates the
 // attribute values by replacing any relative urls with absolute urls.
 // Does not currently handle background props in inline css
-function content_canonical_url_filter(doc, base_url) {
+function canonical_url_filter(doc, base_url) {
   ASSERT(doc);
   ASSERT(url_is_url_object(base_url));
 
-  const src_selector = content_canonical_url_filter_create_src_selector();
+  const src_selector = canonical_url_filter_create_src_selector();
 
   const src_elements = doc.querySelectorAll(src_selector);
   for(const src_element of src_elements) {
-    content_canonical_url_filter_resolve_mapped_attr(src_element, base_url);
+    canonical_url_filter_resolve_mapped_attr(src_element, base_url);
   }
 
   if(doc.body) {
     const srcset_elements = doc.body.querySelectorAll(
       'img[srcset], source[srcset]');
     for(const srcset_element of srcset_elements) {
-      content_canonical_url_filter_resolve_srcset_attr(srcset_element,
+      canonical_url_filter_resolve_srcset_attr(srcset_element,
         base_url);
     }
   }
 }
 
 // TODO: init once
-function content_canonical_url_filter_create_src_selector() {
-  const map = CONTENT_CANONICAL_URL_FILTER_ELEMENT_ATTRIBUTE_MAP;
+function canonical_url_filter_create_src_selector() {
+  const map = CANONICAL_URL_FILTER_ELEMENT_ATTRIBUTE_MAP;
   const tag_names = Object.keys(map);
   const parts = [];
 
@@ -71,9 +73,9 @@ function content_canonical_url_filter_create_src_selector() {
   return parts.join(',');
 }
 
-function content_canonical_url_filter_resolve_mapped_attr(element, base_url) {
+function canonical_url_filter_resolve_mapped_attr(element, base_url) {
 
-  const attr_name = CONTENT_CANONICAL_URL_FILTER_ELEMENT_ATTRIBUTE_MAP[
+  const attr_name = CANONICAL_URL_FILTER_ELEMENT_ATTRIBUTE_MAP[
     element.localName];
   if(!attr_name)
     return;
@@ -90,7 +92,7 @@ function content_canonical_url_filter_resolve_mapped_attr(element, base_url) {
     element.setAttribute(attr_name, resolved_url_object.href);
 }
 
-function content_canonical_url_filter_resolve_srcset_attr(element, base_url) {
+function canonical_url_filter_resolve_srcset_attr(element, base_url) {
   const srcset_attr_value = element.getAttribute('srcset');
   const descriptors = srcset_parse_from_string(srcset_attr_value);
 

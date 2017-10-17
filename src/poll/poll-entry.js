@@ -4,8 +4,8 @@
 
 // Dependencies:
 // assert.js
-// content-lonestar-filter.js
-// content-responsive-image-filter.js
+// lonestar-filter.js
+// responsive-image-filter.js
 // debug.js
 // entry.js
 // favicon.js
@@ -98,27 +98,30 @@ async function poll_entry_prepare_remote_entry(entry, doc,
 
   // TODO: several of these calls should be moved into poll_doc_prep
 
+  ping_filter(doc);
+  noreferrer_filter(doc);
+
   // This must occur before setting image dimensions
-  lonestar_transform_document(doc);
+  lonestar_filter(doc);
 
   // This should generally occur prior to lazy_image_filter, and it should
   // definitely occur prior to setting image dimensions. Does not matter if
   // before or after resolving urls.
-  responsive_transform_document(doc);
+  response_image_filter(doc);
 
   // This must occur before removing sourceless images
   lazy_image_filter(doc);
 
   const url_string = entry_get_top_url(entry);
 
-  content_base_filter(doc);
+  base_filter(doc);
 
   const base_url_object = new URL(url_string);
-  content_canonical_url_filter(doc, base_url_object);
+  canonical_url_filter(doc, base_url_object);
 
   // This must occur after urls are resolved and after filtering tracking info
   let allowed_protocols = undefined; // defer to defaults
-  await image_size_transform_document(doc, allowed_protocols,
+  await image_size_filter(doc, allowed_protocols,
     fetch_img_timeout_ms);
 
   poll_doc_prep(doc, url_string);
@@ -217,8 +220,11 @@ function poll_entry_prepare_local_entry(entry) {
   // If status is STATUS_OK then doc should always be defined
   ASSERT(doc);
 
+  ping_filter(doc);
+  noreferrer_filter(doc);
+
   // TODO: this should be part of poll_doc_prep not external
-  lonestar_transform_document(doc);
+  lonestar_filter(doc);
 
   poll_doc_prep(doc, url_string);
   const content = doc.documentElement.outerHTML.trim();

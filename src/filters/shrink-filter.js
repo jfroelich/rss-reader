@@ -2,7 +2,7 @@
 
 (function(exports) {
 
-function html_shrink(doc, copy_attrs_on_rename, row_scan_limit) {
+function shrink_filter(doc, copy_attrs_on_rename, row_scan_limit) {
   remove_comment_nodes(doc.documentElement);
 
   const body_element = doc.body;
@@ -24,8 +24,9 @@ function html_shrink(doc, copy_attrs_on_rename, row_scan_limit) {
   // Unwrap generic containers
   unwrap_elements(body_element, 'div, ilayer, layer');
 
-  list_filter(body_element);
-  table_filter_transform_document(body_element, row_scan_limit);
+  list_filter(doc);
+
+  table_filter(body_element, row_scan_limit);
   remove_leaf_nodes(body_element);
 
   condense_text_nodes_whitespace(doc.documentElement);
@@ -120,7 +121,7 @@ function node_is_trimmable(node) {
     (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
 }
 
-exports.html_shrink = html_shrink;
+exports.shrink_filter = shrink_filter;
 
 }(this));
 

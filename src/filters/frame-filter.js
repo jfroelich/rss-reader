@@ -6,17 +6,10 @@
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
-// TODO: consider making async and merging frame content to a single document
-// TODO: maybe inline iframes or replace with a message
+
 // TODO: write tests
-function content_frame_filter(doc) {
+function frame_filter(doc) {
   ASSERT(doc);
-
-  // Remove iframes
-  const iframe_elements = doc.querySelectorAll('iframe');
-  for(const iframe_element of iframe_elements)
-    iframe_element.remove();
-
 
   let body_element = doc.body;
   if(!body_element)

@@ -10,18 +10,18 @@
 // @param attribute_whitelist {Object} a basic object where each property is
 // the unqualified name of an element, and each property value is an array of
 // one or more allowed attribute names
-function content_attribute_filter(doc, attribute_whitelist) {
+function attribute_filter(doc, attribute_whitelist) {
   ASSERT(doc);
 
   // Using getElementsByTagName as opposed to querySelectorAll for speed given
   // no elemental removal during iteration
   const elements = doc.getElementsByTagName('*');
   for(const element of elements) {
-    content_attribute_filter_element(element, attribute_whitelist);
+    attribute_filter_element(element, attribute_whitelist);
   }
 }
 
-function content_attribute_filter_element(element, attribute_whitelist) {
+function attribute_filter_element(element, attribute_whitelist) {
   // getAttributeNames was introduced mid 2017, it seems to be faster than
   // walking the attributes collection, and it avoids any issues with
   // mutation during iteration

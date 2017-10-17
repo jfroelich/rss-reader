@@ -4,37 +4,59 @@
 
 // Dependencies:
 // assert.js
-// /content/*
+// filters/*
+
+// TODO: rename to poll_apply_document_filters
 
 function poll_doc_prep(doc, url) {
   ASSERT(typeof doc === 'object');
 
-  // BUG: the line below, body_element = doc.createElement,
-  // occassionally fails saying createElement is not a function
+
+  // NOTE: these asserts are remnants of a bug that was fixed, I am leaving
+  // them in for a little while longer, eventually will remove
   ASSERT(doc.createElement);
-  ASSERT(typeof doc.createElement === 'function')
+  ASSERT(typeof doc.createElement === 'function');
 
-  // Ensure the document has a body element
-  // TODO: make this into its own filter function
-  if(!doc.body) {
-    const error_message = 'Error empty document (no body found)';
-    const body_element = doc.createElement('body');
-    const text_node = doc.createTextNode(error_message);
-    body_element.appendChild(text_node);
-    doc.documentElement.appendChild(body_element);
-  }
 
-  content_frame_filter(doc);
+  // TODO: what is proper order of these two filters?
+  frame_filter(doc);
+  ensure_body_filter(doc);
+
+  script_filter(doc);
+
+  iframe_filter(doc);
+
+  // TODO: reverse arg order, rename to filter-like name
   host_template_prune(url, doc);
+
+  hidden_filter(doc);
+  noscript_filter(doc);
+
+
+  security_filter(doc);
+
+
+
   boilerplate_filter(doc);
-  html_security_transform_document(doc);
-  sanitize_html_document(doc);
+
+  sourcless_image_filter(doc);
+
+  invalid_anchor_filter(doc);
+  formatting_anchor_filter(doc);
+  form_filter(doc);
+  br_filter(doc);
+  hr_filter(doc);
+  formatting_filter(doc);
+
+  adoption_agency_filter(doc);
+  hairspace_filter(doc);
 
   // Because we are stripping attributes, there is no need to keep them
   const copy_attrs_on_rename = false;
-  // How many rows to check when unwrapping single column tables
   const row_scan_limit = 20;
-  html_shrink(doc, copy_attrs_on_rename, row_scan_limit);
+
+  shrink_filter(doc, copy_attrs_on_rename, row_scan_limit);
+
 
   // Filter element attributes last because it is so slow and is sped up by
   // processing fewer elements.
@@ -45,5 +67,5 @@ function poll_doc_prep(doc, url) {
     'img': ['src', 'alt', 'title', 'srcset']
   };
 
-  content_attribute_filter(doc, attribute_whitelist);
+  attribute_filter(doc, attribute_whitelist);
 }

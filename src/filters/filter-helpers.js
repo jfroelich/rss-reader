@@ -4,7 +4,7 @@
 
 // Dependencies:
 // assert.js
-// content-filter-helpers.js
+// filter-helpers.js
 // element.js
 
 

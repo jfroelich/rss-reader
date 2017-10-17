@@ -4,16 +4,18 @@
 // assert.js
 // transform-helpers.js // for insert_children_before
 
-// TODO: revert to accepting doc as parameter and checking for doc.body within.
-// Now that this is global we cannot rely on caller knowledge of this. Also
-// will be more consistent.
-
 // TODO: restrict children of list to proper child type. E.g. only allow li
 // or form within ul/ol, and dd/dt/form within dl. Do some type of transform
 // like move such items to within a new child
 
-function list_filter(ancestor_element) {
+function list_filter(doc) {
   ASSERT(ancestor_element);
+
+  if(!doc.body) {
+    return;
+  }
+
+  const ancestor_element = doc.body;
 
   const lists = ancestor_element.querySelectorAll('ul, ol, dl');
 

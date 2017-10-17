@@ -19,7 +19,7 @@
 //
 // @param row_scan_limit {Number} the maximum number of rows to scan when
 // determining whether a table is a single column table
-function table_filter_transform_document(ancestor_element, row_scan_limit) {
+function table_filter(ancestor_element, row_scan_limit) {
   ASSERT(ancestor_element);
 
   const tables = ancestor_element.querySelectorAll('table');
