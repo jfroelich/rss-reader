@@ -4,15 +4,11 @@
 
 // Dependencies
 // assert.js
-// element.js // for node_is_leaf
-// transform-helpers.js // just for insert_children_before
+// element.js
+// transform-helpers.js
 
 
 /*
-
-* For isSingleColumnRow, check if row.cells supports for..of
-* For unwrapSingleColumnTable, check if table.rows supports for..of
-* For unwrapSingleColumnTable, only pad if adjacent to text
 
 # TODO: Try and improve the table unwrapping algorithm
 
@@ -69,9 +65,13 @@ function table_filter(doc, row_scan_limit) {
     return;
   }
 
-  const ancestor_element = doc.body;
+  // Unwrap table sections
+  unwrap_elements(doc.body,
+    'colgroup, hgroup, multicol, tbody, tfoot, thead');
 
-  const tables = ancestor_element.querySelectorAll('table');
+
+  // Unwrap single column tables
+  const tables = doc.body.querySelectorAll('table');
   for(const table of tables) {
     if(table_filter_is_single_column_table(table, row_scan_limit))
       table_filter_unwrap_single_column_table(table);
@@ -112,6 +112,9 @@ function table_filter_unwrap_single_column_table(table) {
   const row_count = rows.length;
   const parent = table.parentNode;
   const doc = table.ownerDocument;
+
+  // TODO: only add leading and trailing padding if table is adjacent
+  // to a text node.
 
   parent.insertBefore(doc.createTextNode(' '), table);
 

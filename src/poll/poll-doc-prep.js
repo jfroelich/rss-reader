@@ -33,6 +33,8 @@ function poll_doc_prep(doc, url) {
 
   boilerplate_filter(doc);
 
+  condense_tagnames_filter(doc);
+
   sourcless_image_filter(doc);
 
   invalid_anchor_filter(doc);
@@ -47,17 +49,19 @@ function poll_doc_prep(doc, url) {
 
   comment_filter(doc);
 
+  semantic_filter(doc);
+  figure_filter(doc);
+  container_filter(doc);
+
   list_filter(doc);
 
   const row_scan_limit = 20;
   table_filter(doc, row_scan_limit);
 
-
-  // TODO: finish deprecation
-  shrink_filter(doc);
-
   // Better to call later than earlier to reduce number of text nodes visited
   node_whitespace_filter(doc);
+
+  leaf_filter(doc);
 
   // Should be called near end because its behavior changes based on
   // what content remains

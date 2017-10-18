@@ -2,6 +2,13 @@
 // TODO: deprecate entirely, no longer works at all, Google returns 403
 // forbidden response code
 
+// TODO: actually, rewrite to instead just query google, appending
+// "filetype:rss" to the query. First look for whether google has a search
+// api for javascript
+// https://developers.google.com/custom-search/json-api/v1/overview
+
+// Hmmm, seems site specific so basically there is no recourse
+
 
 // Google Feeds API library
 'use strict';
