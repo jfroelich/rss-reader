@@ -9,7 +9,7 @@
 // like move such items to within a new child
 
 function list_filter(doc) {
-  ASSERT(ancestor_element);
+  ASSERT(doc);
 
   if(!doc.body) {
     return;
