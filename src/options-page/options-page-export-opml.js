@@ -1,5 +1,9 @@
 'use strict';
 
+// TODO: this belongs in app middle layer rather than view layer
+// TODO: this should probably be two functions that the caller has to call,
+// one being load feeds and the other being export feeds. The caller should
+// compose them
 async function options_page_export_opml() {
   const title = 'Subscriptions', file_name = 'subscriptions.xml';
 

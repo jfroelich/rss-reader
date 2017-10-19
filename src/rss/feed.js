@@ -5,6 +5,11 @@
 // Dependencies:
 // assert.js
 
+// Create a new feed object
+function feed_create() {
+  return {};
+}
+
 function feed_is_valid_feed_id(id) {
   return Number.isInteger(id) && id > 0;
 }

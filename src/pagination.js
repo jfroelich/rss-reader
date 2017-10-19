@@ -1,10 +1,7 @@
-// Pagination library
-
 'use strict';
 
-// Dependencies:
-// node.js
-// domvis.js
+// import dom/node.js
+// import dom/domvis.js
 
 
 // Returns an array

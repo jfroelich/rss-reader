@@ -19,6 +19,7 @@
       "/src/browser-action.js",
       "/src/cli.js",
       "/src/extension.js",
+      "/src/idb.js",
       "/src/install.js",
       "/src/reader-db.js",
       "/src/refresh-feed-icons.js",

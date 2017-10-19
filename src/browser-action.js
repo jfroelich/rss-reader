@@ -1,11 +1,13 @@
-// Browser action
+'use strict';
+
 // This should only be loaded in the extension background
 
-// Dependencies:
-// debug.js
-// extension.js
+// import base/debug.js
+// import base/extension.js
 
-'use strict';
+// TODO: this isn't a module that exposes functionality about browser actions,
+// this is a binding call. rename the file to something clearer, like
+// bind-browser-action.js
 
 chrome.browserAction.onClicked.addListener(async function(event) {
   try {

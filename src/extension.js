@@ -5,6 +5,14 @@
 
 const EXTENSION_DEBUG = false;
 
+
+function extension_idle_query(idle_period_secs) {
+  return new Promise(function executor(resolve, reject) {
+    chrome.idle.queryState(idle_period_secs, resolve);
+  });
+}
+
+
 // TODO: create badge.js, wrapper function that just passes number to this
 // function
 // TODO: reintroduce conn param, do not connect locally

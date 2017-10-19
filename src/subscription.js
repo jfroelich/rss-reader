@@ -18,7 +18,12 @@
 // if status === STATUS_OK. feed is a copy of the inserted feed, which
 // includes its new id.
 async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
+
+  // TODO: stricter assertion
   ASSERT(feed);
+
+  ASSERT(idb_conn_is_open(reader_conn));
+  ASSERT(idb_conn_is_open(icon_conn));
 
   DEBUG('called sub_add with feed', feed);
 

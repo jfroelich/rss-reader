@@ -19,6 +19,10 @@ const FAVICON_DEFAULT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 // TODO: return status and icon instead of throwing errors
 async function favicon_lookup(conn, url_object, max_age_ms,
   fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size, max_img_size) {
+
+  // TODO: delegate assetion if not reasoned about locally?
+  ASSERT(idb_conn_is_open(conn));
+
   if(FAVICON_DEBUG)
     DEBUG('favicon lookup', url_object.href);
   if(typeof max_age_ms === 'undefined')

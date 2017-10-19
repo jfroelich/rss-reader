@@ -1,5 +1,3 @@
-// Lib for archiving entries
-
 'use strict';
 
 // Dependencies:
@@ -10,11 +8,17 @@
 
 // Scans the database for archivable entries and archives them
 // @param max_age_ms {Number} how long before an entry is considered
-// archivable (using date entry created)
-// @returns {Number} the number of archived entries
+// archivable (using date entry created), in milliseconds
+// @returns {Number} status
 async function archive_entries(conn, max_age_ms) {
+  const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
   if(typeof max_age_ms === 'undefined')
-    max_age_ms = 1000 * 60 * 60 * 24 * 2; // 2 days in ms
+    max_age_ms = TWO_DAYS_MS;
+
+  ASSERT(idb_conn_is_open(conn));
+  // max_age_ms assertion delegated to reader_db_find_archivable_entries
+  // because it is merely forwarded here
+
   DEBUG('archiving entries older than %d ms', max_age_ms);
 
   let compacted_entries = [];

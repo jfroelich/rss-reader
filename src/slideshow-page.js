@@ -9,7 +9,7 @@ let current_slide_element = null;
 const settings_channel = new BroadcastChannel('settings');
 settings_channel.onmessage = function settings_channel_onmessage(event) {
   if(event.data === 'changed')
-    update_entry_css_rules(event);
+    entry_css_on_change(event);
 };
 
 const db_channel = new BroadcastChannel('db');
@@ -352,7 +352,7 @@ function slide_on_scroll(event) {
 }
 
 function on_dom_content_loaded(event) {
-  add_entry_css_rules();
+  entry_css_init();
   let conn;// leave as undefined
   append_slides(conn).catch(console.warn);
 }

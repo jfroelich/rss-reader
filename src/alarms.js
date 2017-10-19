@@ -1,5 +1,15 @@
 'use strict';
 
+// import reader-db.js
+// import archive-entries.js
+// import favicon.js
+// import remove-entries-missing-urls.js
+// import remove-orphaned-entries.js
+// import poll/poll.js
+
+// TODO: consider app layer abstraction between here and deps. alarms, like the
+// cli, are end users.
+
 const ALARMS_DEBUG = false;
 
 async function alarms_on_archive_alarm() {

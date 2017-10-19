@@ -99,7 +99,7 @@ async function is_poll_startable(allow_metered_connections, ignore_idle_state,
   }
 
   if(!ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    const state = await query_idle_state(idle_period_secs);
+    const state = await extension_idle_query(idle_period_secs);
     if(state !== 'locked' && state !== 'idle') {
       DEBUG('Polling canceled because machine not idle');
       return false;
@@ -109,7 +109,7 @@ async function is_poll_startable(allow_metered_connections, ignore_idle_state,
   return true;
 }
 
-// TODO: should just accept flags variable
+// TODO: should just accept flags variable?
 async function find_pollable_feeds(reader_conn, ignore_recency_check,
   recency_period_ms) {
   const feeds = await reader_db_get_feeds(reader_conn);
@@ -267,13 +267,6 @@ function filter_dup_entries(entries) {
   }
 
   return distinct_entries;
-}
-
-// TODO: move to extension.js
-function query_idle_state(idle_period_secs) {
-  return new Promise(function(resolve) {
-    chrome.idle.queryState(idle_period_secs, resolve);
-  });
 }
 
 // experimental

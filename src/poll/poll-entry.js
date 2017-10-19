@@ -22,11 +22,24 @@
 async function poll_entry(entry, reader_conn, icon_conn, feed,
   fetch_html_timeout_ms, fetch_img_timeout_ms) {
 
+  // TODO: improve this assertion, e.g. entry_is_entry
+  ASSERT(entry);
+
+  // TODO: if reader_conn is not used locally this assertion should be
+  // delegated
+  ASSERT(idb_conn_is_open(reader_conn));
+
+  // TODO: if icon_conn is not used locally this assertion should be delegated
+  ASSERT(idb_conn_is_open(icon_conn));
+
+  // TODO: improve this assertion
+  ASSERT(feed);
+
   // Cascade properties from feed to entry
   entry.feed = feed.id;
   entry.feedTitle = feed.title;
 
-  // Check whether the entry has a valid url
+  // Check whether the entry has a valid url. This is not an assertion.
   if(!entry_has_valid_url(entry))
     return false;
 
