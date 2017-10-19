@@ -1,5 +1,3 @@
-// multipage filter lib
-
 'use strict';
 
 // Dependencies:

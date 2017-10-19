@@ -1,5 +1,3 @@
-// hr lib
-
 'use strict';
 
 // Dependencies:

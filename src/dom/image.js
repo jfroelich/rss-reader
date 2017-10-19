@@ -3,9 +3,9 @@
 'use strict';
 
 // TODO: also has source if within picture and picture has <source>, or
-// alternatively rename to image_has_src_attribute
-function image_has_source(img) {
-  return img.hasAttribute('src') || img.hasAttribute('srcset');
+// alternatively rename to image_has_source_attribute
+function image_has_source(image) {
+  return image.hasAttribute('src') || image.hasAttribute('srcset');
 }
 
 // Return true if image has a valid src attribute value

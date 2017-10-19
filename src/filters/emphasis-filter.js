@@ -1,22 +1,31 @@
-// html emphasis lib
+'use strict';
 
-/*
-* For italicized or bolded text, check against a max character length, and if
-text is too long, unwrap the italic/bold formatting. This will reduce the
-number of times I see a full paragraph of italicized text which is difficult
-to read, but still keep situations where just a small sentence or phrase is
-emphasized. Maybe this should be a separate module "emphasis-filter".
-*/
+// import assert.js
+// import debug.js
 
-// TODO: consider the interactions with other filters that touch emphasis
-// related tags, like the condense-names-filter. condense names should be
-// run afterward. Or ... this should be designed to be associative so that
-// filter call order does not affect logic and perhaps only performance.
+const EMPHASIS_FILTER_DEBUG = true;
 
-function emphasis_filter(doc) {
+function emphasis_filter(doc, max_text_length) {
   ASSERT(doc);
 
-  // strong, b, em, i
+  if(!doc.body) {
+    return;
+  }
 
-  // not yet implemented
+  const elements = doc.body.querySelectorAll('b, big, em, i, strong');
+  for(const element of elements) {
+    if(emphasis_filter_needs_prune(element, max_text_length)) {
+
+      if(EMPHASIS_FILTER_DEBUG) {
+        DEBUG('emphasis-filtering:', element);
+      }
+
+      unwrap_element(element);
+    }
+  }
+}
+
+// Return true if too much text
+function emphasis_filter_needs_prune(element, max_text_length) {
+  return element.textContent.length > max_text_length;
 }

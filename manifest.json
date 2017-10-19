@@ -44,6 +44,7 @@
       "/src/filters/comment-filter.js",
       "/src/filters/condense-tagnames-filter.js",
       "/src/filters/container-filter.js",
+      "/src/filters/emphasis-filter.js",
       "/src/filters/ensure-body-filter.js",
       "/src/filters/filter-helpers.js",
       "/src/filters/figure-filter.js",

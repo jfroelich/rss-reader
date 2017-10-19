@@ -1,4 +1,3 @@
-
 'use strict';
 
 // Ensure the document has a body element

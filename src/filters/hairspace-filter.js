@@ -1,5 +1,3 @@
-// hairspace lib
-
 'use strict';
 
 // Dependencies:

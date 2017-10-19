@@ -1,4 +1,3 @@
-// Schwartz-wielding anti-telemetry lib
 'use strict';
 
 // Dependencies:

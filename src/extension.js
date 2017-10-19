@@ -1,11 +1,18 @@
 'use strict';
 
+// import base/assert.js
+// import base/debug.js
+
 const EXTENSION_DEBUG = false;
 
+// TODO: create badge.js, wrapper function that just passes number to this
+// function
 // TODO: reintroduce conn param, do not connect locally
 async function extension_update_badge_text() {
-  if(EXTENSION_DEBUG)
+  if(EXTENSION_DEBUG) {
     DEBUG('updating badge text');
+  }
+
   let count = 0;
   let conn, db_name, db_version, conn_timeout_ms;
 

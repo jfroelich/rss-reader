@@ -1,5 +1,3 @@
-// form element and form-related elements filtering lib
-
 'use strict';
 
 // Dependencies:

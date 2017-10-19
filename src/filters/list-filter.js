@@ -1,4 +1,4 @@
-// html list filtering lib
+'use strict';
 
 // Dependencies:
 // assert.js
@@ -68,6 +68,8 @@ function list_filter_is_empty(list) {
 }
 
 function list_filter_remove_empty_list(list) {
+  const doc = list.ownerDocument;
+
   // Add leading padding
   if(list.previousSibling &&
     list.previousSibling.nodeType === Node.TEXT_NODE) {

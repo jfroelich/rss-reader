@@ -1,4 +1,3 @@
-
 'use strict';
 
 function semantic_filter(doc) {
@@ -8,6 +7,5 @@ function semantic_filter(doc) {
     return;
   }
 
-  unwrap_elements(doc.body,
-    'article, aside, footer, header, main, section');
+  unwrap_elements(doc.body, 'article, aside, footer, header, main, section');
 }

@@ -1,8 +1,8 @@
-
 'use strict';
 
-function comment_filter(doc) {
+// import assert.js
 
+function comment_filter(doc) {
   ASSERT(doc);
 
   const it = doc.createNodeIterator(doc.documentElement,

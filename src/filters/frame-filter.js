@@ -1,4 +1,3 @@
-// DOM frame utilities
 'use strict';
 
 // Dependencies:

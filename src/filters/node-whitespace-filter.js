@@ -1,16 +1,11 @@
-
 'use strict';
 
-// Dependencies:
-// assert.js
-// string.js
+// import assert.js
+// import string.js
 
 function node_whitespace_filter(doc) {
-
   ASSERT(doc);
 
-  // Analysis restricted to body because whitespace out of body is
-  // unimportant
   if(!doc.body) {
     return;
   }
@@ -20,15 +15,14 @@ function node_whitespace_filter(doc) {
     const value = node.nodeValue;
     if(value.length > 3 && !node_whitespace_filter_is_sensitive(node)) {
       const condensed_value = string_condense_whitespace(value);
-      if(condensed_value.length !== value.length)
+      if(condensed_value.length !== value.length) {
         node.nodeValue = condensed_value;
+      }
     }
   }
 }
 
-// Returns true if the node lies within a whitespace sensitive element
 function node_whitespace_filter_is_sensitive(node) {
-  // The closest method only exists on elements, so use the
-  // parent element. The closest method also tests against the element itself.
-  return node.parentNode.closest('code, pre, ruby, textarea, xmp');
+  const selector = 'code, pre, ruby, script, style, textarea, xmp';
+  return node.parentNode.closest(selector);
 }

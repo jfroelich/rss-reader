@@ -1,5 +1,3 @@
-// Hidden elements handling lib
-
 'use strict';
 
 // Dependencies:

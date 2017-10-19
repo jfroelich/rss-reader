@@ -1,5 +1,3 @@
-// This lib contains helpers for document transforms
-
 'use strict';
 
 // Dependencies:

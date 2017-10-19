@@ -1,4 +1,3 @@
-
 'use strict';
 
 // Dependencies:
@@ -13,7 +12,6 @@ function condense_tagnames_filter(doc) {
   }
 
   // TODO: are there other elements with abbreviated versions like strong/em?
-
 
   // Use shorter names for common elements
   // Because we are stripping attributes, there is no need to keep them

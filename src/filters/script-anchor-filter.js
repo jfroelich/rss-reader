@@ -1,12 +1,11 @@
-
 'use strict';
 
 function script_anchor_filter(doc) {
   ASSERT(doc);
 
-  // Restrict to body
-  if(!doc.body)
+  if(!doc.body) {
     return;
+  }
 
   const anchors = doc.body.querySelectorAll('a');
   for(const anchor of anchors) {

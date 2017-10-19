@@ -38,13 +38,10 @@ function srcset_serialize(descriptors) {
 function srcset_parse_from_string(srcset_string) {
   const fallback_output = [];
 
-  // Tolerate invalid inputs. Even though third party might catch this, and
-  // the try/catch certainly does, I'd prefer to avoid the function call.
   if(typeof srcset_string !== 'string') {
     return fallback_output;
   }
 
-  // Catch exceptions due to mistrust of third party
   let descriptors;
   try {
     descriptors = parseSrcset(srcset_string);
@@ -52,8 +49,6 @@ function srcset_parse_from_string(srcset_string) {
     return fallback_output;
   }
 
-  // Sanity check the output of the third party library call. Only provide
-  // third party output if it is an array.
   if(!Array.isArray(descriptors)) {
     return fallback_output;
   }

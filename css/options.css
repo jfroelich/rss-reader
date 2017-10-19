@@ -146,9 +146,6 @@ ul#navigation-menu li.navigation-item-selected {
   width:500px;
 }
 
-#subscription-preview {
-  display:none;
-}
 
 #sub-preview-load-progress {
 
@@ -156,28 +153,6 @@ ul#navigation-menu li.navigation-item-selected {
   appearance: none;
   width: 250px;
   height: 20px;*/
-}
-
-#subscription-preview-title {
-  font-family: 'Segoe UI', Tahoma, sans-serif;
-  font-size:14pt;
-}
-
-#subscription-preview-continue {
-  margin-right:10px;
-}
-
-#subscription-preview-entries {
-  font-family: 'Segoe UI', Tahoma, sans-serif;
-  list-style-type:none;
-  margin-left:0px;
-  padding-left:2px;
-
-}
-#subscription-preview-entries li {
-  padding-top:2px;
-  padding-bottom:2px;
-  border-bottom:1px dotted #efefef;
 }
 
 #discover-no-results {
@@ -342,7 +317,7 @@ ul#navigation-menu li.navigation-item-selected {
 }
 
 /***************************** ERROR MESSAGE *********/
-#options_error_message {
+#options-error-message {
   display:block;
   opacity: 0;
   background-color:red;

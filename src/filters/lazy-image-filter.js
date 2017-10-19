@@ -1,4 +1,3 @@
-// Lazy image handling lib
 'use strict';
 
 // Dependencies:

@@ -1,20 +1,15 @@
-// Lib for working with responsive techniques in html documents
 'use strict';
 
-// Dependencies:
-// assert.js
-// image.js
-// srcset.js
+// import assert.js
+// import image.js
+// import srcset.js
 
-// Scans the input document for responsive images and modifies those image
-// elements in place
-// @param doc {Document} the document to analyze
 function response_image_filter(doc) {
   ASSERT(doc);
 
-  // Analysis restricted to body descendants
-  if(!doc.body)
+  if(!doc.body) {
     return;
+  }
 
   const images = doc.body.getElementsByTagName('img');
   for(const image of images) {
@@ -44,7 +39,5 @@ function responsive_image_filter_image(image) {
       image.setAttribute('width', '' + preferred_descriptor.w);
     if(preferred_descriptor.h)
       image.setAttribute('height', '' + preferred_descriptor.h);
-
-    // TODO: remove the srcset attribute?
   }
 }

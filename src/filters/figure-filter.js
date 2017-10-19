@@ -1,4 +1,3 @@
-
 'use strict';
 
 function figure_filter(doc) {

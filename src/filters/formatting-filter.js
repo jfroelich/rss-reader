@@ -1,5 +1,3 @@
-// formatting filter
-
 'use strict';
 
 // Dependencies:

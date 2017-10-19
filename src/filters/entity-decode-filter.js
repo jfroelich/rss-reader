@@ -1,4 +1,3 @@
-
 'use strict';
 
 function entity_decode_filter(doc) {

@@ -1,5 +1,3 @@
-// invalid anchor lib
-
 'use strict';
 
 // Dependencies:

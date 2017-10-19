@@ -85,3 +85,23 @@ function element_get_dimensions(element) {
   return (isNaN(dimensions.width) || isNaN(dimensions.height)) ?
     undefined : dimensions;
 }
+
+// TODO: this could use some cleanup or at least some clarifying comments
+function fade_element(element, duration_secs, delay_secs) {
+  return new Promise(function executor(resolve, reject) {
+    const style = element.style;
+    if(style.display === 'none') {
+      style.display = '';
+      style.opacity = '0';
+    }
+
+    if(!style.opacity)
+      style.opacity = style.display === 'none' ? '0' : '1';
+
+    element.addEventListener('webkitTransitionEnd', resolve, {'once': true});
+
+    // property duration function delay
+    style.transition = `opacity ${duration_secs}s ease ${delay_secs}s`;
+    style.opacity = style.opacity === '1' ? '0' : '1';
+  });
+}

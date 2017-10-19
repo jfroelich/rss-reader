@@ -1,10 +1,6 @@
-// dom node utils
-
 'use strict';
 
-// Dependencies:
-// assert.js
-
+// import assert.js
 
 // Find the lowest common ancestor of two nodes. Assumes
 // node1 does not contain node2, and node2 does not contain node1.
@@ -20,8 +16,7 @@ function node_find_lca(node1, node2) {
   const ancestors1 = node_get_ancestors(node1);
   const ancestors2 = node_get_ancestors(node2);
 
-  // The +1s are for the immediate parent steps of each node
-
+  // The +1s are for the immediate parent steps
   const len1 = ancestors1.length, len2 = ancestors2.length;
   for(let i = 0; i < len1; i++) {
     const ancestor1 = ancestors1[i];
@@ -39,9 +34,8 @@ function node_find_lca(node1, node2) {
   ASSERT(false, 'Reached unreachable');
 }
 
-
 // Returns an array of ancestors, from deepest to shallowest.
-// The input node itself is not included in the output.
+// The node itself is not included.
 function node_get_ancestors(node) {
   const ancestors = [];
   for(let ancestor = node.parentNode; ancestor;

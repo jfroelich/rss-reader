@@ -1,5 +1,3 @@
-// dom iframe element lib
-
 'use strict';
 
 // Dependencies:

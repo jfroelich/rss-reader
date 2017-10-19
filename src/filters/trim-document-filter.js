@@ -1,10 +1,10 @@
-
 'use strict';
 
-// Remove whitespace and whitespace-like content from the start and end of
-// the document's body.
-function trim_document_filter(doc) {
+// import assert.js
 
+// Remove whitespace and whitespace-like content from the start and end of
+// a document's body.
+function trim_document_filter(doc) {
   ASSERT(doc);
 
   if(!doc.body) {
@@ -29,7 +29,6 @@ function trim_document_filter_step(starting_node, edge_prop_name) {
   }
 }
 
-// TODO: return true for node_is_leaf?
 function trim_document_filter_is_trimmable(node) {
   const elements = ['br', 'hr', 'nobr'];
   return node && (elements.includes(node.localName) ||
