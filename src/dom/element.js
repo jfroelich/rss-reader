@@ -2,6 +2,13 @@
 
 // import base/assert.js
 
+// Returns true if the first parameter is of type Element
+function element_is_element(element) {
+  // TODO: implement
+  return true;
+}
+
+
 // Copies the attributes of an element to another element. Overwrites any
 // existing attributes in the other element.
 // @param from_element {Element}
@@ -85,7 +92,7 @@ function element_get_dimensions(element) {
 }
 
 // TODO: this could use some cleanup or at least some clarifying comments
-function fade_element(element, duration_secs, delay_secs) {
+function element_fade(element, duration_secs, delay_secs) {
   return new Promise(function executor(resolve, reject) {
     const style = element.style;
     if(style.display === 'none') {
@@ -93,8 +100,9 @@ function fade_element(element, duration_secs, delay_secs) {
       style.opacity = '0';
     }
 
-    if(!style.opacity)
+    if(!style.opacity) {
       style.opacity = style.display === 'none' ? '0' : '1';
+    }
 
     element.addEventListener('webkitTransitionEnd', resolve, {'once': true});
 

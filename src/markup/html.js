@@ -1,10 +1,10 @@
 'use strict';
 
-// Dependencies:
-// assert.js
-// debug.js
-// mime.js
-// status.js
+// import base/assert.js
+// import base/debug.js
+// import base/status.js
+// import http/mime.js
+
 
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
@@ -46,6 +46,7 @@ function html_replace_tags(input_string, replacement_string) {
 }
 
 /*
+TODO: move notes to github issues
 * I do not like how I have to do a regex test at the end of the function, this
 is yet another pass over the input. I would prefer a single pass algorithm.
 * I do not like how using the native parser at all is basically an XSS issue.

@@ -1,10 +1,9 @@
 'use strict';
 
-// Dependencies:
-// assert.js
-// string.js
+// import base/assert.js
+// import base/string.js
 
-// Some global mime types commonly used
+// Some commonly used global mime types
 const MIME_TYPE_HTML = 'text/html';
 const MIME_TYPE_XML = 'application/xml';
 

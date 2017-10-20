@@ -1,8 +1,8 @@
 'use strict';
 
-// import assert.js
-// import srcset.js
-// import url.js
+// import base/assert.js
+// import dom/srcset.js
+// import http/url.js
 
 const CANONICAL_URL_FILTER_MAP = {
   'a': 'href',

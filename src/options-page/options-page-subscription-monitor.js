@@ -28,6 +28,6 @@ function options_page_subscription_monitor_append_message(message) {
 async function options_page_subscription_monitor_hide() {
   const monitor_element = document.getElementById('submon');
   const duration = 2, delay = 1;
-  await fade_element(monitor_element, duration, delay);
+  await element_fade(monitor_element, duration, delay);
   monitor_element.remove();
 }

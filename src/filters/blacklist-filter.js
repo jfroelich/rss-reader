@@ -1,6 +1,6 @@
 'use strict';
 
-// import "assert.js"
+// import base/assert.js
 
 const BLACKLIST_FILTER_SELECTOR = [
   'applet', 'audio', 'basefont', 'bgsound', 'command', 'datalist', 'dialog',

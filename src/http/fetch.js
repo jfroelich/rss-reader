@@ -1,10 +1,9 @@
 'use strict';
 
-// Dependencies:
-// assert.js
-// debug.js
-// mime.js
-// url.js
+// import base/assert.js
+// import base/debug.js
+// import http/mime.js
+// import http/url.js
 
 // TODO: change functions to return status instead of throwing exceptions
 

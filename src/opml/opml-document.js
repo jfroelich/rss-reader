@@ -1,9 +1,9 @@
 'use strict';
 
-// import assert.js
-// import debug.js
-// import status.js
-// import xml.js
+// import base/assert.js
+// import base/debug.js
+// import base/status.js
+// import markup/xml.js
 
 function opml_parse_from_string(xml_string) {
   let [status, doc] = xml_parse_from_string(xml_string);
@@ -22,7 +22,12 @@ function opml_parse_from_string(xml_string) {
 }
 
 function opml_document_set_title(doc, title) {
+  // TODO: use document_is_document
   ASSERT(doc);
+
+  const t_title = typeof title;
+  ASSERT(t_title === 'undefined' || t_title === 'string');
+
   let title_element = doc.querySelector('title');
   if(title) {
     if(!title_element) {
@@ -78,6 +83,7 @@ function opml_document_create() {
 }
 
 function opml_get_outline_elements(doc) {
+  // TODO: use document_is_document
   ASSERT(doc);
   return doc.querySelectorAll('opml > body > outline');
 }
@@ -91,6 +97,8 @@ function opml_get_outline_objects(doc) {
 }
 
 function opml_remove_outlines_with_invalid_types(doc) {
+
+  // TODO: use document_is_document
   ASSERT(doc);
 
   const elements = opml_get_outline_elements(doc);
@@ -106,6 +114,8 @@ function opml_remove_outlines_with_invalid_types(doc) {
 }
 
 function opml_remove_outlines_missing_xmlurls(doc) {
+
+  // TODO: use document_is_document
   ASSERT(doc);
 
   const outlines = opml_get_outline_elements(doc);
@@ -118,6 +128,8 @@ function opml_remove_outlines_missing_xmlurls(doc) {
 }
 
 function opml_normalize_outline_xmlurls(doc) {
+
+  // TODO: use document_is_document
   ASSERT(doc);
 
   const outlines = opml_get_outline_elements(doc);
@@ -132,6 +144,10 @@ function opml_document_append_outline_object(doc, outline) {
 }
 
 function opml_append_outline_element(doc, element) {
+
+  // TODO: use document_is_document
+  ASSERT(doc);
+
   let body_element = doc.querySelector('body');
   if(!body_element) {
     body_element = doc.createElement('body');

@@ -1,11 +1,14 @@
 'use strict';
 
+// import base/assert.js
 // import third-party/parseSrcset.js
 
 // @param descriptors {Array} an array of descriptors such as those produced
 // by parseSrcset (third party library)
 // @returns {String} a string suitable for storing as srcset attribute value
 function srcset_serialize(descriptors) {
+  ASSERT(Array.isArray(descriptors));
+
   const descriptor_strings = [];
   for(const descriptor of descriptors) {
     const strings = [descriptor.url];

@@ -2,6 +2,8 @@
 
 // import base/assert.js
 
+// TODO: not sure that http/ is proper folder for this lib
+
 const URL_DEBUG = true;
 
 // Returns true if the given url is canonical (absolute).
@@ -12,6 +14,7 @@ const URL_DEBUG = true;
 // @param url {String} input url
 // @returns {Boolean} true if the url is canonical, otherwise false
 function url_is_canonical(url) {
+  ASSERT(typeof url === 'string');
   return /^\s*[a-z]+:/i.test(url);
 }
 
@@ -136,6 +139,8 @@ function url_path_get_extension(path) {
 // @param url {URL} url object
 // @returns {Boolean} true if probably binary, otherewise false
 function url_sniff_is_binary(url) {
+  ASSERT(url_is_url_object(url));
+
   const path = url.pathname;
 
   // Auto-classify all data url objects are probably non binary

@@ -1,11 +1,12 @@
 'use strict';
 
-// import "assert.js"
+// import base/assert.js
 
 // @param doc {Document}
 // @param whitelist {Object} each property is element name, each value is array
 // of attribute names
 function attribute_filter(doc, whitelist) {
+  // TODO: use document_is_document
   ASSERT(doc);
   const elements = doc.getElementsByTagName('*');
   for(const element of elements) {

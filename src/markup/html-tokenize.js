@@ -11,7 +11,7 @@
 // @throws {Error} if tokenization does not end in the default state, such as
 // within a tag
 function tokenize_html(html_string, input_state = 0) {
-  // TODO: consider relaxing this type check to allow for string-like input
+
   ASSERT(typeof html_string === 'string');
 
   const input_string_length = html_string.length;

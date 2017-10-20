@@ -1,17 +1,18 @@
 'use strict';
 
-// Dependencies
-// assert.js
-// debug.js
-// mime.js
-// status.js
+// import base/assert.js
+// import base/debug.js
+// import base/status.js
+// import http/mime.js
+
 
 // Parses an xml string into a document
 function xml_parse_from_string(xml_string) {
   const parser = new DOMParser();
 
   // parseFromString always yields a defined document, regardless of the
-  // validity of the input value (e.g. null, wrong type)
+  // validity of the input value (e.g. null, wrong type). There is no need
+  // for assertions.
   const doc = parser.parseFromString(xml_string, MIME_TYPE_XML);
 
   // This cannot tell the difference between documents where the parser
@@ -30,6 +31,7 @@ function xml_parse_from_string(xml_string) {
 // @param doc {Document}
 // @returns {String}
 function xml_to_string(doc) {
+  // TODO: use document_is_document
   ASSERT(doc);
   const serializer = new XMLSerializer();
   const xml_string = serializer.serializeToString(doc);
@@ -40,6 +42,7 @@ function xml_to_string(doc) {
 // @param doc {Document}
 // @returns {Blob}
 function xml_to_blob(doc) {
+  // TODO: use document_is_document
   ASSERT(doc);
   const mime_type = 'application/xml';
   const xml_string = xml_to_string(doc);

@@ -19,7 +19,8 @@ function options_page_error_message_show(message, fade) {
   if(fade) {
     error_element.style.opacity = '0';
     document.body.appendChild(error_element);
-    fade_element(container, 1,0);
+    const duration = 1, delay = 0;
+    element_fade(container, duration, delay);
   } else {
     error_element.style.opacity = '1';
     error_element.style.display = 'block';
