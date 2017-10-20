@@ -1,8 +1,6 @@
-// File utilities
 'use strict';
 
-// Dependencies
-// assert.js
+// import base/assert.js
 
 // Returns a promise that resolves to the text of the file
 function file_read_as_text(file) {

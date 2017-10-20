@@ -1,5 +1,3 @@
-// Library for importing an opml file into the database
-
 'use strict';
 
 // import assert.js

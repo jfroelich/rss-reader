@@ -1,5 +1,3 @@
-// Favicon lib
-
 'use strict';
 
 // Requires

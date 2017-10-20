@@ -1,10 +1,7 @@
-// article title utilities
-
 'use strict';
 
-// Dependencies:
-// assert.js
-// string.js
+// import base/assert.js
+// import base/string.js
 
 function article_title_filter_publisher(title) {
   ASSERT(typeof title === 'string');

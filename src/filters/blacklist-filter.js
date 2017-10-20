@@ -9,7 +9,6 @@ const BLACKLIST_FILTER_SELECTOR = [
   'xmp'
 ].join(',');
 
-
 function blacklist_filter(doc) {
   ASSERT(doc);
   const doc_element = doc.documentElement;

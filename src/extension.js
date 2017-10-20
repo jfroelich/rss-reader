@@ -21,11 +21,10 @@ async function extension_update_badge_text() {
     DEBUG('updating badge text');
   }
 
-  let count = 0;
-  let conn, db_name, db_version, conn_timeout_ms;
+  let count = 0, conn;
 
   try {
-    conn = await reader_db_open(db_name, db_version, conn_timeout_ms);
+    conn = await reader_db_open();
     count = await reader_db_count_unread_entries(conn);
   } catch(error) {
     DEBUG(error);

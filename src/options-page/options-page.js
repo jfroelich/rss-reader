@@ -519,15 +519,14 @@ function options_page_feed_list_remove_feed(feed_id) {
 async function options_page_unsubscribe_button_on_click(event) {
   const radix = 10;
   const feed_id = parseInt(event.target.value, radix);
-  ASSERT(!isNaN(feed_id_number));
+  ASSERT(!isNaN(feed_id));
 
   let reader_conn;
   try {
     reader_conn = await reader_db_open();
 
     // TODO: check status of result
-    const num_entries_deleted = await sub_remove(feed_id,
-      reader_conn);
+    const num_entries_deleted = await sub_remove(feed_id, reader_conn);
   } catch(error) {
 
     // TODO: visually react to unsubscribe error

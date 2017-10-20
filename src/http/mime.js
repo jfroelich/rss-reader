@@ -1,5 +1,3 @@
-// Mime utils
-
 'use strict';
 
 // Dependencies:

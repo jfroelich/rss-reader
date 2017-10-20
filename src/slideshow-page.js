@@ -46,10 +46,9 @@ async function slide_mark_read(conn, slide_element) {
   const radix = 10;
   const entry_id_number = parseInt(entry_id_string, radix);
   let is_local_conn = false;
-  let name, version, conn_timeout_ms;
   try {
     if(!conn) {
-      conn = await reader_db_open(name, version, conn_timeout_ms);
+      conn = await reader_db_open();
       is_local_conn = true;
     }
 
@@ -80,13 +79,12 @@ async function append_slides(conn) {
   const limit = 3;
   let is_local_conn = false;
   let entries = [];
-  let name, version, conn_timeout_ms;
 
   const offset = count_unread_slides();
 
   try {
     if(!conn) {
-      conn = await reader_db_open(name, version, conn_timeout_ms);
+      conn = await reader_db_open();
       is_local_conn = true;
     }
 
@@ -246,10 +244,10 @@ async function show_next_slide() {
   const old_slide_element = current_slide_element;
   const unread_slide_element_count = count_unread_slides();
   let num_slides_appended = 0;
-  let conn, name, version, conn_timeout_ms;
+  let conn;
 
   try {
-    conn = await reader_db_open(name, version, conn_timeout_ms);
+    conn = await reader_db_open();
 
     // Conditionally append more slides
     if(unread_slide_element_count < 2)

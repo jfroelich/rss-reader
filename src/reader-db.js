@@ -1,104 +1,19 @@
 // Library for working with the reader app's database
 'use strict';
 
-// Dependencies:
-// assert.js
-// debug.js
+// import base/assert.js
+// import base/debug.js
+// import idb.js
 
-// @private
+
 const READER_DB_DEBUG = false;
 
-// Opens a connection to the database. If version is greater than current
-// version then database upgrades. If timeout given then open fails if database
-// does not open within a certain amount of time.
-// @param name {String} database name
-// @param version {Number} optional version number
-// @param timeout_ms {Number} optional timeout in milliseconds
-// @return {IDBDatabase} an open database connection handle
-// TODO: cancel/close the conn if timeout occurred
-// TODO: cancel the timeout if connected
-// TODO: make a promise utils library that does a timed operation promise,
-// then delegate the race boilerplate to that library. Look further into
-// whether cancelable promises have been implemented. Or, at least create
-// a generic indexedDB lib that helps with this and delegate to that?
-async function reader_db_open(name, version, timeout_ms) {
-  if(typeof name === 'undefined')
-    name = 'reader';
-  if(typeof version === 'undefined')
-    version = 20;
-  if(typeof timeout_ms === 'undefined')
-    timeout_ms = 500;
-  if(READER_DB_DEBUG)
-    DEBUG('connecting to database', name, version);
-
-  const shared_state = {};
-  shared_state.is_timed_out = false;
-
-  // Race timeout against connect to avoid hanging indefinitely on block and
-  // to set an upper bound
-  const conn_promise = reader_db_open_internal(name, version, shared_state);
-  const error_msg = 'connecting to indexedDB database ' + name + ' timed out.';
-  const timeout_promise = reader_db_reject_after_timeout(timeout_ms, error_msg,
-    shared_state);
-  const promises = [conn_promise, timeout_promise];
-  return await Promise.race(promises);
-}
-
-// Helper for reader_db_open. Wraps indexedDB.open in a promise.
-// @private
-function reader_db_open_internal(name, version, shared_state) {
-  return new Promise(function executor(resolve, reject) {
-    const request = indexedDB.open(name, version);
-    request.onupgradeneeded = reader_db_onupgradeneeded;
-    request.onsuccess = function() {
-      const conn = request.result;
-
-      if(shared_state.is_timed_out) {
-        if(READER_DB_DEBUG)
-          DEBUG('opened db but after timeout');
-        conn.close();
-
-        // TODO: reject and exit here?
-      }
-
-      if(READER_DB_DEBUG)
-        DEBUG('connected to database %s v', name, version);
-      resolve(conn);
-    };
-    request.onerror = () => reject(request.error);
-
-    // When open blocks, it blocks indefinitely. Therefore the promise cannot
-    // resolve. This is primarily why I've implemented a timeout scheme, to
-    // avoid the indefiniteness.
-    request.onblocked = console.warn;
-  });
-}
-
-// Helper for reader_db_open. Return a promise that rejects after a given
-// amount of time.
-// @private
-// @param timeout_ms {Number} timeout in milliseconds, optional
-// @param error_msg {String} optional, error message
-// @param shared_state {Object} helps coordinate between the two concurrent
-// processes of opening the database and a timed rejection.
-function reader_db_reject_after_timeout(timeout_ms, error_msg, shared_state) {
-  if(typeof timeout_ms === 'undefined')
-    timeout_ms = 4;
-
-  if(timeout_ms < 4) {
-    // TODO: why am I doing this? I don't think this is relevant
-    shared_state.is_timed_out = true;
-
-    const msg = 'timeout_ms must be greater than 4: ' + timeout_ms;
-    throw new TypeError(msg);
-  }
-
-  return new Promise(function set_timeout_executor(resolve, reject) {
-    setTimeout(function set_timeout_callback() {
-      shared_state.is_timed_out = true;
-      reject(new Error(error_msg));
-    }, timeout_ms);
-  });
+// Opens a connection to the reader-db database
+// @throws {Error} if a connection error occurs
+// @return {IDBDatabase} an open database connection
+function reader_db_open() {
+  const name = 'reader', version = 20, timeout_ms = 500;
+  return idb_open(name, version, reader_db_onupgradeneeded, timeout_ms);
 }
 
 // Helper for reader_db_open. Does the database upgrade. This should never be

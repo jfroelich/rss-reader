@@ -13,12 +13,9 @@
 const ALARMS_DEBUG = false;
 
 async function alarms_on_archive_alarm() {
-  let conn;
-  let db_name, db_version, db_conn_timeout;
-  let max_age_ms;
-  let status;
+  let conn, max_age_ms, status;
   try {
-    conn = await reader_db_open(db_name, db_version, db_conn_timeout);
+    conn = await reader_db_open();
     status = await archive_entries(conn, max_age_ms);
   } catch(error) {
     if(ALARMS_DEBUG)

@@ -1,5 +1,3 @@
-// Lib for polling an rss feed entry
-
 'use strict';
 
 // Dependencies:

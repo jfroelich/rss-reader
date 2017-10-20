@@ -1,9 +1,6 @@
-// srcset utilities
 'use strict';
 
-// Dependencies
-// parseSrcset.js
-
+// import third-party/parseSrcset.js
 
 // @param descriptors {Array} an array of descriptors such as those produced
 // by parseSrcset (third party library)

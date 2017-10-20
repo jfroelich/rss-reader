@@ -1,9 +1,6 @@
-// Feed utilities
-
 'use strict';
 
-// Dependencies:
-// assert.js
+// import base/assert.js
 
 // Create a new feed object
 function feed_create() {

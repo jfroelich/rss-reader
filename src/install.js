@@ -1,5 +1,3 @@
-// App installation and setup
-
 'use strict';
 
 // Dependencies:

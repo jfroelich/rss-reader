@@ -3,6 +3,11 @@
 // TODO: test timeouts
 
 async function test_db() {
+
+
+  // TODO: this is out of date. reader_db_open does not accept params
+  // To test, use idb_open
+
   console.log('Starting db test');
   const name = 'test-feed-db';
   const version = 1;
@@ -11,7 +16,7 @@ async function test_db() {
   let conn;
   try {
     console.log('Connecting to database', name);
-    conn = await reader_db_open(name, version, timeout_ms);
+    conn = await reader_db_open();
     console.log('Closing connection to', name);
     conn.close();
     is_conn_closed = true;

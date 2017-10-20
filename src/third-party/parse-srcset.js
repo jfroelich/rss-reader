@@ -1,6 +1,3 @@
-// Downloaded from:
-// https://github.com/albell/blob/master/modules/misc/parse-srcset.js
-
 /**
  * Srcset Parser
  *

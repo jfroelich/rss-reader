@@ -2,12 +2,16 @@
 
 async function test_archive_entries() {
   console.log('Starting test_archive_entries');
+
+  // TODO: this needs to use idb_open instead of reader_db_open so that it
+  // can connect to a different database. right now this is hardcoded to
+  // connect to the real database.
+
   const test_db_name = 'test-archive-entries';
   const test_db_version = 20;
   let was_conn_close_requested = false;
   let conn, conn_timeout_ms, entry_max_age_ms;
-  const open_promise = reader_db_open(test_db_name, test_db_version,
-    conn_timeout_ms);
+  const open_promise = reader_db_open();
 
   try {
     conn = await open_promise;

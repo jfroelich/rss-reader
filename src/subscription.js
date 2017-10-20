@@ -1,4 +1,3 @@
-// Functions for subscribing to and unsubscribing from feeds
 'use strict';
 
 // TODO: if the prefix is sub, then the file should be called sub.js

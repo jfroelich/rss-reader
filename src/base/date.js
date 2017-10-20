@@ -1,5 +1,3 @@
-// Date object utilities
-
 'use strict';
 
 function date_format(date_object, delimiter) {

@@ -1,6 +1,6 @@
 'use strict';
 
-// import assert.js
+// import base/assert.js
 
 // Find the lowest common ancestor of two nodes. Assumes
 // node1 does not contain node2, and node2 does not contain node1.

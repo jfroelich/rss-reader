@@ -1,6 +1,5 @@
 'use strict';
 
-
 function options_page_error_message_show(message, fade) {
   options_page_error_message_hide();
 

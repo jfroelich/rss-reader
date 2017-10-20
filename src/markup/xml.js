@@ -1,4 +1,3 @@
-// Library for working with xml
 'use strict';
 
 // Dependencies

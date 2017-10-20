@@ -1,9 +1,4 @@
-// string lib
-
 'use strict';
-
-// Depedencies:
-// none
 
 // Returns a new string object where sequences of whitespace characters in the
 // input string are replaced with a single space character.
@@ -36,7 +31,7 @@ function string_tokenize(string) {
   if(typeof string !== 'string')
     return [];
 
-  // TODO: use more precise nlp, consider other word boundary characters
+  // TODO: increase precision, consider other word boundary characters
 
   const words = string.split(/\s+/g);
 
@@ -50,6 +45,9 @@ function string_tokenize(string) {
 
   // TODO: this is pretty heavyweight and I am not sure it is optimized by the
   // interpreter
+
+  // TODO: do not use filter, use an explicit loop
+
   const non_empty_words = words.filter((w) => w);
   return non_empty_words;
 }

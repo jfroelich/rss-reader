@@ -1,5 +1,3 @@
-// document filtering during polling
-
 'use strict';
 
 // Dependencies:

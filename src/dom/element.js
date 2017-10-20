@@ -1,8 +1,6 @@
-// Functions related to DOM elements
 'use strict';
 
-// Dependencies:
-// assert.js
+// import base/assert.js
 
 // Copies the attributes of an element to another element. Overwrites any
 // existing attributes in the other element.

@@ -1,8 +1,6 @@
-// Library for working with urls
 'use strict';
 
-// Dependencies
-// assert.js
+// import base/assert.js
 
 const URL_DEBUG = true;
 

@@ -1,6 +1,5 @@
 'use strict';
 
-
 const domviz = {};
 
 // Returns true if an element is hidden. An element is hidden if any of its

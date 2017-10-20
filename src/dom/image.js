@@ -1,5 +1,3 @@
-// Image utilities
-
 'use strict';
 
 // TODO: also has source if within picture and picture has <source>, or
@@ -18,7 +16,7 @@ function image_has_valid_source(image) {
   }
 }
 
-// Return true if image has a srcset attribute value
+// Return true if image has a non-empty srcset attribute value
 function image_has_srcset(image) {
   const srcset_value = image.getAttribute('srcset');
   return srcset_value && srcset_value.trim();

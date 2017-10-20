@@ -1,5 +1,3 @@
-// host template lib
-
 'use strict';
 
 const HOST_TEMPLATE_DEBUG = false;

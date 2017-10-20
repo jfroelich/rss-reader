@@ -1,5 +1,3 @@
-// Memory usage lib
-
 'use strict';
 
 // Calculates the approximate byte size of a value. This should only be

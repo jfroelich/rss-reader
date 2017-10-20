@@ -1,5 +1,3 @@
-// Global app status codes
-
 'use strict';
 
 // Represents a successful operation

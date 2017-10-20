@@ -1,3 +1,7 @@
+'use strict';
+
+// import base/assert.js
+
 
 // TODO: deprecate entirely, no longer works at all, Google returns 403
 // forbidden response code
@@ -10,11 +14,10 @@
 // Hmmm, seems site specific so basically there is no recourse
 
 
-// Google Feeds API library
-'use strict';
 
-// Dependencies:
-// assert.js
+
+
+
 
 // Sends a search request to Google and yields a resulting object consisting
 // the properties 'query' and 'entries'. query is a formatted HTML

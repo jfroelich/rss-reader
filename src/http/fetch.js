@@ -1,4 +1,3 @@
-// Fetch utilities
 'use strict';
 
 // Dependencies:

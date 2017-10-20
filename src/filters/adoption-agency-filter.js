@@ -1,7 +1,7 @@
 'use strict';
 
-// import "assert."
-// import "status.js"
+// import base/assert.js
+// import base/status.js
 
 // Relocates certain misnested elements
 function adoption_agency_filter(doc) {

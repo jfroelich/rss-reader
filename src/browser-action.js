@@ -1,6 +1,6 @@
 'use strict';
 
-// This should only be loaded in the extension background
+// This file should only be loaded in the extension background
 
 // import base/debug.js
 // import base/extension.js

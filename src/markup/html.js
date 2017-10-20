@@ -1,4 +1,3 @@
-// Utilities for working with html strings
 'use strict';
 
 // Dependencies:
