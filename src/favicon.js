@@ -115,6 +115,8 @@ async function favicon_db_find_redirect_url(conn, url_object, response,
   return entry.iconURLString;
 }
 
+
+// TODO: this should be provided the document text and be a sync function
 // @returns {String} a favicon url
 async function favicon_search_document(conn, url_object, urls, response) {
   let text;
@@ -244,6 +246,10 @@ async function favicon_setup_db(name, version, timeout_ms) {
       conn.close();
   }
 }
+
+
+// TODO: use idb_open, and remove parameters. If a caller wants to test
+// they can use idb_open directly.
 
 // @param name {String} optional, indexedDB database name
 // @param version {Number} optional, indexedDB database version
