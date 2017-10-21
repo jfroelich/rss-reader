@@ -1,10 +1,9 @@
 'use strict';
 
-// Dependencies
-// assert.js
-// debug.js
-// fetch.js
-// url.js
+// import base/assert.js
+// import base/debug.js
+// import http/fetch.js
+// import http/url.js
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
@@ -14,13 +13,8 @@
 // @param doc {Document}
 // @param timeout_ms {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
-async function image_size_filter(doc, allowed_protocols,
-  timeout_ms) {
-
-  // TODO: this should assert typeof, not just definedness
-  ASSERT(doc);
-
-  // timeout_ms sanity assertion is delegated to fetch function
+async function image_size_filter(doc, allowed_protocols, timeout_ms) {
+  ASSERT(doc instanceof Document);
 
   const default_allowed_protocols = ['data:', 'http:', 'https:'];
   if(typeof allowed_protocols === 'undefined')

@@ -3,7 +3,8 @@
 // import base/assert.js
 // import base/debug.js
 // import base/status.js
-// import markup/xml.js
+// import xml.js
+// import opml/opml-outline.js
 
 function opml_parse_from_string(xml_string) {
   let [status, doc] = xml_parse_from_string(xml_string);

@@ -2,9 +2,12 @@
 
 // import base/assert.js
 
-// Create a new feed object
 function feed_create() {
   return {};
+}
+
+function feed_is_feed(feed) {
+  return typeof feed === 'object';
 }
 
 function feed_is_valid_feed_id(id) {
@@ -35,7 +38,7 @@ function feed_append_url(feed, url_string) {
 // Creates a url object that can be used as input to favicon_lookup
 // @returns {URL}
 function feed_create_icon_lookup_url(feed) {
-  ASSERT(feed);
+  ASSERT(feed_is_feed(feed));
 
   // Cannot assume the link is set nor valid
   if(feed.link) {
@@ -74,7 +77,7 @@ async function feed_update_favicon(feed, icon_conn) {
 // TODO: assert feed has one or more urls
 // TODO: assert the type of each property?
 function feed_has_valid_props(feed) {
-  ASSERT(feed);
+  ASSERT(feed_is_feed(feed));
 
   if('id' in feed) {
     ASSERT(Number.isInteger(feed.id));
@@ -89,7 +92,7 @@ function feed_has_valid_props(feed) {
 
 // Returns a shallow copy of the input feed with sanitized properties
 function feed_sanitize(feed, title_max_length, desc_max_length) {
-  ASSERT(feed);
+  ASSERT(feed_is_feed(feed));
 
   const DEFAULT_TITLE_MAX_LEN = 1024;
   const DEFAULT_DESC_MAX_LEN = 1024 * 10;
@@ -100,24 +103,25 @@ function feed_sanitize(feed, title_max_length, desc_max_length) {
     desc_max_length = DEFAULT_DESC_MAX_LEN;
 
   const output_feed = Object.assign({}, feed);
-  const empty_tag_replacement = '';
+  const tag_replacement = '';
+  const suffix = '';
+
   if(output_feed.title) {
     let title = output_feed.title;
     title = string_filter_control_chars(title);
-    title = html_replace_tags(title, empty_tag_replacement);
+    title = html_replace_tags(title, tag_replacement);
     title = string_condense_whitespace(title);
-    const truncated_title_suffix = '';
-    title = html_truncate(title, title_max_length, truncated_title_suffix);
+
+    title = html_truncate(title, title_max_length, suffix);
     output_feed.title = title;
   }
 
   if(output_feed.description) {
     let desc = output_feed.description;
     desc = string_filter_control_chars(desc);
-    desc = html_replace_tags(desc, empty_tag_replacement);
+    desc = html_replace_tags(desc, tag_replacement);
     desc = string_condense_whitespace(desc);
-    const truncated_desc_suffix = '';
-    desc = html_truncate(desc, desc_max_length, truncated_desc_suffix);
+    desc = html_truncate(desc, desc_max_length, suffix);
     output_feed.description = desc;
   }
 
@@ -135,9 +139,12 @@ function feed_merge(old_feed, new_feed) {
   // So the output feed's url list needs to be fixed. First copy over the old
   // feed's urls, then try and append each new feed url.
   merged_feed_object.urls = [...old_feed.urls];
-  if(new_feed.urls)
-    for(const url_string of new_feed.urls)
+
+  if(new_feed.urls) {
+    for(const url_string of new_feed.urls) {
       feed_append_url(merged_feed_object, url_string);
+    }
+  }
 
   return merged_feed_object;
 }

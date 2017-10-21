@@ -13,6 +13,12 @@ const ENTRY_STATE_READ = 1;
 const ENTRY_STATE_UNARCHIVED = 0;
 const ENTRY_STATE_ARCHIVED = 1;
 
+// Return true if the first parameter is an entry object
+function entry_is_entry(entry) {
+  // TODO: maybe use a magic integer internal and check that?
+  return typeof entry === 'object';
+}
+
 // Returns true if the id is a valid entry id, structurally. This does not
 // check if the id actually corresponds to an entry.
 function entry_is_valid_id(id) {

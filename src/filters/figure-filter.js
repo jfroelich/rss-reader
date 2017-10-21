@@ -1,10 +1,14 @@
 'use strict';
 
+// import base/assert.js
+// import base/status.js
+// import filters/filter-helpers.js
+
 function figure_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   if(!doc.body) {
-    return;
+    return STATUS_OK;
   }
 
   // Unwrap captionless figures. Any figure with only 1 child has either only
@@ -15,4 +19,6 @@ function figure_filter(doc) {
       unwrap_element(figure);
     }
   }
+
+  return STATUS_OK;
 }

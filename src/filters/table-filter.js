@@ -1,13 +1,15 @@
 'use strict';
 
-// import assert.js
-// import element.js
-// import transform-helpers.js
+// import base/assert.js
+// import base/status.js
+// import dom/element.js
+// import filters/filter-helpers.js
 
 function table_filter(doc, row_scan_limit) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
+
   if(!doc.body) {
-    return;
+    return STATUS_OK;
   }
 
   unwrap_elements(doc.body, 'colgroup, hgroup, multicol, tbody, tfoot, thead');
@@ -17,6 +19,8 @@ function table_filter(doc, row_scan_limit) {
     if(table_filter_is_single_column_table(table, row_scan_limit))
       table_filter_unwrap_single_column_table(table);
   }
+
+  return STATUS_OK;
 }
 
 function table_filter_is_single_column_table(table, row_scan_limit) {

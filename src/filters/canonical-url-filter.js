@@ -33,7 +33,7 @@ const CANONICAL_URL_FILTER_MAP = {
 };
 
 function canonical_url_filter(doc, base_url) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
   ASSERT(url_is_url_object(base_url));
 
   const src_selector = canonical_url_filter_create_selector();

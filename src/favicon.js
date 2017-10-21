@@ -1,10 +1,10 @@
 'use strict';
 
-// Requires
-// assert.js
-// debug.js
-// fetch.js
-// html-parse.js
+// import base/assert.js
+// import base/debug.js
+// import base/indexeddb.js
+// import fetch/fetch.js
+// import html.js
 
 const FAVICON_DEBUG = false;
 
@@ -12,14 +12,27 @@ const FAVICON_DEBUG = false;
 // cache entry expired
 const FAVICON_DEFAULT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
+
+// Opens a connection to the favicon database
+// @throws {Error} invalid timeout (any other errors occur within promise)
+// @returns {Promise} resolves to open IDBDatabase instance
+function favicon_open_db() {
+  const name = 'favicon-cache';
+  const version = 2;
+  const timeout_ms = 100;
+  return indexeddb_open(name, version, favicon_db_onupgradeneeded, timeout_ms);
+}
+
 // Looks up the favicon url for a given web page url
 // @returns {String} the favicon url if found, otherwise undefined
 // TODO: return status and icon instead of throwing errors
+// TODO: there are simply too many parameters to this function, change to
+// accept a struct-like query object
 async function favicon_lookup(conn, url_object, max_age_ms,
   fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size, max_img_size) {
 
   // TODO: delegate assetion if not reasoned about locally?
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   if(FAVICON_DEBUG)
     DEBUG('favicon lookup', url_object.href);
@@ -49,7 +62,6 @@ async function favicon_lookup(conn, url_object, max_age_ms,
     if(icon_url_string)
       return icon_url_string;
   }
-
 
   // TODO: inline the silent function, it is just a simple try catch and it
   // is not adding much value or encapsulating much of anything
@@ -114,7 +126,6 @@ async function favicon_db_find_redirect_url(conn, url_object, response,
   await favicon_db_put_entries(conn, entry.iconURLString, entries);
   return entry.iconURLString;
 }
-
 
 // TODO: this should be provided the document text and be a sync function
 // @returns {String} a favicon url
@@ -237,52 +248,14 @@ async function favicon_fetch_doc_silently(url_object, fetch_html_timeout_ms) {
   }
 }
 
-async function favicon_setup_db(name, version, timeout_ms) {
+async function favicon_setup_db() {
   let conn;
   try {
-    conn = await favicon_open_db(name, version, timeout_ms);
+    conn = await favicon_open_db();
   } finally {
     if(conn)
       conn.close();
   }
-}
-
-
-// TODO: use idb_open, and remove parameters. If a caller wants to test
-// they can use idb_open directly.
-
-// @param name {String} optional, indexedDB database name
-// @param version {Number} optional, indexedDB database version
-// @param timeout_ms {Number} optional, maximum amount of time to wait when
-// connecting to indexedDB before failure
-// @throws {TypeError} invalid timeout (any other errors occur within promise)
-// @returns {Promise} resolves to open IDBDatabase instance
-async function favicon_open_db(name, version, timeout_ms) {
-  if(typeof name === 'undefined')
-    name = 'favicon-cache';
-  if(typeof version === 'undefined')
-    version = 2;
-  if(typeof timeout_ms === 'undefined')
-    timeout_ms = 100;
-
-  // In the case of a connection blocked event, eventually timeout
-  const connect_promise = favicon_create_open_db_promise(name, version);
-  const error_message = 'Connecting to indexedDB database ' + name +
-    ' timed out.';
-  const timeout_promise = favicon_reject_after_timeout(timeout_ms,
-    error_message);
-  const promises = [connect_promise, timeout_promise];
-  return await Promise.race(promises);
-}
-
-function favicon_create_open_db_promise(name, version) {
-  return new Promise(function executor(resolve, reject) {
-    const request = indexedDB.open(name, version);
-    request.onupgradeneeded = favicon_db_onupgradeneeded;
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-    request.onblocked = console.warn;
-  });
 }
 
 function favicon_db_onupgradeneeded(event) {
@@ -392,21 +365,4 @@ async function favicon_compact_db(conn, max_age_ms) {
     urls.push(entry.pageURLString);
   const resolutions = await favicon_db_remove_entries_with_urls(conn, urls);
   return resolutions.length;
-}
-
-// TODO: this should probably be inlined into the open_db function, so that
-// I can do things easily like get the timer id and call cancelTimeout
-function favicon_reject_after_timeout(timeout_ms, error_message) {
-  if(typeof timeout_ms === 'undefined')
-    timeout_ms = 4;
-  // TODO: document the actual minimum
-  // TODO: this probably doesn't need to be an assert. Just a comment near
-  // the call to setTimeout that the browser may adjust it
-  // Per MDN and Google, the minimum is 4ms.
-  ASSERT(timeout_ms > 3);
-
-  return new Promise(function(resolve, reject) {
-    const error = new Error(error_message);
-    setTimeout(reject, timeout_ms, error);
-  });
 }

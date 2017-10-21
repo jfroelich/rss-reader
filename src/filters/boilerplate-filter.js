@@ -1,8 +1,9 @@
 'use strict';
 
-// import assert.js
-// import image.js
-// import string.js
+// import base/assert.js
+// import base/status.js
+// import base/string.js
+// import dom/image.js
 
 const BOILERPLATE_ANCESTOR_BIASES = {
   'a': -5,
@@ -62,11 +63,13 @@ const BOILERPLATE_TOKEN_WEIGHTS = {
 function boilerplate_filter(doc) {
   ASSERT(doc instanceof Document);
   if(!doc.body) {
-    return;
+    return STATUS_OK;
   }
 
   const best_element = boilerplate_find_high_score_element(doc);
   boilerplate_prune(doc, best_element);
+
+  return STATUS_OK;
 }
 
 function boilerplate_derive_text_bias(element) {

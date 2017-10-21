@@ -120,7 +120,7 @@ async function reader_import_file(file, reader_conn, icon_conn) {
   return sub_count;
 }
 
-// Filter duplicates, favoring earlier in document order
+// Filter duplicates, favoring earlier in array order
 function reader_import_group_outlines(outlines) {
   const unique_urls = [];
   const unique_outlines = [];

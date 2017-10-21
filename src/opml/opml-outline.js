@@ -3,7 +3,15 @@
 // import base/assert.js
 // import rss/feed.js
 
+// TODO: add opml prefix to all globals
+
+function outline_is_outline(outline) {
+  return typeof outline === 'object';
+}
+
 function outline_to_feed(outline) {
+  ASSERT(outline_is_outline(outline));
+
   const feed = {};
   if(outline.type)
     feed.type = outline.type;
@@ -20,7 +28,7 @@ function outline_to_feed(outline) {
 }
 
 function outline_from_feed(feed) {
-  ASSERT(feed);
+  ASSERT(feed_is_feed(feed));
   const outline = {};
   outline.type = feed.type;
   outline.xmlUrl = feed_get_top_url(feed);
@@ -31,6 +39,9 @@ function outline_from_feed(feed) {
 }
 
 function outline_element_has_valid_type(element) {
+
+  // TODO: skip the trim, change the regex to tolerate whitespace
+
   let type = element.getAttribute('type');
   if(type) {
     type = type.trim();
@@ -60,6 +71,8 @@ function outline_element_normalize_xmlurl(element) {
 }
 
 function outline_normalize_htmlurl(outline) {
+  ASSERT(outline_is_outline(outline));
+
   if(outline.htmlUrl === undefined) {
     return;
   }
@@ -84,22 +97,23 @@ function outline_normalize_htmlurl(outline) {
   }
 }
 
-function outline_to_element(doc, object) {
-  ASSERT(doc);
+function outline_to_element(doc, outline) {
+  ASSERT(doc instanceof Document);
+  ASSERT(outline_is_outline(outline));
 
   const element = doc.createElement('outline');
-  if(object.type)
-    element.setAttribute('type', object.type);
-  if(object.xmlUrl)
-    element.setAttribute('xmlUrl', object.xmlUrl);
-  if(object.text)
-    element.setAttribute('text', object.text);
-  if(object.title)
-    element.setAttribute('title', object.title);
-  if(object.description)
-    element.setAttribute('description', object.description);
-  if(object.htmlUrl)
-    element.setAttribute('htmlUrl', object.htmlUrl);
+  if(outline.type)
+    element.setAttribute('type', outline.type);
+  if(outline.xmlUrl)
+    element.setAttribute('xmlUrl', outline.xmlUrl);
+  if(outline.text)
+    element.setAttribute('text', outline.text);
+  if(outline.title)
+    element.setAttribute('title', outline.title);
+  if(outline.description)
+    element.setAttribute('description', outline.description);
+  if(outline.htmlUrl)
+    element.setAttribute('htmlUrl', outline.htmlUrl);
   return element;
 }
 

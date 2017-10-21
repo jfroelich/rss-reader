@@ -1,52 +1,14 @@
 'use strict';
 
-// Dependencies:
-// assert.js
-// debug.js
-// image.js
-// url.js
-
-/*
-
-# TODO
-
-* would it be better to use a querySelectorAll that looks for images without
-certain attributes, instead of filtering in memory?
-* Provide options to allow caller to easily change which attributes are used
-instead of using a hardcoded list.
-* If an image has a srcset, then try and use that instead.
-* If an image is within a picture, look for associated source
-
-# Strange cases to look into and possibly handle better
-* &lt;img class="responsive-image" srcset="url"&gt;  in this case i should be
-able to try and infer from srcset?
-* &lt;img data-src="url" src=""&gt; - note empty source
-* &lt;img style="background-image:url(url);" src="url"&gt;
-* &lt;img class="responsive-image" srcset="url"&gt;
-* &gt;img class="lazyload" src="data:..." data-src="url"&gt;
-* &lt;img data-path="url"&gt;
-* &lt;img data-flickity-lazyload="url"&gt;
-* &lt;img class=​"media__image media__image--responsive"
-data-src-mini=​"url" data-src-xsmall=​"url" data-src-small=​"url"
-data-src-medium=​"url" data-src-large=​"url" data-src-full16x9=​"url"
-data-src-mini1x1=​"url" src=​"data-url"&gt;​
-* &lt;img data-baseurl="url"  srcset="url 350w, url 400w"
-sizes="(min-width: 1260px) 750px, (min-width: 1060px)
-calc(100vw - 559px), (min-width: 840px) calc(100vw - 419px),
-(min-width: 800px) 800px, 100.1vw"&gt;
-
-
-# TODO: Images using a data url object placeholder and a normal image in alt
-attr
-
-&lt;img data-lazy-img="https://...jpg" src="data:..."&gt;
-
-*/
+// import base/assert.js
+// import base/debug.js
+// import dom/image.js
+// import http/url.js
 
 const LAZY_IMAGE_FILTER_DEBUG = false;
 
 function lazy_image_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   const lazy_img_attrs = [
     'load-src',

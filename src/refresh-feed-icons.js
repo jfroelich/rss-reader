@@ -9,10 +9,9 @@ async function refresh_feed_icons() {
 
   let count = 0;
   let reader_conn, icon_conn;
-  const open_dbs_promise = open_dbs();
 
   try {
-    const conns = await open_dbs_promise;
+    const conns = await Promise.all([reader_db_open(), favicon_open_db()]);
     reader_conn = conns[0];
     icon_conn = conns[1];
     const feeds = await reader_db_get_feeds(reader_conn);
@@ -26,15 +25,6 @@ async function refresh_feed_icons() {
   }
 
   return count;
-}
-
-function open_dbs() {
-  let icon_db_name, icon_db_version, conn_timeout_ms;
-  const reader_open_promise = reader_db_open();
-  const icon_open_promise = favicon_open_db(icon_db_name, icon_db_version,
-    conn_timeout_ms);
-  const conn_promises = [reader_open_promise, icon_open_promise];
-  return Promise.all(conn_promises);
 }
 
 function process_feeds(feeds, reader_conn, icon_conn) {

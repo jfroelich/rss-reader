@@ -4,9 +4,7 @@ const cli = {};
 
 // Archive entries from the console
 cli.archive_entries = async function() {
-  let max_age_ms;
-  let conn;
-  let status;
+  let max_age_ms, conn, status;
   try {
     conn = await reader_db_open();
     status = await archive_entries(conn, max_age_ms);

@@ -1,15 +1,14 @@
 'use strict';
 
-// Dependencies:
-// assert.js
-// transform-helpers.js // for insert_children_before
+// import base/assert.js
+// import filters/transform-helpers.js
 
 // TODO: restrict children of list to proper child type. E.g. only allow li
 // or form within ul/ol, and dd/dt/form within dl. Do some type of transform
 // like move such items to within a new child
 
 function list_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   if(!doc.body) {
     return;

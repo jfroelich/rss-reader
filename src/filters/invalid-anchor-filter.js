@@ -4,8 +4,7 @@
 // assert.js
 
 function invalid_anchor_filter(doc) {
-
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   // Restrict to body descendants
   if(!doc.body) {

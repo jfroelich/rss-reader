@@ -1,7 +1,6 @@
 'use strict';
 
-// Dependencies:
-// assert.js
+// import base/assert.js
 
 // TODO: maybe inline iframes or replace with a message instead of simply
 // removing.
@@ -10,10 +9,9 @@
 
 // Remove iframes
 function iframe_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
-  // Only look at frames within body. If body not present then
-  // nothing to do.
+  // Only look at frames within body. If body not present then nothing to do.
   if(!doc.body) {
     return;
   }

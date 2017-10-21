@@ -2,17 +2,18 @@
 
 // import base/assert.js
 
+const INDEXEDDB_DEBUG = false;
+
 // Returns true if the conn is open
 // @param conn {IDBDatabase}
-function idb_conn_is_open(conn) {
+function indexeddb_is_open(conn) {
   ASSERT(conn instanceof IDBDatabase);
   // TODO: only return true if connection is actually open. Not quite sure
   // how to detect this at the moment.
   return true;
 }
 
-// Opens a connection to indexedDB. Augments indexedDB.open with a timeout to
-// avoid the issue of blocked events hanging indefinitely.
+// Wraps indexedDB.open with a timeout to avoid block events
 //
 // TODO: what if there is no need to timeout? Just reject on block, and
 // check if blocked fired on success. I suppose the only benefit is the timeout
@@ -30,7 +31,13 @@ function idb_conn_is_open(conn) {
 // @param timeout_ms {Number} optional, positive integer, how long to wait
 // in milliseconds before giving up on connecting
 // @throws {Error} if connection error or timeout occurs
-async function idb_open(name, version, upgrade_listener, timeout_ms) {
+async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
+
+  if(INDEXEDDB_DEBUG) {
+    DEBUG('indexeddb_open name %s version %s timeout %s', name, version,
+      timeout_ms);
+  }
+
   ASSERT(typeof name === 'string');
 
   if(typeof timeout_ms === 'undefined') {
@@ -47,55 +54,45 @@ async function idb_open(name, version, upgrade_listener, timeout_ms) {
     const request = indexedDB.open(name, version);
     request.onsuccess = function(event) {
       const conn = event.target.result;
-
       if(timedout) {
-        DEBUG('closing connection that opened after timeout');
+        if(INDEXEDDB_DEBUG) {
+          DEBUG('closing connection that opened after timeout');
+        }
+
         conn.close();
-        conn = null;
-        // Leave the promise unsettled forever
+        // Leave unsettled
       } else {
+
+        if(INDEXEDDB_DEBUG) {
+          DEBUG('indexeddb_open opened connection to', name, version);
+        }
+
         resolve(conn);
       }
     };
-    request.onerror = function(event) {
-      reject(request.error);
-    };
-    request.onblocked = function(event) {
-      DEBUG('blocked');
-      // Leave the promise unsettled indefinitely
-    };
+    request.onerror = () => reject(request.error);
+    // Leave unsettled
+    // request.onblocked = () => {};
     request.onupgradeneeded = upgrade_listener;
   });
 
   if(!timeout_ms) {
-    // await so that a possible rejection becomes an uncaught exception
+    // Allow exception to bubble
     return await open_promise;
   }
 
   // TODO: delegate to promise_timeout instead of re-implementing it here?
-
   const time_promise = new Promise(function t_exec(resolve, reject) {
-    timer = setTimeout(function on_timeout() {
-      // Resolve with undefined so that both open promise and time promise
-      // resolve to the 'same' type.
-      resolve();
-    }, timeout_ms);
+    timer = setTimeout(resolve, timeout_ms);
   });
 
-  // If open promise rejected prior to the timeout resolution during the race,
-  // then allow an uncaught exception.
+  // Allow exception to bubble
   const conn = await Promise.race([open_promise, time_promise]);
 
   if(conn) {
-    // If we connected then 'cancel' the timeout promise. Because promises are
-    // not cancelable, just cancel the timer.
     clearTimeout(timer);
   } else {
-    // conn is falsy, which indicates a timeout. Toggle timedout so that if
-    // and when the open promise resolves, it closes its connection.
     timedout = true;
-
-    // Simulate a timeout rejection by manually throwing
     const error_message = 'connecting to database ' + name + ' timed out';
     throw new Error(error_message);
   }

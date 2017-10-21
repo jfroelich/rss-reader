@@ -1,12 +1,13 @@
 'use strict';
 
+// import reader-db.js
+
 // TODO: reintroduce conn as a parameter
 // TODO: deprecate options parameter
 async function remove_orphaned_entries(options) {
   options = options || {};
   let conn, ids, conn_timeout_ms;
   try {
-    // TODO: are these even the correct property names?
     conn = await reader_db_open();
     const orphans = await reader_db_find_orphaned_entries(conn);
     ids = [];

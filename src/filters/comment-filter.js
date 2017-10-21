@@ -3,7 +3,7 @@
 // import assert.js
 
 function comment_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   const it = doc.createNodeIterator(doc.documentElement,
     NodeFilter.SHOW_COMMENT);

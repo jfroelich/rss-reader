@@ -4,10 +4,8 @@
 
 // Returns true if the first parameter is of type Node
 function node_is_node(node) {
-  // TODO: implement, probably using simple duck typing
-  return true;
+  return node instanceof Node;
 }
-
 
 // Find the lowest common ancestor of two nodes. Assumes
 // node1 does not contain node2, and node2 does not contain node1.
@@ -18,7 +16,7 @@ function node_is_node(node) {
 // terms of edge traversals. d2 is the distance from node2 to the ancestor.
 //
 // TODO: change to varargs, find the LCAs of whatever args given, instead of
-// only 2.
+// only 2. change to (...nodes)
 function node_find_lca(node1, node2) {
   ASSERT(node_is_node(node1));
   ASSERT(node_is_node(node2));

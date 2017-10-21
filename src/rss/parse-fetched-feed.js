@@ -1,9 +1,19 @@
 'use strict';
 
-// TODO: maybe rename to coerce-feed or something?
-// TODO: change parse_fetched_feed to not throw in the usual case
+// import rss/feed.js
+// import rss/parse-feed.js
 
-// Post fetch processing that coerces a fetched feed into the app's storage
+
+// TODO: rename to feed-coerce or something?
+// TODO: move out of fetch folder
+// TODO: do not throw in the usual case, return status codes instead
+// TODO: this should be a sync function. Move the response.text call to
+// earlier in calling context. This should accept text as input. Also, if
+// this should accept text as input, consider using parse in name. Or,
+// maybe this shouldn't even accept text as input, it should accept the
+// parser output as input
+
+// Post fetch processing that coerces a fetched feed into the app's internal
 // format.
 // @param response {Object} the result of calling fetch_feed
 async function parse_fetched_feed(response) {

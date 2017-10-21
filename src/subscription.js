@@ -1,32 +1,31 @@
 'use strict';
 
-// TODO: if the prefix is sub, then the file should be called sub.js
+// import base/assert.js
+// import base/debug.js
+// import base/object.js
+// import fetch/fetch.js
+// import fetch/parse-fetched-feed.js
+// import rss/feed.js
+// import extension.js
+// import favicon.js
+// import reader-db.js
 
-// Dependencies:
-// assert.js
-// debug.js
-// extension.js
-// favicon.js
-// feed.js
-// fetch-feed.js
-// object.js
-// parse-fetched-feed.js
-// reader-db.js
+
+// TODO: if the prefix is sub, then the file should be called sub.js.
+// Otherwise, functions should use the file name as prefix.
+
 
 // Returns a result object with properties status and feed. feed is only defined
 // if status === STATUS_OK. feed is a copy of the inserted feed, which
 // includes its new id.
+// TODO: return array instead of object for simpler destructuring
 async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
-
-  // TODO: stricter assertion
-  ASSERT(feed);
-
-  ASSERT(idb_conn_is_open(reader_conn));
-  ASSERT(idb_conn_is_open(icon_conn));
+  ASSERT(feed_is_feed(feed));
+  ASSERT(indexeddb_is_open(reader_conn));
+  ASSERT(indexeddb_is_open(icon_conn));
 
   DEBUG('called sub_add with feed', feed);
 
-  // TODO: assert reader_conn and icon_conn are open connections
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 2000;
   if(typeof notify === 'undefined')
@@ -66,9 +65,6 @@ async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
     // happen within parse_fetched_feed? If not then it should be done right
     // here.
   }
-
-  // Now that we know the redirect does not exist, parse the remainder of the
-  // response into a feed object.
 
   let parse_result;
   try {

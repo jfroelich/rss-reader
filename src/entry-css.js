@@ -2,7 +2,7 @@
 
 // import base/assert.js
 
-const ENTRY_CSS_DEBUG = true;
+const ENTRY_CSS_DEBUG = false;
 
 // Get the current settings from local storage and then modify the css rules
 // in the default style sheet

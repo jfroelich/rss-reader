@@ -2,10 +2,13 @@
 
 const HOST_TEMPLATE_DEBUG = false;
 
+// TODO: reverse arg order, rename to filter-like name
 // TODO: doc should be first parameter
 // TODO: host_selector_map should be a parameter to this function so that
 // configuration is defined externally so that it can be changed without
 // needing to modify its internals (open-closed principle)
+// TODO: move to filters
+
 function host_template_prune(url_string, doc) {
   const host_selector_map = {};
   host_selector_map['www.washingtonpost.com'] = [

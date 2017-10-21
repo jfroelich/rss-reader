@@ -4,10 +4,13 @@
 
 // Returns true if the first parameter is of type Element
 function element_is_element(element) {
-  // TODO: implement
-  return true;
+  return element instanceof Element;
 }
 
+// Returns true if the given name is a valid name for an element
+function element_is_valid_name(name) {
+  return typeof name === 'string' && !name.includes(' ');
+}
 
 // Copies the attributes of an element to another element. Overwrites any
 // existing attributes in the other element.

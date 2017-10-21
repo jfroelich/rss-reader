@@ -13,8 +13,7 @@
 // this works.
 
 function hairspace_filter(doc) {
-
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   // Restrict analysis to body descendants. While hairspaces can occur
   // outside of body, we don't care about normalizing them, because they will

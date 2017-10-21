@@ -1,12 +1,13 @@
 'use strict';
 
-// import assert.js
+// import base/assert.js
+// import base/status.js
 
 function sourcless_image_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   if(!doc.body) {
-    return;
+    return STATUS_OK;
   }
 
   const images = doc.body.querySelectorAll('img');
@@ -15,6 +16,8 @@ function sourcless_image_filter(doc) {
       sourcless_image_filter_remove(image);
     }
   }
+
+  return STATUS_OK;
 }
 
 function sourcless_image_filter_is_sourceless(image) {

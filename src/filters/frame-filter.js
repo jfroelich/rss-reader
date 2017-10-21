@@ -8,7 +8,7 @@
 
 // TODO: write tests
 function frame_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   let body_element = doc.body;
   if(!body_element)

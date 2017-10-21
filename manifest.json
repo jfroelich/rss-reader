@@ -19,7 +19,6 @@
       "/src/browser-action.js",
       "/src/cli.js",
       "/src/extension.js",
-      "/src/idb.js",
       "/src/install.js",
       "/src/reader-db.js",
       "/src/refresh-feed-icons.js",
@@ -30,6 +29,7 @@
 
       "/src/base/assert.js",
       "/src/base/debug.js",
+      "/src/base/indexeddb.js",
       "/src/base/object.js",
       "/src/base/sizeof.js",
       "/src/base/status.js",
@@ -83,8 +83,8 @@
       "/src/http/fetch.js",
       "/src/http/url.js",
 
-      "/src/markup/html.js",
-      "/src/markup/xml.js",
+      "/src/html.js",
+      "/src/xml.js",
 
       "/src/rss/entry.js",
       "/src/rss/feed.js",
@@ -93,7 +93,7 @@
 
       "/src/poll/host-template.js",
       "/src/poll/poll.js",
-      "/src/poll/poll-doc-prep.js",
+      "/src/poll/poll-document-filter.js",
       "/src/poll/poll-entry.js",
       "/src/third-party/parse-srcset.js",
       "/src/favicon.js"

@@ -5,6 +5,10 @@
 // import http/mime.js
 // import http/url.js
 
+const FETCH_DEBUG = false;
+const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
+
+
 // TODO: change functions to return status instead of throwing exceptions
 
 // A 'private' helper function for other fetch functions
@@ -365,11 +369,8 @@ function fetch_did_redirect(request_url, response_url) {
 }
 
 
-
-
 // TODO: instead of returning an invalid value, return both an error code and
-// the value. This way there is no ambiguity, or need for this constant
-const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
+// the value. This way there is no ambiguity, or need for constant
 function fetch_get_content_length(response) {
   const content_length_string = response.headers.get('Content-Length');
   const radix = 10;

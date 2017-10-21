@@ -6,7 +6,7 @@ async function test_db() {
 
 
   // TODO: this is out of date. reader_db_open does not accept params
-  // To test, use idb_open
+  // To test, use indexeddb_open
 
   console.log('Starting db test');
   const name = 'test-feed-db';

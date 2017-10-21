@@ -37,20 +37,10 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
     return;
 
   let num_entries_added = 0;
-
-  // TODO: these should probably be parameters to poll_feeds
-  // TODO: actually, the conns should be parameters instead and this should
-  // not be responsible for creating conns
-  let icon_db_name, icon_db_version, conn_timeout_ms;
-
-  const reader_open_promise = reader_db_open();
-  const icon_open_promise = favicon_open_db(icon_db_name, icon_db_version,
-    conn_timeout_ms);
-  const open_promises = [reader_open_promise, icon_open_promise];
   let reader_conn, icon_conn;
 
   try {
-    const conns = await Promise.all(open_promises);
+    const conns = await Promise.all([reader_db_open(), favicon_open_db()]);
     reader_conn = conns[0];
     icon_conn = conns[1];
     const feeds = await find_pollable_feeds(reader_conn,

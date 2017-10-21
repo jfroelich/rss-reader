@@ -5,7 +5,7 @@
 // filter-helpers.js
 
 function condense_tagnames_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   if(!doc.body) {
     return;

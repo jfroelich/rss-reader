@@ -1,4 +1,7 @@
 'use strict';
+
+// import reader-db.js
+
 async function remove_entries_missing_urls() {
   const channel = new BroadcastChannel('db');
   let count = 0;

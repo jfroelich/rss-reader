@@ -1,11 +1,17 @@
 'use strict';
 
-// Dependencies:
-// debug.js
-// element.js
+// import base/assert.js
+// import base/debug.js
+// import dom/element.js
+
+// TODO: move todos to github issues
 
 // TODO: move patterns into an external configuration file of some sort? or
 // see if patterns can be configured within manifest.json and loaded from there?
+
+// TODO: remove tracking parameters from anchor element href urls for
+// certain origins. Use a blacklist approach that given a certain domain
+// removes certain parameters, and otherwise tolerates all parameters
 
 const LONESTAR_DEBUG = false;
 
@@ -41,6 +47,8 @@ const LONESTAR_PATTERNS = [
 // TODO: tests
 // TODO: deal with the new <picture> element
 function lonestar_filter(doc) {
+  ASSERT(doc instanceof Document);
+
   let num_elements_modified = 0;
 
   // Analysis is limited to descendants of body

@@ -3,7 +3,7 @@
 async function test_archive_entries() {
   console.log('Starting test_archive_entries');
 
-  // TODO: this needs to use idb_open instead of reader_db_open so that it
+  // TODO: this needs to use indexeddb_open instead of reader_db_open so that it
   // can connect to a different database. right now this is hardcoded to
   // connect to the real database.
 

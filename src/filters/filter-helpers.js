@@ -1,20 +1,18 @@
 'use strict';
 
-// Dependencies:
-// assert.js
-// filter-helpers.js
-// element.js
+// import base/assert.js
+// import base/status.js
+// import dom/element.js
 
-
+// TODO: rename to element_unwrap
 // Replace an element with its children. Special care is taken to add spaces
 // if the operation would result in adjacent text nodes.
 function unwrap_element(element) {
+  ASSERT(element instanceof Element);
+  // Calling unwrap on an orphan is always an error
+  ASSERT(element.parentNode, 'orphaned element');
+
   const parent_element = element.parentNode;
-
-  // The caller is responsible for only calling unwrap on elements that have
-  // a parent
-  ASSERT(parent_element, 'Cannot unwrap orphaned element');
-
   const prev_sibling = element.previousSibling;
   const next_sibling = element.nextSibling;
   const first_child = element.firstChild;
@@ -43,7 +41,8 @@ function unwrap_element(element) {
   }
 
   // If next_sibling is undefined then insertBefore appends
-  return parent_element.insertBefore(frag, next_sibling);
+  parent_element.insertBefore(frag, next_sibling);
+  return STATUS_OK;
 }
 
 function unwrap_elements(ancestor_element, selector) {
@@ -74,9 +73,8 @@ function insert_children_before(parent_node, reference_node) {
 function rename_element(element, new_element_name, copy_attrs) {
 
   // According to MDN docs, createElement(null) works like createElement("null")
-  // so to avoid that treat missing name as an error
-  ASSERT(typeof new_element_name === 'string');
-  ASSERT(!new_element_name.includes(' '));
+  // so, to avoid that, treat missing name as an error
+  ASSERT(element_is_valid_name(new_element_name));
 
   if(typeof copy_attrs === 'undefined')
     copy_attrs = true;
@@ -86,6 +84,9 @@ function rename_element(element, new_element_name, copy_attrs) {
     return element;
 
   const parent_element = element.parentNode;
+
+  // Fail silently on orphaned elements. Caller not required to guarantee
+  // parent.
   if(!parent_element)
     return element;
 
@@ -93,11 +94,11 @@ function rename_element(element, new_element_name, copy_attrs) {
   const next_sibling = element.nextSibling;
 
   // Detach the existing node, prior to performing other dom operations, so that
-  // the other operations take place on a detached node. Implicitly, this sets
+  // the other operations take place on a detached node, so that the least
+  // amount of live dom operations are made. Implicitly, this sets
   // parentNode and nextSibling to undefined.
   element.remove();
 
-  // Create the replacement
   const new_element = element.ownerDocument.createElement(new_element_name);
 
   if(copy_attrs) {
@@ -105,10 +106,6 @@ function rename_element(element, new_element_name, copy_attrs) {
   }
 
   // Move children
-  // There does not appear to be a batch node move operation available in the
-  // dom api. I spent some time looking and trying to come up with clever
-  // alternatives, such as to_element.innerHTML = from_element.innerHTML, but
-  // nothing was better.
   let child_node = element.firstChild;
   while(child_node) {
     new_element.appendChild(child_node);
@@ -123,9 +120,14 @@ function rename_element(element, new_element_name, copy_attrs) {
 
 function rename_elements(ancestor_element, old_element_name, new_element_name,
   copy_attrs) {
+
+  // TODO: assertions
+
   if(ancestor_element) {
     const elements = ancestor_element.querySelectorAll(old_element_name);
     for(const element of elements)
       rename_element(element, new_element_name, copy_attrs);
   }
+
+  return STATUS_OK;
 }

@@ -1,5 +1,7 @@
 'use strict';
 
+// import base/assert.js
+
 // Dependencies:
 // ???
 
@@ -11,6 +13,7 @@
 // @param location {String} url of the document
 // @param timeout_ms {Number} timeout per page fetch
 async function multipage_filter(doc, location, timeout_ms) {
+  ASSERT(doc instanceof Document);
   const lca_max_distance = 3;
   const anchors = pagination_find_anchors(doc, location, lca_max_distance);
   if(!anchors.length)

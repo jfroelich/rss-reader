@@ -1,10 +1,12 @@
 'use strict';
 
 // import base/assert.js
+// import http/url.js
 
 // Return true if the first parameter is an image element
 function image_is_image(image) {
   // TODO: implement, maybe use a simple duck type test
+  // TODO: use instanceof?
   return true;
 }
 
@@ -13,18 +15,13 @@ function image_is_image(image) {
 // alternatively rename to image_has_source_attribute
 function image_has_source(image) {
   ASSERT(image_is_image(image));
-  return image.hasAttribute('src') || image.hasAttribute('srcset');
+  return image.hasAttribute('src') || image_has_srcset(image);
 }
 
 // Return true if image has a valid src attribute value
 function image_has_valid_source(image) {
   ASSERT(image_is_image(image));
-  const min_url_length = 2;
-  let src_value = image.getAttribute('src');
-  if(src_value) {
-    src_value = src_value.trim();
-    return (src_value.length > min_url_length) && !src_value.includes(' ');
-  }
+  return url_is_valid(image.getAttribute('src'));
 }
 
 // Return true if image has a non-empty srcset attribute value

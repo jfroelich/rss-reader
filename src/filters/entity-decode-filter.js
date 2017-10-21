@@ -1,7 +1,10 @@
 'use strict';
 
+// import base/assert.js
+// import base/status.js
+
 function entity_decode_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   if(!doc.body) {
     return;
@@ -48,4 +51,6 @@ it works directly on the string itself?
 I'd have to write my own parser i think?
 
 */
+
+  return STATUS_OK;
 }

@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/assert.js
-// import markup/xml.js
+// import xml.js
 // import opml/opml-document.js
 // import opml/opml-outline.js
 

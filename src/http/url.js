@@ -24,7 +24,7 @@ const URL_MIN_SCRIPT_LENGTH = 'javascript:'.length;
 // Returns true if the url has the 'javascript:' protocol
 // @param url {String}
 // @returns {Boolean}
-function url_is_script(url) {
+function url_has_script_protocol(url) {
   // Check url to avoid throwing and reduce calls to regex test
   // Check len to reduce calls to regex test
   return url &&

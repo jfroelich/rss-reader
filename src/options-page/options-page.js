@@ -16,7 +16,7 @@ var options_page_current_section_element;
 
 const options_page_settings_channel = new BroadcastChannel('settings');
 options_page_settings_channel.onmessage = function(event) {
-  console.debug('settings channel message:', event);
+  console.debug('received settings channel message:', event);
   if(event.data === 'changed') {
     entry_css_on_change(event);
   }

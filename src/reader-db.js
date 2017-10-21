@@ -3,7 +3,7 @@
 
 // import base/assert.js
 // import base/debug.js
-// import idb.js
+// import base/indexeddb.js
 
 
 const READER_DB_DEBUG = false;
@@ -13,7 +13,7 @@ const READER_DB_DEBUG = false;
 // @return {IDBDatabase} an open database connection
 function reader_db_open() {
   const name = 'reader', version = 20, timeout_ms = 500;
-  return idb_open(name, version, reader_db_onupgradeneeded, timeout_ms);
+  return indexeddb_open(name, version, reader_db_onupgradeneeded, timeout_ms);
 }
 
 // Helper for reader_db_open. Does the database upgrade. This should never be
@@ -62,7 +62,7 @@ function reader_db_onupgradeneeded(event) {
 // @param conn {IDBDatabase}
 // @param url {String}
 function reader_db_find_feed_id_by_url(conn, url) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   // TODO: stricter assertion, use something from url.js
   ASSERT(typeof url === 'string');
@@ -78,7 +78,7 @@ function reader_db_find_feed_id_by_url(conn, url) {
 }
 
 function reader_db_count_unread_entries(conn) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -96,7 +96,7 @@ function reader_db_count_unread_entries(conn) {
 // @returns {Promise} a promise that resolves to an entry object, or undefined
 // if no matching entry was found
 function reader_db_find_entry_by_id(conn, id) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   // It is important to explicitily guard against the use of an invalid id
   // as otherwise it ambiguous whether a failure is because an entry does not
@@ -118,7 +118,7 @@ function reader_db_find_entry_by_id(conn, id) {
 
 // @param url {String}
 function reader_db_find_entry_by_url(conn, url) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
   ASSERT(typeof url === 'string');
 
   return new Promise(function executor(resolve, reject) {
@@ -132,7 +132,7 @@ function reader_db_find_entry_by_url(conn, url) {
 }
 
 function reader_db_find_entry_ids_by_feed(conn, feed_id) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
   // TODO: assert feed id
 
   return new Promise(function executor(resolve, reject) {
@@ -160,7 +160,7 @@ async function reader_db_find_entries_missing_urls(conn) {
 }
 
 function reader_db_find_feed_by_id(conn, feed_id) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   // TODO: assert feed_id
 
@@ -196,7 +196,7 @@ async function reader_db_find_orphaned_entries(conn) {
 // following error for the call to load entries
 // [Violation] 'success' handler took 164ms
 async function reader_db_find_archivable_entries(conn, max_age_ms) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   ASSERT(Number.isInteger(max_age_ms));
   ASSERT(max_age_ms >= 0);
@@ -213,7 +213,7 @@ async function reader_db_find_archivable_entries(conn, max_age_ms) {
 }
 
 function reader_db_get_entries(conn) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -225,7 +225,7 @@ function reader_db_get_entries(conn) {
 }
 
 function reader_db_get_feeds(conn) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -237,7 +237,7 @@ function reader_db_get_feeds(conn) {
 }
 
 function reader_db_get_feed_ids(conn) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -253,7 +253,7 @@ function reader_db_get_feed_ids(conn) {
 // then using slice or unshift or something to advance. The parameter to getAll
 // might be (offset+limit)
 function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const entries = [];
@@ -291,7 +291,7 @@ function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
 // Returns a Promise that resolves to an array
 // TODO: think of how to merge with load_unarchived_unread_entries
 function reader_db_get_unarchived_unread_entries2(conn) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -305,7 +305,7 @@ function reader_db_get_unarchived_unread_entries2(conn) {
 }
 
 function reader_db_remove_feed_and_entries(conn, feed_id, entry_ids) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');
@@ -320,7 +320,7 @@ function reader_db_remove_feed_and_entries(conn, feed_id, entry_ids) {
 }
 
 function reader_db_put_entry(conn, entry) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   // TODO: assert entry
 
@@ -334,7 +334,7 @@ function reader_db_put_entry(conn, entry) {
 }
 
 function reader_db_put_entries(conn, entries) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const current_date = new Date();
@@ -356,7 +356,7 @@ function reader_db_put_entries(conn, entries) {
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
 function reader_db_put_feed(conn, feed) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
 
   return new Promise(function executor(resolve, reject) {
@@ -375,7 +375,7 @@ function reader_db_put_feed(conn, feed) {
 // TODO: wait to post messages until transaction completes, to avoid
 // premature notification in case of transactional failure
 function reader_db_remove_entries(conn, ids, channel) {
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
 
   const tx = conn.transaction('entry', 'readwrite');
   const promises = [];

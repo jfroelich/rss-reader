@@ -14,9 +14,8 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   // TODO: reintroduce conn parameter to extension_update_badge_text
   extension_update_badge_text();
 
-  let db_name, db_version, db_timeout;
   try {
-    await favicon_setup_db(db_name, db_version, db_timeout);
+    await favicon_setup_db();
   } catch(error) {
     DEBUG(error);
   }

@@ -2,8 +2,15 @@
 
 // import base/assert.js
 
+function file_is_file(file) {
+  // TODO: improve. maybe use file instanceof File?
+  return file;
+}
+
 // Returns a promise that resolves to the text of the file
 function file_read_as_text(file) {
+  ASSERT(file_is_file(file));
+
   return new Promise(function(resolve, reject) {
     const reader = new FileReader();
     reader.readAsText(file);
@@ -14,8 +21,10 @@ function file_read_as_text(file) {
 
 // Returns true if the file has an xml mime type
 // TODO: rename to file_is_type_xml
+// TODO: once inner code delegated to mime.js, deprecate this function and
+// have the caller just call mime_is_xml(file.type)
 function file_is_xml_type(file) {
-  ASSERT(file);
+  ASSERT(file_is_file(file));
 
   const file_type = file.type;
 

@@ -1,7 +1,7 @@
 'use strict';
 
 function container_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   if(!doc.body) {
     return;

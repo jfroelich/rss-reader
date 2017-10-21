@@ -15,7 +15,7 @@ async function archive_entries(conn, max_age_ms) {
   if(typeof max_age_ms === 'undefined')
     max_age_ms = TWO_DAYS_MS;
 
-  ASSERT(idb_conn_is_open(conn));
+  ASSERT(indexeddb_is_open(conn));
   // max_age_ms assertion delegated to reader_db_find_archivable_entries
   // because it is merely forwarded here
 

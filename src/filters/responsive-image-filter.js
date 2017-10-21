@@ -1,14 +1,15 @@
 'use strict';
 
-// import assert.js
-// import image.js
-// import srcset.js
+// import base/assert.js
+// import base/status.js
+// import dom/image.js
+// import dom/srcset.js
 
 function response_image_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   if(!doc.body) {
-    return;
+    return STATUS_OK;
   }
 
   const images = doc.body.getElementsByTagName('img');
@@ -17,6 +18,8 @@ function response_image_filter(doc) {
       responsive_image_filter_image(image);
     }
   }
+
+  return STATUS_OK;
 }
 
 function responsive_image_filter_image(image) {

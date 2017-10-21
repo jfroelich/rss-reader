@@ -1,8 +1,8 @@
 'use strict';
 
-// Dependencies:
-// assert.js
-// element.js
+// import base/assert.js
+// import base/status.js
+// import dom/element.js
 
 const FORMATTING_FILTER_SELECTOR = [
   'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend',
@@ -12,11 +12,13 @@ const FORMATTING_FILTER_SELECTOR = [
 
 
 function formatting_filter(doc) {
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   if(!doc.body) {
-    return;
+    return STATUS_OK;
   }
 
   unwrap_elements(doc.body, FORMATTING_FILTER_SELECTOR);
+
+  return STATUS_OK;
 }

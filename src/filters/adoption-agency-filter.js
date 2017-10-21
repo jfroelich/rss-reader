@@ -33,5 +33,6 @@ function adoption_agency_filter(doc) {
       block.appendChild(ancestor);
     }
   }
+
   return STATUS_OK;
 }

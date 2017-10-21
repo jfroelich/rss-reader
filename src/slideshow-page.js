@@ -1,5 +1,7 @@
 'use strict';
 
+// TODO: deprecate IIAFE
+
 (function(exports){
 
 const SLIDESHOW_DEBUG = false;

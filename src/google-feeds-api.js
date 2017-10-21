@@ -13,12 +13,6 @@
 
 // Hmmm, seems site specific so basically there is no recourse
 
-
-
-
-
-
-
 // Sends a search request to Google and yields a resulting object consisting
 // the properties 'query' and 'entries'. query is a formatted HTML
 // string. entries is an array. entries may be empty but is always defined.
@@ -119,10 +113,6 @@ async function google_feeds_api_search(query_string, timeout_ms) {
   ASSERT(json_result);
   ASSERT(json_result.responseData);
   ASSERT(json_result.responseData.entries);
-
-  //ASSERT(typeof json_result === 'object');
-  //ASSERT(typeof json_result.responseData === 'object');
-  //ASSERT(Array.isArray(json_result.responseData.entries));
 
   const output_response = {};
   output_response.query = json_result.responseData.query || query_string;

@@ -32,10 +32,9 @@ async function alarms_on_archive_alarm() {
 }
 
 async function alarms_on_compact_favicons_alarm() {
-  let name, version, conn_timeout_ms, max_age_ms;
-  let conn;
+  let max_age_ms, conn;
   try {
-    conn = await favicon_open_db(name, version, conn_timeout_ms);
+    conn = await favicon_open_db();
     await favicon_compact_db(conn, max_age_ms);
   } catch(error) {
     if(ALARMS_DEBUG)
