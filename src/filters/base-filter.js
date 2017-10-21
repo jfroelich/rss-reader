@@ -3,8 +3,7 @@
 // import base/assert.js
 
 function base_filter(doc) {
-  // TODO: use document_is_document
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
   const bases = doc.querySelectorAll('base');
   for(const base of bases) {
     base.remove();

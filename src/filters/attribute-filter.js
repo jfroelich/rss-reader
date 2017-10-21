@@ -6,8 +6,7 @@
 // @param whitelist {Object} each property is element name, each value is array
 // of attribute names
 function attribute_filter(doc, whitelist) {
-  // TODO: use document_is_document
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
   const elements = doc.getElementsByTagName('*');
   for(const element of elements) {
     const attribute_names = element.getAttributeNames();

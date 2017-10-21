@@ -5,8 +5,7 @@
 
 // Relocates certain misnested elements
 function adoption_agency_filter(doc) {
-  // TODO: use document_is_document
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
 
   // Restrict analysis to body
   if(!doc.body) {

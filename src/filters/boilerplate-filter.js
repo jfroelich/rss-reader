@@ -60,8 +60,7 @@ const BOILERPLATE_TOKEN_WEIGHTS = {
 
 
 function boilerplate_filter(doc) {
-  // TODO: use document_is_document
-  ASSERT(doc);
+  ASSERT(doc instanceof Document);
   if(!doc.body) {
     return;
   }
