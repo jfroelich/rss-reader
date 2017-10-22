@@ -7,7 +7,6 @@
 // @param url {String}
 // @returns {String}
 function rewrite_url(url) {
-
   ASSERT(typeof url === 'string');
 
   const url_object = new URL(url);

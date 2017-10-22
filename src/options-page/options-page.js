@@ -139,7 +139,7 @@ async function options_page_start_subscription(url) {
 
   try {
     [reader_conn, icon_conn] = await conn_promise;
-    const sub_result = await sub_add(feed, reader_conn, icon_conn);
+    const sub_result = await subscription_add(feed, reader_conn, icon_conn);
     status = sub_result.status;
     subscribed_feed = sub_result.feed;
   } catch(error) {
@@ -526,7 +526,7 @@ async function options_page_unsubscribe_button_on_click(event) {
     reader_conn = await reader_db_open();
 
     // TODO: check status of result
-    const num_entries_deleted = await sub_remove(feed_id, reader_conn);
+    const num_entries_deleted = await subscription_remove(feed_id, reader_conn);
   } catch(error) {
 
     // TODO: visually react to unsubscribe error

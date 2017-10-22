@@ -19,12 +19,6 @@ function mime_get_type_for_extension(extension) {
 
   ASSERT(t_extension === 'string');
 
-  // List adapted partly from
-  // https://chromium.googlesource.com/chromium/src/+/net/base/mime_util.cc
-
-  // Defined inline so as to avoid having the table persist in memory
-  // indefinitely. Let v8 worry about optimization. Also avoids global scope
-  // pollution, and makes the list private.
   const extension_mime_map = {
     'ai':   'application/postscript',
     'aif':  'audio/aiff',
@@ -151,7 +145,10 @@ function mime_from_content_type(content_type) {
   if(semicolon_position !== -1)
     mime_type = content_type.substring(from_index, semicolon_position);
 
-  // Normalize and return, the trim is implicit
+  return mime_normalize(mime_type);
+}
+
+function mime_normalize(mime_type) {
   return string_remove_whitespace(mime_type).toLowerCase();
 }
 

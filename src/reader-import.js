@@ -99,16 +99,16 @@ async function reader_import_file(file, reader_conn, icon_conn) {
   DEBUG('found %d duplicates in file', dup_outline_count, file.name);
 
   for(const outline of unique_outlines) {
-    outline_normalize_htmlurl(outline);
+    opml_outline_normalize_htmlurl(outline);
   }
 
   const feeds = [];
   for(const outline of unique_outlines) {
-    feeds.push(outline_to_feed(outline));
+    feeds.push(opml_outline_to_feed(outline));
   }
 
   // Allow exceptions to bubble
-  const sub_results = await sub_add_all(feeds, reader_conn, icon_conn);
+  const sub_results = await subscription_add_all(feeds, reader_conn, icon_conn);
 
   // Tally successful subscriptions
   let sub_count = 0;

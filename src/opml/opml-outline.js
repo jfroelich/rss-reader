@@ -3,14 +3,12 @@
 // import base/assert.js
 // import rss/feed.js
 
-// TODO: add opml prefix to all globals
-
-function outline_is_outline(outline) {
+function opml_outline_is_outline(outline) {
   return typeof outline === 'object';
 }
 
-function outline_to_feed(outline) {
-  ASSERT(outline_is_outline(outline));
+function opml_outline_to_feed(outline) {
+  ASSERT(opml_outline_is_outline(outline));
 
   const feed = {};
   if(outline.type)
@@ -27,7 +25,7 @@ function outline_to_feed(outline) {
   return feed;
 }
 
-function outline_from_feed(feed) {
+function opml_outline_from_feed(feed) {
   ASSERT(feed_is_feed(feed));
   const outline = {};
   outline.type = feed.type;
@@ -38,27 +36,18 @@ function outline_from_feed(feed) {
   return outline;
 }
 
-function outline_element_has_valid_type(element) {
-
-  // TODO: skip the trim, change the regex to tolerate whitespace
-
-  let type = element.getAttribute('type');
-  if(type) {
-    type = type.trim();
-    if(type) {
-      return /rss|rdf|feed/i.test(type);
-    }
-  }
-
-  return false;
+function opml_outline_element_has_valid_type(element) {
+  ASSERT(element instanceof Element);
+  const TYPE_PATTERN = /\s*(rss|rdf|feed)\s*/i;
+  return TYPE_PATTERN.test(element.getAttribute('type'));
 }
 
-function outline_element_has_xmlurl(element) {
+function opml_outline_element_has_xmlurl(element) {
   let xml_url = element.getAttribute('xmlUrl');
   return xml_url && xml_url.trim();
 }
 
-function outline_element_normalize_xmlurl(element) {
+function opml_outline_element_normalize_xmlurl(element) {
   let url = element.getAttribute('xmlUrl');
   if(url) {
     try {
@@ -70,8 +59,8 @@ function outline_element_normalize_xmlurl(element) {
   }
 }
 
-function outline_normalize_htmlurl(outline) {
-  ASSERT(outline_is_outline(outline));
+function opml_outline_normalize_htmlurl(outline) {
+  ASSERT(opml_outline_is_outline(outline));
 
   if(outline.htmlUrl === undefined) {
     return;
@@ -97,9 +86,9 @@ function outline_normalize_htmlurl(outline) {
   }
 }
 
-function outline_to_element(doc, outline) {
+function opml_outline_to_element(doc, outline) {
   ASSERT(doc instanceof Document);
-  ASSERT(outline_is_outline(outline));
+  ASSERT(opml_outline_is_outline(outline));
 
   const element = doc.createElement('outline');
   if(outline.type)
@@ -117,7 +106,7 @@ function outline_to_element(doc, outline) {
   return element;
 }
 
-function outline_element_to_object(element) {
+function opml_outline_element_to_object(element) {
   const object = {};
   object.description = element.getAttribute('description');
   object.htmlUrl = element.getAttribute('htmlUrl');

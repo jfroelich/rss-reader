@@ -91,7 +91,7 @@ function opml_get_outline_objects(doc) {
   const elements = opml_get_outline_elements(doc);
   const objects = [];
   for(const element of elements)
-    objects.push(outline_element_to_object(element));
+    objects.push(opml_outline_element_to_object(element));
   return objects;
 }
 
@@ -102,7 +102,7 @@ function opml_remove_outlines_with_invalid_types(doc) {
 
   const initial_length = elements.length;
   for(const element of elements) {
-    if(!outline_element_has_valid_type(element)) {
+    if(!opml_outline_element_has_valid_type(element)) {
       element.remove();
     }
   }
@@ -115,7 +115,7 @@ function opml_remove_outlines_missing_xmlurls(doc) {
 
   const outlines = opml_get_outline_elements(doc);
   for(const outline of outlines) {
-    if(!outline_element_has_xmlurl(outline)) {
+    if(!opml_outline_element_has_xmlurl(outline)) {
       outline.remove();
     }
   }
@@ -127,13 +127,13 @@ function opml_normalize_outline_xmlurls(doc) {
 
   const outlines = opml_get_outline_elements(doc);
   for(const outline of outlines) {
-    outline_element_normalize_xmlurl(outline);
+    opml_outline_element_normalize_xmlurl(outline);
   }
   return STATUS_OK;
 }
 
 function opml_document_append_outline_object(doc, outline) {
-  opml_append_outline_element(doc, outline_to_element(doc, outline));
+  opml_append_outline_element(doc, opml_outline_to_element(doc, outline));
 }
 
 function opml_append_outline_element(doc, element) {

@@ -4,13 +4,15 @@
 // import base/assert.js
 // import base/debug.js
 // import base/indexeddb.js
+// import http/url.js
+// import rss/feed.js
+// import rss/entry.js
 
 
 const READER_DB_DEBUG = false;
 
 // Opens a connection to the reader-db database
-// @throws {Error} if a connection error occurs
-// @return {IDBDatabase} an open database connection
+// @return {Promise} a promise that resolves to an open database connection
 function reader_db_open() {
   const name = 'reader', version = 20, timeout_ms = 500;
   return indexeddb_open(name, version, reader_db_onupgradeneeded, timeout_ms);
@@ -18,7 +20,6 @@ function reader_db_open() {
 
 // Helper for reader_db_open. Does the database upgrade. This should never be
 // called directly. To do an upgrade, call open with a higher version number.
-// @private
 function reader_db_onupgradeneeded(event) {
   const conn = event.target.result;
   const tx = event.target.transaction;
@@ -63,9 +64,7 @@ function reader_db_onupgradeneeded(event) {
 // @param url {String}
 function reader_db_find_feed_id_by_url(conn, url) {
   ASSERT(indexeddb_is_open(conn));
-
-  // TODO: stricter assertion, use something from url.js
-  ASSERT(typeof url === 'string');
+  ASSERT(url_is_valid(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -97,17 +96,9 @@ function reader_db_count_unread_entries(conn) {
 // if no matching entry was found
 function reader_db_find_entry_by_id(conn, id) {
   ASSERT(indexeddb_is_open(conn));
+  ASSERT(entry_is_valid_id(id));
 
-  // It is important to explicitily guard against the use of an invalid id
-  // as otherwise it ambiguous whether a failure is because an entry does not
-  // exist or because the id was incorrect
-  // This is done outside of the promise because this is a violation of an
-  // invariant condition.
-  ASSERT(entry_is_valid_id(id), 'Invalid entry id');
-
-  return new Promise(function(resolve, reject) {
-    // If conn is undefined the next line fails. In the context of a promise
-    // this is a swallowed exception that is equivalent to a rejection.
+  return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const request = store.get(id);
@@ -119,7 +110,7 @@ function reader_db_find_entry_by_id(conn, id) {
 // @param url {String}
 function reader_db_find_entry_by_url(conn, url) {
   ASSERT(indexeddb_is_open(conn));
-  ASSERT(typeof url === 'string');
+  ASSERT(url_is_valid(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -133,7 +124,7 @@ function reader_db_find_entry_by_url(conn, url) {
 
 function reader_db_find_entry_ids_by_feed(conn, feed_id) {
   ASSERT(indexeddb_is_open(conn));
-  // TODO: assert feed id
+  ASSERT(feed_is_valid_feed_id(feed_id));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -151,6 +142,7 @@ function reader_db_find_entry_ids_by_feed(conn, feed_id) {
 // Maybe using a cursor walk instead of get all avoids this?
 // Maybe introduce a limit on the number of entries fetched
 async function reader_db_find_entries_missing_urls(conn) {
+  // NOTE: conn sanity delegated to get entries call
   const entries = await reader_db_get_entries(conn);
   const invalid_entries = [];
   for(const entry of entries)
@@ -161,8 +153,7 @@ async function reader_db_find_entries_missing_urls(conn) {
 
 function reader_db_find_feed_by_id(conn, feed_id) {
   ASSERT(indexeddb_is_open(conn));
-
-  // TODO: assert feed_id
+  ASSERT(feed_is_valid_feed_id(feed_id));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -255,6 +246,8 @@ function reader_db_get_feed_ids(conn) {
 function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
   ASSERT(indexeddb_is_open(conn));
 
+  // TODO: validate offset and limit
+
   return new Promise(function executor(resolve, reject) {
     const entries = [];
     let counter = 0;
@@ -306,23 +299,27 @@ function reader_db_get_unarchived_unread_entries2(conn) {
 
 function reader_db_remove_feed_and_entries(conn, feed_id, entry_ids) {
   ASSERT(indexeddb_is_open(conn));
+  ASSERT(feed_is_valid_feed_id(feed_id));
+  ASSERT(Array.isArray(entry_ids));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
+
     const feed_store = tx.objectStore('feed');
     feed_store.delete(feed_id);
+
     const entry_store = tx.objectStore('entry');
-    for(const entry_id of entry_ids)
+    for(const entry_id of entry_ids) {
       entry_store.delete(entry_id);
+    }
   });
 }
 
 function reader_db_put_entry(conn, entry) {
   ASSERT(indexeddb_is_open(conn));
-
-  // TODO: assert entry
+  ASSERT(entry_is_entry(entry));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
@@ -335,6 +332,7 @@ function reader_db_put_entry(conn, entry) {
 
 function reader_db_put_entries(conn, entries) {
   ASSERT(indexeddb_is_open(conn));
+  ASSERT(Array.isArray(entries));
 
   return new Promise(function executor(resolve, reject) {
     const current_date = new Date();
@@ -357,7 +355,7 @@ function reader_db_put_entries(conn, entries) {
 // @param feed {Object} the feed object to add
 function reader_db_put_feed(conn, feed) {
   ASSERT(indexeddb_is_open(conn));
-
+  ASSERT(feed_is_feed(feed));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed', 'readwrite');
@@ -376,11 +374,13 @@ function reader_db_put_feed(conn, feed) {
 // premature notification in case of transactional failure
 function reader_db_remove_entries(conn, ids, channel) {
   ASSERT(indexeddb_is_open(conn));
+  ASSERT(Array.isArray(ids));
 
   const tx = conn.transaction('entry', 'readwrite');
   const promises = [];
-  for(const id of ids)
+  for(const id of ids) {
     promises.push(reader_db_remove_entry(tx, id, channel));
+  }
   return Promise.all(promises);
 }
 

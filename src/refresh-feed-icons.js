@@ -1,5 +1,9 @@
 'use strict';
 
+// import base/debug.js
+// import reader-db.js
+// import favicon.js
+
 (function(exports) {
 
 // Scans through all the feeds in the database and attempts to update each

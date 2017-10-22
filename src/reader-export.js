@@ -1,9 +1,9 @@
 'use strict';
 
 // import base/assert.js
-// import xml.js
 // import opml/opml-document.js
 // import opml/opml-outline.js
+// import xml.js
 
 // Triggers the download of an OPML-formatted file containing the given feeds
 // @param feeds {Array}
@@ -17,7 +17,7 @@ async function reader_export_feeds(feeds, title, file_name) {
   opml_document_set_title(doc, title);
 
   for(const feed of feeds) {
-    opml_document_append_outline_object(doc, outline_from_feed(feed));
+    opml_document_append_outline_object(doc, opml_outline_from_feed(feed));
   }
 
   const blob = xml_to_blob(doc);

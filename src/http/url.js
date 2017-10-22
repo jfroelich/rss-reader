@@ -141,13 +141,12 @@ function url_path_get_extension(path) {
 function url_sniff_is_binary(url) {
   ASSERT(url_is_url_object(url));
 
-  const path = url.pathname;
-
-  // Auto-classify all data url objects are probably non binary
+  // Assume data url objects are probably non binary
   if(url.protocol === 'data:') {
     return false;
   }
 
+  const path = url.pathname;
   const extension = url_path_get_extension(path);
   if(!extension)
     return false;
@@ -160,15 +159,6 @@ function url_sniff_is_binary(url) {
   // All mime types resulting from the lookup should contain a slash.
   // This is an extra check
   ASSERT(slash_position !== -1);
-
-  // TODO: incorrect in several cases (e.g. application/javascript is text)
-  // Basically, testing against the super type is too simple of a solution to
-  // the problem, because it is ignoring the fact that certain generally
-  // binary super types correspond to textual resources. Not a high priority
-  // because of how mime types are checked when fetching, the cost of false
-  // positives or false negatives is not high, it simply prevents some
-  // function in the poll module from exiting earlier than it could. However,
-  // I want to be correct.
 
   const super_type = mime_type.substring(0, slash_position);
   const bin_super_types = ['application', 'audio', 'image', 'video'];
@@ -183,7 +173,6 @@ function url_file_name_filter_extension(file_name) {
 
 function url_path_get_file_name(path) {
   ASSERT(url_path_is_valid(path));
-
   const index = path.lastIndexOf('/');
   if(index > -1) {
     const index_plus_1 = index + 1;

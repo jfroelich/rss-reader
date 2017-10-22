@@ -10,21 +10,18 @@
 // import favicon.js
 // import reader-db.js
 
-
-// TODO: if the prefix is sub, then the file should be called sub.js.
-// Otherwise, functions should use the file name as prefix.
-
-
 // Returns a result object with properties status and feed. feed is only defined
-// if status === STATUS_OK. feed is a copy of the inserted feed, which
-// includes its new id.
+// if status is ok. feed is a copy of the inserted feed, which includes its new
+// id.
 // TODO: return array instead of object for simpler destructuring
-async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
+async function subscription_add(feed, reader_conn, icon_conn, timeout_ms,
+  notify) {
+
   ASSERT(feed_is_feed(feed));
   ASSERT(indexeddb_is_open(reader_conn));
   ASSERT(indexeddb_is_open(icon_conn));
 
-  DEBUG('called sub_add with feed', feed);
+  DEBUG('called subscription_add with feed', feed);
 
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 2000;
@@ -34,14 +31,15 @@ async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
   const url_string = feed_get_top_url(feed);
   ASSERT(url_string);
 
-  let status = await sub_url_is_unique(url_string, reader_conn);
-  if(status !== STATUS_OK)
+  let status = await subscription_url_is_unique(url_string, reader_conn);
+  if(status !== STATUS_OK) {
     return {'status' : status};
+  }
 
   // skip the favicon lookup while offline
   // TODO: maybe should not skip if cache-only lookup could still work
   if('onLine' in navigator && !navigator.onLine) {
-    return await sub_put_feed(feed, reader_conn, notify);
+    return await subscription_put_feed(feed, reader_conn, notify);
   }
 
   let response;
@@ -56,9 +54,11 @@ async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
   ASSERT(response);
 
   if(response.redirected) {
-    status = await sub_url_is_unique(response.response_url, reader_conn);
-    if(status !== STATUS_OK)
+    status = await subscription_url_is_unique(response.response_url,
+      reader_conn);
+    if(status !== STATUS_OK) {
       return {'status' : status};
+    }
 
     // TODO: when and where is redirect url appended to feed's url list?? I am
     // not entirely sure I ever did this. This should be happening. Does it
@@ -82,11 +82,12 @@ async function sub_add(feed, reader_conn, icon_conn, timeout_ms, notify) {
   } catch(error) {
   }
 
-  return await sub_put_feed(merged_feed, reader_conn, notify);
+  return await subscription_put_feed(merged_feed, reader_conn, notify);
 }
 
-// Return the status. Return ok if not already exists
-async function sub_url_is_unique(url_string, reader_conn) {
+// Return the status. Return ok if not already exists. Returns not ok if
+// exists or error.
+async function subscription_url_is_unique(url_string, reader_conn) {
   try {
     if(await reader_db_find_feed_id_by_url(reader_conn, url_string))
       return ERR_DB_OP;
@@ -97,8 +98,8 @@ async function sub_url_is_unique(url_string, reader_conn) {
   return STATUS_OK;
 }
 
-async function sub_put_feed(feed, reader_conn, notify) {
-  const storable_feed = sub_feed_prep(feed);
+async function subscription_put_feed(feed, reader_conn, notify) {
+  const storable_feed = subscription_feed_prep(feed);
   let new_id;
   try {
     new_id = await reader_db_put_feed(reader_conn, storable_feed);
@@ -108,11 +109,11 @@ async function sub_put_feed(feed, reader_conn, notify) {
   }
 
   storable_feed.id = new_id;
-  sub_notify_add(storable_feed, notify);
+  subscription_notify_add(storable_feed, notify);
   return {'status': STATUS_OK, 'feed': storable_feed};
 }
 
-function sub_notify_add(feed, notify) {
+function subscription_notify_add(feed, notify) {
   'use strict';
   if(!notify) return;
   const title = 'Subscribed';
@@ -122,7 +123,7 @@ function sub_notify_add(feed, notify) {
 }
 
 // Creates a shallow copy of the input feed suitable for storage
-function sub_feed_prep(feed) {
+function subscription_feed_prep(feed) {
   'use strict';
   let storable = feed_sanitize(feed);
   storable = object_filter_empty_props(storable);
@@ -135,13 +136,12 @@ function sub_feed_prep(feed) {
 // to an error, that subscription and all later subscriptions are ignored,
 // but earlier ones are committed. If a subscription fails but not for an
 // exceptional reason, then it is skipped.
-function sub_add_all(feeds, reader_conn, icon_conn, timeout_ms) {
-  // TODO: better handling of notifications, maybe a single batch notification
-  // For now, no notifications for batch subscriptions
+// TODO: do a single notification?
+function subscription_add_all(feeds, reader_conn, icon_conn, timeout_ms) {
   const notify = false;
   const promises = [];
   for(const feed of feeds) {
-    const promise = sub_add(feed, reader_conn, icon_conn, timeout_ms,
+    const promise = subscription_add(feed, reader_conn, icon_conn, timeout_ms,
       notify);
     promises.push(promise);
   }
@@ -152,7 +152,7 @@ function sub_add_all(feeds, reader_conn, icon_conn, timeout_ms) {
 // @param conn {IDBDatabase} an open database connection
 // @param feed_id {Number} id of feed to unscubscribe
 // TODO: return a subscription result object instead of number of entries
-async function sub_remove(feed_id, conn) {
+async function subscription_remove(feed_id, conn) {
   DEBUG('unsub', feed_id);
   ASSERT(feed_is_valid_feed_id(feed_id));
 

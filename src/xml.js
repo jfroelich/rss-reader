@@ -45,6 +45,6 @@ function xml_to_blob(doc) {
   const xml_string = xml_to_string(doc);
   const options = {'type': mime_type};
 
-  // TODO: is the [] required?
-  return new Blob([xml_string], options);
+  const parts_array = [xml_string];
+  return new Blob(parts_array, options);
 }
