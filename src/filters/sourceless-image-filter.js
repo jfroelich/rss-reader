@@ -1,10 +1,9 @@
 'use strict';
 
-// import base/assert.js
 // import base/status.js
 
 function sourcless_image_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   if(!doc.body) {
     return STATUS_OK;

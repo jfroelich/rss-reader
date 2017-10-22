@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import base/debug.js
 // import dom/element.js
 
@@ -47,7 +46,7 @@ const LONESTAR_PATTERNS = [
 // TODO: tests
 // TODO: deal with the new <picture> element
 function lonestar_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   let num_elements_modified = 0;
 

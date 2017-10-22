@@ -1,12 +1,11 @@
 'use strict';
 
-// import base/assert.js
 // import base/status.js
 // import dom/element.js
 // import filters/filter-helpers.js
 
 function table_filter(doc, row_scan_limit) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   if(!doc.body) {
     return STATUS_OK;

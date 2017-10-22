@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 // import base/string.js
 
 // TODO: mime is not http only, this file should be moved
@@ -17,7 +17,7 @@ function mime_get_type_for_extension(extension) {
   if(t_extension === 'undefined' || extension === null)
     return;
 
-  ASSERT(t_extension === 'string');
+  console.assert(t_extension === 'string');
 
   const extension_mime_map = {
     'ai':   'application/postscript',
@@ -134,7 +134,7 @@ function mime_from_content_type(content_type) {
   const t_content_type = typeof content_type;
   if(t_content_type === 'undefined')
     return;
-  ASSERT(t_content_type === 'string');
+  console.assert(t_content_type === 'string');
   let mime_type = content_type;
 
   // Strip the character encoding, if present. The substring gets all

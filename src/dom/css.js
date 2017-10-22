@@ -1,15 +1,13 @@
 'use strict';
 
-// import base/assert.js
-
 // Returns the first matching css rule within the given sheet, or undefined if
 // no rules match.
 //
 // @param sheet css style sheet
 // @param selector_text {String}
-// @returns rule
+// @returns rule {???}
 function css_find_rule(sheet, selector_text) {
-  ASSERT(sheet);
+  console.assert(sheet);
 
   for(const rule of sheet.cssRules) {
     if(rule.selectorText === selector_text) {

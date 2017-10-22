@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 // import reader-db.js
 
 
@@ -170,7 +170,7 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
   fetch_feed_timeout_ms, ignore_modified_check, fetch_html_timeout_ms,
   fetch_img_timeout_ms) {
 
-  ASSERT(feed_is_feed(local_feed));
+  console.assert(feed_is_feed(local_feed));
 
   const url_string = feed_get_top_url(local_feed);
   const accept_html = true;

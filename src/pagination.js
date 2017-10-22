@@ -3,7 +3,6 @@
 // import dom/node.js
 // import dom/domvis.js
 
-
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other
 // properties
@@ -15,7 +14,7 @@
 // @param doc {HTMLDocument}
 // @param location {String} url location of the document
 function pagination_find_anchors(doc, location, lca_max_distance) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   const candidates = pagination_find_candidate_anchors(doc, location);
   if(!candidates.length)
@@ -90,7 +89,7 @@ function pagination_is_candidate_anchor(anchor_element, base_url) {
 
 // Returns the anchor's href attribute value as a URL object, or undefined
 function pagination_get_href_url(anchor_element, base_url) {
-  ASSERT(base_url);
+  console.assert(base_url);
 
   let href = anchor_element.getAttribute('href');
 
@@ -153,7 +152,7 @@ function pagination_get_partial_path(path) {
 function pagination_find_anchor_sequences(anchor_elements, lca_max_distance) {
   const num_anchors = anchor_elements.length;
 
-  ASSERT(num_anchors > 0);
+  console.assert(num_anchors > 0);
 
 
   const minlen = 1, maxlen = 51; // exclusive end points

@@ -1,10 +1,9 @@
 'use strict';
 
-// import base/assert.js
 // import base/status.js
 
 function pi_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   // TODO: filter processing instruction.
 

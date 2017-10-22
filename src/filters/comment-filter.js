@@ -1,9 +1,7 @@
 'use strict';
 
-// import base/assert.js
-
 function comment_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   const it = doc.createNodeIterator(doc.documentElement,
     NodeFilter.SHOW_COMMENT);

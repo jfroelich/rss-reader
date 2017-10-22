@@ -1,10 +1,9 @@
 'use strict';
 
-// import base/assert.js
 // import base/string.js
 
 function article_title_filter_publisher(title) {
-  ASSERT(typeof title === 'string');
+  console.assert(typeof title === 'string');
 
   // Look for a delimiter
   let index = title.lastIndexOf(' - ');

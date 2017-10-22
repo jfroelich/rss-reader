@@ -1,12 +1,11 @@
 'use strict';
 
-// import base/assert.js
 // import base/status.js
 // import dom/image.js
 // import dom/srcset.js
 
 function response_image_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   if(!doc.body) {
     return STATUS_OK;

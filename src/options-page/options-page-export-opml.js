@@ -20,7 +20,7 @@ async function options_page_export_opml() {
       conn.close();
   }
 
-  ASSERT(feeds);
+  console.assert(feeds);
 
   const status = await reader_export_feeds(feeds, title, file_name);
   return status;

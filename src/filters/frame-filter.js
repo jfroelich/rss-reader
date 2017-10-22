@@ -1,14 +1,12 @@
 'use strict';
 
-// Dependencies:
-// assert.js
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
 
 // TODO: write tests
 function frame_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   let body_element = doc.body;
   if(!body_element)

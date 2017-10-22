@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import base/debug.js
 // import dom/image.js
 // import http/url.js
@@ -8,7 +7,7 @@
 const LAZY_IMAGE_FILTER_DEBUG = false;
 
 function lazy_image_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   const lazy_img_attrs = [
     'load-src',

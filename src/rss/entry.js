@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 // import base/debug.js
 // import base/number.js
 // import base/sizeof.js
@@ -27,8 +27,8 @@ function entry_is_valid_id(id) {
 // Returns the most last url, as a string, in the entry's url list. Throws an
 // error if the entry does not have urls.
 function entry_get_top_url(entry) {
-  ASSERT(entry_is_entry(entry));
-  ASSERT(entry_has_url(entry));
+  console.assert(entry_is_entry(entry));
+  console.assert(entry_has_url(entry));
   return entry.urls[entry.urls.length - 1];
 }
 
@@ -52,13 +52,13 @@ function entry_append_url(entry, url_string) {
 }
 
 function entry_has_url(entry) {
-  ASSERT(entry_is_entry(entry));
+  console.assert(entry_is_entry(entry));
   return entry.urls && entry.urls.length;
 }
 
 // Checks the initial url
 function entry_has_valid_url(entry) {
-  ASSERT(entry_is_entry(entry));
+  console.assert(entry_is_entry(entry));
 
   // The entry may be initialized but not have any urls at all
   if(!entry_has_url(entry)) {
@@ -83,7 +83,7 @@ function entry_has_valid_url(entry) {
 // Returns a new entry object where fields have been sanitized. Impure
 function entry_sanitize(input_entry, author_max_len, title_max_len,
   content_max_length) {
-  ASSERT(entry_is_entry(input_entry));
+  console.assert(entry_is_entry(input_entry));
 
   if(typeof author_max_len === 'undefined')
     author_max_len = 200;
@@ -92,9 +92,9 @@ function entry_sanitize(input_entry, author_max_len, title_max_len,
   if(typeof content_max_length === 'undefined')
     content_max_length = 50000;
 
-  ASSERT(number_is_positive_integer(author_max_len));
-  ASSERT(number_is_positive_integer(title_max_len));
-  ASSERT(number_is_positive_integer(content_max_length));
+  console.assert(number_is_positive_integer(author_max_len));
+  console.assert(number_is_positive_integer(title_max_len));
+  console.assert(number_is_positive_integer(content_max_length));
 
   const output_entry = Object.assign({}, input_entry);
 

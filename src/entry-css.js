@@ -1,7 +1,5 @@
 'use strict';
 
-// import base/assert.js
-
 const ENTRY_CSS_DEBUG = false;
 
 // Get the current settings from local storage and then modify the css rules
@@ -13,7 +11,7 @@ function entry_css_on_change(event) {
   }
 
   const sheet = css_get_default_sheet();
-  ASSERT(sheet);
+  console.assert(sheet);
   entry_css_update_rule(sheet);
   entry_css_update_title_rule(sheet);
   entry_css_update_content_rule(sheet);
@@ -28,7 +26,7 @@ function entry_css_init() {
   }
 
   const sheet = css_get_default_sheet();
-  ASSERT(sheet);
+  console.assert(sheet);
   sheet.addRule('div.entry', entry_css_create_entry_rule_text());
 
   // TODO: convert these two to be live above statement
@@ -128,9 +126,9 @@ function entry_css_add_content_rule(sheet) {
 }
 
 function entry_css_update_rule(sheet) {
-  ASSERT(sheet);
+  console.assert(sheet);
   const rule = css_find_rule(sheet, 'div.entry');
-  ASSERT(rule);
+  console.assert(rule);
   const style = rule.style;
 
   const path = localStorage.BG_IMAGE;
@@ -152,9 +150,9 @@ function entry_css_update_rule(sheet) {
 }
 
 function entry_css_update_title_rule(sheet) {
-  ASSERT(sheet);
+  console.assert(sheet);
   const rule = css_find_rule(sheet, 'div.entry a.entry-title');
-  ASSERT(rule);
+  console.assert(rule);
   const style = rule.style;
 
   style.background = '';
@@ -167,9 +165,9 @@ function entry_css_update_title_rule(sheet) {
 }
 
 function entry_css_update_content_rule(sheet) {
-  ASSERT(sheet);
+  console.assert(sheet);
   const rule = css_find_rule(sheet, 'div.entry span.entry-content');
-  ASSERT(rule);
+  console.assert(rule);
 
   rule.style.background = '';
 

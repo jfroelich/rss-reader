@@ -1,9 +1,7 @@
 'use strict';
 
-// import base/assert.js
-
-// Dependencies:
-// ???
+// import http/fetch.js
+// import pagination.js
 
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a
@@ -13,17 +11,16 @@
 // @param location {String} url of the document
 // @param timeout_ms {Number} timeout per page fetch
 async function multipage_filter(doc, location, timeout_ms) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
   const lca_max_distance = 3;
   const anchors = pagination_find_anchors(doc, location, lca_max_distance);
   if(!anchors.length)
     return;
 
   const urls = [];
-  for(const anchor of anchors)
+  for(const anchor of anchors) {
     urls.push(anchor.getAttribute('href'));
-
-  // TODO: delegate to fetch_html in fetch.js
+  }
 
   async function fetch_and_parse_html(url, timeout_ms) {
     const parser = new DOMParser();

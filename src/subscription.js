@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import base/debug.js
 // import base/object.js
 // import fetch/fetch.js
@@ -17,9 +16,9 @@
 async function subscription_add(feed, reader_conn, icon_conn, timeout_ms,
   notify) {
 
-  ASSERT(feed_is_feed(feed));
-  ASSERT(indexeddb_is_open(reader_conn));
-  ASSERT(indexeddb_is_open(icon_conn));
+  console.assert(feed_is_feed(feed));
+  console.assert(indexeddb_is_open(reader_conn));
+  console.assert(indexeddb_is_open(icon_conn));
 
   DEBUG('called subscription_add with feed', feed);
 
@@ -29,7 +28,7 @@ async function subscription_add(feed, reader_conn, icon_conn, timeout_ms,
     notify = true;
 
   const url_string = feed_get_top_url(feed);
-  ASSERT(url_string);
+  console.assert(url_string);
 
   let status = await subscription_url_is_unique(url_string, reader_conn);
   if(status !== STATUS_OK) {
@@ -51,7 +50,7 @@ async function subscription_add(feed, reader_conn, icon_conn, timeout_ms,
   }
 
   // If fetch_feed did not throw then response should always be defined.
-  ASSERT(response);
+  console.assert(response);
 
   if(response.redirected) {
     status = await subscription_url_is_unique(response.response_url,
@@ -154,7 +153,7 @@ function subscription_add_all(feeds, reader_conn, icon_conn, timeout_ms) {
 // TODO: return a subscription result object instead of number of entries
 async function subscription_remove(feed_id, conn) {
   DEBUG('unsub', feed_id);
-  ASSERT(feed_is_valid_feed_id(feed_id));
+  console.assert(feed_is_valid_feed_id(feed_id));
 
   // TODO: assert conn open. How do I check if an instance of IDBDatabase is
   // open? I am not seeing any details on MDB. Check spec.

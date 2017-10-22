@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import filters/transform-helpers.js
 
 // TODO: restrict children of list to proper child type. E.g. only allow li
@@ -8,7 +7,7 @@
 // like move such items to within a new child
 
 function list_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   if(!doc.body) {
     return;
@@ -107,7 +106,7 @@ function list_filter_unwrap_single_item_list(list) {
   // This is overly simple and could lead to data loss, but it is based
   // on the assumption that empty lists are properly handled in the first
   // place earlier. Basically, this should never happen and should almost
-  // be an ASSERT.
+  // be an console.assert.
   if(!item) {
     list.remove();
     return;

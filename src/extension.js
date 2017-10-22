@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import base/debug.js
 
 const EXTENSION_DEBUG = false;

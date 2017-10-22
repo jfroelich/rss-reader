@@ -1,7 +1,5 @@
 'use strict';
 
-// import base/assert.js
-
 // TODO: maybe inline iframes or replace with a message instead of simply
 // removing.
 // TODO: maybe special case for handling embedded video, and even more specific
@@ -9,7 +7,7 @@
 
 // Remove iframes
 function iframe_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   // Only look at frames within body. If body not present then nothing to do.
   if(!doc.body) {

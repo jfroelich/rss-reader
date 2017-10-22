@@ -1,10 +1,7 @@
 'use strict';
 
-// Dependencies:
-// assert.js
-
 function invalid_anchor_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   // Restrict to body descendants
   if(!doc.body) {

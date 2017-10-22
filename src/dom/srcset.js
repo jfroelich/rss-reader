@@ -1,13 +1,12 @@
 'use strict';
 
-// import base/assert.js
 // import third-party/parseSrcset.js
 
 // @param descriptors {Array} an array of descriptors such as those produced
 // by parseSrcset (third party library)
 // @returns {String} a string suitable for storing as srcset attribute value
 function srcset_serialize(descriptors) {
-  ASSERT(Array.isArray(descriptors));
+  console.assert(Array.isArray(descriptors));
 
   const descriptor_strings = [];
   for(const descriptor of descriptors) {
@@ -33,18 +32,19 @@ function srcset_serialize(descriptors) {
   return descriptor_strings.join(', ');
 }
 
-// Returns an array of descriptor objects
-// Does not throw. Any errors result in an empty array returned instead.
-function srcset_parse_from_string(srcset_string) {
+// Returns an array of descriptor objects. If the input is bad, or an error
+// occurs, returns an empty array.
+// @param srcset {String}
+function srcset_parse_from_string(srcset) {
   const fallback_output = [];
 
-  if(typeof srcset_string !== 'string') {
+  if(typeof srcset !== 'string') {
     return fallback_output;
   }
 
   let descriptors;
   try {
-    descriptors = parseSrcset(srcset_string);
+    descriptors = parseSrcset(srcset);
   } catch(error) {
     return fallback_output;
   }

@@ -1,10 +1,9 @@
 'use strict';
 
-// import base/assert.js
 // import base/status.js
 
 function semantic_filter(doc) {
-  ASSERT(doc);
+  console.assert(doc);
 
   if(!doc.body) {
     return;

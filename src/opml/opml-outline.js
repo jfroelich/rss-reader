@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 // import rss/feed.js
 
 function opml_outline_is_outline(outline) {
@@ -8,7 +8,7 @@ function opml_outline_is_outline(outline) {
 }
 
 function opml_outline_to_feed(outline) {
-  ASSERT(opml_outline_is_outline(outline));
+  console.assert(opml_outline_is_outline(outline));
 
   const feed = {};
   if(outline.type)
@@ -26,7 +26,7 @@ function opml_outline_to_feed(outline) {
 }
 
 function opml_outline_from_feed(feed) {
-  ASSERT(feed_is_feed(feed));
+  console.assert(feed_is_feed(feed));
   const outline = {};
   outline.type = feed.type;
   outline.xmlUrl = feed_get_top_url(feed);
@@ -37,7 +37,7 @@ function opml_outline_from_feed(feed) {
 }
 
 function opml_outline_element_has_valid_type(element) {
-  ASSERT(element instanceof Element);
+  console.assert(element instanceof Element);
   const TYPE_PATTERN = /\s*(rss|rdf|feed)\s*/i;
   return TYPE_PATTERN.test(element.getAttribute('type'));
 }
@@ -60,7 +60,7 @@ function opml_outline_element_normalize_xmlurl(element) {
 }
 
 function opml_outline_normalize_htmlurl(outline) {
-  ASSERT(opml_outline_is_outline(outline));
+  console.assert(opml_outline_is_outline(outline));
 
   if(outline.htmlUrl === undefined) {
     return;
@@ -87,8 +87,8 @@ function opml_outline_normalize_htmlurl(outline) {
 }
 
 function opml_outline_to_element(doc, outline) {
-  ASSERT(doc instanceof Document);
-  ASSERT(opml_outline_is_outline(outline));
+  console.assert(doc instanceof Document);
+  console.assert(opml_outline_is_outline(outline));
 
   const element = doc.createElement('outline');
   if(outline.type)

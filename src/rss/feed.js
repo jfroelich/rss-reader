@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 
 function feed_create() {
   return {};
@@ -18,7 +18,7 @@ function feed_is_valid_feed_id(id) {
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
 function feed_get_top_url(feed) {
-  ASSERT(feed && feed.urls && feed.urls.length);
+  console.assert(feed && feed.urls && feed.urls.length);
   return feed.urls[feed.urls.length - 1];
 }
 
@@ -38,7 +38,7 @@ function feed_append_url(feed, url_string) {
 // Creates a url object that can be used as input to favicon_lookup
 // @returns {URL}
 function feed_create_icon_lookup_url(feed) {
-  ASSERT(feed_is_feed(feed));
+  console.assert(feed_is_feed(feed));
 
   // Cannot assume the link is set nor valid
   if(feed.link) {
@@ -77,22 +77,22 @@ async function feed_update_favicon(feed, icon_conn) {
 // TODO: assert feed has one or more urls
 // TODO: assert the type of each property?
 function feed_has_valid_props(feed) {
-  ASSERT(feed_is_feed(feed));
+  console.assert(feed_is_feed(feed));
 
   if('id' in feed) {
-    ASSERT(Number.isInteger(feed.id));
-    ASSERT(feed.id > 0);
+    console.assert(Number.isInteger(feed.id));
+    console.assert(feed.id > 0);
   }
 
   if('type' in feed) {
     const types = ['feed', 'rss', 'rdf'];
-    ASSERT(types.includes(feed.type));
+    console.assert(types.includes(feed.type));
   }
 }
 
 // Returns a shallow copy of the input feed with sanitized properties
 function feed_sanitize(feed, title_max_length, desc_max_length) {
-  ASSERT(feed_is_feed(feed));
+  console.assert(feed_is_feed(feed));
 
   const DEFAULT_TITLE_MAX_LEN = 1024;
   const DEFAULT_DESC_MAX_LEN = 1024 * 10;

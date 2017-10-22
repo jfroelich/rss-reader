@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import base/status.js
 // import base/string.js
 // import dom/image.js
@@ -61,7 +60,7 @@ const BOILERPLATE_TOKEN_WEIGHTS = {
 
 
 function boilerplate_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
   if(!doc.body) {
     return STATUS_OK;
   }
@@ -196,7 +195,7 @@ function boilerplate_derive_image_area_bias(image) {
 }
 
 function boilerplate_prune(doc, best_element) {
-  ASSERT(doc.documentElement.contains(best_element));
+  console.assert(doc.documentElement.contains(best_element));
 
   if(best_element === doc.documentElement)
     return;

@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import base/debug.js
 // import http/fetch.js
 // import http/url.js
@@ -14,7 +13,7 @@
 // @param timeout_ms {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
 async function image_size_filter(doc, allowed_protocols, timeout_ms) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   const default_allowed_protocols = ['data:', 'http:', 'https:'];
   if(typeof allowed_protocols === 'undefined')
@@ -23,7 +22,7 @@ async function image_size_filter(doc, allowed_protocols, timeout_ms) {
   // Duck typing assertion, I believe includes is the only functionality of
   // the parameter we care about. So if this trait is present we can infer the
   // rest and assume the parameter is usable.
-  ASSERT(typeof allowed_protocols.includes === 'function');
+  console.assert(typeof allowed_protocols.includes === 'function');
 
   // TODO: returning count isn't that important. Maybe just return status
   // code.

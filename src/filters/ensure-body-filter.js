@@ -1,10 +1,8 @@
 'use strict';
 
-// import base/assert.js
-
 // Ensure the document has a body element
 function ensure_body_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   // If body is present then noop
   if(doc.body) {

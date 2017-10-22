@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import base/debug.js
 // import rss/entry.js
 // reader-db.js
@@ -14,7 +13,7 @@ async function archive_entries(conn, max_age_ms) {
   if(typeof max_age_ms === 'undefined')
     max_age_ms = TWO_DAYS_MS;
 
-  ASSERT(indexeddb_is_open(conn));
+  console.assert(indexeddb_is_open(conn));
   // max_age_ms assertion delegated to reader_db_find_archivable_entries
 
   DEBUG('archiving entries older than %d ms', max_age_ms);

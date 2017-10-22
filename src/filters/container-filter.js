@@ -1,10 +1,9 @@
 'use strict';
 
-// import base/assert.js
 // import filters/filter-helpers.js
 
 function container_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   if(!doc.body) {
     return;

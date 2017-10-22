@@ -1,10 +1,9 @@
 'use strict';
 
-// import base/assert.js
 // import filters/filter-helpers.js
 
 function hidden_filter(doc) {
-  ASSERT(doc instanceof Document)
+  console.assert(doc instanceof Document)
   const body = doc.body;
 
   // Restrict analysis to body descendants

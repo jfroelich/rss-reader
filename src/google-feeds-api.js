@@ -1,8 +1,5 @@
 'use strict';
 
-// import base/assert.js
-
-
 // TODO: deprecate entirely, no longer works at all, Google returns 403
 // forbidden response code
 
@@ -24,27 +21,23 @@
 // @param timeout_ms {Number} a positive integer, optional
 
 /*
-TODO: i think it would be acceptable and more convenient to just
-use an acronym in this case. Rename file to gfa.js, rename function to
-gfa_search
-
 TODO: create a fetch_json function in fetch file somewhere, then defer to that
 */
 
 async function google_feeds_api_search(query_string, timeout_ms) {
-  ASSERT(typeof query_string === 'string');
+  console.assert(typeof query_string === 'string');
   query_string = query_string.trim();
 
   // The caller should never call this with an empty string (after trim)
   // TODO: maybe this should be tolerated and just return undefined or
   // empty result
-  ASSERT(query_string.length);
+  console.assert(query_string.length);
 
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 0;
 
-  ASSERT(Number.isInteger(timeout_ms));
-  ASSERT(timeout_ms >= 0);
+  console.assert(Number.isInteger(timeout_ms));
+  console.assert(timeout_ms >= 0);
 
   // TODO: this should probably delegate to a fetch_json function
 
@@ -92,7 +85,7 @@ async function google_feeds_api_search(query_string, timeout_ms) {
 
   // TODO: this should not be thrown as an exception because it is not an
   // invariant condition violation. Or is it? If it is, then it should be
-  // an ASSERT call. If not, then it should return null or something.
+  // an console.assert call. If not, then it should return null or something.
   // Should not be an assert. Should return ERR_FETCH
   if(!response.ok)
     throw new Error(standard_fetch_error_message);
@@ -110,9 +103,9 @@ async function google_feeds_api_search(query_string, timeout_ms) {
   // the same data structure.
 
   console.dir(json_result);
-  ASSERT(json_result);
-  ASSERT(json_result.responseData);
-  ASSERT(json_result.responseData.entries);
+  console.assert(json_result);
+  console.assert(json_result.responseData);
+  console.assert(json_result.responseData.entries);
 
   const output_response = {};
   output_response.query = json_result.responseData.query || query_string;

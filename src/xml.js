@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import base/debug.js
 // import base/status.js
 // import http/mime.js
@@ -30,7 +29,7 @@ function xml_parse_from_string(xml_string) {
 // @param doc {Document}
 // @returns {String}
 function xml_to_string(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
   const serializer = new XMLSerializer();
   const xml_string = serializer.serializeToString(doc);
   return xml_string;
@@ -40,7 +39,7 @@ function xml_to_string(doc) {
 // @param doc {Document}
 // @returns {Blob}
 function xml_to_blob(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
   const mime_type = 'application/xml';
   const xml_string = xml_to_string(doc);
   const options = {'type': mime_type};

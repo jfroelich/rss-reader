@@ -1,7 +1,5 @@
 'use strict';
 
-// import base/assert.js
-
 const INDEXEDDB_DEBUG = false;
 
 // Returns true if the conn is open
@@ -12,7 +10,7 @@ function indexeddb_is_open(conn) {
     DEBUG('checking if connection open', conn);
   }
 
-  ASSERT(conn instanceof IDBDatabase);
+  console.assert(conn instanceof IDBDatabase);
   // TODO: only return true if connection is actually open. Not quite sure
   // how to detect this at the moment.
   return true;
@@ -43,14 +41,14 @@ async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
       timeout_ms);
   }
 
-  ASSERT(typeof name === 'string');
+  console.assert(typeof name === 'string');
 
   if(typeof timeout_ms === 'undefined') {
     timeout_ms = 0;
   }
 
-  ASSERT(Number.isInteger(timeout_ms));
-  ASSERT(timeout_ms >= 0);
+  console.assert(Number.isInteger(timeout_ms));
+  console.assert(timeout_ms >= 0);
 
   let timedout = false;
   let timer;

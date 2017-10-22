@@ -1,11 +1,10 @@
 'use strict';
 
-// import base/assert.js
 // import base/status.js
 
 // Relocates certain misnested elements
 function adoption_agency_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   // Restrict analysis to body
   if(!doc.body) {

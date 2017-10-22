@@ -1,9 +1,7 @@
 'use strict';
 
-// import base/assert.js
-
 function br_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   if(!doc.body) {
     return;

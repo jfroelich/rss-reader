@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 // import base/debug.js
 // import base/indexeddb.js
 // import base/number.js
@@ -63,8 +63,8 @@ function reader_db_onupgradeneeded(event) {
 // @param conn {IDBDatabase}
 // @param url {String}
 function reader_db_find_feed_id_by_url(conn, url) {
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(url_is_valid(url));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(url_is_valid(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -78,7 +78,7 @@ function reader_db_find_feed_id_by_url(conn, url) {
 
 // @param conn {IDBDatabase}
 function reader_db_count_unread_entries(conn) {
-  ASSERT(indexeddb_is_open(conn));
+  console.assert(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -96,8 +96,8 @@ function reader_db_count_unread_entries(conn) {
 // @returns {Promise} a promise that resolves to an entry object, or undefined
 // if no matching entry was found
 function reader_db_find_entry_by_id(conn, id) {
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(entry_is_valid_id(id));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(entry_is_valid_id(id));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -112,8 +112,8 @@ function reader_db_find_entry_by_id(conn, id) {
 // @param conn {IDBDatabase}
 // @param url {String}
 function reader_db_find_entry_by_url(conn, url) {
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(url_is_valid(url));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(url_is_valid(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -126,8 +126,8 @@ function reader_db_find_entry_by_url(conn, url) {
 }
 
 function reader_db_find_entry_ids_by_feed(conn, feed_id) {
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(feed_is_valid_feed_id(feed_id));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(feed_is_valid_feed_id(feed_id));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -151,8 +151,8 @@ async function reader_db_find_entries_missing_urls(conn) {
 }
 
 function reader_db_find_feed_by_id(conn, feed_id) {
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(feed_is_valid_feed_id(feed_id));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(feed_is_valid_feed_id(feed_id));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -178,8 +178,8 @@ async function reader_db_find_orphaned_entries(conn) {
 }
 
 async function reader_db_find_archivable_entries(conn, max_age_ms) {
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(number_is_positive_integer(max_age_ms));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(number_is_positive_integer(max_age_ms));
 
   const entries = await reader_db_get_unarchived_unread_entries2(conn);
   const archivable_entries = [];
@@ -193,7 +193,7 @@ async function reader_db_find_archivable_entries(conn, max_age_ms) {
 }
 
 function reader_db_get_entries(conn) {
-  ASSERT(indexeddb_is_open(conn));
+  console.assert(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -205,7 +205,7 @@ function reader_db_get_entries(conn) {
 }
 
 function reader_db_get_feeds(conn) {
-  ASSERT(indexeddb_is_open(conn));
+  console.assert(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -217,7 +217,7 @@ function reader_db_get_feeds(conn) {
 }
 
 function reader_db_get_feed_ids(conn) {
-  ASSERT(indexeddb_is_open(conn));
+  console.assert(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -230,7 +230,7 @@ function reader_db_get_feed_ids(conn) {
 
 
 function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
-  ASSERT(indexeddb_is_open(conn));
+  console.assert(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const entries = [];
@@ -266,7 +266,7 @@ function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
 }
 
 function reader_db_get_unarchived_unread_entries2(conn) {
-  ASSERT(indexeddb_is_open(conn));
+  console.assert(indexeddb_is_open(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -280,9 +280,9 @@ function reader_db_get_unarchived_unread_entries2(conn) {
 }
 
 function reader_db_remove_feed_and_entries(conn, feed_id, entry_ids) {
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(feed_is_valid_feed_id(feed_id));
-  ASSERT(Array.isArray(entry_ids));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(feed_is_valid_feed_id(feed_id));
+  console.assert(Array.isArray(entry_ids));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');
@@ -300,8 +300,8 @@ function reader_db_remove_feed_and_entries(conn, feed_id, entry_ids) {
 }
 
 function reader_db_put_entry(conn, entry) {
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(entry_is_entry(entry));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(entry_is_entry(entry));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
@@ -313,8 +313,8 @@ function reader_db_put_entry(conn, entry) {
 }
 
 function reader_db_put_entries(conn, entries) {
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(Array.isArray(entries));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(Array.isArray(entries));
 
   return new Promise(function executor(resolve, reject) {
     const current_date = new Date();
@@ -336,8 +336,8 @@ function reader_db_put_entries(conn, entries) {
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
 function reader_db_put_feed(conn, feed) {
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(feed_is_feed(feed));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(feed_is_feed(feed));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed', 'readwrite');
@@ -355,8 +355,8 @@ function reader_db_put_feed(conn, feed) {
 // @param ids {Array}
 // @param channel {BroadcastChannel}
 function reader_db_remove_entries(conn, ids, channel) {
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(Array.isArray(ids));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(Array.isArray(ids));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');

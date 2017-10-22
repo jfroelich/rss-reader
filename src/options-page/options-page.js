@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 // import base/debug.js
 // import base/status.js
 // import extension.js
@@ -27,7 +27,7 @@ options_page_settings_channel.onmessageerror = function(event) {
 
 
 function options_page_show_section(menu_item_element) {
-  ASSERT(menu_item_element);
+  console.assert(menu_item_element);
 
   if(options_page_current_menu_item === menu_item_element) {
     return;
@@ -46,7 +46,7 @@ function options_page_show_section(menu_item_element) {
   // Show the new section
   const section_id = menu_item_element.getAttribute('section');
   const section_element = document.getElementById(section_id);
-  ASSERT(section_element, 'No matching section ' + section_id);
+  console.assert(section_element, 'No matching section ' + section_id);
 
   section_element.style.display = 'block';
 
@@ -117,7 +117,7 @@ function options_page_feed_list_append_feed(feed) {
     inserted = true;
   }
 
-  ASSERT(inserted);
+  console.assert(inserted);
   options_page_update_feed_count();
 }
 
@@ -159,7 +159,7 @@ async function options_page_start_subscription(url) {
     return;
   }
 
-  ASSERT(subscribed_feed);
+  console.assert(subscribed_feed);
   options_page_feed_list_append_feed(subscribed_feed);
   const feed_url = feed_get_top_url(subscribed_feed);
   options_page_subscription_monitor_append_message(`Subscribed to ${feed_url}`);
@@ -173,7 +173,7 @@ async function options_page_feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id_number = parseInt(feed_id_string, 10);
 
-  ASSERT(!isNaN(feed_id_number));
+  console.assert(!isNaN(feed_id_number));
 
   // Load feed details from the database
   let conn, feed;
@@ -431,7 +431,7 @@ function options_page_create_search_result_element(feed) {
 function options_page_subscribe_button_on_click(event) {
   const subscribe_button = event.target;
   const url = subscribe_button.value;
-  ASSERT(url);
+  console.assert(url);
 
   // TODO: Ignore future clicks if an error was displayed?
 
@@ -495,7 +495,7 @@ function options_page_feed_list_remove_feed(feed_id) {
   const feed_element = document.querySelector(
     `#feedlist li[feed="${feed_id}"]`);
 
-  ASSERT(feed_element);
+  console.assert(feed_element);
 
   feed_element.removeEventListener('click',
     options_page_feed_list_item_onclick);
@@ -518,7 +518,7 @@ function options_page_feed_list_remove_feed(feed_id) {
 async function options_page_unsubscribe_button_on_click(event) {
   const radix = 10;
   const feed_id = parseInt(event.target.value, radix);
-  ASSERT(!isNaN(feed_id));
+  console.assert(!isNaN(feed_id));
 
   let reader_conn;
   try {
@@ -598,7 +598,7 @@ function options_page_enable_bg_processing_checkbox_on_click(event) {
 
 async function init_bg_processing_checkbox() {
   const checkbox = document.getElementById('enable-background');
-  ASSERT(checkbox);
+  console.assert(checkbox);
 
   // TODO: this should be using a local storage variable and instead the
   // permission should be permanently defined.

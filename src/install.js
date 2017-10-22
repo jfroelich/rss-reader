@@ -1,9 +1,8 @@
 'use strict';
 
-// Dependencies:
-// debug.js
-// extension.js
-// favicon.js
+// import base/debug.js
+// import extension.js
+// import favicon.js
 
 chrome.runtime.onInstalled.addListener(async function(event) {
   DEBUG('onInstalled');

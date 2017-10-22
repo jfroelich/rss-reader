@@ -24,7 +24,7 @@ domviz.element_is_hidden = function(element) {
     return false;
 
   // Ignore detached elements and elements outside of body
-  // TODO: change to ASSERT
+  // TODO: change to console.assert
   if(!body.contains(element))
     throw new TypeError('element is not a descendant of body');
 

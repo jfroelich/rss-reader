@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 // import base/debug.js
 // import http/mime.js
 // import http/url.js
@@ -26,10 +26,10 @@ async function fetch_internal(url, options, timeout_ms, accept_response) {
   // TODO: instead of assert, return error
   // TODO: check typeof === whatever response type should be, be more strict
   // in the assertion. Or maybe that is stupid.
-  ASSERT(response);
+  console.assert(response);
 
   // TODO: instead of assert, return error
-  ASSERT(response.ok);
+  console.assert(response.ok);
 
   // The spec says 204 is ok, because response.ok is true for status codes
   // 200-299, but I consider 204 to be an error.
@@ -39,11 +39,11 @@ async function fetch_internal(url, options, timeout_ms, accept_response) {
   // this error code. I would need to test further.
   const HTTP_STATUS_NO_CONTENT = 204;
   // TODO: instead of assert, return error
-  ASSERT(response.status !== HTTP_STATUS_NO_CONTENT);
+  console.assert(response.status !== HTTP_STATUS_NO_CONTENT);
 
   // TODO: instead of assert, return error
   if(accept_response) {
-    ASSERT(accept_response(response));
+    console.assert(accept_response(response));
   }
 
   const response_wrapper = {};
@@ -155,7 +155,7 @@ async function fetch_image_head(url, timeout_ms) {
 
   const response = await fetch_with_timeout(url, options,
     timeout_ms, 'Fetch timed out ' + url);
-  ASSERT(mime_is_image(response.headers.get('Content-Type')));
+  console.assert(mime_is_image(response.headers.get('Content-Type')));
   const output_response = {};
 
   // TODO: rename to content_length
@@ -178,13 +178,13 @@ async function fetch_image_head(url, timeout_ms) {
 // that works more like other fetches can be created, and to avoid confusion
 // TODO: it is possible this should be using the fetch API to avoid cookies?
 function fetch_image(url, timeout_ms) {
-  ASSERT(url);
+  console.assert(url);
 
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 0;
 
-  ASSERT(Number.isInteger(timeout_ms));
-  ASSERT(timeout_ms >= 0);
+  console.assert(Number.isInteger(timeout_ms));
+  console.assert(timeout_ms >= 0);
 
   // There is no simply way to share information between the promises, so
   // define this in outer scope shared between both promise bodies.
@@ -273,15 +273,15 @@ function fetch_image(url, timeout_ms) {
 // TODO: if fetch succeeds, cancel the timeout
 // TODO: if timeout succeeds first, cancel the fetch
 function fetch_with_timeout(url, options, timeout_ms, error_message) {
-  ASSERT(url_is_valid(url));
+  console.assert(url_is_valid(url));
   const t_timeout_ms = typeof timeout_ms;
 
   if(t_timeout_ms !== 'undefined') {
-    ASSERT(Number.isInteger(timeout_ms));
+    console.assert(Number.isInteger(timeout_ms));
     // TODO: the floor should actually be whatever the browser supports, as
     // an explicit reminder that 0ms timeouts are not actually honored by
     // some browsers. I think it is 4ms?
-    ASSERT(timeout_ms >= 0);
+    console.assert(timeout_ms >= 0);
   }
 
   const t_error_message = typeof error_message;
@@ -313,7 +313,7 @@ function fetch_with_timeout(url, options, timeout_ms, error_message) {
 // @returns {Date} the value of Last-Modified, or undefined if error such as
 // no header present or bad date
 function fetch_get_last_modified_date(response) {
-  ASSERT(response);
+  console.assert(response);
 
   const last_modified_string = response.headers.get('Last-Modified');
   if(!last_modified_string)

@@ -1,10 +1,9 @@
 'use strict';
 
-// import base/assert.js
 // import base/string.js
 
 function node_whitespace_filter(doc) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   if(!doc.body) {
     return;

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 // import base/status.js
 // import filters/base-filter.js
 // import filters/emphasis-filter.js
@@ -16,8 +16,8 @@
 // @param fetch_image_timeout_ms {Number} optional, the number of milliseconds
 // to wait before timing out when fetching an image
 async function poll_document_filter(doc, url, fetch_image_timeout_ms) {
-  ASSERT(doc instanceof Document);
-  ASSERT(url_is_valid(url));
+  console.assert(doc instanceof Document);
+  console.assert(url_is_valid(url));
 
   frame_filter(doc);
   ensure_body_filter(doc);

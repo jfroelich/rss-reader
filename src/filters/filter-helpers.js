@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import base/status.js
 // import dom/element.js
 
@@ -8,9 +7,9 @@
 // Replace an element with its children. Special care is taken to add spaces
 // if the operation would result in adjacent text nodes.
 function unwrap_element(element) {
-  ASSERT(element instanceof Element);
+  console.assert(element instanceof Element);
   // Calling unwrap on an orphan is always an error
-  ASSERT(element.parentNode, 'orphaned element');
+  console.assert(element.parentNode, 'orphaned element');
 
   const parent_element = element.parentNode;
   const prev_sibling = element.previousSibling;
@@ -74,7 +73,7 @@ function rename_element(element, new_element_name, copy_attrs) {
 
   // According to MDN docs, createElement(null) works like createElement("null")
   // so, to avoid that, treat missing name as an error
-  ASSERT(element_is_valid_name(new_element_name));
+  console.assert(element_is_valid_name(new_element_name));
 
   if(typeof copy_attrs === 'undefined')
     copy_attrs = true;

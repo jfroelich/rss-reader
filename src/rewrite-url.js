@@ -1,13 +1,11 @@
 'use strict';
 
-// import base/assert.js
-
 // Applies a set of rules to a url object and returns a modified url object
 // Returns undefined if no rewriting occurred
 // @param url {String}
 // @returns {String}
 function rewrite_url(url) {
-  ASSERT(typeof url === 'string');
+  console.assert(typeof url === 'string');
 
   const url_object = new URL(url);
   if(url_object.hostname === 'news.google.com' &&

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 // import base/debug.js
 // import base/object.js
 // import html.js
@@ -18,8 +18,8 @@
 async function poll_entry(entry, reader_conn, icon_conn, feed,
   fetch_html_timeout_ms, fetch_img_timeout_ms) {
 
-  ASSERT(entry_is_entry(entry));
-  ASSERT(feed_is_feed(feed));
+  console.assert(entry_is_entry(entry));
+  console.assert(feed_is_feed(feed));
 
   // Cascade properties from feed to entry
   entry.feed = feed.id;
@@ -94,7 +94,7 @@ async function poll_entry(entry, reader_conn, icon_conn, feed,
 // TODO: merge with poll_entry_prepare_local_entry
 async function poll_entry_prepare_remote_entry(entry, doc,
   fetch_img_timeout_ms) {
-  ASSERT(entry_is_entry(entry));
+  console.assert(entry_is_entry(entry));
   const url_string = entry_get_top_url(entry);
   await poll_document_filter(doc, url_string, fetch_img_timeout_ms);
   entry.content = doc.documentElement.outerHTML.trim();
@@ -102,14 +102,14 @@ async function poll_entry_prepare_remote_entry(entry, doc,
 
 // TODO: merge with poll_entry_prepare_remote_entry
 async function poll_entry_prepare_local_entry(entry, fetch_img_timeout_ms) {
-  ASSERT(entry_is_entry(entry));
+  console.assert(entry_is_entry(entry));
 
   if(!entry.content) {
     return;
   }
 
   const url_string = entry_get_top_url(entry);
-  ASSERT(url_string);
+  console.assert(url_string);
 
   const [status, doc] = html_parse_from_string(entry.content);
   if(status !== STATUS_OK) {

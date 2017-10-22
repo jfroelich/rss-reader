@@ -1,7 +1,5 @@
 'use strict';
 
-// import base/assert.js
-
 // Returns true if the first parameter is of type Element
 function element_is_element(element) {
   return element instanceof Element;

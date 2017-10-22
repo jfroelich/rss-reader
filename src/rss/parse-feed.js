@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 // import base/status.js
 // import xml.js
 
@@ -24,7 +24,7 @@ function parse_feed(xml_string) {
 // @param document {Document} an XML document representing a feed
 // @returns {Object} a simple object with properties feed and entries
 function unmarshall_xml(document) {
-  ASSERT(document);
+  console.assert(document);
   const doc_element = document.documentElement;
   const doc_element_name = doc_element.localName.toLowerCase();
 

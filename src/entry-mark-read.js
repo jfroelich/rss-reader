@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import base/indexeddb.js
 // import base/status.js
 // import rss/entry.js
@@ -17,8 +16,8 @@ async function entry_mark_read(conn, id) {
     DEBUG('marking as read entry with id', id);
   }
 
-  ASSERT(indexeddb_is_open(conn));
-  ASSERT(entry_is_valid_id(id));
+  console.assert(indexeddb_is_open(conn));
+  console.assert(entry_is_valid_id(id));
 
   let entry;
   try {

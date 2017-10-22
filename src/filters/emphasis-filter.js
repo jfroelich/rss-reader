@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/assert.js
 // import base/debug.js
 // import base/number.js
 // import base/status.js
@@ -9,14 +8,14 @@
 const EMPHASIS_FILTER_DEBUG = true;
 
 function emphasis_filter(doc, max_text_length) {
-  ASSERT(doc instanceof Document);
+  console.assert(doc instanceof Document);
 
   // max_text_length is optional
   if(typeof max_text_length === 'undefined') {
     max_text_length = 0;
   }
 
-  ASSERT(number_is_positive_integer(max_text_length));
+  console.assert(number_is_positive_integer(max_text_length));
 
   // Restrict analysis to body
   if(!doc.body) {

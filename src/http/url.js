@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+
 
 // TODO: not sure that http/ is proper folder for this lib
 
@@ -14,7 +14,7 @@ const URL_DEBUG = true;
 // @param url {String} input url
 // @returns {Boolean} true if the url is canonical, otherwise false
 function url_is_canonical(url) {
-  ASSERT(typeof url === 'string');
+  console.assert(typeof url === 'string');
   return /^\s*[a-z]+:/i.test(url);
 }
 
@@ -40,8 +40,8 @@ function url_has_script_protocol(url) {
 // @returns {URL} either the input url as an object if the url was already
 // absolute, or the absolute url, or undefined if a parsing error occurred
 function url_resolve(url, base_url) {
-  ASSERT(typeof url === 'string');
-  ASSERT(url_is_url_object(base_url));
+  console.assert(typeof url === 'string');
+  console.assert(url_is_url_object(base_url));
 
   let canonical_url;
 
@@ -63,7 +63,7 @@ function url_resolve(url, base_url) {
 // @param url {String}
 // @returns {String}
 function url_get_hostname(url) {
-  ASSERT(typeof url === 'string');
+  console.assert(typeof url === 'string');
   try {
     const url_object = new URL(url);
     return url_object.hostname;
@@ -71,7 +71,7 @@ function url_get_hostname(url) {
   }
 }
 
-// Only minor validation for speed
+// Only minor validation for speed. Tolerant of bad input
 // Assumes canonical url
 // @param url {String}
 // @returns {Boolean}
@@ -101,7 +101,7 @@ function url_path_is_valid(path) {
 // @param path {String}
 // @returns {String}
 function url_path_get_extension(path) {
-  ASSERT(url_path_is_valid(path));
+  console.assert(url_path_is_valid(path));
 
   // Fail if the path is probably too short to contain an extension
   const min_path_length = '/a.b'.length;
@@ -140,7 +140,7 @@ function url_path_get_extension(path) {
 // @param url {URL} url object
 // @returns {Boolean} true if probably binary, otherewise false
 function url_sniff_is_binary(url) {
-  ASSERT(url_is_url_object(url));
+  console.assert(url_is_url_object(url));
 
   // Assume data url objects are probably non binary
   if(url.protocol === 'data:') {
@@ -159,7 +159,7 @@ function url_sniff_is_binary(url) {
   const slash_position = mime_type.indexOf('/');
   // All mime types resulting from the lookup should contain a slash.
   // This is an extra check
-  ASSERT(slash_position !== -1);
+  console.assert(slash_position !== -1);
 
   const super_type = mime_type.substring(0, slash_position);
   const bin_super_types = ['application', 'audio', 'image', 'video'];
@@ -173,7 +173,7 @@ function url_file_name_filter_extension(file_name) {
 }
 
 function url_path_get_file_name(path) {
-  ASSERT(url_path_is_valid(path));
+  console.assert(url_path_is_valid(path));
   const index = path.lastIndexOf('/');
   if(index > -1) {
     const index_plus_1 = index + 1;
@@ -195,8 +195,8 @@ function url_is_url_object(url) {
 // @throws {Error} if either url is not a valid url
 // @returns Boolean
 function url_equals_no_hash(url1, url2) {
-  ASSERT(typeof url1 === 'string');
-  ASSERT(typeof url2 === 'string');
+  console.assert(typeof url1 === 'string');
+  console.assert(typeof url2 === 'string');
 
   // Unmarshalling enables normalization and simple hash filtering
   // Allow url parsing errors to bubble.

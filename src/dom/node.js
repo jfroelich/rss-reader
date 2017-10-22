@@ -1,7 +1,5 @@
 'use strict';
 
-// import base/assert.js
-
 // Returns true if the first parameter is of type Node
 function node_is_node(node) {
   return node instanceof Node;
@@ -18,14 +16,10 @@ function node_is_node(node) {
 // TODO: change to varargs, find the LCAs of whatever args given, instead of
 // only 2. change to (...nodes)
 function node_find_lca(node1, node2) {
-  ASSERT(node_is_node(node1));
-  ASSERT(node_is_node(node2));
-
-  // This function should never be called on the same node
-  ASSERT(node1 !== node2);
-
-  // This function should only be called on two nodes from the same document
-  ASSERT(node1.ownerDocument === node2.ownerDocument);
+  console.assert(node_is_node(node1));
+  console.assert(node_is_node(node2));
+  console.assert(node1 !== node2);
+  console.assert(node1.ownerDocument === node2.ownerDocument);
 
   const ancestors1 = node_get_ancestors(node1);
   const ancestors2 = node_get_ancestors(node2);
@@ -45,13 +39,13 @@ function node_find_lca(node1, node2) {
     }
   }
 
-  ASSERT_NOT_REACHED();
+  console.assert(false);
 }
 
 // Returns an array of ancestors, from deepest to shallowest.
 // The node itself is not included.
 function node_get_ancestors(node) {
-  ASSERT(node_is_node(node));
+  console.assert(node_is_node(node));
   const ancestors = [];
   for(let ancestor = node.parentNode; ancestor;
     ancestor = ancestor.parentNode) {

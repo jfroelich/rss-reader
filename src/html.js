@@ -1,10 +1,8 @@
 'use strict';
 
-// import base/assert.js
 // import base/debug.js
 // import base/status.js
 // import http/mime.js
-
 
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
@@ -16,7 +14,7 @@
 // of using html_parse_from_string, due to the lossy transform issue
 function html_replace_tags(input_string, replacement_string) {
   // The caller is responsible for calling this function with a defined string
-  ASSERT(typeof input_string === 'string');
+  console.assert(typeof input_string === 'string');
 
   // Fast case for empty strings
   // Because of the above assert this basically only checks 0 length
@@ -71,8 +69,8 @@ the inaccurate position issue.
 // This is currently a lossy transformation because certain entities that are
 // decoded while processing are not properly re-encoded.
 function html_truncate(html_string, position, extension_string) {
-  ASSERT(Number.isInteger(position));
-  ASSERT(position >= 0);
+  console.assert(Number.isInteger(position));
+  console.assert(position >= 0);
 
   if(!html_string)
     return '';
@@ -128,7 +126,7 @@ function html_truncate(html_string, position, extension_string) {
 function html_parse_from_string(html_string) {
 
   // The caller is responsible for always calling this with a defined string
-  ASSERT(typeof html_string === 'string');
+  console.assert(typeof html_string === 'string');
 
   const parser = new DOMParser();
 

@@ -1,12 +1,10 @@
 'use strict';
 
-// import base/assert.js
 // import base/debug.js
 // import base/status.js
 // import http/url.js
 
 const HOST_TEMPLATE_DEBUG = false;
-
 
 // TODO: host_selector_map should be a parameter to this function so that
 // configuration is defined externally so that it can be changed without
@@ -15,7 +13,7 @@ const HOST_TEMPLATE_DEBUG = false;
 // @param url {String}
 function host_template_filter(doc, url) {
 
-  ASSERT(doc instanceof Document)
+  console.assert(doc instanceof Document)
 
   const host_selector_map = {};
   host_selector_map['www.washingtonpost.com'] = [
