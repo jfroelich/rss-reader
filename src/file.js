@@ -2,14 +2,9 @@
 
 // import base/assert.js
 
-function file_is_file(file) {
-  // TODO: improve. maybe use file instanceof File?
-  return file;
-}
-
 // Returns a promise that resolves to the text of the file
 function file_read_as_text(file) {
-  ASSERT(file_is_file(file));
+  ASSERT(file instanceof File);
 
   return new Promise(function(resolve, reject) {
     const reader = new FileReader();
@@ -17,23 +12,4 @@ function file_read_as_text(file) {
     reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(reader.error);
   });
-}
-
-// Returns true if the file has an xml mime type
-// TODO: rename to file_is_type_xml
-// TODO: once inner code delegated to mime.js, deprecate this function and
-// have the caller just call mime_is_xml(file.type)
-function file_is_xml_type(file) {
-  ASSERT(file_is_file(file));
-
-  const file_type = file.type;
-
-  // TODO: actually the rest of this should defer to a function in
-  // mime.js. Also, that function should tolerate other mime types,
-  // like feed mime types
-
-  let normal_type = file_type || '';
-  normal_type = normal_type.trim().toLowerCase();
-  const supported_types = ['application/xml', 'text/xml'];
-  return supported_types.includes(normal_type);
 }

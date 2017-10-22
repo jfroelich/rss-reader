@@ -1,12 +1,13 @@
 'use strict';
 
-// import assert.js
-// import debug.js
-// import favicon.js
-// import feed.js
-// import file.js
+// import base/assert.js
+// import base/debug.js
+// import http/mime.js
 // import opml/opml-document.js
 // import opml/opml-outline.js
+// import rss/feed.js
+// import favicon.js
+// import file.js
 // import reader-db.js
 // import subscription.js
 
@@ -64,7 +65,7 @@ async function reader_import_file(file, reader_conn, icon_conn) {
     return 0;
   }
 
-  if(!file_is_xml_type(file)) {
+  if(!mime_is_xml(file.type)) {
     DEBUG('file %s is not mime type xml', file.type);
     return 0;
   }
