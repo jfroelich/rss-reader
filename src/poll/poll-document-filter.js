@@ -3,11 +3,11 @@
 // import base/assert.js
 // import base/status.js
 // import filters/base-filter.js
+// import filters/emphasis-filter.js
 // import filters/frame-filter.js
+// import filters/host-template-filter.js
 // import filters/responsive-image-filter.js
 // import http/url.js
-
-// TODO: add emphasis_filter
 
 // Transforms a document's content by removing or changing nods for
 // various reasons.
@@ -27,15 +27,21 @@ async function poll_document_filter(doc, url, fetch_image_timeout_ms) {
   comment_filter(doc);
   base_filter(doc);
 
-  // TODO: is this the proper place to call this in filter order?
-  host_template_prune(url, doc);
-
   hidden_filter(doc);
   noscript_filter(doc);
   blacklist_filter(doc);
   script_anchor_filter(doc);
+
+  // This should occur prior to boilerplate_filter because it has express
+  // knowledge of content organization
+  host_template_filter(doc, url);
+
   boilerplate_filter(doc);
   condense_tagnames_filter(doc);
+
+  const max_emphasis_length = 300;
+  emphasis_filter(doc, max_emphasis_length);
+
 
   const base_url = new URL(url);
   canonical_url_filter(doc, base_url);
@@ -82,6 +88,10 @@ async function poll_document_filter(doc, url, fetch_image_timeout_ms) {
   // Better to call later than earlier to reduce number of text nodes visited
   node_whitespace_filter(doc);
 
+  // This should be called near the end. Most of the other filters are naive
+  // in how they leave ancestor elements meaningless or empty, and simply
+  // remove. So this is like an additional pass now that several holes have
+  // been made.
   leaf_filter(doc);
 
   // Should be called near end because its behavior changes based on

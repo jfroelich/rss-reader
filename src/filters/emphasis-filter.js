@@ -2,6 +2,7 @@
 
 // import base/assert.js
 // import base/debug.js
+// import base/number.js
 // import base/status.js
 // import filters/filter-helpers.js
 
@@ -10,22 +11,15 @@ const EMPHASIS_FILTER_DEBUG = true;
 function emphasis_filter(doc, max_text_length) {
   ASSERT(doc instanceof Document);
 
-  // Not specifying max length is not an error, it just signals
-  // not to do anything.
+  // max_text_length is optional
   if(typeof max_text_length === 'undefined') {
-    return;
+    max_text_length = 0;
   }
 
-  ASSERT(Number.isInteger(max_text_length));
-  ASSERT(max_text_length >= 0);
+  ASSERT(number_is_positive_integer(max_text_length));
 
   // Restrict analysis to body
   if(!doc.body) {
-    return;
-  }
-
-  // No point of processing if 0
-  if(max_text_length < 1) {
     return;
   }
 
@@ -34,7 +28,7 @@ function emphasis_filter(doc, max_text_length) {
     if(element.textContent.length > max_text_length) {
 
       if(EMPHASIS_FILTER_DEBUG) {
-        DEBUG('emphasis-filtering:', element);
+        DEBUG('emphasis-filtering:', element.innerHTML);
       }
 
       unwrap_element(element);

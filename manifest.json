@@ -16,7 +16,7 @@
 
       "/src/alarms.js",
       "/src/archive-entries.js",
-      "/src/browser-action.js",
+      "/src/bind-browser-action.js",
       "/src/cli.js",
       "/src/extension.js",
       "/src/install.js",
@@ -30,6 +30,7 @@
       "/src/base/assert.js",
       "/src/base/debug.js",
       "/src/base/indexeddb.js",
+      "/src/base/number.js",
       "/src/base/object.js",
       "/src/base/sizeof.js",
       "/src/base/status.js",
@@ -55,6 +56,7 @@
       "/src/filters/frame-filter.js",
       "/src/filters/hairspace-filter.js",
       "/src/filters/hidden-filter.js",
+      "/src/filters/host-template-filter.js",
       "/src/filters/hr-filter.js",
       "/src/filters/iframe-filter.js",
       "/src/filters/image-size-filter.js",
@@ -91,7 +93,6 @@
       "/src/rss/parse-feed.js",
       "/src/rss/parse-fetched-feed.js",
 
-      "/src/poll/host-template.js",
       "/src/poll/poll.js",
       "/src/poll/poll-document-filter.js",
       "/src/poll/poll-entry.js",

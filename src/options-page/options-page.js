@@ -2,7 +2,6 @@
 
 // import base/assert.js
 // import base/debug.js
-// import base/function.js
 // import base/status.js
 // import extension.js
 // import reader-db.js

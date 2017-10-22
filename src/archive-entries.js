@@ -1,9 +1,8 @@
 'use strict';
 
-// Dependencies:
-// assert.js
-// debug.js
-// entry.js
+// import base/assert.js
+// import base/debug.js
+// import rss/entry.js
 // reader-db.js
 
 // Scans the database for archivable entries and archives them
@@ -17,7 +16,6 @@ async function archive_entries(conn, max_age_ms) {
 
   ASSERT(indexeddb_is_open(conn));
   // max_age_ms assertion delegated to reader_db_find_archivable_entries
-  // because it is merely forwarded here
 
   DEBUG('archiving entries older than %d ms', max_age_ms);
 

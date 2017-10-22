@@ -15,6 +15,8 @@
 // @param doc {HTMLDocument}
 // @param location {String} url location of the document
 function pagination_find_anchors(doc, location, lca_max_distance) {
+  ASSERT(doc instanceof Document);
+
   const candidates = pagination_find_candidate_anchors(doc, location);
   if(!candidates.length)
     return [];

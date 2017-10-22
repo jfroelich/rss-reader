@@ -1,15 +1,22 @@
 'use strict';
 
+// import base/assert.js
+// import base/debug.js
+// import base/status.js
+// import http/url.js
+
 const HOST_TEMPLATE_DEBUG = false;
 
-// TODO: reverse arg order, rename to filter-like name
-// TODO: doc should be first parameter
+
 // TODO: host_selector_map should be a parameter to this function so that
 // configuration is defined externally so that it can be changed without
 // needing to modify its internals (open-closed principle)
-// TODO: move to filters
 
-function host_template_prune(url_string, doc) {
+// @param url {String}
+function host_template_filter(doc, url) {
+
+  ASSERT(doc instanceof Document)
+
   const host_selector_map = {};
   host_selector_map['www.washingtonpost.com'] = [
     'header#wp-header',
@@ -20,7 +27,7 @@ function host_template_prune(url_string, doc) {
   host_selector_map['theweek.com'] = ['div#head-wrap'];
   host_selector_map['www.usnews.com'] = ['header.header'];
 
-  const hostname = url_get_hostname(url_string);
+  const hostname = url_get_hostname(url);
   if(!hostname)
     return;
 
@@ -29,11 +36,14 @@ function host_template_prune(url_string, doc) {
     return;
 
   if(HOST_TEMPLATE_DEBUG) {
-    DEBUG('template pruning', url_string);
+    DEBUG('template pruning', url);
   }
 
   const selector = selectors.join(',');
   const elements = doc.querySelectorAll(selector);
-  for(const element of elements)
+  for(const element of elements) {
     element.remove();
+  }
+
+  return STATUS_OK;
 }

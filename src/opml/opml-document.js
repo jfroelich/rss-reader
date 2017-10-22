@@ -100,6 +100,7 @@ function opml_remove_outlines_with_invalid_types(doc) {
 
   const elements = opml_get_outline_elements(doc);
 
+  // TODO: return status instead, do not calc len
   const initial_length = elements.length;
   for(const element of elements) {
     if(!opml_outline_element_has_valid_type(element)) {
@@ -146,4 +147,5 @@ function opml_append_outline_element(doc, element) {
   }
 
   body_element.appendChild(element);
+  return STATUS_OK;
 }

@@ -9,7 +9,7 @@ function element_is_element(element) {
 
 // Returns true if the given name is a valid name for an element
 function element_is_valid_name(name) {
-  return typeof name === 'string' && !name.includes(' ');
+  return typeof name === 'string' && name.length && !name.includes(' ');
 }
 
 // Copies the attributes of an element to another element. Overwrites any
@@ -30,7 +30,7 @@ function element_copy_attributes(from_element, to_element) {
 }
 
 // Recursive
-// TODO: move to node.js
+// TODO: move to filter helpers?
 function node_is_leaf(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:

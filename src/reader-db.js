@@ -1,9 +1,9 @@
-// Library for working with the reader app's database
 'use strict';
 
 // import base/assert.js
 // import base/debug.js
 // import base/indexeddb.js
+// import base/number.js
 // import http/url.js
 // import rss/feed.js
 // import rss/entry.js
@@ -76,6 +76,7 @@ function reader_db_find_feed_id_by_url(conn, url) {
   });
 }
 
+// @param conn {IDBDatabase}
 function reader_db_count_unread_entries(conn) {
   ASSERT(indexeddb_is_open(conn));
 
@@ -107,6 +108,8 @@ function reader_db_find_entry_by_id(conn, id) {
   });
 }
 
+// Returns an entry ID, not an entry, matching url
+// @param conn {IDBDatabase}
 // @param url {String}
 function reader_db_find_entry_by_url(conn, url) {
   ASSERT(indexeddb_is_open(conn));
@@ -136,18 +139,14 @@ function reader_db_find_entry_ids_by_feed(conn, feed_id) {
   });
 }
 
-// TODO: avoid loading all entries from the database. This
-// involves too much processing. It probably easily triggers a violation
-// message that appears in the console for taking too long.
-// Maybe using a cursor walk instead of get all avoids this?
-// Maybe introduce a limit on the number of entries fetched
 async function reader_db_find_entries_missing_urls(conn) {
-  // NOTE: conn sanity delegated to get entries call
   const entries = await reader_db_get_entries(conn);
   const invalid_entries = [];
-  for(const entry of entries)
-    if(!entry.urls || !entry.urls.length)
+  for(const entry of entries) {
+    if(!entry_has_url(entry)) {
       invalid_entries.push(entry);
+    }
+  }
   return invalid_entries;
 }
 
@@ -166,31 +165,21 @@ function reader_db_find_feed_by_id(conn, feed_id) {
 
 // Returns an array of all entries missing a feed id or have a feed id that
 // does not exist in the set of feed ids
-// TODO: think of how to optimize this function so that not all entries are
-// loaded. One idea is that if I create an index on feed id I somehow can
-// just load all the keys of that index. But that won't work I think, because
-// missing values are not indexed ...
-// TODO: think of how to make this more scalable, e.g. use a cursor over
-// feeds? Maybe it doesn't matter.
 async function reader_db_find_orphaned_entries(conn) {
   const feed_ids = await reader_db_get_feed_ids(conn);
-  const entries = await get_entries(conn);
+  const entries = await reader_db_get_entries(conn);
   const orphans = [];
-  for(const entry of entries)
-    if(!entry.feed || !feed_ids.includes(entry.feed))
+  for(const entry of entries) {
+    if(!entry.feed || !feed_ids.includes(entry.feed)) {
       orphans.push(entry);
+    }
+  }
   return orphans;
 }
 
-
-// TODO: Optimize. So not load all entries. Once, I observed the
-// following error for the call to load entries
-// [Violation] 'success' handler took 164ms
 async function reader_db_find_archivable_entries(conn, max_age_ms) {
   ASSERT(indexeddb_is_open(conn));
-
-  ASSERT(Number.isInteger(max_age_ms));
-  ASSERT(max_age_ms >= 0);
+  ASSERT(number_is_positive_integer(max_age_ms));
 
   const entries = await reader_db_get_unarchived_unread_entries2(conn);
   const archivable_entries = [];
@@ -239,14 +228,9 @@ function reader_db_get_feed_ids(conn) {
   });
 }
 
-// TODO: rename to get_all or just get_ ...
-// TODO: use getAll, passing in a count parameter as an upper limit, and
-// then using slice or unshift or something to advance. The parameter to getAll
-// might be (offset+limit)
+
 function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
   ASSERT(indexeddb_is_open(conn));
-
-  // TODO: validate offset and limit
 
   return new Promise(function executor(resolve, reject) {
     const entries = [];
@@ -281,8 +265,6 @@ function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
   });
 }
 
-// Returns a Promise that resolves to an array
-// TODO: think of how to merge with load_unarchived_unread_entries
 function reader_db_get_unarchived_unread_entries2(conn) {
   ASSERT(indexeddb_is_open(conn));
 
@@ -369,33 +351,31 @@ function reader_db_put_feed(conn, feed) {
   });
 }
 
-// TODO: do it all here, do not delegate to reader_db_remove_entry
-// TODO: wait to post messages until transaction completes, to avoid
-// premature notification in case of transactional failure
+// @param conn {IDBDatabase}
+// @param ids {Array}
+// @param channel {BroadcastChannel}
 function reader_db_remove_entries(conn, ids, channel) {
   ASSERT(indexeddb_is_open(conn));
   ASSERT(Array.isArray(ids));
 
-  const tx = conn.transaction('entry', 'readwrite');
-  const promises = [];
-  for(const id of ids) {
-    promises.push(reader_db_remove_entry(tx, id, channel));
-  }
-  return Promise.all(promises);
-}
-
-function reader_db_remove_entry(tx, id, channel) {
-
-  // TODO: assert against tx.db or whatever the conn is?
-
   return new Promise(function executor(resolve, reject) {
-    const store = tx.objectStore('entry');
-    const request = store.delete(id);
-    request.onsuccess = () => {
-      if(channel)
-        channel.postMessage({'type': 'entryDeleted', 'id': id});
+    const tx = conn.transaction('entry', 'readwrite');
+    tx.oncomplete = function(event) {
+
+      // Now that the transaction has completed, dispatch messages
+      if(channel) {
+        for(const id of ids) {
+          channel.postMessage({'type': 'entryDeleted', 'id': id});
+        }
+      }
+
       resolve();
     };
-    request.onerror = () => reject(request.error);
+    tx.onerror = () => reject(tx.error);
+
+    const store = tx.objectStore('entry');
+    for(const id of ids) {
+      store.delete(id);
+    }
   });
 }

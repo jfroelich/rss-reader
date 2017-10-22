@@ -1,9 +1,11 @@
 'use strict';
 
-const cli = {};
+// import base/status.js
+// import archive-entries.js
+// import poll.js
+// import reader-db.js
 
-// Archive entries from the console
-cli.archive_entries = async function() {
+async function cli_archive_entries() {
   let max_age_ms, conn, status;
   try {
     conn = await reader_db_open();
@@ -16,10 +18,9 @@ cli.archive_entries = async function() {
   if(status !== STATUS_OK) {
     DEBUG('archive_entries failed with status', status);
   }
-};
+}
 
-// Check for updated console from the console
-cli.poll_feeds = async function() {
+async function cli_poll_feeds() {
   const flags = POLL_FEEDS_FLAGS.ALLOW_METERED_CONNECTIONS |
     POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE |
     POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK |
@@ -30,4 +31,4 @@ cli.poll_feeds = async function() {
   await poll_feeds(idle_period_secs, recency_period_ms,
     fetch_feed_timeout_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
     flags);
-};
+}

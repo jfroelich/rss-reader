@@ -1,6 +1,6 @@
 'use strict';
 
-// import assert.js
+// import base/assert.js
 
 function comment_filter(doc) {
   ASSERT(doc instanceof Document);

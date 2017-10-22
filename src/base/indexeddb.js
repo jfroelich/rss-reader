@@ -7,6 +7,11 @@ const INDEXEDDB_DEBUG = false;
 // Returns true if the conn is open
 // @param conn {IDBDatabase}
 function indexeddb_is_open(conn) {
+
+  if(INDEXEDDB_DEBUG) {
+    DEBUG('checking if connection open', conn);
+  }
+
   ASSERT(conn instanceof IDBDatabase);
   // TODO: only return true if connection is actually open. Not quite sure
   // how to detect this at the moment.
@@ -81,7 +86,8 @@ async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
     return await open_promise;
   }
 
-  // TODO: delegate to promise_timeout instead of re-implementing it here?
+  // TODO: delegate to promise_timeout instead of re-implementing it here? But
+  // how do I easily obtain timer pre resolution?
   const time_promise = new Promise(function t_exec(resolve, reject) {
     timer = setTimeout(resolve, timeout_ms);
   });

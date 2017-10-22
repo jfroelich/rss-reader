@@ -41,8 +41,9 @@ function slide_remove(slide_element) {
 // TODO: visual feedback in event of an error?
 async function slide_mark_read(conn, slide_element) {
   // This is normal and not an error
-  if(slide_element.hasAttribute('read'))
+  if(slide_element.hasAttribute('read')) {
     return;
+  }
 
   const entry_id_string = slide_element.getAttribute('entry');
   const radix = 10;
@@ -58,17 +59,18 @@ async function slide_mark_read(conn, slide_element) {
     if(status !== STATUS_OK) {
       // TODO: react to error
       if(SLIDESHOW_DEBUG)
-        DEBUG('Failed to mark entry as read');
+        DEBUG('Failed to mark entry slide as read');
     } else {
       if(SLIDESHOW_DEBUG)
-        DEBUG('Marked as read');
+        DEBUG('Marked entry slide as read', slide_element.innerHTML);
     }
 
     slide_element.setAttribute('read', '');
   } catch(error) {
-    // TODO: handle error
-    if(SLIDESHOW_DEBUG)
+    // TODO: handle error visually
+    if(SLIDESHOW_DEBUG) {
       DEBUG(error);
+    }
   } finally {
     if(is_local_conn && conn)
       conn.close();

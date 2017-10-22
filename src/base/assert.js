@@ -1,8 +1,12 @@
 'use strict';
 
+const ASSERT_ASSERTIONS_ENABLED = true;
+
 function ASSERT(condition, message) {
-  if(!condition) {
-    throw new Error(message || 'Assertion failed');
+  if(ASSERT_ASSERTIONS_ENABLED) {
+    if(!condition) {
+      throw new Error(message || 'Assertion failed');
+    }
   }
 }
 

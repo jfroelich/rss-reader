@@ -7,7 +7,7 @@
 const URL_DEBUG = true;
 
 // Returns true if the given url is canonical (absolute).
-// Allow for leading whitespace characters
+// Allows for leading whitespace characters
 // Returns true for javascript: and mailto: and data:
 // Returns true for https:// and http://
 // Returns false for // (which is preferable)
@@ -25,9 +25,10 @@ const URL_MIN_SCRIPT_LENGTH = 'javascript:'.length;
 // @param url {String}
 // @returns {Boolean}
 function url_has_script_protocol(url) {
+  // Tolerates bad input. No assert
   // Check url to avoid throwing and reduce calls to regex test
   // Check len to reduce calls to regex test
-  return url &&
+  return typeof url === 'string' &&
     url.length > URL_MIN_SCRIPT_LENGTH &&
     /^\s*javascript:/i.test(url);
 }
@@ -39,6 +40,7 @@ function url_has_script_protocol(url) {
 // @returns {URL} either the input url as an object if the url was already
 // absolute, or the absolute url, or undefined if a parsing error occurred
 function url_resolve(url, base_url) {
+  ASSERT(typeof url === 'string');
   ASSERT(url_is_url_object(base_url));
 
   let canonical_url;
@@ -61,7 +63,7 @@ function url_resolve(url, base_url) {
 // @param url {String}
 // @returns {String}
 function url_get_hostname(url) {
-  ASSERT(url);
+  ASSERT(typeof url === 'string');
   try {
     const url_object = new URL(url);
     return url_object.hostname;
@@ -74,7 +76,6 @@ function url_get_hostname(url) {
 // @param url {String}
 // @returns {Boolean}
 function url_is_valid(url) {
-  // TODO: choose a more accurate minimum length
   const URL_MIN_LENGTH = 1;
 
   if(typeof url === 'string') {

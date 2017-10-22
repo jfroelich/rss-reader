@@ -1,5 +1,9 @@
 'use strict';
 
+// import base/assert.js
+// import reader-db.js
+
+
 (function(exports) {
 
 const POLL_FEEDS_FLAGS = {};
@@ -38,21 +42,17 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
 
   let num_entries_added = 0;
   let reader_conn, icon_conn;
+  let resolutions;
 
   try {
-    const conns = await Promise.all([reader_db_open(), favicon_open_db()]);
-    reader_conn = conns[0];
-    icon_conn = conns[1];
+    [reader_conn, icon_conn] = await Promise.all([reader_db_open(),
+      favicon_open_db()]);
+
     const feeds = await find_pollable_feeds(reader_conn,
       ignore_recency_check, recency_period_ms);
-    const resolutions = await process_feeds(reader_conn, icon_conn, feeds,
+    resolutions = await process_feeds(reader_conn, icon_conn, feeds,
       ignore_modified_check, fetch_feed_timeout_ms, fetch_html_timeout_ms,
       fetch_img_timeout_ms);
-
-    // TODO: this can occur outside of the try/catch
-    for(const resolution of resolutions)
-      num_entries_added += resolution;
-
 
   } finally {
     if(reader_conn)
@@ -61,9 +61,14 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
       icon_conn.close();
   }
 
+  for(const resolution of resolutions) {
+    num_entries_added += resolution;
+  }
+
   // Non-awaited, this uses its own conn
-  if(num_entries_added)
+  if(num_entries_added) {
     extension_update_badge_text();
+  }
 
   if(num_entries_added)
     show_poll_notification(num_entries_added);
@@ -72,7 +77,6 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
   return num_entries_added;
 }
 
-// TODO: inline this function
 async function is_poll_startable(allow_metered_connections, ignore_idle_state,
   idle_period_secs) {
   if(is_offline()) {
@@ -162,12 +166,11 @@ async function poll_feed_silently(reader_conn, icon_conn, feed,
 }
 
 // @throws {Error} any exception thrown by fetch_feed is rethrown
-// TODO: move to poll-feed.js
 async function poll_feed(reader_conn, icon_conn, local_feed,
   fetch_feed_timeout_ms, ignore_modified_check, fetch_html_timeout_ms,
   fetch_img_timeout_ms) {
 
-  ASSERT(local_feed);
+  ASSERT(feed_is_feed(local_feed));
 
   const url_string = feed_get_top_url(local_feed);
   const accept_html = true;
@@ -258,12 +261,10 @@ function filter_dup_entries(entries) {
 }
 
 // experimental
-// TODO: inline
 function is_metered_connection() {
   return navigator.connection && navigator.connection.metered;
 }
 
-// TODO: inline
 function is_offline() {
   return 'onLine' in navigator && !navigator.onLine;
 }

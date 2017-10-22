@@ -11,7 +11,6 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   // Init the badge text. As a side effect this will create the
   // reader-db database
   // Non-awaited.
-  // TODO: reintroduce conn parameter to extension_update_badge_text
   extension_update_badge_text();
 
   try {
