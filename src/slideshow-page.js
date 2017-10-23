@@ -5,7 +5,6 @@
 // import entry-mark-read.js
 // import reader-db.js
 
-
 // TODO: deprecate IIAFE
 
 (function(exports){

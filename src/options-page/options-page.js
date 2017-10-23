@@ -129,24 +129,29 @@ async function options_page_start_subscription(url) {
   feed_append_url(feed, url.href);
 
   let status, subscribed_feed;
-  let reader_conn, icon_conn;
-  const conn_promise = Promise.all([reader_db_open(), favicon_open_db()]);
+
+  const subscription = new Subscription();
+  subscription.feed = feed;
+  subscription.reader_conn = reader_conn;
+  subscription.icon_conn = icon_conn;
 
   try {
-    [reader_conn, icon_conn] = await conn_promise;
-    const sub_result = await subscription_add(feed, reader_conn, icon_conn);
+    [subscription.reader_conn, subscription.icon_conn] = await
+      Promise.all([reader_db_open(), favicon_open_db()]);
+
+    const sub_result = await subscription_add(subscription);
     status = sub_result.status;
     subscribed_feed = sub_result.feed;
   } catch(error) {
     console.warn(error);
     options_page_subscription_monitor_hide();
-    // TODO: show an error message.
+    // TODO: show a visual error message.
     return;
   } finally {
-    if(reader_conn)
-      reader_conn.close();
-    if(icon_conn)
-      icon_conn.close();
+    if(subscription.reader_conn)
+      subscription.reader_conn.close();
+    if(subscription.icon_conn)
+      subscription.icon_conn.close();
   }
 
   if(status !== STATUS_OK) {
@@ -512,16 +517,20 @@ function options_page_feed_list_remove_feed(feed_id) {
 }
 
 async function options_page_unsubscribe_button_on_click(event) {
+
+  const subscription = new Subscription();
+  subscription.feed = {};
+
   const radix = 10;
-  const feed_id = parseInt(event.target.value, radix);
-  console.assert(!isNaN(feed_id));
+  subscription.feed.id = parseInt(event.target.value, radix);
+  console.assert(feed_is_valid_feed_id(subscription.feed.id));
 
   let reader_conn;
   try {
-    reader_conn = await reader_db_open();
+    subscription.reader_conn = await reader_db_open();
 
     // TODO: check status of result
-    const num_entries_deleted = await subscription_remove(feed_id, reader_conn);
+    await subscription_remove(subscription);
   } catch(error) {
 
     // TODO: visually react to unsubscribe error
@@ -532,7 +541,7 @@ async function options_page_unsubscribe_button_on_click(event) {
       reader_conn.close();
   }
 
-  options_page_feed_list_remove_feed(feed_id);
+  options_page_feed_list_remove_feed(subscription.feed.id);
   options_page_show_section_id('subs-list-section');
 }
 

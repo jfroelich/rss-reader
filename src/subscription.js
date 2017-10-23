@@ -8,12 +8,32 @@
 // import favicon.js
 // import reader-db.js
 
+function Subscription() {
+  this.feed = undefined;
+  this.reader_conn = undefined;
+  this.icon_conn = undefined;
+  this.timeout_ms = 0;
+  this.notify = false;
+}
+
+function subscription_is_subscription(subscription) {
+  // TODO: is instanceof more accurate?
+  return typeof subscription === 'object';
+}
+
 // Returns a result object with properties status and feed. feed is only defined
 // if status is ok. feed is a copy of the inserted feed, which includes its new
 // id.
 // TODO: return array instead of object for simpler destructuring
-async function subscription_add(feed, reader_conn, icon_conn, timeout_ms,
-  notify) {
+async function subscription_add(subscription) {
+
+  // TODO: rather than define these, just access the prop directly below.
+  // This is currently a temporary solution while refactoring.
+  const feed = subscription.feed;
+  const reader_conn = subscription.reader_conn;
+  const icon_conn = subscription.icon_conn;
+  const timeout_ms = subscription.timeout_ms;
+  const notify = subscription.notify;
 
   console.assert(feed_is_feed(feed));
   console.assert(indexeddb_is_open(reader_conn));
@@ -136,27 +156,31 @@ function subscription_feed_prep(feed) {
 // exceptional reason, then it is skipped.
 // TODO: do a single notification?
 function subscription_add_all(feeds, reader_conn, icon_conn, timeout_ms) {
-  const notify = false;
+
   const promises = [];
   for(const feed of feeds) {
-    const promise = subscription_add(feed, reader_conn, icon_conn, timeout_ms,
-      notify);
+
+    const subscription = new Subscription();
+    subscription.feed = feed;
+    subscription.reader_conn = reader_conn;
+    subscription.icon_conn = icon_conn;
+    subscription.timeout_ms = timeout_ms;
+    subscription.notify = false;
+
+    const promise = subscription_add(subscription);
     promises.push(promise);
   }
   return Promise.all(promises);
 }
 
-// Unsubscribes from a feed
-// @param conn {IDBDatabase} an open database connection
-// @param feed_id {Number} id of feed to unscubscribe
+// @param subscription {Subscription}
 // TODO: return a status instead of number of entries
-async function subscription_remove(feed_id, conn) {
-  console.log('subscription_remove', feed_id);
-  console.assert(feed_is_valid_feed_id(feed_id));
+async function subscription_remove(subscription) {
+  console.log('subscription_remove', subscription);
 
-  // TODO: assert conn open. How do I check if an instance of IDBDatabase is
-  // open? I am not seeing any details on MDB. Check spec.
-  // Looking at spec, it looks like I want !conn.closePending
+  console.assert(subscription_is_subscription(subscription));
+  console.assert(feed_is_valid_feed_id(subscription.feed.id));
+  console.assert(indexeddb_is_open(subscription.reader_conn));
 
   // Find all entries for the feed, load the ids into memory, then remove the
   // feed and the entries
@@ -165,8 +189,10 @@ async function subscription_remove(feed_id, conn) {
 
   let entry_ids;
   try {
-    entry_ids = await reader_db_find_entry_ids_by_feed(conn, feed_id);
-    await reader_db_remove_feed_and_entries(conn, feed_id, entry_ids);
+    entry_ids = await reader_db_find_entry_ids_by_feed(subscription.reader_conn,
+      subscription.feed.id);
+    await reader_db_remove_feed_and_entries(subscription.reader_conn,
+      subscription.feed.id, entry_ids);
   } catch(error) {
     console.warn(error);
     // TODO: return something clearer, right now this is ambiguous as to
@@ -182,11 +208,12 @@ async function subscription_remove(feed_id, conn) {
   extension_update_badge_text(); // ignore errors
 
   // To avoid large message size, broadcast individual messages.
-  // TODO: rename types to feed_deleted, entry_deleted
+  // TODO: rename message types to feed_deleted, entry_deleted
   // TODO: would be better to broadcast a single message for entries? but how
-  // would slideshow react to entries loaded (by feed actually?)
+  // would slideshow react to entries loaded (by feed actually?)? or
+  // broadcast a message containing an array.
   const channel = new BroadcastChannel('db');
-  channel.postMessage({'type': 'feedDeleted', 'id': feed_id});
+  channel.postMessage({'type': 'feedDeleted', 'id': subscription.feed.id});
   for(const entry_id of entry_ids)
     channel.postMessage({'type': 'entryDeleted', 'id': entry_id});
   channel.close();
