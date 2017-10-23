@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/status.js
 // import filters/filter-helpers.js
 
 // An anchor that acts like a span can be unwrapped
@@ -18,4 +19,6 @@ function formatting_anchor_filter(doc) {
       unwrap_element(anchor);
     }
   }
+
+  return STATUS_OK;
 }

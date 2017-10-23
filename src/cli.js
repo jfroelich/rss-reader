@@ -16,7 +16,7 @@ async function cli_archive_entries() {
   }
 
   if(status !== STATUS_OK) {
-    DEBUG('archive_entries failed with status', status);
+    console.log('archive_entries failed with status', status);
   }
 }
 

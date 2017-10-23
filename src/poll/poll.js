@@ -1,8 +1,6 @@
 'use strict';
 
-
 // import reader-db.js
-
 
 (function(exports) {
 
@@ -33,7 +31,7 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
   const ignore_recency_check = flags & POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK;
   const ignore_modified_check = flags & POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK;
 
-  DEBUG('Checking for new articles...');
+  console.log('Checking for new articles...');
 
   // TODO: it would make more sense to just pass flags here
   if(!await is_poll_startable(allow_metered_connections, ignore_idle_state,
@@ -73,27 +71,27 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
   if(num_entries_added)
     show_poll_notification(num_entries_added);
   broadcast_poll_completed_message(num_entries_added);
-  DEBUG('Polling completed');
+  console.log('Polling completed');
   return num_entries_added;
 }
 
 async function is_poll_startable(allow_metered_connections, ignore_idle_state,
   idle_period_secs) {
   if(is_offline()) {
-    DEBUG('Polling canceled because offline');
+    console.log('Polling canceled because offline');
     return false;
   }
 
   if(!allow_metered_connections && 'NO_POLL_METERED' in localStorage &&
     is_metered_connection()) {
-    DEBUG('Polling canceled because connection is metered');
+    console.log('Polling canceled because connection is metered');
     return false;
   }
 
   if(!ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
     const state = await extension_idle_query(idle_period_secs);
     if(state !== 'locked' && state !== 'idle') {
-      DEBUG('Polling canceled because machine not idle');
+      console.log('Polling canceled because machine not idle');
       return false;
     }
   }
@@ -132,7 +130,7 @@ function feed_is_pollable(feed, recency_period_ms) {
   if(elapsed < recency_period_ms) {
     // A feed has been polled too recently if not enough time has elasped from
     // the last time the feed was polled.
-    DEBUG('feed polled too recently', feed_get_top_url(feed));
+    console.log('feed polled too recently', feed_get_top_url(feed));
     return false;
   }
 
@@ -160,7 +158,7 @@ async function poll_feed_silently(reader_conn, icon_conn, feed,
       fetch_feed_timeout_ms, ignore_modified_check, fetch_html_timeout_ms,
       fetch_img_timeout_ms);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
   }
   return num_entries_added;
 }
@@ -183,7 +181,7 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
   if(!ignore_modified_check && local_feed.dateUpdated &&
     is_feed_unmodified(local_feed.dateLastModified,
       response.last_modified_date)) {
-    DEBUG('skipping unmodified feed', url_string,
+    console.log('skipping unmodified feed', url_string,
         local_feed.dateLastModified, response.last_modified_date);
     return 0;
   }

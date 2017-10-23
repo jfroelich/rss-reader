@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/debug.js
 // import http/mime.js
 // import opml/opml-document.js
 // import opml/opml-outline.js
@@ -16,7 +15,7 @@
 // @returns status
 async function reader_import_files(files) {
   console.assert(files);
-  DEBUG('importing %d files', files.length);
+  console.log('importing %d files', files.length);
 
   let reader_conn, icon_conn;
   try {
@@ -26,7 +25,7 @@ async function reader_import_files(files) {
 
     await reader_import_files_internal(files, reader_conn, icon_conn);
   } catch(error) {
-    DEBUG('opml import error', error);
+    console.warn(error);
     return ERR_DB_OP;
   } finally {
     if(reader_conn)
@@ -50,22 +49,22 @@ async function reader_import_file_silently(file, reader_conn, icon_conn) {
   try {
     num_feeds_added = await reader_import_file(file, reader_conn, icon_conn);
   } catch(error) {
-    DEBUG(error);
+    console.log(error);
   }
   return num_feeds_added;
 }
 
 async function reader_import_file(file, reader_conn, icon_conn) {
   console.assert(file);
-  DEBUG('importing opml file', file.name);
+  console.log('importing opml file', file.name);
 
   if(file.size < 1) {
-    DEBUG('file %s is 0 bytes', file.name);
+    console.log('file %s is 0 bytes', file.name);
     return 0;
   }
 
   if(!mime_is_xml(file.type)) {
-    DEBUG('file %s is not mime type xml', file.type);
+    console.log('file %s is not mime type xml', file.type);
     return 0;
   }
 
@@ -73,13 +72,13 @@ async function reader_import_file(file, reader_conn, icon_conn) {
   try {
     file_content = await file_read_as_text(file);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     return 0;
   }
 
   let [status, document] = opml_parse_from_string(file_content);
   if(status !== STATUS_OK) {
-    DEBUG('error parsing opml file', file.name);
+    console.log('error parsing opml file', file.name);
     return 0;
   }
 
@@ -89,13 +88,13 @@ async function reader_import_file(file, reader_conn, icon_conn) {
 
   const outlines = opml_get_outline_objects(document);
   if(!outlines.length) {
-    DEBUG('file %s contained 0 outlines', file.name);
+    console.log('file %s contained 0 outlines', file.name);
     return 0;
   }
 
   const unique_outlines = reader_import_group_outlines(outlines);
   const dup_outline_count = outlines.length - unique_outlines.length;
-  DEBUG('found %d duplicates in file', dup_outline_count, file.name);
+  console.log('found %d duplicates in file', dup_outline_count, file.name);
 
   for(const outline of unique_outlines) {
     opml_outline_normalize_htmlurl(outline);
@@ -116,7 +115,7 @@ async function reader_import_file(file, reader_conn, icon_conn) {
       sub_count++;
   }
 
-  DEBUG('subbed to %d of %d feeds in file', sub_count, feeds.length, file.name);
+  console.log('subbed to %d of %d feeds in file', sub_count, feeds.length, file.name);
   return sub_count;
 }
 

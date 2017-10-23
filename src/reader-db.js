@@ -1,15 +1,10 @@
 'use strict';
 
-
-// import base/debug.js
 // import base/indexeddb.js
 // import base/number.js
 // import http/url.js
 // import rss/feed.js
 // import rss/entry.js
-
-
-const READER_DB_DEBUG = false;
 
 // Opens a connection to the reader-db database
 // @return {Promise} a promise that resolves to an open database connection
@@ -26,10 +21,8 @@ function reader_db_onupgradeneeded(event) {
   let feed_store, entry_store;
   const stores = conn.objectStoreNames;
 
-  if(READER_DB_DEBUG) {
-    DEBUG('upgrading database %s to version %s from version', conn.name,
-      conn.version, event.oldVersion);
-  }
+  console.log('upgrading database %s to version %s from version', conn.name,
+    conn.version, event.oldVersion);
 
   if(event.oldVersion < 20) {
     feed_store = conn.createObjectStore('feed', {

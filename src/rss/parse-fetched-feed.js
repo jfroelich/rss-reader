@@ -3,7 +3,6 @@
 // import rss/feed.js
 // import rss/parse-feed.js
 
-
 // TODO: rename to feed-coerce or something?
 // TODO: move out of fetch folder
 // TODO: do not throw in the usual case, return status codes instead

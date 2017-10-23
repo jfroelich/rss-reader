@@ -1,7 +1,5 @@
 'use strict';
 
-
-// import base/debug.js
 // import base/object.js
 // import html.js
 // import poll/poll-document-filter.js
@@ -57,7 +55,7 @@ async function poll_entry(entry, reader_conn, icon_conn, feed,
   try {
     response = await fetch_html(url_string, fetch_html_timeout_ms);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
 
     // If the fetch failed, then process the entry as local
     await poll_entry_prepare_local_entry(entry, fetch_img_timeout_ms);
@@ -183,7 +181,7 @@ async function poll_entry_store_entry(entry, reader_conn) {
   try {
     await reader_db_put_entry(reader_conn, storable_entry);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     return false;
   }
   return true;

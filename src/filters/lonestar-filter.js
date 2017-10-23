@@ -1,18 +1,13 @@
 'use strict';
 
-// import base/debug.js
 // import dom/element.js
 
 // TODO: move todos to github issues
-
 // TODO: move patterns into an external configuration file of some sort? or
 // see if patterns can be configured within manifest.json and loaded from there?
-
 // TODO: remove tracking parameters from anchor element href urls for
 // certain origins. Use a blacklist approach that given a certain domain
 // removes certain parameters, and otherwise tolerates all parameters
-
-const LONESTAR_DEBUG = false;
 
 const LONESTAR_PATTERNS = [
   /\/\/.*2o7\.net\//i,
@@ -66,11 +61,7 @@ function lonestar_filter_telemetry_images(doc) {
   const image_elements = doc.body.querySelectorAll('img');
   for(const image_element of image_elements) {
     if(lonestar_image_is_telemetry(image_element)) {
-
-      if(LONESTAR_DEBUG) {
-        DEBUG('removing telemetry image', image_element.outerHTML);
-      }
-
+      console.log('lonestar_filter_telemetry_images', image_element.outerHTML);
       image_element.remove();
       num_elements_modified++;
     }

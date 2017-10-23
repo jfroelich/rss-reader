@@ -1,12 +1,13 @@
 'use strict';
 
+// import base/status.js
 // import reader-db.js
 
 // TODO: reintroduce conn as a parameter
 // TODO: deprecate options parameter
 async function remove_orphaned_entries(options) {
   options = options || {};
-  let conn, ids, conn_timeout_ms;
+  let conn, ids;
   try {
     conn = await reader_db_open();
     const orphans = await reader_db_find_orphaned_entries(conn);
@@ -32,4 +33,6 @@ async function remove_orphaned_entries(options) {
     }
     channel.close();
   }
+
+  return STATUS_OK;
 }

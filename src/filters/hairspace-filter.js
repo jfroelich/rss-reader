@@ -1,12 +1,12 @@
 'use strict';
 
+// import base/status.js
+
 // TODO: this should be part of a general character normalization filter,
 // or perhaps a whitespace normalization filter, or an entity filter
-
 // TODO: accessing nodeValue does decoding, so maybe this doesn't work? Forgot.
 // TODO: this needs testing to test whether it actually works, I don't think
 // this works.
-
 function hairspace_filter(doc) {
   console.assert(doc instanceof Document);
 
@@ -24,4 +24,6 @@ function hairspace_filter(doc) {
     if(modified_value.length !== value.length)
       node.nodeValue = modified_value;
   }
+
+  return STATUS_OK;
 }

@@ -1,6 +1,5 @@
 'use strict';
 
-
 // import rss/feed.js
 
 function opml_outline_is_outline(outline) {

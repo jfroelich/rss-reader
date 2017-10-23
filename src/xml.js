@@ -1,11 +1,12 @@
 'use strict';
 
-// import base/debug.js
 // import base/status.js
 // import http/mime.js
 
 // Parses an xml string into a document
 function xml_parse_from_string(xml_string) {
+  console.assert(xml_string);
+
   const parser = new DOMParser();
 
   // parseFromString always yields a defined document, regardless of the
@@ -18,7 +19,7 @@ function xml_parse_from_string(xml_string) {
   // input. In the interest of safety, this always fails.
   const error_element = doc.querySelector('parsererror');
   if(error_element) {
-    DEBUG(error_element.textContent);
+    console.log(error_element.textContent);
     return [ERR_PARSE];
   }
 
@@ -31,8 +32,7 @@ function xml_parse_from_string(xml_string) {
 function xml_to_string(doc) {
   console.assert(doc instanceof Document);
   const serializer = new XMLSerializer();
-  const xml_string = serializer.serializeToString(doc);
-  return xml_string;
+  return serializer.serializeToString(doc);
 }
 
 // Converts an xml document into a blob
@@ -42,8 +42,7 @@ function xml_to_blob(doc) {
   console.assert(doc instanceof Document);
   const mime_type = 'application/xml';
   const xml_string = xml_to_string(doc);
-  const options = {'type': mime_type};
-
   const parts_array = [xml_string];
+  const options = {'type': mime_type};
   return new Blob(parts_array, options);
 }

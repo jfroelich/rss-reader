@@ -1,7 +1,5 @@
 'use strict';
 
-
-// import base/debug.js
 // import base/status.js
 // import xml.js
 // import opml/opml-outline.js
@@ -9,13 +7,13 @@
 function opml_parse_from_string(xml_string) {
   let [status, doc] = xml_parse_from_string(xml_string);
   if(status !== STATUS_OK) {
-    DEBUG('xml parse error');
+    console.log('xml parse error');
     return [status];
   }
 
   const name = doc.documentElement.localName.toLowerCase();
   if(name !== 'opml') {
-    DEBUG('documentElement not opml:', name);
+    console.log('documentElement not opml:', name);
     return [ERR_DOM];
   }
 
@@ -38,7 +36,7 @@ function opml_document_set_title(doc, title) {
       // <head> if needed
 
       if(!head_element) {
-        DEBUG('missing head element');
+        console.log('missing head element');
         return ERR_DOM;
       }
 

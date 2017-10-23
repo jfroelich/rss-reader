@@ -1,9 +1,5 @@
 'use strict';
 
-// import base/debug.js
-
-const EXTENSION_DEBUG = false;
-
 function extension_idle_query(idle_period_secs) {
   return new Promise(function executor(resolve, reject) {
     chrome.idle.queryState(idle_period_secs, resolve);
@@ -14,17 +10,14 @@ function extension_idle_query(idle_period_secs) {
 // function
 // TODO: reintroduce conn param, do not connect locally
 async function extension_update_badge_text() {
-  if(EXTENSION_DEBUG) {
-    DEBUG('updating badge text');
-  }
-
+  console.log('extension_update_badge_text');
   let count = 0, conn;
 
   try {
     conn = await reader_db_open();
     count = await reader_db_count_unread_entries(conn);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     return ERR_DB_OP;
   } finally {
     if(conn)
@@ -32,8 +25,7 @@ async function extension_update_badge_text() {
   }
 
   const text = count > 999 ? '1k+' : '' + count;
-  if(EXTENSION_DEBUG)
-    DEBUG('setting badge text to', text);
+  console.log('extension_update_badge_text text', text);
   chrome.browserAction.setBadgeText({'text': text});
   return STATUS_OK;
 }
@@ -96,6 +88,6 @@ async function extension_notification_on_click(event) {
     window_handle.close();
     await extension_show_slideshow_tab();
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
   }
 }

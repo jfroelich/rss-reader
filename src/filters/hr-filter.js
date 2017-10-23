@@ -1,5 +1,7 @@
 'use strict';
 
+// import base/status.js
+
 // Look for all <hr><hr> sequences and remove the second one. Naive in that it
 // does not fully account for new document state as hrs removed.
 function hr_filter(doc) {
@@ -10,6 +12,9 @@ function hr_filter(doc) {
   }
 
   const hrs = doc.body.querySelectorAll('hr + hr');
-  for(const hr of hrs)
+  for(const hr of hrs) {
     hr.remove();
+  }
+
+  return STATUS_OK;
 }

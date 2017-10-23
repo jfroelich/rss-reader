@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/debug.js
 // import base/status.js
 // import http/mime.js
 
@@ -23,7 +22,7 @@ function html_replace_tags(input_string, replacement_string) {
 
   const [status, doc] = html_parse_from_string(input_string);
   if(status !== STATUS_OK) {
-    DEBUG('failed to parse html when replacing tags');
+    console.log('failed to parse html when replacing tags');
     // Brick wall the input due to XSS vulnerability
     return 'Unsafe HTML redacted';
   }
@@ -136,7 +135,7 @@ function html_parse_from_string(html_string) {
   const error_element = doc.querySelector('parsererror');
   if(error_element) {
     const unsafe_message = error_element.textContent;
-    DEBUG(unsafe_message);
+    console.log(unsafe_message);
     return [ERR_PARSE];
   }
 
@@ -146,7 +145,7 @@ function html_parse_from_string(html_string) {
   if(lc_root_name !== 'html') {
     const unsafe_message = 'html parsing error: ' + lc_root_name +
       ' is not html';
-    DEBUG(unsafe_message);
+    console.log(unsafe_message);
     return [ERR_PARSE];
   }
 

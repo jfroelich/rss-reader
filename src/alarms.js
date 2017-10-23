@@ -1,16 +1,15 @@
 'use strict';
 
+// import poll/poll.js
 // import reader-db.js
 // import archive-entries.js
 // import favicon.js
 // import remove-entries-missing-urls.js
 // import remove-orphaned-entries.js
-// import poll/poll.js
 
 // TODO: consider app layer abstraction between here and deps. alarms, like the
 // cli, are end users.
 
-const ALARMS_DEBUG = false;
 
 async function alarms_on_archive_alarm() {
   let conn, max_age_ms, status;
@@ -18,16 +17,14 @@ async function alarms_on_archive_alarm() {
     conn = await reader_db_open();
     status = await archive_entries(conn, max_age_ms);
   } catch(error) {
-    if(ALARMS_DEBUG)
-      DEBUG(error);
+    console.error(error);
   } finally {
     if(conn)
       conn.close();
   }
 
   if(status !== STATUS_OK) {
-    if(ALARMS_DEBUG)
-      DEBUG('archive entries failed status', status);
+    console.log('archive entries failed status', status);
   }
 }
 
@@ -37,8 +34,7 @@ async function alarms_on_compact_favicons_alarm() {
     conn = await favicon_open_db();
     await favicon_compact_db(conn, max_age_ms);
   } catch(error) {
-    if(ALARMS_DEBUG)
-      DEBUG(error);
+    console.warn(error);
   } finally {
     if(conn)
       conn.close();
@@ -46,8 +42,7 @@ async function alarms_on_compact_favicons_alarm() {
 }
 
 async function alarms_on_alarm_wakeup(alarm) {
-  if(ALARMS_DEBUG)
-    DEBUG('alarm wokeup:', alarm.name);
+  console.log('alarms_on_alarm_wakeup', alarm.name);
 
   switch(alarm.name) {
   case 'archive':
@@ -75,15 +70,13 @@ async function alarms_on_alarm_wakeup(alarm) {
     alarms_on_compact_favicons_alarm();
     break;
   default:
-    if(ALARMS_DEBUG)
-      DEBUG('Unknown alarm:', alarm.name);
+    console.warn('Unknown alarm:', alarm.name);
     break;
   }
 }
 
 function alarms_register_all() {
-  if(ALARMS_DEBUG)
-    console.debug('registering alarms');
+  console.log('alarms_register_all');
 
   chrome.alarms.create('archive',
     {'periodInMinutes': 60 * 12});

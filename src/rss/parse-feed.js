@@ -1,6 +1,5 @@
 'use strict';
 
-
 // import base/status.js
 // import xml.js
 
@@ -14,7 +13,7 @@
 function parse_feed(xml_string) {
   let [status, doc] = xml_parse_from_string(xml_string);
   if(status !== STATUS_OK) {
-    DEBUG('parse feed error');
+    console.warn('parse feed error');
     return;
   }
 

@@ -1,6 +1,5 @@
 'use strict';
 
-
 // import base/string.js
 
 // TODO: mime is not http only, this file should be moved

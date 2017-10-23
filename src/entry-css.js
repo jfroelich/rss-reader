@@ -1,15 +1,9 @@
 'use strict';
 
-const ENTRY_CSS_DEBUG = false;
-
 // Get the current settings from local storage and then modify the css rules
 // in the default style sheet
 function entry_css_on_change(event) {
-
-  if(ENTRY_CSS_DEBUG) {
-    DEBUG('entry css settings changed');
-  }
-
+  console.log('entry_css_on_change');
   const sheet = css_get_default_sheet();
   console.assert(sheet);
   entry_css_update_rule(sheet);
@@ -20,11 +14,7 @@ function entry_css_on_change(event) {
 // Get the current settings from local storage and then create css rules and
 // append them to the default style sheet.
 function entry_css_init() {
-
-  if(ENTRY_CSS_DEBUG) {
-    DEBUG('initializing entry css settings');
-  }
-
+  console.log('entry_css_init');
   const sheet = css_get_default_sheet();
   console.assert(sheet);
   sheet.addRule('div.entry', entry_css_create_entry_rule_text());
@@ -54,10 +44,7 @@ function entry_css_create_entry_rule_text() {
     buffer.push(`padding: ${padding}px;`);
   }
 
-  if(ENTRY_CSS_DEBUG) {
-    DEBUG('div.entry:', buffer.join(''));
-  }
-
+  console.log('div.entry:', buffer.join(''));
   return buffer.join('');
 }
 

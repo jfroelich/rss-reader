@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/debug.js
 // import rss/entry.js
 // reader-db.js
 
@@ -16,7 +15,7 @@ async function archive_entries(conn, max_age_ms) {
   console.assert(indexeddb_is_open(conn));
   // max_age_ms assertion delegated to reader_db_find_archivable_entries
 
-  DEBUG('archiving entries older than %d ms', max_age_ms);
+  console.log('archiving entries older than %d ms', max_age_ms);
 
   let compacted_entries = [];
   let did_put_entries = false;
@@ -43,6 +42,6 @@ async function archive_entries(conn, max_age_ms) {
     db_channel.close();
   }
 
-  DEBUG('compacted %s entries', compacted_entries.length);
+  console.log('compacted %s entries', compacted_entries.length);
   return STATUS_OK;
 }

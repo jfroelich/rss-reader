@@ -3,6 +3,7 @@
 function date_format(date_object, delimiter) {
 
   // TODO: assert date_object is date
+  console.assert(date_object);
 
   // Tolerate some bad input
   if(!date_object) {

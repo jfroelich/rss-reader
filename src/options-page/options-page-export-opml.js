@@ -13,7 +13,7 @@ async function options_page_export_opml() {
     conn = await reader_db_open();
     feeds = await reader_db_get_feeds(conn);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     return ERR_DB_OP;
   } finally {
     if(conn)

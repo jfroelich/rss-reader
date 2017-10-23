@@ -4,11 +4,9 @@
 
 // Return true if the first parameter is an image element
 function image_is_image(image) {
-  // TODO: implement, maybe use a simple duck type test
-  // TODO: use instanceof?
-  return true;
+  // TODO: be more precise, use HTMLImageElement or whatever it is
+  return image instanceof Element;
 }
-
 
 // TODO: also has source if within picture and picture has <source>, or
 // alternatively rename to image_has_source_attribute

@@ -1,5 +1,7 @@
 'use strict';
 
+// import base/status.js
+
 function invalid_anchor_filter(doc) {
   console.assert(doc instanceof Document);
 
@@ -14,6 +16,8 @@ function invalid_anchor_filter(doc) {
       anchor.remove();
     }
   }
+
+  return STATUS_OK;
 }
 
 function invalid_anchor_filter_is_invalid(anchor_element) {

@@ -1,10 +1,7 @@
 'use strict';
 
-// import base/debug.js
 // import dom/image.js
 // import http/url.js
-
-const LAZY_IMAGE_FILTER_DEBUG = false;
 
 function lazy_image_filter(doc) {
   console.assert(doc instanceof Document);
@@ -34,11 +31,7 @@ function lazy_image_filter(doc) {
         if(url_is_valid(url_string)) {
           img.removeAttribute(lazy_src_attr_name);
           img.setAttribute('src', url_string);
-
-          if(LAZY_IMAGE_FILTER_DEBUG) {
-            DEBUG('transformed lazily loaded image', img);
-          }
-
+          console.log('lazy_image_filter', img.outerHTML);
           num_imgs_modified++;
           break;
         }

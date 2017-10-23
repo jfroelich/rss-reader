@@ -27,7 +27,6 @@
       "/src/rewrite-url.js",
       "/src/subscription.js",
 
-      "/src/base/debug.js",
       "/src/base/indexeddb.js",
       "/src/base/number.js",
       "/src/base/object.js",

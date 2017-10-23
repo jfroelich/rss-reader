@@ -1,7 +1,5 @@
 'use strict';
 
-
-
 function feed_create() {
   return {};
 }

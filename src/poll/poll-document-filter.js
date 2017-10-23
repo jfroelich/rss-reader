@@ -1,6 +1,5 @@
 'use strict';
 
-
 // import base/status.js
 // import filters/base-filter.js
 // import filters/emphasis-filter.js

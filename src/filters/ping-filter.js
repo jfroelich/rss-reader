@@ -1,5 +1,7 @@
 'use strict';
 
+// import base/status.js
+
 function ping_filter(doc) {
   console.assert(doc instanceof Document);
 
@@ -11,4 +13,6 @@ function ping_filter(doc) {
   for(const anchor of anchors) {
     anchor.removeAttribute('ping');
   }
+
+  return STATUS_OK;
 }

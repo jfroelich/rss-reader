@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/status.js
 // import filters/transform-helpers.js
 
 // TODO: restrict children of list to proper child type. E.g. only allow li
@@ -31,6 +32,8 @@ function list_filter(doc) {
   for(const list of lists) {
     list_filter_unwrap_single_item_list(list);
   }
+
+  return STATUS_OK;
 }
 
 // Return true if list is 'empty'

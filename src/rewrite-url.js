@@ -5,6 +5,7 @@
 // @param url {String}
 // @returns {String}
 function rewrite_url(url) {
+  // TODO: stricter assert, use something in url.js
   console.assert(typeof url === 'string');
 
   const url_object = new URL(url);

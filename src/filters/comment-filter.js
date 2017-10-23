@@ -1,5 +1,7 @@
 'use strict';
 
+// import base/status.js
+
 function comment_filter(doc) {
   console.assert(doc instanceof Document);
 
@@ -8,4 +10,5 @@ function comment_filter(doc) {
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     node.remove();
   }
+  return STATUS_OK;
 }

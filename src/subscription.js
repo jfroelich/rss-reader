@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/debug.js
 // import base/object.js
 // import fetch/fetch.js
 // import fetch/parse-fetched-feed.js
@@ -20,7 +19,7 @@ async function subscription_add(feed, reader_conn, icon_conn, timeout_ms,
   console.assert(indexeddb_is_open(reader_conn));
   console.assert(indexeddb_is_open(icon_conn));
 
-  DEBUG('called subscription_add with feed', feed);
+  console.log('called subscription_add with feed', feed);
 
   if(typeof timeout_ms === 'undefined')
     timeout_ms = 2000;
@@ -45,7 +44,7 @@ async function subscription_add(feed, reader_conn, icon_conn, timeout_ms,
   try {
     response = await fetch_feed(url_string, timeout_ms);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     return {'status': ERR_FETCH};
   }
 
@@ -71,7 +70,7 @@ async function subscription_add(feed, reader_conn, icon_conn, timeout_ms,
     // of the response
     parse_result = await parse_fetched_feed(response);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     return {'status': ERR_PARSE};
   }
 
@@ -91,7 +90,7 @@ async function subscription_url_is_unique(url_string, reader_conn) {
     if(await reader_db_find_feed_id_by_url(reader_conn, url_string))
       return ERR_DB_OP;
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     return ERR_DB_OP;
   }
   return STATUS_OK;
@@ -103,7 +102,7 @@ async function subscription_put_feed(feed, reader_conn, notify) {
   try {
     new_id = await reader_db_put_feed(reader_conn, storable_feed);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     return {'status': ERR_DB_OP};
   }
 
@@ -150,9 +149,9 @@ function subscription_add_all(feeds, reader_conn, icon_conn, timeout_ms) {
 // Unsubscribes from a feed
 // @param conn {IDBDatabase} an open database connection
 // @param feed_id {Number} id of feed to unscubscribe
-// TODO: return a subscription result object instead of number of entries
+// TODO: return a status instead of number of entries
 async function subscription_remove(feed_id, conn) {
-  DEBUG('unsub', feed_id);
+  console.log('subscription_remove', feed_id);
   console.assert(feed_is_valid_feed_id(feed_id));
 
   // TODO: assert conn open. How do I check if an instance of IDBDatabase is
@@ -169,7 +168,7 @@ async function subscription_remove(feed_id, conn) {
     entry_ids = await reader_db_find_entry_ids_by_feed(conn, feed_id);
     await reader_db_remove_feed_and_entries(conn, feed_id, entry_ids);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     // TODO: return something clearer, right now this is ambiguous as to
     // whether 0 entries removed, or error. But in order to do that I need
     // to change the return value of the whole function, so this requires more

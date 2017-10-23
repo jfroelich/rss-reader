@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/debug.js
 // import http/fetch.js
 // import http/url.js
 
@@ -12,6 +11,7 @@
 // @param doc {Document}
 // @param timeout_ms {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
+// TODO: change to return status
 async function image_size_filter(doc, allowed_protocols, timeout_ms) {
   console.assert(doc instanceof Document);
 

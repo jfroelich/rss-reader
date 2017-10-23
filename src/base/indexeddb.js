@@ -1,15 +1,8 @@
 'use strict';
 
-const INDEXEDDB_DEBUG = false;
-
 // Returns true if the conn is open
 // @param conn {IDBDatabase}
 function indexeddb_is_open(conn) {
-
-  if(INDEXEDDB_DEBUG) {
-    DEBUG('checking if connection open', conn);
-  }
-
   console.assert(conn instanceof IDBDatabase);
   // TODO: only return true if connection is actually open. Not quite sure
   // how to detect this at the moment.
@@ -35,12 +28,7 @@ function indexeddb_is_open(conn) {
 // in milliseconds before giving up on connecting
 // @throws {Error} if connection error or timeout occurs
 async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
-
-  if(INDEXEDDB_DEBUG) {
-    DEBUG('indexeddb_open name %s version %s timeout %s', name, version,
-      timeout_ms);
-  }
-
+  console.log('indexeddb_open', name, version, timeout_ms);
   console.assert(typeof name === 'string');
 
   if(typeof timeout_ms === 'undefined') {
@@ -58,18 +46,11 @@ async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
     request.onsuccess = function(event) {
       const conn = event.target.result;
       if(timedout) {
-        if(INDEXEDDB_DEBUG) {
-          DEBUG('closing connection that opened after timeout');
-        }
-
+        console.log('closing connection that opened after timeout');
         conn.close();
         // Leave unsettled
       } else {
-
-        if(INDEXEDDB_DEBUG) {
-          DEBUG('indexeddb_open opened connection to', name, version);
-        }
-
+        console.log('indexeddb_open opened connection to', name, version);
         resolve(conn);
       }
     };

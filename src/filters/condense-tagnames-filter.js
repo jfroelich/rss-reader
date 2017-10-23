@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/status.js
 // import filters/filter-helpers.js
 
 function condense_tagnames_filter(doc) {
@@ -14,4 +15,5 @@ function condense_tagnames_filter(doc) {
   const copy_attributes = false;
   rename_elements(doc.body, 'strong', 'b', copy_attributes);
   rename_elements(doc.body, 'em', 'i', copy_attributes);
+  return STATUS_OK;
 }

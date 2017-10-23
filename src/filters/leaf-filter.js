@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/status.js
 // import dom/element.js
 
 function leaf_filter(doc) {
@@ -17,4 +18,5 @@ function leaf_filter(doc) {
       element.remove();
   }
 
+  return STATUS_OK;
 }

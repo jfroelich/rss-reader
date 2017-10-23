@@ -1,13 +1,9 @@
 'use strict';
 
-
-// import base/debug.js
 // import base/status.js
 // import extension.js
 // import reader-db.js
 // import entry-css.js
-
-const OPTIONS_PAGE_DEBUG = true;
 
 // Navigation tracking
 var options_page_current_menu_item;
@@ -123,7 +119,7 @@ function options_page_feed_list_append_feed(feed) {
 
 // @param url {URL}
 async function options_page_start_subscription(url) {
-  DEBUG('starting subscription to', url.href);
+  console.log('starting subscription to', url.href);
 
   options_page_subscription_monitor_show();
   options_page_subscription_monitor_append_message(
@@ -142,7 +138,7 @@ async function options_page_start_subscription(url) {
     status = sub_result.status;
     subscribed_feed = sub_result.feed;
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     options_page_subscription_monitor_hide();
     // TODO: show an error message.
     return;
@@ -529,7 +525,7 @@ async function options_page_unsubscribe_button_on_click(event) {
   } catch(error) {
 
     // TODO: visually react to unsubscribe error
-    DEBUG(error);
+    console.log(error);
     return;
   } finally {
     if(reader_conn)
@@ -672,10 +668,7 @@ function options_page_entry_bg_color_input_on_input(event) {
 
 function options_page_entry_margin_slider_on_change(event) {
   const margin = event.target.value;
-
-  if(OPTIONS_PAGE_DEBUG) {
-    DEBUG('margin changed, new margin is', margin);
-  }
+  console.log('options_page_entry_margin_slider_on_change new value', margin);
 
   if(margin) {
     localStorage.PADDING = margin;

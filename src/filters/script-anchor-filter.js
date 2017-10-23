@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/status.js
 // import filters/filter-helpers.js
 // import http/url.js
 
@@ -17,4 +18,6 @@ function script_anchor_filter(doc) {
       unwrap_element(anchor);
     }
   }
+
+  return STATUS_OK;
 }

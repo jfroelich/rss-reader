@@ -1,5 +1,7 @@
 'use strict';
 
+// import base/status.js
+
 // TODO: maybe inline iframes or replace with a message instead of simply
 // removing.
 // TODO: maybe special case for handling embedded video, and even more specific
@@ -14,11 +16,11 @@ function iframe_filter(doc) {
     return;
   }
 
-  // TODO: reverse iteration over getElementsByTagName might be better
-  // perf
-
+  // TODO: reverse iteration over getElementsByTagName might be better perf?
   const iframes = doc.body.querySelectorAll('iframe');
-  for(const frame of iframes) {
-    frame.remove();
+  for(const iframe of iframes) {
+    iframe.remove();
   }
+
+  return STATUS_OK;
 }

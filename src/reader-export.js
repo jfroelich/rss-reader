@@ -1,6 +1,5 @@
 'use strict';
 
-
 // import opml/opml-document.js
 // import opml/opml-outline.js
 // import xml.js

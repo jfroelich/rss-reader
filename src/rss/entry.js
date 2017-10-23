@@ -1,7 +1,5 @@
 'use strict';
 
-
-// import base/debug.js
 // import base/number.js
 // import base/sizeof.js
 // import base/status.js
@@ -73,7 +71,7 @@ function entry_has_valid_url(entry) {
   try {
     url_object = new URL(url_string);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     return false;
   }
 
@@ -138,6 +136,6 @@ function compact_entry(entry) {
   ce.urls = entry.urls;
   ce.archiveState = ENTRY_STATE_ARCHIVED;
   ce.dateArchived = new Date();
-  DEBUG('before', sizeof(entry), 'after', sizeof(ce));
+  console.log('before', sizeof(entry), 'after', sizeof(ce));
   return ce;
 }

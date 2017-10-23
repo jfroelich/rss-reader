@@ -6,16 +6,11 @@
 // import extension.js
 // import reader-db.js
 
-const ENTRY_MARK_READ_DEBUG = false;
-
 // Mark the corresponding entry as read in the database
 // @param conn {IDBDatabase} an open database connection
 // @param id {Number} the entry id
 async function entry_mark_read(conn, id) {
-  if(ENTRY_MARK_READ_DEBUG) {
-    DEBUG('marking as read entry with id', id);
-  }
-
+  console.log('entry_mark_read id', id);
   console.assert(indexeddb_is_open(conn));
   console.assert(entry_is_valid_id(id));
 
@@ -23,16 +18,11 @@ async function entry_mark_read(conn, id) {
   try {
     entry = await reader_db_find_entry_by_id(conn, id);
   } catch(error) {
-    if(ENTRY_MARK_READ_DEBUG) {
-      DEBUG(error);
-    }
-
+    console.warn(error);
     return ERR_DB_OP;
   }
 
-  if(ENTRY_MARK_READ_DEBUG) {
-    DEBUG('marking as read entry', entry);
-  }
+  console.log('entry_mark_read entry', entry);
 
   if(!entry || entry.readState === ENTRY_STATE_READ) {
     return ERR_DB_STATE;
@@ -45,16 +35,11 @@ async function entry_mark_read(conn, id) {
   try {
     await reader_db_put_entry(conn, entry);
   } catch(error) {
-    DEBUG(error);
+    console.warn(error);
     return ERR_DB_OP;
   }
 
-  if(ENTRY_MARK_READ_DEBUG) {
-    DEBUG('marked as read entry', entry);
-  }
-
-  // Ignore error
+  console.log('entry_mark_read marked read', entry);
   extension_update_badge_text();
-
   return STATUS_OK;
 }

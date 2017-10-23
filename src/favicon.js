@@ -1,11 +1,8 @@
 'use strict';
 
-// import base/debug.js
 // import base/indexeddb.js
 // import fetch/fetch.js
 // import html.js
-
-const FAVICON_DEBUG = false;
 
 // 30 days in ms, used by both lookup and compact to determine whether a
 // cache entry expired
@@ -32,8 +29,7 @@ async function favicon_lookup(conn, url_object, max_age_ms,
   // TODO: delegate assetion if not reasoned about locally?
   console.assert(indexeddb_is_open(conn));
 
-  if(FAVICON_DEBUG)
-    DEBUG('favicon lookup', url_object.href);
+  console.log('favicon_lookup', url_object.href);
   if(typeof max_age_ms === 'undefined')
     max_age_ms = FAVICON_DEFAULT_MAX_AGE_MS;
   if(typeof fetch_html_timeout_ms === 'undefined')
@@ -104,8 +100,7 @@ async function favicon_db_find_lookup_url(conn, url_object, max_age_ms) {
   const current_date = new Date();
   if(favicon_is_entry_expired(entry, current_date, max_age_ms))
     return;
-  if(FAVICON_DEBUG)
-    DEBUG('found favicon of input url in cache', entry);
+  console.log('favicon_db_find_lookup_url entry', entry);
   return entry.iconURLString;
 }
 
@@ -118,8 +113,7 @@ async function favicon_db_find_redirect_url(conn, url_object, response,
   const current_date = new Date();
   if(favicon_is_entry_expired(entry, current_date, max_age_ms))
     return;
-  if(FAVICON_DEBUG)
-    DEBUG('found redirect in cache', entry);
+  console.log('found redirect in cache', entry);
   const entries = [url_object.href];
   await favicon_db_put_entries(conn, entry.iconURLString, entries);
   return entry.iconURLString;
@@ -132,8 +126,7 @@ async function favicon_search_document(conn, url_object, urls, response) {
   try {
     text = await response.text();
   } catch(error) {
-    if(FAVICON_DEBUG)
-      DEBUG(error);
+    console.warn(error);
     return;
   }
 
@@ -177,10 +170,8 @@ async function favicon_search_document(conn, url_object, urls, response) {
       continue;
     }
 
-    if(FAVICON_DEBUG) {
-      DEBUG('Found favicon from <link>', response.response_url,
-        icon_url_object.href);
-    }
+    console.log('Found favicon from <link>', response.response_url,
+      icon_url_object.href);
 
     if(conn)
       await favicon_db_put_entries(conn, icon_url_object.href, urls);
@@ -198,10 +189,9 @@ async function favicon_db_find_origin_url(conn, origin_url_string, urls,
   if(favicon_is_entry_expired(origin_entry, current_date, max_age_ms))
     return;
 
-  if(FAVICON_DEBUG) {
-    DEBUG('Found non-expired origin entry in cache', origin_url_string,
-      origin_entry.iconURLString);
-  }
+  console.log('Found non-expired origin entry in cache', origin_url_string,
+    origin_entry.iconURLString);
+
 
   // origin is not in urls, and we know it is distinct, existing, and fresh
   await favicon_db_put_entries(conn, origin_entry.iconURLString, urls);
@@ -216,18 +206,16 @@ async function favicon_lookup_origin(conn, url_object, urls,
   try {
     response = await fetch_promise;
   } catch(error) {
-    if(FAVICON_DEBUG)
-      DEBUG(error);
+    console.warn(error);
     return;
   }
 
   if(response.size === FETCH_UNKNOWN_CONTENT_LENGTH ||
     (response.size >= min_img_size && response.size <= max_img_size)) {
-    if(conn)
+    if(conn) {
       await favicon_db_put_entries(conn, response.response_url, urls);
-    if(FAVICON_DEBUG) {
-      DEBUG('Found origin icon', url_object.href, response.response_url);
     }
+    console.log('Found origin icon', url_object.href, response.response_url);
     return response.response_url;
   }
 }
@@ -238,9 +226,7 @@ async function favicon_fetch_doc_silently(url_object, fetch_html_timeout_ms) {
   try {
     return await fetch_promise;
   } catch(error) {
-    if(FAVICON_DEBUG) {
-      DEBUG(error);
-    }
+    console.warn(error);
   }
 }
 
@@ -257,15 +243,11 @@ async function favicon_setup_db() {
 
 function favicon_db_onupgradeneeded(event) {
   const conn = event.target.result;
-  if(FAVICON_DEBUG) {
-    DEBUG('creating or upgrading database', conn.name);
-  }
+  console.log('creating or upgrading database', conn.name);
 
   let store;
   if(!event.oldVersion || event.oldVersion < 1) {
-    if(FAVICON_DEBUG) {
-      DEBUG('Creating favicon-cache object store');
-    }
+    console.log('favicon_db_onupgradeneeded creating favicon-cache');
 
     store = conn.createObjectStore('favicon-cache', {
       'keyPath': 'pageURLString'
@@ -276,9 +258,7 @@ function favicon_db_onupgradeneeded(event) {
   }
 
   if(event.oldVersion < 2) {
-    if(FAVICON_DEBUG) {
-      DEBUG('Creating dateUpdated index');
-    }
+    console.log('favicon_db_onupgradeneeded creating dateUpdated index');
     store.createIndex('dateUpdated', 'dateUpdated');
   }
 }

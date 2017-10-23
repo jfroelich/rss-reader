@@ -10,6 +10,5 @@ function semantic_filter(doc) {
   }
 
   unwrap_elements(doc.body, 'article, aside, footer, header, main, section');
-
   return STATUS_OK;
 }

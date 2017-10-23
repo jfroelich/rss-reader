@@ -1,10 +1,6 @@
 'use strict';
 
-
-
 // TODO: not sure that http/ is proper folder for this lib
-
-const URL_DEBUG = true;
 
 // Returns true if the given url is canonical (absolute).
 // Allows for leading whitespace characters

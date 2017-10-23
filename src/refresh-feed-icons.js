@@ -1,23 +1,22 @@
 'use strict';
 
-// import base/debug.js
 // import reader-db.js
 // import favicon.js
+
+// TODO: deprecate IIAFE
 
 (function(exports) {
 
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.
 async function refresh_feed_icons() {
-  DEBUG('Refreshing feed favicons...');
-
-  let count = 0;
-  let reader_conn, icon_conn;
+  console.log('Refreshing feed favicons...');
+  let count = 0, reader_conn, icon_conn;
 
   try {
-    const conns = await Promise.all([reader_db_open(), favicon_open_db()]);
-    reader_conn = conns[0];
-    icon_conn = conns[1];
+    [reader_conn, icon_conn] = await Promise.all([reader_db_open(),
+      favicon_open_db()]);
+
     const feeds = await reader_db_get_feeds(reader_conn);
     const resolutions = await process_feeds(feeds, reader_conn, icon_conn);
     count = count_num_modified(resolutions);
@@ -70,7 +69,7 @@ async function process_feed(feed, reader_conn, icon_conn) {
   if(feed.faviconURLString === icon_url_string)
     return false;
 
-  DEBUG('Changing feed icon url from %s to %s', feed.faviconURLString,
+  console.log('Changing feed icon url from %s to %s', feed.faviconURLString,
     icon_url_string);
 
   // Otherwise the icon changed

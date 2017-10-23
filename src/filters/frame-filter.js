@@ -1,9 +1,9 @@
 'use strict';
 
+// import base/status.js
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
-
 // TODO: write tests
 function frame_filter(doc) {
   console.assert(doc instanceof Document);
@@ -41,6 +41,9 @@ function frame_filter(doc) {
 
   // Remove any frame or frameset elements if somehow any remain
   const frame_elements = doc.querySelectorAll('frame, frameset');
-  for(const frame_element of frame_elements)
+  for(const frame_element of frame_elements) {
     frame_element.remove();
+  }
+
+  reutrn STATUS_OK;
 }

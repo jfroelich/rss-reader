@@ -1,6 +1,7 @@
 'use strict';
 
 // Returns true if the first parameter is of type Node
+// TODO: deprecate, the body is sufficiently idiomatic
 function node_is_node(node) {
   return node instanceof Node;
 }

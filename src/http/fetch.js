@@ -1,13 +1,9 @@
 'use strict';
 
-
-// import base/debug.js
 // import http/mime.js
 // import http/url.js
 
-const FETCH_DEBUG = false;
 const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
-
 
 // TODO: change functions to return status instead of throwing exceptions
 
