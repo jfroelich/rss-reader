@@ -45,5 +45,5 @@ function frame_filter(doc) {
     frame_element.remove();
   }
 
-  reutrn STATUS_OK;
+  return STATUS_OK;
 }
