@@ -1,9 +1,8 @@
 'use strict';
 
-// Returns true if the given url is canonical (absolute). Allows for leading
-// whitespace characters. Returns true for javascript: and mailto: and data:
-// Returns true for https:// and http://
-// Returns false for // (which is preferable)
+// Allows for leading whitespace characters. Returns true for javascript: and
+// mailto: and data:. Returns true for https:// and http://. Returns false for
+// '//' (which is preferable).
 // @param url {String} input url
 // @returns {Boolean} true if the url is canonical, otherwise false
 function url_is_canonical(url) {
@@ -62,7 +61,7 @@ function url_get_hostname(url) {
   }
 }
 
-// Only minor validation for speed. Tolerant of bad input
+// Only minor validation for speed. Tolerates bad input.
 // Assumes canonical url
 // @param url {String}
 // @returns {Boolean}

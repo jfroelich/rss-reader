@@ -3,7 +3,6 @@
 // import base/status.js
 // import mime.js
 
-// Parses an xml string into a document
 function xml_parse_from_string(xml_string) {
   console.assert(xml_string);
 
@@ -26,7 +25,6 @@ function xml_parse_from_string(xml_string) {
   return [STATUS_OK, doc];
 }
 
-// Serializes an xml document into a string
 // @param doc {Document}
 // @returns {String}
 function xml_to_string(doc) {
@@ -35,7 +33,6 @@ function xml_to_string(doc) {
   return serializer.serializeToString(doc);
 }
 
-// Converts an xml document into a blob
 // @param doc {Document}
 // @returns {Blob}
 function xml_to_blob(doc) {
