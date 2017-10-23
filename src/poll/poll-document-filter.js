@@ -6,7 +6,7 @@
 // import filters/frame-filter.js
 // import filters/host-template-filter.js
 // import filters/responsive-image-filter.js
-// import http/url.js
+// import url.js
 
 // Transforms a document's content by removing or changing nods for
 // various reasons.

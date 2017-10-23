@@ -1,11 +1,11 @@
 'use strict';
 
-// import http/mime.js
 // import opml/opml-document.js
 // import opml/opml-outline.js
-// import rss/feed.js
 // import favicon.js
+// import feed.js
 // import file.js
+// import mime.js
 // import reader-db.js
 // import subscription.js
 

@@ -1,8 +1,6 @@
 'use strict';
 
-// TODO: switch to cross browser navigator.permissions lookup once it settles
-// right now navigator.permissions cannot lookup 'background' because it is not
-// one of the enumerated permission names, so it cannot be used.
+// TODO: fold into extension.js?
 
 function permissions_contains(permission) {
   console.assert(typeof permission === 'string');

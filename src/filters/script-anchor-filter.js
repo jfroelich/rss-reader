@@ -2,7 +2,7 @@
 
 // import base/status.js
 // import filters/filter-helpers.js
-// import http/url.js
+// import url.js
 
 function script_anchor_filter(doc) {
   console.assert(doc instanceof Document);

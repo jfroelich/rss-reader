@@ -2,8 +2,6 @@
 
 // import base/string.js
 
-// TODO: mime is not http only, this file should be moved
-
 // Some commonly used global mime types
 const MIME_TYPE_HTML = 'text/html';
 const MIME_TYPE_XML = 'application/xml';

@@ -1,7 +1,7 @@
 'use strict';
 
 // import dom/image.js
-// import http/url.js
+// import url.js
 
 function lazy_image_filter(doc) {
   console.assert(doc instanceof Document);

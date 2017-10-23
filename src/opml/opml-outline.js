@@ -1,6 +1,6 @@
 'use strict';
 
-// import rss/feed.js
+// import feed.js
 
 function opml_outline_is_outline(outline) {
   return typeof outline === 'object';

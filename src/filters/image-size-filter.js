@@ -1,7 +1,7 @@
 'use strict';
 
 // import http/fetch.js
-// import http/url.js
+// import url.js
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions

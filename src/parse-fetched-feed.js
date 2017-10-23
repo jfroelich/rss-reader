@@ -1,7 +1,7 @@
 'use strict';
 
-// import rss/feed.js
-// import rss/parse-feed.js
+// import feed.js
+// import parse-feed.js
 
 // TODO: rename to feed-coerce or something?
 // TODO: move out of fetch folder

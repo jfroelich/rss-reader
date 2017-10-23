@@ -1,6 +1,6 @@
 'use strict';
 
-// import rss/entry.js
+// import entry.js
 // reader-db.js
 
 // Scans the database for archivable entries and archives them

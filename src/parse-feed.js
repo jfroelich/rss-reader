@@ -21,21 +21,22 @@ function parse_feed(xml_string) {
 function parse_feed_unmarshall_xml(document) {
   console.assert(document);
   const doc_element = document.documentElement;
-  const doc_element_name = doc_element.localName.toLowerCase();
 
-  // TODO: I don't think this should be an exception. This is a typical case
-  // of bad untrusted input. So this needs to be able to return an error code
-  // or something to that effect because exceptions should be reserved for
-  // unexpected violations of invariant conditions.
-  if(doc_element_name !== 'feed' && doc_element_name !== 'rss' &&
-    doc_element_name !== 'rdf')
-    throw new TypeError('document contains invalid document element');
+  const empty_result = {
+    'feed': null,
+    'entries': []
+  };
+
+  const root_names = ['feed', 'rdf', 'rss'];
+  const doc_element_name = doc_element.localName.toLowerCase();
+  if(!root_names.includes(doc_element_name)) {
+    return empty_result;
+  }
 
   const channel_element = parse_feed_find_channel_element(doc_element);
-
-  // TODO: like above, this should not be a thrown exception
-  if(!channel_element)
-    throw new TypeError('document does not contain channel element');
+  if(!channel_element) {
+    return empty_result;
+  }
 
   const feed = {};
   feed.type = find_feed_type(doc_element);
@@ -294,17 +295,24 @@ function parse_feed_get_atom_node_text(node) {
 
 function parse_feed_find_child_element(parent_element, predicate) {
   for(let element = parent_element.firstElementChild; element;
-    element = element.nextElementSibling)
-    if(predicate(element))
+    element = element.nextElementSibling) {
+    if(predicate(element)) {
       return element;
+    }
+  }
 }
 
-function parse_feed_find_child_element_by_name(parent_element, element_name) {
-  const normal_element_name = element_name.toLowerCase();
-  for(let child_element = parent_element.firstElementChild; child_element;
-    child_element = child_element.nextElementSibling)
-    if(child_element.localName.toLowerCase() === normal_element_name)
-      return child_element;
+function parse_feed_find_child_element_by_name(parent, name) {
+  console.assert(parent instanceof Element);
+  console.assert(typeof name === 'string');
+
+  const normal_name = name.toLowerCase();
+  for(let child = parent.firstElementChild; child;
+    child = child.nextElementSibling) {
+    if(child.localName.toLowerCase() === normal_name) {
+      return child;
+    }
+  }
 }
 
 function parse_feed_find_child_element_text(parent_element, element_name) {

@@ -1,7 +1,7 @@
 'use strict';
 
-// import http/mime.js
-// import http/url.js
+// import mime.js
+// import url.js
 
 const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 

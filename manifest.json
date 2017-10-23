@@ -18,14 +18,23 @@
       "/src/archive-entries.js",
       "/src/bind-browser-action.js",
       "/src/cli.js",
+      "/src/entry.js",
       "/src/extension.js",
+      "/src/favicon.js",
+      "/src/feed.js",
+      "/src/html.js",
       "/src/install.js",
+      "/src/mime.js",
+      "/src/parse-feed.js",
+      "/src/parse-fetched-feed.js",
       "/src/reader-db.js",
       "/src/refresh-feed-icons.js",
       "/src/remove-entries-missing-urls.js",
       "/src/remove-orphaned-entries.js",
       "/src/rewrite-url.js",
       "/src/subscription.js",
+      "/src/url.js",
+      "/src/xml.js",
 
       "/src/base/indexeddb.js",
       "/src/base/number.js",
@@ -79,23 +88,13 @@
       "/src/dom/image.js",
       "/src/dom/srcset.js",
 
-      "/src/http/mime.js",
       "/src/http/fetch.js",
-      "/src/http/url.js",
 
-      "/src/html.js",
-      "/src/xml.js",
-
-      "/src/rss/entry.js",
-      "/src/rss/feed.js",
-      "/src/rss/parse-feed.js",
-      "/src/rss/parse-fetched-feed.js",
-
-      "/src/poll/poll.js",
+      "/src/poll/poll-feeds.js",
       "/src/poll/poll-document-filter.js",
       "/src/poll/poll-entry.js",
-      "/src/third-party/parse-srcset.js",
-      "/src/favicon.js"
+      "/src/third-party/parse-srcset.js"
+
     ]
   },
   "options_page": "options.html",

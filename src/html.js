@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/status.js
-// import http/mime.js
+// import mime.js
 
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be

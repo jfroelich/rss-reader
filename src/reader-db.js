@@ -2,9 +2,9 @@
 
 // import base/indexeddb.js
 // import base/number.js
-// import http/url.js
-// import rss/feed.js
-// import rss/entry.js
+// import url.js
+// import feed.js
+// import entry.js
 
 // Opens a connection to the reader-db database
 // @return {Promise} a promise that resolves to an open database connection

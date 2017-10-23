@@ -2,7 +2,7 @@
 
 // import base/status.js
 // import dom/srcset.js
-// import http/url.js
+// import url.js
 
 const CANONICAL_URL_FILTER_MAP = {
   'a': 'href',

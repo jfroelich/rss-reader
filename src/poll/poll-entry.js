@@ -3,10 +3,10 @@
 // import base/object.js
 // import html.js
 // import poll/poll-document-filter.js
-// import rss/entry.js
-// import rss/feed.js
+// import entry.js
+// import feed.js
 // import http/fetch.js
-// import http/url.js
+// import url.js
 // import favicon.js
 // import reader-db.js
 

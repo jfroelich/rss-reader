@@ -1,6 +1,6 @@
 'use strict';
 
-// import http/url.js
+// import url.js
 
 // Return true if the first parameter is an image element
 function image_is_image(image) {

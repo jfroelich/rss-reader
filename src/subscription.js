@@ -3,7 +3,7 @@
 // import base/object.js
 // import fetch/fetch.js
 // import fetch/parse-fetched-feed.js
-// import rss/feed.js
+// import feed.js
 // import extension.js
 // import favicon.js
 // import reader-db.js

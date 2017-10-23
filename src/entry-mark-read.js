@@ -2,7 +2,7 @@
 
 // import base/indexeddb.js
 // import base/status.js
-// import rss/entry.js
+// import entry.js
 // import extension.js
 // import reader-db.js
 
@@ -22,7 +22,7 @@ async function entry_mark_read(conn, id) {
     return ERR_DB;
   }
 
-  console.log('entry_mark_read entry', entry);
+  console.log('entry_mark_read found entry', entry);
 
   if(!entry || entry.readState === ENTRY_STATE_READ) {
     return ERR_DB;

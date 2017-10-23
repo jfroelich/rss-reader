@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/status.js
-// import http/mime.js
+// import mime.js
 
 // Parses an xml string into a document
 function xml_parse_from_string(xml_string) {

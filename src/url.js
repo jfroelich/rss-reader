@@ -1,10 +1,7 @@
 'use strict';
 
-// TODO: not sure that http/ is proper folder for this lib
-
-// Returns true if the given url is canonical (absolute).
-// Allows for leading whitespace characters
-// Returns true for javascript: and mailto: and data:
+// Returns true if the given url is canonical (absolute). Allows for leading
+// whitespace characters. Returns true for javascript: and mailto: and data:
 // Returns true for https:// and http://
 // Returns false for // (which is preferable)
 // @param url {String} input url
@@ -17,13 +14,11 @@ function url_is_canonical(url) {
 // A url must be at least this long to be a script url
 const URL_MIN_SCRIPT_LENGTH = 'javascript:'.length;
 
-// Returns true if the url has the 'javascript:' protocol
+// Returns true if the url has the 'javascript:' protocol. Does not throw in
+// the case of bad input.
 // @param url {String}
 // @returns {Boolean}
 function url_has_script_protocol(url) {
-  // Tolerates bad input. No assert
-  // Check url to avoid throwing and reduce calls to regex test
-  // Check len to reduce calls to regex test
   return typeof url === 'string' &&
     url.length > URL_MIN_SCRIPT_LENGTH &&
     /^\s*javascript:/i.test(url);
@@ -179,9 +174,9 @@ function url_path_get_file_name(path) {
   return path;
 }
 
-// Returns true if url is a URL object
-function url_is_url_object(url) {
-  return Object.prototype.toString.call(url) === '[object URL]';
+// Returns true if value is a URL object
+function url_is_url_object(value) {
+  return Object.prototype.toString.call(value) === '[object URL]';
 }
 
 // Compares two urls for equality, after normalization and removing the hash
