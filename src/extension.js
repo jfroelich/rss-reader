@@ -18,7 +18,7 @@ async function extension_update_badge_text() {
     count = await reader_db_count_unread_entries(conn);
   } catch(error) {
     console.warn(error);
-    return ERR_DB_OP;
+    return ERR_DB;
   } finally {
     if(conn)
       conn.close();

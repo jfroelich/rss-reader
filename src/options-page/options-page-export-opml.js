@@ -14,7 +14,7 @@ async function options_page_export_opml() {
     feeds = await reader_db_get_feeds(conn);
   } catch(error) {
     console.warn(error);
-    return ERR_DB_OP;
+    return ERR_DB;
   } finally {
     if(conn)
       conn.close();

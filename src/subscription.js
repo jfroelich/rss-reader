@@ -88,10 +88,10 @@ async function subscription_add(feed, reader_conn, icon_conn, timeout_ms,
 async function subscription_url_is_unique(url_string, reader_conn) {
   try {
     if(await reader_db_find_feed_id_by_url(reader_conn, url_string))
-      return ERR_DB_OP;
+      return ERR_DB;
   } catch(error) {
     console.warn(error);
-    return ERR_DB_OP;
+    return ERR_DB;
   }
   return STATUS_OK;
 }
@@ -103,7 +103,7 @@ async function subscription_put_feed(feed, reader_conn, notify) {
     new_id = await reader_db_put_feed(reader_conn, storable_feed);
   } catch(error) {
     console.warn(error);
-    return {'status': ERR_DB_OP};
+    return {'status': ERR_DB};
   }
 
   storable_feed.id = new_id;

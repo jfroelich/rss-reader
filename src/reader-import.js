@@ -26,7 +26,7 @@ async function reader_import_files(files) {
     await reader_import_files_internal(files, reader_conn, icon_conn);
   } catch(error) {
     console.warn(error);
-    return ERR_DB_OP;
+    return ERR_DB;
   } finally {
     if(reader_conn)
       reader_conn.close();

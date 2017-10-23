@@ -3,12 +3,14 @@
 // Represents a successful operation
 const STATUS_OK = 0;
 
-// TODO: merge db state and op
-const ERR_DB_STATE = -2;
-const ERR_DB_OP = -3;
-const ERR_FETCH = -4;
-const ERR_PARSE = -5;
+// Database related error
+const ERR_DB = -1;
 
-// Represents some error related to invalid/unexpected HTML/XML DOM state or
-// failed dom operation
-const ERR_DOM = -6;
+// HTTP fetch related error
+const ERR_FETCH = -2;
+
+// Parsing error
+const ERR_PARSE = -3;
+
+// DOM related error
+const ERR_DOM = -4;

@@ -26,7 +26,7 @@ async function archive_entries(conn, max_age_ms) {
     await reader_db_put_entries(conn, compacted_entries);
     did_put_entries = true;
   } catch(error) {
-    return ERR_DB_OP;
+    return ERR_DB;
   }
 
   // Notify observers once the transaction commits. Individual messages are

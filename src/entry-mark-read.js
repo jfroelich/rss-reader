@@ -19,13 +19,13 @@ async function entry_mark_read(conn, id) {
     entry = await reader_db_find_entry_by_id(conn, id);
   } catch(error) {
     console.warn(error);
-    return ERR_DB_OP;
+    return ERR_DB;
   }
 
   console.log('entry_mark_read entry', entry);
 
   if(!entry || entry.readState === ENTRY_STATE_READ) {
-    return ERR_DB_STATE;
+    return ERR_DB;
   }
 
   entry.readState = ENTRY_STATE_READ;
@@ -36,7 +36,7 @@ async function entry_mark_read(conn, id) {
     await reader_db_put_entry(conn, entry);
   } catch(error) {
     console.warn(error);
-    return ERR_DB_OP;
+    return ERR_DB;
   }
 
   console.log('entry_mark_read marked read', entry);
