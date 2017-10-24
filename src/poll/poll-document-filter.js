@@ -54,7 +54,7 @@ async function poll_document_filter(doc, url, fetch_image_timeout_ms) {
   lazy_image_filter(doc);
 
   // This should occur before image_size_filter
-  lonestar_filter(doc);
+  lonestar_filter(doc, url);
 
   sourcless_image_filter(doc);
 

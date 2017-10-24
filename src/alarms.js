@@ -7,10 +7,6 @@
 // import remove-entries-missing-urls.js
 // import remove-orphaned-entries.js
 
-// TODO: consider app layer abstraction between here and deps. alarms, like the
-// cli, are end users.
-
-
 async function alarms_on_archive_alarm() {
   let conn, max_age_ms, status;
   try {
@@ -41,6 +37,45 @@ async function alarms_on_compact_favicons_alarm() {
   }
 }
 
+async function alarms_on_poll_feeds_alarm() {
+  const flags = 0; // all off
+  let idle_period_secs, recency_period_ms, fetch_feed_timeout_ms,
+    fetch_html_timeout_ms, fetch_image_timeout_ms;
+  const promise = poll_feeds(idle_period_secs, recency_period_ms,
+    fetch_feed_timeout_ms, fetch_html_timeout_ms,
+    fetch_image_timeout_ms, flags);
+  promise.catch(console.warn);
+  break;
+}
+
+async function alarms_on_remove_entries_missing_urls_alarm() {
+  let conn;
+  try {
+    conn = await reader_db_open();
+    await remove_entries_missing_urls(conn);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    if(conn) {
+      conn.close();
+    }
+  }
+}
+
+async function alarms_on_remove_orphaned_entries_alarm() {
+  let conn;
+  try {
+    conn = await reader_db_open();
+    await remove_orphaned_entries(conn);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    if(conn) {
+      conn.close();
+    }
+  }
+}
+
 async function alarms_on_alarm_wakeup(alarm) {
   console.log('alarms_on_alarm_wakeup', alarm.name);
 
@@ -49,19 +84,13 @@ async function alarms_on_alarm_wakeup(alarm) {
     alarms_on_archive_alarm();
     break;
   case 'poll':
-    const flags = 0; // all off
-    let idle_period_secs, recency_period_ms, fetch_feed_timeout_ms,
-      fetch_html_timeout_ms, fetch_image_timeout_ms;
-    const promise = poll_feeds(idle_period_secs, recency_period_ms,
-      fetch_feed_timeout_ms, fetch_html_timeout_ms,
-      fetch_image_timeout_ms, flags);
-    promise.catch(console.warn);
+    alarms_on_poll_feeds_alarm();
     break;
   case 'remove-entries-missing-urls':
-    remove_entries_missing_urls().catch(console.warn);
+    alarms_on_remove_entries_missing_urls_alarm();
     break;
   case 'remove-orphaned-entries':
-    remove_orphaned_entries().catch(console.warn);
+    alarms_on_remove_orphaned_entries_alarm();
     break;
   case 'refresh-feed-icons':
     refresh_feed_icons().catch(console.warn);
@@ -70,7 +99,7 @@ async function alarms_on_alarm_wakeup(alarm) {
     alarms_on_compact_favicons_alarm();
     break;
   default:
-    console.warn('Unknown alarm:', alarm.name);
+    console.assert(false, 'unhandled alarm', alarm.name);
     break;
   }
 }

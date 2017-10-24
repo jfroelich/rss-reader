@@ -9,6 +9,8 @@
 
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.
+// TODO: reintroduce conn parameters
+// TODO: return status
 async function refresh_feed_icons() {
   console.log('Refreshing feed favicons...');
   let count = 0, reader_conn, icon_conn;
@@ -46,6 +48,7 @@ function count_num_modified(resolutions) {
 }
 
 // Lookup the feed's icon, update the feed in db. Return true if updated.
+// TODO: return status instead of boolean
 async function process_feed(feed, reader_conn, icon_conn) {
   const lookup_url_object = feed_create_icon_lookup_url(feed);
   if(!lookup_url_object)

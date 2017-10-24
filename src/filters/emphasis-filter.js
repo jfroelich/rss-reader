@@ -23,7 +23,6 @@ function emphasis_filter(doc, max_text_length) {
   const elements = doc.body.querySelectorAll('b, big, em, i, strong');
   for(const element of elements) {
     if(element.textContent.length > max_text_length) {
-      console.log('emphasis-filtering:', element.innerHTML);
       unwrap_element(element);
     }
   }

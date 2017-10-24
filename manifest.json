@@ -43,6 +43,12 @@
       "/src/base/status.js",
       "/src/base/string.js",
 
+
+      "/src/dom/element.js",
+      "/src/dom/image.js",
+      "/src/dom/srcset.js",
+      "/src/dom/visibility.js",
+
       "/src/filters/adoption-agency-filter.js",
       "/src/filters/attribute-filter.js",
       "/src/filters/base-filter.js",
@@ -84,9 +90,6 @@
       "/src/filters/table-filter.js",
       "/src/filters/trim-document-filter.js",
 
-      "/src/dom/element.js",
-      "/src/dom/image.js",
-      "/src/dom/srcset.js",
 
       "/src/http/fetch.js",
 

@@ -10,7 +10,6 @@ function extension_idle_query(idle_period_secs) {
 // function
 // TODO: reintroduce conn param, do not connect locally
 async function extension_update_badge_text() {
-  console.log('extension_update_badge_text');
   let count = 0, conn;
 
   try {
@@ -20,12 +19,13 @@ async function extension_update_badge_text() {
     console.warn(error);
     return ERR_DB;
   } finally {
-    if(conn)
+    if(conn) {
       conn.close();
+    }
   }
 
   const text = count > 999 ? '1k+' : '' + count;
-  console.log('extension_update_badge_text text', text);
+  console.log('extension_update_badge_text setBadgeText', text);
   chrome.browserAction.setBadgeText({'text': text});
   return STATUS_OK;
 }

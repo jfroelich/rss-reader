@@ -12,6 +12,9 @@ POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK = 16; // 10000
 
 async function poll_feeds(idle_period_secs, recency_period_ms,
   fetch_feed_timeout_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, flags) {
+
+  console.log('poll_feeds start');
+
   if(typeof idle_period_secs === 'undefined')
     idle_period_secs = 30;
   if(typeof recency_period_ms === 'undefined')
@@ -30,8 +33,6 @@ async function poll_feeds(idle_period_secs, recency_period_ms,
   const ignore_idle_state = flags & POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE;
   const ignore_recency_check = flags & POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK;
   const ignore_modified_check = flags & POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK;
-
-  console.log('Checking for new articles...');
 
   // TODO: it would make more sense to just pass flags here
   if(!await is_poll_startable(allow_metered_connections, ignore_idle_state,

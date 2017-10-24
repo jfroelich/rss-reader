@@ -38,3 +38,8 @@ function image_find_caption(image) {
   }
   return figcaption;
 }
+
+// TODO: remove picture/source/figure/figcaption
+function image_remove(image) {
+  image.remove();
+}

@@ -66,7 +66,7 @@ function pagination_is_candidate_anchor(anchor_element, base_url) {
   if(text_content.trim().length > max_text_length)
     return false;
 
-  if(domviz.element_is_hidden(anchor_element))
+  if(visibility_element_is_hidden(anchor_element))
     return false;
 
   const href_url = pagination_get_href_url(anchor_element, base_url);

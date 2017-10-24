@@ -5,6 +5,7 @@
 // import base/status.js
 // import base/string.js
 // import html.js
+// import url.js
 
 const ENTRY_STATE_UNREAD = 0;
 const ENTRY_STATE_READ = 1;
@@ -34,6 +35,9 @@ function entry_get_top_url(entry) {
 // Normalizes the url. Returns true if the url was added. Returns false if the
 // normalized url already exists and therefore was not added
 function entry_append_url(entry, url_string) {
+  console.assert(entry_is_entry(entry));
+  console.assert(url_is_canonical(url_string));
+
   const url_object = new URL(url_string);
   const normal_url_string = url_object.href;
   if(entry.urls) {
