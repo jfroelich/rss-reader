@@ -1,7 +1,9 @@
 'use strict';
 
+// import base/number.js
 // import mime.js
 // import url.js
+
 
 const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
@@ -15,17 +17,22 @@ const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 // response, and then the return value is asserted
 // @returns {Object} a Response-like object
 async function fetch_internal(url, options, timeout_ms, accept_response) {
+
+  // TODO: after the deprecation of assert.js, several of these asserts
+  // became weak asserts, when in fact they should be strong assertions.
+
+
   // Allow exception to bubble
   // TODO: trap exception. should return error code instead
   const response = await fetch_with_timeout(url, options, timeout_ms);
 
-  // TODO: instead of assert, return error
-  // TODO: check typeof === whatever response type should be, be more strict
-  // in the assertion. Or maybe that is stupid.
-  console.assert(response);
+  if(!response) {
+    throw new Error('response undefined ' + url);
+  }
 
-  // TODO: instead of assert, return error
-  console.assert(response.ok);
+  if(!response.ok) {
+    throw new Error('response not ok ' + url);
+  }
 
   // The spec says 204 is ok, because response.ok is true for status codes
   // 200-299, but I consider 204 to be an error.
@@ -34,17 +41,22 @@ async function fetch_internal(url, options, timeout_ms, accept_response) {
   // sometimes when doing fetch. There may not be a need to explicitly check for
   // this error code. I would need to test further.
   const HTTP_STATUS_NO_CONTENT = 204;
-  // TODO: instead of assert, return error
-  console.assert(response.status !== HTTP_STATUS_NO_CONTENT);
 
-  // TODO: instead of assert, return error
-  if(accept_response) {
-    console.assert(accept_response(response));
+
+  if(response.status === HTTP_STATUS_NO_CONTENT) {
+    throw new Error('no content repsonse ' + url);
+  }
+
+  if(typeof accept_response === 'function') {
+
+    if(!accept_response(response)) {
+      throw new Error('response not accepted ' + url);
+    }
   }
 
   const response_wrapper = {};
 
-  response_wrapper.text = function() {
+  response_wrapper.text = function get_body_text() {
     return response.text();
   };
 
@@ -53,7 +65,6 @@ async function fetch_internal(url, options, timeout_ms, accept_response) {
   response_wrapper.last_modified_date = fetch_get_last_modified_date(response);
   response_wrapper.redirected = fetch_did_redirect(url, response.url);
 
-  // TODO: return [STATUS_OK, response_wrapper];
   return response_wrapper;
 }
 
@@ -151,10 +162,19 @@ async function fetch_image_head(url, timeout_ms) {
 
   const response = await fetch_with_timeout(url, options,
     timeout_ms, 'Fetch timed out ' + url);
-  console.assert(mime_is_image(response.headers.get('Content-Type')));
+
+  console.assert(response);
+
+  const content_type = response.headers.get('Content-Type');
+
+  if(!mime_is_image(content_type)) {
+    throw new Error('Response content type not an image mime type: ' +
+      content_type + ' for url ' + url);
+  }
+
   const output_response = {};
 
-  // TODO: rename to content_length
+  // TODO: rename output_response.size to to output_response.content_length
   output_response.size = fetch_get_content_length(response);
 
   output_response.response_url = response.url;
@@ -272,17 +292,10 @@ function fetch_with_timeout(url, options, timeout_ms, error_message) {
   console.assert(url_is_valid(url));
   const t_timeout_ms = typeof timeout_ms;
 
+  // If timeout is set then check its validity
   if(t_timeout_ms !== 'undefined') {
-    console.assert(Number.isInteger(timeout_ms));
-    // TODO: the floor should actually be whatever the browser supports, as
-    // an explicit reminder that 0ms timeouts are not actually honored by
-    // some browsers. I think it is 4ms?
-    console.assert(timeout_ms >= 0);
+    console.assert(number_is_positive_integer(timeout_ms));
   }
-
-  const t_error_message = typeof error_message;
-  if(t_error_message === 'undefined')
-    error_message = 'Fetch timed out for url ' + url;
 
   const fetch_promise = fetch(url, options);
 
@@ -292,6 +305,10 @@ function fetch_with_timeout(url, options, timeout_ms, error_message) {
 
   // Not much use for this right now, I think it might be important later
   let timeout_id;
+
+  const t_error_message = typeof error_message;
+  if(t_error_message === 'undefined')
+    error_message = 'Fetch timed out for url ' + url;
 
   // I am using this internal function instead of a external helper because of
   // plans to support cancellation
@@ -360,6 +377,9 @@ function fetch_get_last_modified_date(response) {
 // @param response_url {String} the value of the response.url property of the
 // Response object produced by calling fetch.
 function fetch_did_redirect(request_url, response_url) {
+  console.assert(url_is_canonical(request_url));
+  console.assert(url_is_canonical(response_url));
+
   return request_url !== response_url &&
     !url_equals_no_hash(request_url, response_url);
 }

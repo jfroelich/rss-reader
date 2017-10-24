@@ -62,8 +62,6 @@ async function slide_mark_read(conn, slide_element) {
     if(status !== STATUS_OK) {
       // TODO: react to error
       console.warn('slide_mark_read failed to update database');
-    } else {
-      console.log('slide_mark_read marked slide', slide_element.innerHTML);
     }
 
     slide_element.setAttribute('read', '');

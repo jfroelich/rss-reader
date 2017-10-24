@@ -46,7 +46,8 @@ async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
     request.onsuccess = function(event) {
       const conn = event.target.result;
       if(timedout) {
-        console.log('closing connection that opened after timeout');
+        console.log('closing connection %s that opened after timeout',
+          conn.name);
         conn.close();
         // Leave unsettled
       } else {

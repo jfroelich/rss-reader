@@ -2,12 +2,6 @@
 
 // import base/status.js
 
-// TODO: maybe inline iframes or replace with a message instead of simply
-// removing.
-// TODO: maybe special case for handling embedded video, and even more specific
-// special case for youtube.
-
-// Remove iframes
 function iframe_filter(doc) {
   console.assert(doc instanceof Document);
 
@@ -16,7 +10,6 @@ function iframe_filter(doc) {
     return;
   }
 
-  // TODO: reverse iteration over getElementsByTagName might be better perf?
   const iframes = doc.body.querySelectorAll('iframe');
   for(const iframe of iframes) {
     iframe.remove();

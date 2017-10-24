@@ -22,18 +22,18 @@ function unwrap_element(element) {
   // Detach upfront for O(2) live dom ops, compared to O(n-children) otherwise
   element.remove();
 
-  // Leading padding
+  // Add leading padding
   if(prev_sibling && prev_sibling.nodeType === TEXT &&
     first_child && first_child.nodeType === TEXT) {
     frag.appendChild(element.ownerDocument.createTextNode(' '));
   }
 
-  // Move children up
+  // Move children to fragment, maintaining order
   for(let node = first_child; node; node = element.firstChild) {
     frag.appendChild(node);
   }
 
-  // Trailing padding
+  // Add trailing padding
   if(last_child && first_child !== last_child && next_sibling &&
     next_sibling.nodeType === TEXT && last_child.nodeType === TEXT) {
     frag.appendChild(element.ownerDocument.createTextNode(' '));

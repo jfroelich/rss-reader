@@ -46,6 +46,7 @@ async function image_size_filter(doc, allowed_protocols, timeout_ms) {
 }
 
 // Concurrently process each image
+// TODO: inline
 function image_size_filter_get_all_dimensions(images, allowed_protocols,
   timeout_ms) {
   const promises = [];

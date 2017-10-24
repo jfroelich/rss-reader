@@ -33,40 +33,43 @@ function feed_append_url(feed, url_string) {
   return true;
 }
 
-// Creates a url object that can be used as input to favicon_lookup
+// Returns the url used to lookup a feed's favicon
 // @returns {URL}
 function feed_create_icon_lookup_url(feed) {
   console.assert(feed_is_feed(feed));
 
+  // First, prefer the link, as this is the url of the webpage that is
+  // associated with the feed.
   // Cannot assume the link is set nor valid
   if(feed.link) {
     try {
       return new URL(feed.link);
     } catch(error) {
+       console.warn(error);
     }
   }
 
-  // If the link is missing or invalid then use the origin
-  // Assume the feed always has a url.
+  // If the link is missing or invalid then use the origin of the feed's
+  // xml url. Assume the feed always has a url.
   const url_string = feed_get_top_url(feed);
   const url_object = new URL(url_string);
-  const origin_url_string = url_object.origin;
-  return new URL(origin_url_string);
+  return new URL(url_object.origin);
 }
 
 // Update's a feed's faviconURLString property (not persisted to db)
 // TODO: change this to not throw an error so that caller
 // try/catch is not needed in the usual case
+// TODO: this causes circular dependencies, move this function
 async function feed_update_favicon(feed, icon_conn) {
-  const lookup_url_object = feed_create_icon_lookup_url(feed);
-  let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
-    min_img_size, max_img_size;
+
+  const query = new FaviconQuery();
+  query.conn = icon_conn;
+  query.url = feed_create_icon_lookup_url(feed);
 
   // Allow exceptions to bubble
-  const icon_url_string = await favicon_lookup(icon_conn, lookup_url_object,
-    max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
-    max_img_size);
+  const icon_url_string = await favicon_lookup(query);
   feed.faviconURLString = icon_url_string;
+  return STATUS_OK;
 }
 
 // TODO: include this in places where sanitize is called

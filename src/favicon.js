@@ -1,8 +1,10 @@
 'use strict';
 
 // import base/indexeddb.js
+// import base/status.js
 // import fetch/fetch.js
 // import html.js
+// import url.js
 
 // 30 days in ms, used by both lookup and compact to determine whether a
 // cache entry expired
@@ -14,93 +16,175 @@ const FAVICON_DEFAULT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 function favicon_open_db() {
   const name = 'favicon-cache';
   const version = 2;
-  const timeout_ms = 100;
+  const timeout_ms = 500;
   return indexeddb_open(name, version, favicon_db_onupgradeneeded, timeout_ms);
 }
 
+function FaviconQuery() {
+  // The indexedDB database connection to use for the lookup
+  // @type {IDBDatabase}
+  this.conn = null;
+
+  // Optional pre-fetched HTML document to search prior to fetching
+  // @type {Document}
+  this.document = null;
+
+  // The lookup url to find a favicon for
+  // @type {URL}
+  this.url = null;
+
+  // These all store numbers
+  this.max_age_ms = undefined;
+  this.fetch_html_timeout_ms = undefined;
+  this.fetch_image_timeout_ms = undefined;
+  this.min_image_size = undefined;
+  this.max_image_size = undefined;
+}
+
 // Looks up the favicon url for a given web page url
+// @param query {FaviconQuery}
 // @returns {String} the favicon url if found, otherwise undefined
 // TODO: return status and icon instead of throwing errors
-// TODO: there are simply too many parameters to this function, change to
-// accept a struct-like query object
-async function favicon_lookup(conn, url_object, max_age_ms,
-  fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size, max_img_size) {
+async function favicon_lookup(query) {
+  console.assert(query instanceof FaviconQuery);
+  console.log('favicon_lookup', query.url.href);
 
-  // TODO: delegate assetion if not reasoned about locally?
-  console.assert(indexeddb_is_open(conn));
+  // TODO: rather than declare local variables, just use the query parameter
+  const url_object = query.url;
+  let max_age_ms = query.max_age_ms;
+  let fetch_html_timeout_ms = query.fetch_html_timeout_ms;
+  let fetch_image_timeout_ms = query.fetch_image_timeout_ms;
+  let min_image_size = query.min_image_size;
+  let max_image_size = query.max_image_size;
 
-  console.log('favicon_lookup', url_object.href);
   if(typeof max_age_ms === 'undefined')
     max_age_ms = FAVICON_DEFAULT_MAX_AGE_MS;
   if(typeof fetch_html_timeout_ms === 'undefined')
     fetch_html_timeout_ms = 1000;
-  if(typeof fetch_img_timeout_ms === 'undefined')
-    fetch_img_timeout_ms = 200;
-  if(typeof min_img_size === 'undefined')
-    min_img_size = 50;
-  if(typeof max_img_size === 'undefined')
-    max_img_size = 10240;
+  if(typeof fetch_image_timeout_ms === 'undefined')
+    fetch_image_timeout_ms = 200;
+  if(typeof min_image_size === 'undefined')
+    min_image_size = 50;
+  if(typeof max_image_size === 'undefined')
+    max_image_size = 10240;
 
-  // TODO: maybe this is always overkill and not needed. In fact I am
-  // pretty sure it is overkill. We are dealing with a very small number
-  // of urls. Switch back to an array.
+  // TODO: use an array
   const urls = new Set();
   urls.add(url_object.href);
 
-  // Step 1: check the cache for the input url
-  // NOTE: this happens prior to checking whether we are online.
-  // Cache lookups still work offline.
-  if(conn) {
-    const icon_url_string = await favicon_db_find_lookup_url(conn, url_object,
-      max_age_ms);
-    if(icon_url_string)
+  // Check the cache for the input url
+  if(query.conn) {
+    const icon_url_string = await favicon_db_find_lookup_url(query.conn,
+      query.url, max_age_ms);
+    if(icon_url_string) {
       return icon_url_string;
+    }
   }
 
-  // TODO: inline the silent function, it is just a simple try catch and it
-  // is not adding much value or encapsulating much of anything
-  const response = await favicon_fetch_doc_silently(url_object,
-    fetch_html_timeout_ms);
+  // If the query included a pre-fetched document, search it
+  if(query.document) {
+    console.debug('favicon_lookup searching pre-fetched document for url',
+      url_object.href);
+    const icon_url_string = await favicon_search_document(document, query.conn,
+      query.url, urls);
+    if(icon_url_string) {
+      console.debug('favicon_lookup found favicon in pre-fetched document',
+        url_object.href, icon_url_string);
+      return icon_url_string;
+    }
+  }
+
+  // Get the response for the url. Trap any fetch errors, a fetch error is
+  // non-fatal to lookup.
+  let response;
+
+  // Only fetch if a pre-fetched document was not provided
+  if(!query.document) {
+    try {
+      response = await fetch_html(url_object.href, fetch_html_timeout_ms);
+    } catch(error) {
+      // Do not warn. Network errors appear in the console.
+      // Do not exit early. A fetch error is non-fatal to lookup.
+    }
+  }
+
   if(response) {
-    // Step 2: check the cache for the redirect url
-    if(conn && response.redirected) {
-      const response_url_object = new URL(response.response_url);
+    let response_url_object;
+
+    if(response.redirected) {
+      response_url_object = new URL(response.response_url);
       urls.add(response_url_object.href);
-      const icon_url_string = await favicon_db_find_redirect_url(conn,
-        url_object, response, max_age_ms);
-      if(icon_url_string)
-        return icon_url_string;
+
+      // Check the cache for the redirect url
+      if(query.conn) {
+        const icon_url_string = await favicon_db_find_redirect_url(query.conn,
+          url_object, response, max_age_ms);
+
+        // Return the cached favicon url for the redirect url
+        if(icon_url_string) {
+          return icon_url_string;
+        }
+      }
     }
 
-    // Step 3: check the fetched document for a <link> tag
-    const icon_url_string = await favicon_search_document(conn, url_object,
-      urls, response);
-    if(icon_url_string)
-      return icon_url_string;
+    // Get the full text of the fetched document
+    let text;
+    try {
+      text = await response.text();
+    } catch(error) {
+      console.warn(error);
+    }
+
+    if(text) {
+      // Parse the text into an HTML document
+      const [status, document] = html_parse_from_string(text);
+
+      if(status === STATUS_OK) {
+
+        // Use the response url as the base url if available
+        let base_url_object = response_url_object ? response_url_object :
+          url_object;
+
+        // Check the fetched document for a <link> tag
+        const icon_url_string = await favicon_search_document(document,
+          conn, base_url_object, urls);
+        if(icon_url_string) {
+          return icon_url_string;
+        }
+      }
+    }
   }
 
-  // Step 4: check the cache for the origin url
-  if(conn && !urls.has(url_object.origin)) {
-    const icon_url_string = await favicon_db_find_origin_url(conn,
+  // Check the cache for the origin url
+  if(query.conn && !urls.has(url_object.origin)) {
+    const icon_url_string = await favicon_db_find_origin_url(query.conn,
       url_object.origin, urls, max_age_ms);
-    if(icon_url_string)
+    if(icon_url_string) {
       return icon_url_string;
+    }
   }
 
-  // Step 5: check for /favicon.ico
-  const icon_url_string = await favicon_lookup_origin(conn, url_object, urls,
-    fetch_img_timeout_ms, min_img_size, max_img_size);
+  // Check for /favicon.ico
+  const icon_url_string = await favicon_lookup_origin(query.conn, url_object,
+    urls, fetch_image_timeout_ms, min_image_size, max_image_size);
   return icon_url_string;
 }
 
 async function favicon_db_find_lookup_url(conn, url_object, max_age_ms) {
+  console.assert(indexeddb_is_open(conn));
+
   const entry = await favicon_db_find_entry(conn, url_object);
-  if(!entry)
+  if(!entry) {
     return;
+  }
+
   const current_date = new Date();
-  if(favicon_is_entry_expired(entry, current_date, max_age_ms))
+  if(favicon_is_entry_expired(entry, current_date, max_age_ms)) {
     return;
-  console.log('favicon_db_find_lookup_url entry', entry);
+  }
+
+  console.log('favicon_db_find_lookup_url found cached entry',
+    entry.pageURLString, entry.iconURLString);
   return entry.iconURLString;
 }
 
@@ -119,26 +203,20 @@ async function favicon_db_find_redirect_url(conn, url_object, response,
   return entry.iconURLString;
 }
 
-// TODO: this should be provided the document text and be a sync function
+// @param document {Document}
+// @param conn {IDBDatabase}
+// @param base_url_object {URL}
+// @param urls {Set}
 // @returns {String} a favicon url
-async function favicon_search_document(conn, url_object, urls, response) {
-  let text;
-  try {
-    text = await response.text();
-  } catch(error) {
-    console.warn(error);
+async function favicon_search_document(document, conn, base_url_object, urls) {
+  console.assert(document instanceof Document);
+  console.assert(indexeddb_is_open(conn));
+  console.assert(url_is_url_object(base_url_object));
+  console.assert(urls);
+
+  if(!document.head) {
     return;
   }
-
-  const [status, document] = html_parse_from_string(text);
-  if(status !== STATUS_OK)
-    return;
-
-  if(!document.head)
-    return;
-
-  const base_url_object = response.redirected ?
-    new URL(response.response_url) : url_object;
 
   let icon_url_object;
   const selectors = [
@@ -156,25 +234,29 @@ async function favicon_search_document(conn, url_object, urls, response) {
       continue;
 
     // Avoid passing empty string to URL constructor
-    let hrefString = element.getAttribute('href');
-    if(!hrefString)
+    let href_string = element.getAttribute('href');
+    if(!href_string) {
       continue;
+    }
 
-    hrefString = hrefString.trim();
-    if(!hrefString)
+    href_string = href_string.trim();
+    if(!href_string) {
       continue;
+    }
 
     try {
-      icon_url_object = new URL(hrefString, base_url_object);
+      icon_url_object = new URL(href_string, base_url_object);
     } catch(error) {
       continue;
     }
 
-    console.log('Found favicon from <link>', response.response_url,
+    console.log('found favicon <link>', base_url_object.href,
       icon_url_object.href);
 
-    if(conn)
+    // TODO: move this out so that search_document is not async
+    if(conn) {
       await favicon_db_put_entries(conn, icon_url_object.href, urls);
+    }
     return icon_url_object.href;
   }
 }
@@ -199,9 +281,10 @@ async function favicon_db_find_origin_url(conn, origin_url_string, urls,
 }
 
 async function favicon_lookup_origin(conn, url_object, urls,
-  fetch_img_timeout_ms, min_img_size, max_img_size) {
+  fetch_image_timeout_ms, min_image_size, max_image_size) {
   const img_url_string = url_object.origin + '/favicon.ico';
-  const fetch_promise = fetch_image_head(img_url_string, fetch_img_timeout_ms);
+  const fetch_promise = fetch_image_head(img_url_string,
+    fetch_image_timeout_ms);
   let response;
   try {
     response = await fetch_promise;
@@ -211,7 +294,7 @@ async function favicon_lookup_origin(conn, url_object, urls,
   }
 
   if(response.size === FETCH_UNKNOWN_CONTENT_LENGTH ||
-    (response.size >= min_img_size && response.size <= max_img_size)) {
+    (response.size >= min_image_size && response.size <= max_image_size)) {
     if(conn) {
       await favicon_db_put_entries(conn, response.response_url, urls);
     }
@@ -220,15 +303,6 @@ async function favicon_lookup_origin(conn, url_object, urls,
   }
 }
 
-// TODO: inline
-async function favicon_fetch_doc_silently(url_object, fetch_html_timeout_ms) {
-  const fetch_promise = fetch_html(url_object.href, fetch_html_timeout_ms);
-  try {
-    return await fetch_promise;
-  } catch(error) {
-    console.warn(error);
-  }
-}
 
 async function favicon_setup_db() {
   let conn;
@@ -342,6 +416,7 @@ function favicon_db_put_entries(conn, icon_url, page_urls) {
 }
 
 // Finds expired entries in the database and removes them
+// TODO: return status intsead
 async function favicon_compact_db(conn, max_age_ms) {
   console.assert(conn instanceof IDBDatabase);
   const expired_entries = await favicon_db_find_expired_entries(conn,

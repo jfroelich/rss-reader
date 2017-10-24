@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/status.js
 // import poll/poll.js
 // import reader-db.js
 // import archive-entries.js
@@ -45,7 +46,6 @@ async function alarms_on_poll_feeds_alarm() {
     fetch_feed_timeout_ms, fetch_html_timeout_ms,
     fetch_image_timeout_ms, flags);
   promise.catch(console.warn);
-  break;
 }
 
 async function alarms_on_remove_entries_missing_urls_alarm() {
@@ -76,6 +76,28 @@ async function alarms_on_remove_orphaned_entries_alarm() {
   }
 }
 
+async function alarms_on_refresh_feed_icons_alarm() {
+
+  let reader_conn, icon_conn, status;
+
+  try {
+    [reader_conn, icon_conn] = await Promise.all([reader_db_open(),
+      favicon_open_db()]);
+    status = await refresh_feed_icons(reader_conn, icon_conn);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    if(reader_conn)
+      reader_conn.close();
+    if(icon_conn)
+      icon_conn.close();
+  }
+
+  if(status !== STATUS_OK) {
+    console.warn('alarms_on_refresh_feed_icons_alarm invalid status', status);
+  }
+}
+
 async function alarms_on_alarm_wakeup(alarm) {
   console.log('alarms_on_alarm_wakeup', alarm.name);
 
@@ -93,7 +115,7 @@ async function alarms_on_alarm_wakeup(alarm) {
     alarms_on_remove_orphaned_entries_alarm();
     break;
   case 'refresh-feed-icons':
-    refresh_feed_icons().catch(console.warn);
+    alarms_on_refresh_feed_icons_alarm();
     break;
   case 'compact-favicon-db':
     alarms_on_compact_favicons_alarm();

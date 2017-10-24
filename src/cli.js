@@ -1,9 +1,32 @@
 'use strict';
 
 // import base/status.js
+// import poll/poll.js
 // import archive-entries.js
-// import poll.js
+// import favicon.js
 // import reader-db.js
+// import refresh-feed-icons.js
+
+async function cli_refresh_feed_icons() {
+
+  let reader_conn, icon_conn, status;
+
+  try {
+    [reader_conn, icon_conn] = await Promise.all([reader_db_open(),
+      favicon_open_db()]);
+    status = await refresh_feed_icons(reader_conn, icon_conn);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    if(reader_conn)
+      reader_conn.close();
+    if(icon_conn)
+      icon_conn.close();
+  }
+
+  return status;
+}
+
 
 async function cli_archive_entries() {
   let max_age_ms, conn, status;

@@ -20,22 +20,20 @@ indexeddb_open instead of favicon_open_db
 * test compact
 */
 
-async function test_favicon_lookup(url_string, is_cacheless) {
-  const url_object = new URL(url_string);
-  let conn;
-  let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
-    min_img_size, max_img_size;
+async function test_favicon_lookup(url, is_cacheless) {
+
+  const query = new FaviconQuery();
+  query.url = new URL(url);
 
   try {
-    if(!is_cacheless)
-      conn = await favicon_open_db();
-    const icon_url_string = await favicon_lookup(conn, url_object, max_age_ms,
-      fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
-      max_img_size);
-    console.log('lookup output:', icon_url_string);
+    if(!is_cacheless) {
+      query.conn = await favicon_open_db();
+    }
+
+    return await favicon_lookup(query);
   } finally {
-    if(conn)
-      conn.close();
+    if(query.conn)
+      query.conn.close();
   }
 }
 

@@ -4,7 +4,6 @@
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
-// TODO: write tests
 function frame_filter(doc) {
   console.assert(doc instanceof Document);
 

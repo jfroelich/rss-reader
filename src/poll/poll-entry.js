@@ -27,6 +27,7 @@ async function poll_entry(entry, reader_conn, icon_conn, feed,
   if(!entry_has_valid_url(entry))
     return false;
 
+  // TODO: rename url_string to url
   let url_string = entry_get_top_url(entry);
 
   // Exclude those entries not suitable for polling based on the entry's url
@@ -58,6 +59,8 @@ async function poll_entry(entry, reader_conn, icon_conn, feed,
     console.warn(error);
 
     // If the fetch failed, then process the entry as local
+    // Skip favicon processing.
+    // TODO: should still check favicon cache for favicon?
     await poll_entry_prepare_local_entry(entry, fetch_img_timeout_ms);
     return await poll_entry_store_entry(entry, reader_conn);
   }
@@ -77,15 +80,24 @@ async function poll_entry(entry, reader_conn, icon_conn, feed,
     // TODO: do I also want to apply rewrite rules to the redirected?
   }
 
-  await poll_entry_update_favicon(entry, icon_conn, feed.faviconURLString);
   const entry_content = await response.text();
-
   const [status, entry_document] = html_parse_from_string(entry_content);
-  if(status !== STATUS_OK)
+
+  // TODO: rather than just return, maybe this should still fallback to
+  // inserting local entry content?
+  if(status !== STATUS_OK) {
     return false;
+  }
+
+  // Now that the document is available, pass it along to favicon update
+  // function so that the favicon lookup will not always repeat the fetch
+  await poll_entry_update_favicon(entry, entry_document, icon_conn,
+    feed.faviconURLString);
 
   await poll_entry_prepare_remote_entry(entry, entry_document,
     fetch_img_timeout_ms);
+
+
   return await poll_entry_store_entry(entry, reader_conn);
 }
 
@@ -121,15 +133,17 @@ async function poll_entry_prepare_local_entry(entry, fetch_img_timeout_ms) {
 // @param entry {Object}
 // @param icon_conn {IDBDatabase}
 // @param fallback_url {String}
-async function poll_entry_update_favicon(entry, icon_conn, fallback_url) {
-  const lookup_url_string = entry_get_top_url(entry);
-  const lookup_url_object = new URL(lookup_url_string);
-  let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms, min_img_size,
-    max_img_size;
-  const icon_url_string = await favicon_lookup(icon_conn, lookup_url_object,
-    max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
-    min_img_size, max_img_size);
-  entry.faviconURLString = icon_url_string || fallback_url;
+async function poll_entry_update_favicon(entry, entry_document, icon_conn, fallback_url) {
+  const query = new FaviconQuery();
+  query.conn = icon_conn;
+
+  const lookup_url = entry_get_top_url(entry);
+  query.url = new URL(lookup_url);
+
+  query.document = entry_document;
+
+  const icon_url = await favicon_lookup(query);
+  entry.faviconURLString = icon_url || fallback_url;
 }
 
 function poll_entry_is_unpollable_url(url_string) {

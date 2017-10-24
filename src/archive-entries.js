@@ -14,6 +14,7 @@ async function archive_entries(conn, max_age_ms) {
 
   console.assert(indexeddb_is_open(conn));
   // max_age_ms assertion delegated to reader_db_find_archivable_entries
+  // because the variable is not otherwise used locally
 
   console.log('archiving entries older than %d ms', max_age_ms);
 

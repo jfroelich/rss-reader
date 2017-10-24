@@ -1,87 +1,99 @@
 'use strict';
 
-// import reader-db.js
+// import base/status.js
 // import favicon.js
-
-// TODO: deprecate IIAFE
-
-(function(exports) {
+// import feed.js
+// import reader-db.js
 
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.
-// TODO: reintroduce conn parameters
-// TODO: return status
-async function refresh_feed_icons() {
-  console.log('Refreshing feed favicons...');
-  let count = 0, reader_conn, icon_conn;
+async function refresh_feed_icons(reader_conn, icon_conn) {
+  console.log('refresh_feed_icons started');
 
+  // Load all feeds from the database
+  let feeds;
   try {
-    [reader_conn, icon_conn] = await Promise.all([reader_db_open(),
-      favicon_open_db()]);
-
-    const feeds = await reader_db_get_feeds(reader_conn);
-    const resolutions = await process_feeds(feeds, reader_conn, icon_conn);
-    count = count_num_modified(resolutions);
-  } finally {
-    if(reader_conn)
-      reader_conn.close();
-    if(icon_conn)
-      icon_conn.close();
+    feeds = await reader_db_get_feeds(reader_conn);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
   }
 
-  return count;
-}
-
-function process_feeds(feeds, reader_conn, icon_conn) {
+  // Initialize all update tasks so that they run concurrently
   const promises = [];
-  for(const feed of feeds)
-    promises.push(process_feed(feed, reader_conn, icon_conn));
-  return Promise.all(promises);
+  for(const feed of feeds) {
+    promises.push(refresh_feed_icons_update_icon(feed, reader_conn, icon_conn));
+  }
+
+  // Wait until all update calls complete
+  // Ignore error statuses for individual updates
+  await Promise.all(promises);
+
+  console.log('refresh_feed_icons completed');
+  return STATUS_OK;
 }
 
-function count_num_modified(resolutions) {
-  let count = 0;
-  for(const did_update of resolutions)
-    if(did_update)
-      count++;
-  return count;
-}
+// Lookup the feed's icon, update the feed in db
+async function refresh_feed_icons_update_icon(feed, reader_conn, icon_conn) {
+  console.debug('inspecting feed', feed_get_top_url(feed));
 
-// Lookup the feed's icon, update the feed in db. Return true if updated.
-// TODO: return status instead of boolean
-async function process_feed(feed, reader_conn, icon_conn) {
-  const lookup_url_object = feed_create_icon_lookup_url(feed);
-  if(!lookup_url_object)
-    return false;
+  const query = new FaviconQuery();
+  query.conn = icon_conn;
 
-  // TODO: should these be parameters to this function?
-  let max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
-    min_img_size, max_img_size;
-  const icon_url_string = await favicon_lookup(icon_conn, lookup_url_object,
-    max_age_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
-    min_img_size, max_img_size);
+  // feed_create_icon_lookup_url should never throw, so no try catch. If any
+  // error does occur let it bubble up unhandled.
+  query.url = feed_create_icon_lookup_url(feed);
 
-  // If we could not find an icon, then leave the feed as is. The feed may
-  // have an icon but prefer to leave it over remove it.
-  if(!icon_url_string)
-    return false;
+  // feed_create_icon_lookup_url should always return a url. double check.
+  console.assert(query.url);
 
-  // When the feed is missing an icon, then we want to set it.
-  // When the feed is not missing an icon, then we only want to set it if the
-  // newly found icon is different than the current icon.
-  if(feed.faviconURLString === icon_url_string)
-    return false;
+  // Lookup the favicon url
+  // TODO: once favicon_lookup returns a status, check if it is ok, and if not,
+  // return whatever is that status.
+  let icon_url;
+  try {
+    icon_url = await favicon_lookup(query);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
 
-  console.log('Changing feed icon url from %s to %s', feed.faviconURLString,
-    icon_url_string);
+  // If we could not find an icon, then leave the feed as is
+  if(!icon_url) {
+    return STATUS_OK;
+  }
 
-  // Otherwise the icon changed
-  feed.faviconURLString = icon_url_string;
+  const prev_icon_url = feed.faviconURLString;
+
+  // For some reason, this section of code always feels confusing. Rather than
+  // using a concise condition, I've written comments in each branch.
+
+  if(prev_icon_url) {
+    // The feed has an existing favicon
+
+    if(prev_icon_url === icon_url) {
+      // The new icon is the same as the current icon, so exit.
+      return STATUS_OK;
+    } else {
+      // The new icon is different than the current icon, fall through
+    }
+
+  } else {
+    // The feed is missing a favicon, and we now have an icon. Fall through
+    // to set the icon.
+  }
+
+  // Set the new icon
+  console.debug('updating feed favicon %s to %s', prev_icon_url, icon_url);
+  feed.faviconURLString = icon_url;
   feed.dateUpdated = new Date();
-  await reader_db_put_feed(reader_conn, feed);
-  return true;
+
+  try {
+    await reader_db_put_feed(reader_conn, feed);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+
+  return STATUS_OK;
 }
-
-exports.refresh_feed_icons = refresh_feed_icons;
-
-}(this));
