@@ -33,6 +33,9 @@ function FaviconQuery() {
   // @type {URL}
   this.url = null;
 
+  // If true, lookup will skip the fetch of the input url
+  this.skip_url_fetch = false;
+
   // These all store numbers
   this.max_age_ms = undefined;
   this.fetch_html_timeout_ms = undefined;
@@ -99,7 +102,7 @@ async function favicon_lookup(query) {
   let response;
 
   // Only fetch if a pre-fetched document was not provided
-  if(!query.document) {
+  if(!query.document && !query.skip_url_fetch) {
     try {
       response = await fetch_html(url_object.href, fetch_html_timeout_ms);
     } catch(error) {

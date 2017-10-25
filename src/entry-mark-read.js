@@ -22,7 +22,7 @@ async function entry_mark_read(conn, id) {
     return ERR_DB;
   }
 
-  console.log('entry_mark_read found entry', entry);
+  console.debug('entry_mark_read found entry', entry_get_top_url(entry));
 
   if(!entry || entry.readState === ENTRY_STATE_READ) {
     return ERR_DB;
@@ -39,7 +39,7 @@ async function entry_mark_read(conn, id) {
     return ERR_DB;
   }
 
-  console.log('entry_mark_read marked read', entry);
+  console.debug('entry_mark_read updated', entry_get_top_url(entry));
   extension_update_badge_text();
   return STATUS_OK;
 }
