@@ -7,21 +7,22 @@
 // import reader-db.js
 // import refresh-feed-icons.js
 
-async function cli_refresh_feed_icons() {
 
+async function cli_refresh_feed_icons() {
   let reader_conn, icon_conn, status;
 
   try {
     [reader_conn, icon_conn] = await Promise.all([reader_db_open(),
-      favicon_open_db()]);
+      favicon_db_open()]);
     status = await refresh_feed_icons(reader_conn, icon_conn);
-  } catch(error) {
-    console.warn(error);
   } finally {
-    if(reader_conn)
+    if(reader_conn) {
       reader_conn.close();
-    if(icon_conn)
+    }
+
+    if(icon_conn) {
       icon_conn.close();
+    }
   }
 
   return status;
@@ -44,14 +45,24 @@ async function cli_archive_entries() {
 }
 
 async function cli_poll_feeds() {
-  const flags = POLL_FEEDS_FLAGS.ALLOW_METERED_CONNECTIONS |
-    POLL_FEEDS_FLAGS.IGNORE_IDLE_STATE |
-    POLL_FEEDS_FLAGS.IGNORE_RECENCY_CHECK |
-    POLL_FEEDS_FLAGS.IGNORE_MODIFIED_CHECK;
+  const pfd = new PollFeedsDescriptor();
+  pfd.allow_metered_connections = true;
+  pfd.ignore_idle_state = true;
+  pfd.ignore_recency_check = true;
+  pfd.ignore_modified_check = true;
 
-  let recency_period_ms, idle_period_secs, fetch_feed_timeout_ms,
-    fetch_html_timeout_ms, fetch_img_timeout_ms;
-  await poll_feeds(idle_period_secs, recency_period_ms,
-    fetch_feed_timeout_ms, fetch_html_timeout_ms, fetch_img_timeout_ms,
-    flags);
+  try {
+    [pfd.reader_conn, pfd.icon_conn] = await Promise.all([reader_db_open(),
+      favicon_db_open()]);
+    await poll_feeds(pfd);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    if(pfd.reader_conn) {
+      pfd.reader_conn.close();
+    }
+    if(pfd.icon_conn) {
+      pfd.icon_conn.close();
+    }
+  }
 }

@@ -5,7 +5,7 @@ TODO:
 
 * Use a test db instead of the real db, and make sure to
 delete the test db at the end of the test. to use a test db, directly call
-indexeddb_open instead of favicon_open_db
+indexeddb_open instead of favicon_db_open
 * actually run tests instead of command line
 * test offline
 * test a non-existent host
@@ -27,24 +27,26 @@ async function test_favicon_lookup(url, is_cacheless) {
 
   try {
     if(!is_cacheless) {
-      query.conn = await favicon_open_db();
+      query.conn = await favicon_db_open();
     }
 
     return await favicon_lookup(query);
   } finally {
-    if(query.conn)
+    if(query.conn) {
       query.conn.close();
+    }
   }
 }
 
 async function test_clear_icon_db() {
   let conn;
   try {
-    conn = await favicon_open_db();
+    conn = await favicon_db_open();
     await favicon_db_clear(conn);
   } finally {
-    if(conn)
+    if(conn) {
       conn.close();
+    }
   }
 }
 

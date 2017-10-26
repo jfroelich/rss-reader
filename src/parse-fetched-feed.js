@@ -1,7 +1,7 @@
 'use strict';
 
 // import feed.js
-// import parse-feed.js
+// import feed-parse.js
 
 // TODO: rename to feed-coerce or something?
 // TODO: move out of fetch folder
@@ -19,7 +19,7 @@ async function parse_fetched_feed(response) {
   const feed_xml_string = await response.text();
 
   // Allow parse error to bubble
-  const parse_result = parse_feed(feed_xml_string);
+  const parse_result = feed_parse_from_string(feed_xml_string);
   const feed = parse_result.feed;
 
   if(!feed.datePublished)

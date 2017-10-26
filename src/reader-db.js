@@ -292,6 +292,7 @@ function reader_db_remove_feed_and_entries(conn, feed_id, entry_ids) {
   });
 }
 
+// This does not validate the entry, it just puts it as is
 function reader_db_put_entry(conn, entry) {
   console.assert(indexeddb_is_open(conn));
   console.assert(entry_is_entry(entry));

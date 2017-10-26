@@ -129,6 +129,14 @@ function html_parse_from_string(html_string) {
 
   const parser = new DOMParser();
 
+  // BUG: the following message appeared in the console:
+  //[Violation] Added non-passive event listener to a scroll-blocking
+  // 'touchstart' event. Consider marking event handler as 'passive' to make
+  // the page more responsive. See
+  // https://www.chromestatus.com/feature/5745543795965952
+  // This should never appear because the DOM is not live.
+
+
   // doc is guaranteed defined regardless of the validity of html_string
   const doc = parser.parseFromString(html_string, MIME_TYPE_HTML);
 

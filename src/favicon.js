@@ -6,6 +6,10 @@
 // import html.js
 // import url.js
 
+// TODO: use status codes throughout. Currently waiting on fetch.js to
+// migrate to using status codes.
+
+
 // 30 days in ms, used by both lookup and compact to determine whether a
 // cache entry expired
 const FAVICON_DEFAULT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
@@ -13,7 +17,7 @@ const FAVICON_DEFAULT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 // Opens a connection to the favicon database
 // @throws {Error} invalid timeout (any other errors occur within promise)
 // @returns {Promise} resolves to open IDBDatabase instance
-function favicon_open_db() {
+function favicon_db_open() {
   const name = 'favicon-cache';
   const version = 2;
   const timeout_ms = 500;
@@ -292,7 +296,10 @@ async function favicon_lookup_origin(conn, url_object, urls,
   try {
     response = await fetch_promise;
   } catch(error) {
-    console.warn(error);
+    // This is spamming the console so disabled for now. Eventually this should
+    // work using status, and return codes. That needs to wait until
+    // fetch_image_head returns a status code.
+    //console.warn(error);
     return;
   }
 
@@ -307,10 +314,10 @@ async function favicon_lookup_origin(conn, url_object, urls,
 }
 
 
-async function favicon_setup_db() {
+async function favicon_db_setup() {
   let conn;
   try {
-    conn = await favicon_open_db();
+    conn = await favicon_db_open();
   } finally {
     if(conn) {
       conn.close();

@@ -28,7 +28,7 @@ async function alarms_on_archive_alarm() {
 async function alarms_on_compact_favicons_alarm() {
   let max_age_ms, conn;
   try {
-    conn = await favicon_open_db();
+    conn = await favicon_db_open();
     await favicon_compact_db(conn, max_age_ms);
   } catch(error) {
     console.warn(error);
@@ -39,13 +39,21 @@ async function alarms_on_compact_favicons_alarm() {
 }
 
 async function alarms_on_poll_feeds_alarm() {
-  const flags = 0; // all off
-  let idle_period_secs, recency_period_ms, fetch_feed_timeout_ms,
-    fetch_html_timeout_ms, fetch_image_timeout_ms;
-  const promise = poll_feeds(idle_period_secs, recency_period_ms,
-    fetch_feed_timeout_ms, fetch_html_timeout_ms,
-    fetch_image_timeout_ms, flags);
-  promise.catch(console.warn);
+  const pfd = new PollFeedsDescriptor();
+  try {
+    [pfd.reader_conn, pfd.icon_conn] = await Promise.all([reader_db_open(),
+      favicon_db_open()]);
+    await poll_feeds(pfd);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    if(pfd.reader_conn) {
+      pfd.reader_conn.close();
+    }
+    if(pfd.icon_conn) {
+      pfd.icon_conn.close();
+    }
+  }
 }
 
 async function alarms_on_remove_entries_missing_urls_alarm() {
@@ -82,7 +90,7 @@ async function alarms_on_refresh_feed_icons_alarm() {
 
   try {
     [reader_conn, icon_conn] = await Promise.all([reader_db_open(),
-      favicon_open_db()]);
+      favicon_db_open()]);
     status = await refresh_feed_icons(reader_conn, icon_conn);
   } catch(error) {
     console.warn(error);
@@ -127,12 +135,10 @@ async function alarms_on_alarm_wakeup(alarm) {
 }
 
 function alarms_register_all() {
-  console.log('alarms_register_all');
+  console.log('alarms_register_all start');
 
-  chrome.alarms.create('archive',
-    {'periodInMinutes': 60 * 12});
-  chrome.alarms.create('poll',
-    {'periodInMinutes': 60});
+  chrome.alarms.create('archive', {'periodInMinutes': 60 * 12});
+  chrome.alarms.create('poll', {'periodInMinutes': 60});
   chrome.alarms.create('remove-entries-missing-urls',
     {'periodInMinutes': 60 * 24 * 7});
   chrome.alarms.create('remove-orphaned-entries',
@@ -145,4 +151,14 @@ function alarms_register_all() {
 
 chrome.alarms.onAlarm.addListener(alarms_on_alarm_wakeup);
 
-alarms_register_all();
+
+function alarms_dom_content_loaded(event) {
+  console.debug('alarms_dom_content_loaded');
+  alarms_register_all();
+}
+
+// Defer registration until dom content loaded to allow alarms_register_all
+// to use external dependencies that may not yet be loaded in script loading
+// order.
+document.addEventListener('DOMContentLoaded', alarms_dom_content_loaded,
+  {'once': true});

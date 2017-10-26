@@ -66,6 +66,8 @@ async function poll_document_filter(doc, url, fetch_image_timeout_ms) {
   // This should occur after canonical_url_filter
   // This should occur after lonestar_filter
   let allowed_protocols; // defer to defaults
+
+  // TODO: wrap, return ERR_FETCH or something on error
   // Allow exceptions to bubble (for now)
   await image_size_filter(doc, allowed_protocols, fetch_image_timeout_ms);
 

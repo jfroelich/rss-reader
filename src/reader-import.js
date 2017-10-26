@@ -20,7 +20,7 @@ async function reader_import_files(files) {
   let reader_conn, icon_conn;
   try {
     [reader_conn, icon_conn] = await Promise.all([
-      reader_db_open(), favicon_open_db()
+      reader_db_open(), favicon_db_open()
     ]);
 
     await reader_import_files_internal(files, reader_conn, icon_conn);

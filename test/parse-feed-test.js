@@ -10,7 +10,7 @@ async function test(url) {
   // TODO: I think this code is out of date, probably no longer works?
   // Is this how text is retrieved? I think it needs an await?
   const feed_text = response.text;
-  const result = parse_feed(feed_text);
+  const result = feed_parse_from_string(feed_text);
   console.dir(result);
   console.log('Test completed');
 }

@@ -137,7 +137,7 @@ async function options_page_start_subscription(url) {
 
   try {
     [subscription.reader_conn, subscription.icon_conn] = await
-      Promise.all([reader_db_open(), favicon_open_db()]);
+      Promise.all([reader_db_open(), favicon_db_open()]);
 
     const sub_result = await subscription_add(subscription);
     status = sub_result.status;
@@ -368,7 +368,7 @@ async function options_page_subscribe_form_on_submit(event) {
   // TODO: explicit defaults
   let icon_conn;
 
-  icon_conn = await favicon_open_db();
+  icon_conn = await favicon_db_open();
   for(let result of entries) {
     if(!result.link)
       continue;

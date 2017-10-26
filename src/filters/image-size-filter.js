@@ -145,7 +145,6 @@ function image_size_filter_sniff(url_object) {
   // can avoid processing in some cases
 
   if(params.has('width') && params.has('height')) {
-
     dimensions.width = parseInt(params.get('width'), radix);
     dimensions.height = parseInt(params.get('height'), radix);
 
@@ -153,6 +152,10 @@ function image_size_filter_sniff(url_object) {
       return dimensions;
     }
   }
+
+  // TODO: support the following url, s1200 is the feature, s being short for
+  // size, and here size meaning width, this is a 1200px width image
+  // https://media.npr.org/...9fb33b1-s1200.jpg
 
   // TODO: make a helper function
   // Grab from file name (e.g. 100x100.jpg => [100,100])
