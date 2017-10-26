@@ -2,6 +2,8 @@
 
 // import reader-db.js
 
+// TODO: deprecate IIAFE
+
 (function(exports) {
 
 const POLL_FEEDS_FLAGS = {};
@@ -218,16 +220,27 @@ async function poll_feed(reader_conn, icon_conn, local_feed,
   return num_entries_added;
 }
 
-// TODO: this should call out to poll_entry_silently to avoid the
-// failfast behavior of Promise.all
 function poll_feed_entries(reader_conn, icon_conn, feed, entries,
   fetch_html_timeout_ms, fetch_img_timeout_ms) {
   entries = filter_dup_entries(entries);
+
+  // Cascade feed properties
+  for(const entry of entries) {
+    entry.feed = feed.id;
+    entry.feedTitle = feed.title;
+  }
+
+  const desc = new PollEntryDescriptor();
+  desc.reader_conn = reader_conn;
+  desc.icon_conn = icon_conn;
+  desc.feed_favicon_url = feed.faviconURLString;
+  desc.fetch_html_timeout_ms = fetch_html_timeout_ms;
+  desc.fetch_image_timeout_ms = fetch_img_timeout_ms;
+
   const promises = [];
   for(const entry of entries) {
-    const promise = poll_entry(entry, reader_conn, icon_conn, feed,
-      fetch_html_timeout_ms, fetch_img_timeout_ms);
-    promises.push(promise);
+    desc.entry = entry;
+    promises.push(poll_entry(desc));
   }
   return Promise.all(promises);
 }

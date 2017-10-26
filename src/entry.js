@@ -58,30 +58,6 @@ function entry_has_url(entry) {
   return entry.urls && entry.urls.length;
 }
 
-// Checks the initial url
-function entry_has_valid_url(entry) {
-  console.assert(entry_is_entry(entry));
-
-  // The entry may be initialized but not have any urls at all
-  if(!entry_has_url(entry)) {
-    return false;
-  }
-
-  // TODO: defer url functionality to url.js
-  // TODO: separate out the special check for // or just remove it
-
-  const url_string = entry.urls[0];
-  let url_object;
-  try {
-    url_object = new URL(url_string);
-  } catch(error) {
-    console.warn(error);
-    return false;
-  }
-
-  return !url_object.pathname.startsWith('//');
-}
-
 // Returns a new entry object where fields have been sanitized. Impure
 function entry_sanitize(input_entry, author_max_len, title_max_len,
   content_max_length) {

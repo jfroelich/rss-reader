@@ -11,140 +11,85 @@
 // import reader-db.js
 // import url.js
 
+function PollEntryDescriptor() {
+  this.entry = null;
+  this.reader_conn = null;
+  this.icon_conn = null;
+  this.feed_favicon_url = null;
+  this.fetch_html_timeout_ms = undefined;
+  this.fetch_image_timeout_ms = undefined;
+}
+
+
+// TODO: regarding the bug below, it is because this is not a composition of
+// individual elements each of which has been tested. Because I have not
+// bothered to write tests, and I have not quite thought of how to organize
+// the functionality into smaller components. For debugging, what I would
+// prefer to do is break apart the problem into smaller problems, and then
+// test each component separately, and make assertions about input and
+// output.
+
 
 // TODO: this shouldn't be returning true/false, it should be returning status
 // Switching to return status partly blocked by fetch not yielding status and
 // some other todos. Need to work from the bottom up, and review which
 // helper functions throw errors.
-async function poll_entry(entry, reader_conn, icon_conn, feed,
-  fetch_html_timeout_ms, fetch_image_timeout_ms) {
+async function poll_entry(desc) {
+  console.assert(typeof desc === 'object');
+  console.assert(entry_is_entry(desc.entry));
 
-  console.assert(entry_is_entry(entry));
-  console.assert(feed_is_feed(feed));
-
-  // Cascade properties from feed to entry
-  // TODO: cascading properties is not a feature that poll_entry should be
-  // responsible for. Move it to calling context. Next, consider the remaining
-  // role of the feed parameter. If the only remaining use is to get the
-  // default favicon url, then remove feed parameter and add default favicon
-  // url parameter.
-  entry.feed = feed.id;
-  entry.feedTitle = feed.title;
-
-  // TODO: entry_has_valid_url should maybe be inlined. First, this feels like
-  // it might be the only caller. Second, it is partly redundant with
-  // entry_get_top_url. Third, it feels like the wrong abstraction. I should
-  // directly make a call to a function in url.js given that I have the url
-  // available here. However, there is the issue of how to check if an entry
-  // has any url at all. I kind of still need an entry_has_url function. Or,
-  // entry_get_top_url should tolerate empty urls list and not throw in that
-  // case.
-
-  // Check whether the entry has a valid url. This is not an assertion. This
-  // might be the first time the entry is validated after parsing it from
-  // the feed xml.
-  if(!entry_has_valid_url(entry)) {
+  const entry = desc.entry;
+  if(!entry_has_url(entry)) {
     return false;
   }
 
   let url = entry_get_top_url(entry);
-
-  // Exclude those entries not suitable for polling based on the entry's url
-  if(poll_entry_is_blacklisted_url(url)) {
+  if(!url_is_valid(url)) {
     return false;
   }
 
-  // Check if the entry already exists in the database, using url comparison
-  if(await reader_db_find_entry_by_url(reader_conn, url)) {
-    return false;
-  }
-
-  // TODO: rewriting should probably occur prior to looking for whether the
-  // entry exists. That way more urls are normalized to the same url
-  // so fewer database requests are performed.
-
-  // Try and rewrite the url and then perform the same steps again
   let rewritten_url = rewrite_url(url);
   if(rewritten_url && url !== rewritten_url) {
+    console.debug('rewrote entry url', url, rewritten_url);
     entry_append_url(entry, rewritten_url);
     url = rewritten_url;
-
-    if(poll_entry_is_blacklisted_url(url)) {
-      return false;
-    }
-
-    if(await reader_db_find_entry_by_url(reader_conn, url)) {
-      return false;
-    }
   }
 
-  // Fetch the entry's full text
-  let response;
-  try {
-    response = await fetch_html(url, fetch_html_timeout_ms);
-  } catch(error) {
-    // Fetch errors are non-fatal to polling an entry
-    console.warn(error);
+  if(!await poll_entry_pollable(url, desc.reader_conn)) {
+    return false;
   }
 
+  const response = await poll_entry_fetch(url, desc.fetch_html_timeout_ms);
   if(response && response.redirected) {
+    if(!await poll_entry_pollable(response.response_url, desc.reader_conn)) {
+      return false;
+    }
 
-    // The redirected url will now represent the entry
+    entry_append_url(entry, response.response_url);
     url = response.response_url;
 
-    // If a redirect occurred, then check again if the entry should be stored,
-    // this time using the redirect url
-    if(poll_entry_is_blacklisted_url(url)) {
-      return false;
-    }
-
-    if(await reader_db_find_entry_by_url(reader_conn, url)) {
-      return false;
-    }
-
-    // If a redirect occurred and we are going to continue polling, append the
-    // redirect url.
-    entry_append_url(entry, url);
-
-    // TODO: apply rewrite rules to redirected url?
+    // TODO: rewrite the redirected url?
   }
 
   // Initialize entry content to either the fetched text or the feed text,
-  // based on whether success was successful.
-  let entry_content;
-  if(response) {
-    // This pulls in the body of the response, which is deferred until now,
-    // after ensuring redirect url does not exist.
-    entry_content = await response.text();
-  } else {
-    entry_content = entry.content;
-  }
-
-  // Create an HTML document from the entry content.
+  // based on whether the fetch was successful. This pulls in the body of the
+  // response, which is deferred until checking if the redirect url exists.
+  const entry_content = response ? await response.text() : entry.content;
   const [status, entry_document] = html_parse_from_string(entry_content);
 
-  // Set the entry's favicon (before filtering to ensure <link> appears in
-  // pre-fetched document).
+  // Lookup the favicon
   const query = new FaviconQuery();
-  query.conn = icon_conn;
+  query.conn = desc.icon_conn;
   query.url = new URL(url);
-
-  // Only provide the pre-fetched document to favicon_lookup if it was actually
-  // fetched the remote html
-  if(response) {
-    query.document = entry_document;
-  }
-
-  // Regardless of whether we fetched, or failed to fetch, instruct
-  // favicon_lookup not to fetch again
   query.skip_url_fetch = true;
-
+  query.document = response ? entry_document : undefined;
   const icon_url = await favicon_lookup(query);
-  entry.faviconURLString = icon_url || feed.faviconURLString;
+  entry.faviconURLString = icon_url || desc.feed_favicon_url;
 
   // Filter the entry content
   if(entry_document) {
-    await poll_document_filter(entry_document, url, fetch_image_timeout_ms);
+    await poll_document_filter(entry_document, url,
+      desc.fetch_image_timeout_ms);
     entry.content = entry_document.documentElement.outerHTML.trim();
   }
 
@@ -155,35 +100,117 @@ async function poll_entry(entry, reader_conn, icon_conn, feed,
   storable_entry.archiveState = ENTRY_STATE_UNARCHIVED;
   storable_entry.dateCreated = new Date();
 
+  // BUG: something strange is happening with pdf urls now. I see the following
+  // error message in the console, printed by the console.warn call in the
+  // next try catch.
+  // First off, this entry should not be in the database. So maybe the database
+  // entered an unexpected state?
+  // Second, I am doing multiple exists checks. How are none of them
+  // matching?
+  // It could be related to the rewriting switch, where I rewrite before
+  // checking if exists? But url is left as is if no rewrite occurs, so the
+  // initial url is still checked.
+/*
+DOMException: Unable to add key to index 'urls': at least one key does not
+satisfy the uniqueness requirements.
+["http://www.mit.edu/~jnt/Papers/J012-86-intractable.pdf"]
+*/
+
+
   try {
-    await reader_db_put_entry(reader_conn, storable_entry);
+    await reader_db_put_entry(desc.reader_conn, storable_entry);
   } catch(error) {
-    console.warn(error);
+    console.warn(error, storable_entry.urls);
     return false;
   }
 
   return true;
 }
 
-function poll_entry_is_blacklisted_url(url_string) {
-  const url_object = new URL(url_string);
+async function poll_entry_fetch(url, timeout) {
+  let response;
+  try {
+    response = await fetch_html(url, timeout);
+  } catch(error) {
+    // Fetch errors are non-fatal to polling an entry
+  }
+  return response;
+}
+
+async function poll_entry_pollable(url, conn) {
+  const url_object = new URL(url);
   const hostname = url_object.hostname;
 
+  if(poll_entry_is_interstitial(hostname)) {
+    return false;
+  }
+
+  if(poll_entry_is_scripted(hostname)) {
+    return false;
+  }
+
+  if(poll_entry_is_blacklisted_url(url)) {
+    return false;
+  }
+
+  // BUG: this is missing PDFs for some reason
+  // http://www.cse.unsw.edu.au/~hpaik/thesis/showcases/16s2/
+  // http://www.mit.edu/~jnt/Papers/J012-86-intractable.pdf
+
+  // TEST RESULT: url_sniff_is_binary on scott_brisbane.pdf returns true.
+  // So this should return false. Ah. That was the bug. The inversion of the
+  // condition. The previous function is is unpollable, and now this is
+  // called with !is_pollable. But I simply copied this from earlier. So
+  // url_sniff_is_binary works, this just was returning the opposite of what
+  // I intended.
+
+  // Followup, yes, I think this was the bug. Ran poll tests again, and now
+  // this is properly catching binaries, and I am not seeing fetch accept
+  // errors.
+
+  // Lesson: fast refactoring that involves copy and paste is sometimes bad.
+  // Lesson: during refactoring, be especially wary of nested conditions in a
+  // function that returns a boolean result.
+
+  // How would I avoid this in the future?
+  // 1) Refactor slower.
+  // 2) Use fewer layers of abstraction?
+  // 3) Test driven development.
+  // 4) More modularity.
+
+  if(url_sniff_is_binary(url_object)) {
+    console.debug('binary resource', url);
+    return false;
+  }
+
+  if(await reader_db_find_entry_by_url(conn, url)) {
+    return false;
+  }
+  return true;
+}
+
+function poll_entry_is_interstitial(hostname) {
   const interstitial_hosts = [
     'www.forbes.com',
     'forbes.com'
   ];
-  if(interstitial_hosts.includes(hostname)) {
-    return true;
-  }
 
+  return interstitial_hosts.includes(hostname);
+}
+
+function poll_entry_is_scripted(hostname) {
   const scripted_hosts = [
     'productforums.google.com',
     'groups.google.com'
   ];
-  if(scripted_hosts.includes(hostname)) {
-    return true;
-  }
+  return scripted_hosts.includes(hostname);
+}
+
+
+// TODO: split into separate functions
+function poll_entry_is_blacklisted_url(url) {
+  const url_object = new URL(url);
+  const hostname = url_object.hostname;
 
   const paywall_hosts = [
     'www.nytimes.com',
@@ -202,8 +229,6 @@ function poll_entry_is_blacklisted_url(url_string) {
     return true;
   }
 
-  if(url_sniff_is_binary(url_object)) {
-    return true;
-  }
+
   return false;
 }
