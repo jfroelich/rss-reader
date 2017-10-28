@@ -14,8 +14,9 @@ function object_filter_empty_props(object) {
   for(const key in object) {
     if(has_own_prop.call(object, key)) {
       const value = object[key];
-      if(value !== undefined && value !== null && value !== '')
+      if(value !== undefined && value !== null && value !== '') {
         output_object[key] = value;
+      }
     }
   }
 

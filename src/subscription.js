@@ -2,7 +2,7 @@
 
 // import base/object.js
 // import fetch/fetch.js
-// import fetch/parse-fetched-feed.js
+// import fetch/feed-coerce-from-response.js
 // import feed.js
 // import extension.js
 // import favicon.js
@@ -78,23 +78,27 @@ async function subscription_add(subscription) {
       return {'status' : status};
     }
 
-    // TODO: when and where is redirect url appended to feed's url list?? I am
-    // not entirely sure I ever did this. This should be happening. Does it
-    // happen within parse_fetched_feed? If not then it should be done right
-    // here.
+    // TODO: add response_url to feed here instead of in coerce?
   }
 
-  let parse_result;
+  let xml_string;
   try {
-    // Must be awaited because internally parse_fetched_feed fetches the body
-    // of the response
-    parse_result = await parse_fetched_feed(response);
+    xml_string = await response.text();
+  } catch(error) {
+    console.warn(error);
+    return ERR_FETCH;
+  }
+
+  let coerce_result;
+  try {
+    coerce_result = feed_coerce_from_response(xml_string,
+      response.request_url, response.response_url, response.last_modified_date);
   } catch(error) {
     console.warn(error);
     return {'status': ERR_PARSE};
   }
 
-  const merged_feed = feed_merge(feed, parse_result.feed);
+  const merged_feed = feed_merge(feed, coerce_result.feed);
   try {
     await feed_update_favicon(merged_feed, icon_conn);
   } catch(error) {
@@ -116,6 +120,10 @@ async function subscription_url_is_unique(url_string, reader_conn) {
   return STATUS_OK;
 }
 
+// TODO: this should delegate to reader_feed_put instead
+// and subscription_feed_prep should be deprecated as well
+// I think first step would be to inline this function, because right now it
+// composes prep, store, and notify together.
 async function subscription_put_feed(feed, reader_conn, notify) {
   const storable_feed = subscription_feed_prep(feed);
   let new_id;
@@ -132,7 +140,6 @@ async function subscription_put_feed(feed, reader_conn, notify) {
 }
 
 function subscription_notify_add(feed, notify) {
-  'use strict';
   if(!notify) return;
   const title = 'Subscribed';
   const feed_name = feed.title || feed_get_top_url(feed);
@@ -142,7 +149,6 @@ function subscription_notify_add(feed, notify) {
 
 // Creates a shallow copy of the input feed suitable for storage
 function subscription_feed_prep(feed) {
-  'use strict';
   let storable = feed_sanitize(feed);
   storable = object_filter_empty_props(storable);
   storable.dateCreated = new Date();

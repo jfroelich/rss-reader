@@ -1,9 +1,13 @@
 'use strict';
 
+// import base/status.js
+// import http/fetch.js
 // import poll/poll-entry.js
 // import extension.js
+// import feed.js
+// import feed-coerce-from-response.js
 // import reader-db.js
-
+// import reader-feed-put.js
 
 function PollFeedsDescriptor() {
   this.reader_conn = undefined;
@@ -22,8 +26,6 @@ function PollFeedsDescriptor() {
   this.accept_html = true;
 }
 
-// TODO: return status instead of counts
-
 async function poll_feeds(desc) {
   console.log('poll_feeds start');
 
@@ -39,71 +41,57 @@ async function poll_feeds(desc) {
   }
 
   if(!desc.ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    const state = await extension_idle_query(idle_period_secs);
+    const state = await extension_idle_query(desc.idle_period_secs);
     if(state !== 'locked' && state !== 'idle') {
-      console.log('Polling canceled because machine not idle');
+      console.debug('idle');
       return false;
     }
   }
 
-  // Allow exceptions to bubble (for now)
-  const feeds = await poll_feeds_find_pollable_feeds(desc);
+  let feeds;
+  try {
+    feeds = await reader_db_get_feeds(desc.reader_conn);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+
+  if(!desc.ignore_recency_check) {
+    const pollable_feeds = [];
+    for(const feed of feeds) {
+      if(poll_feeds_feed_is_pollable(feed, desc.recency_period_ms)) {
+        pollable_feeds.push(feed);
+      }
+    }
+    feeds = pollable_feeds;
+  }
 
   const promises = [];
   for(const feed of feeds) {
-    promises.push(poll_feeds_poll_feed_silently(feed, desc));
+    promises.push(poll_feeds_poll_feed(feed, desc));
   }
-  const resolutions = await Promise.all(promises);
+  const poll_feed_statuses = await Promise.all(promises);
 
-  let num_entries_added = 0;
-  for(const resolution of resolutions) {
-    num_entries_added += resolution;
-  }
+  await extension_update_badge_text();
 
-  // Non-awaited, this uses its own conn
-  if(num_entries_added) {
-    extension_update_badge_text();
-  }
-
-  if(num_entries_added) {
-    poll_feeds_show_poll_notification(num_entries_added);
-  }
+  const title = 'Added articles';
+  const message = 'Added articles';
+  extension_notify(title, message);
 
   const channel = new BroadcastChannel('poll');
   channel.postMessage('completed');
   channel.close();
 
-  console.log('Polling completed');
-  return num_entries_added;
-}
-
-
-async function poll_feeds_find_pollable_feeds(desc) {
-  const feeds = await reader_db_get_feeds(desc.reader_conn);
-  if(desc.ignore_recency_check) {
-    return feeds;
-  }
-
-  const output_feeds = [];
-  for(const feed of feeds) {
-    if(poll_feeds_feed_is_pollable(feed, desc.recency_period_ms)) {
-      output_feeds.push(feed);
-    }
-  }
-  return output_feeds;
-}
-
-function poll_feeds_show_poll_notification(num_entries_added) {
-  const title = 'Added articles';
-  const message = `Added ${num_entries_added} articles`;
-  extension_notify(title, message);
+  console.log('poll_feeds end');
+  return STATUS_OK;
 }
 
 function poll_feeds_feed_is_pollable(feed, recency_period_ms) {
   // If we do not know when the feed was fetched, then assume it is a new feed
-  // that has never been fetched, so pollable
-  if(!feed.dateFetched)
+  // that has never been fetched
+  if(!feed.dateFetched) {
     return true;
+  }
 
   // The amount of time that has elapsed, in milliseconds, from when the
   // feed was last polled.
@@ -111,104 +99,80 @@ function poll_feeds_feed_is_pollable(feed, recency_period_ms) {
   if(elapsed < recency_period_ms) {
     // A feed has been polled too recently if not enough time has elasped from
     // the last time the feed was polled.
-    console.log('feed polled too recently', feed_get_top_url(feed));
+    console.debug('feed polled too recently', feed_get_top_url(feed));
     return false;
   }
 
   return true;
 }
 
+// @throws {Error} any exception thrown by fetch_feed
+// @returns {status} status
+async function poll_feeds_poll_feed(feed, desc) {
+  console.assert(feed_is_feed(feed));
+  console.assert(desc instanceof PollFeedsDescriptor);
 
-async function poll_feeds_poll_feed_silently(feed, desc) {
-  let num_entries_added = 0;
+  const url = feed_get_top_url(feed);
+
+  let response;
   try {
-    num_entries_added = await poll_feeds_poll_feed(feed, desc);
+    response = await fetch_feed(url, desc.fetch_feed_timeout_ms,
+      desc.accept_html);
   } catch(error) {
     console.warn(error);
+    return ERR_FETCH;
   }
-  return num_entries_added;
+
+  // Check whether the feed was not modified since last update
+  if(!desc.ignore_modified_check && feed.dateUpdated &&
+    feed.dateLastModified && response.last_modified_date &&
+    feed.dateLastModified.getTime() ===
+    response.last_modified_date.getTime()) {
+
+    console.debug('skipping unmodified feed', url,
+        feed.dateLastModified, response.last_modified_date);
+    return STATUS_OK;
+  }
+
+  const xml_string = await response.text();
+  const coerce_result = feed_coerce_from_response(xml_string,
+    response.request_url, response.response_url, response.last_modified_date);
+  const merged_feed = feed_merge(feed, coerce_result.feed);
+
+  let stored_feed;
+  try {
+    stored_feed = await reader_feed_put(merged_feed, desc.reader_conn);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+
+  await poll_feeds_poll_feed_entries(stored_feed, coerce_result.entries, desc);
+  return STATUS_OK;
 }
 
-// @throws {Error} any exception thrown by fetch_feed
-async function poll_feeds_poll_feed(local_feed, desc) {
-  console.assert(feed_is_feed(local_feed));
-
-  const url = feed_get_top_url(local_feed);
-
-  const response = await fetch_feed(url, desc.fetch_feed_timeout_ms,
-    desc.accept_html);
-
-  // Before parsing, check if the feed was modified
-  if(!desc.ignore_modified_check && local_feed.dateUpdated &&
-    poll_feeds_is_feed_unmodified(local_feed.dateLastModified,
-      response.last_modified_date)) {
-    console.log('skipping unmodified feed', url,
-        local_feed.dateLastModified, response.last_modified_date);
-    return 0;
-  }
-
-  // TODO: provide an option to do a crc32 check for whether feed content
-  // has changed instead of relying on date modified header, because date
-  // modified header may not be trustworthy?
-
-  // Now that we know the feed has been modified according to its header,
-  // fetch and parse the body of the response into a feed object
-  // Must be awaited because internally parse_fetched_feed fetches the body
-  // of the response
-  const parse_feed_result = await parse_fetched_feed(response);
-
-  const merged_feed = feed_merge(local_feed, parse_feed_result.feed);
-
-  // Prepare the feed for storage
-  let storable_feed = feed_sanitize(merged_feed);
-  storable_feed = object_filter_empty_props(storable_feed);
-  storable_feed.dateUpdated = new Date();
-
-  await reader_db_put_feed(desc.reader_conn, storable_feed);
-
-  const resolutions = await poll_feeds_poll_feed_entries(desc.reader_conn,
-    desc.icon_conn, storable_feed, parse_feed_result.entries,
-    desc.fetch_html_timeout_ms,
-    desc.fetch_image_timeout_ms);
-
-  let num_entries_added = 0;
-  for(const resolution of resolutions) {
-    if(resolution) {
-      num_entries_added++;
-    }
-  }
-  return num_entries_added;
-}
-
-function poll_feeds_poll_feed_entries(reader_conn, icon_conn, feed, entries,
-  fetch_html_timeout_ms, fetch_img_timeout_ms) {
+function poll_feeds_poll_feed_entries(feed, entries, desc) {
   entries = poll_feeds_filter_dup_entries(entries);
 
-  // Cascade feed properties
+  // Cascade feed properties to entires
   for(const entry of entries) {
     entry.feed = feed.id;
     entry.feedTitle = feed.title;
   }
 
+  // poll_entry is not 'concurrency-safe' so use individual descriptors
   const promises = [];
   for(const entry of entries) {
-    // poll_entry is not 'thread-safe' in the sense that we must use a separate
-    // descriptor for each call.
     const ped = new PollEntryDescriptor();
-    ped.reader_conn = reader_conn;
-    ped.icon_conn = icon_conn;
+    ped.reader_conn = desc.reader_conn;
+    ped.icon_conn = desc.icon_conn;
     ped.feed_favicon_url = feed.faviconURLString;
-    ped.fetch_html_timeout_ms = fetch_html_timeout_ms;
-    ped.fetch_image_timeout_ms = fetch_img_timeout_ms;
+    ped.fetch_html_timeout_ms = desc.fetch_html_timeout_ms;
+    ped.fetch_image_timeout_ms = desc.fetch_image_timeout_ms;
     ped.entry = entry;
     promises.push(poll_entry(ped));
   }
   return Promise.all(promises);
-}
-
-function poll_feeds_is_feed_unmodified(local_modified_date, remote_modified_date) {
-  return local_modified_date && remote_modified_date &&
-    local_modified_date.getTime() === remote_modified_date.getTime();
 }
 
 function poll_feeds_filter_dup_entries(entries) {
