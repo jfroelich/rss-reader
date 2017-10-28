@@ -132,17 +132,6 @@ function reader_db_find_entry_ids_by_feed(conn, feed_id) {
   });
 }
 
-async function reader_db_find_entries_missing_urls(conn) {
-  const entries = await reader_db_get_entries(conn);
-  const invalid_entries = [];
-  for(const entry of entries) {
-    if(!entry_has_url(entry)) {
-      invalid_entries.push(entry);
-    }
-  }
-  return invalid_entries;
-}
-
 function reader_db_find_feed_by_id(conn, feed_id) {
   console.assert(indexeddb_is_open(conn));
   console.assert(feed_is_valid_feed_id(feed_id));
@@ -156,19 +145,9 @@ function reader_db_find_feed_by_id(conn, feed_id) {
   });
 }
 
-// Returns an array of all entries missing a feed id or have a feed id that
-// does not exist in the set of feed ids
-async function reader_db_find_orphaned_entries(conn) {
-  const feed_ids = await reader_db_get_feed_ids(conn);
-  const entries = await reader_db_get_entries(conn);
-  const orphans = [];
-  for(const entry of entries) {
-    if(!entry.feed || !feed_ids.includes(entry.feed)) {
-      orphans.push(entry);
-    }
-  }
-  return orphans;
-}
+
+
+
 
 async function reader_db_find_archivable_entries(conn, max_age_ms) {
   console.assert(indexeddb_is_open(conn));
@@ -219,6 +198,56 @@ function reader_db_get_feed_ids(conn) {
     const request = store.getAllKeys();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
+  });
+}
+
+// Limit applies to the return array size, not num scanned
+// Limit should be > 0 (only weakly asserted).
+function reader_db_find_entries(conn, predicate, limit) {
+  console.assert(indexeddb_is_open(conn));
+  console.assert(typeof predicate === 'function');
+  console.assert(number_is_positive_integer(limit));
+  console.assert(limit > 0);
+
+  return new Promise(function executor(resolve, reject) {
+    const entries = [];
+    const tx = conn.transaction('entry');
+
+    tx.onerror = function(event) {
+      reject(tx.error);
+    };
+
+    tx.oncomplete = function(event) {
+      resolve(entries);
+    };
+
+    const store = tx.objectStore('entry');
+    const request = store.openCursor();
+
+    request.onsuccess = function request_onsuccess(event) {
+      const cursor = event.target.result;
+      if(!cursor) {
+        // Either no entries, or iterated all. Do not advance. Allow the
+        // transaction to settle which allows the promise to settle.
+        return;
+      }
+
+      const entry = cursor.value;
+
+      if(predicate(entry)) {
+        console.debug('reader_db_find_entries predicate true', entry.id);
+        entries.push(entry);
+
+        if(entries.length === limit) {
+          console.debug('reader_db_find_entries reached limit ');
+          // Do not advance. Allow the transaction to settle which allows
+          // the promise to settle.
+          return;
+        }
+      }
+
+      cursor.continue();
+    };
   });
 }
 
@@ -349,26 +378,14 @@ function reader_db_put_feed(conn, feed) {
 
 // @param conn {IDBDatabase}
 // @param ids {Array}
-// @param channel {BroadcastChannel}
-function reader_db_remove_entries(conn, ids, channel) {
+function reader_db_remove_entries(conn, ids) {
   console.assert(indexeddb_is_open(conn));
   console.assert(Array.isArray(ids));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
-    tx.oncomplete = function(event) {
-
-      // Now that the transaction has completed, dispatch messages
-      if(channel) {
-        for(const id of ids) {
-          channel.postMessage({'type': 'entryDeleted', 'id': id});
-        }
-      }
-
-      resolve();
-    };
+    tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
-
     const store = tx.objectStore('entry');
     for(const id of ids) {
       store.delete(id);

@@ -24,6 +24,7 @@ function favicon_db_open() {
   return indexeddb_open(name, version, favicon_db_onupgradeneeded, timeout_ms);
 }
 
+// TODO: rename to favicon_lookup_context, move out url and doc
 function FaviconQuery() {
   // The indexedDB database connection to use for the lookup
   // @type {IDBDatabase}

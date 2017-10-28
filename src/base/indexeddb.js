@@ -28,7 +28,7 @@ function indexeddb_is_open(conn) {
 // in milliseconds before giving up on connecting
 // @throws {Error} if connection error or timeout occurs
 async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
-  console.log('indexeddb_open', name, version, timeout_ms);
+  console.log('indexeddb_open opening', name, version, timeout_ms);
   console.assert(typeof name === 'string');
 
   if(typeof timeout_ms === 'undefined') {
@@ -51,7 +51,7 @@ async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
         conn.close();
         // Leave unsettled
       } else {
-        console.log('indexeddb_open opened connection to', name, version);
+        console.log('indexeddb_open opened', name, version);
         resolve(conn);
       }
     };

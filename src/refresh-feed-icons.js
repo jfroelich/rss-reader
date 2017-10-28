@@ -5,6 +5,8 @@
 // import feed.js
 // import reader-db.js
 
+// TODO: move to reader-storage.js
+
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.
 async function refresh_feed_icons(reader_conn, icon_conn) {

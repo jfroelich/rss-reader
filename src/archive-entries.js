@@ -4,6 +4,8 @@
 // import entry.js
 // import reader-db.js
 
+// TODO: move to reader-storage.js
+
 // TODO: consider returning to one transaction per entry update. create a
 // helper function named archive_entries_archive_entry that does compact,
 // store, and notify. run the helper function concurrently on all entries

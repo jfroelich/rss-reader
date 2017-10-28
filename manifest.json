@@ -30,7 +30,6 @@
       "/src/reader-db.js",
       "/src/reader-storage.js",
       "/src/refresh-feed-icons.js",
-      "/src/remove-entries-missing-urls.js",
       "/src/rewrite-url.js",
       "/src/subscription.js",
       "/src/url.js",

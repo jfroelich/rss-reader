@@ -17,8 +17,6 @@
 // import reader-db.js
 
 
-
-
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection
 // @param id {Number} an entry id
@@ -106,37 +104,119 @@ async function reader_storage_add_entry(entry, conn) {
   return STATUS_OK;
 }
 
+// Removes entries not linked to a feed from the database
+// @param conn {IDBDatabase} an open database connection
+// TODO: update all callers to use limit, implement cli
+async function reader_storage_remove_orphans(conn, limit) {
+  console.assert(indexeddb_is_open(conn));
 
-// Scans the database for entries that are not linked to a feed and removes
-// them.
-// @param conn {IDBDatabase}
-async function reader_storage_remove_orphans(conn) {
-  // conn assertion delegated to reader_db_find_orphaned_entries
-  let ids;
-
-  // TODO: deprecate and inline reader_db_find_orphaned_entries here
-
+  // Get all feed ids
+  let feed_ids;
   try {
-    const orphans = await reader_db_find_orphaned_entries(conn);
-    ids = [];
-    for(const entry of orphans) {
-      ids.push(entry.id);
-    }
-
-    await reader_db_remove_entries(conn, ids);
+    feed_ids = await reader_db_get_feed_ids(conn);
   } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+  console.assert(feed_ids);
+
+  function entry_is_orphan(entry) {
+    const id = entry.feed;
+    return !id || !feed_is_valid_feed_id(id) || !feed_ids.includes(id);
+  }
+
+  // Find orphaned entries
+  let entries;
+  try {
+    entries = await reader_db_find_entries(conn, entry_is_orphan, limit);
+  } catch(error) {
+    console.warn(error);
     return ERR_DB;
   }
 
-  if(ids && ids.length) {
-    const channel = new BroadcastChannel('db');
-    const message = {'type': 'entry-deleted', 'id': null};
-    for(const id of ids) {
-      message.id = id;
-      channel.postMessage(message);
-    }
-    channel.close();
+  if(entries.length === 0) {
+    return STATUS_OK;
   }
+
+  console.debug('found %s orphans', entries.length);
+
+  // Map entries to ids
+  const orphan_ids = [];
+  for(const entry of entries) {
+    orphan_ids.push(entry.id);
+  }
+
+  // Remove orphans
+  try {
+    await reader_db_remove_entries(conn, orphan_ids);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+
+  // Notify observers of removed entries
+  const channel = new BroadcastChannel('db');
+  const message = {'type': 'entry-deleted', 'id': null, 'reason': 'orphan'};
+  for(const id of orphan_ids) {
+    message.id = id;
+    channel.postMessage(message);
+  }
+  channel.close();
+
+  return STATUS_OK;
+}
+
+
+// An entry is 'lost' if it does not have a location, as in, it does not have
+// one or more urls in its urls property. I've made the opinionated design
+// decision that this extension is only interested in entries that have urls,
+// so this is a helper function that scans the database for entries that
+// are somehow missing urls are removes them. In theory this actually never
+// finds any entries to remove.
+// @param conn {IDBDatabase}
+async function reader_storage_remove_lost_entries(conn, limit) {
+  console.debug('reader_storage_remove_lost_entries start');
+
+  function entry_is_lost(entry) {
+    return !entry_has_url(entry);
+  }
+
+  let entries;
+  try {
+    entries = await reader_db_find_entries(conn, entry_is_lost, limit);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+
+  if(entries.length === 0) {
+    return STATUS_OK;
+  }
+
+  console.debug('found %s lost entries', entries.length);
+
+  // Map entry objects to an array of entry ids
+  const ids = [];
+  for(const entry of entries) {
+    ids.push(entry.id);
+  }
+
+  // Remove the entries
+  try {
+    await reader_db_remove_entries(conn, ids);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+
+  // Notify observers of removed entries
+  const channel = new BroadcastChannel('db');
+  const message = {'type': 'entry-deleted', 'id': null, 'reason': 'lost'};
+  for(const id of ids) {
+    message.id = id;
+    channel.postMessage(message);
+  }
+  channel.close();
 
   return STATUS_OK;
 }

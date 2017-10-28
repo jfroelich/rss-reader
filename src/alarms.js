@@ -6,7 +6,6 @@
 // import favicon.js
 // import reader-db.js
 // import reader-storage.js
-// import remove-entries-missing-urls.js
 
 async function alarms_on_archive_alarm() {
   let conn, max_age_ms, status;
@@ -58,11 +57,13 @@ async function alarms_on_poll_feeds_alarm() {
   }
 }
 
-async function alarms_on_remove_entries_missing_urls_alarm() {
+async function alarms_on_remove_lost_entries_alarm() {
+  const limit = 100;
   let conn;
+
   try {
     conn = await reader_db_open();
-    await remove_entries_missing_urls(conn);
+    await reader_storage_remove_lost_entries(conn, limit);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -73,10 +74,12 @@ async function alarms_on_remove_entries_missing_urls_alarm() {
 }
 
 async function alarms_on_remove_orphans_alarm() {
+  const limit = 100;
   let conn;
+
   try {
     conn = await reader_db_open();
-    await reader_storage_remove_orphans(conn);
+    await reader_storage_remove_orphans(conn, limit);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -121,7 +124,7 @@ function alarms_on_alarm_wakeup(alarm) {
     alarms_on_poll_feeds_alarm();
     break;
   case 'remove-entries-missing-urls':
-    alarms_on_remove_entries_missing_urls_alarm();
+    alarms_on_remove_lost_entries_alarm();
     break;
   case 'remove-orphaned-entries':
     alarms_on_remove_orphans_alarm();
