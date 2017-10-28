@@ -3,6 +3,8 @@
 // import feed.js
 // import feed-parse.js
 
+// TODO: basically just break apart this entire awkward function
+
 // TODO: do the parsing externally and accept a parse result as input
 
 // TODO: this should not be handling both feed and entries at the same
@@ -14,7 +16,6 @@
 
 // Post fetch processing that coerces a fetched feed into the app's internal
 // format.
-
 function feed_coerce_from_response(xml_string, request_url, response_url,
   last_modified_date) {
 

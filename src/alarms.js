@@ -2,7 +2,6 @@
 
 // import base/status.js
 // import poll/poll.js
-// import archive-entries.js
 // import favicon.js
 // import reader-db.js
 // import reader-storage.js
@@ -11,7 +10,7 @@ async function alarms_on_archive_alarm() {
   let conn, max_age_ms, status;
   try {
     conn = await reader_db_open();
-    status = await archive_entries(conn, max_age_ms);
+    status = await reader_storage_archive_entries(conn, max_age_ms);
   } catch(error) {
     console.error(error);
   } finally {
@@ -96,7 +95,7 @@ async function alarms_on_refresh_feed_icons_alarm() {
   try {
     [reader_conn, icon_conn] = await Promise.all([reader_db_open(),
       favicon_db_open()]);
-    status = await refresh_feed_icons(reader_conn, icon_conn);
+    status = await reader_storage_refresh_feed_icons(reader_conn, icon_conn);
   } catch(error) {
     console.warn(error);
   } finally {

@@ -6,8 +6,7 @@
 // import html.js
 // import url.js
 
-// TODO: use status codes throughout. Currently waiting on fetch.js to
-// migrate to using status codes.
+// TODO: use status codes throughout. First update fetch.js to use status codes.
 
 
 // 30 days in ms, used by both lookup and compact to determine whether a

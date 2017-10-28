@@ -13,8 +13,66 @@
 // import base/status.js
 // import entry.js
 // import extension.js
+// import favicon.js
 // import feed.js
 // import reader-db.js
+
+
+// Scans the database for archivable entries and archives them
+// @param max_age_ms {Number} how long before an entry is considered
+// archivable (using date entry created), in milliseconds
+// @returns {Number} status
+// TODO: consider returning to one transaction per entry update. create a
+// helper function named archive_entries_archive_entry that does compact,
+// store, and notify. run the helper function concurrently on all entries
+// loaded. i lose the performance of having only a single transaction, but
+// i gain other benefits. i think each compact operation is isolated.
+// the impact of one failure does not impact the others. compactions can
+// occur in parallel. i do not need to keep everything in memory either, if
+// i want to use a cursor walk approach. the compact occurs within the promise
+// so that also means compacts are almost concurrent.
+async function reader_storage_archive_entries(conn, max_age_ms) {
+  console.log('reader_storage_archive_entries start', max_age_ms);
+  console.assert(indexeddb_is_open(conn));
+
+  const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
+  if(typeof max_age_ms === 'undefined') {
+    max_age_ms = TWO_DAYS_MS;
+  }
+
+  let entries;
+  try {
+    entries = await reader_db_find_archivable_entries(conn, max_age_ms);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+
+  let compacted_entries = [];
+  for(const entry of entries) {
+    compacted_entries.push(entry_compact(entry));
+  }
+
+  try {
+    await reader_db_put_entries(conn, compacted_entries);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+
+  console.log('compacted %s entries', compacted_entries.length);
+
+  const db_channel = new BroadcastChannel('db');
+  for(const entry of compacted_entries) {
+    const message = {};
+    message.type = 'archived-entry';
+    message.id = entry.id;
+    db_channel.postMessage(message);
+  }
+  db_channel.close();
+
+  return STATUS_OK;
+}
 
 
 // Mark the entry with the given id as read in the database
@@ -110,7 +168,6 @@ async function reader_storage_add_entry(entry, conn) {
 async function reader_storage_remove_orphans(conn, limit) {
   console.assert(indexeddb_is_open(conn));
 
-  // Get all feed ids
   let feed_ids;
   try {
     feed_ids = await reader_db_get_feed_ids(conn);
@@ -125,7 +182,6 @@ async function reader_storage_remove_orphans(conn, limit) {
     return !id || !feed_is_valid_feed_id(id) || !feed_ids.includes(id);
   }
 
-  // Find orphaned entries
   let entries;
   try {
     entries = await reader_db_find_entries(conn, entry_is_orphan, limit);
@@ -140,13 +196,11 @@ async function reader_storage_remove_orphans(conn, limit) {
 
   console.debug('found %s orphans', entries.length);
 
-  // Map entries to ids
   const orphan_ids = [];
   for(const entry of entries) {
     orphan_ids.push(entry.id);
   }
 
-  // Remove orphans
   try {
     await reader_db_remove_entries(conn, orphan_ids);
   } catch(error) {
@@ -154,7 +208,6 @@ async function reader_storage_remove_orphans(conn, limit) {
     return ERR_DB;
   }
 
-  // Notify observers of removed entries
   const channel = new BroadcastChannel('db');
   const message = {'type': 'entry-deleted', 'id': null, 'reason': 'orphan'};
   for(const id of orphan_ids) {
@@ -165,7 +218,6 @@ async function reader_storage_remove_orphans(conn, limit) {
 
   return STATUS_OK;
 }
-
 
 // An entry is 'lost' if it does not have a location, as in, it does not have
 // one or more urls in its urls property. I've made the opinionated design
@@ -195,13 +247,11 @@ async function reader_storage_remove_lost_entries(conn, limit) {
 
   console.debug('found %s lost entries', entries.length);
 
-  // Map entry objects to an array of entry ids
   const ids = [];
   for(const entry of entries) {
     ids.push(entry.id);
   }
 
-  // Remove the entries
   try {
     await reader_db_remove_entries(conn, ids);
   } catch(error) {
@@ -209,7 +259,6 @@ async function reader_storage_remove_lost_entries(conn, limit) {
     return ERR_DB;
   }
 
-  // Notify observers of removed entries
   const channel = new BroadcastChannel('db');
   const message = {'type': 'entry-deleted', 'id': null, 'reason': 'lost'};
   for(const id of ids) {
@@ -217,6 +266,95 @@ async function reader_storage_remove_lost_entries(conn, limit) {
     channel.postMessage(message);
   }
   channel.close();
+
+  return STATUS_OK;
+}
+
+
+// Scans through all the feeds in the database and attempts to update each
+// feed's favicon property.
+async function reader_storage_refresh_feed_icons(reader_conn, icon_conn) {
+  console.log('reader_storage_refresh_feed_icons start');
+
+  let feeds;
+  try {
+    feeds = await reader_db_get_feeds(reader_conn);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+
+  const promises = [];
+  for(const feed of feeds) {
+    promises.push(reader_storage_update_icon(feed, reader_conn, icon_conn));
+  }
+  await Promise.all(promises);
+
+  console.log('reader_storage_refresh_feed_icons end');
+  return STATUS_OK;
+}
+
+// Lookup the feed's icon, update the feed in db
+async function reader_storage_update_icon(feed, reader_conn, icon_conn) {
+  console.debug('inspecting feed', feed_get_top_url(feed));
+
+  const query = new FaviconQuery();
+  query.conn = icon_conn;
+
+  // feed_create_icon_lookup_url should never throw, so no try catch. If any
+  // error does occur let it bubble up unhandled.
+  query.url = feed_create_icon_lookup_url(feed);
+
+  // feed_create_icon_lookup_url should always return a url. double check.
+  console.assert(query.url);
+
+  // Lookup the favicon url
+  // TODO: once favicon_lookup returns a status, check if it is ok, and if not,
+  // return whatever is that status.
+  let icon_url;
+  try {
+    icon_url = await favicon_lookup(query);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+
+  // If we could not find an icon, then leave the feed as is
+  if(!icon_url) {
+    return STATUS_OK;
+  }
+
+  const prev_icon_url = feed.faviconURLString;
+
+  // For some reason, this section of code always feels confusing. Rather than
+  // using a concise condition, I've written comments in each branch.
+
+  if(prev_icon_url) {
+    // The feed has an existing favicon
+
+    if(prev_icon_url === icon_url) {
+      // The new icon is the same as the current icon, so exit.
+      return STATUS_OK;
+    } else {
+      // The new icon is different than the current icon, fall through
+    }
+
+  } else {
+    // The feed is missing a favicon, and we now have an icon. Fall through
+    // to set the icon.
+  }
+
+  // Set the new icon
+  console.debug('updating feed favicon %s to %s', prev_icon_url, icon_url);
+  feed.faviconURLString = icon_url;
+  feed.dateUpdated = new Date();
+
+  try {
+    await reader_db_put_feed(reader_conn, feed);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
 
   return STATUS_OK;
 }

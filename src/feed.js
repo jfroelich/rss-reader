@@ -61,7 +61,6 @@ function feed_create_icon_lookup_url(feed) {
 // Update's a feed's faviconURLString property (not persisted to db)
 // TODO: change this to not throw an error so that caller
 // try/catch is not needed in the usual case
-// TODO: this causes circular dependencies, move this function
 async function feed_update_favicon(feed, icon_conn) {
 
   const query = new FaviconQuery();

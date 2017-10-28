@@ -5,6 +5,8 @@
 function article_title_filter_publisher(title) {
   console.assert(typeof title === 'string');
 
+  // TODO: tolerate alternate whitespace expressions
+
   // Look for a delimiter
   let index = title.lastIndexOf(' - ');
 

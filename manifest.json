@@ -15,7 +15,6 @@
     "scripts": [
 
       "/src/alarms.js",
-      "/src/archive-entries.js",
       "/src/bind-browser-action.js",
       "/src/cli.js",
       "/src/entry.js",
@@ -29,7 +28,6 @@
       "/src/feed-coerce-from-response.js",
       "/src/reader-db.js",
       "/src/reader-storage.js",
-      "/src/refresh-feed-icons.js",
       "/src/rewrite-url.js",
       "/src/subscription.js",
       "/src/url.js",
