@@ -120,7 +120,8 @@ async function reader_import_file(file, reader_conn, icon_conn) {
     }
   }
 
-  console.log('subbed to %d of %d feeds in file', sub_count, feeds.length, file.name);
+  console.log('subbed to %d of %d feeds in file', sub_count, feeds.length,
+    file.name);
   return sub_count;
 }
 

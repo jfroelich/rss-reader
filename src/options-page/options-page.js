@@ -614,9 +614,9 @@ function options_page_enable_notifications_checkbox_on_click(event) {
 
 function options_page_enable_bg_processing_checkbox_on_click(event) {
   if(event.target.checked) {
-    permissions_request('background');
+    extension_permissions_request('background');
   } else {
-    permissions_remove('background');
+    extension_permissions_remove('background');
   }
 }
 
@@ -628,7 +628,7 @@ async function init_bg_processing_checkbox() {
   // permission should be permanently defined.
 
   checkbox.onclick = options_page_enable_bg_processing_checkbox_on_click;
-  checkbox.checked = await permissions_contains('background');
+  checkbox.checked = await extension_permissions_contains('background');
 }
 
 function restrict_idle_polling_checkbox_on_click(event) {

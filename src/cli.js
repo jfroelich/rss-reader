@@ -46,24 +46,24 @@ async function cli_archive_entries() {
 }
 
 async function cli_poll_feeds() {
-  const pfd = new PollFeedsDescriptor();
-  pfd.allow_metered_connections = true;
-  pfd.ignore_idle_state = true;
-  pfd.ignore_recency_check = true;
-  pfd.ignore_modified_check = true;
+  const pfc = new poll_feeds_context();
+  pfc.allow_metered_connections = true;
+  pfc.ignore_idle_state = true;
+  pfc.ignore_recency_check = true;
+  pfc.ignore_modified_check = true;
 
   try {
-    [pfd.reader_conn, pfd.icon_conn] = await Promise.all([reader_db_open(),
+    [pfc.reader_conn, pfc.icon_conn] = await Promise.all([reader_db_open(),
       favicon_db_open()]);
-    await poll_feeds(pfd);
+    await poll_feeds(pfc);
   } catch(error) {
     console.warn(error);
   } finally {
-    if(pfd.reader_conn) {
-      pfd.reader_conn.close();
+    if(pfc.reader_conn) {
+      pfc.reader_conn.close();
     }
-    if(pfd.icon_conn) {
-      pfd.icon_conn.close();
+    if(pfc.icon_conn) {
+      pfc.icon_conn.close();
     }
   }
 }

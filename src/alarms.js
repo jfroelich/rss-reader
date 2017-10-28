@@ -2,11 +2,11 @@
 
 // import base/status.js
 // import poll/poll.js
-// import reader-db.js
 // import archive-entries.js
 // import favicon.js
+// import reader-db.js
+// import reader-storage.js
 // import remove-entries-missing-urls.js
-// import remove-orphaned-entries.js
 
 async function alarms_on_archive_alarm() {
   let conn, max_age_ms, status;
@@ -41,19 +41,19 @@ async function alarms_on_compact_favicons_alarm() {
 }
 
 async function alarms_on_poll_feeds_alarm() {
-  const pfd = new PollFeedsDescriptor();
+  const pfc = new poll_feeds_context();
   try {
-    [pfd.reader_conn, pfd.icon_conn] = await Promise.all([reader_db_open(),
+    [pfc.reader_conn, pfc.icon_conn] = await Promise.all([reader_db_open(),
       favicon_db_open()]);
-    await poll_feeds(pfd);
+    await poll_feeds(pfc);
   } catch(error) {
     console.warn(error);
   } finally {
-    if(pfd.reader_conn) {
-      pfd.reader_conn.close();
+    if(pfc.reader_conn) {
+      pfc.reader_conn.close();
     }
-    if(pfd.icon_conn) {
-      pfd.icon_conn.close();
+    if(pfc.icon_conn) {
+      pfc.icon_conn.close();
     }
   }
 }
@@ -72,11 +72,11 @@ async function alarms_on_remove_entries_missing_urls_alarm() {
   }
 }
 
-async function alarms_on_remove_orphaned_entries_alarm() {
+async function alarms_on_remove_orphans_alarm() {
   let conn;
   try {
     conn = await reader_db_open();
-    await remove_orphaned_entries(conn);
+    await reader_storage_remove_orphans(conn);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -110,9 +110,8 @@ async function alarms_on_refresh_feed_icons_alarm() {
   }
 }
 
-// TODO: remove async? I don't think there is a need for it.
-async function alarms_on_alarm_wakeup(alarm) {
-  console.log('alarms_on_alarm_wakeup', alarm.name);
+function alarms_on_alarm_wakeup(alarm) {
+  console.debug('alarms_on_alarm_wakeup', alarm.name);
 
   switch(alarm.name) {
   case 'archive':
@@ -125,7 +124,7 @@ async function alarms_on_alarm_wakeup(alarm) {
     alarms_on_remove_entries_missing_urls_alarm();
     break;
   case 'remove-orphaned-entries':
-    alarms_on_remove_orphaned_entries_alarm();
+    alarms_on_remove_orphans_alarm();
     break;
   case 'refresh-feed-icons':
     alarms_on_refresh_feed_icons_alarm();
@@ -134,7 +133,7 @@ async function alarms_on_alarm_wakeup(alarm) {
     alarms_on_compact_favicons_alarm();
     break;
   default:
-    console.assert(false, 'unhandled alarm', alarm.name);
+    console.warn('unhandled alarm', alarm.name);
     break;
   }
 }

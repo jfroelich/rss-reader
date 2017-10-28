@@ -1,7 +1,21 @@
 'use strict';
 
+// import base/indexeddb.js
 // import entry.js
-// reader-db.js
+// import reader-db.js
+
+// TODO: consider returning to one transaction per entry update. create a
+// helper function named archive_entries_archive_entry that does compact,
+// store, and notify. run the helper function concurrently on all entries
+// loaded. i lose the performance of having only a single transaction, but
+// i gain other benefits. i think each compact operation is isolated.
+// the impact of one failure does not impact the others. compactions can
+// occur in parallel. i do not need to keep everything in memory either, if
+// i want to use a cursor walk approach. the compact occurs within the promise
+// so that also means compacts are almost concurrent.
+
+
+
 
 // Scans the database for archivable entries and archives them
 // @param max_age_ms {Number} how long before an entry is considered
@@ -24,7 +38,7 @@ async function archive_entries(conn, max_age_ms) {
   try {
     const entries = await reader_db_find_archivable_entries(conn, max_age_ms);
     for(const entry of entries) {
-      compacted_entries.push(compact_entry(entry));
+      compacted_entries.push(entry_compact(entry));
     }
 
     await reader_db_put_entries(conn, compacted_entries);

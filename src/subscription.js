@@ -8,6 +8,12 @@
 // import favicon.js
 // import reader-db.js
 
+// TODO: rewrite Subscription as subscription_context. Remove feed property
+// from context. rewrite subscription_add to accept feed parameter, and to
+// expect to be bound to subscription_context, and internally accept context
+// using this.property.
+
+
 function Subscription() {
   this.feed = undefined;
   this.reader_conn = undefined;
@@ -123,7 +129,7 @@ async function subscription_url_is_unique(url_string, reader_conn) {
   return STATUS_OK;
 }
 
-// TODO: this should delegate to reader_feed_put instead
+// TODO: this should delegate to reader_storage_put_feed instead
 // and subscription_feed_prep should be deprecated as well
 // I think first step would be to inline this function, because right now it
 // composes prep, store, and notify together.
@@ -223,7 +229,7 @@ async function subscription_remove(subscription) {
   channel.postMessage({'type': 'feedDeleted', 'id': subscription.feed.id});
 
   for(const entry_id of entry_ids) {
-    channel.postMessage({'type': 'entryDeleted', 'id': entry_id});
+    channel.postMessage({'type': 'entry-deleted', 'id': entry_id});
   }
 
   channel.close();

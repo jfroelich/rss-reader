@@ -1,5 +1,7 @@
 'use strict';
 
+// import reader-db.js
+
 function extension_idle_query(idle_period_secs) {
   return new Promise(function executor(resolve, reject) {
     chrome.idle.queryState(idle_period_secs, resolve);
@@ -7,7 +9,7 @@ function extension_idle_query(idle_period_secs) {
 }
 
 // TODO: create badge.js, wrapper function that just passes number to this
-// function
+// function. database calls shouldn't really be happening in this lib.
 // TODO: reintroduce conn param, do not connect locally
 async function extension_update_badge_text() {
   let count = 0, conn;
@@ -92,4 +94,28 @@ async function extension_notification_on_click(event) {
   } catch(error) {
     console.warn(error);
   }
+}
+
+function extension_permissions_contains(permission) {
+  console.assert(typeof permission === 'string');
+  return new Promise(function executor(resolve, reject) {
+    const descriptor = {'permissions': [permission]};
+    chrome.permissions.contains(descriptor, resolve);
+  });
+}
+
+function extension_permissions_request(permission) {
+  console.assert(typeof permission === 'string');
+  return new Promise(function executor(resolve, reject) {
+    const descriptor = {'permissions': [permission]};
+    chrome.permissions.request(descriptor, resolve);
+  });
+}
+
+function extension_permissions_remove(permission) {
+  console.assert(typeof permission === 'string');
+  return new Promise(function executor(resolve, reject) {
+    const descriptor = {'permissions': [permission]};
+    chrome.permissions.remove(descriptor, resolve);
+  });
 }

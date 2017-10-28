@@ -8,7 +8,7 @@
 // import feed.js
 // import html.js
 // import reader-db.js
-// import reader-entry-add.js
+// import reader-storage.js
 // import rewrite-url.js
 // import url.js
 
@@ -21,17 +21,15 @@ function poll_entry_context() {
   this.fetch_image_timeout_ms = undefined;
 }
 
-
-
 // TODO: this shouldn't be returning true/false, it should be returning status
 // Switching to return status partly blocked by fetch not yielding status and
 // some other todos. Need to work from the bottom up, and review which
 // helper functions throw errors.
 
+// Expects to be bound to a poll_entry_context
 // @param entry {Object}
-// @param pec {poll_entry_context}
-async function poll_entry(entry, pec) {
-  console.assert(pec instanceof poll_entry_context);
+async function poll_entry(entry) {
+  console.assert(this instanceof poll_entry_context);
   console.assert(entry_is_entry(entry));
 
   if(!entry_has_url(entry)) {
@@ -50,16 +48,15 @@ async function poll_entry(entry, pec) {
     url = rewritten_url;
   }
 
-  if(!await poll_entry_pollable(url, pec.reader_conn)) {
+  if(!await poll_entry_pollable(url, this.reader_conn)) {
     return false;
   }
 
-  const response = await poll_entry_fetch(url, pec.fetch_html_timeout_ms);
+  const response = await poll_entry_fetch(url, this.fetch_html_timeout_ms);
   let entry_content = entry.content;
   if(response) {
     if(response.redirected) {
-      if(!await poll_entry_pollable(response.response_url,
-        pec.reader_conn)) {
+      if(!await poll_entry_pollable(response.response_url, this.reader_conn)) {
         return false;
       }
 
@@ -74,29 +71,26 @@ async function poll_entry(entry, pec) {
 
   let [status, entry_document] = html_parse_from_string(entry_content);
 
-  // TODO: entry_document should basically always be defined from here
-  // onward. Otherwise, this never overwrites entry.content. Or, allow it
-  // to be undefined, but ensure that I replace entry.content with some
-  // other value.
-
   // Only use the document for lookup if it was fetched
   const lookup_document = response ? entry_document : undefined;
   // Ignore icon update failure, do not need to check status
-  await poll_entry_update_icon(entry, pec, lookup_document);
+  await poll_entry_update_icon.call(this, entry, lookup_document);
 
   // Filter the entry content
   if(entry_document) {
     status = await poll_document_filter(entry_document, url,
-      pec.fetch_image_timeout_ms);
+      this.fetch_image_timeout_ms);
 
     if(status !== STATUS_OK) {
       return false;
     }
 
     entry.content = entry_document.documentElement.outerHTML.trim();
+  } else {
+    entry.content = 'Empty or malformed content';
   }
 
-  status = await reader_entry_add(entry, pec.reader_conn);
+  status = await reader_storage_add_entry(entry, this.reader_conn);
   if(status !== STATUS_OK) {
     return false;
   }
@@ -115,18 +109,17 @@ async function poll_entry_fetch(url, timeout) {
 }
 
 // @param entry {Object} a feed entry
-// @param pec {poll_entry_context}
 // @param document {Document} optional, pre-fetched document
-async function poll_entry_update_icon(entry, pec, document) {
+async function poll_entry_update_icon(entry, document) {
   console.assert(entry_is_entry(entry));
-  console.assert(pec instanceof poll_entry_context);
+  console.assert(this instanceof poll_entry_context);
 
   if(document) {
     console.assert(document instanceof Document);
   }
 
   const query = new FaviconQuery();
-  query.conn = pec.icon_conn;
+  query.conn = this.icon_conn;
   query.url = new URL(entry_get_top_url(entry));
   query.skip_url_fetch = true;
   query.document = document;
@@ -143,7 +136,7 @@ async function poll_entry_update_icon(entry, pec, document) {
     // lookup error is non-fatal
   }
 
-  entry.faviconURLString = icon_url || pec.feed_favicon_url;
+  entry.faviconURLString = icon_url || this.feed_favicon_url;
   return STATUS_OK;
 }
 
@@ -176,10 +169,19 @@ async function poll_entry_pollable(url, conn) {
     return false;
   }
 
-  if(await reader_db_find_entry_by_url(conn, url)) {
+  // TODO: this should be a call to something like
+  // reader_storage_contains_entry that abstracts how
+  // entry comparison works
+
+  let exists;
+  try {
+    exists = await reader_db_find_entry_by_url(conn, url);
+  } catch(error) {
+    console.warn(error);
     return false;
   }
-  return true;
+
+  return !exists;
 }
 
 function poll_entry_url_is_interstitial(url) {

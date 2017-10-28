@@ -41,8 +41,6 @@ async function fetch_internal(url, options, timeout_ms, accept_response) {
   // sometimes when doing fetch. There may not be a need to explicitly check for
   // this error code. I would need to test further.
   const HTTP_STATUS_NO_CONTENT = 204;
-
-
   if(response.status === HTTP_STATUS_NO_CONTENT) {
     throw new Error('no content repsonse ' + url);
   }

@@ -24,7 +24,7 @@ const slideshow_db_channel = new BroadcastChannel('db');
 slideshow_db_channel.onmessage = function(event) {
   if(event.data && event.data.type === 'entryArchived') {
     console.log('Received archive entry request message');
-  } else if(event.data && event.data.type === 'entryDeleted') {
+  } else if(event.data && event.data.type === 'entry-deleted') {
     console.log('Received entry delete request message');
   }
 };
@@ -60,7 +60,7 @@ async function slideshow_slide_mark_read(conn, slide_element) {
   const entry_id_number = parseInt(entry_id_string, radix);
   try {
 
-    const status = await entry_mark_read(conn, entry_id_number);
+    const status = await reader_storage_mark_read(conn, entry_id_number);
     if(status !== STATUS_OK) {
       // TODO: react to error
       console.warn('slideshow_slide_mark_read failed to update database');

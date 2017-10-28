@@ -7,9 +7,9 @@
 // import feed.js
 // import feed-coerce-from-response.js
 // import reader-db.js
-// import reader-feed-put.js
+// import reader-storage.js
 
-function PollFeedsDescriptor() {
+function poll_feeds_context() {
   this.reader_conn = undefined;
   this.icon_conn = undefined;
   this.allow_metered_connections = false;
@@ -111,7 +111,7 @@ function poll_feeds_feed_is_pollable(feed, recency_period_ms) {
 // @returns {status} status
 async function poll_feeds_poll_feed(feed, desc) {
   console.assert(feed_is_feed(feed));
-  console.assert(desc instanceof PollFeedsDescriptor);
+  console.assert(desc instanceof poll_feeds_context);
 
   const url = feed_get_top_url(feed);
 
@@ -142,7 +142,7 @@ async function poll_feeds_poll_feed(feed, desc) {
 
   let stored_feed;
   try {
-    stored_feed = await reader_feed_put(merged_feed, desc.reader_conn);
+    stored_feed = await reader_storage_put_feed(merged_feed, desc.reader_conn);
   } catch(error) {
     console.warn(error);
     return ERR_DB;
@@ -159,8 +159,6 @@ async function poll_feeds_poll_feed(feed, desc) {
 }
 
 function poll_feeds_poll_feed_entries(feed, entries, desc) {
-  entries = poll_feeds_filter_dup_entries(entries);
-
   const pec = new poll_entry_context();
   pec.reader_conn = desc.reader_conn;
   pec.icon_conn = desc.icon_conn;
@@ -168,11 +166,8 @@ function poll_feeds_poll_feed_entries(feed, entries, desc) {
   pec.fetch_html_timeout_ms = desc.fetch_html_timeout_ms;
   pec.fetch_image_timeout_ms = desc.fetch_image_timeout_ms;
 
-  const promises = [];
-  for(const entry of entries) {
-    promises.push(poll_entry(entry, pec));
-  }
-  return Promise.all(promises);
+  entries = poll_feeds_filter_dup_entries(entries);
+  return Promise.all(entries.map(poll_entry, pec));
 }
 
 function poll_feeds_filter_dup_entries(entries) {

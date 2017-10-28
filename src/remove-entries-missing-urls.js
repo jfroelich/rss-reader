@@ -3,6 +3,8 @@
 // import base/status.js
 // import reader-db.js
 
+// TODO: move to reader-storage.js
+
 async function remove_entries_missing_urls(conn) {
   const channel = new BroadcastChannel('db');
   try {

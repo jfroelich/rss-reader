@@ -44,7 +44,6 @@ function entry_css_create_entry_rule_text() {
     buffer.push(`padding: ${padding}px;`);
   }
 
-  console.log('div.entry:', buffer.join(''));
   return buffer.join('');
 }
 
