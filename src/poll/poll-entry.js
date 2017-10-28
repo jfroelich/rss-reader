@@ -12,8 +12,8 @@
 // import rewrite-url.js
 // import url.js
 
-function PollEntryDescriptor() {
-  this.entry = null;
+function poll_entry_context() {
+  console.assert(this !== window);
   this.reader_conn = null;
   this.icon_conn = null;
   this.feed_favicon_url = null;
@@ -21,19 +21,19 @@ function PollEntryDescriptor() {
   this.fetch_image_timeout_ms = undefined;
 }
 
+
+
 // TODO: this shouldn't be returning true/false, it should be returning status
 // Switching to return status partly blocked by fetch not yielding status and
 // some other todos. Need to work from the bottom up, and review which
 // helper functions throw errors.
 
-// This function is not 'thread-safe'. If calling poll_entry in a sychronous
-// loop like a for loop, make sure to use a new and separate (isolated)
-// descriptor object for each call.
-async function poll_entry(desc) {
-  console.assert(desc instanceof PollEntryDescriptor);
-  console.assert(entry_is_entry(desc.entry));
+// @param entry {Object}
+// @param pec {poll_entry_context}
+async function poll_entry(entry, pec) {
+  console.assert(pec instanceof poll_entry_context);
+  console.assert(entry_is_entry(entry));
 
-  const entry = desc.entry;
   if(!entry_has_url(entry)) {
     return false;
   }
@@ -45,44 +45,49 @@ async function poll_entry(desc) {
 
   let rewritten_url = rewrite_url(url);
   if(rewritten_url && url !== rewritten_url) {
-    console.debug('rewrote entry url', url, rewritten_url);
+    console.debug('rewrite_url', url, rewritten_url);
     entry_append_url(entry, rewritten_url);
     url = rewritten_url;
   }
 
-  if(!await poll_entry_pollable(url, desc.reader_conn)) {
+  if(!await poll_entry_pollable(url, pec.reader_conn)) {
     return false;
   }
 
-  const response = await poll_entry_fetch(url, desc.fetch_html_timeout_ms);
-  if(response && response.redirected) {
-    if(!await poll_entry_pollable(response.response_url, desc.reader_conn)) {
-      return false;
+  const response = await poll_entry_fetch(url, pec.fetch_html_timeout_ms);
+  let entry_content = entry.content;
+  if(response) {
+    if(response.redirected) {
+      if(!await poll_entry_pollable(response.response_url,
+        pec.reader_conn)) {
+        return false;
+      }
+
+      entry_append_url(entry, response.response_url);
+      // TODO: attempt to rewrite the redirected url as well?
+      url = response.response_url;
     }
 
-    entry_append_url(entry, response.response_url);
-    url = response.response_url;
-
-    // TODO: rewrite the redirected url?
+    // Use the full text of the response in place of the in-feed content
+    entry_content = await response.text();
   }
 
-  let status, entry_document;
+  let [status, entry_document] = html_parse_from_string(entry_content);
 
-  // Initialize entry content to either the fetched text or the feed text,
-  // based on whether the fetch was successful. This pulls in the body of the
-  // response, which is deferred until checking if the redirect url exists.
-  const entry_content = response ? await response.text() : entry.content;
-  [status, entry_document] = html_parse_from_string(entry_content);
+  // TODO: entry_document should basically always be defined from here
+  // onward. Otherwise, this never overwrites entry.content. Or, allow it
+  // to be undefined, but ensure that I replace entry.content with some
+  // other value.
 
   // Only use the document for lookup if it was fetched
-  const doc_for_lookup = response ? entry_document : undefined;
+  const lookup_document = response ? entry_document : undefined;
   // Ignore icon update failure, do not need to check status
-  status = await poll_entry_update_icon(desc, doc_for_lookup);
+  await poll_entry_update_icon(entry, pec, lookup_document);
 
   // Filter the entry content
   if(entry_document) {
     status = await poll_document_filter(entry_document, url,
-      desc.fetch_image_timeout_ms);
+      pec.fetch_image_timeout_ms);
 
     if(status !== STATUS_OK) {
       return false;
@@ -91,7 +96,7 @@ async function poll_entry(desc) {
     entry.content = entry_document.documentElement.outerHTML.trim();
   }
 
-  status = await reader_entry_add(desc.entry, desc.reader_conn);
+  status = await reader_entry_add(entry, pec.reader_conn);
   if(status !== STATUS_OK) {
     return false;
   }
@@ -109,12 +114,20 @@ async function poll_entry_fetch(url, timeout) {
   return response;
 }
 
-async function poll_entry_update_icon(desc, document) {
-  console.assert(desc instanceof PollEntryDescriptor);
+// @param entry {Object} a feed entry
+// @param pec {poll_entry_context}
+// @param document {Document} optional, pre-fetched document
+async function poll_entry_update_icon(entry, pec, document) {
+  console.assert(entry_is_entry(entry));
+  console.assert(pec instanceof poll_entry_context);
+
+  if(document) {
+    console.assert(document instanceof Document);
+  }
 
   const query = new FaviconQuery();
-  query.conn = desc.icon_conn;
-  query.url = new URL(entry_get_top_url(desc.entry));
+  query.conn = pec.icon_conn;
+  query.url = new URL(entry_get_top_url(entry));
   query.skip_url_fetch = true;
   query.document = document;
 
@@ -130,7 +143,7 @@ async function poll_entry_update_icon(desc, document) {
     // lookup error is non-fatal
   }
 
-  desc.entry.faviconURLString = icon_url || query.feed_favicon_url;
+  entry.faviconURLString = icon_url || pec.feed_favicon_url;
   return STATUS_OK;
 }
 
@@ -138,19 +151,23 @@ async function poll_entry_pollable(url, conn) {
   const url_object = new URL(url);
   const hostname = url_object.hostname;
 
-  if(poll_entry_is_interstitial(hostname)) {
+  if(poll_entry_url_is_interstitial(url_object)) {
+    console.debug('interstitial', url);
     return false;
   }
 
-  if(poll_entry_is_scripted(hostname)) {
+  if(poll_entry_url_is_scripted(url_object)) {
+    console.debug('script-generated-content', url);
     return false;
   }
 
   if(poll_entry_is_paywall(hostname)) {
+    console.debug('paywall', url);
     return false;
   }
 
   if(poll_entry_requires_cookie(hostname)) {
+    console.debug('requires cookie', url);
     return false;
   }
 
@@ -165,20 +182,20 @@ async function poll_entry_pollable(url, conn) {
   return true;
 }
 
-function poll_entry_is_interstitial(hostname) {
+function poll_entry_url_is_interstitial(url) {
   const hosts = [
     'www.forbes.com',
     'forbes.com'
   ];
-  return hosts.includes(hostname);
+  return hosts.includes(url.hostname);
 }
 
-function poll_entry_is_scripted(hostname) {
+function poll_entry_url_is_scripted(url) {
   const hosts = [
     'productforums.google.com',
     'groups.google.com'
   ];
-  return hosts.includes(hostname);
+  return hosts.includes(url.hostname);
 }
 
 function poll_entry_is_paywall(hostname) {

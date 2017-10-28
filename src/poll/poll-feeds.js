@@ -148,6 +148,12 @@ async function poll_feeds_poll_feed(feed, desc) {
     return ERR_DB;
   }
 
+  // Cascade feed properties to entires
+  for(const entry of coerce_result.entries) {
+    entry.feed = stored_feed.id;
+    entry.feedTitle = stored_feed.title;
+  }
+
   await poll_feeds_poll_feed_entries(stored_feed, coerce_result.entries, desc);
   return STATUS_OK;
 }
@@ -155,23 +161,16 @@ async function poll_feeds_poll_feed(feed, desc) {
 function poll_feeds_poll_feed_entries(feed, entries, desc) {
   entries = poll_feeds_filter_dup_entries(entries);
 
-  // Cascade feed properties to entires
-  for(const entry of entries) {
-    entry.feed = feed.id;
-    entry.feedTitle = feed.title;
-  }
+  const pec = new poll_entry_context();
+  pec.reader_conn = desc.reader_conn;
+  pec.icon_conn = desc.icon_conn;
+  pec.feed_favicon_url = feed.faviconURLString;
+  pec.fetch_html_timeout_ms = desc.fetch_html_timeout_ms;
+  pec.fetch_image_timeout_ms = desc.fetch_image_timeout_ms;
 
-  // poll_entry is not 'concurrency-safe' so use individual descriptors
   const promises = [];
   for(const entry of entries) {
-    const ped = new PollEntryDescriptor();
-    ped.reader_conn = desc.reader_conn;
-    ped.icon_conn = desc.icon_conn;
-    ped.feed_favicon_url = feed.faviconURLString;
-    ped.fetch_html_timeout_ms = desc.fetch_html_timeout_ms;
-    ped.fetch_image_timeout_ms = desc.fetch_image_timeout_ms;
-    ped.entry = entry;
-    promises.push(poll_entry(ped));
+    promises.push(poll_entry(entry, pec));
   }
   return Promise.all(promises);
 }
