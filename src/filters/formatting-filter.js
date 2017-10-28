@@ -18,6 +18,5 @@ function formatting_filter(doc) {
   }
 
   unwrap_elements(doc.body, FORMATTING_FILTER_SELECTOR);
-
   return STATUS_OK;
 }

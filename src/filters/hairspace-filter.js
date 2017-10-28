@@ -21,8 +21,9 @@ function hairspace_filter(doc) {
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
     const modified_value = value.replace(/&(hairsp|#8082|#x200a);/ig, ' ');
-    if(modified_value.length !== value.length)
+    if(modified_value.length !== value.length) {
       node.nodeValue = modified_value;
+    }
   }
 
   return STATUS_OK;

@@ -70,6 +70,7 @@ async function poll_feeds(desc) {
   for(const feed of feeds) {
     promises.push(poll_feeds_poll_feed(feed, desc));
   }
+
   const poll_feed_statuses = await Promise.all(promises);
 
   await extension_update_badge_text();
@@ -129,8 +130,8 @@ async function poll_feeds_poll_feed(feed, desc) {
     feed.dateLastModified.getTime() ===
     response.last_modified_date.getTime()) {
 
-    console.debug('skipping unmodified feed', url,
-        feed.dateLastModified, response.last_modified_date);
+    console.debug('skipping unmodified feed', url, feed.dateLastModified,
+      response.last_modified_date);
     return STATUS_OK;
   }
 

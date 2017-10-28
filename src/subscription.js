@@ -41,10 +41,13 @@ async function subscription_add(subscription) {
 
   console.log('called subscription_add with feed', feed);
 
-  if(typeof timeout_ms === 'undefined')
+  if(typeof timeout_ms === 'undefined') {
     timeout_ms = 2000;
-  if(typeof notify === 'undefined')
+  }
+
+  if(typeof notify === 'undefined') {
     notify = true;
+  }
 
   const url_string = feed_get_top_url(feed);
   console.assert(url_string);
@@ -165,16 +168,13 @@ function subscription_add_all(feeds, reader_conn, icon_conn, timeout_ms) {
 
   const promises = [];
   for(const feed of feeds) {
-
-    const subscription = new Subscription();
-    subscription.feed = feed;
-    subscription.reader_conn = reader_conn;
-    subscription.icon_conn = icon_conn;
-    subscription.timeout_ms = timeout_ms;
-    subscription.notify = false;
-
-    const promise = subscription_add(subscription);
-    promises.push(promise);
+    const sub = new Subscription();
+    sub.feed = feed;
+    sub.reader_conn = reader_conn;
+    sub.icon_conn = icon_conn;
+    sub.timeout_ms = timeout_ms;
+    sub.notify = false;
+    promises.push(subscription_add(sub));
   }
   return Promise.all(promises);
 }
@@ -219,9 +219,13 @@ async function subscription_remove(subscription) {
   // would slideshow react to entries loaded (by feed actually?)? or
   // broadcast a message containing an array.
   const channel = new BroadcastChannel('db');
+
   channel.postMessage({'type': 'feedDeleted', 'id': subscription.feed.id});
-  for(const entry_id of entry_ids)
+
+  for(const entry_id of entry_ids) {
     channel.postMessage({'type': 'entryDeleted', 'id': entry_id});
+  }
+
   channel.close();
 
   return entry_ids.length;

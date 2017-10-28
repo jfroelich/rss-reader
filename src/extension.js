@@ -51,21 +51,23 @@ async function extension_show_slideshow_tab() {
 }
 
 function extension_find_tabs_by_url(url_string) {
-  function resolver(resolve, reject) {
+  return new Promise(function executor(resolve, reject) {
     return chrome.tabs.query({'url': url_string}, resolve);
-  }
-  return new Promise(resolver);
+  });
 }
 
 function extension_notify(title, message, icon_url_string) {
-  if(typeof Notification === 'undefined')
+  if(typeof Notification === 'undefined') {
     return;
+  }
 
-  if(!('SHOW_NOTIFICATIONS' in localStorage))
+  if(!('SHOW_NOTIFICATIONS' in localStorage)) {
     return;
+  }
 
-  if(Notification.permission !== 'granted')
+  if(Notification.permission !== 'granted') {
     return;
+  }
 
   const default_icon_url_string =
     chrome.extension.getURL('/images/rss_icon_trans.gif');

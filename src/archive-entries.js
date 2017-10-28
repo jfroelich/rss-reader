@@ -9,8 +9,9 @@
 // @returns {Number} status
 async function archive_entries(conn, max_age_ms) {
   const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
-  if(typeof max_age_ms === 'undefined')
+  if(typeof max_age_ms === 'undefined') {
     max_age_ms = TWO_DAYS_MS;
+  }
 
   console.assert(indexeddb_is_open(conn));
   // max_age_ms assertion delegated to reader_db_find_archivable_entries
@@ -22,8 +23,10 @@ async function archive_entries(conn, max_age_ms) {
   let did_put_entries = false;
   try {
     const entries = await reader_db_find_archivable_entries(conn, max_age_ms);
-    for(const entry of entries)
+    for(const entry of entries) {
       compacted_entries.push(compact_entry(entry));
+    }
+
     await reader_db_put_entries(conn, compacted_entries);
     did_put_entries = true;
   } catch(error) {

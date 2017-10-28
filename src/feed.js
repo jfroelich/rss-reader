@@ -27,8 +27,10 @@ function feed_append_url(feed, url_string) {
   feed.urls = feed.urls || [];
   const url_object = new URL(url_string);
   const norm_url_string = url_object.href;
-  if(feed.urls.includes(norm_url_string))
+  if(feed.urls.includes(norm_url_string)) {
     return false;
+  }
+
   feed.urls.push(norm_url_string);
   return true;
 }
@@ -98,10 +100,13 @@ function feed_sanitize(feed, title_max_length, desc_max_length) {
   const DEFAULT_TITLE_MAX_LEN = 1024;
   const DEFAULT_DESC_MAX_LEN = 1024 * 10;
 
-  if(typeof title_max_length === 'undefined')
+  if(typeof title_max_length === 'undefined') {
     title_max_length = DEFAULT_TITLE_MAX_LEN;
-  if(typeof desc_max_length === 'undefined')
+  }
+
+  if(typeof desc_max_length === 'undefined') {
     desc_max_length = DEFAULT_DESC_MAX_LEN;
+  }
 
   const output_feed = Object.assign({}, feed);
   const tag_replacement = '';
@@ -112,7 +117,6 @@ function feed_sanitize(feed, title_max_length, desc_max_length) {
     title = string_filter_control_chars(title);
     title = html_replace_tags(title, tag_replacement);
     title = string_condense_whitespace(title);
-
     title = html_truncate(title, title_max_length, suffix);
     output_feed.title = title;
   }

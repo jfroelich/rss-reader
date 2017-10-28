@@ -10,16 +10,26 @@ function opml_outline_to_feed(outline) {
   console.assert(opml_outline_is_outline(outline));
 
   const feed = {};
-  if(outline.type)
+  if(outline.type) {
     feed.type = outline.type;
-  if(outline.title)
+  }
+
+  if(outline.title) {
     feed.title = outline.title;
-  if(outline.text)
+  }
+
+  if(outline.text) {
     feed.text = outline.text;
-  if(outline.description)
+  }
+
+  if(outline.description) {
     feed.description = outline.description;
-  if(outline.htmlUrl)
+  }
+
+  if(outline.htmlUrl) {
     feed.link = outline.htmlUrl;
+  }
+
   feed_append_url(feed, outline.xmlUrl);
   return feed;
 }
@@ -90,18 +100,30 @@ function opml_outline_to_element(doc, outline) {
   console.assert(opml_outline_is_outline(outline));
 
   const element = doc.createElement('outline');
-  if(outline.type)
+  if(outline.type) {
     element.setAttribute('type', outline.type);
-  if(outline.xmlUrl)
+  }
+
+  if(outline.xmlUrl) {
     element.setAttribute('xmlUrl', outline.xmlUrl);
-  if(outline.text)
+  }
+
+  if(outline.text) {
     element.setAttribute('text', outline.text);
-  if(outline.title)
+  }
+
+  if(outline.title) {
     element.setAttribute('title', outline.title);
-  if(outline.description)
+  }
+
+  if(outline.description) {
     element.setAttribute('description', outline.description);
-  if(outline.htmlUrl)
+  }
+
+  if(outline.htmlUrl) {
     element.setAttribute('htmlUrl', outline.htmlUrl);
+  }
+
   return element;
 }
 

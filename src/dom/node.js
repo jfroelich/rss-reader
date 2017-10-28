@@ -48,10 +48,8 @@ function node_find_lca(node1, node2) {
 function node_get_ancestors(node) {
   console.assert(node_is_node(node));
   const ancestors = [];
-  for(let ancestor = node.parentNode; ancestor;
-    ancestor = ancestor.parentNode) {
-    ancestors.push(node);
+  for(let an = node.parentNode; an; an = an.parentNode) {
+    ancestors.push(an);
   }
-
   return ancestors;
 }

@@ -47,8 +47,9 @@ function unwrap_element(element) {
 function unwrap_elements(ancestor_element, selector) {
   if(ancestor_element && selector) {
     const elements = ancestor_element.querySelectorAll(selector);
-    for(const element of elements)
+    for(const element of elements) {
       unwrap_element(element);
+    }
   }
 }
 
@@ -56,8 +57,9 @@ function unwrap_elements(ancestor_element, selector) {
 // the dependencies. Inline this function
 function insert_children_before(parent_node, reference_node) {
   const ref_parent = reference_node.parentNode;
-  for(let node = parent_node.firstChild; node; node = parent_node.firstChild)
+  for(let node = parent_node.firstChild; node; node = parent_node.firstChild) {
     ref_parent.insertBefore(node, reference_node);
+  }
 }
 
 // Changes the tag name of an element. Event listeners are lost on rename. No
@@ -75,19 +77,22 @@ function rename_element(element, new_element_name, copy_attrs) {
   // so, to avoid that, treat missing name as an error
   console.assert(element_is_valid_name(new_element_name));
 
-  if(typeof copy_attrs === 'undefined')
+  if(typeof copy_attrs === 'undefined') {
     copy_attrs = true;
+  }
 
   // Treat attempting to rename an element to the same name as a noop
-  if(element.localName === new_element_name.toLowerCase())
+  if(element.localName === new_element_name.toLowerCase()) {
     return element;
+  }
 
   const parent_element = element.parentNode;
 
   // Fail silently on orphaned elements. Caller not required to guarantee
   // parent.
-  if(!parent_element)
+  if(!parent_element) {
     return element;
+  }
 
   // Use next sibling to record position prior to detach. May be undefined.
   const next_sibling = element.nextSibling;
@@ -124,8 +129,9 @@ function rename_elements(ancestor_element, old_element_name, new_element_name,
 
   if(ancestor_element) {
     const elements = ancestor_element.querySelectorAll(old_element_name);
-    for(const element of elements)
+    for(const element of elements) {
       rename_element(element, new_element_name, copy_attrs);
+    }
   }
 
   return STATUS_OK;

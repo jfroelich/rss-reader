@@ -100,8 +100,10 @@ function list_filter_remove_empty_list(list) {
 function list_filter_unwrap_single_item_list(list) {
 
   const list_parent = list.parentNode;
-  if(!list_parent)
+  if(!list_parent) {
     return;
+  }
+
   const doc = list.ownerDocument;
   const item = list.firstElementChild;
 
@@ -116,12 +118,15 @@ function list_filter_unwrap_single_item_list(list) {
   }
 
   // If the list has more than one child element then leave the list as is
-  if(item.nextElementSibling)
+  if(item.nextElementSibling) {
     return;
+  }
+
   // If the list's only child element isn't one of the correct types, ignore it
   const list_item_names = {'li': 0, 'dt': 0, 'dd': 0};
-  if(!(item.localName in list_item_names))
+  if(!(item.localName in list_item_names)) {
     return;
+  }
 
   // If the list has one child element of the correct type, and that child
   // element has no inner content, then remove the list. This will also remove

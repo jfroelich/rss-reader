@@ -24,8 +24,7 @@ const slideshow_db_channel = new BroadcastChannel('db');
 slideshow_db_channel.onmessage = function(event) {
   if(event.data && event.data.type === 'entryArchived') {
     console.log('Received archive entry request message');
-  }
-  else if(event.data && event.data.type === 'entryDeleted') {
+  } else if(event.data && event.data.type === 'entryDeleted') {
     console.log('Received entry delete request message');
   }
 };
@@ -94,12 +93,15 @@ async function slideshow_append_slides(conn) {
   } catch(error) {
     console.warn(error);
   } finally {
-    if(is_local_conn && conn)
+    if(is_local_conn && conn) {
       conn.close();
+    }
   }
 
-  for(const entry of entries)
+  for(const entry of entries) {
     slideshow_append_slide(entry);
+  }
+
   return entries.length;
 }
 
@@ -191,8 +193,9 @@ function slideshow_create_feed_source_element(entry) {
   }
 
   const title_element = document.createElement('span');
-  if(entry.feedLink)
+  if(entry.feedLink) {
     title_element.setAttribute('title', entry.feedLink);
+  }
 
   const buffer = [];
   buffer.push(entry.feedTitle || 'Unknown feed');
@@ -309,11 +312,15 @@ function slideshow_cleanup_slideshow_on_append() {
 // Move the current slide out of view to the right, and move the previous
 // slide into view, and then update the current slide.
 function slideshow_show_prev_slide() {
-  if(!slideshow_current_slide)
+  if(!slideshow_current_slide) {
     return;
+  }
+
   const prev_slide_element = slideshow_current_slide.previousSibling;
-  if(!prev_slide_element)
+  if(!prev_slide_element) {
     return;
+  }
+
   slideshow_current_slide.style.left = '100%';
   slideshow_current_slide.style.right = '-100%';
   prev_slide_element.style.left = '0px';
@@ -356,10 +363,14 @@ function slideshow_slide_on_scroll(event) {
     document.activeElement.scrollTop += delta;
   }
 
-  if(event.keyCode !== DOWN && event.keyCode !== UP)
+  if(event.keyCode !== DOWN && event.keyCode !== UP) {
     return;
-  if(!document.activeElement)
+  }
+
+  if(!document.activeElement) {
     return;
+  }
+
   event.preventDefault();
   cancelIdleCallback(slideshow_scroll_callback_handle);
   slideshow_scroll_callback_handle = requestIdleCallback(on_idle_callback);

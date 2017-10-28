@@ -16,8 +16,9 @@ async function alarms_on_archive_alarm() {
   } catch(error) {
     console.error(error);
   } finally {
-    if(conn)
+    if(conn) {
       conn.close();
+    }
   }
 
   if(status !== STATUS_OK) {
@@ -33,8 +34,9 @@ async function alarms_on_compact_favicons_alarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    if(conn)
+    if(conn) {
       conn.close();
+    }
   }
 }
 
@@ -95,10 +97,12 @@ async function alarms_on_refresh_feed_icons_alarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    if(reader_conn)
+    if(reader_conn) {
       reader_conn.close();
-    if(icon_conn)
+    }
+    if(icon_conn) {
       icon_conn.close();
+    }
   }
 
   if(status !== STATUS_OK) {
@@ -106,6 +110,7 @@ async function alarms_on_refresh_feed_icons_alarm() {
   }
 }
 
+// TODO: remove async? I don't think there is a need for it.
 async function alarms_on_alarm_wakeup(alarm) {
   console.log('alarms_on_alarm_wakeup', alarm.name);
 

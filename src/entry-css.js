@@ -51,12 +51,14 @@ function entry_css_create_entry_rule_text() {
 function entry_css_add_title_rule(sheet) {
   let buffer = [];
   const header_font_size = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10);
-  if(header_font_size)
+  if(header_font_size) {
     buffer.push(`font-size: ${(header_font_size / 10).toFixed(2)}em;`);
+  }
 
   const header_font_family = localStorage.HEADER_FONT_FAMILY;
-  if(header_font_family)
+  if(header_font_family) {
     buffer.push(`font-family:${header_font_family};`);
+  }
 
   buffer.push('letter-spacing:-0.03em;');
   buffer.push('color:rgba(50, 50, 50, 0.9);');
@@ -73,24 +75,28 @@ function entry_css_add_title_rule(sheet) {
 function entry_css_add_content_rule(sheet) {
   let buffer = [];
   const body_font_size = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
-  if(body_font_size)
+  if(body_font_size) {
     buffer.push(`font-size: ${(body_font_size / 10).toFixed(2)}em;`);
+  }
 
   const body_justify_text = localStorage.JUSTIFY_TEXT === '1';
-  if(body_justify_text)
+  if(body_justify_text) {
     buffer.push('text-align: justify;');
+  }
 
   const body_font_family = localStorage.BODY_FONT_FAMILY;
-  if(body_font_family)
+  if(body_font_family) {
     buffer.push(`font-family:${body_font_family};`);
+  }
 
   let body_line_height_string = localStorage.BODY_LINE_HEIGHT;
   if(body_line_height_string) {
     const body_line_height = parseInt(body_line_height_string, 10);
 
     // TODO: units?
-    if(body_line_height)
+    if(body_line_height) {
       buffer.push(`line-height: ${(body_line_height / 10).toFixed(2)};`);
+    }
   }
 
   buffer.push('vertical-align: text-top;');
@@ -159,10 +165,11 @@ function entry_css_update_content_rule(sheet) {
   rule.style.background = '';
 
   const body_font_family = localStorage.BODY_FONT_FAMILY;
-  if(body_font_family)
+  if(body_font_family) {
     rule.style.fontFamily = body_font_family;
-  else
+  } else {
     rule.style.fontFamily = 'initial';
+  }
 
   const body_font_size_string = localStorage.BODY_FONT_SIZE;
   if(body_font_size_string) {
@@ -172,18 +179,21 @@ function entry_css_update_content_rule(sheet) {
     // Why am I dividing by 10 here??
     // Why am I using em?
     // What is the base font?
-    if(body_font_size_number)
+    if(body_font_size_number) {
       rule.style.fontSize = (body_font_size_number / 10).toFixed(2) + 'em';
+    }
   }
 
-  rule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ?
-    'justify' : 'left';
+  rule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ? 'justify' :
+    'left';
 
   const body_line_height = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
   rule.style.lineHeight = (body_line_height / 10).toFixed(2);
   let column_count_string = localStorage.COLUMN_COUNT;
   const valid_counts = { '1': true, '2': true, '3': true };
-  if(!(column_count_string in valid_counts))
+  if(!(column_count_string in valid_counts)) {
     column_count_string = '1';
+  }
+
   rule.style.webkitColumnCount = column_count_string;
 }

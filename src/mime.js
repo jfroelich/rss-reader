@@ -11,8 +11,9 @@ const MIME_TYPE_XML = 'application/xml';
 // @returns {String} a mime type, or undefined on error or failed lookup
 function mime_get_type_for_extension(extension) {
   const t_extension = typeof extension;
-  if(t_extension === 'undefined' || extension === null)
+  if(t_extension === 'undefined' || extension === null) {
     return;
+  }
 
   console.assert(t_extension === 'string');
 
@@ -129,8 +130,10 @@ function mime_get_type_for_extension(extension) {
 // @returns {String} a mime type, or undefined if error
 function mime_from_content_type(content_type) {
   const t_content_type = typeof content_type;
-  if(t_content_type === 'undefined')
+  if(t_content_type === 'undefined') {
     return;
+  }
+
   console.assert(t_content_type === 'string');
   let mime_type = content_type;
 
@@ -139,8 +142,9 @@ function mime_from_content_type(content_type) {
   // is optional, so leave the type as is if no semicolon is present.
   const from_index = 0;
   const semicolon_position = content_type.indexOf(';');
-  if(semicolon_position !== -1)
+  if(semicolon_position !== -1) {
     mime_type = content_type.substring(from_index, semicolon_position);
+  }
 
   return mime_normalize(mime_type);
 }

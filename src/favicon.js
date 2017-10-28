@@ -64,16 +64,25 @@ async function favicon_lookup(query) {
   let min_image_size = query.min_image_size;
   let max_image_size = query.max_image_size;
 
-  if(typeof max_age_ms === 'undefined')
+  if(typeof max_age_ms === 'undefined') {
     max_age_ms = FAVICON_DEFAULT_MAX_AGE_MS;
-  if(typeof fetch_html_timeout_ms === 'undefined')
+  }
+
+  if(typeof fetch_html_timeout_ms === 'undefined') {
     fetch_html_timeout_ms = 1000;
-  if(typeof fetch_image_timeout_ms === 'undefined')
+  }
+
+  if(typeof fetch_image_timeout_ms === 'undefined') {
     fetch_image_timeout_ms = 200;
-  if(typeof min_image_size === 'undefined')
+  }
+
+  if(typeof min_image_size === 'undefined') {
     min_image_size = 50;
-  if(typeof max_image_size === 'undefined')
+  }
+
+  if(typeof max_image_size === 'undefined') {
     max_image_size = 10240;
+  }
 
   // TODO: use an array
   const urls = new Set();
@@ -199,11 +208,15 @@ async function favicon_db_find_redirect_url(conn, url_object, response,
   max_age_ms) {
   const response_url_object = new URL(response.response_url);
   const entry = await favicon_db_find_entry(conn, response_url_object);
-  if(!entry)
+  if(!entry) {
     return;
+  }
+
   const current_date = new Date();
-  if(favicon_is_entry_expired(entry, current_date, max_age_ms))
+  if(favicon_is_entry_expired(entry, current_date, max_age_ms)) {
     return;
+  }
+
   console.log('found redirect in cache', entry);
   const entries = [url_object.href];
   await favicon_db_put_entries(conn, entry.iconURLString, entries);
@@ -226,6 +239,9 @@ async function favicon_search_document(document, conn, base_url_object, urls) {
   }
 
   let icon_url_object;
+
+  // TODO: querySelectorAll on one selector instead?
+
   const selectors = [
     'link[rel="icon"][href]',
     'link[rel="shortcut icon"][href]',
@@ -233,12 +249,13 @@ async function favicon_search_document(document, conn, base_url_object, urls) {
     'link[rel="apple-touch-icon-precomposed"][href]'
   ];
 
-  // TODO: querySelectorAll?
+
 
   for(let selector of selectors) {
     const element = document.head.querySelector(selector);
-    if(!element)
+    if(!element) {
       continue;
+    }
 
     // Avoid passing empty string to URL constructor
     let href_string = element.getAttribute('href');
@@ -273,10 +290,13 @@ async function favicon_db_find_origin_url(conn, origin_url_string, urls,
   const origin_url_object = new URL(origin_url_string);
   const origin_entry = await favicon_db_find_entry(conn, origin_url_object);
   const current_date = new Date();
-  if(!origin_entry)
+  if(!origin_entry) {
     return;
-  if(favicon_is_entry_expired(origin_entry, current_date, max_age_ms))
+  }
+
+  if(favicon_is_entry_expired(origin_entry, current_date, max_age_ms)) {
     return;
+  }
 
   console.log('Found non-expired origin entry in cache', origin_url_string,
     origin_entry.iconURLString);
@@ -378,8 +398,9 @@ function favicon_db_find_entry(conn, url_object) {
 
 function favicon_db_find_expired_entries(conn, max_age_ms) {
   console.assert(conn instanceof IDBDatabase);
-  if(typeof max_age_ms === 'undefined')
+  if(typeof max_age_ms === 'undefined') {
     max_age_ms = FAVICON_DEFAULT_MAX_AGE_MS;
+  }
 
   return new Promise(function(resolve, reject) {
     let cutoff_time_ms = Date.now() - max_age_ms;
@@ -429,11 +450,15 @@ function favicon_db_put_entries(conn, icon_url, page_urls) {
 // TODO: return status intsead
 async function favicon_compact_db(conn, max_age_ms) {
   console.assert(conn instanceof IDBDatabase);
+
   const expired_entries = await favicon_db_find_expired_entries(conn,
     max_age_ms);
+
   const urls = [];
-  for(const entry of expired_entries)
+  for(const entry of expired_entries) {
     urls.push(entry.pageURLString);
+  }
+
   const resolutions = await favicon_db_remove_entries_with_urls(conn, urls);
   return resolutions.length;
 }

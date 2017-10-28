@@ -33,8 +33,9 @@ async function google_feeds_api_search(query_string, timeout_ms) {
   // empty result
   console.assert(query_string.length);
 
-  if(typeof timeout_ms === 'undefined')
+  if(typeof timeout_ms === 'undefined') {
     timeout_ms = 0;
+  }
 
   console.assert(Number.isInteger(timeout_ms));
   console.assert(timeout_ms >= 0);
@@ -94,8 +95,9 @@ async function google_feeds_api_search(query_string, timeout_ms) {
 
   // TODO: same situation as above, should probably not be an exception
   const no_content_status_code = 204;
-  if(response_status_code === no_content_status_code)
+  if(response_status_code === no_content_status_code) {
     throw new Error(standard_fetch_error_message);
+  }
 
   const json_result = await response.json();
 

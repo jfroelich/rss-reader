@@ -102,8 +102,9 @@ function fetch_feed(url, timeout_ms, accept_html) {
 
   const types = ['application/rss+xml', 'application/rdf+xml',
     'application/atom+xml', 'application/xml', 'text/xml'];
-  if(accept_html || typeof accept_html === 'undefined')
+  if(accept_html || typeof accept_html === 'undefined') {
     types.push('text/html');
+  }
 
   function accept_response(response) {
     const content_type = response.headers.get('Content-Type');
@@ -196,8 +197,9 @@ async function fetch_image_head(url, timeout_ms) {
 function fetch_image(url, timeout_ms) {
   console.assert(url);
 
-  if(typeof timeout_ms === 'undefined')
+  if(typeof timeout_ms === 'undefined') {
     timeout_ms = 0;
+  }
 
   console.assert(Number.isInteger(timeout_ms));
   console.assert(timeout_ms >= 0);
@@ -300,15 +302,17 @@ function fetch_with_timeout(url, options, timeout_ms, error_message) {
   const fetch_promise = fetch(url, options);
 
   // If timeout is not set then do a normal fetch
-  if(t_timeout_ms === 'undefined' || timeout_ms === 0)
+  if(t_timeout_ms === 'undefined' || timeout_ms === 0) {
     return fetch_promise;
+  }
 
   // Not much use for this right now, I think it might be important later
   let timeout_id;
 
   const t_error_message = typeof error_message;
-  if(t_error_message === 'undefined')
+  if(t_error_message === 'undefined') {
     error_message = 'Fetch timed out for url ' + url;
+  }
 
   // I am using this internal function instead of a external helper because of
   // plans to support cancellation
@@ -329,8 +333,9 @@ function fetch_get_last_modified_date(response) {
   console.assert(response);
 
   const last_modified_string = response.headers.get('Last-Modified');
-  if(!last_modified_string)
+  if(!last_modified_string) {
     return;
+  }
 
   try {
     return new Date(last_modified_string);

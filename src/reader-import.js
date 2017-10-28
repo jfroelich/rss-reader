@@ -28,10 +28,13 @@ async function reader_import_files(files) {
     console.warn(error);
     return ERR_DB;
   } finally {
-    if(reader_conn)
+    if(reader_conn) {
       reader_conn.close();
-    if(icon_conn)
+    }
+
+    if(icon_conn) {
       icon_conn.close();
+    }
   }
 
   return STATUS_OK;
@@ -39,8 +42,9 @@ async function reader_import_files(files) {
 
 function reader_import_files_internal(files, reader_conn, icon_conn) {
   const promises = [];
-  for(const file of files)
+  for(const file of files) {
     promises.push(reader_import_file_silently(file, reader_conn, icon_conn));
+  }
   return Promise.all(promises);
 }
 
@@ -111,8 +115,9 @@ async function reader_import_file(file, reader_conn, icon_conn) {
   // Tally successful subscriptions
   let sub_count = 0;
   for(const sub_result of sub_results) {
-    if(sub_result.status === STATUS_OK)
+    if(sub_result.status === STATUS_OK) {
       sub_count++;
+    }
   }
 
   console.log('subbed to %d of %d feeds in file', sub_count, feeds.length, file.name);

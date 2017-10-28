@@ -22,12 +22,14 @@ function host_template_filter(doc, url) {
   host_selector_map['www.usnews.com'] = ['header.header'];
 
   const hostname = url_get_hostname(url);
-  if(!hostname)
+  if(!hostname) {
     return;
+  }
 
   const selectors = host_selector_map[hostname];
-  if(!selectors)
+  if(!selectors) {
     return;
+  }
 
   console.log('host_template_filter processing', url);
 

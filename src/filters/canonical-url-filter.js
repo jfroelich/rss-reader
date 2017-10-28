@@ -47,8 +47,7 @@ function canonical_url_filter(doc, base_url) {
     const srcset_elements = doc.body.querySelectorAll(
       'img[srcset], source[srcset]');
     for(const srcset_element of srcset_elements) {
-      canonical_url_filter_resolve_srcset(srcset_element,
-        base_url);
+      canonical_url_filter_resolve_srcset(srcset_element, base_url);
     }
   }
 

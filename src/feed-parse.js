@@ -54,8 +54,9 @@ function feed_parse_unmarshall_xml(document) {
 
   const entry_objects = [];
   const entry_elements = feed_parse_find_entry_elements(channel_element);
-  for(const entry_element of entry_elements)
+  for(const entry_element of entry_elements) {
     entry_objects.push(feed_parse_create_entry_object(entry_element));
+  }
 
   const result = {};
   result.feed = feed;
@@ -75,10 +76,11 @@ function feed_parse_find_feed_description(document, channel_element) {
 }
 
 function feed_parse_find_channel_element(doc_element) {
-  if(doc_element.localName.toLowerCase() === 'feed')
+  if(doc_element.localName.toLowerCase() === 'feed') {
     return doc_element;
-  else
+  } else {
     return feed_parse_find_child_element_by_name(doc_element, 'channel');
+  }
 }
 
 function feed_parse_find_entry_elements(channel_element) {
@@ -101,9 +103,12 @@ function feed_parse_find_entry_elements(channel_element) {
   }
 
   for(let child_element = parent_node.firstElementChild; child_element;
-    child_element = child_element.nextElementSibling)
-    if(child_element.localName.toLowerCase() === entry_element_name)
+    child_element = child_element.nextElementSibling) {
+    if(child_element.localName.toLowerCase() === entry_element_name) {
       entries.push(child_element);
+    }
+  }
+
   return entries;
 }
 
@@ -116,9 +121,9 @@ function feed_parse_find_feed_date(channel_element) {
   const feed_type = find_feed_type(doc_element);
 
   let date_text;
-  if(feed_type === 'feed')
+  if(feed_type === 'feed') {
     date_text = feed_parse_find_child_element_text(channel_element, 'updated');
-  else {
+  } else {
     date_text = feed_parse_find_child_element_text(channel_element, 'pubdate');
     date_text = date_text ||
       feed_parse_find_child_element_text(channel_element, 'lastbuilddate');
@@ -126,14 +131,17 @@ function feed_parse_find_feed_date(channel_element) {
       feed_parse_find_child_element_text(channel_element, 'date');
   }
 
-  if(!date_text)
+  if(!date_text) {
     return;
+  }
 
+  // TODO: call date_parse in date.js instead?
   let feed_date;
   try {
     feed_date = new Date(date_text);
   } catch(error) {
   }
+
   return feed_date;
 }
 
@@ -150,18 +158,20 @@ function feed_parse_find_feed_link(channel_element) {
     link_element = link_element ||
       feed_parse_find_child_element(channel_element,
         feed_parse_is_link_with_href_element);
-    if(link_element)
+    if(link_element) {
       link_text = link_element.getAttribute('href');
+    }
   } else {
     link_element = feed_parse_find_child_element(channel_element,
       feed_parse_is_link_without_href_element);
-    if(link_element)
+    if(link_element) {
       link_text = link_element.textContent;
-    else {
+    } else {
       link_element = feed_parse_find_child_element(channel_element,
         feed_parse_is_link_with_href_element);
-      if(link_element)
+      if(link_element) {
         link_text = link_element.getAttribute('href');
+      }
     }
   }
 
@@ -218,14 +228,16 @@ function feed_parse_find_entry_author(entry_element) {
   if(author_element) {
     const author_name_text = feed_parse_find_child_element_text(
       author_element, 'name');
-    if(author_name_text)
+    if(author_name_text) {
       return author_name_text;
+    }
   }
 
   const creator_text = feed_parse_find_child_element_text(
     entry_element, 'creator');
-  if(creator_text)
+  if(creator_text) {
     return creator_text;
+  }
   return feed_parse_find_child_element_text(entry_element, 'publisher');
 }
 
@@ -260,8 +272,10 @@ function feed_parse_find_entry_date(entry_element) {
       entry_element, 'pubdate') ||
       feed_parse_find_child_element_text(entry_element, 'date');
   }
-  if(!date_string)
+  if(!date_string) {
     return;
+  }
+
   let entry_date;
   try {
     entry_date = new Date(date_string);
@@ -326,7 +340,8 @@ function feed_parse_find_child_element_text(parent_element, element_name) {
     element_name);
   if(child_element) {
     const child_element_text = child_element.textContent;
-    if(child_element_text)
+    if(child_element_text) {
       return child_element_text.trim();
+    }
   }
 }

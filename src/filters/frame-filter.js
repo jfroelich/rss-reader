@@ -8,12 +8,14 @@ function frame_filter(doc) {
   console.assert(doc instanceof Document);
 
   let body_element = doc.body;
-  if(!body_element)
+  if(!body_element) {
     return;
+  }
 
   // If document is not framed, then nothing else to do
-  if(body_element.localName !== 'frameset')
+  if(body_element.localName !== 'frameset') {
     return;
+  }
 
   // The document is framed, transform into unframed
   let new_body_element = doc.createElement('body');
@@ -22,8 +24,10 @@ function frame_filter(doc) {
   const noframes_element = doc.querySelector('noframes');
   if(noframes_element) {
     for(let node = noframes_element.firstChild; node;
-      node = noframes_element.firstChild)
+      node = noframes_element.firstChild) {
+
       new_body_element.appendChild(node);
+    }
   }
 
   // If the new body is empty, add an error message about framed content

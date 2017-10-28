@@ -35,8 +35,9 @@ async function cli_archive_entries() {
     conn = await reader_db_open();
     status = await archive_entries(conn, max_age_ms);
   } finally {
-    if(conn)
+    if(conn) {
       conn.close();
+    }
   }
 
   if(status !== STATUS_OK) {

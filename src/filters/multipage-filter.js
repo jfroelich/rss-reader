@@ -14,8 +14,9 @@ async function multipage_filter(doc, location, timeout_ms) {
   console.assert(doc instanceof Document);
   const lca_max_distance = 3;
   const anchors = pagination_find_anchors(doc, location, lca_max_distance);
-  if(!anchors.length)
+  if(!anchors.length) {
     return;
+  }
 
   const urls = [];
   for(const anchor of anchors) {
@@ -32,8 +33,7 @@ async function multipage_filter(doc, location, timeout_ms) {
   // Concurrently fetch the array of urls. If any fetch fails then this fails.
   const promises = [];
   for(const url of urls) {
-    const promise = fetch_and_parse_html(url, timeout_ms);
-    promises.push(fetch_promise);
+    promises.push(fetch_and_parse_html(url, timeout_ms));
   }
 
   let docs;

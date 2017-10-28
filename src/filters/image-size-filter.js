@@ -16,8 +16,9 @@ async function image_size_filter(doc, allowed_protocols, timeout_ms) {
   console.assert(doc instanceof Document);
 
   const default_allowed_protocols = ['data:', 'http:', 'https:'];
-  if(typeof allowed_protocols === 'undefined')
+  if(typeof allowed_protocols === 'undefined') {
     allowed_protocols = default_allowed_protocols;
+  }
 
   // Duck typing assertion, I believe includes is the only functionality of
   // the parameter we care about. So if this trait is present we can infer the
@@ -28,8 +29,9 @@ async function image_size_filter(doc, allowed_protocols, timeout_ms) {
   // code.
 
   let modified_image_count = 0;
-  if(!doc.body)
+  if(!doc.body) {
     return modified_image_count;
+  }
 
   const images = doc.body.getElementsByTagName('img');
   const results = await image_size_filter_get_all_dimensions(images,
@@ -63,7 +65,9 @@ async function image_size_filter_get_dimensions_silently(image,
   try {
     return await image_size_filter_get_dimensions(image, allowed_protocols,
       timeout_ms);
-  } catch(error) {}
+  } catch(error) {
+
+  }
 }
 
 async function image_size_filter_get_dimensions(image, allowed_protocols,
@@ -77,8 +81,9 @@ async function image_size_filter_get_dimensions(image, allowed_protocols,
     'hint': undefined
   };
 
-  if(image.hasAttribute('width') && image.hasAttribute('height'))
+  if(image.hasAttribute('width') && image.hasAttribute('height')) {
     return;
+  }
 
   const style_dimensions = element_get_dimensions(image);
   if(style_dimensions) {
@@ -89,12 +94,14 @@ async function image_size_filter_get_dimensions(image, allowed_protocols,
   }
 
   const url_string = image.getAttribute('src');
-  if(!url_string)
+  if(!url_string) {
     return;
+  }
 
   const url_object = new URL(url_string);
-  if(!allowed_protocols.includes(url_object.protocol))
+  if(!allowed_protocols.includes(url_object.protocol)) {
     return;
+  }
 
   const url_dimensions = image_size_filter_sniff(url_object);
   if(url_dimensions) {
@@ -116,8 +123,9 @@ async function image_size_filter_get_dimensions(image, allowed_protocols,
 
 function image_size_filter_sniff(url_object) {
   // data urls will not contain useful information so ignore them
-  if(url_object.protocol === 'data:')
+  if(url_object.protocol === 'data:') {
     return;
+  }
 
   // TODO: make the w/h and width/height search params check into a helper
   // function?

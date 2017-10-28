@@ -97,12 +97,14 @@ function url_path_get_extension(path) {
 
   // Fail if the path is probably too short to contain an extension
   const min_path_length = '/a.b'.length;
-  if(path.length < min_path_length)
+  if(path.length < min_path_length) {
     return;
+  }
 
   const last_dot_position = path.lastIndexOf('.');
-  if(last_dot_position === -1)
+  if(last_dot_position === -1) {
     return;
+  }
 
   // A path that ends with a period is a valid path.
   // The +1 skips past the period itself.
@@ -112,16 +114,19 @@ function url_path_get_extension(path) {
   // If the path ended with a dot, then the extension string will be
   // empty, so assume the path is malformed and no extension exists
   // TODO: does this make sense if I avoid the case above?
-  if(!extension)
+  if(!extension) {
     return;
+  }
 
   const max_extension_len = 4;
-  if(extension.length > max_extension_len)
+  if(extension.length > max_extension_len) {
     return;
+  }
 
   extension = extension.toLowerCase();
-  if(!/[a-z]/.test(extension))
+  if(!/[a-z]/.test(extension)) {
     return;
+  }
 
   return extension;
 }
@@ -141,12 +146,14 @@ function url_sniff_is_binary(url) {
 
   const path = url.pathname;
   const extension = url_path_get_extension(path);
-  if(!extension)
+  if(!extension) {
     return false;
+  }
 
   const mime_type = mime_get_type_for_extension(extension);
-  if(!mime_type)
+  if(!mime_type) {
     return false;
+  }
 
   const slash_position = mime_type.indexOf('/');
   // All mime types resulting from the lookup should contain a slash.
@@ -169,8 +176,9 @@ function url_path_get_file_name(path) {
   const index = path.lastIndexOf('/');
   if(index > -1) {
     const index_plus_1 = index + 1;
-    if(index_plus_1 < path.length)
+    if(index_plus_1 < path.length) {
       return path.substring(index_plus_1);
+    }
   }
   return path;
 }

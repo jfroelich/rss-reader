@@ -17,12 +17,14 @@ function pagination_find_anchors(doc, location, lca_max_distance) {
   console.assert(doc instanceof Document);
 
   const candidates = pagination_find_candidate_anchors(doc, location);
-  if(!candidates.length)
+  if(!candidates.length) {
     return [];
+  }
 
   const sequences = pagination_find_anchor_sequences(candidates, lca_max_distance);
-  if(!sequences.length)
+  if(!sequences.length) {
     return [];
+  }
 
   // TODO: Return the first valid sequence?
   throw new Error('Not yet implemented');
@@ -36,18 +38,22 @@ function pagination_find_anchors(doc, location, lca_max_distance) {
 // anchor
 function pagination_find_candidate_anchors(doc, location) {
   const body_element = doc.body;
-  if(!body_element)
+  if(!body_element) {
     return [];
+  }
 
   const anchors = body_element.getElementsByTagName('a');
-  if(!anchors.length)
+  if(!anchors.length) {
     return [];
+  }
 
   const candidates = [];
   const location_url = new URL(location);
-  for(const anchor of anchors)
-    if(pagination_is_candidate_anchor(anchor, location_url))
+  for(const anchor of anchors) {
+    if(pagination_is_candidate_anchor(anchor, location_url)) {
       candidates.push(anchor);
+    }
+  }
   return candidates;
 }
 
@@ -58,28 +64,34 @@ function pagination_is_candidate_anchor(anchor_element, base_url) {
   // Although the following conditions are generally associative, they are
   // ordered so as to reduce the chance of performing more expensive operations
 
-  if(!anchor_element.firstChild)
+  if(!anchor_element.firstChild) {
     return false;
+  }
 
   const max_text_length = 30;
   const text_content = anchor_element.textContent || '';
-  if(text_content.trim().length > max_text_length)
+  if(text_content.trim().length > max_text_length) {
     return false;
+  }
 
-  if(visibility_element_is_hidden(anchor_element))
+  if(visibility_element_is_hidden(anchor_element)) {
     return false;
+  }
 
   const href_url = pagination_get_href_url(anchor_element, base_url);
-  if(!href_url)
+  if(!href_url) {
     return false;
+  }
 
   const allowed_protocols = ['https:', 'http:'];
-  if(!allowed_protocols.includes(href_url.protocol))
+  if(!allowed_protocols.includes(href_url.protocol)) {
     return false;
+  }
 
   // If it an exactly identical url then ignore it
-  if(href_url.href === base_url.href)
+  if(href_url.href === base_url.href) {
     return false;
+  }
 
   // TODO: Check for digits somewhere in the anchor. At least one feature must
   // have digits (or the name like one/two)
@@ -97,11 +109,14 @@ function pagination_get_href_url(anchor_element, base_url) {
   // new URL, so it is important to avoid passing in an empty string because
   // when calling new URL(empty string, base url), the result is a copy of
   // the base url, not an error.
-  if(!href)
+  if(!href) {
     return;
+  }
+
   href = href.trim();
-  if(!href)
+  if(!href) {
     return;
+  }
 
   let href_url;
   try {
@@ -115,11 +130,15 @@ function pagination_get_href_url(anchor_element, base_url) {
 // comparing path so this name is not great
 // Expects 2 URL objects. Return true if the second is similar to the first
 function pagination_are_similar_urls(url1, url2) {
-  if(url1.origin !== url2.origin)
+  if(url1.origin !== url2.origin) {
     return false;
+  }
+
   let path1 = url1.pathname, path2 = url2.pathname;
-  if(path1 === path2)
+  if(path1 === path2) {
     return true;
+  }
+
   path1 = pagination_get_partial_path(url1.pathname);
   path2 = pagination_get_partial_path(url2.pathname);
   return path1 === path2;
@@ -131,8 +150,10 @@ function pagination_are_similar_urls(url1, url2) {
 // Assume's input path string is defined, trimmed, and normalized.
 function pagination_get_partial_path(path) {
   const index = path.lastIndexOf('/');
-  if(index === -1)
+  if(index === -1) {
     throw new TypeError('path missing forward slash');
+  }
+
   return path.substring(0, index);
 }
 
@@ -154,7 +175,6 @@ function pagination_find_anchor_sequences(anchor_elements, lca_max_distance) {
 
   console.assert(num_anchors > 0);
 
-
   const minlen = 1, maxlen = 51; // exclusive end points
   const seqs = [];
   const maxd = lca_max_distance - 1;
@@ -167,8 +187,11 @@ function pagination_find_anchor_sequences(anchor_elements, lca_max_distance) {
     lca2 = node_find_lca(a1, a2);
     if((lca1 && (lca2.ancestor !== lca1.ancestor)) ||
       (lca2.d1 !== lca2.d2) || (lca2.d1 > maxd)) {
-      if(seq.length > minlen && seq.length < maxlen)
+
+      if(seq.length > minlen && seq.length < maxlen) {
         seqs.push(seq);
+      }
+
       seq = [a2];
       a1 = a2;
       lca1 = null;
@@ -179,7 +202,9 @@ function pagination_find_anchor_sequences(anchor_elements, lca_max_distance) {
     }
   }
 
-  if(seq.length > minlen && seq.length < maxlen)
+  if(seq.length > minlen && seq.length < maxlen) {
     seqs.push(seq);
+  }
+
   return seqs;
 }

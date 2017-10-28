@@ -63,12 +63,17 @@ function entry_sanitize(input_entry, author_max_len, title_max_len,
   content_max_length) {
   console.assert(entry_is_entry(input_entry));
 
-  if(typeof author_max_len === 'undefined')
+  if(typeof author_max_len === 'undefined') {
     author_max_len = 200;
-  if(typeof title_max_len === 'undefined')
+  }
+
+  if(typeof title_max_len === 'undefined') {
     title_max_len = 1000;
-  if(typeof content_max_length === 'undefined')
+  }
+
+  if(typeof content_max_length === 'undefined') {
     content_max_length = 50000;
+  }
 
   console.assert(number_is_positive_integer(author_max_len));
   console.assert(number_is_positive_integer(title_max_len));

@@ -22,8 +22,9 @@ function lazy_image_filter(doc) {
   let num_imgs_modified = 0;
   const images = doc.getElementsByTagName('img');
   for(const img of images) {
-    if(image_has_source(img))
+    if(image_has_source(img)) {
       continue;
+    }
 
     for(const lazy_src_attr_name of lazy_img_attrs) {
       if(img.hasAttribute(lazy_src_attr_name)) {

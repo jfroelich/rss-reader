@@ -7,10 +7,14 @@ function article_title_filter_publisher(title) {
 
   // Look for a delimiter
   let index = title.lastIndexOf(' - ');
-  if(index < 0)
+
+  if(index < 0) {
     index = title.lastIndexOf(' | ');
-  if(index < 0)
+  }
+
+  if(index < 0) {
     index = title.lastIndexOf(' : ');
+  }
 
   // Exit early if no delimiter found
   if(index < 0) {

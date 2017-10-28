@@ -45,8 +45,9 @@ function opml_document_set_title(doc, title) {
 
     title_element.textContent = title;
   } else {
-    if(title_element)
+    if(title_element) {
       title_element.remove();
+    }
   }
 
   return STATUS_OK;
@@ -88,8 +89,9 @@ function opml_get_outline_elements(doc) {
 function opml_get_outline_objects(doc) {
   const elements = opml_get_outline_elements(doc);
   const objects = [];
-  for(const element of elements)
+  for(const element of elements) {
     objects.push(opml_outline_element_to_object(element));
+  }
   return objects;
 }
 

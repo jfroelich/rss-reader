@@ -28,53 +28,54 @@ function sizeof(input_value) {
     const value = stack.pop();
 
     // typeof null === 'object'
-    if(value === null)
+    if(value === null) {
       continue;
+    }
 
     switch(typeof value) {
-      case 'undefined':
-        break;
-      case 'boolean':
-        byte_size += 4;
-        break;
-      case 'string':
-        byte_size += value.length * 2;
-        break;
-      case 'number':
-        byte_size += 8;
-        break;
-      case 'function':
-        // Treat as some kind of function identifier
-        byte_size += 8;
-        break;
-      case 'object':
-        if(visited_objects.indexOf(value) === -1) {
-          visited_objects.push(value);
+    case 'undefined':
+      break;
+    case 'boolean':
+      byte_size += 4;
+      break;
+    case 'string':
+      byte_size += value.length * 2;
+      break;
+    case 'number':
+      byte_size += 8;
+      break;
+    case 'function':
+      // Treat as some kind of function identifier
+      byte_size += 8;
+      break;
+    case 'object':
+      if(visited_objects.indexOf(value) === -1) {
+        visited_objects.push(value);
 
-          if(ArrayBuffer.isView(value))
-            byte_size += value.length;
-          else if(Array.isArray(value))
-            stack.push(...value);
-          else {
-            const to_string_output = to_string.call(value);
-            if(to_string_output === '[object Date]') {
-              byte_size += 8; // guess
-            } else if(to_string_output === '[object URL]') {
-              byte_size += 2 * value.href.length; // guess
-            } else {
-              for(let prop_name in value) {
-                if(has_own_prop.call(value, prop_name)) {
-                  // Add size of the property name string itself
-                  byte_size += prop_name.length * 2;
-                  stack.push(value[prop_name]);
-                }
+        if(ArrayBuffer.isView(value)) {
+          byte_size += value.length;
+        } else if(Array.isArray(value)) {
+          stack.push(...value);
+        } else {
+          const to_string_output = to_string.call(value);
+          if(to_string_output === '[object Date]') {
+            byte_size += 8; // guess
+          } else if(to_string_output === '[object URL]') {
+            byte_size += 2 * value.href.length; // guess
+          } else {
+            for(let prop_name in value) {
+              if(has_own_prop.call(value, prop_name)) {
+                // Add size of the property name string itself
+                byte_size += prop_name.length * 2;
+                stack.push(value[prop_name]);
               }
             }
           }
         }
-        break;
-      default:
-        break;// ignore
+      }
+      break;
+    default:
+      break;// ignore
     }
   }
 

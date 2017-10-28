@@ -32,11 +32,16 @@ function element_copy_attributes(from_element, to_element) {
 function node_is_leaf(node) {
   switch(node.nodeType) {
     case Node.ELEMENT_NODE:
-      if(element_is_leaf_exception(node))
+      if(element_is_leaf_exception(node)) {
         return false;
-      for(let child = node.firstChild; child; child = child.nextSibling)
-        if(!node_is_leaf(child))
+      }
+
+      for(let child = node.firstChild; child; child = child.nextSibling) {
+        if(!node_is_leaf(child)) {
           return false;
+        }
+      }
+
       break;
     case Node.TEXT_NODE:
       return !node.nodeValue.trim();
@@ -66,8 +71,9 @@ function element_get_dimensions(element) {
 
   // Accessing element.style is a performance heavy operation sometimes, so
   // try and avoid calling it.
-  if(!element.hasAttribute('style'))
+  if(!element.hasAttribute('style')) {
     return;
+  }
 
   // TODO: support percents and other strange values?
 

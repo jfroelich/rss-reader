@@ -179,8 +179,9 @@ async function reader_db_find_archivable_entries(conn, max_age_ms) {
   const current_date = new Date();
   for(const entry of entries) {
     const entry_age_ms = current_date - entry.dateCreated;
-    if(entry_age_ms > max_age_ms)
+    if(entry_age_ms > max_age_ms) {
       archivable_entries.push(entry);
+    }
   }
   return archivable_entries;
 }
@@ -250,8 +251,9 @@ function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
           cursor.advance(offset);
         } else {
           entries.push(cursor.value);
-          if(is_limited && ++counter < limit)
+          if(is_limited && ++counter < limit) {
             cursor.continue();
+          }
         }
       }
     };

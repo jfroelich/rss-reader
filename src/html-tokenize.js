@@ -15,8 +15,9 @@ function tokenize_html(html_string, input_state = 0) {
   console.assert(typeof html_string === 'string');
 
   const input_string_length = html_string.length;
-  if(input_string_length < 1)
+  if(input_string_length < 1) {
     return [];
+  }
 
   let counter = 1;
 
@@ -107,8 +108,9 @@ function tokenize_html(html_string, input_state = 0) {
           }
           state = STATE_TAG_OPEN;
           token.push(cursor);
-        } else
+        } else {
           token.push(cursor);
+        }
         break;
       case STATE_TAG_OPEN:
         token.push(cursor);
@@ -118,16 +120,15 @@ function tokenize_html(html_string, input_state = 0) {
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '/')
-
+        } else if(cursor === '/') {
           state = STATE_TAG_CLOSE;// </
-        else if(cursor === '!')
+        } else if(cursor === '!') {
           state = STATE_TAG_OPEN_BANG;
-        else if(cursor === '?')
+        } else if(cursor === '?') {
           state = STATE_TAG_OPEN_NAME;// <? Start of pi
-        else if(/[a-z]/i.test(cursor))
+        } else if(/[a-z]/i.test(cursor)) {
           state = STATE_TAG_OPEN_NAME;// <character
-        else {
+        } else {
           // We do not allow leading spaces before a tag name, so if this
           // is a space it is not valid. Possibly an unencoded < in plain text
           state = STATE_TEXT;
@@ -141,14 +142,15 @@ function tokenize_html(html_string, input_state = 0) {
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '-')
+        } else if(cursor === '-') {
           state = STATE_TAG_OPEN_BANG_DASH;// <!-
-        else if(cursor === '[')
+        } else if(cursor === '[') {
           state = STATE_TAG_OPEN_BANG_BRACKET;// <![
-        else if(/[a-z]/i.test(cursor))
+        } else if(/[a-z]/i.test(cursor)) {
           state = STATE_TAG_OPEN_NAME;// <!DOCTYPE
-        else
+        } else {
           state = STATE_TAG_OPEN_AFTER_NAME;
+        }
         break;
       case STATE_TAG_OPEN_BANG_DASH:
         token.push(cursor);// <!-
@@ -156,9 +158,9 @@ function tokenize_html(html_string, input_state = 0) {
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '-')
+        } else if(cursor === '-') {
           state = STATE_COMMENT;// <!--
-        else {
+        } else {
           // <!-? Malformed?
           // TODO: should i distinguish between open name and open after name
           // here based on whether it is whitespace?
@@ -173,9 +175,9 @@ function tokenize_html(html_string, input_state = 0) {
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === 'c' || cursor === 'C')
+        } else if(cursor === 'c' || cursor === 'C') {
           state = STATE_TAG_OPEN_BANG_BRACKET_C;
-        else {
+        } else {
           // TODO: distinguish between name and after name states here?
           state = STATE_TAG_OPEN_NAME;
         }
@@ -662,8 +664,6 @@ function tokenize_html(html_string, input_state = 0) {
             }
           }
 
-
-
           console.warn('Assuming start of regex literal at character');
           state = STATE_SCRIPT_POSSIBLE_REGULAR_EXPRESS_LITERAL;
         }
@@ -837,10 +837,14 @@ function tokenize_html(html_string, input_state = 0) {
   } // end for loop
 
   // Handle the final token
-  if(token.length)
+  if(token.length) {
     tokens.push(token.join(''));
-  if(state !== STATE_TEXT)
+  }
+
+  if(state !== STATE_TEXT) {
     throw new Error('Ended in invalid state ' + state + ' with token ' +
       token.join(''));
+  }
+
   return tokens;
 }

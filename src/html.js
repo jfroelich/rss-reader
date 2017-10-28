@@ -17,8 +17,9 @@ function html_replace_tags(input_string, replacement_string) {
 
   // Fast case for empty strings
   // Because of the above assert this basically only checks 0 length
-  if(!input_string)
+  if(!input_string) {
     return input_string;
+  }
 
   const [status, doc] = html_parse_from_string(input_string);
   if(status !== STATUS_OK) {
@@ -31,14 +32,17 @@ function html_replace_tags(input_string, replacement_string) {
   // functionality of the textContent property getter. This is faster than
   // a non-native solution, although it is opaque and therefore may have
   // different behavior.
-  if(!replacement_string)
+  if(!replacement_string) {
     return doc.body.textContent;
+  }
 
   // Shove the text nodes into an array and then join by replacement
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   const node_values = [];
-  for(let node = it.nextNode(); node; node = it.nextNode())
+  for(let node = it.nextNode(); node; node = it.nextNode()) {
     node_values.push(node.nodeValue);
+  }
+
   return node_values.join(replacement_string);
 }
 
@@ -71,8 +75,9 @@ function html_truncate(html_string, position, extension_string) {
   console.assert(Number.isInteger(position));
   console.assert(position >= 0);
 
-  if(!html_string)
+  if(!html_string) {
     return '';
+  }
 
   const ellipsis = '\u2026';
   const extension = typeof extension_string === 'string' ?
@@ -102,8 +107,9 @@ function html_truncate(html_string, position, extension_string) {
       is_past_position = true;
       const remaining_length = position - total_length;
       node.nodeValue = value.substr(0, remaining_length) + extension;
-    } else
+    } else {
       total_length += value_length;
+    }
   }
 
   return /<html/i.test(html_string) ?

@@ -74,15 +74,19 @@ function options_page_feed_list_append_feed(feed) {
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
   item_element.setAttribute('feed', feed.id);
-  if(feed.description)
+  if(feed.description) {
     item_element.setAttribute('title', feed.description);
+  }
+
   item_element.onclick = options_page_feed_list_item_onclick;
 
   if(feed.faviconURLString) {
     const favicon_element = document.createElement('img');
     favicon_element.src = feed.faviconURLString;
-    if(feed.title)
+    if(feed.title) {
       favicon_element.title = feed.title;
+    }
+
     favicon_element.setAttribute('width', '16');
     favicon_element.setAttribute('height', '16');
     item_element.appendChild(favicon_element);
@@ -148,15 +152,18 @@ async function options_page_start_subscription(url) {
     // TODO: show a visual error message.
     return;
   } finally {
-    if(subscription.reader_conn)
+    if(subscription.reader_conn) {
       subscription.reader_conn.close();
-    if(subscription.icon_conn)
+    }
+
+    if(subscription.icon_conn) {
       subscription.icon_conn.close();
+    }
   }
 
+  // TODO: show an error message.
   if(status !== STATUS_OK) {
     options_page_subscription_monitor_hide();
-    // TODO: show an error message.
     return;
   }
 
@@ -186,25 +193,28 @@ async function options_page_feed_list_item_onclick(event) {
     // TODO: visual feedback?
     return;
   } finally {
-    if(conn)
+    if(conn) {
       conn.close();
+    }
   }
 
   const title_element = document.getElementById('details-title');
   title_element.textContent = feed.title || feed.link || 'Untitled';
 
   const favicon_element = document.getElementById('details-favicon');
-  if(feed.faviconURLString)
+  if(feed.faviconURLString) {
     favicon_element.setAttribute('src', feed.faviconURLString);
-  else
+  } else {
     favicon_element.removeAttribute('src');
+  }
 
   const description_element = document.getElementById(
     'details-feed-description');
-  if(feed.description)
+  if(feed.description) {
     description_element.textContent = feed.description;
-  else
+  } else {
     description_element.textContent = '';
+  }
 
   const feed_url_element = document.getElementById('details-feed-url');
   feed_url_element.textContent = feed_get_top_url(feed);
@@ -316,8 +326,9 @@ async function options_page_subscribe_form_on_submit(event) {
   // TODO: use a Set?
   const distinct_urls = [];
   entries = entries.filter((entry_object) => {
-    if(distinct_urls.includes(entry_object.url.href))
+    if(distinct_urls.includes(entry_object.url.href)) {
       return false;
+    }
     distinct_urls.push(entry_object.url.href);
     return true;
   });
@@ -351,8 +362,8 @@ async function options_page_subscribe_form_on_submit(event) {
     if(snippet) {
       snippet = string_filter_control_chars(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
-      snippet = html_truncate(
-        snippet, entry_snippet_max_length, replacement_string);
+      snippet = html_truncate(snippet, entry_snippet_max_length,
+        replacement_string);
       entry_object.contentSnippet = snippet;
     }
   });
@@ -370,12 +381,13 @@ async function options_page_subscribe_form_on_submit(event) {
 
   icon_conn = await favicon_db_open();
   for(let result of entries) {
-    if(!result.link)
+    if(!result.link) {
       continue;
+    }
 
     link_url = new URL(result.link);
     // TODO: properly call with all parameteres
-    icon_url = await lookup_favicon(icon_conn, link_url);
+    icon_url = await favicon_lookup(icon_conn, link_url);
     result.faviconURLString = icon_url;
   }
   icon_conn.close();
@@ -402,8 +414,10 @@ function options_page_create_search_result_element(feed) {
   if(feed.faviconURLString) {
     const favicon_element = document.createElement('img');
     favicon_element.setAttribute('src', feed.faviconURLString);
-    if(feed.link)
+    if(feed.link) {
       favicon_element.setAttribute('title', feed.link);
+    }
+
     favicon_element.setAttribute('width', '16');
     favicon_element.setAttribute('height', '16');
     item_element.appendChild(favicon_element);
@@ -411,8 +425,10 @@ function options_page_create_search_result_element(feed) {
 
   // TODO: don't allow for empty href value
   const title_element = document.createElement('a');
-  if(feed.link)
+  if(feed.link) {
     title_element.setAttribute('href', feed.link);
+  }
+
   title_element.setAttribute('target', '_blank');
   title_element.title = feed.title;
   title_element.innerHTML = feed.title;
@@ -438,8 +454,9 @@ function options_page_subscribe_button_on_click(event) {
 
   // Ignore future clicks while subscription in progress
   const subscription_monitor = document.getElementById('submon');
-  if(subscription_monitor && subscription_monitor.style.display !== 'none')
+  if(subscription_monitor && subscription_monitor.style.display !== 'none') {
     return;
+  }
 
   options_page_start_subscription(new URL(url));
 }
@@ -447,8 +464,7 @@ function options_page_subscribe_button_on_click(event) {
 async function options_page_feed_list_init() {
   const no_feeds_element = document.getElementById('nosubs');
   const feed_list_element = document.getElementById('feedlist');
-  let conn;
-  let feeds;
+  let conn, feeds;
   try {
     conn = await reader_db_open();
     feeds = await reader_db_get_feeds(conn);
@@ -456,8 +472,9 @@ async function options_page_feed_list_init() {
     // TODO: react to error
     console.warn(error);
   } finally {
-    if(conn)
+    if(conn) {
       conn.close();
+    }
   }
 
   if(!feeds) {
@@ -525,6 +542,7 @@ async function options_page_unsubscribe_button_on_click(event) {
   subscription.feed.id = parseInt(event.target.value, radix);
   console.assert(feed_is_valid_feed_id(subscription.feed.id));
 
+  // TODO: there is no ambiguity here, rename reader_conn to conn
   let reader_conn;
   try {
     subscription.reader_conn = await reader_db_open();
@@ -537,8 +555,9 @@ async function options_page_unsubscribe_button_on_click(event) {
     console.log(error);
     return;
   } finally {
-    if(reader_conn)
+    if(reader_conn) {
       reader_conn.close();
+    }
   }
 
   options_page_feed_list_remove_feed(subscription.feed.id);
