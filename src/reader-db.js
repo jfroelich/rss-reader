@@ -145,26 +145,6 @@ function reader_db_find_feed_by_id(conn, feed_id) {
   });
 }
 
-
-
-
-
-async function reader_db_find_archivable_entries(conn, max_age_ms) {
-  console.assert(indexeddb_is_open(conn));
-  console.assert(number_is_positive_integer(max_age_ms));
-
-  const entries = await reader_db_get_unarchived_unread_entries2(conn);
-  const archivable_entries = [];
-  const current_date = new Date();
-  for(const entry of entries) {
-    const entry_age_ms = current_date - entry.dateCreated;
-    if(entry_age_ms > max_age_ms) {
-      archivable_entries.push(entry);
-    }
-  }
-  return archivable_entries;
-}
-
 function reader_db_get_entries(conn) {
   console.assert(indexeddb_is_open(conn));
 
@@ -212,7 +192,6 @@ function reader_db_find_entries(conn, predicate, limit) {
   return new Promise(function executor(resolve, reject) {
     const entries = [];
     const tx = conn.transaction('entry');
-
     tx.onerror = function(event) {
       reject(tx.error);
     };
@@ -251,6 +230,51 @@ function reader_db_find_entries(conn, predicate, limit) {
   });
 }
 
+function reader_db_find_archivable_entries(conn, predicate, limit) {
+  console.assert(indexeddb_is_open(conn));
+  console.assert(typeof predicate === 'function');
+
+  // Only using weak asserts. Caller should use a correct limit. Right now
+  // an incorrect limit causes undefined behavior.
+  console.assert(number_is_positive_integer(limit));
+  console.assert(limit > 0);
+
+  // This does two layers of filtering. It would preferably but one but
+  // a three property index involving a date gets complicated. Given the
+  // perf is not top priority this is acceptable for now. The first filter
+  // layer is at the indexedDB level, and the second is the in memory predicate.
+  // The first reduces the number of entries loaded by a large amount.
+
+  return new Promise(function executor(resolve, reject) {
+    const entries = [];
+    const tx = conn.transaction('entry');
+    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = function(event) {
+      resolve(entries);
+    };
+
+    const store = tx.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
+    const request = index.openCursor(key_path);
+    request.onsuccess = function(event) {
+      const cursor = event.target.result;
+      if(!cursor) {
+        return;
+      }
+
+      const entry = cursor.value;
+      if(predicate(entry)) {
+        entries.push(entry);
+        if(entries.length === limit) {
+          return;
+        }
+      }
+
+      cursor.continue();
+    };
+  });
+}
 
 function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
   console.assert(indexeddb_is_open(conn));
@@ -286,20 +310,6 @@ function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
         }
       }
     };
-  });
-}
-
-function reader_db_get_unarchived_unread_entries2(conn) {
-  console.assert(indexeddb_is_open(conn));
-
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
-    const request = index.getAll(key_path);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
   });
 }
 

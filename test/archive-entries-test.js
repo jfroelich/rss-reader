@@ -6,15 +6,16 @@
 async function test_archive_entries() {
   console.log('test_archive_entries start');
 
-  const test_db_name = 'test-archive-entries';
-  const test_db_version = 20;
+  const name = 'test-archive-entries';
+  const version = 20;
   let was_conn_close_requested = false;
   let conn, conn_timeout_ms = 1000, entry_max_age_ms;
-
+  const limit = 5;
   try {
-    conn = await indexeddb_open(test_db_name, test_db_version,
+    conn = await indexeddb_open(name, version,
       reader_db_onupgradeneeded, conn_timeout_ms);
-    const status = await reader_storage_archive_entries(entry_max_age_ms);
+    const status = await reader_storage_archive_entries(conn, entry_max_age_ms,
+      limit);
     indexeddb_close(conn);
     was_conn_close_requested = true;
     await indexeddb_delete_database(conn.name);

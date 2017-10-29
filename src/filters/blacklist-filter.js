@@ -13,7 +13,7 @@ const BLACKLIST_FILTER_SELECTOR = [
 ].join(',');
 
 function blacklist_filter(doc) {
-  console.assert(doc);
+  console.assert(doc instanceof Document);
   const doc_element = doc.documentElement;
   const elements = doc.querySelectorAll(BLACKLIST_FILTER_SELECTOR);
 

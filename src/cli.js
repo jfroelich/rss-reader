@@ -22,12 +22,13 @@ async function cli_refresh_feed_icons() {
   return status;
 }
 
-async function cli_archive_entries() {
+async function cli_archive_entries(limit) {
   console.log('cli_archive_entries start');
   let max_age_ms, conn, status;
+  limit = limit || 10;
   try {
     conn = await reader_db_open();
-    status = await reader_storage_archive_entries(conn, max_age_ms);
+    status = await reader_storage_archive_entries(conn, max_age_ms, limit);
   } finally {
     indexeddb_close(conn);
   }

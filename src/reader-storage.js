@@ -17,21 +17,11 @@
 // import feed.js
 // import reader-db.js
 
-
 // Scans the database for archivable entries and archives them
 // @param max_age_ms {Number} how long before an entry is considered
 // archivable (using date entry created), in milliseconds
 // @returns {Number} status
-// TODO: consider returning to one transaction per entry update. create a
-// helper function named archive_entries_archive_entry that does compact,
-// store, and notify. run the helper function concurrently on all entries
-// loaded. i lose the performance of having only a single transaction, but
-// i gain other benefits. i think each compact operation is isolated.
-// the impact of one failure does not impact the others. compactions can
-// occur in parallel. i do not need to keep everything in memory either, if
-// i want to use a cursor walk approach. the compact occurs within the promise
-// so that also means compacts are almost concurrent.
-async function reader_storage_archive_entries(conn, max_age_ms) {
+async function reader_storage_archive_entries(conn, max_age_ms, limit) {
   console.log('reader_storage_archive_entries start', max_age_ms);
   console.assert(indexeddb_is_open(conn));
 
@@ -40,40 +30,52 @@ async function reader_storage_archive_entries(conn, max_age_ms) {
     max_age_ms = TWO_DAYS_MS;
   }
 
+  console.assert(number_is_positive_integer(max_age_ms));
+
+  const current_date = new Date();
+  function is_archivable(entry) {
+    const entry_age_ms = current_date - entry.dateCreated;
+    return entry_age_ms > max_age_ms;
+  }
+
   let entries;
   try {
-    entries = await reader_db_find_archivable_entries(conn, max_age_ms);
+    entries = await reader_db_find_archivable_entries(conn, is_archivable,
+      limit);
   } catch(error) {
     console.warn(error);
     return ERR_DB;
   }
 
-  let compacted_entries = [];
+  if(!entries.length) {
+    return STATUS_OK;
+  }
+
+  const compacted_entries = [];
   for(const entry of entries) {
     compacted_entries.push(entry_compact(entry));
   }
+  entries = compacted_entries;
 
   try {
-    await reader_db_put_entries(conn, compacted_entries);
+    await reader_db_put_entries(conn, entries);
   } catch(error) {
     console.warn(error);
     return ERR_DB;
   }
 
-  console.log('compacted %s entries', compacted_entries.length);
+  console.log('compacted %s entries', entries.length);
 
-  const db_channel = new BroadcastChannel('db');
-  for(const entry of compacted_entries) {
-    const message = {};
-    message.type = 'archived-entry';
+  const channel = new BroadcastChannel('db');
+  const message = {'type': 'archived-entry', 'id': undefined};
+  for(const entry of entries) {
     message.id = entry.id;
-    db_channel.postMessage(message);
+    channel.postMessage(message);
   }
-  db_channel.close();
+  channel.close();
 
   return STATUS_OK;
 }
-
 
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection
@@ -121,7 +123,6 @@ async function reader_storage_mark_read(conn, id) {
   return STATUS_OK;
 }
 
-
 async function reader_storage_put_feed(feed, conn) {
   console.assert(feed_is_feed(feed));
   console.assert(indexeddb_is_open(conn));
@@ -136,7 +137,6 @@ async function reader_storage_put_feed(feed, conn) {
 
   return storable;
 }
-
 
 // Stores an entry in the app's storage. This is basically a wrapper function
 // of reader_db_put_entry that attaches sanitization, initialization, and
@@ -272,7 +272,6 @@ async function reader_storage_remove_lost_entries(conn, limit) {
 
   return STATUS_OK;
 }
-
 
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.

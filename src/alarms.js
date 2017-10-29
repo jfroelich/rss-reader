@@ -9,9 +9,10 @@
 
 async function alarms_on_archive_alarm() {
   let conn, max_age_ms, status;
+  const limit = 500;
   try {
     conn = await reader_db_open();
-    status = await reader_storage_archive_entries(conn, max_age_ms);
+    status = await reader_storage_archive_entries(conn, max_age_ms, limit);
   } catch(error) {
     console.error(error);
   } finally {
