@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/indexeddb.js
 // import opml/opml-document.js
 // import opml/opml-outline.js
 // import favicon.js
@@ -28,13 +29,8 @@ async function reader_import_files(files) {
     console.warn(error);
     return ERR_DB;
   } finally {
-    if(reader_conn) {
-      reader_conn.close();
-    }
-
-    if(icon_conn) {
-      icon_conn.close();
-    }
+    indexeddb_close(reader_conn);
+    indexeddb_close(icon_conn);
   }
 
   return STATUS_OK;
@@ -109,8 +105,14 @@ async function reader_import_file(file, reader_conn, icon_conn) {
     feeds.push(opml_outline_to_feed(outline));
   }
 
+  const sc = new subscription_context();
+  sc.reader_conn = reader_conn;
+  sc.icon_conn = icon_conn;
+  sc.timeout_ms = timeout_ms;
+  sc.notify = false;
+
   // Allow exceptions to bubble
-  const sub_results = await subscription_add_all(feeds, reader_conn, icon_conn);
+  const sub_results = await subscription_add_all.call(sc, feeds);
 
   // Tally successful subscriptions
   let sub_count = 0;

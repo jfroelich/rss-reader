@@ -73,7 +73,10 @@ async function poll_feeds(desc) {
 
   const poll_feed_statuses = await Promise.all(promises);
 
-  await extension_update_badge_text();
+  let status = await reader_update_badge(desc.reader_conn);
+  if(status !== STATUS_OK) {
+    console.warn('poll_feeds reader_update_badge failed with status', status);
+  }
 
   const title = 'Added articles';
   const message = 'Added articles';

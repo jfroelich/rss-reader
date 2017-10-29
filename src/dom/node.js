@@ -1,11 +1,5 @@
 'use strict';
 
-// Returns true if the first parameter is of type Node
-// TODO: deprecate, the body is sufficiently idiomatic
-function node_is_node(node) {
-  return node instanceof Node;
-}
-
 // Find the lowest common ancestor of two nodes. Assumes
 // node1 does not contain node2, and node2 does not contain node1.
 //
@@ -17,8 +11,8 @@ function node_is_node(node) {
 // TODO: change to varargs, find the LCAs of whatever args given, instead of
 // only 2. change to (...nodes)
 function node_find_lca(node1, node2) {
-  console.assert(node_is_node(node1));
-  console.assert(node_is_node(node2));
+  console.assert(node1 instanceof Node);
+  console.assert(node2 instanceof Node);
   console.assert(node1 !== node2);
   console.assert(node1.ownerDocument === node2.ownerDocument);
 
@@ -46,7 +40,7 @@ function node_find_lca(node1, node2) {
 // Returns an array of ancestors, from deepest to shallowest.
 // The node itself is not included.
 function node_get_ancestors(node) {
-  console.assert(node_is_node(node));
+  console.assert(node instanceof Node);
   const ancestors = [];
   for(let an = node.parentNode; an; an = an.parentNode) {
     ancestors.push(an);

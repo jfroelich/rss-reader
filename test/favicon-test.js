@@ -1,5 +1,9 @@
 'use strict';
 
+// import base/indexeddb.js
+// import favicon.js
+
+
 /*
 TODO:
 
@@ -32,9 +36,7 @@ async function test_favicon_lookup(url, is_cacheless) {
 
     return await favicon_lookup(query);
   } finally {
-    if(query.conn) {
-      query.conn.close();
-    }
+    indexeddb_close(query.conn);
   }
 }
 
@@ -44,14 +46,13 @@ async function test_clear_icon_db() {
     conn = await favicon_db_open();
     await favicon_db_clear(conn);
   } finally {
-    if(conn) {
-      conn.close();
-    }
+    indexeddb_close(conn);
   }
 }
 
 async function test_compact_icon_db() {
+  // TODO: i think this is outdated, I think it needs conn now right?
   let max_age_ms;
-  const num_entries_deleted = await favicon_compact_db(max_age_ms);
-  console.log('Deleted %d entries', num_entries_deleted);
+  const status = await favicon_compact_db(max_age_ms);
+  console.log('Deleted entries, status', status);
 }

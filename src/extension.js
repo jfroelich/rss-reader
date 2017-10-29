@@ -8,28 +8,10 @@ function extension_idle_query(idle_period_secs) {
   });
 }
 
-// TODO: create badge.js, wrapper function that just passes number to this
-// function. database calls shouldn't really be happening in this lib.
-// TODO: reintroduce conn param, do not connect locally
-async function extension_update_badge_text() {
-  let count = 0, conn;
-
-  try {
-    conn = await reader_db_open();
-    count = await reader_db_count_unread_entries(conn);
-  } catch(error) {
-    console.warn(error);
-    return ERR_DB;
-  } finally {
-    if(conn) {
-      conn.close();
-    }
-  }
-
+function extension_set_badge_text(count) {
+  count = count || 0;
   const text = count > 999 ? '1k+' : '' + count;
-  console.log('extension_update_badge_text setBadgeText', text);
   chrome.browserAction.setBadgeText({'text': text});
-  return STATUS_OK;
 }
 
 async function extension_show_slideshow_tab() {

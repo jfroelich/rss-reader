@@ -1,5 +1,7 @@
 'use strict';
 
+// import dom/element.js
+
 // TODO: instead of removing and re-adding, reset and reuse
 function options_page_subscription_monitor_show() {
   let monitor_element = document.getElementById('submon');

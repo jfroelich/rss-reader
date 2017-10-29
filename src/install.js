@@ -3,20 +3,25 @@
 // import base/status.js
 // import extension.js
 // import favicon.js
+// import reader-badge.js
+// import reader-db.js
 
 // This file should only be loaded in the background page of the extension
 
 chrome.runtime.onInstalled.addListener(async function(event) {
-  console.log('onInstalled event');
-
-  // TODO: rather than setup db as a side effect, do it explicitly. Create a
-  // function like reader_db_install in reader-db.js, and then call it here.
+  console.log('onInstalled', event);
 
   // Init the badge text. As a side effect this will create the
   // reader-db database
-  let status = await extension_update_badge_text();
-  if(status !== STATUS_OK) {
-    console.warn('failed to set badge text during installation');
+
+  let conn, status;
+  try {
+    conn = await reader_db_open();
+    status = await reader_update_badge(conn);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    indexeddb_close(conn);
   }
 
   // Setup the favicon database

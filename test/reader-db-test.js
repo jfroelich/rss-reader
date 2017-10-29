@@ -1,42 +1,42 @@
 // See license.md
 
+// import base/indexeddb.js
+// import base/status.js
+// import reader-db.js
+
 // TODO: test timeouts
+// TODO: this is out of date. reader_db_open does not accept params
+// To test, use indexeddb_open
 
-async function test_db() {
+async function test() {
+  console.log('test_db start');
 
-
-  // TODO: this is out of date. reader_db_open does not accept params
-  // To test, use indexeddb_open
-
-  console.log('Starting db test');
-  const name = 'test-feed-db';
-  const version = 1;
-  let timeout_ms;
-  let is_conn_closed = false;
+  const name = 'test-feed-db', version = 1;
+  let close_requested = false;
   let conn;
   try {
-    console.log('Connecting to database', name);
-    conn = await reader_db_open();
-    console.log('Closing connection to', name);
-    conn.close();
-    is_conn_closed = true;
-    console.log('Deleting database', name);
-    await test_delete_db(name);
+    conn = await indexeddb_open(name, version, reader_db_onupgradeneeded);
+    console.assert(indexeddb_is_open(conn));
+    indexeddb_close(conn);
+
+    if(indexeddb_is_open(conn)) {
+      console.debug('NOT DESIRED: indexeddb_is_open says open after conn closed');
+    } else {
+      console.debug('DESIRED: indexeddb_is_open says conn closed');
+    }
+
+    close_requested = true;
+    await indexeddb_delete_database(name);
   } catch(error) {
     console.warn(error);
+    return ERR_DB;
   } finally {
-    if(conn && !is_conn_closed)
-      conn.close();
+    if(!close_requested) {
+      indexeddb_close(conn);
+      console.assert(!indexeddb_is_open(conn));
+    }
   }
 
-  console.log('Db Test completed');
-}
-
-function test_delete_db(name) {
-  function resolver(resolve, reject) {
-    const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  }
-  return new Promise(resolver);
+  console.log('test_db end');
+  return STATUS_OK;
 }

@@ -256,6 +256,7 @@ function fetch_image(url, timeout_ms) {
   }
 
   // There is a timeout, so we are going to race
+  // TODO: consider delegation to promise_timeout in promise.js
   // TODO: think about binds to reduce callback hell
   const timeout_promise = new Promise(function time_exec(resolve, reject) {
     timer_id = setTimeout(function on_timeout() {
@@ -311,6 +312,12 @@ function fetch_with_timeout(url, options, timeout_ms, error_message) {
   if(t_error_message === 'undefined') {
     error_message = 'Fetch timed out for url ' + url;
   }
+
+  // TODO: consider delegation to promise_timeout
+  // TODO: resolve instead of reject. But think of how to represent that
+  // in case of error? Ok have the promise reject with undefined. The fetch
+  // promise never resolves with undefined. So make this function async and
+  // await the race and then check whether the response is defined.
 
   // I am using this internal function instead of a external helper because of
   // plans to support cancellation

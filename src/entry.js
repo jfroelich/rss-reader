@@ -23,6 +23,12 @@ function entry_is_valid_id(id) {
   return number_is_positive_integer(id);
 }
 
+
+function entry_has_url(entry) {
+  console.assert(entry_is_entry(entry));
+  return entry.urls && entry.urls.length;
+}
+
 // Returns the most last url, as a string, in the entry's url list. Throws an
 // error if the entry does not have urls.
 function entry_get_top_url(entry) {
@@ -53,10 +59,6 @@ function entry_append_url(entry, url_string) {
   return true;
 }
 
-function entry_has_url(entry) {
-  console.assert(entry_is_entry(entry));
-  return entry.urls && entry.urls.length;
-}
 
 // Returns a new entry object where fields have been sanitized. Impure
 function entry_sanitize(input_entry, author_max_len, title_max_len,
@@ -121,6 +123,6 @@ function entry_compact(entry) {
   ce.urls = entry.urls;
   ce.archiveState = ENTRY_STATE_ARCHIVED;
   ce.dateArchived = new Date();
-  console.log('before', sizeof(entry), 'after', sizeof(ce));
+  console.debug('before', sizeof(entry), 'after', sizeof(ce));
   return ce;
 }

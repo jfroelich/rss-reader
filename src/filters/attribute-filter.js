@@ -11,7 +11,6 @@ function attribute_filter(doc, whitelist) {
   // TODO: assert whitelist
   // TODO: exit early if whitelist empty
 
-
   const elements = doc.getElementsByTagName('*');
   for(const element of elements) {
     const attribute_names = element.getAttributeNames();

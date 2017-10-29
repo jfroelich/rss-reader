@@ -16,8 +16,7 @@ async function options_page_export_opml() {
     console.warn(error);
     return ERR_DB;
   } finally {
-    if(conn)
-      conn.close();
+    indexeddb_close(conn);
   }
 
   console.assert(feeds);

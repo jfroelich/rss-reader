@@ -1,19 +1,17 @@
 'use strict';
 
-function date_format(date_object, delimiter) {
-
-  // TODO: assert date_object is date
-  console.assert(date_object);
-
+function date_format(date, delimiter) {
   // Tolerate some bad input
-  if(!date_object) {
+  if(!date) {
     return '';
   }
 
+  console.assert(date instanceof Date);
+
   const parts = [];
   // Add 1 because getMonth is a zero based index
-  parts.push(date_object.getMonth() + 1);
-  parts.push(date_object.getDate());
-  parts.push(date_object.getFullYear());
+  parts.push(date.getMonth() + 1);
+  parts.push(date.getDate());
+  parts.push(date.getFullYear());
   return parts.join(delimiter || '/');
 }

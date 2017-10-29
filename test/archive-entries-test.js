@@ -1,5 +1,8 @@
 'use strict';
 
+// import base/indexeddb.js
+// import reader-storage.js
+
 async function test_archive_entries() {
   console.log('test_archive_entries start');
 
@@ -12,20 +15,12 @@ async function test_archive_entries() {
     conn = await indexeddb_open(test_db_name, test_db_version,
       reader_db_onupgradeneeded, conn_timeout_ms);
     const status = await reader_storage_archive_entries(entry_max_age_ms);
-    conn.close();
+    indexeddb_close(conn);
     was_conn_close_requested = true;
-    await test_delete_database(conn.name);
+    await indexeddb_delete_database(conn.name);
   } finally {
-    if(conn && !was_conn_close_requested) {
-      conn.close();
+    if(!was_conn_close_requested) {
+      indexeddb_close(conn);
     }
   }
-}
-
-function test_delete_database(name) {
-  return new Promise(function(resolve, reject) {
-    const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
 }

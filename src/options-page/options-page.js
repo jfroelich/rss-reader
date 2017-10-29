@@ -1,5 +1,9 @@
 'use strict';
 
+// TODO: if background refresh feed favicons completes, this needs to update
+// the icons displayed
+
+// import base/indexeddb.js
 // import base/status.js
 // import extension.js
 // import reader-db.js
@@ -123,9 +127,11 @@ function options_page_feed_list_append_feed(feed) {
 
 // @param url {URL}
 async function options_page_start_subscription(url) {
-  console.log('starting subscription to', url.href);
+  console.log('options_page_start_subscription start', url.href);
 
   options_page_subscription_monitor_show();
+
+  // TODO: unsafe?
   options_page_subscription_monitor_append_message(
     `Subscribing to ${url.href}`);
 
@@ -134,16 +140,13 @@ async function options_page_start_subscription(url) {
 
   let status, subscribed_feed;
 
-  const subscription = new Subscription();
-  subscription.feed = feed;
-  subscription.reader_conn = reader_conn;
-  subscription.icon_conn = icon_conn;
+  const sc = new subscription_context();
 
   try {
-    [subscription.reader_conn, subscription.icon_conn] = await
+    [sc.reader_conn, sc.icon_conn] = await
       Promise.all([reader_db_open(), favicon_db_open()]);
 
-    const sub_result = await subscription_add(subscription);
+    const sub_result = await subscription_add.call(sc, feed);
     status = sub_result.status;
     subscribed_feed = sub_result.feed;
   } catch(error) {
@@ -152,13 +155,8 @@ async function options_page_start_subscription(url) {
     // TODO: show a visual error message.
     return;
   } finally {
-    if(subscription.reader_conn) {
-      subscription.reader_conn.close();
-    }
-
-    if(subscription.icon_conn) {
-      subscription.icon_conn.close();
-    }
+    indexeddb_close(sc.reader_conn);
+    indexeddb_close(sc.icon_conn);
   }
 
   // TODO: show an error message.
@@ -170,6 +168,8 @@ async function options_page_start_subscription(url) {
   console.assert(subscribed_feed);
   options_page_feed_list_append_feed(subscribed_feed);
   const feed_url = feed_get_top_url(subscribed_feed);
+
+  // TODO: unsafe?
   options_page_subscription_monitor_append_message(`Subscribed to ${feed_url}`);
   options_page_subscription_monitor_hide();
   options_page_show_section_id('subs-list-section');
@@ -193,9 +193,7 @@ async function options_page_feed_list_item_onclick(event) {
     // TODO: visual feedback?
     return;
   } finally {
-    if(conn) {
-      conn.close();
-    }
+    indexeddb_close();
   }
 
   const title_element = document.getElementById('details-title');
@@ -240,7 +238,7 @@ async function options_page_feed_list_item_onclick(event) {
 // TODO: Suppress resubmits if last query was a search and the
 // query did not change
 async function options_page_subscribe_form_on_submit(event) {
-
+  console.debug('options_page_subscribe_form_on_submit', event);
   // Prevent normal form submission behavior
   event.preventDefault();
 
@@ -256,13 +254,27 @@ async function options_page_subscribe_form_on_submit(event) {
   const no_results_element = document.getElementById('discover-no-results');
 
   const progress_element = document.getElementById('discover-in-progress');
-  if(progress_element.style.display !== 'none') {
+
+  if(progress_element) {
+    console.debug('progress_element.style.display: "%s"',
+      progress_element.style.display);
+  }
+
+  if(progress_element.style.display === 'block') {
+    console.debug('in progress, canceling submit');
     return false;
   }
 
   const monitor_element = document.getElementById('submon');
-  if(monitor_element && monitor_element.style.display !== 'none') {
-    console.debug('canceling submit, subscription in progress');
+
+  if(monitor_element) {
+    console.debug('monitor_element.style.display: "%s"',
+      monitor_element.style.display);
+  }
+
+
+  if(monitor_element && monitor_element.style.display === 'block') {
+    console.debug('in progress, canceling submit');
     return false;
   }
 
@@ -375,7 +387,7 @@ async function options_page_subscribe_form_on_submit(event) {
   item_element.textContent = `Found ${entries.length} feeds.`;
   results_list_element.appendChild(item_element);
 
-  // TODO: use try/catch
+  // TODO: use try/catch/finally
   // TODO: explicit defaults
   let icon_conn;
 
@@ -390,7 +402,7 @@ async function options_page_subscribe_form_on_submit(event) {
     icon_url = await favicon_lookup(icon_conn, link_url);
     result.faviconURLString = icon_url;
   }
-  icon_conn.close();
+  indexeddb_close(icon_conn);
 
   // TODO: use explicit loops
   const elements = entries.map(options_page_create_search_result_element);
@@ -472,9 +484,7 @@ async function options_page_feed_list_init() {
     // TODO: react to error
     console.warn(error);
   } finally {
-    if(conn) {
-      conn.close();
-    }
+    indexeddb_close(conn);
   }
 
   if(!feeds) {
@@ -534,33 +544,28 @@ function options_page_feed_list_remove_feed(feed_id) {
 }
 
 async function options_page_unsubscribe_button_on_click(event) {
-
-  const subscription = new Subscription();
-  subscription.feed = {};
-
+  const sc = new subscription_context();
+  const feed = {};
   const radix = 10;
-  subscription.feed.id = parseInt(event.target.value, radix);
-  console.assert(feed_is_valid_feed_id(subscription.feed.id));
-
-  // TODO: there is no ambiguity here, rename reader_conn to conn
-  let reader_conn;
+  feed.id = parseInt(event.target.value, radix);
+  console.assert(feed_is_valid_feed_id(feed.id));
+  let status;
   try {
-    subscription.reader_conn = await reader_db_open();
-
-    // TODO: check status of result
-    await subscription_remove(subscription);
+    sc.reader_conn = await reader_db_open();
+    status = await subscription_remove.call(sc, feed);
   } catch(error) {
-
     // TODO: visually react to unsubscribe error
     console.log(error);
     return;
   } finally {
-    if(reader_conn) {
-      reader_conn.close();
-    }
+    indexeddb_close(sc.reader_conn);
   }
 
-  options_page_feed_list_remove_feed(subscription.feed.id);
+  if(status !== STATUS_OK) {
+    console.warn('subscription_remove status not ok', status);
+  }
+
+  options_page_feed_list_remove_feed(feed.id);
   options_page_show_section_id('subs-list-section');
 }
 

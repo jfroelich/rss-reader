@@ -1,25 +1,22 @@
 'use strict';
 
-// Returns true if the conn is open
+// import base/number.js
+// import base/promise.js
+
+// Returns true if the conn is open. This should only be used with connections
+// opened and closed by this module.
 // @param conn {IDBDatabase}
 function indexeddb_is_open(conn) {
-  console.assert(conn instanceof IDBDatabase);
-  // TODO: only return true if connection is actually open. Not quite sure
-  // how to detect this at the moment.
-  return true;
+  // The instanceof check is basically an implied assertion that the
+  // connection is defined, and is of the proper type.
+  // The onabort condition is used to detect if open because it is defined
+  // when opened by indexeddb_open and undefined when closed by
+  // indexeddb_close
+  return conn instanceof IDBDatabase && conn.onabort;
 }
 
-// Wraps indexedDB.open with a timeout to avoid block events
-//
-// TODO: what if there is no need to timeout? Just reject on block, and
-// check if blocked fired on success. I suppose the only benefit is the timeout
-// is basically a temporary toleration of blocked state? I could just reject
-// and it would be faster. error.type will be blocked instead of another type
-// of error so can still differentiate error reason. and can set a blocked
-// outerscope variable that success checks at the point it resolves to
-// determine if it should close. I suppose another minor benefit is just
-// setting an upper bound on the operation time. But I quibble with whether
-// that is even worth it.
+// Wraps a call to indexedDB.open that imposes a time limit and translates
+// blocked events into errors.
 //
 // @param name {String}
 // @param version {Number} optional
@@ -28,36 +25,60 @@ function indexeddb_is_open(conn) {
 // in milliseconds before giving up on connecting
 // @throws {Error} if connection error or timeout occurs
 async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
-  console.log('indexeddb_open opening', name, version, timeout_ms);
+  console.log('connecting to database', name, version);
   console.assert(typeof name === 'string');
-
-  if(typeof timeout_ms === 'undefined') {
+  if(isNaN(timeout_ms)) {
     timeout_ms = 0;
   }
 
-  console.assert(Number.isInteger(timeout_ms));
-  console.assert(timeout_ms >= 0);
+  console.assert(number_is_positive_integer(timeout_ms));
 
   let timedout = false;
   let timer;
 
   const open_promise = new Promise(function o_exec(resolve, reject) {
+    let blocked = false;
     const request = indexedDB.open(name, version);
     request.onsuccess = function(event) {
       const conn = event.target.result;
-      if(timedout) {
-        console.log('closing connection %s that opened after timeout',
-          conn.name);
+      if(blocked) {
+        console.log('closing connection %s that unblocked', conn.name);
         conn.close();
-        // Leave unsettled
+      } else if(timedout) {
+        console.log('closing connection %s opened after timeout', conn.name);
+        conn.close();
       } else {
-        console.log('indexeddb_open opened', name, version);
+        console.log('connected to database', name, version);
+
+        // Use the onabort listener property as a flag to indicate to
+        // indexeddb_is_open that the connection is currently open
+        conn.onabort = function noop() {};
+
+        // NOTE: MDN says this works, but it does not
+        conn.onclose = function() {
+          console.log('closing connection', conn.name);
+        };
+
         resolve(conn);
       }
     };
+
+    request.onblocked = function(event) {
+      blocked = true;
+      const error_message = name + ' blocked';
+      const error = new Error(error_message);
+      reject(error);
+    };
+
     request.onerror = () => reject(request.error);
-    // Leave unsettled
-    // request.onblocked = () => {};
+
+    // NOTE: an upgrade can still happen in the event of a rejection. I am
+    // not trying to prevent that as an implicit side effect, although it is
+    // possible to abort the versionchange transaction from within the
+    // upgrade listener. If I wanted to do that I would wrap the call to the
+    // listener here with a function that first checks if blocked/timedout
+    // and if so aborts the transaction and closes, otherwise forwards to the
+    // listener.
     request.onupgradeneeded = upgrade_listener;
   });
 
@@ -66,11 +87,8 @@ async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
     return await open_promise;
   }
 
-  // TODO: delegate to promise_timeout instead of re-implementing it here? But
-  // how do I easily obtain timer pre resolution?
-  const time_promise = new Promise(function t_exec(resolve, reject) {
-    timer = setTimeout(resolve, timeout_ms);
-  });
+  let time_promise;
+  [timer, time_promise] = promise_timeout(timeout_ms);
 
   // Allow exception to bubble
   const conn = await Promise.race([open_promise, time_promise]);
@@ -84,4 +102,24 @@ async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
   }
 
   return conn;
+}
+
+function indexeddb_close(conn) {
+  if(conn) {
+    console.debug('closing connection to database', conn.name);
+
+    // Ensure that indexeddb_is_open returns false
+    conn.onabort = null;
+
+    conn.close();
+  }
+}
+
+function indexeddb_delete_database(name) {
+  return new Promise(function executor(resolve, reject) {
+    console.debug('deleting database', name);
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 }

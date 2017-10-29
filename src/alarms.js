@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/indexeddb.js
 // import base/status.js
 // import poll/poll.js
 // import favicon.js
@@ -14,13 +15,11 @@ async function alarms_on_archive_alarm() {
   } catch(error) {
     console.error(error);
   } finally {
-    if(conn) {
-      conn.close();
-    }
+    indexeddb_close(conn);
   }
 
   if(status !== STATUS_OK) {
-    console.log('archive entries failed status', status);
+    console.warn('archive entries failed status', status);
   }
 }
 
@@ -32,9 +31,7 @@ async function alarms_on_compact_favicons_alarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    if(conn) {
-      conn.close();
-    }
+    indexeddb_close(conn);
   }
 }
 
@@ -47,12 +44,8 @@ async function alarms_on_poll_feeds_alarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    if(pfc.reader_conn) {
-      pfc.reader_conn.close();
-    }
-    if(pfc.icon_conn) {
-      pfc.icon_conn.close();
-    }
+    indexeddb_close(pfc.reader_conn);
+    indexeddb_close(pfc.icon_conn);
   }
 }
 
@@ -66,9 +59,7 @@ async function alarms_on_remove_lost_entries_alarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    if(conn) {
-      conn.close();
-    }
+    indexeddb_close(conn);
   }
 }
 
@@ -82,9 +73,7 @@ async function alarms_on_remove_orphans_alarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    if(conn) {
-      conn.close();
-    }
+    indexeddb_close(conn);
   }
 }
 
@@ -99,12 +88,8 @@ async function alarms_on_refresh_feed_icons_alarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    if(reader_conn) {
-      reader_conn.close();
-    }
-    if(icon_conn) {
-      icon_conn.close();
-    }
+    indexeddb_close(reader_conn);
+    indexeddb_close(icon_conn);
   }
 
   if(status !== STATUS_OK) {

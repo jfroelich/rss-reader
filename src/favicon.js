@@ -14,7 +14,6 @@
 const FAVICON_DEFAULT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 // Opens a connection to the favicon database
-// @throws {Error} invalid timeout (any other errors occur within promise)
 // @returns {Promise} resolves to open IDBDatabase instance
 function favicon_db_open() {
   const name = 'favicon-cache';
@@ -163,7 +162,7 @@ async function favicon_lookup(query) {
 
         // Check the fetched document for a <link> tag
         const icon_url_string = await favicon_search_document(document,
-          conn, base_url_object, urls);
+          query.conn, base_url_object, urls);
         if(icon_url_string) {
           return icon_url_string;
         }
@@ -339,9 +338,7 @@ async function favicon_db_setup() {
   try {
     conn = await favicon_db_open();
   } finally {
-    if(conn) {
-      conn.close();
-    }
+    indexeddb_close(conn);
   }
 }
 
@@ -375,8 +372,10 @@ function favicon_is_entry_expired(entry, current_date, max_age_ms) {
 }
 
 function favicon_db_clear(conn) {
-  console.assert(conn instanceof IDBDatabase);
+  console.assert(indexeddb_is_open(conn));
+
   return new Promise(function(resolve, reject) {
+    console.debug('favicon_db_clear start');
     const tx = conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
     const request = store.clear();
@@ -386,7 +385,8 @@ function favicon_db_clear(conn) {
 }
 
 function favicon_db_find_entry(conn, url_object) {
-  console.assert(conn instanceof IDBDatabase);
+  console.assert(indexeddb_is_open(conn));
+
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
@@ -397,7 +397,8 @@ function favicon_db_find_entry(conn, url_object) {
 }
 
 function favicon_db_find_expired_entries(conn, max_age_ms) {
-  console.assert(conn instanceof IDBDatabase);
+  console.assert(indexeddb_is_open(conn));
+
   if(typeof max_age_ms === 'undefined') {
     max_age_ms = FAVICON_DEFAULT_MAX_AGE_MS;
   }
@@ -417,7 +418,8 @@ function favicon_db_find_expired_entries(conn, max_age_ms) {
 }
 
 function favicon_db_remove_entries_with_urls(conn, page_urls) {
-  console.assert(conn instanceof IDBDatabase);
+  console.assert(indexeddb_is_open(conn));
+
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
@@ -429,7 +431,8 @@ function favicon_db_remove_entries_with_urls(conn, page_urls) {
 }
 
 function favicon_db_put_entries(conn, icon_url, page_urls) {
-  console.assert(conn instanceof IDBDatabase);
+  console.assert(indexeddb_is_open(conn));
+
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
@@ -449,16 +452,29 @@ function favicon_db_put_entries(conn, icon_url, page_urls) {
 // Finds expired entries in the database and removes them
 // TODO: return status intsead
 async function favicon_compact_db(conn, max_age_ms) {
-  console.assert(conn instanceof IDBDatabase);
+  console.assert(indexeddb_is_open(conn));
+  console.debug('favicon_compact_db start', max_age_ms);
 
-  const expired_entries = await favicon_db_find_expired_entries(conn,
-    max_age_ms);
+  let entries;
+  try {
+    entries = await favicon_db_find_expired_entries(conn, max_age_ms);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
 
   const urls = [];
-  for(const entry of expired_entries) {
+  for(const entry of entries) {
     urls.push(entry.pageURLString);
   }
 
-  const resolutions = await favicon_db_remove_entries_with_urls(conn, urls);
-  return resolutions.length;
+  let resolutions;
+  try {
+    resolutions = await favicon_db_remove_entries_with_urls(conn, urls);
+  } catch(error) {
+    console.warn(error);
+    return ERR_DB;
+  }
+
+  return STATUS_OK;
 }

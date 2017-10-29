@@ -93,8 +93,8 @@ async function slideshow_append_slides(conn) {
   } catch(error) {
     console.warn(error);
   } finally {
-    if(is_local_conn && conn) {
-      conn.close();
+    if(is_local_conn) {
+      indexeddb_close(conn);
     }
   }
 
@@ -238,9 +238,7 @@ async function slideshow_slide_on_click(event) {
   } catch(error) {
     console.warn(error);
   } finally {
-    if(conn) {
-      conn.close();
-    }
+    indexeddb_close(conn);
   }
 
   return false;
@@ -288,9 +286,7 @@ async function slideshow_show_next_slide() {
   } catch(error) {
     console.warn(error);
   } finally {
-    if(conn) {
-      conn.close();
-    }
+    indexeddb_close(conn);
   }
 
   if(num_slides_appended > 0) {

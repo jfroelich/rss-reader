@@ -7,58 +7,37 @@
 // import extension.js
 // import favicon.js
 // import reader-db.js
+// import reader-badge.js
 
-// TODO: rewrite Subscription as subscription_context. Remove feed property
-// from context. rewrite subscription_add to accept feed parameter, and to
-// expect to be bound to subscription_context, and internally accept context
-// using this.property.
-
-
-function Subscription() {
-  this.feed = undefined;
-  this.reader_conn = undefined;
-  this.icon_conn = undefined;
-  this.timeout_ms = 0;
-  this.notify = false;
-}
-
-function subscription_is_subscription(subscription) {
-  // TODO: is instanceof more accurate?
-  return typeof subscription === 'object';
+function subscription_context() {
+  this.reader_conn;
+  this.icon_conn;
+  this.timeout_ms = 2000;
+  this.notify = true;
 }
 
 // Returns a result object with properties status and feed. feed is only defined
 // if status is ok. feed is a copy of the inserted feed, which includes its new
 // id.
 // TODO: return array instead of object for simpler destructuring
-async function subscription_add(subscription) {
-
-  // TODO: rather than define these, just access the prop directly below.
-  // This is currently a temporary solution while refactoring.
-  const feed = subscription.feed;
-  const reader_conn = subscription.reader_conn;
-  const icon_conn = subscription.icon_conn;
-  const timeout_ms = subscription.timeout_ms;
-  const notify = subscription.notify;
-
+async function subscription_add(feed) {
+  console.assert(this instanceof subscription_context);
+  console.assert(indexeddb_is_open(this.reader_conn));
+  console.assert(indexeddb_is_open(this.icon_conn));
   console.assert(feed_is_feed(feed));
-  console.assert(indexeddb_is_open(reader_conn));
-  console.assert(indexeddb_is_open(icon_conn));
 
-  console.log('called subscription_add with feed', feed);
 
-  if(typeof timeout_ms === 'undefined') {
-    timeout_ms = 2000;
-  }
 
-  if(typeof notify === 'undefined') {
-    notify = true;
-  }
+  // TODO: rather than assert below, check whether feed has a url. If it does
+  // not then this is an error and this should return an error status code
+  // and exit early.
 
   const url_string = feed_get_top_url(feed);
   console.assert(url_string);
 
-  let status = await subscription_url_is_unique(url_string, reader_conn);
+  console.log('subscription_add', url_string);
+
+  let status = await subscription_url_is_unique(url_string, this.reader_conn);
   if(status !== STATUS_OK) {
     return {'status' : status};
   }
@@ -66,12 +45,12 @@ async function subscription_add(subscription) {
   // skip the favicon lookup while offline
   // TODO: maybe should not skip if cache-only lookup could still work
   if('onLine' in navigator && !navigator.onLine) {
-    return await subscription_put_feed(feed, reader_conn, notify);
+    return await subscription_put_feed(feed, this.reader_conn, this.notify);
   }
 
   let response;
   try {
-    response = await fetch_feed(url_string, timeout_ms);
+    response = await fetch_feed(url_string, this.timeout_ms);
   } catch(error) {
     console.warn(error);
     return {'status': ERR_FETCH};
@@ -82,7 +61,7 @@ async function subscription_add(subscription) {
 
   if(response.redirected) {
     status = await subscription_url_is_unique(response.response_url,
-      reader_conn);
+      this.reader_conn);
     if(status !== STATUS_OK) {
       return {'status' : status};
     }
@@ -108,12 +87,14 @@ async function subscription_add(subscription) {
   }
 
   const merged_feed = feed_merge(feed, coerce_result.feed);
-  try {
-    await feed_update_favicon(merged_feed, icon_conn);
-  } catch(error) {
-  }
 
-  return await subscription_put_feed(merged_feed, reader_conn, notify);
+  console.assert(merged_feed);
+
+  // ignore result status, icon update failure is non-fatal
+  await feed_update_favicon(merged_feed, this.icon_conn);
+
+  return await subscription_put_feed(merged_feed, this.reader_conn,
+    this.notify);
 }
 
 // Return the status. Return ok if not already exists. Returns not ok if
@@ -165,74 +146,43 @@ function subscription_feed_prep(feed) {
 }
 
 // Concurrently subscribe to each feed in the feeds iterable. Returns a promise
-// that resolves to an array of subscribed feeds. If a subscription fails due
+// that resolves to an array of statuses. If a subscription fails due
 // to an error, that subscription and all later subscriptions are ignored,
 // but earlier ones are committed. If a subscription fails but not for an
 // exceptional reason, then it is skipped.
-// TODO: do a single notification?
-function subscription_add_all(feeds, reader_conn, icon_conn, timeout_ms) {
-
-  const promises = [];
-  for(const feed of feeds) {
-    const sub = new Subscription();
-    sub.feed = feed;
-    sub.reader_conn = reader_conn;
-    sub.icon_conn = icon_conn;
-    sub.timeout_ms = timeout_ms;
-    sub.notify = false;
-    promises.push(subscription_add(sub));
-  }
-  return Promise.all(promises);
+function subscription_add_all(feeds) {
+  return Promise.all(feeds.map(subscription_add, this));
 }
 
-// @param subscription {Subscription}
-// TODO: return a status instead of number of entries
-async function subscription_remove(subscription) {
-  console.log('subscription_remove', subscription);
+async function subscription_remove(feed) {
+  console.assert(this instanceof subscription_context);
+  console.assert(indexeddb_is_open(this.reader_conn));
+  console.assert(feed_is_feed(feed));
+  console.assert(feed_is_valid_feed_id(feed.id));
 
-  console.assert(subscription_is_subscription(subscription));
-  console.assert(feed_is_valid_feed_id(subscription.feed.id));
-  console.assert(indexeddb_is_open(subscription.reader_conn));
-
-  // Find all entries for the feed, load the ids into memory, then remove the
-  // feed and the entries
-  // TODO: look into a deleteAll function that would allow this to skip loading
-  // the ids into memory
+  console.log('subscription_remove id', feed.id);
 
   let entry_ids;
   try {
-    entry_ids = await reader_db_find_entry_ids_by_feed(subscription.reader_conn,
-      subscription.feed.id);
-    await reader_db_remove_feed_and_entries(subscription.reader_conn,
-      subscription.feed.id, entry_ids);
+    entry_ids = await reader_db_find_entry_ids_by_feed(this.reader_conn,
+      feed.id);
+    await reader_db_remove_feed_and_entries(this.reader_conn, feed.id,
+      entry_ids);
   } catch(error) {
     console.warn(error);
-    // TODO: return something clearer, right now this is ambiguous as to
-    // whether 0 entries removed, or error. But in order to do that I need
-    // to change the return value of the whole function, so this requires more
-    // thought.
-    return 0;
+    return ERR_DB;
   }
 
-  // TODO: rather than request badge update, maybe it would be better if badge
-  // update responded to a broadcasted message about the change in entry store
-  // state. Such as an entries-changed event.
-  extension_update_badge_text(); // ignore errors
+  // ignore status
+  await reader_update_badge(this.reader_conn);
 
-  // To avoid large message size, broadcast individual messages.
-  // TODO: rename message types to feed_deleted, entry_deleted
-  // TODO: would be better to broadcast a single message for entries? but how
-  // would slideshow react to entries loaded (by feed actually?)? or
-  // broadcast a message containing an array.
   const channel = new BroadcastChannel('db');
-
-  channel.postMessage({'type': 'feedDeleted', 'id': subscription.feed.id});
-
+  channel.postMessage({'type': 'feed-deleted', 'id': feed.id});
   for(const entry_id of entry_ids) {
     channel.postMessage({'type': 'entry-deleted', 'id': entry_id});
   }
-
   channel.close();
 
-  return entry_ids.length;
+  console.debug('unsubscribed from feed', feed.id);
+  return STATUS_OK;
 }

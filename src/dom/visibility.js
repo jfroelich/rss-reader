@@ -3,7 +3,6 @@
 // Returns true if an element, or any of its ancestors, is hidden.
 // @param element {Element}
 function visibility_element_is_hidden(element) {
-
   console.assert(element instanceof Element);
 
   const doc = element.ownerDocument;
@@ -43,8 +42,8 @@ function visibility_element_is_hidden(element) {
     return true;
   }
 
-  // TODO: the collection of ancestors should be delegated to a function
-  // in element.js. This probably also entails changing the order of iteration
+  // TODO: the collection of ancestors should be delegated to node_get_ancestors
+  // in node.js. This probably also entails changing the order of iteration
   // over the ancestors in the subsequent loop.
 
   // Walk bottom-up from after element to before body, recording the path
@@ -73,18 +72,17 @@ function visibility_element_is_hidden_inline(element) {
   // is that all elements have a style property. So perhaps this is not
   // getting called on an element? But the previous assert never fails, element
   // is an instanceof an element. Or does it? Check again.
-
   // NOTE: this bug only arose after recent changes to poll_entry and after
   // adding brackets to all single line if/for blocks
 
   const style = element.style;
 
-  // TEMP: for some reason this assertion fails
+  // TEMP: for some reason this assertion occasionally fails
   console.assert(style);
 
   // TEMP: researching bug
   if(!style) {
-    console.debug('styleless element', element.innerHTML.substring(0, 50));
+    console.warn('styleless element', element.innerHTML.substring(0, 50));
     return false;
   }
 

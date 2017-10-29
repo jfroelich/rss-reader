@@ -1,5 +1,11 @@
 'use strict';
 
+// import base/number.js
+// import base/string.js
+// import favicon.js
+// import html.js
+// import url.js
+
 function feed_create() {
   return {};
 }
@@ -9,7 +15,7 @@ function feed_is_feed(feed) {
 }
 
 function feed_is_valid_feed_id(id) {
-  return Number.isInteger(id) && id > 0;
+  return number_is_positive_integer(id);
 }
 
 // Returns the last url in the feed's url list as a string
@@ -41,13 +47,15 @@ function feed_create_icon_lookup_url(feed) {
   console.assert(feed_is_feed(feed));
 
   // First, prefer the link, as this is the url of the webpage that is
-  // associated with the feed.
-  // Cannot assume the link is set nor valid
+  // associated with the feed. Cannot assume the link is set or valid
   if(feed.link) {
+    // If feed.link is set it should always be canonical
+    console.assert(url_is_canonical(feed.link));
     try {
       return new URL(feed.link);
     } catch(error) {
-       console.warn(error);
+      // If feed.link is set it should always be valid
+      console.warn(error);
     }
   }
 
@@ -59,17 +67,22 @@ function feed_create_icon_lookup_url(feed) {
 }
 
 // Update's a feed's faviconURLString property (not persisted to db)
-// TODO: change this to not throw an error so that caller
-// try/catch is not needed in the usual case
 async function feed_update_favicon(feed, icon_conn) {
 
   const query = new FaviconQuery();
   query.conn = icon_conn;
   query.url = feed_create_icon_lookup_url(feed);
 
-  // Allow exceptions to bubble
-  const icon_url_string = await favicon_lookup(query);
-  feed.faviconURLString = icon_url_string;
+  let icon_url;
+  try {
+    icon_url = await favicon_lookup(query);
+  } catch(error) {
+    console.warn(error);
+    // TODO: use a more accurate error code
+    return ERR_DB;
+  }
+
+  feed.faviconURLString = icon_url;
   return STATUS_OK;
 }
 
@@ -82,14 +95,17 @@ function feed_has_valid_props(feed) {
   console.assert(feed_is_feed(feed));
 
   if('id' in feed) {
-    console.assert(Number.isInteger(feed.id));
-    console.assert(feed.id > 0);
+    if(!number_is_positive_integer(feed.id)) {
+      return false;
+    }
   }
 
   if('type' in feed) {
     const types = ['feed', 'rss', 'rdf'];
     console.assert(types.includes(feed.type));
   }
+
+  return true;
 }
 
 // Returns a shallow copy of the input feed with sanitized properties
@@ -101,10 +117,14 @@ function feed_sanitize(feed, title_max_length, desc_max_length) {
 
   if(typeof title_max_length === 'undefined') {
     title_max_length = DEFAULT_TITLE_MAX_LEN;
+  } else {
+    console.assert(number_is_positive_integer(title_max_length));
   }
 
   if(typeof desc_max_length === 'undefined') {
     desc_max_length = DEFAULT_DESC_MAX_LEN;
+  } else {
+    console.assert(number_is_positive_integer(desc_max_length));
   }
 
   const output_feed = Object.assign({}, feed);

@@ -114,7 +114,10 @@ async function reader_storage_mark_read(conn, id) {
   }
 
   console.debug('reader_storage_mark_read updated', entry_get_top_url(entry));
-  await extension_update_badge_text();
+
+  // Ignore status
+  await reader_update_badge(conn);
+
   return STATUS_OK;
 }
 
@@ -273,6 +276,8 @@ async function reader_storage_remove_lost_entries(conn, limit) {
 
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.
+// TODO: consider overwriting existing icons too, given that some feed icons
+// become invalid over time.
 async function reader_storage_refresh_feed_icons(reader_conn, icon_conn) {
   console.log('reader_storage_refresh_feed_icons start');
 
