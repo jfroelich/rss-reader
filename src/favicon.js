@@ -6,6 +6,14 @@
 // import net/url.js
 // import html.js
 
+// BUG: I am failing to detect the following link in the html for an unknown
+// reason when subscribing to https://www.lesserwrong.com/feed.xml. Perhaps it
+// is added by script after load? No, it is right there
+// in the source of the page (although some other funky things are
+// certainly occurring)
+// <link name="favicon" rel="shortcut icon"
+// href="http://res.cloudinary.com/lesswrong-2-0/image/upload/
+// v1497915096/favicon_lncumn.ico" data-react-helmet="true">
 
 // TODO: use status codes throughout. First update fetch.js to use status codes.
 

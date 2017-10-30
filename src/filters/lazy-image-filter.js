@@ -6,6 +6,10 @@
 function lazy_image_filter(doc) {
   console.assert(doc instanceof Document);
 
+  if(!doc.body) {
+    return STATUS_OK;
+  }
+
   const lazy_img_attrs = [
     'load-src',
     'data-src',
@@ -19,8 +23,7 @@ function lazy_image_filter(doc) {
     'data-default-src'
   ];
 
-  let num_imgs_modified = 0;
-  const images = doc.getElementsByTagName('img');
+  const images = doc.body.getElementsByTagName('img');
   for(const img of images) {
     if(dom_image_has_source(img)) {
       continue;
@@ -30,15 +33,16 @@ function lazy_image_filter(doc) {
       if(img.hasAttribute(lazy_src_attr_name)) {
         const url_string = img.getAttribute(lazy_src_attr_name);
         if(url_is_valid(url_string)) {
+          const pre_html = img.outerHTML;
           img.removeAttribute(lazy_src_attr_name);
           img.setAttribute('src', url_string);
-          console.log('lazy_image_filter', img.outerHTML);
-          num_imgs_modified++;
+          const post_html = img.outerHTML;
+          console.log('lazy:', pre_html, post_html);
           break;
         }
       }
     }
   }
 
-  return num_imgs_modified;
+  return STATUS_OK;
 }

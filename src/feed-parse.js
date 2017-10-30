@@ -3,6 +3,8 @@
 // import base/status.js
 // import xml.js
 
+// TODO: should be using "item" terminology instead of "entry" here
+
 // Parses the input string into a feed object
 // @param xml_string {String} the text to parse
 // @returns {Object} an object representing the parsed feed and its entries

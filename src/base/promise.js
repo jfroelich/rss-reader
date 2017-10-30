@@ -17,3 +17,10 @@ function promise_timeout(timeout_ms) {
   // promise has resolved so that the caller can cancel.
   return [timeout_id, promise];
 }
+
+// A variant of Promise.all that does not shortcircuit. This should be
+// used instead of the pattern of enclosing promises in a wrapper promise that
+// traps exceptions
+function promise_every(promises) {
+  throw new Error('Not yet implemented');
+}
