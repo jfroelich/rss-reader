@@ -38,6 +38,10 @@ async function reader_storage_archive_entries(conn, max_age_ms, limit) {
     return entry_age_ms > max_age_ms;
   }
 
+  // TODO: now that this uses a cursor, I just realized that unless I
+  // handle the item during iteration, this is technically slower than
+  // simply calling getAll with a second parameter that specifies a limit
+
   let entries;
   try {
     entries = await reader_db_find_archivable_entries(conn, is_archivable,

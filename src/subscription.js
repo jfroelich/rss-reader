@@ -1,8 +1,8 @@
 'use strict';
 
 // import base/object.js
-// import fetch/fetch.js
-// import fetch/feed-coerce-from-response.js
+// import net/fetch.js
+// import feed-coerce-from-response.js
 // import feed.js
 // import extension.js
 // import favicon.js

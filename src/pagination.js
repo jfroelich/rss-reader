@@ -1,7 +1,6 @@
 'use strict';
 
-// import dom/node.js
-// import dom/domvis.js
+// import dom.js
 
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other
@@ -74,7 +73,7 @@ function pagination_is_candidate_anchor(anchor_element, base_url) {
     return false;
   }
 
-  if(visibility_element_is_hidden(anchor_element)) {
+  if(dom_element_is_hidden(anchor_element)) {
     return false;
   }
 
@@ -169,7 +168,7 @@ function pagination_get_partial_path(path) {
 // TODO: maybe store the LCA within each sequence as each sequence's first value
 // before returning, as this may help avoid having to find it again later
 // TODO: if I am using a max distance to lca, then why not just restrict search
-// distance in node_find_lca and return null when no lca found within distance?
+// distance in dom_find_lca and return null when no lca found within distance?
 function pagination_find_anchor_sequences(anchor_elements, lca_max_distance) {
   const num_anchors = anchor_elements.length;
 
@@ -184,7 +183,7 @@ function pagination_find_anchor_sequences(anchor_elements, lca_max_distance) {
 
   for(let i = 1; i < num_anchors; i++) {
     a2 = anchor_elements[i];
-    lca2 = node_find_lca(a1, a2);
+    lca2 = dom_find_lca(a1, a2);
     if((lca1 && (lca2.ancestor !== lca1.ancestor)) ||
       (lca2.d1 !== lca2.d2) || (lca2.d1 > maxd)) {
 

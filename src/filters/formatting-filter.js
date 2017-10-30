@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/status.js
-// import dom/element.js
+// import dom.js
 
 const FORMATTING_FILTER_SELECTOR = [
   'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend',

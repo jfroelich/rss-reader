@@ -16,7 +16,7 @@ function formatting_anchor_filter(doc) {
   const anchors = doc.body.querySelectorAll('a');
   for(const anchor of anchors) {
     if(!anchor.hasAttribute('href')) {
-      unwrap_element(anchor);
+      dom_unwrap(anchor);
     }
   }
 

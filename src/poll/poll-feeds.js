@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/status.js
-// import http/fetch.js
+// import net/fetch.js
 // import poll/poll-entry.js
 // import extension.js
 // import feed.js

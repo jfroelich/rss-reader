@@ -1,10 +1,12 @@
 'use strict';
 
+// import dom.js
+
 // Get the current settings from local storage and then modify the css rules
 // in the default style sheet
 function entry_css_on_change(event) {
   console.log('entry_css_on_change');
-  const sheet = css_get_default_sheet();
+  const sheet = dom_get_default_stylesheet();
   console.assert(sheet);
   entry_css_update_rule(sheet);
   entry_css_update_title_rule(sheet);
@@ -15,7 +17,7 @@ function entry_css_on_change(event) {
 // append them to the default style sheet.
 function entry_css_init() {
   console.log('entry_css_init');
-  const sheet = css_get_default_sheet();
+  const sheet = dom_get_default_stylesheet();
   console.assert(sheet);
   sheet.addRule('div.entry', entry_css_create_entry_rule_text());
 
@@ -119,7 +121,7 @@ function entry_css_add_content_rule(sheet) {
 
 function entry_css_update_rule(sheet) {
   console.assert(sheet);
-  const rule = css_find_rule(sheet, 'div.entry');
+  const rule = dom_find_css_rule(sheet, 'div.entry');
   console.assert(rule);
   const style = rule.style;
 
@@ -143,7 +145,7 @@ function entry_css_update_rule(sheet) {
 
 function entry_css_update_title_rule(sheet) {
   console.assert(sheet);
-  const rule = css_find_rule(sheet, 'div.entry a.entry-title');
+  const rule = dom_find_css_rule(sheet, 'div.entry a.entry-title');
   console.assert(rule);
   const style = rule.style;
 
@@ -158,7 +160,7 @@ function entry_css_update_title_rule(sheet) {
 
 function entry_css_update_content_rule(sheet) {
   console.assert(sheet);
-  const rule = css_find_rule(sheet, 'div.entry span.entry-content');
+  const rule = dom_find_css_rule(sheet, 'div.entry span.entry-content');
   console.assert(rule);
 
   rule.style.background = '';

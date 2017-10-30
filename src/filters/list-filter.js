@@ -1,6 +1,7 @@
 'use strict';
 
 // import base/status.js
+// import filters/leaf-filter.js
 // import filters/transform-helpers.js
 
 // TODO: restrict children of list to proper child type. E.g. only allow li
@@ -19,7 +20,7 @@ function list_filter(doc) {
   const lists = ancestor_element.querySelectorAll('ul, ol, dl');
 
   // TODO: maybe this empty checking should be moved into the
-  // node_is_leaf logic as a special case for list elements. That way it
+  // leaf_filter_is_leaf logic as a special case for list elements. That way it
   // will be recursive. But this does a moving of children where as the
   // leaf code just removes. So that would also entail changing the meaning
   // of leaf filtering from filter to transform.
@@ -159,8 +160,10 @@ function list_filter_unwrap_single_item_list(list) {
     list_parent.insertBefore(doc.createTextNode(' '), list);
   }
 
-  // TODO: inline this call to decrease coupling??
-  insert_children_before(item, list);
+  // Move the children of the item to before the list, maintainin order
+  for(let node = item.firstChild; node; node = item.firstChild) {
+    list_parent.insertBefore(node, list);
+  }
 
   // Add trailing padding
   if(list.nextSibling &&

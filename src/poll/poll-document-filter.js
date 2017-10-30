@@ -11,7 +11,7 @@
 // import filters/host-template-filter.js
 // import filters/lonestar-filter.js
 // import filters/responsive-image-filter.js
-// import url.js
+// import net/url.js
 
 // Transforms a document's content by removing or changing nods for
 // various reasons.

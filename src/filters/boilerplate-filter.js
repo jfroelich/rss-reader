@@ -2,7 +2,7 @@
 
 // import base/status.js
 // import base/string.js
-// import dom/image.js
+// import dom.js
 
 const BOILERPLATE_ANCESTOR_BIASES = {
   'a': -5,
@@ -199,7 +199,7 @@ function boilerplate_derive_image_text_bias(image) {
     bias += 30;
   }
 
-  if(image_find_caption(image)) {
+  if(dom_find_caption(image)) {
     bias += 100;
   }
 

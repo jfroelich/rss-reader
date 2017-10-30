@@ -2,7 +2,7 @@
 
 // import base/indexeddb.js
 // import base/number.js
-// import url.js
+// import net/url.js
 // import feed.js
 // import entry.js
 

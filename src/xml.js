@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/status.js
-// import mime.js
+// import net/mime.js
 
 function xml_parse_from_string(xml_string) {
   console.assert(xml_string);
@@ -37,9 +37,8 @@ function xml_to_string(doc) {
 // @returns {Blob}
 function xml_to_blob(doc) {
   console.assert(doc instanceof Document);
-  const mime_type = 'application/xml';
   const xml_string = xml_to_string(doc);
   const parts_array = [xml_string];
-  const options = {'type': mime_type};
+  const options = {'type': MIME_TYPE_XML};
   return new Blob(parts_array, options);
 }

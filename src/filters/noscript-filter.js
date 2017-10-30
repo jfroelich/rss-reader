@@ -8,7 +8,7 @@ function noscript_filter(doc) {
 
   const noscripts = doc.querySelectorAll('noscript');
   for(const noscript of noscripts) {
-    unwrap_element(noscript);
+    dom_unwrap(noscript);
   }
 
   return STATUS_OK;

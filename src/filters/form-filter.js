@@ -17,13 +17,13 @@ function form_filter(doc) {
   // Unwrap forms
   const form_elements = ancestor_element.querySelectorAll('form');
   for(const form_element of form_elements) {
-    unwrap_element(form_element);
+    dom_unwrap(form_element);
   }
 
   // Unwrap labels
   const label_elements = ancestor_element.querySelectorAll('label');
   for(const label_element of label_elements) {
-    unwrap_element(label_element);
+    dom_unwrap(label_element);
   }
 
   // TODO: add contains check to reduce operations like removing option

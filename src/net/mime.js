@@ -2,6 +2,8 @@
 
 // import base/string.js
 
+// TODO: move back to http
+
 // Some commonly used global mime types
 const MIME_TYPE_HTML = 'text/html';
 const MIME_TYPE_XML = 'application/xml';
@@ -87,7 +89,7 @@ function mime_get_type_for_extension(extension) {
     'rar':  'application/octet-stream',
 
     // TODO: need to fix url sniffing to uncomment
-    // See url.js
+    // See net/url.js
     // 'rdf': 'application/rdf+xml',
     // 'rss':  'application/rss+xml',
 

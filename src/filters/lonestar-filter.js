@@ -1,9 +1,8 @@
 'use strict';
 
 // import base/status.js
-// import dom/image.js
-// import dom/visibility.js
-// import url.js
+// import net/url.js
+// import dom.js
 
 const LONESTAR_PATTERNS = [
   /\/\/.*2o7\.net\//i,
@@ -57,14 +56,14 @@ function lonestar_filter(doc, url) {
   const document_hostname = url_get_hostname(url);
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
-    if(visibility_element_is_hidden_inline(image) ||
+    if(dom_element_is_hidden_inline(image) ||
       lonestar_filter_is_pixel(image) ||
       lonestar_filter_has_telemetry_source(image, document_hostname)) {
 
       console.debug('lonestar_filter_telemetry_images filtering',
         image.outerHTML);
 
-      image_remove(image);
+      dom_remove_image(image);
     }
   }
 

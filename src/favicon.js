@@ -2,9 +2,10 @@
 
 // import base/indexeddb.js
 // import base/status.js
-// import fetch/fetch.js
+// import net/fetch.js
+// import net/url.js
 // import html.js
-// import url.js
+
 
 // TODO: use status codes throughout. First update fetch.js to use status codes.
 

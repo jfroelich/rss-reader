@@ -1,8 +1,7 @@
 'use strict';
 
 // import base/status.js
-// import dom/image.js
-// import dom/srcset.js
+// import dom.js
 
 function response_image_filter(doc) {
   console.assert(doc instanceof Document);
@@ -13,7 +12,7 @@ function response_image_filter(doc) {
 
   const images = doc.body.getElementsByTagName('img');
   for(const image of images) {
-    if(!image_has_valid_source(image) && image_has_srcset(image)) {
+    if(!dom_image_has_valid_source(image) && dom_image_has_srcset(image)) {
       responsive_image_filter_image(image);
     }
   }
@@ -23,7 +22,7 @@ function response_image_filter(doc) {
 
 function responsive_image_filter_image(image) {
   const srcset_value = image.getAttribute('srcset');
-  const descriptors = srcset_parse_from_string(srcset_value);
+  const descriptors = dom_srcset_parse_from_string(srcset_value);
 
   // For the time being, the preference is whatever is first, no special
   // handling of descriptor.d, and only one dimension needed

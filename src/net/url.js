@@ -1,6 +1,8 @@
 'use strict';
 
 // TODO: impose length cap on url strings
+// TODO: despite moving this out of http, after more reading, it really does
+// belong in http
 
 // Allows for leading whitespace characters. Returns true for javascript: and
 // mailto: and data:. Returns true for https:// and http://. Returns false for

@@ -2,9 +2,9 @@
 
 // import base/number.js
 // import base/string.js
+// import net/url.js
 // import favicon.js
 // import html.js
-// import url.js
 
 function feed_create() {
   return {};

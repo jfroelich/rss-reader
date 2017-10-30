@@ -4,8 +4,9 @@
 // import base/sizeof.js
 // import base/status.js
 // import base/string.js
+// import net/url.js
 // import html.js
-// import url.js
+
 
 const ENTRY_STATE_UNREAD = 0;
 const ENTRY_STATE_READ = 1;

@@ -1,12 +1,12 @@
 'use strict';
 
 // import base/indexeddb.js
+// import net/mime.js
 // import opml/opml-document.js
 // import opml/opml-outline.js
 // import favicon.js
 // import feed.js
 // import file.js
-// import mime.js
 // import reader-db.js
 // import subscription.js
 

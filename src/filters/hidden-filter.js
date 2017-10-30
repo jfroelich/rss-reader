@@ -1,7 +1,7 @@
 'use strict';
 
-// import dom/visibility.js
 // import filters/filter-helpers.js
+// import dom.js
 
 // TODO: make a github issue about optimizing recursive unwrap
 function hidden_filter(doc) {
@@ -20,8 +20,8 @@ function hidden_filter(doc) {
 
   const elements = body.querySelectorAll('*');
   for(const element of elements) {
-    if(body.contains(element) && visibility_element_is_hidden_inline(element)) {
-      unwrap_element(element);
+    if(body.contains(element) && dom_element_is_hidden_inline(element)) {
+      dom_unwrap(element);
     }
   }
 }

@@ -1,7 +1,7 @@
 'use strict';
 
-// import dom/image.js
-// import url.js
+// import net/url.js
+// import dom.js
 
 function lazy_image_filter(doc) {
   console.assert(doc instanceof Document);
@@ -22,7 +22,7 @@ function lazy_image_filter(doc) {
   let num_imgs_modified = 0;
   const images = doc.getElementsByTagName('img');
   for(const img of images) {
-    if(image_has_source(img)) {
+    if(dom_image_has_source(img)) {
       continue;
     }
 

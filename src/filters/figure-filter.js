@@ -15,7 +15,7 @@ function figure_filter(doc) {
   const figures = doc.body.querySelectorAll('figure');
   for(const figure of figures) {
     if(figure.childElementCount === 1) {
-      unwrap_element(figure);
+      dom_unwrap(figure);
     }
   }
 

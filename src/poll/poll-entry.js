@@ -1,7 +1,8 @@
 'use strict';
 
 // import base/status.js
-// import http/fetch.js
+// import net/fetch.js
+// import net/url.js
 // import poll/poll-document-filter.js
 // import entry.js
 // import favicon.js
@@ -10,7 +11,7 @@
 // import reader-db.js
 // import reader-storage.js
 // import rewrite-url.js
-// import url.js
+
 
 function poll_entry_context() {
   console.assert(this !== window);

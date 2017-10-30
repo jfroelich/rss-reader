@@ -1,6 +1,6 @@
 'use strict';
 
-// import http/fetch.js
+// import net/fetch.js
 // import pagination.js
 
 // Investigates whether a document is a multi-page document. If the document

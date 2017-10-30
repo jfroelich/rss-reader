@@ -1,9 +1,8 @@
 'use strict';
 
 // import base/number.js
-// import mime.js
-// import url.js
-
+// import net/mime.js
+// import net/url.js
 
 const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 

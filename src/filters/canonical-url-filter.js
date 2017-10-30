@@ -1,8 +1,8 @@
 'use strict';
 
 // import base/status.js
-// import dom/srcset.js
-// import url.js
+// import net/url.js
+// import dom.js
 
 const CANONICAL_URL_FILTER_MAP = {
   'a': 'href',
@@ -86,7 +86,7 @@ function canonical_url_filter_resolve_attribute(element, base_url) {
 
 function canonical_url_filter_resolve_srcset(element, base_url) {
   const srcset_attr_value = element.getAttribute('srcset');
-  const descriptors = srcset_parse_from_string(srcset_attr_value);
+  const descriptors = dom_srcset_parse_from_string(srcset_attr_value);
 
   let change_count = 0;
   for(const descriptor of descriptors) {
@@ -100,7 +100,7 @@ function canonical_url_filter_resolve_srcset(element, base_url) {
   }
 
   if(change_count) {
-    const new_value = srcset_serialize(descriptors);
+    const new_value = dom_srcset_serialize(descriptors);
     if(new_value) {
       element.setAttribute('srcset', new_value);
     }

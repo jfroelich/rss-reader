@@ -1,6 +1,6 @@
 'use strict';
 
-// import dom/element.js
+// import dom.js
 
 // TODO: instead of removing and re-adding, reset and reuse
 function options_page_subscription_monitor_show() {
@@ -30,6 +30,6 @@ function options_page_subscription_monitor_append_message(message) {
 async function options_page_subscription_monitor_hide() {
   const monitor_element = document.getElementById('submon');
   const duration = 2, delay = 1;
-  await element_fade(monitor_element, duration, delay);
+  await dom_fade(monitor_element, duration, delay);
   monitor_element.remove();
 }

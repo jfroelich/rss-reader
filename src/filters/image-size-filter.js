@@ -1,7 +1,7 @@
 'use strict';
 
-// import http/fetch.js
-// import url.js
+// import net/fetch.js
+// import net/url.js
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
@@ -85,7 +85,7 @@ async function image_size_filter_get_dimensions(image, allowed_protocols,
     return;
   }
 
-  const style_dimensions = element_get_dimensions(image);
+  const style_dimensions = dom_get_dimensions(image);
   if(style_dimensions) {
     result.width = style_dimensions.width;
     result.height = style_dimensions.height;

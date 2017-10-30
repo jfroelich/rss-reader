@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/status.js
-// import url.js
+// import net/url.js
 
 // TODO: host_selector_map should be a parameter to this function so that
 // configuration is defined externally so that it can be changed without
