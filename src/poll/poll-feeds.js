@@ -141,6 +141,15 @@ async function poll_feeds_poll_feed(feed, desc) {
   const xml_string = await response.text();
   const coerce_result = feed_coerce_from_response(xml_string,
     response.request_url, response.response_url, response.last_modified_date);
+
+  console.assert(coerce_result);
+
+  if(coerce_result.status !== STATUS_OK) {
+    console.debug('feed_coerce_from_response return status not ok, ',
+      coerce_result.status, url);
+    return ERR_PARSE;
+  }
+
   const merged_feed = feed_merge(feed, coerce_result.feed);
 
   let stored_feed;
@@ -177,8 +186,31 @@ function poll_feeds_filter_dup_entries(entries) {
   const distinct_entries = [];
   const seen_urls = [];
 
+/*
+Uncaught (in promise) TypeError: entry.urls is not iterable TypeError: entry.urls is not iterable
+    at poll_feeds_filter_dup_entries (poll-feeds.js:182)
+    at poll_feeds_poll_feed_entries (poll-feeds.js:172)
+    at poll_feeds_poll_feed (poll-feeds.js:160)
+    at <anonymous>
+
+// TODO: this needs to allow for the fact that the entry may not have any
+// urls, or a valid url, and so forth.
+// TODO: in addition to that, it should probably also be a caller responsibility
+// to filter out such entries prior to calling this. Or, it should at least
+// trigger a failed assertion here.
+*/
+
+
   for(const entry of entries) {
     let is_seen_url = false;
+
+    // Trying to fix above bug
+    if(!entry_has_url(entry)) {
+      console.log('ignoring entry without url during dup filter', entry);
+      continue;
+    }
+
+
     for(const url_string of entry.urls) {
       if(seen_urls.includes(url_string)) {
         is_seen_url = true;
