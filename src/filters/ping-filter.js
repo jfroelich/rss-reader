@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 function ping_filter(doc) {
   console.assert(doc instanceof Document);
@@ -14,5 +14,5 @@ function ping_filter(doc) {
     anchor.removeAttribute('ping');
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

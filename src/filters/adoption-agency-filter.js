@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 // Relocates certain misnested elements
 function adoption_agency_filter(doc) {
@@ -8,7 +8,7 @@ function adoption_agency_filter(doc) {
 
   // Restrict analysis to body
   if(!doc.body) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   // Fix hr in lists. Simple case of invalid parent
@@ -33,5 +33,5 @@ function adoption_agency_filter(doc) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

@@ -10,7 +10,7 @@
 
 // import base/indexeddb.js
 // import base/object.js
-// import base/status.js
+// import base/errors.js
 // import entry.js
 // import extension.js
 // import favicon.js
@@ -48,11 +48,11 @@ async function reader_storage_archive_entries(conn, max_age_ms, limit) {
       limit);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   if(!entries.length) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   const compacted_entries = [];
@@ -65,7 +65,7 @@ async function reader_storage_archive_entries(conn, max_age_ms, limit) {
     await reader_db_put_entries(conn, entries);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   console.log('compacted %s entries', entries.length);
@@ -78,7 +78,7 @@ async function reader_storage_archive_entries(conn, max_age_ms, limit) {
   }
   channel.close();
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 // Mark the entry with the given id as read in the database
@@ -94,7 +94,7 @@ async function reader_storage_mark_read(conn, id) {
     entry = await reader_db_find_entry_by_id(conn, id);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   console.debug('reader_storage_mark_read found entry',
@@ -102,7 +102,7 @@ async function reader_storage_mark_read(conn, id) {
 
   if(!entry || entry.readState === ENTRY_STATE_READ) {
     // TODO: should be ERR_INVALID_STATE or something
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   // We have full control over the entry object from read to write, so
@@ -116,7 +116,7 @@ async function reader_storage_mark_read(conn, id) {
     await reader_db_put_entry(conn, entry);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   console.debug('reader_storage_mark_read updated', entry_get_top_url(entry));
@@ -124,7 +124,7 @@ async function reader_storage_mark_read(conn, id) {
   // Ignore status
   await reader_update_badge(conn);
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 async function reader_storage_put_feed(feed, conn) {
@@ -163,10 +163,10 @@ async function reader_storage_add_entry(entry, conn) {
     await reader_db_put_entry(conn, storable);
   } catch(error) {
     console.warn(error, storable.urls);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 // Removes entries not linked to a feed from the database
@@ -180,7 +180,7 @@ async function reader_storage_remove_orphans(conn, limit) {
     feed_ids = await reader_db_get_feed_ids(conn);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
   console.assert(feed_ids);
 
@@ -194,11 +194,11 @@ async function reader_storage_remove_orphans(conn, limit) {
     entries = await reader_db_find_entries(conn, entry_is_orphan, limit);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   if(entries.length === 0) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   console.debug('found %s orphans', entries.length);
@@ -212,7 +212,7 @@ async function reader_storage_remove_orphans(conn, limit) {
     await reader_db_remove_entries(conn, orphan_ids);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   const channel = new BroadcastChannel('db');
@@ -223,7 +223,7 @@ async function reader_storage_remove_orphans(conn, limit) {
   }
   channel.close();
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 // An entry is 'lost' if it does not have a location, as in, it does not have
@@ -245,11 +245,11 @@ async function reader_storage_remove_lost_entries(conn, limit) {
     entries = await reader_db_find_entries(conn, entry_is_lost, limit);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   if(entries.length === 0) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   console.debug('found %s lost entries', entries.length);
@@ -263,7 +263,7 @@ async function reader_storage_remove_lost_entries(conn, limit) {
     await reader_db_remove_entries(conn, ids);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   const channel = new BroadcastChannel('db');
@@ -274,7 +274,7 @@ async function reader_storage_remove_lost_entries(conn, limit) {
   }
   channel.close();
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 // Scans through all the feeds in the database and attempts to update each
@@ -289,7 +289,7 @@ async function reader_storage_refresh_feed_icons(reader_conn, icon_conn) {
     feeds = await reader_db_get_feeds(reader_conn);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   const promises = [];
@@ -299,7 +299,7 @@ async function reader_storage_refresh_feed_icons(reader_conn, icon_conn) {
   await Promise.all(promises);
 
   console.log('reader_storage_refresh_feed_icons end');
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 // Lookup the feed's icon, update the feed in db
@@ -324,12 +324,12 @@ async function reader_storage_update_icon(feed, reader_conn, icon_conn) {
     icon_url = await favicon_lookup(query);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   // If we could not find an icon, then leave the feed as is
   if(!icon_url) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   const prev_icon_url = feed.faviconURLString;
@@ -342,7 +342,7 @@ async function reader_storage_update_icon(feed, reader_conn, icon_conn) {
 
     if(prev_icon_url === icon_url) {
       // The new icon is the same as the current icon, so exit.
-      return STATUS_OK;
+      return RDR_OK;
     } else {
       // The new icon is different than the current icon, fall through
     }
@@ -361,8 +361,8 @@ async function reader_storage_update_icon(feed, reader_conn, icon_conn) {
     await reader_db_put_feed(reader_conn, feed);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

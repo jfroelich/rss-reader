@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/indexeddb.js
-// import base/status.js
+// import base/errors.js
 // import net/fetch.js
 // import net/url.js
 // import html.js
@@ -163,7 +163,7 @@ async function favicon_lookup(query) {
       // Parse the text into an HTML document
       const [status, document] = html_parse_from_string(text);
 
-      if(status === STATUS_OK) {
+      if(status === RDR_OK) {
 
         // Use the response url as the base url if available
         let base_url_object = response_url_object ? response_url_object :
@@ -469,7 +469,7 @@ async function favicon_compact_db(conn, max_age_ms) {
     entries = await favicon_db_find_expired_entries(conn, max_age_ms);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   const urls = [];
@@ -482,8 +482,8 @@ async function favicon_compact_db(conn, max_age_ms) {
     resolutions = await favicon_db_remove_entries_with_urls(conn, urls);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

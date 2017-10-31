@@ -2,7 +2,7 @@
 
 // import base/number.js
 // import base/sizeof.js
-// import base/status.js
+// import base/errors.js
 // import base/string.js
 // import net/url.js
 // import html.js

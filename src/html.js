@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import net/mime.js
 
 // Returns a new string where html elements were replaced with the optional
@@ -22,7 +22,7 @@ function html_replace_tags(input_string, replacement_string) {
   }
 
   const [status, doc] = html_parse_from_string(input_string);
-  if(status !== STATUS_OK) {
+  if(status !== RDR_OK) {
     console.log('failed to parse html when replacing tags');
     // Brick wall the input due to XSS vulnerability
     return 'Unsafe HTML redacted';
@@ -150,7 +150,7 @@ function html_parse_from_string(html_string) {
   if(error_element) {
     const unsafe_message = error_element.textContent;
     console.log(unsafe_message);
-    return [ERR_PARSE];
+    return [RDR_ERR_PARSE];
   }
 
   // TODO: is this check appropriate? can an html document exist and be valid
@@ -160,8 +160,8 @@ function html_parse_from_string(html_string) {
     const unsafe_message = 'html parsing error: ' + lc_root_name +
       ' is not html';
     console.log(unsafe_message);
-    return [ERR_PARSE];
+    return [RDR_ERR_PARSE];
   }
 
-  return [STATUS_OK, doc];
+  return [RDR_OK, doc];
 }

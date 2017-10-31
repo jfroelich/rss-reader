@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import extension.js
 // import favicon.js
 // import reader-badge.js

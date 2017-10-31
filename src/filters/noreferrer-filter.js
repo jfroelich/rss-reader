@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 // TODO: this conflicts with attribute filter. Need to whitelist this
 // attribute and this value for this element.
@@ -16,5 +16,5 @@ function noreferrer_filter(doc) {
     anchor.setAttribute('rel', 'noreferrer');
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import net/fetch.js
 // import net/url.js
 // import poll/poll-document-filter.js
@@ -82,7 +82,7 @@ async function poll_entry(entry) {
     status = await poll_document_filter(entry_document, url,
       this.fetch_image_timeout_ms);
 
-    if(status !== STATUS_OK) {
+    if(status !== RDR_OK) {
       return false;
     }
 
@@ -92,7 +92,7 @@ async function poll_entry(entry) {
   }
 
   status = await reader_storage_add_entry(entry, this.reader_conn);
-  if(status !== STATUS_OK) {
+  if(status !== RDR_OK) {
     return false;
   }
 
@@ -138,7 +138,7 @@ async function poll_entry_update_icon(entry, document) {
   }
 
   entry.faviconURLString = icon_url || this.feed_favicon_url;
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 async function poll_entry_pollable(url, conn) {

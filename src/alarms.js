@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/indexeddb.js
-// import base/status.js
+// import base/errors.js
 // import poll/poll.js
 // import favicon.js
 // import reader-db.js
@@ -19,7 +19,7 @@ async function alarms_on_archive_alarm() {
     indexeddb_close(conn);
   }
 
-  if(status !== STATUS_OK) {
+  if(status !== RDR_OK) {
     console.warn('archive entries failed status', status);
   }
 }
@@ -93,7 +93,7 @@ async function alarms_on_refresh_feed_icons_alarm() {
     indexeddb_close(icon_conn);
   }
 
-  if(status !== STATUS_OK) {
+  if(status !== RDR_OK) {
     console.warn('alarms_on_refresh_feed_icons_alarm invalid status', status);
   }
 }

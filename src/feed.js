@@ -79,11 +79,11 @@ async function feed_update_favicon(feed, icon_conn) {
   } catch(error) {
     console.warn(error);
     // TODO: use a more accurate error code
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   feed.faviconURLString = icon_url;
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 // TODO: include this in places where sanitize is called

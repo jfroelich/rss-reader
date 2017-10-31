@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import net/mime.js
 
 function xml_parse_from_string(xml_string) {
@@ -19,10 +19,10 @@ function xml_parse_from_string(xml_string) {
   const error_element = doc.querySelector('parsererror');
   if(error_element) {
     console.log(error_element.textContent);
-    return [ERR_PARSE];
+    return [RDR_ERR_PARSE];
   }
 
-  return [STATUS_OK, doc];
+  return [RDR_OK, doc];
 }
 
 // @param doc {Document}

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 function entity_decode_filter(doc) {
   console.assert(doc instanceof Document);
@@ -9,5 +9,5 @@ function entity_decode_filter(doc) {
     return;
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

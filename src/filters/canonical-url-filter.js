@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import net/url.js
 // import dom.js
 
@@ -51,7 +51,7 @@ function canonical_url_filter(doc, base_url) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 function canonical_url_filter_create_selector() {

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 function script_filter(doc) {
   console.assert(doc instanceof Document);
@@ -10,5 +10,5 @@ function script_filter(doc) {
     script.remove();
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

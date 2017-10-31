@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import filters/filter-helpers.js
 
 function noscript_filter(doc) {
@@ -11,5 +11,5 @@ function noscript_filter(doc) {
     dom_unwrap(noscript);
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

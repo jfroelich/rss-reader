@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import filters/filter-helpers.js
 
 function semantic_filter(doc) {
@@ -11,5 +11,5 @@ function semantic_filter(doc) {
   }
 
   unwrap_elements(doc.body, 'article, aside, footer, header, main, section');
-  return STATUS_OK;
+  return RDR_OK;
 }

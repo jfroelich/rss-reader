@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import dom.js
 
 function unwrap_elements(ancestor_element, selector) {
@@ -11,7 +11,7 @@ function unwrap_elements(ancestor_element, selector) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 function rename_elements(ancestor_element, old_element_name, new_element_name,
@@ -27,5 +27,5 @@ function rename_elements(ancestor_element, old_element_name, new_element_name,
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

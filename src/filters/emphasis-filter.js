@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/number.js
-// import base/status.js
+// import base/errors.js
 // import filters/filter-helpers.js
 
 // @param max_text_length {Number} optional, if number of non-tag characters
@@ -27,5 +27,5 @@ function emphasis_filter(doc, max_text_length) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import base/string.js
 
 function node_whitespace_filter(doc) {
@@ -21,7 +21,7 @@ function node_whitespace_filter(doc) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 function node_whitespace_filter_is_sensitive(node) {

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 function br_filter(doc) {
   console.assert(doc instanceof Document);
@@ -14,5 +14,5 @@ function br_filter(doc) {
     br.remove();
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

@@ -71,7 +71,7 @@ function dom_unwrap(element) {
 
   // If next_sibling is undefined then insertBefore appends
   parent_element.insertBefore(frag, next_sibling);
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 

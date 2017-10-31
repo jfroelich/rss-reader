@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import filters/leaf-filter.js
 // import filters/transform-helpers.js
 
@@ -34,7 +34,7 @@ function list_filter(doc) {
     list_filter_unwrap_single_item_list(list);
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 // Return true if list is 'empty'

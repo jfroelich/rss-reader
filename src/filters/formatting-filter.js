@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import dom.js
 
 const FORMATTING_FILTER_SELECTOR = [
@@ -14,9 +14,9 @@ function formatting_filter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   unwrap_elements(doc.body, FORMATTING_FILTER_SELECTOR);
-  return STATUS_OK;
+  return RDR_OK;
 }

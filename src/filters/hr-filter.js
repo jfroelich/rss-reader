@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 // Look for all <hr><hr> sequences and remove the second one. Naive in that it
 // does not fully account for new document state as hrs removed.
@@ -16,5 +16,5 @@ function hr_filter(doc) {
     hr.remove();
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

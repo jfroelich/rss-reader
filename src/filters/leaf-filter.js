@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import dom.js
 
 const LEAF_FILTER_EXCEPTION_ELEMENTS = [
@@ -24,7 +24,7 @@ function leaf_filter(doc) {
       element.remove();
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 

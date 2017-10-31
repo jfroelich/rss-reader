@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
@@ -48,5 +48,5 @@ function frame_filter(doc) {
     frame_element.remove();
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

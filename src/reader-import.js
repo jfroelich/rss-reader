@@ -27,13 +27,13 @@ async function reader_import_files(files) {
     await reader_import_files_internal(files, reader_conn, icon_conn);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   } finally {
     indexeddb_close(reader_conn);
     indexeddb_close(icon_conn);
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 function reader_import_files_internal(files, reader_conn, icon_conn) {
@@ -77,7 +77,7 @@ async function reader_import_file(file, reader_conn, icon_conn) {
   }
 
   let [status, document] = opml_parse_from_string(file_content);
-  if(status !== STATUS_OK) {
+  if(status !== RDR_OK) {
     console.log('error parsing opml file', file.name);
     return 0;
   }
@@ -117,7 +117,7 @@ async function reader_import_file(file, reader_conn, icon_conn) {
   // Tally successful subscriptions
   let sub_count = 0;
   for(const sub_result of sub_results) {
-    if(sub_result.status === STATUS_OK) {
+    if(sub_result.status === RDR_OK) {
       sub_count++;
     }
   }

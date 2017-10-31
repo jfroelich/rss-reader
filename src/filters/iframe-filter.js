@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 function iframe_filter(doc) {
   console.assert(doc instanceof Document);
@@ -15,5 +15,5 @@ function iframe_filter(doc) {
     iframe.remove();
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

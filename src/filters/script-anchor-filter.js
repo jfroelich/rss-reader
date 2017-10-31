@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import filters/filter-helpers.js
 // import net/url.js
 
@@ -19,5 +19,5 @@ function script_anchor_filter(doc) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

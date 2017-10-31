@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 // Remove whitespace and whitespace-like content from the start and end of
 // a document's body.
@@ -8,7 +8,7 @@ function trim_document_filter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   const first_child = doc.body.firstChild;
@@ -23,7 +23,7 @@ function trim_document_filter(doc) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 function trim_document_filter_step(starting_node, edge_prop_name) {

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 // TODO: rename. It isn't clear what this is a blacklist of. Rename to something
 // like element-blacklist-filter.js
@@ -22,5 +22,5 @@ function blacklist_filter(doc) {
       element.remove();
     }
   }
-  return STATUS_OK;
+  return RDR_OK;
 }

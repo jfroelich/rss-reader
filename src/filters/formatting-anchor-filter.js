@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import filters/filter-helpers.js
 
 // An anchor that acts like a span can be unwrapped
@@ -20,5 +20,5 @@ function formatting_anchor_filter(doc) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

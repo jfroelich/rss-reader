@@ -61,7 +61,7 @@ async function slideshow_slide_mark_read(conn, slide_element) {
   try {
 
     const status = await reader_storage_mark_read(conn, entry_id_number);
-    if(status !== STATUS_OK) {
+    if(status !== RDR_OK) {
       // TODO: react to error
       console.warn('slideshow_slide_mark_read failed to update database');
     }

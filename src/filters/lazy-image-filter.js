@@ -7,7 +7,7 @@ function lazy_image_filter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   const lazy_img_attrs = [
@@ -44,5 +44,5 @@ function lazy_image_filter(doc) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

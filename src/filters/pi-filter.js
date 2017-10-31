@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 function pi_filter(doc) {
   console.assert(doc instanceof Document);
@@ -14,5 +14,5 @@ function pi_filter(doc) {
   // node filter test that only returns true for
   // Node.PROCESSING_INSTRUCTION_NODE (value of 7)
 
-  return STATUS_OK;
+  return RDR_OK;
 }

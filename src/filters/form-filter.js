@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import filters/filter-helpers.js
 
 function form_filter(doc) {
@@ -37,5 +37,5 @@ function form_filter(doc) {
     input_element.remove();
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

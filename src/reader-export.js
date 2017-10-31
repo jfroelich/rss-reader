@@ -28,5 +28,5 @@ async function reader_export_feeds(feeds, title, file_name) {
   anchor.click();
 
   URL.revokeObjectURL(url);
-  return STATUS_OK;
+  return RDR_OK;
 }

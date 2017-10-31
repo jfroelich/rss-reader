@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import filters/leaf-filter.js
 // import filters/filter-helpers.js
 // import dom.js
@@ -9,7 +9,7 @@ function table_filter(doc, row_scan_limit) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   unwrap_elements(doc.body, 'colgroup, hgroup, multicol, tbody, tfoot, thead');
@@ -20,7 +20,7 @@ function table_filter(doc, row_scan_limit) {
       table_filter_unwrap_single_column_table(table);
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 function table_filter_is_single_column_table(table, row_scan_limit) {

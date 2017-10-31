@@ -4,7 +4,7 @@
 // the icons displayed
 
 // import base/indexeddb.js
-// import base/status.js
+// import base/errors.js
 // import extension.js
 // import reader-db.js
 // import entry-css.js
@@ -160,7 +160,7 @@ async function options_page_start_subscription(url) {
   }
 
   // TODO: show an error message.
-  if(status !== STATUS_OK) {
+  if(status !== RDR_OK) {
     options_page_subscription_monitor_hide();
     return;
   }
@@ -561,7 +561,7 @@ async function options_page_unsubscribe_button_on_click(event) {
     indexeddb_close(sc.reader_conn);
   }
 
-  if(status !== STATUS_OK) {
+  if(status !== RDR_OK) {
     console.warn('subscription_remove status not ok', status);
   }
 
@@ -597,7 +597,7 @@ async function options_page_import_opml_uploader_on_change(event) {
 
 async function options_page_export_opml_button_onclick(event) {
   const status = await options_page_export_opml();
-  if(status !== STATUS_OK) {
+  if(status !== RDR_OK) {
     console.warn('export failed with status', status);
     // TODO: react to error
   }

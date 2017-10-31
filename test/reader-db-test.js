@@ -1,7 +1,7 @@
 // See license.md
 
 // import base/indexeddb.js
-// import base/status.js
+// import base/errors.js
 // import reader-db.js
 
 // TODO: test timeouts
@@ -29,7 +29,7 @@ async function test() {
     await indexeddb_delete_database(name);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   } finally {
     if(!close_requested) {
       indexeddb_close(conn);
@@ -38,5 +38,5 @@ async function test() {
   }
 
   console.log('test_db end');
-  return STATUS_OK;
+  return RDR_OK;
 }

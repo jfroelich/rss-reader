@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import net/url.js
 // import dom.js
 
@@ -45,7 +45,7 @@ function lonestar_filter(doc, url) {
 
   // Analysis is limited to descendants of body
   if(!doc.body) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   // Telemetry images are usually hidden, so treat visibility as an indicator.
@@ -67,7 +67,7 @@ function lonestar_filter(doc, url) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 // Returns true if an image is a pixel-sized image

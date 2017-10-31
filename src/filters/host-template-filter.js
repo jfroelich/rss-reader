@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import net/url.js
 
 // TODO: host_selector_map should be a parameter to this function so that
@@ -39,5 +39,5 @@ function host_template_filter(doc, url) {
     element.remove();
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

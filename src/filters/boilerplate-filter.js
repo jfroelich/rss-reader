@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import base/string.js
 // import dom.js
 
@@ -62,13 +62,13 @@ const BOILERPLATE_TOKEN_WEIGHTS = {
 function boilerplate_filter(doc) {
   console.assert(doc instanceof Document);
   if(!doc.body) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   const best_element = boilerplate_find_high_score_element(doc);
   boilerplate_prune(doc, best_element);
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 function boilerplate_derive_text_bias(element) {

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import xml.js
 
 // TODO: should be using "item" terminology instead of "entry" here
@@ -10,7 +10,7 @@
 // @returns {Object} an object representing the parsed feed and its entries
 function feed_parse_from_string(xml_string) {
   let [status, doc] = xml_parse_from_string(xml_string);
-  if(status !== STATUS_OK) {
+  if(status !== RDR_OK) {
     console.warn('parse feed error');
 
     const empty_result = {

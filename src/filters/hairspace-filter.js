@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 // TODO: this should be part of a general character normalization filter,
 // or perhaps a whitespace normalization filter, or an entity filter
@@ -26,5 +26,5 @@ function hairspace_filter(doc) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

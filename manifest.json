@@ -26,7 +26,7 @@
       "/src/install.js",
 
       "/src/feed-parse.js",
-      "/src/feed-coerce-from-response.js",
+      "/src/coerce-fetched-feed.js",
       "/src/reader-badge.js",
       "/src/reader-db.js",
       "/src/reader-storage.js",
@@ -38,7 +38,7 @@
       "/src/base/object.js",
       "/src/base/promise.js",
       "/src/base/sizeof.js",
-      "/src/base/status.js",
+      "/src/base/errors.js",
       "/src/base/string.js",
 
 

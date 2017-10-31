@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 // @param doc {Document}
 // @param whitelist {Object} each property is element name, each value is array
@@ -26,5 +26,5 @@ function attribute_filter(doc, whitelist) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }

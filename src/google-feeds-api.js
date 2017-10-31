@@ -87,7 +87,7 @@ async function google_feeds_api_search(query_string, timeout_ms) {
   // TODO: this should not be thrown as an exception because it is not an
   // invariant condition violation. Or is it? If it is, then it should be
   // an console.assert call. If not, then it should return null or something.
-  // Should not be an assert. Should return ERR_FETCH
+  // Should not be an assert. Should return RDR_ERR_FETCH
   if(!response.ok)
     throw new Error(standard_fetch_error_message);
 

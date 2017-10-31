@@ -19,14 +19,11 @@ function subscription_context() {
 // Returns a result object with properties status and feed. feed is only defined
 // if status is ok. feed is a copy of the inserted feed, which includes its new
 // id.
-// TODO: return array instead of object for simpler destructuring
 async function subscription_add(feed) {
   console.assert(this instanceof subscription_context);
   console.assert(indexeddb_is_open(this.reader_conn));
   console.assert(indexeddb_is_open(this.icon_conn));
   console.assert(feed_is_feed(feed));
-
-
 
   // TODO: rather than assert below, check whether feed has a url. If it does
   // not then this is an error and this should return an error status code
@@ -38,12 +35,14 @@ async function subscription_add(feed) {
   console.log('subscription_add', url_string);
 
   let status = await subscription_url_is_unique(url_string, this.reader_conn);
-  if(status !== STATUS_OK) {
+  if(status !== RDR_OK) {
     return {'status' : status};
   }
 
   // skip the favicon lookup while offline
   // TODO: maybe should not skip if cache-only lookup could still work
+  // TODO: maybe should not support subscribe while offline if I have no way
+  // of removing dead or invalid feeds yet
   if('onLine' in navigator && !navigator.onLine) {
     return await subscription_put_feed(feed, this.reader_conn, this.notify);
   }
@@ -52,8 +51,9 @@ async function subscription_add(feed) {
   try {
     response = await fetch_feed(url_string, this.timeout_ms);
   } catch(error) {
+    // If we are online and fetch fails then reject the subscription
     console.warn(error);
-    return {'status': ERR_FETCH};
+    return {'status': RDR_ERR_FETCH};
   }
 
   // If fetch_feed did not throw then response should always be defined.
@@ -62,7 +62,7 @@ async function subscription_add(feed) {
   if(response.redirected) {
     status = await subscription_url_is_unique(response.response_url,
       this.reader_conn);
-    if(status !== STATUS_OK) {
+    if(status !== RDR_OK) {
       return {'status' : status};
     }
 
@@ -74,24 +74,33 @@ async function subscription_add(feed) {
     xml_string = await response.text();
   } catch(error) {
     console.warn(error);
-    return ERR_FETCH;
+    return RDR_ERR_FETCH;
   }
 
-  let coerce_result;
+  let parse_result;
   try {
-    coerce_result = feed_coerce_from_response(xml_string,
-      response.request_url, response.response_url, response.last_modified_date);
+    parse_result = feed_parse_from_string(xml_string);
   } catch(error) {
     console.warn(error);
-    return {'status': ERR_PARSE};
+    return {'status': RDR_ERR_PARSE};
   }
 
-  const merged_feed = feed_merge(feed, coerce_result.feed);
+  let coerced_feed;
+  [status, coerced_feed] = coerce_fetched_feed(parse_result.feed,
+    response.request_url, response.response_url, response.last_modified_date);
 
+  if(status !== RDR_OK) {
+    return {'status': status};
+  }
+  console.assert(coerced_feed);
+  const merged_feed = feed_merge(feed, coerced_feed);
   console.assert(merged_feed);
 
-  // ignore result status, icon update failure is non-fatal
-  await feed_update_favicon(merged_feed, this.icon_conn);
+  status = await feed_update_favicon(merged_feed, this.icon_conn);
+  if(status !== RDR_OK) {
+    // icon update failure is non-fatal
+    console.debug('failed to update feed favicon', status);
+  }
 
   return await subscription_put_feed(merged_feed, this.reader_conn,
     this.notify);
@@ -100,20 +109,23 @@ async function subscription_add(feed) {
 // Return the status. Return ok if not already exists. Returns not ok if
 // exists or error.
 async function subscription_url_is_unique(url_string, reader_conn) {
+  let feed;
   try {
-    if(await reader_db_find_feed_id_by_url(reader_conn, url_string))
-      return ERR_DB;
+    feed = await reader_db_find_feed_id_by_url(reader_conn, url_string);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
-  return STATUS_OK;
+  return feed ? RDR_ERR_DB : RDR_OK;
 }
 
 // TODO: this should delegate to reader_storage_put_feed instead
 // and subscription_feed_prep should be deprecated as well
 // I think first step would be to inline this function, because right now it
 // composes prep, store, and notify together.
+// The second problem is the notify flag. Basically, let the caller decide
+// whether to notify simply by choosing to call subscription_notify_add or not.
+// The notify flag is pointless here and also in subscription_notify_add
 async function subscription_put_feed(feed, reader_conn, notify) {
   const storable_feed = subscription_feed_prep(feed);
   let new_id;
@@ -121,16 +133,18 @@ async function subscription_put_feed(feed, reader_conn, notify) {
     new_id = await reader_db_put_feed(reader_conn, storable_feed);
   } catch(error) {
     console.warn(error);
-    return {'status': ERR_DB};
+    return {'status': RDR_ERR_DB};
   }
 
   storable_feed.id = new_id;
-  subscription_notify_add(storable_feed, notify);
-  return {'status': STATUS_OK, 'feed': storable_feed};
+  if(notify) {
+    subscription_notify_add(storable_feed);
+  }
+
+  return {'status': RDR_OK, 'feed': storable_feed};
 }
 
-function subscription_notify_add(feed, notify) {
-  if(!notify) return;
+function subscription_notify_add(feed) {
   const title = 'Subscribed';
   const feed_name = feed.title || feed_get_top_url(feed);
   const message = 'Subscribed to ' + feed_name;
@@ -170,7 +184,7 @@ async function subscription_remove(feed) {
       entry_ids);
   } catch(error) {
     console.warn(error);
-    return ERR_DB;
+    return RDR_ERR_DB;
   }
 
   // ignore status
@@ -184,5 +198,5 @@ async function subscription_remove(feed) {
   channel.close();
 
   console.debug('unsubscribed from feed', feed.id);
-  return STATUS_OK;
+  return RDR_OK;
 }

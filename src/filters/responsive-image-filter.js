@@ -1,13 +1,13 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import dom.js
 
 function response_image_filter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
-    return STATUS_OK;
+    return RDR_OK;
   }
 
   const images = doc.body.getElementsByTagName('img');
@@ -17,7 +17,7 @@ function response_image_filter(doc) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 function responsive_image_filter_image(image) {

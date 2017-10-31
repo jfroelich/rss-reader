@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import filters/adoption-agency-filter.js
 // import filters/attribute-filter.js
 // import filters/base-filter.js
@@ -67,7 +67,7 @@ async function poll_document_filter(doc, url, fetch_image_timeout_ms) {
   // This should occur after lonestar_filter
   let allowed_protocols; // defer to defaults
 
-  // TODO: wrap, return ERR_FETCH or something on error
+  // TODO: wrap, return RDR_ERR_FETCH or something on error
   // Allow exceptions to bubble (for now)
   await image_size_filter(doc, allowed_protocols, fetch_image_timeout_ms);
 
@@ -120,5 +120,5 @@ async function poll_document_filter(doc, url, fetch_image_timeout_ms) {
 
   attribute_filter(doc, attribute_whitelist);
 
-  return STATUS_OK;
+  return RDR_OK;
 }

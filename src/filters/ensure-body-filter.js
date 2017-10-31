@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 
 // Ensure the document has a body element
 function ensure_body_filter(doc) {
@@ -16,5 +16,5 @@ function ensure_body_filter(doc) {
   const body_element = doc.createElement('body');
   body_element.appendChild(error_text_node);
   doc.documentElement.appendChild(body_element);
-  return STATUS_OK;
+  return RDR_OK;
 }

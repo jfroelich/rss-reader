@@ -1,12 +1,12 @@
 'use strict';
 
-// import base/status.js
+// import base/errors.js
 // import xml.js
 // import opml/opml-outline.js
 
 function opml_parse_from_string(xml_string) {
   let [status, doc] = xml_parse_from_string(xml_string);
-  if(status !== STATUS_OK) {
+  if(status !== RDR_OK) {
     console.log('xml parse error');
     return [status];
   }
@@ -14,10 +14,10 @@ function opml_parse_from_string(xml_string) {
   const name = doc.documentElement.localName.toLowerCase();
   if(name !== 'opml') {
     console.log('documentElement not opml:', name);
-    return [ERR_DOM];
+    return [RDR_ERR_DOM];
   }
 
-  return [STATUS_OK, doc];
+  return [RDR_OK, doc];
 }
 
 function opml_document_set_title(doc, title) {
@@ -37,7 +37,7 @@ function opml_document_set_title(doc, title) {
 
       if(!head_element) {
         console.log('missing head element');
-        return ERR_DOM;
+        return RDR_ERR_DOM;
       }
 
       head_element.appendChild(title_element);
@@ -50,7 +50,7 @@ function opml_document_set_title(doc, title) {
     }
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 function opml_document_create() {
@@ -120,7 +120,7 @@ function opml_remove_outlines_missing_xmlurls(doc) {
       outline.remove();
     }
   }
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 function opml_normalize_outline_xmlurls(doc) {
@@ -130,7 +130,7 @@ function opml_normalize_outline_xmlurls(doc) {
   for(const outline of outlines) {
     opml_outline_element_normalize_xmlurl(outline);
   }
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 function opml_document_append_outline_object(doc, outline) {
@@ -147,5 +147,5 @@ function opml_append_outline_element(doc, element) {
   }
 
   body_element.appendChild(element);
-  return STATUS_OK;
+  return RDR_OK;
 }

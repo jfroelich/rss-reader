@@ -2,7 +2,7 @@
 
 // import base/indexeddb.js
 // import base/number.js
-// import base/status.js
+// import base/errors.js
 // import poll/poll.js
 // import favicon.js
 // import reader-db.js
@@ -55,7 +55,7 @@ async function cli_poll_feeds() {
 
   // TODO: once poll_feeds returns status, use that as return value
   console.log('cli_poll_feeds end');
-  return STATUS_OK;
+  return RDR_OK;
 }
 
 async function cli_scan_lost(limit) {
@@ -102,5 +102,5 @@ async function cli_clear_favicons() {
     indexeddb_close(conn);
   }
 
-  return STATUS_OK;
+  return RDR_OK;
 }
