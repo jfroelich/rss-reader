@@ -27,9 +27,8 @@ function dom_get_default_stylesheet() {
   }
 }
 
-
 // Returns true if the given name is a valid name for an element. This only
-// does minimal validation.
+// does minimal validation and may yield false positives.
 function dom_is_valid_element_name(name) {
   return typeof name === 'string' && name.length && !name.includes(' ');
 }
@@ -73,7 +72,6 @@ function dom_unwrap(element) {
   parent_element.insertBefore(frag, next_sibling);
   return RDR_OK;
 }
-
 
 // Changes the tag name of an element. Event listeners are lost on rename. No
 // checking is done regarding whether the result is semantically correct.
@@ -240,7 +238,6 @@ function dom_remove_image(image) {
   image.remove();
 }
 
-
 // Find the lowest common ancestor of two nodes. Assumes
 // node1 does not contain node2, and node2 does not contain node1.
 //
@@ -288,7 +285,6 @@ function dom_ancestors(node) {
   }
   return ancestors;
 }
-
 
 // @param descriptors {Array} an array of descriptors such as those produced
 // by parseSrcset (third party library)
@@ -344,10 +340,9 @@ function dom_srcset_parse_from_string(srcset) {
   return descriptors;
 }
 
-
 // Returns true if an element, or any of its ancestors, is hidden.
 // @param element {Element}
-function dom_element_is_hidden(element) {
+function dom_is_hidden(element) {
   console.assert(element instanceof Element);
 
   const doc = element.ownerDocument;
@@ -383,7 +378,7 @@ function dom_element_is_hidden(element) {
 
   // Quickly test the element itself before testing ancestors, with the hope
   // of avoiding checking ancestors
-  if(dom_element_is_hidden_inline(element)) {
+  if(dom_is_hidden_inline(element)) {
     return true;
   }
 
@@ -400,7 +395,7 @@ function dom_element_is_hidden(element) {
   // Step backward along the path and stop upon finding the first hidden node
   // This is top down.
   for(let i = path.length - 1; i > -1; i--) {
-    if(dom_element_is_hidden_inline(path[i])) {
+    if(dom_is_hidden_inline(path[i])) {
       return true;
     }
   }
@@ -410,7 +405,7 @@ function dom_element_is_hidden(element) {
 
 // Returns true if an element is hidden according to its inline style. Makes
 // mostly conservative guesses and misses a few cases.
-function dom_element_is_hidden_inline(element) {
+function dom_is_hidden_inline(element) {
   console.assert(element instanceof Element);
 
   // BUG: seeing cannot read length of undefined in console. My understanding

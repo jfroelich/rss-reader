@@ -56,7 +56,7 @@ function lonestar_filter(doc, url) {
   const document_hostname = url_get_hostname(url);
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
-    if(dom_element_is_hidden_inline(image) ||
+    if(dom_is_hidden_inline(image) ||
       lonestar_filter_is_pixel(image) ||
       lonestar_filter_has_telemetry_source(image, document_hostname)) {
 

@@ -73,7 +73,7 @@ function pagination_is_candidate_anchor(anchor_element, base_url) {
     return false;
   }
 
-  if(dom_element_is_hidden(anchor_element)) {
+  if(dom_is_hidden(anchor_element)) {
     return false;
   }
 

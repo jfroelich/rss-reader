@@ -20,7 +20,7 @@ function hidden_filter(doc) {
 
   const elements = body.querySelectorAll('*');
   for(const element of elements) {
-    if(body.contains(element) && dom_element_is_hidden_inline(element)) {
+    if(body.contains(element) && dom_is_hidden_inline(element)) {
       dom_unwrap(element);
     }
   }
