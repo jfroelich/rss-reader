@@ -20,29 +20,30 @@ function subscription_context() {
 // if status is ok. feed is a copy of the inserted feed, which includes its new
 // id.
 async function subscription_add(feed) {
+  console.log('subscription_add', feed);
   console.assert(this instanceof subscription_context);
   console.assert(indexeddb_is_open(this.reader_conn));
   console.assert(indexeddb_is_open(this.icon_conn));
   console.assert(feed_is_feed(feed));
 
-  // TODO: rather than assert below, check whether feed has a url. If it does
-  // not then this is an error and this should return an error status code
-  // and exit early.
+  if(!feed_has_url(feed)) {
+    return {'status' : RDR_EINVAL};
+  }
 
   const url_string = feed_get_top_url(feed);
-  console.assert(url_string);
-
-  console.log('subscription_add', url_string);
-
-  let status = await subscription_url_is_unique(url_string, this.reader_conn);
+  let status = await subscription_unique(url_string, this.reader_conn);
   if(status !== RDR_OK) {
     return {'status' : status};
   }
 
-  // skip the favicon lookup while offline
-  // TODO: maybe should not skip if cache-only lookup could still work
+  // If offline then skip fetching information.
   // TODO: maybe should not support subscribe while offline if I have no way
   // of removing dead or invalid feeds yet
+
+  // Skip the favicon lookup while offline
+  // TODO: maybe should not skip favicon lookup if cache-only lookup could
+  // still work
+
   if('onLine' in navigator && !navigator.onLine) {
     return await subscription_put_feed(feed, this.reader_conn, this.notify);
   }
@@ -51,22 +52,16 @@ async function subscription_add(feed) {
   try {
     response = await fetch_feed(url_string, this.timeout_ms);
   } catch(error) {
-    // If we are online and fetch fails then reject the subscription
+    // If we are online and fetch fails then cancel the subscription
     console.warn(error);
     return {'status': RDR_ERR_FETCH};
   }
 
-  // If fetch_feed did not throw then response should always be defined.
-  console.assert(response);
-
   if(response.redirected) {
-    status = await subscription_url_is_unique(response.response_url,
-      this.reader_conn);
+    status = await subscription_unique(response.response_url, this.reader_conn);
     if(status !== RDR_OK) {
       return {'status' : status};
     }
-
-    // TODO: add response_url to feed here instead of in coerce?
   }
 
   let xml_string;
@@ -85,14 +80,9 @@ async function subscription_add(feed) {
     return {'status': RDR_ERR_PARSE};
   }
 
-  let coerced_feed;
-  [status, coerced_feed] = coerce_fetched_feed(parse_result.feed,
+  const coerced_feed = coerce_fetched_feed(parse_result.feed,
     response.request_url, response.response_url, response.last_modified_date);
 
-  if(status !== RDR_OK) {
-    return {'status': status};
-  }
-  console.assert(coerced_feed);
   const merged_feed = feed_merge(feed, coerced_feed);
   console.assert(merged_feed);
 
@@ -106,9 +96,10 @@ async function subscription_add(feed) {
     this.notify);
 }
 
-// Return the status. Return ok if not already exists. Returns not ok if
-// exists or error.
-async function subscription_url_is_unique(url_string, reader_conn) {
+// Check whether a feed with the given url already exists in the database
+// Return the status. Return ok if not already exists. Otherwise, returns either
+// database error or constraint error.
+async function subscription_unique(url_string, reader_conn) {
   let feed;
   try {
     feed = await reader_db_find_feed_id_by_url(reader_conn, url_string);
@@ -116,7 +107,7 @@ async function subscription_url_is_unique(url_string, reader_conn) {
     console.warn(error);
     return RDR_ERR_DB;
   }
-  return feed ? RDR_ERR_DB : RDR_OK;
+  return feed ? RDR_ERR_CONSTRAINT : RDR_OK;
 }
 
 // TODO: this should delegate to reader_storage_put_feed instead

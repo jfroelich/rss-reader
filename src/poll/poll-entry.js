@@ -24,8 +24,7 @@ function poll_entry_context() {
 
 // TODO: this shouldn't be returning true/false, it should be returning status
 // Switching to return status partly blocked by fetch not yielding status and
-// some other todos. Need to work from the bottom up, and review which
-// helper functions throw errors.
+// some other todos.
 
 // Expects to be bound to a poll_entry_context
 // @param entry {Object}
@@ -33,6 +32,7 @@ async function poll_entry(entry) {
   console.assert(this instanceof poll_entry_context);
   console.assert(entry_is_entry(entry));
 
+  // Cannot assume entry has url
   if(!entry_has_url(entry)) {
     return false;
   }
@@ -104,7 +104,6 @@ async function poll_entry_fetch(url, timeout) {
   try {
     response = await fetch_html(url, timeout);
   } catch(error) {
-    // Fetch errors are non-fatal to polling an entry
   }
   return response;
 }

@@ -16,3 +16,9 @@ const RDR_ERR_PARSE = -3;
 
 // DOM related error
 const RDR_ERR_DOM = -4;
+
+// TypeError
+const RDR_EINVAL = -5;
+
+// Constraint error (e.g. duplicate db key)
+const RDR_ERR_CONSTRAINT = -6;

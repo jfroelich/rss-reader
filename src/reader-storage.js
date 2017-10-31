@@ -5,7 +5,7 @@
 // processing. For example, where as a reader-db function simply stores an
 // object exactly as is, the corresponding wrapper function here attaches
 // additional functionality such as sanitization and setting defaults. This
-// layer also integrates other components together to bring auxillary
+// layer also composes components together to bring auxillary
 // functionality such as notifications or badge text update.
 
 // import base/indexeddb.js
@@ -15,6 +15,7 @@
 // import extension.js
 // import favicon.js
 // import feed.js
+// import reader-badge.js
 // import reader-db.js
 
 // Scans the database for archivable entries and archives them

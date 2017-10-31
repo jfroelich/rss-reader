@@ -36,12 +36,12 @@ function article_title_filter_publisher(title) {
     return title;
   }
 
-  const tail = title.substring(index + 3);
-
+  const delimiter_length = 3;
+  const tail = title.substring(index + delimiter_length);
   const words = string_tokenize(tail);
 
-  // Too many words in the tail
-  if(words.length > 4) {
+  const MAX_TAIL_WORDS = 4;
+  if(words.length > MAX_TAIL_WORDS) {
     return title;
   }
 

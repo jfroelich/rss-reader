@@ -41,6 +41,7 @@ function entry_get_top_url(entry) {
 // Append a url to an entry's url list. Lazily creates the list if needed.
 // Normalizes the url. Returns true if the url was added. Returns false if the
 // normalized url already exists and therefore was not added
+// @throws {Error} if url_string is invalid
 function entry_append_url(entry, url_string) {
   console.assert(entry_is_entry(entry));
   console.assert(url_is_canonical(url_string));

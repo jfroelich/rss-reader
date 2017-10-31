@@ -18,6 +18,11 @@ function feed_is_valid_feed_id(id) {
   return number_is_positive_integer(id);
 }
 
+function feed_has_url(feed) {
+  console.assert(feed_is_feed(feed));
+  return feed.urls && feed.urls.length;
+}
+
 // Returns the last url in the feed's url list as a string
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
