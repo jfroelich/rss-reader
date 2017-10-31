@@ -2,8 +2,8 @@
 
 // import base/indexeddb.js
 // import net/mime.js
-// import opml/opml-document.js
-// import opml/opml-outline.js
+// import opml-document.js
+// import opml-outline.js
 // import favicon.js
 // import feed.js
 // import file.js

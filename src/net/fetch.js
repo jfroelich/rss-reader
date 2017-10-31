@@ -17,7 +17,7 @@ const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 // @returns {Object} a Response-like object
 async function fetch_internal(url, options, timeout_ms, accept_response) {
 
-  // TODO: after the deprecation of assert.js, several of these asserts
+  // TODO: after the deprecation of assert.js, several of the asserts
   // became weak asserts, when in fact they should be strong assertions.
 
 
@@ -45,7 +45,6 @@ async function fetch_internal(url, options, timeout_ms, accept_response) {
   }
 
   if(typeof accept_response === 'function') {
-
     if(!accept_response(response)) {
       throw new Error('response not accepted ' + url);
     }

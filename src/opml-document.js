@@ -2,7 +2,7 @@
 
 // import base/errors.js
 // import xml.js
-// import opml/opml-outline.js
+// import opml-outline.js
 
 function opml_parse_from_string(xml_string) {
   let [status, doc] = xml_parse_from_string(xml_string);

@@ -1,7 +1,7 @@
 'use strict';
 
-// import opml/opml-document.js
-// import opml/opml-outline.js
+// import opml-document.js
+// import opml-outline.js
 // import xml.js
 
 // Triggers the download of an OPML-formatted file containing the given feeds
