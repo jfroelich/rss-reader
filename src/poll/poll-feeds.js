@@ -138,26 +138,23 @@ async function poll_feeds_poll_feed(feed, pfc) {
     return RDR_OK;
   }
 
-  let xml_string;
+  let feed_xml;
   try {
-    xml_string = await response.text();
+    feed_xml = await response.text();
   } catch(error) {
     console.warn(error);
     return RDR_ERR_FETCH;
   }
 
-  let parse_result;
-  try {
-    parse_result = feed_parse_from_string(xml_string);
-  } catch(error) {
-    console.warn(error);
-    return RDR_ERR_PARSE;
+  const process_entries = true;
+  const parse_result = reader_parse_feed(feed_xml, url,
+    response.response_url, response.last_modified_date, process_entries);
+
+  if(parse_result.status !== RDR_OK) {
+    return parse_result.status;
   }
 
-  const coerced_feed = coerce_fetched_feed(parse_result.feed, url,
-    response.response_url, response.last_modified_date);
-
-  const merged_feed = feed_merge(feed, coerced_feed);
+  const merged_feed = feed_merge(feed, parse_result.feed);
   let stored_feed;
   try {
     stored_feed = await reader_storage_put_feed(merged_feed, pfc.reader_conn);
@@ -167,23 +164,6 @@ async function poll_feeds_poll_feed(feed, pfc) {
   }
 
   let entries = parse_result.entries;
-
-  let base_url;
-  try {
-    base_url = new URL(feed.link);
-  } catch(error) {
-    // Ignore? I guess? Ignore for now. Might be incorrect.
-  }
-
-  for(const entry of entries) {
-    canonicalize_fetched_entry_link(entry, base_url);
-  }
-
-  for(const entry of entries) {
-    coerce_fetched_entry_to_storage_format(entry);
-  }
-
-  entries = poll_feeds_filter_dup_entries(entries);
 
   // Cascade feed properties to entries
   for(const entry of entries) {
@@ -204,34 +184,4 @@ async function poll_feeds_poll_feed(feed, pfc) {
   const entry_promises = entries.map(poll_entry, pec);
   const entry_resolutions = await Promise.all(entry_promises);
   return RDR_OK;
-}
-
-function poll_feeds_filter_dup_entries(entries) {
-  const distinct_entries = [];
-  const seen_urls = [];
-
-  for(const entry of entries) {
-
-    // Retain entries without urls in the output without comparison
-    if(!entry_has_url(entry)) {
-      distinct_entries.push(entry);
-      continue;
-    }
-
-    let is_seen_url = false;
-
-    for(const url_string of entry.urls) {
-      if(seen_urls.includes(url_string)) {
-        is_seen_url = true;
-        break;
-      }
-    }
-
-    if(!is_seen_url) {
-      distinct_entries.push(entry);
-      seen_urls.push(...entry.urls);
-    }
-  }
-
-  return distinct_entries;
 }

@@ -64,32 +64,25 @@ async function subscription_add(feed) {
     }
   }
 
-  let xml_string;
+  let feed_xml;
   try {
-    xml_string = await response.text();
+    feed_xml = await response.text();
   } catch(error) {
     console.warn(error);
     return RDR_ERR_FETCH;
   }
 
-  let parse_result;
-  try {
-    parse_result = feed_parse_from_string(xml_string);
-  } catch(error) {
-    console.warn(error);
-    return {'status': RDR_ERR_PARSE};
+  const process_entries = false;
+  const parse_result = reader_parse_feed(feed_xml, response.request_url,
+    response.response_url, response.last_modified_date, process_entries);
+  if(parse_result.status !== RDR_OK) {
+    return {'status': parse_result.status};
   }
 
-  const coerced_feed = coerce_fetched_feed(parse_result.feed,
-    response.request_url, response.response_url, response.last_modified_date);
-
-  const merged_feed = feed_merge(feed, coerced_feed);
-  console.assert(merged_feed);
-
+  const merged_feed = feed_merge(feed, parse_result.feed);
   status = await feed_update_favicon(merged_feed, this.icon_conn);
   if(status !== RDR_OK) {
-    // icon update failure is non-fatal
-    console.debug('failed to update feed favicon', status);
+    console.debug('failed to update feed favicon (non-fatal)', status);
   }
 
   return await subscription_put_feed(merged_feed, this.reader_conn,

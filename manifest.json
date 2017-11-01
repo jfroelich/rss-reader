@@ -26,9 +26,9 @@
       "/src/install.js",
 
       "/src/feed-parse.js",
-      "/src/coerce-fetched-feed.js",
       "/src/reader-badge.js",
       "/src/reader-db.js",
+      "/src/reader-parse-feed.js",
       "/src/reader-storage.js",
       "/src/rewrite-url.js",
       "/src/subscription.js",

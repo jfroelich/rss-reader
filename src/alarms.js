@@ -127,8 +127,6 @@ function alarms_on_alarm_wakeup(alarm) {
 }
 
 function alarms_register_all() {
-  console.log('alarms_register_all start');
-
   chrome.alarms.create('archive', {'periodInMinutes': 60 * 12});
   chrome.alarms.create('poll', {'periodInMinutes': 60});
   chrome.alarms.create('remove-entries-missing-urls',
@@ -142,7 +140,6 @@ function alarms_register_all() {
 }
 
 chrome.alarms.onAlarm.addListener(alarms_on_alarm_wakeup);
-
 
 function alarms_dom_content_loaded(event) {
   console.debug('alarms_dom_content_loaded');
