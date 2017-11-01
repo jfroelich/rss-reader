@@ -3,6 +3,7 @@
 // import base/errors.js
 // import net/url.js
 // import entry.js
+// import feed.js
 // import feed-parse.js
 
 // Parses an xml input string representing a feed. Returns a result with a
