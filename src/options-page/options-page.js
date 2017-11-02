@@ -1,8 +1,5 @@
 'use strict';
 
-// TODO: if background refresh feed favicons completes, this needs to update
-// the icons displayed
-
 // import base/indexeddb.js
 // import base/errors.js
 // import extension.js
@@ -128,50 +125,7 @@ function optionsPageFeedListAppendFeed(feed) {
 
 // @param url {URL}
 async function optionsPageStartSubscription(url) {
-  console.log('optionsPageStartSubscription start', url.href);
 
-  optionsPageSubscriptionMonitorShow();
-
-  // TODO: unsafe?
-  optionsPageSubscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
-
-  const feed = feedCreate();
-  feedAppendURL(feed, url.href);
-
-  let status, subscribedFeed;
-
-  const sc = new SubscriptionContext();
-
-  try {
-    [sc.readerConn, sc.iconConn] = await
-      Promise.all([readerDbOpen(), faviconDbOpen()]);
-
-    const subResult = await subscriptionAdd.call(sc, feed);
-    status = subResult.status;
-    subscribedFeed = subResult.feed;
-  } catch(error) {
-    console.warn(error);
-    optionsPageSubscriptionMonitorHide();
-    // TODO: show a visual error message.
-    return;
-  } finally {
-    indexedDBClose(sc.readerConn, sc.iconConn);
-  }
-
-  // TODO: show an error message.
-  if(status !== RDR_OK) {
-    optionsPageSubscriptionMonitorHide();
-    return;
-  }
-
-  console.assert(subscribedFeed);
-  optionsPageFeedListAppendFeed(subscribedFeed);
-  const feedURL = feedGetTopURL(subscribedFeed);
-
-  // TODO: unsafe?
-  optionsPageSubscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
-  optionsPageSubscriptionMonitorHide();
-  optionsPageShowSectionId('subs-list-section');
 }
 
 async function optionsPageFeedListItemOnclick(event) {
@@ -229,39 +183,10 @@ async function optionsPageFeedListItemOnclick(event) {
   window.scrollTo(0,0);
 }
 
-
-// TODO: this function is too large
-// TODO: favicon resolution is too slow. Display the results immediately
-// using a placeholder. Then, in a separate non-blocking
-// task, try and replace the default icon with the proper icon.
-// TODO: Suppress resubmits if last query was a search and the
-// query did not change
 async function optionsPageSubscribeFormOnSubmit(event) {
   console.debug('optionsPageSubscribeFormOnSubmit', event);
   // Prevent normal form submission behavior
   event.preventDefault();
-
-  const queryElement = document.getElementById('subscribe-discover-query');
-  let queryString = queryElement.value;
-  queryString = queryString || '';
-  queryString = queryString.trim();
-
-  if(!queryString) {
-    return false;
-  }
-
-  const noResultsElement = document.getElementById('discover-no-results');
-  const progressElement = document.getElementById('discover-in-progress');
-
-  if(progressElement) {
-    console.debug('progressElement.style.display: "%s"',
-      progressElement.style.display);
-  }
-
-  if(progressElement.style.display === 'block') {
-    console.debug('in progress, canceling submit');
-    return false;
-  }
 
   const monitorElement = document.getElementById('submon');
 
@@ -270,202 +195,81 @@ async function optionsPageSubscribeFormOnSubmit(event) {
       monitorElement.style.display);
   }
 
-
   if(monitorElement && monitorElement.style.display === 'block') {
     console.debug('in progress, canceling submit');
     return false;
   }
 
-  // Clear the previous results list
-  const resultsListElement = document.getElementById('discover-results-list');
-  resultsListElement.innerHTML  = '';
+  // TODO: rename, this is no longer query, simply a text input that should
+  // contain a url string
+  const queryElement = document.getElementById('subscribe-url');
+  let queryString = queryElement.value;
+  queryString = queryString || '';
+  queryString = queryString.trim();
 
+  if(!queryString) {
+    return false;
+  }
 
-  let urlObject = null;
+  let url = null;
   try {
-    urlObject = new URL(queryString);
+    url = new URL(queryString);
   } catch(exception) {
-  }
+    // TODO: show error
 
-  // If it is a URL, subscribe
-  if(urlObject) {
-    console.debug('form submit detected url input, not doing search');
-    queryElement.value = '';
-
-    optionsPageStartSubscription(urlObject);
+    console.warn(exception);
     return false;
   }
 
-  // TODO: if i am going to deprecate search, then everything below here
-  // can be deleted.
+  // Reset the input
+  queryElement.value = '';
 
-  // Search for feeds
-  progressElement.style.display = 'block';
+  optionsPageSubscriptionMonitorShow();
 
-  let iconURL, linkURL, entries, query;
-  const searchTimeoutMs = 5000;
+  // This is safe because it is coming from the parsed url and not directly
+  // from user input, and would have failed earlier.
+  optionsPageSubscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
+
+  const feed = feedCreate();
+  feedAppendURL(feed, url.href);
+
+  let status, subscribedFeed;
+
+  const sc = new SubscriptionContext();
 
   try {
-    ({query, entries} =
-      await googleFeedsAPISearch(queryString, searchTimeoutMs));
+    [sc.readerConn, sc.iconConn] = await
+      Promise.all([readerDbOpen(), faviconDbOpen()]);
+
+    const subResult = await subscriptionAdd.call(sc, feed);
+    status = subResult.status;
+    subscribedFeed = subResult.feed;
   } catch(error) {
-    console.debug(error);
-    return false;
+    console.warn(error);
+    optionsPageSubscriptionMonitorHide();
+    // TODO: show a visual error message.
+    return;
   } finally {
-    progressElement.style.display = 'none';
+    indexedDBClose(sc.readerConn, sc.iconConn);
   }
 
-  // TODO: do i need to still hide progress element then?
-
-  // TODO: use explicit loops
-
-  // Filter entries without urls
-  entries = entries.filter((entryObject) => entryObject.url);
-
-  // Convert to URL objects, filter entries with invalid urls
-  entries = entries.filter((entryObject) => {
-    try {
-      entryObject.url = new URL(entryObject.url);
-      return true;
-    } catch(error) {
-      return false;
-    }
-  });
-
-  // Filter entries with identical normalized urls, favoring earlier entries
-  const distinctURLs = [];
-  entries = entries.filter((entryObject) => {
-    if(distinctURLs.includes(entryObject.url.href)) {
-      return false;
-    }
-    distinctURLs.push(entryObject.url.href);
-    return true;
-  });
-
-  // If, after filtering, there are no more entries, exit early
-  if(!entries.length) {
-    resultsListElement.style.display = 'none';
-    noResultsElement.style.display = 'block';
-    return false;
-  }
-
-  // Sanitize entry title
-  // TODO: use for..of
-  const ENTRY_TITLE_MAX_LENGTH = 200;
-  entries.forEach((entryObject) => {
-    let title = entryObject.title;
-    if(title) {
-      title = stringFilterControlChars(title);
-      title = htmlReplaceTags(title, '');
-      title = htmlTruncate(title, ENTRY_TITLE_MAX_LENGTH);
-      entryObject.title = title;
-    }
-  });
-
-  // Sanitize content snippet
-  const replacementString = '\u2026';
-  const entrySnippetMaxLength = 400;
-  // TODO: use for..of
-  entries.forEach((entryObject) => {
-    let snippet = entryObject.contentSnippet;
-    if(snippet) {
-      snippet = stringFilterControlChars(snippet);
-      snippet = snippet.replace(/<br\s*>/gi, ' ');
-      snippet = htmlTruncate(snippet, entrySnippetMaxLength,
-        replacementString);
-      entryObject.contentSnippet = snippet;
-    }
-  });
-
-  resultsListElement.style.display = 'block';
-  noResultsElement.style.display = 'none';
-
-  const itemElement = document.createElement('li');
-  itemElement.textContent = `Found ${entries.length} feeds.`;
-  resultsListElement.appendChild(itemElement);
-
-  // TODO: use try/catch/finally
-  // TODO: explicit defaults
-  let iconConn;
-
-  iconConn = await faviconDbOpen();
-  for(let result of entries) {
-    if(!result.link) {
-      continue;
-    }
-
-    linkURL = new URL(result.link);
-    // TODO: properly call with all parameteres
-    iconURL = await faviconLookup(iconConn, linkURL);
-    result.faviconURLString = iconURL;
-  }
-  indexedDBClose(iconConn);
-
-  // TODO: use explicit loops
-  const elements = entries.map(optionsPageCreateSearchResultElement);
-  elements.forEach((el) => resultsListElement.appendChild(el));
-  return false;// Signal no submit
-}
-
-// Creates and returns a search result item to show in the list of search
-// results when searching for feeds.
-function optionsPageCreateSearchResultElement(feed) {
-  const itemElement = document.createElement('li');
-  const subscribeButton = document.createElement('button');
-  subscribeButton.value = feed.url.href;
-  subscribeButton.title = feed.url.href;
-  subscribeButton.textContent = 'Subscribe';
-  subscribeButton.onclick = optionsPageSubscribeButtonOnclick;
-  itemElement.appendChild(subscribeButton);
-
-  if(feed.faviconURLString) {
-    const faviconElement = document.createElement('img');
-    faviconElement.setAttribute('src', feed.faviconURLString);
-    if(feed.link) {
-      faviconElement.setAttribute('title', feed.link);
-    }
-
-    faviconElement.setAttribute('width', '16');
-    faviconElement.setAttribute('height', '16');
-    itemElement.appendChild(faviconElement);
-  }
-
-  // TODO: don't allow for empty href value
-  const titleElement = document.createElement('a');
-  if(feed.link) {
-    titleElement.setAttribute('href', feed.link);
-  }
-
-  titleElement.setAttribute('target', '_blank');
-  titleElement.title = feed.title;
-  titleElement.innerHTML = feed.title;
-  itemElement.appendChild(titleElement);
-
-  const snippetElement = document.createElement('span');
-  snippetElement.innerHTML = feed.contentSnippet;
-  itemElement.appendChild(snippetElement);
-
-  const urlElement = document.createElement('span');
-  urlElement.setAttribute('class', 'discover-search-result-url');
-  urlElement.textContent = feed.url.href;
-  itemElement.appendChild(urlElement);
-  return itemElement;
-}
-
-function optionsPageSubscribeButtonOnclick(event) {
-  const subscribeButton = event.target;
-  const url = subscribeButton.value;
-  console.assert(url);
-
-  // TODO: Ignore future clicks if an error was displayed?
-
-  // Ignore future clicks while subscription in progress
-  const subscriptionMonitor = document.getElementById('submon');
-  if(subscriptionMonitor && subscriptionMonitor.style.display !== 'none') {
+  // TODO: show an error message.
+  if(status !== RDR_OK) {
+    optionsPageSubscriptionMonitorHide();
     return;
   }
 
-  optionsPageStartSubscription(new URL(url));
+  console.assert(subscribedFeed);
+  optionsPageFeedListAppendFeed(subscribedFeed);
+  const feedURL = feedGetTopURL(subscribedFeed);
+
+  // TODO: unsafe?
+  optionsPageSubscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
+  optionsPageSubscriptionMonitorHide();
+  optionsPageShowSectionId('subs-list-section');
+
+  // Signal form should not be submitted
+  return false;
 }
 
 async function optionsPageFeedListInit() {
@@ -813,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function(event) {
   }
 
   {
-    const headerFontMenu = document.getElementById('select_header_font');
+    const headerFontMenu = document.getElementById('select-header-font');
     headerFontMenu.onchange = optionsPageHeaderFontMenuOnchange;
     let option = document.createElement('option');
     option.textContent = 'Use Chrome font settings';
@@ -829,7 +633,7 @@ document.addEventListener('DOMContentLoaded', function(event) {
   }
 
   {
-    const bodyFontMenu = document.getElementById('select_body_font');
+    const bodyFontMenu = document.getElementById('select-body-font');
     bodyFontMenu.onchange = optionsPageBodyFontMenuOnchange;
     let option = document.createElement('option');
     option.textContent = 'Use Chrome font settings';

@@ -27,7 +27,6 @@ function urlHasScriptProtocol(url) {
     /^\s*javascript:/i.test(url);
 }
 
-
 // Returns the absolute form the input url
 // @param url {String}
 // @param baseURL {URL}

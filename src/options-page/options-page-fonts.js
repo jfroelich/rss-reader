@@ -18,6 +18,5 @@ const OPTIONS_PAGE_FONTS = [
   'Open Sans Regular',
   'PathwayGothicOne',
   'PlayfairDisplaySC',
-  'Raleway, sans-serif',
   'Roboto Regular'
 ];

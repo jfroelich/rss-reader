@@ -4,7 +4,6 @@
 <link rel="shortcut icon" href="/images/rss_icon_trans.gif"/>
 <link rel="stylesheet" href="/css/common.css"/>
 <link rel="stylesheet" href="/css/options.css"/>
-
 <script src="/src/base/indexeddb.js"></script>
 <script src="/src/base/number.js"></script>
 <script src="/src/base/object.js"></script>
@@ -20,7 +19,6 @@
 <script src="/src/options-page/options-page-fonts.js"></script>
 <script src="/src/options-page/options-page-image-paths.js"></script>
 <script src="/src/options-page/options-page-subscription-monitor.js"></script>
-
 <script src="/src/dom.js"></script>
 <script src="/src/entry.js"></script>
 <script src="/src/entry-css.js"></script>
@@ -28,7 +26,6 @@
 <script src="/src/favicon.js"></script>
 <script src="/src/feed.js"></script>
 <script src="/src/base/file-utils.js"></script>
-<script src="/src/google-feeds-api.js"></script>
 <script src="/src/html.js"></script>
 <script src="/src/feed-parse.js"></script>
 <script src="/src/opml-document.js"></script>
@@ -42,7 +39,6 @@
 <script src="/src/subscription.js"></script>
 <script src="/src/xml-utils.js"></script>
 <script src="/src/xml-parser.js"></script>
-
 </head>
 <body>
 <table id="f-it"><tr><td id="nav-cell-container">
@@ -57,19 +53,19 @@
   settings</li>
 <li id="mi-backup" section="section-backup">Import/export</li>
 <li id="mi-view-about" section="divabout">About</li>
-<li id="mi-feed-details" section="section-feed-details" style="display:none;">
+<li id="mi-feed-details" section="section-feed-details" style="display: none;">
   hidden feed details placeholder</li>
 </ul>
 
 </td><td id="section-layout-container">
 
-<div id="section-subscriptions" class="options_section">
+<div id="section-subscriptions" class="options-section">
   <h1>Subscriptions</h1>
   <p id="nosubs" class="option-text">No subscriptions</p>
   <ul id="feedlist"></ul>
 </div>
 
-<div id="section-general-settings" class="options_section">
+<div id="section-general-settings" class="options-section">
   <h1>General settings</h1>
   <table id="general-settings-table">
   <tr>
@@ -95,7 +91,7 @@
   </table>
 </div>
 
-<div id="section-feed-details" class="options_section">
+<div id="section-feed-details" class="options-section">
   <h1 id="details-title-container">
   <img id="details-favicon" width="24">
   <span id="details-title"></span>
@@ -121,23 +117,16 @@
   </table>
 </div>
 
-<div id="section-add-subscription" class="options_section">
+<div id="section-add-subscription" class="options-section">
   <h1>Add a subscription</h1>
   <form id="subscription-form">
-    <input type="search" id="subscribe-discover-query"
-      placeholder="e.g. http://example.com/feed.rss or &quot;grumpy cats&quot;"
-      required>
+    <input type="search" id="subscribe-url"
+      placeholder="e.g. http://example.com/feed.rss" required>
     <input type="submit" value="GO">
   </form>
-  <ul id="discover-results-list"></ul>
-  <p id="discover-no-results" class="option-text">No results matched your
-  query.</p>
-  <p id="discover-in-progress" class="option-text">
-  <progress style="width:200px">Searching</progress>
-  </p>
 </div>
 
-<div id="section-display-settings" class="options_section">
+<div id="section-display-settings" class="options-section">
   <h1>Display settings</h1>
   <div id="display-preview">
     <div class="entry" style='padding-bottom:5px'>
@@ -152,7 +141,7 @@
      eu ultrices.  Fusce molestie quam quis congue tempus.</span>
     </div>
   </div>
-  <table id="options_table">
+  <table id="options-table">
   <tr>
     <td class="options-text">Margins:</td>
     <td><input type="range" id="entry-margin" min="5" max="300" step="1"></td>
@@ -167,7 +156,7 @@
   <tr>
     <td class="option-text">Headings:</td>
     <td>
-      <select id="select_header_font" style="margin-top:0px;padding-top:0px">
+      <select id="select-header-font" style="margin-top:0px;padding-top:0px">
       </select>
       <input type="range" id="header-font-size" min="1" max="50" step="1">
     </td>
@@ -175,7 +164,7 @@
   <tr>
     <td class="option-text">Text:</td>
     <td>
-      <select id="select_body_font"></select>
+      <select id="select-body-font"></select>
       <input type="range" id="body-font-size" min="1" max="50" step="1">
       <input type="checkbox" id="justify-text" style="width:20px;"> Justify
     </td>
@@ -193,7 +182,7 @@
 </div>
 
 
-<div id="section-backup" class="options_section">
+<div id="section-backup" class="options-section">
 <h1>Import/export</h1>
 <p class="option-text">Import feeds from an OPML file:</p>
 <p><button id="button-import-opml">Import OPML file</button></p>
@@ -201,7 +190,7 @@
 <p><button id="button-export-opml">Export OPML file</button></p>
 </div>
 
-<div id="divabout" class="options_section">
+<div id="divabout" class="options-section">
   <h1>About</h1>
   <p class="option-text">Name: <span id="extension-name"></span></p>
   <p class="option-text">Author: <span id="extension-author"></span></p>
