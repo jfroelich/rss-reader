@@ -4,67 +4,8 @@
 // import net/mime-utils.js
 // import net/url-utils.js
 
-const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
 // TODO: change functions to return status instead of throwing exceptions
-
-// A 'private' helper function for other fetch functions
-// @param url {String} request url
-// @param options {Object} optional, fetch options parameter
-// @param timeoutMs {Number} optional, timeout in milliseconds
-// @param acceptPredicate {Function} optional, if specified then is passed the
-// response, and then the return value is asserted
-// @returns {Object} a Response-like object
-async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
-
-  // TODO: after the deprecation of assert.js, several of the asserts
-  // became weak asserts, when in fact they should be strong assertions.
-
-  // Allow exception to bubble
-  // TODO: trap exception. should return error code instead
-  const response = await fetchWithTimeout(url, options, timeoutMs);
-
-  if(!response) {
-    throw new Error('response undefined ' + url);
-  }
-
-  if(!response.ok) {
-    throw new Error('response not ok ' + url);
-  }
-
-  // The spec says 204 is ok, because response.ok is true for status codes
-  // 200-299, but I consider 204 to be an error.
-  // NOTE: based on errors in the console Chrome may implicitly be treating
-  // 204 as a network error, based on seeing "no content errors" that occur
-  // sometimes when doing fetch. There may not be a need to explicitly check for
-  // this error code. I would need to test further.
-  const HTTP_STATUS_NO_CONTENT = 204;
-  if(response.status === HTTP_STATUS_NO_CONTENT) {
-    throw new Error('no content repsonse ' + url);
-  }
-
-  if(typeof acceptPredicate === 'function') {
-    if(!acceptPredicate(response)) {
-      throw new Error('response not accepted ' + url);
-    }
-  }
-
-  // TODO: create a ReaderResponse class and use that instead of a simple
-  // object
-
-  const responseWrapper = {};
-
-  responseWrapper.text = function getBodyText() {
-    return response.text();
-  };
-
-  responseWrapper.requestURL = url;
-  responseWrapper.responseURL = response.url;
-  responseWrapper.last_modified_date = fetchGetLastModifiedDate(response);
-  responseWrapper.redirected = fetchDidRedirect(url, response.url);
-  return responseWrapper;
-}
-
 
 // Fetches a feed. Returns a basic object, similar to Response, with custom
 // properties.
@@ -180,9 +121,9 @@ async function fetchImageHead(url, timeoutMs) {
   // TODO: create and use ReaderResponse
   const outputResponse = {};
 
-  // TODO: fetchGetContentLength should be a method of ReaderResponse
+  // TODO: ResponseUtils.getContentLength should be a method of ReaderResponse
   // TODO: rename outputResponse.size to to outputResponse.contentLength
-  outputResponse.size = fetchGetContentLength(response);
+  outputResponse.size = ResponseUtils.getContentLength(response);
 
   outputResponse.responseURL = response.url;
   return outputResponse;
@@ -282,6 +223,63 @@ function fetchImage(url, timeoutMs) {
   return Promise.race([fetchPromise, timeoutPromise]);
 }
 
+// A 'private' helper function for other fetch functions
+// @param url {String} request url
+// @param options {Object} optional, fetch options parameter
+// @param timeoutMs {Number} optional, timeout in milliseconds
+// @param acceptPredicate {Function} optional, if specified then is passed the
+// response, and then the return value is asserted
+// @returns {Object} a Response-like object
+async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
+
+  // TODO: after the deprecation of assert.js, several of the asserts
+  // became weak asserts, when in fact they should be strong assertions.
+
+  // Allow exception to bubble
+  // TODO: trap exception. should return error code instead
+  const response = await fetchWithTimeout(url, options, timeoutMs);
+
+  if(!response) {
+    throw new Error('response undefined ' + url);
+  }
+
+  if(!response.ok) {
+    throw new Error('response not ok ' + url);
+  }
+
+  // The spec says 204 is ok, because response.ok is true for status codes
+  // 200-299, but I consider 204 to be an error.
+  // NOTE: based on errors in the console Chrome may implicitly be treating
+  // 204 as a network error, based on seeing "no content errors" that occur
+  // sometimes when doing fetch. There may not be a need to explicitly check for
+  // this error code. I would need to test further.
+  const HTTP_STATUS_NO_CONTENT = 204;
+  if(response.status === HTTP_STATUS_NO_CONTENT) {
+    throw new Error('no content repsonse ' + url);
+  }
+
+  if(typeof acceptPredicate === 'function') {
+    if(!acceptPredicate(response)) {
+      throw new Error('response not accepted ' + url);
+    }
+  }
+
+  // TODO: create a ReaderResponse class and use that instead of a simple
+  // object
+
+  const responseWrapper = {};
+
+  responseWrapper.text = function getBodyText() {
+    return response.text();
+  };
+
+  responseWrapper.requestURL = url;
+  responseWrapper.responseURL = response.url;
+  responseWrapper.last_modified_date = ResponseUtils.getLastModified(response);
+  responseWrapper.redirected = fetchURLChanged(url, response.url);
+  return responseWrapper;
+}
+
 // Returns a promise. If no timeout is given the promise is the same promise
 // as yielded by calling fetch. If a timeout is given, then a timeout promise
 // is raced against the fetch, and whichever promise wins the race is returned.
@@ -338,12 +336,27 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
   return Promise.race([fetchPromise, timeoutPromise]);
 }
 
+// Return true if the response url is 'different' than the request url,
+// ignoring the hash
+//
+// @param requestURL {String} the fetch input url
+// @param responseURL {String} the value of the response.url property of the
+// Response object produced by calling fetch.
+function fetchURLChanged(requestURL, responseURL) {
+  console.assert(URLUtils.isCanonical(requestURL));
+  console.assert(URLUtils.isCanonical(responseURL));
+
+  return requestURL !== responseURL &&
+    !URLUtils.hashlessEquals(requestURL, responseURL);
+}
+
+const ResponseUtils = {};
+
 // Returns the value of the Last-Modified header as a Date object
 // @param response {Response}
 // @returns {Date} the value of Last-Modified, or undefined if error such as
 // no header present or bad date
-// TODO: move to ReaderResponse method
-function fetchGetLastModifiedDate(response) {
+ResponseUtils.getLastModified = function(response) {
   console.assert(response);
 
   const lastModifiedString = response.headers.get('Last-Modified');
@@ -355,60 +368,15 @@ function fetchGetLastModifiedDate(response) {
     return new Date(lastModifiedString);
   } catch(error) {
   }
-}
+};
 
-// Return true if the response url is 'different' than the request url, which
-// indicates a redirect in the sense used by this library. This test is done
-// due to quirks with fetch response.redirected not working as expected. That
-// may be just because I started using the new fetch API as soon as it
-// became available and there was a bug that has since been fixed. When first
-// using it I witnessed many times that it was false, even though a redirect
-// had occurred. I never witnessed it return true.
-//
-// If the two are exactly equal, then not a redirect. Even if some chain
-// of redirects occurred and the terminal url was the same as the initial
-// url. If the two are not equal, then a redirect occurred unless the only
-// difference is the hash value.
-//
-// Note there are issues with this hashless comparison, when the '#' symbol
-// in the url carries additional meaning, such as when it used like the symbol
-// '?'. If I recall this is a simple setting in Apache. I've witnessed it
-// in action at Google groups. Simply stripping the hash from the input
-// request url when fetching would lead to possibly fetching the wrong
-// response (which is how I learned about this, because fetches to Google
-// groups all failed in strange ways). This is why fetches occur on urls as is,
-// without any hash filtering. So I must pass the hash to fetch, but then I must
-// deal with the fact that fetch automatically strips hash information from
-// response.url, regardless of how response.redirected is derived.
-//
-// The response.url yielded by fetch discards the hash, leading to a url that
-// is not exactly equal to the input url. This results in something that
-// appears to be a new url, that is sometimes in fact still the same url, which
-// means no redirect.
-//
-// TODO: given that it is not identical to the meaning of redirect in the
-// spec, or that I am not really clear on it, maybe just be exact in naming.
-// Maybe name the function something like fetch_did_url_change? Focusing only
-// on how I use urls, instead of whatever a redirect technically is, may be
-// a better way to frame the problem.
-//
-// @param requestURL {String} the fetch input url
-// @param responseURL {String} the value of the response.url property of the
-// Response object produced by calling fetch.
-function fetchDidRedirect(requestURL, responseURL) {
-  console.assert(URLUtils.isCanonical(requestURL));
-  console.assert(URLUtils.isCanonical(responseURL));
-
-  return requestURL !== responseURL &&
-    !URLUtils.hashlessEquals(requestURL, responseURL);
-}
-
+const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
 // TODO: instead of returning an invalid value, return both an error code and
-// the value. This way there is no ambiguity, or need for constant
-function fetchGetContentLength(response) {
+// the value. This way there is no ambiguity, or need for global constant
+ResponseUtils.getContentLength = function(response) {
   const contentLengthString = response.headers.get('Content-Length');
   const radix = 10;
   const contentLength = parseInt(contentLengthString, radix);
   return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
-}
+};
