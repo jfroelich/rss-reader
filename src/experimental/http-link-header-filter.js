@@ -1,7 +1,5 @@
 'use strict';
 
-// not currently included in manifest.json, never got this working
-
 (function(exports) {
 
 async function register_dw_link_filter_rule() {
