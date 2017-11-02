@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/number.js
-// import net/mime.js
+// import net/mime-utils.js
 // import net/url.js
 
 const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
@@ -108,7 +108,7 @@ function fetchFeed(url, timeoutMs, acceptHTML) {
 
   function acceptPredicate(response) {
     const contentType = response.headers.get('Content-Type');
-    const mimeType = mimeFromContentType(contentType);
+    const mimeType = MIMEUtils.fromContentType(contentType);
     return types.includes(mimeType);
   }
 
@@ -122,7 +122,7 @@ function fetchHTML(url, timeoutMs) {
   const options = {
     'credentials': 'omit',
     'method': 'get',
-    // TODO: use mime.js constant
+    // TODO: use mime-utils.js constant
     'headers': {'Accept': 'text/html'},
     'mode': 'cors',
     'cache': 'default',
@@ -134,9 +134,9 @@ function fetchHTML(url, timeoutMs) {
   // TODO: move outside of function and rename?
   function acceptHTMLPredicate(response) {
     const contentType = response.headers.get('Content-Type');
-    const mimeType = mimeFromContentType(contentType);
+    const mimeType = MIMEUtils.fromContentType(contentType);
 
-    // TODO: use constant from mime.js
+    // TODO: use constant from mime-utils.js
     return mimeType === 'text/html';
   }
 
@@ -172,7 +172,7 @@ async function fetchImageHead(url, timeoutMs) {
 
   const contentType = response.headers.get('Content-Type');
 
-  if(!mimeIsImage(contentType)) {
+  if(!MIMEUtils.isImage(contentType)) {
     throw new Error('Response content type not an image mime type: ' +
       contentType + ' for url ' + url);
   }

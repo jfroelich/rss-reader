@@ -46,7 +46,7 @@ async function googleFeedsAPISearch(query, timeoutMs) {
   const baseURL ='https://ajax.googleapis.com/ajax/services/feed/find?v=1.0&q=';
   const requestURL =  baseURL + encodeURIComponent(query);
 
-  // TODO: defer to mime.js to create somehow
+  // TODO: defer to mime-utils.js to create somehow
   const headers = {'Accept': 'application/json,text/javascript;q=0.9'};
 
   const fetchOptions = {

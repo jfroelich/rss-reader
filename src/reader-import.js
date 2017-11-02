@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/indexeddb.js
-// import net/mime.js
+// import net/mime-utils.js
 // import opml-document.js
 // import opml-outline.js
 // import opml-parse.js
@@ -51,7 +51,7 @@ async function readerImportFile(file, readerConn, iconConn) {
     return 0;
   }
 
-  if(!mimeIsXML(file.type)) {
+  if(!MIMEUtils.isXML(file.type)) {
     console.log('file %s is not mime type xml', file.type);
     return 0;
   }

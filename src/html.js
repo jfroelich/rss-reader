@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/errors.js
-// import net/mime.js
+// import net/mime-utils.js
 
 // Returns a new string where html elements were replaced with the optional
 // replacement string. HTML entities remain (except some will be
@@ -144,7 +144,7 @@ function htmlParseFromString(htmlString) {
 
 
   // doc is guaranteed defined regardless of the validity of htmlString
-  const doc = parser.parseFromString(htmlString, MIME_TYPE_HTML);
+  const doc = parser.parseFromString(htmlString, MIMEUtils.HTML);
 
   const parserErrorElement = doc.querySelector('parsererror');
   if(parserErrorElement) {

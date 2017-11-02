@@ -1,5 +1,7 @@
 'use strict';
 
+// import net/mime-utils.js
+
 // TODO: impose length cap on url strings
 
 // Allows for leading whitespace characters. Returns true for javascript: and
@@ -150,10 +152,12 @@ function urlSniffIsBinary(url) {
     return false;
   }
 
-  const mimeType = mimeGetTypeForExtension(extension);
+  const mimeType = MIMEUtils.getTypeForExtension(extension);
   if(!mimeType) {
     return false;
   }
+
+  // TODO: delegate to mime-utils.js function MIMEUtils.isBinary
 
   const forwardSlashPosition = mimeType.indexOf('/');
   // All mime types resulting from the lookup should contain a slash.

@@ -87,7 +87,7 @@
       "/src/filters/trim-document-filter.js",
 
       "/src/net/fetch.js",
-      "/src/net/mime.js",
+      "/src/net/mime-utils.js",
       "/src/net/url.js",
 
       "/src/poll/poll-feeds.js",
