@@ -4,30 +4,30 @@
 
 // Get the current settings from local storage and then modify the css rules
 // in the default style sheet
-function entry_css_on_change(event) {
-  console.log('entry_css_on_change');
-  const sheet = dom_get_default_stylesheet();
+function entryCSSOnChange(event) {
+  console.log('entryCSSOnChange');
+  const sheet = domGetDefaultStylesheet();
   console.assert(sheet);
-  entry_css_update_rule(sheet);
-  entry_css_update_title_rule(sheet);
-  entry_css_update_content_rule(sheet);
+  entryCSSUpdateRule(sheet);
+  entryCSSUpdateTitleRule(sheet);
+  entryCSSUpdateContentRule(sheet);
 }
 
 // Get the current settings from local storage and then create css rules and
 // append them to the default style sheet.
-function entry_css_init() {
-  console.log('entry_css_init');
-  const sheet = dom_get_default_stylesheet();
+function entryCSSInit() {
+  console.log('entryCSSInit');
+  const sheet = domGetDefaultStylesheet();
   console.assert(sheet);
-  sheet.addRule('div.entry', entry_css_create_entry_rule_text());
+  sheet.addRule('div.entry', entryCSSCreateEntryRuleText());
 
   // TODO: convert these two to be live above statement
 
-  entry_css_add_title_rule(sheet);
-  entry_css_add_content_rule(sheet);
+  entryCSSAddTitleRule(sheet);
+  entryCSSAddContentRule(sheet);
 }
 
-function entry_css_create_entry_rule_text() {
+function entryCSSCreateEntryRuleText() {
   const buffer = [];
 
   buffer.push('margin: 0px;');
@@ -49,16 +49,17 @@ function entry_css_create_entry_rule_text() {
   return buffer.join('');
 }
 
-function entry_css_add_title_rule(sheet) {
+function entryCSSAddTitleRule(sheet) {
   let buffer = [];
-  const header_font_size = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10);
-  if(header_font_size) {
-    buffer.push(`font-size: ${(header_font_size / 10).toFixed(2)}em;`);
+  const RADIX = 10;
+  const headerFontSize = parseInt(localStorage.HEADER_FONT_SIZE || '0', RADIX);
+  if(headerFontSize) {
+    buffer.push(`font-size: ${(headerFontSize / 10).toFixed(2)}em;`);
   }
 
-  const header_font_family = localStorage.HEADER_FONT_FAMILY;
-  if(header_font_family) {
-    buffer.push(`font-family:${header_font_family};`);
+  const headerFontFamily = localStorage.HEADER_FONT_FAMILY;
+  if(headerFontFamily) {
+    buffer.push(`font-family:${headerFontFamily};`);
   }
 
   buffer.push('letter-spacing:-0.03em;');
@@ -73,30 +74,31 @@ function entry_css_add_title_rule(sheet) {
   sheet.addRule('div.entry a.entry-title', buffer.join(''));
 }
 
-function entry_css_add_content_rule(sheet) {
+function entryCSSAddContentRule(sheet) {
   let buffer = [];
-  const body_font_size = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
-  if(body_font_size) {
-    buffer.push(`font-size: ${(body_font_size / 10).toFixed(2)}em;`);
+  const bodyFontSize = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
+  if(bodyFontSize) {
+    buffer.push(`font-size: ${(bodyFontSize / 10).toFixed(2)}em;`);
   }
 
-  const body_justify_text = localStorage.JUSTIFY_TEXT === '1';
-  if(body_justify_text) {
+  const bodyJustifyText = localStorage.JUSTIFY_TEXT === '1';
+  if(bodyJustifyText) {
     buffer.push('text-align: justify;');
   }
 
-  const body_font_family = localStorage.BODY_FONT_FAMILY;
-  if(body_font_family) {
-    buffer.push(`font-family:${body_font_family};`);
+  const bodyFontFamily = localStorage.BODY_FONT_FAMILY;
+  if(bodyFontFamily) {
+    buffer.push(`font-family:${bodyFontFamily};`);
   }
 
-  let body_line_height_string = localStorage.BODY_LINE_HEIGHT;
-  if(body_line_height_string) {
-    const body_line_height = parseInt(body_line_height_string, 10);
+  let bodyLineHeightString = localStorage.BODY_LINE_HEIGHT;
+  if(bodyLineHeightString) {
+    const RADIX = 10;
+    const bodyLineHeight = parseInt(bodyLineHeightString, RADIX);
 
     // TODO: units?
-    if(body_line_height) {
-      buffer.push(`line-height: ${(body_line_height / 10).toFixed(2)};`);
+    if(bodyLineHeight) {
+      buffer.push(`line-height: ${(bodyLineHeight / 10).toFixed(2)};`);
     }
   }
 
@@ -109,9 +111,9 @@ function entry_css_add_content_rule(sheet) {
   buffer.push('padding-bottom: 20px;');
   buffer.push('margin: 0px;');
 
-  const column_count = localStorage.COLUMN_COUNT;
-  if(column_count === '2' || column_count === '3') {
-    buffer.push(`-webkit-column-count: ${column_count};`);
+  const columnCountString = localStorage.COLUMN_COUNT;
+  if(columnCountString === '2' || columnCountString === '3') {
+    buffer.push(`-webkit-column-count: ${columnCountString};`);
     buffer.push('-webkit-column-gap: 30px;');
     buffer.push('-webkit-column-rule: 1px outset #AAAAAA;');
   }
@@ -119,9 +121,9 @@ function entry_css_add_content_rule(sheet) {
   sheet.addRule('div.entry span.entry-content', buffer.join(''));
 }
 
-function entry_css_update_rule(sheet) {
+function entryCSSUpdateRule(sheet) {
   console.assert(sheet);
-  const rule = dom_find_css_rule(sheet, 'div.entry');
+  const rule = domFindCSSRule(sheet, 'div.entry');
   console.assert(rule);
   const style = rule.style;
 
@@ -143,9 +145,9 @@ function entry_css_update_rule(sheet) {
   style.padding = `${padding}px`;
 }
 
-function entry_css_update_title_rule(sheet) {
+function entryCSSUpdateTitleRule(sheet) {
   console.assert(sheet);
-  const rule = dom_find_css_rule(sheet, 'div.entry a.entry-title');
+  const rule = domFindCSSRule(sheet, 'div.entry a.entry-title');
   console.assert(rule);
   const style = rule.style;
 
@@ -158,43 +160,43 @@ function entry_css_update_title_rule(sheet) {
   }
 }
 
-function entry_css_update_content_rule(sheet) {
+function entryCSSUpdateContentRule(sheet) {
   console.assert(sheet);
-  const rule = dom_find_css_rule(sheet, 'div.entry span.entry-content');
+  const rule = domFindCSSRule(sheet, 'div.entry span.entry-content');
   console.assert(rule);
 
   rule.style.background = '';
 
-  const body_font_family = localStorage.BODY_FONT_FAMILY;
-  if(body_font_family) {
-    rule.style.fontFamily = body_font_family;
+  const bodyFontFamily = localStorage.BODY_FONT_FAMILY;
+  if(bodyFontFamily) {
+    rule.style.fontFamily = bodyFontFamily;
   } else {
     rule.style.fontFamily = 'initial';
   }
 
-  const body_font_size_string = localStorage.BODY_FONT_SIZE;
-  if(body_font_size_string) {
-    const radix = 10;
-    const body_font_size_number = parseInt(body_font_size_string, radix);
+  const bodyFontSizeString = localStorage.BODY_FONT_SIZE;
+  if(bodyFontSizeString) {
+    const RADIX = 10;
+    const bodyFontSizeNumber = parseInt(bodyFontSizeString, RADIX);
 
     // Why am I dividing by 10 here??
     // Why am I using em?
     // What is the base font?
-    if(body_font_size_number) {
-      rule.style.fontSize = (body_font_size_number / 10).toFixed(2) + 'em';
+    if(bodyFontSizeNumber) {
+      rule.style.fontSize = (bodyFontSizeNumber / 10).toFixed(2) + 'em';
     }
   }
 
   rule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ? 'justify' :
     'left';
 
-  const body_line_height = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
-  rule.style.lineHeight = (body_line_height / 10).toFixed(2);
-  let column_count_string = localStorage.COLUMN_COUNT;
-  const valid_counts = { '1': true, '2': true, '3': true };
-  if(!(column_count_string in valid_counts)) {
-    column_count_string = '1';
+  const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
+  rule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
+  let columnCountString = localStorage.COLUMN_COUNT;
+  const validColumnCounts = { '1': 1, '2': 1, '3': 1 };
+  if(!(columnCountString in validColumnCounts)) {
+    columnCountString = '1';
   }
 
-  rule.style.webkitColumnCount = column_count_string;
+  rule.style.webkitColumnCount = columnCountString;
 }

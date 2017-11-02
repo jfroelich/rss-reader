@@ -5,11 +5,11 @@
 // @param {String} an input string
 // @throws {Error} if input is not a string
 // @returns {String} a condensed string
-function string_condense_whitespace(string) {
+function stringCondenseWhitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
 }
 
-function string_remove_whitespace(string) {
+function stringRemoveWhitespace(string) {
   return string.replace(/\s+/g, '');
 }
 
@@ -19,7 +19,7 @@ function string_remove_whitespace(string) {
 // http://stackoverflow.com/questions/4324790
 // http://stackoverflow.com/questions/21284228
 // http://stackoverflow.com/questions/24229262
-function string_filter_control_chars(string) {
+function stringFilterControlChars(string) {
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }
 

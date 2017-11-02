@@ -2,8 +2,6 @@
 
 // import base/string.js
 
-// TODO: move back to http
-
 // Some commonly used global mime types
 const MIME_TYPE_HTML = 'text/html';
 const MIME_TYPE_XML = 'application/xml';
@@ -11,15 +9,16 @@ const MIME_TYPE_XML = 'application/xml';
 // Return a mime type corresponding a file name extension
 // @param extension {String}
 // @returns {String} a mime type, or undefined on error or failed lookup
-function mime_get_type_for_extension(extension) {
-  const t_extension = typeof extension;
-  if(t_extension === 'undefined' || extension === null) {
+function mimeGetTypeForExtension(extension) {
+  const extensionVarType = typeof extension;
+  if(extensionVarType === 'undefined' || extension === null) {
     return;
   }
 
-  console.assert(t_extension === 'string');
+  console.assert(extensionVarType === 'string');
 
-  const extension_mime_map = {
+  // TODO: move outside of function and rename
+  const extensionMimeMap = {
     'ai':   'application/postscript',
     'aif':  'audio/aiff',
     'atom': 'application/atom+xml',
@@ -124,47 +123,47 @@ function mime_get_type_for_extension(extension) {
     'zip':  'application/zip'
   };
 
-  return extension_mime_map[extension];
+  return extensionMimeMap[extension];
 }
 
 // Returns a normalized mime type from a content type
-// @param content_type {String} an http response header value, optional
+// @param contentType {String} an http response header value, optional
 // @returns {String} a mime type, or undefined if error
-function mime_from_content_type(content_type) {
-  const t_content_type = typeof content_type;
-  if(t_content_type === 'undefined') {
+function mimeFromContentType(contentType) {
+  const contentTypeVarType = typeof contentType;
+  if(contentTypeVarType === 'undefined') {
     return;
   }
 
-  console.assert(t_content_type === 'string');
-  let mime_type = content_type;
+  console.assert(contentTypeVarType === 'string');
+  let mimeType = contentType;
 
   // Strip the character encoding, if present. The substring gets all
   // characters up to but excluding the semicolon. The coding
   // is optional, so leave the type as is if no semicolon is present.
-  const from_index = 0;
-  const semicolon_position = content_type.indexOf(';');
-  if(semicolon_position !== -1) {
-    mime_type = content_type.substring(from_index, semicolon_position);
+  const fromIndex = 0;
+  const semicolonPosition = contentType.indexOf(';');
+  if(semicolonPosition !== -1) {
+    mimeType = contentType.substring(fromIndex, semicolonPosition);
   }
 
-  return mime_normalize(mime_type);
+  return mimeNormalize(mimeType);
 }
 
-function mime_normalize(mime_type) {
-  return string_remove_whitespace(mime_type).toLowerCase();
+function mimeNormalize(mimeType) {
+  return stringRemoveWhitespace(mimeType).toLowerCase();
 }
 
-function mime_is_html(content_type) {
-  return /^\s*text\/html/i.test(content_type);
+function mimeIsHTML(contentType) {
+  return /^\s*text\/html/i.test(contentType);
 }
 
-function mime_is_image(content_type) {
-  return /^\s*image\//i.test(content_type);
+function mimeIsImage(contentType) {
+  return /^\s*image\//i.test(contentType);
 }
 
-function mime_is_xml(content_type) {
-  const mime_type = mime_from_content_type(content_type);
+function mimeIsXML(contentType) {
+  const mimeType = mimeFromContentType(contentType);
   const types = [
     'application/atom+xml',
     'application/rdf+xml',
@@ -172,5 +171,5 @@ function mime_is_xml(content_type) {
     'application/xml',
     'text/xml'
   ];
-  return types.includes(mime_type);
+  return types.includes(mimeType);
 }

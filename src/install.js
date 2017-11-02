@@ -16,17 +16,17 @@ chrome.runtime.onInstalled.addListener(async function(event) {
 
   let conn, status;
   try {
-    conn = await reader_db_open();
-    status = await reader_update_badge(conn);
+    conn = await readerDbOpen();
+    status = await readerUpdateBadge(conn);
   } catch(error) {
     console.warn(error);
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 
   // Setup the favicon database
   try {
-    await favicon_db_setup();
+    await faviconDbSetup();
   } catch(error) {
     console.warn(error);
   }

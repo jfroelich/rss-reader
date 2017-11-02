@@ -3,22 +3,24 @@
 // import base/errors.js
 // import net/mime.js
 
-function xml_parse_from_string(xml_string) {
-  console.assert(xml_string);
+// TODO: split into XMLParser and XMLDocumentUtils
+
+function xmlParseFromString(xml) {
+  console.assert(xml);
 
   const parser = new DOMParser();
 
   // parseFromString always yields a defined document, regardless of the
   // validity of the input value (e.g. null, wrong type). There is no need
   // for assertions.
-  const doc = parser.parseFromString(xml_string, MIME_TYPE_XML);
+  const doc = parser.parseFromString(xml, MIME_TYPE_XML);
 
   // This cannot tell the difference between documents where the parser
   // introduced a new element and documents containing the element in the
   // input. In the interest of safety, this always fails.
-  const error_element = doc.querySelector('parsererror');
-  if(error_element) {
-    console.log(error_element.textContent);
+  const parserErrorElement = doc.querySelector('parsererror');
+  if(parserErrorElement) {
+    console.log(parserErrorElement.textContent);
     return [RDR_ERR_PARSE];
   }
 
@@ -27,7 +29,7 @@ function xml_parse_from_string(xml_string) {
 
 // @param doc {Document}
 // @returns {String}
-function xml_to_string(doc) {
+function xmlToString(doc) {
   console.assert(doc instanceof Document);
   const serializer = new XMLSerializer();
   return serializer.serializeToString(doc);
@@ -35,10 +37,10 @@ function xml_to_string(doc) {
 
 // @param doc {Document}
 // @returns {Blob}
-function xml_to_blob(doc) {
+function xmlToBlob(doc) {
   console.assert(doc instanceof Document);
-  const xml_string = xml_to_string(doc);
-  const parts_array = [xml_string];
+  const xml = xmlToString(doc);
+  const partsArray = [xml];
   const options = {'type': MIME_TYPE_XML};
-  return new Blob(parts_array, options);
+  return new Blob(partsArray, options);
 }

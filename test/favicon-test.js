@@ -9,7 +9,7 @@ TODO:
 
 * Use a test db instead of the real db, and make sure to
 delete the test db at the end of the test. to use a test db, directly call
-indexeddb_open instead of favicon_db_open
+indexedDBOpen instead of faviconDbOpen
 * actually run tests instead of command line
 * test offline
 * test a non-existent host
@@ -31,28 +31,28 @@ async function test_favicon_lookup(url, is_cacheless) {
 
   try {
     if(!is_cacheless) {
-      query.conn = await favicon_db_open();
+      query.conn = await faviconDbOpen();
     }
 
-    return await favicon_lookup(query);
+    return await faviconLookup(query);
   } finally {
-    indexeddb_close(query.conn);
+    indexedDBClose(query.conn);
   }
 }
 
 async function test_clear_icon_db() {
   let conn;
   try {
-    conn = await favicon_db_open();
-    await favicon_db_clear(conn);
+    conn = await faviconDbOpen();
+    await faviconDbClear(conn);
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 }
 
 async function test_compact_icon_db() {
   // TODO: i think this is outdated, I think it needs conn now right?
-  let max_age_ms;
-  const status = await favicon_compact_db(max_age_ms);
+  let maxAgeMs;
+  const status = await faviconCompactDb(maxAgeMs);
   console.log('Deleted entries, status', status);
 }

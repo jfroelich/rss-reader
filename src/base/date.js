@@ -1,7 +1,7 @@
 'use strict';
 
-function date_format(date, delimiter) {
-  // Tolerate some bad input
+function dateFormat(date, delimiter) {
+  // Tolerate some forms bad input
   if(!date) {
     return '';
   }

@@ -3,6 +3,7 @@
 // import base/promises.js
 // import net/fetch.js
 // import net/url.js
+// import dom.js
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
@@ -10,18 +11,18 @@
 // Assumes that if an image has a src attribute value that is a url, that the
 // url is absolute.
 // @param doc {Document}
-// @param timeout_ms {Number} optional, if undefined or 0 then no timeout
+// @param timeoutMs {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
-async function image_size_filter(doc, allowed_protocols, timeout_ms) {
+async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
   console.assert(doc instanceof Document);
 
   const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];
-  if(typeof allowed_protocols === 'undefined') {
-    allowed_protocols = DEFAULT_ALLOWED_PROTOCOLS;
+  if(typeof allowedProtocols === 'undefined') {
+    allowedProtocols = DEFAULT_ALLOWED_PROTOCOLS;
   }
 
   // Duck typing assertion
-  console.assert(typeof allowed_protocols.includes === 'function');
+  console.assert(typeof allowedProtocols.includes === 'function');
 
   if(!doc.body) {
     return RDR_OK;
@@ -33,11 +34,11 @@ async function image_size_filter(doc, allowed_protocols, timeout_ms) {
   // Concurrently process each image
   const promises = [];
   for(const image of images) {
-    const promise = image_size_filter_get_dimensions(image, allowed_protocols,
-      timeout_ms);
+    const promise = imageSizeFilterGetDimensions(image, allowedProtocols,
+      timeoutMs);
     promises.push(promise);
   }
-  const results = await promise_every(promises);
+  const results = await promiseEvery(promises);
 
   for(const result of results) {
     if(result) {
@@ -48,8 +49,8 @@ async function image_size_filter(doc, allowed_protocols, timeout_ms) {
   return RDR_OK;
 }
 
-async function image_size_filter_get_dimensions(image, allowed_protocols,
-  timeout_ms) {
+async function imageSizeFilterGetDimensions(image, allowedProtocols,
+  timeoutMs) {
 
   // A template of the output produced by this function
   const result = {
@@ -63,34 +64,34 @@ async function image_size_filter_get_dimensions(image, allowed_protocols,
     return;
   }
 
-  const style_dimensions = dom_get_dimensions(image);
-  if(style_dimensions) {
-    result.width = style_dimensions.width;
-    result.height = style_dimensions.height;
+  const styleDimensions = domGetDimensions(image);
+  if(styleDimensions) {
+    result.width = styleDimensions.width;
+    result.height = styleDimensions.height;
     result.hint = 'style';
     return result;
   }
 
-  const url_string = image.getAttribute('src');
-  if(!url_string) {
+  const imageSource = image.getAttribute('src');
+  if(!imageSource) {
     return;
   }
 
-  const url_object = new URL(url_string);
-  if(!allowed_protocols.includes(url_object.protocol)) {
+  const sourceURL = new URL(imageSource);
+  if(!allowedProtocols.includes(sourceURL.protocol)) {
     return;
   }
 
-  const url_dimensions = image_size_filter_sniff(url_object);
-  if(url_dimensions) {
-    result.width = url_dimensions.width;
-    result.height = url_dimensions.height;
+  const urlDimensions = imageSizeFilterSniff(sourceURL);
+  if(urlDimensions) {
+    result.width = urlDimensions.width;
+    result.height = urlDimensions.height;
     result.hint = 'url';
     return result;
   }
 
   // Allow exceptions to bubble
-  const response = await fetch_image(url_object.href, timeout_ms);
+  const response = await fetchImage(sourceURL.href, timeoutMs);
 
   // Access by property, attributes are not set
   result.width = response.width;
@@ -99,9 +100,9 @@ async function image_size_filter_get_dimensions(image, allowed_protocols,
   return result;
 }
 
-function image_size_filter_sniff(url_object) {
+function imageSizeFilterSniff(sourceURL) {
   // data urls will not contain useful information so ignore them
-  if(url_object.protocol === 'data:') {
+  if(sourceURL.protocol === 'data:') {
     return;
   }
 
@@ -112,7 +113,7 @@ function image_size_filter_sniff(url_object) {
   // TODO: defer height has check and parseInt height until width processed,
   // can avoid processing in some cases
 
-  const params = url_object.searchParams;
+  const params = sourceURL.searchParams;
   const dimensions = {}, radix = 10;
   if(params.has('w') && params.has('h')) {
 
@@ -145,11 +146,11 @@ function image_size_filter_sniff(url_object) {
 
   // TODO: make a helper function
   // Grab from file name (e.g. 100x100.jpg => [100,100])
-  const path = url_object.pathname;
-  const file_name = url_path_get_file_name(path);
-  if(file_name) {
-    const file_name_no_extension = url_file_name_filter_extension(file_name);
-    if(file_name_no_extension) {
+  const path = sourceURL.pathname;
+  const fileName = urlPathGetFileName(path);
+  if(fileName) {
+    const partialFileName = urlFileNameFilterExtension(fileName);
+    if(partialFileName) {
       // not implemented
     }
   }

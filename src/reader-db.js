@@ -8,56 +8,56 @@
 
 // Opens a connection to the reader-db database
 // @return {Promise} a promise that resolves to an open database connection
-function reader_db_open() {
-  const name = 'reader', version = 20, timeout_ms = 500;
-  return indexeddb_open(name, version, reader_db_onupgradeneeded, timeout_ms);
+function readerDbOpen() {
+  const name = 'reader', version = 20, timeoutMs = 500;
+  return indexedDBOpen(name, version, readerDbOnUpgradeNeeded, timeoutMs);
 }
 
-// Helper for reader_db_open. Does the database upgrade. This should never be
+// Helper for readerDbOpen. Does the database upgrade. This should never be
 // called directly. To do an upgrade, call open with a higher version number.
-function reader_db_onupgradeneeded(event) {
+function readerDbOnUpgradeNeeded(event) {
   const conn = event.target.result;
   const tx = event.target.transaction;
-  let feed_store, entry_store;
+  let feedStore, entryStore;
   const stores = conn.objectStoreNames;
 
   console.log('upgrading database %s to version %s from version', conn.name,
     conn.version, event.oldVersion);
 
   if(event.oldVersion < 20) {
-    feed_store = conn.createObjectStore('feed', {
+    feedStore = conn.createObjectStore('feed', {
       'keyPath': 'id',
       'autoIncrement': true
     });
-    entry_store = conn.createObjectStore('entry', {
+    entryStore = conn.createObjectStore('entry', {
       'keyPath': 'id',
       'autoIncrement': true
     });
-    feed_store.createIndex('urls', 'urls', {
+    feedStore.createIndex('urls', 'urls', {
       'multiEntry': true,
       'unique': true
     });
-    feed_store.createIndex('title', 'title');
-    entry_store.createIndex('readState', 'readState');
-    entry_store.createIndex('feed', 'feed');
-    entry_store.createIndex('archiveState-readState',
+    feedStore.createIndex('title', 'title');
+    entryStore.createIndex('readState', 'readState');
+    entryStore.createIndex('feed', 'feed');
+    entryStore.createIndex('archiveState-readState',
       ['archiveState', 'readState']);
-    entry_store.createIndex('urls', 'urls', {
+    entryStore.createIndex('urls', 'urls', {
       'multiEntry': true,
       'unique': true
     });
   } else {
-    feed_store = tx.objectStore('feed');
-    entry_store = tx.objectStore('entry');
+    feedStore = tx.objectStore('feed');
+    entryStore = tx.objectStore('entry');
   }
 }
 
 // Returns feed id if a feed with the given url exists in the database
 // @param conn {IDBDatabase}
 // @param url {String}
-function reader_db_find_feed_id_by_url(conn, url) {
-  console.assert(indexeddb_is_open(conn));
-  console.assert(url_is_valid(url));
+function readerDbFindFeedIdByURL(conn, url) {
+  console.assert(indexedDBIsOpen(conn));
+  console.assert(urlIsValid(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -70,8 +70,8 @@ function reader_db_find_feed_id_by_url(conn, url) {
 }
 
 // @param conn {IDBDatabase}
-function reader_db_count_unread_entries(conn) {
-  console.assert(indexeddb_is_open(conn));
+function readerDbCountUnreadEntries(conn) {
+  console.assert(indexedDBIsOpen(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -88,9 +88,9 @@ function reader_db_count_unread_entries(conn) {
 // @param id {Number} id of entry to find
 // @returns {Promise} a promise that resolves to an entry object, or undefined
 // if no matching entry was found
-function reader_db_find_entry_by_id(conn, id) {
-  console.assert(indexeddb_is_open(conn));
-  console.assert(entry_is_valid_id(id));
+function readerDbFindEntryById(conn, id) {
+  console.assert(indexedDBIsOpen(conn));
+  console.assert(entryIsValidId(id));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -104,9 +104,9 @@ function reader_db_find_entry_by_id(conn, id) {
 // Returns an entry ID, not an entry, matching url
 // @param conn {IDBDatabase}
 // @param url {String}
-function reader_db_find_entry_by_url(conn, url) {
-  console.assert(indexeddb_is_open(conn));
-  console.assert(url_is_valid(url));
+function readerDbFindEntryByURL(conn, url) {
+  console.assert(indexedDBIsOpen(conn));
+  console.assert(urlIsValid(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -118,35 +118,36 @@ function reader_db_find_entry_by_url(conn, url) {
   });
 }
 
-function reader_db_find_entry_ids_by_feed(conn, feed_id) {
-  console.assert(indexeddb_is_open(conn));
-  console.assert(feed_is_valid_feed_id(feed_id));
+function readerDbFindEntryIdsByFeedId(conn, feedId) {
+  console.assert(indexedDBIsOpen(conn));
+  console.assert(feedIsValidId(feedId));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('feed');
-    const request = index.getAllKeys(feed_id);
+    const request = index.getAllKeys(feedId);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
-function reader_db_find_feed_by_id(conn, feed_id) {
-  console.assert(indexeddb_is_open(conn));
-  console.assert(feed_is_valid_feed_id(feed_id));
+function readerDbFindFeedById(conn, feedId) {
+  console.assert(indexedDBIsOpen(conn));
+  console.assert(feedIsValidId(feedId));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
-    const request = store.get(feed_id);
+    const request = store.get(feedId);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
-function reader_db_get_entries(conn) {
-  console.assert(indexeddb_is_open(conn));
+// TODO: is this in use? deprecate if not. I don't think it is
+function readerDbGetEntries(conn) {
+  console.assert(indexedDBIsOpen(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -157,8 +158,8 @@ function reader_db_get_entries(conn) {
   });
 }
 
-function reader_db_get_feeds(conn) {
-  console.assert(indexeddb_is_open(conn));
+function readerDbGetFeeds(conn) {
+  console.assert(indexedDBIsOpen(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -169,8 +170,8 @@ function reader_db_get_feeds(conn) {
   });
 }
 
-function reader_db_get_feed_ids(conn) {
-  console.assert(indexeddb_is_open(conn));
+function readerDbGetFeedIds(conn) {
+  console.assert(indexedDBIsOpen(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -183,10 +184,10 @@ function reader_db_get_feed_ids(conn) {
 
 // Limit applies to the return array size, not num scanned
 // Limit should be > 0 (only weakly asserted).
-function reader_db_find_entries(conn, predicate, limit) {
-  console.assert(indexeddb_is_open(conn));
+function readerDbFindEntries(conn, predicate, limit) {
+  console.assert(indexedDBIsOpen(conn));
   console.assert(typeof predicate === 'function');
-  console.assert(number_is_positive_integer(limit));
+  console.assert(numberIsPositiveInteger(limit));
   console.assert(limit > 0);
 
   return new Promise(function executor(resolve, reject) {
@@ -214,11 +215,11 @@ function reader_db_find_entries(conn, predicate, limit) {
       const entry = cursor.value;
 
       if(predicate(entry)) {
-        console.debug('reader_db_find_entries predicate true', entry.id);
+        console.debug('readerDbFindEntries predicate true', entry.id);
         entries.push(entry);
 
         if(entries.length === limit) {
-          console.debug('reader_db_find_entries reached limit ');
+          console.debug('readerDbFindEntries reached limit ');
           // Do not advance. Allow the transaction to settle which allows
           // the promise to settle.
           return;
@@ -230,13 +231,13 @@ function reader_db_find_entries(conn, predicate, limit) {
   });
 }
 
-function reader_db_find_archivable_entries(conn, predicate, limit) {
-  console.assert(indexeddb_is_open(conn));
+function readerDbFindArchivableEntries(conn, predicate, limit) {
+  console.assert(indexedDBIsOpen(conn));
   console.assert(typeof predicate === 'function');
 
   // Only using weak asserts. Caller should use a correct limit. Right now
   // an incorrect limit causes undefined behavior.
-  console.assert(number_is_positive_integer(limit));
+  console.assert(numberIsPositiveInteger(limit));
   console.assert(limit > 0);
 
   // This does two layers of filtering. It would preferably but one but
@@ -255,8 +256,8 @@ function reader_db_find_archivable_entries(conn, predicate, limit) {
 
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
-    const request = index.openCursor(key_path);
+    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
+    const request = index.openCursor(keyPath);
     request.onsuccess = function(event) {
       const cursor = event.target.result;
       if(!cursor) {
@@ -276,14 +277,14 @@ function reader_db_find_archivable_entries(conn, predicate, limit) {
   });
 }
 
-function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
-  console.assert(indexeddb_is_open(conn));
+function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
+  console.assert(indexedDBIsOpen(conn));
 
   return new Promise(function executor(resolve, reject) {
     const entries = [];
     let counter = 0;
     let advanced = false;
-    const is_limited = limit > 0;
+    const isLimited = limit > 0;
     const tx = conn.transaction('entry');
     tx.oncomplete = function(event) {
       resolve(entries);
@@ -294,8 +295,8 @@ function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
 
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
-    const request = index.openCursor(key_path);
+    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
+    const request = index.openCursor(keyPath);
     request.onsuccess = function request_onsuccess(event) {
       const cursor = event.target.result;
       if(cursor) {
@@ -304,7 +305,7 @@ function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
           cursor.advance(offset);
         } else {
           entries.push(cursor.value);
-          if(is_limited && ++counter < limit) {
+          if(isLimited && ++counter < limit) {
             cursor.continue();
           }
         }
@@ -313,30 +314,30 @@ function reader_db_get_unarchived_unread_entries(conn, offset, limit) {
   });
 }
 
-function reader_db_remove_feed_and_entries(conn, feed_id, entry_ids) {
-  console.assert(indexeddb_is_open(conn));
-  console.assert(feed_is_valid_feed_id(feed_id));
-  console.assert(Array.isArray(entry_ids));
+function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
+  console.assert(indexedDBIsOpen(conn));
+  console.assert(feedIsValidId(feedId));
+  console.assert(Array.isArray(entryIds));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
 
-    const feed_store = tx.objectStore('feed');
-    feed_store.delete(feed_id);
+    const feedStore = tx.objectStore('feed');
+    feedStore.delete(feedId);
 
-    const entry_store = tx.objectStore('entry');
-    for(const entry_id of entry_ids) {
-      entry_store.delete(entry_id);
+    const entryStore = tx.objectStore('entry');
+    for(const entryId of entryIds) {
+      entryStore.delete(entryId);
     }
   });
 }
 
 // This does not validate the entry, it just puts it as is
-function reader_db_put_entry(conn, entry) {
-  console.assert(indexeddb_is_open(conn));
-  console.assert(entry_is_entry(entry));
+function readerDbPutEntry(conn, entry) {
+  console.assert(indexedDBIsOpen(conn));
+  console.assert(entryIsEntry(entry));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
@@ -347,21 +348,24 @@ function reader_db_put_entry(conn, entry) {
   });
 }
 
-function reader_db_put_entries(conn, entries) {
-  console.assert(indexeddb_is_open(conn));
+function readerDbPutEntries(conn, entries) {
+  console.assert(indexedDBIsOpen(conn));
   console.assert(Array.isArray(entries));
 
+  // TODO: this should not be setting dateUpdated that is caller's
+  // responsibility
+
   return new Promise(function executor(resolve, reject) {
-    const current_date = new Date();
+    const currentDate = new Date();
     const tx = conn.transaction('entry', 'readwrite');
     tx.oncomplete = resolve;
-    tx.onerror = function tx_onerror(event) {
+    tx.onerror = function txOnerror(event) {
       reject(tx.error);
     };
-    const entry_store = tx.objectStore('entry');
+    const entryStore = tx.objectStore('entry');
     for(const entry of entries) {
-      entry.dateUpdated = current_date;
-      entry_store.put(entry);
+      entry.dateUpdated = currentDate;
+      entryStore.put(entry);
     }
   });
 }
@@ -370,9 +374,9 @@ function reader_db_put_entries(conn, entries) {
 // There are no side effects other than the database modification.
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
-function reader_db_put_feed(conn, feed) {
-  console.assert(indexeddb_is_open(conn));
-  console.assert(feed_is_feed(feed));
+function readerDbPutFeed(conn, feed) {
+  console.assert(indexedDBIsOpen(conn));
+  console.assert(feedIsFeed(feed));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed', 'readwrite');
@@ -388,8 +392,8 @@ function reader_db_put_feed(conn, feed) {
 
 // @param conn {IDBDatabase}
 // @param ids {Array}
-function reader_db_remove_entries(conn, ids) {
-  console.assert(indexeddb_is_open(conn));
+function readerDbRemoveEntries(conn, ids) {
+  console.assert(indexedDBIsOpen(conn));
   console.assert(Array.isArray(ids));
 
   return new Promise(function executor(resolve, reject) {

@@ -9,40 +9,40 @@ const LEAF_FILTER_EXCEPTION_ELEMENTS = [
   'source', 'sbg', 'textarea', 'track', 'video', 'wbr'
 ];
 
-function leaf_filter(doc) {
+function leafFilter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
     return;
   }
 
-  const doc_element = doc.documentElement;
-
+  const documentElement = doc.documentElement;
   const elements = doc.body.querySelectorAll('*');
   for(const element of elements) {
-    if(doc_element.contains(element) && leaf_filter_is_leaf(element))
+    if(documentElement.contains(element) && leafFilterIsLeaf(element)) {
       element.remove();
+    }
   }
 
   return RDR_OK;
 }
 
-
 // Recursive
-function leaf_filter_is_leaf(node) {
+function leafFilterIsLeaf(node) {
   switch(node.nodeType) {
-    case Node.ELEMENT_NODE:
-      if(leaf_filter_is_exception(node)) {
+    case Node.ELEMENT_NODE: {
+      if(leafFilterIsException(node)) {
         return false;
       }
 
       for(let child = node.firstChild; child; child = child.nextSibling) {
-        if(!leaf_filter_is_leaf(child)) {
+        if(!leafFilterIsLeaf(child)) {
           return false;
         }
       }
 
       break;
+    }
     case Node.TEXT_NODE:
       return !node.nodeValue.trim();
     case Node.COMMENT_NODE:
@@ -54,8 +54,6 @@ function leaf_filter_is_leaf(node) {
   return true;
 }
 
-
-
-function leaf_filter_is_exception(element) {
+function leafFilterIsException(element) {
   return LEAF_FILTER_EXCEPTION_ELEMENTS.includes(element.localName);
 }

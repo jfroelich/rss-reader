@@ -19,24 +19,24 @@
 // import reader-db.js
 
 // Scans the database for archivable entries and archives them
-// @param max_age_ms {Number} how long before an entry is considered
+// @param maxAgeMs {Number} how long before an entry is considered
 // archivable (using date entry created), in milliseconds
 // @returns {Number} status
-async function reader_storage_archive_entries(conn, max_age_ms, limit) {
-  console.log('reader_storage_archive_entries start', max_age_ms);
-  console.assert(indexeddb_is_open(conn));
+async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
+  console.log('readerStorageArchiveEntries start', maxAgeMs);
+  console.assert(indexedDBIsOpen(conn));
 
   const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
-  if(typeof max_age_ms === 'undefined') {
-    max_age_ms = TWO_DAYS_MS;
+  if(typeof maxAgeMs === 'undefined') {
+    maxAgeMs = TWO_DAYS_MS;
   }
 
-  console.assert(number_is_positive_integer(max_age_ms));
+  console.assert(numberIsPositiveInteger(maxAgeMs));
 
-  const current_date = new Date();
-  function is_archivable(entry) {
-    const entry_age_ms = current_date - entry.dateCreated;
-    return entry_age_ms > max_age_ms;
+  const currentDate = new Date();
+  function isArchivable(entry) {
+    const entryAgeMs = currentDate - entry.dateCreated;
+    return entryAgeMs > maxAgeMs;
   }
 
   // TODO: now that this uses a cursor, I just realized that unless I
@@ -45,8 +45,7 @@ async function reader_storage_archive_entries(conn, max_age_ms, limit) {
 
   let entries;
   try {
-    entries = await reader_db_find_archivable_entries(conn, is_archivable,
-      limit);
+    entries = await readerDbFindArchivableEntries(conn, isArchivable, limit);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
@@ -56,14 +55,14 @@ async function reader_storage_archive_entries(conn, max_age_ms, limit) {
     return RDR_OK;
   }
 
-  const compacted_entries = [];
+  const compactedEntries = [];
   for(const entry of entries) {
-    compacted_entries.push(entry_compact(entry));
+    compactedEntries.push(entryCompact(entry));
   }
-  entries = compacted_entries;
+  entries = compactedEntries;
 
   try {
-    await reader_db_put_entries(conn, entries);
+    await readerDbPutEntries(conn, entries);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
@@ -85,21 +84,20 @@ async function reader_storage_archive_entries(conn, max_age_ms, limit) {
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection
 // @param id {Number} an entry id
-async function reader_storage_mark_read(conn, id) {
-  console.log('reader_storage_mark_read id', id);
-  console.assert(indexeddb_is_open(conn));
-  console.assert(entry_is_valid_id(id));
+async function readerStorageMarkRead(conn, id) {
+  console.log('readerStorageMarkRead id', id);
+  console.assert(indexedDBIsOpen(conn));
+  console.assert(entryIsValidId(id));
 
   let entry;
   try {
-    entry = await reader_db_find_entry_by_id(conn, id);
+    entry = await readerDbFindEntryById(conn, id);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
   }
 
-  console.debug('reader_storage_mark_read found entry',
-    entry_get_top_url(entry));
+  console.debug('readerStorageMarkRead found entry', entryGetTopURL(entry));
 
   if(!entry || entry.readState === ENTRY_STATE_READ) {
     // TODO: should be ERR_INVALID_STATE or something
@@ -114,54 +112,54 @@ async function reader_storage_mark_read(conn, id) {
   entry.dateRead = entry.dateUpdated;
 
   try {
-    await reader_db_put_entry(conn, entry);
+    await readerDbPutEntry(conn, entry);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
   }
 
-  console.debug('reader_storage_mark_read updated', entry_get_top_url(entry));
+  console.debug('readerStorageMarkRead updated', entryGetTopURL(entry));
 
   // Ignore status
-  await reader_update_badge(conn);
+  await readerUpdateBadge(conn);
 
   return RDR_OK;
 }
 
-async function reader_storage_put_feed(feed, conn) {
-  console.assert(feed_is_feed(feed));
-  console.assert(indexeddb_is_open(conn));
+async function readerStoragePutFeed(feed, conn) {
+  console.assert(feedIsFeed(feed));
+  console.assert(indexedDBIsOpen(conn));
 
-  let storable = feed_sanitize(feed);
-  storable = object_filter_empty_props(storable);
+  let storable = feedSanitize(feed);
+  storable = objectFilterEmptyProps(storable);
   storable.dateUpdated = new Date();
 
   // TODO: ensure that if put is add that new id is set on resulting feed
   // TODO: catch exception locally and return undefined on error
-  await reader_db_put_feed(conn, storable);
+  await readerDbPutFeed(conn, storable);
 
   return storable;
 }
 
 // Stores an entry in the app's storage. This is basically a wrapper function
-// of reader_db_put_entry that attaches sanitization, initialization, and
-// verification before storing the object. Caller should use reader_db_put_entry
+// of readerDbPutEntry that attaches sanitization, initialization, and
+// verification before storing the object. Caller should use readerDbPutEntry
 // to store the entry object exactly as it is without any guards or init, but
 // should use this function in the ordinary case.
 // @param entry {Object} an entry object
 // @param conn {IDBDatabase} an open indexedDB database connection
-async function reader_storage_add_entry(entry, conn) {
-  console.assert(entry_is_entry(entry));
-  console.assert(indexeddb_is_open(conn));
+async function readerStorageAddEntry(entry, conn) {
+  console.assert(entryIsEntry(entry));
+  console.assert(indexedDBIsOpen(conn));
 
-  const san = entry_sanitize(entry);
-  const storable = object_filter_empty_props(san);
+  const san = entrySanitize(entry);
+  const storable = objectFilterEmptyProps(san);
   storable.readState = ENTRY_STATE_UNREAD;
   storable.archiveState = ENTRY_STATE_UNARCHIVED;
   storable.dateCreated = new Date();
 
   try {
-    await reader_db_put_entry(conn, storable);
+    await readerDbPutEntry(conn, storable);
   } catch(error) {
     console.warn(error, storable.urls);
     return RDR_ERR_DB;
@@ -173,26 +171,26 @@ async function reader_storage_add_entry(entry, conn) {
 // Removes entries not linked to a feed from the database
 // @param conn {IDBDatabase} an open database connection
 // TODO: update all callers to use limit, implement cli
-async function reader_storage_remove_orphans(conn, limit) {
-  console.assert(indexeddb_is_open(conn));
+async function readerStorageRemoveOrphans(conn, limit) {
+  console.assert(indexedDBIsOpen(conn));
 
-  let feed_ids;
+  let feedIds;
   try {
-    feed_ids = await reader_db_get_feed_ids(conn);
+    feedIds = await readerDbGetFeedIds(conn);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
   }
-  console.assert(feed_ids);
+  console.assert(feedIds);
 
-  function entry_is_orphan(entry) {
+  function isOrphan(entry) {
     const id = entry.feed;
-    return !id || !feed_is_valid_feed_id(id) || !feed_ids.includes(id);
+    return !id || !feedIsValidId(id) || !feedIds.includes(id);
   }
 
   let entries;
   try {
-    entries = await reader_db_find_entries(conn, entry_is_orphan, limit);
+    entries = await readerDbFindEntries(conn, isOrphan, limit);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
@@ -204,13 +202,13 @@ async function reader_storage_remove_orphans(conn, limit) {
 
   console.debug('found %s orphans', entries.length);
 
-  const orphan_ids = [];
+  const orphanIds = [];
   for(const entry of entries) {
-    orphan_ids.push(entry.id);
+    orphanIds.push(entry.id);
   }
 
   try {
-    await reader_db_remove_entries(conn, orphan_ids);
+    await readerDbRemoveEntries(conn, orphanIds);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
@@ -218,7 +216,7 @@ async function reader_storage_remove_orphans(conn, limit) {
 
   const channel = new BroadcastChannel('db');
   const message = {'type': 'entry-deleted', 'id': null, 'reason': 'orphan'};
-  for(const id of orphan_ids) {
+  for(const id of orphanIds) {
     message.id = id;
     channel.postMessage(message);
   }
@@ -234,16 +232,16 @@ async function reader_storage_remove_orphans(conn, limit) {
 // are somehow missing urls are removes them. In theory this actually never
 // finds any entries to remove.
 // @param conn {IDBDatabase}
-async function reader_storage_remove_lost_entries(conn, limit) {
-  console.debug('reader_storage_remove_lost_entries start');
+async function readerStorageRemoveLostEntries(conn, limit) {
+  console.debug('readerStorageRemoveLostEntries start');
 
-  function entry_is_lost(entry) {
-    return !entry_has_url(entry);
+  function isLost(entry) {
+    return !entryHasURL(entry);
   }
 
   let entries;
   try {
-    entries = await reader_db_find_entries(conn, entry_is_lost, limit);
+    entries = await readerDbFindEntries(conn, isLost, limit);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
@@ -261,7 +259,7 @@ async function reader_storage_remove_lost_entries(conn, limit) {
   }
 
   try {
-    await reader_db_remove_entries(conn, ids);
+    await readerDbRemoveEntries(conn, ids);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
@@ -282,12 +280,12 @@ async function reader_storage_remove_lost_entries(conn, limit) {
 // feed's favicon property.
 // TODO: consider overwriting existing icons too, given that some feed icons
 // become invalid over time.
-async function reader_storage_refresh_feed_icons(reader_conn, icon_conn) {
-  console.log('reader_storage_refresh_feed_icons start');
+async function readerStorageRefreshFeedIcons(readerConn, iconConn) {
+  console.log('readerStorageRefreshFeedIcons start');
 
   let feeds;
   try {
-    feeds = await reader_db_get_feeds(reader_conn);
+    feeds = await readerDbGetFeeds(readerConn);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
@@ -295,53 +293,53 @@ async function reader_storage_refresh_feed_icons(reader_conn, icon_conn) {
 
   const promises = [];
   for(const feed of feeds) {
-    promises.push(reader_storage_update_icon(feed, reader_conn, icon_conn));
+    promises.push(readerStorageUpdateIcon(feed, readerConn, iconConn));
   }
   await Promise.all(promises);
 
-  console.log('reader_storage_refresh_feed_icons end');
+  console.log('readerStorageRefreshFeedIcons end');
   return RDR_OK;
 }
 
 // Lookup the feed's icon, update the feed in db
-async function reader_storage_update_icon(feed, reader_conn, icon_conn) {
-  console.debug('inspecting feed', feed_get_top_url(feed));
+async function readerStorageUpdateIcon(feed, readerConn, iconConn) {
+  console.debug('inspecting feed', feedGetTopURL(feed));
 
   const query = new FaviconQuery();
-  query.conn = icon_conn;
+  query.conn = iconConn;
 
-  // feed_create_icon_lookup_url should never throw, so no try catch. If any
+  // feedCreateIconLookupURL should never throw, so no try catch. If any
   // error does occur let it bubble up unhandled.
-  query.url = feed_create_icon_lookup_url(feed);
+  query.url = feedCreateIconLookupURL(feed);
 
-  // feed_create_icon_lookup_url should always return a url. double check.
+  // feedCreateIconLookupURL should always return a url. double check.
   console.assert(query.url);
 
   // Lookup the favicon url
-  // TODO: once favicon_lookup returns a status, check if it is ok, and if not,
+  // TODO: once faviconLookup returns a status, check if it is ok, and if not,
   // return whatever is that status.
-  let icon_url;
+  let iconURL;
   try {
-    icon_url = await favicon_lookup(query);
+    iconURL = await faviconLookup(query);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
   }
 
   // If we could not find an icon, then leave the feed as is
-  if(!icon_url) {
+  if(!iconURL) {
     return RDR_OK;
   }
 
-  const prev_icon_url = feed.faviconURLString;
+  const prevIconURL = feed.faviconURLString;
 
   // For some reason, this section of code always feels confusing. Rather than
   // using a concise condition, I've written comments in each branch.
 
-  if(prev_icon_url) {
+  if(prevIconURL) {
     // The feed has an existing favicon
 
-    if(prev_icon_url === icon_url) {
+    if(prevIconURL === iconURL) {
       // The new icon is the same as the current icon, so exit.
       return RDR_OK;
     } else {
@@ -354,12 +352,12 @@ async function reader_storage_update_icon(feed, reader_conn, icon_conn) {
   }
 
   // Set the new icon
-  console.debug('updating feed favicon %s to %s', prev_icon_url, icon_url);
-  feed.faviconURLString = icon_url;
+  console.debug('updating feed favicon %s to %s', prevIconURL, iconURL);
+  feed.faviconURLString = iconURL;
   feed.dateUpdated = new Date();
 
   try {
-    await reader_db_put_feed(reader_conn, feed);
+    await readerDbPutFeed(readerConn, feed);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;

@@ -7,20 +7,20 @@
 // no rules match.
 //
 // @param sheet css style sheet
-// @param selector_text {String}
+// @param selectorText {String}
 // @returns rule {???}
-function dom_find_css_rule(sheet, selector_text) {
+function domFindCSSRule(sheet, selectorText) {
   console.assert(sheet);
 
   for(const rule of sheet.cssRules) {
-    if(rule.selectorText === selector_text) {
+    if(rule.selectorText === selectorText) {
       return rule;
     }
   }
 }
 
 // Use the first sheet
-function dom_get_default_stylesheet() {
+function domGetDefaultStylesheet() {
   const sheets = document.styleSheets;
   if(sheets.length) {
     return sheets[0];
@@ -29,22 +29,22 @@ function dom_get_default_stylesheet() {
 
 // Returns true if the given name is a valid name for an element. This only
 // does minimal validation and may yield false positives.
-function dom_is_valid_element_name(name) {
+function domIsValidElementName(name) {
   return typeof name === 'string' && name.length && !name.includes(' ');
 }
 
 // Replace an element with its children. Special care is taken to add spaces
 // if the operation would result in adjacent text nodes.
-function dom_unwrap(element) {
+function domUnwrap(element) {
   console.assert(element instanceof Element);
   // Calling unwrap on an orphan is always an error
   console.assert(element.parentNode, 'orphaned element');
 
-  const parent_element = element.parentNode;
-  const prev_sibling = element.previousSibling;
-  const next_sibling = element.nextSibling;
-  const first_child = element.firstChild;
-  const last_child = element.lastChild;
+  const parentElement = element.parentNode;
+  const previousSibling = element.previousSibling;
+  const nextSibling = element.nextSibling;
+  const firstChild = element.firstChild;
+  const lastChild = element.lastChild;
   const TEXT = Node.TEXT_NODE;
   const frag = element.ownerDocument.createDocumentFragment();
 
@@ -52,24 +52,24 @@ function dom_unwrap(element) {
   element.remove();
 
   // Add leading padding
-  if(prev_sibling && prev_sibling.nodeType === TEXT &&
-    first_child && first_child.nodeType === TEXT) {
+  if(previousSibling && previousSibling.nodeType === TEXT &&
+    firstChild && firstChild.nodeType === TEXT) {
     frag.appendChild(element.ownerDocument.createTextNode(' '));
   }
 
   // Move children to fragment, maintaining order
-  for(let node = first_child; node; node = element.firstChild) {
+  for(let node = firstChild; node; node = element.firstChild) {
     frag.appendChild(node);
   }
 
   // Add trailing padding
-  if(last_child && first_child !== last_child && next_sibling &&
-    next_sibling.nodeType === TEXT && last_child.nodeType === TEXT) {
+  if(lastChild && firstChild !== lastChild && nextSibling &&
+    nextSibling.nodeType === TEXT && lastChild.nodeType === TEXT) {
     frag.appendChild(element.ownerDocument.createTextNode(' '));
   }
 
-  // If next_sibling is undefined then insertBefore appends
-  parent_element.insertBefore(frag, next_sibling);
+  // If nextSibling is undefined then insertBefore appends
+  parentElement.insertBefore(frag, nextSibling);
   return RDR_OK;
 }
 
@@ -79,34 +79,34 @@ function dom_unwrap(element) {
 // See https://stackoverflow.com/questions/15408394 for a basic explanation of
 // why event listeners are lost on rename.
 //
-// @param copy_attrs {Boolean} optional, if true then attributes are maintained,
-// defaults to true.
+// @param copyAttributes {Boolean} optional, if true then attributes are
+// maintained, defaults to true.
 // @returns {Element} the new element that replaced the old one
-function dom_rename(element, new_element_name, copy_attrs) {
+function domRename(element, newName, copyAttributes) {
 
   // According to MDN docs, createElement(null) works like createElement("null")
   // so, to avoid that, treat missing name as an error
-  console.assert(dom_is_valid_element_name(new_element_name));
+  console.assert(domIsValidElementName(newName));
 
-  if(typeof copy_attrs === 'undefined') {
-    copy_attrs = true;
+  if(typeof copyAttributes === 'undefined') {
+    copyAttributes = true;
   }
 
   // Treat attempting to rename an element to the same name as a noop
-  if(element.localName === new_element_name.toLowerCase()) {
+  if(element.localName === newName.toLowerCase()) {
     return element;
   }
 
-  const parent_element = element.parentNode;
+  const parentElement = element.parentNode;
 
   // Fail silently on orphaned elements. Caller not required to guarantee
   // parent.
-  if(!parent_element) {
+  if(!parentElement) {
     return element;
   }
 
   // Use next sibling to record position prior to detach. May be undefined.
-  const next_sibling = element.nextSibling;
+  const nextSibling = element.nextSibling;
 
   // Detach the existing node, prior to performing other dom operations, so that
   // the other operations take place on a detached node, so that the least
@@ -114,45 +114,45 @@ function dom_rename(element, new_element_name, copy_attrs) {
   // parentNode and nextSibling to undefined.
   element.remove();
 
-  const new_element = element.ownerDocument.createElement(new_element_name);
+  const newElement = element.ownerDocument.createElement(newName);
 
-  if(copy_attrs) {
-    dom_copy_attributes(element, new_element);
+  if(copyAttributes) {
+    domCopyAttributes(element, newElement);
   }
 
   // Move children
-  let child_node = element.firstChild;
-  while(child_node) {
-    new_element.appendChild(child_node);
-    child_node = element.firstChild;
+  let childNode = element.firstChild;
+  while(childNode) {
+    newElement.appendChild(childNode);
+    childNode = element.firstChild;
   }
 
   // Attach the new element in place of the old element
-  // If next_sibling is undefined then insertBefore simply appends
+  // If nextSibling is undefined then insertBefore simply appends
   // Returns the new element
-  return parent_element.insertBefore(new_element, next_sibling);
+  return parentElement.insertBefore(newElement, nextSibling);
 }
 
 // Copies the attributes of an element to another element. Overwrites any
 // existing attributes in the other element.
-// @param from_element {Element}
-// @param to_element {Element}
+// @param fromElement {Element}
+// @param toElement {Element}
 // @throws {Error} if either element is not an Element
 // @returns void
-function dom_copy_attributes(from_element, to_element) {
+function domCopyAttributes(fromElement, toElement) {
   // Use getAttributeNames in preference to element.attributes due to
   // performance issues with element.attributes, and to allow unencumbered use
   // of the for..of syntax (I had issues with NamedNodeMap and for..of).
-  const names = from_element.getAttributeNames();
+  const names = fromElement.getAttributeNames();
   for(const name of names) {
-    const value = from_element.getAttribute(name);
-    to_element.setAttribute(name, value);
+    const value = fromElement.getAttribute(name);
+    toElement.setAttribute(name, value);
   }
 }
 
 // Only looks at inline style.
 // Returns {'width': int, 'height': int} or undefined
-function dom_get_dimensions(element) {
+function domGetDimensions(element) {
 
   // Accessing element.style is a performance heavy operation sometimes, so
   // try and avoid calling it.
@@ -174,7 +174,7 @@ function dom_get_dimensions(element) {
 }
 
 // TODO: this could use some cleanup or at least some clarifying comments
-function dom_fade(element, duration_secs, delay_secs) {
+function domFade(element, durationSecs, delaySecs) {
   return new Promise(function executor(resolve, reject) {
     const style = element.style;
     if(style.display === 'none') {
@@ -189,7 +189,7 @@ function dom_fade(element, duration_secs, delay_secs) {
     element.addEventListener('webkitTransitionEnd', resolve, {'once': true});
 
     // property duration function delay
-    style.transition = `opacity ${duration_secs}s ease ${delay_secs}s`;
+    style.transition = `opacity ${durationSecs}s ease ${delaySecs}s`;
     style.opacity = style.opacity === '1' ? '0' : '1';
   });
 }
@@ -197,34 +197,34 @@ function dom_fade(element, duration_secs, delay_secs) {
 
 // Return true if the first parameter is an image element
 // TODO: inline, not a sufficient abstraction
-function dom_is_image(image) {
+function domIsImage(image) {
   // TODO: be more precise, use HTMLImageElement or whatever it is
   return image instanceof Element;
 }
 
 // TODO: also has source if within picture and picture has <source>, or
 // alternatively rename to image_has_source_attribute
-function dom_image_has_source(image) {
-  console.assert(dom_is_image(image));
-  return image.hasAttribute('src') || dom_image_has_srcset(image);
+function domImageHasSource(image) {
+  console.assert(domIsImage(image));
+  return image.hasAttribute('src') || domImageHasSrcset(image);
 }
 
 // Return true if image has a valid src attribute value
-function dom_image_has_valid_source(image) {
-  console.assert(dom_is_image(image));
-  return url_is_valid(image.getAttribute('src'));
+function domImageHasValidSource(image) {
+  console.assert(domIsImage(image));
+  return urlIsValid(image.getAttribute('src'));
 }
 
 // Return true if image has a non-empty srcset attribute value
-function dom_image_has_srcset(image) {
-  console.assert(dom_is_image(image));
-  const srcset_value = image.getAttribute('srcset');
-  return srcset_value && srcset_value.trim();
+function domImageHasSrcset(image) {
+  console.assert(domIsImage(image));
+  const imageSrcset = image.getAttribute('srcset');
+  return imageSrcset && imageSrcset.trim();
 }
 
 // Searches for and returns the corresponding figcaption element
-function dom_find_caption(image) {
-  console.assert(dom_is_image(image));
+function domFindCaption(image) {
+  console.assert(domIsImage(image));
   let figcaption;
   const figure = image.closest('figure');
   if(figure) {
@@ -234,7 +234,7 @@ function dom_find_caption(image) {
 }
 
 // TODO: remove picture/source/figure/figcaption
-function dom_remove_image(image) {
+function domRemoveImage(image) {
   image.remove();
 }
 
@@ -248,14 +248,14 @@ function dom_remove_image(image) {
 //
 // TODO: change to varargs, find the LCAs of whatever args given, instead of
 // only 2. change to (...nodes)
-function dom_find_lca(node1, node2) {
+function domFindLCA(node1, node2) {
   console.assert(node1 instanceof Node);
   console.assert(node2 instanceof Node);
   console.assert(node1 !== node2);
   console.assert(node1.ownerDocument === node2.ownerDocument);
 
-  const ancestors1 = dom_ancestors(node1);
-  const ancestors2 = dom_ancestors(node2);
+  const ancestors1 = domAncestors(node1);
+  const ancestors2 = domAncestors(node2);
 
   // The +1s are for the immediate parent steps
   const len1 = ancestors1.length, len2 = ancestors2.length;
@@ -277,11 +277,11 @@ function dom_find_lca(node1, node2) {
 
 // Returns an array of ancestors, from deepest to shallowest.
 // The node itself is not included.
-function dom_ancestors(node) {
+function domAncestors(node) {
   console.assert(node instanceof Node);
   const ancestors = [];
-  for(let an = node.parentNode; an; an = an.parentNode) {
-    ancestors.push(an);
+  for(let parent = node.parentNode; parent; parent = parent.parentNode) {
+    ancestors.push(parent);
   }
   return ancestors;
 }
@@ -289,10 +289,10 @@ function dom_ancestors(node) {
 // @param descriptors {Array} an array of descriptors such as those produced
 // by parseSrcset (third party library)
 // @returns {String} a string suitable for storing as srcset attribute value
-function dom_srcset_serialize(descriptors) {
+function domSrcsetSerialize(descriptors) {
   console.assert(Array.isArray(descriptors));
 
-  const descriptor_strings = [];
+  const descriptorStrings = [];
   for(const descriptor of descriptors) {
     const strings = [descriptor.url];
     if(descriptor.d) {
@@ -309,32 +309,32 @@ function dom_srcset_serialize(descriptors) {
       strings.push('h');
     }
 
-    const descriptor_string = strings.join('');
-    descriptor_strings.push(descriptor_string);
+    const descriptorString = strings.join('');
+    descriptorStrings.push(descriptorString);
   }
 
-  return descriptor_strings.join(', ');
+  return descriptorStrings.join(', ');
 }
 
 // Returns an array of descriptor objects. If the input is bad, or an error
 // occurs, returns an empty array.
 // @param srcset {String}
-function dom_srcset_parse_from_string(srcset) {
-  const fallback_output = [];
+function domSrcsetParseFromString(srcset) {
+  const fallbackOutput = [];
 
   if(typeof srcset !== 'string') {
-    return fallback_output;
+    return fallbackOutput;
   }
 
   let descriptors;
   try {
     descriptors = parseSrcset(srcset);
   } catch(error) {
-    return fallback_output;
+    return fallbackOutput;
   }
 
   if(!Array.isArray(descriptors)) {
-    return fallback_output;
+    return fallbackOutput;
   }
 
   return descriptors;
@@ -342,7 +342,7 @@ function dom_srcset_parse_from_string(srcset) {
 
 // Returns true if an element, or any of its ancestors, is hidden.
 // @param element {Element}
-function dom_is_hidden(element) {
+function domIsHidden(element) {
   console.assert(element instanceof Element);
 
   const doc = element.ownerDocument;
@@ -378,11 +378,11 @@ function dom_is_hidden(element) {
 
   // Quickly test the element itself before testing ancestors, with the hope
   // of avoiding checking ancestors
-  if(dom_is_hidden_inline(element)) {
+  if(domIsHiddenInline(element)) {
     return true;
   }
 
-  // TODO: the collection of ancestors should be delegated to dom_ancestors
+  // TODO: the collection of ancestors should be delegated to domAncestors
   // in node.js. This probably also entails changing the order of iteration
   // over the ancestors in the subsequent loop.
 
@@ -395,7 +395,7 @@ function dom_is_hidden(element) {
   // Step backward along the path and stop upon finding the first hidden node
   // This is top down.
   for(let i = path.length - 1; i > -1; i--) {
-    if(dom_is_hidden_inline(path[i])) {
+    if(domIsHiddenInline(path[i])) {
       return true;
     }
   }
@@ -405,14 +405,14 @@ function dom_is_hidden(element) {
 
 // Returns true if an element is hidden according to its inline style. Makes
 // mostly conservative guesses and misses a few cases.
-function dom_is_hidden_inline(element) {
+function domIsHiddenInline(element) {
   console.assert(element instanceof Element);
 
   // BUG: seeing cannot read length of undefined in console. My understanding
   // is that all elements have a style property. So perhaps this is not
   // getting called on an element? But the previous assert never fails, element
   // is an instanceof an element. Or does it? Check again.
-  // NOTE: this bug only arose after recent changes to poll_entry and after
+  // NOTE: this bug only arose after recent changes to pollEntry and after
   // adding brackets to all single line if/for blocks
 
   const style = element.style;
@@ -436,13 +436,13 @@ function dom_is_hidden_inline(element) {
 
   return style.display === 'none' ||
     style.visibility === 'hidden' ||
-    dom_is_near_transparent(element) ||
-    dom_is_offscreen(element);
+    domIsNearTransparent(element) ||
+    domIsOffscreen(element);
 }
 
 // Returns true if the element's opacity is too close to 0
 // TODO: support all formats of the opacity property?
-function dom_is_near_transparent(element) {
+function domIsNearTransparent(element) {
   const opacity = parseFloat(element.style.opacity);
   return !isNaN(opacity) && opacity >= 0 && opacity <= 0.3;
 }
@@ -452,10 +452,10 @@ function dom_is_near_transparent(element) {
 // positives. The cost of guessing wrong is not too high.
 // This is pretty inaccurate. Mostly just a mental note.
 // Again, restricted to inert document context.
-function dom_is_offscreen(element) {
+function domIsOffscreen(element) {
   if(element.style.position === 'absolute') {
-    const radix = 10;
-    const left = parseInt(element.style.left, radix);
+    const RADIX = 10;
+    const left = parseInt(element.style.left, RADIX);
     if(!isNaN(left) && left < 0) {
       return true;
     }

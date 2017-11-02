@@ -8,8 +8,8 @@
 
 // Parses an xml input string representing a feed. Returns a result with a
 // status, a feed object, and an array of entries.
-function reader_parse_feed(xml_string, request_url, response_url,
-  last_mod_date, process_entries) {
+function readerParseFeed(xmlString, requestURL, responseURL,
+  lastModDate, processEntries) {
 
   const result = {
     'status': RDR_OK,
@@ -19,7 +19,7 @@ function reader_parse_feed(xml_string, request_url, response_url,
 
   let parse_result;
   try {
-    parse_result = feed_parse_from_string(xml_string);
+    parse_result = feedParseFromString(xmlString);
   } catch(error) {
     console.warn(error);
     result.status = RDR_ERR_PARSE;
@@ -27,41 +27,40 @@ function reader_parse_feed(xml_string, request_url, response_url,
   }
 
   const feed = parse_result.feed;
-  reader_feed_parse_setup_feed(feed, request_url, response_url, last_mod_date);
+  readerParseFeedSetupFeed(feed, requestURL, responseURL, lastModDate);
   result.feed = feed;
 
-  let base_url;
+  let baseURL;
   try {
-    base_url = new URL(feed.link);
+    baseURL = new URL(feed.link);
   } catch(error) {
     // Ignore
   }
 
-  if(process_entries) {
+  if(processEntries) {
     let entries = parse_result.entries;
     for(const entry of entries) {
-      reader_parse_feed_resolve(entry, base_url);
-      reader_parse_feed_coerce_entry(entry);
+      readerParseFeedResolve(entry, baseURL);
+      readerParseFeedCoerceEntry(entry);
     }
 
-    result.entries = reader_parse_feed_dedup(entries);
+    result.entries = readerParseFeedDedup(entries);
   }
 
   return result;
 }
 
-function reader_feed_parse_setup_feed(feed, request_url, response_url,
-  last_mod_date) {
+function readerParseFeedSetupFeed(feed, requestURL, responseURL, lastModDate) {
 
   // Compose fetch urls as the initial feed urls
-  feed_append_url(feed, request_url);
-  feed_append_url(feed, response_url);
+  feedAppendURL(feed, requestURL);
+  feedAppendURL(feed, responseURL);
 
   // Normalize feed link if set and valid, otherwise set to undefined
-  if(feed.link && url_is_canonical(feed.link)) {
+  if(feed.link && urlIsCanonical(feed.link)) {
     try {
-      const feed_link_url = new URL(feed.link);
-      feed.link = feed_link_url.href;
+      const feedLinkURL = new URL(feed.link);
+      feed.link = feedLinkURL.href;
     } catch(error) {
       console.debug('error parsing feed link url', feed.link, error);
       feed.link = undefined;
@@ -75,17 +74,17 @@ function reader_feed_parse_setup_feed(feed, request_url, response_url,
   }
 
   feed.dateFetched = new Date();
-  feed.dateLastModified = last_mod_date;
+  feed.dateLastModified = lastModDate;
 }
 
 
 // If the entry has a link property, canonicalize and normalize it
-// base_url is optional, generally should be feed.link
-function reader_parse_feed_resolve(entry, base_url) {
-  console.assert(entry_is_entry(entry));
+// baseURL is optional, generally should be feed.link
+function readerParseFeedResolve(entry, baseURL) {
+  console.assert(entryIsEntry(entry));
   if(entry.link) {
     try {
-      const url = new URL(entry.link, base_url);
+      const url = new URL(entry.link, baseURL);
       entry.link = url.href;
     } catch(error) {
       console.debug(entry.link, error);
@@ -97,10 +96,10 @@ function reader_parse_feed_resolve(entry, base_url) {
 // entries are fetched as objects with a link property. for each entry that
 // has a link, convert it into the app's storage format that uses a urls
 // array. this tolerates entries that do not have links
-function reader_parse_feed_coerce_entry(entry) {
+function readerParseFeedCoerceEntry(entry) {
   if(entry.link) {
     try {
-      entry_append_url(entry, entry.link);
+      entryAppendURL(entry, entry.link);
     } catch(error) {
       console.warn('failed to coerce link to url', entry.link);
     }
@@ -110,32 +109,32 @@ function reader_parse_feed_coerce_entry(entry) {
 }
 
 // Filter duplicate entries by comparing urls
-function reader_parse_feed_dedup(entries) {
-  const distinct_entries = [];
-  const seen_urls = [];
+function readerParseFeedDedup(entries) {
+  const distinctEntries = [];
+  const seenURLs = [];
 
   for(const entry of entries) {
 
     // Retain entries without urls in the output without comparison
-    if(!entry_has_url(entry)) {
-      distinct_entries.push(entry);
+    if(!entryHasURL(entry)) {
+      distinctEntries.push(entry);
       continue;
     }
 
-    let is_seen_url = false;
+    let isSeenURL = false;
 
-    for(const url_string of entry.urls) {
-      if(seen_urls.includes(url_string)) {
-        is_seen_url = true;
+    for(const urlString of entry.urls) {
+      if(seenURLs.includes(urlString)) {
+        isSeenURL = true;
         break;
       }
     }
 
-    if(!is_seen_url) {
-      distinct_entries.push(entry);
-      seen_urls.push(...entry.urls);
+    if(!isSeenURL) {
+      distinctEntries.push(entry);
+      seenURLs.push(...entry.urls);
     }
   }
 
-  return distinct_entries;
+  return distinctEntries;
 }

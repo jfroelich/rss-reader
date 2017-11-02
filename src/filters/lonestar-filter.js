@@ -33,15 +33,15 @@ const LONESTAR_PATTERNS = [
 ];
 
 // TODO: switch to accepting url object instead, then update
-// poll_document_filter to pass in base_url. The url parsing work
+// pollDocumentFilter to pass in base_url. The url parsing work
 // only is done once then instead of multiple times.
 
 // Removes some telemetry data from a document.
 // @param doc {Document}
 // @param url {String} canonical document url
-function lonestar_filter(doc, url) {
+function lonestarFilter(doc, url) {
   console.assert(doc instanceof Document);
-  console.assert(url_is_canonical(url));
+  console.assert(urlIsCanonical(url));
 
   // Analysis is limited to descendants of body
   if(!doc.body) {
@@ -53,17 +53,14 @@ function lonestar_filter(doc, url) {
   // visibility overlaps with sanitization, but this is intentionally naive
   // regarding what other filters are applied to the document.
 
-  const document_hostname = url_get_hostname(url);
+  const documentHostname = urlGetHostname(url);
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
-    if(dom_is_hidden_inline(image) ||
-      lonestar_filter_is_pixel(image) ||
-      lonestar_filter_has_telemetry_source(image, document_hostname)) {
-
-      console.debug('lonestar_filter_telemetry_images filtering',
-        image.outerHTML);
-
-      dom_remove_image(image);
+    if(domIsHiddenInline(image) ||
+      lonestarFilterIsPixel(image) ||
+      lonestarFilterHasTelemetrySource(image, documentHostname)) {
+      console.debug('lonestarFilter filtering', image.outerHTML);
+      domRemoveImage(image);
     }
   }
 
@@ -71,7 +68,7 @@ function lonestar_filter(doc, url) {
 }
 
 // Returns true if an image is a pixel-sized image
-function lonestar_filter_is_pixel(image) {
+function lonestarFilterIsPixel(image) {
   return image.hasAttribute('src') &&
     image.hasAttribute('width') &&
     image.width < 2 &&
@@ -80,23 +77,23 @@ function lonestar_filter_is_pixel(image) {
 }
 
 // @param image {Image}
-// @param document_hostname {String}
-function lonestar_filter_has_telemetry_source(image, document_hostname) {
+// @param documentHostname {String}
+function lonestarFilterHasTelemetrySource(image, documentHostname) {
   console.assert(image instanceof Element);
-  console.assert(typeof document_hostname === 'string');
+  console.assert(typeof documentHostname === 'string');
 
   // This only looks at the src attribute. Using srcset or picture source is
   // exceedlingly rare mechanism for telemetry so ignore those channels.
 
-  let image_url = image.getAttribute('src');
+  let imageSource = image.getAttribute('src');
   // Ignore images without a src attribute, or an empty value
-  if(!image_url) {
+  if(!imageSource) {
     return false;
   }
 
-  image_url = image_url.trim();
+  imageSource = imageSource.trim();
   // Ignore images with an empty src attribute
-  if(!image_url) {
+  if(!imageSource) {
     return false;
   }
 
@@ -104,13 +101,13 @@ function lonestar_filter_has_telemetry_source(image, document_hostname) {
   // to url.js
 
   // Ignore very short urls
-  if(image_url.length < 2) {
+  if(imageSource.length < 2) {
     return false;
   }
 
   // Ignore images with a src value containing an inner space, as this is
   // probably not a valid url
-  if(image_url.includes(' ')) {
+  if(imageSource.includes(' ')) {
     return false;
   }
 
@@ -118,20 +115,22 @@ function lonestar_filter_has_telemetry_source(image, document_hostname) {
   // Ignore urls with a data protocol
   // TODO: make non-capturing for better performance?
   const URL_START_PATTERN = /^(http:\/\/|https:\/\/|\/\/)/i;
-  if(!URL_START_PATTERN.test(image_url)) {
+  if(!URL_START_PATTERN.test(imageSource)) {
     return false;
   }
 
   // Ignore 'same-origin' urls. Except I use hostname instead of origin because
   // of the common practice of including insecure images in a secure domain
-  const image_hostname = url_get_hostname(image_url);
-  if(image_hostname === document_hostname) {
+  // TODO: only compare by TLD and whatever next-level-domain-part is, ignore
+  // subdomains as well in comparison
+  const imageHostname = urlGetHostname(imageSource);
+  if(imageHostname === documentHostname) {
     return false;
   }
 
   // If the url matches one of the patterns then it is a telemetry image
   for(const pattern of LONESTAR_PATTERNS) {
-    if(pattern.test(image_url)) {
+    if(pattern.test(imageSource)) {
       return true;
     }
   }

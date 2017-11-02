@@ -8,96 +8,96 @@
 // import reader-db.js
 // import reader-storage.js
 
-async function cli_refresh_feed_icons() {
-  let reader_conn, icon_conn, status;
+async function cliRefreshFeedIcons() {
+  let readerConn, iconConn, status;
   try {
-    [reader_conn, icon_conn] = await Promise.all([reader_db_open(),
-      favicon_db_open()]);
-    status = await reader_storage_refresh_feed_icons(reader_conn, icon_conn);
+    [readerConn, iconConn] = await Promise.all([readerDbOpen(),
+      faviconDbOpen()]);
+    status = await readerStorageRefreshFeedIcons(readerConn, iconConn);
   } finally {
-    indexeddb_close(reader_conn, icon_conn);
+    indexedDBClose(readerConn, iconConn);
   }
 
   return status;
 }
 
-async function cli_archive_entries(limit) {
-  console.log('cli_archive_entries start');
-  let max_age_ms, conn, status;
+async function cliArchiveEntries(limit) {
+  console.log('cliArchiveEntries start');
+  let maxAgeMs, conn, status;
   limit = limit || 10;
   try {
-    conn = await reader_db_open();
-    status = await reader_storage_archive_entries(conn, max_age_ms, limit);
+    conn = await readerDbOpen();
+    status = await readerStorageArchiveEntries(conn, maxAgeMs, limit);
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
-  console.log('cli_archive_entries end');
+  console.log('cliArchiveEntries end');
   return status;
 }
 
-async function cli_poll_feeds() {
-  console.log('cli_poll_feeds start');
-  const pfc = new poll_feeds_context();
-  pfc.allow_metered_connections = true;
-  pfc.ignore_idle_state = true;
-  pfc.ignore_recency_check = true;
-  pfc.ignore_modified_check = true;
+async function cliPollFeeds() {
+  console.log('cliPollFeeds start');
+  const pfc = new PollFeedsContext();
+  pfc.allowMeteredConnections = true;
+  pfc.ignoreIdleState = true;
+  pfc.ignoreRecencyCheck = true;
+  pfc.ignoreModifiedCheck = true;
 
   try {
-    [pfc.reader_conn, pfc.icon_conn] = await Promise.all([reader_db_open(),
-      favicon_db_open()]);
-    await poll_feeds(pfc);
+    [pfc.readerConn, pfc.iconConn] = await Promise.all([readerDbOpen(),
+      faviconDbOpen()]);
+    await pollFeeds(pfc);
   } finally {
-    indexeddb_close(pfc.reader_conn, pfc.icon_conn);
+    indexedDBClose(pfc.readerConn, pfc.iconConn);
   }
 
-  // TODO: once poll_feeds returns status, use that as return value
-  console.log('cli_poll_feeds end');
+  // TODO: once pollFeeds returns status, use that as return value
+  console.log('cliPollFeeds end');
   return RDR_OK;
 }
 
-async function cli_scan_lost(limit) {
-  console.log('cli_scan_lost start');
-  if(!number_is_positive_integer(limit) || limit < 1) {
+async function cliScanLost(limit) {
+  console.log('cliScanLost start');
+  if(!numberIsPositiveInteger(limit) || limit < 1) {
     throw new TypeError('limit must be > 0');
   }
 
   let conn, status;
   try {
-    conn = await reader_db_open();
-    status = await reader_storage_remove_lost_entries(conn, limit);
+    conn = await readerDbOpen();
+    status = await readerStorageRemoveLostEntries(conn, limit);
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 
   return status;
 }
 
-async function cli_scan_orphan(limit) {
-  console.log('cli_scan_orphan start');
-  if(!number_is_positive_integer(limit) || limit < 1) {
+async function cliScanOrphans(limit) {
+  console.log('cliScanOrphans start');
+  if(!numberIsPositiveInteger(limit) || limit < 1) {
     throw new TypeError('limit must be > 0');
   }
 
   let conn, status;
   try {
-    conn = await reader_db_open();
-    status = await reader_storage_remove_orphans(conn, limit);
+    conn = await readerDbOpen();
+    status = await readerStorageRemoveOrphans(conn, limit);
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 
   return status;
 }
 
-async function cli_clear_favicons() {
-  console.log('cli_clear_favicons start');
+async function cliClearFavicons() {
+  console.log('cliClearFavicons start');
   let conn;
   try {
-    conn = await favicon_db_open();
-    await favicon_db_clear(conn);
+    conn = await faviconDbOpen();
+    await faviconDbClear(conn);
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 
   return RDR_OK;

@@ -3,35 +3,35 @@
 // import base/errors.js
 // import net/url.js
 
-// TODO: host_selector_map should be a parameter to this function so that
+// TODO: hostSelectorMap should be a parameter to this function so that
 // configuration is defined externally so that it can be changed without
 // needing to modify its internals (open-closed principle)
 
 // @param url {String}
-function host_template_filter(doc, url) {
+function hostTemplateFilter(doc, url) {
   console.assert(doc instanceof Document)
 
-  const host_selector_map = {};
-  host_selector_map['www.washingtonpost.com'] = [
+  const hostSelectorMap = {};
+  hostSelectorMap['www.washingtonpost.com'] = [
     'header#wp-header',
     'div.top-sharebar-wrapper',
     'div.newsletter-inline-unit',
     'div.moat-trackable'
   ];
-  host_selector_map['theweek.com'] = ['div#head-wrap'];
-  host_selector_map['www.usnews.com'] = ['header.header'];
+  hostSelectorMap['theweek.com'] = ['div#head-wrap'];
+  hostSelectorMap['www.usnews.com'] = ['header.header'];
 
-  const hostname = url_get_hostname(url);
+  const hostname = urlGetHostname(url);
   if(!hostname) {
     return;
   }
 
-  const selectors = host_selector_map[hostname];
+  const selectors = hostSelectorMap[hostname];
   if(!selectors) {
     return;
   }
 
-  console.log('host_template_filter processing', url);
+  console.log('hostTemplateFilter processing', url);
 
   const selector = selectors.join(',');
   const elements = doc.querySelectorAll(selector);

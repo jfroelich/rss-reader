@@ -3,38 +3,38 @@
 // import base/errors.js
 // import filters/filter-helpers.js
 
-function form_filter(doc) {
+function formFilter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
     return;
   }
 
-  const ancestor_element = doc.body;
+  const ancestor = doc.body;
 
-  // TODO: use unwrap_elements?
+  // TODO: use unwrapElements?
 
   // Unwrap forms
-  const form_elements = ancestor_element.querySelectorAll('form');
-  for(const form_element of form_elements) {
-    dom_unwrap(form_element);
+  const forms = ancestor.querySelectorAll('form');
+  for(const form of forms) {
+    domUnwrap(form);
   }
 
   // Unwrap labels
-  const label_elements = ancestor_element.querySelectorAll('label');
-  for(const label_element of label_elements) {
-    dom_unwrap(label_element);
+  const labels = ancestor.querySelectorAll('label');
+  for(const label of labels) {
+    domUnwrap(label);
   }
 
   // TODO: add contains check to reduce operations like removing option
   // nested in select removed in prior iteration
 
   // Remove form fields
-  const input_selector =
+  const inputSelector =
     'button, fieldset, input, optgroup, option, select, textarea';
-  const input_elements = ancestor_element.querySelectorAll(input_selector);
-  for(const input_element of input_elements) {
-    input_element.remove();
+  const inputs = ancestor.querySelectorAll(inputSelector);
+  for(const input of inputs) {
+    input.remove();
   }
 
   return RDR_OK;

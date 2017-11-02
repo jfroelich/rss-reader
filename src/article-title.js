@@ -2,7 +2,7 @@
 
 // import base/string.js
 
-function article_title_filter_publisher(title) {
+function articleTitleFilterPublisher(title) {
   console.assert(typeof title === 'string');
 
   // TODO: tolerate alternate whitespace expressions
@@ -31,13 +31,13 @@ function article_title_filter_publisher(title) {
 
   // Exit early if the delimiter was found too close to the end of the string
   const MIN_PUBLISHER_NAME_LENGTH = 5;
-  const remaining_char_count = title.length - index;
-  if(remaining_char_count < MIN_PUBLISHER_NAME_LENGTH) {
+  const remainingCharCount = title.length - index;
+  if(remainingCharCount < MIN_PUBLISHER_NAME_LENGTH) {
     return title;
   }
 
-  const delimiter_length = 3;
-  const tail = title.substring(index + delimiter_length);
+  const delimiterLength = 3;
+  const tail = title.substring(index + delimiterLength);
   const words = string_tokenize(tail);
 
   const MAX_TAIL_WORDS = 4;
@@ -45,7 +45,6 @@ function article_title_filter_publisher(title) {
     return title;
   }
 
-  let output_title = title.substring(0, index);
-  output_title = output_title.trim();
-  return output_title;
+  let outputTitle = title.substring(0, index);
+  return outputTitle.trim();
 }

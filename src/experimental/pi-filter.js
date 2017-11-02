@@ -2,7 +2,7 @@
 
 // import base/errors.js
 
-function pi_filter(doc) {
+function piFilter(doc) {
   console.assert(doc instanceof Document);
 
   // TODO: filter processing instruction.

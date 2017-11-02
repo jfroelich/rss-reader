@@ -10,40 +10,40 @@
 // TODO: write tests
 // TODO: make lossless. right now entities are sometimes lost.
 // TODO: once tokenize_html is settled, migrate to tokenizer approach instead
-// of using html_parse_from_string, due to the lossy transform issue
-function html_replace_tags(input_string, replacement_string) {
+// of using htmlParseFromString, due to the lossy transform issue
+function htmlReplaceTags(inputString, replacementString) {
   // The caller is responsible for calling this function with a defined string
-  console.assert(typeof input_string === 'string');
+  console.assert(typeof inputString === 'string');
 
   // Fast case for empty strings
   // Because of the above assert this basically only checks 0 length
-  if(!input_string) {
-    return input_string;
+  if(!inputString) {
+    return inputString;
   }
 
-  const [status, doc] = html_parse_from_string(input_string);
+  const [status, doc] = htmlParseFromString(inputString);
   if(status !== RDR_OK) {
     console.log('failed to parse html when replacing tags');
     // Brick wall the input due to XSS vulnerability
     return 'Unsafe HTML redacted';
   }
 
-  // If there is no replacement_string, then use the built in serialization
+  // If there is no replacementString, then use the built in serialization
   // functionality of the textContent property getter. This is faster than
   // a non-native solution, although it is opaque and therefore may have
   // different behavior.
-  if(!replacement_string) {
+  if(!replacementString) {
     return doc.body.textContent;
   }
 
   // Shove the text nodes into an array and then join by replacement
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  const node_values = [];
+  const nodeValues = [];
   for(let node = it.nextNode(); node; node = it.nextNode()) {
-    node_values.push(node.nodeValue);
+    nodeValues.push(node.nodeValue);
   }
 
-  return node_values.join(replacement_string);
+  return nodeValues.join(replacementString);
 }
 
 /*
@@ -71,54 +71,54 @@ the inaccurate position issue.
 // while maintaining a higher level of well-formedness over a naive truncation.
 // This is currently a lossy transformation because certain entities that are
 // decoded while processing are not properly re-encoded.
-function html_truncate(html_string, position, extension_string) {
+function htmlTruncate(htmlString, position, extensionString) {
   console.assert(Number.isInteger(position));
   console.assert(position >= 0);
 
-  if(!html_string) {
+  if(!htmlString) {
     return '';
   }
 
   const ellipsis = '\u2026';
-  const extension = typeof extension_string === 'string' ?
-    extension_string : ellipsis;
+  const extension = typeof extensionString === 'string' ?
+    extensionString : ellipsis;
 
-  let is_past_position = false;
-  let total_length = 0;
+  let isPastPosition = false;
+  let totalLength = 0;
 
-  // TODO: use html_parse_from_string
+  // TODO: use htmlParseFromString
 
   // Parse the html into a Document object
   const doc = document.implementation.createHTMLDocument();
-  doc.documentElement.innerHTML = html_string;
+  doc.documentElement.innerHTML = htmlString;
 
   // Create an iterator for iterating over text nodes
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
 
   for(let node = it.nextNode(); node; node = it.nextNode()) {
-    if(is_past_position) {
+    if(isPastPosition) {
       node.remove();
       continue;
     }
 
     const value = node.nodeValue;
-    const value_length = value.length;
-    if(total_length + value_length >= position) {
-      is_past_position = true;
-      const remaining_length = position - total_length;
-      node.nodeValue = value.substr(0, remaining_length) + extension;
+    const valueLength = value.length;
+    if(totalLength + valueLength >= position) {
+      isPastPosition = true;
+      const remainingLength = position - totalLength;
+      node.nodeValue = value.substr(0, remainingLength) + extension;
     } else {
-      total_length += value_length;
+      totalLength += valueLength;
     }
   }
 
-  return /<html/i.test(html_string) ?
+  return /<html/i.test(htmlString) ?
     doc.documentElement.outerHTML : doc.body.innerHTML;
 }
 
 
 
-// When html_string is a fragment, it will be inserted into a new document
+// When htmlString is a fragment, it will be inserted into a new document
 // using a default template provided by the browser, that includes a document
 // element and usually a body. If not a fragment, then it is merged into a
 // document with a default template.
@@ -128,10 +128,10 @@ function html_truncate(html_string, position, extension_string) {
 // guarantee trapping of exceptions, there is no need to enclose a call to this
 // function in a try/catch.
 // In the event of a parsing error, this returns undefined.
-function html_parse_from_string(html_string) {
+function htmlParseFromString(htmlString) {
 
   // The caller is responsible for always calling this with a defined string
-  console.assert(typeof html_string === 'string');
+  console.assert(typeof htmlString === 'string');
 
   const parser = new DOMParser();
 
@@ -143,23 +143,21 @@ function html_parse_from_string(html_string) {
   // This should never appear because the DOM is not live.
 
 
-  // doc is guaranteed defined regardless of the validity of html_string
-  const doc = parser.parseFromString(html_string, MIME_TYPE_HTML);
+  // doc is guaranteed defined regardless of the validity of htmlString
+  const doc = parser.parseFromString(htmlString, MIME_TYPE_HTML);
 
-  const error_element = doc.querySelector('parsererror');
-  if(error_element) {
-    const unsafe_message = error_element.textContent;
-    console.log(unsafe_message);
+  const parserErrorElement = doc.querySelector('parsererror');
+  if(parserErrorElement) {
+    console.log(parserErrorElement.textContent);
     return [RDR_ERR_PARSE];
   }
 
   // TODO: is this check appropriate? can an html document exist and be valid
   // if this is ever not the case, under the terms of this app?
-  const lc_root_name = doc.documentElement.localName;
-  if(lc_root_name !== 'html') {
-    const unsafe_message = 'html parsing error: ' + lc_root_name +
-      ' is not html';
-    console.log(unsafe_message);
+  const lcRootName = doc.documentElement.localName;
+  if(lcRootName !== 'html') {
+    console.log(unsafeMessage = 'html parsing error: ' + lcRootName +
+      ' is not html');
     return [RDR_ERR_PARSE];
   }
 

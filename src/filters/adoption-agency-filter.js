@@ -3,7 +3,7 @@
 // import base/errors.js
 
 // Relocates certain misnested elements
-function adoption_agency_filter(doc) {
+function adoptionAgencyFilter(doc) {
   console.assert(doc instanceof Document);
 
   // Restrict analysis to body
@@ -12,18 +12,18 @@ function adoption_agency_filter(doc) {
   }
 
   // Fix hr in lists. Simple case of invalid parent
-  const nestedhrs = doc.body.querySelectorAll('ul > hr, ol > hr, dl > hr');
-  for(const hr of nestedhrs) {
+  const nestedHRs = doc.body.querySelectorAll('ul > hr, ol > hr, dl > hr');
+  for(const hr of nestedHRs) {
     hr.remove();
   }
 
   // Relocate some basic occurrences of invalid ancestor
-  const block_selector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
-  const inline_selector = 'a, span, b, strong, i';
+  const blockSelector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
+  const inlineSelector = 'a, span, b, strong, i';
 
-  const blocks = doc.body.querySelectorAll(block_selector);
+  const blocks = doc.body.querySelectorAll(blockSelector);
   for(const block of blocks) {
-    const ancestor = block.closest(inline_selector);
+    const ancestor = block.closest(inlineSelector);
     if(ancestor && ancestor.parentNode) {
       ancestor.parentNode.insertBefore(block, ancestor);
       for(let node = block.firstChild; node; node = block.firstChild) {

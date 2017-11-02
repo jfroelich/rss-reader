@@ -8,20 +8,19 @@ async function test_archive_entries() {
 
   const name = 'test-archive-entries';
   const version = 20;
-  let was_conn_close_requested = false;
-  let conn, conn_timeout_ms = 1000, entry_max_age_ms;
+  let closeRequested = false;
+  let conn, timeoutMs = 1000, maxAgeMs;
   const limit = 5;
   try {
-    conn = await indexeddb_open(name, version,
-      reader_db_onupgradeneeded, conn_timeout_ms);
-    const status = await reader_storage_archive_entries(conn, entry_max_age_ms,
-      limit);
-    indexeddb_close(conn);
-    was_conn_close_requested = true;
-    await indexeddb_delete_database(conn.name);
+    conn = await indexedDBOpen(name, version, readerDbOnUpgradeNeeded,
+      timeoutMs);
+    const status = await readerStorageArchiveEntries(conn, maxAgeMs, limit);
+    indexedDBClose(conn);
+    closeRequested = true;
+    await indexedDBDeleteDatabase(conn.name);
   } finally {
-    if(!was_conn_close_requested) {
-      indexeddb_close(conn);
+    if(!closeRequested) {
+      indexedDBClose(conn);
     }
   }
 }

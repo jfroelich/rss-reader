@@ -14,48 +14,47 @@ const ENTRY_STATE_UNARCHIVED = 0;
 const ENTRY_STATE_ARCHIVED = 1;
 
 // Return true if the first parameter is an entry object
-function entry_is_entry(entry) {
+function entryIsEntry(entry) {
   return typeof entry === 'object';
 }
 
 // Returns true if the id is a valid entry id, structurally. This does not
 // check if the id actually corresponds to an entry.
-function entry_is_valid_id(id) {
-  return number_is_positive_integer(id);
+function entryIsValidId(id) {
+  return numberIsPositiveInteger(id);
 }
 
-
-function entry_has_url(entry) {
-  console.assert(entry_is_entry(entry));
+function entryHasURL(entry) {
+  console.assert(entryIsEntry(entry));
   return entry.urls && entry.urls.length;
 }
 
 // Returns the most last url, as a string, in the entry's url list. Throws an
 // error if the entry does not have urls.
-function entry_get_top_url(entry) {
-  console.assert(entry_is_entry(entry));
-  console.assert(entry_has_url(entry));
+function entryGetTopURL(entry) {
+  console.assert(entryIsEntry(entry));
+  console.assert(entryHasURL(entry));
   return entry.urls[entry.urls.length - 1];
 }
 
 // Append a url to an entry's url list. Lazily creates the list if needed.
 // Normalizes the url. Returns true if the url was added. Returns false if the
 // normalized url already exists and therefore was not added
-// @throws {Error} if url_string is invalid
-function entry_append_url(entry, url_string) {
-  console.assert(entry_is_entry(entry));
-  console.assert(url_is_canonical(url_string));
+// @throws {Error} if urlString is invalid
+function entryAppendURL(entry, urlString) {
+  console.assert(entryIsEntry(entry));
+  console.assert(urlIsCanonical(urlString));
 
-  const url_object = new URL(url_string);
-  const normal_url_string = url_object.href;
+  const urlObject = new URL(urlString);
+  const normalUrlString = urlObject.href;
   if(entry.urls) {
-    if(entry.urls.includes(normal_url_string)) {
+    if(entry.urls.includes(normalUrlString)) {
       return false;
     }
 
-    entry.urls.push(normal_url_string);
+    entry.urls.push(normalUrlString);
   } else {
-    entry.urls = [normal_url_string];
+    entry.urls = [normalUrlString];
   }
 
   return true;
@@ -63,59 +62,59 @@ function entry_append_url(entry, url_string) {
 
 
 // Returns a new entry object where fields have been sanitized. Impure
-function entry_sanitize(input_entry, author_max_len, title_max_len,
-  content_max_length) {
-  console.assert(entry_is_entry(input_entry));
+function entrySanitize(inputEntry, authorMaxLength, titleMaxLength,
+  contextMaxLength) {
+  console.assert(entryIsEntry(inputEntry));
 
-  if(typeof author_max_len === 'undefined') {
-    author_max_len = 200;
+  if(typeof authorMaxLength === 'undefined') {
+    authorMaxLength = 200;
   }
 
-  if(typeof title_max_len === 'undefined') {
-    title_max_len = 1000;
+  if(typeof titleMaxLength === 'undefined') {
+    titleMaxLength = 1000;
   }
 
-  if(typeof content_max_length === 'undefined') {
-    content_max_length = 50000;
+  if(typeof contextMaxLength === 'undefined') {
+    contextMaxLength = 50000;
   }
 
-  console.assert(number_is_positive_integer(author_max_len));
-  console.assert(number_is_positive_integer(title_max_len));
-  console.assert(number_is_positive_integer(content_max_length));
+  console.assert(numberIsPositiveInteger(authorMaxLength));
+  console.assert(numberIsPositiveInteger(titleMaxLength));
+  console.assert(numberIsPositiveInteger(contextMaxLength));
 
-  const output_entry = Object.assign({}, input_entry);
+  const outputEntry = Object.assign({}, inputEntry);
 
-  if(output_entry.author) {
-    let author = output_entry.author;
-    author = string_filter_control_chars(author);
-    author = html_replace_tags(author, '');
-    author = string_condense_whitespace(author);
-    author = html_truncate(author, author_max_len);
-    output_entry.author = author;
+  if(outputEntry.author) {
+    let author = outputEntry.author;
+    author = stringFilterControlChars(author);
+    author = htmlReplaceTags(author, '');
+    author = stringCondenseWhitespace(author);
+    author = htmlTruncate(author, authorMaxLength);
+    outputEntry.author = author;
   }
 
-  if(output_entry.content) {
-    let content = output_entry.content;
-    content = html_truncate(content, content_max_length);
-    output_entry.content = content;
+  if(outputEntry.content) {
+    let content = outputEntry.content;
+    content = htmlTruncate(content, contextMaxLength);
+    outputEntry.content = content;
   }
 
-  if(output_entry.title) {
-    let title = output_entry.title;
-    title = string_filter_control_chars(title);
-    title = html_replace_tags(title, '');
-    title = string_condense_whitespace(title);
-    title = html_truncate(title, title_max_len);
-    output_entry.title = title;
+  if(outputEntry.title) {
+    let title = outputEntry.title;
+    title = stringFilterControlChars(title);
+    title = htmlReplaceTags(title, '');
+    title = stringCondenseWhitespace(title);
+    title = htmlTruncate(title, titleMaxLength);
+    outputEntry.title = title;
   }
 
-  return output_entry;
+  return outputEntry;
 }
 
 // Returns a new entry object that is in a compacted form. The new entry is a
 // shallow copy of the input entry, where only certain properties are kept, and
 // a couple properties are changed.
-function entry_compact(entry) {
+function entryCompact(entry) {
   const ce = {};
   ce.dateCreated = entry.dateCreated;
   ce.dateRead = entry.dateRead;

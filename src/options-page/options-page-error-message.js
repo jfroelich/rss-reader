@@ -1,44 +1,43 @@
 'use strict';
 
-function options_page_error_message_show(message, fade) {
-  options_page_error_message_hide();
+function optionsPageErrorMessageShow(message, fade) {
+  optionsPageErrorMessageHide();
 
-  const error_element = document.createElement('div');
-  error_element.setAttribute('id','options-error-message');
+  const errorElement = document.createElement('div');
+  errorElement.setAttribute('id','options-error-message');
 
-  const message_element = document.createElement('span');
-  message_element.textContent = message;
-  error_element.appendChild(message_element);
+  const messageElement = document.createElement('span');
+  messageElement.textContent = message;
+  errorElement.appendChild(messageElement);
 
-  const dismiss_error_button = document.createElement('button');
-  dismiss_error_button.setAttribute('id', 'dismiss-error-button');
-  dismiss_error_button.textContent = 'Dismiss';
-  dismiss_error_button.onclick = options_page_error_message_hide;
-  error_element.appendChild(dismiss_error_button);
+  const dismissButton = document.createElement('button');
+  dismissButton.setAttribute('id', 'dismiss-error-button');
+  dismissButton.textContent = 'Dismiss';
+  dismissButton.onclick = optionsPageErrorMessageHide;
+  errorElement.appendChild(dismissButton);
 
   if(fade) {
-    error_element.style.opacity = '0';
-    document.body.appendChild(error_element);
+    errorElement.style.opacity = '0';
+    document.body.appendChild(errorElement);
     const duration = 1, delay = 0;
-    dom_fade(container, duration, delay);
+    domFade(container, duration, delay);
   } else {
-    error_element.style.opacity = '1';
-    error_element.style.display = 'block';
-    document.body.appendChild(error_element);
+    errorElement.style.opacity = '1';
+    errorElement.style.display = 'block';
+    document.body.appendChild(errorElement);
   }
 }
 
-function options_page_error_message_hide() {
-  const error_message_element = document.getElementById(
-    'options-error-message');
-  if(!error_message_element) {
+function optionsPageErrorMessageHide() {
+  const errorMessageElement = document.getElementById('options-error-message');
+  if(!errorMessageElement) {
     return;
   }
 
-  const dismiss_button = document.getElementById('dismiss-error-button');
-  if(dismiss_button) {
-    dismiss_button.removeEventListener('click',
-      options_page_error_message_hide);
+  const dismissButton = document.getElementById('dismiss-error-button');
+  if(dismissButton) {
+    dismissButton.removeEventListener('click',
+      optionsPageErrorMessageHide);
   }
-  error_message_element.remove();
+  errorMessageElement.remove();
 }

@@ -4,7 +4,7 @@
 // import filters/filter-helpers.js
 // import net/url.js
 
-function script_anchor_filter(doc) {
+function scriptAnchorFilter(doc) {
   console.assert(doc instanceof Document);
 
   // Restrict analysis to body descendants
@@ -14,8 +14,8 @@ function script_anchor_filter(doc) {
 
   const anchors = doc.body.querySelectorAll('a[href]');
   for(const anchor of anchors) {
-    if(url_has_script_protocol(anchor.getAttribute('href'))) {
-      dom_unwrap(anchor);
+    if(urlHasScriptProtocol(anchor.getAttribute('href'))) {
+      domUnwrap(anchor);
     }
   }
 

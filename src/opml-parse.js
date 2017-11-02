@@ -8,15 +8,15 @@ class OPMLParser {
   // @param xml {String}
   // @returns {Array} returns an array of status code and document
   static parse(xml) {
-    let [status, doc] = xml_parse_from_string(xml);
+    let [status, doc] = xmlParseFromString(xml);
     if(status !== RDR_OK) {
-      console.log('xml parse error');
+      console.debug('xml parse error');
       return [status];
     }
 
     const name = doc.documentElement.localName.toLowerCase();
     if(name !== 'opml') {
-      console.log('documentElement not opml:', name);
+      console.debug('documentElement not opml:', name);
       return [RDR_ERR_DOM];
     }
 

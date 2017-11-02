@@ -4,16 +4,16 @@
 // import extension.js
 // import reader-db.js
 
-async function reader_update_badge(conn) {
+async function readerUpdateBadge(conn) {
   let count;
   try {
-    count = await reader_db_count_unread_entries(conn);
+    count = await readerDbCountUnreadEntries(conn);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
   }
 
   console.debug('unread count:', count);
-  extension_set_badge_text(count);
+  extensionSetBadgeText(count);
   return RDR_OK;
 }

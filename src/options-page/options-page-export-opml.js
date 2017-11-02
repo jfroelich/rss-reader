@@ -1,26 +1,26 @@
 'use strict';
 
-// TODO: this belongs in app middle layer rather than view layer
+// TODO: move to reader-storage.js
 // TODO: this should probably be two functions that the caller has to call,
 // one being load feeds and the other being export feeds. The caller should
 // compose them
-async function options_page_export_opml() {
-  const title = 'Subscriptions', file_name = 'subscriptions.xml';
+async function optionsPageExportOPML() {
+  const title = 'Subscriptions', fileName = 'subscriptions.xml';
 
   // Connect, load feeds, disconnect
   let conn, feeds;
   try {
-    conn = await reader_db_open();
-    feeds = await reader_db_get_feeds(conn);
+    conn = await readerDbOpen();
+    feeds = await readerDbGetFeeds(conn);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 
   console.assert(feeds);
 
-  const status = await reader_export_feeds(feeds, title, file_name);
+  const status = await readerExportFeeds(feeds, title, fileName);
   return status;
 }

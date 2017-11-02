@@ -8,37 +8,37 @@
 // or form within ul/ol, and dd/dt/form within dl. Do some type of transform
 // like move such items to within a new child
 
-function list_filter(doc) {
+function listFilter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
     return;
   }
 
-  const ancestor_element = doc.body;
+  const ancestor = doc.body;
 
-  const lists = ancestor_element.querySelectorAll('ul, ol, dl');
+  const lists = ancestor.querySelectorAll('ul, ol, dl');
 
   // TODO: maybe this empty checking should be moved into the
-  // leaf_filter_is_leaf logic as a special case for list elements. That way it
+  // leafFilterIsLeaf logic as a special case for list elements. That way it
   // will be recursive. But this does a moving of children where as the
   // leaf code just removes. So that would also entail changing the meaning
   // of leaf filtering from filter to transform.
   for(const list of lists) {
-    if(list_filter_is_empty(list)) {
-      list_filter_remove_empty_list(list);
+    if(listFilterIsEmpty(list)) {
+      listFilterRemoveEmptyList(list);
     }
   }
 
   for(const list of lists) {
-    list_filter_unwrap_single_item_list(list);
+    listFilterUnwrapSingleItemList(list);
   }
 
   return RDR_OK;
 }
 
 // Return true if list is 'empty'
-function list_filter_is_empty(list) {
+function listFilterIsEmpty(list) {
   // Return true if the list has no child nodes. This is redundant with
   // leaf filtering but I think it is ok and prefer to not make assumptions
   // about composition with other filters
@@ -69,7 +69,7 @@ function list_filter_is_empty(list) {
   return false;
 }
 
-function list_filter_remove_empty_list(list) {
+function listFilterRemoveEmptyList(list) {
   const doc = list.ownerDocument;
 
   // Add leading padding
@@ -78,18 +78,18 @@ function list_filter_remove_empty_list(list) {
     list.parentNode.insertBefore(doc.createTextNode(' '), list);
   }
 
-  const first_child = list.firstChild;
+  const firstChild = list.firstChild;
 
   // Move any child nodes (there may be none). As each first child is moved,
   // the next child becomes the first child.
-  for(let node = first_child; node; node = list.firstChild) {
+  for(let node = firstChild; node; node = list.firstChild) {
     list.parentNode.insertBefore(node, list);
   }
 
   // Add trailing padding if needed. Also check if there were children,
   // so as to not add padding on top of the leading padding when there is
   // no need.
-  if(first_child && list.nextSibling &&
+  if(firstChild && list.nextSibling &&
     list.nextSibling.nodeType === Node.TEXT_NODE) {
     list.parentNode.insertBefore(doc.createTextNode(' '), list);
   }
@@ -98,10 +98,10 @@ function list_filter_remove_empty_list(list) {
 }
 
 // Unwraps single item or empty list elements
-function list_filter_unwrap_single_item_list(list) {
+function listFilterUnwrapSingleItemList(list) {
 
-  const list_parent = list.parentNode;
-  if(!list_parent) {
+  const listParent = list.parentNode;
+  if(!listParent) {
     return;
   }
 
@@ -124,8 +124,8 @@ function list_filter_unwrap_single_item_list(list) {
   }
 
   // If the list's only child element isn't one of the correct types, ignore it
-  const list_item_names = {'li': 0, 'dt': 0, 'dd': 0};
-  if(!(item.localName in list_item_names)) {
+  const listItemNames = {'li': 0, 'dt': 0, 'dd': 0};
+  if(!(item.localName in listItemNames)) {
     return;
   }
 
@@ -139,7 +139,7 @@ function list_filter_unwrap_single_item_list(list) {
       list.nextSibling &&
       list.nextSibling.nodeType === Node.TEXT_NODE) {
 
-      list_parent.replaceChild(doc.createTextNode(' '), list);
+      listParent.replaceChild(doc.createTextNode(' '), list);
 
     } else {
       list.remove();
@@ -157,12 +157,12 @@ function list_filter_unwrap_single_item_list(list) {
     item.firstChild &&
     item.firstChild.nodeType === Node.TEXT_NODE) {
 
-    list_parent.insertBefore(doc.createTextNode(' '), list);
+    listParent.insertBefore(doc.createTextNode(' '), list);
   }
 
   // Move the children of the item to before the list, maintainin order
   for(let node = item.firstChild; node; node = item.firstChild) {
-    list_parent.insertBefore(node, list);
+    listParent.insertBefore(node, list);
   }
 
   // Add trailing padding
@@ -171,7 +171,7 @@ function list_filter_unwrap_single_item_list(list) {
     list.previousSibling &&
     list.previousSibling.nodeType === Node.TEXT_NODE) {
 
-    list_parent.insertBefore(doc.createTextNode(' '), list);
+    listParent.insertBefore(doc.createTextNode(' '), list);
   }
 
   list.remove();

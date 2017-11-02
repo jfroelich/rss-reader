@@ -2,7 +2,7 @@
 
 // import base/errors.js
 
-function entity_decode_filter(doc) {
+function entityDecodeFilter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {

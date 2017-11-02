@@ -5,8 +5,8 @@
 // import reader-db.js
 
 // TODO: test timeouts
-// TODO: this is out of date. reader_db_open does not accept params
-// To test, use indexeddb_open
+// TODO: this is out of date. readerDbOpen does not accept params
+// To test, use indexedDBOpen
 
 async function test() {
   console.log('test_db start');
@@ -15,25 +15,25 @@ async function test() {
   let close_requested = false;
   let conn;
   try {
-    conn = await indexeddb_open(name, version, reader_db_onupgradeneeded);
-    console.assert(indexeddb_is_open(conn));
-    indexeddb_close(conn);
+    conn = await indexedDBOpen(name, version, readerDbOnUpgradeNeeded);
+    console.assert(indexedDBIsOpen(conn));
+    indexedDBClose(conn);
 
-    if(indexeddb_is_open(conn)) {
-      console.debug('NOT DESIRED: indexeddb_is_open says open after conn closed');
+    if(indexedDBIsOpen(conn)) {
+      console.debug('NOT DESIRED: indexedDBIsOpen says open after conn closed');
     } else {
-      console.debug('DESIRED: indexeddb_is_open says conn closed');
+      console.debug('DESIRED: indexedDBIsOpen says conn closed');
     }
 
     close_requested = true;
-    await indexeddb_delete_database(name);
+    await indexedDBDeleteDatabase(name);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
   } finally {
     if(!close_requested) {
-      indexeddb_close(conn);
-      console.assert(!indexeddb_is_open(conn));
+      indexedDBClose(conn);
+      console.assert(!indexedDBIsOpen(conn));
     }
   }
 

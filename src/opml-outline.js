@@ -2,12 +2,12 @@
 
 // import feed.js
 
-function opml_outline_is_outline(outline) {
+function opmlOutlineIsOutline(outline) {
   return typeof outline === 'object';
 }
 
-function opml_outline_to_feed(outline) {
-  console.assert(opml_outline_is_outline(outline));
+function opmlOutlineToFeed(outline) {
+  console.assert(opmlOutlineIsOutline(outline));
 
   const feed = {};
   if(outline.type) {
@@ -30,46 +30,46 @@ function opml_outline_to_feed(outline) {
     feed.link = outline.htmlUrl;
   }
 
-  feed_append_url(feed, outline.xmlUrl);
+  feedAppendURL(feed, outline.xmlUrl);
   return feed;
 }
 
-function opml_outline_from_feed(feed) {
-  console.assert(feed_is_feed(feed));
+function opmlOutlineFromFeed(feed) {
+  console.assert(feedIsFeed(feed));
   const outline = {};
   outline.type = feed.type;
-  outline.xmlUrl = feed_get_top_url(feed);
+  outline.xmlUrl = feedGetTopURL(feed);
   outline.title = feed.title;
   outline.description = feed.description;
   outline.htmlUrl = feed.link;
   return outline;
 }
 
-function opml_outline_element_has_valid_type(element) {
+function opmlOutlineElementHasValidType(element) {
   console.assert(element instanceof Element);
   const TYPE_PATTERN = /\s*(rss|rdf|feed)\s*/i;
   return TYPE_PATTERN.test(element.getAttribute('type'));
 }
 
-function opml_outline_element_has_xmlurl(element) {
-  let xml_url = element.getAttribute('xmlUrl');
-  return xml_url && xml_url.trim();
+function opmlOutlineElementHasXMLURL(element) {
+  let xmlUrl = element.getAttribute('xmlUrl');
+  return xmlUrl && xmlUrl.trim();
 }
 
-function opml_outline_element_normalize_xmlurl(element) {
+function opmlOutlineElementNormalizeXMLURL(element) {
   let url = element.getAttribute('xmlUrl');
   if(url) {
     try {
-      const urlo = new URL(url);
-      element.setAttribute('xmlUrl', urlo.href);
+      const urlObject = new URL(url);
+      element.setAttribute('xmlUrl', urlObject.href);
     } catch(error) {
       element.removeAttribute('xmlUrl');
     }
   }
 }
 
-function opml_outline_normalize_htmlurl(outline) {
-  console.assert(opml_outline_is_outline(outline));
+function opmlOutlineNormalizeHTMLURL(outline) {
+  console.assert(opmlOutlineIsOutline(outline));
 
   if(outline.htmlUrl === undefined) {
     return;
@@ -88,16 +88,16 @@ function opml_outline_normalize_htmlurl(outline) {
   }
 
   try {
-    const urlo = new URL(outline.htmlUrl);
-    outline.htmlUrl = urlo.href;
+    const urlObject = new URL(outline.htmlUrl);
+    outline.htmlUrl = urlObject.href;
   } catch(error) {
     outline.htmlUrl = undefined;
   }
 }
 
-function opml_outline_to_element(doc, outline) {
+function opmlOutlineToElement(doc, outline) {
   console.assert(doc instanceof Document);
-  console.assert(opml_outline_is_outline(outline));
+  console.assert(opmlOutlineIsOutline(outline));
 
   const element = doc.createElement('outline');
   if(outline.type) {
@@ -127,7 +127,7 @@ function opml_outline_to_element(doc, outline) {
   return element;
 }
 
-function opml_outline_element_to_object(element) {
+function opmlOutlineElementToObject(element) {
   const object = {};
   object.description = element.getAttribute('description');
   object.htmlUrl = element.getAttribute('htmlUrl');

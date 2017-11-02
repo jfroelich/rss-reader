@@ -6,16 +6,16 @@
 // Returns undefined if no rewriting occurred
 // @param url {String}
 // @returns {String}
-function rewrite_url(url) {
-  console.assert(url_is_canonical(url));
+function rewriteURL(url) {
+  console.assert(urlIsCanonical(url));
 
-  const url_object = new URL(url);
-  if(url_object.hostname === 'news.google.com' &&
-    url_object.pathname === '/news/url') {
-    return url_object.searchParams.get('url');
-  } else if(url_object.hostname === 'techcrunch.com' &&
-    url_object.searchParams.has('ncid')) {
-    url_object.searchParams.delete('ncid');
-    return url_object.href;
+  const urlObject = new URL(url);
+  if(urlObject.hostname === 'news.google.com' &&
+    urlObject.pathname === '/news/url') {
+    return urlObject.searchParams.get('url');
+  } else if(urlObject.hostname === 'techcrunch.com' &&
+    urlObject.searchParams.has('ncid')) {
+    urlObject.searchParams.delete('ncid');
+    return urlObject.href;
   }
 }

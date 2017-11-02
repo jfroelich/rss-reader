@@ -4,7 +4,7 @@
 // import dom.js
 
 // TODO: make a github issue about optimizing recursive unwrap
-function hidden_filter(doc) {
+function hiddenFilter(doc) {
   console.assert(doc instanceof Document)
   const body = doc.body;
 
@@ -20,8 +20,8 @@ function hidden_filter(doc) {
 
   const elements = body.querySelectorAll('*');
   for(const element of elements) {
-    if(body.contains(element) && dom_is_hidden_inline(element)) {
-      dom_unwrap(element);
+    if(body.contains(element) && domIsHiddenInline(element)) {
+      domUnwrap(element);
     }
   }
 }

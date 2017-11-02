@@ -9,11 +9,11 @@
 // pagination elements are removed.
 // @param doc {HTMLDocument} the document
 // @param location {String} url of the document
-// @param timeout_ms {Number} timeout per page fetch
-async function multipage_filter(doc, location, timeout_ms) {
+// @param timeoutMs {Number} timeout per page fetch
+async function multipageFilter(doc, location, timeoutMs) {
   console.assert(doc instanceof Document);
-  const lca_max_distance = 3;
-  const anchors = pagination_find_anchors(doc, location, lca_max_distance);
+  const lcaMaxDistance = 3;
+  const anchors = paginationFindAnchors(doc, location, lcaMaxDistance);
   if(!anchors.length) {
     return;
   }
@@ -23,9 +23,10 @@ async function multipage_filter(doc, location, timeout_ms) {
     urls.push(anchor.getAttribute('href'));
   }
 
-  async function fetch_and_parse_html(url, timeout_ms) {
+  // TODO: inline
+  async function fetchAndParseHTML(url, timeoutMs) {
     const parser = new DOMParser();
-    const response = await fetch_html(url, timeout_ms);
+    const response = await fetchHTML(url, timeoutMs);
     const text = await response.text();
     return parser.parseFromString(text, 'text/html');
   }
@@ -33,7 +34,7 @@ async function multipage_filter(doc, location, timeout_ms) {
   // Concurrently fetch the array of urls. If any fetch fails then this fails.
   const promises = [];
   for(const url of urls) {
-    promises.push(fetch_and_parse_html(url, timeout_ms));
+    promises.push(fetchAndParseHTML(url, timeoutMs));
   }
 
   let docs;

@@ -2,45 +2,45 @@
 
 // import reader-db.js
 
-function extension_idle_query(idle_period_secs) {
+function extensionIdleQuery(idlePeriodSecs) {
   return new Promise(function executor(resolve, reject) {
-    chrome.idle.queryState(idle_period_secs, resolve);
+    chrome.idle.queryState(idlePeriodSecs, resolve);
   });
 }
 
-function extension_set_badge_text(count) {
+function extensionSetBadgeText(count) {
   count = count || 0;
   const text = count > 999 ? '1k+' : '' + count;
   chrome.browserAction.setBadgeText({'text': text});
 }
 
-async function extension_show_slideshow_tab() {
-  const slideshow_url_string = chrome.extension.getURL('slideshow.html');
-  const newtab_url_string = 'chrome://newtab/';
+async function extensionShowSlideshowTab() {
+  const slideshowURL = chrome.extension.getURL('slideshow.html');
+  const newtabURL = 'chrome://newtab/';
 
-  let tabs = await extension_find_tabs_by_url(slideshow_url_string);
+  let tabs = await extensionFindTabsByURL(slideshowURL);
   if(tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id, {'active': true});
     return;
   }
 
-  tabs = await extension_find_tabs_by_url(newtab_url_string);
+  tabs = await extensionFindTabsByURL(newtabURL);
   if(tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id,
-      {'active': true, 'url': slideshow_url_string});
+      {'active': true, 'url': slideshowURL});
     return;
   }
 
-  chrome.tabs.create({'url': slideshow_url_string});
+  chrome.tabs.create({'url': slideshowURL});
 }
 
-function extension_find_tabs_by_url(url_string) {
+function extensionFindTabsByURL(urlString) {
   return new Promise(function executor(resolve, reject) {
-    return chrome.tabs.query({'url': url_string}, resolve);
+    return chrome.tabs.query({'url': urlString}, resolve);
   });
 }
 
-function extension_notify(title, message, icon_url_string) {
+function extensionNotify(title, message, iconURL) {
   if(typeof Notification === 'undefined') {
     return;
   }
@@ -53,32 +53,31 @@ function extension_notify(title, message, icon_url_string) {
     return;
   }
 
-  const default_icon_url_string =
-    chrome.extension.getURL('/images/rss_icon_trans.gif');
+  const defaultIconURL = chrome.extension.getURL('/images/rss_icon_trans.gif');
 
   const details = {};
   details.body = message || '';
-  details.icon = icon_url_string || default_icon_url_string;
+  details.icon = iconURL || defaultIconURL;
 
   // Instantiation also shows
   const notification = new Notification(title, details);
-  notification.addEventListener('click', extension_notification_on_click);
+  notification.addEventListener('click', extensionNotificationOnclick);
 }
 
-async function extension_notification_on_click(event) {
+async function extensionNotificationOnclick(event) {
   try {
     // Ensure the browser is open to avoid mac chrome crash in 55
     // TODO: test if this behavior is still present in latest chrome and if
     // not then remove
-    const window_handle = window.open();
-    window_handle.close();
-    await extension_show_slideshow_tab();
+    const windowHandle = window.open();
+    windowHandle.close();
+    await extensionShowSlideshowTab();
   } catch(error) {
     console.warn(error);
   }
 }
 
-function extension_permissions_contains(permission) {
+function extensionPermissionsContains(permission) {
   console.assert(typeof permission === 'string');
   return new Promise(function executor(resolve, reject) {
     const descriptor = {'permissions': [permission]};
@@ -86,7 +85,7 @@ function extension_permissions_contains(permission) {
   });
 }
 
-function extension_permissions_request(permission) {
+function extensionPermissionsRequest(permission) {
   console.assert(typeof permission === 'string');
   return new Promise(function executor(resolve, reject) {
     const descriptor = {'permissions': [permission]};
@@ -94,7 +93,7 @@ function extension_permissions_request(permission) {
   });
 }
 
-function extension_permissions_remove(permission) {
+function extensionPermissionsRemove(permission) {
   console.assert(typeof permission === 'string');
   return new Promise(function executor(resolve, reject) {
     const descriptor = {'permissions': [permission]};

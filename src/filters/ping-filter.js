@@ -2,7 +2,7 @@
 
 // import base/errors.js
 
-function ping_filter(doc) {
+function pingFilter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {

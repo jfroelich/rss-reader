@@ -2,7 +2,7 @@
 
 // import base/errors.js
 
-function comment_filter(doc) {
+function commentFilter(doc) {
   console.assert(doc instanceof Document);
 
   const it = doc.createNodeIterator(doc.documentElement,

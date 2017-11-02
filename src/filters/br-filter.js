@@ -2,7 +2,7 @@
 
 // import base/errors.js
 
-function br_filter(doc) {
+function brFilter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {

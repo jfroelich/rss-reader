@@ -12,15 +12,15 @@
 
 // @param doc {HTMLDocument}
 // @param location {String} url location of the document
-function pagination_find_anchors(doc, location, lca_max_distance) {
+function paginationFindAnchors(doc, location, lcaMaxDistance) {
   console.assert(doc instanceof Document);
 
-  const candidates = pagination_find_candidate_anchors(doc, location);
+  const candidates = paginationFindCandidateAnchors(doc, location);
   if(!candidates.length) {
     return [];
   }
 
-  const sequences = pagination_find_anchor_sequences(candidates, lca_max_distance);
+  const sequences = paginationFindAnchorSequences(candidates, lcaMaxDistance);
   if(!sequences.length) {
     return [];
   }
@@ -35,21 +35,21 @@ function pagination_find_anchors(doc, location, lca_max_distance) {
 // candidates found then an empty array is returned. Is not concerned with
 // sequence-related criteria for anchors, just the minimal criteria for any
 // anchor
-function pagination_find_candidate_anchors(doc, location) {
-  const body_element = doc.body;
-  if(!body_element) {
+function paginationFindCandidateAnchors(doc, location) {
+  const bodyElement = doc.body;
+  if(!bodyElement) {
     return [];
   }
 
-  const anchors = body_element.getElementsByTagName('a');
+  const anchors = bodyElement.getElementsByTagName('a');
   if(!anchors.length) {
     return [];
   }
 
   const candidates = [];
-  const location_url = new URL(location);
+  const locationURL = new URL(location);
   for(const anchor of anchors) {
-    if(pagination_is_candidate_anchor(anchor, location_url)) {
+    if(paginationIsCandidateAnchor(anchor, locationURL)) {
       candidates.push(anchor);
     }
   }
@@ -57,52 +57,52 @@ function pagination_find_candidate_anchors(doc, location) {
 }
 
 // Return true if the anchor element may be part of a pager sequence
-// @param anchor_element {Element} an anchor element
-// @param base_url {URL}
-function pagination_is_candidate_anchor(anchor_element, base_url) {
+// @param anchorElement {Element} an anchor element
+// @param baseURL {URL}
+function paginationIsCandidateAnchor(anchorElement, baseURL) {
   // Although the following conditions are generally associative, they are
   // ordered so as to reduce the chance of performing more expensive operations
 
-  if(!anchor_element.firstChild) {
+  if(!anchorElement.firstChild) {
     return false;
   }
 
-  const max_text_length = 30;
-  const text_content = anchor_element.textContent || '';
-  if(text_content.trim().length > max_text_length) {
+  const maxTextLength = 30;
+  const textContent = anchorElement.textContent || '';
+  if(textContent.trim().length > maxTextLength) {
     return false;
   }
 
-  if(dom_is_hidden(anchor_element)) {
+  if(domIsHidden(anchorElement)) {
     return false;
   }
 
-  const href_url = pagination_get_href_url(anchor_element, base_url);
-  if(!href_url) {
+  const hrefURL = paginationGetHrefURL(anchorElement, baseURL);
+  if(!hrefURL) {
     return false;
   }
 
-  const allowed_protocols = ['https:', 'http:'];
-  if(!allowed_protocols.includes(href_url.protocol)) {
+  const allowedProtocols = ['https:', 'http:'];
+  if(!allowedProtocols.includes(hrefURL.protocol)) {
     return false;
   }
 
   // If it an exactly identical url then ignore it
-  if(href_url.href === base_url.href) {
+  if(hrefURL.href === baseURL.href) {
     return false;
   }
 
   // TODO: Check for digits somewhere in the anchor. At least one feature must
   // have digits (or the name like one/two)
   // TODO: Check id, class, href filename, href params, text
-  return pagination_are_similar_urls(base_url, href_url);
+  return paginationAreSimilarURLs(baseURL, hrefURL);
 }
 
 // Returns the anchor's href attribute value as a URL object, or undefined
-function pagination_get_href_url(anchor_element, base_url) {
-  console.assert(base_url);
+function paginationGetHrefURL(anchorElement, baseURL) {
+  console.assert(baseURL);
 
-  let href = anchor_element.getAttribute('href');
+  let href = anchorElement.getAttribute('href');
 
   // The anchor's href value will eventually be used as the first parameter to
   // new URL, so it is important to avoid passing in an empty string because
@@ -117,18 +117,18 @@ function pagination_get_href_url(anchor_element, base_url) {
     return;
   }
 
-  let href_url;
+  let hrefURL;
   try {
-    href_url = new URL(href, base_url);
+    hrefURL = new URL(href, baseURL);
   } catch(error) {
   }
-  return href_url;
+  return hrefURL;
 }
 
 // TODO: actually I think this can be inlined. Also, this is really just
 // comparing path so this name is not great
 // Expects 2 URL objects. Return true if the second is similar to the first
-function pagination_are_similar_urls(url1, url2) {
+function paginationAreSimilarURLs(url1, url2) {
   if(url1.origin !== url2.origin) {
     return false;
   }
@@ -138,8 +138,8 @@ function pagination_are_similar_urls(url1, url2) {
     return true;
   }
 
-  path1 = pagination_get_partial_path(url1.pathname);
-  path2 = pagination_get_partial_path(url2.pathname);
+  path1 = paginationGetPartialPath(url1.pathname);
+  path2 = paginationGetPartialPath(url2.pathname);
   return path1 === path2;
 }
 
@@ -147,7 +147,7 @@ function pagination_are_similar_urls(url1, url2) {
 // Returns a path string without the "filename" segment of the path
 // Note that for basic path like '/' this may return an empty string.
 // Assume's input path string is defined, trimmed, and normalized.
-function pagination_get_partial_path(path) {
+function paginationGetPartialPath(path) {
   const index = path.lastIndexOf('/');
   if(index === -1) {
     throw new TypeError('path missing forward slash');
@@ -168,26 +168,26 @@ function pagination_get_partial_path(path) {
 // TODO: maybe store the LCA within each sequence as each sequence's first value
 // before returning, as this may help avoid having to find it again later
 // TODO: if I am using a max distance to lca, then why not just restrict search
-// distance in dom_find_lca and return null when no lca found within distance?
-function pagination_find_anchor_sequences(anchor_elements, lca_max_distance) {
-  const num_anchors = anchor_elements.length;
+// distance in domFindLCA and return null when no lca found within distance?
+function paginationFindAnchorSequences(anchors, lcaMaxDistance) {
+  const anchorCount = anchors.length;
 
-  console.assert(num_anchors > 0);
+  console.assert(anchorCount > 0);
 
-  const minlen = 1, maxlen = 51; // exclusive end points
+  const minLength = 1, maxLength = 51; // exclusive end points
   const seqs = [];
-  const maxd = lca_max_distance - 1;
-  let a1 = anchor_elements[0], a2 = null;
+  const maxd = lcaMaxDistance - 1;
+  let a1 = anchors[0], a2 = null;
   let seq = [a1];
   let lca1, lca2;
 
-  for(let i = 1; i < num_anchors; i++) {
-    a2 = anchor_elements[i];
-    lca2 = dom_find_lca(a1, a2);
+  for(let i = 1; i < anchorCount; i++) {
+    a2 = anchors[i];
+    lca2 = domFindLCA(a1, a2);
     if((lca1 && (lca2.ancestor !== lca1.ancestor)) ||
       (lca2.d1 !== lca2.d2) || (lca2.d1 > maxd)) {
 
-      if(seq.length > minlen && seq.length < maxlen) {
+      if(seq.length > minLength && seq.length < maxLength) {
         seqs.push(seq);
       }
 
@@ -201,7 +201,7 @@ function pagination_find_anchor_sequences(anchor_elements, lca_max_distance) {
     }
   }
 
-  if(seq.length > minlen && seq.length < maxlen) {
+  if(seq.length > minLength && seq.length < maxLength) {
     seqs.push(seq);
   }
 

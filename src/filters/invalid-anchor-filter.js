@@ -2,7 +2,7 @@
 
 // import base/errors.js
 
-function invalid_anchor_filter(doc) {
+function invalidAnchorFilter(doc) {
   console.assert(doc instanceof Document);
 
   // Restrict to body descendants
@@ -12,7 +12,7 @@ function invalid_anchor_filter(doc) {
 
   const anchors = doc.body.querySelectorAll('a');
   for(const anchor of anchors) {
-    if(invalid_anchor_filter_is_invalid(anchor)) {
+    if(invalidAnchorFilterIsInvalid(anchor)) {
       anchor.remove();
     }
   }
@@ -20,7 +20,7 @@ function invalid_anchor_filter(doc) {
   return RDR_OK;
 }
 
-function invalid_anchor_filter_is_invalid(anchor_element) {
-  const href_value = anchor_element.getAttribute('href');
-  return href_value && /^\s*https?:\/\/#/i.test(href_value);
+function invalidAnchorFilterIsInvalid(anchor) {
+  const hrefValue = anchor.getAttribute('href');
+  return hrefValue && /^\s*https?:\/\/#/i.test(hrefValue);
 }

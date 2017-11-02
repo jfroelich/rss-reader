@@ -2,7 +2,7 @@
 
 // import base/errors.js
 
-function script_filter(doc) {
+function scriptFilter(doc) {
   console.assert(doc instanceof Document);
 
   const scripts = doc.querySelectorAll('script');

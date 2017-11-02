@@ -6,43 +6,45 @@
 // import extension.js
 // import feed.js
 // import feed-coerce-from-response.js
+// import reader-badge.js
 // import reader-db.js
 // import reader-storage.js
 
-function poll_feeds_context() {
-  this.reader_conn = undefined;
-  this.icon_conn = undefined;
-  this.allow_metered_connections = false;
-  this.ignore_recency_check = false;
-  this.ignore_idle_state = false;
-  this.ignore_modified_check = false;
-  this.idle_period_secs = 30;
-  this.recency_period_ms = 5 * 60 * 1000;
-  this.fetch_feed_timeout_ms = 5000;
-  this.fetch_html_timeout_ms = 5000;
-  this.fetch_image_timeout_ms = 3000;
+function PollFeedsContext() {
+  this.readerConn = undefined;
+  this.iconConn = undefined;
+  this.allowMeteredConnections = false;
+  this.ignoreRecencyCheck = false;
+  this.ignoreIdleState = false;
+  this.ignoreModifiedCheck = false;
+  this.idlePeriodSecs = 30;
+  this.recencyPeriodMs = 5 * 60 * 1000;
+  this.fetchFeedTimeoutMs = 5000;
+  this.fetchHTMLTimeoutMs = 5000;
+  this.fetchImageTimeoutMs = 3000;
 
   // Whether to accept html when fetching a feed
-  this.accept_html = true;
+  this.acceptHTML = true;
 }
 
-async function poll_feeds(pfc) {
-  console.assert(pfc instanceof poll_feeds_context);
-  console.log('poll_feeds start');
+async function pollFeeds(pfc) {
+  console.assert(pfc instanceof PollFeedsContext);
+  console.log('pollFeeds start');
 
   if('onLine' in navigator && !navigator.onLine) {
     console.debug('offline');
     return false;
   }
 
-  if(!pfc.allow_metered_connections && 'NO_POLL_METERED' in localStorage &&
+  if(!pfc.allowMeteredConnections && 'NO_POLL_METERED' in localStorage &&
     navigator.connection && navigator.connection.metered) {
     console.debug('metered connection');
     return false;
   }
 
-  if(!pfc.ignore_idle_state && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    const state = await extension_idle_query(pfc.idle_period_secs);
+  if(!pfc.ignoreIdleState && 'ONLY_POLL_IF_IDLE' in localStorage) {
+    // TODO: call to wrapper function extensionIsIdle instead
+    const state = await extensionIdleQuery(pfc.idlePeriodSecs);
     if(state !== 'locked' && state !== 'idle') {
       console.debug('idle');
       return false;
@@ -51,47 +53,47 @@ async function poll_feeds(pfc) {
 
   let feeds;
   try {
-    feeds = await reader_db_get_feeds(pfc.reader_conn);
+    feeds = await readerDbGetFeeds(pfc.readerConn);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
   }
 
-  if(!pfc.ignore_recency_check) {
-    const pollable_feeds = [];
+  if(!pfc.ignoreRecencyCheck) {
+    const pollableFeeds = [];
     for(const feed of feeds) {
-      if(poll_feeds_feed_is_pollable(feed, pfc.recency_period_ms)) {
-        pollable_feeds.push(feed);
+      if(pollFeedsFeedIsPollable(feed, pfc.recencyPeriodMs)) {
+        pollableFeeds.push(feed);
       }
     }
-    feeds = pollable_feeds;
+    feeds = pollableFeeds;
   }
 
   const promises = [];
   for(const feed of feeds) {
-    promises.push(poll_feeds_poll_feed(feed, pfc));
+    promises.push(pollFeedsPollFeed(feed, pfc));
   }
 
-  const poll_feed_statuses = await Promise.all(promises);
+  const statuses = await Promise.all(promises);
 
-  let status = await reader_update_badge(pfc.reader_conn);
+  let status = await readerUpdateBadge(pfc.readerConn);
   if(status !== RDR_OK) {
-    console.warn('poll_feeds reader_update_badge failed with status', status);
+    console.warn('pollFeeds readerUpdateBadge failed with status', status);
   }
 
   const title = 'Added articles';
   const message = 'Added articles';
-  extension_notify(title, message);
+  extensionNotify(title, message);
 
   const channel = new BroadcastChannel('poll');
   channel.postMessage('completed');
   channel.close();
 
-  console.log('poll_feeds end');
+  console.log('pollFeeds end');
   return RDR_OK;
 }
 
-function poll_feeds_feed_is_pollable(feed, recency_period_ms) {
+function pollFeedsFeedIsPollable(feed, recencyPeriodMs) {
   // If we do not know when the feed was fetched, then assume it is a new feed
   // that has never been fetched
   if(!feed.dateFetched) {
@@ -101,35 +103,34 @@ function poll_feeds_feed_is_pollable(feed, recency_period_ms) {
   // The amount of time that has elapsed, in milliseconds, from when the
   // feed was last polled.
   const elapsed = new Date() - feed.dateFetched;
-  if(elapsed < recency_period_ms) {
+  if(elapsed < recencyPeriodMs) {
     // A feed has been polled too recently if not enough time has elasped from
     // the last time the feed was polled.
-    console.debug('feed polled too recently', feed_get_top_url(feed));
+    console.debug('feed polled too recently', feedGetTopURL(feed));
     return false;
   }
 
   return true;
 }
 
-// @throws {Error} any exception thrown by fetch_feed
+// @throws {Error} any exception thrown by fetchFeed
 // @returns {status} status
-async function poll_feeds_poll_feed(feed, pfc) {
-  console.assert(feed_is_feed(feed));
-  console.assert(pfc instanceof poll_feeds_context);
+async function pollFeedsPollFeed(feed, pfc) {
+  console.assert(feedIsFeed(feed));
+  console.assert(pfc instanceof PollFeedsContext);
 
-  const url = feed_get_top_url(feed);
+  const url = feedGetTopURL(feed);
 
   let response;
   try {
-    response = await fetch_feed(url, pfc.fetch_feed_timeout_ms,
-      pfc.accept_html);
+    response = await fetchFeed(url, pfc.fetchFeedTimeoutMs, pfc.acceptHTML);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_FETCH;
   }
 
   // Check whether the feed was not modified since last update
-  if(!pfc.ignore_modified_check && feed.dateUpdated &&
+  if(!pfc.ignoreModifiedCheck && feed.dateUpdated &&
     feed.dateLastModified && response.last_modified_date &&
     feed.dateLastModified.getTime() ===
     response.last_modified_date.getTime()) {
@@ -139,50 +140,50 @@ async function poll_feeds_poll_feed(feed, pfc) {
     return RDR_OK;
   }
 
-  let feed_xml;
+  let feedXML;
   try {
-    feed_xml = await response.text();
+    feedXML = await response.text();
   } catch(error) {
     console.warn(error);
     return RDR_ERR_FETCH;
   }
 
-  const process_entries = true;
-  const parse_result = reader_parse_feed(feed_xml, url,
-    response.response_url, response.last_modified_date, process_entries);
+  const PROCESS_ENTRIES = true;
+  const parseResult = readerParseFeed(feedXML, url, response.responseURL,
+    response.last_modified_date, PROCESS_ENTRIES);
 
-  if(parse_result.status !== RDR_OK) {
-    return parse_result.status;
+  if(parseResult.status !== RDR_OK) {
+    return parseResult.status;
   }
 
-  const merged_feed = feed_merge(feed, parse_result.feed);
-  let stored_feed;
+  const mergedFeed = feedMerge(feed, parseResult.feed);
+  let storedFeed;
   try {
-    stored_feed = await reader_storage_put_feed(merged_feed, pfc.reader_conn);
+    storedFeed = await readerStoragePutFeed(mergedFeed, pfc.readerConn);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
   }
 
-  let entries = parse_result.entries;
+  let entries = parseResult.entries;
 
   // Cascade feed properties to entries
   for(const entry of entries) {
-    entry.feed = stored_feed.id;
-    entry.feedTitle = stored_feed.title;
+    entry.feed = storedFeed.id;
+    entry.feedTitle = storedFeed.title;
     if(!entry.datePublished) {
-      entry.datePublished = stored_feed.datePublished;
+      entry.datePublished = storedFeed.datePublished;
     }
   }
 
-  const pec = new poll_entry_context();
-  pec.reader_conn = pfc.reader_conn;
-  pec.icon_conn = pfc.icon_conn;
-  pec.feed_favicon_url = stored_feed.faviconURLString;
-  pec.fetch_html_timeout_ms = pfc.fetch_html_timeout_ms;
-  pec.fetch_image_timeout_ms = pfc.fetch_image_timeout_ms;
+  const pec = new PollEntryContext();
+  pec.readerConn = pfc.readerConn;
+  pec.iconConn = pfc.iconConn;
+  pec.feedFaviconURL = storedFeed.faviconURLString;
+  pec.fetchHTMLTimeoutMs = pfc.fetchHTMLTimeoutMs;
+  pec.fetchImageTimeoutMs = pfc.fetchImageTimeoutMs;
 
-  const entry_promises = entries.map(poll_entry, pec);
-  const entry_resolutions = await Promise.all(entry_promises);
+  const entryPromises = entries.map(pollEntry, pec);
+  const entryResolutions = await Promise.all(entryPromises);
   return RDR_OK;
 }

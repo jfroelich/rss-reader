@@ -9,29 +9,29 @@
 // import reader-db.js
 // import reader-badge.js
 
-function subscription_context() {
-  this.reader_conn;
-  this.icon_conn;
-  this.timeout_ms = 2000;
+function SubscriptionContext() {
+  this.readerConn;
+  this.iconConn;
+  this.timeoutMs = 2000;
   this.notify = true;
 }
 
 // Returns a result object with properties status and feed. feed is only defined
 // if status is ok. feed is a copy of the inserted feed, which includes its new
 // id.
-async function subscription_add(feed) {
-  console.log('subscription_add', feed);
-  console.assert(this instanceof subscription_context);
-  console.assert(indexeddb_is_open(this.reader_conn));
-  console.assert(indexeddb_is_open(this.icon_conn));
-  console.assert(feed_is_feed(feed));
+async function subscriptionAdd(feed) {
+  console.log('subscriptionAdd', feed);
+  console.assert(this instanceof SubscriptionContext);
+  console.assert(indexedDBIsOpen(this.readerConn));
+  console.assert(indexedDBIsOpen(this.iconConn));
+  console.assert(feedIsFeed(feed));
 
-  if(!feed_has_url(feed)) {
+  if(!feedHasURL(feed)) {
     return {'status' : RDR_EINVAL};
   }
 
-  const url_string = feed_get_top_url(feed);
-  let status = await subscription_unique(url_string, this.reader_conn);
+  const urlString = feedGetTopURL(feed);
+  let status = await subscriptionIsUnique(urlString, this.readerConn);
   if(status !== RDR_OK) {
     return {'status' : status};
   }
@@ -45,12 +45,12 @@ async function subscription_add(feed) {
   // still work
 
   if('onLine' in navigator && !navigator.onLine) {
-    return await subscription_put_feed(feed, this.reader_conn, this.notify);
+    return await subscriptionPutFeed(feed, this.readerConn, this.notify);
   }
 
   let response;
   try {
-    response = await fetch_feed(url_string, this.timeout_ms);
+    response = await fetchFeed(urlString, this.timeoutMs);
   } catch(error) {
     // If we are online and fetch fails then cancel the subscription
     console.warn(error);
@@ -58,44 +58,43 @@ async function subscription_add(feed) {
   }
 
   if(response.redirected) {
-    status = await subscription_unique(response.response_url, this.reader_conn);
+    status = await subscriptionIsUnique(response.responseURL, this.readerConn);
     if(status !== RDR_OK) {
       return {'status' : status};
     }
   }
 
-  let feed_xml;
+  let feedXML;
   try {
-    feed_xml = await response.text();
+    feedXML = await response.text();
   } catch(error) {
     console.warn(error);
     return RDR_ERR_FETCH;
   }
 
-  const process_entries = false;
-  const parse_result = reader_parse_feed(feed_xml, response.request_url,
-    response.response_url, response.last_modified_date, process_entries);
-  if(parse_result.status !== RDR_OK) {
-    return {'status': parse_result.status};
+  const PROCESS_ENTRIES = false;
+  const parseResult = readerParseFeed(feedXML, response.request_url,
+    response.responseURL, response.last_modified_date, PROCESS_ENTRIES);
+  if(parseResult.status !== RDR_OK) {
+    return {'status': parseResult.status};
   }
 
-  const merged_feed = feed_merge(feed, parse_result.feed);
-  status = await feed_update_favicon(merged_feed, this.icon_conn);
+  const mergedFeed = feedMerge(feed, parseResult.feed);
+  status = await feedUpdateFavicon(mergedFeed, this.iconConn);
   if(status !== RDR_OK) {
     console.debug('failed to update feed favicon (non-fatal)', status);
   }
 
-  return await subscription_put_feed(merged_feed, this.reader_conn,
-    this.notify);
+  return await subscriptionPutFeed(mergedFeed, this.readerConn, this.notify);
 }
 
 // Check whether a feed with the given url already exists in the database
 // Return the status. Return ok if not already exists. Otherwise, returns either
 // database error or constraint error.
-async function subscription_unique(url_string, reader_conn) {
+async function subscriptionIsUnique(urlString, readerConn) {
   let feed;
   try {
-    feed = await reader_db_find_feed_id_by_url(reader_conn, url_string);
+    feed = await readerDbFindFeedIdByURL(readerConn, urlString);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
@@ -103,42 +102,42 @@ async function subscription_unique(url_string, reader_conn) {
   return feed ? RDR_ERR_CONSTRAINT : RDR_OK;
 }
 
-// TODO: this should delegate to reader_storage_put_feed instead
-// and subscription_feed_prep should be deprecated as well
+// TODO: this should delegate to readerStoragePutFeed instead
+// and subscriptionFeedPrep should be deprecated as well
 // I think first step would be to inline this function, because right now it
 // composes prep, store, and notify together.
 // The second problem is the notify flag. Basically, let the caller decide
-// whether to notify simply by choosing to call subscription_notify_add or not.
-// The notify flag is pointless here and also in subscription_notify_add
-async function subscription_put_feed(feed, reader_conn, notify) {
-  const storable_feed = subscription_feed_prep(feed);
-  let new_id;
+// whether to notify simply by choosing to call subscriptionNotifyAdd or not.
+// The notify flag is pointless here and also in subscriptionNotifyAdd
+async function subscriptionPutFeed(feed, readerConn, notify) {
+  const storableFeed = subscriptionFeedPrep(feed);
+  let newId;
   try {
-    new_id = await reader_db_put_feed(reader_conn, storable_feed);
+    newId = await readerDbPutFeed(readerConn, storableFeed);
   } catch(error) {
     console.warn(error);
     return {'status': RDR_ERR_DB};
   }
 
-  storable_feed.id = new_id;
+  storableFeed.id = newId;
   if(notify) {
-    subscription_notify_add(storable_feed);
+    subscriptionNotifyAdd(storableFeed);
   }
 
-  return {'status': RDR_OK, 'feed': storable_feed};
+  return {'status': RDR_OK, 'feed': storableFeed};
 }
 
-function subscription_notify_add(feed) {
+function subscriptionNotifyAdd(feed) {
   const title = 'Subscribed';
-  const feed_name = feed.title || feed_get_top_url(feed);
-  const message = 'Subscribed to ' + feed_name;
-  extension_notify(title, message, feed.faviconURLString);
+  const feedName = feed.title || feedGetTopURL(feed);
+  const message = 'Subscribed to ' + feedName;
+  extensionNotify(title, message, feed.faviconURLString);
 }
 
 // Creates a shallow copy of the input feed suitable for storage
-function subscription_feed_prep(feed) {
-  let storable = feed_sanitize(feed);
-  storable = object_filter_empty_props(storable);
+function subscriptionFeedPrep(feed) {
+  let storable = feedSanitize(feed);
+  storable = objectFilterEmptyProps(storable);
   storable.dateCreated = new Date();
   return storable;
 }
@@ -148,36 +147,34 @@ function subscription_feed_prep(feed) {
 // to an error, that subscription and all later subscriptions are ignored,
 // but earlier ones are committed. If a subscription fails but not for an
 // exceptional reason, then it is skipped.
-function subscription_add_all(feeds) {
-  return Promise.all(feeds.map(subscription_add, this));
+function subscriptionAddAll(feeds) {
+  return Promise.all(feeds.map(subscriptionAdd, this));
 }
 
-async function subscription_remove(feed) {
-  console.assert(this instanceof subscription_context);
-  console.assert(indexeddb_is_open(this.reader_conn));
-  console.assert(feed_is_feed(feed));
-  console.assert(feed_is_valid_feed_id(feed.id));
+async function subscriptionRemove(feed) {
+  console.assert(this instanceof SubscriptionContext);
+  console.assert(indexedDBIsOpen(this.readerConn));
+  console.assert(feedIsFeed(feed));
+  console.assert(feedIsValidId(feed.id));
 
-  console.log('subscription_remove id', feed.id);
+  console.log('subscriptionRemove id', feed.id);
 
-  let entry_ids;
+  let entryIds;
   try {
-    entry_ids = await reader_db_find_entry_ids_by_feed(this.reader_conn,
-      feed.id);
-    await reader_db_remove_feed_and_entries(this.reader_conn, feed.id,
-      entry_ids);
+    entryIds = await readerDbFindEntryIdsByFeedId(this.readerConn, feed.id);
+    await readerDbRemoveFeedAndEntries(this.readerConn, feed.id, entryIds);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
   }
 
   // ignore status
-  await reader_update_badge(this.reader_conn);
+  await readerUpdateBadge(this.readerConn);
 
   const channel = new BroadcastChannel('db');
   channel.postMessage({'type': 'feed-deleted', 'id': feed.id});
-  for(const entry_id of entry_ids) {
-    channel.postMessage({'type': 'entry-deleted', 'id': entry_id});
+  for(const entryId of entryIds) {
+    channel.postMessage({'type': 'entry-deleted', 'id': entryId});
   }
   channel.close();
 

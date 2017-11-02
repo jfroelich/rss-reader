@@ -3,27 +3,26 @@
 // import base/errors.js
 // import dom.js
 
-function unwrap_elements(ancestor_element, selector) {
-  if(ancestor_element && selector) {
-    const elements = ancestor_element.querySelectorAll(selector);
+function unwrapElements(ancestorElement, selector) {
+  if(ancestorElement && selector) {
+    const elements = ancestorElement.querySelectorAll(selector);
     for(const element of elements) {
-      dom_unwrap(element);
+      domUnwrap(element);
     }
   }
 
   return RDR_OK;
 }
 
-function rename_elements(ancestor_element, old_element_name, new_element_name,
-  copy_attrs) {
-  console.assert(typeof old_element_name === 'string');
-  console.assert(typeof new_element_name === 'string');
+function renameElements(ancestorElement, oldName, newName, copyAttributes) {
+  console.assert(typeof oldName === 'string');
+  console.assert(typeof newName === 'string');
 
-  if(ancestor_element) {
-    console.assert(ancestor_element instanceof Element);
-    const elements = ancestor_element.querySelectorAll(old_element_name);
+  if(ancestorElement) {
+    console.assert(ancestorElement instanceof Element);
+    const elements = ancestorElement.querySelectorAll(oldName);
     for(const element of elements) {
-      dom_rename(element, new_element_name, copy_attrs);
+      domRename(element, newName, copyAttributes);
     }
   }
 

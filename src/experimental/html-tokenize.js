@@ -4,18 +4,18 @@
 // standards but does not fully comply.
 // Entities are not distinguished from text and are not validated.
 // To determine if a token is a tag, check if its first character is '<'
-// @param html_string {String} any string
-// @param input_state {Number} optional starting state
+// @param htmlString {String} any string
+// @param inputState {Number} optional starting state
 // @returns {Array} an array of strings, each is a token
-// @throws {TypeError} is html_string is not a defined string-like object
+// @throws {TypeError} is htmlString is not a defined string-like object
 // @throws {Error} if tokenization does not end in the default state, such as
 // within a tag
-function tokenize_html(html_string, input_state = 0) {
+function tokenizeHTML(htmlString, inputState = 0) {
 
-  console.assert(typeof html_string === 'string');
+  console.assert(typeof htmlString === 'string');
 
-  const input_string_length = html_string.length;
-  if(input_string_length < 1) {
+  const inputStringLength = htmlString.length;
+  if(inputStringLength < 1) {
     return [];
   }
 
@@ -88,7 +88,7 @@ function tokenize_html(html_string, input_state = 0) {
   const STATE_SCRIPT_REGULAR_EXPRESS_LITERAL_ESCAPE = counter++;
 
   // Set the initial state
-  let state = input_state || STATE_TEXT;
+  let state = inputState || STATE_TEXT;
 
   // Buffer of all output tokens
   const tokens = [];
@@ -96,8 +96,8 @@ function tokenize_html(html_string, input_state = 0) {
   // Buffer of characters of current token
   let token = [];
 
-  for(let index = 0; index < input_string_length; index++) {
-    const cursor = html_string.charAt(index);
+  for(let index = 0; index < inputStringLength; index++) {
+    const cursor = htmlString.charAt(index);
 
     switch(state) {
       case STATE_TEXT:

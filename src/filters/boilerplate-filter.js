@@ -59,137 +59,138 @@ const BOILERPLATE_TOKEN_WEIGHTS = {
 };
 
 
-function boilerplate_filter(doc) {
+function boilerplateFilter(doc) {
   console.assert(doc instanceof Document);
   if(!doc.body) {
     return RDR_OK;
   }
 
-  const best_element = boilerplate_find_high_score_element(doc);
-  boilerplate_prune(doc, best_element);
+  const bestElement = boilerplateFindHighScoreElement(doc);
+  console.assert(bestElement);
+  boilerplatePrune(doc, bestElement);
 
   return RDR_OK;
 }
 
-function boilerplate_derive_text_bias(element) {
-  const text = string_condense_whitespace(element.textContent);
-  const text_length = text.length;
-  const anchor_length = boilerplate_derive_anchor_length(element);
-  return 0.25 * text_length - 0.7 * anchor_length;
+function boilerplateDeriveTextBias(element) {
+  const text = stringCondenseWhitespace(element.textContent);
+  const textLength = text.length;
+  const anchorLength = boilerplateDeriveAnchorLength(element);
+  return 0.25 * textLength - 0.7 * anchorLength;
 }
 
-function boilerplate_derive_anchor_length(element) {
+function boilerplateDeriveAnchorLength(element) {
   const anchors = element.querySelectorAll('a[href]');
-  let anchor_length = 0;
+  let anchorLength = 0;
   for(const anchor of anchors) {
-    const text = string_condense_whitespace(anchor.textContent);
-    anchor_length = anchor_length + text.length;
+    const text = stringCondenseWhitespace(anchor.textContent);
+    anchorLength = anchorLength + text.length;
   }
-  return anchor_length;
+  return anchorLength;
 }
 
-function boilerplate_derive_ancestor_bias(element) {
-  let total_bias = 0;
+function boilerplateDeriveAncestorBias(element) {
+  let totalBias = 0;
   for(let child = element.firstElementChild; child;
     child = child.nextElementSibling) {
     const bias = BOILERPLATE_ANCESTOR_BIASES[child.localName];
     if(bias) {
-      total_bias = total_bias + bias;
+      totalBias = totalBias + bias;
     }
   }
-  return total_bias;
+  return totalBias;
 }
 
-function boilerplate_derive_attribute_bias(element) {
-  var total_bias = 0;
+function boilerplateDeriveAttributeBias(element) {
+  var totalBias = 0;
   var vals = [element.id, element.name, element.className];
-  var vals_flat_string = vals.join(' ');
-  if(vals_flat_string.length < 3) {
-    return total_bias;
+  var valsFlatString = vals.join(' ');
+  if(valsFlatString.length < 3) {
+    return totalBias;
   }
 
-  var norm_vals_string = vals_flat_string.toLowerCase();
-  var tokens = norm_vals_string.split(/[\s\-_0-9]+/g);
-  var tokens_length = tokens.length;
-  var seen_tokens = {};
+  var normalValsString = valsFlatString.toLowerCase();
+  var tokens = normalValsString.split(/[\s\-_0-9]+/g);
+  var tokenCount = tokens.length;
+  var seenTokens = {};
   var bias = 0;
   var token;
 
-  for(var i = 0; i < tokens_length; i++) {
+  for(var i = 0; i < tokenCount; i++) {
     token = tokens[i];
     if(!token) {
       continue;
     }
 
-    if(token in seen_tokens) {
+    if(token in seenTokens) {
       continue;
     }
 
-    seen_tokens[token] = 1;
+    seenTokens[token] = 1;
     bias = BOILERPLATE_TOKEN_WEIGHTS[token];
     if(bias) {
-      total_bias = total_bias + bias;
+      totalBias = totalBias + bias;
     }
   }
 
-  return total_bias;
+  return totalBias;
 }
 
-function boilerplate_find_high_score_element(doc) {
-  var candidate_selector =
+function boilerplateFindHighScoreElement(doc) {
+  var candidateSelector =
     'article, content, div, layer, main, section, span, td';
-  var list_selector = 'li, ol, ul, dd, dl, dt';
-  var nav_selector = 'aside, header, footer, nav, menu, menuitem';
-  var best_element = doc.documentElement;
+  var listSelector = 'li, ol, ul, dd, dl, dt';
+  var navSelector = 'aside, header, footer, nav, menu, menuitem';
+  var bestElement = doc.documentElement;
   if(!doc.body) {
-    return best_element;
+    return bestElement;
   }
 
-  var elements = doc.body.querySelectorAll(candidate_selector);
-  var high_score = 0;
+  var elements = doc.body.querySelectorAll(candidateSelector);
+  var highScore = 0;
   for(var element of elements) {
-    var score = boilerplate_derive_text_bias(element);
-    if(element.closest(list_selector)) {
+    var score = boilerplateDeriveTextBias(element);
+    if(element.closest(listSelector)) {
       score -= 200;
     }
 
-    if(element.closest(nav_selector)) {
+    if(element.closest(navSelector)) {
       score -= 500;
     }
 
-    score += boilerplate_derive_ancestor_bias(element);
+    score += boilerplateDeriveAncestorBias(element);
     score += boilerplate_derive_image_bias(element);
-    score += boilerplate_derive_attribute_bias(element);
-    if(score > high_score) {
-      best_element = element;
-      high_score = score;
+    score += boilerplateDeriveAttributeBias(element);
+    if(score > highScore) {
+      bestElement = element;
+      highScore = score;
     }
   }
 
-  return best_element;
+  return bestElement;
 }
 
-function boilerplate_derive_image_bias(parent_element) {
+function boilerplate_derive_image_bias(parentElement) {
   let bias = 0;
-  let image_count = 0;
-  for(let node of parent_element.childNodes) {
+  let imageCount = 0;
+  for(let node of parentElement.childNodes) {
     if(node.localName === 'img') {
-      bias += boilerplate_derive_image_area_bias(node) +
-        boilerplate_derive_image_text_bias(node);
-      image_count++;
+      bias += boilerplateDeriveImageAreaBias(node) +
+        boilerplateDeriveImageTextBias(node);
+      imageCount++;
     }
   }
 
   // Penalize carousels
-  if(image_count > 1) {
-    bias += -50 * (image_count - 1);
+  if(imageCount > 1) {
+    bias += -50 * (imageCount - 1);
   }
 
   return bias;
 }
 
 // Reward supporting text of images
-function boilerplate_derive_image_text_bias(image) {
+function boilerplateDeriveImageTextBias(image) {
   let bias = 0;
   if(image.hasAttribute('alt')) {
     bias += 20;
@@ -199,43 +200,43 @@ function boilerplate_derive_image_text_bias(image) {
     bias += 30;
   }
 
-  if(dom_find_caption(image)) {
+  if(domFindCaption(image)) {
     bias += 100;
   }
 
   return bias;
 }
 
-function boilerplate_derive_image_area_bias(image) {
+function boilerplateDeriveImageAreaBias(image) {
   let bias = 0;
-  const max_area = 100000;
-  const damp_coef = 0.0015;
+  const maxArea = 100000;
+  const dampCoeff = 0.0015;
   const area = image.width * image.height;
   if(area) {
-    bias = damp_coef * Math.min(max_area, area);
+    bias = dampCoeff * Math.min(maxArea, area);
   }
 
   return bias;
 }
 
-function boilerplate_prune(doc, best_element) {
-  console.assert(doc.documentElement.contains(best_element));
+function boilerplatePrune(doc, bestElement) {
+  console.assert(doc.documentElement.contains(bestElement));
 
-  if(best_element === doc.documentElement) {
+  if(bestElement === doc.documentElement) {
     return;
   }
 
-  if(best_element === doc.body) {
+  if(bestElement === doc.body) {
     return;
   }
 
   const elements = doc.body.querySelectorAll('*');
   for(const element of elements) {
-    if(element.contains(best_element)) {
+    if(element.contains(bestElement)) {
       continue;
     }
 
-    if(best_element.contains(element)) {
+    if(bestElement.contains(element)) {
       continue;
     }
 

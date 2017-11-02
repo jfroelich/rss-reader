@@ -10,221 +10,220 @@
 // import entry-css.js
 
 // Navigation tracking
-var options_page_current_menu_item;
-var options_page_current_section_element;
+var optionsPageCurrentMenuItem;
+var optionsPageCurrentSectionElement;
 
-const options_page_settings_channel = new BroadcastChannel('settings');
-options_page_settings_channel.onmessage = function(event) {
+const optionsPageSettingsChannel = new BroadcastChannel('settings');
+optionsPageSettingsChannel.onmessage = function(event) {
   console.debug('received settings channel message:', event);
   if(event.data === 'changed') {
-    entry_css_on_change(event);
+    entryCSSOnChange(event);
   }
 };
 
-options_page_settings_channel.onmessageerror = function(event) {
+optionsPageSettingsChannel.onmessageerror = function(event) {
   console.error(event);
 };
 
+function optionsPageShowSection(menuItemElement) {
+  console.assert(menuItemElement);
 
-function options_page_show_section(menu_item_element) {
-  console.assert(menu_item_element);
-
-  if(options_page_current_menu_item === menu_item_element) {
+  if(optionsPageCurrentMenuItem === menuItemElement) {
     return;
   }
 
-  if(options_page_current_menu_item) {
-    options_page_current_menu_item.classList.remove('navigation-item-selected');
+  if(optionsPageCurrentMenuItem) {
+    optionsPageCurrentMenuItem.classList.remove('navigation-item-selected');
   }
 
-  if(options_page_current_section_element) {
-    options_page_current_section_element.style.display = 'none';
+  if(optionsPageCurrentSectionElement) {
+    optionsPageCurrentSectionElement.style.display = 'none';
   }
 
-  menu_item_element.classList.add('navigation-item-selected');
+  menuItemElement.classList.add('navigation-item-selected');
 
   // Show the new section
-  const section_id = menu_item_element.getAttribute('section');
-  const section_element = document.getElementById(section_id);
-  console.assert(section_element, 'No matching section ' + section_id);
+  const sectionId = menuItemElement.getAttribute('section');
+  const sectionElement = document.getElementById(sectionId);
+  console.assert(sectionElement, 'No matching section ' + sectionId);
 
-  section_element.style.display = 'block';
+  sectionElement.style.display = 'block';
 
   // Update the global tracking vars
-  options_page_current_menu_item = menu_item_element;
-  options_page_current_section_element = section_element;
+  optionsPageCurrentMenuItem = menuItemElement;
+  optionsPageCurrentSectionElement = sectionElement;
 }
 
-function options_page_show_section_id(id) {
-  options_page_show_section(document.getElementById(id));
+function optionsPageShowSectionId(id) {
+  optionsPageShowSection(document.getElementById(id));
 }
 
-function options_page_update_feed_count() {
-  const feed_list_element = document.getElementById('feedlist');
-  const count = feed_list_element.childElementCount;
-  const feed_count_element = document.getElementById('subscription-count');
+function optionsPageUpdateFeedCount() {
+  const feedListElement = document.getElementById('feedlist');
+  const count = feedListElement.childElementCount;
+  const feedCountElement = document.getElementById('subscription-count');
   if(count > 50) {
-    feed_count_element.textContent = ' (50+)';
+    feedCountElement.textContent = ' (50+)';
   } else {
-    feed_count_element.textContent = ` (${count})`;
+    feedCountElement.textContent = ` (${count})`;
   }
 }
 
-function options_page_feed_list_append_feed(feed) {
-  const item_element = document.createElement('li');
-  item_element.setAttribute('sort-key', feed.title);
+function optionsPageFeedListAppendFeed(feed) {
+  const itemElement = document.createElement('li');
+  itemElement.setAttribute('sort-key', feed.title);
 
   // TODO: stop using custom feed attribute?
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
-  item_element.setAttribute('feed', feed.id);
+  itemElement.setAttribute('feed', feed.id);
   if(feed.description) {
-    item_element.setAttribute('title', feed.description);
+    itemElement.setAttribute('title', feed.description);
   }
 
-  item_element.onclick = options_page_feed_list_item_onclick;
+  itemElement.onclick = optionsPageFeedListItemOnclick;
 
   if(feed.faviconURLString) {
-    const favicon_element = document.createElement('img');
-    favicon_element.src = feed.faviconURLString;
+    const faviconElement = document.createElement('img');
+    faviconElement.src = feed.faviconURLString;
     if(feed.title) {
-      favicon_element.title = feed.title;
+      faviconElement.title = feed.title;
     }
 
-    favicon_element.setAttribute('width', '16');
-    favicon_element.setAttribute('height', '16');
-    item_element.appendChild(favicon_element);
+    faviconElement.setAttribute('width', '16');
+    faviconElement.setAttribute('height', '16');
+    itemElement.appendChild(faviconElement);
   }
 
-  const title_element = document.createElement('span');
-  let feed_title = feed.title || 'Untitled';
-  feed_title = html_truncate(feed_title, 300);
-  title_element.textContent = feed_title;
-  item_element.appendChild(title_element);
-  const feed_list_element = document.getElementById('feedlist');
-  const normal_title = feed_title.toLowerCase();
+  const titleElement = document.createElement('span');
+  let feedTitle = feed.title || 'Untitled';
+  feedTitle = htmlTruncate(feedTitle, 300);
+  titleElement.textContent = feedTitle;
+  itemElement.appendChild(titleElement);
+  const feedListElement = document.getElementById('feedlist');
+  const normalTitle = feedTitle.toLowerCase();
 
   // Insert the feed element into the proper position in the list
   let inserted = false;
-  for(const child_node of feed_list_element.childNodes) {
-    const key_string =
-      (child_node.getAttribute('sort-key') || '').toLowerCase();
-    if(indexedDB.cmp(normal_title, key_string) < 1) {
-      feed_list_element.insertBefore(item_element, child_node);
+  for(const childNode of feedListElement.childNodes) {
+    let keyString = childNode.getAttribute('sort-key');
+    keyString = keyString || '';
+    keyString = keyString.toLowerCase();
+
+    if(indexedDB.cmp(normalTitle, keyString) < 1) {
+      feedListElement.insertBefore(itemElement, childNode);
       inserted = true;
       break;
     }
   }
 
   if(!inserted) {
-    feed_list_element.appendChild(item_element);
+    feedListElement.appendChild(itemElement);
     inserted = true;
   }
 
   console.assert(inserted);
-  options_page_update_feed_count();
+  optionsPageUpdateFeedCount();
 }
 
 // @param url {URL}
-async function options_page_start_subscription(url) {
-  console.log('options_page_start_subscription start', url.href);
+async function optionsPageStartSubscription(url) {
+  console.log('optionsPageStartSubscription start', url.href);
 
-  options_page_subscription_monitor_show();
+  optionsPageSubscriptionMonitorShow();
 
   // TODO: unsafe?
-  options_page_subscription_monitor_append_message(
-    `Subscribing to ${url.href}`);
+  optionsPageSubscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
 
-  const feed = feed_create();
-  feed_append_url(feed, url.href);
+  const feed = feedCreate();
+  feedAppendURL(feed, url.href);
 
-  let status, subscribed_feed;
+  let status, subscribedFeed;
 
-  const sc = new subscription_context();
+  const sc = new SubscriptionContext();
 
   try {
-    [sc.reader_conn, sc.icon_conn] = await
-      Promise.all([reader_db_open(), favicon_db_open()]);
+    [sc.readerConn, sc.iconConn] = await
+      Promise.all([readerDbOpen(), faviconDbOpen()]);
 
-    const sub_result = await subscription_add.call(sc, feed);
-    status = sub_result.status;
-    subscribed_feed = sub_result.feed;
+    const subResult = await subscriptionAdd.call(sc, feed);
+    status = subResult.status;
+    subscribedFeed = subResult.feed;
   } catch(error) {
     console.warn(error);
-    options_page_subscription_monitor_hide();
+    optionsPageSubscriptionMonitorHide();
     // TODO: show a visual error message.
     return;
   } finally {
-    indexeddb_close(sc.reader_conn);
-    indexeddb_close(sc.icon_conn);
+    indexedDBClose(sc.readerConn, sc.iconConn);
   }
 
   // TODO: show an error message.
   if(status !== RDR_OK) {
-    options_page_subscription_monitor_hide();
+    optionsPageSubscriptionMonitorHide();
     return;
   }
 
-  console.assert(subscribed_feed);
-  options_page_feed_list_append_feed(subscribed_feed);
-  const feed_url = feed_get_top_url(subscribed_feed);
+  console.assert(subscribedFeed);
+  optionsPageFeedListAppendFeed(subscribedFeed);
+  const feedURL = feedGetTopURL(subscribedFeed);
 
   // TODO: unsafe?
-  options_page_subscription_monitor_append_message(`Subscribed to ${feed_url}`);
-  options_page_subscription_monitor_hide();
-  options_page_show_section_id('subs-list-section');
+  optionsPageSubscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
+  optionsPageSubscriptionMonitorHide();
+  optionsPageShowSectionId('subs-list-section');
 }
 
-async function options_page_feed_list_item_onclick(event) {
+async function optionsPageFeedListItemOnclick(event) {
   // Use current target to capture the element with the feed attribute
-  const feed_list_item_element = event.currentTarget;
-  const feed_id_string = feed_list_item_element.getAttribute('feed');
-  const feed_id_number = parseInt(feed_id_string, 10);
+  const feedListItem = event.currentTarget;
+  const feedIdString = feedListItem.getAttribute('feed');
+  const feedIdNumber = parseInt(feedIdString, 10);
 
-  console.assert(!isNaN(feed_id_number));
+  console.assert(!isNaN(feedIdNumber));
 
   // Load feed details from the database
   let conn, feed;
   try {
-    conn = await reader_db_open();
-    feed = await reader_db_find_feed_by_id(conn, feed_id_number);
+    conn = await readerDbOpen();
+    feed = await readerDbFindFeedById(conn, feedIdNumber);
   } catch(error) {
     console.warn(error);
     // TODO: visual feedback?
     return;
   } finally {
-    indexeddb_close();
+    indexedDBClose();
   }
 
-  const title_element = document.getElementById('details-title');
-  title_element.textContent = feed.title || feed.link || 'Untitled';
+  const titleElement = document.getElementById('details-title');
+  titleElement.textContent = feed.title || feed.link || 'Untitled';
 
-  const favicon_element = document.getElementById('details-favicon');
+  const faviconElement = document.getElementById('details-favicon');
   if(feed.faviconURLString) {
-    favicon_element.setAttribute('src', feed.faviconURLString);
+    faviconElement.setAttribute('src', feed.faviconURLString);
   } else {
-    favicon_element.removeAttribute('src');
+    faviconElement.removeAttribute('src');
   }
 
-  const description_element = document.getElementById(
+  const descriptionElement = document.getElementById(
     'details-feed-description');
   if(feed.description) {
-    description_element.textContent = feed.description;
+    descriptionElement.textContent = feed.description;
   } else {
-    description_element.textContent = '';
+    descriptionElement.textContent = '';
   }
 
-  const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = feed_get_top_url(feed);
-  const feed_link_element = document.getElementById('details-feed-link');
-  feed_link_element.textContent = feed.link || '';
-  const unsubscribe_button = document.getElementById('details-unsubscribe');
-  unsubscribe_button.value = '' + feed.id;
+  const feedURLElement = document.getElementById('details-feed-url');
+  feedURLElement.textContent = feedGetTopURL(feed);
+  const feedLinkElement = document.getElementById('details-feed-link');
+  feedLinkElement.textContent = feed.link || '';
+  const unsubscribeButton = document.getElementById('details-unsubscribe');
+  unsubscribeButton.value = '' + feed.id;
 
   // TODO: show num entries, num unread/red, etc
   // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 
-  options_page_show_section_id('mi-feed-details');
+  optionsPageShowSectionId('mi-feed-details');
 
   // Ensure the details are visible
   window.scrollTo(0,0);
@@ -237,64 +236,63 @@ async function options_page_feed_list_item_onclick(event) {
 // task, try and replace the default icon with the proper icon.
 // TODO: Suppress resubmits if last query was a search and the
 // query did not change
-async function options_page_subscribe_form_on_submit(event) {
-  console.debug('options_page_subscribe_form_on_submit', event);
+async function optionsPageSubscribeFormOnSubmit(event) {
+  console.debug('optionsPageSubscribeFormOnSubmit', event);
   // Prevent normal form submission behavior
   event.preventDefault();
 
-  const query_element = document.getElementById('subscribe-discover-query');
-  let query_string = query_element.value;
-  query_string = query_string || '';
-  query_string = query_string.trim();
+  const queryElement = document.getElementById('subscribe-discover-query');
+  let queryString = queryElement.value;
+  queryString = queryString || '';
+  queryString = queryString.trim();
 
-  if(!query_string) {
+  if(!queryString) {
     return false;
   }
 
-  const no_results_element = document.getElementById('discover-no-results');
+  const noResultsElement = document.getElementById('discover-no-results');
+  const progressElement = document.getElementById('discover-in-progress');
 
-  const progress_element = document.getElementById('discover-in-progress');
-
-  if(progress_element) {
-    console.debug('progress_element.style.display: "%s"',
-      progress_element.style.display);
+  if(progressElement) {
+    console.debug('progressElement.style.display: "%s"',
+      progressElement.style.display);
   }
 
-  if(progress_element.style.display === 'block') {
+  if(progressElement.style.display === 'block') {
     console.debug('in progress, canceling submit');
     return false;
   }
 
-  const monitor_element = document.getElementById('submon');
+  const monitorElement = document.getElementById('submon');
 
-  if(monitor_element) {
-    console.debug('monitor_element.style.display: "%s"',
-      monitor_element.style.display);
+  if(monitorElement) {
+    console.debug('monitorElement.style.display: "%s"',
+      monitorElement.style.display);
   }
 
 
-  if(monitor_element && monitor_element.style.display === 'block') {
+  if(monitorElement && monitorElement.style.display === 'block') {
     console.debug('in progress, canceling submit');
     return false;
   }
 
   // Clear the previous results list
-  const results_list_element = document.getElementById('discover-results-list');
-  results_list_element.innerHTML  = '';
+  const resultsListElement = document.getElementById('discover-results-list');
+  resultsListElement.innerHTML  = '';
 
 
-  let url_object = null;
+  let urlObject = null;
   try {
-    url_object = new URL(query_string);
+    urlObject = new URL(queryString);
   } catch(exception) {
   }
 
   // If it is a URL, subscribe
-  if(url_object) {
+  if(urlObject) {
     console.debug('form submit detected url input, not doing search');
-    query_element.value = '';
+    queryElement.value = '';
 
-    options_page_start_subscription(url_object);
+    optionsPageStartSubscription(urlObject);
     return false;
   }
 
@@ -302,19 +300,19 @@ async function options_page_subscribe_form_on_submit(event) {
   // can be deleted.
 
   // Search for feeds
-  progress_element.style.display = 'block';
+  progressElement.style.display = 'block';
 
-  let icon_url, link_url, entries, query;
-  const search_timeout_ms = 5000;
+  let iconURL, linkURL, entries, query;
+  const searchTimeoutMs = 5000;
 
   try {
     ({query, entries} =
-      await google_feeds_api_search(query_string, search_timeout_ms));
+      await googleFeedsAPISearch(queryString, searchTimeoutMs));
   } catch(error) {
     console.debug(error);
     return false;
   } finally {
-    progress_element.style.display = 'none';
+    progressElement.style.display = 'none';
   }
 
   // TODO: do i need to still hide progress element then?
@@ -322,12 +320,12 @@ async function options_page_subscribe_form_on_submit(event) {
   // TODO: use explicit loops
 
   // Filter entries without urls
-  entries = entries.filter((entry_object) => entry_object.url);
+  entries = entries.filter((entryObject) => entryObject.url);
 
   // Convert to URL objects, filter entries with invalid urls
-  entries = entries.filter((entry_object) => {
+  entries = entries.filter((entryObject) => {
     try {
-      entry_object.url = new URL(entry_object.url);
+      entryObject.url = new URL(entryObject.url);
       return true;
     } catch(error) {
       return false;
@@ -335,156 +333,153 @@ async function options_page_subscribe_form_on_submit(event) {
   });
 
   // Filter entries with identical normalized urls, favoring earlier entries
-  // TODO: use a Set?
-  const distinct_urls = [];
-  entries = entries.filter((entry_object) => {
-    if(distinct_urls.includes(entry_object.url.href)) {
+  const distinctURLs = [];
+  entries = entries.filter((entryObject) => {
+    if(distinctURLs.includes(entryObject.url.href)) {
       return false;
     }
-    distinct_urls.push(entry_object.url.href);
+    distinctURLs.push(entryObject.url.href);
     return true;
   });
 
   // If, after filtering, there are no more entries, exit early
   if(!entries.length) {
-    results_list_element.style.display = 'none';
-    no_results_element.style.display = 'block';
+    resultsListElement.style.display = 'none';
+    noResultsElement.style.display = 'block';
     return false;
   }
 
   // Sanitize entry title
   // TODO: use for..of
-  const entry_title_max_length = 200;
-  entries.forEach((entry_object) => {
-    let title = entry_object.title;
+  const ENTRY_TITLE_MAX_LENGTH = 200;
+  entries.forEach((entryObject) => {
+    let title = entryObject.title;
     if(title) {
-      title = string_filter_control_chars(title);
-      title = html_replace_tags(title, '');
-      title = html_truncate(title, entry_title_max_length);
-      entry_object.title = title;
+      title = stringFilterControlChars(title);
+      title = htmlReplaceTags(title, '');
+      title = htmlTruncate(title, ENTRY_TITLE_MAX_LENGTH);
+      entryObject.title = title;
     }
   });
 
   // Sanitize content snippet
-  const replacement_string = '\u2026';
-  const entry_snippet_max_length = 400;
+  const replacementString = '\u2026';
+  const entrySnippetMaxLength = 400;
   // TODO: use for..of
-  entries.forEach((entry_object) => {
-    let snippet = entry_object.contentSnippet;
+  entries.forEach((entryObject) => {
+    let snippet = entryObject.contentSnippet;
     if(snippet) {
-      snippet = string_filter_control_chars(snippet);
+      snippet = stringFilterControlChars(snippet);
       snippet = snippet.replace(/<br\s*>/gi, ' ');
-      snippet = html_truncate(snippet, entry_snippet_max_length,
-        replacement_string);
-      entry_object.contentSnippet = snippet;
+      snippet = htmlTruncate(snippet, entrySnippetMaxLength,
+        replacementString);
+      entryObject.contentSnippet = snippet;
     }
   });
 
-  results_list_element.style.display = 'block';
-  no_results_element.style.display = 'none';
+  resultsListElement.style.display = 'block';
+  noResultsElement.style.display = 'none';
 
-  const item_element = document.createElement('li');
-  item_element.textContent = `Found ${entries.length} feeds.`;
-  results_list_element.appendChild(item_element);
+  const itemElement = document.createElement('li');
+  itemElement.textContent = `Found ${entries.length} feeds.`;
+  resultsListElement.appendChild(itemElement);
 
   // TODO: use try/catch/finally
   // TODO: explicit defaults
-  let icon_conn;
+  let iconConn;
 
-  icon_conn = await favicon_db_open();
+  iconConn = await faviconDbOpen();
   for(let result of entries) {
     if(!result.link) {
       continue;
     }
 
-    link_url = new URL(result.link);
+    linkURL = new URL(result.link);
     // TODO: properly call with all parameteres
-    icon_url = await favicon_lookup(icon_conn, link_url);
-    result.faviconURLString = icon_url;
+    iconURL = await faviconLookup(iconConn, linkURL);
+    result.faviconURLString = iconURL;
   }
-  indexeddb_close(icon_conn);
+  indexedDBClose(iconConn);
 
   // TODO: use explicit loops
-  const elements = entries.map(options_page_create_search_result_element);
-  elements.forEach((el) => results_list_element.appendChild(el));
+  const elements = entries.map(optionsPageCreateSearchResultElement);
+  elements.forEach((el) => resultsListElement.appendChild(el));
   return false;// Signal no submit
 }
 
-
-
 // Creates and returns a search result item to show in the list of search
 // results when searching for feeds.
-function options_page_create_search_result_element(feed) {
-  const item_element = document.createElement('li');
-  const subscribe_button = document.createElement('button');
-  subscribe_button.value = feed.url.href;
-  subscribe_button.title = feed.url.href;
-  subscribe_button.textContent = 'Subscribe';
-  subscribe_button.onclick = options_page_subscribe_button_on_click;
-  item_element.appendChild(subscribe_button);
+function optionsPageCreateSearchResultElement(feed) {
+  const itemElement = document.createElement('li');
+  const subscribeButton = document.createElement('button');
+  subscribeButton.value = feed.url.href;
+  subscribeButton.title = feed.url.href;
+  subscribeButton.textContent = 'Subscribe';
+  subscribeButton.onclick = optionsPageSubscribeButtonOnclick;
+  itemElement.appendChild(subscribeButton);
 
   if(feed.faviconURLString) {
-    const favicon_element = document.createElement('img');
-    favicon_element.setAttribute('src', feed.faviconURLString);
+    const faviconElement = document.createElement('img');
+    faviconElement.setAttribute('src', feed.faviconURLString);
     if(feed.link) {
-      favicon_element.setAttribute('title', feed.link);
+      faviconElement.setAttribute('title', feed.link);
     }
 
-    favicon_element.setAttribute('width', '16');
-    favicon_element.setAttribute('height', '16');
-    item_element.appendChild(favicon_element);
+    faviconElement.setAttribute('width', '16');
+    faviconElement.setAttribute('height', '16');
+    itemElement.appendChild(faviconElement);
   }
 
   // TODO: don't allow for empty href value
-  const title_element = document.createElement('a');
+  const titleElement = document.createElement('a');
   if(feed.link) {
-    title_element.setAttribute('href', feed.link);
+    titleElement.setAttribute('href', feed.link);
   }
 
-  title_element.setAttribute('target', '_blank');
-  title_element.title = feed.title;
-  title_element.innerHTML = feed.title;
-  item_element.appendChild(title_element);
+  titleElement.setAttribute('target', '_blank');
+  titleElement.title = feed.title;
+  titleElement.innerHTML = feed.title;
+  itemElement.appendChild(titleElement);
 
-  const snippet_element = document.createElement('span');
-  snippet_element.innerHTML = feed.contentSnippet;
-  item_element.appendChild(snippet_element);
+  const snippetElement = document.createElement('span');
+  snippetElement.innerHTML = feed.contentSnippet;
+  itemElement.appendChild(snippetElement);
 
-  const url_element = document.createElement('span');
-  url_element.setAttribute('class', 'discover-search-result-url');
-  url_element.textContent = feed.url.href;
-  item_element.appendChild(url_element);
-  return item_element;
+  const urlElement = document.createElement('span');
+  urlElement.setAttribute('class', 'discover-search-result-url');
+  urlElement.textContent = feed.url.href;
+  itemElement.appendChild(urlElement);
+  return itemElement;
 }
 
-function options_page_subscribe_button_on_click(event) {
-  const subscribe_button = event.target;
-  const url = subscribe_button.value;
+function optionsPageSubscribeButtonOnclick(event) {
+  const subscribeButton = event.target;
+  const url = subscribeButton.value;
   console.assert(url);
 
   // TODO: Ignore future clicks if an error was displayed?
 
   // Ignore future clicks while subscription in progress
-  const subscription_monitor = document.getElementById('submon');
-  if(subscription_monitor && subscription_monitor.style.display !== 'none') {
+  const subscriptionMonitor = document.getElementById('submon');
+  if(subscriptionMonitor && subscriptionMonitor.style.display !== 'none') {
     return;
   }
 
-  options_page_start_subscription(new URL(url));
+  optionsPageStartSubscription(new URL(url));
 }
 
-async function options_page_feed_list_init() {
-  const no_feeds_element = document.getElementById('nosubs');
-  const feed_list_element = document.getElementById('feedlist');
+async function optionsPageFeedListInit() {
+  const noFeedsElement = document.getElementById('nosubs');
+  const feedListElement = document.getElementById('feedlist');
   let conn, feeds;
   try {
-    conn = await reader_db_open();
-    feeds = await reader_db_get_feeds(conn);
+    conn = await readerDbOpen();
+    feeds = await readerDbGetFeeds(conn);
   } catch(error) {
     // TODO: react to error
     console.warn(error);
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 
   if(!feeds) {
@@ -506,85 +501,84 @@ async function options_page_feed_list_init() {
   });
 
   for(let feed of feeds) {
-    options_page_feed_list_append_feed(feed);
+    optionsPageFeedListAppendFeed(feed);
   }
 
   if(!feeds.length) {
-    no_feeds_element.style.display = 'block';
-    feed_list_element.style.display = 'none';
+    noFeedsElement.style.display = 'block';
+    feedListElement.style.display = 'none';
   } else {
-    no_feeds_element.style.display = 'none';
-    feed_list_element.style.display = 'block';
+    noFeedsElement.style.display = 'none';
+    feedListElement.style.display = 'block';
   }
 }
 
-// @param feed_id {Number}
-function options_page_feed_list_remove_feed(feed_id) {
-  const feed_element = document.querySelector(
-    `#feedlist li[feed="${feed_id}"]`);
+// @param feedId {Number}
+function optionsPageFeedListRemoveFeed(feedId) {
+  const feedElement = document.querySelector(
+    `#feedlist li[feed="${feedId}"]`);
 
-  console.assert(feed_element);
+  console.assert(feedElement);
 
-  feed_element.removeEventListener('click',
-    options_page_feed_list_item_onclick);
-  feed_element.remove();
+  feedElement.removeEventListener('click', optionsPageFeedListItemOnclick);
+  feedElement.remove();
 
   // Upon removing the feed, update the displayed number of feeds.
-  options_page_update_feed_count();
+  optionsPageUpdateFeedCount();
 
   // Upon removing the feed, update the state of the feed list.
   // If the feed list has no items, hide it and show a message instead
-  const feed_list_element = document.getElementById('feedlist');
-  if(!feed_list_element.childElementCount) {
-    feed_list_element.style.display = 'none';
+  const feedListElement = document.getElementById('feedlist');
+  if(!feedListElement.childElementCount) {
+    feedListElement.style.display = 'none';
 
-    const no_feeds_element = document.getElementById('nosubs');
-    no_feeds_element.style.display = 'block';
+    const noFeedsElement = document.getElementById('nosubs');
+    noFeedsElement.style.display = 'block';
   }
 }
 
-async function options_page_unsubscribe_button_on_click(event) {
-  const sc = new subscription_context();
+async function optionsPageUnsubscribeButtonOnclick(event) {
+  const sc = new SubscriptionContext();
   const feed = {};
   const radix = 10;
   feed.id = parseInt(event.target.value, radix);
-  console.assert(feed_is_valid_feed_id(feed.id));
+  console.assert(feedIsValidId(feed.id));
   let status;
   try {
-    sc.reader_conn = await reader_db_open();
-    status = await subscription_remove.call(sc, feed);
+    sc.readerConn = await readerDbOpen();
+    status = await subscriptionRemove.call(sc, feed);
   } catch(error) {
     // TODO: visually react to unsubscribe error
     console.log(error);
     return;
   } finally {
-    indexeddb_close(sc.reader_conn);
+    indexedDBClose(sc.readerConn);
   }
 
   if(status !== RDR_OK) {
-    console.warn('subscription_remove status not ok', status);
+    console.warn('subscriptionRemove status not ok', status);
   }
 
-  options_page_feed_list_remove_feed(feed.id);
-  options_page_show_section_id('subs-list-section');
+  optionsPageFeedListRemoveFeed(feed.id);
+  optionsPageShowSectionId('subs-list-section');
 }
 
-function options_page_import_opml_button_on_click(event) {
-  const uploader_input = document.createElement('input');
-  uploader_input.setAttribute('type', 'file');
-  uploader_input.setAttribute('accept', 'application/xml');
-  uploader_input.addEventListener('change',
-    options_page_import_opml_uploader_on_change);
-  uploader_input.click();
+function optionsPageImportOPMLButtonOnclick(event) {
+  const uploaderInput = document.createElement('input');
+  uploaderInput.setAttribute('type', 'file');
+  uploaderInput.setAttribute('accept', 'application/xml');
+  uploaderInput.addEventListener('change',
+    optionsPageImportOPMLUploaderOnchange);
+  uploaderInput.click();
 }
 
-async function options_page_import_opml_uploader_on_change(event) {
+async function optionsPageImportOPMLUploaderOnchange(event) {
   // TODO: show operation started
 
-  const uploader_input = event.target;
+  const uploaderInput = event.target;
 
   try {
-    await reader_import_files(uploader_input.files);
+    await readerImportFiles(uploaderInput.files);
   } catch(error) {
     // TODO: visual feedback in event an error
     console.warn(error);
@@ -595,21 +589,21 @@ async function options_page_import_opml_uploader_on_change(event) {
   // TODO: refresh feed list
 }
 
-async function options_page_export_opml_button_onclick(event) {
-  const status = await options_page_export_opml();
+async function optionsPageExportOPMLButtonOnclick(event) {
+  const status = await optionsPageExportOPML();
   if(status !== RDR_OK) {
     console.warn('export failed with status', status);
     // TODO: react to error
   }
 }
 
-function options_page_menu_item_on_click(event) {
-  const clicked_element = event.target;
-  const section_element = event.currentTarget;
-  options_page_show_section(section_element);
+function optionsPageMenuItemOnclick(event) {
+  const clickedElement = event.target;
+  const sectionElement = event.currentTarget;
+  optionsPageShowSection(sectionElement);
 }
 
-function options_page_enable_notifications_checkbox_on_click(event) {
+function optionsPageEnableNotificationsCheckboxOnclick(event) {
   if(event.target.checked) {
     localStorage.SHOW_NOTIFICATIONS = '1';
   } else {
@@ -617,26 +611,26 @@ function options_page_enable_notifications_checkbox_on_click(event) {
   }
 }
 
-function options_page_enable_bg_processing_checkbox_on_click(event) {
+function optionsPageEnableBgProcessingCheckboxOnclick(event) {
   if(event.target.checked) {
-    extension_permissions_request('background');
+    extensionPermissionsRequest('background');
   } else {
-    extension_permissions_remove('background');
+    extensionPermissionsRemove('background');
   }
 }
 
-async function init_bg_processing_checkbox() {
+async function initBgProcessingCheckbox() {
   const checkbox = document.getElementById('enable-background');
   console.assert(checkbox);
 
   // TODO: this should be using a local storage variable and instead the
   // permission should be permanently defined.
 
-  checkbox.onclick = options_page_enable_bg_processing_checkbox_on_click;
-  checkbox.checked = await extension_permissions_contains('background');
+  checkbox.onclick = optionsPageEnableBgProcessingCheckboxOnclick;
+  checkbox.checked = await extensionPermissionsContains('background');
 }
 
-function restrict_idle_polling_checkbox_on_click(event) {
+function optionsPageRestrictIdlePollingCheckboxOnclick(event) {
   if(event.target.checked) {
     localStorage.ONLY_POLL_IF_IDLE = '1';
   } else {
@@ -644,7 +638,7 @@ function restrict_idle_polling_checkbox_on_click(event) {
   }
 }
 
-function options_page_background_img_menu_on_change(event) {
+function optionsPageBgImageMenuOnchange(event) {
   const path = event.target.value;
   if(path) {
     localStorage.BG_IMAGE = path;
@@ -652,10 +646,10 @@ function options_page_background_img_menu_on_change(event) {
     delete localStorage.BG_IMAGE;
   }
 
-  options_page_settings_channel.postMessage('changed');
+  optionsPageSettingsChannel.postMessage('changed');
 }
 
-function options_page_header_font_menu_on_change(event){
+function optionsPageHeaderFontMenuOnchange(event){
   const font = event.target.value;
   if(font) {
     localStorage.HEADER_FONT_FAMILY = font;
@@ -663,10 +657,10 @@ function options_page_header_font_menu_on_change(event){
     delete localStorage.HEADER_FONT_FAMILY;
   }
 
-  options_page_settings_channel.postMessage('changed');
+  optionsPageSettingsChannel.postMessage('changed');
 }
 
-function options_page_body_font_menu_on_change(event) {
+function optionsPageBodyFontMenuOnchange(event) {
   const font = event.target.value;
   if(font) {
     localStorage.BODY_FONT_FAMILY = font;
@@ -674,10 +668,10 @@ function options_page_body_font_menu_on_change(event) {
     delete localStorage.BODY_FONT_FAMILY;
   }
 
-  options_page_settings_channel.postMessage('changed');
+  optionsPageSettingsChannel.postMessage('changed');
 }
 
-function options_page_column_count_menu_on_change(event) {
+function optionsPageColumnCountMenuOnchange(event) {
   const count = event.target.value;
   if(count) {
     localStorage.COLUMN_COUNT = count;
@@ -685,10 +679,10 @@ function options_page_column_count_menu_on_change(event) {
     delete localStorage.COLUMN_COUNT;
   }
 
-  options_page_settings_channel.postMessage('changed');
+  optionsPageSettingsChannel.postMessage('changed');
 }
 
-function options_page_entry_bg_color_input_on_input(event) {
+function optionsPageEntryBgColorInputOninput(event) {
   const color = event.target.value;
   if(color) {
     localStorage.BG_COLOR = color;
@@ -696,12 +690,12 @@ function options_page_entry_bg_color_input_on_input(event) {
     delete localStorage.BG_COLOR;
   }
 
-  options_page_settings_channel.postMessage('changed');
+  optionsPageSettingsChannel.postMessage('changed');
 }
 
-function options_page_entry_margin_slider_on_change(event) {
+function optionsPageEntryMarginSliderOnchange(event) {
   const margin = event.target.value;
-  console.log('options_page_entry_margin_slider_on_change new value', margin);
+  console.log('optionsPageEntryMarginSliderOnchange new value', margin);
 
   if(margin) {
     localStorage.PADDING = margin;
@@ -709,10 +703,10 @@ function options_page_entry_margin_slider_on_change(event) {
     delete localStorage.PADDING;
   }
 
-  options_page_settings_channel.postMessage('changed');
+  optionsPageSettingsChannel.postMessage('changed');
 }
 
-function options_page_header_font_size_slider_on_change(event) {
+function optionsPageHeaderFontSizeSliderOnchange(event) {
   const size = event.target.value;
   if(size) {
     localStorage.HEADER_FONT_SIZE = size;
@@ -720,10 +714,10 @@ function options_page_header_font_size_slider_on_change(event) {
     delete localStorage.HEADER_FONT_SIZE;
   }
 
-  options_page_settings_channel.postMessage('changed');
+  optionsPageSettingsChannel.postMessage('changed');
 }
 
-function options_page_body_font_size_slider_on_change(event) {
+function optionsPageBodyFontSizeSliderOnchange(event) {
   const size = event.target.value;
   if(size) {
     localStorage.BODY_FONT_SIZE = size;
@@ -731,20 +725,20 @@ function options_page_body_font_size_slider_on_change(event) {
     delete localStorage.BODY_FONT_SIZE;
   }
 
-  options_page_settings_channel.postMessage('changed');
+  optionsPageSettingsChannel.postMessage('changed');
 }
 
-function options_page_justify_text_checkbox_on_change(event) {
+function optionsPageJustifyTextCheckboxOnchange(event) {
   if(event.target.checked) {
     localStorage.JUSTIFY_TEXT = '1';
   } else {
     delete localStorage.JUSTIFY_TEXT;
   }
 
-  options_page_settings_channel.postMessage('changed');
+  optionsPageSettingsChannel.postMessage('changed');
 }
 
-function options_page_body_height_input_on_input(event) {
+function optionsPageBodyHeightInputOninput(event) {
   const height = event.target.value;
   if(height) {
     localStorage.BODY_LINE_HEIGHT = height;
@@ -752,158 +746,160 @@ function options_page_body_height_input_on_input(event) {
     delete localStorage.BODY_LINE_HEIGHT;
   }
 
-  options_page_settings_channel.postMessage('changed');
+  optionsPageSettingsChannel.postMessage('changed');
 }
 
 document.addEventListener('DOMContentLoaded', function(event) {
-  entry_css_init();
+  entryCSSInit();
 
   // Attach click handlers to menu items
   // TODO: use single event listener on list itself instead
-  const menu_items = document.querySelectorAll('#navigation-menu li');
-  for(const menu_item of menu_items) {
-    menu_item.onclick = options_page_menu_item_on_click;
+  const menuItems = document.querySelectorAll('#navigation-menu li');
+  for(const menuItem of menuItems) {
+    menuItem.onclick = optionsPageMenuItemOnclick;
   }
 
   // Init Enable notifications checkbox
-  const enable_notifications_checkbox = document.getElementById(
+  const enableNotificationsCheckbox = document.getElementById(
     'enable-notifications');
-  enable_notifications_checkbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
-  enable_notifications_checkbox.onclick =
-    options_page_enable_notifications_checkbox_on_click;
+  enableNotificationsCheckbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
+  enableNotificationsCheckbox.onclick =
+    optionsPageEnableNotificationsCheckboxOnclick;
 
-  init_bg_processing_checkbox();
+  initBgProcessingCheckbox();
 
-  const enable_restrict_idle_polling_checkbox = document.getElementById(
+  const enableRestrictIdlePollingCheckbox = document.getElementById(
     'enable-idle-check');
-  enable_restrict_idle_polling_checkbox.checked =
+  enableRestrictIdlePollingCheckbox.checked =
     'ONLY_POLL_IF_IDLE' in localStorage;
-  enable_restrict_idle_polling_checkbox.onclick =
-    restrict_idle_polling_checkbox_on_click;
+  enableRestrictIdlePollingCheckbox.onclick =
+    optionsPageRestrictIdlePollingCheckboxOnclick;
 
-  const export_opml_button = document.getElementById('button-export-opml');
-  export_opml_button.onclick = options_page_export_opml_button_onclick;
-  const import_opml_button = document.getElementById('button-import-opml');
-  import_opml_button.onclick = options_page_import_opml_button_on_click;
+  const exportOPMLButton = document.getElementById('button-export-opml');
+  exportOPMLButton.onclick = optionsPageExportOPMLButtonOnclick;
+  const importOPMLButton = document.getElementById('button-import-opml');
+  importOPMLButton.onclick = optionsPageImportOPMLButtonOnclick;
 
-  options_page_feed_list_init();
+  optionsPageFeedListInit();
 
   // Init feed details section unsubscribe button click handler
-  const unsubscribe_button = document.getElementById('details-unsubscribe');
-  unsubscribe_button.onclick = options_page_unsubscribe_button_on_click;
+  const unsubscribeButton = document.getElementById('details-unsubscribe');
+  unsubscribeButton.onclick = optionsPageUnsubscribeButtonOnclick;
 
   // Init the subscription form section
-  const subscription_form = document.getElementById('subscription-form');
-  subscription_form.onsubmit = options_page_subscribe_form_on_submit;
+  const subscriptionForm = document.getElementById('subscription-form');
+  subscriptionForm.onsubmit = optionsPageSubscribeFormOnSubmit;
 
 
   // Init background image menu
   {
-    const background_image_menu = document.getElementById(
+    const backgroundImageMenu = document.getElementById(
       'entry-background-image');
-    background_image_menu.onchange = options_page_background_img_menu_on_change;
+    backgroundImageMenu.onchange = optionsPageBgImageMenuOnchange;
     let option = document.createElement('option');
     option.value = '';
     option.textContent = 'Use background color';
-    background_image_menu.appendChild(option);
+    backgroundImageMenu.appendChild(option);
 
-    const current_bg_img_path = localStorage.BG_IMAGE;
-    const bg_img_path_offset = '/images/'.length;
+    const currentBgImagePath = localStorage.BG_IMAGE;
+    const bgImagePathOffset = '/images/'.length;
     for(const path of OPTIONS_PAGE_IMAGE_PATHS) {
-      option = document.createElement('option');
+      let option = document.createElement('option');
       option.value = path;
-      option.textContent = path.substring(bg_img_path_offset);
-      option.selected = current_bg_img_path === path;
-      background_image_menu.appendChild(option);
+      option.textContent = path.substring(bgImagePathOffset);
+      option.selected = currentBgImagePath === path;
+      backgroundImageMenu.appendChild(option);
     }
   }
 
   {
-    const header_font_menu = document.getElementById('select_header_font');
-    header_font_menu.onchange = options_page_header_font_menu_on_change;
+    const headerFontMenu = document.getElementById('select_header_font');
+    headerFontMenu.onchange = optionsPageHeaderFontMenuOnchange;
     let option = document.createElement('option');
     option.textContent = 'Use Chrome font settings';
-    header_font_menu.appendChild(option);
-    const current_header_font = localStorage.HEADER_FONT_FAMILY;
+    headerFontMenu.appendChild(option);
+    const currentHeaderFont = localStorage.HEADER_FONT_FAMILY;
     for(const font of OPTIONS_PAGE_FONTS) {
       let option = document.createElement('option');
       option.value = font;
-      option.selected = font === current_header_font;
+      option.selected = font === currentHeaderFont;
       option.textContent = font;
-      header_font_menu.appendChild(option);
+      headerFontMenu.appendChild(option);
     }
   }
 
   {
-    const body_font_menu = document.getElementById('select_body_font');
-    body_font_menu.onchange = options_page_body_font_menu_on_change;
+    const bodyFontMenu = document.getElementById('select_body_font');
+    bodyFontMenu.onchange = optionsPageBodyFontMenuOnchange;
     let option = document.createElement('option');
     option.textContent = 'Use Chrome font settings';
-    body_font_menu.appendChild(option);
+    bodyFontMenu.appendChild(option);
 
-    const current_body_font = localStorage.BODY_FONT_FAMILY;
-    for(const body_font of OPTIONS_PAGE_FONTS) {
+    const currentBodyFont = localStorage.BODY_FONT_FAMILY;
+    for(const font of OPTIONS_PAGE_FONTS) {
       option = document.createElement('option');
-      option.value = body_font;
-      option.selected = body_font === current_body_font;
-      option.textContent = body_font;
-      body_font_menu.appendChild(option);
+      option.value = font;
+      option.selected = font === currentBodyFont;
+      option.textContent = font;
+      bodyFontMenu.appendChild(option);
     }
   }
 
   {
-    const column_count_element = document.getElementById('column-count');
-    column_count_element.onchange = options_page_column_count_menu_on_change;
-    const column_counts = ['1', '2', '3'];
-    const current_column_count = localStorage.COLUMN_COUNT
-    for(const column_count of column_counts) {
+    const columnCountMenu = document.getElementById('column-count');
+    columnCountMenu.onchange = optionsPageColumnCountMenuOnchange;
+    const columnCounts = ['1', '2', '3'];
+    const currentColumnCount = localStorage.COLUMN_COUNT
+    for(const columnCount of columnCounts) {
       const option = document.createElement('option');
-      option.value = column_count;
-      option.selected = column_count === current_column_count;
-      option.textContent = column_count;
-      column_count_element.appendChild(option);
+      option.value = columnCount;
+      option.selected = columnCount === currentColumnCount;
+      option.textContent = columnCount;
+      columnCountMenu.appendChild(option);
     }
   }
 
-  const bg_color_input = document.getElementById('entry-background-color');
-  bg_color_input.value = localStorage.BG_COLOR || '';
-  bg_color_input.oninput = options_page_entry_bg_color_input_on_input;
+  const bgColorInput = document.getElementById('entry-background-color');
+  bgColorInput.value = localStorage.BG_COLOR || '';
+  bgColorInput.oninput = optionsPageEntryBgColorInputOninput;
 
-  const margin_input = document.getElementById('entry-margin');
-  margin_input.value = localStorage.PADDING || '10';
-  margin_input.onchange = options_page_entry_margin_slider_on_change;
+  const marginInput = document.getElementById('entry-margin');
+  marginInput.value = localStorage.PADDING || '10';
+  marginInput.onchange = optionsPageEntryMarginSliderOnchange;
 
-  const header_font_size_input = document.getElementById('header-font-size');
-  header_font_size_input.value = localStorage.HEADER_FONT_SIZE || '1';
-  header_font_size_input.onchange =
-    options_page_header_font_size_slider_on_change;
+  const headerFontSizeInput = document.getElementById('header-font-size');
+  headerFontSizeInput.value = localStorage.HEADER_FONT_SIZE || '1';
+  headerFontSizeInput.onchange =
+    optionsPageHeaderFontSizeSliderOnchange;
 
-  const body_font_size_input = document.getElementById('body-font-size');
-  body_font_size_input.value = localStorage.BODY_FONT_SIZE || '1';
-  body_font_size_input.onchange = options_page_body_font_size_slider_on_change;
+  const bodyFontSizeInput = document.getElementById('body-font-size');
+  bodyFontSizeInput.value = localStorage.BODY_FONT_SIZE || '1';
+  bodyFontSizeInput.onchange = optionsPageBodyFontSizeSliderOnchange;
 
-  const justify_text_checkbox = document.getElementById('justify-text');
-  justify_text_checkbox.checked = 'JUSTIFY_TEXT' in localStorage;
-  justify_text_checkbox.onchange = options_page_justify_text_checkbox_on_change;
+  const justifyTextCheckbox = document.getElementById('justify-text');
+  justifyTextCheckbox.checked = 'JUSTIFY_TEXT' in localStorage;
+  justifyTextCheckbox.onchange = optionsPageJustifyTextCheckboxOnchange;
 
-  const body_line_height_input = document.getElementById('body-line-height');
-  body_line_height_input.oninput = options_page_body_height_input_on_input;
-  const body_line_height_number = parseInt(localStorage.BODY_LINE_HEIGHT) || 10;
-  if(!isNaN(body_line_height_number))
-    body_line_height_input.value = (body_line_height_number / 10).toFixed(2);
+  const bodyLineHeightInput = document.getElementById('body-line-height');
+  bodyLineHeightInput.oninput = optionsPageBodyHeightInputOninput;
+  const bodyLineHeightNumber =
+    parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
+  if(!isNaN(bodyLineHeightNumber)) {
+    bodyLineHeightInput.value = (bodyLineHeightNumber / 10).toFixed(2);
+  }
 
   const manifest = chrome.runtime.getManifest();
-  const ext_name_element = document.getElementById('extension-name');
-  ext_name_element.textContent = manifest.name;
-  const ext_version_element = document.getElementById('extension-version');
-  ext_version_element.textValue = manifest.version;
-  const ext_author_element = document.getElementById('extension-author');
-  ext_author_element.textContent = manifest.author;
-  const ext_description_element = document.getElementById(
+  const extNameElement = document.getElementById('extension-name');
+  extNameElement.textContent = manifest.name;
+  const extVersionElement = document.getElementById('extension-version');
+  extVersionElement.textValue = manifest.version;
+  const extAuthorElement = document.getElementById('extension-author');
+  extAuthorElement.textContent = manifest.author;
+  const extDescriptionElement = document.getElementById(
     'extension-description');
-  ext_description_element.textContent = manifest.description || '';
-  const ext_url_element = document.getElementById('extension-homepage');
-  ext_url_element.textContent = manifest.homepage_url;
+  extDescriptionElement.textContent = manifest.description || '';
+  const extURLElement = document.getElementById('extension-homepage');
+  extURLElement.textContent = manifest.homepage_url;
 
-  options_page_show_section_id('subs-list-section');
+  optionsPageShowSectionId('subs-list-section');
 }, {'once': true});

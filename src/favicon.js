@@ -24,11 +24,11 @@ const FAVICON_DEFAULT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 // Opens a connection to the favicon database
 // @returns {Promise} resolves to open IDBDatabase instance
-function favicon_db_open() {
+function faviconDbOpen() {
   const name = 'favicon-cache';
   const version = 2;
-  const timeout_ms = 500;
-  return indexeddb_open(name, version, favicon_db_onupgradeneeded, timeout_ms);
+  const timeoutMs = 500;
+  return indexedDBOpen(name, version, faviconDbOnUpgradeNeeded, timeoutMs);
 }
 
 // TODO: rename to favicon_lookup_context, move out url and doc
@@ -46,75 +46,77 @@ function FaviconQuery() {
   this.url = null;
 
   // If true, lookup will skip the fetch of the input url
-  this.skip_url_fetch = false;
+  this.skipURLFetch = false;
 
   // These all store numbers
-  this.max_age_ms = undefined;
-  this.fetch_html_timeout_ms = undefined;
-  this.fetch_image_timeout_ms = undefined;
-  this.min_image_size = undefined;
-  this.max_image_size = undefined;
+  this.maxAgeMs = undefined;
+  this.fetchHTMLTimeoutMs = undefined;
+  this.fetchImageTimeoutMs = undefined;
+
+  // TODO: move defaults to here
+  this.minImageSize = undefined;
+  this.maxImageSize = undefined;
 }
 
 // Looks up the favicon url for a given web page url
 // @param query {FaviconQuery}
 // @returns {String} the favicon url if found, otherwise undefined
 // TODO: return status and icon instead of throwing errors
-async function favicon_lookup(query) {
+async function faviconLookup(query) {
   console.assert(query instanceof FaviconQuery);
-  console.log('favicon_lookup', query.url.href);
+  console.log('faviconLookup', query.url.href);
 
   // TODO: rather than declare local variables, just use the query parameter
-  const url_object = query.url;
-  let max_age_ms = query.max_age_ms;
-  let fetch_html_timeout_ms = query.fetch_html_timeout_ms;
-  let fetch_image_timeout_ms = query.fetch_image_timeout_ms;
-  let min_image_size = query.min_image_size;
-  let max_image_size = query.max_image_size;
+  const urlObject = query.url;
+  let maxAgeMs = query.maxAgeMs;
+  let fetchHTMLTimeoutMs = query.fetchHTMLTimeoutMs;
+  let fetchImageTimeoutMs = query.fetchImageTimeoutMs;
+  let minImageSize = query.minImageSize;
+  let maxImageSize = query.maxImageSize;
 
-  if(typeof max_age_ms === 'undefined') {
-    max_age_ms = FAVICON_DEFAULT_MAX_AGE_MS;
+  if(typeof maxAgeMs === 'undefined') {
+    maxAgeMs = FAVICON_DEFAULT_MAX_AGE_MS;
   }
 
-  if(typeof fetch_html_timeout_ms === 'undefined') {
-    fetch_html_timeout_ms = 1000;
+  if(typeof fetchHTMLTimeoutMs === 'undefined') {
+    fetchHTMLTimeoutMs = 1000;
   }
 
-  if(typeof fetch_image_timeout_ms === 'undefined') {
-    fetch_image_timeout_ms = 200;
+  if(typeof fetchImageTimeoutMs === 'undefined') {
+    fetchImageTimeoutMs = 200;
   }
 
-  if(typeof min_image_size === 'undefined') {
-    min_image_size = 50;
+  if(typeof minImageSize === 'undefined') {
+    minImageSize = 50;
   }
 
-  if(typeof max_image_size === 'undefined') {
-    max_image_size = 10240;
+  if(typeof maxImageSize === 'undefined') {
+    maxImageSize = 10240;
   }
 
   // TODO: use an array
   const urls = new Set();
-  urls.add(url_object.href);
+  urls.add(urlObject.href);
 
   // Check the cache for the input url
   if(query.conn) {
-    const icon_url_string = await favicon_db_find_lookup_url(query.conn,
-      query.url, max_age_ms);
-    if(icon_url_string) {
-      return icon_url_string;
+    const iconURLString = await faviconDbFindLookupURL(query.conn,
+      query.url, maxAgeMs);
+    if(iconURLString) {
+      return iconURLString;
     }
   }
 
   // If the query included a pre-fetched document, search it
   if(query.document) {
-    console.debug('favicon_lookup searching pre-fetched document for url',
-      url_object.href);
-    const icon_url_string = await favicon_search_document(document, query.conn,
+    console.debug('faviconLookup searching pre-fetched document for url',
+      urlObject.href);
+    const iconURLString = await faviconSearchDocument(document, query.conn,
       query.url, urls);
-    if(icon_url_string) {
-      console.debug('favicon_lookup found favicon in pre-fetched document',
-        url_object.href, icon_url_string);
-      return icon_url_string;
+    if(iconURLString) {
+      console.debug('faviconLookup found favicon in pre-fetched document',
+        urlObject.href, iconURLString);
+      return iconURLString;
     }
   }
 
@@ -123,9 +125,9 @@ async function favicon_lookup(query) {
   let response;
 
   // Only fetch if a pre-fetched document was not provided
-  if(!query.document && !query.skip_url_fetch) {
+  if(!query.document && !query.skipURLFetch) {
     try {
-      response = await fetch_html(url_object.href, fetch_html_timeout_ms);
+      response = await fetchHTML(urlObject.href, fetchHTMLTimeoutMs);
     } catch(error) {
       // Do not warn. Network errors appear in the console.
       // Do not exit early. A fetch error is non-fatal to lookup.
@@ -133,20 +135,20 @@ async function favicon_lookup(query) {
   }
 
   if(response) {
-    let response_url_object;
+    let responseURLObject;
 
     if(response.redirected) {
-      response_url_object = new URL(response.response_url);
-      urls.add(response_url_object.href);
+      responseURLObject = new URL(response.responseURL);
+      urls.add(responseURLObject.href);
 
       // Check the cache for the redirect url
       if(query.conn) {
-        const icon_url_string = await favicon_db_find_redirect_url(query.conn,
-          url_object, response, max_age_ms);
+        const iconURLString = await faviconDbFindRedirectURL(query.conn,
+          urlObject, response, maxAgeMs);
 
         // Return the cached favicon url for the redirect url
-        if(icon_url_string) {
-          return icon_url_string;
+        if(iconURLString) {
+          return iconURLString;
         }
       }
     }
@@ -161,92 +163,92 @@ async function favicon_lookup(query) {
 
     if(text) {
       // Parse the text into an HTML document
-      const [status, document] = html_parse_from_string(text);
+      const [status, document] = htmlParseFromString(text);
 
       if(status === RDR_OK) {
 
         // Use the response url as the base url if available
-        let base_url_object = response_url_object ? response_url_object :
-          url_object;
+        // TODO: const?
+        let baseURLObject = responseURLObject ? responseURLObject : urlObject;
 
         // Check the fetched document for a <link> tag
-        const icon_url_string = await favicon_search_document(document,
-          query.conn, base_url_object, urls);
-        if(icon_url_string) {
-          return icon_url_string;
+        const iconURLString = await faviconSearchDocument(document,
+          query.conn, baseURLObject, urls);
+        if(iconURLString) {
+          return iconURLString;
         }
       }
     }
   }
 
   // Check the cache for the origin url
-  if(query.conn && !urls.has(url_object.origin)) {
-    const icon_url_string = await favicon_db_find_origin_url(query.conn,
-      url_object.origin, urls, max_age_ms);
-    if(icon_url_string) {
-      return icon_url_string;
+  if(query.conn && !urls.has(urlObject.origin)) {
+    const iconURLString = await faviconDbFindOriginURL(query.conn,
+      urlObject.origin, urls, maxAgeMs);
+    if(iconURLString) {
+      return iconURLString;
     }
   }
 
   // Check for /favicon.ico
-  const icon_url_string = await favicon_lookup_origin(query.conn, url_object,
-    urls, fetch_image_timeout_ms, min_image_size, max_image_size);
-  return icon_url_string;
+  const iconURLString = await faviconLookupOrigin(query.conn, urlObject,
+    urls, fetchImageTimeoutMs, minImageSize, maxImageSize);
+  return iconURLString;
 }
 
-async function favicon_db_find_lookup_url(conn, url_object, max_age_ms) {
-  console.assert(indexeddb_is_open(conn));
+async function faviconDbFindLookupURL(conn, urlObject, maxAgeMs) {
+  console.assert(indexedDBIsOpen(conn));
 
-  const entry = await favicon_db_find_entry(conn, url_object);
+  const entry = await faviconDbFindEntry(conn, urlObject);
   if(!entry) {
     return;
   }
 
-  const current_date = new Date();
-  if(favicon_is_entry_expired(entry, current_date, max_age_ms)) {
+  const currentDate = new Date();
+  if(faviconIsEntryExpired(entry, currentDate, maxAgeMs)) {
     return;
   }
 
-  console.log('favicon_db_find_lookup_url found cached entry',
+  console.log('faviconDbFindLookupURL found cached entry',
     entry.pageURLString, entry.iconURLString);
   return entry.iconURLString;
 }
 
-async function favicon_db_find_redirect_url(conn, url_object, response,
-  max_age_ms) {
-  const response_url_object = new URL(response.response_url);
-  const entry = await favicon_db_find_entry(conn, response_url_object);
+async function faviconDbFindRedirectURL(conn, urlObject, response,
+  maxAgeMs) {
+  const responseURLObject = new URL(response.responseURL);
+  const entry = await faviconDbFindEntry(conn, responseURLObject);
   if(!entry) {
     return;
   }
 
-  const current_date = new Date();
-  if(favicon_is_entry_expired(entry, current_date, max_age_ms)) {
+  const currentDate = new Date();
+  if(faviconIsEntryExpired(entry, currentDate, maxAgeMs)) {
     return;
   }
 
   console.log('found redirect in cache', entry);
-  const entries = [url_object.href];
-  await favicon_db_put_entries(conn, entry.iconURLString, entries);
+  const entries = [urlObject.href];
+  await faviconDbPutEntries(conn, entry.iconURLString, entries);
   return entry.iconURLString;
 }
 
 // @param document {Document}
 // @param conn {IDBDatabase}
-// @param base_url_object {URL}
+// @param baseURLObject {URL}
 // @param urls {Set}
 // @returns {String} a favicon url
-async function favicon_search_document(document, conn, base_url_object, urls) {
+async function faviconSearchDocument(document, conn, baseURLObject, urls) {
   console.assert(document instanceof Document);
-  console.assert(indexeddb_is_open(conn));
-  console.assert(url_is_url_object(base_url_object));
+  console.assert(indexedDBIsOpen(conn));
+  console.assert(urlIsURL(baseURLObject));
   console.assert(urls);
 
   if(!document.head) {
     return;
   }
 
-  let icon_url_object;
+  let iconURLObject;
 
   // TODO: querySelectorAll on one selector instead?
 
@@ -257,8 +259,6 @@ async function favicon_search_document(document, conn, base_url_object, urls) {
     'link[rel="apple-touch-icon-precomposed"][href]'
   ];
 
-
-
   for(let selector of selectors) {
     const element = document.head.querySelector(selector);
     if(!element) {
@@ -266,98 +266,94 @@ async function favicon_search_document(document, conn, base_url_object, urls) {
     }
 
     // Avoid passing empty string to URL constructor
-    let href_string = element.getAttribute('href');
-    if(!href_string) {
+    let hrefString = element.getAttribute('href');
+    if(!hrefString) {
       continue;
     }
 
-    href_string = href_string.trim();
-    if(!href_string) {
+    hrefString = hrefString.trim();
+    if(!hrefString) {
       continue;
     }
 
     try {
-      icon_url_object = new URL(href_string, base_url_object);
+      iconURLObject = new URL(hrefString, baseURLObject);
     } catch(error) {
       continue;
     }
 
-    console.log('found favicon <link>', base_url_object.href,
-      icon_url_object.href);
+    console.log('found favicon <link>', baseURLObject.href,
+      iconURLObject.href);
 
     // TODO: move this out so that search_document is not async
     if(conn) {
-      await favicon_db_put_entries(conn, icon_url_object.href, urls);
+      await faviconDbPutEntries(conn, iconURLObject.href, urls);
     }
-    return icon_url_object.href;
+    return iconURLObject.href;
   }
 }
 
-async function favicon_db_find_origin_url(conn, origin_url_string, urls,
-  max_age_ms) {
-  const origin_url_object = new URL(origin_url_string);
-  const origin_entry = await favicon_db_find_entry(conn, origin_url_object);
-  const current_date = new Date();
-  if(!origin_entry) {
+async function faviconDbFindOriginURL(conn, originURLString, urls, maxAgeMs) {
+  const originURLObject = new URL(originURLString);
+  const originEntry = await faviconDbFindEntry(conn, originURLObject);
+  const currentDate = new Date();
+  if(!originEntry) {
     return;
   }
 
-  if(favicon_is_entry_expired(origin_entry, current_date, max_age_ms)) {
+  if(faviconIsEntryExpired(originEntry, currentDate, maxAgeMs)) {
     return;
   }
 
-  console.log('Found non-expired origin entry in cache', origin_url_string,
-    origin_entry.iconURLString);
-
+  console.log('Found non-expired origin entry in cache', originURLString,
+    originEntry.iconURLString);
 
   // origin is not in urls, and we know it is distinct, existing, and fresh
-  await favicon_db_put_entries(conn, origin_entry.iconURLString, urls);
-  return origin_entry.iconURLString;
+  await faviconDbPutEntries(conn, originEntry.iconURLString, urls);
+  return originEntry.iconURLString;
 }
 
-async function favicon_lookup_origin(conn, url_object, urls,
-  fetch_image_timeout_ms, min_image_size, max_image_size) {
-  const img_url_string = url_object.origin + '/favicon.ico';
-  const fetch_promise = fetch_image_head(img_url_string,
-    fetch_image_timeout_ms);
+async function faviconLookupOrigin(conn, urlObject, urls, fetchImageTimeoutMs,
+  minImageSize, maxImageSize) {
+  const imageURLString = urlObject.origin + '/favicon.ico';
+  const fetchPromise = fetchImageHead(imageURLString, fetchImageTimeoutMs);
   let response;
   try {
-    response = await fetch_promise;
+    response = await fetchPromise;
   } catch(error) {
     // This is spamming the console so disabled for now. Eventually this should
     // work using status, and return codes. That needs to wait until
-    // fetch_image_head returns a status code.
+    // fetchImageHead returns a status code.
     //console.warn(error);
     return;
   }
 
   if(response.size === FETCH_UNKNOWN_CONTENT_LENGTH ||
-    (response.size >= min_image_size && response.size <= max_image_size)) {
+    (response.size >= minImageSize && response.size <= maxImageSize)) {
     if(conn) {
-      await favicon_db_put_entries(conn, response.response_url, urls);
+      await faviconDbPutEntries(conn, response.responseURL, urls);
     }
-    console.log('Found origin icon', url_object.href, response.response_url);
-    return response.response_url;
+    console.log('Found origin icon', urlObject.href, response.responseURL);
+    return response.responseURL;
   }
 }
 
-
-async function favicon_db_setup() {
+async function faviconDbSetup() {
   let conn;
   try {
-    conn = await favicon_db_open();
+    conn = await faviconDbOpen();
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 }
 
-function favicon_db_onupgradeneeded(event) {
+function faviconDbOnUpgradeNeeded(event) {
   const conn = event.target.result;
   console.log('creating or upgrading database', conn.name);
 
   let store;
   if(!event.oldVersion || event.oldVersion < 1) {
-    console.log('favicon_db_onupgradeneeded creating favicon-cache');
+    console.log('faviconDbOnUpgradeNeeded creating favicon-cache');
 
     store = conn.createObjectStore('favicon-cache', {
       'keyPath': 'pageURLString'
@@ -368,23 +364,22 @@ function favicon_db_onupgradeneeded(event) {
   }
 
   if(event.oldVersion < 2) {
-    console.log('favicon_db_onupgradeneeded creating dateUpdated index');
+    console.log('faviconDbOnUpgradeNeeded creating dateUpdated index');
     store.createIndex('dateUpdated', 'dateUpdated');
   }
 }
 
 // An entry is expired if the difference between today's date and the date the
 // entry was last updated is greater than max age.
-function favicon_is_entry_expired(entry, current_date, max_age_ms) {
-  const entry_age_ms = current_date - entry.dateUpdated;
-  return entry_age_ms > max_age_ms;
+function faviconIsEntryExpired(entry, currentDate, maxAgeMs) {
+  const entryAgeMs = currentDate - entry.dateUpdated;
+  return entryAgeMs > maxAgeMs;
 }
 
-function favicon_db_clear(conn) {
-  console.assert(indexeddb_is_open(conn));
-
+function faviconDbClear(conn) {
+  console.assert(indexedDBIsOpen(conn));
   return new Promise(function(resolve, reject) {
-    console.debug('favicon_db_clear start');
+    console.debug('faviconDbClear start');
     const tx = conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
     const request = store.clear();
@@ -393,66 +388,63 @@ function favicon_db_clear(conn) {
   });
 }
 
-function favicon_db_find_entry(conn, url_object) {
-  console.assert(indexeddb_is_open(conn));
-
+function faviconDbFindEntry(conn, urlObject) {
+  console.assert(indexedDBIsOpen(conn));
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
-    const request = store.get(url_object.href);
+    const request = store.get(urlObject.href);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
-function favicon_db_find_expired_entries(conn, max_age_ms) {
-  console.assert(indexeddb_is_open(conn));
+function faviconDbFindExpiredEntries(conn, maxAgeMs) {
+  console.assert(indexedDBIsOpen(conn));
 
-  if(typeof max_age_ms === 'undefined') {
-    max_age_ms = FAVICON_DEFAULT_MAX_AGE_MS;
+  if(typeof maxAgeMs === 'undefined') {
+    maxAgeMs = FAVICON_DEFAULT_MAX_AGE_MS;
   }
 
   return new Promise(function(resolve, reject) {
-    let cutoff_time_ms = Date.now() - max_age_ms;
-    cutoff_time_ms = cutoff_time_ms < 0 ? 0 : cutoff_time_ms;
+    let cutoffTimeMs = Date.now() - maxAgeMs;
+    cutoffTimeMs = cutoffTimeMs < 0 ? 0 : cutoffTimeMs;
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
     const index = store.index('dateUpdated');
-    const cutoff_time_date = new Date(cutoff_time_ms);
-    const range = IDBKeyRange.upperBound(cutoff_time_date);
+    const cutoffDate = new Date(cutoffTimeMs);
+    const range = IDBKeyRange.upperBound(cutoffDate);
     const request = index.getAll(range);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => resolve(request.error);
   });
 }
 
-function favicon_db_remove_entries_with_urls(conn, page_urls) {
-  console.assert(indexeddb_is_open(conn));
-
+function faviconDbRemoveEntriesWithURLs(conn, pageURLs) {
+  console.assert(indexedDBIsOpen(conn));
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('favicon-cache');
-    for(const url of page_urls)
+    for(const url of pageURLs)
       store.delete(url);
   });
 }
 
-function favicon_db_put_entries(conn, icon_url, page_urls) {
-  console.assert(indexeddb_is_open(conn));
-
+function faviconDbPutEntries(conn, iconURL, pageURLs) {
+  console.assert(indexedDBIsOpen(conn));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('favicon-cache');
-    const current_date = new Date();
-    for(const url of page_urls) {
+    const currentDate = new Date();
+    for(const url of pageURLs) {
       const entry = {};
       entry.pageURLString = url;
-      entry.iconURLString = icon_url;
-      entry.dateUpdated = current_date;
+      entry.iconURLString = iconURL;
+      entry.dateUpdated = currentDate;
       store.put(entry);
     }
   });
@@ -460,13 +452,13 @@ function favicon_db_put_entries(conn, icon_url, page_urls) {
 
 // Finds expired entries in the database and removes them
 // TODO: return status intsead
-async function favicon_compact_db(conn, max_age_ms) {
-  console.assert(indexeddb_is_open(conn));
-  console.debug('favicon_compact_db start', max_age_ms);
+async function faviconCompactDb(conn, maxAgeMs) {
+  console.assert(indexedDBIsOpen(conn));
+  console.debug('faviconCompactDb start', maxAgeMs);
 
   let entries;
   try {
-    entries = await favicon_db_find_expired_entries(conn, max_age_ms);
+    entries = await faviconDbFindExpiredEntries(conn, maxAgeMs);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;
@@ -477,9 +469,8 @@ async function favicon_compact_db(conn, max_age_ms) {
     urls.push(entry.pageURLString);
   }
 
-  let resolutions;
   try {
-    resolutions = await favicon_db_remove_entries_with_urls(conn, urls);
+    await faviconDbRemoveEntriesWithURLs(conn, urls);
   } catch(error) {
     console.warn(error);
     return RDR_ERR_DB;

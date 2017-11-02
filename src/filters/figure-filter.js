@@ -3,7 +3,7 @@
 // import base/errors.js
 // import filters/filter-helpers.js
 
-function figure_filter(doc) {
+function figureFilter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
@@ -15,7 +15,7 @@ function figure_filter(doc) {
   const figures = doc.body.querySelectorAll('figure');
   for(const figure of figures) {
     if(figure.childElementCount === 1) {
-      dom_unwrap(figure);
+      domUnwrap(figure);
     }
   }
 

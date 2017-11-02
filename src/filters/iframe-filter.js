@@ -2,7 +2,7 @@
 
 // import base/errors.js
 
-function iframe_filter(doc) {
+function iframeFilter(doc) {
   console.assert(doc instanceof Document);
 
   // Only look at frames within body. If body not present then nothing to do.

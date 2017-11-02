@@ -6,6 +6,6 @@ function test() {
   const f = document.getElementById('f');
 
   const anchor_elements = document.body.getElementsByTagName('a');
-  const sequences = pagination_find_anchor_sequences(anchor_elements, 4);
+  const sequences = paginationFindAnchorSequences(anchor_elements, 4);
   return sequences;
 }

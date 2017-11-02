@@ -10,13 +10,13 @@ const FORMATTING_FILTER_SELECTOR = [
 ].join(',');
 
 
-function formatting_filter(doc) {
+function formattingFilter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
     return RDR_OK;
   }
 
-  unwrap_elements(doc.body, FORMATTING_FILTER_SELECTOR);
+  unwrapElements(doc.body, FORMATTING_FILTER_SELECTOR);
   return RDR_OK;
 }

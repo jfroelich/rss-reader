@@ -1,8 +1,9 @@
 'use strict';
 
 // import base/errors.js
+// import dom.js
 
-function sourcless_image_filter(doc) {
+function sourcelessImageFilter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
@@ -11,18 +12,15 @@ function sourcless_image_filter(doc) {
 
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
-    if(sourcless_image_filter_is_sourceless(image)) {
-      sourcless_image_filter_remove(image);
+    if(sourcelessImageFilterIsSourceless(image)) {
+      domRemoveImage(image);
     }
   }
 
   return RDR_OK;
 }
 
-function sourcless_image_filter_is_sourceless(image) {
+// TODO: delegate to dom.js function, maybe inverse
+function sourcelessImageFilterIsSourceless(image) {
   return !image.hasAttribute('src') && !image.hasAttribute('srcset');
-}
-
-function sourcless_image_filter_remove(image) {
-  image.remove();
 }

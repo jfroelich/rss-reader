@@ -1,5 +1,5 @@
 async function test_sgf(query) {
-  const timeout_ms = 10000;
-  let result = await google_feeds_api_search(query, timeout_ms);
+  const timeoutMs = 10000;
+  let result = await googleFeedsAPISearch(query, timeoutMs);
   console.dir(result);
 }

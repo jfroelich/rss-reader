@@ -5,7 +5,7 @@
 // @param doc {Document}
 // @param whitelist {Object} each property is element name, each value is array
 // of attribute names
-function attribute_filter(doc, whitelist) {
+function attributeFilter(doc, whitelist) {
   console.assert(doc instanceof Document);
 
   // TODO: assert whitelist
@@ -13,14 +13,14 @@ function attribute_filter(doc, whitelist) {
 
   const elements = doc.getElementsByTagName('*');
   for(const element of elements) {
-    const attribute_names = element.getAttributeNames();
-    if(!attribute_names.length) {
+    const atributeNames = element.getAttributeNames();
+    if(!atributeNames.length) {
       continue;
     }
 
-    const allowed_names = whitelist[element.localName] || [];
-    for(const name of attribute_names) {
-      if(!allowed_names.includes(name)) {
+    const allowedNames = whitelist[element.localName] || [];
+    for(const name of atributeNames) {
+      if(!allowedNames.includes(name)) {
         element.removeAttribute(name);
       }
     }

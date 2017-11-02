@@ -3,7 +3,7 @@
 // import base/errors.js
 // import filters/filter-helpers.js
 
-function condense_tagnames_filter(doc) {
+function condenseTagnamesFilter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {
@@ -12,8 +12,9 @@ function condense_tagnames_filter(doc) {
 
   // Use shorter names for common elements
   // Because we are stripping attributes, there is no need to keep them
-  const copy_attributes = false;
-  rename_elements(doc.body, 'strong', 'b', copy_attributes);
-  rename_elements(doc.body, 'em', 'i', copy_attributes);
+  // TODO: make copyAttributes a parameter
+  const copyAttributes = false;
+  renameElements(doc.body, 'strong', 'b', copyAttributes);
+  renameElements(doc.body, 'em', 'i', copyAttributes);
   return RDR_OK;
 }

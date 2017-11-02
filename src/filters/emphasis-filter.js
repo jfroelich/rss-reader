@@ -4,16 +4,16 @@
 // import base/errors.js
 // import filters/filter-helpers.js
 
-// @param max_text_length {Number} optional, if number of non-tag characters
+// @param maxTextLength {Number} optional, if number of non-tag characters
 // within emphasis element is greater than this, then the element is filtered
-function emphasis_filter(doc, max_text_length) {
+function emphasisFilter(doc, maxTextLength) {
   console.assert(doc instanceof Document);
 
-  if(typeof max_text_length === 'undefined') {
-    max_text_length = 0;
+  if(typeof maxTextLength === 'undefined') {
+    maxTextLength = 0;
   }
 
-  console.assert(number_is_positive_integer(max_text_length));
+  console.assert(numberIsPositiveInteger(maxTextLength));
 
   // Restrict analysis to body
   if(!doc.body) {
@@ -22,8 +22,8 @@ function emphasis_filter(doc, max_text_length) {
 
   const elements = doc.body.querySelectorAll('b, big, em, i, strong');
   for(const element of elements) {
-    if(element.textContent.length > max_text_length) {
-      dom_unwrap(element);
+    if(element.textContent.length > maxTextLength) {
+      domUnwrap(element);
     }
   }
 

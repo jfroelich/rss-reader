@@ -7,16 +7,16 @@
 // import reader-db.js
 // import reader-storage.js
 
-async function alarms_on_archive_alarm() {
-  let conn, max_age_ms, status;
+async function alarmsOnArchiveAlarm() {
+  let conn, maxAgeMs, status;
   const limit = 500;
   try {
-    conn = await reader_db_open();
-    status = await reader_storage_archive_entries(conn, max_age_ms, limit);
+    conn = await readerDbOpen();
+    status = await readerStorageArchiveEntries(conn, maxAgeMs, limit);
   } catch(error) {
     console.error(error);
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 
   if(status !== RDR_OK) {
@@ -24,101 +24,98 @@ async function alarms_on_archive_alarm() {
   }
 }
 
-async function alarms_on_compact_favicons_alarm() {
-  let max_age_ms, conn;
+async function alarmsOnCompactFaviconsAlarm() {
+  let maxAgeMs, conn;
   try {
-    conn = await favicon_db_open();
-    await favicon_compact_db(conn, max_age_ms);
+    conn = await faviconDbOpen();
+    await faviconCompactDb(conn, maxAgeMs);
   } catch(error) {
     console.warn(error);
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 }
 
-async function alarms_on_poll_feeds_alarm() {
-  const pfc = new poll_feeds_context();
+async function alarmsOnPollFeedsAlarm() {
+  const pfc = new PollFeedsContext();
   try {
-    [pfc.reader_conn, pfc.icon_conn] = await Promise.all([reader_db_open(),
-      favicon_db_open()]);
-    await poll_feeds(pfc);
+    [pfc.readerConn, pfc.iconConn] = await Promise.all([readerDbOpen(),
+      faviconDbOpen()]);
+    await pollFeeds(pfc);
   } catch(error) {
     console.warn(error);
   } finally {
-    indexeddb_close(pfc.reader_conn);
-    indexeddb_close(pfc.icon_conn);
+    indexedDBClose(pfc.readerConn, pfc.iconConn);
   }
 }
 
-async function alarms_on_remove_lost_entries_alarm() {
+async function alarmsOnRemoveLostEntriesAlarm() {
   const limit = 100;
   let conn;
 
   try {
-    conn = await reader_db_open();
-    await reader_storage_remove_lost_entries(conn, limit);
+    conn = await readerDbOpen();
+    await readerStorageRemoveLostEntries(conn, limit);
   } catch(error) {
     console.warn(error);
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 }
 
-async function alarms_on_remove_orphans_alarm() {
+async function alarmsOnRemoveOrphansAlarm() {
   const limit = 100;
   let conn;
 
   try {
-    conn = await reader_db_open();
-    await reader_storage_remove_orphans(conn, limit);
+    conn = await readerDbOpen();
+    await readerStorageRemoveOrphans(conn, limit);
   } catch(error) {
     console.warn(error);
   } finally {
-    indexeddb_close(conn);
+    indexedDBClose(conn);
   }
 }
 
-async function alarms_on_refresh_feed_icons_alarm() {
-
-  let reader_conn, icon_conn, status;
+async function alarmsOnRefreshFeedIconsAlarm() {
+  let readerConn, iconConn, status;
 
   try {
-    [reader_conn, icon_conn] = await Promise.all([reader_db_open(),
-      favicon_db_open()]);
-    status = await reader_storage_refresh_feed_icons(reader_conn, icon_conn);
+    [readerConn, iconConn] = await Promise.all([readerDbOpen(),
+      faviconDbOpen()]);
+    status = await readerStorageRefreshFeedIcons(readerConn, iconConn);
   } catch(error) {
     console.warn(error);
   } finally {
-    indexeddb_close(reader_conn);
-    indexeddb_close(icon_conn);
+    indexedDBClose(readerConn, iconConn);
   }
 
   if(status !== RDR_OK) {
-    console.warn('alarms_on_refresh_feed_icons_alarm invalid status', status);
+    console.warn('alarmsOnRefreshFeedIconsAlarm invalid status', status);
   }
 }
 
-function alarms_on_alarm_wakeup(alarm) {
-  console.debug('alarms_on_alarm_wakeup', alarm.name);
+function alarmsOnWakeup(alarm) {
+  console.debug('alarmsOnWakeup', alarm.name);
 
   switch(alarm.name) {
   case 'archive':
-    alarms_on_archive_alarm();
+    alarmsOnArchiveAlarm();
     break;
   case 'poll':
-    alarms_on_poll_feeds_alarm();
+    alarmsOnPollFeedsAlarm();
     break;
   case 'remove-entries-missing-urls':
-    alarms_on_remove_lost_entries_alarm();
+    alarmsOnRemoveLostEntriesAlarm();
     break;
   case 'remove-orphaned-entries':
-    alarms_on_remove_orphans_alarm();
+    alarmsOnRemoveOrphansAlarm();
     break;
   case 'refresh-feed-icons':
-    alarms_on_refresh_feed_icons_alarm();
+    alarmsOnRefreshFeedIconsAlarm();
     break;
   case 'compact-favicon-db':
-    alarms_on_compact_favicons_alarm();
+    alarmsOnCompactFaviconsAlarm();
     break;
   default:
     console.warn('unhandled alarm', alarm.name);
@@ -126,7 +123,7 @@ function alarms_on_alarm_wakeup(alarm) {
   }
 }
 
-function alarms_register_all() {
+function alarmsRegisterAll() {
   chrome.alarms.create('archive', {'periodInMinutes': 60 * 12});
   chrome.alarms.create('poll', {'periodInMinutes': 60});
   chrome.alarms.create('remove-entries-missing-urls',
@@ -139,15 +136,15 @@ function alarms_register_all() {
     {'periodInMinutes': 60 * 24 * 7});
 }
 
-chrome.alarms.onAlarm.addListener(alarms_on_alarm_wakeup);
+chrome.alarms.onAlarm.addListener(alarmsOnWakeup);
 
-function alarms_dom_content_loaded(event) {
-  console.debug('alarms_dom_content_loaded');
-  alarms_register_all();
+function alarmsOnDOMContentLoaded(event) {
+  console.debug('alarmsOnDOMContentLoaded');
+  alarmsRegisterAll();
 }
 
-// Defer registration until dom content loaded to allow alarms_register_all
+// Defer registration until dom content loaded to allow alarmsRegisterAll
 // to use external dependencies that may not yet be loaded in script loading
 // order.
-document.addEventListener('DOMContentLoaded', alarms_dom_content_loaded,
+document.addEventListener('DOMContentLoaded', alarmsOnDOMContentLoaded,
   {'once': true});

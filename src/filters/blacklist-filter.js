@@ -12,13 +12,13 @@ const BLACKLIST_FILTER_SELECTOR = [
   'xmp'
 ].join(',');
 
-function blacklist_filter(doc) {
+function blacklistFilter(doc) {
   console.assert(doc instanceof Document);
-  const doc_element = doc.documentElement;
+  const documentElement = doc.documentElement;
   const elements = doc.querySelectorAll(BLACKLIST_FILTER_SELECTOR);
 
   for(const element of elements) {
-    if(doc_element.contains(element)) {
+    if(documentElement.contains(element)) {
       element.remove();
     }
   }

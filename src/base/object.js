@@ -3,22 +3,23 @@
 // Returns a new object that is a copy of the input less empty properties. A
 // property is empty if it is null, undefined, or an empty string. Ignores
 // prototype, deep objects, getters, etc. Shallow copy by reference.
-function object_filter_empty_props(object) {
-  if(typeof object === 'undefined') {
-    return {};
+function objectFilterEmptyProps(object) {
+  const output = {};
+
+  if(typeof object !== 'object') {
+    return output;
   }
 
-  const output_object = {};
-  const has_own_prop = Object.prototype.hasOwnProperty;
+  const hasOwnProp = Object.prototype.hasOwnProperty;
 
   for(const key in object) {
-    if(has_own_prop.call(object, key)) {
+    if(hasOwnProp.call(object, key)) {
       const value = object[key];
       if(value !== undefined && value !== null && value !== '') {
-        output_object[key] = value;
+        output[key] = value;
       }
     }
   }
 
-  return output_object;
+  return output;
 }

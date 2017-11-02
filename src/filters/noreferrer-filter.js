@@ -2,9 +2,9 @@
 
 // import base/errors.js
 
-// TODO: this conflicts with attribute filter. Need to whitelist this
-// attribute and this value for this element.
-function noreferrer_filter(doc) {
+// TODO: this function's behavior conflicts with attribute filter. Need to
+// whitelist this attribute (and this value) for this element.
+function noreferrerFilter(doc) {
   console.assert(doc instanceof Document);
 
   if(!doc.body) {

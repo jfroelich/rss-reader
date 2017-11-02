@@ -3,7 +3,7 @@
 // import base/errors.js
 
 // Ensure the document has a body element
-function ensure_body_filter(doc) {
+function ensureBodyFilter(doc) {
   console.assert(doc instanceof Document);
 
   // If body is present then noop
@@ -11,10 +11,10 @@ function ensure_body_filter(doc) {
     return;
   }
 
-  const error_message = 'This document has no content.';
-  const error_text_node = doc.createTextNode(error_message);
-  const body_element = doc.createElement('body');
-  body_element.appendChild(error_text_node);
-  doc.documentElement.appendChild(body_element);
+  const errorMessage = 'This document has no content.';
+  const errorNode = doc.createTextNode(errorMessage);
+  const bodyElement = doc.createElement('body');
+  bodyElement.appendChild(errorNode);
+  doc.documentElement.appendChild(bodyElement);
   return RDR_OK;
 }

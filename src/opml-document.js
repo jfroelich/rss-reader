@@ -4,132 +4,132 @@
 // import opml-outline.js
 
 
-function opml_document_set_title(doc, title) {
+function opmlDocumentSetTitle(doc, title) {
   console.assert(doc instanceof Document);
 
-  const t_title = typeof title;
-  console.assert(t_title === 'undefined' || t_title === 'string');
+  const titleVarType = typeof title;
+  console.assert(titleVarType === 'undefined' || titleVarType === 'string');
 
-  let title_element = doc.querySelector('title');
+  let titleElement = doc.querySelector('title');
   if(title) {
-    if(!title_element) {
-      title_element = doc.createElement('title');
-      const head_element = doc.querySelector('head');
+    if(!titleElement) {
+      titleElement = doc.createElement('title');
+      const headElement = doc.querySelector('head');
 
       // TODO: instead of failing on not finding <head>, create
       // <head> if needed
 
-      if(!head_element) {
+      if(!headElement) {
         console.log('missing head element');
         return RDR_ERR_DOM;
       }
 
-      head_element.appendChild(title_element);
+      headElement.appendChild(titleElement);
     }
 
-    title_element.textContent = title;
+    titleElement.textContent = title;
   } else {
-    if(title_element) {
-      title_element.remove();
+    if(titleElement) {
+      titleElement.remove();
     }
   }
 
   return RDR_OK;
 }
 
-function opml_document_create() {
+function opmlDocumentCreate() {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
-  const head_element = doc.createElement('head');
-  doc.documentElement.appendChild(head_element);
+  const headElement = doc.createElement('head');
+  doc.documentElement.appendChild(headElement);
 
-  const current_date = new Date();
-  const current_utc_string = current_date.toUTCString();
+  const currentDate = new Date();
+  const currentUTCString = currentDate.toUTCString();
 
-  const date_created_element = doc.createElement('datecreated');
-  date_created_element.textContent = current_utc_string;
-  head_element.appendChild(date_created_element);
+  const dateCreatedElement = doc.createElement('datecreated');
+  dateCreatedElement.textContent = currentUTCString;
+  headElement.appendChild(dateCreatedElement);
 
-  const date_modified_element = doc.createElement('datemodified');
-  date_modified_element.textContent = current_utc_string;
-  head_element.appendChild(date_modified_element);
+  const dateModifiedElement = doc.createElement('datemodified');
+  dateModifiedElement.textContent = currentUTCString;
+  headElement.appendChild(dateModifiedElement);
 
-  const docs_element = doc.createElement('docs');
-  docs_element.textContent = 'http://dev.opml.org/spec2.html';
-  head_element.appendChild(docs_element);
+  const docsElement = doc.createElement('docs');
+  docsElement.textContent = 'http://dev.opml.org/spec2.html';
+  headElement.appendChild(docsElement);
 
-  const body_element = doc.createElement('body');
-  doc.documentElement.appendChild(body_element);
+  const bodyElement = doc.createElement('body');
+  doc.documentElement.appendChild(bodyElement);
 
   return doc;
 }
 
-function opml_get_outline_elements(doc) {
+function opmlGetOutlineElements(doc) {
   console.assert(doc instanceof Document);
   return doc.querySelectorAll('opml > body > outline');
 }
 
-function opml_get_outline_objects(doc) {
-  const elements = opml_get_outline_elements(doc);
+function opmlGetOutlineObjects(doc) {
+  const elements = opmlGetOutlineElements(doc);
   const objects = [];
   for(const element of elements) {
-    objects.push(opml_outline_element_to_object(element));
+    objects.push(opmlOutlineElementToObject(element));
   }
   return objects;
 }
 
-function opml_remove_outlines_with_invalid_types(doc) {
+function opmlRemoveOutlinesWithInvalidTypes(doc) {
   console.assert(doc instanceof Document);
 
-  const elements = opml_get_outline_elements(doc);
+  const elements = opmlGetOutlineElements(doc);
 
   // TODO: return status instead, do not calc len
-  const initial_length = elements.length;
+  const initialLength = elements.length;
   for(const element of elements) {
-    if(!opml_outline_element_has_valid_type(element)) {
+    if(!opmlOutlineElementHasValidType(element)) {
       element.remove();
     }
   }
 
-  return initial_length - elements.length;
+  return initialLength - elements.length;
 }
 
-function opml_remove_outlines_missing_xmlurls(doc) {
+function opmlRemoveOutlinesMissingXMLURLs(doc) {
   console.assert(doc instanceof Document);
 
-  const outlines = opml_get_outline_elements(doc);
+  const outlines = opmlGetOutlineElements(doc);
   for(const outline of outlines) {
-    if(!opml_outline_element_has_xmlurl(outline)) {
+    if(!opmlOutlineElementHasXMLURL(outline)) {
       outline.remove();
     }
   }
   return RDR_OK;
 }
 
-function opml_normalize_outline_xmlurls(doc) {
+function opmlNormalizeOutlineXMLURLs(doc) {
   console.assert(doc instanceof Document);
 
-  const outlines = opml_get_outline_elements(doc);
+  const outlines = opmlGetOutlineElements(doc);
   for(const outline of outlines) {
-    opml_outline_element_normalize_xmlurl(outline);
+    opmlOutlineElementNormalizeXMLURL(outline);
   }
   return RDR_OK;
 }
 
-function opml_document_append_outline_object(doc, outline) {
-  opml_append_outline_element(doc, opml_outline_to_element(doc, outline));
+function opmlDocumentAppendOutlineObject(doc, outline) {
+  opmlDocumentAppendOutlineElement(doc, opmlOutlineToElement(doc, outline));
 }
 
-function opml_append_outline_element(doc, element) {
+function opmlDocumentAppendOutlineElement(doc, element) {
   console.assert(doc instanceof Document);
 
-  let body_element = doc.querySelector('body');
-  if(!body_element) {
-    body_element = doc.createElement('body');
-    doc.documentElement.appendChild(body_element);
+  let bodyElement = doc.querySelector('body');
+  if(!bodyElement) {
+    bodyElement = doc.createElement('body');
+    doc.documentElement.appendChild(bodyElement);
   }
 
-  body_element.appendChild(element);
+  bodyElement.appendChild(element);
   return RDR_OK;
 }

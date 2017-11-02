@@ -17,108 +17,108 @@
 // various reasons.
 // @param doc {Document} the document to transform
 // @param url {String} the canonical url of the document
-// @param fetch_image_timeout_ms {Number} optional, the number of milliseconds
+// @param fetchImageTimeoutMs {Number} optional, the number of milliseconds
 // to wait before timing out when fetching an image
-async function poll_document_filter(doc, url, fetch_image_timeout_ms) {
+async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
   console.assert(doc instanceof Document);
-  console.assert(url_is_valid(url));
+  console.assert(urlIsValid(url));
 
-  frame_filter(doc);
-  ensure_body_filter(doc);
+  frameFilter(doc);
+  ensureBodyFilter(doc);
 
-  script_filter(doc);
-  iframe_filter(doc);
-  comment_filter(doc);
-  base_filter(doc);
+  scriptFilter(doc);
+  iframeFilter(doc);
+  commentFilter(doc);
+  baseFilter(doc);
 
-  hidden_filter(doc);
-  noscript_filter(doc);
-  blacklist_filter(doc);
-  script_anchor_filter(doc);
+  hiddenFilter(doc);
+  noscriptFilter(doc);
+  blacklistFilter(doc);
+  scriptAnchorFilter(doc);
 
-  // This should occur prior to boilerplate_filter because it has express
+  // This should occur prior to boilerplateFilter because it has express
   // knowledge of content organization
-  host_template_filter(doc, url);
+  hostTemplateFilter(doc, url);
 
-  boilerplate_filter(doc);
-  condense_tagnames_filter(doc);
+  boilerplateFilter(doc);
+  condenseTagnamesFilter(doc);
 
-  const max_emphasis_length = 300;
-  emphasis_filter(doc, max_emphasis_length);
+  const MAX_EMPHASIS_LENGTH = 300;
+  emphasisFilter(doc, MAX_EMPHASIS_LENGTH);
 
 
-  const base_url = new URL(url);
-  canonical_url_filter(doc, base_url);
+  const baseURL = new URL(url);
+  canonicalURLFilter(doc, baseURL);
 
-  // This should occur prior to lazy_image_filter
-  // This should occur prior to image_size_filter
-  // Does not matter if before or after canonical_url_filter
-  response_image_filter(doc);
+  // This should occur prior to lazyImageFilter
+  // This should occur prior to imageSizeFilter
+  // Does not matter if before or after canonicalURLFilter
+  responsiveImageFilter(doc);
 
-  // This should occur before sourcless_image_filter
-  lazy_image_filter(doc);
+  // This should occur before sourcelessImageFilter
+  lazyImageFilter(doc);
 
-  // This should occur before image_size_filter
-  lonestar_filter(doc, url);
+  // This should occur before imageSizeFilter
+  lonestarFilter(doc, url);
 
-  sourcless_image_filter(doc);
+  sourcelessImageFilter(doc);
 
-  // This should occur after canonical_url_filter
-  // This should occur after lonestar_filter
+  // This should occur after canonicalURLFilter
+  // This should occur after lonestarFilter
   let allowed_protocols; // defer to defaults
 
   // TODO: wrap, return RDR_ERR_FETCH or something on error
   // Allow exceptions to bubble (for now)
-  await image_size_filter(doc, allowed_protocols, fetch_image_timeout_ms);
+  await imageSizeFilter(doc, allowed_protocols, fetchImageTimeoutMs);
 
 
-  invalid_anchor_filter(doc);
-  formatting_anchor_filter(doc);
-  form_filter(doc);
-  br_filter(doc);
-  hr_filter(doc);
-  formatting_filter(doc);
+  invalidAnchorFilter(doc);
+  formattingAnchorFilter(doc);
+  formFilter(doc);
+  brFilter(doc);
+  hrFilter(doc);
+  formattingFilter(doc);
 
-  adoption_agency_filter(doc);
-  hairspace_filter(doc);
+  adoptionAgencyFilter(doc);
+  hairspaceFilter(doc);
 
-  semantic_filter(doc);
-  figure_filter(doc);
-  container_filter(doc);
+  semanticFilter(doc);
+  figureFilter(doc);
+  containerFilter(doc);
 
-  list_filter(doc);
+  listFilter(doc);
 
-  const row_scan_limit = 20;
-  table_filter(doc, row_scan_limit);
+  const ROW_SCAN_LIMIT = 20;
+  tableFilter(doc, ROW_SCAN_LIMIT);
 
   // Better to call later than earlier to reduce number of text nodes visited
-  node_whitespace_filter(doc);
+  nodeWhitespaceFilter(doc);
 
   // This should be called near the end. Most of the other filters are naive
   // in how they leave ancestor elements meaningless or empty, and simply
   // remove. So this is like an additional pass now that several holes have
   // been made.
-  leaf_filter(doc);
+  leafFilter(doc);
 
   // Should be called near end because its behavior changes based on
   // what content remains, and is faster with fewer elements
-  trim_document_filter(doc);
+  trimDocumentFilter(doc);
 
   // Primarily an attribute filter, so it should be caller as late as possible
   // to reduce the number of elements visited
-  noreferrer_filter(doc);
-  ping_filter(doc);
+  noreferrerFilter(doc);
+  pingFilter(doc);
 
   // Filter element attributes last because it is so slow and is sped up by
   // processing fewer elements.
-  const attribute_whitelist = {
+  const attributeWhitelist = {
     'a': ['href', 'name', 'title', 'rel'],
     'iframe': ['src'],
     'source': ['media', 'sizes', 'srcset', 'src', 'type'],
     'img': ['src', 'alt', 'title', 'srcset']
   };
 
-  attribute_filter(doc, attribute_whitelist);
+  attributeFilter(doc, attributeWhitelist);
 
   return RDR_OK;
 }
