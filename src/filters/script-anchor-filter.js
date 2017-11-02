@@ -2,7 +2,7 @@
 
 // import base/errors.js
 // import filters/filter-helpers.js
-// import net/url.js
+// import net/url-utils.js
 
 function scriptAnchorFilter(doc) {
   console.assert(doc instanceof Document);
@@ -14,7 +14,7 @@ function scriptAnchorFilter(doc) {
 
   const anchors = doc.body.querySelectorAll('a[href]');
   for(const anchor of anchors) {
-    if(urlHasScriptProtocol(anchor.getAttribute('href'))) {
+    if(URLUtils.hasScriptProtocol(anchor.getAttribute('href'))) {
       domUnwrap(anchor);
     }
   }

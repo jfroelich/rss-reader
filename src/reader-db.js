@@ -2,7 +2,7 @@
 
 // import base/indexeddb.js
 // import base/number.js
-// import net/url.js
+// import net/url-utils.js
 // import feed.js
 // import entry.js
 
@@ -57,7 +57,7 @@ function readerDbOnUpgradeNeeded(event) {
 // @param url {String}
 function readerDbFindFeedIdByURL(conn, url) {
   console.assert(indexedDBIsOpen(conn));
-  console.assert(urlIsValid(url));
+  console.assert(URLUtils.isValid(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -106,7 +106,7 @@ function readerDbFindEntryById(conn, id) {
 // @param url {String}
 function readerDbFindEntryByURL(conn, url) {
   console.assert(indexedDBIsOpen(conn));
-  console.assert(urlIsValid(url));
+  console.assert(URLUtils.isValid(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');

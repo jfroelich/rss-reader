@@ -1,6 +1,6 @@
 'use strict';
 
-// import net/url.js
+// import net/url-utils.js
 // import third-party/parseSrcset.js
 
 // Returns the first matching css rule within the given sheet, or undefined if
@@ -212,7 +212,7 @@ function domImageHasSource(image) {
 // Return true if image has a valid src attribute value
 function domImageHasValidSource(image) {
   console.assert(domIsImage(image));
-  return urlIsValid(image.getAttribute('src'));
+  return URLUtils.isValid(image.getAttribute('src'));
 }
 
 // Return true if image has a non-empty srcset attribute value

@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/errors.js
-// import net/url.js
+// import net/url-utils.js
 // import dom.js
 
 const LONESTAR_PATTERNS = [
@@ -41,7 +41,7 @@ const LONESTAR_PATTERNS = [
 // @param url {String} canonical document url
 function lonestarFilter(doc, url) {
   console.assert(doc instanceof Document);
-  console.assert(urlIsCanonical(url));
+  console.assert(URLUtils.isCanonical(url));
 
   // Analysis is limited to descendants of body
   if(!doc.body) {
@@ -53,7 +53,7 @@ function lonestarFilter(doc, url) {
   // visibility overlaps with sanitization, but this is intentionally naive
   // regarding what other filters are applied to the document.
 
-  const documentHostname = urlGetHostname(url);
+  const documentHostname = URLUtils.getHostname(url);
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
     if(domIsHiddenInline(image) ||
@@ -98,7 +98,7 @@ function lonestarFilterHasTelemetrySource(image, documentHostname) {
   }
 
   // TODO: probably some part of these conditions should be delegated
-  // to url.js
+  // to url-utils.js
 
   // Ignore very short urls
   if(imageSource.length < 2) {
@@ -123,7 +123,7 @@ function lonestarFilterHasTelemetrySource(image, documentHostname) {
   // of the common practice of including insecure images in a secure domain
   // TODO: only compare by TLD and whatever next-level-domain-part is, ignore
   // subdomains as well in comparison
-  const imageHostname = urlGetHostname(imageSource);
+  const imageHostname = URLUtils.getHostname(imageSource);
   if(imageHostname === documentHostname) {
     return false;
   }

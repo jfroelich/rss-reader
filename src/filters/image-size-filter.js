@@ -2,7 +2,7 @@
 
 // import base/promises.js
 // import net/fetch.js
-// import net/url.js
+// import net/url-utils.js
 // import dom.js
 
 // Scans the images of a document and ensures the width and height attributes
@@ -147,9 +147,9 @@ function imageSizeFilterSniff(sourceURL) {
   // TODO: make a helper function
   // Grab from file name (e.g. 100x100.jpg => [100,100])
   const path = sourceURL.pathname;
-  const fileName = urlPathGetFileName(path);
+  const fileName = URLUtils.getFileNameFromPath(path);
   if(fileName) {
-    const partialFileName = urlFileNameFilterExtension(fileName);
+    const partialFileName = URLUtils.filterExtensionFromFileName(fileName);
     if(partialFileName) {
       // not implemented
     }

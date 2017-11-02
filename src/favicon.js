@@ -3,20 +3,10 @@
 // import base/indexeddb.js
 // import base/errors.js
 // import net/fetch.js
-// import net/url.js
+// import net/url-utils.js
 // import html.js
 
-// BUG: I am failing to detect the following link in the html for an unknown
-// reason when subscribing to https://www.lesserwrong.com/feed.xml. Perhaps it
-// is added by script after load? No, it is right there
-// in the source of the page (although some other funky things are
-// certainly occurring)
-// <link name="favicon" rel="shortcut icon"
-// href="http://res.cloudinary.com/lesswrong-2-0/image/upload/
-// v1497915096/favicon_lncumn.ico" data-react-helmet="true">
-
 // TODO: use status codes throughout. First update fetch.js to use status codes.
-
 
 // 30 days in ms, used by both lookup and compact to determine whether a
 // cache entry expired
@@ -241,7 +231,7 @@ async function faviconDbFindRedirectURL(conn, urlObject, response,
 async function faviconSearchDocument(document, conn, baseURLObject, urls) {
   console.assert(document instanceof Document);
   console.assert(indexedDBIsOpen(conn));
-  console.assert(urlIsURL(baseURLObject));
+  console.assert(URLUtils.isURL(baseURLObject));
   console.assert(urls);
 
   if(!document.head) {

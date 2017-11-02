@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/errors.js
-// import net/url.js
+// import net/url-utils.js
 // import dom.js
 
 const CANONICAL_URL_FILTER_MAP = {
@@ -34,7 +34,7 @@ const CANONICAL_URL_FILTER_MAP = {
 
 function canonicalURLFilter(doc, baseURL) {
   console.assert(doc instanceof Document);
-  console.assert(urlIsURL(baseURL));
+  console.assert(URLUtils.isURL(baseURL));
 
   const srcSelector = canonicalURLFilterCreateSelector();
 
@@ -74,7 +74,7 @@ function canonicalURLFilterResolveAttribute(element, baseURL) {
     return;
   }
 
-  const resolvedURL = urlResolve(originalURLString, baseURL);
+  const resolvedURL = URLUtils.resolve(originalURLString, baseURL);
   if(!resolvedURL) {
     return;
   }
@@ -90,7 +90,7 @@ function canonicalURLFilterResolveSrcset(element, baseURL) {
 
   let changeCount = 0;
   for(const descriptor of descriptors) {
-    const resolvedURL = urlResolve(descriptor.url, baseURL);
+    const resolvedURL = URLUtils.resolve(descriptor.url, baseURL);
 
     if(resolvedURL &&
       resolvedURL.href.length !== descriptor.url.length) {

@@ -2,7 +2,7 @@
 
 // import base/number.js
 // import net/mime-utils.js
-// import net/url.js
+// import net/url-utils.js
 
 const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
@@ -298,7 +298,7 @@ function fetchImage(url, timeoutMs) {
 // TODO: if fetch succeeds, cancel the timeout
 // TODO: if timeout succeeds first, cancel the fetch
 function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
-  console.assert(urlIsValid(url));
+  console.assert(URLUtils.isValid(url));
   const timeoutMsType = typeof timeoutMs;
 
   // If timeout is set then check its validity
@@ -396,11 +396,11 @@ function fetchGetLastModifiedDate(response) {
 // @param responseURL {String} the value of the response.url property of the
 // Response object produced by calling fetch.
 function fetchDidRedirect(requestURL, responseURL) {
-  console.assert(urlIsCanonical(requestURL));
-  console.assert(urlIsCanonical(responseURL));
+  console.assert(URLUtils.isCanonical(requestURL));
+  console.assert(URLUtils.isCanonical(responseURL));
 
   return requestURL !== responseURL &&
-    !urlEqualsNoHash(requestURL, responseURL);
+    !URLUtils.hashlessEquals(requestURL, responseURL);
 }
 
 

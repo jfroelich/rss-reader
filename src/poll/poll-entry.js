@@ -2,7 +2,7 @@
 
 // import base/errors.js
 // import net/fetch.js
-// import net/url.js
+// import net/url-utils.js
 // import poll/poll-document-filter.js
 // import entry.js
 // import favicon.js
@@ -10,7 +10,7 @@
 // import html.js
 // import reader-db.js
 // import reader-storage.js
-// import rewrite-url.js
+// import rewrite-url-utils.js
 
 
 function PollEntryContext() {
@@ -38,7 +38,7 @@ async function pollEntry(entry) {
   }
 
   let url = entryGetTopURL(entry);
-  if(!urlIsValid(url)) {
+  if(!URLUtils.isValid(url)) {
     return false;
   }
 
@@ -164,7 +164,7 @@ async function pollEntryPollable(url, conn) {
     return false;
   }
 
-  if(urlSniffIsBinary(urlObject)) {
+  if(URLUtils.sniffIsBinary(urlObject)) {
     console.debug('binary resource', url);
     return false;
   }

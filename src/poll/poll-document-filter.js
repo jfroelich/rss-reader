@@ -11,7 +11,7 @@
 // import filters/host-template-filter.js
 // import filters/lonestar-filter.js
 // import filters/responsive-image-filter.js
-// import net/url.js
+// import net/url-utils.js
 
 // Transforms a document's content by removing or changing nods for
 // various reasons.
@@ -21,7 +21,7 @@
 // to wait before timing out when fetching an image
 async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
   console.assert(doc instanceof Document);
-  console.assert(urlIsValid(url));
+  console.assert(URLUtils.isValid(url));
 
   frameFilter(doc);
   ensureBodyFilter(doc);

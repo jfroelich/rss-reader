@@ -2,7 +2,7 @@
 
 // import base/number.js
 // import base/string.js
-// import net/url.js
+// import net/url-utils.js
 // import favicon.js
 // import html.js
 
@@ -55,7 +55,7 @@ function feedCreateIconLookupURL(feed) {
   // associated with the feed. Cannot assume the link is set or valid
   if(feed.link) {
     // If feed.link is set it should always be canonical
-    console.assert(urlIsCanonical(feed.link));
+    console.assert(URLUtils.isCanonical(feed.link));
     try {
       return new URL(feed.link);
     } catch(error) {

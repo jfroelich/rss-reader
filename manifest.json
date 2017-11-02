@@ -30,7 +30,7 @@
       "/src/reader-db.js",
       "/src/reader-parse-feed.js",
       "/src/reader-storage.js",
-      "/src/rewrite-url.js",
+      "/src/rewrite-url-utils.js",
       "/src/subscription.js",
       "/src/xml-utils.js",
       "/src/xml-parser.js",
@@ -88,7 +88,7 @@
 
       "/src/net/fetch.js",
       "/src/net/mime-utils.js",
-      "/src/net/url.js",
+      "/src/net/url-utils.js",
 
       "/src/poll/poll-feeds.js",
       "/src/poll/poll-document-filter.js",

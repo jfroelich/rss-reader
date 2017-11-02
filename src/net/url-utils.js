@@ -3,99 +3,90 @@
 // import net/mime-utils.js
 
 // TODO: impose length cap on url strings
-// TODO: split into URLStringUtils and URLUtils ?
+
+const URLUtils = {};
 
 // Allows for leading whitespace characters. Returns true for javascript: and
 // mailto: and data:. Returns true for https:// and http://. Returns false for
 // '//' (which is preferable).
 // @param url {String} input url
 // @returns {Boolean} true if the url is canonical, otherwise false
-function urlIsCanonical(url) {
+URLUtils.isCanonical = function(url) {
   console.assert(typeof url === 'string');
   return /^\s*[a-z]+:/i.test(url);
-}
+};
 
 // A url must be at least this long to be a script url
-const URL_MIN_SCRIPT_LENGTH = 'javascript:'.length;
+URLUtils.MIN_SCRIPT_LENGTH = 'javascript:'.length;
 
 // Returns true if the url has the 'javascript:' protocol. Does not throw in
 // the case of bad input.
 // @param url {String}
 // @returns {Boolean}
-function urlHasScriptProtocol(url) {
+URLUtils.hasScriptProtocol = function(url) {
   return typeof url === 'string' &&
-    url.length > URL_MIN_SCRIPT_LENGTH &&
+    url.length > URLUtils.MIN_SCRIPT_LENGTH &&
     /^\s*javascript:/i.test(url);
-}
+};
 
 // Returns the absolute form the input url
 // @param url {String}
 // @param baseURL {URL}
-// @returns {URL} either the input url as an object if the url was already
-// absolute, or the absolute url, or undefined if a parsing error occurred
-function urlResolve(url, baseURL) {
+// @returns {URL} the absolute url, or undefined if an error occurred
+URLUtils.resolve = function(url, baseURL) {
   console.assert(typeof url === 'string');
-  console.assert(urlIsURL(baseURL));
+  console.assert(baseURL instanceof URL);
 
   let canonicalURL;
-
-  if(urlIsCanonical(url)) {
-    try {
-      canonicalURL = new URL(url);
-    } catch(error) {
-    }
-    return canonicalURL;
-  }
-
   try {
     canonicalURL = new URL(url, baseURL);
   } catch(error) {
   }
   return canonicalURL;
-}
+};
 
 // @param url {String}
 // @returns {String}
-function urlGetHostname(url) {
+URLUtils.getHostname = function(url) {
   console.assert(typeof url === 'string');
   try {
     const urlObject = new URL(url);
     return urlObject.hostname;
   } catch(error) {
   }
-}
+};
 
 // Only minor validation for speed. Tolerates bad input.
 // Assumes canonical url
 // @param url {String}
 // @returns {Boolean}
-function urlIsValid(url) {
-  const URL_MIN_LENGTH = 1;
-
+URLUtils.isValid = function(url) {
+  const MIN_LENGTH = 1;
   if(typeof url === 'string') {
     url = url.trim();
-    if(url.length >= URL_MIN_LENGTH) {
+    if(url.length >= MIN_LENGTH) {
       return !url.includes(' ');
     }
   }
   return false;
-}
+};
 
 // Returns true if the input string appears to be a valid path
 // @param path {String} a path component of a url
 // @returns {Boolean} true if the path appears valid, otherwise false
-function urlPathIsValid(path) {
+URLUtils.isValidPath = function(path) {
   return typeof path === 'string' &&
     path.length > 0 &&
     path.charAt(0) === '/' &&
     !path.includes(' ');
-}
+};
 
 // TODO: test input 'foo.', I suspect it is incorrect
+// TODO: revert to accepting {URL} as input
 // @param path {String}
 // @returns {String}
-function urlPathGetExtension(path) {
-  console.assert(urlPathIsValid(path));
+URLUtils.getExtensionFromPath = function(path) {
+  console.assert(URLUtils.isValidPath(path));
 
   // Fail if the path is probably too short to contain an extension
   const MIN_PATH_LENGTH = '/a.b'.length;
@@ -131,15 +122,12 @@ function urlPathGetExtension(path) {
   }
 
   return extension;
-}
+};
 
-// Return true if url probably represents a binary resource. This does not
-// actually inspect the bytes of the resource. This makes a guess based on the
-// extension of the file name in the url.
+// Return true if url probably represents a binary resource
 // @param url {URL} url object
-// @returns {Boolean} true if probably binary, otherewise false
-function urlSniffIsBinary(url) {
-  console.assert(urlIsURL(url));
+URLUtils.sniffIsBinary = function(url) {
+  console.assert(URLUtils.isURL(url));
 
   // Assume data url objects are probably non binary
   if(url.protocol === 'data:') {
@@ -147,7 +135,7 @@ function urlSniffIsBinary(url) {
   }
 
   const path = url.pathname;
-  const extension = urlPathGetExtension(path);
+  const extension = URLUtils.getExtensionFromPath(path);
   if(!extension) {
     return false;
   }
@@ -158,16 +146,18 @@ function urlSniffIsBinary(url) {
   }
 
   return MIMEUtils.isBinary(mimeType);
-}
+};
 
 // Returns a file name without its extension (and without the '.')
-function urlFileNameFilterExtension(fileName) {
+URLUtils.filterExtensionFromFileName = function(fileName) {
+  console.assert(typeof fileName === 'string');
   const index = fileName.lastIndexOf('.');
   return index < 0 ? fileName : fileName.substring(0, index);
-}
+};
 
-function urlPathGetFileName(path) {
-  console.assert(urlPathIsValid(path));
+// TODO: revert to accepting URL as input
+URLUtils.getFileNameFromPath = function(path) {
+  console.assert(URLUtils.isValidPath(path));
   const index = path.lastIndexOf('/');
   if(index > -1) {
     const indexPlus1 = index + 1;
@@ -176,12 +166,12 @@ function urlPathGetFileName(path) {
     }
   }
   return path;
-}
+};
 
 // Returns true if value is a URL object
-function urlIsURL(value) {
+URLUtils.isURL = function(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
-}
+};
 
 // Compares two urls for equality, after normalization and removing the hash
 // from each url, if present. Both urls must be defined strings.
@@ -189,7 +179,8 @@ function urlIsURL(value) {
 // @param url2 {String}
 // @throws {Error} if either url is not a valid url
 // @returns Boolean
-function urlEqualsNoHash(url1, url2) {
+// TODO: change to accepting URL objects only
+URLUtils.hashlessEquals = function(url1, url2) {
   console.assert(typeof url1 === 'string');
   console.assert(typeof url2 === 'string');
 
@@ -200,4 +191,4 @@ function urlEqualsNoHash(url1, url2) {
   urlObject1.hash = '';
   urlObject2.hash = '';
   return urlObject1.href === urlObject2.href;
-}
+};

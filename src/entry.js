@@ -4,7 +4,7 @@
 // import base/sizeof.js
 // import base/errors.js
 // import base/string.js
-// import net/url.js
+// import net/url-utils.js
 // import html.js
 
 
@@ -43,7 +43,7 @@ function entryGetTopURL(entry) {
 // @throws {Error} if urlString is invalid
 function entryAppendURL(entry, urlString) {
   console.assert(entryIsEntry(entry));
-  console.assert(urlIsCanonical(urlString));
+  console.assert(URLUtils.isCanonical(urlString));
 
   const urlObject = new URL(urlString);
   const normalUrlString = urlObject.href;

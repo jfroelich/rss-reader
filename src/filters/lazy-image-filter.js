@@ -1,6 +1,6 @@
 'use strict';
 
-// import net/url.js
+// import net/url-utils.js
 // import dom.js
 
 function lazyImageFilter(doc) {
@@ -32,7 +32,7 @@ function lazyImageFilter(doc) {
     for(const lazySourceName of lazyAttributes) {
       if(image.hasAttribute(lazySourceName)) {
         const imageSource = image.getAttribute(lazySourceName);
-        if(urlIsValid(imageSource)) {
+        if(URLUtils.isValid(imageSource)) {
           const preHTML = image.outerHTML;
           image.removeAttribute(lazySourceName);
           image.setAttribute('src', imageSource);
