@@ -1,24 +1,8 @@
 'use strict';
 
 // import base/errors.js
-// import xml.js
 // import opml-outline.js
 
-function opml_parse_from_string(xml_string) {
-  let [status, doc] = xml_parse_from_string(xml_string);
-  if(status !== RDR_OK) {
-    console.log('xml parse error');
-    return [status];
-  }
-
-  const name = doc.documentElement.localName.toLowerCase();
-  if(name !== 'opml') {
-    console.log('documentElement not opml:', name);
-    return [RDR_ERR_DOM];
-  }
-
-  return [RDR_OK, doc];
-}
 
 function opml_document_set_title(doc, title) {
   console.assert(doc instanceof Document);

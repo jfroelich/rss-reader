@@ -4,6 +4,7 @@
 // import net/mime.js
 // import opml-document.js
 // import opml-outline.js
+// import opml-parse.js
 // import favicon.js
 // import feed.js
 // import file.js
@@ -65,7 +66,7 @@ async function reader_import_file(file, reader_conn, icon_conn) {
     return 0;
   }
 
-  let [status, document] = opml_parse_from_string(file_content);
+  let [status, document] = OPMLParser.parse(file_content);
   if(status !== RDR_OK) {
     console.log('error parsing opml file', file.name);
     return 0;
