@@ -5,7 +5,13 @@
 
 class XMLParser {
   static parse(xml) {
-    console.assert(typeof xml === 'string');
+
+    // Even though parseFromString tolerates bad input, this function expects
+    // the proper type, and not receiving it indicates a programming error.
+    if(typeof xml !== 'string') {
+      return [RDR_EINVAL];
+    }
+
     const parser = new DOMParser();
 
     // NOTE: parseFromString generates a default document with an embedded
