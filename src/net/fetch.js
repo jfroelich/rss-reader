@@ -108,7 +108,7 @@ function fetchFeed(url, timeoutMs, acceptHTML) {
 
   function acceptPredicate(response) {
     const contentType = response.headers.get('Content-Type');
-    const mimeType = mime_from_content_type(contentType);
+    const mimeType = mimeFromContentType(contentType);
     return types.includes(mimeType);
   }
 
@@ -134,7 +134,7 @@ function fetchHTML(url, timeoutMs) {
   // TODO: move outside of function and rename?
   function acceptHTMLPredicate(response) {
     const contentType = response.headers.get('Content-Type');
-    const mimeType = mime_from_content_type(contentType);
+    const mimeType = mimeFromContentType(contentType);
 
     // TODO: use constant from mime.js
     return mimeType === 'text/html';
