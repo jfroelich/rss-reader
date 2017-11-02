@@ -7,7 +7,7 @@
 // import opml-parse.js
 // import favicon.js
 // import feed.js
-// import base/file.js
+// import base/file-utils.js
 // import reader-db.js
 // import subscription.js
 
@@ -58,7 +58,7 @@ async function readerImportFile(file, readerConn, iconConn) {
 
   let fileContent;
   try {
-    fileContent = await fileReadAsText(file);
+    fileContent = await FileUtils.readAsText(file);
   } catch(error) {
     console.warn(error);
     return 0;
