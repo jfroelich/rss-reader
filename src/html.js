@@ -129,6 +129,7 @@ function htmlTruncate(htmlString, position, extensionString) {
 function htmlParseFromString(htmlString) {
 
   // The caller is responsible for always calling this with a defined string
+  // TODO: strong assertion
   console.assert(typeof htmlString === 'string');
 
   const parser = new DOMParser();
@@ -153,8 +154,7 @@ function htmlParseFromString(htmlString) {
   // if this is ever not the case, under the terms of this app?
   const lcRootName = doc.documentElement.localName;
   if(lcRootName !== 'html') {
-    console.log(unsafeMessage = 'html parsing error: ' + lcRootName +
-      ' is not html');
+    console.log(lcRootName + ' is not html');
     return [RDR_ERR_PARSE];
   }
 

@@ -3,6 +3,7 @@
 // import net/mime-utils.js
 
 // TODO: impose length cap on url strings
+// TODO: split into URLStringUtils and URLUtils ?
 
 // Allows for leading whitespace characters. Returns true for javascript: and
 // mailto: and data:. Returns true for https:// and http://. Returns false for

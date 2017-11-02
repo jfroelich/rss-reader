@@ -5,9 +5,9 @@
 // import poll/poll-entry.js
 // import extension.js
 // import feed.js
-// import feed-coerce-from-response.js
 // import reader-badge.js
 // import reader-db.js
+// import reader-parse-feed.js
 // import reader-storage.js
 
 function PollFeedsContext() {
