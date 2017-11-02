@@ -104,14 +104,17 @@ async function indexeddb_open(name, version, upgrade_listener, timeout_ms) {
   return conn;
 }
 
-function indexeddb_close(conn) {
-  if(conn) {
-    console.debug('closing connection to database', conn.name);
-
-    // Ensure that indexeddb_is_open returns false
-    conn.onabort = null;
-
-    conn.close();
+// Requests to close 0 or more connections
+// Does not fail if no connections given or if any one connection is falsy
+// @param ...cons {spread} one or more parameters each of type IDBDatabase
+function indexeddb_close(...conns) {
+  for(const conn of conns) {
+    if(conn) {
+      console.debug('closing connection to database', conn.name);
+      // Ensure that indexeddb_is_open returns false
+      conn.onabort = null;
+      conn.close();
+    }
   }
 }
 

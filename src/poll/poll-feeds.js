@@ -27,6 +27,7 @@ function poll_feeds_context() {
 }
 
 async function poll_feeds(pfc) {
+  console.assert(pfc instanceof poll_feeds_context);
   console.log('poll_feeds start');
 
   if('onLine' in navigator && !navigator.onLine) {

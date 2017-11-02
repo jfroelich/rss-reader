@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/promises.js
 // import net/fetch.js
 // import net/url.js
 
@@ -11,63 +12,40 @@
 // @param doc {Document}
 // @param timeout_ms {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
-// TODO: change to return status
 async function image_size_filter(doc, allowed_protocols, timeout_ms) {
   console.assert(doc instanceof Document);
 
-  const default_allowed_protocols = ['data:', 'http:', 'https:'];
+  const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];
   if(typeof allowed_protocols === 'undefined') {
-    allowed_protocols = default_allowed_protocols;
+    allowed_protocols = DEFAULT_ALLOWED_PROTOCOLS;
   }
 
-  // Duck typing assertion, I believe includes is the only functionality of
-  // the parameter we care about. So if this trait is present we can infer the
-  // rest and assume the parameter is usable.
+  // Duck typing assertion
   console.assert(typeof allowed_protocols.includes === 'function');
 
-  // TODO: returning count isn't that important. Maybe just return status
-  // code.
-
-  let modified_image_count = 0;
   if(!doc.body) {
-    return modified_image_count;
+    return RDR_OK;
   }
 
+  // Get all images
   const images = doc.body.getElementsByTagName('img');
-  const results = await image_size_filter_get_all_dimensions(images,
-    allowed_protocols, timeout_ms);
+
+  // Concurrently process each image
+  const promises = [];
+  for(const image of images) {
+    const promise = image_size_filter_get_dimensions(image, allowed_protocols,
+      timeout_ms);
+    promises.push(promise);
+  }
+  const results = await promise_every(promises);
 
   for(const result of results) {
     if(result) {
       result.image.setAttribute('width', '' + result.width);
       result.image.setAttribute('height', '' + result.height);
-      modified_image_count++;
     }
   }
-  return modified_image_count;
-}
-
-// Concurrently process each image
-// TODO: inline
-function image_size_filter_get_all_dimensions(images, allowed_protocols,
-  timeout_ms) {
-  const promises = [];
-  for(const image of images) {
-    const promise = image_size_filter_get_dimensions_silently(image,
-      allowed_protocols, timeout_ms);
-    promises.push(promise);
-  }
-  return Promise.all(promises);
-}
-
-async function image_size_filter_get_dimensions_silently(image,
-  allowed_protocols, timeout_ms) {
-  try {
-    return await image_size_filter_get_dimensions(image, allowed_protocols,
-      timeout_ms);
-  } catch(error) {
-
-  }
+  return RDR_OK;
 }
 
 async function image_size_filter_get_dimensions(image, allowed_protocols,

@@ -34,13 +34,17 @@ function reader_parse_feed(xml_string, request_url, response_url,
   try {
     base_url = new URL(feed.link);
   } catch(error) {
-    // Ignore for now. If entries are relative they will all be filtered
-    // later.
+    // Ignore
   }
 
   if(process_entries) {
-    result.entries = reader_feed_parse_setup_entries(parse_result.entries,
-      base_url);
+    let entries = parse_result.entries;
+    for(const entry of entries) {
+      reader_parse_feed_resolve(entry, base_url);
+      reader_parse_feed_coerce_entry(entry);
+    }
+
+    result.entries = reader_parse_feed_dedup(entries);
   }
 
   return result;
@@ -74,19 +78,6 @@ function reader_feed_parse_setup_feed(feed, request_url, response_url,
   feed.dateLastModified = last_mod_date;
 }
 
-function reader_feed_parse_setup_entries(entries, base_url) {
-  for(const entry of entries) {
-    reader_parse_feed_resolve(entry, base_url);
-  }
-
-  for(const entry of entries) {
-    reader_parse_feed_coerce_entry(entry);
-  }
-
-  entries = reader_parse_feed_filter_dup_entries(entries);
-  return entries;
-}
-
 
 // If the entry has a link property, canonicalize and normalize it
 // base_url is optional, generally should be feed.link
@@ -118,7 +109,8 @@ function reader_parse_feed_coerce_entry(entry) {
   }
 }
 
-function reader_parse_feed_filter_dup_entries(entries) {
+// Filter duplicate entries by comparing urls
+function reader_parse_feed_dedup(entries) {
   const distinct_entries = [];
   const seen_urls = [];
 

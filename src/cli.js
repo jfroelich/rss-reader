@@ -15,8 +15,7 @@ async function cli_refresh_feed_icons() {
       favicon_db_open()]);
     status = await reader_storage_refresh_feed_icons(reader_conn, icon_conn);
   } finally {
-    indexeddb_close(reader_conn);
-    indexeddb_close(icon_conn);
+    indexeddb_close(reader_conn, icon_conn);
   }
 
   return status;
@@ -49,8 +48,7 @@ async function cli_poll_feeds() {
       favicon_db_open()]);
     await poll_feeds(pfc);
   } finally {
-    indexeddb_close(pfc.reader_conn);
-    indexeddb_close(pfc.icon_conn);
+    indexeddb_close(pfc.reader_conn, pfc.icon_conn);
   }
 
   // TODO: once poll_feeds returns status, use that as return value
