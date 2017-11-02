@@ -2,7 +2,7 @@
 
 // import opml-document.js
 // import opml-outline.js
-// import xml.js
+// import xml-utils.js
 
 // Triggers the download of an OPML-formatted file containing the given feeds
 // @param feeds {Array}
@@ -19,7 +19,7 @@ async function readerExportFeeds(feeds, title, fileName) {
     opmlDocumentAppendOutlineObject(doc, opmlOutlineFromFeed(feed));
   }
 
-  const blob = xmlToBlob(doc);
+  const blob = XMLUtils.toBlob(doc);
   const url = URL.createObjectURL(blob);
 
   const anchor = document.createElement('a');

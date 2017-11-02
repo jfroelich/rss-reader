@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/errors.js
-// import xml.js
+// import xml-parser.js
 
 // TODO: should be using "item" terminology instead of "entry" here
 
@@ -9,7 +9,7 @@
 // @param xml {String} the text to parse
 // @returns {Object} an object representing the parsed feed and its entries
 function feedParseFromString(xml) {
-  let [status, doc] = xmlParseFromString(xml);
+  let [status, doc] = XMLParser.parse(xml);
   if(status !== RDR_OK) {
     console.warn('parse feed error');
 
