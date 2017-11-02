@@ -8,7 +8,7 @@ const MIMEUtils = {};
 MIMEUtils.HTML = 'text/html';
 MIMEUtils.XML = 'application/xml';
 
-const MIMEUtils.EXTENSION_TYPE_MAP = {
+MIMEUtils.EXTENSION_TYPE_MAP = {
   'ai':   'application/postscript',
   'aif':  'audio/aiff',
   'atom': 'application/atom+xml',
@@ -159,7 +159,6 @@ MIMEUtils.isMimeType = function(mimeType) {
     mimeType.indexOf(' ') === -1;
 };
 
-
 // TODO: this is incorrect in several cases. In particular, mime types
 // such as application/xml should be considered textual.
 MIMEUtils.isBinary = function(mimeType) {
@@ -175,7 +174,6 @@ MIMEUtils.isBinary = function(mimeType) {
   const binarySuperTypes = ['application', 'audio', 'image', 'video'];
   return binarySuperTypes.includes(superType);
 };
-
 
 MIMEUtils.normalize = function(mimeType) {
   console.assert(MIMEUtils.isMimeType(mimeType));
