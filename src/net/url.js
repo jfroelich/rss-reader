@@ -157,16 +157,7 @@ function urlSniffIsBinary(url) {
     return false;
   }
 
-  // TODO: delegate to mime-utils.js function MIMEUtils.isBinary
-
-  const forwardSlashPosition = mimeType.indexOf('/');
-  // All mime types resulting from the lookup should contain a slash.
-  // This is an extra check
-  console.assert(forwardSlashPosition !== -1);
-
-  const superType = mimeType.substring(0, forwardSlashPosition);
-  const binarySuperTypes = ['application', 'audio', 'image', 'video'];
-  return binarySuperTypes.includes(superType);
+  return MIMEUtils.isBinary(mimeType);
 }
 
 // Returns a file name without its extension (and without the '.')

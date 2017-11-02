@@ -151,7 +151,34 @@ MIMEUtils.fromContentType = function(contentType) {
   return MIMEUtils.normalize(mimeType);
 };
 
+// A basic trivial test of whether the parameter represents a mime type.
+// Inaccurate. No false negatives but several false positives.
+MIMEUtils.isMimeType = function(mimeType) {
+  return typeof mimeType === 'string' &&
+    mimeType.indexOf('/') !== -1 &&
+    mimeType.indexOf(' ') === -1;
+};
+
+
+// TODO: this is incorrect in several cases. In particular, mime types
+// such as application/xml should be considered textual.
+MIMEUtils.isBinary = function(mimeType) {
+  // TODO: this should be a strong assertion
+  console.assert(MIMEUtils.isMimeType(mimeType));
+
+  const slashPosition = mimeType.indexOf('/');
+  const superType = mimeType.substring(0, slashPosition);
+
+  // TODO: use a switch statement and introduce special cases for
+  // application subtype
+
+  const binarySuperTypes = ['application', 'audio', 'image', 'video'];
+  return binarySuperTypes.includes(superType);
+};
+
+
 MIMEUtils.normalize = function(mimeType) {
+  console.assert(MIMEUtils.isMimeType(mimeType));
   return stringRemoveWhitespace(mimeType).toLowerCase();
 };
 
