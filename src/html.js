@@ -116,8 +116,6 @@ function htmlTruncate(htmlString, position, extensionString) {
     doc.documentElement.outerHTML : doc.body.innerHTML;
 }
 
-
-
 // When htmlString is a fragment, it will be inserted into a new document
 // using a default template provided by the browser, that includes a document
 // element and usually a body. If not a fragment, then it is merged into a
@@ -141,7 +139,6 @@ function htmlParseFromString(htmlString) {
   // the page more responsive. See
   // https://www.chromestatus.com/feature/5745543795965952
   // This should never appear because the DOM is not live.
-
 
   // doc is guaranteed defined regardless of the validity of htmlString
   const doc = parser.parseFromString(htmlString, MIMEUtils.HTML);

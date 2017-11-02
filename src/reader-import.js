@@ -7,7 +7,7 @@
 // import opml-parse.js
 // import favicon.js
 // import feed.js
-// import file.js
+// import base/file.js
 // import reader-db.js
 // import subscription.js
 

@@ -77,8 +77,7 @@ MIMEUtils.EXTENSION_TYPE_MAP = {
   'ps':  'application/postscript',
   'rar':  'application/octet-stream',
 
-  // TODO: need to fix url sniffing to uncomment
-  // See net/url.js
+  // TODO: need to fix MIMEUtils.isBinary
   // 'rdf': 'application/rdf+xml',
   // 'rss':  'application/rss+xml',
 

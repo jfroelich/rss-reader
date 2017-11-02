@@ -1,7 +1,5 @@
 'use strict';
 
-// TODO: move to base folder
-
 // Returns a promise that resolves to the text of the file
 function fileReadAsText(file) {
   console.assert(file instanceof File);
