@@ -16,7 +16,7 @@ async function test() {
   let conn;
   try {
     conn = await indexedDBOpen(name, version, readerDbOnUpgradeNeeded);
-    console.assert(indexedDBIsOpen(conn));
+    assert(indexedDBIsOpen(conn));
     indexedDBClose(conn);
 
     if(indexedDBIsOpen(conn)) {
@@ -33,7 +33,7 @@ async function test() {
   } finally {
     if(!close_requested) {
       indexedDBClose(conn);
-      console.assert(!indexedDBIsOpen(conn));
+      assert(!indexedDBIsOpen(conn));
     }
   }
 

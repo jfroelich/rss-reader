@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import net/url-utils.js
 
 // Applies a set of rules to a url object and returns a modified url object
@@ -7,7 +8,7 @@
 // @param url {String}
 // @returns {String}
 function rewriteURL(url) {
-  console.assert(URLUtils.isCanonical(url));
+  assert(URLUtils.isCanonical(url));
 
   const urlObject = new URL(url);
   if(urlObject.hostname === 'news.google.com' &&

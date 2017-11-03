@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import opml-document.js
 // import opml-outline.js
 // import xml-utils.js
@@ -10,7 +11,7 @@
 // @param fileName {String} optional
 // @returns {Number} status code
 async function readerExportFeeds(feeds, title, fileName) {
-  console.assert(Array.isArray(feeds));
+  assert(Array.isArray(feeds));
 
   const doc = opmlDocumentCreate();
   opmlDocumentSetTitle(doc, title);

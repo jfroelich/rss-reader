@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import net/url-utils.js
 // import dom.js
@@ -40,8 +41,8 @@ const LONESTAR_PATTERNS = [
 // @param doc {Document}
 // @param url {String} canonical document url
 function lonestarFilter(doc, url) {
-  console.assert(doc instanceof Document);
-  console.assert(URLUtils.isCanonical(url));
+  assert(doc instanceof Document);
+  assert(URLUtils.isCanonical(url));
 
   // Analysis is limited to descendants of body
   if(!doc.body) {
@@ -79,8 +80,8 @@ function lonestarFilterIsPixel(image) {
 // @param image {Image}
 // @param documentHostname {String}
 function lonestarFilterHasTelemetrySource(image, documentHostname) {
-  console.assert(image instanceof Element);
-  console.assert(typeof documentHostname === 'string');
+  assert(image instanceof Element);
+  assert(typeof documentHostname === 'string');
 
   // This only looks at the src attribute. Using srcset or picture source is
   // exceedlingly rare mechanism for telemetry so ignore those channels.

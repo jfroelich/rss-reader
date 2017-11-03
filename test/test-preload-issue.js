@@ -12,7 +12,7 @@ async function testPreloadIssue() {
 
   const url = 'https://www.yahoo.com';
   const response = await fetch(url, options);
-  console.assert(response.ok);
+  assert(response.ok);
   const text = await response.text();
   console.log('Text:', {'text': text});
   return 'Test completed, request may be pending';

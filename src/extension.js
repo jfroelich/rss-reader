@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import reader-db.js
 
 function extensionIdleQuery(idlePeriodSecs) {
@@ -11,6 +12,7 @@ function extensionIdleQuery(idlePeriodSecs) {
 function extensionSetBadgeText(count) {
   count = count || 0;
   const text = count > 999 ? '1k+' : '' + count;
+  console.debug('setting badge text to', text);
   chrome.browserAction.setBadgeText({'text': text});
 }
 
@@ -78,7 +80,7 @@ async function extensionNotificationOnclick(event) {
 }
 
 function extensionPermissionsContains(permission) {
-  console.assert(typeof permission === 'string');
+  assert(typeof permission === 'string');
   return new Promise(function executor(resolve, reject) {
     const descriptor = {'permissions': [permission]};
     chrome.permissions.contains(descriptor, resolve);
@@ -86,7 +88,7 @@ function extensionPermissionsContains(permission) {
 }
 
 function extensionPermissionsRequest(permission) {
-  console.assert(typeof permission === 'string');
+  assert(typeof permission === 'string');
   return new Promise(function executor(resolve, reject) {
     const descriptor = {'permissions': [permission]};
     chrome.permissions.request(descriptor, resolve);
@@ -94,7 +96,7 @@ function extensionPermissionsRequest(permission) {
 }
 
 function extensionPermissionsRemove(permission) {
-  console.assert(typeof permission === 'string');
+  assert(typeof permission === 'string');
   return new Promise(function executor(resolve, reject) {
     const descriptor = {'permissions': [permission]};
     chrome.permissions.remove(descriptor, resolve);

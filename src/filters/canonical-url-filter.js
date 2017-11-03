@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import net/url-utils.js
 // import dom.js
@@ -33,8 +34,8 @@ const CANONICAL_URL_FILTER_MAP = {
 };
 
 function canonicalURLFilter(doc, baseURL) {
-  console.assert(doc instanceof Document);
-  console.assert(URLUtils.isURL(baseURL));
+  assert(doc instanceof Document);
+  assert(URLUtils.isURL(baseURL));
 
   const srcSelector = canonicalURLFilterCreateSelector();
 

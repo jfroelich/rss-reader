@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import net/fetch.js
 // import poll/poll-entry.js
@@ -28,7 +29,7 @@ function PollFeedsContext() {
 }
 
 async function pollFeeds(pfc) {
-  console.assert(pfc instanceof PollFeedsContext);
+  assert(pfc instanceof PollFeedsContext);
   console.log('pollFeeds start');
 
   if('onLine' in navigator && !navigator.onLine) {
@@ -116,8 +117,8 @@ function pollFeedsFeedIsPollable(feed, recencyPeriodMs) {
 // @throws {Error} any exception thrown by fetchFeed
 // @returns {status} status
 async function pollFeedsPollFeed(feed, pfc) {
-  console.assert(feedIsFeed(feed));
-  console.assert(pfc instanceof PollFeedsContext);
+  assert(feedIsFeed(feed));
+  assert(pfc instanceof PollFeedsContext);
 
   const url = feedGetTopURL(feed);
 

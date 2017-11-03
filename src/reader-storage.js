@@ -1,13 +1,6 @@
 'use strict';
 
-// reader storage is a layer between the app and reader-db.js that provides
-// database related functionality with additional pre and post conditions and
-// processing. For example, where as a reader-db function simply stores an
-// object exactly as is, the corresponding wrapper function here attaches
-// additional functionality such as sanitization and setting defaults. This
-// layer also composes components together to bring auxillary
-// functionality such as notifications or badge text update.
-
+// import base/assert.js
 // import base/indexeddb.js
 // import base/object.js
 // import base/errors.js
@@ -18,20 +11,20 @@
 // import reader-badge.js
 // import reader-db.js
 
-// Scans the database for archivable entries and archives them
+// Archives certain entries in the database
 // @param maxAgeMs {Number} how long before an entry is considered
 // archivable (using date entry created), in milliseconds
 // @returns {Number} status
 async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
   console.log('readerStorageArchiveEntries start', maxAgeMs);
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
 
   const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
   if(typeof maxAgeMs === 'undefined') {
     maxAgeMs = TWO_DAYS_MS;
   }
 
-  console.assert(numberIsPositiveInteger(maxAgeMs));
+  assert(numberIsPositiveInteger(maxAgeMs));
 
   const currentDate = new Date();
   function isArchivable(entry) {
@@ -86,8 +79,8 @@ async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
 // @param id {Number} an entry id
 async function readerStorageMarkRead(conn, id) {
   console.log('readerStorageMarkRead id', id);
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(entryIsValidId(id));
+  assert(indexedDBIsOpen(conn));
+  assert(entryIsValidId(id));
 
   let entry;
   try {
@@ -127,8 +120,8 @@ async function readerStorageMarkRead(conn, id) {
 }
 
 async function readerStoragePutFeed(feed, conn) {
-  console.assert(feedIsFeed(feed));
-  console.assert(indexedDBIsOpen(conn));
+  assert(feedIsFeed(feed));
+  assert(indexedDBIsOpen(conn));
 
   let storable = feedSanitize(feed);
   storable = objectFilterEmptyProps(storable);
@@ -149,8 +142,8 @@ async function readerStoragePutFeed(feed, conn) {
 // @param entry {Object} an entry object
 // @param conn {IDBDatabase} an open indexedDB database connection
 async function readerStorageAddEntry(entry, conn) {
-  console.assert(entryIsEntry(entry));
-  console.assert(indexedDBIsOpen(conn));
+  assert(entryIsEntry(entry));
+  assert(indexedDBIsOpen(conn));
 
   const san = entrySanitize(entry);
   const storable = objectFilterEmptyProps(san);
@@ -172,7 +165,7 @@ async function readerStorageAddEntry(entry, conn) {
 // @param conn {IDBDatabase} an open database connection
 // TODO: update all callers to use limit, implement cli
 async function readerStorageRemoveOrphans(conn, limit) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
 
   let feedIds;
   try {
@@ -181,7 +174,7 @@ async function readerStorageRemoveOrphans(conn, limit) {
     console.warn(error);
     return RDR_ERR_DB;
   }
-  console.assert(feedIds);
+  assert(feedIds);
 
   function isOrphan(entry) {
     const id = entry.feed;
@@ -313,7 +306,7 @@ async function readerStorageUpdateIcon(feed, readerConn, iconConn) {
   query.url = feedCreateIconLookupURL(feed);
 
   // feedCreateIconLookupURL should always return a url. double check.
-  console.assert(query.url);
+  assert(query.url);
 
   // Lookup the favicon url
   // TODO: once faviconLookup returns a status, check if it is ok, and if not,

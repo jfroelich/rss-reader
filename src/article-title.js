@@ -1,9 +1,10 @@
 'use strict';
 
+// import base/assert.js
 // import base/string.js
 
 function articleTitleFilterPublisher(title) {
-  console.assert(typeof title === 'string');
+  assert(typeof title === 'string');
 
   // TODO: tolerate alternate whitespace expressions
 

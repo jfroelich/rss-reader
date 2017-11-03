@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import net/url-utils.js
 
@@ -9,7 +10,7 @@
 
 // @param url {String}
 function hostTemplateFilter(doc, url) {
-  console.assert(doc instanceof Document)
+  assert(doc instanceof Document)
 
   const hostSelectorMap = {};
   hostSelectorMap['www.washingtonpost.com'] = [

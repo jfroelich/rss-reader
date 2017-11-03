@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import net/fetch.js
 // import net/url-utils.js
@@ -14,7 +15,7 @@
 
 
 function PollEntryContext() {
-  console.assert(this !== window);
+  assert(this !== window);
   this.readerConn = null;
   this.iconConn = null;
   this.feedFaviconURL = null;
@@ -29,8 +30,8 @@ function PollEntryContext() {
 // Expects to be bound to a PollEntryContext
 // @param entry {Object}
 async function pollEntry(entry) {
-  console.assert(this instanceof PollEntryContext);
-  console.assert(entryIsEntry(entry));
+  assert(this instanceof PollEntryContext);
+  assert(entryIsEntry(entry));
 
   // Cannot assume entry has url
   if(!entryHasURL(entry)) {
@@ -111,11 +112,11 @@ async function pollEntryFetch(url, timeout) {
 // @param entry {Object} a feed entry
 // @param document {Document} optional, pre-fetched document
 async function pollEntryUpdateIcon(entry, document) {
-  console.assert(entryIsEntry(entry));
-  console.assert(this instanceof PollEntryContext);
+  assert(entryIsEntry(entry));
+  assert(this instanceof PollEntryContext);
 
   if(document) {
-    console.assert(document instanceof Document);
+    assert(document instanceof Document);
   }
 
   const query = new FaviconQuery();

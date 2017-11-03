@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 
 // TODO: rename. It isn't clear what this is a blacklist of. Rename to something
@@ -13,7 +14,7 @@ const BLACKLIST_FILTER_SELECTOR = [
 ].join(',');
 
 function blacklistFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
   const documentElement = doc.documentElement;
   const elements = doc.querySelectorAll(BLACKLIST_FILTER_SELECTOR);
 

@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import net/url-utils.js
 // import third-party/parseSrcset.js
 
@@ -10,7 +11,7 @@
 // @param selectorText {String}
 // @returns rule {???}
 function domFindCSSRule(sheet, selectorText) {
-  console.assert(sheet);
+  assert(sheet);
 
   for(const rule of sheet.cssRules) {
     if(rule.selectorText === selectorText) {
@@ -36,9 +37,9 @@ function domIsValidElementName(name) {
 // Replace an element with its children. Special care is taken to add spaces
 // if the operation would result in adjacent text nodes.
 function domUnwrap(element) {
-  console.assert(element instanceof Element);
+  assert(element instanceof Element);
   // Calling unwrap on an orphan is always an error
-  console.assert(element.parentNode, 'orphaned element');
+  assert(element.parentNode, 'orphaned element');
 
   const parentElement = element.parentNode;
   const previousSibling = element.previousSibling;
@@ -86,7 +87,7 @@ function domRename(element, newName, copyAttributes) {
 
   // According to MDN docs, createElement(null) works like createElement("null")
   // so, to avoid that, treat missing name as an error
-  console.assert(domIsValidElementName(newName));
+  assert(domIsValidElementName(newName));
 
   if(typeof copyAttributes === 'undefined') {
     copyAttributes = true;
@@ -205,26 +206,26 @@ function domIsImage(image) {
 // TODO: also has source if within picture and picture has <source>, or
 // alternatively rename to image_has_source_attribute
 function domImageHasSource(image) {
-  console.assert(domIsImage(image));
+  assert(domIsImage(image));
   return image.hasAttribute('src') || domImageHasSrcset(image);
 }
 
 // Return true if image has a valid src attribute value
 function domImageHasValidSource(image) {
-  console.assert(domIsImage(image));
+  assert(domIsImage(image));
   return URLUtils.isValid(image.getAttribute('src'));
 }
 
 // Return true if image has a non-empty srcset attribute value
 function domImageHasSrcset(image) {
-  console.assert(domIsImage(image));
+  assert(domIsImage(image));
   const imageSrcset = image.getAttribute('srcset');
   return imageSrcset && imageSrcset.trim();
 }
 
 // Searches for and returns the corresponding figcaption element
 function domFindCaption(image) {
-  console.assert(domIsImage(image));
+  assert(domIsImage(image));
   let figcaption;
   const figure = image.closest('figure');
   if(figure) {
@@ -249,10 +250,10 @@ function domRemoveImage(image) {
 // TODO: change to varargs, find the LCAs of whatever args given, instead of
 // only 2. change to (...nodes)
 function domFindLCA(node1, node2) {
-  console.assert(node1 instanceof Node);
-  console.assert(node2 instanceof Node);
-  console.assert(node1 !== node2);
-  console.assert(node1.ownerDocument === node2.ownerDocument);
+  assert(node1 instanceof Node);
+  assert(node2 instanceof Node);
+  assert(node1 !== node2);
+  assert(node1.ownerDocument === node2.ownerDocument);
 
   const ancestors1 = domAncestors(node1);
   const ancestors2 = domAncestors(node2);
@@ -272,13 +273,13 @@ function domFindLCA(node1, node2) {
     }
   }
 
-  console.assert(false);
+  assert(false);
 }
 
 // Returns an array of ancestors, from deepest to shallowest.
 // The node itself is not included.
 function domAncestors(node) {
-  console.assert(node instanceof Node);
+  assert(node instanceof Node);
   const ancestors = [];
   for(let parent = node.parentNode; parent; parent = parent.parentNode) {
     ancestors.push(parent);
@@ -290,7 +291,7 @@ function domAncestors(node) {
 // by parseSrcset (third party library)
 // @returns {String} a string suitable for storing as srcset attribute value
 function domSrcsetSerialize(descriptors) {
-  console.assert(Array.isArray(descriptors));
+  assert(Array.isArray(descriptors));
 
   const descriptorStrings = [];
   for(const descriptor of descriptors) {
@@ -343,7 +344,7 @@ function domSrcsetParseFromString(srcset) {
 // Returns true if an element, or any of its ancestors, is hidden.
 // @param element {Element}
 function domIsHidden(element) {
-  console.assert(element instanceof Element);
+  assert(element instanceof Element);
 
   const doc = element.ownerDocument;
   const body = doc.body;
@@ -374,7 +375,7 @@ function domIsHidden(element) {
 
   // Ignore detached elements and elements outside of body
   // TODO: this is a weak assert. Decide if it should be a strong assert
-  console.assert(body.contains(element));
+  assert(body.contains(element));
 
   // Quickly test the element itself before testing ancestors, with the hope
   // of avoiding checking ancestors
@@ -406,7 +407,7 @@ function domIsHidden(element) {
 // Returns true if an element is hidden according to its inline style. Makes
 // mostly conservative guesses and misses a few cases.
 function domIsHiddenInline(element) {
-  console.assert(element instanceof Element);
+  assert(element instanceof Element);
 
   // BUG: seeing cannot read length of undefined in console. My understanding
   // is that all elements have a style property. So perhaps this is not
@@ -418,7 +419,7 @@ function domIsHiddenInline(element) {
   const style = element.style;
 
   // TEMP: for some reason this assertion occasionally fails
-  console.assert(style);
+  assert(style);
 
   // TEMP: researching bug
   if(!style) {

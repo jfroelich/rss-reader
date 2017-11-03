@@ -1,11 +1,12 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import filters/filter-helpers.js
 // import net/url-utils.js
 
 function scriptAnchorFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   // Restrict analysis to body descendants
   if(!doc.body) {

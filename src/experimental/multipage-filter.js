@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import net/fetch.js
 // import pagination.js
 
@@ -11,7 +12,7 @@
 // @param location {String} url of the document
 // @param timeoutMs {Number} timeout per page fetch
 async function multipageFilter(doc, location, timeoutMs) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
   const lcaMaxDistance = 3;
   const anchors = paginationFindAnchors(doc, location, lcaMaxDistance);
   if(!anchors.length) {

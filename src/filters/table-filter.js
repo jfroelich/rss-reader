@@ -1,12 +1,13 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import filters/leaf-filter.js
 // import filters/filter-helpers.js
 // import dom.js
 
 function tableFilter(doc, scanLimit) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   if(!doc.body) {
     return RDR_OK;

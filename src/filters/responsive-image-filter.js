@@ -1,10 +1,11 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import dom.js
 
 function responsiveImageFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   if(!doc.body) {
     return RDR_OK;

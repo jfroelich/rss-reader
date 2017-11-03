@@ -1,11 +1,12 @@
 'use strict';
 
+// import base/assert.js
 // import filters/filter-helpers.js
 // import dom.js
 
 // TODO: make a github issue about optimizing recursive unwrap
 function hiddenFilter(doc) {
-  console.assert(doc instanceof Document)
+  assert(doc instanceof Document)
   const body = doc.body;
 
   // Restrict analysis to body descendants

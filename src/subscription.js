@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/object.js
 // import net/fetch.js
 // import feed-coerce-from-response.js
@@ -21,10 +22,10 @@ function SubscriptionContext() {
 // id.
 async function subscriptionAdd(feed) {
   console.log('subscriptionAdd', feed);
-  console.assert(this instanceof SubscriptionContext);
-  console.assert(indexedDBIsOpen(this.readerConn));
-  console.assert(indexedDBIsOpen(this.iconConn));
-  console.assert(feedIsFeed(feed));
+  assert(this instanceof SubscriptionContext);
+  assert(indexedDBIsOpen(this.readerConn));
+  assert(indexedDBIsOpen(this.iconConn));
+  assert(feedIsFeed(feed));
 
   if(!feedHasURL(feed)) {
     return {'status' : RDR_EINVAL};
@@ -152,10 +153,10 @@ function subscriptionAddAll(feeds) {
 }
 
 async function subscriptionRemove(feed) {
-  console.assert(this instanceof SubscriptionContext);
-  console.assert(indexedDBIsOpen(this.readerConn));
-  console.assert(feedIsFeed(feed));
-  console.assert(feedIsValidId(feed.id));
+  assert(this instanceof SubscriptionContext);
+  assert(indexedDBIsOpen(this.readerConn));
+  assert(feedIsFeed(feed));
+  assert(feedIsValidId(feed.id));
 
   console.log('subscriptionRemove id', feed.id);
 

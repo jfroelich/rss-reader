@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/indexeddb.js
 // import article-title.js
 // import entry-css.js
@@ -48,7 +49,7 @@ function slideshowSlideRemove(slideElement) {
 
 // TODO: visual feedback in event of an error?
 async function slideshowSlideMarkRead(conn, slideElement) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
 
   // This is normal and not an error
   if(slideElement.hasAttribute('read')) {
@@ -295,7 +296,7 @@ async function slideshowShowNextSlide() {
 
 function slideshowCleanupOnAppend() {
   // Weakly assert as this is trivial
-  console.assert(slideshowCurrentSlide, 'slideshowCurrentSlide is undefined');
+  assert(slideshowCurrentSlide, 'slideshowCurrentSlide is undefined');
 
   const maxSlideCount = 6;
   const containerElement = document.getElementById('slideshow-container');

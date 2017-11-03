@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/number.js
 // import base/errors.js
 // import filters/filter-helpers.js
@@ -7,13 +8,13 @@
 // @param maxTextLength {Number} optional, if number of non-tag characters
 // within emphasis element is greater than this, then the element is filtered
 function emphasisFilter(doc, maxTextLength) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   if(typeof maxTextLength === 'undefined') {
     maxTextLength = 0;
   }
 
-  console.assert(numberIsPositiveInteger(maxTextLength));
+  assert(numberIsPositiveInteger(maxTextLength));
 
   // Restrict analysis to body
   if(!doc.body) {

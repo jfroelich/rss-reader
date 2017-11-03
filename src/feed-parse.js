@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import xml-parser.js
 
@@ -27,7 +28,7 @@ function feedParseFromString(xml) {
 // @param document {Document} an XML document representing a feed
 // @returns {Object} a simple object with properties feed and entries
 function feedParseUnmarshallXML(document) {
-  console.assert(document);
+  assert(document instanceof Document);
   const documentElement = document.documentElement;
 
   const emptyResult = {
@@ -318,8 +319,8 @@ function feedParseFindChildElement(parentElement, predicate) {
 }
 
 function feedParseFindChildElementByName(parent, name) {
-  console.assert(parent instanceof Element);
-  console.assert(typeof name === 'string');
+  assert(parent instanceof Element);
+  assert(typeof name === 'string');
 
   const normalName = name.toLowerCase();
   for(let child = parent.firstElementChild; child;

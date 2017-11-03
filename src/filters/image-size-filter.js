@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/promises.js
 // import net/fetch.js
 // import net/url-utils.js
@@ -14,7 +15,7 @@
 // @param timeoutMs {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
 async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];
   if(typeof allowedProtocols === 'undefined') {
@@ -22,7 +23,7 @@ async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
   }
 
   // Duck typing assertion
-  console.assert(typeof allowedProtocols.includes === 'function');
+  assert(typeof allowedProtocols.includes === 'function');
 
   if(!doc.body) {
     return RDR_OK;

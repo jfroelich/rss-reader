@@ -17,7 +17,7 @@ class XMLParser {
     // NOTE: parseFromString generates a default document with an embedded
     // error for invalid input; does not throw
     const doc = parser.parseFromString(xml, MIMEUtils.XML);
-    console.assert(doc instanceof Document);
+    assert(doc instanceof Document);
 
     // This cannot tell the difference between documents where the parser
     // introduced a new element and documents containing the element in the

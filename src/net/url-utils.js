@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import net/mime-utils.js
 
 // TODO: impose length cap on url strings
@@ -12,7 +13,7 @@ const URLUtils = {};
 // @param url {String} input url
 // @returns {Boolean} true if the url is canonical, otherwise false
 URLUtils.isCanonical = function(url) {
-  console.assert(typeof url === 'string');
+  assert(typeof url === 'string');
   return /^\s*[a-z]+:/i.test(url);
 };
 
@@ -34,8 +35,8 @@ URLUtils.hasScriptProtocol = function(url) {
 // @param baseURL {URL}
 // @returns {URL} the absolute url, or undefined if an error occurred
 URLUtils.resolve = function(url, baseURL) {
-  console.assert(typeof url === 'string');
-  console.assert(baseURL instanceof URL);
+  assert(typeof url === 'string');
+  assert(baseURL instanceof URL);
 
   let canonicalURL;
   try {
@@ -48,7 +49,7 @@ URLUtils.resolve = function(url, baseURL) {
 // @param url {String}
 // @returns {String}
 URLUtils.getHostname = function(url) {
-  console.assert(typeof url === 'string');
+  assert(typeof url === 'string');
   try {
     const urlObject = new URL(url);
     return urlObject.hostname;
@@ -86,7 +87,7 @@ URLUtils.isValidPath = function(path) {
 // @param path {String}
 // @returns {String}
 URLUtils.getExtensionFromPath = function(path) {
-  console.assert(URLUtils.isValidPath(path));
+  assert(URLUtils.isValidPath(path));
 
   // Fail if the path is probably too short to contain an extension
   const MIN_PATH_LENGTH = '/a.b'.length;
@@ -127,7 +128,7 @@ URLUtils.getExtensionFromPath = function(path) {
 // Return true if url probably represents a binary resource
 // @param url {URL} url object
 URLUtils.sniffIsBinary = function(url) {
-  console.assert(URLUtils.isURL(url));
+  assert(URLUtils.isURL(url));
 
   // Assume data url objects are probably non binary
   if(url.protocol === 'data:') {
@@ -150,14 +151,14 @@ URLUtils.sniffIsBinary = function(url) {
 
 // Returns a file name without its extension (and without the '.')
 URLUtils.filterExtensionFromFileName = function(fileName) {
-  console.assert(typeof fileName === 'string');
+  assert(typeof fileName === 'string');
   const index = fileName.lastIndexOf('.');
   return index < 0 ? fileName : fileName.substring(0, index);
 };
 
 // TODO: revert to accepting URL as input
 URLUtils.getFileNameFromPath = function(path) {
-  console.assert(URLUtils.isValidPath(path));
+  assert(URLUtils.isValidPath(path));
   const index = path.lastIndexOf('/');
   if(index > -1) {
     const indexPlus1 = index + 1;
@@ -181,8 +182,8 @@ URLUtils.isURL = function(value) {
 // @returns Boolean
 // TODO: change to accepting URL objects only
 URLUtils.hashlessEquals = function(url1, url2) {
-  console.assert(typeof url1 === 'string');
-  console.assert(typeof url2 === 'string');
+  assert(typeof url1 === 'string');
+  assert(typeof url2 === 'string');
 
   // Unmarshalling enables normalization and simple hash filtering
   // Allow url parsing errors to bubble.

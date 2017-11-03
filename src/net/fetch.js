@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/number.js
 // import net/mime-utils.js
 // import net/url-utils.js
@@ -109,7 +110,7 @@ async function fetchImageHead(url, timeoutMs) {
   const response = await fetchWithTimeout(url, options,
     timeoutMs, 'Fetch timed out ' + url);
 
-  console.assert(response);
+  assert(response);
 
   const contentType = response.headers.get('Content-Type');
 
@@ -142,14 +143,14 @@ async function fetchImageHead(url, timeoutMs) {
 // that works more like other fetches can be created, and to avoid confusion
 // TODO: it is possible this should be using the fetch API to avoid cookies?
 function fetchImage(url, timeoutMs) {
-  console.assert(url);
+  assert(url);
 
   if(typeof timeoutMs === 'undefined') {
     timeoutMs = 0;
   }
 
-  console.assert(Number.isInteger(timeoutMs));
-  console.assert(timeoutMs >= 0);
+  assert(Number.isInteger(timeoutMs));
+  assert(timeoutMs >= 0);
 
   // There is no simply way to share information between the promises, so
   // define this in outer scope shared between both promise bodies.
@@ -296,12 +297,12 @@ async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
 // TODO: if fetch succeeds, cancel the timeout
 // TODO: if timeout succeeds first, cancel the fetch
 function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
-  console.assert(URLUtils.isValid(url));
+  assert(URLUtils.isValid(url));
   const timeoutMsType = typeof timeoutMs;
 
   // If timeout is set then check its validity
   if(timeoutMsType !== 'undefined') {
-    console.assert(numberIsPositiveInteger(timeoutMs));
+    assert(numberIsPositiveInteger(timeoutMs));
   }
 
   const fetchPromise = fetch(url, options);
@@ -343,8 +344,8 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
 // @param responseURL {String} the value of the response.url property of the
 // Response object produced by calling fetch.
 function fetchURLChanged(requestURL, responseURL) {
-  console.assert(URLUtils.isCanonical(requestURL));
-  console.assert(URLUtils.isCanonical(responseURL));
+  assert(URLUtils.isCanonical(requestURL));
+  assert(URLUtils.isCanonical(responseURL));
 
   return requestURL !== responseURL &&
     !URLUtils.hashlessEquals(requestURL, responseURL);
@@ -357,7 +358,7 @@ const ResponseUtils = {};
 // @returns {Date} the value of Last-Modified, or undefined if error such as
 // no header present or bad date
 ResponseUtils.getLastModified = function(response) {
-  console.assert(response);
+  assert(response);
 
   const lastModifiedString = response.headers.get('Last-Modified');
   if(!lastModifiedString) {

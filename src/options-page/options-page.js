@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/indexeddb.js
 // import base/errors.js
 // import extension.js
@@ -23,7 +24,7 @@ optionsPageSettingsChannel.onmessageerror = function(event) {
 };
 
 function optionsPageShowSection(menuItemElement) {
-  console.assert(menuItemElement);
+  assert(menuItemElement);
 
   if(optionsPageCurrentMenuItem === menuItemElement) {
     return;
@@ -42,7 +43,7 @@ function optionsPageShowSection(menuItemElement) {
   // Show the new section
   const sectionId = menuItemElement.getAttribute('section');
   const sectionElement = document.getElementById(sectionId);
-  console.assert(sectionElement, 'No matching section ' + sectionId);
+  assert(sectionElement, 'No matching section ' + sectionId);
 
   sectionElement.style.display = 'block';
 
@@ -119,7 +120,7 @@ function optionsPageFeedListAppendFeed(feed) {
     inserted = true;
   }
 
-  console.assert(inserted);
+  assert(inserted);
   optionsPageUpdateFeedCount();
 }
 
@@ -134,7 +135,7 @@ async function optionsPageFeedListItemOnclick(event) {
   const feedIdString = feedListItem.getAttribute('feed');
   const feedIdNumber = parseInt(feedIdString, 10);
 
-  console.assert(!isNaN(feedIdNumber));
+  assert(!isNaN(feedIdNumber));
 
   // Load feed details from the database
   let conn, feed;
@@ -259,7 +260,7 @@ async function optionsPageSubscribeFormOnSubmit(event) {
     return;
   }
 
-  console.assert(subscribedFeed);
+  assert(subscribedFeed);
   optionsPageFeedListAppendFeed(subscribedFeed);
   const feedURL = feedGetTopURL(subscribedFeed);
 
@@ -322,7 +323,7 @@ function optionsPageFeedListRemoveFeed(feedId) {
   const feedElement = document.querySelector(
     `#feedlist li[feed="${feedId}"]`);
 
-  console.assert(feedElement);
+  assert(feedElement);
 
   feedElement.removeEventListener('click', optionsPageFeedListItemOnclick);
   feedElement.remove();
@@ -346,7 +347,7 @@ async function optionsPageUnsubscribeButtonOnclick(event) {
   const feed = {};
   const radix = 10;
   feed.id = parseInt(event.target.value, radix);
-  console.assert(feedIsValidId(feed.id));
+  assert(feedIsValidId(feed.id));
   let status;
   try {
     sc.readerConn = await readerDbOpen();
@@ -425,7 +426,7 @@ function optionsPageEnableBgProcessingCheckboxOnclick(event) {
 
 async function initBgProcessingCheckbox() {
   const checkbox = document.getElementById('enable-background');
-  console.assert(checkbox);
+  assert(checkbox);
 
   // TODO: this should be using a local storage variable and instead the
   // permission should be permanently defined.

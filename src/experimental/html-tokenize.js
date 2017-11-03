@@ -1,5 +1,7 @@
 'use strict';
 
+// import base/assert.js
+
 // Tokenizes an arbitrary string of html. Makes some effort to comply with
 // standards but does not fully comply.
 // Entities are not distinguished from text and are not validated.
@@ -12,7 +14,7 @@
 // within a tag
 function tokenizeHTML(htmlString, inputState = 0) {
 
-  console.assert(typeof htmlString === 'string');
+  assert(typeof htmlString === 'string');
 
   const inputStringLength = htmlString.length;
   if(inputStringLength < 1) {

@@ -1,10 +1,11 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 
 // Relocates certain misnested elements
 function adoptionAgencyFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   // Restrict analysis to body
   if(!doc.body) {

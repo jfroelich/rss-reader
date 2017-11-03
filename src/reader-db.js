@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/indexeddb.js
 // import base/number.js
 // import net/url-utils.js
@@ -56,8 +57,8 @@ function readerDbOnUpgradeNeeded(event) {
 // @param conn {IDBDatabase}
 // @param url {String}
 function readerDbFindFeedIdByURL(conn, url) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(URLUtils.isValid(url));
+  assert(indexedDBIsOpen(conn));
+  assert(URLUtils.isValid(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -71,7 +72,7 @@ function readerDbFindFeedIdByURL(conn, url) {
 
 // @param conn {IDBDatabase}
 function readerDbCountUnreadEntries(conn) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -89,8 +90,8 @@ function readerDbCountUnreadEntries(conn) {
 // @returns {Promise} a promise that resolves to an entry object, or undefined
 // if no matching entry was found
 function readerDbFindEntryById(conn, id) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(entryIsValidId(id));
+  assert(indexedDBIsOpen(conn));
+  assert(entryIsValidId(id));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -105,8 +106,8 @@ function readerDbFindEntryById(conn, id) {
 // @param conn {IDBDatabase}
 // @param url {String}
 function readerDbFindEntryByURL(conn, url) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(URLUtils.isValid(url));
+  assert(indexedDBIsOpen(conn));
+  assert(URLUtils.isValid(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -119,8 +120,8 @@ function readerDbFindEntryByURL(conn, url) {
 }
 
 function readerDbFindEntryIdsByFeedId(conn, feedId) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(feedIsValidId(feedId));
+  assert(indexedDBIsOpen(conn));
+  assert(feedIsValidId(feedId));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -133,8 +134,8 @@ function readerDbFindEntryIdsByFeedId(conn, feedId) {
 }
 
 function readerDbFindFeedById(conn, feedId) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(feedIsValidId(feedId));
+  assert(indexedDBIsOpen(conn));
+  assert(feedIsValidId(feedId));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -147,7 +148,7 @@ function readerDbFindFeedById(conn, feedId) {
 
 // TODO: is this in use? deprecate if not. I don't think it is
 function readerDbGetEntries(conn) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -159,7 +160,7 @@ function readerDbGetEntries(conn) {
 }
 
 function readerDbGetFeeds(conn) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -171,7 +172,7 @@ function readerDbGetFeeds(conn) {
 }
 
 function readerDbGetFeedIds(conn) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -185,10 +186,10 @@ function readerDbGetFeedIds(conn) {
 // Limit applies to the return array size, not num scanned
 // Limit should be > 0 (only weakly asserted).
 function readerDbFindEntries(conn, predicate, limit) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(typeof predicate === 'function');
-  console.assert(numberIsPositiveInteger(limit));
-  console.assert(limit > 0);
+  assert(indexedDBIsOpen(conn));
+  assert(typeof predicate === 'function');
+  assert(numberIsPositiveInteger(limit));
+  assert(limit > 0);
 
   return new Promise(function executor(resolve, reject) {
     const entries = [];
@@ -232,13 +233,13 @@ function readerDbFindEntries(conn, predicate, limit) {
 }
 
 function readerDbFindArchivableEntries(conn, predicate, limit) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(typeof predicate === 'function');
+  assert(indexedDBIsOpen(conn));
+  assert(typeof predicate === 'function');
 
   // Only using weak asserts. Caller should use a correct limit. Right now
   // an incorrect limit causes undefined behavior.
-  console.assert(numberIsPositiveInteger(limit));
-  console.assert(limit > 0);
+  assert(numberIsPositiveInteger(limit));
+  assert(limit > 0);
 
   // This does two layers of filtering. It would preferably but one but
   // a three property index involving a date gets complicated. Given the
@@ -278,7 +279,7 @@ function readerDbFindArchivableEntries(conn, predicate, limit) {
 }
 
 function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
 
   return new Promise(function executor(resolve, reject) {
     const entries = [];
@@ -315,9 +316,9 @@ function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
 }
 
 function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(feedIsValidId(feedId));
-  console.assert(Array.isArray(entryIds));
+  assert(indexedDBIsOpen(conn));
+  assert(feedIsValidId(feedId));
+  assert(Array.isArray(entryIds));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');
@@ -336,8 +337,8 @@ function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
 
 // This does not validate the entry, it just puts it as is
 function readerDbPutEntry(conn, entry) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(entryIsEntry(entry));
+  assert(indexedDBIsOpen(conn));
+  assert(entryIsEntry(entry));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
@@ -349,8 +350,8 @@ function readerDbPutEntry(conn, entry) {
 }
 
 function readerDbPutEntries(conn, entries) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(Array.isArray(entries));
+  assert(indexedDBIsOpen(conn));
+  assert(Array.isArray(entries));
 
   // TODO: this should not be setting dateUpdated that is caller's
   // responsibility
@@ -375,8 +376,8 @@ function readerDbPutEntries(conn, entries) {
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
 function readerDbPutFeed(conn, feed) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(feedIsFeed(feed));
+  assert(indexedDBIsOpen(conn));
+  assert(feedIsFeed(feed));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed', 'readwrite');
@@ -393,8 +394,8 @@ function readerDbPutFeed(conn, feed) {
 // @param conn {IDBDatabase}
 // @param ids {Array}
 function readerDbRemoveEntries(conn, ids) {
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(Array.isArray(ids));
+  assert(indexedDBIsOpen(conn));
+  assert(Array.isArray(ids));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');

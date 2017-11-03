@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/number.js
 // import base/sizeof.js
 // import base/errors.js
@@ -25,15 +26,15 @@ function entryIsValidId(id) {
 }
 
 function entryHasURL(entry) {
-  console.assert(entryIsEntry(entry));
+  assert(entryIsEntry(entry));
   return entry.urls && entry.urls.length;
 }
 
 // Returns the most last url, as a string, in the entry's url list. Throws an
 // error if the entry does not have urls.
 function entryGetTopURL(entry) {
-  console.assert(entryIsEntry(entry));
-  console.assert(entryHasURL(entry));
+  assert(entryIsEntry(entry));
+  assert(entryHasURL(entry));
   return entry.urls[entry.urls.length - 1];
 }
 
@@ -42,8 +43,8 @@ function entryGetTopURL(entry) {
 // normalized url already exists and therefore was not added
 // @throws {Error} if urlString is invalid
 function entryAppendURL(entry, urlString) {
-  console.assert(entryIsEntry(entry));
-  console.assert(URLUtils.isCanonical(urlString));
+  assert(entryIsEntry(entry));
+  assert(URLUtils.isCanonical(urlString));
 
   const urlObject = new URL(urlString);
   const normalUrlString = urlObject.href;
@@ -64,7 +65,7 @@ function entryAppendURL(entry, urlString) {
 // Returns a new entry object where fields have been sanitized. Impure
 function entrySanitize(inputEntry, authorMaxLength, titleMaxLength,
   contextMaxLength) {
-  console.assert(entryIsEntry(inputEntry));
+  assert(entryIsEntry(inputEntry));
 
   if(typeof authorMaxLength === 'undefined') {
     authorMaxLength = 200;
@@ -78,9 +79,9 @@ function entrySanitize(inputEntry, authorMaxLength, titleMaxLength,
     contextMaxLength = 50000;
   }
 
-  console.assert(numberIsPositiveInteger(authorMaxLength));
-  console.assert(numberIsPositiveInteger(titleMaxLength));
-  console.assert(numberIsPositiveInteger(contextMaxLength));
+  assert(numberIsPositiveInteger(authorMaxLength));
+  assert(numberIsPositiveInteger(titleMaxLength));
+  assert(numberIsPositiveInteger(contextMaxLength));
 
   const outputEntry = Object.assign({}, inputEntry);
 

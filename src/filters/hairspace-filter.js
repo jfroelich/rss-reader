@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 
 // TODO: this should be part of a general character normalization filter,
@@ -8,7 +9,7 @@
 // TODO: this needs testing to test whether it actually works, I don't think
 // this works.
 function hairspaceFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   // Restrict analysis to body descendants. While hairspaces can occur
   // outside of body, we don't care about normalizing them, because they will

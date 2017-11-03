@@ -1,14 +1,15 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import opml-outline.js
 
 
 function opmlDocumentSetTitle(doc, title) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   const titleVarType = typeof title;
-  console.assert(titleVarType === 'undefined' || titleVarType === 'string');
+  assert(titleVarType === 'undefined' || titleVarType === 'string');
 
   let titleElement = doc.querySelector('title');
   if(title) {
@@ -66,7 +67,7 @@ function opmlDocumentCreate() {
 }
 
 function opmlGetOutlineElements(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
   return doc.querySelectorAll('opml > body > outline');
 }
 
@@ -80,7 +81,7 @@ function opmlGetOutlineObjects(doc) {
 }
 
 function opmlRemoveOutlinesWithInvalidTypes(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   const elements = opmlGetOutlineElements(doc);
 
@@ -96,7 +97,7 @@ function opmlRemoveOutlinesWithInvalidTypes(doc) {
 }
 
 function opmlRemoveOutlinesMissingXMLURLs(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   const outlines = opmlGetOutlineElements(doc);
   for(const outline of outlines) {
@@ -108,7 +109,7 @@ function opmlRemoveOutlinesMissingXMLURLs(doc) {
 }
 
 function opmlNormalizeOutlineXMLURLs(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   const outlines = opmlGetOutlineElements(doc);
   for(const outline of outlines) {
@@ -122,7 +123,7 @@ function opmlDocumentAppendOutlineObject(doc, outline) {
 }
 
 function opmlDocumentAppendOutlineElement(doc, element) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   let bodyElement = doc.querySelector('body');
   if(!bodyElement) {

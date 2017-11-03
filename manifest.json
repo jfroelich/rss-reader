@@ -30,10 +30,12 @@
       "/src/reader-db.js",
       "/src/reader-parse-feed.js",
       "/src/reader-storage.js",
-      "/src/rewrite-url-utils.js",
+      "/src/rewrite-url.js",
       "/src/subscription.js",
       "/src/xml-utils.js",
       "/src/xml-parser.js",
+
+      "/src/base/assert.js",
       "/src/base/indexeddb.js",
       "/src/base/number.js",
       "/src/base/object.js",
@@ -41,9 +43,6 @@
       "/src/base/sizeof.js",
       "/src/base/errors.js",
       "/src/base/string.js",
-
-
-
 
       "/src/filters/adoption-agency-filter.js",
       "/src/filters/attribute-filter.js",

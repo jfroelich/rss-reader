@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/number.js
 
 // Returns a promise that resolves to undefined after a certain amount of time,
@@ -8,7 +9,7 @@
 // @param timeoutMs {Number} milliseconds, should be >= 0, the browser may
 // choose to take longer than specified
 function promiseTimeout(timeoutMs) {
-  console.assert(numberIsPositiveInteger(timeoutMs));
+  assert(numberIsPositiveInteger(timeoutMs));
   let timeoutId;
   const promise = new Promise(function executor(resolve, reject) {
     timeoutId = setTimeout(resolve, timeoutMs);

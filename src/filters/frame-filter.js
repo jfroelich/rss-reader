@@ -1,11 +1,12 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
 function frameFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   let originalBody = doc.body;
   if(!originalBody) {

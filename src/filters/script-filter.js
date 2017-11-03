@@ -1,9 +1,10 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 
 function scriptFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   const scripts = doc.querySelectorAll('script');
   for(const script of scripts) {

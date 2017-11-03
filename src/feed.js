@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/number.js
 // import base/string.js
 // import net/url-utils.js
@@ -19,7 +20,7 @@ function feedIsValidId(id) {
 }
 
 function feedHasURL(feed) {
-  console.assert(feedIsFeed(feed));
+  assert(feedIsFeed(feed));
   return feed.urls && feed.urls.length;
 }
 
@@ -27,7 +28,7 @@ function feedHasURL(feed) {
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
 function feedGetTopURL(feed) {
-  console.assert(feed && feed.urls && feed.urls.length);
+  assert(feed && feed.urls && feed.urls.length);
   return feed.urls[feed.urls.length - 1];
 }
 
@@ -49,13 +50,13 @@ function feedAppendURL(feed, urlString) {
 // Returns the url used to lookup a feed's favicon
 // @returns {URL}
 function feedCreateIconLookupURL(feed) {
-  console.assert(feedIsFeed(feed));
+  assert(feedIsFeed(feed));
 
   // First, prefer the link, as this is the url of the webpage that is
   // associated with the feed. Cannot assume the link is set or valid
   if(feed.link) {
     // If feed.link is set it should always be canonical
-    console.assert(URLUtils.isCanonical(feed.link));
+    assert(URLUtils.isCanonical(feed.link));
     try {
       return new URL(feed.link);
     } catch(error) {
@@ -97,7 +98,7 @@ async function feedUpdateFavicon(feed, iconConn) {
 // TODO: assert feed has one or more urls
 // TODO: assert the type of each property?
 function feedHasValidProperties(feed) {
-  console.assert(feedIsFeed(feed));
+  assert(feedIsFeed(feed));
 
   if('id' in feed) {
     if(!numberIsPositiveInteger(feed.id)) {
@@ -107,7 +108,7 @@ function feedHasValidProperties(feed) {
 
   if('type' in feed) {
     const types = ['feed', 'rss', 'rdf'];
-    console.assert(types.includes(feed.type));
+    assert(types.includes(feed.type));
   }
 
   return true;
@@ -115,7 +116,7 @@ function feedHasValidProperties(feed) {
 
 // Returns a shallow copy of the input feed with sanitized properties
 function feedSanitize(feed, titleMaxLength, descMaxLength) {
-  console.assert(feedIsFeed(feed));
+  assert(feedIsFeed(feed));
 
   const DEFAULT_TITLE_MAX_LEN = 1024;
   const DEFAULT_DESC_MAX_LEN = 1024 * 10;
@@ -123,13 +124,13 @@ function feedSanitize(feed, titleMaxLength, descMaxLength) {
   if(typeof titleMaxLength === 'undefined') {
     titleMaxLength = DEFAULT_TITLE_MAX_LEN;
   } else {
-    console.assert(numberIsPositiveInteger(titleMaxLength));
+    assert(numberIsPositiveInteger(titleMaxLength));
   }
 
   if(typeof descMaxLength === 'undefined') {
     descMaxLength = DEFAULT_DESC_MAX_LEN;
   } else {
-    console.assert(numberIsPositiveInteger(descMaxLength));
+    assert(numberIsPositiveInteger(descMaxLength));
   }
 
   const outputFeed = Object.assign({}, feed);

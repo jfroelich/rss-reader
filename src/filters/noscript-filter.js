@@ -1,10 +1,11 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import filters/filter-helpers.js
 
 function noscriptFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   const noscripts = doc.querySelectorAll('noscript');
   for(const noscript of noscripts) {

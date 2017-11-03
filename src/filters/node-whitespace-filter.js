@@ -4,7 +4,7 @@
 // import base/string.js
 
 function nodeWhitespaceFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   if(!doc.body) {
     return;

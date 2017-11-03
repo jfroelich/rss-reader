@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import feed.js
 
 function opmlOutlineIsOutline(outline) {
@@ -7,7 +8,7 @@ function opmlOutlineIsOutline(outline) {
 }
 
 function opmlOutlineToFeed(outline) {
-  console.assert(opmlOutlineIsOutline(outline));
+  assert(opmlOutlineIsOutline(outline));
 
   const feed = {};
   if(outline.type) {
@@ -35,7 +36,7 @@ function opmlOutlineToFeed(outline) {
 }
 
 function opmlOutlineFromFeed(feed) {
-  console.assert(feedIsFeed(feed));
+  assert(feedIsFeed(feed));
   const outline = {};
   outline.type = feed.type;
   outline.xmlUrl = feedGetTopURL(feed);
@@ -46,7 +47,7 @@ function opmlOutlineFromFeed(feed) {
 }
 
 function opmlOutlineElementHasValidType(element) {
-  console.assert(element instanceof Element);
+  assert(element instanceof Element);
   const TYPE_PATTERN = /\s*(rss|rdf|feed)\s*/i;
   return TYPE_PATTERN.test(element.getAttribute('type'));
 }
@@ -69,7 +70,7 @@ function opmlOutlineElementNormalizeXMLURL(element) {
 }
 
 function opmlOutlineNormalizeHTMLURL(outline) {
-  console.assert(opmlOutlineIsOutline(outline));
+  assert(opmlOutlineIsOutline(outline));
 
   if(outline.htmlUrl === undefined) {
     return;
@@ -96,8 +97,8 @@ function opmlOutlineNormalizeHTMLURL(outline) {
 }
 
 function opmlOutlineToElement(doc, outline) {
-  console.assert(doc instanceof Document);
-  console.assert(opmlOutlineIsOutline(outline));
+  assert(doc instanceof Document);
+  assert(opmlOutlineIsOutline(outline));
 
   const element = doc.createElement('outline');
   if(outline.type) {

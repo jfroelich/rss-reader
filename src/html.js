@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import net/mime-utils.js
 
@@ -13,7 +14,7 @@
 // of using htmlParseFromString, due to the lossy transform issue
 function htmlReplaceTags(inputString, replacementString) {
   // The caller is responsible for calling this function with a defined string
-  console.assert(typeof inputString === 'string');
+  assert(typeof inputString === 'string');
 
   // Fast case for empty strings
   // Because of the above assert this basically only checks 0 length
@@ -72,8 +73,8 @@ the inaccurate position issue.
 // This is currently a lossy transformation because certain entities that are
 // decoded while processing are not properly re-encoded.
 function htmlTruncate(htmlString, position, extensionString) {
-  console.assert(Number.isInteger(position));
-  console.assert(position >= 0);
+  assert(Number.isInteger(position));
+  assert(position >= 0);
 
   if(!htmlString) {
     return '';
@@ -130,7 +131,7 @@ function htmlParseFromString(htmlString) {
 
   // The caller is responsible for always calling this with a defined string
   // TODO: strong assertion
-  console.assert(typeof htmlString === 'string');
+  assert(typeof htmlString === 'string');
 
   const parser = new DOMParser();
 

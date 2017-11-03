@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import dom.js
 
 // Returns an array
@@ -13,7 +14,7 @@
 // @param doc {HTMLDocument}
 // @param location {String} url location of the document
 function paginationFindAnchors(doc, location, lcaMaxDistance) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   const candidates = paginationFindCandidateAnchors(doc, location);
   if(!candidates.length) {
@@ -100,7 +101,7 @@ function paginationIsCandidateAnchor(anchorElement, baseURL) {
 
 // Returns the anchor's href attribute value as a URL object, or undefined
 function paginationGetHrefURL(anchorElement, baseURL) {
-  console.assert(baseURL);
+  assert(baseURL);
 
   let href = anchorElement.getAttribute('href');
 
@@ -172,7 +173,7 @@ function paginationGetPartialPath(path) {
 function paginationFindAnchorSequences(anchors, lcaMaxDistance) {
   const anchorCount = anchors.length;
 
-  console.assert(anchorCount > 0);
+  assert(anchorCount > 0);
 
   const minLength = 1, maxLength = 51; // exclusive end points
   const seqs = [];

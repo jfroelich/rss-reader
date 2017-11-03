@@ -1,5 +1,7 @@
 'use strict';
 
+// import base/assert.js
+
 // TODO: move to reader-storage.js
 // TODO: this should probably be two functions that the caller has to call,
 // one being load feeds and the other being export feeds. The caller should
@@ -19,7 +21,7 @@ async function optionsPageExportOPML() {
     indexedDBClose(conn);
   }
 
-  console.assert(feeds);
+  assert(feeds);
 
   const status = await readerExportFeeds(feeds, title, fileName);
   return status;

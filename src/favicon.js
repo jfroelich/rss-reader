@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/indexeddb.js
 // import base/errors.js
 // import net/fetch.js
@@ -53,7 +54,7 @@ function FaviconQuery() {
 // @returns {String} the favicon url if found, otherwise undefined
 // TODO: return status and icon instead of throwing errors
 async function faviconLookup(query) {
-  console.assert(query instanceof FaviconQuery);
+  assert(query instanceof FaviconQuery);
   console.log('faviconLookup', query.url.href);
 
   // TODO: rather than declare local variables, just use the query parameter
@@ -187,7 +188,7 @@ async function faviconLookup(query) {
 }
 
 async function faviconDbFindLookupURL(conn, urlObject, maxAgeMs) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
 
   const entry = await faviconDbFindEntry(conn, urlObject);
   if(!entry) {
@@ -229,10 +230,10 @@ async function faviconDbFindRedirectURL(conn, urlObject, response,
 // @param urls {Set}
 // @returns {String} a favicon url
 async function faviconSearchDocument(document, conn, baseURLObject, urls) {
-  console.assert(document instanceof Document);
-  console.assert(indexedDBIsOpen(conn));
-  console.assert(URLUtils.isURL(baseURLObject));
-  console.assert(urls);
+  assert(document instanceof Document);
+  assert(indexedDBIsOpen(conn));
+  assert(URLUtils.isURL(baseURLObject));
+  assert(urls);
 
   if(!document.head) {
     return;
@@ -367,7 +368,7 @@ function faviconIsEntryExpired(entry, currentDate, maxAgeMs) {
 }
 
 function faviconDbClear(conn) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
   return new Promise(function(resolve, reject) {
     console.debug('faviconDbClear start');
     const tx = conn.transaction('favicon-cache', 'readwrite');
@@ -379,7 +380,7 @@ function faviconDbClear(conn) {
 }
 
 function faviconDbFindEntry(conn, urlObject) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
@@ -390,7 +391,7 @@ function faviconDbFindEntry(conn, urlObject) {
 }
 
 function faviconDbFindExpiredEntries(conn, maxAgeMs) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
 
   if(typeof maxAgeMs === 'undefined') {
     maxAgeMs = FAVICON_DEFAULT_MAX_AGE_MS;
@@ -411,7 +412,7 @@ function faviconDbFindExpiredEntries(conn, maxAgeMs) {
 }
 
 function faviconDbRemoveEntriesWithURLs(conn, pageURLs) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
@@ -423,7 +424,7 @@ function faviconDbRemoveEntriesWithURLs(conn, pageURLs) {
 }
 
 function faviconDbPutEntries(conn, iconURL, pageURLs) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
@@ -443,7 +444,7 @@ function faviconDbPutEntries(conn, iconURL, pageURLs) {
 // Finds expired entries in the database and removes them
 // TODO: return status intsead
 async function faviconCompactDb(conn, maxAgeMs) {
-  console.assert(indexedDBIsOpen(conn));
+  assert(indexedDBIsOpen(conn));
   console.debug('faviconCompactDb start', maxAgeMs);
 
   let entries;

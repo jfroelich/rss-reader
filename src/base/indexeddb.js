@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/number.js
 // import base/promise.js
 
@@ -25,18 +26,18 @@ function indexedDBIsOpen(conn) {
 // in milliseconds before giving up on connecting
 // @throws {Error} if connection error or timeout occurs
 async function indexedDBOpen(name, version, upgradeListener, timeoutMs) {
-  console.log('connecting to database', name, version);
-  console.assert(typeof name === 'string');
+  assert(typeof name === 'string');
   if(isNaN(timeoutMs)) {
     timeoutMs = 0;
   }
 
-  console.assert(numberIsPositiveInteger(timeoutMs));
+  assert(numberIsPositiveInteger(timeoutMs));
 
   let timedout = false;
   let timer;
 
   const openPromise = new Promise(function openExecutor(resolve, reject) {
+    console.log('connecting to database', name, version);
     let blocked = false;
     const request = indexedDB.open(name, version);
     request.onsuccess = function(event) {

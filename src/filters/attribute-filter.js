@@ -1,12 +1,13 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 
 // @param doc {Document}
 // @param whitelist {Object} each property is element name, each value is array
 // of attribute names
 function attributeFilter(doc, whitelist) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   // TODO: assert whitelist
   // TODO: exit early if whitelist empty

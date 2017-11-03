@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import filters/adoption-agency-filter.js
 // import filters/attribute-filter.js
@@ -20,8 +21,8 @@
 // @param fetchImageTimeoutMs {Number} optional, the number of milliseconds
 // to wait before timing out when fetching an image
 async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
-  console.assert(doc instanceof Document);
-  console.assert(URLUtils.isValid(url));
+  assert(doc instanceof Document);
+  assert(URLUtils.isValid(url));
 
   frameFilter(doc);
   ensureBodyFilter(doc);

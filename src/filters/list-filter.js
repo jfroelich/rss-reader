@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import filters/leaf-filter.js
 // import filters/transform-helpers.js
@@ -9,7 +10,7 @@
 // like move such items to within a new child
 
 function listFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   if(!doc.body) {
     return;
@@ -112,7 +113,7 @@ function listFilterUnwrapSingleItemList(list) {
   // This is overly simple and could lead to data loss, but it is based
   // on the assumption that empty lists are properly handled in the first
   // place earlier. Basically, this should never happen and should almost
-  // be an console.assert.
+  // be an assert.
   if(!item) {
     list.remove();
     return;

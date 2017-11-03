@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import dom.js
 
 // Get the current settings from local storage and then modify the css rules
@@ -7,7 +8,7 @@
 function entryCSSOnChange(event) {
   console.log('entryCSSOnChange');
   const sheet = domGetDefaultStylesheet();
-  console.assert(sheet);
+  assert(sheet);
   entryCSSUpdateRule(sheet);
   entryCSSUpdateTitleRule(sheet);
   entryCSSUpdateContentRule(sheet);
@@ -18,7 +19,7 @@ function entryCSSOnChange(event) {
 function entryCSSInit() {
   console.log('entryCSSInit');
   const sheet = domGetDefaultStylesheet();
-  console.assert(sheet);
+  assert(sheet);
   sheet.addRule('div.entry', entryCSSCreateEntryRuleText());
 
   // TODO: convert these two to be live above statement
@@ -122,9 +123,9 @@ function entryCSSAddContentRule(sheet) {
 }
 
 function entryCSSUpdateRule(sheet) {
-  console.assert(sheet);
+  assert(sheet);
   const rule = domFindCSSRule(sheet, 'div.entry');
-  console.assert(rule);
+  assert(rule);
   const style = rule.style;
 
   const path = localStorage.BG_IMAGE;
@@ -146,9 +147,9 @@ function entryCSSUpdateRule(sheet) {
 }
 
 function entryCSSUpdateTitleRule(sheet) {
-  console.assert(sheet);
+  assert(sheet);
   const rule = domFindCSSRule(sheet, 'div.entry a.entry-title');
-  console.assert(rule);
+  assert(rule);
   const style = rule.style;
 
   style.background = '';
@@ -161,9 +162,9 @@ function entryCSSUpdateTitleRule(sheet) {
 }
 
 function entryCSSUpdateContentRule(sheet) {
-  console.assert(sheet);
+  assert(sheet);
   const rule = domFindCSSRule(sheet, 'div.entry span.entry-content');
-  console.assert(rule);
+  assert(rule);
 
   rule.style.background = '';
 

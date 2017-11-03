@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import dom.js
 
@@ -11,7 +12,7 @@ const FORMATTING_FILTER_SELECTOR = [
 
 
 function formattingFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   if(!doc.body) {
     return RDR_OK;

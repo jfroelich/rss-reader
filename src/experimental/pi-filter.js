@@ -1,9 +1,10 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 
 function piFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   // TODO: filter processing instruction.
 

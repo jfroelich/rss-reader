@@ -1,11 +1,12 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 
 // Remove whitespace and whitespace-like content from the start and end of
 // a document's body.
 function trimDocumentFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   if(!doc.body) {
     return RDR_OK;

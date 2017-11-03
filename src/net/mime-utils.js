@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/string.js
 
 const MIMEUtils = {};
@@ -121,7 +122,7 @@ MIMEUtils.getTypeForExtension = function(extension) {
     return;
   }
 
-  console.assert(extensionVarType === 'string');
+  assert(extensionVarType === 'string');
 
   return MIMEUtils.EXTENSION_TYPE_MAP[extension];
 };
@@ -135,7 +136,7 @@ MIMEUtils.fromContentType = function(contentType) {
     return;
   }
 
-  console.assert(contentTypeVarType === 'string');
+  assert(contentTypeVarType === 'string');
   let mimeType = contentType;
 
   // Strip the character encoding, if present. The substring gets all
@@ -162,7 +163,7 @@ MIMEUtils.isMimeType = function(mimeType) {
 // such as application/xml should be considered textual.
 MIMEUtils.isBinary = function(mimeType) {
   // TODO: this should be a strong assertion
-  console.assert(MIMEUtils.isMimeType(mimeType));
+  assert(MIMEUtils.isMimeType(mimeType));
 
   const slashPosition = mimeType.indexOf('/');
   const superType = mimeType.substring(0, slashPosition);
@@ -175,7 +176,7 @@ MIMEUtils.isBinary = function(mimeType) {
 };
 
 MIMEUtils.normalize = function(mimeType) {
-  console.assert(MIMEUtils.isMimeType(mimeType));
+  assert(MIMEUtils.isMimeType(mimeType));
   return stringRemoveWhitespace(mimeType).toLowerCase();
 };
 

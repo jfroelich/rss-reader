@@ -1,11 +1,12 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 
 // TODO: this function's behavior conflicts with attribute filter. Need to
 // whitelist this attribute (and this value) for this element.
 function noreferrerFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   if(!doc.body) {
     return;

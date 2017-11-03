@@ -1,9 +1,10 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 
 function iframeFilter(doc) {
-  console.assert(doc instanceof Document);
+  assert(doc instanceof Document);
 
   // Only look at frames within body. If body not present then nothing to do.
   if(!doc.body) {

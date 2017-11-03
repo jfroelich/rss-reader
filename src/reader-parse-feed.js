@@ -1,5 +1,6 @@
 'use strict';
 
+// import base/assert.js
 // import base/errors.js
 // import net/url-utils.js
 // import entry.js
@@ -81,7 +82,7 @@ function readerParseFeedSetupFeed(feed, requestURL, responseURL, lastModDate) {
 // If the entry has a link property, canonicalize and normalize it
 // baseURL is optional, generally should be feed.link
 function readerParseFeedResolve(entry, baseURL) {
-  console.assert(entryIsEntry(entry));
+  assert(entryIsEntry(entry));
   if(entry.link) {
     try {
       const url = new URL(entry.link, baseURL);
