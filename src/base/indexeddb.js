@@ -5,11 +5,14 @@
 // import base/promise.js
 
 // Returns true if the conn is open. This should only be used with connections
-// opened and closed by this module.
+// created by this module.
 // @param conn {IDBDatabase}
 function indexedDBIsOpen(conn) {
   // The instanceof check is basically an implied assertion that the
   // connection is defined, and is of the proper type.
+  // While passing a conn to this function should technically cause an assert
+  // if not the right type or undefined, this function itself is almost
+  // universally used as an assert condition, so I don't think it matters
   // The onabort condition is used to detect if open because it is defined
   // when opened by indexedDBOpen and undefined when closed by
   // indexedDBClose
@@ -27,10 +30,10 @@ function indexedDBIsOpen(conn) {
 // @throws {Error} if connection error or timeout occurs
 async function indexedDBOpen(name, version, upgradeListener, timeoutMs) {
   assert(typeof name === 'string');
+
   if(isNaN(timeoutMs)) {
     timeoutMs = 0;
   }
-
   assert(numberIsPositiveInteger(timeoutMs));
 
   let timedout = false;
@@ -107,10 +110,11 @@ async function indexedDBOpen(name, version, upgradeListener, timeoutMs) {
 
 // Requests to close 0 or more connections
 // Does not fail if no connections given or if any one connection is falsy
-// @param ...cons {spread} one or more parameters each of type IDBDatabase
+// @param varargs one or more parameters each of type IDBDatabase
 function indexedDBClose(...conns) {
   for(const conn of conns) {
-    if(conn) {
+    // This is routinely called in a finally block, so try never to throw
+    if(conn && conn instanceof IDBDatabase) {
       console.debug('closing connection to database', conn.name);
       // Ensure that indexedDBIsOpen returns false
       conn.onabort = null;

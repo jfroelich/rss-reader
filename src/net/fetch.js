@@ -2,7 +2,7 @@
 
 // import base/assert.js
 // import base/number.js
-// import net/mime-utils.js
+// import net/mime.js
 // import net/url-utils.js
 
 
@@ -50,7 +50,7 @@ function fetchFeed(url, timeoutMs, acceptHTML) {
 
   function acceptPredicate(response) {
     const contentType = response.headers.get('Content-Type');
-    const mimeType = MIMEUtils.fromContentType(contentType);
+    const mimeType = mime.fromContentType(contentType);
     return types.includes(mimeType);
   }
 
@@ -64,7 +64,7 @@ function fetchHTML(url, timeoutMs) {
   const options = {
     'credentials': 'omit',
     'method': 'get',
-    // TODO: use mime-utils.js constant
+    // TODO: use mime.js constant
     'headers': {'Accept': 'text/html'},
     'mode': 'cors',
     'cache': 'default',
@@ -76,9 +76,9 @@ function fetchHTML(url, timeoutMs) {
   // TODO: move outside of function and rename?
   function acceptHTMLPredicate(response) {
     const contentType = response.headers.get('Content-Type');
-    const mimeType = MIMEUtils.fromContentType(contentType);
+    const mimeType = mime.fromContentType(contentType);
 
-    // TODO: use constant from mime-utils.js
+    // TODO: use constant from mime.js
     return mimeType === 'text/html';
   }
 
@@ -114,7 +114,7 @@ async function fetchImageHead(url, timeoutMs) {
 
   const contentType = response.headers.get('Content-Type');
 
-  if(!MIMEUtils.isImage(contentType)) {
+  if(!mime.isImage(contentType)) {
     throw new Error('Response content type not an image mime type: ' +
       contentType + ' for url ' + url);
   }
@@ -149,8 +149,7 @@ function fetchImage(url, timeoutMs) {
     timeoutMs = 0;
   }
 
-  assert(Number.isInteger(timeoutMs));
-  assert(timeoutMs >= 0);
+  assert(numberIsPositiveInteger(timeoutMs));
 
   // There is no simply way to share information between the promises, so
   // define this in outer scope shared between both promise bodies.
@@ -233,11 +232,7 @@ function fetchImage(url, timeoutMs) {
 // @returns {Object} a Response-like object
 async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
 
-  // TODO: after the deprecation of assert.js, several of the asserts
-  // became weak asserts, when in fact they should be strong assertions.
-
   // Allow exception to bubble
-  // TODO: trap exception. should return error code instead
   const response = await fetchWithTimeout(url, options, timeoutMs);
 
   if(!response) {
@@ -358,7 +353,7 @@ const ResponseUtils = {};
 // @returns {Date} the value of Last-Modified, or undefined if error such as
 // no header present or bad date
 ResponseUtils.getLastModified = function(response) {
-  assert(response);
+  assert(response instanceof Response);
 
   const lastModifiedString = response.headers.get('Last-Modified');
   if(!lastModifiedString) {

@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/errors.js
-// import net/mime-utils.js
+// import net/mime.js
 
 class XMLParser {
   static parse(xml) {
@@ -16,7 +16,7 @@ class XMLParser {
 
     // NOTE: parseFromString generates a default document with an embedded
     // error for invalid input; does not throw
-    const doc = parser.parseFromString(xml, MIMEUtils.XML);
+    const doc = parser.parseFromString(xml, mime.XML);
     assert(doc instanceof Document);
 
     // This cannot tell the difference between documents where the parser

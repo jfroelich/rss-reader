@@ -4,7 +4,6 @@
 // import base/errors.js
 // import opml-outline.js
 
-
 function opmlDocumentSetTitle(doc, title) {
   assert(doc instanceof Document);
 

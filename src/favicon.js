@@ -153,18 +153,22 @@ async function faviconLookup(query) {
     }
 
     if(text) {
-      // Parse the text into an HTML document
-      const [status, document] = htmlParseFromString(text);
 
-      if(status === RDR_OK) {
+      let document;
+      try {
+        document = htmlParseFromString(text);
+      } catch(error) {
+        if(error instanceof AssertionError) {
+          throw error;
+        } else {
+          // Ignore parse error
+        }
+      }
 
-        // Use the response url as the base url if available
-        // TODO: const?
-        let baseURLObject = responseURLObject ? responseURLObject : urlObject;
-
-        // Check the fetched document for a <link> tag
-        const iconURLString = await faviconSearchDocument(document,
-          query.conn, baseURLObject, urls);
+      if(document) {
+        const baseURL = responseURLObject ? responseURLObject : urlObject;
+        const iconURLString = await faviconSearchDocument(document, query.conn,
+          baseURL, urls);
         if(iconURLString) {
           return iconURLString;
         }

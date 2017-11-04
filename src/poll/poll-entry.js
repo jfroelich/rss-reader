@@ -13,22 +13,18 @@
 // import reader-storage.js
 // import rewrite-url-utils.js
 
-
-function PollEntryContext() {
-  assert(this !== window);
-  this.readerConn = null;
-  this.iconConn = null;
-  this.feedFaviconURL = null;
-  this.fetchHTMLTimeoutMs = undefined;
-  this.fetchImageTimeoutMs = undefined;
+class PollEntryContext {
+  constructor() {
+    this.readerConn = null;
+    this.iconConn = null;
+    this.feedFaviconURL = null;
+    this.fetchHTMLTimeoutMs = undefined;
+    this.fetchImageTimeoutMs = undefined;
+  }
 }
 
-// TODO: this shouldn't be returning true/false, it should be returning status
-// Switching to return status partly blocked by fetch not yielding status and
-// some other todos.
-
-// Expects to be bound to a PollEntryContext
-// @param entry {Object}
+// @param this {PollEntryContext}
+// @throws AssertionError
 async function pollEntry(entry) {
   assert(this instanceof PollEntryContext);
   assert(entryIsEntry(entry));
@@ -38,14 +34,13 @@ async function pollEntry(entry) {
     return false;
   }
 
-  let url = entryGetTopURL(entry);
+  let url = entryPeekURL(entry);
   if(!URLUtils.isValid(url)) {
     return false;
   }
 
-  let rewrittenURL = rewriteURL(url);
+  const rewrittenURL = rewriteURL(url);
   if(rewrittenURL && url !== rewrittenURL) {
-    console.debug('rewriteURL', url, rewrittenURL);
     entryAppendURL(entry, rewrittenURL);
     url = rewrittenURL;
   }
@@ -71,13 +66,23 @@ async function pollEntry(entry) {
     entryContent = await response.text();
   }
 
-  let [status, entryDocument] = htmlParseFromString(entryContent);
+  let entryDocument;
+  try {
+    entryDocument = htmlParseFromString(entryContent);
+  } catch(error) {
+    if(error instanceof AssertionError) {
+      throw error;
+    } else {
+      // ignore parse error
+    }
+  }
 
   // Only use the document for lookup if it was fetched
   const lookupDocument = response ? entryDocument : undefined;
   // Ignore icon update failure, do not need to check status
   await pollEntryUpdateIcon.call(this, entry, lookupDocument);
 
+  let status;
   // Filter the entry content
   if(entryDocument) {
     status = await pollDocumentFilter(entryDocument, url,
@@ -121,7 +126,7 @@ async function pollEntryUpdateIcon(entry, document) {
 
   const query = new FaviconQuery();
   query.conn = this.iconConn;
-  query.url = new URL(entryGetTopURL(entry));
+  query.url = new URL(entryPeekURL(entry));
   query.skipURLFetch = true;
   query.document = document;
 

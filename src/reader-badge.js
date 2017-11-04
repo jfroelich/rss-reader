@@ -5,6 +5,7 @@
 // import extension.js
 // import reader-db.js
 
+// @throws AssertionError
 async function readerUpdateBadge(conn) {
   assert(indexedDBIsOpen(conn));
   let count;
@@ -15,7 +16,7 @@ async function readerUpdateBadge(conn) {
     return RDR_ERR_DB;
   }
 
-  console.debug('unread count:', count);
+  console.debug('unread count is', count);
   extensionSetBadgeText(count);
   return RDR_OK;
 }

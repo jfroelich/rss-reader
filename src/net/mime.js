@@ -3,13 +3,13 @@
 // import base/assert.js
 // import base/string.js
 
-const MIMEUtils = {};
+const mime = {};
 
 // Some commonly used global mime types
-MIMEUtils.HTML = 'text/html';
-MIMEUtils.XML = 'application/xml';
+mime.HTML = 'text/html';
+mime.XML = 'application/xml';
 
-MIMEUtils.EXTENSION_TYPE_MAP = {
+mime.EXTENSION_TYPE_MAP = {
   'ai':   'application/postscript',
   'aif':  'audio/aiff',
   'atom': 'application/atom+xml',
@@ -78,7 +78,7 @@ MIMEUtils.EXTENSION_TYPE_MAP = {
   'ps':  'application/postscript',
   'rar':  'application/octet-stream',
 
-  // TODO: need to fix MIMEUtils.isBinary
+  // TODO: need to fix mime.isBinary
   // 'rdf': 'application/rdf+xml',
   // 'rss':  'application/rss+xml',
 
@@ -116,7 +116,7 @@ MIMEUtils.EXTENSION_TYPE_MAP = {
 // Return a mime type corresponding a file name extension
 // @param extension {String}
 // @returns {String} a mime type, or undefined on error or failed lookup
-MIMEUtils.getTypeForExtension = function(extension) {
+mime.getTypeForExtension = function(extension) {
   const extensionVarType = typeof extension;
   if(extensionVarType === 'undefined' || extension === null) {
     return;
@@ -124,13 +124,13 @@ MIMEUtils.getTypeForExtension = function(extension) {
 
   assert(extensionVarType === 'string');
 
-  return MIMEUtils.EXTENSION_TYPE_MAP[extension];
+  return mime.EXTENSION_TYPE_MAP[extension];
 };
 
 // Returns a normalized mime type from a content type
 // @param contentType {String} an http response header value, optional
 // @returns {String} a mime type, or undefined if error
-MIMEUtils.fromContentType = function(contentType) {
+mime.fromContentType = function(contentType) {
   const contentTypeVarType = typeof contentType;
   if(contentTypeVarType === 'undefined') {
     return;
@@ -148,12 +148,12 @@ MIMEUtils.fromContentType = function(contentType) {
     mimeType = contentType.substring(fromIndex, semicolonPosition);
   }
 
-  return MIMEUtils.normalize(mimeType);
+  return mime.normalize(mimeType);
 };
 
 // A basic trivial test of whether the parameter represents a mime type.
 // Inaccurate. No false negatives but several false positives.
-MIMEUtils.isMimeType = function(mimeType) {
+mime.isMimeType = function(mimeType) {
   return typeof mimeType === 'string' &&
     mimeType.indexOf('/') !== -1 &&
     mimeType.indexOf(' ') === -1;
@@ -161,9 +161,9 @@ MIMEUtils.isMimeType = function(mimeType) {
 
 // TODO: this is incorrect in several cases. In particular, mime types
 // such as application/xml should be considered textual.
-MIMEUtils.isBinary = function(mimeType) {
+mime.isBinary = function(mimeType) {
   // TODO: this should be a strong assertion
-  assert(MIMEUtils.isMimeType(mimeType));
+  assert(mime.isMimeType(mimeType));
 
   const slashPosition = mimeType.indexOf('/');
   const superType = mimeType.substring(0, slashPosition);
@@ -175,21 +175,21 @@ MIMEUtils.isBinary = function(mimeType) {
   return binarySuperTypes.includes(superType);
 };
 
-MIMEUtils.normalize = function(mimeType) {
-  assert(MIMEUtils.isMimeType(mimeType));
+mime.normalize = function(mimeType) {
+  assert(mime.isMimeType(mimeType));
   return stringRemoveWhitespace(mimeType).toLowerCase();
 };
 
-MIMEUtils.isHTML = function(contentType) {
+mime.isHTML = function(contentType) {
   return /^\s*text\/html/i.test(contentType);
 };
 
-MIMEUtils.isImage = function(contentType) {
+mime.isImage = function(contentType) {
   return /^\s*image\//i.test(contentType);
 };
 
-MIMEUtils.isXML = function(contentType) {
-  const mimeType = MIMEUtils.fromContentType(contentType);
+mime.isXML = function(contentType) {
+  const mimeType = mime.fromContentType(contentType);
   const types = [
     'application/atom+xml',
     'application/rdf+xml',

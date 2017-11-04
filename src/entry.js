@@ -32,7 +32,7 @@ function entryHasURL(entry) {
 
 // Returns the most last url, as a string, in the entry's url list. Throws an
 // error if the entry does not have urls.
-function entryGetTopURL(entry) {
+function entryPeekURL(entry) {
   assert(entryIsEntry(entry));
   assert(entryHasURL(entry));
   return entry.urls[entry.urls.length - 1];
@@ -63,6 +63,7 @@ function entryAppendURL(entry, urlString) {
 
 
 // Returns a new entry object where fields have been sanitized. Impure
+// @throws AssertionError, ParseError
 function entrySanitize(inputEntry, authorMaxLength, titleMaxLength,
   contextMaxLength) {
   assert(entryIsEntry(inputEntry));

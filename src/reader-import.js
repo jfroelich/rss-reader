@@ -2,7 +2,7 @@
 
 // import base/assert.js
 // import base/indexeddb.js
-// import net/mime-utils.js
+// import net/mime.js
 // import opml-document.js
 // import opml-outline.js
 // import opml-parse.js
@@ -52,7 +52,7 @@ async function readerImportFile(file, readerConn, iconConn) {
     return 0;
   }
 
-  if(!MIMEUtils.isXML(file.type)) {
+  if(!mime.isXML(file.type)) {
     console.log('file %s is not mime type xml', file.type);
     return 0;
   }

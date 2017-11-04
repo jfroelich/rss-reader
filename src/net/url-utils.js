@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/assert.js
-// import net/mime-utils.js
+// import net/mime.js
 
 // TODO: impose length cap on url strings
 
@@ -141,12 +141,12 @@ URLUtils.sniffIsBinary = function(url) {
     return false;
   }
 
-  const mimeType = MIMEUtils.getTypeForExtension(extension);
+  const mimeType = mime.getTypeForExtension(extension);
   if(!mimeType) {
     return false;
   }
 
-  return MIMEUtils.isBinary(mimeType);
+  return mime.isBinary(mimeType);
 };
 
 // Returns a file name without its extension (and without the '.')

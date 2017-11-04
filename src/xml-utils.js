@@ -1,7 +1,7 @@
 'use strict';
 
 // import base/assert.js
-// import net/mime-utils.js
+// import net/mime.js
 
 // NOTE: ideally this would be XMLDocument with methods, but XMLDocument is a
 // builtin object, and I don't want to deal with the complexity
@@ -17,7 +17,7 @@ class XMLUtils {
     assert(doc instanceof Document);
     const xml = XMLUtils.toString(doc);
     const partsArray = [xml];
-    const options = {'type': MIMEUtils.XML};
+    const options = {'type': mime.XML};
     return new Blob(partsArray, options);
   }
 }

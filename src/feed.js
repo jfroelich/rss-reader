@@ -115,6 +115,7 @@ function feedHasValidProperties(feed) {
 }
 
 // Returns a shallow copy of the input feed with sanitized properties
+// @throws AssertionError, ParseError
 function feedSanitize(feed, titleMaxLength, descMaxLength) {
   assert(feedIsFeed(feed));
 

@@ -22,3 +22,13 @@ const RDR_EINVAL = -5;
 
 // Constraint error (e.g. duplicate db key)
 const RDR_ERR_CONSTRAINT = -6;
+
+
+// Global exceptions
+
+class ParseError extends Error {
+  constructor(message) {
+    super(message || 'Parse error');
+    //Error.captureStackTrace(this, this.constructor.name);
+  }
+}

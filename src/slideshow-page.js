@@ -153,7 +153,7 @@ function slideshowAppendSlide(entry) {
 
 function slideshowCreateArticleTitleElement(entry) {
   const titleElement = document.createElement('a');
-  titleElement.setAttribute('href', entryGetTopURL(entry));
+  titleElement.setAttribute('href', entryPeekURL(entry));
   titleElement.setAttribute('class', 'entry-title');
   titleElement.setAttribute('target','_blank');
   titleElement.setAttribute('rel', 'noreferrer');
@@ -162,6 +162,8 @@ function slideshowCreateArticleTitleElement(entry) {
     titleElement.setAttribute('title', entry.title);
     let titleText = entry.title;
     titleText = articleTitleFilterPublisher(titleText);
+
+    // TODO: handle ParseError correctly
     titleText = htmlTruncate(titleText, 300);
     titleElement.innerHTML = titleText;
   } else {

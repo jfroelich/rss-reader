@@ -1,5 +1,8 @@
 
 document.addEventListener('DOMContentLoaded', function(event) {
+
+  // NOTE: htmlTruncate throws AssertionError, ParseError
+
   'use strict';
   const ext = '...';
   const input1 = 'a<p>b</p>c';

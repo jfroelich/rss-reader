@@ -22,7 +22,6 @@ async function cliRefreshFeedIcons() {
 }
 
 async function cliArchiveEntries(limit) {
-  console.log('cliArchiveEntries start');
   let maxAgeMs, conn, status;
   limit = limit || 10;
   try {
@@ -31,12 +30,10 @@ async function cliArchiveEntries(limit) {
   } finally {
     indexedDBClose(conn);
   }
-  console.log('cliArchiveEntries end');
   return status;
 }
 
 async function cliPollFeeds() {
-  console.log('cliPollFeeds start');
   const pfc = new PollFeedsContext();
   pfc.allowMeteredConnections = true;
   pfc.ignoreIdleState = true;
@@ -52,12 +49,10 @@ async function cliPollFeeds() {
   }
 
   // TODO: once pollFeeds returns status, use that as return value
-  console.log('cliPollFeeds end');
   return RDR_OK;
 }
 
 async function cliScanLost(limit) {
-  console.log('cliScanLost start');
   if(!numberIsPositiveInteger(limit) || limit < 1) {
     throw new TypeError('limit must be > 0');
   }
@@ -74,7 +69,6 @@ async function cliScanLost(limit) {
 }
 
 async function cliScanOrphans(limit) {
-  console.log('cliScanOrphans start');
   if(!numberIsPositiveInteger(limit) || limit < 1) {
     throw new TypeError('limit must be > 0');
   }
@@ -91,7 +85,6 @@ async function cliScanOrphans(limit) {
 }
 
 async function cliClearFavicons() {
-  console.log('cliClearFavicons start');
   let conn;
   try {
     conn = await faviconDbOpen();
@@ -99,6 +92,5 @@ async function cliClearFavicons() {
   } finally {
     indexedDBClose(conn);
   }
-
   return RDR_OK;
 }

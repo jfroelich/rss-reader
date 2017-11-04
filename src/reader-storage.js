@@ -90,7 +90,7 @@ async function readerStorageMarkRead(conn, id) {
     return RDR_ERR_DB;
   }
 
-  console.debug('readerStorageMarkRead found entry', entryGetTopURL(entry));
+  console.debug('readerStorageMarkRead found entry', entryPeekURL(entry));
 
   if(!entry || entry.readState === ENTRY_STATE_READ) {
     // TODO: should be ERR_INVALID_STATE or something
@@ -111,7 +111,7 @@ async function readerStorageMarkRead(conn, id) {
     return RDR_ERR_DB;
   }
 
-  console.debug('readerStorageMarkRead updated', entryGetTopURL(entry));
+  console.debug('readerStorageMarkRead updated', entryPeekURL(entry));
 
   // Ignore status
   await readerUpdateBadge(conn);

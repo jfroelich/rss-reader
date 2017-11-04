@@ -24,6 +24,7 @@ function promiseTimeout(timeoutMs) {
 // undefined is placed in the output array in place of the promise's return
 // value.
 function promiseEvery(promises) {
+  assert(Array.isArray(promises));
   const noop = function() {};
   const trap = function(p) { return p.catch(noop); };
   const trapped = promises.map(trap);
