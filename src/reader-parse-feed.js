@@ -13,9 +13,9 @@ function readerParseFeed(xmlString, requestURL, responseURL,
   lastModDate, processEntries) {
 
   const result = {
-    'status': RDR_OK,
-    'feed': undefined,
-    'entries': []
+    status: RDR_OK,
+    feed: undefined,
+    entries: []
   };
 
   let parse_result;

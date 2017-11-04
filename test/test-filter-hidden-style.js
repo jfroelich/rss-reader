@@ -2,14 +2,14 @@
 
 async function test(url) {
   const options = {
-    'credentials': 'omit',
-    'method': 'get',
-    'headers': {'accept': 'text/html'},
-    'mode': 'cors',
-    'cache': 'default',
-    'redirect': 'follow',
-    'referrer': 'no-referrer',
-    'referrerPolicy': 'no-referrer'
+    credentials: 'omit',
+    method: 'get',
+    headers: {'accept': 'text/html'},
+    mode: 'cors',
+    cache: 'default',
+    redirect: 'follow',
+    referrer: 'no-referrer',
+    referrerPolicy: 'no-referrer'
   };
 
   const response = await fetch(url, options);

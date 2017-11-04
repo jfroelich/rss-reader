@@ -29,6 +29,5 @@ const RDR_ERR_CONSTRAINT = -6;
 class ParseError extends Error {
   constructor(message) {
     super(message || 'Parse error');
-    //Error.captureStackTrace(this, this.constructor.name);
   }
 }

@@ -125,7 +125,7 @@ function listFilterUnwrapSingleItemList(list) {
   }
 
   // If the list's only child element isn't one of the correct types, ignore it
-  const listItemNames = {'li': 0, 'dt': 0, 'dd': 0};
+  const listItemNames = {li: 0, dt: 0, dd: 0};
   if(!(item.localName in listItemNames)) {
     return;
   }

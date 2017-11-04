@@ -228,7 +228,8 @@ async function slideshowSlideOnclick(event) {
   event.preventDefault();
 
   const urlString = anchor.getAttribute('href');
-  chrome.tabs.create({'active': true, 'url': urlString});
+  // TODO: call to function in extension.js
+  chrome.tabs.create({active: true, url: urlString});
 
   let conn;
   try {
@@ -337,6 +338,8 @@ window.addEventListener('keydown', function slideshowOnKeyDown(event) {
   const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
   const code = event.keyCode;
 
+  // TODO: use switch
+
   if(code === RIGHT || code === N || code === SPACE) {
     event.preventDefault();
     cancelIdleCallback(keydownTimerId);
@@ -382,4 +385,4 @@ async function slideshowOnDOMContentLoaded(event) {
 }
 
 document.addEventListener('DOMContentLoaded', slideshowOnDOMContentLoaded,
-  {'once': true});
+  {once: true});

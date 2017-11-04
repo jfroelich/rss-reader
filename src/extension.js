@@ -22,23 +22,23 @@ async function extensionShowSlideshowTab() {
 
   let tabs = await extensionFindTabsByURL(slideshowURL);
   if(tabs && tabs.length) {
-    chrome.tabs.update(tabs[0].id, {'active': true});
+    chrome.tabs.update(tabs[0].id, {active: true});
     return;
   }
 
   tabs = await extensionFindTabsByURL(newtabURL);
   if(tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id,
-      {'active': true, 'url': slideshowURL});
+      {active: true, url: slideshowURL});
     return;
   }
 
-  chrome.tabs.create({'url': slideshowURL});
+  chrome.tabs.create({url: slideshowURL});
 }
 
 function extensionFindTabsByURL(urlString) {
   return new Promise(function executor(resolve, reject) {
-    return chrome.tabs.query({'url': urlString}, resolve);
+    return chrome.tabs.query({url: urlString}, resolve);
   });
 }
 
@@ -82,7 +82,7 @@ async function extensionNotificationOnclick(event) {
 function extensionPermissionsContains(permission) {
   assert(typeof permission === 'string');
   return new Promise(function executor(resolve, reject) {
-    const descriptor = {'permissions': [permission]};
+    const descriptor = {permissions: [permission]};
     chrome.permissions.contains(descriptor, resolve);
   });
 }
@@ -90,7 +90,7 @@ function extensionPermissionsContains(permission) {
 function extensionPermissionsRequest(permission) {
   assert(typeof permission === 'string');
   return new Promise(function executor(resolve, reject) {
-    const descriptor = {'permissions': [permission]};
+    const descriptor = {permissions: [permission]};
     chrome.permissions.request(descriptor, resolve);
   });
 }
@@ -98,7 +98,7 @@ function extensionPermissionsRequest(permission) {
 function extensionPermissionsRemove(permission) {
   assert(typeof permission === 'string');
   return new Promise(function executor(resolve, reject) {
-    const descriptor = {'permissions': [permission]};
+    const descriptor = {permissions: [permission]};
     chrome.permissions.remove(descriptor, resolve);
   });
 }

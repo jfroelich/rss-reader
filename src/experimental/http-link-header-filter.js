@@ -6,14 +6,14 @@ async function registerDWLinkFilterRule() {
   if(localStorage.DW_LINK_RULE_ID)
     return;
   const linkMatcher = new chrome.declarativeWebRequest.RequestMatcher({
-    'resourceType': ['xmlhttprequest'],
-    'contentType': ['text/html']
+    resourceType: ['xmlhttprequest'],
+    contentType: ['text/html']
   });
   const linkAction = new chrome.declarativeWebRequest.RemoveResponseHeader(
-    {'name': 'link'});
+    {name: 'link'});
   const linkRule = {
-    'conditions': [linkMatcher],
-    'actions': [linkAction]
+    conditions: [linkMatcher],
+    actions: [linkAction]
   };
   const rules = [linkRule];
   const addedRules = await addDWRules(rules);

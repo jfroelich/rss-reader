@@ -101,6 +101,8 @@ async function indexedDBOpen(name, version, upgradeListener, timeoutMs) {
     clearTimeout(timer);
   } else {
     timedout = true;
+
+    // TODO: create and use a TimedOutError or something along those lines
     const errorMessage = 'connecting to database ' + name + ' timed out';
     throw new Error(errorMessage);
   }

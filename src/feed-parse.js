@@ -15,8 +15,8 @@ function feedParseFromString(xml) {
     console.warn('parse feed error');
 
     const emptyResult = {
-      'feed': null,
-      'entries': []
+      feed: null,
+      entries: []
     };
 
     return emptyResult;
@@ -199,12 +199,12 @@ function feedParseIsLinkWithoutHrefElement(element) {
 
 function feedParseCreateEntryObject(entryElement) {
   return {
-    'title': feedParseFindEntryTitle(entryElement),
-    'author': feedParseFindEntryAuthor(entryElement),
-    'link': feedParseFindEntryLink(entryElement),
-    'datePublished': feedParseFindEntryDate(entryElement),
-    'content': feedParseFindEntryContent(entryElement),
-    'enclosure': feedParseFindEntryEnclosure(entryElement)
+    title: feedParseFindEntryTitle(entryElement),
+    author: feedParseFindEntryAuthor(entryElement),
+    link: feedParseFindEntryLink(entryElement),
+    datePublished: feedParseFindEntryDate(entryElement),
+    content: feedParseFindEntryContent(entryElement),
+    enclosure: feedParseFindEntryEnclosure(entryElement)
   };
 }
 

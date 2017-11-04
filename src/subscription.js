@@ -28,13 +28,13 @@ async function subscriptionAdd(feed) {
   assert(feedIsFeed(feed));
 
   if(!feedHasURL(feed)) {
-    return {'status' : RDR_EINVAL};
+    return {status: RDR_EINVAL};
   }
 
   const urlString = feedPeekURL(feed);
   let status = await subscriptionIsUnique(urlString, this.readerConn);
   if(status !== RDR_OK) {
-    return {'status' : status};
+    return {status: status};
   }
 
   // If offline then skip fetching information.
@@ -55,13 +55,13 @@ async function subscriptionAdd(feed) {
   } catch(error) {
     // If we are online and fetch fails then cancel the subscription
     console.warn(error);
-    return {'status': RDR_ERR_FETCH};
+    return {status: RDR_ERR_FETCH};
   }
 
   if(response.redirected) {
     status = await subscriptionIsUnique(response.responseURL, this.readerConn);
     if(status !== RDR_OK) {
-      return {'status' : status};
+      return {status: status};
     }
   }
 
@@ -77,7 +77,7 @@ async function subscriptionAdd(feed) {
   const parseResult = readerParseFeed(feedXML, response.request_url,
     response.responseURL, response.last_modified_date, PROCESS_ENTRIES);
   if(parseResult.status !== RDR_OK) {
-    return {'status': parseResult.status};
+    return {status: parseResult.status};
   }
 
   const mergedFeed = feedMerge(feed, parseResult.feed);
@@ -117,7 +117,7 @@ async function subscriptionPutFeed(feed, readerConn, notify) {
     newId = await readerDbPutFeed(readerConn, storableFeed);
   } catch(error) {
     console.warn(error);
-    return {'status': RDR_ERR_DB};
+    return {status: RDR_ERR_DB};
   }
 
   storableFeed.id = newId;
@@ -125,7 +125,7 @@ async function subscriptionPutFeed(feed, readerConn, notify) {
     subscriptionNotifyAdd(storableFeed);
   }
 
-  return {'status': RDR_OK, 'feed': storableFeed};
+  return {status: RDR_OK, feed: storableFeed};
 }
 
 function subscriptionNotifyAdd(feed) {
@@ -148,6 +148,7 @@ function subscriptionFeedPrep(feed) {
 // to an error, that subscription and all later subscriptions are ignored,
 // but earlier ones are committed. If a subscription fails but not for an
 // exceptional reason, then it is skipped.
+// @param this {SubscriptionContext}
 function subscriptionAddAll(feeds) {
   return Promise.all(feeds.map(subscriptionAdd, this));
 }
@@ -173,9 +174,9 @@ async function subscriptionRemove(feed) {
   await readerUpdateBadge(this.readerConn);
 
   const channel = new BroadcastChannel('db');
-  channel.postMessage({'type': 'feed-deleted', 'id': feed.id});
+  channel.postMessage({type: 'feed-deleted', id: feed.id});
   for(const entryId of entryIds) {
-    channel.postMessage({'type': 'entry-deleted', 'id': entryId});
+    channel.postMessage({type: 'entry-deleted', id: entryId});
   }
   channel.close();
 

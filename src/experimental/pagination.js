@@ -149,6 +149,9 @@ function paginationAreSimilarURLs(url1, url2) {
 // Note that for basic path like '/' this may return an empty string.
 // Assume's input path string is defined, trimmed, and normalized.
 function paginationGetPartialPath(path) {
+
+  // TODO: assert path starts with / as an ASSERTION, not a basic error
+
   const index = path.lastIndexOf('/');
   if(index === -1) {
     throw new TypeError('path missing forward slash');

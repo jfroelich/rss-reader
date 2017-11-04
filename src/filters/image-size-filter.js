@@ -53,12 +53,12 @@ async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
 async function imageSizeFilterGetDimensions(image, allowedProtocols,
   timeoutMs) {
 
-  // A template of the output produced by this function
+  // TODO: rename hint to reason
   const result = {
-    'image': image,
-    'width': undefined,
-    'height': undefined,
-    'hint': undefined
+    image: image,
+    width: undefined,
+    height: undefined,
+    hint: undefined
   };
 
   if(image.hasAttribute('width') && image.hasAttribute('height')) {

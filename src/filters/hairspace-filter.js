@@ -3,6 +3,7 @@
 // import base/assert.js
 // import base/errors.js
 
+// TODO: move to experimental and stop using for now
 // TODO: this should be part of a general character normalization filter,
 // or perhaps a whitespace normalization filter, or an entity filter
 // TODO: accessing nodeValue does decoding, so maybe this doesn't work? Forgot.

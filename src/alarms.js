@@ -114,16 +114,16 @@ function alarmsOnWakeup(alarm) {
 }
 
 function alarmsRegisterAll() {
-  chrome.alarms.create('archive', {'periodInMinutes': 60 * 12});
-  chrome.alarms.create('poll', {'periodInMinutes': 60});
+  chrome.alarms.create('archive', {periodInMinutes: 60 * 12});
+  chrome.alarms.create('poll', {periodInMinutes: 60});
   chrome.alarms.create('remove-entries-missing-urls',
-    {'periodInMinutes': 60 * 24 * 7});
+    {periodInMinutes: 60 * 24 * 7});
   chrome.alarms.create('remove-orphaned-entries',
-    {'periodInMinutes': 60 * 24 * 7});
+    {periodInMinutes: 60 * 24 * 7});
   chrome.alarms.create('refresh-feed-icons',
-    {'periodInMinutes': 60 * 24 * 7 * 2});
+    {periodInMinutes: 60 * 24 * 7 * 2});
   chrome.alarms.create('compact-favicon-db',
-    {'periodInMinutes': 60 * 24 * 7});
+    {periodInMinutes: 60 * 24 * 7});
 }
 
 chrome.alarms.onAlarm.addListener(alarmsOnWakeup);
@@ -137,4 +137,4 @@ function alarmsOnDOMContentLoaded(event) {
 // to use external dependencies that may not yet be loaded in script loading
 // order.
 document.addEventListener('DOMContentLoaded', alarmsOnDOMContentLoaded,
-  {'once': true});
+  {once: true});

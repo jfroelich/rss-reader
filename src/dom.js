@@ -264,11 +264,7 @@ function domFindLCA(node1, node2) {
     const ancestor1 = ancestors1[i];
     for(let j = 0; j < len2; j++) {
       if(ancestor1 === ancestors2[j]) {
-        return {
-          'ancestor': ancestor1,
-          'd1': i + 1,
-          'd2': j + 1
-        };
+        return {ancestor: ancestor1, d1: i + 1, d2: j + 1};
       }
     }
   }

@@ -27,16 +27,16 @@ function fetchFeed(url, timeoutMs, acceptHTML) {
     'text/xml;q=0.8'
   ].join(',');
 
-  const headers = {'Accept': ACCEPT_HEADER};
+  const headers = {Accept: ACCEPT_HEADER};
   const options = {
-    'credentials': 'omit',
-    'method': 'get',
-    'headers': headers,
-    'mode': 'cors',
-    'cache': 'default',
-    'redirect': 'follow',
-    'referrer': 'no-referrer',
-    'referrerPolicy': 'no-referrer'
+    credentials: 'omit',
+    method: 'get',
+    headers: headers,
+    mode: 'cors',
+    cache: 'default',
+    redirect: 'follow',
+    referrer: 'no-referrer',
+    referrerPolicy: 'no-referrer'
   };
 
   const types = ['application/rss+xml', 'application/rdf+xml',
@@ -62,15 +62,15 @@ function fetchFeed(url, timeoutMs, acceptHTML) {
 // @param timeoutMs {Number} optional, timeout in milliseconds
 function fetchHTML(url, timeoutMs) {
   const options = {
-    'credentials': 'omit',
-    'method': 'get',
+    credentials: 'omit',
+    method: 'get',
     // TODO: use mime.js constant
-    'headers': {'Accept': 'text/html'},
-    'mode': 'cors',
-    'cache': 'default',
-    'redirect': 'follow',
-    'referrer': 'no-referrer',
-    'referrerPolicy': 'no-referrer'
+    headers: {'Accept': 'text/html'},
+    mode: 'cors',
+    cache: 'default',
+    redirect: 'follow',
+    referrer: 'no-referrer',
+    referrerPolicy: 'no-referrer'
   };
 
   // TODO: move outside of function and rename?
@@ -310,9 +310,7 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
   // Not much use for this right now, I think it might be important later
   let timeoutId;
 
-  // TODO: why the strange syntax?
-  const errorMessageType = typeof errorMessage;
-  if(errorMessageType === 'undefined') {
+  if(typeof errorMessage === 'undefined') {
     errorMessage = 'Fetch timed out for url ' + url;
   }
 
@@ -372,7 +370,7 @@ const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 // the value. This way there is no ambiguity, or need for global constant
 ResponseUtils.getContentLength = function(response) {
   const contentLengthString = response.headers.get('Content-Length');
-  const radix = 10;
-  const contentLength = parseInt(contentLengthString, radix);
+  const RADIX = 10;
+  const contentLength = parseInt(contentLengthString, RADIX);
   return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
 };

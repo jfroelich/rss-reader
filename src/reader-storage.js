@@ -32,10 +32,6 @@ async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
     return entryAgeMs > maxAgeMs;
   }
 
-  // TODO: now that this uses a cursor, I just realized that unless I
-  // handle the item during iteration, this is technically slower than
-  // simply calling getAll with a second parameter that specifies a limit
-
   // Allow errors to bubble
   let entries = await readerDbFindArchivableEntries(conn, isArchivable, limit);
 
@@ -43,6 +39,12 @@ async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
     console.debug('no archivable entries found');
     return;
   }
+
+  // TODO: entryCompact is unique to this operation, so it probably does not
+  // belong in entry.js
+  // TODO: entryCompact should throw an error when the entry is in the wrong
+  // state, such as when it is already archived, and that error should bubble
+  // here
 
   const compactedEntries = [];
   for(const entry of entries) {
@@ -54,7 +56,7 @@ async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
   await readerDbPutEntries(conn, entries);
 
   const channel = new BroadcastChannel('db');
-  const message = {'type': 'archived-entry', 'id': undefined};
+  const message = {type: 'archived-entry', id: undefined};
   for(const entry of entries) {
     message.id = entry.id;
     channel.postMessage(message);
@@ -195,8 +197,7 @@ async function readerStorageRemoveOrphans(conn, limit) {
   await readerDbRemoveEntries(conn, orphanIds);
 
   const channel = new BroadcastChannel('db');
-  const message = {'type': 'entry-deleted', 'id': undefined,
-    'reason': 'orphan'};
+  const message = {type: 'entry-deleted', id: undefined, reason: 'orphan'};
   for(const id of orphanIds) {
     message.id = id;
     channel.postMessage(message);
@@ -234,7 +235,7 @@ async function readerStorageRemoveLostEntries(conn, limit) {
   await readerDbRemoveEntries(conn, ids);
 
   const channel = new BroadcastChannel('db');
-  const message = {'type': 'entry-deleted', 'id': undefined, 'reason': 'lost'};
+  const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
   for(const id of ids) {
     message.id = id;
     channel.postMessage(message);

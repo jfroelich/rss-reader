@@ -40,16 +40,16 @@ function readerDbOnUpgradeNeeded(event) {
 
   if(event.oldVersion < 20) {
     feedStore = conn.createObjectStore('feed', {
-      'keyPath': 'id',
-      'autoIncrement': true
+      keyPath: 'id',
+      autoIncrement: true
     });
     entryStore = conn.createObjectStore('entry', {
-      'keyPath': 'id',
-      'autoIncrement': true
+      keyPath: 'id',
+      autoIncrement: true
     });
     feedStore.createIndex('urls', 'urls', {
-      'multiEntry': true,
-      'unique': true
+      multiEntry: true,
+      unique: true
     });
     feedStore.createIndex('title', 'title');
     entryStore.createIndex('readState', 'readState');
@@ -57,8 +57,8 @@ function readerDbOnUpgradeNeeded(event) {
     entryStore.createIndex('archiveState-readState',
       ['archiveState', 'readState']);
     entryStore.createIndex('urls', 'urls', {
-      'multiEntry': true,
-      'unique': true
+      multiEntry: true,
+      unique: true
     });
   } else {
     feedStore = tx.objectStore('feed');

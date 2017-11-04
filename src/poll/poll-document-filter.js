@@ -113,10 +113,10 @@ async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
   // Filter element attributes last because it is so slow and is sped up by
   // processing fewer elements.
   const attributeWhitelist = {
-    'a': ['href', 'name', 'title', 'rel'],
-    'iframe': ['src'],
-    'source': ['media', 'sizes', 'srcset', 'src', 'type'],
-    'img': ['src', 'alt', 'title', 'srcset']
+    a: ['href', 'name', 'title', 'rel'],
+    iframe: ['src'],
+    source: ['media', 'sizes', 'srcset', 'src', 'type'],
+    img: ['src', 'alt', 'title', 'srcset']
   };
 
   attributeFilter(doc, attributeWhitelist);

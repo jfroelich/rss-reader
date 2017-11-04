@@ -3,7 +3,7 @@ async function testPreloadIssue() {
   const options = {};
   options.credentials = 'omit';
   options.method = 'get';
-  options.headers = {'Accept': 'text/html'};
+  options.headers = {Accept: 'text/html'};
   options.mode = 'cors';
   options.cache = 'default';
   options.redirect = 'follow';
@@ -14,7 +14,7 @@ async function testPreloadIssue() {
   const response = await fetch(url, options);
   assert(response.ok);
   const text = await response.text();
-  console.log('Text:', {'text': text});
+  console.log('Text:', text);
   return 'Test completed, request may be pending';
 }
 
