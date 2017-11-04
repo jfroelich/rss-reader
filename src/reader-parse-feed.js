@@ -8,26 +8,18 @@
 // import feed-parse.js
 
 // Parses an xml input string representing a feed. Returns a result with a
-// status, a feed object, and an array of entries.
-function readerParseFeed(xmlString, requestURL, responseURL,
-  lastModDate, processEntries) {
+// feed object and an array of entries.
+// @throws AssertionError
+// @throws ParserError
+function readerParseFeed(xmlString, requestURL, responseURL, lastModDate,
+  processEntries) {
 
-  const result = {
-    status: RDR_OK,
-    feed: undefined,
-    entries: []
-  };
+  const result = {feed: undefined, entries: []};
 
-  let parse_result;
-  try {
-    parse_result = feedParseFromString(xmlString);
-  } catch(error) {
-    console.warn(error);
-    result.status = RDR_ERR_PARSE;
-    return result;
-  }
+  // Allow errors to bubble
+  const parseResult = feedParseFromString(xmlString);
 
-  const feed = parse_result.feed;
+  const feed = parseResult.feed;
   readerParseFeedSetupFeed(feed, requestURL, responseURL, lastModDate);
   result.feed = feed;
 
@@ -39,7 +31,7 @@ function readerParseFeed(xmlString, requestURL, responseURL,
   }
 
   if(processEntries) {
-    let entries = parse_result.entries;
+    let entries = parseResult.entries;
     for(const entry of entries) {
       readerParseFeedResolve(entry, baseURL);
       readerParseFeedCoerceEntry(entry);

@@ -1,8 +1,8 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 
+// @throws AssertionError
 function entityDecodeFilter(doc) {
   assert(doc instanceof Document);
 
@@ -10,5 +10,5 @@ function entityDecodeFilter(doc) {
     return;
   }
 
-  return RDR_OK;
+  throw new Error('Not implemented');
 }

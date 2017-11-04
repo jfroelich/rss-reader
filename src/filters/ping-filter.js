@@ -14,6 +14,4 @@ function pingFilter(doc) {
   for(const anchor of anchors) {
     anchor.removeAttribute('ping');
   }
-
-  return RDR_OK;
 }

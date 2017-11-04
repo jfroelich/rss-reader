@@ -1,7 +1,6 @@
 // See license.md
 
 // import base/indexeddb.js
-// import base/errors.js
 // import reader-db.js
 
 // TODO: test timeouts
@@ -9,8 +8,6 @@
 // To test, use indexedDBOpen
 
 async function test() {
-  console.log('test_db start');
-
   const name = 'test-feed-db', version = 1;
   let close_requested = false;
   let conn;
@@ -27,16 +24,10 @@ async function test() {
 
     close_requested = true;
     await indexedDBDeleteDatabase(name);
-  } catch(error) {
-    console.warn(error);
-    return RDR_ERR_DB;
   } finally {
     if(!close_requested) {
       indexedDBClose(conn);
       assert(!indexedDBIsOpen(conn));
     }
   }
-
-  console.log('test_db end');
-  return RDR_OK;
 }

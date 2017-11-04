@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 
 function baseFilter(doc) {
   assert(doc instanceof Document);
@@ -9,5 +8,4 @@ function baseFilter(doc) {
   for(const base of bases) {
     base.remove();
   }
-  return RDR_OK;
 }

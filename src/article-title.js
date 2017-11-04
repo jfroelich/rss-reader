@@ -3,6 +3,7 @@
 // import base/assert.js
 // import base/string.js
 
+// @throws AssertionError
 function articleTitleFilterPublisher(title) {
   assert(typeof title === 'string');
 

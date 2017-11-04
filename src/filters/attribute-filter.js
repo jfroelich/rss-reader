@@ -8,8 +8,8 @@
 // of attribute names
 function attributeFilter(doc, whitelist) {
   assert(doc instanceof Document);
+  assert(typeof whitelist === 'object');
 
-  // TODO: assert whitelist
   // TODO: exit early if whitelist empty
 
   const elements = doc.getElementsByTagName('*');
@@ -26,6 +26,4 @@ function attributeFilter(doc, whitelist) {
       }
     }
   }
-
-  return RDR_OK;
 }

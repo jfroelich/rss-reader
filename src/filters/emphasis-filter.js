@@ -2,7 +2,6 @@
 
 // import base/assert.js
 // import base/number.js
-// import base/errors.js
 // import filters/filter-helpers.js
 
 // @param maxTextLength {Number} optional, if number of non-tag characters
@@ -27,6 +26,4 @@ function emphasisFilter(doc, maxTextLength) {
       domUnwrap(element);
     }
   }
-
-  return RDR_OK;
 }

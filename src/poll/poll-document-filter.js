@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import filters/adoption-agency-filter.js
 // import filters/attribute-filter.js
 // import filters/base-filter.js
@@ -20,6 +19,7 @@
 // @param url {String} the canonical url of the document
 // @param fetchImageTimeoutMs {Number} optional, the number of milliseconds
 // to wait before timing out when fetching an image
+// @throws AssertionError
 async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
   assert(doc instanceof Document);
   assert(URLUtils.isValid(url));
@@ -68,10 +68,8 @@ async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
   // This should occur after lonestarFilter
   let allowed_protocols; // defer to defaults
 
-  // TODO: wrap, return RDR_ERR_FETCH or something on error
-  // Allow exceptions to bubble (for now)
+  // Allow exceptions to bubble
   await imageSizeFilter(doc, allowed_protocols, fetchImageTimeoutMs);
-
 
   invalidAnchorFilter(doc);
   formattingAnchorFilter(doc);
@@ -120,6 +118,4 @@ async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
   };
 
   attributeFilter(doc, attributeWhitelist);
-
-  return RDR_OK;
 }

@@ -8,7 +8,7 @@ function lazyImageFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
-    return RDR_OK;
+    return;
   }
 
   const lazyAttributes = [
@@ -34,16 +34,14 @@ function lazyImageFilter(doc) {
       if(image.hasAttribute(lazySourceName)) {
         const imageSource = image.getAttribute(lazySourceName);
         if(URLUtils.isValid(imageSource)) {
-          const preHTML = image.outerHTML;
+          //const preHTML = image.outerHTML;
           image.removeAttribute(lazySourceName);
           image.setAttribute('src', imageSource);
-          const postHTML = image.outerHTML;
-          console.log('lazy:', preHTML, postHTML);
+          //const postHTML = image.outerHTML;
+          //console.log('lazy:', preHTML, postHTML);
           break;
         }
       }
     }
   }
-
-  return RDR_OK;
 }

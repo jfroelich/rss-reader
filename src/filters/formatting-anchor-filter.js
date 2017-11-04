@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import filters/filter-helpers.js
 
 // An anchor that acts like a span can be unwrapped
@@ -20,6 +19,4 @@ function formattingAnchorFilter(doc) {
       domUnwrap(anchor);
     }
   }
-
-  return RDR_OK;
 }

@@ -52,13 +52,8 @@ async function pollFeeds(pfc) {
     }
   }
 
-  let feeds;
-  try {
-    feeds = await readerDbGetFeeds(pfc.readerConn);
-  } catch(error) {
-    console.warn(error);
-    return RDR_ERR_DB;
-  }
+  // Allow errors to bubble
+  const feeds = await readerDbGetFeeds(pfc.readerConn);
 
   if(!pfc.ignoreRecencyCheck) {
     const pollableFeeds = [];
@@ -74,13 +69,12 @@ async function pollFeeds(pfc) {
   for(const feed of feeds) {
     promises.push(pollFeedsPollFeed(feed, pfc));
   }
+  // TODO: use promiseEvery? But what about assertion errors?
+  await Promise.all(promises);
 
-  const statuses = await Promise.all(promises);
+  // Allow errors to bubble
+  await readerUpdateBadge(pfc.readerConn);
 
-  let status = await readerUpdateBadge(pfc.readerConn);
-  if(status !== RDR_OK) {
-    console.warn('pollFeeds readerUpdateBadge failed with status', status);
-  }
 
   const title = 'Added articles';
   const message = 'Added articles';
@@ -91,7 +85,6 @@ async function pollFeeds(pfc) {
   channel.close();
 
   console.log('pollFeeds end');
-  return RDR_OK;
 }
 
 function pollFeedsFeedIsPollable(feed, recencyPeriodMs) {
@@ -114,57 +107,41 @@ function pollFeedsFeedIsPollable(feed, recencyPeriodMs) {
   return true;
 }
 
+// @throws {AssertionError}
 // @throws {Error} any exception thrown by fetchFeed
-// @returns {status} status
+// @throws {ParserError}
+// @throws {Error} any exception calling response.text()
+// @throws {Error} database error
 async function pollFeedsPollFeed(feed, pfc) {
   assert(feedIsFeed(feed));
   assert(pfc instanceof PollFeedsContext);
 
   const url = feedPeekURL(feed);
 
-  let response;
-  try {
-    response = await fetchFeed(url, pfc.fetchFeedTimeoutMs, pfc.acceptHTML);
-  } catch(error) {
-    console.warn(error);
-    return RDR_ERR_FETCH;
-  }
+  // Allow exceptions to bubble
+  const response = await fetchFeed(url, pfc.fetchFeedTimeoutMs, pfc.acceptHTML);
 
-  // Check whether the feed was not modified since last update
-  if(!pfc.ignoreModifiedCheck && feed.dateUpdated &&
-    feed.dateLastModified && response.last_modified_date &&
-    feed.dateLastModified.getTime() ===
+  if(!pfc.ignoreModifiedCheck && feed.dateUpdated && feed.dateLastModified &&
+    response.last_modified_date && feed.dateLastModified.getTime() ===
     response.last_modified_date.getTime()) {
-
     console.debug('skipping unmodified feed', url, feed.dateLastModified,
       response.last_modified_date);
-    return RDR_OK;
+    return;
   }
 
-  let feedXML;
-  try {
-    feedXML = await response.text();
-  } catch(error) {
-    console.warn(error);
-    return RDR_ERR_FETCH;
-  }
+  // Allow errors to bubble
+  const feedXML = await response.text();
 
   const PROCESS_ENTRIES = true;
+
+  // Allow errors to bubble
   const parseResult = readerParseFeed(feedXML, url, response.responseURL,
     response.last_modified_date, PROCESS_ENTRIES);
 
-  if(parseResult.status !== RDR_OK) {
-    return parseResult.status;
-  }
-
   const mergedFeed = feedMerge(feed, parseResult.feed);
-  let storedFeed;
-  try {
-    storedFeed = await readerStoragePutFeed(mergedFeed, pfc.readerConn);
-  } catch(error) {
-    console.warn(error);
-    return RDR_ERR_DB;
-  }
+
+  // Allow errors to bubble
+  const storedFeed = await readerStoragePutFeed(mergedFeed, pfc.readerConn);
 
   let entries = parseResult.entries;
 
@@ -186,5 +163,4 @@ async function pollFeedsPollFeed(feed, pfc) {
 
   const entryPromises = entries.map(pollEntry, pec);
   const entryResolutions = await Promise.all(entryPromises);
-  return RDR_OK;
 }

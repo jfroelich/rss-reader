@@ -79,18 +79,17 @@ async function pollEntry(entry) {
 
   // Only use the document for lookup if it was fetched
   const lookupDocument = response ? entryDocument : undefined;
-  // Ignore icon update failure, do not need to check status
-  await pollEntryUpdateIcon.call(this, entry, lookupDocument);
 
-  let status;
+  try {
+    await pollEntryUpdateIcon.call(this, entry, lookupDocument);
+  } catch(error) {
+    // Ignore icon update failure
+  }
+
+
   // Filter the entry content
   if(entryDocument) {
-    status = await pollDocumentFilter(entryDocument, url,
-      this.fetchImageTimeoutMs);
-
-    if(status !== RDR_OK) {
-      return false;
-    }
+    await pollDocumentFilter(entryDocument, url, this.fetchImageTimeoutMs);
 
     entry.content = entryDocument.documentElement.outerHTML.trim();
   } else {
@@ -135,10 +134,6 @@ async function pollEntryUpdateIcon(entry, document) {
   query.skipURLFetch = true;
   query.document = document;
 
-  // TODO: once faviconLookup returns status, then no need for try/catch. Until
-  // then, trap the exception to prevent this function from throwing in the
-  // ordinary case.
-
   let iconURL;
   try {
     iconURL = await faviconLookup(query);
@@ -148,7 +143,6 @@ async function pollEntryUpdateIcon(entry, document) {
   }
 
   entry.faviconURLString = iconURL || this.feedFaviconURL;
-  return RDR_OK;
 }
 
 async function pollEntryPollable(url, conn) {

@@ -13,11 +13,10 @@ chrome.runtime.onInstalled.addListener(async function(event) {
 
   // Init the badge text. As a side effect this will create the
   // reader-db database
-
-  let conn, status;
+  let conn;
   try {
     conn = await readerDbOpen();
-    status = await readerUpdateBadge(conn);
+    await readerUpdateBadge(conn);
   } catch(error) {
     console.warn(error);
   } finally {

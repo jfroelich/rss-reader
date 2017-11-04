@@ -7,8 +7,6 @@
 // import net/url-utils.js
 // import html.js
 
-// TODO: use status codes throughout. First update fetch.js to use status codes.
-
 // 30 days in ms, used by both lookup and compact to determine whether a
 // cache entry expired
 const FAVICON_DEFAULT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
@@ -52,7 +50,8 @@ function FaviconQuery() {
 // Looks up the favicon url for a given web page url
 // @param query {FaviconQuery}
 // @returns {String} the favicon url if found, otherwise undefined
-// TODO: return status and icon instead of throwing errors
+// TODO: make a member function of FaviconQuery named lookup, remove the query
+// parameter
 async function faviconLookup(query) {
   assert(query instanceof FaviconQuery);
   console.log('faviconLookup', query.url.href);
@@ -316,10 +315,8 @@ async function faviconLookupOrigin(conn, urlObject, urls, fetchImageTimeoutMs,
   try {
     response = await fetchPromise;
   } catch(error) {
-    // This is spamming the console so disabled for now. Eventually this should
-    // work using status, and return codes. That needs to wait until
-    // fetchImageHead returns a status code.
-    //console.warn(error);
+    // This is spamming the console so disabled for now.
+    // console.warn(error);
     return;
   }
 
@@ -446,30 +443,19 @@ function faviconDbPutEntries(conn, iconURL, pageURLs) {
 }
 
 // Finds expired entries in the database and removes them
-// TODO: return status intsead
+// @throws AssertionError
+// @throws Error database related
 async function faviconCompactDb(conn, maxAgeMs) {
   assert(indexedDBIsOpen(conn));
-  console.debug('faviconCompactDb start', maxAgeMs);
 
-  let entries;
-  try {
-    entries = await faviconDbFindExpiredEntries(conn, maxAgeMs);
-  } catch(error) {
-    console.warn(error);
-    return RDR_ERR_DB;
-  }
+  // Allow errors to bubble
+  const entries = await faviconDbFindExpiredEntries(conn, maxAgeMs);
 
   const urls = [];
   for(const entry of entries) {
     urls.push(entry.pageURLString);
   }
 
-  try {
-    await faviconDbRemoveEntriesWithURLs(conn, urls);
-  } catch(error) {
-    console.warn(error);
-    return RDR_ERR_DB;
-  }
-
-  return RDR_OK;
+  // Allow errors to bubble
+  await faviconDbRemoveEntriesWithURLs(conn, urls);
 }

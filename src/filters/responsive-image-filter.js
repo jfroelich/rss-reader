@@ -1,14 +1,13 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import dom.js
 
 function responsiveImageFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
-    return RDR_OK;
+    return;
   }
 
   const images = doc.body.getElementsByTagName('img');
@@ -17,8 +16,6 @@ function responsiveImageFilter(doc) {
       responsiveImageFilterImage(image);
     }
   }
-
-  return RDR_OK;
 }
 
 function responsiveImageFilterImage(image) {

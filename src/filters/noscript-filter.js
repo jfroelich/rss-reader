@@ -11,6 +11,4 @@ function noscriptFilter(doc) {
   for(const noscript of noscripts) {
     domUnwrap(noscript);
   }
-
-  return RDR_OK;
 }

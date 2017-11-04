@@ -1,12 +1,9 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 
 function iframeFilter(doc) {
   assert(doc instanceof Document);
-
-  // Only look at frames within body. If body not present then nothing to do.
   if(!doc.body) {
     return;
   }
@@ -15,6 +12,4 @@ function iframeFilter(doc) {
   for(const iframe of iframes) {
     iframe.remove();
   }
-
-  return RDR_OK;
 }

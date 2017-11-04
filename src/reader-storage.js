@@ -13,7 +13,6 @@
 // Archives certain entries in the database
 // @param maxAgeMs {Number} how long before an entry is considered
 // archivable (using date entry created), in milliseconds
-// @returns {Number} status
 // @throws AssertionError
 // @throws Error - database related
 async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {

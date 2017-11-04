@@ -26,7 +26,7 @@ async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
   assert(typeof allowedProtocols.includes === 'function');
 
   if(!doc.body) {
-    return RDR_OK;
+    return;
   }
 
   // Get all images
@@ -47,7 +47,6 @@ async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
       result.image.setAttribute('height', '' + result.height);
     }
   }
-  return RDR_OK;
 }
 
 async function imageSizeFilterGetDimensions(image, allowedProtocols,

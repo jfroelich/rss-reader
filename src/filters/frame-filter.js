@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
@@ -46,6 +45,4 @@ function frameFilter(doc) {
   for(const frame of frames) {
     frame.remove();
   }
-
-  return RDR_OK;
 }

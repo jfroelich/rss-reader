@@ -237,7 +237,7 @@ async function optionsPageSubscribeFormOnSubmit(event) {
   const feed = feedCreate();
   feedAppendURL(feed, url.href);
 
-  let status, subscribedFeed;
+  let subscribedFeed;
 
   const sc = new SubscriptionContext();
 
@@ -246,7 +246,6 @@ async function optionsPageSubscribeFormOnSubmit(event) {
       Promise.all([readerDbOpen(), faviconDbOpen()]);
 
     const subResult = await subscriptionAdd.call(sc, feed);
-    status = subResult.status;
     subscribedFeed = subResult.feed;
   } catch(error) {
     console.warn(error);
@@ -255,12 +254,6 @@ async function optionsPageSubscribeFormOnSubmit(event) {
     return;
   } finally {
     indexedDBClose(sc.readerConn, sc.iconConn);
-  }
-
-  // TODO: show an error message.
-  if(status !== RDR_OK) {
-    optionsPageSubscriptionMonitorHide();
-    return;
   }
 
   assert(subscribedFeed);
@@ -348,23 +341,17 @@ function optionsPageFeedListRemoveFeed(feedId) {
 async function optionsPageUnsubscribeButtonOnclick(event) {
   const sc = new SubscriptionContext();
   const feed = {};
-  const radix = 10;
-  feed.id = parseInt(event.target.value, radix);
+  feed.id = parseInt10(event.target.value);
   assert(feedIsValidId(feed.id));
-  let status;
   try {
     sc.readerConn = await readerDbOpen();
-    status = await subscriptionRemove.call(sc, feed);
+    await subscriptionRemove.call(sc, feed);
   } catch(error) {
     // TODO: visually react to unsubscribe error
-    console.log(error);
+    console.warn(error);
     return;
   } finally {
     indexedDBClose(sc.readerConn);
-  }
-
-  if(status !== RDR_OK) {
-    console.warn('subscriptionRemove status not ok', status);
   }
 
   optionsPageFeedListRemoveFeed(feed.id);
@@ -398,10 +385,11 @@ async function optionsPageImportOPMLUploaderOnchange(event) {
 }
 
 async function optionsPageExportOPMLButtonOnclick(event) {
-  const status = await optionsPageExportOPML();
-  if(status !== RDR_OK) {
-    console.warn('export failed with status', status);
-    // TODO: react to error
+  try {
+    await optionsPageExportOPML();
+  } catch(error) {
+    // TODO: handle error visually
+    console.warn(error);
   }
 }
 

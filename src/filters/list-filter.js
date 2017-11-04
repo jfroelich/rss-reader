@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import filters/leaf-filter.js
 // import filters/transform-helpers.js
 
@@ -34,8 +33,6 @@ function listFilter(doc) {
   for(const list of lists) {
     listFilterUnwrapSingleItemList(list);
   }
-
-  return RDR_OK;
 }
 
 // Return true if list is 'empty'

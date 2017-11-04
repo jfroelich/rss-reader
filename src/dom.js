@@ -71,7 +71,6 @@ function domUnwrap(element) {
 
   // If nextSibling is undefined then insertBefore appends
   parentElement.insertBefore(frag, nextSibling);
-  return RDR_OK;
 }
 
 // Changes the tag name of an element. Event listeners are lost on rename. No

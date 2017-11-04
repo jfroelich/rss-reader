@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 
 // TODO: move to experimental and stop using for now
 // TODO: this should be part of a general character normalization filter,
@@ -27,6 +26,4 @@ function hairspaceFilter(doc) {
       node.nodeValue = newValue;
     }
   }
-
-  return RDR_OK;
 }

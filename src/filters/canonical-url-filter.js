@@ -33,6 +33,7 @@ const CANONICAL_URL_FILTER_MAP = {
   video: 'src'
 };
 
+// @throws AssertionError
 function canonicalURLFilter(doc, baseURL) {
   assert(doc instanceof Document);
   assert(URLUtils.isURL(baseURL));
@@ -51,8 +52,6 @@ function canonicalURLFilter(doc, baseURL) {
       canonicalURLFilterResolveSrcset(srcsetElement, baseURL);
     }
   }
-
-  return RDR_OK;
 }
 
 function canonicalURLFilterCreateSelector() {

@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import filters/filter-helpers.js
 
 function formFilter(doc) {
@@ -37,6 +36,4 @@ function formFilter(doc) {
   for(const input of inputs) {
     input.remove();
   }
-
-  return RDR_OK;
 }

@@ -52,7 +52,5 @@ async function test_clear_icon_db() {
 
 async function test_compact_icon_db() {
   // TODO: i think this is outdated, I think it needs conn now right?
-  let maxAgeMs;
-  const status = await faviconCompactDb(maxAgeMs);
-  console.log('Deleted entries, status', status);
+  await faviconCompactDb();
 }

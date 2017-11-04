@@ -1,12 +1,9 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 
 function invalidAnchorFilter(doc) {
   assert(doc instanceof Document);
-
-  // Restrict to body descendants
   if(!doc.body) {
     return;
   }
@@ -17,8 +14,6 @@ function invalidAnchorFilter(doc) {
       anchor.remove();
     }
   }
-
-  return RDR_OK;
 }
 
 function invalidAnchorFilterIsInvalid(anchor) {

@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import filters/leaf-filter.js
 // import filters/filter-helpers.js
 // import dom.js
@@ -10,7 +9,7 @@ function tableFilter(doc, scanLimit) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
-    return RDR_OK;
+    return;
   }
 
   unwrapElements(doc.body, 'colgroup, hgroup, multicol, tbody, tfoot, thead');
@@ -20,8 +19,6 @@ function tableFilter(doc, scanLimit) {
     if(tableFilterIsSingleColumnTable(table, scanLimit))
       tableFilterUnwrapSingleColumnTable(table);
   }
-
-  return RDR_OK;
 }
 
 function tableFilterIsSingleColumnTable(table, scanLimit) {

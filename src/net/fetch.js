@@ -5,9 +5,6 @@
 // import net/mime.js
 // import net/url-utils.js
 
-
-// TODO: change functions to return status instead of throwing exceptions
-
 // Fetches a feed. Returns a basic object, similar to Response, with custom
 // properties.
 // @param url {String} the url to fetch

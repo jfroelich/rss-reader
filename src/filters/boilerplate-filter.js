@@ -59,18 +59,16 @@ const BOILERPLATE_TOKEN_WEIGHTS = {
   zone: -50
 };
 
-
+// @throws AssertionError
 function boilerplateFilter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {
-    return RDR_OK;
+    return;
   }
 
   const bestElement = boilerplateFindHighScoreElement(doc);
   assert(bestElement);
   boilerplatePrune(doc, bestElement);
-
-  return RDR_OK;
 }
 
 function boilerplateDeriveTextBias(element) {

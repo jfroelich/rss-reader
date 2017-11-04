@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import net/url-utils.js
 
 // TODO: hostSelectorMap should be a parameter to this function so that
@@ -39,6 +38,4 @@ function hostTemplateFilter(doc, url) {
   for(const element of elements) {
     element.remove();
   }
-
-  return RDR_OK;
 }

@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import filters/filter-helpers.js
 
 function condenseTagnamesFilter(doc) {
@@ -17,5 +16,4 @@ function condenseTagnamesFilter(doc) {
   const copyAttributes = false;
   renameElements(doc.body, 'strong', 'b', copyAttributes);
   renameElements(doc.body, 'em', 'i', copyAttributes);
-  return RDR_OK;
 }

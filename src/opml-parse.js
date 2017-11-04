@@ -6,20 +6,19 @@
 class OPMLParser {
 
   // @param xml {String}
-  // @returns {Array} returns an array of status code and document
+  // @throws {AssertionError}
+  // @throws {ParserError}
+  // @throws {Error} invalid document element
+  // @returns {Document} document
   static parse(xml) {
-    let [status, doc] = XMLParser.parse(xml);
-    if(status !== RDR_OK) {
-      console.debug('xml parse error');
-      return [status];
-    }
-
+    // Allow errors to bubble
+    const doc = XMLParser.parse(xml);
     const name = doc.documentElement.localName.toLowerCase();
     if(name !== 'opml') {
-      console.debug('documentElement not opml:', name);
-      return [RDR_ERR_DOM];
+      // TODO: use a more specific error
+      throw new Error('documentElement not opml: ' + name);
     }
 
-    return [RDR_OK, doc];
+    return doc;
   }
 }

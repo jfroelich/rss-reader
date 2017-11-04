@@ -4,18 +4,14 @@
 // import net/mime.js
 
 class XMLParser {
+
+  // @throws {AssertionError}
+  // @throws {ParserError}
   static parse(xml) {
-
-    // Even though parseFromString tolerates bad input, this function expects
-    // the proper type, and not receiving it indicates a programming error.
-    if(typeof xml !== 'string') {
-      return [RDR_EINVAL];
-    }
-
+    assert(typeof xml === 'string');
     const parser = new DOMParser();
 
-    // NOTE: parseFromString generates a default document with an embedded
-    // error for invalid input; does not throw
+    // Does not throw
     const doc = parser.parseFromString(xml, mime.XML);
     assert(doc instanceof Document);
 
@@ -24,10 +20,9 @@ class XMLParser {
     // input. In the interest of safety, this always fails.
     const parserErrorElement = doc.querySelector('parsererror');
     if(parserErrorElement) {
-      console.warn(parserErrorElement.textContent);
-      return [RDR_ERR_PARSE];
+      throw new ParserError(parserErrorElement.textContent);
     }
 
-    return [RDR_OK, doc];
+    return doc;
   }
 }

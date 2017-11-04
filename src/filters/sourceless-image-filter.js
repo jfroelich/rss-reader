@@ -1,14 +1,13 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import dom.js
 
 function sourcelessImageFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
-    return RDR_OK;
+    return;
   }
 
   const images = doc.body.querySelectorAll('img');
@@ -17,8 +16,6 @@ function sourcelessImageFilter(doc) {
       domRemoveImage(image);
     }
   }
-
-  return RDR_OK;
 }
 
 // TODO: delegate to dom.js function, maybe inverse

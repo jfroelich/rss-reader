@@ -73,23 +73,20 @@ function feedCreateIconLookupURL(feed) {
 }
 
 // Update's a feed's faviconURLString property (not persisted to db)
+// TODO: move to subscription.js
+// @throws AssertionError
+// @throws Error error creating lookup url
+// @throws Error error looking up favicon
 async function feedUpdateFavicon(feed, iconConn) {
-
+  assert(feedIsFeed(feed));
+  assert(indexedDBIsOpen(iconConn));
   const query = new FaviconQuery();
   query.conn = iconConn;
+  // Allow errors to bubble
   query.url = feedCreateIconLookupURL(feed);
-
-  let icon_url;
-  try {
-    icon_url = await faviconLookup(query);
-  } catch(error) {
-    console.warn(error);
-    // TODO: use a more accurate error code
-    return RDR_ERR_DB;
-  }
-
-  feed.faviconURLString = icon_url;
-  return RDR_OK;
+  // Allow errors to bubble
+  const iconURL = await faviconLookup(query);
+  feed.faviconURLString = iconURL;
 }
 
 // TODO: include this in places where sanitize is called

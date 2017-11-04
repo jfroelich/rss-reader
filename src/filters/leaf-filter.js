@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import dom.js
 
 const LEAF_FILTER_EXCEPTION_ELEMENTS = [
@@ -24,8 +23,6 @@ function leafFilter(doc) {
       element.remove();
     }
   }
-
-  return RDR_OK;
 }
 
 // Recursive

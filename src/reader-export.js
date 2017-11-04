@@ -9,11 +9,14 @@
 // @param feeds {Array}
 // @param title {String} optional
 // @param fileName {String} optional
-// @returns {Number} status code
-async function readerExportFeeds(feeds, title, fileName) {
+// @throws AssertionError
+// @throws Error opmlDocumentSetTitle head element not found error
+function readerExportFeeds(feeds, title, fileName) {
   assert(Array.isArray(feeds));
 
   const doc = opmlDocumentCreate();
+
+  // Allow errors to bubble
   opmlDocumentSetTitle(doc, title);
 
   for(const feed of feeds) {
@@ -29,5 +32,4 @@ async function readerExportFeeds(feeds, title, fileName) {
   anchor.click();
 
   URL.revokeObjectURL(url);
-  return RDR_OK;
 }

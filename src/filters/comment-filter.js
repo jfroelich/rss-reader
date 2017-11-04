@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 
 function commentFilter(doc) {
   assert(doc instanceof Document);
@@ -10,5 +9,4 @@ function commentFilter(doc) {
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     node.remove();
   }
-  return RDR_OK;
 }

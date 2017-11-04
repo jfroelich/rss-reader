@@ -1,8 +1,8 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 
+// TODO: use a clearer name
 function piFilter(doc) {
   assert(doc instanceof Document);
 
@@ -15,5 +15,5 @@ function piFilter(doc) {
   // node filter test that only returns true for
   // Node.PROCESSING_INSTRUCTION_NODE (value of 7)
 
-  return RDR_OK;
+  throw new Error('Not implemented');
 }

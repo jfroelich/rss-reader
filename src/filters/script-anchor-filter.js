@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import filters/filter-helpers.js
 // import net/url-utils.js
 
@@ -19,6 +18,4 @@ function scriptAnchorFilter(doc) {
       domUnwrap(anchor);
     }
   }
-
-  return RDR_OK;
 }

@@ -8,20 +8,15 @@
 
 // Parses the input string into a feed object
 // @param xml {String} the text to parse
+// @throws {AssertionError}
+// @throws {ParserError}
 // @returns {Object} an object representing the parsed feed and its entries
 function feedParseFromString(xml) {
-  let [status, doc] = XMLParser.parse(xml);
-  if(status !== RDR_OK) {
-    console.warn('parse feed error');
 
-    const emptyResult = {
-      feed: null,
-      entries: []
-    };
+  // Allow errors to bubble
+  const doc = XMLParser.parse(xml);
 
-    return emptyResult;
-  }
-
+  // Allow errors to bubble
   return feedParseUnmarshallXML(doc);
 }
 

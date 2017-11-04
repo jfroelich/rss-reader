@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import dom.js
 
 const FORMATTING_FILTER_SELECTOR = [
@@ -10,14 +9,12 @@ const FORMATTING_FILTER_SELECTOR = [
   'font', 'plaintext', 'small', 'tt'
 ].join(',');
 
-
 function formattingFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
-    return RDR_OK;
+    return;
   }
 
   unwrapElements(doc.body, FORMATTING_FILTER_SELECTOR);
-  return RDR_OK;
 }

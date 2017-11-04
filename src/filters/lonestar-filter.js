@@ -46,7 +46,7 @@ function lonestarFilter(doc, url) {
 
   // Analysis is limited to descendants of body
   if(!doc.body) {
-    return RDR_OK;
+    return;
   }
 
   // Telemetry images are usually hidden, so treat visibility as an indicator.
@@ -64,8 +64,6 @@ function lonestarFilter(doc, url) {
       domRemoveImage(image);
     }
   }
-
-  return RDR_OK;
 }
 
 // Returns true if an image is a pixel-sized image

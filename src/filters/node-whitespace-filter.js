@@ -20,8 +20,6 @@ function nodeWhitespaceFilter(doc) {
       }
     }
   }
-
-  return RDR_OK;
 }
 
 function nodeWhitespaceFilterIsSensitive(node) {

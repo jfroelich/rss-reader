@@ -1,9 +1,10 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import opml-outline.js
 
+// @throws AssertionError
+// @throws Error missing head element
 function opmlDocumentSetTitle(doc, title) {
   assert(doc instanceof Document);
 
@@ -20,8 +21,7 @@ function opmlDocumentSetTitle(doc, title) {
       // <head> if needed
 
       if(!headElement) {
-        console.log('missing head element');
-        return RDR_ERR_DOM;
+        throw new Error('missing head element');
       }
 
       headElement.appendChild(titleElement);
@@ -33,8 +33,6 @@ function opmlDocumentSetTitle(doc, title) {
       titleElement.remove();
     }
   }
-
-  return RDR_OK;
 }
 
 function opmlDocumentCreate() {
@@ -81,10 +79,7 @@ function opmlGetOutlineObjects(doc) {
 
 function opmlRemoveOutlinesWithInvalidTypes(doc) {
   assert(doc instanceof Document);
-
   const elements = opmlGetOutlineElements(doc);
-
-  // TODO: return status instead, do not calc len
   const initialLength = elements.length;
   for(const element of elements) {
     if(!opmlOutlineElementHasValidType(element)) {
@@ -97,24 +92,20 @@ function opmlRemoveOutlinesWithInvalidTypes(doc) {
 
 function opmlRemoveOutlinesMissingXMLURLs(doc) {
   assert(doc instanceof Document);
-
   const outlines = opmlGetOutlineElements(doc);
   for(const outline of outlines) {
     if(!opmlOutlineElementHasXMLURL(outline)) {
       outline.remove();
     }
   }
-  return RDR_OK;
 }
 
 function opmlNormalizeOutlineXMLURLs(doc) {
   assert(doc instanceof Document);
-
   const outlines = opmlGetOutlineElements(doc);
   for(const outline of outlines) {
     opmlOutlineElementNormalizeXMLURL(outline);
   }
-  return RDR_OK;
 }
 
 function opmlDocumentAppendOutlineObject(doc, outline) {
@@ -123,13 +114,10 @@ function opmlDocumentAppendOutlineObject(doc, outline) {
 
 function opmlDocumentAppendOutlineElement(doc, element) {
   assert(doc instanceof Document);
-
   let bodyElement = doc.querySelector('body');
   if(!bodyElement) {
     bodyElement = doc.createElement('body');
     doc.documentElement.appendChild(bodyElement);
   }
-
   bodyElement.appendChild(element);
-  return RDR_OK;
 }

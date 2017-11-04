@@ -1,15 +1,15 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 
 // Relocates certain misnested elements
+// @throws AssertionError
 function adoptionAgencyFilter(doc) {
   assert(doc instanceof Document);
 
   // Restrict analysis to body
   if(!doc.body) {
-    return RDR_OK;
+    return;
   }
 
   // Fix hr in lists. Simple case of invalid parent
@@ -33,6 +33,4 @@ function adoptionAgencyFilter(doc) {
       block.appendChild(ancestor);
     }
   }
-
-  return RDR_OK;
 }

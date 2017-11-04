@@ -1,21 +1,15 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 // import dom.js
 
 function unwrapElements(ancestorElement, selector) {
-  // TODO: why the if? do not think it is needed
-  if(ancestorElement && selector) {
-    assert(ancestorElement instanceof Element);
-    assert(typeof selector === 'string');
-    const elements = ancestorElement.querySelectorAll(selector);
-    for(const element of elements) {
-      domUnwrap(element);
-    }
+  assert(ancestorElement instanceof Element);
+  assert(typeof selector === 'string');
+  const elements = ancestorElement.querySelectorAll(selector);
+  for(const element of elements) {
+    domUnwrap(element);
   }
-
-  return RDR_OK;
 }
 
 function renameElements(ancestorElement, oldName, newName, copyAttributes) {
@@ -29,6 +23,4 @@ function renameElements(ancestorElement, oldName, newName, copyAttributes) {
       domRename(element, newName, copyAttributes);
     }
   }
-
-  return RDR_OK;
 }
