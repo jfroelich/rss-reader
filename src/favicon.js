@@ -279,7 +279,7 @@ async function faviconSearchDocument(document, conn, baseURLObject, urls) {
     console.log('found favicon <link>', baseURLObject.href,
       iconURLObject.href);
 
-    // TODO: move this out so that search_document is not async
+    // TODO: move this out so that faviconSearchDocument is not async
     if(conn) {
       await faviconDbPutEntries(conn, iconURLObject.href, urls);
     }
