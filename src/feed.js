@@ -27,7 +27,7 @@ function feedHasURL(feed) {
 // Returns the last url in the feed's url list as a string
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
-function feedGetTopURL(feed) {
+function feedPeekURL(feed) {
   assert(feed && feed.urls && feed.urls.length);
   return feed.urls[feed.urls.length - 1];
 }
@@ -67,7 +67,7 @@ function feedCreateIconLookupURL(feed) {
 
   // If the link is missing or invalid then use the origin of the feed's
   // xml url. Assume the feed always has a url.
-  const urlString = feedGetTopURL(feed);
+  const urlString = feedPeekURL(feed);
   const urlObject = new URL(urlString);
   return new URL(urlObject.origin);
 }

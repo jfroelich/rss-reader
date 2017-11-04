@@ -7,6 +7,19 @@
 // import feed.js
 // import entry.js
 
+class ReaderDbNotFoundError extends Error {
+  constructor(key) {
+    super('Object not found for key ' + key);
+  }
+}
+
+class ReaderDbInvalidStateError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
+
 // Opens a connection to the reader-db database
 // @return {Promise} a promise that resolves to an open database connection
 function readerDbOpen() {
@@ -171,6 +184,10 @@ function readerDbGetFeeds(conn) {
   });
 }
 
+// Returns a promise that resolves to an array of feed ids, or rejects with
+// a database error
+// @param conn {IDBDatabase}
+// @throws AssertionError
 function readerDbGetFeedIds(conn) {
   assert(indexedDBIsOpen(conn));
 
@@ -183,13 +200,25 @@ function readerDbGetFeedIds(conn) {
   });
 }
 
-// Limit applies to the return array size, not num scanned
-// Limit should be > 0 (only weakly asserted).
+// Scans the entry object store for entries matching the predicate
+// @param conn {IDBDatabase}
+// @param predicate {Function} evaluated against each entry during scan,
+// an entry is included in the output if true
+// @param limit {Number} optional, if specified then must be an integer > 0,
+// an upper bound on number of entries included in output
+// @throws AssertionError
+// @returns {Promise} resolves to an array of entry objects, or rejects with
+// a database-related error.
 function readerDbFindEntries(conn, predicate, limit) {
   assert(indexedDBIsOpen(conn));
   assert(typeof predicate === 'function');
-  assert(numberIsPositiveInteger(limit));
-  assert(limit > 0);
+
+  const limited = typeof limit !== 'undefined';
+
+  if(limited) {
+    assert(numberIsPositiveInteger(limit));
+    assert(limit > 0);
+  }
 
   return new Promise(function executor(resolve, reject) {
     const entries = [];
@@ -219,7 +248,7 @@ function readerDbFindEntries(conn, predicate, limit) {
         console.debug('readerDbFindEntries predicate true', entry.id);
         entries.push(entry);
 
-        if(entries.length === limit) {
+        if(limited && entries.length === limit) {
           console.debug('readerDbFindEntries reached limit ');
           // Do not advance. Allow the transaction to settle which allows
           // the promise to settle.

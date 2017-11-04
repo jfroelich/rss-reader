@@ -39,7 +39,7 @@ function opmlOutlineFromFeed(feed) {
   assert(feedIsFeed(feed));
   const outline = {};
   outline.type = feed.type;
-  outline.xmlUrl = feedGetTopURL(feed);
+  outline.xmlUrl = feedPeekURL(feed);
   outline.title = feed.title;
   outline.description = feed.description;
   outline.htmlUrl = feed.link;

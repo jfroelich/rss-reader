@@ -47,11 +47,11 @@ function slideshowSlideRemove(slideElement) {
   slideElement.remove();
 }
 
-// TODO: visual feedback in event of an error?
+// TODO: visual feedback in event of an error
 async function slideshowSlideMarkRead(conn, slideElement) {
   assert(indexedDBIsOpen(conn));
 
-  // This is normal and not an error
+  // not an error
   if(slideElement.hasAttribute('read')) {
     return;
   }
@@ -60,17 +60,14 @@ async function slideshowSlideMarkRead(conn, slideElement) {
   const RADIX = 10;
   const entryIdNumber = parseInt(entryIdString, RADIX);
   try {
-    const status = await readerStorageMarkRead(conn, entryIdNumber);
-    if(status !== RDR_OK) {
-      // TODO: react to error
-      console.warn('slideshowSlideMarkRead failed to update database');
-    }
-
-    slideElement.setAttribute('read', '');
+    await readerStorageMarkRead(conn, entryIdNumber);
   } catch(error) {
     // TODO: handle error visually
     console.warn(error);
+    return;
   }
+
+  slideElement.setAttribute('read', '');
 }
 
 // TODO: do not support local conn

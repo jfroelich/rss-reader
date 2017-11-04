@@ -8,19 +8,15 @@
 // import reader-storage.js
 
 async function alarmsOnArchiveAlarm() {
-  let conn, maxAgeMs, status;
+  let conn, maxAgeMs;
   const limit = 500;
   try {
     conn = await readerDbOpen();
-    status = await readerStorageArchiveEntries(conn, maxAgeMs, limit);
+    await readerStorageArchiveEntries(conn, maxAgeMs, limit);
   } catch(error) {
-    console.error(error);
+    console.warn(error);
   } finally {
     indexedDBClose(conn);
-  }
-
-  if(status !== RDR_OK) {
-    console.warn('archive entries failed status', status);
   }
 }
 
@@ -52,7 +48,6 @@ async function alarmsOnPollFeedsAlarm() {
 async function alarmsOnRemoveLostEntriesAlarm() {
   const limit = 100;
   let conn;
-
   try {
     conn = await readerDbOpen();
     await readerStorageRemoveLostEntries(conn, limit);
@@ -78,20 +73,15 @@ async function alarmsOnRemoveOrphansAlarm() {
 }
 
 async function alarmsOnRefreshFeedIconsAlarm() {
-  let readerConn, iconConn, status;
-
+  let readerConn, iconConn;
   try {
     [readerConn, iconConn] = await Promise.all([readerDbOpen(),
       faviconDbOpen()]);
-    status = await readerStorageRefreshFeedIcons(readerConn, iconConn);
+    await readerStorageRefreshFeedIcons(readerConn, iconConn);
   } catch(error) {
     console.warn(error);
   } finally {
     indexedDBClose(readerConn, iconConn);
-  }
-
-  if(status !== RDR_OK) {
-    console.warn('alarmsOnRefreshFeedIconsAlarm invalid status', status);
   }
 }
 

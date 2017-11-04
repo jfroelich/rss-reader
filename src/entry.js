@@ -8,6 +8,7 @@
 // import net/url-utils.js
 // import html.js
 
+// TODO: entry is too generic of an term, add qualifying to name
 
 const ENTRY_STATE_UNREAD = 0;
 const ENTRY_STATE_READ = 1;
@@ -32,6 +33,7 @@ function entryHasURL(entry) {
 
 // Returns the most last url, as a string, in the entry's url list. Throws an
 // error if the entry does not have urls.
+// @throws AssertionError
 function entryPeekURL(entry) {
   assert(entryIsEntry(entry));
   assert(entryHasURL(entry));

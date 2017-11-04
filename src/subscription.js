@@ -31,7 +31,7 @@ async function subscriptionAdd(feed) {
     return {'status' : RDR_EINVAL};
   }
 
-  const urlString = feedGetTopURL(feed);
+  const urlString = feedPeekURL(feed);
   let status = await subscriptionIsUnique(urlString, this.readerConn);
   if(status !== RDR_OK) {
     return {'status' : status};
@@ -130,7 +130,7 @@ async function subscriptionPutFeed(feed, readerConn, notify) {
 
 function subscriptionNotifyAdd(feed) {
   const title = 'Subscribed';
-  const feedName = feed.title || feedGetTopURL(feed);
+  const feedName = feed.title || feedPeekURL(feed);
   const message = 'Subscribed to ' + feedName;
   extensionNotify(title, message, feed.faviconURLString);
 }

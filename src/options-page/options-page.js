@@ -172,7 +172,7 @@ async function optionsPageFeedListItemOnclick(event) {
   }
 
   const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = feedGetTopURL(feed);
+  feedURLElement.textContent = feedPeekURL(feed);
   const feedLinkElement = document.getElementById('details-feed-link');
   feedLinkElement.textContent = feed.link || '';
   const unsubscribeButton = document.getElementById('details-unsubscribe');
@@ -265,7 +265,7 @@ async function optionsPageSubscribeFormOnSubmit(event) {
 
   assert(subscribedFeed);
   optionsPageFeedListAppendFeed(subscribedFeed);
-  const feedURL = feedGetTopURL(subscribedFeed);
+  const feedURL = feedPeekURL(subscribedFeed);
 
   // TODO: unsafe?
   optionsPageSubscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);

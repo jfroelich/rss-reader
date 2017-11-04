@@ -107,7 +107,7 @@ function pollFeedsFeedIsPollable(feed, recencyPeriodMs) {
   if(elapsed < recencyPeriodMs) {
     // A feed has been polled too recently if not enough time has elasped from
     // the last time the feed was polled.
-    console.debug('feed polled too recently', feedGetTopURL(feed));
+    console.debug('feed polled too recently', feedPeekURL(feed));
     return false;
   }
 
@@ -120,7 +120,7 @@ async function pollFeedsPollFeed(feed, pfc) {
   assert(feedIsFeed(feed));
   assert(pfc instanceof PollFeedsContext);
 
-  const url = feedGetTopURL(feed);
+  const url = feedPeekURL(feed);
 
   let response;
   try {

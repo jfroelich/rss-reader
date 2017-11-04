@@ -9,28 +9,25 @@
 // import reader-storage.js
 
 async function cliRefreshFeedIcons() {
-  let readerConn, iconConn, status;
+  let readerConn, iconConn;
   try {
     [readerConn, iconConn] = await Promise.all([readerDbOpen(),
       faviconDbOpen()]);
-    status = await readerStorageRefreshFeedIcons(readerConn, iconConn);
+    await readerStorageRefreshFeedIcons(readerConn, iconConn);
   } finally {
     indexedDBClose(readerConn, iconConn);
   }
-
-  return status;
 }
 
 async function cliArchiveEntries(limit) {
-  let maxAgeMs, conn, status;
+  let maxAgeMs, conn;
   limit = limit || 10;
   try {
     conn = await readerDbOpen();
-    status = await readerStorageArchiveEntries(conn, maxAgeMs, limit);
+    await readerStorageArchiveEntries(conn, maxAgeMs, limit);
   } finally {
     indexedDBClose(conn);
   }
-  return status;
 }
 
 async function cliPollFeeds() {
@@ -53,35 +50,41 @@ async function cliPollFeeds() {
 }
 
 async function cliScanLost(limit) {
-  if(!numberIsPositiveInteger(limit) || limit < 1) {
-    throw new TypeError('limit must be > 0');
+  if(typeof limit !== 'undefined') {
+    // This check is not an assertion because this is a user-specified parameter
+    // that is not indicative of a violation of an invariant condition.
+    if(!numberIsPositiveInteger(limit) || limit < 1) {
+      // This is not worthy of an exception because it is a top level console
+      // call, so instead directly inform the caller in the console and exit.
+      console.warn('Scan canceled. Limit must be integer greater than 0.');
+      return;
+    }
   }
 
-  let conn, status;
+  let conn;
   try {
     conn = await readerDbOpen();
-    status = await readerStorageRemoveLostEntries(conn, limit);
+    await readerStorageRemoveLostEntries(conn, limit);
   } finally {
     indexedDBClose(conn);
   }
-
-  return status;
 }
 
 async function cliScanOrphans(limit) {
-  if(!numberIsPositiveInteger(limit) || limit < 1) {
-    throw new TypeError('limit must be > 0');
+  if(typeof limit !== 'undefined') {
+    if(!numberIsPositiveInteger(limit) || limit < 1) {
+      console.warn('scan canceled, invalid limit');
+      return;
+    }
   }
 
-  let conn, status;
+  let conn;
   try {
     conn = await readerDbOpen();
-    status = await readerStorageRemoveOrphans(conn, limit);
+    await readerStorageRemoveOrphans(conn, limit);
   } finally {
     indexedDBClose(conn);
   }
-
-  return status;
 }
 
 async function cliClearFavicons() {

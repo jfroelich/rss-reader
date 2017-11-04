@@ -9,7 +9,7 @@ function numberIsPositiveInteger(number) {
 }
 
 // TODO: replace all parseInt callsites with this wrapper function
-function numberParseInt10(number) {
+function parseInt10(number) {
   const RADIX = 10;
   return parseInt(number, RADIX);
 }

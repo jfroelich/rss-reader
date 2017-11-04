@@ -14,7 +14,7 @@ async function test_archive_entries() {
   try {
     conn = await indexedDBOpen(name, version, readerDbOnUpgradeNeeded,
       timeoutMs);
-    const status = await readerStorageArchiveEntries(conn, maxAgeMs, limit);
+    await readerStorageArchiveEntries(conn, maxAgeMs, limit);
     indexedDBClose(conn);
     closeRequested = true;
     await indexedDBDeleteDatabase(conn.name);

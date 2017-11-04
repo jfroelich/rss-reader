@@ -97,9 +97,14 @@ async function pollEntry(entry) {
     entry.content = 'Empty or malformed content';
   }
 
-  status = await readerStorageAddEntry(entry, this.readerConn);
-  if(status !== RDR_OK) {
-    return false;
+  try {
+    await readerStorageAddEntry(entry, this.readerConn);
+  } catch(error) {
+    if(error instanceof AssertionError) {
+      throw error;
+    } else {
+      return false;
+    }
   }
 
   return true;
