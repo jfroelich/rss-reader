@@ -128,15 +128,15 @@ async function readerStoragePutFeed(feed, conn, skipPrep) {
     storable = objectFilterEmptyProps(storable);
   }
 
-  // TODO: set dateCreated if not set
+  const currentDate = new Date();
+  if(!('dateCreated' in storable)) {
+    storable.dateCreated = currentDate;
+  }
+  storable.dateUpdated = currentDate;
 
-  storable.dateUpdated = new Date();
-
-  // TODO: ensure that if put is add that new id is set on resulting feed
-  await readerDbPutFeed(conn, storable);
-
-  // TODO: return the feed returned by readerDbPutFeed instead of the feed
-  // given to readerDbPutFeed
+  // Allow errors to bubble
+  const newId = await readerDbPutFeed(conn, storable);
+  storable.id = newId;
   return storable;
 }
 

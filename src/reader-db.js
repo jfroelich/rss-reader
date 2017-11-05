@@ -7,6 +7,13 @@
 // import feed.js
 // import entry.js
 
+
+class ReaderDbConstraintError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
 class ReaderDbNotFoundError extends Error {
   constructor(key) {
     super('Object not found for key ' + key);

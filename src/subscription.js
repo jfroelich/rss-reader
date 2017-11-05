@@ -10,6 +10,10 @@
 // import reader-db.js
 // import reader-badge.js
 
+
+// TODO: make subscriptionAdd a member of SubscriptionContext, rename
+// SubscriptionContext to SubscribeRequest or something like that.
+
 function SubscriptionContext() {
   this.readerConn;
   this.iconConn;
@@ -17,61 +21,62 @@ function SubscriptionContext() {
   this.notify = true;
 }
 
-// Returns the subscribed feed is successful, otherwise undefined.
-// @throws AssertionError
-// @throws Error database-related
-// @throws Error parse related
-// @throws Error fetch related
+// @param feed {Object} the feed to subscribe to
+// @param this {SubscriptionContext}
+// @throws {AssertionError}
+// @throws {Error} database-related
+// @throws {Error} parse related
+// @throws {Error} fetch related
+// @returns {Object} the subscribed feed
 async function subscriptionAdd(feed) {
   console.log('subscriptionAdd', feed);
   assert(this instanceof SubscriptionContext);
   assert(indexedDBIsOpen(this.readerConn));
   assert(indexedDBIsOpen(this.iconConn));
   assert(feedIsFeed(feed));
+  assert(feedHasURL(feed));
 
-  if(!feedHasURL(feed)) {
-    // TODO: use more specific error
-    throw new Error('feed missing url');
+  const url = feedPeekURL(feed);
+  if(await readerDbFindFeedIdByURL(this.readerConn, url)) {
+    throw new ReaderDbConstraintError();
   }
 
-  const urlString = feedPeekURL(feed);
-  if(!(await subscriptionIsUnique(urlString, this.readerConn))) {
-    throw new Error('constraint error');
-  }
-
-  // If offline then skip fetching information.
-  // TODO: maybe should not support subscribe while offline if I have no way
-  // of removing dead or invalid feeds
-  if('onLine' in navigator && !navigator.onLine) {
-    // Skip the favicon lookup while offline
-    // TODO: maybe should not skip favicon lookup if cache-only lookup could
-    // still work
-    return await subscriptionPutFeed(feed, this.readerConn, this.notify);
-  }
-
-  // Allow errors to bubble
-  const response = await fetchFeed(urlString, this.timeoutMs);
-
-  if(response.redirected) {
-    if(!(await subscriptionIsUnique(response.responseURL, this.readerConn))) {
-      throw new Error('constraint error');
+  // If we are online, or cannot tell, then try and fetch the feed's details,
+  // check if it exists, and check for redirect url.
+  if(navigator.onLine || !('onLine' in navigator)) {
+    const res = await fetchFeed(url, this.timeoutMs);
+    if(res.redirected) {
+      if(await readerDbFindFeedIdByURL(this.readerConn,res.responseURL)) {
+        throw new ReaderDbConstraintError();
+      }
     }
+
+    const xml = await response.text();
+    const PROCESS_ENTRIES = false;
+    const parseResult = readerParseFeed(xml, url, res.responseURL,
+      res.last_modified_date, PROCESS_ENTRIES);
+    const mergedFeed = feedMerge(feed, parseResult.feed);
+    feed = mergedFeed;
   }
 
-  // Allow errors to bubble
-  const feedXML = await response.text();
+  await subscriptionLookupFavicon.call(this, feed);
 
-  const PROCESS_ENTRIES = false;
+  const SKIP_PREP = false;
+  const storedFeed = readerStoragePutFeed(feed, this.readerConn, SKIP_PREP);
+  if(this.notify) {
+    subscriptionNotify(storedFeed);
+  }
+  return storedFeed;
+}
 
-  // Allow errors to bubble
-  const parseResult = readerParseFeed(feedXML, response.request_url,
-    response.responseURL, response.last_modified_date, PROCESS_ENTRIES);
-
-
-  const mergedFeed = feedMerge(feed, parseResult.feed);
-
+async function subscriptionLookupFavicon(feed) {
+  const query = new FaviconQuery();
+  query.conn = this.iconConn;
+  query.url = feedCreateIconLookupURL(feed);
+  query.skipURLFetch = true;
   try {
-    await feedUpdateFavicon(mergedFeed, this.iconConn);
+    const iconURL = await faviconLookup(query);
+    feed.faviconURLString = iconURL;
   } catch(error) {
     if(error instanceof AssertionError) {
       throw error;
@@ -79,46 +84,14 @@ async function subscriptionAdd(feed) {
       // ignore, favicon failure is non-fatal
     }
   }
-
-  return await subscriptionPutFeed(mergedFeed, this.readerConn, this.notify);
 }
 
-// Check whether a feed with the given url already exists in the database
-// @throws {Error} database-related
-async function subscriptionIsUnique(urlString, readerConn) {
-  const feed = await readerDbFindFeedIdByURL(readerConn, urlString);
-  return !feed;
+function subscriptionNotify(feed) {
+  const title = 'Subscribed';
+  const feedName = feed.title || feedPeekURL(feed);
+  const message = 'Subscribed to ' + feedName;
+  extensionNotify(title, message, feed.faviconURLString);
 }
-
-// TODO: deprecate, this should delegate to readerStoragePutFeed instead
-// I think first step would be to inline this function, because right now it
-// composes prep, store, and notify together.
-// TODO: The second problem is the notify flag. Basically, let the caller decide
-// @throws AssertionError
-// @throws Error database related
-// @throws Error feed related
-async function subscriptionPutFeed(feed, readerConn, notify) {
-  // Prep
-  let storableFeed = feedSanitize(feed);
-  storableFeed = objectFilterEmptyProps(storableFeed);
-  storableFeed.dateCreated = new Date();
-
-  // Store
-  // Allow errors to bubble
-  const newId = await readerDbPutFeed(readerConn, storableFeed);
-  storableFeed.id = newId;
-
-  // Notify
-  if(notify) {
-    const title = 'Subscribed';
-    const feedName = storableFeed.title || feedPeekURL(storableFeed);
-    const message = 'Subscribed to ' + feedName;
-    extensionNotify(title, message, storableFeed.faviconURLString);
-  }
-  return storableFeed;
-}
-
-
 
 // Concurrently subscribe to each feed in the feeds iterable. Returns a promise
 // that resolves to an array of statuses. If a subscription fails due
@@ -138,13 +111,9 @@ async function subscriptionRemove(feed) {
   assert(feedIsFeed(feed));
   assert(feedIsValidId(feed.id));
 
-  // Allow errors to bubble
-  let entryIds = await readerDbFindEntryIdsByFeedId(this.readerConn, feed.id);
-  // Allow errors to bubble
+  const entryIds = await readerDbFindEntryIdsByFeedId(this.readerConn, feed.id);
   await readerDbRemoveFeedAndEntries(this.readerConn, feed.id, entryIds);
-  // Allow errors to bubble
   await readerUpdateBadge(this.readerConn);
-
   const channel = new BroadcastChannel('db');
   channel.postMessage({type: 'feed-deleted', id: feed.id});
   for(const entryId of entryIds) {
