@@ -39,15 +39,9 @@ async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
     return;
   }
 
-  // TODO: entryCompact is unique to this operation, so it probably does not
-  // belong in entry.js
-  // TODO: entryCompact should throw an error when the entry is in the wrong
-  // state, such as when it is already archived, and that error should bubble
-  // here
-
   const compactedEntries = [];
   for(const entry of entries) {
-    compactedEntries.push(entryCompact(entry));
+    compactedEntries.push(readerStorageEntryCompact(entry));
   }
   entries = compactedEntries;
 
@@ -65,6 +59,24 @@ async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
   console.log('compacted %s entries', entries.length);
 }
 
+
+// Returns a new entry object that is in a compacted form. The new entry is a
+// shallow copy of the input entry, where only certain properties are kept, and
+// a couple properties are changed.
+function readerStorageEntryCompact(entry) {
+  const ce = {};
+  ce.dateCreated = entry.dateCreated;
+  ce.dateRead = entry.dateRead;
+  ce.feed = entry.feed;
+  ce.id = entry.id;
+  ce.readState = entry.readState;
+  ce.urls = entry.urls;
+  ce.archiveState = ENTRY_STATE_ARCHIVED;
+  ce.dateArchived = new Date();
+  console.debug('before', sizeof(entry), 'after', sizeof(ce));
+  return ce;
+}
+
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection
 // @param id {Number} an entry id
@@ -75,7 +87,7 @@ async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
 // @throws {ReaderDbNotFoundError} entry not found for id
 // @throws {ReaderDbInvalidStateError} entry already read
 // @throws Error entry unlocatable (missing url)
-// @throws Error readerUpdateBadge related error
+// @throws Error readerBadgeUpdate related error
 async function readerStorageMarkRead(conn, id) {
   assert(indexedDBIsOpen(conn));
   assert(entryIsValidId(id));
@@ -111,7 +123,7 @@ async function readerStorageMarkRead(conn, id) {
   console.debug('updated entry', entryURL);
 
   // Allow errors to bubble
-  await readerUpdateBadge(conn);
+  await readerBadgeUpdate(conn);
 }
 
 // @throws AssertionError

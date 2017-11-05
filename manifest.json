@@ -23,6 +23,7 @@
       "/src/favicon.js",
       "/src/feed.js",
       "/src/html.js",
+      "/src/html-parser.js",
       "/src/install.js",
 
       "/src/feed-parse.js",
@@ -31,7 +32,7 @@
       "/src/reader-parse-feed.js",
       "/src/reader-storage.js",
       "/src/rewrite-url.js",
-      "/src/subscription.js",
+      "/src/subscribe-request.js",
       "/src/xml-utils.js",
       "/src/xml-parser.js",
 

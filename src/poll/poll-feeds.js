@@ -23,8 +23,6 @@ function PollFeedsContext() {
   this.fetchFeedTimeoutMs = 5000;
   this.fetchHTMLTimeoutMs = 5000;
   this.fetchImageTimeoutMs = 3000;
-
-  // Whether to accept html when fetching a feed
   this.acceptHTML = true;
 }
 
@@ -52,8 +50,7 @@ async function pollFeeds(pfc) {
     }
   }
 
-  // Allow errors to bubble
-  const feeds = await readerDbGetFeeds(pfc.readerConn);
+  let feeds = await readerDbGetFeeds(pfc.readerConn);
 
   if(!pfc.ignoreRecencyCheck) {
     const pollableFeeds = [];
@@ -72,9 +69,7 @@ async function pollFeeds(pfc) {
   // TODO: use promiseEvery? But what about assertion errors?
   await Promise.all(promises);
 
-  // Allow errors to bubble
-  await readerUpdateBadge(pfc.readerConn);
-
+  await readerBadgeUpdate(pfc.readerConn);
 
   const title = 'Added articles';
   const message = 'Added articles';

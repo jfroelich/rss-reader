@@ -114,20 +114,3 @@ function entrySanitize(inputEntry, authorMaxLength, titleMaxLength,
 
   return outputEntry;
 }
-
-// Returns a new entry object that is in a compacted form. The new entry is a
-// shallow copy of the input entry, where only certain properties are kept, and
-// a couple properties are changed.
-function entryCompact(entry) {
-  const ce = {};
-  ce.dateCreated = entry.dateCreated;
-  ce.dateRead = entry.dateRead;
-  ce.feed = entry.feed;
-  ce.id = entry.id;
-  ce.readState = entry.readState;
-  ce.urls = entry.urls;
-  ce.archiveState = ENTRY_STATE_ARCHIVED;
-  ce.dateArchived = new Date();
-  console.debug('before', sizeof(entry), 'after', sizeof(ce));
-  return ce;
-}

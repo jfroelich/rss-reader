@@ -2,6 +2,7 @@
 
 // import base/assert.js
 // import net/fetch.js
+// import net/mime.js
 // import pagination.js
 
 // Investigates whether a document is a multi-page document. If the document
@@ -25,11 +26,12 @@ async function multipageFilter(doc, location, timeoutMs) {
   }
 
   // TODO: inline
+  // TODO: use HTMLParser
   async function fetchAndParseHTML(url, timeoutMs) {
     const parser = new DOMParser();
     const response = await fetchHTML(url, timeoutMs);
     const text = await response.text();
-    return parser.parseFromString(text, 'text/html');
+    return parser.parseFromString(text, mime.HTML);
   }
 
   // Concurrently fetch the array of urls. If any fetch fails then this fails.

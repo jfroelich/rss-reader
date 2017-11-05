@@ -1,5 +1,7 @@
 'use strict';
 
+// import net/mime.js
+
 (function(exports) {
 
 async function registerDWLinkFilterRule() {
@@ -7,7 +9,7 @@ async function registerDWLinkFilterRule() {
     return;
   const linkMatcher = new chrome.declarativeWebRequest.RequestMatcher({
     resourceType: ['xmlhttprequest'],
-    contentType: ['text/html']
+    contentType: [mime.HTML]
   });
   const linkAction = new chrome.declarativeWebRequest.RemoveResponseHeader(
     {name: 'link'});

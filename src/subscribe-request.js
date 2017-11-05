@@ -4,12 +4,12 @@
 // import base/indexeddb.js
 // import base/object.js
 // import net/fetch.js
-// import feed-coerce-from-response.js
 // import feed.js
 // import extension.js
 // import favicon.js
 // import reader-db.js
 // import reader-badge.js
+// import reader-parse-feed.js
 
 class SubscribeRequest {
   constructor() {
@@ -21,8 +21,8 @@ class SubscribeRequest {
 
   // Open database connections
   async connect() {
-    const connPromises = [readerDbOpen(), faviconDbOpen()];
-    [this.readerConn, this.iconConn] = await Promise.all(connPromises);
+    const promises = [readerDbOpen(), faviconDbOpen()];
+    [this.readerConn, this.iconConn] = await Promise.all(promises);
   }
 
   // Close database connections
@@ -108,45 +108,28 @@ class SubscribeRequest {
       }
     }
   }
-}
 
-// TODO: make a member of SubscribeRequest, like subscribeAll
-// Concurrently subscribe to each feed in the feeds iterable. Returns a promise
-// that resolves to an array of statuses. If a subscription fails due
-// to an error, that subscription and all later subscriptions are ignored,
-// but earlier ones are committed. If a subscription fails but not for an
-// exceptional reason, then it is skipped.
-// @param this {SubscriptionContext}
-function subscriptionAddAll(feeds) {
-  const request = new SubscribeRequest();
-  this.readerConn = this.readerConn;
-  this.iconConn = this.iconConn;
-  this.timeoutMs = this.timeoutMs;
-  this.notify = this.notify;
-
-  const promises = [];
-  for(const feed of feeds) {
-    promises.push(request.subscribe(feed));
+  // Concurrently subscribe to each feed
+  subscribeAll(feeds) {
+    const promises = feeds.map(this.subscribe);
+    // TODO: use promiseEvery?
+    return Promise.all(promises);
   }
-  // TODO: use promiseEvery?
-  return Promise.all(promises);
-}
 
-// @throws AssertionError
-// @throws Error database-related
-async function subscriptionRemove(feed, conn) {
-
-  assert(indexedDBIsOpen(conn));
-  assert(feedIsFeed(feed));
-  assert(feedIsValidId(feed.id));
-
-  const entryIds = await readerDbFindEntryIdsByFeedId(conn, feed.id);
-  await readerDbRemoveFeedAndEntries(conn, feed.id, entryIds);
-  await readerUpdateBadge(conn);
-  const channel = new BroadcastChannel('db');
-  channel.postMessage({type: 'feed-deleted', id: feed.id});
-  for(const entryId of entryIds) {
-    channel.postMessage({type: 'entry-deleted', id: entryId});
+  // @throws AssertionError
+  // @throws Error database-related
+  async remove(feedId) {
+    assert(indexedDBIsOpen(this.readerConn));
+    assert(feedIsValidId(feedId));
+    const entryIds = await readerDbFindEntryIdsByFeedId(this.readerConn,
+      feedId);
+    await readerDbRemoveFeedAndEntries(this.readerConn, feedId, entryIds);
+    await readerBadgeUpdate(this.readerConn);
+    const channel = new BroadcastChannel('db');
+    channel.postMessage({type: 'feed-deleted', id: feedId});
+    for(const entryId of entryIds) {
+      channel.postMessage({type: 'entry-deleted', id: entryId});
+    }
+    channel.close();
   }
-  channel.close();
 }

@@ -18,7 +18,7 @@ mime.EXTENSION_TYPE_MAP = {
   bmp:  'image/bmp',
   c:    'text/plain',
   cc:   'text/plain',
-  cgi:  'text/hml',
+  cgi:  'text/html',
   'class':'application/java',
   com:  'application/octet-stream',
   cpp:  'text/plain',
@@ -36,7 +36,7 @@ mime.EXTENSION_TYPE_MAP = {
   h:    'text/plain',
   htm:  'text/html',
   html: 'text/html',
-  ico:  'image/x-icon', // image/vnd.microsoft.icon
+  ico:  'image/x-icon',
   ics:  'text/calendar',
   java: 'text/plain',
   jfif: 'image/jpeg',
@@ -77,11 +77,8 @@ mime.EXTENSION_TYPE_MAP = {
     'presentation',
   ps:  'application/postscript',
   rar:  'application/octet-stream',
-
-  // TODO: need to fix mime.isBinary
-  // 'rdf': 'application/rdf+xml',
-  // 'rss':  'application/rss+xml',
-
+  rdf: 'application/rdf+xml',
+  rss:  'application/rss+xml',
   sh:  'text/x-sh',
   shtm: 'text/html',
   shtml: 'text/html',
@@ -152,27 +149,50 @@ mime.fromContentType = function(contentType) {
 };
 
 // A basic trivial test of whether the parameter represents a mime type.
-// Inaccurate. No false negatives but several false positives.
+// Inaccurate. Few false negatives but many false positives.
 mime.isMimeType = function(mimeType) {
-  return typeof mimeType === 'string' &&
-    mimeType.indexOf('/') !== -1 &&
-    mimeType.indexOf(' ') === -1;
+  const MIN_LENGTH = 2, MAX_LENGTH = 100;
+  return typeof mimeType === 'string' && mimeType.length > MIN_LENGTH &&
+    mimeType.length < MAX_LENGTH && mimeType.includes('/') &&
+    !mimeType.includes(' ');
 };
 
-// TODO: this is incorrect in several cases. In particular, mime types
-// such as application/xml should be considered textual.
+// Mime types that have the application super type but are not binary
+mime.APPLICATION_TEXT_TYPES = [
+  'application/atom+xml',
+  'application/javascript',
+  'application/json',
+  'application/rdf+xml',
+  'application/rss+xml',
+  'application/vnd.mozilla.xul+xml',
+  'application/xhtml+xml',
+  'application/xml'
+];
+
 mime.isBinary = function(mimeType) {
-  // TODO: this should be a strong assertion
   assert(mime.isMimeType(mimeType));
 
   const slashPosition = mimeType.indexOf('/');
   const superType = mimeType.substring(0, slashPosition);
 
-  // TODO: use a switch statement and introduce special cases for
-  // application subtype
-
-  const binarySuperTypes = ['application', 'audio', 'image', 'video'];
-  return binarySuperTypes.includes(superType);
+  switch(superType) {
+  case 'application': {
+    return !mime.APPLICATION_TEXT_TYPES.includes(mimeType);
+  }
+  case 'text':
+    return false;
+  case 'audio':
+    return true;
+  case 'image':
+    return true;
+  case 'video':
+    return true;
+  case 'multipart':
+    return true;
+  default:
+    console.debug('unhandled mime type:', mimeType);
+    return false;
+  }
 };
 
 mime.normalize = function(mimeType) {
@@ -194,7 +214,9 @@ mime.isXML = function(contentType) {
     'application/atom+xml',
     'application/rdf+xml',
     'application/rss+xml',
+    'application/vnd.mozilla.xul+xml',
     'application/xml',
+    'application/xhtml+xml',
     'text/xml'
   ];
   return types.includes(mimeType);

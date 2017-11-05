@@ -4,6 +4,7 @@
 // import base/errors.js
 // import base/number.js
 // import net/mime.js
+// import html-parser.js
 
 // Replaces html tags in the input string with the replacement. If no
 // replacement, then removes the tags.
@@ -18,13 +19,15 @@ function htmlReplaceTags(inputString, replacement) {
     return inputString;
   }
 
-  assert(typeof replacement === 'string');
+  if(replacement) {
+    assert(typeof replacement === 'string');
+  }
 
   let doc;
 
   // TODO: do not catch
   try {
-    doc = htmlParseFromString(inputString);
+    doc = HTMLParser.parseDocumentFromString(inputString);
   } catch(error) {
     if(error instanceof AssertionError) {
       throw error;
@@ -67,7 +70,7 @@ function htmlTruncate(htmlString, position, suffix) {
     suffix = ELLIPSIS;
   }
 
-  const doc = htmlParseFromString(htmlString);
+  const doc = HTMLParser.parseDocumentFromString(htmlString);
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   let totalLength = 0;
   // Search for the text node in which truncation should occur and truncate it
@@ -90,22 +93,4 @@ function htmlTruncate(htmlString, position, suffix) {
 
   return /<html/i.test(htmlString) ?
     doc.documentElement.outerHTML : doc.body.innerHTML;
-}
-
-// When htmlString is a fragment, it will be inserted into a new document
-// using a default template provided by the browser, that includes a document
-// element and usually a body. If not a fragment, then it is merged into a
-// document with a default template.
-// @throws AssertionError
-// @throws ParseError
-function htmlParseFromString(htmlString) {
-  assert(typeof htmlString === 'string');
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlString, mime.HTML);
-  assert(doc instanceof Document);
-  const parserErrorElement = doc.querySelector('parsererror');
-  if(parserErrorElement) {
-    throw new ParseError(parserErrorElement.textContent);
-  }
-  return doc;
 }

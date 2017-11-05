@@ -11,7 +11,6 @@ class XMLParser {
     assert(typeof xml === 'string');
     const parser = new DOMParser();
 
-    // Does not throw
     const doc = parser.parseFromString(xml, mime.XML);
     assert(doc instanceof Document);
 

@@ -13,10 +13,7 @@
 // @throws ParserError
 function readerParseFeed(xmlString, requestURL, responseURL, lastModDate,
   processEntries) {
-
   const result = {feed: undefined, entries: []};
-
-  // Allow errors to bubble
   const parseResult = feedParseFromString(xmlString);
 
   const feed = parseResult.feed;

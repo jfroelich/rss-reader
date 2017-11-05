@@ -1,7 +1,6 @@
 'use strict';
 
 // import base/assert.js
-// import base/errors.js
 
 // @param doc {Document}
 // @param whitelist {Object} each property is element name, each value is array
@@ -10,7 +9,10 @@ function attributeFilter(doc, whitelist) {
   assert(doc instanceof Document);
   assert(typeof whitelist === 'object');
 
-  // TODO: exit early if whitelist empty
+  const keys = Object.keys(whitelist);
+  if(keys.length === 0) {
+    return;
+  }
 
   const elements = doc.getElementsByTagName('*');
   for(const element of elements) {

@@ -7,7 +7,6 @@
 function adoptionAgencyFilter(doc) {
   assert(doc instanceof Document);
 
-  // Restrict analysis to body
   if(!doc.body) {
     return;
   }

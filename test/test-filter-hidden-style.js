@@ -1,10 +1,14 @@
 'use strict';
 
 async function test(url) {
+
+  // TODO: use fetchHTML instead of raw fetch. This was created before
+  // fetchHTML was more settled
+
   const options = {
     credentials: 'omit',
     method: 'get',
-    headers: {'accept': 'text/html'},
+    headers: {'accept': mime.HTML},
     mode: 'cors',
     cache: 'default',
     redirect: 'follow',
@@ -14,8 +18,10 @@ async function test(url) {
 
   const response = await fetch(url, options);
   const text = await response.text();
+
+  // TODO: use HTMLParser
   const parser = new DOMParser();
-  const doc = parser.parseFromString(text, 'text/html');
+  const doc = parser.parseFromString(text, mime.HTML);
   filter_hidden_elements_using_style(doc);
 }
 

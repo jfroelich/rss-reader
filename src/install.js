@@ -6,8 +6,6 @@
 // import reader-badge.js
 // import reader-db.js
 
-// This file should only be loaded in the background page of the extension
-
 chrome.runtime.onInstalled.addListener(async function(event) {
   console.log('onInstalled', event);
 
@@ -16,7 +14,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   let conn;
   try {
     conn = await readerDbOpen();
-    await readerUpdateBadge(conn);
+    await readerBadgeUpdate(conn);
   } catch(error) {
     console.warn(error);
   } finally {

@@ -38,7 +38,6 @@ function domIsValidElementName(name) {
 // if the operation would result in adjacent text nodes.
 function domUnwrap(element) {
   assert(element instanceof Element);
-  // Calling unwrap on an orphan is always an error
   assert(element.parentNode, 'orphaned element');
 
   const parentElement = element.parentNode;
@@ -84,8 +83,7 @@ function domUnwrap(element) {
 // @returns {Element} the new element that replaced the old one
 function domRename(element, newName, copyAttributes) {
 
-  // According to MDN docs, createElement(null) works like createElement("null")
-  // so, to avoid that, treat missing name as an error
+  // Disallow createElement(null) working like createElement("null")
   assert(domIsValidElementName(newName));
 
   if(typeof copyAttributes === 'undefined') {
@@ -178,12 +176,10 @@ function domFade(element, durationSecs, delaySecs) {
   return new Promise(function executor(resolve, reject) {
     const style = element.style;
     if(style.display === 'none') {
-      style.display = '';
       style.opacity = '0';
-    }
-
-    if(!style.opacity) {
-      style.opacity = style.display === 'none' ? '0' : '1';
+      style.display = 'block';
+    } else {
+      style.opacity = '1';
     }
 
     element.addEventListener('webkitTransitionEnd', resolve, {'once': true});
@@ -194,37 +190,29 @@ function domFade(element, durationSecs, delaySecs) {
   });
 }
 
-
-// Return true if the first parameter is an image element
-// TODO: inline, not a sufficient abstraction
-function domIsImage(image) {
-  // TODO: be more precise, use HTMLImageElement or whatever it is
-  return image instanceof Element;
-}
-
 // TODO: also has source if within picture and picture has <source>, or
-// alternatively rename to image_has_source_attribute
+// alternatively rename to domImageHasSourceAttribute
 function domImageHasSource(image) {
-  assert(domIsImage(image));
+  assert(image instanceof Element);
   return image.hasAttribute('src') || domImageHasSrcset(image);
 }
 
 // Return true if image has a valid src attribute value
 function domImageHasValidSource(image) {
-  assert(domIsImage(image));
+  assert(image instanceof Element);
   return URLUtils.isValid(image.getAttribute('src'));
 }
 
 // Return true if image has a non-empty srcset attribute value
 function domImageHasSrcset(image) {
-  assert(domIsImage(image));
+  assert(image instanceof Element);
   const imageSrcset = image.getAttribute('srcset');
   return imageSrcset && imageSrcset.trim();
 }
 
 // Searches for and returns the corresponding figcaption element
 function domFindCaption(image) {
-  assert(domIsImage(image));
+  assert(image instanceof Element);
   let figcaption;
   const figure = image.closest('figure');
   if(figure) {

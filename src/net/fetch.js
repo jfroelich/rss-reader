@@ -16,6 +16,11 @@
 // honor Accept headers.
 // @returns {Promise} a promise that resolves to a Response-like object
 function fetchFeed(url, timeoutMs, acceptHTML) {
+
+  if(typeof acceptHTML === 'undefined') {
+    acceptHTML = true;
+  }
+
   const ACCEPT_HEADER = [
     'application/rss+xml',
     'application/rdf+xml',
@@ -38,11 +43,8 @@ function fetchFeed(url, timeoutMs, acceptHTML) {
 
   const types = ['application/rss+xml', 'application/rdf+xml',
     'application/atom+xml', 'application/xml', 'text/xml'];
-
-  // TODO: set acceptHTML to true if not defined, this syntax currently
-  // is awkward
-  if(acceptHTML || typeof acceptHTML === 'undefined') {
-    types.push('text/html');
+  if(acceptHTML) {
+    types.push(mime.HTML);
   }
 
   function acceptPredicate(response) {
@@ -62,7 +64,7 @@ function fetchHTML(url, timeoutMs) {
     credentials: 'omit',
     method: 'get',
     // TODO: use mime.js constant
-    headers: {'Accept': 'text/html'},
+    headers: {'Accept': mime.HTML},
     mode: 'cors',
     cache: 'default',
     redirect: 'follow',
@@ -74,9 +76,7 @@ function fetchHTML(url, timeoutMs) {
   function acceptHTMLPredicate(response) {
     const contentType = response.headers.get('Content-Type');
     const mimeType = mime.fromContentType(contentType);
-
-    // TODO: use constant from mime.js
-    return mimeType === 'text/html';
+    return mimeType === mime.HTML;
   }
 
   return fetchInternal(url, options, timeoutMs, acceptHTMLPredicate);

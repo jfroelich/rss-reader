@@ -8,8 +8,6 @@
 // import reader-db.js
 
 // TODO: add assertions and logging
-// TODO: use statuses instead of exceptions
-
 
 let slideshowCurrentSlide = null;
 

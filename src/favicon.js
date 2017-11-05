@@ -5,7 +5,7 @@
 // import base/errors.js
 // import net/fetch.js
 // import net/url-utils.js
-// import html.js
+// import html-parser.js
 
 // 30 days in ms, used by both lookup and compact to determine whether a
 // cache entry expired
@@ -155,7 +155,7 @@ async function faviconLookup(query) {
 
       let document;
       try {
-        document = htmlParseFromString(text);
+        document = HTMLParser.parseDocumentFromString(text);
       } catch(error) {
         if(error instanceof AssertionError) {
           throw error;

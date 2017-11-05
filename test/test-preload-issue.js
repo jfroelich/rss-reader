@@ -1,9 +1,11 @@
 
+// import net/mime.js
+
 async function testPreloadIssue() {
   const options = {};
   options.credentials = 'omit';
   options.method = 'get';
-  options.headers = {Accept: 'text/html'};
+  options.headers = {Accept: mime.HTML};
   options.mode = 'cors';
   options.cache = 'default';
   options.redirect = 'follow';

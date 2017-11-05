@@ -9,6 +9,7 @@
 // import favicon.js
 // import feed.js
 // import html.js
+// import html-parser.js
 // import reader-db.js
 // import reader-storage.js
 // import rewrite-url-utils.js
@@ -68,7 +69,7 @@ async function pollEntry(entry) {
 
   let entryDocument;
   try {
-    entryDocument = htmlParseFromString(entryContent);
+    entryDocument = HTMLParser.parseDocumentFromString(entryContent);
   } catch(error) {
     if(error instanceof AssertionError) {
       throw error;
@@ -155,28 +156,27 @@ async function pollEntryPollable(url, conn) {
   }
 
   if(pollEntryURLIsScripted(urlObject)) {
-    console.debug('script-generated-content', url);
+    //console.debug('script-generated-content', url);
     return false;
   }
 
   if(pollEntryURLIsPaywall(hostname)) {
-    console.debug('paywall', url);
+    //console.debug('paywall', url);
     return false;
   }
 
   if(pollEntryURLRequiresCookie(hostname)) {
-    console.debug('requires cookie', url);
+    //console.debug('requires cookie', url);
     return false;
   }
 
   if(URLUtils.sniffIsBinary(urlObject)) {
-    console.debug('binary resource', url);
+    //console.debug('binary resource', url);
     return false;
   }
 
   // TODO: this should be a call to something like
-  // reader_storage_contains_entry that abstracts how
-  // entry comparison works
+  // readerStorageContainsEntry that abstracts how entry comparison works
 
   let exists;
   try {

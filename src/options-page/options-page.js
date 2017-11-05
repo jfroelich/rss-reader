@@ -3,9 +3,20 @@
 // import base/assert.js
 // import base/indexeddb.js
 // import base/errors.js
-// import extension.js
-// import reader-db.js
+// import net/mime.js
+// import options-page/options-page-error-message.js
+// import options-page/options-page-export-opml.js
+// import options-page/options-page-fonts.js
+// import options-page/options-page-image-paths.js
+// import options-page/options-page-subscription-monitor.js
 // import entry-css.js
+// import extension.js
+// import feed.js
+// import html.js
+// import reader-db.js
+// import reader-export.js
+// import reader-import.js
+// import subscribe-request.js
 
 // Navigation tracking
 var optionsPageCurrentMenuItem;
@@ -127,11 +138,6 @@ function optionsPageFeedListAppendFeed(feed) {
   optionsPageUpdateFeedCount();
 }
 
-// @param url {URL}
-async function optionsPageStartSubscription(url) {
-
-}
-
 async function optionsPageFeedListItemOnclick(event) {
   // Use current target to capture the element with the feed attribute
   const feedListItem = event.currentTarget;
@@ -150,7 +156,7 @@ async function optionsPageFeedListItemOnclick(event) {
     // TODO: visual feedback?
     return;
   } finally {
-    indexedDBClose();
+    indexedDBClose(conn);
   }
 
   const titleElement = document.getElementById('details-title');
@@ -333,31 +339,28 @@ function optionsPageFeedListRemoveFeed(feedId) {
 }
 
 async function optionsPageUnsubscribeButtonOnclick(event) {
-  const feed = feedCreate();
-  feed.id = parseInt10(event.target.value);
-  assert(feedIsValidId(feed.id));
-  let conn;
+  const feedId = parseInt10(event.target.value);
+  assert(feedIsValidId(feedId));
+  const request = new SubscribeRequest();
   try {
-    conn = await readerDbOpen();
-    await subscriptionRemove(feed, conn);
+    request.readerConn = await readerDbOpen();
+    await request.remove(feedId);
   } catch(error) {
     // TODO: visually react to unsubscribe error
     console.warn(error);
     return;
   } finally {
-    indexedDBClose(conn);
+    indexedDBClose(request.readerConn);
   }
 
-  optionsPageFeedListRemoveFeed(feed.id);
+  optionsPageFeedListRemoveFeed(feedId);
   optionsPageShowSectionId('subs-list-section');
 }
 
 function optionsPageImportOPMLButtonOnclick(event) {
   const uploaderInput = document.createElement('input');
   uploaderInput.setAttribute('type', 'file');
-
-  // TODO: use mime.js constant
-  uploaderInput.setAttribute('accept', 'application/xml');
+  uploaderInput.setAttribute('accept', mime.XML);
   uploaderInput.addEventListener('change',
     optionsPageImportOPMLUploaderOnchange);
   uploaderInput.click();
