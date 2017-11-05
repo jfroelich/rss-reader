@@ -122,10 +122,10 @@ async function pollFeedsPollFeed(feed, pfc) {
   const response = await fetchFeed(url, pfc.fetchFeedTimeoutMs, pfc.acceptHTML);
 
   if(!pfc.ignoreModifiedCheck && feed.dateUpdated && feed.dateLastModified &&
-    response.last_modified_date && feed.dateLastModified.getTime() ===
-    response.last_modified_date.getTime()) {
+    response.lastModifiedDate && feed.dateLastModified.getTime() ===
+    response.lastModifiedDate.getTime()) {
     console.debug('skipping unmodified feed', url, feed.dateLastModified,
-      response.last_modified_date);
+      response.lastModifiedDate);
     return;
   }
 
@@ -136,7 +136,7 @@ async function pollFeedsPollFeed(feed, pfc) {
 
   // Allow errors to bubble
   const parseResult = readerParseFeed(feedXML, url, response.responseURL,
-    response.last_modified_date, PROCESS_ENTRIES);
+    response.lastModifiedDate, PROCESS_ENTRIES);
 
   const mergedFeed = feedMerge(feed, parseResult.feed);
 

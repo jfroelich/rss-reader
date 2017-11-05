@@ -188,12 +188,9 @@ async function optionsPageFeedListItemOnclick(event) {
 }
 
 async function optionsPageSubscribeFormOnSubmit(event) {
-  console.debug('optionsPageSubscribeFormOnSubmit', event);
-  // Prevent normal form submission behavior
   event.preventDefault();
 
   const monitorElement = document.getElementById('submon');
-
   if(monitorElement) {
     console.debug('monitorElement.style.display: "%s"',
       monitorElement.style.display);
@@ -205,7 +202,7 @@ async function optionsPageSubscribeFormOnSubmit(event) {
   }
 
   // TODO: rename, this is no longer query, simply a text input that should
-  // contain a url string
+  // contain a url
   const queryElement = document.getElementById('subscribe-url');
   let queryString = queryElement.value;
   queryString = queryString || '';
@@ -219,8 +216,7 @@ async function optionsPageSubscribeFormOnSubmit(event) {
   try {
     url = new URL(queryString);
   } catch(exception) {
-    // TODO: show error
-
+    // TODO: show error like "Please enter a valid url"
     console.warn(exception);
     return false;
   }
@@ -239,21 +235,19 @@ async function optionsPageSubscribeFormOnSubmit(event) {
 
   let subscribedFeed;
 
-  const sc = new SubscriptionContext();
+  const request = new SubscribeRequest();
 
   try {
-    [sc.readerConn, sc.iconConn] = await
-      Promise.all([readerDbOpen(), faviconDbOpen()]);
-
-    const subResult = await subscriptionAdd.call(sc, feed);
+    await request.connect();
+    const subResult = await request.subscribe(feed);
     subscribedFeed = subResult.feed;
   } catch(error) {
+    // TODO: show a visual error message.
     console.warn(error);
     optionsPageSubscriptionMonitorHide();
-    // TODO: show a visual error message.
     return;
   } finally {
-    indexedDBClose(sc.readerConn, sc.iconConn);
+    request.close();
   }
 
   assert(subscribedFeed);
@@ -339,19 +333,19 @@ function optionsPageFeedListRemoveFeed(feedId) {
 }
 
 async function optionsPageUnsubscribeButtonOnclick(event) {
-  const sc = new SubscriptionContext();
-  const feed = {};
+  const feed = feedCreate();
   feed.id = parseInt10(event.target.value);
   assert(feedIsValidId(feed.id));
+  let conn;
   try {
-    sc.readerConn = await readerDbOpen();
-    await subscriptionRemove.call(sc, feed);
+    conn = await readerDbOpen();
+    await subscriptionRemove(feed, conn);
   } catch(error) {
     // TODO: visually react to unsubscribe error
     console.warn(error);
     return;
   } finally {
-    indexedDBClose(sc.readerConn);
+    indexedDBClose(conn);
   }
 
   optionsPageFeedListRemoveFeed(feed.id);
@@ -361,6 +355,8 @@ async function optionsPageUnsubscribeButtonOnclick(event) {
 function optionsPageImportOPMLButtonOnclick(event) {
   const uploaderInput = document.createElement('input');
   uploaderInput.setAttribute('type', 'file');
+
+  // TODO: use mime.js constant
   uploaderInput.setAttribute('accept', 'application/xml');
   uploaderInput.addEventListener('change',
     optionsPageImportOPMLUploaderOnchange);

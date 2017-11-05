@@ -268,7 +268,7 @@ async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
 
   responseWrapper.requestURL = url;
   responseWrapper.responseURL = response.url;
-  responseWrapper.last_modified_date = ResponseUtils.getLastModified(response);
+  responseWrapper.lastModifiedDate = ResponseUtils.getLastModified(response);
   responseWrapper.redirected = fetchURLChanged(url, response.url);
   return responseWrapper;
 }
