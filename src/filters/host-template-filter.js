@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 // import net/url-utils.js
 
 // TODO: hostSelectorMap should be a parameter to this function so that

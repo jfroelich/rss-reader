@@ -1,10 +1,9 @@
 'use strict';
 
-// import base/assert.js
-// import base/indexeddb.js
 // import article-title.js
 // import entry-css.js
 // import entry-mark-read.js
+// import rbl.js
 // import reader-db.js
 
 // TODO: add assertions and logging
@@ -47,7 +46,7 @@ function slideshowSlideRemove(slideElement) {
 
 // TODO: visual feedback in event of an error
 async function slideshowSlideMarkRead(conn, slideElement) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   // not an error
   if(slideElement.hasAttribute('read')) {
@@ -89,7 +88,7 @@ async function slideshowAppendSlides(conn) {
     console.warn(error);
   } finally {
     if(isLocalConn) {
-      indexedDBClose(conn);
+      rbl.closeDB(conn);
     }
   }
 
@@ -158,7 +157,7 @@ function slideshowCreateArticleTitleElement(entry) {
     let titleText = entry.title;
     titleText = articleTitleFilterPublisher(titleText);
 
-    // TODO: handle ParseError correctly
+    // TODO: handle ParserError correctly
     titleText = htmlTruncate(titleText, 300);
     titleElement.innerHTML = titleText;
   } else {
@@ -200,7 +199,7 @@ function slideshowCreateFeedSourceElement(entry) {
   buffer.push(entry.author || 'Unknown author');
   if(entry.datePublished) {
     buffer.push(' on ');
-    buffer.push(dateFormat(entry.datePublished));
+    buffer.push(rbl.formatDate(entry.datePublished));
   }
   titleElement.textContent = buffer.join('');
   sourceElement.appendChild(titleElement);
@@ -236,7 +235,7 @@ async function slideshowSlideOnclick(event) {
   } catch(error) {
     console.warn(error);
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 
   return false;
@@ -284,7 +283,7 @@ async function slideshowShowNextSlide() {
   } catch(error) {
     console.warn(error);
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 
   if(slideAppendCount > 0) {

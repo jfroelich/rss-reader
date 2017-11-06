@@ -1,12 +1,11 @@
 'use strict';
 
-// import base/assert.js
-// import base/indexeddb.js
-// import base/object.js
 // import net/fetch.js
 // import feed.js
 // import extension.js
 // import favicon.js
+// import fetch-policy.js
+// import rbl.js
 // import reader-db.js
 // import reader-badge.js
 // import reader-parse-feed.js
@@ -27,7 +26,7 @@ class SubscribeRequest {
 
   // Close database connections
   close() {
-    indexedDBClose(this.readerConn, this.iconConn);
+    rbl.closeDB(this.readerConn, this.iconConn);
   }
 
   // Returns a promise that resolves to the id of a feed matching the url
@@ -42,12 +41,17 @@ class SubscribeRequest {
   // @throws {Error} fetch related
   // @returns {Object} the subscribed feed
   async subscribe(feed) {
-    assert(indexedDBIsOpen(this.readerConn));
-    assert(indexedDBIsOpen(this.iconConn));
+    assert(rbl.isOpenDB(this.readerConn));
+    assert(rbl.isOpenDB(this.iconConn));
     assert(feedIsFeed(feed));
     assert(feedHasURL(feed));
 
     const url = feedPeekURL(feed);
+
+    if(!FetchPolicy.isAllowedURL(url)) {
+      throw new ReaderPermissionsError(url + ' is not permitted');
+    }
+
     if(await this.isSubscribed(url)) {
       throw new ReaderDbConstraintError();
     }
@@ -112,14 +116,14 @@ class SubscribeRequest {
   // Concurrently subscribe to each feed
   subscribeAll(feeds) {
     const promises = feeds.map(this.subscribe);
-    // TODO: use promiseEvery?
+    // TODO: use rbl.promiseEvery?
     return Promise.all(promises);
   }
 
   // @throws AssertionError
   // @throws Error database-related
   async remove(feedId) {
-    assert(indexedDBIsOpen(this.readerConn));
+    assert(rbl.isOpenDB(this.readerConn));
     assert(feedIsValidId(feedId));
     const entryIds = await readerDbFindEntryIdsByFeedId(this.readerConn,
       feedId);

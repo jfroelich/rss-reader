@@ -1,10 +1,8 @@
 'use strict';
 
-// import base/assert.js
-// import base/errors.js
-// import base/number.js
 // import net/mime.js
 // import html-parser.js
+// import rbl.js
 
 // Replaces html tags in the input string with the replacement. If no
 // replacement, then removes the tags.
@@ -56,9 +54,9 @@ function htmlReplaceTags(inputString, replacement) {
 // @param suffix {String} optional, appended after truncation, defaults to
 // an ellipsis
 // @throws AssertionError
-// @throws ParseError
+// @throws ParserError
 function htmlTruncate(htmlString, position, suffix) {
-  assert(numberIsPositiveInteger(position));
+  assert(rbl.isPosInt(position));
 
   // Tolerate some bad input for convenience
   if(typeof htmlString !== 'string') {

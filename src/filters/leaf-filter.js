@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 // import dom.js
 
 const LEAF_FILTER_EXCEPTION_ELEMENTS = [

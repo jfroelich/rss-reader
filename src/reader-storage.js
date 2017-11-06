@@ -1,14 +1,13 @@
 'use strict';
 
-// import base/assert.js
-// import base/indexeddb.js
-// import base/object.js
 // import entry.js
 // import extension.js
 // import favicon.js
 // import feed.js
+// import rbl.js
 // import reader-badge.js
 // import reader-db.js
+
 
 // Archives certain entries in the database
 // @param maxAgeMs {Number} how long before an entry is considered
@@ -16,14 +15,14 @@
 // @throws AssertionError
 // @throws Error - database related
 async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
   if(typeof maxAgeMs === 'undefined') {
     maxAgeMs = TWO_DAYS_MS;
   }
 
-  assert(numberIsPositiveInteger(maxAgeMs));
+  assert(rbl.isPosInt(maxAgeMs));
 
   const currentDate = new Date();
   function isArchivable(entry) {
@@ -89,7 +88,7 @@ function readerStorageEntryCompact(entry) {
 // @throws Error entry unlocatable (missing url)
 // @throws Error readerBadgeUpdate related error
 async function readerStorageMarkRead(conn, id) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(entryIsValidId(id));
 
   // Allow errors to bubble
@@ -130,14 +129,14 @@ async function readerStorageMarkRead(conn, id) {
 // @throws Error database related
 async function readerStoragePutFeed(feed, conn, skipPrep) {
   assert(feedIsFeed(feed));
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   let storable;
   if(skipPrep) {
     storable = feed;
   } else {
     storable = feedSanitize(feed);
-    storable = objectFilterEmptyProps(storable);
+    storable = rbl.filterEmptyProps(storable);
   }
 
   const currentDate = new Date();
@@ -163,10 +162,10 @@ async function readerStoragePutFeed(feed, conn, skipPrep) {
 // @throws Error database related
 async function readerStorageAddEntry(entry, conn) {
   assert(entryIsEntry(entry));
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   const san = entrySanitize(entry);
-  const storable = objectFilterEmptyProps(san);
+  const storable = rbl.filterEmptyProps(san);
   storable.readState = ENTRY_STATE_UNREAD;
   storable.archiveState = ENTRY_STATE_UNARCHIVED;
   storable.dateCreated = new Date();
@@ -180,7 +179,7 @@ async function readerStorageAddEntry(entry, conn) {
 // @throws AssertionError
 // @throws Error - database-related error
 async function readerStorageRemoveOrphans(conn, limit) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   // Allow errors to bubble
   const feedIds = await readerDbGetFeedIds(conn);
@@ -222,7 +221,7 @@ async function readerStorageRemoveOrphans(conn, limit) {
 // @throws AssertionError
 // @throws Error - database related
 async function readerStorageRemoveLostEntries(conn, limit) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   function isLost(entry) {
     return !entryHasURL(entry);
@@ -261,8 +260,8 @@ async function readerStorageRemoveLostEntries(conn, limit) {
 // @throws AssertionError
 // @throws Error - database related
 async function readerStorageRefreshFeedIcons(readerConn, iconConn) {
-  assert(indexedDBIsOpen(readerConn));
-  assert(indexedDBIsOpen(iconConn));
+  assert(rbl.isOpenDB(readerConn));
+  assert(rbl.isOpenDB(iconConn));
 
   // Allow errors to bubble
   const feeds = await readerDbGetFeeds(readerConn);
@@ -278,7 +277,7 @@ async function readerStorageRefreshFeedIcons(readerConn, iconConn) {
   }
 
   // Allow any individual failure to cancel iteration and bubble an error
-  // TODO: consider promiseEvery, but then how would assertion errors bubble?
+  // TODO: consider rbl.promiseEvery, but then how would assertion errors bubble?
   await Promise.all(promises);
 }
 

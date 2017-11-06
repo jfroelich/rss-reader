@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 
 // Remove whitespace and whitespace-like content from the start and end of
 // a document's body.

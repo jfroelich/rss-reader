@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 
 // @param doc {Document}
 // @param whitelist {Object} each property is element name, each value is array

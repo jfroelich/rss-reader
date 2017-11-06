@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 // import filters/adoption-agency-filter.js
 // import filters/attribute-filter.js
 // import filters/base-filter.js

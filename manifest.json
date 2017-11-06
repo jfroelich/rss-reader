@@ -13,7 +13,6 @@
   "background": {
     "persistent": false,
     "scripts": [
-
       "/src/alarms.js",
       "/src/bind-browser-action.js",
       "/src/reader-command.js",
@@ -25,8 +24,8 @@
       "/src/html.js",
       "/src/html-parser.js",
       "/src/install.js",
-
       "/src/feed-parse.js",
+      "/src/rbl.js",
       "/src/reader-badge.js",
       "/src/reader-db.js",
       "/src/reader-parse-feed.js",
@@ -35,16 +34,6 @@
       "/src/subscribe-request.js",
       "/src/xml-utils.js",
       "/src/xml-parser.js",
-
-      "/src/base/assert.js",
-      "/src/base/indexeddb.js",
-      "/src/base/number.js",
-      "/src/base/object.js",
-      "/src/base/promise.js",
-      "/src/base/sizeof.js",
-      "/src/base/errors.js",
-      "/src/base/string.js",
-
       "/src/filters/adoption-agency-filter.js",
       "/src/filters/attribute-filter.js",
       "/src/filters/base-filter.js",
@@ -85,16 +74,13 @@
       "/src/filters/sourceless-image-filter.js",
       "/src/filters/table-filter.js",
       "/src/filters/trim-document-filter.js",
-
       "/src/net/fetch.js",
       "/src/net/mime.js",
       "/src/net/url-utils.js",
-
       "/src/poll/poll-feeds.js",
       "/src/poll/poll-document-filter.js",
       "/src/poll/poll-entry.js",
       "/src/third-party/parse-srcset.js"
-
     ]
   },
   "options_page": "options.html",

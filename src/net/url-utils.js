@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 // import net/mime.js
 
 // TODO: impose length cap on url strings

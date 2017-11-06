@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 
 function invalidAnchorFilter(doc) {
   assert(doc instanceof Document);

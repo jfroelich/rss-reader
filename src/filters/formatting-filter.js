@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 // import dom.js
 
 const FORMATTING_FILTER_SELECTOR = [

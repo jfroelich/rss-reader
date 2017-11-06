@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 // import net/fetch.js
 // import net/mime.js
 // import pagination.js

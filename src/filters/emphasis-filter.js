@@ -1,8 +1,7 @@
 'use strict';
 
-// import base/assert.js
-// import base/number.js
 // import filters/filter-helpers.js
+// import rbl.js
 
 // @param maxTextLength {Number} optional, if number of non-tag characters
 // within emphasis element is greater than this, then the element is filtered
@@ -13,7 +12,7 @@ function emphasisFilter(doc, maxTextLength) {
     maxTextLength = 0;
   }
 
-  assert(numberIsPositiveInteger(maxTextLength));
+  assert(rbl.isPosInt(maxTextLength));
 
   // Restrict analysis to body
   if(!doc.body) {

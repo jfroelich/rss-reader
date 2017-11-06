@@ -1,10 +1,9 @@
 'use strict';
 
-// import base/assert.js
-// import base/promises.js
 // import net/fetch.js
 // import net/url-utils.js
 // import dom.js
+// import rbl.js
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
@@ -39,7 +38,7 @@ async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
       timeoutMs);
     promises.push(promise);
   }
-  const results = await promiseEvery(promises);
+  const results = await rbl.promiseEvery(promises);
 
   for(const result of results) {
     if(result) {

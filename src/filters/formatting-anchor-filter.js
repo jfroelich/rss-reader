@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 // import filters/filter-helpers.js
 
 // An anchor that acts like a span can be unwrapped

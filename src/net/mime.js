@@ -1,7 +1,6 @@
 'use strict';
 
-// import base/assert.js
-// import base/string.js
+// import rbl.js
 
 const mime = {};
 
@@ -197,7 +196,7 @@ mime.isBinary = function(mimeType) {
 
 mime.normalize = function(mimeType) {
   assert(mime.isMimeType(mimeType));
-  return stringRemoveWhitespace(mimeType).toLowerCase();
+  return rbl.removeWhitespace(mimeType).toLowerCase();
 };
 
 mime.isHTML = function(contentType) {

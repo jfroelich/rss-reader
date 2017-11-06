@@ -1,14 +1,12 @@
 'use strict';
 
-// import base/assert.js
-// import base/indexeddb.js
 // import net/mime.js
+// import favicon.js
+// import feed.js
 // import opml-document.js
 // import opml-outline.js
 // import opml-parser.js
-// import favicon.js
-// import feed.js
-// import base/file-utils.js
+// import rbl.js
 // import reader-db.js
 // import subscribe-request.js
 
@@ -36,9 +34,9 @@ async function readerImportFiles(files) {
     // TODO: if the promises are executed above, I am not sure if this needs
     // to await here? maybe this can occur after try/finally?
     // TODO: what about swallowed assertion errors?
-    await promiseEvery(promises);
+    await rbl.promiseEvery(promises);
   } finally {
-    indexedDBClose(readerConn, iconConn);
+    rbl.closeDB(readerConn, iconConn);
   }
 }
 
@@ -46,8 +44,8 @@ async function readerImportFiles(files) {
 // @throws {ParserError}
 async function readerImportFile(file, readerConn, iconConn) {
   assert(file instanceof File);
-  assert(indexedDBIsOpen(readerConn));
-  assert(indexedDBIsOpen(iconConn));
+  assert(rbl.isOpenDB(readerConn));
+  assert(rbl.isOpenDB(iconConn));
   console.log('importing opml file', file.name);
 
   if(file.size < 1) {
@@ -62,7 +60,7 @@ async function readerImportFile(file, readerConn, iconConn) {
 
   let fileContent;
   try {
-    fileContent = await FileUtils.readAsText(file);
+    fileContent = await rbl.readFileAsText(file);
   } catch(error) {
     console.warn(error);
     return 0;

@@ -1,7 +1,6 @@
 'use strict';
 
-// import base/assert.js
-// import base/errors.js
+// import rbl.js
 // import net/fetch.js
 // import poll/poll-entry.js
 // import extension.js
@@ -10,6 +9,10 @@
 // import reader-db.js
 // import reader-parse-feed.js
 // import reader-storage.js
+
+// TODO: rather than context, just create a function option like
+// PollFeedOperation, or PollFeedRequest or something like this. Then
+// deprecate PollFeedsContext.
 
 function PollFeedsContext() {
   this.readerConn = undefined;
@@ -28,25 +31,23 @@ function PollFeedsContext() {
 
 async function pollFeeds(pfc) {
   assert(pfc instanceof PollFeedsContext);
-  console.log('pollFeeds start');
-
-  if('onLine' in navigator && !navigator.onLine) {
+  assert('onLine' in navigator);
+  if(!navigator.onLine) {
     console.debug('offline');
-    return false;
+    return;
   }
 
   if(!pfc.allowMeteredConnections && 'NO_POLL_METERED' in localStorage &&
     navigator.connection && navigator.connection.metered) {
     console.debug('metered connection');
-    return false;
+    return;
   }
 
   if(!pfc.ignoreIdleState && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    // TODO: call to wrapper function extensionIsIdle instead
     const state = await extensionIdleQuery(pfc.idlePeriodSecs);
     if(state !== 'locked' && state !== 'idle') {
       console.debug('idle');
-      return false;
+      return;
     }
   }
 
@@ -62,12 +63,12 @@ async function pollFeeds(pfc) {
     feeds = pollableFeeds;
   }
 
+  // TODO: pfc should be this bound?
   const promises = [];
   for(const feed of feeds) {
     promises.push(pollFeedsPollFeed(feed, pfc));
   }
-  // TODO: use promiseEvery? But what about assertion errors?
-  await Promise.all(promises);
+  await rbl.promiseEvery(promises);
 
   await readerBadgeUpdate(pfc.readerConn);
 
@@ -78,13 +79,9 @@ async function pollFeeds(pfc) {
   const channel = new BroadcastChannel('poll');
   channel.postMessage('completed');
   channel.close();
-
-  console.log('pollFeeds end');
 }
 
 function pollFeedsFeedIsPollable(feed, recencyPeriodMs) {
-  // If we do not know when the feed was fetched, then assume it is a new feed
-  // that has never been fetched
   if(!feed.dateFetched) {
     return true;
   }
@@ -112,8 +109,6 @@ async function pollFeedsPollFeed(feed, pfc) {
   assert(pfc instanceof PollFeedsContext);
 
   const url = feedPeekURL(feed);
-
-  // Allow exceptions to bubble
   const response = await fetchFeed(url, pfc.fetchFeedTimeoutMs, pfc.acceptHTML);
 
   if(!pfc.ignoreModifiedCheck && feed.dateUpdated && feed.dateLastModified &&
@@ -124,21 +119,14 @@ async function pollFeedsPollFeed(feed, pfc) {
     return;
   }
 
-  // Allow errors to bubble
   const feedXML = await response.text();
-
   const PROCESS_ENTRIES = true;
-
-  // Allow errors to bubble
   const parseResult = readerParseFeed(feedXML, url, response.responseURL,
-    response.lastModifiedDate, PROCESS_ENTRIES);
+      response.lastModifiedDate, PROCESS_ENTRIES);
 
   const mergedFeed = feedMerge(feed, parseResult.feed);
-
-  // Allow errors to bubble
   const storedFeed = await readerStoragePutFeed(mergedFeed, pfc.readerConn);
-
-  let entries = parseResult.entries;
+  const entries = parseResult.entries;
 
   // Cascade feed properties to entries
   for(const entry of entries) {

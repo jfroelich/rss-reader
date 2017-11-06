@@ -1,11 +1,9 @@
 'use strict';
 
-// import base/assert.js
-// import base/number.js
-// import base/string.js
 // import net/url-utils.js
 // import favicon.js
 // import html.js
+// import rbl.js
 
 function feedCreate() {
   return {};
@@ -16,7 +14,7 @@ function feedIsFeed(feed) {
 }
 
 function feedIsValidId(id) {
-  return numberIsPositiveInteger(id);
+  return rbl.isPosInt(id);
 }
 
 function feedHasURL(feed) {
@@ -82,7 +80,7 @@ function feedHasValidProperties(feed) {
   assert(feedIsFeed(feed));
 
   if('id' in feed) {
-    if(!numberIsPositiveInteger(feed.id)) {
+    if(!rbl.isPosInt(feed.id)) {
       return false;
     }
   }
@@ -96,7 +94,7 @@ function feedHasValidProperties(feed) {
 }
 
 // Returns a shallow copy of the input feed with sanitized properties
-// @throws AssertionError, ParseError
+// @throws AssertionError, ParserError
 function feedSanitize(feed, titleMaxLength, descMaxLength) {
   assert(feedIsFeed(feed));
 
@@ -106,13 +104,13 @@ function feedSanitize(feed, titleMaxLength, descMaxLength) {
   if(typeof titleMaxLength === 'undefined') {
     titleMaxLength = DEFAULT_TITLE_MAX_LEN;
   } else {
-    assert(numberIsPositiveInteger(titleMaxLength));
+    assert(rbl.isPosInt(titleMaxLength));
   }
 
   if(typeof descMaxLength === 'undefined') {
     descMaxLength = DEFAULT_DESC_MAX_LEN;
   } else {
-    assert(numberIsPositiveInteger(descMaxLength));
+    assert(rbl.isPosInt(descMaxLength));
   }
 
   const outputFeed = Object.assign({}, feed);
@@ -121,18 +119,18 @@ function feedSanitize(feed, titleMaxLength, descMaxLength) {
 
   if(outputFeed.title) {
     let title = outputFeed.title;
-    title = stringFilterControlChars(title);
+    title = rbl.filterControls(title);
     title = htmlReplaceTags(title, tagReplacement);
-    title = stringCondenseWhitespace(title);
+    title = rbl.condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength, suffix);
     outputFeed.title = title;
   }
 
   if(outputFeed.description) {
     let desc = outputFeed.description;
-    desc = stringFilterControlChars(desc);
+    desc = rbl.filterControls(desc);
     desc = htmlReplaceTags(desc, tagReplacement);
-    desc = stringCondenseWhitespace(desc);
+    desc = rbl.condenseWhitespace(desc);
     desc = htmlTruncate(desc, descMaxLength, suffix);
     outputFeed.description = desc;
   }

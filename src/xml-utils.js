@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 // import net/mime.js
 
 // NOTE: ideally this would be XMLDocument with methods, but XMLDocument is a
@@ -16,7 +16,7 @@ class XMLUtils {
     assert(doc instanceof Document);
     const xml = XMLUtils.toString(doc);
     const partsArray = [xml];
-    const options = {type: mime.XML};
+    const options = {type: mime.XML + ';charset=utf-8'};
     return new Blob(partsArray, options);
   }
 }

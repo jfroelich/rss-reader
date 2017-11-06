@@ -1,12 +1,9 @@
 'use strict';
 
-// import base/assert.js
-// import base/indexeddb.js
-// import base/number.js
 // import net/url-utils.js
 // import feed.js
 // import entry.js
-
+// import rbl.js
 
 class ReaderDbConstraintError extends Error {
   constructor(message) {
@@ -31,7 +28,7 @@ class ReaderDbInvalidStateError extends Error {
 // @return {Promise} a promise that resolves to an open database connection
 function readerDbOpen() {
   const name = 'reader', version = 20, timeoutMs = 500;
-  return indexedDBOpen(name, version, readerDbOnUpgradeNeeded, timeoutMs);
+  return rbl.openDB(name, version, readerDbOnUpgradeNeeded, timeoutMs);
 }
 
 // Helper for readerDbOpen. Does the database upgrade. This should never be
@@ -77,7 +74,7 @@ function readerDbOnUpgradeNeeded(event) {
 // @param conn {IDBDatabase}
 // @param url {String}
 function readerDbFindFeedIdByURL(conn, url) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(URLUtils.isValid(url));
 
   return new Promise(function executor(resolve, reject) {
@@ -92,7 +89,7 @@ function readerDbFindFeedIdByURL(conn, url) {
 
 // @param conn {IDBDatabase}
 function readerDbCountUnreadEntries(conn) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -110,7 +107,7 @@ function readerDbCountUnreadEntries(conn) {
 // @returns {Promise} a promise that resolves to an entry object, or undefined
 // if no matching entry was found
 function readerDbFindEntryById(conn, id) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(entryIsValidId(id));
 
   return new Promise(function executor(resolve, reject) {
@@ -126,7 +123,7 @@ function readerDbFindEntryById(conn, id) {
 // @param conn {IDBDatabase}
 // @param url {String}
 function readerDbFindEntryByURL(conn, url) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(URLUtils.isValid(url));
 
   return new Promise(function executor(resolve, reject) {
@@ -140,7 +137,7 @@ function readerDbFindEntryByURL(conn, url) {
 }
 
 function readerDbFindEntryIdsByFeedId(conn, feedId) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(feedIsValidId(feedId));
 
   return new Promise(function executor(resolve, reject) {
@@ -154,7 +151,7 @@ function readerDbFindEntryIdsByFeedId(conn, feedId) {
 }
 
 function readerDbFindFeedById(conn, feedId) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(feedIsValidId(feedId));
 
   return new Promise(function executor(resolve, reject) {
@@ -168,7 +165,7 @@ function readerDbFindFeedById(conn, feedId) {
 
 // TODO: is this in use? deprecate if not. I don't think it is
 function readerDbGetEntries(conn) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -180,7 +177,7 @@ function readerDbGetEntries(conn) {
 }
 
 function readerDbGetFeeds(conn) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -196,7 +193,7 @@ function readerDbGetFeeds(conn) {
 // @param conn {IDBDatabase}
 // @throws AssertionError
 function readerDbGetFeedIds(conn) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -217,13 +214,13 @@ function readerDbGetFeedIds(conn) {
 // @returns {Promise} resolves to an array of entry objects, or rejects with
 // a database-related error.
 function readerDbFindEntries(conn, predicate, limit) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(typeof predicate === 'function');
 
   const limited = typeof limit !== 'undefined';
 
   if(limited) {
-    assert(numberIsPositiveInteger(limit));
+    assert(rbl.isPosInt(limit));
     assert(limit > 0);
   }
 
@@ -269,12 +266,12 @@ function readerDbFindEntries(conn, predicate, limit) {
 }
 
 function readerDbFindArchivableEntries(conn, predicate, limit) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(typeof predicate === 'function');
 
   // Only using weak asserts. Caller should use a correct limit. Right now
   // an incorrect limit causes undefined behavior.
-  assert(numberIsPositiveInteger(limit));
+  assert(rbl.isPosInt(limit));
   assert(limit > 0);
 
   // This does two layers of filtering. It would preferably but one but
@@ -315,7 +312,7 @@ function readerDbFindArchivableEntries(conn, predicate, limit) {
 }
 
 function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
     const entries = [];
@@ -352,7 +349,7 @@ function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
 }
 
 function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(feedIsValidId(feedId));
   assert(Array.isArray(entryIds));
 
@@ -373,7 +370,7 @@ function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
 
 // This does not validate the entry, it just puts it as is
 function readerDbPutEntry(conn, entry) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(entryIsEntry(entry));
 
   return new Promise(function executor(resolve, reject) {
@@ -386,7 +383,7 @@ function readerDbPutEntry(conn, entry) {
 }
 
 function readerDbPutEntries(conn, entries) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(Array.isArray(entries));
 
   // TODO: this should not be setting dateUpdated that is caller's
@@ -412,7 +409,7 @@ function readerDbPutEntries(conn, entries) {
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
 function readerDbPutFeed(conn, feed) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(feedIsFeed(feed));
 
   return new Promise(function executor(resolve, reject) {
@@ -430,7 +427,7 @@ function readerDbPutFeed(conn, feed) {
 // @param conn {IDBDatabase}
 // @param ids {Array}
 function readerDbRemoveEntries(conn, ids) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(Array.isArray(ids));
 
   return new Promise(function executor(resolve, reject) {

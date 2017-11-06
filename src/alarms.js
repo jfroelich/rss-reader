@@ -1,7 +1,5 @@
 'use strict';
 
-// import base/indexeddb.js
-// import base/errors.js
 // import poll/poll.js
 // import favicon.js
 // import reader-db.js
@@ -16,7 +14,7 @@ async function alarmsOnArchiveAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 }
 
@@ -28,7 +26,7 @@ async function alarmsOnCompactFaviconsAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 }
 
@@ -41,7 +39,7 @@ async function alarmsOnPollFeedsAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    indexedDBClose(pfc.readerConn, pfc.iconConn);
+    rbl.closeDB(pfc.readerConn, pfc.iconConn);
   }
 }
 
@@ -54,7 +52,7 @@ async function alarmsOnRemoveLostEntriesAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 }
 
@@ -68,7 +66,7 @@ async function alarmsOnRemoveOrphansAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 }
 
@@ -81,7 +79,7 @@ async function alarmsOnRefreshFeedIconsAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    indexedDBClose(readerConn, iconConn);
+    rbl.closeDB(readerConn, iconConn);
   }
 }
 

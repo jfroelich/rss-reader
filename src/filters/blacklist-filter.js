@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 
 // TODO: rename to element-blacklist-filter.js
 

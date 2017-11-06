@@ -1,7 +1,7 @@
 
 document.addEventListener('DOMContentLoaded', function(event) {
 
-  // NOTE: htmlTruncate throws AssertionError, ParseError
+  // NOTE: htmlTruncate throws AssertionError, ParserError
 
   'use strict';
   const ext = '...';

@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/errors.js
 // import extension.js
 // import favicon.js
 // import reader-badge.js
@@ -18,7 +17,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   } catch(error) {
     console.warn(error);
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 
   // Setup the favicon database

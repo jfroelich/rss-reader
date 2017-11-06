@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 // import filters/leaf-filter.js
 // import filters/transform-helpers.js
 

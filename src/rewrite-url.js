@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 // import net/url-utils.js
 
 // Applies a set of rules to a url object and returns a modified url object

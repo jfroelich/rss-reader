@@ -1,12 +1,8 @@
 'use strict';
 
-// import base/assert.js
-// import base/number.js
-// import base/sizeof.js
-// import base/errors.js
-// import base/string.js
 // import net/url-utils.js
 // import html.js
+// import rbl.js
 
 // TODO: entry is too generic of an term, add qualifying to name
 
@@ -23,7 +19,7 @@ function entryIsEntry(entry) {
 // Returns true if the id is a valid entry id, structurally. This does not
 // check if the id actually corresponds to an entry.
 function entryIsValidId(id) {
-  return numberIsPositiveInteger(id);
+  return rbl.isPosInt(id);
 }
 
 function entryHasURL(entry) {
@@ -65,7 +61,7 @@ function entryAppendURL(entry, urlString) {
 
 
 // Returns a new entry object where fields have been sanitized. Impure
-// @throws AssertionError, ParseError
+// @throws AssertionError, ParserError
 function entrySanitize(inputEntry, authorMaxLength, titleMaxLength,
   contextMaxLength) {
   assert(entryIsEntry(inputEntry));
@@ -82,17 +78,17 @@ function entrySanitize(inputEntry, authorMaxLength, titleMaxLength,
     contextMaxLength = 50000;
   }
 
-  assert(numberIsPositiveInteger(authorMaxLength));
-  assert(numberIsPositiveInteger(titleMaxLength));
-  assert(numberIsPositiveInteger(contextMaxLength));
+  assert(rbl.isPosInt(authorMaxLength));
+  assert(rbl.isPosInt(titleMaxLength));
+  assert(rbl.isPosInt(contextMaxLength));
 
   const outputEntry = Object.assign({}, inputEntry);
 
   if(outputEntry.author) {
     let author = outputEntry.author;
-    author = stringFilterControlChars(author);
+    author = rbl.filterControls(author);
     author = htmlReplaceTags(author, '');
-    author = stringCondenseWhitespace(author);
+    author = rbl.condenseWhitespace(author);
     author = htmlTruncate(author, authorMaxLength);
     outputEntry.author = author;
   }
@@ -105,9 +101,9 @@ function entrySanitize(inputEntry, authorMaxLength, titleMaxLength,
 
   if(outputEntry.title) {
     let title = outputEntry.title;
-    title = stringFilterControlChars(title);
+    title = rbl.filterControls(title);
     title = htmlReplaceTags(title, '');
-    title = stringCondenseWhitespace(title);
+    title = rbl.condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength);
     outputEntry.title = title;
   }

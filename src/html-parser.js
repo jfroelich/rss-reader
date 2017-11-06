@@ -1,7 +1,6 @@
 'use strict';
 
-// import base/assert.js
-// import base/errors.js
+// import rbl.js
 
 class HTMLParser {
 
@@ -10,7 +9,7 @@ class HTMLParser {
   // element and usually a body. If not a fragment, then it is merged into a
   // document with a default template.
   // @throws AssertionError
-  // @throws ParseError
+  // @throws ParserError
   static parseDocumentFromString(html) {
     assert(typeof html === 'string');
     const parser = new DOMParser();
@@ -18,7 +17,7 @@ class HTMLParser {
     assert(doc instanceof Document);
     const parserErrorElement = doc.querySelector('parsererror');
     if(parserErrorElement) {
-      throw new ParseError(parserErrorElement.textContent);
+      throw new ParserError(parserErrorElement.textContent);
     }
     return doc;
   }

@@ -1,7 +1,6 @@
 'use strict';
 
-// import base/assert.js
-// import base/errors.js
+// import rbl.js
 
 function pingFilter(doc) {
   assert(doc instanceof Document);

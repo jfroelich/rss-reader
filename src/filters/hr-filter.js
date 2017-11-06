@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 
 // Look for all <hr><hr> sequences and remove the second one. Naive in that it
 // does not fully account for new document state as hrs removed.

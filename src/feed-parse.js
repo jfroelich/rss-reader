@@ -1,7 +1,6 @@
 'use strict';
 
-// import base/assert.js
-// import base/errors.js
+// import rbl.js
 // import xml-parser.js
 
 // TODO: should be using "item" terminology instead of "entry" here

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 
 function iframeFilter(doc) {
   assert(doc instanceof Document);

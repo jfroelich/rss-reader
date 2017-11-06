@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/indexeddb.js
+// import rbl.js
 // import favicon.js
 
 
@@ -9,7 +9,7 @@ TODO:
 
 * Use a test db instead of the real db, and make sure to
 delete the test db at the end of the test. to use a test db, directly call
-indexedDBOpen instead of faviconDbOpen
+rbl.openDB instead of faviconDbOpen
 * actually run tests instead of command line
 * test offline
 * test a non-existent host
@@ -36,7 +36,7 @@ async function test_favicon_lookup(url, is_cacheless) {
 
     return await faviconLookup(query);
   } finally {
-    indexedDBClose(query.conn);
+    rbl.closeDB(query.conn);
   }
 }
 
@@ -46,7 +46,7 @@ async function test_clear_icon_db() {
     conn = await faviconDbOpen();
     await faviconDbClear(conn);
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 }
 

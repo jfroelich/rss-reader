@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 
 // Tokenizes an arbitrary string of html. Makes some effort to comply with
 // standards but does not fully comply.

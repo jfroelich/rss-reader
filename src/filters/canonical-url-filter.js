@@ -1,7 +1,6 @@
 'use strict';
 
-// import base/assert.js
-// import base/errors.js
+// import rbl.js
 // import net/url-utils.js
 // import dom.js
 

@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 
 // TODO: this function's behavior conflicts with attribute filter. Need to
 // whitelist this attribute (and this value) for this element.

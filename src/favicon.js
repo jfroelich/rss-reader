@@ -1,8 +1,6 @@
 'use strict';
 
-// import base/assert.js
-// import base/indexeddb.js
-// import base/errors.js
+// import rbl.js
 // import net/fetch.js
 // import net/url-utils.js
 // import html-parser.js
@@ -17,7 +15,7 @@ function faviconDbOpen() {
   const name = 'favicon-cache';
   const version = 2;
   const timeoutMs = 500;
-  return indexedDBOpen(name, version, faviconDbOnUpgradeNeeded, timeoutMs);
+  return rbl.openDB(name, version, faviconDbOnUpgradeNeeded, timeoutMs);
 }
 
 // TODO: rename to favicon_lookup_context, move out url and doc
@@ -191,7 +189,7 @@ async function faviconLookup(query) {
 }
 
 async function faviconDbFindLookupURL(conn, urlObject, maxAgeMs) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   const entry = await faviconDbFindEntry(conn, urlObject);
   if(!entry) {
@@ -234,7 +232,7 @@ async function faviconDbFindRedirectURL(conn, urlObject, response,
 // @returns {String} a favicon url
 async function faviconSearchDocument(document, conn, baseURLObject, urls) {
   assert(document instanceof Document);
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   assert(URLUtils.isURL(baseURLObject));
   assert(urls);
 
@@ -335,7 +333,7 @@ async function faviconDbSetup() {
   try {
     conn = await faviconDbOpen();
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 }
 
@@ -369,7 +367,7 @@ function faviconIsEntryExpired(entry, currentDate, maxAgeMs) {
 }
 
 function faviconDbClear(conn) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   return new Promise(function(resolve, reject) {
     console.debug('faviconDbClear start');
     const tx = conn.transaction('favicon-cache', 'readwrite');
@@ -381,7 +379,7 @@ function faviconDbClear(conn) {
 }
 
 function faviconDbFindEntry(conn, urlObject) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
@@ -392,7 +390,7 @@ function faviconDbFindEntry(conn, urlObject) {
 }
 
 function faviconDbFindExpiredEntries(conn, maxAgeMs) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   if(typeof maxAgeMs === 'undefined') {
     maxAgeMs = FAVICON_DEFAULT_MAX_AGE_MS;
@@ -413,7 +411,7 @@ function faviconDbFindExpiredEntries(conn, maxAgeMs) {
 }
 
 function faviconDbRemoveEntriesWithURLs(conn, pageURLs) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   return new Promise(function(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
@@ -425,7 +423,7 @@ function faviconDbRemoveEntriesWithURLs(conn, pageURLs) {
 }
 
 function faviconDbPutEntries(conn, iconURL, pageURLs) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
@@ -446,7 +444,7 @@ function faviconDbPutEntries(conn, iconURL, pageURLs) {
 // @throws AssertionError
 // @throws Error database related
 async function faviconCompactDb(conn, maxAgeMs) {
-  assert(indexedDBIsOpen(conn));
+  assert(rbl.isOpenDB(conn));
 
   // Allow errors to bubble
   const entries = await faviconDbFindExpiredEntries(conn, maxAgeMs);

@@ -1,10 +1,8 @@
 'use strict';
 
-// import base/indexeddb.js
-// import base/number.js
-// import base/errors.js
 // import poll/poll.js
 // import favicon.js
+// import rbl.js
 // import reader-db.js
 // import reader-storage.js
 
@@ -17,7 +15,7 @@ async function readerCommand(command, ...args) {
         faviconDbOpen()]);
       await readerStorageRefreshFeedIcons(readerConn, iconConn);
     } finally {
-      indexedDBClose(readerConn, iconConn);
+      rbl.closeDB(readerConn, iconConn);
     }
     break;
   }
@@ -27,7 +25,7 @@ async function readerCommand(command, ...args) {
       conn = await readerDbOpen();
       await readerStorageArchiveEntries(conn, maxAgeMs, args);
     } finally {
-      indexedDBClose(conn);
+      rbl.closeDB(conn);
     }
     break;
   }
@@ -43,7 +41,7 @@ async function readerCommand(command, ...args) {
         faviconDbOpen()]);
       await pollFeeds(pfc);
     } finally {
-      indexedDBClose(pfc.readerConn, pfc.iconConn);
+      rbl.closeDB(pfc.readerConn, pfc.iconConn);
     }
     break;
   }
@@ -53,7 +51,7 @@ async function readerCommand(command, ...args) {
       conn = await readerDbOpen();
       await readerStorageRemoveLostEntries(conn, args);
     } finally {
-      indexedDBClose(conn);
+      rbl.closeDB(conn);
     }
     break;
   }
@@ -63,7 +61,7 @@ async function readerCommand(command, ...args) {
       conn = await readerDbOpen();
       await readerStorageRemoveOrphans(conn, args);
     } finally {
-      indexedDBClose(conn);
+      rbl.closeDB(conn);
     }
     break;
   }
@@ -73,7 +71,7 @@ async function readerCommand(command, ...args) {
       conn = await faviconDbOpen();
       await faviconDbClear(conn);
     } finally {
-      indexedDBClose(conn);
+      rbl.closeDB(conn);
     }
     break;
   }

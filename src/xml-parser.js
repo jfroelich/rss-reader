@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/errors.js
 // import net/mime.js
 
 class XMLParser {

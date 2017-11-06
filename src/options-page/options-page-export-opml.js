@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 
 // TODO: move to reader-storage.js
 // TODO: deprecate. this should probably be two functions that the caller has
@@ -16,7 +16,7 @@ async function optionsPageExportOPML() {
     conn = await readerDbOpen();
     feeds = await readerDbGetFeeds(conn);
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 
   assert(feeds);

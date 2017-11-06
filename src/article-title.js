@@ -1,7 +1,6 @@
 'use strict';
 
-// import base/assert.js
-// import base/string.js
+// import rbl.js
 
 // @throws AssertionError
 function articleTitleFilterPublisher(title) {
@@ -40,7 +39,7 @@ function articleTitleFilterPublisher(title) {
 
   const delimiterLength = 3;
   const tail = title.substring(index + delimiterLength);
-  const words = string_tokenize(tail);
+  const words = rbl.tokenize(tail);
 
   const MAX_TAIL_WORDS = 4;
   if(words.length > MAX_TAIL_WORDS) {

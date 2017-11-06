@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 
 // TODO: use a clearer name
 function piFilter(doc) {

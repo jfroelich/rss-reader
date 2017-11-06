@@ -1,6 +1,5 @@
 'use strict';
 
-// import base/errors.js
 // import xml-parser.js
 
 class OPMLParser {

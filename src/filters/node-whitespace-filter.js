@@ -1,7 +1,6 @@
 'use strict';
 
-// import base/errors.js
-// import base/string.js
+// import rbl.js
 
 function nodeWhitespaceFilter(doc) {
   assert(doc instanceof Document);
@@ -14,7 +13,7 @@ function nodeWhitespaceFilter(doc) {
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
     if(value.length > 3 && !nodeWhitespaceFilterIsSensitive(node)) {
-      const newValue = stringCondenseWhitespace(value);
+      const newValue = rbl.condenseWhitespace(value);
       if(newValue.length !== value.length) {
         node.nodeValue = newValue;
       }

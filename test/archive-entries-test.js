@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/indexeddb.js
+// import rbl.js
 // import reader-storage.js
 
 async function test_archive_entries() {
@@ -12,15 +12,15 @@ async function test_archive_entries() {
   let conn, timeoutMs = 1000, maxAgeMs;
   const limit = 5;
   try {
-    conn = await indexedDBOpen(name, version, readerDbOnUpgradeNeeded,
+    conn = await rbl.openDB(name, version, readerDbOnUpgradeNeeded,
       timeoutMs);
     await readerStorageArchiveEntries(conn, maxAgeMs, limit);
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
     closeRequested = true;
-    await indexedDBDeleteDatabase(conn.name);
+    await rbl.deleteDB(conn.name);
   } finally {
     if(!closeRequested) {
-      indexedDBClose(conn);
+      rbl.closeDB(conn);
     }
   }
 }

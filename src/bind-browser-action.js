@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/extension.js
+// import extension.js
 
 chrome.browserAction.onClicked.addListener(async function(event) {
   try {

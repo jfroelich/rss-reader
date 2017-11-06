@@ -1,8 +1,6 @@
 'use strict';
 
-// import base/assert.js
-// import base/indexeddb.js
-// import base/errors.js
+// import rbl.js
 // import net/mime.js
 // import options-page/options-page-error-message.js
 // import options-page/options-page-export-opml.js
@@ -108,7 +106,7 @@ function optionsPageFeedListAppendFeed(feed) {
   let feedTitle = feed.title || 'Untitled';
 
   // TODO: handle the parse error, this is near root scope
-  // @throws AssertionError, ParseError
+  // @throws AssertionError, ParserError
   feedTitle = htmlTruncate(feedTitle, 300);
   titleElement.textContent = feedTitle;
   itemElement.appendChild(titleElement);
@@ -156,7 +154,7 @@ async function optionsPageFeedListItemOnclick(event) {
     // TODO: visual feedback?
     return;
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 
   const titleElement = document.getElementById('details-title');
@@ -280,7 +278,7 @@ async function optionsPageFeedListInit() {
     // TODO: react to error
     console.warn(error);
   } finally {
-    indexedDBClose(conn);
+    rbl.closeDB(conn);
   }
 
   if(!feeds) {
@@ -339,7 +337,7 @@ function optionsPageFeedListRemoveFeed(feedId) {
 }
 
 async function optionsPageUnsubscribeButtonOnclick(event) {
-  const feedId = parseInt10(event.target.value);
+  const feedId = rbl.parseInt10(event.target.value);
   assert(feedIsValidId(feedId));
   const request = new SubscribeRequest();
   try {
@@ -350,7 +348,7 @@ async function optionsPageUnsubscribeButtonOnclick(event) {
     console.warn(error);
     return;
   } finally {
-    indexedDBClose(request.readerConn);
+    rbl.closeDB(request.readerConn);
   }
 
   optionsPageFeedListRemoveFeed(feedId);

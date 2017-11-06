@@ -1,6 +1,6 @@
 'use strict';
 
-// import base/assert.js
+// import rbl.js
 // import dom.js
 
 // Get the current settings from local storage and then modify the css rules

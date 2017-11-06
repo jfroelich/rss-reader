@@ -1,7 +1,6 @@
 'use strict';
 
-// import base/assert.js
-// import base/errors.js
+// import rbl.js
 // import filters/filter-helpers.js
 
 function noscriptFilter(doc) {
