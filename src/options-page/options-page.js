@@ -243,8 +243,7 @@ async function optionsPageSubscribeFormOnSubmit(event) {
 
   try {
     await request.connect();
-    const subResult = await request.subscribe(feed);
-    subscribedFeed = subResult.feed;
+    subscribedFeed = await request.subscribe(feed);
   } catch(error) {
     // TODO: show a visual error message.
     console.warn(error);

@@ -215,17 +215,6 @@ rbl.timeoutPromise = function(timeoutMs) {
   return [timeoutId, promise];
 };
 
-/*
-// This doesn't support pass-thru AssertionError
-rbl.promiseEveryLegacy = function(promises) {
-  assert(Array.isArray(promises));
-  const noop = function() {};
-  const trap = function(p) { return p.catch(noop); };
-  const trapped = promises.map(trap);
-  return Promise.all(trapped);
-};
-*/
-
 // A variant of Promise.all that does not shortcircuit. If any promise rejects,
 // undefined is placed in the output array in place of the promise's return
 // value.
@@ -239,13 +228,6 @@ rbl.promiseEvery = async function(promises) {
     } catch(error) {
       if(error instanceof AssertionError) {
         throw error;
-      } else {
-        // Prevent the error from bubbling
-        // Leave result undefined
-
-        // There is no need to warn, chrome logs an Uncaught exception in
-        // promise error automatically.
-        //console.warn('Ignored error in promiseEvery', error);
       }
     }
 

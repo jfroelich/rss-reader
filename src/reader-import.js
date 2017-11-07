@@ -19,8 +19,6 @@ async function readerImportFiles(files) {
   assert(files instanceof FileList);
   console.log('importing %d files', files.length);
 
-  // Allow errors to bubble
-
   let readerConn, iconConn;
   try {
     [readerConn, iconConn] = await Promise.all([readerDbOpen(),
@@ -31,9 +29,8 @@ async function readerImportFiles(files) {
       promises.push(readerImportFile(file, readerConn, iconConn));
     }
 
-    // TODO: if the promises are executed above, I am not sure if this needs
-    // to await here? maybe this can occur after try/finally?
-    // TODO: what about swallowed assertion errors?
+    // TODO: if the promises are executed above, maybe this can occur after
+    // try/finally?
     await rbl.promiseEvery(promises);
   } finally {
     rbl.closeDB(readerConn, iconConn);

@@ -29,6 +29,6 @@ class FetchPolicy {
   static isAllowedURL(url) {
     assert(URLUtils.isCanonical(url));
     const urlo = new URL(url);
-    return !isCredentialedURL(urlo) && !isLocalURL(urlo);
+    return !this.isCredentialedURL(urlo) && !this.isLocalURL(urlo);
   }
 }

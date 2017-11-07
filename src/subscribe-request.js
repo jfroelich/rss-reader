@@ -9,6 +9,7 @@
 // import reader-db.js
 // import reader-badge.js
 // import reader-parse-feed.js
+// import reader-storage.js
 
 class SubscribeRequest {
   constructor() {
@@ -64,7 +65,7 @@ class SubscribeRequest {
         }
       }
 
-      const xml = await response.text();
+      const xml = await res.text();
       const PROCESS_ENTRIES = false;
       const parseResult = readerParseFeed(xml, url, res.responseURL,
         res.lastModifiedDate, PROCESS_ENTRIES);
