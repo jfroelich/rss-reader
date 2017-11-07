@@ -3,7 +3,6 @@
 // import rbl.js
 // import favicon.js
 
-
 /*
 TODO:
 
@@ -24,8 +23,7 @@ rbl.openDB instead of faviconDbOpen
 * test compact
 */
 
-async function test_favicon_lookup(url, is_cacheless) {
-
+async function testLookup(url, is_cacheless) {
   const query = new FaviconQuery();
   query.url = new URL(url);
 

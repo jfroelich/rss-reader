@@ -138,8 +138,14 @@ async function pollEntryUpdateIcon(entry, document) {
   try {
     iconURL = await faviconLookup(query);
   } catch(error) {
-    console.warn(error);
-    // lookup error is non-fatal
+    // Allow assertion errors to pass through. This was previously not done
+    // and was hiding a bug.
+    if(error instanceof AssertionError) {
+      throw error;
+    } else {
+      console.warn(error);
+      // lookup error is non-fatal
+    }
   }
 
   entry.faviconURLString = iconURL || this.feedFaviconURL;

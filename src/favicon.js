@@ -7,10 +7,9 @@
 
 // 30 days in ms, used by both lookup and compact to determine whether a
 // cache entry expired
-const FAVICON_DEFAULT_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
+const FAVICON_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 // Opens a connection to the favicon database
-// @returns {Promise} resolves to open IDBDatabase instance
 function faviconDbOpen() {
   const name = 'favicon-cache';
   const version = 2;
@@ -18,7 +17,10 @@ function faviconDbOpen() {
   return rbl.openDB(name, version, faviconDbOnUpgradeNeeded, timeoutMs);
 }
 
-// TODO: rename to favicon_lookup_context, move out url and doc
+// TODO: move out url and doc, those should be params, and this should be a
+// this-bound context instead. Alternatively, this whole thing should be
+// something like FaviconLookupRequest, and faviconLookup should be a member
+// function.
 function FaviconQuery() {
   // The indexedDB database connection to use for the lookup
   // @type {IDBDatabase}
@@ -63,11 +65,11 @@ async function faviconLookup(query) {
   let maxImageSize = query.maxImageSize;
 
   if(typeof maxAgeMs === 'undefined') {
-    maxAgeMs = FAVICON_DEFAULT_MAX_AGE_MS;
+    maxAgeMs = FAVICON_MAX_AGE_MS;
   }
 
   if(typeof fetchHTMLTimeoutMs === 'undefined') {
-    fetchHTMLTimeoutMs = 1000;
+    fetchHTMLTimeoutMs = 4000;
   }
 
   if(typeof fetchImageTimeoutMs === 'undefined') {
@@ -112,19 +114,22 @@ async function faviconLookup(query) {
   // non-fatal to lookup.
   let response;
 
-  // Only fetch if a pre-fetched document was not provided
   if(!query.document && !query.skipURLFetch) {
     try {
       response = await fetchHTML(urlObject.href, fetchHTMLTimeoutMs);
     } catch(error) {
-      // Do not warn. Network errors appear in the console.
-      // Do not exit early. A fetch error is non-fatal to lookup.
+      // A fetch error is non-fatal to lookup unless it is an assertion failure
+
+      if(typeof error === AssertionError) {
+        throw error;
+      } else {
+        console.warn(error);
+      }
     }
   }
 
   if(response) {
     let responseURLObject;
-
     if(response.redirected) {
       responseURLObject = new URL(response.responseURL);
       urls.add(responseURLObject.href);
@@ -158,7 +163,8 @@ async function faviconLookup(query) {
         if(error instanceof AssertionError) {
           throw error;
         } else {
-          // Ignore parse error
+          // Treat parse error as non-fatal. In this case document is undefined
+          console.warn(error);
         }
       }
 
@@ -232,7 +238,8 @@ async function faviconDbFindRedirectURL(conn, urlObject, response,
 // @returns {String} a favicon url
 async function faviconSearchDocument(document, conn, baseURLObject, urls) {
   assert(document instanceof Document);
-  assert(rbl.isOpenDB(conn));
+  // NOTE: conn definedness and state is not asserted because we allow for
+  // cacheless lookup. This was previously the source of a bug.
   assert(URLUtils.isURL(baseURLObject));
   assert(urls);
 
@@ -257,8 +264,12 @@ async function faviconSearchDocument(document, conn, baseURLObject, urls) {
       continue;
     }
 
-    // Avoid passing empty string to URL constructor
+    console.debug('candidate:', selector, element.outerHTML);
+
     let hrefString = element.getAttribute('href');
+
+    // Avoid passing empty string to URL constructor. The selector criterion
+    // only checks attribute presence
     if(!hrefString) {
       continue;
     }
@@ -279,6 +290,7 @@ async function faviconSearchDocument(document, conn, baseURLObject, urls) {
 
     // TODO: move this out so that faviconSearchDocument is not async
     if(conn) {
+      // conn definedness and state assertion delegated to faviconDbPutEntries
       await faviconDbPutEntries(conn, iconURLObject.href, urls);
     }
     return iconURLObject.href;
@@ -393,7 +405,7 @@ function faviconDbFindExpiredEntries(conn, maxAgeMs) {
   assert(rbl.isOpenDB(conn));
 
   if(typeof maxAgeMs === 'undefined') {
-    maxAgeMs = FAVICON_DEFAULT_MAX_AGE_MS;
+    maxAgeMs = FAVICON_MAX_AGE_MS;
   }
 
   return new Promise(function(resolve, reject) {

@@ -1,5 +1,6 @@
 'use strict';
 
+// import net/url-utils.js
 // import poll/poll.js
 // import favicon.js
 // import rbl.js
@@ -75,6 +76,33 @@ async function readerCommand(command, ...args) {
     }
     break;
   }
+  case 'iconlookup': {
+    let url, timeout, cacheless = true;
+    if(args && args.length) {
+      url = args[0];
+      if(args.length > 1) {
+        timeout = parseInt(args[1]);
+        if(args.length > 2) {
+          cacheless = args[2];
+        }
+      }
+    }
+
+    const query = new FaviconQuery();
+    query.url = new URL(url);
+    query.fetchHTMLTimeoutMs = timeout;
+    try {
+      if(!cacheless) {
+        query.conn = await faviconDbOpen();
+      }
+
+      return await faviconLookup(query);
+    } finally {
+      rbl.closeDB(query.conn);
+    }
+
+    break;
+  }
   default:
     console.error('Unknown command', command);
     print_usage();
@@ -89,7 +117,8 @@ async function readerCommand(command, ...args) {
       'poll',
       'scanlost',
       'scanorphans',
-      'clearicons'
+      'clearicons',
+      'iconlookup'
     ]);
   }
 }
