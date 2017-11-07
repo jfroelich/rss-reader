@@ -151,15 +151,25 @@ function slideshowCreateArticleTitleElement(entry) {
   titleElement.setAttribute('class', 'entry-title');
   titleElement.setAttribute('target','_blank');
   titleElement.setAttribute('rel', 'noreferrer');
-  titleElement.setAttribute('title', entry.title || 'Untitled');
-  if(entry.title) {
-    titleElement.setAttribute('title', entry.title);
-    let titleText = entry.title;
-    titleText = articleTitleFilterPublisher(titleText);
 
-    // TODO: handle ParserError correctly
-    titleText = htmlTruncate(titleText, 300);
-    titleElement.innerHTML = titleText;
+  if(entry.title) {
+    let title = entry.title;
+    let safeTitle = htmlSpecialChars(title);
+
+    // Set the attribute value to the full title without truncation or
+    // publisher filter
+    titleElement.setAttribute('title', safeTitle);
+
+    let filteredSafeTitle = articleTitleFilterPublisher(safeTitle);
+
+    try {
+      filteredSafeTitle = htmlTruncate(filteredSafeTitle, 300);
+    } catch(error) {
+      console.warn(error);
+    }
+
+    // Use textContent, not innerHTML
+    titleElement.textContent = filteredSafeTitle;
   } else {
     titleElement.setAttribute('title', 'Untitled');
     titleElement.textContent = 'Untitled';

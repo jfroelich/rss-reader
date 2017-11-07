@@ -257,7 +257,9 @@ async function optionsPageSubscribeFormOnSubmit(event) {
   optionsPageFeedListAppendFeed(subscribedFeed);
   const feedURL = feedPeekURL(subscribedFeed);
 
-  // TODO: unsafe?
+  // This is safe. feedURL comes from a string that has undergone
+  // deserialization into a URL object and back to a string. Unsafe user input
+  // would have triggered a parsing error.
   optionsPageSubscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
   optionsPageSubscriptionMonitorHide();
   optionsPageShowSectionId('subs-list-section');

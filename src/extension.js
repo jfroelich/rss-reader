@@ -3,6 +3,12 @@
 // import rbl.js
 // import reader-db.js
 
+// TODO: refactor as platform.js, include only platform-specific functionality
+// and move out all non-platform-specific functionality as wrapping layers
+// Use a namespace object like platform. For example, showSlideshowForTab
+// and notify both have non-platform-specific code that is inappropriate here.
+// setBadgeText should also be simplified.
+
 function extensionIdleQuery(idlePeriodSecs) {
   return new Promise(function executor(resolve, reject) {
     chrome.idle.queryState(idlePeriodSecs, resolve);

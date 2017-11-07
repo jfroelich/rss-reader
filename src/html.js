@@ -4,11 +4,29 @@
 // import html-parser.js
 // import rbl.js
 
+
+function htmlSpecialChars(inputString) {
+  const inputStringVarType = typeof inputString;
+  if(inputStringVarType === 'undefined') {
+    return '';
+  } else {
+    assert(inputStringVarType === 'string');
+  }
+
+  // Do a simple replacement of unsafe characters
+  // TODO: do all the replacements at once using a regex
+  let output = inputString;
+  output = output.replace('<', '&lt;');
+  output = output.replace('>', '&gt;');
+  output = output.replace('"', '&quot;');
+
+  return output;
+}
+
 // Replaces html tags in the input string with the replacement. If no
 // replacement, then removes the tags.
 // @throws AssertionError
 function htmlReplaceTags(inputString, replacement) {
-  // The caller is responsible for calling this function with a defined string
   assert(typeof inputString === 'string');
 
   // Fast case for empty strings
