@@ -9,6 +9,10 @@
 // and notify both have non-platform-specific code that is inappropriate here.
 // setBadgeText should also be simplified.
 
+function extensionOpenTab(url) {
+  chrome.tabs.create({active: true, url: url});
+}
+
 function extensionIdleQuery(idlePeriodSecs) {
   return new Promise(function executor(resolve, reject) {
     chrome.idle.queryState(idlePeriodSecs, resolve);

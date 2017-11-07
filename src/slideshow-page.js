@@ -3,10 +3,9 @@
 // import article-title.js
 // import entry-css.js
 // import entry-mark-read.js
+// import extension.js
 // import rbl.js
 // import reader-db.js
-
-// TODO: add assertions and logging
 
 let slideshowCurrentSlide = null;
 
@@ -40,26 +39,27 @@ slideshowPollChannel.onmessage = function(event) {
 };
 
 function slideshowSlideRemove(slideElement) {
+  assert(slideElement instanceof Element);
   slideElement.removeEventListener('click', slideshowSlideOnclick);
   slideElement.remove();
 }
 
-// TODO: visual feedback in event of an error
 async function slideshowSlideMarkRead(conn, slideElement) {
   assert(rbl.isOpenDB(conn));
 
-  // not an error
+  // This is a routine situation such as when navigating backward and therefore
+  // not an error.
   if(slideElement.hasAttribute('read')) {
     return;
   }
 
-  const entryIdString = slideElement.getAttribute('entry');
-  const RADIX = 10;
-  const entryIdNumber = parseInt(entryIdString, RADIX);
+  const slideEntryAttributeValue = slideElement.getAttribute('entry');
+  const entryId = rbl.parseInt10(slideEntryAttributeValue);
+  assert(entryIsValidId(entryId));
+
   try {
-    await readerStorageMarkRead(conn, entryIdNumber);
+    await readerStorageMarkRead(conn, entryId);
   } catch(error) {
-    // TODO: handle error visually
     console.warn(error);
     return;
   }
@@ -67,29 +67,19 @@ async function slideshowSlideMarkRead(conn, slideElement) {
   slideElement.setAttribute('read', '');
 }
 
-// TODO: do not support local conn
-// TODO: require caller to establish conn, do not do it here
 // TODO: visual feedback on error
 async function slideshowAppendSlides(conn) {
   const limit = 3;
-  let isLocalConn = false;
   let entries = [];
-
   const offset = slideshowCountUnreadSlides();
 
   try {
-    if(!conn) {
-      conn = await readerDbOpen();
-      isLocalConn = true;
-    }
-
+    conn = await readerDbOpen();
     entries = await readerDbGetUnarchivedUnreadEntries(conn, offset, limit);
   } catch(error) {
+    // TODO: visual feedback in event of an error
     console.warn(error);
-  } finally {
-    if(isLocalConn) {
-      rbl.closeDB(conn);
-    }
+    return 0;
   }
 
   for(const entry of entries) {
@@ -101,6 +91,8 @@ async function slideshowAppendSlides(conn) {
 
 // Add a new slide to the view.
 function slideshowAppendSlide(entry) {
+  assert(entryIsEntry(entry));
+
   const containerElement = document.getElementById('slideshow-container');
   const slideElement = document.createElement('div');
 
@@ -139,6 +131,7 @@ function slideshowAppendSlide(entry) {
 
   // TODO: this might be wrong if multiple unread slides are initially appended
   // I need to ensure slideshowCurrentSlide is always set. Where do I do this?
+  // TODO: clarify the above comment, I have no idea what I am talking about
   if(containerElement.childElementCount === 1) {
     slideshowCurrentSlide = slideElement;
     slideshowCurrentSlide.focus();
@@ -168,7 +161,6 @@ function slideshowCreateArticleTitleElement(entry) {
       console.warn(error);
     }
 
-    // Use textContent, not innerHTML
     titleElement.textContent = filteredSafeTitle;
   } else {
     titleElement.setAttribute('title', 'Untitled');
@@ -188,16 +180,18 @@ function slideshowCreateArticleContentElement(entry) {
 
 function slideshowCreateFeedSourceElement(entry) {
   const sourceElement = document.createElement('span');
-  sourceElement.setAttribute('class','entrysource');
+  sourceElement.setAttribute('class', 'entry-source');
 
   if(entry.faviconURLString) {
+    assert(URLUtils.isCanonical(entry.faviconURLString));
     const faviconElement = document.createElement('img');
     faviconElement.setAttribute('src', entry.faviconURLString);
     faviconElement.setAttribute('width', '16');
     faviconElement.setAttribute('height', '16');
     sourceElement.appendChild(faviconElement);
   }
-
+  // TODO: why is this called title? This should be renamed to something like
+  // attributionElement
   const titleElement = document.createElement('span');
   if(entry.feedLink) {
     titleElement.setAttribute('title', entry.feedLink);
@@ -213,13 +207,12 @@ function slideshowCreateFeedSourceElement(entry) {
   }
   titleElement.textContent = buffer.join('');
   sourceElement.appendChild(titleElement);
-
   return sourceElement;
 }
 
 async function slideshowSlideOnclick(event) {
-  const LEFT_MOUSE_BUTTON_CODE = 1;
-  if(event.which !== LEFT_MOUSE_BUTTON_CODE) {
+  const CODE_LEFT_MOUSE_BUTTON = 1;
+  if(event.which !== CODE_LEFT_MOUSE_BUTTON) {
     return true;
   }
 
@@ -235,8 +228,8 @@ async function slideshowSlideOnclick(event) {
   event.preventDefault();
 
   const urlString = anchor.getAttribute('href');
-  // TODO: call to function in extension.js
-  chrome.tabs.create({active: true, url: urlString});
+  assert(URLUtils.isCanonical(urlString));
+  extensionOpenTab(urlString);
 
   let conn;
   try {
@@ -259,7 +252,7 @@ async function slideshowShowNextSlide() {
   // slideshow before subscribing when there are no feeds and entries, or
   // initially viewing the slideshow when all entries are read.
   if(!slideshowCurrentSlide) {
-    console.warn('No current slide');
+    console.warn('no current slide');
     return;
   }
 
@@ -272,8 +265,9 @@ async function slideshowShowNextSlide() {
     conn = await readerDbOpen();
 
     // Conditionally append more slides
-    if(unreadSlideElementCount < 2)
+    if(unreadSlideElementCount < 2) {
       slideAppendCount = await slideshowAppendSlides(conn);
+    }
 
     if(slideshowCurrentSlide.nextSibling) {
       slideshowCurrentSlide.style.left = '-100%';
@@ -287,7 +281,6 @@ async function slideshowShowNextSlide() {
       // with keys works
       slideshowCurrentSlide.focus();
 
-      // Must be awaited
       await slideshowSlideMarkRead(conn, oldSlideElement);
     }
   } catch(error) {
@@ -302,19 +295,21 @@ async function slideshowShowNextSlide() {
 }
 
 function slideshowCleanupOnAppend() {
-  // Weakly assert as this is trivial
-  assert(slideshowCurrentSlide, 'slideshowCurrentSlide is undefined');
+  assert(slideshowCurrentSlide);
 
   const maxSlideCount = 6;
   const containerElement = document.getElementById('slideshow-container');
   while(containerElement.childElementCount > maxSlideCount &&
-    containerElement.firstChild !== slideshowCurrentSlide)
+    containerElement.firstChild !== slideshowCurrentSlide) {
     slideshowSlideRemove(containerElement.firstChild);
+  }
 }
 
 // Move the current slide out of view to the right, and move the previous
 // slide into view, and then update the current slide.
 function slideshowShowPreviousSlide() {
+
+  // TODO: when is this condition ever true? Maybe this should be an assert?
   if(!slideshowCurrentSlide) {
     return;
   }
@@ -326,8 +321,8 @@ function slideshowShowPreviousSlide() {
 
   slideshowCurrentSlide.style.left = '100%';
   slideshowCurrentSlide.style.right = '-100%';
-  prevSlideElement.style.left = '0px';
-  prevSlideElement.style.right = '0px';
+  prevSlideElement.style.left = '0';
+  prevSlideElement.style.right = '0';
   slideshowCurrentSlide = prevSlideElement;
   // Change the active element to the new current slide, so that scrolling
   // using keyboard keys still works
@@ -341,21 +336,32 @@ function slideshowCountUnreadSlides() {
 
 let keydownTimerId = null;
 window.addEventListener('keydown', function slideshowOnKeyDown(event) {
-  // Redefine space from page down to navigate next
+  // Translate space from page down to show next slide
   const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
   const code = event.keyCode;
 
-  // TODO: use switch
-
-  if(code === RIGHT || code === N || code === SPACE) {
+  switch(code) {
+  case RIGHT:
+  case N:
+  case SPACE: {
     event.preventDefault();
     cancelIdleCallback(keydownTimerId);
     keydownTimerId = requestIdleCallback(slideshowShowNextSlide);
-  } else if(code === LEFT || code === P) {
+
+    break;
+  }
+
+  case LEFT:
+  case P: {
     event.preventDefault();
     cancelIdleCallback(keydownTimerId);
     keydownTimerId = requestIdleCallback(slideshowShowPreviousSlide);
+    break;
   }
+  default:
+    break;
+  }
+
 });
 
 // Override built in keyboard scrolling

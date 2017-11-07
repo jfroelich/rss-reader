@@ -177,8 +177,8 @@ rbl.isPosInt = function(number) {
 
 // TODO: replace all parseInt calls with this function
 rbl.parseInt10 = function(number) {
-  const RADIX = 10;
-  return parseInt(number, RADIX);
+  const BASE_10_RADIX = 10;
+  return parseInt(number, BASE_10_RADIX);
 };
 
 // Returns a new object that is a copy of the input less empty properties. A
