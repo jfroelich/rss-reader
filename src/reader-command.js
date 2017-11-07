@@ -21,10 +21,15 @@ async function readerCommand(command, ...args) {
     break;
   }
   case 'archive': {
-    let maxAgeMs, conn;
+    let maxAgeMs, conn, limit;
+
+    if(args && args.length) {
+      limit = args[0];
+    }
+
     try {
       conn = await readerDbOpen();
-      await readerStorageArchiveEntries(conn, maxAgeMs, args);
+      await readerStorageArchiveEntries(conn, maxAgeMs, limit);
     } finally {
       rbl.closeDB(conn);
     }

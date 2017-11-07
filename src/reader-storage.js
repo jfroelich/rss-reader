@@ -8,7 +8,6 @@
 // import reader-badge.js
 // import reader-db.js
 
-
 // Archives certain entries in the database
 // @param maxAgeMs {Number} how long before an entry is considered
 // archivable (using date entry created), in milliseconds
@@ -31,33 +30,38 @@ async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
   }
 
   // Allow errors to bubble
-  let entries = await readerDbFindArchivableEntries(conn, isArchivable, limit);
+  const entries = await readerDbFindArchivableEntries(conn, isArchivable,
+    limit);
 
   if(!entries.length) {
     console.debug('no archivable entries found');
     return;
   }
 
-  const compactedEntries = [];
-  for(const entry of entries) {
-    compactedEntries.push(readerStorageEntryCompact(entry));
-  }
-  entries = compactedEntries;
-
-  // Allow errors to bubble
-  await readerDbPutEntries(conn, entries);
-
+  // Concurrently archive and store each entry
   const channel = new BroadcastChannel('db');
-  const message = {type: 'archived-entry', id: undefined};
+  const promises = [];
   for(const entry of entries) {
-    message.id = entry.id;
-    channel.postMessage(message);
+    promises.push(readerStorageArchiveEntry(entry, conn, channel));
   }
-  channel.close();
+
+  try {
+    await Promise.all(promises);
+  } finally {
+    channel.close();
+  }
 
   console.log('compacted %s entries', entries.length);
 }
 
+async function readerStorageArchiveEntry(entry, conn, bc) {
+  const ce = readerStorageEntryCompact(entry);
+  ce.dateUpdated = new Date();
+  await readerDbPutEntry(conn, entry);
+  const message = {type: 'archived-entry', id: ce.id};
+  bc.postMessage(message);
+  return ce;
+}
 
 // Returns a new entry object that is in a compacted form. The new entry is a
 // shallow copy of the input entry, where only certain properties are kept, and

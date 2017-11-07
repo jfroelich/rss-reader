@@ -269,10 +269,12 @@ function readerDbFindArchivableEntries(conn, predicate, limit) {
   assert(rbl.isOpenDB(conn));
   assert(typeof predicate === 'function');
 
-  // Only using weak asserts. Caller should use a correct limit. Right now
-  // an incorrect limit causes undefined behavior.
-  assert(rbl.isPosInt(limit));
-  assert(limit > 0);
+  // Limit is optional
+  const limited = typeof limit !== 'undefined';
+  if(limited) {
+    assert(rbl.isPosInt(limit), '' + limit);
+    assert(limit > 0);
+  }
 
   // This does two layers of filtering. It would preferably but one but
   // a three property index involving a date gets complicated. Given the
@@ -301,7 +303,9 @@ function readerDbFindArchivableEntries(conn, predicate, limit) {
       const entry = cursor.value;
       if(predicate(entry)) {
         entries.push(entry);
-        if(entries.length === limit) {
+
+        // Stop walking if limited and reached limit
+        if(limited && (entries.length >= limit)) {
           return;
         }
       }

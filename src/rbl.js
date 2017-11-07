@@ -119,7 +119,9 @@ rbl.openDB = async function(name, version, upgradeListener, timeoutMs) {
   });
 
   if(!timeoutMs) {
-    // Allow exception to bubble
+    // Ordinarily it would make sense to just return the promise. However, the
+    // await pulls out a promise rejection and translates it into an uncaught
+    // exception, which we allow to bubble.
     return await openPromise;
   }
 
