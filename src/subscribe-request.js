@@ -50,7 +50,7 @@ class SubscribeRequest {
     const url = feedPeekURL(feed);
 
     if(!FetchPolicy.isAllowedURL(url)) {
-      throw new ReaderPermissionsError(url + ' is not permitted');
+      throw new PermissionsError(url + ' is not permitted');
     }
 
     if(await this.isSubscribed(url)) {

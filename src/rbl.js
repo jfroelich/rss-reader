@@ -381,8 +381,7 @@ class ParserError extends Error {
   }
 }
 
-// TODO: stop using reader prefix
-class ReaderPermissionsError extends Error {
+class PermissionsError extends Error {
   constructor(message) {
     super(message || 'Not permitted');
   }

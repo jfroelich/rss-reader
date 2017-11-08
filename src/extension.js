@@ -5,9 +5,13 @@
 
 // TODO: refactor as platform.js, include only platform-specific functionality
 // and move out all non-platform-specific functionality as wrapping layers
-// Use a namespace object like platform. For example, showSlideshowForTab
+// For example, showSlideshowForTab
 // and notify both have non-platform-specific code that is inappropriate here.
 // setBadgeText should also be simplified.
+
+// NOTE: do not use a namespace object. Once modules are supported, functions
+// will be individually exported.
+
 
 function extensionOpenTab(url) {
   chrome.tabs.create({active: true, url: url});

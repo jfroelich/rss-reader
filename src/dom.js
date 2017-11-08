@@ -392,21 +392,19 @@ function domIsHidden(element) {
 function domIsHiddenInline(element) {
   assert(element instanceof Element);
 
-  // BUG: seeing cannot read length of undefined in console. My understanding
-  // is that all elements have a style property. So perhaps this is not
-  // getting called on an element? But the previous assert never fails, element
-  // is an instanceof an element. Or does it? Check again.
-  // NOTE: this bug only arose after recent changes to pollEntry and after
-  // adding brackets to all single line if/for blocks
+  // Special handling for MathML. <math> and its subelements do not contain
+  // a style property in a parsed DOM (apparently). I don't know if this is
+  // a bug or expected behavior. In any case, consider math elements and
+  // descendants of math elements as always visible.
+  // NOTE: I always confuse this, but closest includes the element itself
+  if(element.closest('math')) {
+    return false;
+  }
 
   const style = element.style;
 
-  // TEMP: for some reason this assertion occasionally fails
-  assert(style);
-
-  // TEMP: researching bug
   if(!style) {
-    console.warn('styleless element', element.innerHTML.substring(0, 50));
+    console.debug('no style prop:', element.outerHTML.substring(0, 100));
     return false;
   }
 
