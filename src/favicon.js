@@ -160,7 +160,7 @@ async function faviconLookup(query) {
       try {
         document = HTMLParser.parseDocumentFromString(text);
       } catch(error) {
-        if(error instanceof AssertionError) {
+        if(rbl.isUncheckedError(error)) {
           throw error;
         } else {
           // Treat parse error as non-fatal. In this case document is undefined

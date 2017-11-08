@@ -106,10 +106,10 @@ class SubscribeRequest {
       const iconURL = await faviconLookup(query);
       feed.faviconURLString = iconURL;
     } catch(error) {
-      if(error instanceof AssertionError) {
+      if(rbl.isUncheckedError(error)) {
         throw error;
       } else {
-        // ignore, favicon failure is non-fatal
+        // ignore, lookup failure is non-fatal
       }
     }
   }

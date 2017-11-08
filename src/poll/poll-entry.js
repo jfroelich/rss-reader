@@ -70,7 +70,7 @@ async function pollEntry(entry) {
   try {
     entryDocument = HTMLParser.parseDocumentFromString(entryContent);
   } catch(error) {
-    if(error instanceof AssertionError) {
+    if(rbl.isUncheckedError(error)) {
       throw error;
     } else {
       // ignore parse error
@@ -99,7 +99,7 @@ async function pollEntry(entry) {
   try {
     await readerStorageAddEntry(entry, this.readerConn);
   } catch(error) {
-    if(error instanceof AssertionError) {
+    if(rbl.isUncheckedError(error)) {
       throw error;
     } else {
       return false;
@@ -138,9 +138,7 @@ async function pollEntryUpdateIcon(entry, document) {
   try {
     iconURL = await faviconLookup(query);
   } catch(error) {
-    // Allow assertion errors to pass through. This was previously not done
-    // and was hiding a bug.
-    if(error instanceof AssertionError) {
+    if(rbl.isUncheckedError(error)) {
       throw error;
     } else {
       console.warn(error);

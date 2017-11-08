@@ -41,11 +41,11 @@ function htmlReplaceTags(inputString, replacement) {
 
   let doc;
 
-  // TODO: do not catch
+  // TODO: do not catch?
   try {
     doc = HTMLParser.parseDocumentFromString(inputString);
   } catch(error) {
-    if(error instanceof AssertionError) {
+    if(rbl.isUncheckedError(error)) {
       throw error;
     } else {
       return 'Unsafe HTML redacted';

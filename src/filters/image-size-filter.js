@@ -89,7 +89,6 @@ async function imageSizeFilterGetDimensions(image, allowedProtocols,
     return result;
   }
 
-  // Allow exceptions to bubble
   const response = await fetchImage(sourceURL.href, timeoutMs);
 
   // Access by property, attributes are not set
