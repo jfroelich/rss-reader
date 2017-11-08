@@ -103,7 +103,7 @@ async function readerStorageMarkRead(conn, id) {
     throw new ReaderDbInvalidStateError('Entry in read state with id ' + id);
   }
 
-  // Allow errors to bubble
+  assert(entryHasURL(entry));
   const entryURL = entryPeekURL(entry);
   console.debug('found entry', entryURL);
 

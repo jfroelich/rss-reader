@@ -158,11 +158,17 @@ function domGetDimensions(element) {
     return;
   }
 
+  // Some elements do not have a defined style property.
+  if(!element.style) {
+    return;
+  }
+
   // TODO: support all value formats
+  // TODO: uses parseInt10
   const dims = {};
-  const radix = 10;
-  dims.width = parseInt(element.style.width, radix);
-  dims.height = parseInt(element.style.height, radix);
+  const RADIX = 10;
+  dims.width = parseInt(element.style.width, RADIX);
+  dims.height = parseInt(element.style.height, RADIX);
 
   if(isNaN(dims.width) || isNaN(dims.height)) {
     return;
@@ -357,7 +363,7 @@ function domIsHidden(element) {
   }
 
   // Ignore detached elements and elements outside of body
-  // TODO: this is a weak assert. Decide if it should be a strong assert
+  // TODO: this should just be an if?
   assert(body.contains(element));
 
   // Quickly test the element itself before testing ancestors, with the hope
@@ -396,13 +402,14 @@ function domIsHiddenInline(element) {
   // a style property in a parsed DOM (apparently). I don't know if this is
   // a bug or expected behavior. In any case, consider math elements and
   // descendants of math elements as always visible.
-  // NOTE: I always confuse this, but closest includes the element itself
+  // NOTE: closest includes the element itself
   if(element.closest('math')) {
     return false;
   }
 
   const style = element.style;
 
+  // Some elements do not have a style prop.
   if(!style) {
     console.debug('no style prop:', element.outerHTML.substring(0, 100));
     return false;
@@ -436,6 +443,7 @@ function domIsNearTransparent(element) {
 // Again, restricted to inert document context.
 function domIsOffscreen(element) {
   if(element.style.position === 'absolute') {
+    // TODO: use parseInt10
     const RADIX = 10;
     const left = parseInt(element.style.left, RADIX);
     if(!isNaN(left) && left < 0) {

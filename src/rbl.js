@@ -367,10 +367,6 @@ function sizeof(inputValue) {
   return byteCount;
 }
 
-// TODO: use this instead of everywhere I allow assertion errors to bubble.
-// Those places should allow any error that is unchecked to bubble, not just
-// assertion errors. This will reduce the number of hidden errors that should
-// be equivalent to assertion or programming errors.
 rbl.isUncheckedError = function(error) {
   return error instanceof AssertionError ||
     error instanceof TypeError ||
