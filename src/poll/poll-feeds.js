@@ -68,7 +68,7 @@ async function pollFeeds(pfc) {
   for(const feed of feeds) {
     promises.push(pollFeedsPollFeed(feed, pfc));
   }
-  await rbl.promiseEvery(promises);
+  await promiseEvery(promises);
 
   await readerBadgeUpdate(pfc.readerConn);
 

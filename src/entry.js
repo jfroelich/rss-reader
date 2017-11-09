@@ -19,7 +19,7 @@ function entryIsEntry(entry) {
 // Returns true if the id is a valid entry id, structurally. This does not
 // check if the id actually corresponds to an entry.
 function entryIsValidId(id) {
-  return rbl.isPosInt(id);
+  return isPosInt(id);
 }
 
 function entryHasURL(entry) {
@@ -78,17 +78,17 @@ function entrySanitize(inputEntry, authorMaxLength, titleMaxLength,
     contextMaxLength = 50000;
   }
 
-  assert(rbl.isPosInt(authorMaxLength));
-  assert(rbl.isPosInt(titleMaxLength));
-  assert(rbl.isPosInt(contextMaxLength));
+  assert(isPosInt(authorMaxLength));
+  assert(isPosInt(titleMaxLength));
+  assert(isPosInt(contextMaxLength));
 
   const outputEntry = Object.assign({}, inputEntry);
 
   if(outputEntry.author) {
     let author = outputEntry.author;
-    author = rbl.filterControls(author);
+    author = filterControls(author);
     author = htmlReplaceTags(author, '');
-    author = rbl.condenseWhitespace(author);
+    author = condenseWhitespace(author);
     author = htmlTruncate(author, authorMaxLength);
     outputEntry.author = author;
   }
@@ -101,9 +101,9 @@ function entrySanitize(inputEntry, authorMaxLength, titleMaxLength,
 
   if(outputEntry.title) {
     let title = outputEntry.title;
-    title = rbl.filterControls(title);
+    title = filterControls(title);
     title = htmlReplaceTags(title, '');
-    title = rbl.condenseWhitespace(title);
+    title = condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength);
     outputEntry.title = title;
   }

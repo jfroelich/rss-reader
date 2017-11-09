@@ -28,7 +28,7 @@ class ReaderDbInvalidStateError extends Error {
 // @return {Promise} a promise that resolves to an open database connection
 function readerDbOpen() {
   const name = 'reader', version = 20, timeoutMs = 500;
-  return rbl.openDB(name, version, readerDbOnUpgradeNeeded, timeoutMs);
+  return openDB(name, version, readerDbOnUpgradeNeeded, timeoutMs);
 }
 
 // Helper for readerDbOpen. Does the database upgrade. This should never be
@@ -74,7 +74,7 @@ function readerDbOnUpgradeNeeded(event) {
 // @param conn {IDBDatabase}
 // @param url {String}
 function readerDbFindFeedIdByURL(conn, url) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(URLUtils.isValid(url));
 
   return new Promise(function executor(resolve, reject) {
@@ -89,7 +89,7 @@ function readerDbFindFeedIdByURL(conn, url) {
 
 // @param conn {IDBDatabase}
 function readerDbCountUnreadEntries(conn) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -107,7 +107,7 @@ function readerDbCountUnreadEntries(conn) {
 // @returns {Promise} a promise that resolves to an entry object, or undefined
 // if no matching entry was found
 function readerDbFindEntryById(conn, id) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(entryIsValidId(id));
 
   return new Promise(function executor(resolve, reject) {
@@ -123,7 +123,7 @@ function readerDbFindEntryById(conn, id) {
 // @param conn {IDBDatabase}
 // @param url {String}
 function readerDbFindEntryByURL(conn, url) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(URLUtils.isValid(url));
 
   return new Promise(function executor(resolve, reject) {
@@ -137,7 +137,7 @@ function readerDbFindEntryByURL(conn, url) {
 }
 
 function readerDbFindEntryIdsByFeedId(conn, feedId) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(feedIsValidId(feedId));
 
   return new Promise(function executor(resolve, reject) {
@@ -151,7 +151,7 @@ function readerDbFindEntryIdsByFeedId(conn, feedId) {
 }
 
 function readerDbFindFeedById(conn, feedId) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(feedIsValidId(feedId));
 
   return new Promise(function executor(resolve, reject) {
@@ -165,7 +165,7 @@ function readerDbFindFeedById(conn, feedId) {
 
 // TODO: is this in use? deprecate if not. I don't think it is
 function readerDbGetEntries(conn) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
@@ -177,7 +177,7 @@ function readerDbGetEntries(conn) {
 }
 
 function readerDbGetFeeds(conn) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -193,7 +193,7 @@ function readerDbGetFeeds(conn) {
 // @param conn {IDBDatabase}
 // @throws AssertionError
 function readerDbGetFeedIds(conn) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -214,13 +214,13 @@ function readerDbGetFeedIds(conn) {
 // @returns {Promise} resolves to an array of entry objects, or rejects with
 // a database-related error.
 function readerDbFindEntries(conn, predicate, limit) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(typeof predicate === 'function');
 
   const limited = typeof limit !== 'undefined';
 
   if(limited) {
-    assert(rbl.isPosInt(limit));
+    assert(isPosInt(limit));
     assert(limit > 0);
   }
 
@@ -266,13 +266,13 @@ function readerDbFindEntries(conn, predicate, limit) {
 }
 
 function readerDbFindArchivableEntries(conn, predicate, limit) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(typeof predicate === 'function');
 
   // Limit is optional
   const limited = typeof limit !== 'undefined';
   if(limited) {
-    assert(rbl.isPosInt(limit), '' + limit);
+    assert(isPosInt(limit), '' + limit);
     assert(limit > 0);
   }
 
@@ -316,7 +316,7 @@ function readerDbFindArchivableEntries(conn, predicate, limit) {
 }
 
 function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
     const entries = [];
@@ -353,7 +353,7 @@ function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
 }
 
 function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(feedIsValidId(feedId));
   assert(Array.isArray(entryIds));
 
@@ -374,7 +374,7 @@ function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
 
 // This does not validate the entry, it just puts it as is
 function readerDbPutEntry(conn, entry) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(entryIsEntry(entry));
 
   return new Promise(function executor(resolve, reject) {
@@ -387,7 +387,7 @@ function readerDbPutEntry(conn, entry) {
 }
 
 function readerDbPutEntries(conn, entries) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(Array.isArray(entries));
 
   // TODO: this should not be setting dateUpdated that is caller's
@@ -413,7 +413,7 @@ function readerDbPutEntries(conn, entries) {
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
 function readerDbPutFeed(conn, feed) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(feedIsFeed(feed));
 
   return new Promise(function executor(resolve, reject) {
@@ -431,7 +431,7 @@ function readerDbPutFeed(conn, feed) {
 // @param conn {IDBDatabase}
 // @param ids {Array}
 function readerDbRemoveEntries(conn, ids) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(Array.isArray(ids));
 
   return new Promise(function executor(resolve, reject) {

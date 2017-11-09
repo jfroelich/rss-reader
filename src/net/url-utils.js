@@ -71,7 +71,7 @@ URLUtils.isIPv4Address = function(string) {
   }
 
   for(const part of parts) {
-    const digit = rbl.parseInt10(part);
+    const digit = parseInt10(part);
     if(isNaN(digit) || digit < 0 || digit > 255) {
       return false;
     }

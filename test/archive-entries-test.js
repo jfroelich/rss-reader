@@ -12,15 +12,15 @@ async function test_archive_entries() {
   let conn, timeoutMs = 1000, maxAgeMs;
   const limit = 5;
   try {
-    conn = await rbl.openDB(name, version, readerDbOnUpgradeNeeded,
+    conn = await openDB(name, version, readerDbOnUpgradeNeeded,
       timeoutMs);
     await readerStorageArchiveEntries(conn, maxAgeMs, limit);
-    rbl.closeDB(conn);
+    closeDB(conn);
     closeRequested = true;
-    await rbl.deleteDB(conn.name);
+    await deleteDB(conn.name);
   } finally {
     if(!closeRequested) {
-      rbl.closeDB(conn);
+      closeDB(conn);
     }
   }
 }

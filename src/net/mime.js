@@ -196,7 +196,7 @@ mime.isBinary = function(mimeType) {
 
 mime.normalize = function(mimeType) {
   assert(mime.isMimeType(mimeType));
-  return rbl.removeWhitespace(mimeType).toLowerCase();
+  return filterWhitespace(mimeType).toLowerCase();
 };
 
 mime.isHTML = function(contentType) {

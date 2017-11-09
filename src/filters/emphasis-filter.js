@@ -12,7 +12,7 @@ function emphasisFilter(doc, maxTextLength) {
     maxTextLength = 0;
   }
 
-  assert(rbl.isPosInt(maxTextLength));
+  assert(isPosInt(maxTextLength));
 
   // Restrict analysis to body
   if(!doc.body) {

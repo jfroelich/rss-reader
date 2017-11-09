@@ -145,7 +145,7 @@ function fetchImage(url, timeoutMs) {
     timeoutMs = 0;
   }
 
-  assert(rbl.isPosInt(timeoutMs));
+  assert(isPosInt(timeoutMs));
 
   // There is no simply way to share information between the promises, so
   // define this in outer scope shared between both promise bodies.
@@ -201,7 +201,7 @@ function fetchImage(url, timeoutMs) {
   }
 
   // There is a timeout, so we are going to race
-  // TODO: consider delegation to rbl.timeoutPromise
+  // TODO: consider delegation to setTimeoutPromise
   // TODO: think about binds to reduce callback hell
   const timeoutPromise = new Promise(function timeExec(resolve, reject) {
     timerId = setTimeout(function on_timeout() {
@@ -293,7 +293,7 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
 
   // If timeout is set then check its validity
   if(timeoutMsType !== 'undefined') {
-    assert(rbl.isPosInt(timeoutMs));
+    assert(isPosInt(timeoutMs));
   }
 
   const fetchPromise = fetch(url, options);
@@ -310,7 +310,7 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
     errorMessage = 'Fetch timed out for url ' + url;
   }
 
-  // TODO: delegate to rbl.timeoutPromise
+  // TODO: delegate to setTimeoutPromise
   // TODO: resolve instead of reject. But think of how to represent that
   // in case of error? Ok have the promise reject with undefined. The fetch
   // promise never resolves with undefined. So make this function async and
@@ -366,7 +366,6 @@ const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 // the value. This way there is no ambiguity, or need for global constant
 ResponseUtils.getContentLength = function(response) {
   const contentLengthString = response.headers.get('Content-Length');
-  const RADIX = 10;
-  const contentLength = parseInt(contentLengthString, RADIX);
+  const contentLength = parseInt10(contentLengthString);
   return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
 };

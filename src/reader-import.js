@@ -31,9 +31,9 @@ async function readerImportFiles(files) {
 
     // TODO: if the promises are executed above, maybe this can occur after
     // try/finally?
-    await rbl.promiseEvery(promises);
+    await promiseEvery(promises);
   } finally {
-    rbl.closeDB(readerConn, iconConn);
+    closeDB(readerConn, iconConn);
   }
 }
 
@@ -41,8 +41,8 @@ async function readerImportFiles(files) {
 // @throws {ParserError}
 async function readerImportFile(file, readerConn, iconConn) {
   assert(file instanceof File);
-  assert(rbl.isOpenDB(readerConn));
-  assert(rbl.isOpenDB(iconConn));
+  assert(isOpenDB(readerConn));
+  assert(isOpenDB(iconConn));
   console.log('importing opml file', file.name);
 
   if(file.size < 1) {
@@ -57,7 +57,7 @@ async function readerImportFile(file, readerConn, iconConn) {
 
   let fileContent;
   try {
-    fileContent = await rbl.readFileAsText(file);
+    fileContent = await readFileAsText(file);
   } catch(error) {
     console.warn(error);
     return 0;

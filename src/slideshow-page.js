@@ -45,7 +45,7 @@ function slideshowSlideRemove(slideElement) {
 }
 
 async function slideshowSlideMarkRead(conn, slideElement) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
 
   // This is a routine situation such as when navigating backward and therefore
   // not an error.
@@ -54,7 +54,7 @@ async function slideshowSlideMarkRead(conn, slideElement) {
   }
 
   const slideEntryAttributeValue = slideElement.getAttribute('entry');
-  const entryId = rbl.parseInt10(slideEntryAttributeValue);
+  const entryId = parseInt10(slideEntryAttributeValue);
   assert(entryIsValidId(entryId));
 
   try {
@@ -203,7 +203,7 @@ function slideshowCreateFeedSourceElement(entry) {
   buffer.push(entry.author || 'Unknown author');
   if(entry.datePublished) {
     buffer.push(' on ');
-    buffer.push(rbl.formatDate(entry.datePublished));
+    buffer.push(formatDate(entry.datePublished));
   }
   titleElement.textContent = buffer.join('');
   sourceElement.appendChild(titleElement);
@@ -238,7 +238,7 @@ async function slideshowSlideOnclick(event) {
   } catch(error) {
     console.warn(error);
   } finally {
-    rbl.closeDB(conn);
+    closeDB(conn);
   }
 
   return false;
@@ -286,7 +286,7 @@ async function slideshowShowNextSlide() {
   } catch(error) {
     console.warn(error);
   } finally {
-    rbl.closeDB(conn);
+    closeDB(conn);
   }
 
   if(slideAppendCount > 0) {

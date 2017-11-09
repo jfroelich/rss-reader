@@ -14,7 +14,7 @@ async function alarmsOnArchiveAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    rbl.closeDB(conn);
+    closeDB(conn);
   }
 }
 
@@ -26,7 +26,7 @@ async function alarmsOnCompactFaviconsAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    rbl.closeDB(conn);
+    closeDB(conn);
   }
 }
 
@@ -39,7 +39,7 @@ async function alarmsOnPollFeedsAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    rbl.closeDB(pfc.readerConn, pfc.iconConn);
+    closeDB(pfc.readerConn, pfc.iconConn);
   }
 }
 
@@ -52,7 +52,7 @@ async function alarmsOnRemoveLostEntriesAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    rbl.closeDB(conn);
+    closeDB(conn);
   }
 }
 
@@ -66,7 +66,7 @@ async function alarmsOnRemoveOrphansAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    rbl.closeDB(conn);
+    closeDB(conn);
   }
 }
 
@@ -79,7 +79,7 @@ async function alarmsOnRefreshFeedIconsAlarm() {
   } catch(error) {
     console.warn(error);
   } finally {
-    rbl.closeDB(readerConn, iconConn);
+    closeDB(readerConn, iconConn);
   }
 }
 

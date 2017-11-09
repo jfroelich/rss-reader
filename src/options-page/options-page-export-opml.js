@@ -16,7 +16,7 @@ async function optionsPageExportOPML() {
     conn = await readerDbOpen();
     feeds = await readerDbGetFeeds(conn);
   } finally {
-    rbl.closeDB(conn);
+    closeDB(conn);
   }
 
   assert(feeds);

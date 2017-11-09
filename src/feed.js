@@ -14,7 +14,7 @@ function feedIsFeed(feed) {
 }
 
 function feedIsValidId(id) {
-  return rbl.isPosInt(id);
+  return isPosInt(id);
 }
 
 function feedHasURL(feed) {
@@ -80,7 +80,7 @@ function feedHasValidProperties(feed) {
   assert(feedIsFeed(feed));
 
   if('id' in feed) {
-    if(!rbl.isPosInt(feed.id)) {
+    if(!isPosInt(feed.id)) {
       return false;
     }
   }
@@ -104,13 +104,13 @@ function feedSanitize(feed, titleMaxLength, descMaxLength) {
   if(typeof titleMaxLength === 'undefined') {
     titleMaxLength = DEFAULT_TITLE_MAX_LEN;
   } else {
-    assert(rbl.isPosInt(titleMaxLength));
+    assert(isPosInt(titleMaxLength));
   }
 
   if(typeof descMaxLength === 'undefined') {
     descMaxLength = DEFAULT_DESC_MAX_LEN;
   } else {
-    assert(rbl.isPosInt(descMaxLength));
+    assert(isPosInt(descMaxLength));
   }
 
   const outputFeed = Object.assign({}, feed);
@@ -119,18 +119,18 @@ function feedSanitize(feed, titleMaxLength, descMaxLength) {
 
   if(outputFeed.title) {
     let title = outputFeed.title;
-    title = rbl.filterControls(title);
+    title = filterControls(title);
     title = htmlReplaceTags(title, tagReplacement);
-    title = rbl.condenseWhitespace(title);
+    title = condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength, suffix);
     outputFeed.title = title;
   }
 
   if(outputFeed.description) {
     let desc = outputFeed.description;
-    desc = rbl.filterControls(desc);
+    desc = filterControls(desc);
     desc = htmlReplaceTags(desc, tagReplacement);
-    desc = rbl.condenseWhitespace(desc);
+    desc = condenseWhitespace(desc);
     desc = htmlTruncate(desc, descMaxLength, suffix);
     outputFeed.description = desc;
   }

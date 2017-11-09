@@ -70,7 +70,7 @@ function boilerplateFilter(doc) {
 }
 
 function boilerplateDeriveTextBias(element) {
-  const text = rbl.condenseWhitespace(element.textContent);
+  const text = condenseWhitespace(element.textContent);
   const textLength = text.length;
   const anchorLength = boilerplateDeriveAnchorLength(element);
   return 0.25 * textLength - 0.7 * anchorLength;
@@ -80,7 +80,7 @@ function boilerplateDeriveAnchorLength(element) {
   const anchors = element.querySelectorAll('a[href]');
   let anchorLength = 0;
   for(const anchor of anchors) {
-    const text = rbl.condenseWhitespace(anchor.textContent);
+    const text = condenseWhitespace(anchor.textContent);
     anchorLength = anchorLength + text.length;
   }
   return anchorLength;

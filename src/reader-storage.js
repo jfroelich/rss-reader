@@ -14,14 +14,14 @@
 // @throws AssertionError
 // @throws Error - database related
 async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
 
   const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
   if(typeof maxAgeMs === 'undefined') {
     maxAgeMs = TWO_DAYS_MS;
   }
 
-  assert(rbl.isPosInt(maxAgeMs));
+  assert(isPosInt(maxAgeMs));
 
   const currentDate = new Date();
   function isArchivable(entry) {
@@ -92,7 +92,7 @@ function readerStorageEntryCompact(entry) {
 // @throws Error entry unlocatable (missing url)
 // @throws Error readerBadgeUpdate related error
 async function readerStorageMarkRead(conn, id) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
   assert(entryIsValidId(id));
 
   // Allow errors to bubble
@@ -133,14 +133,14 @@ async function readerStorageMarkRead(conn, id) {
 // @throws Error database related
 async function readerStoragePutFeed(feed, conn, skipPrep) {
   assert(feedIsFeed(feed));
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
 
   let storable;
   if(skipPrep) {
     storable = feed;
   } else {
     storable = feedSanitize(feed);
-    storable = rbl.filterEmptyProps(storable);
+    storable = filterEmptyProps(storable);
   }
 
   const currentDate = new Date();
@@ -166,10 +166,10 @@ async function readerStoragePutFeed(feed, conn, skipPrep) {
 // @throws Error database related
 async function readerStorageAddEntry(entry, conn) {
   assert(entryIsEntry(entry));
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
 
   const san = entrySanitize(entry);
-  const storable = rbl.filterEmptyProps(san);
+  const storable = filterEmptyProps(san);
   storable.readState = ENTRY_STATE_UNREAD;
   storable.archiveState = ENTRY_STATE_UNARCHIVED;
   storable.dateCreated = new Date();
@@ -183,7 +183,7 @@ async function readerStorageAddEntry(entry, conn) {
 // @throws AssertionError
 // @throws Error - database-related error
 async function readerStorageRemoveOrphans(conn, limit) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
 
   // Allow errors to bubble
   const feedIds = await readerDbGetFeedIds(conn);
@@ -225,7 +225,7 @@ async function readerStorageRemoveOrphans(conn, limit) {
 // @throws AssertionError
 // @throws Error - database related
 async function readerStorageRemoveLostEntries(conn, limit) {
-  assert(rbl.isOpenDB(conn));
+  assert(isOpenDB(conn));
 
   function isLost(entry) {
     return !entryHasURL(entry);
@@ -264,8 +264,8 @@ async function readerStorageRemoveLostEntries(conn, limit) {
 // @throws AssertionError
 // @throws Error - database related
 async function readerStorageRefreshFeedIcons(readerConn, iconConn) {
-  assert(rbl.isOpenDB(readerConn));
-  assert(rbl.isOpenDB(iconConn));
+  assert(isOpenDB(readerConn));
+  assert(isOpenDB(iconConn));
 
   // Allow errors to bubble
   const feeds = await readerDbGetFeeds(readerConn);
@@ -281,7 +281,7 @@ async function readerStorageRefreshFeedIcons(readerConn, iconConn) {
   }
 
   // Allow any individual failure to cancel iteration and bubble an error
-  // TODO: consider rbl.promiseEvery, but then how would assertion errors bubble?
+  // TODO: consider promiseEvery, but then how would assertion errors bubble?
   await Promise.all(promises);
 }
 

@@ -38,7 +38,7 @@ async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
       timeoutMs);
     promises.push(promise);
   }
-  const results = await rbl.promiseEvery(promises);
+  const results = await promiseEvery(promises);
 
   for(const result of results) {
     if(result) {
@@ -108,30 +108,30 @@ function imageSizeFilterSniff(sourceURL) {
   // function?
 
   // Try and grab from parameters
-  // TODO: defer height has check and parseInt height until width processed,
+  // TODO: defer height has check and parseInt10 height until width processed,
   // can avoid processing in some cases
 
   const params = sourceURL.searchParams;
-  const dimensions = {}, radix = 10;
+  const dimensions = {};
   if(params.has('w') && params.has('h')) {
 
-    dimensions.width = parseInt(params.get('w'), radix);
-    dimensions.height = parseInt(params.get('h'), radix);
+    dimensions.width = parseInt10(params.get('w'));
+    dimensions.height = parseInt10(params.get('h'));
 
     if(!isNaN(dimensions.width) && !isNaN(dimensions.height)) {
       return dimensions;
     }
   }
 
-  // Check has because the cost is less than the cost of calling parseInt
+  // Check 'has' because the cost is less than the cost of calling parseInt10
   // (untested assumption)
 
-  // TODO: defer height has check and parseInt height until width processed,
+  // TODO: defer height has check and parseInt10 height until width processed,
   // can avoid processing in some cases
 
   if(params.has('width') && params.has('height')) {
-    dimensions.width = parseInt(params.get('width'), radix);
-    dimensions.height = parseInt(params.get('height'), radix);
+    dimensions.width = parseInt10(params.get('width'));
+    dimensions.height = parseInt10(params.get('height'));
 
     if(!isNaN(dimensions.width) && !isNaN(dimensions.height)) {
       return dimensions;

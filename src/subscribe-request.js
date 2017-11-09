@@ -27,7 +27,7 @@ class SubscribeRequest {
 
   // Close database connections
   close() {
-    rbl.closeDB(this.readerConn, this.iconConn);
+    closeDB(this.readerConn, this.iconConn);
   }
 
   // Returns a promise that resolves to the id of a feed matching the url
@@ -42,8 +42,8 @@ class SubscribeRequest {
   // @throws {Error} fetch related
   // @returns {Object} the subscribed feed
   async subscribe(feed) {
-    assert(rbl.isOpenDB(this.readerConn));
-    assert(rbl.isOpenDB(this.iconConn));
+    assert(isOpenDB(this.readerConn));
+    assert(isOpenDB(this.iconConn));
     assert(feedIsFeed(feed));
     assert(feedHasURL(feed));
 
@@ -106,7 +106,7 @@ class SubscribeRequest {
       const iconURL = await faviconLookup(query);
       feed.faviconURLString = iconURL;
     } catch(error) {
-      if(rbl.isUncheckedError(error)) {
+      if(isUncheckedError(error)) {
         throw error;
       } else {
         // ignore, lookup failure is non-fatal
@@ -117,14 +117,14 @@ class SubscribeRequest {
   // Concurrently subscribe to each feed
   subscribeAll(feeds) {
     const promises = feeds.map(this.subscribe);
-    // TODO: use rbl.promiseEvery?
+    // TODO: use promiseEvery?
     return Promise.all(promises);
   }
 
   // @throws AssertionError
   // @throws Error database-related
   async remove(feedId) {
-    assert(rbl.isOpenDB(this.readerConn));
+    assert(isOpenDB(this.readerConn));
     assert(feedIsValidId(feedId));
     const entryIds = await readerDbFindEntryIdsByFeedId(this.readerConn,
       feedId);

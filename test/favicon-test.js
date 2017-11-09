@@ -8,7 +8,7 @@ TODO:
 
 * Use a test db instead of the real db, and make sure to
 delete the test db at the end of the test. to use a test db, directly call
-rbl.openDB instead of faviconDbOpen
+openDB instead of faviconDbOpen
 * actually run tests instead of command line
 * test offline
 * test a non-existent host
@@ -34,7 +34,7 @@ async function testLookup(url, is_cacheless) {
 
     return await faviconLookup(query);
   } finally {
-    rbl.closeDB(query.conn);
+    closeDB(query.conn);
   }
 }
 
@@ -44,7 +44,7 @@ async function test_clear_icon_db() {
     conn = await faviconDbOpen();
     await faviconDbClear(conn);
   } finally {
-    rbl.closeDB(conn);
+    closeDB(conn);
   }
 }
 

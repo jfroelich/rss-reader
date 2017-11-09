@@ -13,7 +13,7 @@ function nodeWhitespaceFilter(doc) {
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
     if(value.length > 3 && !nodeWhitespaceFilterIsSensitive(node)) {
-      const newValue = rbl.condenseWhitespace(value);
+      const newValue = condenseWhitespace(value);
       if(newValue.length !== value.length) {
         node.nodeValue = newValue;
       }

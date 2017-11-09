@@ -17,7 +17,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   } catch(error) {
     console.warn(error);
   } finally {
-    rbl.closeDB(conn);
+    closeDB(conn);
   }
 
   // Setup the favicon database

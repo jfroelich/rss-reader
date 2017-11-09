@@ -42,7 +42,7 @@ function htmlReplaceTags(inputString, replacement) {
   try {
     doc = HTMLParser.parseDocumentFromString(inputString);
   } catch(error) {
-    if(rbl.isUncheckedError(error)) {
+    if(isUncheckedError(error)) {
       throw error;
     } else {
       return 'Unsafe HTML redacted';
@@ -71,7 +71,7 @@ function htmlReplaceTags(inputString, replacement) {
 // @throws AssertionError
 // @throws ParserError
 function htmlTruncate(htmlString, position, suffix) {
-  assert(rbl.isPosInt(position));
+  assert(isPosInt(position));
 
   // Tolerate some bad input for convenience
   if(typeof htmlString !== 'string') {

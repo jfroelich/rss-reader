@@ -52,8 +52,7 @@ function entryCSSCreateEntryRuleText() {
 
 function entryCSSAddTitleRule(sheet) {
   let buffer = [];
-  const RADIX = 10;
-  const headerFontSize = parseInt(localStorage.HEADER_FONT_SIZE || '0', RADIX);
+  const headerFontSize = parseInt10(localStorage.HEADER_FONT_SIZE || '0');
   if(headerFontSize) {
     buffer.push(`font-size: ${(headerFontSize / 10).toFixed(2)}em;`);
   }
@@ -77,7 +76,7 @@ function entryCSSAddTitleRule(sheet) {
 
 function entryCSSAddContentRule(sheet) {
   let buffer = [];
-  const bodyFontSize = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
+  const bodyFontSize = parseInt10(localStorage.BODY_FONT_SIZE || '0');
   if(bodyFontSize) {
     buffer.push(`font-size: ${(bodyFontSize / 10).toFixed(2)}em;`);
   }
@@ -94,8 +93,7 @@ function entryCSSAddContentRule(sheet) {
 
   let bodyLineHeightString = localStorage.BODY_LINE_HEIGHT;
   if(bodyLineHeightString) {
-    const RADIX = 10;
-    const bodyLineHeight = parseInt(bodyLineHeightString, RADIX);
+    const bodyLineHeight = parseInt10(bodyLineHeightString);
 
     // TODO: units?
     if(bodyLineHeight) {
@@ -155,7 +153,7 @@ function entryCSSUpdateTitleRule(sheet) {
   style.background = '';
   style.fontFamily = localStorage.HEADER_FONT_FAMILY;
 
-  const size = parseInt(localStorage.HEADER_FONT_SIZE, 10);
+  const size = parseInt10(localStorage.HEADER_FONT_SIZE);
   if(!isNaN(size)) {
     style.fontSize = (size / 10).toFixed(2) + 'em';
   }
@@ -177,8 +175,7 @@ function entryCSSUpdateContentRule(sheet) {
 
   const bodyFontSizeString = localStorage.BODY_FONT_SIZE;
   if(bodyFontSizeString) {
-    const RADIX = 10;
-    const bodyFontSizeNumber = parseInt(bodyFontSizeString, RADIX);
+    const bodyFontSizeNumber = parseInt10(bodyFontSizeString);
 
     // Why am I dividing by 10 here??
     // Why am I using em?
@@ -191,7 +188,7 @@ function entryCSSUpdateContentRule(sheet) {
   rule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ? 'justify' :
     'left';
 
-  const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
+  const bodyLineHeight = parseInt10(localStorage.BODY_LINE_HEIGHT) || 10;
   rule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
   let columnCountString = localStorage.COLUMN_COUNT;
   const validColumnCounts = { '1': 1, '2': 1, '3': 1 };

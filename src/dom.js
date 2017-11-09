@@ -1,8 +1,8 @@
 'use strict';
 
-// import rbl.js
 // import net/url-utils.js
 // import third-party/parseSrcset.js
+// import rbl.js
 
 // Returns the first matching css rule within the given sheet, or undefined if
 // no rules match.
@@ -164,11 +164,9 @@ function domGetDimensions(element) {
   }
 
   // TODO: support all value formats
-  // TODO: uses parseInt10
   const dims = {};
-  const RADIX = 10;
-  dims.width = parseInt(element.style.width, RADIX);
-  dims.height = parseInt(element.style.height, RADIX);
+  dims.width = parseInt10(element.style.width);
+  dims.height = parseInt10(element.style.height);
 
   if(isNaN(dims.width) || isNaN(dims.height)) {
     return;
@@ -443,9 +441,7 @@ function domIsNearTransparent(element) {
 // Again, restricted to inert document context.
 function domIsOffscreen(element) {
   if(element.style.position === 'absolute') {
-    // TODO: use parseInt10
-    const RADIX = 10;
-    const left = parseInt(element.style.left, RADIX);
+    const left = parseInt10(element.style.left);
     if(!isNaN(left) && left < 0) {
       return true;
     }

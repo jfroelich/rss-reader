@@ -2,22 +2,23 @@
 
 // Reader Base Library
 
-// Directly in global scope due to frequency of use and its rather distinctive
-// role
+const ASSERT_LOG_ERRORS = true;
+
+// @throws {AssertionError}
 function assert(condition, message) {
   if(!condition) {
     const error = new AssertionError(message);
-    // Always log in case the assertion is swallowed
-    console.error(error);
+
+    if(ASSERT_LOG_ERRORS) {
+      console.error(error);
+    }
+
     throw error;
   }
 }
 
-// TODO: drop the rbl namespace object. Qualification not needed.
-
-const rbl = {};
-
-rbl.formatDate = function(date, delimiter) {
+// @throws {AssertionError}
+function formatDate(date, delimiter) {
   // Tolerate some forms bad input
   if(!date) {
     return '';
@@ -30,9 +31,11 @@ rbl.formatDate = function(date, delimiter) {
   parts.push(date.getDate());
   parts.push(date.getFullYear());
   return parts.join(delimiter || '/');
-};
+}
 
-rbl.readFileAsText = function(file) {
+// @param file {File}
+// @returns {Promise}
+function readFileAsText(file) {
   assert(file instanceof File);
   return new Promise(function executor(resolve, reject) {
     const reader = new FileReader();
@@ -40,16 +43,14 @@ rbl.readFileAsText = function(file) {
     reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(reader.error);
   });
-};
-
+}
 
 // Returns true if the conn is open. This should only be used with indexedDB
-// connections created by this module.
+// databases opened by this library.
 // @param conn {IDBDatabase}
-rbl.isOpenDB = function(conn) {
+function isOpenDB(conn) {
   return conn instanceof IDBDatabase && conn.onabort;
-};
-
+}
 
 // Wraps a call to indexedDB.open that imposes a time limit and translates
 // blocked events into errors.
@@ -60,13 +61,13 @@ rbl.isOpenDB = function(conn) {
 // @param timeoutMs {Number} optional, positive integer, how long to wait
 // in milliseconds before giving up on connecting
 // @throws {Error} if connection error or timeout occurs
-rbl.openDB = async function(name, version, upgradeListener, timeoutMs) {
+async function openDB(name, version, upgradeListener, timeoutMs) {
   assert(typeof name === 'string');
 
   if(isNaN(timeoutMs)) {
     timeoutMs = 0;
   }
-  assert(rbl.isPosInt(timeoutMs));
+  assert(isPosInt(timeoutMs));
 
   let timedout = false;
   let timer;
@@ -87,7 +88,7 @@ rbl.openDB = async function(name, version, upgradeListener, timeoutMs) {
         console.log('connected to database', name, version);
 
         // Use the onabort listener property as a flag to indicate to
-        // rbl.isOpenDB that the connection is currently open
+        // isOpenDB that the connection is currently open
         conn.onabort = function noop() {};
 
         // NOTE: this is only invoked if force closed by error
@@ -127,7 +128,7 @@ rbl.openDB = async function(name, version, upgradeListener, timeoutMs) {
   }
 
   let timeoutPromise;
-  [timer, timeoutPromise] = rbl.timeoutPromise(timeoutMs);
+  [timer, timeoutPromise] = setTimeoutPromise(timeoutMs);
 
   // Allow exception to bubble
   const conn = await Promise.race([openPromise, timeoutPromise]);
@@ -143,57 +144,61 @@ rbl.openDB = async function(name, version, upgradeListener, timeoutMs) {
   }
 
   return conn;
-};
+}
 
-// Requests to close 0 or more connections
+// Requests to close 0 or more indexedDB connections
 // @param {...IDBDatabase}
-rbl.closeDB = function(...conns) {
+function closeDB(...conns) {
+  // NOTE: undefined conns does not raise an error, the loop simply never
+  // iterates.
   for(const conn of conns) {
     // This is routinely called in a finally block, so try never to throw
     if(conn && conn instanceof IDBDatabase) {
       console.debug('closing connection to database', conn.name);
-      // Ensure that rbl.isOpenDB returns false
+      // Ensure that isOpenDB returns false
       conn.onabort = null;
       conn.close();
     }
   }
-};
+}
 
-rbl.deleteDB = function(name) {
+function deleteDB(name) {
   return new Promise(function executor(resolve, reject) {
     console.debug('deleting database', name);
     const request = indexedDB.deleteDatabase(name);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-};
+}
 
 // Returns true if the input value is a positive integer
 // Returns false for NaN
 // Returns false for Number.POSITIVE_INFINITY
 // Returns true for 0
-rbl.isPosInt = function(number) {
+function isPosInt(number) {
   return Number.isInteger(number) && number >= 0;
-};
+}
 
-// TODO: replace all parseInt calls with this function
-rbl.parseInt10 = function(number) {
+// Wraps parseInt with a base 10 parameter. This is both convenient and avoids
+// surprising parse results (such as when parsing '010').
+function parseInt10(number) {
   const BASE_10_RADIX = 10;
   return parseInt(number, BASE_10_RADIX);
-};
+}
 
 // Returns a new object that is a copy of the input less empty properties. A
 // property is empty if it is null, undefined, or an empty string. Ignores
 // prototype, deep objects, getters, etc. Shallow copy by reference.
-rbl.filterEmptyProps = function(object) {
+function filterEmptyProps(object) {
   const hasOwnProp = Object.prototype.hasOwnProperty;
   const output = {};
+  let undef;
 
   if(typeof object === 'object') {
     for(const key in object) {
       if(hasOwnProp.call(object, key)) {
         const value = object[key];
-        if(value !== undefined && value !== null && value !== '') {
+        if(value !== undef && value !== null && value !== '') {
           output[key] = value;
         }
       }
@@ -201,27 +206,35 @@ rbl.filterEmptyProps = function(object) {
   }
 
   return output;
-};
-
+}
 
 // Returns a promise that resolves to undefined after a certain amount of time,
 // as well as the timer id. This returns an array so that the caller can use
-// destructuring such as const [t,p] = rbl.timeoutPromise(n);
-// @param timeoutMs {Number} milliseconds, should be >= 0, the browser may
+// destructuring such as const [t,p] = setTimeoutPromise(n);
+// @param timeoutMs {Number} milliseconds, must be >= 0, the browser may
 // choose to take longer than specified
-rbl.timeoutPromise = function(timeoutMs) {
-  assert(rbl.isPosInt(timeoutMs));
+function setTimeoutPromise(timeoutMs) {
+  assert(isPosInt(timeoutMs));
+
+  // Note this is special behavior and different than calling setTimeout with
+  // a value of 0, because the browser may take even longer.
+  if(timeoutMs === 0) {
+    const FAKE_TIMEOUT_ID = 0;
+    const FAKE_RESOLVED_PROMISE = Promise.resolve();
+    return [FAKE_TIMEOUT_ID, FAKE_RESOLVED_PROMISE];
+  }
+
   let timeoutId;
   const promise = new Promise(function executor(resolve, reject) {
     timeoutId = setTimeout(resolve, timeoutMs);
   });
   return [timeoutId, promise];
-};
+}
 
 // A variant of Promise.all that does not shortcircuit. If any promise rejects,
 // undefined is placed in the output array in place of the promise's return
 // value.
-rbl.promiseEvery = async function(promises) {
+async function promiseEvery(promises) {
   assert(Array.isArray(promises));
   const results = [];
   for(const promise of promises) {
@@ -229,10 +242,11 @@ rbl.promiseEvery = async function(promises) {
     try {
       result = await promise;
     } catch(error) {
-      if(rbl.isUncheckedError(error)) {
+      if(isUncheckedError(error)) {
         throw error;
       } else {
-        // ignore and silence the error
+        // Prevent the error from bubbling by ignoring it.
+        console.debug('iteration skipped error', error);
       }
     }
 
@@ -240,20 +254,20 @@ rbl.promiseEvery = async function(promises) {
   }
 
   return results;
-};
+}
 
 // Returns a new string object where sequences of whitespace characters in the
 // input string are replaced with a single space character.
 // @param {String} an input string
 // @throws {Error} if input is not a string
 // @returns {String} a condensed string
-rbl.condenseWhitespace = function(string) {
+function condenseWhitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
-};
+}
 
-rbl.removeWhitespace = function(string) {
+function filterWhitespace(string) {
   return string.replace(/\s+/g, '');
-};
+}
 
 // Returns a new string where Unicode Cc-class characters have been removed.
 // Throws an error if string is not a defined string.
@@ -261,14 +275,14 @@ rbl.removeWhitespace = function(string) {
 // http://stackoverflow.com/questions/4324790
 // http://stackoverflow.com/questions/21284228
 // http://stackoverflow.com/questions/24229262
-rbl.filterControls = function(string) {
+function filterControls(string) {
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
-};
+}
 
 // Returns an array of word token strings.
 // @param string {String}
 // @returns {Array} an array of tokens
-rbl.tokenize = function(string) {
+function tokenize(string) {
   // Rather than make any assertions about the input, tolerate bad input for
   // the sake of caller convenience.
   if(typeof string !== 'string') {
@@ -276,15 +290,15 @@ rbl.tokenize = function(string) {
   }
 
   // Trim to avoid leading/trailing space leading to empty tokens
-  const trimmed_input = string.trim();
+  const trimmedInput = string.trim();
 
   // Special case for empty string to avoid producing empty token
-  if(!trimmed_input) {
+  if(!trimmedInput) {
     return [];
   }
 
-  return trimmed_input.split(/\s+/g);
-};
+  return trimmedInput.split(/\s+/g);
+}
 
 // Calculates the approximate byte size of a value. This should only be
 // used for informational purposes because it is hilariously inaccurate.
@@ -349,11 +363,11 @@ function sizeof(inputValue) {
           } else if(toStringOutput === '[object URL]') {
             byteCount += 2 * value.href.length; // guess
           } else {
-            for(let prop_name in value) {
-              if(hasOwnProp.call(value, prop_name)) {
+            for(let propName in value) {
+              if(hasOwnProp.call(value, propName)) {
                 // Add size of the property name string itself
-                byteCount += prop_name.length * 2;
-                stack.push(value[prop_name]);
+                byteCount += propName.length * 2;
+                stack.push(value[propName]);
               }
             }
           }
@@ -368,18 +382,16 @@ function sizeof(inputValue) {
   return byteCount;
 }
 
-rbl.isUncheckedError = function(error) {
+function isUncheckedError(error) {
   return error instanceof AssertionError ||
     error instanceof TypeError ||
     error instanceof ReferenceError;
-};
+}
 
 // Global errors
-
 class AssertionError extends Error {
   constructor(message) {
     super(message || 'Assertion failed');
-    //Error.captureStackTrace(this, this.constructor.name);
   }
 }
 

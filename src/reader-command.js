@@ -16,7 +16,7 @@ async function readerCommand(command, ...args) {
         faviconDbOpen()]);
       await readerStorageRefreshFeedIcons(readerConn, iconConn);
     } finally {
-      rbl.closeDB(readerConn, iconConn);
+      closeDB(readerConn, iconConn);
     }
     break;
   }
@@ -31,7 +31,7 @@ async function readerCommand(command, ...args) {
       conn = await readerDbOpen();
       await readerStorageArchiveEntries(conn, maxAgeMs, limit);
     } finally {
-      rbl.closeDB(conn);
+      closeDB(conn);
     }
     break;
   }
@@ -47,7 +47,7 @@ async function readerCommand(command, ...args) {
         faviconDbOpen()]);
       await pollFeeds(pfc);
     } finally {
-      rbl.closeDB(pfc.readerConn, pfc.iconConn);
+      closeDB(pfc.readerConn, pfc.iconConn);
     }
     break;
   }
@@ -57,7 +57,7 @@ async function readerCommand(command, ...args) {
       conn = await readerDbOpen();
       await readerStorageRemoveLostEntries(conn, args);
     } finally {
-      rbl.closeDB(conn);
+      closeDB(conn);
     }
     break;
   }
@@ -67,7 +67,7 @@ async function readerCommand(command, ...args) {
       conn = await readerDbOpen();
       await readerStorageRemoveOrphans(conn, args);
     } finally {
-      rbl.closeDB(conn);
+      closeDB(conn);
     }
     break;
   }
@@ -77,7 +77,7 @@ async function readerCommand(command, ...args) {
       conn = await faviconDbOpen();
       await faviconDbClear(conn);
     } finally {
-      rbl.closeDB(conn);
+      closeDB(conn);
     }
     break;
   }
@@ -86,7 +86,7 @@ async function readerCommand(command, ...args) {
     if(args && args.length) {
       url = args[0];
       if(args.length > 1) {
-        timeout = parseInt(args[1]);
+        timeout = parseInt10(args[1]);
         if(args.length > 2) {
           cacheless = args[2];
         }
@@ -103,7 +103,7 @@ async function readerCommand(command, ...args) {
 
       return await faviconLookup(query);
     } finally {
-      rbl.closeDB(query.conn);
+      closeDB(query.conn);
     }
 
     break;

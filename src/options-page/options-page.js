@@ -1,6 +1,5 @@
 'use strict';
 
-// import rbl.js
 // import net/mime.js
 // import options-page/options-page-error-message.js
 // import options-page/options-page-export-opml.js
@@ -11,6 +10,7 @@
 // import extension.js
 // import feed.js
 // import html.js
+// import rbl.js
 // import reader-db.js
 // import reader-export.js
 // import reader-import.js
@@ -140,7 +140,7 @@ async function optionsPageFeedListItemOnclick(event) {
   // Use current target to capture the element with the feed attribute
   const feedListItem = event.currentTarget;
   const feedIdString = feedListItem.getAttribute('feed');
-  const feedIdNumber = parseInt(feedIdString, 10);
+  const feedIdNumber = parseInt10(feedIdString);
 
   assert(!isNaN(feedIdNumber));
 
@@ -154,7 +154,7 @@ async function optionsPageFeedListItemOnclick(event) {
     // TODO: visual feedback?
     return;
   } finally {
-    rbl.closeDB(conn);
+    closeDB(conn);
   }
 
   const titleElement = document.getElementById('details-title');
@@ -279,7 +279,7 @@ async function optionsPageFeedListInit() {
     // TODO: react to error
     console.warn(error);
   } finally {
-    rbl.closeDB(conn);
+    closeDB(conn);
   }
 
   if(!feeds) {
@@ -338,7 +338,7 @@ function optionsPageFeedListRemoveFeed(feedId) {
 }
 
 async function optionsPageUnsubscribeButtonOnclick(event) {
-  const feedId = rbl.parseInt10(event.target.value);
+  const feedId = parseInt10(event.target.value);
   assert(feedIsValidId(feedId));
   const request = new SubscribeRequest();
   try {
@@ -349,7 +349,7 @@ async function optionsPageUnsubscribeButtonOnclick(event) {
     console.warn(error);
     return;
   } finally {
-    rbl.closeDB(request.readerConn);
+    closeDB(request.readerConn);
   }
 
   optionsPageFeedListRemoveFeed(feedId);
@@ -676,8 +676,7 @@ document.addEventListener('DOMContentLoaded', function(event) {
 
   const bodyLineHeightInput = document.getElementById('body-line-height');
   bodyLineHeightInput.oninput = optionsPageBodyHeightInputOninput;
-  const bodyLineHeightNumber =
-    parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
+  const bodyLineHeightNumber = parseInt10(localStorage.BODY_LINE_HEIGHT) || 10;
   if(!isNaN(bodyLineHeightNumber)) {
     bodyLineHeightInput.value = (bodyLineHeightNumber / 10).toFixed(2);
   }
