@@ -3,13 +3,91 @@
 // import rbl.js
 // import net/mime.js
 
-// TODO: impose length cap on url strings
 
 const URLUtils = {};
 
+// Returns true if otherURL is 'external' to the documentURL. Inaccurate and
+// insecure.
+// @param documentURL {URL}
+// @param otherURL {URL}
+// @throws AssertionError
+// @return {Boolean}
+URLUtils.isExternalURL = function(documentURL, otherURL) {
+  const docDomain = URLUtils.getUpperDomain(documentURL);
+  const otherDomain = URLUtils.getUpperDomain(otherURL);
+  return docDomain !== otherDomain;
+};
+
+// Returns the 1st and 2nd level domains as a string. Basically hostname
+// without subdomains. This only does minimal symbolic validation of values,
+// and is also inaccurate and insecure.
+URLUtils.getUpperDomain = function(url) {
+  assert(url instanceof URL);
+
+  // Treat IP as whole
+  if(URLUtils.isIPv4Address(url.hostname) ||
+    URLUtils.isIPv6Address(url.hostname)) {
+    return url.hostname;
+  }
+
+  const levels = url.hostname.split('.');
+
+  // Handle the simple case of 'localhost'
+  if(levels.length === 1) {
+    return url.hostname;
+  }
+
+  // Handle the simple case of 'example.com'
+  if(levels.length === 2) {
+    return url.hostname;
+  }
+
+  // This isn't meant to be super accurate or professional. Using the full list
+  // from https://publicsuffix.org/list/public_suffix_list.dat is overkill.
+  // As a compromise, just look at tld character count.
+
+  const level1 = levels[levels.length - 1];
+
+  if(level1.length === 2) {
+    // Infer it is ccTLD, return levels 3 + 2 + 1
+    const usedLevels = levels.slice(-3);
+    return usedLevels.join('.');
+  } else {
+    // Infer it is gTLD, returns levels 2 + 1
+    const usedLevels = levels.slice(-2);
+    return usedLevels.join('.');
+  }
+};
+
+
+URLUtils.isIPv4Address = function(string) {
+  if(typeof string !== 'string') {
+    return false;
+  }
+
+  const parts = string.split('.');
+  if(parts.length !== 4) {
+    return false;
+  }
+
+  for(const part of parts) {
+    const digit = rbl.parseInt10(part);
+    if(isNaN(digit) || digit < 0 || digit > 255) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+// Expects a hostname string property value from a URL object.
+URLUtils.isIPv6Address = function(hostname) {
+  return typeof hostname === 'string' && hostname.includes(':');
+};
+
 // Allows for leading whitespace characters. Returns true for javascript: and
 // mailto: and data:. Returns true for https:// and http://. Returns false for
-// '//' (which is preferable).
+// '//'.
 // @param url {String} input url
 // @returns {Boolean} true if the url is canonical, otherwise false
 URLUtils.isCanonical = function(url) {
@@ -56,6 +134,8 @@ URLUtils.getHostname = function(url) {
   } catch(error) {
   }
 };
+
+// TODO: impose max length cap on url strings when assessing validity?
 
 // Only minor validation for speed. Tolerates bad input.
 // Assumes canonical url
@@ -125,6 +205,8 @@ URLUtils.getExtensionFromPath = function(path) {
   return extension;
 };
 
+// TODO: this really does not belong here, this is so much extra functionality
+// and involves possible circular dependency between mime and url
 // Return true if url probably represents a binary resource
 // @param url {URL} url object
 URLUtils.sniffIsBinary = function(url) {

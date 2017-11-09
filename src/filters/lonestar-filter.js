@@ -1,10 +1,10 @@
 'use strict';
 
-// import rbl.js
 // import net/url-utils.js
 // import dom.js
+// import rbl.js
 
-const LONESTAR_PATTERNS = [
+const LONESTAR_FILTER_PATTERNS = [
   /\/\/.*2o7\.net\//i,
   /\/\/ad\.doubleclick\.net\//i,
   /\/\/ad\.linksynergy\.com\//i,
@@ -32,9 +32,7 @@ const LONESTAR_PATTERNS = [
   /\/\/www\.facebook\.com\/tr/i
 ];
 
-// TODO: switch to accepting url object instead, then update
-// pollDocumentFilter to pass in base_url. The url parsing work
-// only is done once then instead of multiple times.
+// TODO: switch to accepting url object instead of url string
 
 // Removes some telemetry data from a document.
 // @param doc {Document}
@@ -48,18 +46,18 @@ function lonestarFilter(doc, url) {
     return;
   }
 
+  const documentURL = new URL(documentURL);
+
   // Telemetry images are usually hidden, so treat visibility as an indicator.
   // False positives are probably not too harmful. Removing images based on
   // visibility overlaps with sanitization, but this is intentionally naive
   // regarding what other filters are applied to the document.
 
-  const documentHostname = URLUtils.getHostname(url);
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
     if(domIsHiddenInline(image) ||
       lonestarFilterIsPixel(image) ||
-      lonestarFilterHasTelemetrySource(image, documentHostname)) {
-      console.debug('lonestarFilter filtering', image.outerHTML);
+      lonestarFilterHasTelemetrySource(image, documentURL)) {
       domRemoveImage(image);
     }
   }
@@ -74,61 +72,67 @@ function lonestarFilterIsPixel(image) {
     image.height < 2;
 }
 
+// This test only considers the src attribute. Using srcset or picture source is
+// exceedingly rare mechanism for telemetry so ignore those channels.
 // @param image {Image}
-// @param documentHostname {String}
-function lonestarFilterHasTelemetrySource(image, documentHostname) {
+// @param documentURL {URL}
+function lonestarFilterHasTelemetrySource(image, documentURL) {
   assert(image instanceof Element);
-  assert(typeof documentHostname === 'string');
 
-  // This only looks at the src attribute. Using srcset or picture source is
-  // exceedlingly rare mechanism for telemetry so ignore those channels.
-
-  let imageSource = image.getAttribute('src');
-  // Ignore images without a src attribute, or an empty value
-  if(!imageSource) {
+  if(!image.hasAttribute('src')) {
     return false;
   }
 
-  imageSource = imageSource.trim();
-  // Ignore images with an empty src attribute
-  if(!imageSource) {
+  const src = image.getAttribute('src').trim();
+  if(!src) {
     return false;
   }
 
   // TODO: probably some part of these conditions should be delegated
   // to url-utils.js
 
-  // Ignore very short urls
-  if(imageSource.length < 2) {
+  // Prior to parsing the url, try and exclude some of the url strings to avoid
+  // the parsing cost.
+
+  // Very short urls are probably not telemetry
+  const MIN_IMAGE_URL_LENGTH = 's.gif'.length;
+  if(src.length < MIN_IMAGE_URL_LENGTH) {
     return false;
   }
 
-  // Ignore images with a src value containing an inner space, as this is
-  // probably not a valid url
-  if(imageSource.includes(' ')) {
+  // Ignore urls that appear invalid. Invalid urls are not a telemetry concern
+  // because requests will presumably fail.
+  if(src.includes(' ')) {
     return false;
   }
 
-  // Ignore non-canonical images, including urls that start with '//'
-  // Ignore urls with a data protocol
-  // TODO: make non-capturing for better performance?
+  // Relative urls are generally not telemetry urls.
+  // Protocol-agnostic urls are considered canonical (not relative), which is
+  // notably different behavior than URLUtils.isCanonical.
+  // Urls using the 'data:' protocol are generally not telemetry urls because
+  // no networking is involved. Basically only look at http and https
+  // TODO: make non-capturing regex
   const URL_START_PATTERN = /^(http:\/\/|https:\/\/|\/\/)/i;
-  if(!URL_START_PATTERN.test(imageSource)) {
+  if(!URL_START_PATTERN.test(src)) {
     return false;
   }
 
-  // Ignore 'same-origin' urls. Except I use hostname instead of origin because
-  // of the common practice of including insecure images in a secure domain
-  // TODO: only compare by TLD and whatever next-level-domain-part is, ignore
-  // subdomains as well in comparison
-  const imageHostname = URLUtils.getHostname(imageSource);
-  if(imageHostname === documentHostname) {
+  let imageURL;
+  try {
+    imageURL = new URL(src);
+  } catch(error) {
+    // It is a relative url, or an invalid url of some kind. It is probably
+    // not telemetry, or at least, not a telemetry concern.
     return false;
   }
 
-  // If the url matches one of the patterns then it is a telemetry image
-  for(const pattern of LONESTAR_PATTERNS) {
-    if(pattern.test(imageSource)) {
+  // Ignore 'internal' urls.
+  if(!URLUtils.isExternalURL(documentURL, imageURL)) {
+    return false;
+  }
+
+  for(const pattern of LONESTAR_FILTER_PATTERNS) {
+    if(pattern.test(src)) {
       return true;
     }
   }
