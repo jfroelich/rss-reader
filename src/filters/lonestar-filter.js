@@ -46,7 +46,7 @@ function lonestarFilter(doc, url) {
     return;
   }
 
-  const documentURL = new URL(documentURL);
+  const documentURL = new URL(url);
 
   // Telemetry images are usually hidden, so treat visibility as an indicator.
   // False positives are probably not too harmful. Removing images based on
