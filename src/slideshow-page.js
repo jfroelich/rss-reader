@@ -147,7 +147,7 @@ function slideshowCreateArticleTitleElement(entry) {
 
   if(entry.title) {
     let title = entry.title;
-    let safeTitle = htmlSpecialChars(title);
+    let safeTitle = htmlEscape(title);
 
     // Set the attribute value to the full title without truncation or
     // publisher filter

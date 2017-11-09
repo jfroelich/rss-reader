@@ -4,23 +4,20 @@
 // import html-parser.js
 // import rbl.js
 
-
-function htmlSpecialChars(inputString) {
-  const inputStringVarType = typeof inputString;
-  if(inputStringVarType === 'undefined') {
-    return '';
-  } else {
-    assert(inputStringVarType === 'string');
+// Returns a new string where certain 'unsafe' characters in the input string
+// have been replaced with html entities. If input is not a string returns
+// undefined.
+function htmlEscape(htmlString) {
+  if(typeof htmlString === 'string') {
+    // See https://stackoverflow.com/questions/784586 for reference
+    const HTML_PATTERN = /[&<>"']/g;
+    return htmlString.replace(HTML_PATTERN, htmlEncodeFirstCharacter);
   }
+}
 
-  // Do a simple replacement of unsafe characters
-  // TODO: do all the replacements at once using a regex
-  let output = inputString;
-  output = output.replace('<', '&lt;');
-  output = output.replace('>', '&gt;');
-  output = output.replace('"', '&quot;');
-
-  return output;
+// Returns the first character of the input string as an numeric html entity
+function htmlEncodeFirstCharacter(string) {
+  return '&#' + string.charCodeAt(0) + ';';
 }
 
 // Replaces html tags in the input string with the replacement. If no
