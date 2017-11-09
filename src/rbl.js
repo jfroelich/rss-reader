@@ -13,6 +13,7 @@ function assert(condition, message) {
   }
 }
 
+// TODO: drop the rbl namespace object. Qualification not needed.
 
 const rbl = {};
 
