@@ -13,7 +13,10 @@
 function readerParseFeed(xmlString, requestURL, responseURL, lastModDate,
   processEntries) {
   const result = {feed: undefined, entries: []};
-  const parseResult = feedParseFromString(xmlString);
+
+  const parser = new FeedParser();
+
+  const parseResult = parser.parseFromString(xmlString);
 
   const feed = parseResult.feed;
   readerParseFeedSetupFeed(feed, requestURL, responseURL, lastModDate);

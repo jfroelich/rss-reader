@@ -6,7 +6,9 @@ async function test(url) {
   const acceptHTML = true;
   const response = await fetchFeed(url, timeoutMs, acceptHTML);
   console.dir(response);
-  const feedText = await response.text();
-  const result = feedParseFromString(feedText);
+  const feedXML = await response.text();
+
+  const parser = new FeedParser();
+  const result = parser.parseFromString(feedXML);
   console.dir(result);
 }
