@@ -28,7 +28,6 @@ function paginationFindAnchors(doc, location, lcaMaxDistance) {
 
   // TODO: Return the first valid sequence?
   throw new Error('Not yet implemented');
-  //return [];
 }
 
 // Search for anchors within the ancestor element. Return an array

@@ -16,8 +16,9 @@ function tableFilter(doc, scanLimit) {
 
   const tables = doc.body.querySelectorAll('table');
   for(const table of tables) {
-    if(tableFilterIsSingleColumnTable(table, scanLimit))
+    if(tableFilterIsSingleColumnTable(table, scanLimit)) {
       tableFilterUnwrapSingleColumnTable(table);
+    }
   }
 }
 
@@ -25,8 +26,9 @@ function tableFilterIsSingleColumnTable(table, scanLimit) {
   const rows = table.rows;
   const safeLimit = Math.min(rows.length, scanLimit);
   for(let i = 0; i < safeLimit; i++) {
-    if(!tableFilterIsSingleColumnRow(rows[i]))
+    if(!tableFilterIsSingleColumnRow(rows[i])) {
       return false;
+    }
   }
   return true;
 }

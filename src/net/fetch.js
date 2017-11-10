@@ -40,8 +40,8 @@ function fetchFeed(url, timeoutMs, acceptHTML) {
     referrerPolicy: 'no-referrer'
   };
 
-  const types = ['application/rss+xml', 'application/rdf+xml',
-    'application/atom+xml', 'application/xml', 'text/xml'];
+  const types = ['application/rss+xml', 'application/rdf+xml', 'application/atom+xml',
+    'application/xml', 'text/xml'];
   if(acceptHTML) {
     types.push(mime.HTML);
   }
@@ -87,6 +87,11 @@ function fetchHTML(url, timeoutMs) {
 async function fetchImageHead(url, timeoutMs) {
   const headers = {'Accept': 'image/*'};
 
+  // TODO: this should be refactored to use fetchInternal. But I need to
+  // calculate content length. So fetchInternal first needs to be refactored
+  // to also calculate content length because response is not exposed, just
+  // wrapped response.
+
   // TODO: set properties in a consistent manner, like I do in other fetch
   // functions
   const options = {};
@@ -98,30 +103,20 @@ async function fetchImageHead(url, timeoutMs) {
   options.redirect = 'follow';
   options.referrer = 'no-referrer';
 
-  // TODO: this should be refactored to use fetchInternal. But I need to
-  // calculate content length. So fetchInternal first needs to be refactored
-  // to also calculate content length because response is not exposed, just
-  // wrapped response.
-
-  const response = await fetchWithTimeout(url, options,
-    timeoutMs, 'Fetch timed out ' + url);
-
+  const response = await fetchWithTimeout(url, options, timeoutMs, 'Fetch timed out ' + url);
   assert(response);
-
   const contentType = response.headers.get('Content-Type');
 
   if(!mime.isImage(contentType)) {
-    throw new Error('Response content type not an image mime type: ' +
-      contentType + ' for url ' + url);
+    throw new Error('Response content type not an image mime type: ' + contentType + ' for url ' +
+      url);
   }
 
-  // TODO: create and use ReaderResponse
+  // TODO: create and use ReaderResponse?
   const outputResponse = {};
-
   // TODO: ResponseUtils.getContentLength should be a method of ReaderResponse
   // TODO: rename outputResponse.size to to outputResponse.contentLength
   outputResponse.size = ResponseUtils.getContentLength(response);
-
   outputResponse.responseURL = response.url;
   return outputResponse;
 }
@@ -155,7 +150,6 @@ function fetchImage(url, timeoutMs) {
   // image. So, race a fetch promise against a timeout promise to simulate
   // a timeout parameter.
   // NOTE: there is no penalty for calling clearTimeout with an invalid timer
-
   const fetchPromise = new Promise(function fetchExec(resolve, reject) {
 
     // Create an image element within the document running this script
@@ -201,7 +195,7 @@ function fetchImage(url, timeoutMs) {
   }
 
   // There is a timeout, so we are going to race
-  // TODO: consider delegation to setTimeoutPromise
+  // TODO: delegate to setTimeoutPromise
   // TODO: think about binds to reduce callback hell
   const timeoutPromise = new Promise(function timeExec(resolve, reject) {
     timerId = setTimeout(function on_timeout() {
@@ -335,9 +329,7 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
 function fetchURLChanged(requestURL, responseURL) {
   assert(URLUtils.isCanonical(requestURL));
   assert(URLUtils.isCanonical(responseURL));
-
-  return requestURL !== responseURL &&
-    !URLUtils.hashlessEquals(requestURL, responseURL);
+  return requestURL !== responseURL && !URLUtils.hashlessEquals(requestURL, responseURL);
 }
 
 const ResponseUtils = {};

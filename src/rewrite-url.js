@@ -11,11 +11,9 @@ function rewriteURL(url) {
   assert(URLUtils.isCanonical(url));
 
   const urlObject = new URL(url);
-  if(urlObject.hostname === 'news.google.com' &&
-    urlObject.pathname === '/news/url') {
+  if(urlObject.hostname === 'news.google.com' && urlObject.pathname === '/news/url') {
     return urlObject.searchParams.get('url');
-  } else if(urlObject.hostname === 'techcrunch.com' &&
-    urlObject.searchParams.has('ncid')) {
+  } else if(urlObject.hostname === 'techcrunch.com' && urlObject.searchParams.has('ncid')) {
     urlObject.searchParams.delete('ncid');
     return urlObject.href;
   }

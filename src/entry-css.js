@@ -185,8 +185,7 @@ function entryCSSUpdateContentRule(sheet) {
     }
   }
 
-  rule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ? 'justify' :
-    'left';
+  rule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ? 'justify' : 'left';
 
   const bodyLineHeight = parseInt10(localStorage.BODY_LINE_HEIGHT) || 10;
   rule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);

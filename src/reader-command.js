@@ -12,8 +12,7 @@ async function readerCommand(command, ...args) {
   case 'refreshicons': {
     let readerConn, iconConn;
     try {
-      [readerConn, iconConn] = await Promise.all([readerDbOpen(),
-        faviconDbOpen()]);
+      [readerConn, iconConn] = await Promise.all([readerDbOpen(), faviconDbOpen()]);
       await readerStorageRefreshFeedIcons(readerConn, iconConn);
     } finally {
       closeDB(readerConn, iconConn);
@@ -43,8 +42,7 @@ async function readerCommand(command, ...args) {
     pfc.ignoreModifiedCheck = true;
 
     try {
-      [pfc.readerConn, pfc.iconConn] = await Promise.all([readerDbOpen(),
-        faviconDbOpen()]);
+      [pfc.readerConn, pfc.iconConn] = await Promise.all([readerDbOpen(), faviconDbOpen()]);
       await pollFeeds(pfc);
     } finally {
       closeDB(pfc.readerConn, pfc.iconConn);

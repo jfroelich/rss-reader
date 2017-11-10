@@ -10,14 +10,10 @@
 // feed object and an array of entries.
 // @throws AssertionError
 // @throws ParserError
-function readerParseFeed(xmlString, requestURL, responseURL, lastModDate,
-  processEntries) {
+function readerParseFeed(xmlString, requestURL, responseURL, lastModDate, processEntries) {
   const result = {feed: undefined, entries: []};
-
   const parser = new FeedParser();
-
   const parseResult = parser.parseFromString(xmlString);
-
   const feed = parseResult.feed;
   readerParseFeedSetupFeed(feed, requestURL, responseURL, lastModDate);
   result.feed = feed;

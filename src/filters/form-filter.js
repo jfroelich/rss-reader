@@ -30,8 +30,7 @@ function formFilter(doc) {
   // nested in select removed in prior iteration
 
   // Remove form fields
-  const inputSelector =
-    'button, fieldset, input, optgroup, option, select, textarea';
+  const inputSelector = 'button, fieldset, input, optgroup, option, select, textarea';
   const inputs = ancestor.querySelectorAll(inputSelector);
   for(const input of inputs) {
     input.remove();

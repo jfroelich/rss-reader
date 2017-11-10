@@ -55,8 +55,7 @@ function lonestarFilter(doc, url) {
 
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
-    if(domIsHiddenInline(image) ||
-      lonestarFilterIsPixel(image) ||
+    if(domIsHiddenInline(image) || lonestarFilterIsPixel(image) ||
       lonestarFilterHasTelemetrySource(image, documentURL)) {
       domRemoveImage(image);
     }
@@ -65,11 +64,8 @@ function lonestarFilter(doc, url) {
 
 // Returns true if an image is a pixel-sized image
 function lonestarFilterIsPixel(image) {
-  return image.hasAttribute('src') &&
-    image.hasAttribute('width') &&
-    image.width < 2 &&
-    image.hasAttribute('height') &&
-    image.height < 2;
+  return image.hasAttribute('src') && image.hasAttribute('width') && image.width < 2 &&
+    image.hasAttribute('height') && image.height < 2;
 }
 
 // This test only considers the src attribute. Using srcset or picture source is

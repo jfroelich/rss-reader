@@ -90,8 +90,7 @@ async function faviconLookup(query) {
 
   // Check the cache for the input url
   if(query.conn) {
-    const iconURLString = await faviconDbFindLookupURL(query.conn,
-      query.url, maxAgeMs);
+    const iconURLString = await faviconDbFindLookupURL(query.conn, query.url, maxAgeMs);
     if(iconURLString) {
       return iconURLString;
     }
@@ -99,13 +98,11 @@ async function faviconLookup(query) {
 
   // If the query included a pre-fetched document, search it
   if(query.document) {
-    console.debug('faviconLookup searching pre-fetched document for url',
-      urlObject.href);
-    const iconURLString = await faviconSearchDocument(document, query.conn,
-      query.url, urls);
+    console.debug('faviconLookup searching pre-fetched document for url', urlObject.href);
+    const iconURLString = await faviconSearchDocument(document, query.conn, query.url, urls);
     if(iconURLString) {
-      console.debug('faviconLookup found favicon in pre-fetched document',
-        urlObject.href, iconURLString);
+      console.debug('faviconLookup found favicon in pre-fetched document', urlObject.href,
+        iconURLString);
       return iconURLString;
     }
   }
@@ -119,7 +116,6 @@ async function faviconLookup(query) {
       response = await fetchHTML(urlObject.href, fetchHTMLTimeoutMs);
     } catch(error) {
       // A fetch error is non-fatal to lookup unless it is an assertion failure
-
       if(typeof error === AssertionError) {
         throw error;
       } else {
@@ -136,8 +132,8 @@ async function faviconLookup(query) {
 
       // Check the cache for the redirect url
       if(query.conn) {
-        const iconURLString = await faviconDbFindRedirectURL(query.conn,
-          urlObject, response, maxAgeMs);
+        const iconURLString = await faviconDbFindRedirectURL(query.conn, urlObject, response,
+          maxAgeMs);
 
         // Return the cached favicon url for the redirect url
         if(iconURLString) {
@@ -170,8 +166,7 @@ async function faviconLookup(query) {
 
       if(document) {
         const baseURL = responseURLObject ? responseURLObject : urlObject;
-        const iconURLString = await faviconSearchDocument(document, query.conn,
-          baseURL, urls);
+        const iconURLString = await faviconSearchDocument(document, query.conn, baseURL, urls);
         if(iconURLString) {
           return iconURLString;
         }
@@ -181,16 +176,16 @@ async function faviconLookup(query) {
 
   // Check the cache for the origin url
   if(query.conn && !urls.has(urlObject.origin)) {
-    const iconURLString = await faviconDbFindOriginURL(query.conn,
-      urlObject.origin, urls, maxAgeMs);
+    const iconURLString = await faviconDbFindOriginURL(query.conn, urlObject.origin, urls,
+      maxAgeMs);
     if(iconURLString) {
       return iconURLString;
     }
   }
 
   // Check for /favicon.ico
-  const iconURLString = await faviconLookupOrigin(query.conn, urlObject,
-    urls, fetchImageTimeoutMs, minImageSize, maxImageSize);
+  const iconURLString = await faviconLookupOrigin(query.conn, urlObject, urls, fetchImageTimeoutMs,
+    minImageSize, maxImageSize);
   return iconURLString;
 }
 
@@ -207,8 +202,8 @@ async function faviconDbFindLookupURL(conn, urlObject, maxAgeMs) {
     return;
   }
 
-  console.log('faviconDbFindLookupURL found cached entry',
-    entry.pageURLString, entry.iconURLString);
+  console.log('faviconDbFindLookupURL found cached entry', entry.pageURLString,
+    entry.iconURLString);
   return entry.iconURLString;
 }
 
@@ -285,8 +280,7 @@ async function faviconSearchDocument(document, conn, baseURLObject, urls) {
       continue;
     }
 
-    console.log('found favicon <link>', baseURLObject.href,
-      iconURLObject.href);
+    console.log('found favicon <link>', baseURLObject.href, iconURLObject.href);
 
     // TODO: move this out so that faviconSearchDocument is not async
     if(conn) {

@@ -3,6 +3,9 @@
 // import rbl.js
 // import feed.js
 
+// TODO: change to class
+
+// TODO: deprecate in favor of caller using instanceof after refactoring as class
 function opmlOutlineIsOutline(outline) {
   return typeof outline === 'object';
 }

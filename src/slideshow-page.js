@@ -296,11 +296,10 @@ async function slideshowShowNextSlide() {
 
 function slideshowCleanupOnAppend() {
   assert(slideshowCurrentSlide);
-
   const maxSlideCount = 6;
   const containerElement = document.getElementById('slideshow-container');
-  while(containerElement.childElementCount > maxSlideCount &&
-    containerElement.firstChild !== slideshowCurrentSlide) {
+  while(containerElement.childElementCount > maxSlideCount && containerElement.firstChild !==
+    slideshowCurrentSlide) {
     slideshowSlideRemove(containerElement.firstChild);
   }
 }
@@ -308,7 +307,6 @@ function slideshowCleanupOnAppend() {
 // Move the current slide out of view to the right, and move the previous
 // slide into view, and then update the current slide.
 function slideshowShowPreviousSlide() {
-
   // TODO: when is this condition ever true? Maybe this should be an assert?
   if(!slideshowCurrentSlide) {
     return;
@@ -397,5 +395,4 @@ async function slideshowOnDOMContentLoaded(event) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', slideshowOnDOMContentLoaded,
-  {once: true});
+document.addEventListener('DOMContentLoaded', slideshowOnDOMContentLoaded, {once: true});

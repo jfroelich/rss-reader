@@ -67,8 +67,7 @@ FeedParser.prototype.findFeedTitle = function(channelElement) {
 FeedParser.prototype.findFeedDescription = function(document, channelElement) {
   const documentElement = document.documentElement;
   const documentElementName = documentElement.localName.toLowerCase();
-  const elementName = documentElementName === 'feed' ? 'subtitle' :
-    'description';
+  const elementName = documentElementName === 'feed' ? 'subtitle' : 'description';
   return this.findChildElementText(channelElement, elementName);
 };
 
@@ -123,10 +122,8 @@ FeedParser.prototype.findFeedDate = function(channelElement) {
     dateText = this.findChildElementText(channelElement, 'updated');
   } else {
     dateText = this.findChildElementText(channelElement, 'pubdate');
-    dateText = dateText ||
-      this.findChildElementText(channelElement, 'lastbuilddate');
-    dateText = dateText ||
-      this.findChildElementText(channelElement, 'date');
+    dateText = dateText || this.findChildElementText(channelElement, 'lastbuilddate');
+    dateText = dateText || this.findChildElementText(channelElement, 'date');
   }
 
   if(!dateText) {
@@ -143,20 +140,17 @@ FeedParser.prototype.findFeedDate = function(channelElement) {
 };
 
 FeedParser.prototype.findAtomFeedLinkElement = function(channelElement) {
-  let linkElement = this.findChildElement(channelElement,
-    this.isLinkRelAltElement);
+  let linkElement = this.findChildElement(channelElement, this.isLinkRelAltElement);
   if(linkElement) {
     return linkElement;
   }
 
-  linkElement = this.findChildElement(channelElement,
-    this.isLinkRelSelfElement);
+  linkElement = this.findChildElement(channelElement, this.isLinkRelSelfElement);
   if(linkElement) {
     return linkElement;
   }
 
-  linkElement = this.findChildElement(channelElement,
-    this.isLinkWithHrefElement);
+  linkElement = this.findChildElement(channelElement, this.isLinkWithHrefElement);
   return linkElement;
 };
 
@@ -170,13 +164,11 @@ FeedParser.prototype.findFeedLink = function(channelElement) {
       linkText = linkElement.getAttribute('href');
     }
   } else {
-    linkElement = this.findChildElement(channelElement,
-      this.isLinkWithoutHrefElement);
+    linkElement = this.findChildElement(channelElement, this.isLinkWithoutHrefElement);
     if(linkElement) {
       linkText = linkElement.textContent;
     } else {
-      linkElement = this.findChildElement(channelElement,
-        this.isLinkWithHrefElement);
+      linkElement = this.findChildElement(channelElement, this.isLinkWithHrefElement);
       if(linkElement) {
         linkText = linkElement.getAttribute('href');
       }
@@ -218,8 +210,7 @@ FeedParser.prototype.findEntryTitle = function(entryElement) {
 };
 
 FeedParser.prototype.findEntryEnclosure = function(entryElement) {
-  const enclosureElement = this.findChildElementByName(entryElement,
-    'enclosure');
+  const enclosureElement = this.findChildElementByName(entryElement, 'enclosure');
 
   if(enclosureElement) {
     const enclosureObject = {};
@@ -250,12 +241,9 @@ FeedParser.prototype.findEntryLink = function(entryElement) {
   const documentElement = entryElement.ownerDocument.documentElement;
   let linkText;
   if(documentElement.localName.toLowerCase() === 'feed') {
-    let link = this.findChildElement(entryElement,
-      this.isLinkRelAltElement);
-    link = link || this.findChildElement(entryElement,
-      this.isLinkRelSelfElement);
-    link = link || this.findChildElement(entryElement,
-      this.isLinkWithHrefElement);
+    let link = this.findChildElement(entryElement, this.isLinkRelAltElement);
+    link = link || this.findChildElement(entryElement, this.isLinkRelSelfElement);
+    link = link || this.findChildElement(entryElement, this.isLinkWithHrefElement);
     linkText = link ? link.getAttribute('href') : undefined;
   } else {
     linkText = this.findChildElementText(entryElement, 'origlink');
@@ -308,15 +296,13 @@ FeedParser.prototype.findEntryContent = function(entryElement) {
 };
 
 FeedParser.prototype.getAtomNodeText = function(node) {
-  return node.nodeType === Node.ELEMENT_NODE ?
-    node.innerHTML : node.textContent;
+  return node.nodeType === Node.ELEMENT_NODE ? node.innerHTML : node.textContent;
 };
 
 FeedParser.prototype.findChildElement = function(parentElement, predicate) {
-  for(let element = parentElement.firstElementChild; element;
-    element = element.nextElementSibling) {
-    if(predicate(element)) {
-      return element;
+  for(let e = parentElement.firstElementChild; e; e = e.nextElementSibling) {
+    if(predicate(e)) {
+      return e;
     }
   }
 };
@@ -333,10 +319,8 @@ FeedParser.prototype.findChildElementByName = function(parent, name) {
   }
 };
 
-FeedParser.prototype.findChildElementText = function(parentElement,
-  elementName) {
-  const childElement = this.findChildElementByName(parentElement,
-    elementName);
+FeedParser.prototype.findChildElementText = function(parentElement, elementName) {
+  const childElement = this.findChildElementByName(parentElement, elementName);
   if(childElement) {
     const text = childElement.textContent;
     if(text) {

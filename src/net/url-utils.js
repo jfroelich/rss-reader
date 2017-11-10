@@ -25,8 +25,7 @@ URLUtils.getUpperDomain = function(url) {
   assert(url instanceof URL);
 
   // Treat IP as whole
-  if(URLUtils.isIPv4Address(url.hostname) ||
-    URLUtils.isIPv6Address(url.hostname)) {
+  if(URLUtils.isIPv4Address(url.hostname) || URLUtils.isIPv6Address(url.hostname)) {
     return url.hostname;
   }
 
@@ -103,8 +102,7 @@ URLUtils.MIN_SCRIPT_LENGTH = 'javascript:'.length;
 // @param url {String}
 // @returns {Boolean}
 URLUtils.hasScriptProtocol = function(url) {
-  return typeof url === 'string' &&
-    url.length > URLUtils.MIN_SCRIPT_LENGTH &&
+  return typeof url === 'string' && url.length > URLUtils.MIN_SCRIPT_LENGTH &&
     /^\s*javascript:/i.test(url);
 };
 
@@ -156,9 +154,7 @@ URLUtils.isValid = function(url) {
 // @param path {String} a path component of a url
 // @returns {Boolean} true if the path appears valid, otherwise false
 URLUtils.isValidPath = function(path) {
-  return typeof path === 'string' &&
-    path.length > 0 &&
-    path.charAt(0) === '/' &&
+  return typeof path === 'string' && path.length > 0 && path.charAt(0) === '/' &&
     !path.includes(' ');
 };
 

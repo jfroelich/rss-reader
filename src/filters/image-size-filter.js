@@ -34,8 +34,7 @@ async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
   // Concurrently process each image
   const promises = [];
   for(const image of images) {
-    const promise = imageSizeFilterGetDimensions(image, allowedProtocols,
-      timeoutMs);
+    const promise = imageSizeFilterGetDimensions(image, allowedProtocols, timeoutMs);
     promises.push(promise);
   }
   const results = await promiseEvery(promises);

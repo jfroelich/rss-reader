@@ -23,8 +23,7 @@ mime.EXTENSION_TYPE_MAP = {
   cpp:  'text/plain',
   css:  'text/css',
   doc:  'application/msword',
-  docx:
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   eml:  'message/rfc822',
   eps:  'application/postscript',
   exe:  'application/octet-stream',
@@ -71,9 +70,7 @@ mime.EXTENSION_TYPE_MAP = {
   png:  'image/x-png',
   pps:  'application/vnd.ms-powerpoint',
   ppt:  'application/vnd.ms-powerpoint',
-  pptx:
-    'application/vnd.openxmlformats-officedocument.presentationml.' +
-    'presentation',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   ps:  'application/postscript',
   rar:  'application/octet-stream',
   rdf: 'application/rdf+xml',

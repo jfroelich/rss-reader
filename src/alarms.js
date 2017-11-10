@@ -33,8 +33,7 @@ async function alarmsOnCompactFaviconsAlarm() {
 async function alarmsOnPollFeedsAlarm() {
   const pfc = new PollFeedsContext();
   try {
-    [pfc.readerConn, pfc.iconConn] = await Promise.all([readerDbOpen(),
-      faviconDbOpen()]);
+    [pfc.readerConn, pfc.iconConn] = await Promise.all([readerDbOpen(), faviconDbOpen()]);
     await pollFeeds(pfc);
   } catch(error) {
     console.warn(error);
@@ -73,8 +72,7 @@ async function alarmsOnRemoveOrphansAlarm() {
 async function alarmsOnRefreshFeedIconsAlarm() {
   let readerConn, iconConn;
   try {
-    [readerConn, iconConn] = await Promise.all([readerDbOpen(),
-      faviconDbOpen()]);
+    [readerConn, iconConn] = await Promise.all([readerDbOpen(), faviconDbOpen()]);
     await readerStorageRefreshFeedIcons(readerConn, iconConn);
   } catch(error) {
     console.warn(error);
@@ -114,14 +112,10 @@ function alarmsOnWakeup(alarm) {
 function alarmsRegisterAll() {
   chrome.alarms.create('archive', {periodInMinutes: 60 * 12});
   chrome.alarms.create('poll', {periodInMinutes: 60});
-  chrome.alarms.create('remove-entries-missing-urls',
-    {periodInMinutes: 60 * 24 * 7});
-  chrome.alarms.create('remove-orphaned-entries',
-    {periodInMinutes: 60 * 24 * 7});
-  chrome.alarms.create('refresh-feed-icons',
-    {periodInMinutes: 60 * 24 * 7 * 2});
-  chrome.alarms.create('compact-favicon-db',
-    {periodInMinutes: 60 * 24 * 7});
+  chrome.alarms.create('remove-entries-missing-urls', {periodInMinutes: 60 * 24 * 7});
+  chrome.alarms.create('remove-orphaned-entries', {periodInMinutes: 60 * 24 * 7});
+  chrome.alarms.create('refresh-feed-icons', {periodInMinutes: 60 * 24 * 7 * 2});
+  chrome.alarms.create('compact-favicon-db', {periodInMinutes: 60 * 24 * 7});
 }
 
 chrome.alarms.onAlarm.addListener(alarmsOnWakeup);
@@ -134,5 +128,4 @@ function alarmsOnDOMContentLoaded(event) {
 // Defer registration until dom content loaded to allow alarmsRegisterAll
 // to use external dependencies that may not yet be loaded in script loading
 // order.
-document.addEventListener('DOMContentLoaded', alarmsOnDOMContentLoaded,
-  {once: true});
+document.addEventListener('DOMContentLoaded', alarmsOnDOMContentLoaded, {once: true});

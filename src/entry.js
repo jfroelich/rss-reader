@@ -62,8 +62,7 @@ function entryAppendURL(entry, urlString) {
 
 // Returns a new entry object where fields have been sanitized. Impure
 // @throws AssertionError, ParserError
-function entrySanitize(inputEntry, authorMaxLength, titleMaxLength,
-  contextMaxLength) {
+function entrySanitize(inputEntry, authorMaxLength, titleMaxLength, contextMaxLength) {
   assert(entryIsEntry(inputEntry));
 
   if(typeof authorMaxLength === 'undefined') {

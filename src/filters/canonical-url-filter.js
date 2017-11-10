@@ -45,8 +45,7 @@ function canonicalURLFilter(doc, baseURL) {
   }
 
   if(doc.body) {
-    const srcsetElements = doc.body.querySelectorAll(
-      'img[srcset], source[srcset]');
+    const srcsetElements = doc.body.querySelectorAll('img[srcset], source[srcset]');
     for(const srcsetElement of srcsetElements) {
       canonicalURLFilterResolveSrcset(srcsetElement, baseURL);
     }
@@ -90,9 +89,7 @@ function canonicalURLFilterResolveSrcset(element, baseURL) {
   let changeCount = 0;
   for(const descriptor of descriptors) {
     const resolvedURL = URLUtils.resolve(descriptor.url, baseURL);
-
-    if(resolvedURL &&
-      resolvedURL.href.length !== descriptor.url.length) {
+    if(resolvedURL && resolvedURL.href.length !== descriptor.url.length) {
       descriptor.url = resolvedURL.href;
       changeCount++;
     }

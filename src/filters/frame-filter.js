@@ -23,8 +23,7 @@ function frameFilter(doc) {
   // If available, move noframes content into the new body.
   const noframesElement = doc.querySelector('noframes');
   if(noframesElement) {
-    for(let node = noframesElement.firstChild; node;
-      node = noframesElement.firstChild) {
+    for(let node = noframesElement.firstChild; node; node = noframesElement.firstChild) {
       newBody.appendChild(node);
     }
   }

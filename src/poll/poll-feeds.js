@@ -37,8 +37,8 @@ async function pollFeeds(pfc) {
     return;
   }
 
-  if(!pfc.allowMeteredConnections && 'NO_POLL_METERED' in localStorage &&
-    navigator.connection && navigator.connection.metered) {
+  if(!pfc.allowMeteredConnections && 'NO_POLL_METERED' in localStorage && navigator.connection &&
+    navigator.connection.metered) {
     console.debug('metered connection');
     return;
   }
@@ -121,8 +121,8 @@ async function pollFeedsPollFeed(feed, pfc) {
 
   const feedXML = await response.text();
   const PROCESS_ENTRIES = true;
-  const parseResult = readerParseFeed(feedXML, url, response.responseURL,
-      response.lastModifiedDate, PROCESS_ENTRIES);
+  const parseResult = readerParseFeed(feedXML, url, response.responseURL, response.lastModifiedDate,
+    PROCESS_ENTRIES);
 
   const mergedFeed = feedMerge(feed, parseResult.feed);
   const storedFeed = await readerStoragePutFeed(mergedFeed, pfc.readerConn);

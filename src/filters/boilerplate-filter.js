@@ -109,6 +109,8 @@ function boilerplateDeriveAttributeBias(element) {
   var normalValsString = valsFlatString.toLowerCase();
   var tokens = normalValsString.split(/[\s\-_0-9]+/g);
   var tokenCount = tokens.length;
+
+  // TODO: use an array instead of an object, this may be the cause of deopts
   var seenTokens = {};
   var bias = 0;
   var token;
@@ -134,8 +136,7 @@ function boilerplateDeriveAttributeBias(element) {
 }
 
 function boilerplateFindHighScoreElement(doc) {
-  var candidateSelector =
-    'article, content, div, layer, main, section, span, td';
+  var candidateSelector = 'article, content, div, layer, main, section, span, td';
   var listSelector = 'li, ol, ul, dd, dl, dt';
   var navSelector = 'aside, header, footer, nav, menu, menuitem';
   var bestElement = doc.documentElement;
@@ -172,8 +173,7 @@ function boilerplate_derive_image_bias(parentElement) {
   let imageCount = 0;
   for(let node of parentElement.childNodes) {
     if(node.localName === 'img') {
-      bias += boilerplateDeriveImageAreaBias(node) +
-        boilerplateDeriveImageTextBias(node);
+      bias += boilerplateDeriveImageAreaBias(node) + boilerplateDeriveImageTextBias(node);
       imageCount++;
     }
   }

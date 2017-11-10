@@ -52,8 +52,8 @@ function domUnwrap(element) {
   element.remove();
 
   // Add leading padding
-  if(previousSibling && previousSibling.nodeType === TEXT &&
-    firstChild && firstChild.nodeType === TEXT) {
+  if(previousSibling && previousSibling.nodeType === TEXT && firstChild &&
+    firstChild.nodeType === TEXT) {
     frag.appendChild(element.ownerDocument.createTextNode(' '));
   }
 
@@ -63,8 +63,8 @@ function domUnwrap(element) {
   }
 
   // Add trailing padding
-  if(lastChild && firstChild !== lastChild && nextSibling &&
-    nextSibling.nodeType === TEXT && lastChild.nodeType === TEXT) {
+  if(lastChild && firstChild !== lastChild && nextSibling && nextSibling.nodeType === TEXT &&
+    lastChild.nodeType === TEXT) {
     frag.appendChild(element.ownerDocument.createTextNode(' '));
   }
 
@@ -421,10 +421,8 @@ function domIsHiddenInline(element) {
     return false;
   }
 
-  return style.display === 'none' ||
-    style.visibility === 'hidden' ||
-    domIsNearTransparent(element) ||
-    domIsOffscreen(element);
+  return style.display === 'none' || style.visibility === 'hidden' ||
+    domIsNearTransparent(element) || domIsOffscreen(element);
 }
 
 // Returns true if the element's opacity is too close to 0

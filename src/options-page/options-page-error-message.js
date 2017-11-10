@@ -36,8 +36,7 @@ function optionsPageErrorMessageHide() {
 
   const dismissButton = document.getElementById('dismiss-error-button');
   if(dismissButton) {
-    dismissButton.removeEventListener('click',
-      optionsPageErrorMessageHide);
+    dismissButton.removeEventListener('click', optionsPageErrorMessageHide);
   }
   errorMessageElement.remove();
 }

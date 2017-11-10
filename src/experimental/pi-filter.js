@@ -2,8 +2,7 @@
 
 // import rbl.js
 
-// TODO: use a clearer name
-function piFilter(doc) {
+function procInstFilter(doc) {
   assert(doc instanceof Document);
 
   // TODO: filter processing instruction.

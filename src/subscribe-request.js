@@ -67,8 +67,8 @@ class SubscribeRequest {
 
       const xml = await res.text();
       const PROCESS_ENTRIES = false;
-      const parseResult = readerParseFeed(xml, url, res.responseURL,
-        res.lastModifiedDate, PROCESS_ENTRIES);
+      const parseResult = readerParseFeed(xml, url, res.responseURL, res.lastModifiedDate,
+        PROCESS_ENTRIES);
       const mergedFeed = feedMerge(feed, parseResult.feed);
       feed = mergedFeed;
     }
@@ -81,8 +81,7 @@ class SubscribeRequest {
 
   async addFeed(feed) {
     const SKIP_PREP = false;
-    const storedFeed = await readerStoragePutFeed(feed, this.readerConn,
-      SKIP_PREP);
+    const storedFeed = await readerStoragePutFeed(feed, this.readerConn, SKIP_PREP);
     return storedFeed;
   }
 
@@ -126,8 +125,7 @@ class SubscribeRequest {
   async remove(feedId) {
     assert(isOpenDB(this.readerConn));
     assert(feedIsValidId(feedId));
-    const entryIds = await readerDbFindEntryIdsByFeedId(this.readerConn,
-      feedId);
+    const entryIds = await readerDbFindEntryIdsByFeedId(this.readerConn, feedId);
     await readerDbRemoveFeedAndEntries(this.readerConn, feedId, entryIds);
     await readerBadgeUpdate(this.readerConn);
     const channel = new BroadcastChannel('db');

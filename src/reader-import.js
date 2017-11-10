@@ -21,8 +21,7 @@ async function readerImportFiles(files) {
 
   let readerConn, iconConn;
   try {
-    [readerConn, iconConn] = await Promise.all([readerDbOpen(),
-      faviconDbOpen()]);
+    [readerConn, iconConn] = await Promise.all([readerDbOpen(), faviconDbOpen()]);
 
     const promises = [];
     for(const file of files) {

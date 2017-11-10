@@ -23,7 +23,6 @@ class ReaderDbInvalidStateError extends Error {
   }
 }
 
-
 // Opens a connection to the reader-db database
 // @return {Promise} a promise that resolves to an open database connection
 function readerDbOpen() {
@@ -39,31 +38,18 @@ function readerDbOnUpgradeNeeded(event) {
   let feedStore, entryStore;
   const stores = conn.objectStoreNames;
 
-  console.log('upgrading database %s to version %s from version', conn.name,
-    conn.version, event.oldVersion);
+  console.log('upgrading database %s to version %s from version', conn.name, conn.version,
+    event.oldVersion);
 
   if(event.oldVersion < 20) {
-    feedStore = conn.createObjectStore('feed', {
-      keyPath: 'id',
-      autoIncrement: true
-    });
-    entryStore = conn.createObjectStore('entry', {
-      keyPath: 'id',
-      autoIncrement: true
-    });
-    feedStore.createIndex('urls', 'urls', {
-      multiEntry: true,
-      unique: true
-    });
+    feedStore = conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
+    entryStore = conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
+    feedStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
     feedStore.createIndex('title', 'title');
     entryStore.createIndex('readState', 'readState');
     entryStore.createIndex('feed', 'feed');
-    entryStore.createIndex('archiveState-readState',
-      ['archiveState', 'readState']);
-    entryStore.createIndex('urls', 'urls', {
-      multiEntry: true,
-      unique: true
-    });
+    entryStore.createIndex('archiveState-readState', ['archiveState', 'readState']);
+    entryStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
   } else {
     feedStore = tx.objectStore('feed');
     entryStore = tx.objectStore('entry');

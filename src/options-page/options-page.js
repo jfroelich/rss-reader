@@ -167,8 +167,7 @@ async function optionsPageFeedListItemOnclick(event) {
     faviconElement.removeAttribute('src');
   }
 
-  const descriptionElement = document.getElementById(
-    'details-feed-description');
+  const descriptionElement = document.getElementById('details-feed-description');
   if(feed.description) {
     descriptionElement.textContent = feed.description;
   } else {
@@ -196,8 +195,7 @@ async function optionsPageSubscribeFormOnSubmit(event) {
 
   const monitorElement = document.getElementById('submon');
   if(monitorElement) {
-    console.debug('monitorElement.style.display: "%s"',
-      monitorElement.style.display);
+    console.debug('monitorElement.style.display: "%s"', monitorElement.style.display);
   }
 
   if(monitorElement && monitorElement.style.display === 'block') {
@@ -360,8 +358,7 @@ function optionsPageImportOPMLButtonOnclick(event) {
   const uploaderInput = document.createElement('input');
   uploaderInput.setAttribute('type', 'file');
   uploaderInput.setAttribute('accept', mime.XML);
-  uploaderInput.addEventListener('change',
-    optionsPageImportOPMLUploaderOnchange);
+  uploaderInput.addEventListener('change', optionsPageImportOPMLUploaderOnchange);
   uploaderInput.click();
 }
 
@@ -554,20 +551,15 @@ document.addEventListener('DOMContentLoaded', function(event) {
   }
 
   // Init Enable notifications checkbox
-  const enableNotificationsCheckbox = document.getElementById(
-    'enable-notifications');
+  const enableNotificationsCheckbox = document.getElementById('enable-notifications');
   enableNotificationsCheckbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
-  enableNotificationsCheckbox.onclick =
-    optionsPageEnableNotificationsCheckboxOnclick;
+  enableNotificationsCheckbox.onclick = optionsPageEnableNotificationsCheckboxOnclick;
 
   initBgProcessingCheckbox();
 
-  const enableRestrictIdlePollingCheckbox = document.getElementById(
-    'enable-idle-check');
-  enableRestrictIdlePollingCheckbox.checked =
-    'ONLY_POLL_IF_IDLE' in localStorage;
-  enableRestrictIdlePollingCheckbox.onclick =
-    optionsPageRestrictIdlePollingCheckboxOnclick;
+  const enableRestrictIdlePollingCheckbox = document.getElementById('enable-idle-check');
+  enableRestrictIdlePollingCheckbox.checked = 'ONLY_POLL_IF_IDLE' in localStorage;
+  enableRestrictIdlePollingCheckbox.onclick = optionsPageRestrictIdlePollingCheckboxOnclick;
 
   const exportOPMLButton = document.getElementById('button-export-opml');
   exportOPMLButton.onclick = optionsPageExportOPMLButtonOnclick;
@@ -587,8 +579,7 @@ document.addEventListener('DOMContentLoaded', function(event) {
 
   // Init background image menu
   {
-    const backgroundImageMenu = document.getElementById(
-      'entry-background-image');
+    const backgroundImageMenu = document.getElementById('entry-background-image');
     backgroundImageMenu.onchange = optionsPageBgImageMenuOnchange;
     let option = document.createElement('option');
     option.value = '';
@@ -663,8 +654,7 @@ document.addEventListener('DOMContentLoaded', function(event) {
 
   const headerFontSizeInput = document.getElementById('header-font-size');
   headerFontSizeInput.value = localStorage.HEADER_FONT_SIZE || '1';
-  headerFontSizeInput.onchange =
-    optionsPageHeaderFontSizeSliderOnchange;
+  headerFontSizeInput.onchange = optionsPageHeaderFontSizeSliderOnchange;
 
   const bodyFontSizeInput = document.getElementById('body-font-size');
   bodyFontSizeInput.value = localStorage.BODY_FONT_SIZE || '1';
@@ -688,8 +678,7 @@ document.addEventListener('DOMContentLoaded', function(event) {
   extVersionElement.textValue = manifest.version;
   const extAuthorElement = document.getElementById('extension-author');
   extAuthorElement.textContent = manifest.author;
-  const extDescriptionElement = document.getElementById(
-    'extension-description');
+  const extDescriptionElement = document.getElementById('extension-description');
   extDescriptionElement.textContent = manifest.description || '';
   const extURLElement = document.getElementById('extension-homepage');
   extURLElement.textContent = manifest.homepage_url;

@@ -23,7 +23,7 @@ function trimDocumentFilter(doc) {
 
 function trimDocumentFilterStep(startNode, edgeName) {
   let node = startNode;
-  while(trimDocumentFilterIsTrimmable(node)) {
+  while(node && trimDocumentFilterIsTrimmable(node)) {
     const sibling = node[edgeName];
     node.remove();
     node = sibling;
@@ -32,6 +32,10 @@ function trimDocumentFilterStep(startNode, edgeName) {
 
 function trimDocumentFilterIsTrimmable(node) {
   const elements = ['br', 'hr', 'nobr'];
-  return node && (elements.includes(node.localName) ||
-    (node.nodeType === Node.TEXT_NODE && !node.nodeValue.trim()));
+
+  if(node.nodeType === Node.TEXT_NODE) {
+    return !node.nodeValue.trim();
+  } else {
+    return elements.includes(node.localName);
+  }
 }
