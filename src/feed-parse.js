@@ -4,6 +4,8 @@
 // import xml-parser.js
 
 // TODO: prefer "item" over "entry" terminology?
+// TODO: yet again I think IIAFE is probably better. This is an object for no valid reason,
+// because there is no state to track.
 
 class FeedParser {}
 

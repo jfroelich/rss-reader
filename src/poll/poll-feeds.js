@@ -12,7 +12,7 @@
 
 // TODO: rather than context, just create a function option like
 // PollFeedOperation, or PollFeedRequest or something like this. Then
-// deprecate PollFeedsContext.
+// deprecate PollFeedsContext. Or create an IIAFE and keep context.
 
 function PollFeedsContext() {
   this.readerConn = undefined;
