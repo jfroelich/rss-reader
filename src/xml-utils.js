@@ -16,7 +16,8 @@ class XMLUtils {
     assert(doc instanceof Document);
     const xml = XMLUtils.toString(doc);
     const partsArray = [xml];
-    const options = {type: mime.XML + ';charset=utf-8'};
+    //const options = {type: mime.XML + ';charset=utf-8'};
+    const options = {type: mime.XML};
     return new Blob(partsArray, options);
   }
 }
