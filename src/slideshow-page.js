@@ -7,6 +7,11 @@
 // import rbl.js
 // import reader-db.js
 
+// TODO: the slideshow prefix is dumb, this really is better with just an IIAFE. Nothing is
+// exported from the file, an the IIAFE is probably the best way to simulate c-static visibility
+// until modules.
+
+
 let slideshowCurrentSlide = null;
 
 const slideshowSettingsChannel = new BroadcastChannel('settings');

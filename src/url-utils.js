@@ -3,6 +3,10 @@
 // import mime.js
 // import rbl.js
 
+// TODO: sigh, once again i think the namespace is dumb. This can just be a collection of
+// well-named functions in the global namespace. Leaving everything in the global namespace is
+// also better suited toward the transition to modules
+
 const URLUtils = {};
 
 // Returns true if otherURL is 'external' to the documentURL. Inaccurate and

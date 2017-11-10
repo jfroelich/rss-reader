@@ -2,6 +2,8 @@
 
 // import mime.js
 
+// TODO: the class is stupid, this should be one function in the global namespace
+
 class XMLParser {
 
   // @throws {AssertionError}
