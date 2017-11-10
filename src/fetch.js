@@ -327,9 +327,19 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
 // @param responseURL {String} the value of the response.url property of the
 // Response object produced by calling fetch.
 function fetchURLChanged(requestURL, responseURL) {
+
+  // TODO: I don't think I need explicit assertions any longer now that I create the URL objects
+  // here. It is sufficiently explicit that those objects will fail, not just because either url
+  // is not canonical, but also because one is invalid. But before I remove the assertions I
+  // should document what exceptions are thrown by this function once the assertions would be
+  // removed.
   assert(isCanonicalURL(requestURL));
   assert(isCanonicalURL(responseURL));
-  return requestURL !== responseURL && !compareURLsWithoutHash(requestURL, responseURL);
+
+  const requestURLObject = new URL(requestURL);
+  const responseURLObject = new URL(responseURL);
+
+  return requestURL !== responseURL && !compareURLsWithoutHash(requestURLObject, responseURLObject);
 }
 
 const ResponseUtils = {};

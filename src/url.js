@@ -245,6 +245,7 @@ function getFileNameFromPath(path) {
 }
 
 // Returns true if value is a URL object
+// TODO: deprecate, caller should just use instanceof
 function isURL(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
 }
@@ -258,14 +259,16 @@ function isURL(value) {
 // @throws {Error} if either url is not a valid url, of if either is not canonical
 // @returns Boolean
 function compareURLsWithoutHash(url1, url2) {
-  assert(typeof url1 === 'string');
-  assert(typeof url2 === 'string');
+  assert(url1 instanceof URL);
+  assert(url2 instanceof URL);
 
-  // Unmarshalling enables normalization and simple hash filtering
-  // Allow url parsing errors to bubble.
-  const urlObject1 = new URL(url1);
-  const urlObject2 = new URL(url2);
-  urlObject1.hash = '';
-  urlObject2.hash = '';
-  return urlObject1.href === urlObject2.href;
+  // Create clones of each url so that we can mutate the hash property without
+  // causing unexpected side effects on the input in the calling context.
+
+  const modURL1 = new URL(url1.href);
+  const modURL2 = new URL(url2.href);
+
+  modURL1.hash = '';
+  modURL2.hash = '';
+  return modURL1.href === modURL2.href;
 }
