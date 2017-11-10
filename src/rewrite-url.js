@@ -1,14 +1,14 @@
 'use strict';
 
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 // Applies a set of rules to a url object and returns a modified url object
 // Returns undefined if no rewriting occurred
 // @param url {String}
 // @returns {String}
 function rewriteURL(url) {
-  assert(URLUtils.isCanonical(url));
+  assert(isCanonicalURL(url));
 
   const urlObject = new URL(url);
   if(urlObject.hostname === 'news.google.com' && urlObject.pathname === '/news/url') {

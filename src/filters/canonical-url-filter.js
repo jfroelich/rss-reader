@@ -2,7 +2,7 @@
 
 // import dom.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 const CANONICAL_URL_FILTER_MAP = {
   a: 'href',
@@ -35,7 +35,7 @@ const CANONICAL_URL_FILTER_MAP = {
 // @throws AssertionError
 function canonicalURLFilter(doc, baseURL) {
   assert(doc instanceof Document);
-  assert(URLUtils.isURL(baseURL));
+  assert(isURL(baseURL));
 
   const srcSelector = canonicalURLFilterCreateSelector();
 
@@ -72,7 +72,7 @@ function canonicalURLFilterResolveAttribute(element, baseURL) {
     return;
   }
 
-  const resolvedURL = URLUtils.resolve(originalURLString, baseURL);
+  const resolvedURL = resolveURL(originalURLString, baseURL);
   if(!resolvedURL) {
     return;
   }
@@ -88,7 +88,7 @@ function canonicalURLFilterResolveSrcset(element, baseURL) {
 
   let changeCount = 0;
   for(const descriptor of descriptors) {
-    const resolvedURL = URLUtils.resolve(descriptor.url, baseURL);
+    const resolvedURL = resolveURL(descriptor.url, baseURL);
     if(resolvedURL && resolvedURL.href.length !== descriptor.url.length) {
       descriptor.url = resolvedURL.href;
       changeCount++;

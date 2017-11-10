@@ -10,8 +10,8 @@
 // import rbl.js
 // import reader-db.js
 // import reader-storage.js
-// import rewrite-url-utils.js
-// import url-utils.js
+// import rewrite-url.js
+// import url.js
 
 class PollEntryContext {
   constructor() {
@@ -35,7 +35,7 @@ async function pollEntry(entry) {
   }
 
   let url = entryPeekURL(entry);
-  if(!URLUtils.isValid(url)) {
+  if(!isValidURL(url)) {
     return false;
   }
 
@@ -173,7 +173,7 @@ async function pollEntryPollable(url, conn) {
     return false;
   }
 
-  if(URLUtils.sniffIsBinary(urlObject)) {
+  if(sniffIsBinaryURL(urlObject)) {
     //console.debug('binary resource', url);
     return false;
   }

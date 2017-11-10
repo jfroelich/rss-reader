@@ -3,32 +3,26 @@
 // import mime.js
 // import rbl.js
 
-// TODO: sigh, once again i think the namespace is dumb. This can just be a collection of
-// well-named functions in the global namespace. Leaving everything in the global namespace is
-// also better suited toward the transition to modules
-
-const URLUtils = {};
-
 // Returns true if otherURL is 'external' to the documentURL. Inaccurate and
 // insecure.
 // @param documentURL {URL}
 // @param otherURL {URL}
 // @throws AssertionError
 // @return {Boolean}
-URLUtils.isExternalURL = function(documentURL, otherURL) {
-  const docDomain = URLUtils.getUpperDomain(documentURL);
-  const otherDomain = URLUtils.getUpperDomain(otherURL);
+function isExternalURL(documentURL, otherURL) {
+  const docDomain = urlGetUpperDomain(documentURL);
+  const otherDomain = urlGetUpperDomain(otherURL);
   return docDomain !== otherDomain;
-};
+}
 
 // Returns the 1st and 2nd level domains as a string. Basically hostname
 // without subdomains. This only does minimal symbolic validation of values,
 // and is also inaccurate and insecure.
-URLUtils.getUpperDomain = function(url) {
+function urlGetUpperDomain(url) {
   assert(url instanceof URL);
 
   // Treat IP as whole
-  if(URLUtils.isIPv4Address(url.hostname) || URLUtils.isIPv6Address(url.hostname)) {
+  if(isIPv4Address(url.hostname) || isIPv6Address(url.hostname)) {
     return url.hostname;
   }
 
@@ -59,10 +53,10 @@ URLUtils.getUpperDomain = function(url) {
     const usedLevels = levels.slice(-2);
     return usedLevels.join('.');
   }
-};
+}
 
 
-URLUtils.isIPv4Address = function(string) {
+function isIPv4Address(string) {
   if(typeof string !== 'string') {
     return false;
   }
@@ -80,40 +74,40 @@ URLUtils.isIPv4Address = function(string) {
   }
 
   return true;
-};
+}
 
 // Expects a hostname string property value from a URL object.
-URLUtils.isIPv6Address = function(hostname) {
+function isIPv6Address(hostname) {
   return typeof hostname === 'string' && hostname.includes(':');
-};
+}
 
 // Allows for leading whitespace characters. Returns true for javascript: and
 // mailto: and data:. Returns true for https:// and http://. Returns false for
 // '//'.
 // @param url {String} input url
 // @returns {Boolean} true if the url is canonical, otherwise false
-URLUtils.isCanonical = function(url) {
+function isCanonicalURL(url) {
   assert(typeof url === 'string');
   return /^\s*[a-z]+:/i.test(url);
-};
+}
 
 // A url must be at least this long to be a script url
-URLUtils.MIN_SCRIPT_LENGTH = 'javascript:'.length;
+const URL_MIN_SCRIPT_LENGTH = 'javascript:'.length;
 
 // Returns true if the url has the 'javascript:' protocol. Does not throw in
 // the case of bad input.
 // @param url {String}
 // @returns {Boolean}
-URLUtils.hasScriptProtocol = function(url) {
-  return typeof url === 'string' && url.length > URLUtils.MIN_SCRIPT_LENGTH &&
+function hasScriptProtocol(url) {
+  return typeof url === 'string' && url.length > URL_MIN_SCRIPT_LENGTH &&
     /^\s*javascript:/i.test(url);
-};
+}
 
 // Returns the absolute form the input url
 // @param url {String}
 // @param baseURL {URL}
 // @returns {URL} the absolute url, or undefined if an error occurred
-URLUtils.resolve = function(url, baseURL) {
+function resolveURL(url, baseURL) {
   assert(typeof url === 'string');
   assert(baseURL instanceof URL);
 
@@ -123,18 +117,18 @@ URLUtils.resolve = function(url, baseURL) {
   } catch(error) {
   }
   return canonicalURL;
-};
+}
 
 // @param url {String}
 // @returns {String}
-URLUtils.getHostname = function(url) {
+function urlGetHostname(url) {
   assert(typeof url === 'string');
   try {
     const urlObject = new URL(url);
     return urlObject.hostname;
   } catch(error) {
   }
-};
+}
 
 // TODO: impose max length cap on url strings when assessing validity?
 
@@ -142,7 +136,7 @@ URLUtils.getHostname = function(url) {
 // Assumes canonical url
 // @param url {String}
 // @returns {Boolean}
-URLUtils.isValid = function(url) {
+function isValidURL(url) {
   const MIN_LENGTH = 1;
   if(typeof url === 'string') {
     url = url.trim();
@@ -151,22 +145,22 @@ URLUtils.isValid = function(url) {
     }
   }
   return false;
-};
+}
 
 // Returns true if the input string appears to be a valid path
 // @param path {String} a path component of a url
 // @returns {Boolean} true if the path appears valid, otherwise false
-URLUtils.isValidPath = function(path) {
+function isValidURLPath(path) {
   return typeof path === 'string' && path.length > 0 && path.charAt(0) === '/' &&
     !path.includes(' ');
-};
+}
 
 // TODO: test input 'foo.', I suspect it is incorrect
 // TODO: revert to accepting {URL} as input
 // @param path {String}
 // @returns {String}
-URLUtils.getExtensionFromPath = function(path) {
-  assert(URLUtils.isValidPath(path));
+function getExtensionFromURLPath(path) {
+  assert(isValidURLPath(path));
 
   // Fail if the path is probably too short to contain an extension
   const MIN_PATH_LENGTH = '/a.b'.length;
@@ -202,14 +196,14 @@ URLUtils.getExtensionFromPath = function(path) {
   }
 
   return extension;
-};
+}
 
 // TODO: this really does not belong here, this is so much extra functionality
 // and involves possible circular dependency between mime and url
 // Return true if url probably represents a binary resource
 // @param url {URL} url object
-URLUtils.sniffIsBinary = function(url) {
-  assert(URLUtils.isURL(url));
+function sniffIsBinaryURL(url) {
+  assert(isURL(url));
 
   // Assume data url objects are probably binary
   if(url.protocol === 'data:') {
@@ -217,7 +211,7 @@ URLUtils.sniffIsBinary = function(url) {
   }
 
   const path = url.pathname;
-  const extension = URLUtils.getExtensionFromPath(path);
+  const extension = getExtensionFromURLPath(path);
   if(!extension) {
     return false;
   }
@@ -228,18 +222,18 @@ URLUtils.sniffIsBinary = function(url) {
   }
 
   return mime.isBinary(mimeType);
-};
+}
 
 // Returns a file name without its extension (and without the '.')
-URLUtils.filterExtensionFromFileName = function(fileName) {
+function filterExtensionFromFileName(fileName) {
   assert(typeof fileName === 'string');
   const index = fileName.lastIndexOf('.');
   return index < 0 ? fileName : fileName.substring(0, index);
-};
+}
 
 // TODO: revert to accepting URL as input
-URLUtils.getFileNameFromPath = function(path) {
-  assert(URLUtils.isValidPath(path));
+function getFileNameFromPath(path) {
+  assert(isValidURLPath(path));
   const index = path.lastIndexOf('/');
   if(index > -1) {
     const indexPlus1 = index + 1;
@@ -248,21 +242,22 @@ URLUtils.getFileNameFromPath = function(path) {
     }
   }
   return path;
-};
+}
 
 // Returns true if value is a URL object
-URLUtils.isURL = function(value) {
+function isURL(value) {
   return Object.prototype.toString.call(value) === '[object URL]';
-};
+}
 
+// TODO: change to accepting URL objects only
 // Compares two urls for equality, after normalization and removing the hash
 // from each url, if present. Both urls must be defined strings.
 // @param url1 {String}
 // @param url2 {String}
-// @throws {Error} if either url is not a valid url
+// @throws {AssertionError} if either url is not a string
+// @throws {Error} if either url is not a valid url, of if either is not canonical
 // @returns Boolean
-// TODO: change to accepting URL objects only
-URLUtils.hashlessEquals = function(url1, url2) {
+function compareURLsWithoutHash(url1, url2) {
   assert(typeof url1 === 'string');
   assert(typeof url2 === 'string');
 
@@ -273,4 +268,4 @@ URLUtils.hashlessEquals = function(url1, url2) {
   urlObject1.hash = '';
   urlObject2.hash = '';
   return urlObject1.href === urlObject2.href;
-};
+}

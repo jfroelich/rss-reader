@@ -3,7 +3,7 @@
 // import entry.js
 // import feed.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 class ReaderDbConstraintError extends Error {
   constructor(message) {
@@ -61,7 +61,7 @@ function readerDbOnUpgradeNeeded(event) {
 // @param url {String}
 function readerDbFindFeedIdByURL(conn, url) {
   assert(isOpenDB(conn));
-  assert(URLUtils.isValid(url));
+  assert(isValidURL(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
@@ -110,7 +110,7 @@ function readerDbFindEntryById(conn, id) {
 // @param url {String}
 function readerDbFindEntryByURL(conn, url) {
   assert(isOpenDB(conn));
-  assert(URLUtils.isValid(url));
+  assert(isValidURL(url));
 
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');

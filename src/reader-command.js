@@ -5,7 +5,7 @@
 // import rbl.js
 // import reader-db.js
 // import reader-storage.js
-// import url-utils.js
+// import url.js
 
 async function readerCommand(command, ...args) {
   switch(command) {

@@ -1,7 +1,7 @@
 'use strict';
 
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 // NOTE: this is the initial implementation, probably going to change
 // drastically, is definitely not very reliable or accurate
@@ -11,14 +11,14 @@
 
 class FetchPolicy {
 
-  // TODO: move to url-utils.js?
+  // TODO: move to url.js?
   static isLocalURL(url) {
     const protocol = url.protocol;
     const hostname = url.hostname;
     return hostname === 'localhost' || hostname === '127.0.0.1' || protocol === 'file:';
   }
 
-  // TODO: move to url-utils.js?
+  // TODO: move to url.js?
   static isCredentialedURL(url) {
     return url.username || url.password;
   }
@@ -26,7 +26,7 @@ class FetchPolicy {
   // Return true if the app's policy permits fetching the url
   // TODO: accept URL object instead of string
   static isAllowedURL(url) {
-    assert(URLUtils.isCanonical(url));
+    assert(isCanonicalURL(url));
     const urlo = new URL(url);
     return !this.isCredentialedURL(urlo) && !this.isLocalURL(urlo);
   }

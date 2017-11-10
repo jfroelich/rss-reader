@@ -2,7 +2,7 @@
 
 // import html.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 // TODO: entry is too generic of an term, add qualifying to name
 
@@ -42,7 +42,7 @@ function entryPeekURL(entry) {
 // @throws {Error} if urlString is invalid
 function entryAppendURL(entry, urlString) {
   assert(entryIsEntry(entry));
-  assert(URLUtils.isCanonical(urlString));
+  assert(isCanonicalURL(urlString));
 
   const urlObject = new URL(urlString);
   const normalUrlString = urlObject.href;

@@ -11,7 +11,7 @@
 // import filters/lonestar-filter.js
 // import filters/responsive-image-filter.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 // Transforms a document's content by removing or changing nods for
 // various reasons.
@@ -22,7 +22,7 @@
 // @throws AssertionError
 async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
   assert(doc instanceof Document);
-  assert(URLUtils.isValid(url));
+  assert(isValidURL(url));
 
   frameFilter(doc);
   ensureBodyFilter(doc);

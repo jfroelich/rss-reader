@@ -2,7 +2,7 @@
 
 // import third-party/parseSrcset.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 // Returns the first matching css rule within the given sheet, or undefined if
 // no rules match.
@@ -204,7 +204,7 @@ function domImageHasSource(image) {
 // Return true if image has a valid src attribute value
 function domImageHasValidSource(image) {
   assert(image instanceof Element);
-  return URLUtils.isValid(image.getAttribute('src'));
+  return isValidURL(image.getAttribute('src'));
 }
 
 // Return true if image has a non-empty srcset attribute value

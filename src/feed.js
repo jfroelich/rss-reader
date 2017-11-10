@@ -3,7 +3,7 @@
 // import favicon.js
 // import html.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 function feedCreate() {
   return {};
@@ -54,7 +54,7 @@ function feedCreateIconLookupURL(feed) {
   // associated with the feed. Cannot assume the link is set or valid
   if(feed.link) {
     // If feed.link is set it should always be canonical
-    assert(URLUtils.isCanonical(feed.link));
+    assert(isCanonicalURL(feed.link));
     try {
       return new URL(feed.link);
     } catch(error) {

@@ -4,7 +4,7 @@
 // import feed.js
 // import feed-parse.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 // Parses an xml input string representing a feed. Returns a result with a
 // feed object and an array of entries.
@@ -45,7 +45,7 @@ function readerParseFeedSetupFeed(feed, requestURL, responseURL, lastModDate) {
   feedAppendURL(feed, responseURL);
 
   // Normalize feed link if set and valid, otherwise set to undefined
-  if(feed.link && URLUtils.isCanonical(feed.link)) {
+  if(feed.link && isCanonicalURL(feed.link)) {
     try {
       const feedLinkURL = new URL(feed.link);
       feed.link = feedLinkURL.href;

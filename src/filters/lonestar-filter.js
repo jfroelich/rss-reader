@@ -2,7 +2,7 @@
 
 // import dom.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 const LONESTAR_FILTER_PATTERNS = [
   /\/\/.*2o7\.net\//i,
@@ -39,7 +39,7 @@ const LONESTAR_FILTER_PATTERNS = [
 // @param url {String} canonical document url
 function lonestarFilter(doc, url) {
   assert(doc instanceof Document);
-  assert(URLUtils.isCanonical(url));
+  assert(isCanonicalURL(url));
 
   // Analysis is limited to descendants of body
   if(!doc.body) {
@@ -85,7 +85,7 @@ function lonestarFilterHasTelemetrySource(image, documentURL) {
   }
 
   // TODO: probably some part of these conditions should be delegated
-  // to url-utils.js
+  // to url.js
 
   // Prior to parsing the url, try and exclude some of the url strings to avoid
   // the parsing cost.
@@ -104,7 +104,7 @@ function lonestarFilterHasTelemetrySource(image, documentURL) {
 
   // Relative urls are generally not telemetry urls.
   // Protocol-agnostic urls are considered canonical (not relative), which is
-  // notably different behavior than URLUtils.isCanonical.
+  // notably different behavior than isCanonicalURL.
   // Urls using the 'data:' protocol are generally not telemetry urls because
   // no networking is involved. Basically only look at http and https
   // TODO: make non-capturing regex
@@ -123,7 +123,7 @@ function lonestarFilterHasTelemetrySource(image, documentURL) {
   }
 
   // Ignore 'internal' urls.
-  if(!URLUtils.isExternalURL(documentURL, imageURL)) {
+  if(!isExternalURL(documentURL, imageURL)) {
     return false;
   }
 

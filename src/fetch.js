@@ -2,7 +2,7 @@
 
 // import mime.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 // Fetches a feed. Returns a basic object, similar to Response, with custom
 // properties.
@@ -282,7 +282,7 @@ async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
 // TODO: if fetch succeeds, cancel the timeout
 // TODO: if timeout succeeds first, cancel the fetch
 function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
-  assert(URLUtils.isValid(url));
+  assert(isValidURL(url));
   const timeoutMsType = typeof timeoutMs;
 
   // If timeout is set then check its validity
@@ -327,9 +327,9 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
 // @param responseURL {String} the value of the response.url property of the
 // Response object produced by calling fetch.
 function fetchURLChanged(requestURL, responseURL) {
-  assert(URLUtils.isCanonical(requestURL));
-  assert(URLUtils.isCanonical(responseURL));
-  return requestURL !== responseURL && !URLUtils.hashlessEquals(requestURL, responseURL);
+  assert(isCanonicalURL(requestURL));
+  assert(isCanonicalURL(responseURL));
+  return requestURL !== responseURL && !compareURLsWithoutHash(requestURL, responseURL);
 }
 
 const ResponseUtils = {};

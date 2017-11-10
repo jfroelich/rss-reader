@@ -3,7 +3,7 @@
 // import fetch.js
 // import html-parser.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 
 // 30 days in ms, used by both lookup and compact to determine whether a
@@ -236,7 +236,7 @@ async function faviconSearchDocument(document, conn, baseURLObject, urls) {
   assert(document instanceof Document);
   // NOTE: conn definedness and state is not asserted because we allow for
   // cacheless lookup. This was previously the source of a bug.
-  assert(URLUtils.isURL(baseURLObject));
+  assert(isURL(baseURLObject));
   assert(urls);
 
   if(!document.head) {

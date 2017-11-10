@@ -3,7 +3,7 @@
 // import dom.js
 // import fetch.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
@@ -144,9 +144,9 @@ function imageSizeFilterSniff(sourceURL) {
   // TODO: make a helper function
   // Grab from file name (e.g. 100x100.jpg => [100,100])
   const path = sourceURL.pathname;
-  const fileName = URLUtils.getFileNameFromPath(path);
+  const fileName = getFileNameFromPath(path);
   if(fileName) {
-    const partialFileName = URLUtils.filterExtensionFromFileName(fileName);
+    const partialFileName = filterExtensionFromFileName(fileName);
     if(partialFileName) {
       // not implemented
     }

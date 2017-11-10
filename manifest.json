@@ -34,7 +34,7 @@
       "/src/reader-storage.js",
       "/src/rewrite-url.js",
       "/src/subscribe-request.js",
-      "/src/url-utils.js",
+      "/src/url.js",
       "/src/xml-utils.js",
       "/src/xml-parser.js",
       "/src/filters/adoption-agency-filter.js",

@@ -2,7 +2,7 @@
 
 // import dom.js
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 function lazyImageFilter(doc) {
   assert(doc instanceof Document);
@@ -33,7 +33,7 @@ function lazyImageFilter(doc) {
     for(const lazySourceName of lazyAttributes) {
       if(image.hasAttribute(lazySourceName)) {
         const imageSource = image.getAttribute(lazySourceName);
-        if(URLUtils.isValid(imageSource)) {
+        if(isValidURL(imageSource)) {
           //const preHTML = image.outerHTML;
           image.removeAttribute(lazySourceName);
           image.setAttribute('src', imageSource);

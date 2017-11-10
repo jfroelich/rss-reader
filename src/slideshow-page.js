@@ -188,7 +188,7 @@ function slideshowCreateFeedSourceElement(entry) {
   sourceElement.setAttribute('class', 'entry-source');
 
   if(entry.faviconURLString) {
-    assert(URLUtils.isCanonical(entry.faviconURLString));
+    assert(isCanonicalURL(entry.faviconURLString));
     const faviconElement = document.createElement('img');
     faviconElement.setAttribute('src', entry.faviconURLString);
     faviconElement.setAttribute('width', '16');
@@ -233,7 +233,7 @@ async function slideshowSlideOnclick(event) {
   event.preventDefault();
 
   const urlString = anchor.getAttribute('href');
-  assert(URLUtils.isCanonical(urlString));
+  assert(isCanonicalURL(urlString));
   extensionOpenTab(urlString);
 
   let conn;

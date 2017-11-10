@@ -1,7 +1,7 @@
 'use strict';
 
 // import rbl.js
-// import url-utils.js
+// import url.js
 
 // TODO: hostSelectorMap should be a parameter to this function so that
 // configuration is defined externally so that it can be changed without
@@ -21,7 +21,7 @@ function hostTemplateFilter(doc, url) {
   hostSelectorMap['theweek.com'] = ['div#head-wrap'];
   hostSelectorMap['www.usnews.com'] = ['header.header'];
 
-  const hostname = URLUtils.getHostname(url);
+  const hostname = urlGetHostname(url);
   if(!hostname) {
     return;
   }

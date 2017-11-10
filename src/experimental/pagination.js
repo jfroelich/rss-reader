@@ -143,7 +143,7 @@ function paginationAreSimilarURLs(url1, url2) {
   return path1 === path2;
 }
 
-// TODO: move to url-utils.js
+// TODO: move to url.js
 // Returns a path string without the "filename" segment of the path
 // Note that for basic path like '/' this may return an empty string.
 // Assume's input path string is defined, trimmed, and normalized.
