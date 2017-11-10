@@ -4,6 +4,8 @@
 // import rbl.js
 // import url.js
 
+// TODO: create FetchError, change functions to throw FetchError instead of generic Error
+
 // Fetches a feed. Returns a basic object, similar to Response, with custom
 // properties.
 // @param url {String} the url to fetch
@@ -262,7 +264,10 @@ async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
   responseWrapper.requestURL = url;
   responseWrapper.responseURL = response.url;
   responseWrapper.lastModifiedDate = ResponseUtils.getLastModified(response);
-  responseWrapper.redirected = fetchURLChanged(url, response.url);
+
+  const requestURLObject = new URL(url);
+  const responseURLObject = new URL(response.url);
+  responseWrapper.redirected = fetchURLChanged(requestURLObject, responseURLObject);
   return responseWrapper;
 }
 
@@ -320,26 +325,12 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
   return Promise.race([fetchPromise, timeoutPromise]);
 }
 
-// Return true if the response url is 'different' than the request url,
-// ignoring the hash
+// Return true if the response url is 'different' than the request url
 //
-// @param requestURL {String} the fetch input url
-// @param responseURL {String} the value of the response.url property of the
-// Response object produced by calling fetch.
+// @param requestURL {URL}
+// @param responseURL {URL}
 function fetchURLChanged(requestURL, responseURL) {
-
-  // TODO: I don't think I need explicit assertions any longer now that I create the URL objects
-  // here. It is sufficiently explicit that those objects will fail, not just because either url
-  // is not canonical, but also because one is invalid. But before I remove the assertions I
-  // should document what exceptions are thrown by this function once the assertions would be
-  // removed.
-  assert(isCanonicalURL(requestURL));
-  assert(isCanonicalURL(responseURL));
-
-  const requestURLObject = new URL(requestURL);
-  const responseURLObject = new URL(responseURL);
-
-  return requestURL !== responseURL && !compareURLsWithoutHash(requestURLObject, responseURLObject);
+  return !compareURLsWithoutHash(requestURL, responseURL);
 }
 
 const ResponseUtils = {};
