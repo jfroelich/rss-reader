@@ -3,7 +3,7 @@
 // import filters/adoption-agency-filter.js
 // import filters/attribute-filter.js
 // import filters/base-filter.js
-// import filters/blacklist-filter.js
+// import filters/element-blacklist-filter.js
 // import filters/emphasis-filter.js
 // import filters/ensure-body-filter.js
 // import filters/frame-filter.js
@@ -34,7 +34,7 @@ async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
 
   hiddenFilter(doc);
   noscriptFilter(doc);
-  blacklistFilter(doc);
+  elementBlacklistFilter(doc);
   scriptAnchorFilter(doc);
 
   // This should occur prior to boilerplateFilter because it has express

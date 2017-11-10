@@ -2,15 +2,13 @@
 
 // import rbl.js
 
-// TODO: rename to element-blacklist-filter.js
-
 const BLACKLIST_FILTER_SELECTOR = [
   'applet', 'audio', 'basefont', 'bgsound', 'command', 'datalist', 'dialog', 'embed', 'head',
   'isindex', 'link', 'math', 'meta', 'object', 'output', 'param', 'path', 'progress', 'spacer',
   'style', 'svg', 'title', 'video', 'xmp'
 ].join(',');
 
-function blacklistFilter(doc) {
+function elementBlacklistFilter(doc) {
   assert(doc instanceof Document);
   const documentElement = doc.documentElement;
   const elements = doc.querySelectorAll(BLACKLIST_FILTER_SELECTOR);
