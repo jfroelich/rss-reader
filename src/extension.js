@@ -8,9 +8,7 @@
 // For example, showSlideshowForTab
 // and notify both have non-platform-specific code that is inappropriate here.
 // setBadgeText should also be simplified.
-
-// NOTE: do not use a namespace object. Once modules are supported, functions
-// will be individually exported.
+// TODO: drop prefix?
 
 
 function extensionOpenTab(url) {
@@ -23,10 +21,7 @@ function extensionIdleQuery(idlePeriodSecs) {
   });
 }
 
-function extensionSetBadgeText(count) {
-  count = count || 0;
-  const text = count > 999 ? '1k+' : '' + count;
-  console.debug('setting badge text to', text);
+function extensionSetBadgeText(text) {
   chrome.browserAction.setBadgeText({'text': text});
 }
 
