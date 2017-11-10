@@ -1,8 +1,8 @@
 'use strict';
 
 // import mime.js
-// import url-utils.js
 // import rbl.js
+// import url-utils.js
 
 // Fetches a feed. Returns a basic object, similar to Response, with custom
 // properties.

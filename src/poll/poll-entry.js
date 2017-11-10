@@ -1,17 +1,17 @@
 'use strict';
 
-// import rbl.js
-// import fetch.js
-// import url-utils.js
 // import poll/poll-document-filter.js
 // import entry.js
 // import favicon.js
 // import feed.js
+// import fetch.js
 // import html.js
 // import html-parser.js
+// import rbl.js
 // import reader-db.js
 // import reader-storage.js
 // import rewrite-url-utils.js
+// import url-utils.js
 
 class PollEntryContext {
   constructor() {

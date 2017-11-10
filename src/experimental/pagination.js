@@ -1,7 +1,7 @@
 'use strict';
 
-// import rbl.js
 // import dom.js
+// import rbl.js
 
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other

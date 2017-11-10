@@ -1,9 +1,9 @@
 'use strict';
 
-// import url-utils.js
 // import favicon.js
 // import html.js
 // import rbl.js
+// import url-utils.js
 
 function feedCreate() {
   return {};

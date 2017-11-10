@@ -1,10 +1,10 @@
 'use strict';
 
-// import rbl.js
-// import fetch.js
 // import poll/poll-entry.js
 // import extension.js
 // import feed.js
+// import fetch.js
+// import rbl.js
 // import reader-badge.js
 // import reader-db.js
 // import reader-parse-feed.js

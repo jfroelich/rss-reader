@@ -1,8 +1,8 @@
 'use strict';
 
-// import url-utils.js
 // import dom.js
 // import rbl.js
+// import url-utils.js
 
 const LONESTAR_FILTER_PATTERNS = [
   /\/\/.*2o7\.net\//i,

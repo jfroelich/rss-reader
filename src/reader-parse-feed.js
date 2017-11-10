@@ -1,10 +1,10 @@
 'use strict';
 
-// import url-utils.js
 // import entry.js
 // import feed.js
 // import feed-parse.js
 // import rbl.js
+// import url-utils.js
 
 // Parses an xml input string representing a feed. Returns a result with a
 // feed object and an array of entries.

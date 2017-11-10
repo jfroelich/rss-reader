@@ -1,8 +1,8 @@
 'use strict';
 
-// import mime.js
 // import favicon.js
 // import feed.js
+// import mime.js
 // import opml-document.js
 // import opml-outline.js
 // import opml-parser.js

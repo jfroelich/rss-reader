@@ -1,9 +1,9 @@
 'use strict';
 
-// import rbl.js
 // import filters/leaf-filter.js
 // import filters/filter-helpers.js
 // import dom.js
+// import rbl.js
 
 function tableFilter(doc, scanLimit) {
   assert(doc instanceof Document);

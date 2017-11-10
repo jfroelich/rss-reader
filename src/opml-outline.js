@@ -1,9 +1,9 @@
 'use strict';
 
-// import rbl.js
 // import feed.js
+// import rbl.js
 
-// TODO: change to class
+// TODO: change to class?
 
 // TODO: deprecate in favor of caller using instanceof after refactoring as class
 function opmlOutlineIsOutline(outline) {

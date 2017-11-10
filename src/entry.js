@@ -1,8 +1,8 @@
 'use strict';
 
-// import url-utils.js
 // import html.js
 // import rbl.js
+// import url-utils.js
 
 // TODO: entry is too generic of an term, add qualifying to name
 

@@ -1,7 +1,7 @@
 'use strict';
 
-// import rbl.js
 // import dom.js
+// import rbl.js
 
 // Get the current settings from local storage and then modify the css rules
 // in the default style sheet

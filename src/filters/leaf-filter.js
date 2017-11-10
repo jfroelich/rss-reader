@@ -1,7 +1,7 @@
 'use strict';
 
-// import rbl.js
 // import dom.js
+// import rbl.js
 
 const LEAF_FILTER_EXCEPTION_ELEMENTS = [
   'area', 'audio', 'base', 'col', 'command', 'br', 'canvas', 'col', 'hr', 'iframe', 'img', 'input',

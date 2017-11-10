@@ -1,8 +1,8 @@
 'use strict';
 
+// import dom.js
 // import rbl.js
 // import url-utils.js
-// import dom.js
 
 const CANONICAL_URL_FILTER_MAP = {
   a: 'href',

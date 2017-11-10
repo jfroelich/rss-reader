@@ -1,8 +1,8 @@
 'use strict';
 
-// import url-utils.js
 // import third-party/parseSrcset.js
 // import rbl.js
+// import url-utils.js
 
 // Returns the first matching css rule within the given sheet, or undefined if
 // no rules match.

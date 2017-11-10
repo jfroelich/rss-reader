@@ -1,7 +1,7 @@
 'use strict';
 
-// import rbl.js
 // import opml-outline.js
+// import rbl.js
 
 // @throws AssertionError
 // @throws Error missing head element

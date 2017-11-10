@@ -1,8 +1,8 @@
 'use strict';
 
+// import dom.js
 // import rbl.js
 // import url-utils.js
-// import dom.js
 
 function lazyImageFilter(doc) {
   assert(doc instanceof Document);

@@ -1,7 +1,7 @@
 'use strict';
 
-// import mime.js
 // import html-parser.js
+// import mime.js
 // import rbl.js
 
 // Returns a new string where certain 'unsafe' characters in the input string

@@ -1,9 +1,9 @@
 'use strict';
 
-// import url-utils.js
-// import feed.js
 // import entry.js
+// import feed.js
 // import rbl.js
+// import url-utils.js
 
 class ReaderDbConstraintError extends Error {
   constructor(message) {

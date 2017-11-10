@@ -1,8 +1,8 @@
 'use strict';
 
-// import rbl.js
 // import filters/filter-helpers.js
 // import dom.js
+// import rbl.js
 
 // TODO: make a github issue about optimizing recursive unwrap
 function hiddenFilter(doc) {

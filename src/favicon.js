@@ -1,9 +1,10 @@
 'use strict';
 
-// import rbl.js
 // import fetch.js
-// import url-utils.js
 // import html-parser.js
+// import rbl.js
+// import url-utils.js
+
 
 // 30 days in ms, used by both lookup and compact to determine whether a
 // cache entry expired

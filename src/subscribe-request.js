@@ -1,9 +1,9 @@
 'use strict';
 
-// import fetch.js
-// import feed.js
 // import extension.js
 // import favicon.js
+// import feed.js
+// import fetch.js
 // import fetch-policy.js
 // import rbl.js
 // import reader-db.js

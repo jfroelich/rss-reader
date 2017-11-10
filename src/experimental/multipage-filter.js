@@ -1,9 +1,9 @@
 'use strict';
 
-// import rbl.js
 // import fetch.js
 // import mime.js
 // import pagination.js
+// import rbl.js
 
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a

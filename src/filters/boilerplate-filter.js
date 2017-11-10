@@ -1,7 +1,7 @@
 'use strict';
 
-// import rbl.js
 // import dom.js
+// import rbl.js
 
 const BOILERPLATE_ANCESTOR_BIASES = {
   a: -5,

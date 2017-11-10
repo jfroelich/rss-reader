@@ -1,6 +1,5 @@
 'use strict';
 
-// import mime.js
 // import options-page/options-page-error-message.js
 // import options-page/options-page-export-opml.js
 // import options-page/options-page-fonts.js
@@ -10,6 +9,7 @@
 // import extension.js
 // import feed.js
 // import html.js
+// import mime.js
 // import rbl.js
 // import reader-db.js
 // import reader-export.js

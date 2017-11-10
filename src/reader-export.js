@@ -1,8 +1,8 @@
 'use strict';
 
-// import rbl.js
 // import opml-document.js
 // import opml-outline.js
+// import rbl.js
 // import xml-utils.js
 
 // Triggers the download of an OPML-formatted file containing the given feeds

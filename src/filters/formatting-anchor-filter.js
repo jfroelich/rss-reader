@@ -1,7 +1,7 @@
 'use strict';
 
-// import rbl.js
 // import filters/filter-helpers.js
+// import rbl.js
 
 // An anchor that acts like a span can be unwrapped
 // Currently misses anchors that have href attr but is empty/whitespace

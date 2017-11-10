@@ -1,7 +1,7 @@
 'use strict';
 
-// import rbl.js
 // import filters/filter-helpers.js
+// import rbl.js
 
 function containerFilter(doc) {
   assert(doc instanceof Document);

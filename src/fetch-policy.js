@@ -1,7 +1,7 @@
 'use strict';
 
 // import rbl.js
-// import net/url.js
+// import url-utils.js
 
 // NOTE: this is the initial implementation, probably going to change
 // drastically, is definitely not very reliable or accurate

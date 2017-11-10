@@ -1,7 +1,7 @@
 'use strict';
 
-// import rbl.js
 // import dom.js
+// import rbl.js
 
 function sourcelessImageFilter(doc) {
   assert(doc instanceof Document);
