@@ -207,9 +207,9 @@ URLUtils.getExtensionFromPath = function(path) {
 URLUtils.sniffIsBinary = function(url) {
   assert(URLUtils.isURL(url));
 
-  // Assume data url objects are probably non binary
+  // Assume data url objects are probably binary
   if(url.protocol === 'data:') {
-    return false;
+    return true;
   }
 
   const path = url.pathname;
