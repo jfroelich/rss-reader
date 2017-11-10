@@ -1,7 +1,7 @@
 'use strict';
 
 // import rbl.js
-// import net/url-utils.js
+// import url-utils.js
 
 // TODO: hostSelectorMap should be a parameter to this function so that
 // configuration is defined externally so that it can be changed without

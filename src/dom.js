@@ -1,6 +1,6 @@
 'use strict';
 
-// import net/url-utils.js
+// import url-utils.js
 // import third-party/parseSrcset.js
 // import rbl.js
 

@@ -1,6 +1,6 @@
 'use strict';
 
-// import net/mime.js
+// import mime.js
 
 (function(exports) {
 

@@ -1,7 +1,7 @@
 'use strict';
 
 // import rbl.js
-// import net/mime.js
+// import mime.js
 
 // NOTE: ideally this would be XMLDocument with methods, but XMLDocument is a
 // builtin object, and I don't want to deal with the complexity

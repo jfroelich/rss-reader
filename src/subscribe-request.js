@@ -1,6 +1,6 @@
 'use strict';
 
-// import net/fetch.js
+// import fetch.js
 // import feed.js
 // import extension.js
 // import favicon.js

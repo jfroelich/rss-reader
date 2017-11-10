@@ -1,8 +1,8 @@
 'use strict';
 
 // import rbl.js
-// import net/fetch.js
-// import net/url-utils.js
+// import fetch.js
+// import url-utils.js
 // import html-parser.js
 
 // 30 days in ms, used by both lookup and compact to determine whether a

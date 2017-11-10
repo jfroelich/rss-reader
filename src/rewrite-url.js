@@ -1,7 +1,7 @@
 'use strict';
 
 // import rbl.js
-// import net/url-utils.js
+// import url-utils.js
 
 // Applies a set of rules to a url object and returns a modified url object
 // Returns undefined if no rewriting occurred

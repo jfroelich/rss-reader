@@ -1,6 +1,6 @@
 'use strict';
 
-// import net/mime.js
+// import mime.js
 // import options-page/options-page-error-message.js
 // import options-page/options-page-export-opml.js
 // import options-page/options-page-fonts.js

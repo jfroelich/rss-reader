@@ -1,6 +1,6 @@
 'use strict';
 
-// import net/url-utils.js
+// import url-utils.js
 // import entry.js
 // import feed.js
 // import feed-parse.js

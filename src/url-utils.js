@@ -1,7 +1,7 @@
 'use strict';
 
 // import rbl.js
-// import net/mime.js
+// import mime.js
 
 
 const URLUtils = {};

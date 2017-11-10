@@ -2,7 +2,7 @@
 
 // import rbl.js
 // import filters/filter-helpers.js
-// import net/url-utils.js
+// import url-utils.js
 
 function scriptAnchorFilter(doc) {
   assert(doc instanceof Document);

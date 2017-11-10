@@ -1,7 +1,7 @@
 'use strict';
 
 // import rbl.js
-// import net/fetch.js
+// import fetch.js
 // import poll/poll-entry.js
 // import extension.js
 // import feed.js

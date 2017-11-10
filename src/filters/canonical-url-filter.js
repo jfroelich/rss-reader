@@ -1,7 +1,7 @@
 'use strict';
 
 // import rbl.js
-// import net/url-utils.js
+// import url-utils.js
 // import dom.js
 
 const CANONICAL_URL_FILTER_MAP = {

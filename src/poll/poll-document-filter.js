@@ -1,6 +1,5 @@
 'use strict';
 
-// import rbl.js
 // import filters/adoption-agency-filter.js
 // import filters/attribute-filter.js
 // import filters/base-filter.js
@@ -11,7 +10,8 @@
 // import filters/host-template-filter.js
 // import filters/lonestar-filter.js
 // import filters/responsive-image-filter.js
-// import net/url-utils.js
+// import url-utils.js
+// import rbl.js
 
 // Transforms a document's content by removing or changing nods for
 // various reasons.

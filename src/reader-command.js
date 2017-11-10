@@ -1,6 +1,6 @@
 'use strict';
 
-// import net/url-utils.js
+// import url-utils.js
 // import poll/poll.js
 // import favicon.js
 // import rbl.js

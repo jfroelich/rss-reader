@@ -1,6 +1,6 @@
 'use strict';
 
-// import net/url-utils.js
+// import url-utils.js
 // import favicon.js
 // import html.js
 // import rbl.js

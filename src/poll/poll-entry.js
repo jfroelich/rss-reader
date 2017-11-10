@@ -1,8 +1,8 @@
 'use strict';
 
 // import rbl.js
-// import net/fetch.js
-// import net/url-utils.js
+// import fetch.js
+// import url-utils.js
 // import poll/poll-document-filter.js
 // import entry.js
 // import favicon.js
