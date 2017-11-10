@@ -201,9 +201,9 @@ function getExtensionFromURLPath(path) {
 // TODO: this really does not belong here, this is so much extra functionality
 // and involves possible circular dependency between mime and url
 // Return true if url probably represents a binary resource
-// @param url {URL} url object
+// @param url {URL}
 function sniffIsBinaryURL(url) {
-  assert(isURL(url));
+  assert(url instanceof URL);
 
   // Assume data url objects are probably binary
   if(url.protocol === 'data:') {
@@ -244,13 +244,6 @@ function getFileNameFromPath(path) {
   return path;
 }
 
-// Returns true if value is a URL object
-// TODO: deprecate, caller should just use instanceof
-function isURL(value) {
-  return Object.prototype.toString.call(value) === '[object URL]';
-}
-
-// TODO: change to accepting URL objects only
 // Compares two urls for equality, after normalization and removing the hash
 // from each url, if present. Both urls must be defined strings.
 // @param url1 {String}

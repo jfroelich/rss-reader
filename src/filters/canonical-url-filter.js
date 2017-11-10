@@ -32,10 +32,12 @@ const CANONICAL_URL_FILTER_MAP = {
   video: 'src'
 };
 
+// @param doc {Document}
+// @param baseURL {URL}
 // @throws AssertionError
 function canonicalURLFilter(doc, baseURL) {
   assert(doc instanceof Document);
-  assert(isURL(baseURL));
+  assert(baseURL instanceof URL);
 
   const srcSelector = canonicalURLFilterCreateSelector();
 

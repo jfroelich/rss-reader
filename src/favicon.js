@@ -236,7 +236,7 @@ async function faviconSearchDocument(document, conn, baseURLObject, urls) {
   assert(document instanceof Document);
   // NOTE: conn definedness and state is not asserted because we allow for
   // cacheless lookup. This was previously the source of a bug.
-  assert(isURL(baseURLObject));
+  assert(baseURLObject instanceof URL);
   assert(urls);
 
   if(!document.head) {
