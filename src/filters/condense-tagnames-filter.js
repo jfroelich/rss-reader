@@ -1,19 +1,16 @@
 'use strict';
 
-// import rbl.js
 // import filters/filter-helpers.js
+// import rbl.js
 
-function condenseTagnamesFilter(doc) {
+// Use shorter names for common elements
+function condenseTagnamesFilter(doc, copyAttributes) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
     return;
   }
 
-  // Use shorter names for common elements
-  // Because we are stripping attributes, there is no need to keep them
-  // TODO: make copyAttributes a parameter
-  const copyAttributes = false;
   renameElements(doc.body, 'strong', 'b', copyAttributes);
   renameElements(doc.body, 'em', 'i', copyAttributes);
 }

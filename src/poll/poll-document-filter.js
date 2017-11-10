@@ -42,7 +42,9 @@ async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
   hostTemplateFilter(doc, url);
 
   boilerplateFilter(doc);
-  condenseTagnamesFilter(doc);
+
+  const copyAttributesOnCondense = false;
+  condenseTagnamesFilter(doc, copyAttributesOnCondense);
 
   const MAX_EMPHASIS_LENGTH = 300;
   emphasisFilter(doc, MAX_EMPHASIS_LENGTH);
