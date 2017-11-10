@@ -8,6 +8,10 @@ const mime = {};
 mime.HTML = 'text/html';
 mime.XML = 'application/xml';
 
+// Rather arbitrary, but just as a general bound
+mime.MIME_TYPE_MIN_LENGTH = 7;// TODO: increase and test accuracy
+mime.MIME_TYPE_MAX_LENGTH = 100;
+
 mime.EXTENSION_TYPE_MAP = {
   ai:   'application/postscript',
   aif:  'audio/aiff',

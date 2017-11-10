@@ -198,17 +198,20 @@ function getExtensionFromURLPath(path) {
   return extension;
 }
 
-// TODO: this really does not belong here, this is so much extra functionality
-// and involves possible circular dependency between mime and url
 // Return true if url probably represents a binary resource
 // @param url {URL}
+// @throws {AssertionError}
 function sniffIsBinaryURL(url) {
   assert(url instanceof URL);
 
-  // Assume data url objects are probably binary
-  // TODO: inspect the embedded mime type and make a decision from that
   if(url.protocol === 'data:') {
-    return true;
+    const mimeType = findMimeTypeInDataURL(url);
+    if(mimeType) {
+      return mime.isBinary(mimeType);
+    } else {
+      // Assume data url objects are probably binary
+      return true;
+    }
   }
 
   const path = url.pathname;
@@ -223,6 +226,33 @@ function sniffIsBinaryURL(url) {
   }
 
   return mime.isBinary(mimeType);
+}
+
+function findMimeTypeInDataURL(dataURL) {
+  assert(dataURL instanceof URL);
+  assert(dataURL.protocol === 'data:');
+
+  const href = dataURL.href;
+
+  // If the url is too short to even contain the mime type, fail.
+  if(href.length < mime.MIME_TYPE_MIN_LENGTH) {
+    return;
+  }
+
+  const PREFIX_LENGTH = 'data:'.length;
+
+  // Limit the scope of the search
+  const haystack = href.substring(PREFIX_LENGTH, PREFIX_LENGTH + mime.MIME_TYPE_MAX_LENGTH);
+
+  const semicolonPosition = haystack.indexOf(';');
+  if(semicolonPosition < 0) {
+    return;
+  }
+
+  const mimeType = haystack.substring(0, semicolonPosition);
+  if(mime.isMimeType(mimeType)) {
+    return mimeType;
+  }
 }
 
 // Returns a file name without its extension (and without the '.')
