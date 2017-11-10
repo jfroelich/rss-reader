@@ -206,6 +206,7 @@ function sniffIsBinaryURL(url) {
   assert(url instanceof URL);
 
   // Assume data url objects are probably binary
+  // TODO: inspect the embedded mime type and make a decision from that
   if(url.protocol === 'data:') {
     return true;
   }
@@ -231,7 +232,7 @@ function filterExtensionFromFileName(fileName) {
   return index < 0 ? fileName : fileName.substring(0, index);
 }
 
-// TODO: revert to accepting URL as input
+// TODO: accept URL as input
 function getFileNameFromPath(path) {
   assert(isValidURLPath(path));
   const index = path.lastIndexOf('/');
@@ -244,23 +245,19 @@ function getFileNameFromPath(path) {
   return path;
 }
 
-// Compares two urls for equality, after normalization and removing the hash
-// from each url, if present. Both urls must be defined strings.
-// @param url1 {String}
-// @param url2 {String}
-// @throws {AssertionError} if either url is not a string
-// @throws {Error} if either url is not a valid url, of if either is not canonical
-// @returns Boolean
+// Compares two urls for equality without considering hash values
+// @param url1 {URL}
+// @param url2 {URL}
+// @throws {AssertionError} if either parameter is not a URL
+// @return {Boolean} true if equal
 function compareURLsWithoutHash(url1, url2) {
   assert(url1 instanceof URL);
   assert(url2 instanceof URL);
 
   // Create clones of each url so that we can mutate the hash property without
   // causing unexpected side effects on the input in the calling context.
-
   const modURL1 = new URL(url1.href);
   const modURL2 = new URL(url2.href);
-
   modURL1.hash = '';
   modURL2.hash = '';
   return modURL1.href === modURL2.href;
