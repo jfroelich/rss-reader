@@ -130,18 +130,21 @@ function urlGetHostname(url) {
   }
 }
 
-// TODO: impose max length cap on url strings when assessing validity?
+const URL_MAX_LENGTH_EXCLUSIVE = 3000;
+const URL_MIN_LENGTH_INCLUSIVE = 1;
 
-// Only minor validation for speed. Tolerates bad input.
-// Assumes canonical url
+// Only minor validation for speed. Tolerates bad input. This isn't intended to be the most
+// accurate classification. Instead, it is intended to easily find bad urls and rule them out as
+// invalid, even though some slip through, and not unintentionally rule out good urls.
 // @param url {String}
 // @returns {Boolean}
 function isValidURL(url) {
-  const MIN_LENGTH = 1;
   if(typeof url === 'string') {
     url = url.trim();
-    if(url.length >= MIN_LENGTH) {
-      return !url.includes(' ');
+    if(url.length < URL_MAX_LENGTH_EXCLUSIVE) {
+      if(url.length >= URL_MIN_LENGTH_INCLUSIVE) {
+        return !url.includes(' ');
+      }
     }
   }
   return false;

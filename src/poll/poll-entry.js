@@ -143,6 +143,7 @@ async function pollEntryUpdateIcon(entry, document) {
     } else {
       console.warn(error);
       // lookup error is non-fatal
+      // fall through leaving iconURL undefined
     }
   }
 
@@ -154,42 +155,34 @@ async function pollEntryPollable(url, conn) {
   const hostname = urlObject.hostname;
 
   if(pollEntryURLIsInterstitial(urlObject)) {
-    console.debug('interstitial', url);
     return false;
   }
 
   if(pollEntryURLIsScripted(urlObject)) {
-    //console.debug('script-generated-content', url);
     return false;
   }
 
   if(pollEntryURLIsPaywall(hostname)) {
-    //console.debug('paywall', url);
     return false;
   }
 
   if(pollEntryURLRequiresCookie(hostname)) {
-    //console.debug('requires cookie', url);
     return false;
   }
 
   if(sniffIsBinaryURL(urlObject)) {
-    //console.debug('binary resource', url);
     return false;
   }
 
   // TODO: this should be a call to something like
-  // readerStorageContainsEntry that abstracts how entry comparison works
-
-  let exists;
+  // readerStorageHasEntry that abstracts how entry comparison works
   try {
-    exists = await readerDbFindEntryByURL(conn, url);
+    const exists = await readerDbFindEntryByURL(conn, url);
+    return !exists;
   } catch(error) {
     console.warn(error);
     return false;
   }
-
-  return !exists;
 }
 
 function pollEntryURLIsInterstitial(url) {
