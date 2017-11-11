@@ -20,9 +20,11 @@ chrome.runtime.onInstalled.addListener(async function(event) {
     closeDB(conn);
   }
 
+  const fic = new FaviconCache();
+
   // Setup the favicon database
   try {
-    await faviconDbSetup();
+    await fic.setup();
   } catch(error) {
     console.warn(error);
   }

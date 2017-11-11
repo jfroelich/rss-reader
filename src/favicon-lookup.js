@@ -16,9 +16,9 @@ const FAVICON_MAX_ORIGIN_FAILURE_COUNT = 2;
 // something like FaviconLookupRequest, and faviconLookup should be a member
 // function.
 function FaviconQuery() {
-  // The indexedDB database connection to use for the lookup
-  // @type {IDBDatabase}
-  this.conn = null;
+  // The cache to use for the lookup
+  // @type {FaviconCache}
+  this.cache = null;
 
   // Optional pre-fetched HTML document to search prior to fetching
   // @type {Document}
@@ -59,7 +59,7 @@ async function faviconLookup(query) {
   let maxImageSize = query.maxImageSize;
 
   if(typeof maxAgeMs === 'undefined') {
-    maxAgeMs = FAVICON_MAX_AGE_MS;
+    maxAgeMs = FaviconCache.MAX_AGE_MS;
   }
 
   if(typeof fetchHTMLTimeoutMs === 'undefined') {
@@ -83,8 +83,8 @@ async function faviconLookup(query) {
   urls.add(urlObject.href);
 
   // Check the cache for the input url
-  if(query.conn) {
-    const iconURLString = await faviconDbFindLookupURL(query.conn, query.url, maxAgeMs);
+  if(query.cache) {
+    const iconURLString = await faviconDbFindLookupURL(query.cache, query.url, maxAgeMs);
     if(iconURLString) {
       return iconURLString;
     }
@@ -93,7 +93,7 @@ async function faviconLookup(query) {
   // If the query included a pre-fetched document, search it
   if(query.document) {
     console.debug('faviconLookup searching pre-fetched document for url', urlObject.href);
-    const iconURLString = await faviconSearchDocument(document, query.conn, query.url, urls);
+    const iconURLString = await faviconSearchDocument(document, query.cache, query.url, urls);
     if(iconURLString) {
       console.debug('faviconLookup found favicon in pre-fetched document', urlObject.href,
         iconURLString);
@@ -103,9 +103,9 @@ async function faviconLookup(query) {
 
   // Before fetching, check for origin max failure count in db
   // TODO: this should probably somehow expire to allow eventual success
-  if(query.conn) {
+  if(query.cache && query.cache.conn) {
     const originURL = new URL(urlObject.origin);
-    const originEntry = await faviconDbFindEntry(query.conn, originURL);
+    const originEntry = await query.cache.findEntry(originURL);
     if(originEntry && originEntry.failureCount >= FAVICON_MAX_ORIGIN_FAILURE_COUNT) {
       console.debug('canceling lookup, too many failures on origin', originURL.href);
       return;
@@ -138,8 +138,8 @@ async function faviconLookup(query) {
       urls.add(responseURLObject.href);
 
       // Check the cache for the redirect url
-      if(query.conn) {
-        const iconURLString = await faviconDbFindRedirectURL(query.conn, urlObject, response,
+      if(query.cache && query.cache.conn) {
+        const iconURLString = await faviconDbFindRedirectURL(query.cache, urlObject, response,
           maxAgeMs);
 
         // Return the cached favicon url for the redirect url
@@ -173,7 +173,8 @@ async function faviconLookup(query) {
 
       if(document) {
         const baseURL = responseURLObject ? responseURLObject : urlObject;
-        const iconURLString = await faviconSearchDocument(document, query.conn, baseURL, urls);
+        const iconURLString = await faviconSearchDocument(document, query.cache, baseURL,
+          urls);
         if(iconURLString) {
           return iconURLString;
         }
@@ -182,8 +183,8 @@ async function faviconLookup(query) {
   }
 
   // Check the cache for the origin url
-  if(query.conn && !urls.has(urlObject.origin)) {
-    const iconURLString = await faviconDbFindOriginURL(query.conn, urlObject.origin, urls,
+  if(query.cache && query.cache.conn && !urls.has(urlObject.origin)) {
+    const iconURLString = await faviconDbFindOriginURL(query.cache, urlObject.origin, urls,
       maxAgeMs);
     if(iconURLString) {
       return iconURLString;
@@ -201,8 +202,7 @@ async function faviconLookup(query) {
 
     const originURLObject = new URL(urlObject.origin);
     console.debug('checking for cached entry for failure', originURLObject.href);
-
-    const originEntry = await faviconDbFindEntry(query.conn, originURLObject);
+    const originEntry = await query.cache.findEntry(originURLObject);
 
     if(originEntry) {
       // In the case of checking for the failure counter, I do not think it is necessary to check
@@ -224,8 +224,8 @@ async function faviconLookup(query) {
   }
 
   // Check for /favicon.ico
-  const iconURLString = await faviconLookupOrigin(query.conn, urlObject, urls, fetchImageTimeoutMs,
-    minImageSize, maxImageSize);
+  const iconURLString = await faviconLookupOrigin(query.cache, urlObject, urls,
+    fetchImageTimeoutMs, minImageSize, maxImageSize);
   return iconURLString;
 }
 
@@ -237,10 +237,8 @@ function faviconIsEntryExpired(entry, currentDate, maxAgeMs) {
 }
 
 
-async function faviconDbFindLookupURL(conn, urlObject, maxAgeMs) {
-  assert(isOpenDB(conn));
-
-  const entry = await faviconDbFindEntry(conn, urlObject);
+async function faviconDbFindLookupURL(cache, urlObject, maxAgeMs) {
+  const entry = await cache.findEntry(urlObject);
   if(!entry) {
     return;
   }
@@ -255,10 +253,10 @@ async function faviconDbFindLookupURL(conn, urlObject, maxAgeMs) {
   return entry.iconURLString;
 }
 
-async function faviconDbFindRedirectURL(conn, urlObject, response,
+async function faviconDbFindRedirectURL(cache, urlObject, response,
   maxAgeMs) {
   const responseURLObject = new URL(response.responseURL);
-  const entry = await faviconDbFindEntry(conn, responseURLObject);
+  const entry = await cache.findEntry(responseURLObject);
   if(!entry) {
     return;
   }
@@ -270,18 +268,18 @@ async function faviconDbFindRedirectURL(conn, urlObject, response,
 
   console.log('found redirect in cache', entry);
   const entries = [urlObject.href];
-  await faviconDbPutEntries(conn, entry.iconURLString, entries);
+  await cache.putAll(entries, entry.iconURLString);
   return entry.iconURLString;
 }
 
 // @param document {Document}
-// @param conn {IDBDatabase}
+// @param cache {FaviconCache}
 // @param baseURLObject {URL}
 // @param urls {Set}
 // @returns {String} a favicon url
-async function faviconSearchDocument(document, conn, baseURLObject, urls) {
+async function faviconSearchDocument(document, cache, baseURLObject, urls) {
   assert(document instanceof Document);
-  // NOTE: conn definedness and state is not asserted because we allow for
+  // NOTE: cache state is not asserted because we allow for
   // cacheless lookup. This was previously the source of a bug.
   assert(baseURLObject instanceof URL);
   assert(urls);
@@ -331,17 +329,19 @@ async function faviconSearchDocument(document, conn, baseURLObject, urls) {
     console.log('found favicon <link>', baseURLObject.href, iconURLObject.href);
 
     // TODO: move this out so that faviconSearchDocument is not async
-    if(conn) {
-      // conn definedness and state assertion delegated to faviconDbPutEntries
-      await faviconDbPutEntries(conn, iconURLObject.href, urls);
+    // conn definedness and state assertion delegated to putAll
+    if(cache && cache.conn) {
+      await cache.putAll(urls, iconURLObject.href);
     }
     return iconURLObject.href;
   }
 }
 
-async function faviconDbFindOriginURL(conn, originURLString, urls, maxAgeMs) {
+async function faviconDbFindOriginURL(cache, originURLString, urls, maxAgeMs) {
+  assert(cache instanceof FaviconCache);
+
   const originURLObject = new URL(originURLString);
-  const originEntry = await faviconDbFindEntry(conn, originURLObject);
+  const originEntry = await cache.findEntry(originURLObject);
   const currentDate = new Date();
   if(!originEntry) {
     return;
@@ -355,12 +355,18 @@ async function faviconDbFindOriginURL(conn, originURLString, urls, maxAgeMs) {
     originEntry.iconURLString);
 
   // origin is not in urls, and we know it is distinct, existing, and fresh
-  await faviconDbPutEntries(conn, originEntry.iconURLString, urls);
+  await cache.putAll(urls, originEntry.iconURLString);
   return originEntry.iconURLString;
 }
 
-async function faviconLookupOrigin(conn, urlObject, urls, fetchImageTimeoutMs, minImageSize,
+async function faviconLookupOrigin(cache, urlObject, urls, fetchImageTimeoutMs, minImageSize,
   maxImageSize) {
+
+  // BUG: during polling this assertion currently fails
+  assert(cache instanceof FaviconCache);
+  assert(urlObject instanceof URL);
+  assert(urls);
+
 
   const imageURLString = urlObject.origin + '/favicon.ico';
   const fetchPromise = fetchImageHead(imageURLString, fetchImageTimeoutMs);
@@ -378,13 +384,13 @@ async function faviconLookupOrigin(conn, urlObject, urls, fetchImageTimeoutMs, m
     // TODO: just realized, I am going to be storing a null icon property. Everything needs to
     // account for that.
 
-    if(conn) {
+    if(cache && cache.conn) {
       console.debug('origin fetch error, storing failure possibly', error);
       // NOTE: if this fails it throws its own exception
 
       // NOTE: pass the origin url, not the image url
 
-      await faviconDbAddOriginFetchFailure(conn, urlObject.origin);
+      await faviconDbAddOriginFetchFailure(cache, urlObject.origin);
     } else {
       console.debug('origin fetch error but no connection available');
     }
@@ -395,26 +401,27 @@ async function faviconLookupOrigin(conn, urlObject, urls, fetchImageTimeoutMs, m
 
   if(response.size === FETCH_UNKNOWN_CONTENT_LENGTH ||
     (response.size >= minImageSize && response.size <= maxImageSize)) {
-    if(conn) {
 
+    const iconURL = response.responseURL;
+
+    if(cache && cache.conn) {
       // TEMP: ISSUE #453
       // For every fetch success, reset the failure counter of the entry to 0.
       // When creating a new entry, initialize the failure counter to 0.
       // TODO: this needs to only happen for the origin url
-
-      await faviconDbPutEntries(conn, response.responseURL, urls);
+      await cache.putAll(urls, iconURL);
     }
-    console.log('Found origin icon', urlObject.origin, response.responseURL);
-    return response.responseURL;
+    console.log('Found origin icon', urlObject.origin, iconURL);
+    return iconURL;
   }
 }
 
 // TEMP: new functionality, not fully implemented nor tested
 // Issue #453
-async function faviconDbAddOriginFetchFailure(conn, originURLString) {
+async function faviconDbAddOriginFetchFailure(cache, originURLString) {
 
   // The caller should never call this with an undefined or closed connection
-  assert(isOpenDB(conn));
+  assert(isOpenDB(cache.conn));
 
   // TODO: Either store a new entry, or increment the failure counter of an existing entry
 
@@ -428,7 +435,7 @@ async function faviconDbAddOriginFetchFailure(conn, originURLString) {
   const originURL = new URL(originURLString);
 
 
-  const entry = await faviconDbFindEntry(conn, originURL);
+  const entry = await cache.findEntry(originURL);
 
   if(entry) {
     const newEntry = {};
@@ -445,7 +452,7 @@ async function faviconDbAddOriginFetchFailure(conn, originURLString) {
       if(entry.failureCount <= FAVICON_MAX_ORIGIN_FAILURE_COUNT) {
         console.debug('storing incremented failure count of origin fetch', newEntry.pageURLString);
         newEntry.failureCount = entry.failureCount + 1;
-        await faviconDbPutEntry(conn, newEntry);
+        await cache.put(newEntry);
       } else {
         console.debug('noop, max fail count reached for origin fetch', newEntry.pageURLString);
         // We reached the max failure count. This becomes a no-operation.
@@ -453,7 +460,7 @@ async function faviconDbAddOriginFetchFailure(conn, originURLString) {
     } else {
       console.debug('storing initial failure of origin fetch', newEntry.pageURLString);
       newEntry.failureCount = 1;
-      await faviconDbPutEntry(conn, newEntry);
+      await cache.put(newEntry);
     }
 
   } else {
@@ -474,6 +481,6 @@ async function faviconDbAddOriginFetchFailure(conn, originURLString) {
     newEntry.iconURLString = undefined;
     newEntry.dateUpdated = new Date();
     newEntry.failureCount = 1;
-    await faviconDbPutEntry(conn, newEntry);
+    await cache.put(newEntry);
   }
 }

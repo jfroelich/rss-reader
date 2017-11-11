@@ -20,20 +20,23 @@ async function readerImportFiles(files) {
   assert(files instanceof FileList);
   console.log('importing %d files', files.length);
 
-  let readerConn, iconConn;
+  const fic = new FaviconCache();
+
+  let readerConn, _;
   try {
-    [readerConn, iconConn] = await Promise.all([readerDbOpen(), faviconDbOpen()]);
+    [readerConn, _] = await Promise.all([readerDbOpen(), fic.open()]);
 
     const promises = [];
     for(const file of files) {
-      promises.push(readerImportFile(file, readerConn, iconConn));
+      promises.push(readerImportFile(file, readerConn, fic.conn));
     }
 
     // TODO: if the promises are executed above, maybe this can occur after
     // try/finally?
     await promiseEvery(promises);
   } finally {
-    closeDB(readerConn, iconConn);
+    fic.close();
+    closeDB(readerConn);
   }
 }
 

@@ -20,26 +20,35 @@ async function alarmsOnArchiveAlarm() {
 }
 
 async function alarmsOnCompactFaviconsAlarm() {
-  let maxAgeMs, conn;
+  const cache = new FaviconCache();
   try {
-    conn = await faviconDbOpen();
-    await faviconCompactDb(conn, maxAgeMs);
+    await cache.open();
+    await cache.compact();
   } catch(error) {
     console.warn(error);
   } finally {
-    closeDB(conn);
+    cache.close();
   }
 }
 
 async function alarmsOnPollFeedsAlarm() {
+
+  // The cache dependency should be implicit. cache should be a property of a
+  // pollFeeds-like object.
+
+  const faviconCache = new FaviconCache();
+
   const pfc = new PollFeedsContext();
+  pfc.iconCache = faviconCache;
+  let _;
   try {
-    [pfc.readerConn, pfc.iconConn] = await Promise.all([readerDbOpen(), faviconDbOpen()]);
+    [pfc.readerConn, _] = await Promise.all([readerDbOpen(), faviconCache.open()]);
     await pollFeeds(pfc);
   } catch(error) {
     console.warn(error);
   } finally {
-    closeDB(pfc.readerConn, pfc.iconConn);
+    faviconCache.close();
+    closeDB(pfc.readerConn);
   }
 }
 
@@ -71,14 +80,18 @@ async function alarmsOnRemoveOrphansAlarm() {
 }
 
 async function alarmsOnRefreshFeedIconsAlarm() {
-  let readerConn, iconConn;
+
+  const fic = new FaviconCache();
+
+  let readerConn, _;
   try {
-    [readerConn, iconConn] = await Promise.all([readerDbOpen(), faviconDbOpen()]);
-    await readerStorageRefreshFeedIcons(readerConn, iconConn);
+    [readerConn, _] = await Promise.all([readerDbOpen(), fic.open()]);
+    await readerStorageRefreshFeedIcons(readerConn, fic.conn);
   } catch(error) {
     console.warn(error);
   } finally {
-    closeDB(readerConn, iconConn);
+    fic.close();
+    closeDB(readerConn);
   }
 }
 

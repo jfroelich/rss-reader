@@ -16,7 +16,7 @@
 
 function PollFeedsContext() {
   this.readerConn = undefined;
-  this.iconConn = undefined;
+  this.iconCache = undefined;
   this.allowMeteredConnections = false;
   this.ignoreRecencyCheck = false;
   this.ignoreIdleState = false;
@@ -139,7 +139,7 @@ async function pollFeedsPollFeed(feed, pfc) {
 
   const pec = new PollEntryContext();
   pec.readerConn = pfc.readerConn;
-  pec.iconConn = pfc.iconConn;
+  pec.iconCache = pfc.iconCache;
   pec.feedFaviconURL = storedFeed.faviconURLString;
   pec.fetchHTMLTimeoutMs = pfc.fetchHTMLTimeoutMs;
   pec.fetchImageTimeoutMs = pfc.fetchImageTimeoutMs;

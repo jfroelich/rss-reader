@@ -14,21 +14,29 @@
 
 class SubscribeRequest {
   constructor() {
+    // TODO: use iconCache instead of iconConn
+    this.iconCache = undefined;
     this.readerConn = undefined;
-    this.iconConn = undefined;
+    //this.iconConn = undefined;
     this.timeoutMs = 2000;
     this.notify = true;
   }
 
   // Open database connections
   async connect() {
-    const promises = [readerDbOpen(), faviconDbOpen()];
-    [this.readerConn, this.iconConn] = await Promise.all(promises);
+    this.iconCache = new FaviconCache();
+    let _;
+    const promises = [readerDbOpen(), iconCache.open()];
+    [this.readerConn, _] = await Promise.all(promises);
   }
 
   // Close database connections
   close() {
-    closeDB(this.readerConn, this.iconConn);
+    if(this.iconCache) {
+      this.iconCache.close();
+    }
+
+    closeDB(this.readerConn);
   }
 
   // Returns a promise that resolves to the id of a feed matching the url

@@ -8,8 +8,8 @@
 TODO:
 
 * Use a test db instead of the real db, and make sure to
-delete the test db at the end of the test. to use a test db, directly call
-openDB instead of faviconDbOpen
+delete the test db at the end of the test.
+* to use a test db, set cache.name to a non-default name
 * actually run tests instead of command line
 * test offline
 * test a non-existent host
@@ -25,31 +25,42 @@ openDB instead of faviconDbOpen
 */
 
 async function testLookup(url, is_cacheless) {
+  const cache = new FaviconCache();
+
+
   const query = new FaviconQuery();
   query.url = new URL(url);
 
   try {
     if(!is_cacheless) {
-      query.conn = await faviconDbOpen();
+      await cache.open();
+      query.cache = cache;
     }
 
     return await faviconLookup(query);
   } finally {
-    closeDB(query.conn);
+    if(!is_cacheless) {
+      cache.close();
+    }
   }
 }
 
 async function test_clear_icon_db() {
-  let conn;
+  const cache = new FaviconCache();
   try {
-    conn = await faviconDbOpen();
-    await faviconDbClear(conn);
+    await cache.open();
+    await cache.clear();
   } finally {
-    closeDB(conn);
+    cache.close();
   }
 }
 
 async function test_compact_icon_db() {
-  // TODO: i think this is outdated, I think it needs conn now right?
-  await faviconCompactDb();
+  const cache = new FaviconCache();
+  try {
+    await cache.open();
+    await cache.compact();
+  } finally {
+    cache.close();
+  }
 }

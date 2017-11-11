@@ -17,7 +17,7 @@
 class PollEntryContext {
   constructor() {
     this.readerConn = null;
-    this.iconConn = null;
+    this.iconCache = null;
     this.feedFaviconURL = null;
     this.fetchHTMLTimeoutMs = undefined;
     this.fetchImageTimeoutMs = undefined;
@@ -130,7 +130,7 @@ async function pollEntryUpdateIcon(entry, document) {
   }
 
   const query = new FaviconQuery();
-  query.conn = this.iconConn;
+  query.cache = this.iconCache;
   query.url = new URL(entryPeekURL(entry));
   query.skipURLFetch = true;
   query.document = document;

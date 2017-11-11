@@ -11,12 +11,15 @@
 async function readerCommand(command, ...args) {
   switch(command) {
   case 'refreshicons': {
-    let readerConn, iconConn;
+
+    const fic = new FaviconCache();
+    let readerConn, _;
     try {
-      [readerConn, iconConn] = await Promise.all([readerDbOpen(), faviconDbOpen()]);
-      await readerStorageRefreshFeedIcons(readerConn, iconConn);
+      [readerConn, _] = await Promise.all([readerDbOpen(), fic.open()]);
+      await readerStorageRefreshFeedIcons(readerConn, fic.conn);
     } finally {
-      closeDB(readerConn, iconConn);
+      fic.close();
+      closeDB(readerConn);
     }
     break;
   }
@@ -36,17 +39,24 @@ async function readerCommand(command, ...args) {
     break;
   }
   case 'poll': {
+
+    const fic = new FaviconCache();
+
     const pfc = new PollFeedsContext();
+    pfc.iconCache = fic;
     pfc.allowMeteredConnections = true;
     pfc.ignoreIdleState = true;
     pfc.ignoreRecencyCheck = true;
     pfc.ignoreModifiedCheck = true;
 
+    let _;
+
     try {
-      [pfc.readerConn, pfc.iconConn] = await Promise.all([readerDbOpen(), faviconDbOpen()]);
+      [pfc.readerConn, _] = await Promise.all([readerDbOpen(), fic.open()]);
       await pollFeeds(pfc);
     } finally {
-      closeDB(pfc.readerConn, pfc.iconConn);
+      fic.close();
+      closeDB(pfc.readerConn);
     }
     break;
   }
@@ -71,12 +81,12 @@ async function readerCommand(command, ...args) {
     break;
   }
   case 'clearicons': {
-    let conn;
+    const fic = new FaviconCache();
     try {
-      conn = await faviconDbOpen();
-      await faviconDbClear(conn);
+      await fic.open();
+      await fic.clear();
     } finally {
-      closeDB(conn);
+      fic.close();
     }
     break;
   }
@@ -92,17 +102,22 @@ async function readerCommand(command, ...args) {
       }
     }
 
+    const fic = new FaviconCache();
+
     const query = new FaviconQuery();
     query.url = new URL(url);
     query.fetchHTMLTimeoutMs = timeout;
     try {
       if(!cacheless) {
-        query.conn = await faviconDbOpen();
+        await fic.open();
+        query.cache = fic;
       }
 
       return await faviconLookup(query);
     } finally {
-      closeDB(query.conn);
+      if(!cacheless) {
+        fic.close();
+      }
     }
 
     break;

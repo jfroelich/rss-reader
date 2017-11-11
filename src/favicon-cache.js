@@ -1,44 +1,58 @@
 'use strict';
 
-// 30 days in ms, used by both lookup and compact to determine whether a
-// cache entry expired
-const FAVICON_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
+// import rbl.js
 
-// Opens a connection to the favicon database
-function faviconDbOpen() {
-  const name = 'favicon-cache';
-  const version = 3;
-  const timeoutMs = 500;
-  return openDB(name, version, faviconDbOnUpgradeNeeded, timeoutMs);
-}
-
-async function faviconDbSetup() {
-  let conn;
-  try {
-    conn = await faviconDbOpen();
-  } finally {
-    closeDB(conn);
+class FaviconCache {
+  constructor() {
+    this.conn = undefined;
+    this.name = 'favicon-cache';
+    this.version = 3;
+    this.openTimeoutMs = 500;
   }
 }
 
-function faviconDbOnUpgradeNeeded(event) {
+// 30 days in ms, used by both lookup and compact to determine whether a
+// cache entry expired
+FaviconCache.MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
+
+// Opens the cache
+FaviconCache.prototype.open = async function() {
+  this.conn = await openDB(this.name, this.version, this.onUpgradeNeeded, this.openTimeoutMs);
+
+  // TODO: I would prefer this would be void, first need to ensure call sites do not expect
+  // return value
+  return this;
+};
+
+FaviconCache.prototype.close = function() {
+  closeDB(this.conn);
+};
+
+FaviconCache.prototype.setup = async function() {
+  console.log('setting up favicon database', this.name, this.version);
+  try {
+    await this.open();
+  } finally {
+    this.close();
+  }
+};
+
+FaviconCache.prototype.onUpgradeNeeded = function(event) {
   const conn = event.target.result;
   console.log('creating or upgrading database', conn.name);
 
   let store;
   if(!event.oldVersion || event.oldVersion < 1) {
-    console.log('faviconDbOnUpgradeNeeded creating favicon-cache');
+    console.log('onUpgradeNeeded creating favicon-cache');
 
-    store = conn.createObjectStore('favicon-cache', {
-      'keyPath': 'pageURLString'
-    });
+    store = conn.createObjectStore('favicon-cache', {keyPath: 'pageURLString'});
   } else {
     const tx = event.target.transaction;
     store = tx.objectStore('favicon-cache');
   }
 
   if(event.oldVersion < 2) {
-    console.debug('faviconDbOnUpgradeNeeded creating dateUpdated index');
+    console.debug('onUpgradeNeeded creating dateUpdated index');
     store.createIndex('dateUpdated', 'dateUpdated');
   }
 
@@ -46,42 +60,42 @@ function faviconDbOnUpgradeNeeded(event) {
     console.debug('oldVersion < 3');
     // In the transition from 2 to 3, there are no changes. I am adding a non-indexed property.
   }
-}
+};
 
-function faviconDbClear(conn) {
-  assert(isOpenDB(conn));
-  return new Promise(function(resolve, reject) {
-    console.debug('faviconDbClear start');
-    const tx = conn.transaction('favicon-cache', 'readwrite');
+FaviconCache.prototype.clear = function() {
+  assert(isOpenDB(this.conn));
+  return new Promise((resolve, reject) => {
+    console.debug('clearing favicon cache');
+    const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
     const request = store.clear();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
-function faviconDbFindEntry(conn, urlObject) {
-  assert(isOpenDB(conn));
-  return new Promise(function(resolve, reject) {
-    const tx = conn.transaction('favicon-cache');
+FaviconCache.prototype.findEntry = function(urlObject) {
+  assert(isOpenDB(this.conn));
+  return new Promise((resolve, reject) => {
+    const tx = this.conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
     const request = store.get(urlObject.href);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
-function faviconDbFindExpiredEntries(conn, maxAgeMs) {
-  assert(isOpenDB(conn));
+FaviconCache.prototype.findExpired = function(maxAgeMs) {
+  assert(isOpenDB(this.conn));
 
   if(typeof maxAgeMs === 'undefined') {
-    maxAgeMs = FAVICON_MAX_AGE_MS;
+    maxAgeMs = FaviconCache.MAX_AGE_MS;
   }
 
-  return new Promise(function(resolve, reject) {
+  return new Promise((resolve, reject) => {
     let cutoffTimeMs = Date.now() - maxAgeMs;
     cutoffTimeMs = cutoffTimeMs < 0 ? 0 : cutoffTimeMs;
-    const tx = conn.transaction('favicon-cache');
+    const tx = this.conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
     const index = store.index('dateUpdated');
     const cutoffDate = new Date(cutoffTimeMs);
@@ -90,35 +104,47 @@ function faviconDbFindExpiredEntries(conn, maxAgeMs) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => resolve(request.error);
   });
-}
+};
 
-function faviconDbRemoveEntriesWithURLs(conn, pageURLs) {
-  assert(isOpenDB(conn));
-  return new Promise(function(resolve, reject) {
-    const tx = conn.transaction('favicon-cache', 'readwrite');
+FaviconCache.prototype.removeByURL = function(pageURLs) {
+  assert(isOpenDB(this.conn));
+  return new Promise((resolve, reject) => {
+    const tx = this.conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('favicon-cache');
-    for(const url of pageURLs)
+    for(const url of pageURLs) {
       store.delete(url);
+    }
   });
-}
+};
 
-function faviconDbPutEntry(conn, entry) {
-  assert(isOpenDB(conn));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('favicon-cache', 'readwrite');
+FaviconCache.prototype.put = function(entry) {
+  assert(isOpenDB(this.conn));
+
+  // Temporary assertion due to error
+  assert(arguments.length === 1);
+
+  return new Promise((resolve, reject) => {
+    const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
+
+    console.debug('FaviconCache.prototype.put', entry);
+
     const request = store.put(entry);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-}
+};
 
-function faviconDbPutEntries(conn, iconURL, pageURLs) {
-  assert(isOpenDB(conn));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('favicon-cache', 'readwrite');
+FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
+  assert(isOpenDB(this.conn));
+
+  // Temporary assertion due to error
+  assert(arguments.length === 2);
+
+  return new Promise((resolve, reject) => {
+    const tx = this.conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('favicon-cache');
@@ -138,22 +164,17 @@ function faviconDbPutEntries(conn, iconURL, pageURLs) {
       store.put(entry);
     }
   });
-}
+};
 
 // Finds expired entries in the database and removes them
-// @throws AssertionError
-// @throws Error database related
-async function faviconCompactDb(conn, maxAgeMs) {
-  assert(isOpenDB(conn));
-
-  // Allow errors to bubble
-  const entries = await faviconDbFindExpiredEntries(conn, maxAgeMs);
-
+// @throws {AssertionError}
+// @throws {Error} database related
+FaviconCache.prototype.compact = async function(maxAgeMs) {
+  assert(isOpenDB(this.conn));
+  const entries = await this.findExpired(maxAgeMs);
   const urls = [];
   for(const entry of entries) {
     urls.push(entry.pageURLString);
   }
-
-  // Allow errors to bubble
-  await faviconDbRemoveEntriesWithURLs(conn, urls);
-}
+  await this.removeByURL(urls);
+};
