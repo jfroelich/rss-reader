@@ -20,7 +20,12 @@ class XMLParser {
     // input. In the interest of safety, this always fails.
     const parserErrorElement = doc.querySelector('parsererror');
     if(parserErrorElement) {
-      throw new ParserError(parserErrorElement.textContent);
+      let errorMessage = parserErrorElement.textContent;
+
+      // Make the error output a bit prettier for the log
+      errorMessage = errorMessage.replace(/\s+/g, ' ');
+
+      throw new ParserError(errorMessage);
     }
 
     return doc;
