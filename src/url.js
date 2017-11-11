@@ -158,47 +158,29 @@ function isValidURLPath(path) {
     !path.includes(' ');
 }
 
-// TODO: test input 'foo.', I suspect it is incorrect
-// TODO: revert to accepting {URL} as input
+
+// TODO: revert to accepting {URL} as input?
 // @param path {String}
 // @returns {String}
 function getExtensionFromURLPath(path) {
   assert(isValidURLPath(path));
 
-  // Fail if the path is probably too short to contain an extension
-  const MIN_PATH_LENGTH = '/a.b'.length;
-  if(path.length < MIN_PATH_LENGTH) {
-    return;
+  // It is counterintuitive at first glance but there is no need to first get the file name
+  // then get the extension. If there is a dot in a directory part of the path, there is still
+  // a trailing slash before the file name, which is not alphanumeric. If there is both a dot in
+  // a directory and a dot in the file name, the dot in the directory is not the last dot.
+
+  const URL_PATH_WITH_EXTENSION_MIN_LENGTH = 4; // '/a.b'
+  const URL_EXTENSION_MAX_LENGTH = 255; // excluding '.'
+  if(path.length >= URL_PATH_WITH_EXTENSION_MIN_LENGTH) {
+    const lastDotPos = path.lastIndexOf('.');
+    if((lastDotPos >= 0) && (lastDotPos + 1 < path.length)) {
+      const ext = path.substring(lastDotPos + 1); // exclude '.'
+      if(ext.length <= URL_EXTENSION_MAX_LENGTH && isAlphanumeric(ext)) {
+        return ext;
+      }
+    }
   }
-
-  const lastDotPosition = path.lastIndexOf('.');
-  if(lastDotPosition === -1) {
-    return;
-  }
-
-  // A path that ends with a period is a valid path.
-  // The +1 skips past the period itself.
-  // TODO: this should avoid out of bounds error? What if dot is final position?
-  let extension = path.substring(lastDotPosition + 1);
-
-  // If the path ended with a dot, then the extension string will be
-  // empty, so assume the path is malformed and no extension exists
-  // TODO: does this make sense if I avoid the case above?
-  if(!extension) {
-    return;
-  }
-
-  const MAX_EXTENSION_LENGTH = 4;
-  if(extension.length > MAX_EXTENSION_LENGTH) {
-    return;
-  }
-
-  extension = extension.toLowerCase();
-  if(!/[a-z]/.test(extension)) {
-    return;
-  }
-
-  return extension;
 }
 
 // Return true if url probably represents a binary resource
