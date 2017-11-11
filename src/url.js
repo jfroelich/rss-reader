@@ -150,15 +150,6 @@ function isValidURL(url) {
   return false;
 }
 
-// Returns true if the input string appears to be a valid path
-// @param path {String} a path component of a url
-// @returns {Boolean} true if the path appears valid, otherwise false
-function isValidURLPath(path) {
-  return typeof path === 'string' && path.length > 0 && path.charAt(0) === '/' &&
-    !path.includes(' ');
-}
-
-
 // @param url {URL}
 // @returns {String}
 function getExtensionFromURL(url) {
