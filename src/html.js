@@ -10,7 +10,8 @@
 function htmlEscape(htmlString) {
   if(typeof htmlString === 'string') {
     // See https://stackoverflow.com/questions/784586 for reference
-    const HTML_PATTERN = /[&<>"']/g;
+    // TEMP: not replacing & due to common double encoding issue
+    const HTML_PATTERN = /[<>"']/g;
     return htmlString.replace(HTML_PATTERN, htmlEncodeFirstCharacter);
   }
 }
