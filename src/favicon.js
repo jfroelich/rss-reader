@@ -5,6 +5,10 @@
 // import rbl.js
 // import url.js
 
+// TODO: use a queue or somehow join a request queue that merges lookups to the same origin
+
+// After 2 lookups stop trying (comparison is <=)
+const FAVICON_MAX_ORIGIN_FAILURE_COUNT = 2;
 
 // 30 days in ms, used by both lookup and compact to determine whether a
 // cache entry expired
@@ -13,7 +17,7 @@ const FAVICON_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 // Opens a connection to the favicon database
 function faviconDbOpen() {
   const name = 'favicon-cache';
-  const version = 2;
+  const version = 3;
   const timeoutMs = 500;
   return openDB(name, version, faviconDbOnUpgradeNeeded, timeoutMs);
 }
@@ -108,6 +112,19 @@ async function faviconLookup(query) {
     }
   }
 
+  // Before fetching, check for origin max failure count in db
+  // TODO: this should probably somehow expire to allow eventual success
+  if(query.conn) {
+    const originURL = new URL(urlObject.origin);
+    const originEntry = await faviconDbFindEntry(query.conn, originURL);
+    if(originEntry && originEntry.failureCount >= FAVICON_MAX_ORIGIN_FAILURE_COUNT) {
+      console.debug('canceling lookup, too many failures on origin', originURL.href);
+      return;
+    }
+  }
+
+  // TODO: before fetching, add sniff logic. Stop trying to fetch xml feeds.
+
   // Get the response for the url. Trap any fetch errors, a fetch error is
   // non-fatal to lookup.
   let response;
@@ -181,6 +198,39 @@ async function faviconLookup(query) {
       maxAgeMs);
     if(iconURLString) {
       return iconURLString;
+    }
+
+    // TEMP: new functionality
+    // Issue #453
+    // Before fetching an origin, check if an entry exists with a failure counter. If not, proceed.
+    // If a failure counter exists, and it is greater than some threshold, do not fetch, do not
+    // increment the counter, just fail.
+
+    // Due to some bad design at the moment, query again for the origin entry.
+    // TODO: this should not re-query. Refactor faviconDbFindOriginURL so that the entry lookup
+    // is done externally and shared
+
+    const originURLObject = new URL(urlObject.origin);
+    console.debug('checking for cached entry for failure', originURLObject.href);
+
+    const originEntry = await faviconDbFindEntry(query.conn, originURLObject);
+
+    if(originEntry) {
+      // In the case of checking for the failure counter, I do not think it is necessary to check
+      // whether the entry is expired. At least, not at the moment. Not thinking clearly.
+      if(originEntry.failureCount >= FAVICON_MAX_ORIGIN_FAILURE_COUNT) {
+        console.debug('reached max failure count for origin lookup', originEntry);
+
+        // TODO: Issue #453. Consider distinguishing between a fetch failure, and a
+        // too-many-failed-requests failure. Not sure how. Perhaps as an exception.
+        // I think here is where instead of returning I just throw an exception? I really do not
+        // like throwing an exception in a non-exceptional case.
+
+        // Exit early to avoid the call to faviconLookupOrigin
+        return;
+      }
+    } else {
+      console.debug('no entry found to check failure count', originURLObject.href);
     }
   }
 
@@ -312,8 +362,9 @@ async function faviconDbFindOriginURL(conn, originURLString, urls, maxAgeMs) {
   return originEntry.iconURLString;
 }
 
-async function faviconLookupOrigin(conn, urlObject, urls, fetchImageTimeoutMs,
-  minImageSize, maxImageSize) {
+async function faviconLookupOrigin(conn, urlObject, urls, fetchImageTimeoutMs, minImageSize,
+  maxImageSize) {
+
   const imageURLString = urlObject.origin + '/favicon.ico';
   const fetchPromise = fetchImageHead(imageURLString, fetchImageTimeoutMs);
   let response;
@@ -322,15 +373,41 @@ async function faviconLookupOrigin(conn, urlObject, urls, fetchImageTimeoutMs,
   } catch(error) {
     // This is spamming the console so disabled for now.
     // console.warn(error);
+
+    // TEMP: Issue #453. When failing to fetch an origin (not the input url), increment the
+    // failure counter. The failure counter is limited to origin lookups to avoid storing too many
+    // entries.
+
+    // TODO: just realized, I am going to be storing a null icon property. Everything needs to
+    // account for that.
+
+    if(conn) {
+      console.debug('origin fetch error, storing failure possibly', error);
+      // NOTE: if this fails it throws its own exception
+
+      // NOTE: pass the origin url, not the image url
+
+      await faviconDbAddOriginFetchFailure(conn, urlObject.origin);
+    } else {
+      console.debug('origin fetch error but no connection available');
+    }
+
+
     return;
   }
 
   if(response.size === FETCH_UNKNOWN_CONTENT_LENGTH ||
     (response.size >= minImageSize && response.size <= maxImageSize)) {
     if(conn) {
+
+      // TEMP: ISSUE #453
+      // For every fetch success, reset the failure counter of the entry to 0.
+      // When creating a new entry, initialize the failure counter to 0.
+      // TODO: this needs to only happen for the origin url
+
       await faviconDbPutEntries(conn, response.responseURL, urls);
     }
-    console.log('Found origin icon', urlObject.href, response.responseURL);
+    console.log('Found origin icon', urlObject.origin, response.responseURL);
     return response.responseURL;
   }
 }
@@ -361,8 +438,13 @@ function faviconDbOnUpgradeNeeded(event) {
   }
 
   if(event.oldVersion < 2) {
-    console.log('faviconDbOnUpgradeNeeded creating dateUpdated index');
+    console.debug('faviconDbOnUpgradeNeeded creating dateUpdated index');
     store.createIndex('dateUpdated', 'dateUpdated');
+  }
+
+  if(event.oldVersion < 3) {
+    console.debug('oldVersion < 3');
+    // In the transition from 2 to 3, there are no changes. I am adding a non-indexed property.
   }
 }
 
@@ -429,6 +511,86 @@ function faviconDbRemoveEntriesWithURLs(conn, pageURLs) {
   });
 }
 
+// TEMP: new functionality, not fully implemented nor tested
+// Issue #453
+async function faviconDbAddOriginFetchFailure(conn, originURLString) {
+
+  // The caller should never call this with an undefined or closed connection
+  assert(isOpenDB(conn));
+
+  // TODO: Either store a new entry, or increment the failure counter of an existing entry
+
+  // Search for an existing entry
+
+  console.debug('searching with value', originURLString);
+
+  // TODO: if this search was done previously by the caller it would make sense to avoid the
+  // additional lookup, perhaps with an entry parameter to this function. I am concerned there are
+  // too many database round trips and want to minimize the number.
+  const originURL = new URL(originURLString);
+
+
+  const entry = await faviconDbFindEntry(conn, originURL);
+
+  if(entry) {
+    const newEntry = {};
+    newEntry.pageURLString = entry.pageURLString;
+    newEntry.dateUpdated = new Date();
+
+    // If the entry previously had an icon, keep it.
+    // TODO: is this correct? needed? important? Not sure. Kinda not thinking clearly atm.
+    newEntry.iconURLString = entry.iconURLString;
+
+    // Increment the failure count
+    if('failureCount' in entry && typeof entry.failureCount === 'number') {
+
+      if(entry.failureCount <= FAVICON_MAX_ORIGIN_FAILURE_COUNT) {
+        console.debug('storing incremented failure count of origin fetch', newEntry.pageURLString);
+        newEntry.failureCount = entry.failureCount + 1;
+        await faviconDbPutEntry(conn, newEntry);
+      } else {
+        console.debug('noop, max fail count reached for origin fetch', newEntry.pageURLString);
+        // We reached the max failure count. This becomes a no-operation.
+      }
+    } else {
+      console.debug('storing initial failure of origin fetch', newEntry.pageURLString);
+      newEntry.failureCount = 1;
+      await faviconDbPutEntry(conn, newEntry);
+    }
+
+  } else {
+    // Store a new entry representing the failed origin lookup
+
+    // TODO: this is storing the wrong thing. It is storing the url with '/favicon.ico' in it.
+    // it should be storing a different page url
+    // changed, let's see if this fixed it
+    // changed again now that passing in origin instead of imageURLString
+    // changed again, pass href so it matches lookup. .origin does not include path leading slash
+
+    console.debug('storing failed entry with page url', originURL);
+
+    const newEntry = {};
+
+    //newEntry.pageURLString = new URL(originURL.origin).href;
+    newEntry.pageURLString = originURL.href;
+    newEntry.iconURLString = undefined;
+    newEntry.dateUpdated = new Date();
+    newEntry.failureCount = 1;
+    await faviconDbPutEntry(conn, newEntry);
+  }
+}
+
+function faviconDbPutEntry(conn, entry) {
+  assert(isOpenDB(conn));
+  return new Promise(function executor(resolve, reject) {
+    const tx = conn.transaction('favicon-cache', 'readwrite');
+    const store = tx.objectStore('favicon-cache');
+    const request = store.put(entry);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
 function faviconDbPutEntries(conn, iconURL, pageURLs) {
   assert(isOpenDB(conn));
   return new Promise(function executor(resolve, reject) {
@@ -442,6 +604,13 @@ function faviconDbPutEntries(conn, iconURL, pageURLs) {
       entry.pageURLString = url;
       entry.iconURLString = iconURL;
       entry.dateUpdated = currentDate;
+
+      // TEMP: ISSUE #453
+      // This is called at least in the case of storing a succesful origin lookup.
+      // For every fetch success, reset the failure counter to 0.
+      // When creating a new entry, initialize the failure counter to 0.
+      entry.failureCount = 0;
+
       store.put(entry);
     }
   });
