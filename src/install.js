@@ -1,7 +1,7 @@
 'use strict';
 
 // import extension.js
-// import favicon.js
+// import favicon-cache.js
 // import reader-badge.js
 // import reader-db.js
 

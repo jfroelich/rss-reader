@@ -2,7 +2,8 @@
 
 // import entry.js
 // import extension.js
-// import favicon.js
+// import favicon-cache.js
+// import favicon-lookup.js
 // import feed.js
 // import rbl.js
 // import reader-badge.js

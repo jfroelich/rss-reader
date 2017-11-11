@@ -1,6 +1,7 @@
 'use strict';
 
-// import favicon.js
+// import favicon-cache.js
+// import favicon-lookup.js
 // import html.js
 // import rbl.js
 // import url.js

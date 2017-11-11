@@ -1,6 +1,7 @@
 'use strict';
 
-// import favicon.js
+// import favicon-cache.js
+// import favicon-lookup.js
 // import feed.js
 // import mime.js
 // import opml-document.js

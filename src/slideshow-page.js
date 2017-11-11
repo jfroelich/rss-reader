@@ -166,7 +166,11 @@ function slideshowCreateArticleTitleElement(entry) {
       console.warn(error);
     }
 
-    titleElement.textContent = filteredSafeTitle;
+    //titleElement.textContent = filteredSafeTitle;
+
+    // Use innerHTML to allow entities in titles
+    titleElement.innerHTML = filteredSafeTitle;
+
   } else {
     titleElement.setAttribute('title', 'Untitled');
     titleElement.textContent = 'Untitled';

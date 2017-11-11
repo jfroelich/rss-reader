@@ -1,7 +1,8 @@
 'use strict';
 
 // import extension.js
-// import favicon.js
+// import favicon-cache.js
+// import favicon-lookup.js
 // import feed.js
 // import fetch.js
 // import fetch-policy.js

@@ -1,7 +1,8 @@
 'use strict';
 
 // import poll/poll.js
-// import favicon.js
+// import favicon-cache.js
+// import favicon-lookup.js
 // import rbl.js
 // import reader-db.js
 // import reader-storage.js

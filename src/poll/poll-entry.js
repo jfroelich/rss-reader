@@ -2,7 +2,8 @@
 
 // import poll/poll-document-filter.js
 // import entry.js
-// import favicon.js
+// import favicon-cache.js
+// import favicon-lookup.js
 // import feed.js
 // import fetch.js
 // import html.js

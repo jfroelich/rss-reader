@@ -32,6 +32,16 @@ optionsPageSettingsChannel.onmessageerror = function(event) {
   console.error(event);
 };
 
+
+function optionsPageDispatchSettingsChanged() {
+
+  // TODO: once the loopback issue is fixed, do not double call
+  // HACK: for now, hard call
+  entryCSSOnChange();
+
+  optionsPageSettingsChannel.postMessage('changed');
+}
+
 function optionsPageShowSection(menuItemElement) {
   assert(menuItemElement);
 
@@ -539,16 +549,6 @@ function optionsPageBodyHeightInputOninput(event) {
 
   optionsPageDispatchSettingsChanged();
 }
-
-function optionsPageDispatchSettingsChanged() {
-
-  // TODO: once the loopback issue is fixed, do not double call
-  // HACK: for now, hard call
-  entryCSSOnChange();
-
-  optionsPageSettingsChannel.postMessage('changed');
-}
-
 
 document.addEventListener('DOMContentLoaded', function(event) {
   entryCSSInit();
