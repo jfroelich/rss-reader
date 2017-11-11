@@ -275,6 +275,7 @@ function isAlphanumeric(string) {
   // See https://stackoverflow.com/questions/4434076
   // See https://stackoverflow.com/questions/336210
   // The empty string is true, null/undefined are true
+  // Does NOT support languages other than English
   return /^[a-zA-Z0-9]*$/.test(string);
 }
 
