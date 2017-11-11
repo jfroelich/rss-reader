@@ -159,19 +159,19 @@ function isValidURLPath(path) {
 }
 
 
-// TODO: revert to accepting {URL} as input?
-// @param path {String}
+// @param url {URL}
 // @returns {String}
-function getExtensionFromURLPath(path) {
-  assert(isValidURLPath(path));
+function getExtensionFromURL(url) {
+  assert(url instanceof URL);
 
   // It is counterintuitive at first glance but there is no need to first get the file name
   // then get the extension. If there is a dot in a directory part of the path, there is still
   // a trailing slash before the file name, which is not alphanumeric. If there is both a dot in
   // a directory and a dot in the file name, the dot in the directory is not the last dot.
 
-  const URL_PATH_WITH_EXTENSION_MIN_LENGTH = 4; // '/a.b'
+  const URL_PATH_WITH_EXTENSION_MIN_LENGTH = 3; // '/.b'
   const URL_EXTENSION_MAX_LENGTH = 255; // excluding '.'
+  const path = url.pathname;
   if(path.length >= URL_PATH_WITH_EXTENSION_MIN_LENGTH) {
     const lastDotPos = path.lastIndexOf('.');
     if((lastDotPos >= 0) && (lastDotPos + 1 < path.length)) {
@@ -199,18 +199,15 @@ function sniffIsBinaryURL(url) {
     }
   }
 
-  const path = url.pathname;
-  const extension = getExtensionFromURLPath(path);
-  if(!extension) {
-    return false;
+  const extension = getExtensionFromURL(url);
+  if(extension) {
+    const mimeType = mime.getTypeForExtension(extension);
+    if(mimeType) {
+      return mime.isBinary(mimeType);
+    }
   }
 
-  const mimeType = mime.getTypeForExtension(extension);
-  if(!mimeType) {
-    return false;
-  }
-
-  return mime.isBinary(mimeType);
+  return false;
 }
 
 function findMimeTypeInDataURL(dataURL) {
