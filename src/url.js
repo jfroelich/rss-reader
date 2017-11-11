@@ -244,17 +244,13 @@ function filterExtensionFromFileName(fileName) {
   return index < 0 ? fileName : fileName.substring(0, index);
 }
 
-// TODO: accept URL as input
-function getFileNameFromPath(path) {
-  assert(isValidURLPath(path));
+function getFileNameFromURL(url) {
+  assert(url instanceof URL);
+  const path = url.pathname;
   const index = path.lastIndexOf('/');
-  if(index > -1) {
-    const indexPlus1 = index + 1;
-    if(indexPlus1 < path.length) {
-      return path.substring(indexPlus1);
-    }
+  if((index > -1) && (index + 1 < path.length)) {
+    return path.substring(index + 1);
   }
-  return path;
 }
 
 // Compares two urls for equality without considering hash values

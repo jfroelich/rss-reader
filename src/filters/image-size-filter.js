@@ -143,8 +143,7 @@ function imageSizeFilterSniff(sourceURL) {
 
   // TODO: make a helper function
   // Grab from file name (e.g. 100x100.jpg => [100,100])
-  const path = sourceURL.pathname;
-  const fileName = getFileNameFromPath(path);
+  const fileName = getFileNameFromURL(sourceURL);
   if(fileName) {
     const partialFileName = filterExtensionFromFileName(fileName);
     if(partialFileName) {
