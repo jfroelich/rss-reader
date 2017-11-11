@@ -141,10 +141,8 @@ const URL_MIN_LENGTH_INCLUSIVE = 1;
 function isValidURL(url) {
   if(typeof url === 'string') {
     url = url.trim();
-    if(url.length < URL_MAX_LENGTH_EXCLUSIVE) {
-      if(url.length >= URL_MIN_LENGTH_INCLUSIVE) {
-        return !url.includes(' ');
-      }
+    if(url.length < URL_MAX_LENGTH_EXCLUSIVE && url.length >= URL_MIN_LENGTH_INCLUSIVE) {
+      return !url.includes(' ');
     }
   }
   return false;
@@ -162,11 +160,10 @@ function getExtensionFromURL(url) {
 
   const URL_PATH_WITH_EXTENSION_MIN_LENGTH = 3; // '/.b'
   const URL_EXTENSION_MAX_LENGTH = 255; // excluding '.'
-  const path = url.pathname;
-  if(path.length >= URL_PATH_WITH_EXTENSION_MIN_LENGTH) {
-    const lastDotPos = path.lastIndexOf('.');
-    if((lastDotPos >= 0) && (lastDotPos + 1 < path.length)) {
-      const ext = path.substring(lastDotPos + 1); // exclude '.'
+  if(url.pathname.length >= URL_PATH_WITH_EXTENSION_MIN_LENGTH) {
+    const lastDotPos = url.pathname.lastIndexOf('.');
+    if((lastDotPos >= 0) && (lastDotPos + 1 < url.pathname.length)) {
+      const ext = url.pathname.substring(lastDotPos + 1); // exclude '.'
       if(ext.length <= URL_EXTENSION_MAX_LENGTH && isAlphanumeric(ext)) {
         return ext;
       }
@@ -237,10 +234,9 @@ function filterExtensionFromFileName(fileName) {
 
 function getFileNameFromURL(url) {
   assert(url instanceof URL);
-  const path = url.pathname;
-  const index = path.lastIndexOf('/');
-  if((index > -1) && (index + 1 < path.length)) {
-    return path.substring(index + 1);
+  const index = url.pathname.lastIndexOf('/');
+  if((index > -1) && (index + 1 < url.pathname.length)) {
+    return url.pathname.substring(index + 1);
   }
 }
 

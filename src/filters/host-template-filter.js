@@ -7,6 +7,9 @@
 // configuration is defined externally so that it can be changed without
 // needing to modify its internals (open-closed principle)
 
+// TODO: hostTemplateFilter should accept a URL object as input instead of a string, and
+// should not need to call urlGetHostname, and urlGetHostname should be deprecated
+
 // @param url {String}
 function hostTemplateFilter(doc, url) {
   assert(doc instanceof Document)
