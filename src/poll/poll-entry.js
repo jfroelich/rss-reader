@@ -129,20 +129,18 @@ async function pollEntryUpdateIcon(entry, document) {
     assert(document instanceof Document);
   }
 
-  const query = new FaviconQuery();
+  const query = new FaviconLookup();
   query.cache = this.iconCache;
-  query.url = new URL(entryPeekURL(entry));
   query.skipURLFetch = true;
-  query.document = document;
 
   let iconURL;
   try {
-    iconURL = await faviconLookup(query);
+    iconURL = await query.lookup(new URL(entryPeekURL(entry)), document);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;
     } else {
-      console.warn(error);
+      console.debug(error);
       // lookup error is non-fatal
       // fall through leaving iconURL undefined
     }

@@ -286,6 +286,8 @@ async function readerStorageRefreshFeedIcons(readerConn, iconConn) {
   await Promise.all(promises);
 }
 
+// TODO: this should accept a cache parameter instead of iconConn
+
 // Lookup the feed's icon, update the feed in db
 // @param feed {Object}
 // @param readerConn {IDBDatabase}
@@ -297,37 +299,42 @@ async function readerStorageUpdateIcon(feed, readerConn, iconConn, skipPrep) {
   assert(feedIsFeed(feed));
   assert(feedHasURL(feed));
 
-  const query = new FaviconQuery();
-  query.conn = iconConn;
+  const query = new FaviconLookup();
+  query.cache = new FaviconCache();
+  query.cache.conn = iconConn;
 
-  // Allow errors to bubble
-  query.url = feedCreateIconLookupURL(feed);
+  const url = feedCreateIconLookupURL(feed);
+  assert(url);
 
-  assert(query.url);
-
-  // Allow errors to bubble
-  const iconURL = await faviconLookup(query);
-  if(!iconURL) {
-    return;
+  let iconURL;
+  try {
+    iconURL = await query.lookup(url);
+  } catch(error) {
+    if(isUncheckedError(error)) {
+      throw error;
+    } else {
+      console.debug('favicon lookup error', url.href, error);
+    }
   }
 
   const prevIconURL = feed.faviconURLString;
 
-  // For some reason, this section of code always feels confusing
+  // For some reason, this section of code always feels confusing, so I've made it extremely
+  // explicit
   if(prevIconURL) {
     // The feed has an existing favicon
     if(prevIconURL === iconURL) {
       // The new icon is the same as the current icon, so exit.
       return;
     } else {
-      // The new icon is different than the current icon, fall through
+      // The new icon is different than the current icon, fall through to set the icon
     }
   } else {
-    // The feed is missing a favicon, and we now have an icon. Fall through
-    // to set the icon.
+    // The feed is missing a favicon, and we now have a possibly new icon. Fall through to set
+    // the icon.
   }
 
-  console.debug('changing favicon from %s to %s', prevIconURL, iconURL);
+  console.debug('changing favicon from %s to %s', prevIconURL, iconURL || '(will be undefined)');
   feed.faviconURLString = iconURL;
 
   // Allow errors to bubble

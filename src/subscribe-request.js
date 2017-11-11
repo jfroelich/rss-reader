@@ -12,9 +12,13 @@
 // import reader-parse-feed.js
 // import reader-storage.js
 
+// TODO: write member functions out of line so it is more readable, I hate this class syntax, it
+// is too symptomatic of trying to overly condense things to the point where intent is obfuscated
+
+
 class SubscribeRequest {
   constructor() {
-    // TODO: use iconCache instead of iconConn
+
     this.iconCache = undefined;
     this.readerConn = undefined;
     //this.iconConn = undefined;
@@ -26,7 +30,7 @@ class SubscribeRequest {
   async connect() {
     this.iconCache = new FaviconCache();
     let _;
-    const promises = [readerDbOpen(), iconCache.open()];
+    const promises = [readerDbOpen(), this.iconCache.open()];
     [this.readerConn, _] = await Promise.all(promises);
   }
 
@@ -52,7 +56,7 @@ class SubscribeRequest {
   // @returns {Object} the subscribed feed
   async subscribe(feed) {
     assert(isOpenDB(this.readerConn));
-    assert(isOpenDB(this.iconConn));
+    assert(this.iconCache instanceof FaviconCache);
     assert(feedIsFeed(feed));
     assert(feedHasURL(feed));
 
@@ -106,12 +110,19 @@ class SubscribeRequest {
   }
 
   async setFavicon(feed) {
-    const query = new FaviconQuery();
-    query.conn = this.iconConn;
-    query.url = feedCreateIconLookupURL(feed);
+    const query = new FaviconLookup();
+
+    // TODO: the containing object should have a cache member instead of doing this, this
+    // violates law of demeter and is rather hackish. However I quickly refactored and just want
+    // to get it working for now.
+    query.cache = new FaviconCache();
+    query.cache.conn = this.iconConn;
+
     query.skipURLFetch = true;
+    const url = feedCreateIconLookupURL(feed);
+
     try {
-      const iconURL = await faviconLookup(query);
+      const iconURL = await query.lookup(url);
       feed.faviconURLString = iconURL;
     } catch(error) {
       if(isUncheckedError(error)) {
@@ -122,6 +133,7 @@ class SubscribeRequest {
     }
   }
 
+  // TODO: deprecate
   // Concurrently subscribe to each feed
   subscribeAll(feeds) {
     const promises = feeds.map(this.subscribe);

@@ -24,22 +24,21 @@ delete the test db at the end of the test.
 * test compact
 */
 
-async function testLookup(url, is_cacheless) {
+async function testLookup(url, cacheless) {
   const cache = new FaviconCache();
+  const query = new FaviconLookup();
+  query.cache = cache;
 
-
-  const query = new FaviconQuery();
-  query.url = new URL(url);
+  const lookupURL = new URL(url);
 
   try {
-    if(!is_cacheless) {
+    if(!cacheless) {
       await cache.open();
-      query.cache = cache;
     }
 
-    return await faviconLookup(query);
+    return await query.lookup(lookupURL);
   } finally {
-    if(!is_cacheless) {
+    if(!cacheless) {
       cache.close();
     }
   }

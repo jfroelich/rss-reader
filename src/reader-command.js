@@ -102,21 +102,19 @@ async function readerCommand(command, ...args) {
       }
     }
 
-    const fic = new FaviconCache();
-
-    const query = new FaviconQuery();
-    query.url = new URL(url);
+    const query = new FaviconLookup();
+    query.cache = new FaviconCache();
     query.fetchHTMLTimeoutMs = timeout;
+
     try {
       if(!cacheless) {
-        await fic.open();
-        query.cache = fic;
+        await query.cache.open();
       }
 
-      return await faviconLookup(query);
+      return await query.lookup(new URL(url));
     } finally {
       if(!cacheless) {
-        fic.close();
+        query.cache.close();
       }
     }
 

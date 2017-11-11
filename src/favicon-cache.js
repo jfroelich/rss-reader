@@ -137,6 +137,8 @@ FaviconCache.prototype.put = function(entry) {
   });
 };
 
+// @param pageURLs {Iterable<String>}
+// @param iconURL {String}
 FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
   assert(isOpenDB(this.conn));
 
