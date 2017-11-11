@@ -437,7 +437,7 @@ function optionsPageBgImageMenuOnchange(event) {
     delete localStorage.BG_IMAGE;
   }
 
-  optionsPageSettingsChannel.postMessage('changed');
+  optionsPageDispatchSettingsChanged();
 }
 
 function optionsPageHeaderFontMenuOnchange(event){
@@ -448,7 +448,7 @@ function optionsPageHeaderFontMenuOnchange(event){
     delete localStorage.HEADER_FONT_FAMILY;
   }
 
-  optionsPageSettingsChannel.postMessage('changed');
+  optionsPageDispatchSettingsChanged();
 }
 
 function optionsPageBodyFontMenuOnchange(event) {
@@ -459,7 +459,7 @@ function optionsPageBodyFontMenuOnchange(event) {
     delete localStorage.BODY_FONT_FAMILY;
   }
 
-  optionsPageSettingsChannel.postMessage('changed');
+  optionsPageDispatchSettingsChanged();
 }
 
 function optionsPageColumnCountMenuOnchange(event) {
@@ -470,7 +470,7 @@ function optionsPageColumnCountMenuOnchange(event) {
     delete localStorage.COLUMN_COUNT;
   }
 
-  optionsPageSettingsChannel.postMessage('changed');
+  optionsPageDispatchSettingsChanged();
 }
 
 function optionsPageEntryBgColorInputOninput(event) {
@@ -481,7 +481,7 @@ function optionsPageEntryBgColorInputOninput(event) {
     delete localStorage.BG_COLOR;
   }
 
-  optionsPageSettingsChannel.postMessage('changed');
+  optionsPageDispatchSettingsChanged();
 }
 
 function optionsPageEntryMarginSliderOnchange(event) {
@@ -494,7 +494,7 @@ function optionsPageEntryMarginSliderOnchange(event) {
     delete localStorage.PADDING;
   }
 
-  optionsPageSettingsChannel.postMessage('changed');
+  optionsPageDispatchSettingsChanged();
 }
 
 function optionsPageHeaderFontSizeSliderOnchange(event) {
@@ -505,7 +505,7 @@ function optionsPageHeaderFontSizeSliderOnchange(event) {
     delete localStorage.HEADER_FONT_SIZE;
   }
 
-  optionsPageSettingsChannel.postMessage('changed');
+  optionsPageDispatchSettingsChanged();
 }
 
 function optionsPageBodyFontSizeSliderOnchange(event) {
@@ -516,7 +516,7 @@ function optionsPageBodyFontSizeSliderOnchange(event) {
     delete localStorage.BODY_FONT_SIZE;
   }
 
-  optionsPageSettingsChannel.postMessage('changed');
+  optionsPageDispatchSettingsChanged();
 }
 
 function optionsPageJustifyTextCheckboxOnchange(event) {
@@ -526,7 +526,7 @@ function optionsPageJustifyTextCheckboxOnchange(event) {
     delete localStorage.JUSTIFY_TEXT;
   }
 
-  optionsPageSettingsChannel.postMessage('changed');
+  optionsPageDispatchSettingsChanged();
 }
 
 function optionsPageBodyHeightInputOninput(event) {
@@ -537,8 +537,18 @@ function optionsPageBodyHeightInputOninput(event) {
     delete localStorage.BODY_LINE_HEIGHT;
   }
 
+  optionsPageDispatchSettingsChanged();
+}
+
+function optionsPageDispatchSettingsChanged() {
+
+  // TODO: once the loopback issue is fixed, do not double call
+  // HACK: for now, hard call
+  entryCSSOnChange();
+
   optionsPageSettingsChannel.postMessage('changed');
 }
+
 
 document.addEventListener('DOMContentLoaded', function(event) {
   entryCSSInit();
