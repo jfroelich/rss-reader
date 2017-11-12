@@ -1,49 +1,40 @@
 'use strict';
 
+// import favicon-cache.js
 // import fetch.js
 // import html-parser.js
 // import rbl.js
 // import url.js
 
-// BUG: https://bost.ocks.org/mike/
-// This should be getting trapped by the origin failureCount guard, but it is not
-// add a bunch of logging or something
-// Thought: it might be related to using url.origin vs new URL(url.origin).href, the href adds the
-// trailing slash, remember that.
-// Ok, logging so far shows that there is an origin entry found, but its failure count is 1, and
-// it stays at 1 in repeated lookups
+// TODO: the failure guards should eventually let the request succeed somehow. Probably failure
+// entries should also have an expiration period.
+// TODO: this should probably somehow expire to allow eventual success, probably by checking
+// if entry expired, but based on expires date set in entry instead of externally, so that I can
+// have different expiration dates for non-failure cache items and failure cache items.
 
-// TODO: just checking if cache is defined is not sufficient, need to check if conn is defined
+// TODO: when determining whether to perform a cacheless lookup, just checking if cache is defined
+// is not sufficient, this needs to also check if conn is defined, the caller may wire up a cache
+// instance but never call cache.connect()
 // TODO: use a queue or somehow join a request queue that merges lookups to the same origin
 // TODO: cleanup debug messages after testing
+// TODO: cleanup origin url initialization, it is done redundantly in a couple spots
 
 class FaviconLookup {
   constructor() {
-    // After 2 lookups stop trying (comparison is <=)
-    this.MAX_ORIGIN_FAILURE_COUNT = 2;
-
     this.cache = undefined;
-
-    // If true, lookup will skip the fetch of the input url
+    this.kMaxFailureCount = 2;// (comparison is <=), 'const'
     this.skipURLFetch = false;
-
-    // These all store numbers
-
-    // Default to the constant defined in FaviconCache
     this.maxAgeMs = FaviconCache.MAX_AGE_MS;
-
     this.fetchHTMLTimeoutMs = 4000;
     this.fetchImageTimeoutMs = 1000;
-
-    // TODO: move defaults to here
     this.minImageSize = 50;
     this.maxImageSize = 10240;
-
   }
 }
 
 // @param document {Document}
 // @param baseURL {URL} the base url of the document for resolution purposes
+// @throws {AssertionError}
 // @returns {String} favicon url if found
 FaviconLookup.prototype.search = function(document, baseURL) {
   assert(document instanceof Document);
@@ -101,7 +92,6 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
   // Store a distinct set of request urls involved in the lookup so that various conditions are
   // simpler to implement and read
-  // TODO: note that during refactor I changed this to an array
   const urls = [];
   urls.push(url.href);
 
@@ -109,16 +99,30 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   if(this.cache) {
     const entry = await this.cache.findEntry(url);
     const currentDate = new Date();
-    if(entry && entry.iconURLString && !this.isExpired(entry, currentDate, this.maxAgeMs)) {
-      // TEMP: for debug refactor, will delete
-      console.debug('found lookup url in cache', url.href, entry.iconURLString);
-      return entry.iconURLString;
+
+    if(entry) {
+      // If we found a valid cached entry then exit early with the icon url
+      if(entry.iconURLString && !this.isExpired(entry, currentDate, this.maxAgeMs)) {
+        // TEMP: for debug refactor, will delete
+        console.debug('found lookup url in cache', url.href, entry.iconURLString);
+        return entry.iconURLString;
+      }
+
+      // If the entry's origin is the same as the url, and the entry failure count exceeds the
+      // max failure count, then exit early without a result.
+      const originURL = new URL(url.origin);
+      if(originURL.href === url.href) {
+        if(entry.failureCount >= this.kMaxFailureCount) {
+          console.debug('canceling lookup, too many failures on origin (origin same as input)',
+            originURL.href);
+          return;
+        }
+      }
     }
   }
 
   // If a pre-fetched document was given then search it
   if(document) {
-    // TEMP for refactor debug, will delete
     console.debug('lookup has pre-fetched document', url.href);
     const iconURL = this.search(document, url);
     if(iconURL) {
@@ -130,24 +134,29 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     }
   }
 
-  // Check if we reached the max failure count for requests to the origin
-  // TODO: this should probably somehow expire to allow eventual success, probably by checking
-  // if entry expired, but based on expires date set in entry instead of externally, so that I can
-  // have different expiration dates for cache items.
+  // Check if we reached the max failure count for requests to the origin, if the origin is
+  // different than the input url
+
+  // This is outside the scope of the if blocks here so that it can be re-used at the end of the
+  // function in the case of failure.
+  let originEntry;
+
   if(this.cache) {
     const originURL = new URL(url.origin);
 
     if(originURL.href !== url.href) {
-      const entry = await this.cache.findEntry(originURL);
-      if(entry && entry.failureCount >= this.MAX_ORIGIN_FAILURE_COUNT) {
+      originEntry = await this.cache.findEntry(originURL);
+      if(originEntry && originEntry.failureCount >= this.kMaxFailureCount) {
         // TEMP: for debugging refactor, will delete
         console.debug('canceled lookup because too many failures', url.href);
         return;
       } else {
+        // TEMP: for debugging, will delete
         console.debug('Origin url not found in pre-fetch guard, or found but failure count under threshold',
-          originURL.href, entry);
+          originURL.href, originEntry);
       }
     } else {
+      // TEMP: for debugging, will delete
       console.debug('skipping origin failure count guard, origin same as input url');
     }
   }
@@ -155,17 +164,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   // Fetch the url's response. Failure is not fatal to lookup.
   let response;
   if(!document && !this.skipURLFetch) {
-    try {
-      response = await fetchHTML(url.href, this.fetchHTMLTimeoutMs);
-    } catch(error) {
-      if(isUncheckedError(error)) {
-        throw error;
-      } else {
-        // ignore
-        // TEMP: for debugging refactor, will delete
-        console.debug('failed to fetch', url.href, error);
-      }
-    }
+    response = await this.fetchHTML(url.href);
   }
 
   // Check if the response redirected and is in the cache
@@ -192,36 +191,15 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     }
   }
 
-  // Parse the response into an HTML document
-  let didParse = false;
+  // Nullify document so there is no ambiguity regarding whether fetching/parsing failed and
+  // whether an input document was specified. The document parameter variable is re-used.
+  document = undefined;
   if(response) {
-    let text;
-    try {
-      text = await response.text();
-    } catch(error) {
-      // ignore. parse error not fatal to lookup
-      // TEMP: debug for refactor
-      console.debug('error parsing response', url.href, error);
-    }
-
-    if(text) {
-      try {
-        document = HTMLParser.parseDocumentFromString(text);
-        didParse = true;
-      } catch(error) {
-        if(isUncheckedError(error)) {
-          throw error;
-        } else {
-          // ignore. parse error is not fatal to lookup
-          // TEMP: for debug refactor, will delete
-          console.debug('error parsing response', url.href, error);
-        }
-      }
-    }
+    document = await this.parseHTMLResponse(response);
   }
 
   // If we successfully parsed the fetched document, search it
-  if(didParse) {
+  if(document) {
     const baseURL = responseURL ? responseURL : url;
     const iconURL = this.search(document, baseURL);
     if(iconURL) {
@@ -230,12 +208,16 @@ FaviconLookup.prototype.lookup = async function(url, document) {
         await this.cache.putAll(urls, iconURL);
       }
       return iconURL;
-    } else {
-      console.debug('did not find icon in fetched document', url.href);
     }
   }
 
-  const originURL = new URL(url.origin);
+  // Initialize originURL
+  let originURL;
+  if(responseURL) {
+    originURL = new URL(responseURL.origin);
+  } else {
+    originURL = new URL(url.origin);
+  }
 
   // NOTE: this feels like the source of the bug. the entry.failureCount test happens separately,
   // something about that. Yeah this isn't right. It is related to the last-minute addition of
@@ -249,7 +231,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
   // The issue: when am I supposed to increment count? What are the conditions under which it
   // should be incremented? This is the issue. I am missing one of the cases where it should be
-  // incremented but is not.
+  // incremented but is not. Should this happen before or after trying the favicon root?
 
 
   // Check the cache for the origin url if it is distinct from other urls already checked
@@ -273,7 +255,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
         // Store the icon for the other urls (we did not add origin to urls array)
         await this.cache.putAll(urls, iconURL);
         return iconURL;
-      } else if(entry.failureCount >= this.MAX_ORIGIN_FAILURE_COUNT) {
+      } else if(entry.failureCount >= this.kMaxFailureCount) {
         // Issue #453.
         // TODO: this may be redundant with earlier check?
         // TEMP: debug for refactor
@@ -298,6 +280,9 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
   // Check for favicon in the origin root directory
   const imageURL = url.origin + '/favicon.ico';
+
+  // Set response to null so that if it is previously defined, it will not affect the logic
+  // of whether it became redefined after calling fetchImageHead
   response = null;
 
   try {
@@ -306,16 +291,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     if(isUncheckedError(error)) {
       throw error;
     } else {
-      // Issue #453
-      // If the fetch failed, store a failure entry
-      if(this.cache) {
-        // NOTE: this is now a URL object
-        await this.onOriginFetchFailure(originURL);
-      }
-
-      // Exit lookup with nothing, lookup failed (not due to an error)
-      console.debug('fetch image failed', imageURL);
-      return;
+      console.debug('fetch image head failed', imageURL);
     }
   }
 
@@ -329,7 +305,48 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     return iconURL;
   }
 
-  // Failure (all JavaScript functions implictly return undefined)
+  // Issue #453
+  // If everything failed, increment the failure count for the origin
+  console.debug('every lookup branch failed, store a failure entry for the origin');
+
+  if(this.cache) {
+    await this.onLookupFailure(originURL, originEntry);
+  }
+
+};
+
+// Helper that traps non-assertion errors as those are non-fatal to lookup
+FaviconLookup.prototype.fetchHTML = async function(url) {
+  assert(typeof url === 'string');
+  try {
+    return await fetchHTML(url, this.fetchHTMLTimeoutMs);
+  } catch(error) {
+    if(isUncheckedError(error)) {
+      throw error;
+    } else {
+      // Ignore the error
+      // TEMP: for debugging refactor, will delete
+      console.debug('failed to fetch', url, error);
+    }
+  }
+};
+
+// Helper that traps non-assertion errors
+// @param response {Response}
+// @throws {AssertionError}
+// @returns {Document}
+FaviconLookup.prototype.parseHTMLResponse = async function(response) {
+  try {
+    const text = await response.text();
+    return HTMLParser.parseDocumentFromString(text);
+  } catch(error) {
+    if(isUncheckedError(error)) {
+      throw error;
+    } else {
+      // ignore. fetch/parse error is not fatal to lookup
+      console.debug('error creating html document from repsonse', url.href, error);
+    }
+  }
 };
 
 // An entry is expired if the difference between today's date and the date the
@@ -342,25 +359,32 @@ FaviconLookup.prototype.isExpired = function(entry, currentDate, maxAgeMs) {
   return entryAgeMs > maxAgeMs;
 };
 
+// TODO: this requires too much knowledge of cache entry structure. Probably need to create a
+// helper function in cache and just pass known parameters and let it properly assemble the entry.
+// Or maybe even this whole thing should be a cache function.
+
 // Issue #453
-// TODO: if this search was done previously by the caller it would make sense to avoid the
-// additional lookup, perhaps with an entry parameter to this function. I am concerned there are
-// too many database round trips and want to minimize the number.
-FaviconLookup.prototype.onOriginFetchFailure = async function(originURL) {
-  const entry = await this.cache.findEntry(originURL);
+// @param originURL {URL}
+// @param currentEntry {Object} optional, the existing origin entry if the lookup was already
+// performed and the entry is available
+FaviconLookup.prototype.onLookupFailure = async function(originURL, currentEntry) {
+  assert(this.cache);
+  assert(isOpenDB(this.cache.conn));
+
+  const entry = currentEntry ? currentEntry : await this.cache.findEntry(originURL);
   if(entry) {
     const newEntry = {};
     newEntry.pageURLString = entry.pageURLString;
     newEntry.dateUpdated = new Date();
     newEntry.iconURLString = entry.iconURLString;
     if('failureCount' in entry) {
-      if(entry.failureCount <= FaviconLookup.MAX_ORIGIN_FAILURE_COUNT) {
-        // TEMP: debug for the refactor
+      if(entry.failureCount <= this.kMaxFailureCount) {
         console.debug('storing incremented failure count of origin fetch', newEntry.pageURLString);
         newEntry.failureCount = entry.failureCount + 1;
         await this.cache.put(newEntry);
       } else {
         // noop if max failure count exceeded
+        console.debug('onLookupFailure noop, failure count already exceeded', entry.failureCount);
       }
     } else {
       console.debug('storing initial failure of origin fetch', newEntry.pageURLString);
@@ -368,7 +392,6 @@ FaviconLookup.prototype.onOriginFetchFailure = async function(originURL) {
       await this.cache.put(newEntry);
     }
   } else {
-    // TEMP: debug for refactor
     console.debug('storing failed entry with page url', originURL.href);
     const newEntry = {};
     newEntry.pageURLString = originURL.href;

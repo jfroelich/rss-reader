@@ -11,8 +11,9 @@ class FaviconCache {
   }
 }
 
-// 30 days in ms, used by both lookup and compact to determine whether a
-// cache entry expired
+// This is a 'static' property, not instance property, so that it can be accessed without the need
+// to create an instance. static in the java sense, not c.
+// 30 days in ms, used by both lookup and compact to determine whether a cache entry expired
 FaviconCache.MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 // Opens the cache
