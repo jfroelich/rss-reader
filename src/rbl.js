@@ -52,6 +52,8 @@ function isOpenDB(conn) {
   return conn instanceof IDBDatabase && conn.onabort;
 }
 
+const INDEXEDDB_DEBUG = false;
+
 // Wraps a call to indexedDB.open that imposes a time limit and translates
 // blocked events into errors.
 //
@@ -73,7 +75,10 @@ async function openDB(name, version, upgradeListener, timeoutMs) {
   let timer;
 
   const openPromise = new Promise(function openExecutor(resolve, reject) {
-    console.log('connecting to database', name, version);
+    if(INDEXEDDB_DEBUG) {
+      console.debug('connecting to database', name, version);
+    }
+
     let blocked = false;
     const request = indexedDB.open(name, version);
     request.onsuccess = function(event) {
@@ -85,7 +90,9 @@ async function openDB(name, version, upgradeListener, timeoutMs) {
         console.log('closing connection %s opened after timeout', conn.name);
         conn.close();
       } else {
-        console.log('connected to database', name, version);
+        if(INDEXEDDB_DEBUG) {
+          console.debug('connected to database', name, version);
+        }
 
         // Use the onabort listener property as a flag to indicate to
         // isOpenDB that the connection is currently open
@@ -94,7 +101,7 @@ async function openDB(name, version, upgradeListener, timeoutMs) {
         // NOTE: this is only invoked if force closed by error
         conn.onclose = function() {
           conn.onabort = undefined;
-          console.log('closing connection', conn.name);
+          console.log('connection was forced closed', conn.name);
         };
 
         resolve(conn);
@@ -154,7 +161,10 @@ function closeDB(...conns) {
   for(const conn of conns) {
     // This is routinely called in a finally block, so try never to throw
     if(conn && conn instanceof IDBDatabase) {
-      console.debug('closing connection to database', conn.name);
+      if(INDEXEDDB_DEBUG) {
+        console.debug('closing connection to database', conn.name);
+      }
+
       // Ensure that isOpenDB returns false
       conn.onabort = null;
       conn.close();
