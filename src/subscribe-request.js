@@ -21,7 +21,6 @@ class SubscribeRequest {
 
     this.iconCache = undefined;
     this.readerConn = undefined;
-    //this.iconConn = undefined;
     this.timeoutMs = 2000;
     this.notify = true;
   }
@@ -57,6 +56,7 @@ class SubscribeRequest {
   async subscribe(feed) {
     assert(isOpenDB(this.readerConn));
     assert(this.iconCache instanceof FaviconCache);
+    assert(isOpenDB(this.iconCache.conn));
     assert(feedIsFeed(feed));
     assert(feedHasURL(feed));
 
@@ -111,16 +111,9 @@ class SubscribeRequest {
 
   async setFavicon(feed) {
     const query = new FaviconLookup();
-
-    // TODO: the containing object should have a cache member instead of doing this, this
-    // violates law of demeter and is rather hackish. However I quickly refactored and just want
-    // to get it working for now.
-    query.cache = new FaviconCache();
-    query.cache.conn = this.iconConn;
-
+    query.cache = this.iconCache;
     query.skipURLFetch = true;
     const url = feedCreateIconLookupURL(feed);
-
     try {
       const iconURL = await query.lookup(url);
       feed.faviconURLString = iconURL;
