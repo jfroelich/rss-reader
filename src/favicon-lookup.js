@@ -227,7 +227,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     if(entry) {
       const iconURL = entry.iconURLString;
       const currentDate = new Date();
-      if(!this.isExpired(entry, currentDate, this.maxAgeMs)) {
+      if(iconURL && !this.isExpired(entry, currentDate, this.maxAgeMs)) {
 
         // TEMP: for debug refactor, will delete
         console.debug('found fresh origin in cache', originURL.href, iconURL);

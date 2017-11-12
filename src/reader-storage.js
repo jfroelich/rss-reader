@@ -321,22 +321,33 @@ async function readerStorageUpdateIcon(feed, readerConn, iconConn, skipPrep) {
 
   // For some reason, this section of code always feels confusing, so I've made it extremely
   // explicit
-  if(prevIconURL) {
-    // The feed has an existing favicon
-    if(prevIconURL === iconURL) {
-      // The new icon is the same as the current icon, so exit.
-      return;
-    } else {
-      // The new icon is different than the current icon, fall through to set the icon
-    }
-  } else {
-    // The feed is missing a favicon, and we now have a possibly new icon. Fall through to set
-    // the icon.
+
+  if(prevIconURL && iconURL && prevIconURL !== iconURL) {
+    console.debug('feed with favicon changed favicon %s', iconURL);
+    feed.faviconURLString = iconURL;
+
+    // Allow errors to bubble
+    await readerStoragePutFeed(feed, readerConn, skipPrep);
+    return;
   }
 
-  console.debug('changing favicon from %s to %s', prevIconURL, iconURL || '(will be undefined)');
-  feed.faviconURLString = iconURL;
+  if(prevIconURL && iconURL && prevIconURL === iconURL) {
+    console.debug('feed favicon did not change (no database operation)', prevIconURL);
+    return;
+  }
 
-  // Allow errors to bubble
-  await readerStoragePutFeed(feed, readerConn, skipPrep);
+  if(!prevIconURL && !iconURL) {
+    console.debug('feed did not have favicon, could not find favicon (no database operation)',
+      url.href);
+    return;
+  }
+
+  if(!prevIconURL && iconURL) {
+    console.debug('setting initial feed favicon %s', iconURL);
+    feed.faviconURLString = iconURL;
+
+    // Allow errors to bubble
+    await readerStoragePutFeed(feed, readerConn, skipPrep);
+    return;// just for consistency
+  }
 }
