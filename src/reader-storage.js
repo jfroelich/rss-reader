@@ -325,14 +325,19 @@ async function readerStorageUpdateIcon(feed, readerConn, iconConn, skipPrep) {
   if(prevIconURL && iconURL && prevIconURL !== iconURL) {
     console.debug('feed with favicon changed favicon %s', iconURL);
     feed.faviconURLString = iconURL;
-
-    // Allow errors to bubble
     await readerStoragePutFeed(feed, readerConn, skipPrep);
     return;
   }
 
   if(prevIconURL && iconURL && prevIconURL === iconURL) {
-    console.debug('feed favicon did not change (no database operation)', prevIconURL);
+    console.debug('feed with favicon did not change (no database operation)', prevIconURL);
+    return;
+  }
+
+  if(prevIconURL && !iconURL) {
+    console.debug('removing feed favicon because lookup failed', url.href, prevIconURL);
+    feed.faviconURLString = undefined;
+    await readerStoragePutFeed(feed, readerConn, skipPrep);
     return;
   }
 
@@ -345,8 +350,6 @@ async function readerStorageUpdateIcon(feed, readerConn, iconConn, skipPrep) {
   if(!prevIconURL && iconURL) {
     console.debug('setting initial feed favicon %s', iconURL);
     feed.faviconURLString = iconURL;
-
-    // Allow errors to bubble
     await readerStoragePutFeed(feed, readerConn, skipPrep);
     return;// just for consistency
   }
