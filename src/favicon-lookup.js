@@ -5,6 +5,14 @@
 // import rbl.js
 // import url.js
 
+// BUG: https://bost.ocks.org/mike/
+// This should be getting trapped by the origin failureCount guard, but it is not
+// add a bunch of logging or something
+// Thought: it might be related to using url.origin vs new URL(url.origin).href, the href adds the
+// trailing slash, remember that.
+// Ok, logging so far shows that there is an origin entry found, but its failure count is 1, and
+// it stays at 1 in repeated lookups
+
 // TODO: just checking if cache is defined is not sufficient, need to check if conn is defined
 // TODO: use a queue or somehow join a request queue that merges lookups to the same origin
 // TODO: cleanup debug messages after testing
@@ -25,7 +33,7 @@ class FaviconLookup {
     this.maxAgeMs = FaviconCache.MAX_AGE_MS;
 
     this.fetchHTMLTimeoutMs = 4000;
-    this.fetchImageTimeoutMs = 200;
+    this.fetchImageTimeoutMs = 1000;
 
     // TODO: move defaults to here
     this.minImageSize = 50;
@@ -128,11 +136,19 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   // have different expiration dates for cache items.
   if(this.cache) {
     const originURL = new URL(url.origin);
-    const entry = await this.cache.findEntry(originURL);
-    if(entry && entry.failureCount >= this.MAX_ORIGIN_FAILURE_COUNT) {
-      // TEMP: for debugging refactor, will delete
-      console.debug('canceled lookup because too many failures', url.href);
-      return;
+
+    if(originURL.href !== url.href) {
+      const entry = await this.cache.findEntry(originURL);
+      if(entry && entry.failureCount >= this.MAX_ORIGIN_FAILURE_COUNT) {
+        // TEMP: for debugging refactor, will delete
+        console.debug('canceled lookup because too many failures', url.href);
+        return;
+      } else {
+        console.debug('Origin url not found in pre-fetch guard, or found but failure count under threshold',
+          originURL.href, entry);
+      }
+    } else {
+      console.debug('skipping origin failure count guard, origin same as input url');
     }
   }
 
@@ -158,9 +174,8 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     if(response.redirected) {
       responseURL = new URL(response.responseURL);
 
-      // Only append if distinct from input url. We only 'redirected' if 'distinct'.
+      // Only append if distinct from input url. We only 'redirected' if 'distinct'
       urls.push(responseURL.href);
-
 
       if(this.cache) {
         const entry = await this.cache.findEntry(responseURL);
@@ -215,18 +230,41 @@ FaviconLookup.prototype.lookup = async function(url, document) {
         await this.cache.putAll(urls, iconURL);
       }
       return iconURL;
+    } else {
+      console.debug('did not find icon in fetched document', url.href);
     }
   }
 
   const originURL = new URL(url.origin);
 
+  // NOTE: this feels like the source of the bug. the entry.failureCount test happens separately,
+  // something about that. Yeah this isn't right. It is related to the last-minute addition of
+  // iconURL definedness test in the condition. Somewhere around here is wrong.
+
+  // I am struggling to articulate what should happen. Try enumeration. What are the cases.
+
+  // 1) A normal lookup where we fallback to origin check, and want to return it if in cache
+  // 2) A failed lookup, where we fallback to origin check, where we maybe want to return it or
+  // something?
+
+  // The issue: when am I supposed to increment count? What are the conditions under which it
+  // should be incremented? This is the issue. I am missing one of the cases where it should be
+  // incremented but is not.
+
+
   // Check the cache for the origin url if it is distinct from other urls already checked
   if(this.cache && !urls.includes(originURL.href)) {
     const entry = await this.cache.findEntry(originURL);
 
+
+
     if(entry) {
       const iconURL = entry.iconURLString;
       const currentDate = new Date();
+
+
+
+
       if(iconURL && !this.isExpired(entry, currentDate, this.maxAgeMs)) {
 
         // TEMP: for debug refactor, will delete
@@ -235,18 +273,21 @@ FaviconLookup.prototype.lookup = async function(url, document) {
         // Store the icon for the other urls (we did not add origin to urls array)
         await this.cache.putAll(urls, iconURL);
         return iconURL;
-      }
-
-      if(entry.failureCount >= this.MAX_ORIGIN_FAILURE_COUNT) {
+      } else if(entry.failureCount >= this.MAX_ORIGIN_FAILURE_COUNT) {
         // Issue #453.
         // TODO: this may be redundant with earlier check?
         // TEMP: debug for refactor
         console.debug('canceling lookup, reached max failure count', originURL.href);
         return;
+      } else {
+        console.debug('found origin in cache and failure count less than threshold');
       }
+    } else {
+      console.debug('did not find origin url in cache');
     }
-
-
+  } else {
+    // TEMP: researching bug
+    console.debug('cacheless or origin is unique, not repeating origin cache check or failure count guard');
   }
 
   // Now append origin to urls list in prep for next step
@@ -273,7 +314,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
       }
 
       // Exit lookup with nothing, lookup failed (not due to an error)
-      console.debug('lookup failed (without error)', url.href);
+      console.debug('fetch image failed', imageURL);
       return;
     }
   }
