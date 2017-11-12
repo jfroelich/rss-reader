@@ -15,5 +15,5 @@ async function readerBadgeUpdate(conn) {
     console.debug('setting badge text to', text);
   }
 
-  extensionSetBadgeText(text);
+  setBadgeText(text);
 }

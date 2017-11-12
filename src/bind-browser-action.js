@@ -4,7 +4,7 @@
 
 chrome.browserAction.onClicked.addListener(async function(event) {
   try {
-    await extensionShowSlideshowTab();
+    await showSlideshowTab();
   } catch(error) {
     console.warn(error);
   }

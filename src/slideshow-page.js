@@ -238,7 +238,7 @@ async function slideshowSlideOnclick(event) {
 
   const urlString = anchor.getAttribute('href');
   assert(isCanonicalURL(urlString));
-  extensionOpenTab(urlString);
+  openTab(urlString);
 
   let conn;
   try {

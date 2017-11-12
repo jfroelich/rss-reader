@@ -3,39 +3,31 @@
 // import rbl.js
 // import reader-db.js
 
-// TODO: refactor as platform.js, include only platform-specific functionality
-// and move out all non-platform-specific functionality as wrapping layers
-// For example, showSlideshowForTab
-// and notify both have non-platform-specific code that is inappropriate here.
-// setBadgeText should also be simplified.
-// TODO: drop prefix?
-
-
-function extensionOpenTab(url) {
+function openTab(url) {
   chrome.tabs.create({active: true, url: url});
 }
 
-function extensionIdleQuery(idlePeriodSecs) {
+function queryIdleState(idlePeriodSecs) {
   return new Promise(function executor(resolve, reject) {
     chrome.idle.queryState(idlePeriodSecs, resolve);
   });
 }
 
-function extensionSetBadgeText(text) {
+function setBadgeText(text) {
   chrome.browserAction.setBadgeText({'text': text});
 }
 
-async function extensionShowSlideshowTab() {
+async function showSlideshowTab() {
   const slideshowURL = chrome.extension.getURL('slideshow.html');
   const newtabURL = 'chrome://newtab/';
 
-  let tabs = await extensionFindTabsByURL(slideshowURL);
+  let tabs = await findTabsByURL(slideshowURL);
   if(tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id, {active: true});
     return;
   }
 
-  tabs = await extensionFindTabsByURL(newtabURL);
+  tabs = await findTabsByURL(newtabURL);
   if(tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id,
       {active: true, url: slideshowURL});
@@ -45,13 +37,13 @@ async function extensionShowSlideshowTab() {
   chrome.tabs.create({url: slideshowURL});
 }
 
-function extensionFindTabsByURL(urlString) {
+function findTabsByURL(urlString) {
   return new Promise(function executor(resolve, reject) {
     return chrome.tabs.query({url: urlString}, resolve);
   });
 }
 
-function extensionNotify(title, message, iconURL) {
+function showNotification(title, message, iconURL) {
   if(typeof Notification === 'undefined') {
     return;
   }
@@ -72,40 +64,37 @@ function extensionNotify(title, message, iconURL) {
 
   // Instantiation also shows
   const notification = new Notification(title, details);
-  notification.addEventListener('click', extensionNotificationOnclick);
+  notification.addEventListener('click', browserNotificationOnClick);
 }
 
-async function extensionNotificationOnclick(event) {
+async function browserNotificationOnClick(event) {
   try {
     // Ensure the browser is open to avoid mac chrome crash in 55
     // TODO: test if this behavior is still present in latest chrome and if
     // not then remove
     const windowHandle = window.open();
     windowHandle.close();
-    await extensionShowSlideshowTab();
+    await showSlideshowTab();
   } catch(error) {
     console.warn(error);
   }
 }
 
-function extensionPermissionsContains(permission) {
-  assert(typeof permission === 'string');
+function hasBrowserPermission(permission) {
   return new Promise(function executor(resolve, reject) {
     const descriptor = {permissions: [permission]};
     chrome.permissions.contains(descriptor, resolve);
   });
 }
 
-function extensionPermissionsRequest(permission) {
-  assert(typeof permission === 'string');
+function requestBrowserPermission(permission) {
   return new Promise(function executor(resolve, reject) {
     const descriptor = {permissions: [permission]};
     chrome.permissions.request(descriptor, resolve);
   });
 }
 
-function extensionPermissionsRemove(permission) {
-  assert(typeof permission === 'string');
+function removeBrowserPermission(permission) {
   return new Promise(function executor(resolve, reject) {
     const descriptor = {permissions: [permission]};
     chrome.permissions.remove(descriptor, resolve);

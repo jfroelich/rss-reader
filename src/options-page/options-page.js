@@ -420,9 +420,9 @@ function optionsPageEnableNotificationsCheckboxOnclick(event) {
 
 function optionsPageEnableBgProcessingCheckboxOnclick(event) {
   if(event.target.checked) {
-    extensionPermissionsRequest('background');
+    requestBrowserPermission('background');
   } else {
-    extensionPermissionsRemove('background');
+    removeBrowserPermission('background');
   }
 }
 
@@ -434,7 +434,7 @@ async function initBgProcessingCheckbox() {
   // permission should be permanently defined.
 
   checkbox.onclick = optionsPageEnableBgProcessingCheckboxOnclick;
-  checkbox.checked = await extensionPermissionsContains('background');
+  checkbox.checked = await hasBrowserPermission('background');
 }
 
 function optionsPageRestrictIdlePollingCheckboxOnclick(event) {

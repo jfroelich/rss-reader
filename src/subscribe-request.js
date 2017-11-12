@@ -106,7 +106,7 @@ class SubscribeRequest {
     const title = 'Subscribed';
     const feedName = feed.title || feedPeekURL(feed);
     const message = 'Subscribed to ' + feedName;
-    extensionNotify(title, message, feed.faviconURLString);
+    showNotification(title, message, feed.faviconURLString);
   }
 
   async setFavicon(feed) {

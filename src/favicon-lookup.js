@@ -117,7 +117,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
       }
     }
   }
-
+ 
   // Nullify document so there is no ambiguity regarding whether fetching/parsing failed and
   // whether an input document was specified. The document parameter variable is re-used.
   document = undefined;

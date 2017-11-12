@@ -44,7 +44,7 @@ async function pollFeeds(pfc) {
   }
 
   if(!pfc.ignoreIdleState && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    const state = await extensionIdleQuery(pfc.idlePeriodSecs);
+    const state = await queryIdleState(pfc.idlePeriodSecs);
     if(state !== 'locked' && state !== 'idle') {
       console.debug('idle');
       return;
@@ -74,7 +74,7 @@ async function pollFeeds(pfc) {
 
   const title = 'Added articles';
   const message = 'Added articles';
-  extensionNotify(title, message);
+  showNotification(title, message);
 
   const channel = new BroadcastChannel('poll');
   channel.postMessage('completed');
