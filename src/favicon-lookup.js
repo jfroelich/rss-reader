@@ -96,7 +96,8 @@ FaviconLookup.prototype.lookup = async function(url, document) {
       if(this.hasCache()) {
         const entry = await this.cache.findEntry(responseURL);
         if(entry && entry.iconURLString && !this.isExpired(entry)) {
-          await this.cache.putAll(urls, entry.iconURLString);
+          // Associate the redirect's icon with the input url
+          await this.cache.putAll([url.href], entry.iconURLString);
           return entry.iconURLString;
         }
       }
