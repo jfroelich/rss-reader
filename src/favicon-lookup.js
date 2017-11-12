@@ -6,17 +6,6 @@
 // import rbl.js
 // import url.js
 
-// TODO: the failure guards should eventually let the request succeed somehow. Probably failure
-// entries should also have an expiration period. But based on expires date set in entry instead of
-// externally, so that I can have different expiration dates for non-failure cache items and failure
-// cache items.
-// TODO: use a queue or somehow join a request queue that merges concurrent lookups to same origin
-// TODO: cleanup origin url initialization, it is done redundantly in a couple spots
-// TODO: consider using querySelectorAll on one selector instead of multiple in search
-// TODO: onLookupFailure requires too much knowledge of cache entry structure. Probably need to
-// create a helper function in cache and just pass known parameters and let it properly assemble
-// the entry, or maybe onLookupFailure should be a FaviconCache function.
-
 class FaviconLookup {
   constructor() {
     this.cache = undefined;
@@ -234,54 +223,74 @@ FaviconLookup.prototype.parseHTMLResponse = async function(response) {
 
 // Returns whether a cache entry is expired
 FaviconLookup.prototype.isExpired = function(entry) {
+  // Expect entries to always have a date set
+  assert(entry.dateUpdated instanceof Date);
+  // Expect this instance to always have a max age set
+  assert(isPosInt(this.maxAgeMs));
+
   // An entry is expired if the difference between the current date and the date the
   // entry was last updated is greater than max age.
   const currentDate = new Date();
+  // The subtraction operator on dates yields a difference in milliseconds
   const entryAgeMs = currentDate - entry.dateUpdated;
   return entryAgeMs > this.maxAgeMs;
 };
+
+FaviconLookup.prototype.LINK_SELECTOR = [
+  'link[rel="icon"][href]',
+  'link[rel="shortcut icon"][href]',
+  'link[rel="apple-touch-icon"][href]',
+  'link[rel="apple-touch-icon-precomposed"][href]'
+].join(',');
 
 // Searches the document for favicon urls
 // @param document {Document}
 // @param baseURL {URL} the base url of the document for resolution purposes
 // @throws {AssertionError}
 // @returns {String} a favicon url, if found
-
 FaviconLookup.prototype.search = function(document, baseURL) {
   assert(document instanceof Document);
+  if(document.head) {
+    const elements = document.head.querySelectorAll(this.LINK_SELECTOR);
+    for(const element of elements) {
+      const href = element.getAttribute('href');
+      // hrefs may be relative
+      const iconURL = this.resolveURL(href, baseURL);
+      if(iconURL) {
+        return iconURL.href;
+      }
+    }
+  }
+};
+
+// Helper that resolves a url. If url is undefined, invalid, etc, then this returns undefined.
+// Otherwise this returns a new URL representing the canonical url.
+// @param url {String} optional url to resolve
+// @param baseURL {URL}
+// @throws {AssertionError}
+// @returns {URL}
+FaviconLookup.prototype.resolveURL = function(url, baseURL) {
   assert(baseURL instanceof URL);
 
-  if(!document.head) {
+  // Tolerate bad input for caller convenience
+  if(typeof url !== 'string') {
     return;
   }
 
-  const selectors = [
-    'link[rel="icon"][href]',
-    'link[rel="shortcut icon"][href]',
-    'link[rel="apple-touch-icon"][href]',
-    'link[rel="apple-touch-icon-precomposed"][href]'
-  ];
+  // Do not pass an empty url to the URL constructor when base url is also defined as base url
+  // becomes the resulting url without an error. This was previously the source of a bug, so as
+  // annoying as it is, I am leaving this comment here as a continual reminder.
 
-  // href values may be relative, which is why we resolve them
-  for(const selector of selectors) {
-    const element = document.head.querySelector(selector);
-    if(element) {
-      let hrefValue = element.getAttribute('href');
-      // Do not pass an 'empty' url to the URL constructor when base url is also defined
-      // as base url will become the resulting url. This was previously the source of a bug.
-      if(typeof hrefValue === 'undefined') {
-        hrefValue = '';
-      }
-      hrefValue = hrefValue.trim();
-      if(hrefValue) {
-        try {
-          const iconURL = new URL(hrefValue, baseURL);
-          return iconURL.href;
-        } catch(error) {
-          // ignore
-        }
-      }
-    }
+  // Check if the url is not just whitespace
+  url = url.trim();
+  if(url.length === 0) {
+    return;
+  }
+
+  try {
+    return new URL(url, baseURL);
+  } catch(error) {
+    // Ignore
   }
 };
 
