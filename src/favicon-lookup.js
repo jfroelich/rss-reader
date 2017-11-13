@@ -1,6 +1,6 @@
 import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/errors.js";
-import {FaviconCache} from "/src/favicon-cache.js";
+import FaviconCache from "/src/favicon-cache.js";
 import {
   fetchHTML,
   fetchImageHead,
