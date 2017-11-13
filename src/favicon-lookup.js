@@ -6,9 +6,9 @@ import {
   fetchImageHead,
   FETCH_UNKNOWN_CONTENT_LENGTH
 } from "/src/fetch.js";
-import {HTMLParser} from "/src/html-parser.js";
 import {isOpenDB} from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
+import parseHTML from "/src/parse-html.js";
 
 export default class FaviconLookup {
   constructor() {
@@ -237,7 +237,7 @@ FaviconLookup.prototype.fetchHTML = async function(url) {
 FaviconLookup.prototype.parseHTMLResponse = async function(response) {
   try {
     const text = await response.text();
-    return HTMLParser.parseDocumentFromString(text);
+    return parseHTML(text);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;

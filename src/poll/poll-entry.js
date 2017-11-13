@@ -9,8 +9,8 @@ import {
 import {isUncheckedError} from "/src/errors.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {fetchHTML} from "/src/fetch.js";
-import {HTMLParser} from "/src/html-parser.js";
 import {isOpenDB} from "/src/idb.js";
+import parseHTML from "/src/parse-html.js";
 import {pollDocumentFilter} from "/src/poll/poll-document-filter.js";
 
 import {readerDbFindEntryByURL} from "/src/reader-db.js";
@@ -87,7 +87,7 @@ export async function pollEntry(entry) {
 
   let entryDocument;
   try {
-    entryDocument = HTMLParser.parseDocumentFromString(entryContent);
+    entryDocument = parseHTML(entryContent);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;

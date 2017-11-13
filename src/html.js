@@ -1,7 +1,7 @@
 import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/errors.js";
-import {HTMLParser} from "/src/html-parser.js";
 import {isPosInt} from "/src/number.js";
+import parseHTML from "/src/parse-html.js";
 
 // Returns a new string where certain 'unsafe' characters in the input string
 // have been replaced with html entities. If input is not a string returns
@@ -39,7 +39,7 @@ export function htmlReplaceTags(htmlString, replacement) {
 
   // TODO: do not catch?
   try {
-    doc = HTMLParser.parseDocumentFromString(htmlString);
+    doc = parseHTML(htmlString);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;
@@ -81,7 +81,7 @@ export function htmlTruncate(htmlString, position, suffix) {
     suffix = ELLIPSIS;
   }
 
-  const doc = HTMLParser.parseDocumentFromString(htmlString);
+  const doc = parseHTML(htmlString);
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   let totalLength = 0;
   // Search for the text node in which truncation should occur and truncate it
