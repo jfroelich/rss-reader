@@ -1,10 +1,9 @@
-'use strict';
 
-// import filters/filter-helpers.js
-// import rbl.js
+import {renameElements} from "/src/filters/filter-helpers.js";
+import {assert} from "/src/rbl.js";
 
 // Use shorter names for common elements
-function condenseTagnamesFilter(doc, copyAttributes) {
+export function condenseTagnamesFilter(doc, copyAttributes) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

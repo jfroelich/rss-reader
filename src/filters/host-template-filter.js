@@ -1,7 +1,6 @@
-'use strict';
 
-// import rbl.js
-// import url.js
+import {assert} from "/src/rbl.js";
+import {urlGetHostname} from "/src/url.js";
 
 // TODO: hostSelectorMap should be a parameter to this function so that
 // configuration is defined externally so that it can be changed without
@@ -11,7 +10,7 @@
 // should not need to call urlGetHostname, and urlGetHostname should be deprecated
 
 // @param url {String}
-function hostTemplateFilter(doc, url) {
+export function hostTemplateFilter(doc, url) {
   assert(doc instanceof Document)
 
   const hostSelectorMap = {};

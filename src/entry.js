@@ -1,28 +1,32 @@
-'use strict';
+// feed entry object utilities module
 
-// import html.js
-// import rbl.js
-// import url.js
+import {htmlReplaceTags, htmlTruncate} from "/src/html.js";
+import {
+  assert,
+  isPosInt,
+  filterControls,
+  condenseWhitespace
+} from "/src/rbl.js";
+import {isCanonicalURL} from "/src/url.js";
 
-// TODO: entry is too generic of an term, add qualifying to name
 
-const ENTRY_STATE_UNREAD = 0;
-const ENTRY_STATE_READ = 1;
-const ENTRY_STATE_UNARCHIVED = 0;
-const ENTRY_STATE_ARCHIVED = 1;
+export const ENTRY_STATE_UNREAD = 0;
+export const ENTRY_STATE_READ = 1;
+export const ENTRY_STATE_UNARCHIVED = 0;
+export const ENTRY_STATE_ARCHIVED = 1;
 
 // Return true if the first parameter is an entry object
-function entryIsEntry(entry) {
+export function entryIsEntry(entry) {
   return typeof entry === 'object';
 }
 
 // Returns true if the id is a valid entry id, structurally. This does not
 // check if the id actually corresponds to an entry.
-function entryIsValidId(id) {
+export function entryIsValidId(id) {
   return isPosInt(id);
 }
 
-function entryHasURL(entry) {
+export function entryHasURL(entry) {
   assert(entryIsEntry(entry));
   return entry.urls && entry.urls.length;
 }
@@ -30,7 +34,7 @@ function entryHasURL(entry) {
 // Returns the most last url, as a string, in the entry's url list. Throws an
 // error if the entry does not have urls.
 // @throws AssertionError
-function entryPeekURL(entry) {
+export function entryPeekURL(entry) {
   assert(entryIsEntry(entry));
   assert(entryHasURL(entry));
   return entry.urls[entry.urls.length - 1];
@@ -40,7 +44,7 @@ function entryPeekURL(entry) {
 // Normalizes the url. Returns true if the url was added. Returns false if the
 // normalized url already exists and therefore was not added
 // @throws {Error} if urlString is invalid
-function entryAppendURL(entry, urlString) {
+export function entryAppendURL(entry, urlString) {
   assert(entryIsEntry(entry));
   assert(isCanonicalURL(urlString));
 
@@ -62,7 +66,7 @@ function entryAppendURL(entry, urlString) {
 
 // Returns a new entry object where fields have been sanitized. Impure
 // @throws AssertionError, ParserError
-function entrySanitize(inputEntry, authorMaxLength, titleMaxLength, contextMaxLength) {
+export function entrySanitize(inputEntry, authorMaxLength, titleMaxLength, contextMaxLength) {
   assert(entryIsEntry(inputEntry));
 
   if(typeof authorMaxLength === 'undefined') {

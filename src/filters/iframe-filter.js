@@ -1,8 +1,7 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
-function iframeFilter(doc) {
+export function iframeFilter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {
     return;

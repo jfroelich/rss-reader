@@ -1,11 +1,9 @@
-'use strict';
 
-// import filters/leaf-filter.js
-// import filters/filter-helpers.js
-// import dom.js
-// import rbl.js
+import {unwrapElements} from "/src/filters/filter-helpers.js";
+import {leafFilterIsLeaf} from "/src/filters/leaf-filter.js";
+import {assert} from "/src/rbl.js";
 
-function tableFilter(doc, scanLimit) {
+export function tableFilter(doc, scanLimit) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
@@ -16,24 +14,24 @@ function tableFilter(doc, scanLimit) {
 
   const tables = doc.body.querySelectorAll('table');
   for(const table of tables) {
-    if(tableFilterIsSingleColumnTable(table, scanLimit)) {
-      tableFilterUnwrapSingleColumnTable(table);
+    if(isSingleColumnTable(table, scanLimit)) {
+      unwrapTable(table);
     }
   }
 }
 
-function tableFilterIsSingleColumnTable(table, scanLimit) {
+function isSingleColumnTable(table, scanLimit) {
   const rows = table.rows;
   const safeLimit = Math.min(rows.length, scanLimit);
   for(let i = 0; i < safeLimit; i++) {
-    if(!tableFilterIsSingleColumnRow(rows[i])) {
+    if(!isSingleColumnRow(rows[i])) {
       return false;
     }
   }
   return true;
 }
 
-function tableFilterIsSingleColumnRow(row) {
+function isSingleColumnRow(row) {
   const cells = row.cells;
   let nonEmptyCellCount = 0;
   for(let i = 0, len = cells.length; i < len; i++) {
@@ -45,7 +43,7 @@ function tableFilterIsSingleColumnRow(row) {
   return true;
 }
 
-function tableFilterUnwrapSingleColumnTable(table) {
+function unwrapTable(table) {
   const rows = table.rows;
   const rowCount = rows.length;
   const parent = table.parentNode;

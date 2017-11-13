@@ -1,36 +1,32 @@
-'use strict';
-
-// import html-parser.js
-// import mime.js
-// import rbl.js
+import {HTMLParser} from "/src/html-parser.js";
+import {assert, isPosInt, isUncheckedError} from "/src/rbl.js";
 
 // Returns a new string where certain 'unsafe' characters in the input string
 // have been replaced with html entities. If input is not a string returns
 // undefined.
-function htmlEscape(htmlString) {
+export function htmlEscape(htmlString) {
   if(typeof htmlString === 'string') {
     // See https://stackoverflow.com/questions/784586 for reference
     // TEMP: not replacing & due to common double encoding issue
     const HTML_PATTERN = /[<>"']/g;
-    return htmlString.replace(HTML_PATTERN, htmlEncodeFirstCharacter);
+    return htmlString.replace(HTML_PATTERN, encodeFirst);
   }
 }
 
 // Returns the first character of the input string as an numeric html entity
-function htmlEncodeFirstCharacter(string) {
+function encodeFirst(string) {
   return '&#' + string.charCodeAt(0) + ';';
 }
 
 // Replaces html tags in the input string with the replacement. If no
 // replacement, then removes the tags.
-// @throws AssertionError
-function htmlReplaceTags(inputString, replacement) {
-  assert(typeof inputString === 'string');
+export function htmlReplaceTags(htmlString, replacement) {
+  assert(typeof htmlString === 'string');
 
   // Fast case for empty strings
   // Because of the above assert this basically only checks 0 length
-  if(!inputString) {
-    return inputString;
+  if(!htmlString) {
+    return htmlString;
   }
 
   if(replacement) {
@@ -41,7 +37,7 @@ function htmlReplaceTags(inputString, replacement) {
 
   // TODO: do not catch?
   try {
-    doc = HTMLParser.parseDocumentFromString(inputString);
+    doc = HTMLParser.parseDocumentFromString(htmlString);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;
@@ -69,9 +65,8 @@ function htmlReplaceTags(inputString, replacement) {
 // @param position {Number} position after which to truncate
 // @param suffix {String} optional, appended after truncation, defaults to
 // an ellipsis
-// @throws AssertionError
 // @throws ParserError
-function htmlTruncate(htmlString, position, suffix) {
+export function htmlTruncate(htmlString, position, suffix) {
   assert(isPosInt(position));
 
   // Tolerate some bad input for convenience

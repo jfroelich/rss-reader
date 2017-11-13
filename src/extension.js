@@ -1,23 +1,20 @@
-'use strict';
+// extension utilities module that provides an abstraction around platform specific functionality
 
-// import rbl.js
-// import reader-db.js
-
-function openTab(url) {
+export function openTab(url) {
   chrome.tabs.create({active: true, url: url});
 }
 
-function queryIdleState(idlePeriodSecs) {
+export function queryIdleState(idlePeriodSecs) {
   return new Promise(function executor(resolve, reject) {
     chrome.idle.queryState(idlePeriodSecs, resolve);
   });
 }
 
-function setBadgeText(text) {
+export function setBadgeText(text) {
   chrome.browserAction.setBadgeText({'text': text});
 }
 
-async function showSlideshowTab() {
+export async function showSlideshowTab() {
   const slideshowURL = chrome.extension.getURL('slideshow.html');
   const newtabURL = 'chrome://newtab/';
 
@@ -29,8 +26,7 @@ async function showSlideshowTab() {
 
   tabs = await findTabsByURL(newtabURL);
   if(tabs && tabs.length) {
-    chrome.tabs.update(tabs[0].id,
-      {active: true, url: slideshowURL});
+    chrome.tabs.update(tabs[0].id, {active: true, url: slideshowURL});
     return;
   }
 
@@ -43,7 +39,7 @@ function findTabsByURL(urlString) {
   });
 }
 
-function showNotification(title, message, iconURL) {
+export function showNotification(title, message, iconURL) {
   if(typeof Notification === 'undefined') {
     return;
   }
@@ -64,10 +60,10 @@ function showNotification(title, message, iconURL) {
 
   // Instantiation also shows
   const notification = new Notification(title, details);
-  notification.addEventListener('click', browserNotificationOnClick);
+  notification.addEventListener('click', notificationOnClick);
 }
 
-async function browserNotificationOnClick(event) {
+async function notificationOnClick(event) {
   try {
     // Ensure the browser is open to avoid mac chrome crash in 55
     // TODO: test if this behavior is still present in latest chrome and if
@@ -80,21 +76,21 @@ async function browserNotificationOnClick(event) {
   }
 }
 
-function hasBrowserPermission(permission) {
+export function hasBrowserPermission(permission) {
   return new Promise(function executor(resolve, reject) {
     const descriptor = {permissions: [permission]};
     chrome.permissions.contains(descriptor, resolve);
   });
 }
 
-function requestBrowserPermission(permission) {
+export function requestBrowserPermission(permission) {
   return new Promise(function executor(resolve, reject) {
     const descriptor = {permissions: [permission]};
     chrome.permissions.request(descriptor, resolve);
   });
 }
 
-function removeBrowserPermission(permission) {
+export function removeBrowserPermission(permission) {
   return new Promise(function executor(resolve, reject) {
     const descriptor = {permissions: [permission]};
     chrome.permissions.remove(descriptor, resolve);

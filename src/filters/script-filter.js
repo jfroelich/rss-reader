@@ -1,8 +1,7 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
-function scriptFilter(doc) {
+export function scriptFilter(doc) {
   assert(doc instanceof Document);
 
   const scripts = doc.querySelectorAll('script');

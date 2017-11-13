@@ -1,23 +1,29 @@
-'use strict';
+// Module for interacting with the app indexedDB database
 
-// import entry.js
-// import feed.js
-// import rbl.js
-// import url.js
+import {
+  entryIsEntry,
+  entryIsValidId,
+  ENTRY_STATE_READ,
+  ENTRY_STATE_UNREAD,
+  ENTRY_STATE_UNARCHIVED
+} from "/src/entry.js";
+import {feedIsFeed, feedIsValidId} from "/src/feed.js";
+import {assert, openDB, isOpenDB, isPosInt} from "/src/rbl.js";
+import {isValidURL} from "/src/url.js";
 
-class ReaderDbConstraintError extends Error {
+export class ReaderDbConstraintError extends Error {
   constructor(message) {
     super(message);
   }
 }
 
-class ReaderDbNotFoundError extends Error {
+export class ReaderDbNotFoundError extends Error {
   constructor(key) {
     super('Object not found for key ' + key);
   }
 }
 
-class ReaderDbInvalidStateError extends Error {
+export class ReaderDbInvalidStateError extends Error {
   constructor(message) {
     super(message);
   }
@@ -25,14 +31,14 @@ class ReaderDbInvalidStateError extends Error {
 
 // Opens a connection to the reader-db database
 // @return {Promise} a promise that resolves to an open database connection
-function readerDbOpen() {
+export function readerDbOpen() {
   const name = 'reader', version = 20, timeoutMs = 500;
-  return openDB(name, version, readerDbOnUpgradeNeeded, timeoutMs);
+  return openDB(name, version, onUpgradeNeeded, timeoutMs);
 }
 
 // Helper for readerDbOpen. Does the database upgrade. This should never be
 // called directly. To do an upgrade, call open with a higher version number.
-function readerDbOnUpgradeNeeded(event) {
+function onUpgradeNeeded(event) {
   const conn = event.target.result;
   const tx = event.target.transaction;
   let feedStore, entryStore;
@@ -59,7 +65,7 @@ function readerDbOnUpgradeNeeded(event) {
 // Returns feed id if a feed with the given url exists in the database
 // @param conn {IDBDatabase}
 // @param url {String}
-function readerDbFindFeedIdByURL(conn, url) {
+export function readerDbFindFeedIdByURL(conn, url) {
   assert(isOpenDB(conn));
   assert(isValidURL(url));
 
@@ -74,7 +80,7 @@ function readerDbFindFeedIdByURL(conn, url) {
 }
 
 // @param conn {IDBDatabase}
-function readerDbCountUnreadEntries(conn) {
+export function readerDbCountUnreadEntries(conn) {
   assert(isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
@@ -92,7 +98,7 @@ function readerDbCountUnreadEntries(conn) {
 // @param id {Number} id of entry to find
 // @returns {Promise} a promise that resolves to an entry object, or undefined
 // if no matching entry was found
-function readerDbFindEntryById(conn, id) {
+export function readerDbFindEntryById(conn, id) {
   assert(isOpenDB(conn));
   assert(entryIsValidId(id));
 
@@ -108,7 +114,7 @@ function readerDbFindEntryById(conn, id) {
 // Returns an entry ID, not an entry, matching url
 // @param conn {IDBDatabase}
 // @param url {String}
-function readerDbFindEntryByURL(conn, url) {
+export function readerDbFindEntryByURL(conn, url) {
   assert(isOpenDB(conn));
   assert(isValidURL(url));
 
@@ -122,7 +128,7 @@ function readerDbFindEntryByURL(conn, url) {
   });
 }
 
-function readerDbFindEntryIdsByFeedId(conn, feedId) {
+export function readerDbFindEntryIdsByFeedId(conn, feedId) {
   assert(isOpenDB(conn));
   assert(feedIsValidId(feedId));
 
@@ -136,7 +142,7 @@ function readerDbFindEntryIdsByFeedId(conn, feedId) {
   });
 }
 
-function readerDbFindFeedById(conn, feedId) {
+export function readerDbFindFeedById(conn, feedId) {
   assert(isOpenDB(conn));
   assert(feedIsValidId(feedId));
 
@@ -162,7 +168,7 @@ function readerDbGetEntries(conn) {
   });
 }
 
-function readerDbGetFeeds(conn) {
+export function readerDbGetFeeds(conn) {
   assert(isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
@@ -178,7 +184,7 @@ function readerDbGetFeeds(conn) {
 // a database error
 // @param conn {IDBDatabase}
 // @throws AssertionError
-function readerDbGetFeedIds(conn) {
+export function readerDbGetFeedIds(conn) {
   assert(isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
@@ -199,7 +205,7 @@ function readerDbGetFeedIds(conn) {
 // @throws AssertionError
 // @returns {Promise} resolves to an array of entry objects, or rejects with
 // a database-related error.
-function readerDbFindEntries(conn, predicate, limit) {
+export function readerDbFindEntries(conn, predicate, limit) {
   assert(isOpenDB(conn));
   assert(typeof predicate === 'function');
 
@@ -224,7 +230,7 @@ function readerDbFindEntries(conn, predicate, limit) {
     const store = tx.objectStore('entry');
     const request = store.openCursor();
 
-    request.onsuccess = function request_onsuccess(event) {
+    request.onsuccess = function requestOnsuccess(event) {
       const cursor = event.target.result;
       if(!cursor) {
         // Either no entries, or iterated all. Do not advance. Allow the
@@ -251,7 +257,7 @@ function readerDbFindEntries(conn, predicate, limit) {
   });
 }
 
-function readerDbFindArchivableEntries(conn, predicate, limit) {
+export function readerDbFindArchivableEntries(conn, predicate, limit) {
   assert(isOpenDB(conn));
   assert(typeof predicate === 'function');
 
@@ -301,14 +307,14 @@ function readerDbFindArchivableEntries(conn, predicate, limit) {
   });
 }
 
-function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
+export function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
   assert(isOpenDB(conn));
 
   return new Promise(function executor(resolve, reject) {
     const entries = [];
     let counter = 0;
     let advanced = false;
-    const isLimited = limit > 0;
+    const limited = limit > 0;
     const tx = conn.transaction('entry');
     tx.oncomplete = function(event) {
       resolve(entries);
@@ -321,7 +327,7 @@ function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
     const index = store.index('archiveState-readState');
     const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
     const request = index.openCursor(keyPath);
-    request.onsuccess = function request_onsuccess(event) {
+    request.onsuccess = function requestOnsuccess(event) {
       const cursor = event.target.result;
       if(cursor) {
         if(offset && !advanced) {
@@ -329,7 +335,7 @@ function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
           cursor.advance(offset);
         } else {
           entries.push(cursor.value);
-          if(isLimited && ++counter < limit) {
+          if(limited && ++counter < limit) {
             cursor.continue();
           }
         }
@@ -338,7 +344,7 @@ function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
   });
 }
 
-function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
+export function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
   assert(isOpenDB(conn));
   assert(feedIsValidId(feedId));
   assert(Array.isArray(entryIds));
@@ -359,7 +365,7 @@ function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
 }
 
 // This does not validate the entry, it just puts it as is
-function readerDbPutEntry(conn, entry) {
+export function readerDbPutEntry(conn, entry) {
   assert(isOpenDB(conn));
   assert(entryIsEntry(entry));
 
@@ -372,7 +378,7 @@ function readerDbPutEntry(conn, entry) {
   });
 }
 
-function readerDbPutEntries(conn, entries) {
+export function readerDbPutEntries(conn, entries) {
   assert(isOpenDB(conn));
   assert(Array.isArray(entries));
 
@@ -398,7 +404,7 @@ function readerDbPutEntries(conn, entries) {
 // There are no side effects other than the database modification.
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
-function readerDbPutFeed(conn, feed) {
+export function readerDbPutFeed(conn, feed) {
   assert(isOpenDB(conn));
   assert(feedIsFeed(feed));
 
@@ -416,7 +422,7 @@ function readerDbPutFeed(conn, feed) {
 
 // @param conn {IDBDatabase}
 // @param ids {Array}
-function readerDbRemoveEntries(conn, ids) {
+export function readerDbRemoveEntries(conn, ids) {
   assert(isOpenDB(conn));
   assert(Array.isArray(ids));
 

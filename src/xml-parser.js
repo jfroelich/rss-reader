@@ -1,13 +1,14 @@
-'use strict';
+// xml-parsing module
 
-// import mime.js
+// TODO: the class is stupid, this should just export a single function, but wait till after
+// working transition to modules
 
-// TODO: the class is stupid, this should be one function in the global namespace
 
-class XMLParser {
+import {assert, ParserError} from "/src/rbl.js";
+import {mime} from "/src/mime.js";
 
-  // @throws {AssertionError}
-  // @throws {ParserError}
+export class XMLParser {
+
   static parse(xml) {
     assert(typeof xml === 'string');
     const parser = new DOMParser();

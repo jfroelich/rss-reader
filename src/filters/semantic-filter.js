@@ -1,9 +1,8 @@
-'use strict';
 
-// import filters/filter-helpers.js
-// import rbl.js
+import {unwrapElements} from "/src/filters/filter-helpers.js";
+import {assert} from "/src/rbl.js";
 
-function semanticFilter(doc) {
+export function semanticFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

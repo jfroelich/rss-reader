@@ -1,11 +1,10 @@
-'use strict';
 
-// import filters/filter-helpers.js
-// import rbl.js
+import {domUnwrap} from "/src/dom.js";
+import {assert, isPosInt} from "/src/rbl.js";
 
 // @param maxTextLength {Number} optional, if number of non-tag characters
 // within emphasis element is greater than this, then the element is filtered
-function emphasisFilter(doc, maxTextLength) {
+export function emphasisFilter(doc, maxTextLength) {
   assert(doc instanceof Document);
 
   if(typeof maxTextLength === 'undefined') {

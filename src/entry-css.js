@@ -1,11 +1,9 @@
-'use strict';
-
-// import dom.js
-// import rbl.js
+import {domFindCSSRule, domGetDefaultStylesheet} from "/src/dom.js";
+import {assert, parseInt10} from "/src/rbl.js";
 
 // Get the current settings from local storage and then modify the css rules
 // in the default style sheet
-function entryCSSOnChange(event) {
+export function entryCSSOnChange(event) {
   console.log('entryCSSOnChange');
   const sheet = domGetDefaultStylesheet();
   assert(sheet);
@@ -16,7 +14,7 @@ function entryCSSOnChange(event) {
 
 // Get the current settings from local storage and then create css rules and
 // append them to the default style sheet.
-function entryCSSInit() {
+export function entryCSSInit() {
   console.log('entryCSSInit');
   const sheet = domGetDefaultStylesheet();
   assert(sheet);

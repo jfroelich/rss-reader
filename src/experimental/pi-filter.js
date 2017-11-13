@@ -1,8 +1,7 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
-function procInstFilter(doc) {
+export function procInstFilter(doc) {
   assert(doc instanceof Document);
 
   // TODO: filter processing instruction.

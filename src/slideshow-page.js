@@ -1,29 +1,38 @@
-'use strict';
+// slideshow module
 
-// import article-title.js
-// import entry-css.js
-// import entry-mark-read.js
-// import extension.js
-// import rbl.js
-// import reader-db.js
+import {articleTitleFilterPublisher} from "/src/article-title.js";
+import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
+import {openTab} from "/src/extension.js";
+import {htmlEscape, htmlTruncate} from "/src/html.js";
+import {
+  assert,
+  closeDB,
+  formatDate,
+  isOpenDB,
+  parseInt10
+} from "/src/rbl.js";
+import {
+  entryIsValidId,
+  entryIsEntry,
+  entryPeekURL
+} from "/src/entry.js";
+import {readerDbOpen, readerDbGetUnarchivedUnreadEntries} from "/src/reader-db.js";
+import {readerStorageMarkRead} from "/src/reader-storage.js";
+import {isCanonicalURL} from "/src/url.js";
 
-// TODO: the slideshow prefix is dumb, this really is better with just an IIAFE. Nothing is
-// exported from the file, an the IIAFE is probably the best way to simulate c-static visibility
-// until modules.
+// Track the currently visible slide
+let currentSlide;
 
-
-let slideshowCurrentSlide = null;
-
-const slideshowSettingsChannel = new BroadcastChannel('settings');
-slideshowSettingsChannel.onmessage = function(event) {
+const settingsChannel = new BroadcastChannel('settings');
+settingsChannel.onmessage = function(event) {
   if(event.data === 'changed') {
     console.debug('settings change detected');
     entryCSSOnChange(event);
   }
 };
 
-const slideshowDBChannel = new BroadcastChannel('db');
-slideshowDBChannel.onmessage = function(event) {
+const dbChannel = new BroadcastChannel('db');
+dbChannel.onmessage = function(event) {
   if(event.data && event.data.type === 'entry-archived') {
     console.log('Received archive entry request message');
   } else if(event.data && event.data.type === 'entry-deleted') {
@@ -31,25 +40,25 @@ slideshowDBChannel.onmessage = function(event) {
   }
 };
 
-const slideshowPollChannel = new BroadcastChannel('poll');
-slideshowPollChannel.onmessage = function(event) {
+const pollChannel = new BroadcastChannel('poll');
+pollChannel.onmessage = function(event) {
   if(event.data === 'completed') {
     console.debug('Received poll completed message, maybe appending slides');
-    const count = slideshowCountUnreadSlides();
+    const count = countUnreadSlides();
     let conn; // leave undefined
     if(count < 2) {
-      slideshowAppendSlides(conn);
+      appendSlides(conn);
     }
   }
 };
 
-function slideshowSlideRemove(slideElement) {
+function removeSlide(slideElement) {
   assert(slideElement instanceof Element);
-  slideElement.removeEventListener('click', slideshowSlideOnclick);
+  slideElement.removeEventListener('click', onSlideClick);
   slideElement.remove();
 }
 
-async function slideshowSlideMarkRead(conn, slideElement) {
+async function markSlideRead(conn, slideElement) {
   assert(isOpenDB(conn));
 
   // This is a routine situation such as when navigating backward and therefore
@@ -73,10 +82,10 @@ async function slideshowSlideMarkRead(conn, slideElement) {
 }
 
 // TODO: visual feedback on error
-async function slideshowAppendSlides(conn) {
+async function appendSlides(conn) {
   const limit = 3;
   let entries = [];
-  const offset = slideshowCountUnreadSlides();
+  const offset = countUnreadSlides();
 
   try {
     conn = await readerDbOpen();
@@ -88,14 +97,14 @@ async function slideshowAppendSlides(conn) {
   }
 
   for(const entry of entries) {
-    slideshowAppendSlide(entry);
+    appendSlide(entry);
   }
 
   return entries.length;
 }
 
 // Add a new slide to the view.
-function slideshowAppendSlide(entry) {
+function appendSlide(entry) {
   assert(entryIsEntry(entry));
 
   const containerElement = document.getElementById('slideshow-container');
@@ -106,10 +115,10 @@ function slideshowAppendSlide(entry) {
   slideElement.setAttribute('entry', entry.id);
   slideElement.setAttribute('feed', entry.feed);
   slideElement.setAttribute('class','entry');
-  slideElement.addEventListener('click', slideshowSlideOnclick);
+  slideElement.addEventListener('click', onSlideClick);
   // Bind to slide, not window, because only slide scrolls
   // TODO: look into the new 'passive' flag for scroll listeners
-  slideElement.addEventListener('scroll', slideshowSlideOnscroll);
+  slideElement.addEventListener('scroll', onSlideScroll);
   slideElement.style.position = 'absolute';
 
   if(containerElement.childElementCount) {
@@ -125,25 +134,25 @@ function slideshowAppendSlide(entry) {
   slideElement.style.bottom = '0';
   slideElement.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
-  const titleElement = slideshowCreateArticleTitleElement(entry);
+  const titleElement = createArticleTitleElement(entry);
   slideElement.appendChild(titleElement);
-  const contentElement = slideshowCreateArticleContentElement(entry);
+  const contentElement = createArticleContentElement(entry);
   slideElement.appendChild(contentElement);
-  const sourceElement = slideshowCreateFeedSourceElement(entry);
+  const sourceElement = createFeedSourceElement(entry);
   slideElement.appendChild(sourceElement);
 
   containerElement.appendChild(slideElement);
 
   // TODO: this might be wrong if multiple unread slides are initially appended
-  // I need to ensure slideshowCurrentSlide is always set. Where do I do this?
+  // I need to ensure currentSlide is always set. Where do I do this?
   // TODO: clarify the above comment, I have no idea what I am talking about
   if(containerElement.childElementCount === 1) {
-    slideshowCurrentSlide = slideElement;
-    slideshowCurrentSlide.focus();
+    currentSlide = slideElement;
+    currentSlide.focus();
   }
 }
 
-function slideshowCreateArticleTitleElement(entry) {
+function createArticleTitleElement(entry) {
   const titleElement = document.createElement('a');
   titleElement.setAttribute('href', entryPeekURL(entry));
   titleElement.setAttribute('class', 'entry-title');
@@ -179,7 +188,7 @@ function slideshowCreateArticleTitleElement(entry) {
   return titleElement;
 }
 
-function slideshowCreateArticleContentElement(entry) {
+function createArticleContentElement(entry) {
   const contentElement = document.createElement('span');
   contentElement.setAttribute('class', 'entry-content');
   // <html><body> will be implicitly stripped
@@ -187,7 +196,7 @@ function slideshowCreateArticleContentElement(entry) {
   return contentElement;
 }
 
-function slideshowCreateFeedSourceElement(entry) {
+function createFeedSourceElement(entry) {
   const sourceElement = document.createElement('span');
   sourceElement.setAttribute('class', 'entry-source');
 
@@ -219,7 +228,7 @@ function slideshowCreateFeedSourceElement(entry) {
   return sourceElement;
 }
 
-async function slideshowSlideOnclick(event) {
+async function onSlideClick(event) {
   const CODE_LEFT_MOUSE_BUTTON = 1;
   if(event.which !== CODE_LEFT_MOUSE_BUTTON) {
     return true;
@@ -243,7 +252,7 @@ async function slideshowSlideOnclick(event) {
   let conn;
   try {
     conn = await readerDbOpen();
-    await slideshowSlideMarkRead(conn, slideshowCurrentSlide);
+    await markSlideRead(conn, currentSlide);
   } catch(error) {
     console.warn(error);
   } finally {
@@ -254,19 +263,19 @@ async function slideshowSlideOnclick(event) {
 }
 
 // TODO: visual feedback on error
-async function slideshowShowNextSlide() {
+async function showNextSlide() {
 
-  // slideshowCurrentSlide may be undefined
+  // currentSlide may be undefined
   // This isn't actually an error. For example, when initially viewing the
   // slideshow before subscribing when there are no feeds and entries, or
   // initially viewing the slideshow when all entries are read.
-  if(!slideshowCurrentSlide) {
+  if(!currentSlide) {
     console.warn('no current slide');
     return;
   }
 
-  const oldSlideElement = slideshowCurrentSlide;
-  const unreadSlideElementCount = slideshowCountUnreadSlides();
+  const oldSlideElement = currentSlide;
+  const unreadSlideElementCount = countUnreadSlides();
   let slideAppendCount = 0;
   let conn;
 
@@ -275,22 +284,22 @@ async function slideshowShowNextSlide() {
 
     // Conditionally append more slides
     if(unreadSlideElementCount < 2) {
-      slideAppendCount = await slideshowAppendSlides(conn);
+      slideAppendCount = await appendSlides(conn);
     }
 
-    if(slideshowCurrentSlide.nextSibling) {
-      slideshowCurrentSlide.style.left = '-100%';
-      slideshowCurrentSlide.style.right = '100%';
-      slideshowCurrentSlide.nextSibling.style.left = '0px';
-      slideshowCurrentSlide.nextSibling.style.right = '0px';
-      slideshowCurrentSlide.scrollTop = 0;
-      slideshowCurrentSlide = slideshowCurrentSlide.nextSibling;
+    if(currentSlide.nextSibling) {
+      currentSlide.style.left = '-100%';
+      currentSlide.style.right = '100%';
+      currentSlide.nextSibling.style.left = '0px';
+      currentSlide.nextSibling.style.right = '0px';
+      currentSlide.scrollTop = 0;
+      currentSlide = currentSlide.nextSibling;
 
       // Change the active element to the new current slide, so that scrolling
       // with keys works
-      slideshowCurrentSlide.focus();
+      currentSlide.focus();
 
-      await slideshowSlideMarkRead(conn, oldSlideElement);
+      await markSlideRead(conn, oldSlideElement);
     }
   } catch(error) {
     console.warn(error);
@@ -299,50 +308,51 @@ async function slideshowShowNextSlide() {
   }
 
   if(slideAppendCount > 0) {
-    slideshowCleanupOnAppend();
+    cleanupOnAppend();
   }
 }
 
-function slideshowCleanupOnAppend() {
-  assert(slideshowCurrentSlide);
+function cleanupOnAppend() {
+  assert(currentSlide);
   const maxSlideCount = 6;
   const containerElement = document.getElementById('slideshow-container');
   while(containerElement.childElementCount > maxSlideCount && containerElement.firstChild !==
-    slideshowCurrentSlide) {
-    slideshowSlideRemove(containerElement.firstChild);
+    currentSlide) {
+    removeSlide(containerElement.firstChild);
   }
 }
 
 // Move the current slide out of view to the right, and move the previous
 // slide into view, and then update the current slide.
-function slideshowShowPreviousSlide() {
+function showPreviousSlide() {
   // TODO: when is this condition ever true? Maybe this should be an assert?
-  if(!slideshowCurrentSlide) {
+  if(!currentSlide) {
     return;
   }
 
-  const prevSlideElement = slideshowCurrentSlide.previousSibling;
+  const prevSlideElement = currentSlide.previousSibling;
   if(!prevSlideElement) {
     return;
   }
 
-  slideshowCurrentSlide.style.left = '100%';
-  slideshowCurrentSlide.style.right = '-100%';
+  currentSlide.style.left = '100%';
+  currentSlide.style.right = '-100%';
   prevSlideElement.style.left = '0';
   prevSlideElement.style.right = '0';
-  slideshowCurrentSlide = prevSlideElement;
+  currentSlide = prevSlideElement;
   // Change the active element to the new current slide, so that scrolling
   // using keyboard keys still works
-  slideshowCurrentSlide.focus();
+  currentSlide.focus();
 }
 
-function slideshowCountUnreadSlides() {
+function countUnreadSlides() {
   const slides = document.body.querySelectorAll('div[entry]:not([read])');
   return slides.length;
 }
 
 let keydownTimerId = null;
-window.addEventListener('keydown', function slideshowOnKeyDown(event) {
+
+function onKeyDown(event) {
   // Translate space from page down to show next slide
   const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
   const code = event.keyCode;
@@ -353,7 +363,7 @@ window.addEventListener('keydown', function slideshowOnKeyDown(event) {
   case SPACE: {
     event.preventDefault();
     cancelIdleCallback(keydownTimerId);
-    keydownTimerId = requestIdleCallback(slideshowShowNextSlide);
+    keydownTimerId = requestIdleCallback(showNextSlide);
 
     break;
   }
@@ -362,18 +372,20 @@ window.addEventListener('keydown', function slideshowOnKeyDown(event) {
   case P: {
     event.preventDefault();
     cancelIdleCallback(keydownTimerId);
-    keydownTimerId = requestIdleCallback(slideshowShowPreviousSlide);
+    keydownTimerId = requestIdleCallback(showPreviousSlide);
     break;
   }
   default:
     break;
   }
 
-});
+}
+
+window.addEventListener('keydown', onKeyDown);
 
 // Override built in keyboard scrolling
-let slideshowScrollCallbackHandle;
-function slideshowSlideOnscroll(event) {
+let scrollCallbackHandle;
+function onSlideScroll(event) {
   const DOWN = 40, UP = 38;
   function onIdleCallback() {
     const delta = event.keyCode === UP ? -200 : 200;
@@ -389,19 +401,21 @@ function slideshowSlideOnscroll(event) {
   }
 
   event.preventDefault();
-  cancelIdleCallback(slideshowScrollCallbackHandle);
-  slideshowScrollCallbackHandle = requestIdleCallback(onIdleCallback);
+  cancelIdleCallback(scrollCallbackHandle);
+  scrollCallbackHandle = requestIdleCallback(onIdleCallback);
 }
 
-async function slideshowOnDOMContentLoaded(event) {
-  console.debug('slideshowOnDOMContentLoaded');
+// TODO: waiting for dom content loaded in a module is probably not needed?
+
+async function onDOMContentLoaded(event) {
+  console.debug('onDOMContentLoaded');
   entryCSSInit();
   let conn;
   try {
-    await slideshowAppendSlides(conn);
+    await appendSlides(conn);
   } catch(error) {
     console.warn(error);
   }
 }
 
-document.addEventListener('DOMContentLoaded', slideshowOnDOMContentLoaded, {once: true});
+document.addEventListener('DOMContentLoaded', onDOMContentLoaded, {once: true});

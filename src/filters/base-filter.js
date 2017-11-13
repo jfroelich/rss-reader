@@ -1,8 +1,7 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
-function baseFilter(doc) {
+export function baseFilter(doc) {
   assert(doc instanceof Document);
   const bases = doc.querySelectorAll('base');
   for(const base of bases) {

@@ -1,16 +1,20 @@
-'use strict';
+// This is a wrapper around FeedParser that customizes the parsed feed format to the app's feed
+// format.
 
-// import entry.js
-// import feed.js
-// import feed-parse.js
-// import rbl.js
-// import url.js
+// TODO: after module transition rename to parse-feed and put in app folder or something like that
+// TODO: after module transition rename non-exported globals
+
+import {entryAppendURL, entryHasURL, entryIsEntry} from "/src/entry.js";
+import {feedAppendURL} from "/src/feed.js";
+import {FeedParser} from "/src/feed-parser.js";
+import {assert} from "/src/rbl.js";
+import {isCanonicalURL} from "/src/url.js";
+
 
 // Parses an xml input string representing a feed. Returns a result with a
 // feed object and an array of entries.
-// @throws AssertionError
 // @throws ParserError
-function readerParseFeed(xmlString, requestURL, responseURL, lastModDate, processEntries) {
+export function readerParseFeed(xmlString, requestURL, responseURL, lastModDate, processEntries) {
   const result = {feed: undefined, entries: []};
   const parser = new FeedParser();
   const parseResult = parser.parseFromString(xmlString);

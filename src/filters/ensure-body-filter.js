@@ -1,8 +1,7 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
-function ensureBodyFilter(doc) {
+export function ensureBodyFilter(doc) {
   assert(doc instanceof Document);
   if(doc.body) {
     return;

@@ -1,8 +1,11 @@
-'use strict';
 
-// import rbl.js
+import {mime} from "/src/mime.js";
+import {assert, ParserError} from "/src/rbl.js";
 
-class HTMLParser {
+
+// TODO: the class is dumb now with modules, just export a function instead
+
+export class HTMLParser {
 
   // When html is a fragment, it will be inserted into a new document
   // using a default template provided by the browser, that includes a document

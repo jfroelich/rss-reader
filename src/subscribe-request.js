@@ -1,24 +1,46 @@
-'use strict';
-
-// import extension.js
-// import favicon-cache.js
-// import favicon-lookup.js
-// import feed.js
-// import fetch.js
-// import fetch-policy.js
-// import rbl.js
-// import reader-db.js
-// import reader-badge.js
-// import reader-parse-feed.js
-// import reader-storage.js
+// Class for subscribing to a new feed
 
 // TODO: write member functions out of line so it is more readable, I hate this class syntax, it
 // is too symptomatic of trying to overly condense things to the point where intent is obfuscated
+// TODO: now that modules are available, this class barely serves any purpose. Just export a single
+// function or two, but do this after successful transition to modules
+
+import {showNotification} from "/src/extension.js";
+import {FaviconCache} from "/src/favicon-cache.js";
+import {FaviconLookup} from "/src/favicon-lookup.js";
+import {
+  feedCreateIconLookupURL,
+  feedHasURL,
+  feedIsFeed,
+  feedIsValidId,
+  feedMerge,
+  feedPeekURL
+} from "/src/feed.js";
+import {fetchFeed} from "/src/fetch.js";
+import {FetchPolicy} from "/src/fetch-policy.js";
+import {readerBadgeUpdate} from "/src/reader-badge.js";
+import {
+  assert,
+  closeDB,
+  isOpenDB,
+  isUncheckedError,
+  PermissionsError
+} from "/src/rbl.js";
+
+import {
+  readerDbOpen,
+  readerDbFindFeedIdByURL,
+  readerDbFindEntryIdsByFeedId,
+  readerDbRemoveFeedAndEntries,
+  ReaderDbConstraintError
+} from "/src/reader-db.js";
+
+import {readerParseFeed} from "/src/reader-parse-feed.js";
+import {readerStoragePutFeed} from "/src/reader-storage.js";
 
 
-class SubscribeRequest {
+export class SubscribeRequest {
   constructor() {
-
     this.iconCache = undefined;
     this.readerConn = undefined;
     this.timeoutMs = 2000;
@@ -127,10 +149,10 @@ class SubscribeRequest {
   }
 
   // TODO: deprecate
+  // TODO: use promiseEvery?
   // Concurrently subscribe to each feed
   subscribeAll(feeds) {
     const promises = feeds.map(this.subscribe);
-    // TODO: use promiseEvery?
     return Promise.all(promises);
   }
 

@@ -1,4 +1,3 @@
-'use strict';
 
 // import favicon-cache.js
 // import favicon-lookup.js

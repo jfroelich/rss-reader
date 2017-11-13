@@ -1,8 +1,5 @@
-'use strict';
 
-// import mime.js
-
-(function(exports) {
+import {mime} from "/src/mime.js";
 
 async function registerDWLinkFilterRule() {
   if(localStorage.DW_LINK_RULE_ID)
@@ -63,9 +60,3 @@ async function unregisterDWLinkFilterRule() {
     console.debug('Removed %s dw rules', rules.length);
   }
 }
-
-
-exports.registerDWLinkFilterRule = registerDWLinkFilterRule;
-exports.unregisterDWLinkFilterRule = unregisterDWLinkFilterRule;
-
-}(this));

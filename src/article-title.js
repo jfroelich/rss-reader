@@ -1,9 +1,6 @@
-'use strict';
+import {assert, tokenize} from "/src/rbl.js";
 
-// import rbl.js
-
-// @throws AssertionError
-function articleTitleFilterPublisher(title) {
+export function articleTitleFilterPublisher(title) {
   assert(typeof title === 'string');
 
   // TODO: tolerate alternate whitespace expressions

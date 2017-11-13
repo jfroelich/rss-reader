@@ -1,10 +1,9 @@
-'use strict';
 
-// import filters/filter-helpers.js
-// import rbl.js
-// import url.js
+import {domUnwrap} from "/src/dom.js";
+import {assert} from "/src/rbl.js";
+import {hasScriptProtocol} from "/src/url.js";
 
-function scriptAnchorFilter(doc) {
+export function scriptAnchorFilter(doc) {
   assert(doc instanceof Document);
 
   // Restrict analysis to body descendants

@@ -1,9 +1,8 @@
-'use strict';
 
-// import filters/filter-helpers.js
-// import rbl.js
+import {domUnwrap} from "/src/dom.js";
+import {assert} from "/src/rbl.js";
 
-function noscriptFilter(doc) {
+export function noscriptFilter(doc) {
   assert(doc instanceof Document);
 
   const noscripts = doc.querySelectorAll('noscript');

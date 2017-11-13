@@ -1,10 +1,18 @@
 'use strict';
 
-// import poll/poll.js
-// import favicon-cache.js
-// import favicon-lookup.js
-// import reader-db.js
-// import reader-storage.js
+import {pollFeeds, PollFeedsContext} from "/src/poll/poll-feeds.js";
+import {FaviconCache} from "/src/favicon-cache.js";
+import {FaviconLookup} from "/src/favicon-lookup.js";
+import {closeDB} from "/src/rbl.js";
+import {readerDbOpen} from "/src/reader-db.js";
+import {
+  readerStorageArchiveEntries,
+  readerStorageRemoveLostEntries,
+  readerStorageRemoveOrphans,
+  readerStorageRefreshFeedIcons
+} from "/src/reader-storage.js";
+
+
 
 async function alarmsOnArchiveAlarm() {
   let conn, maxAgeMs;
@@ -95,8 +103,8 @@ async function alarmsOnRefreshFeedIconsAlarm() {
   }
 }
 
-function alarmsOnWakeup(alarm) {
-  console.debug('alarmsOnWakeup', alarm.name);
+function onWakeup(alarm) {
+  console.debug('onWakeup', alarm.name);
 
   switch(alarm.name) {
   case 'archive':
@@ -123,7 +131,7 @@ function alarmsOnWakeup(alarm) {
   }
 }
 
-function alarmsRegisterAll() {
+function registerAlarms() {
   chrome.alarms.create('archive', {periodInMinutes: 60 * 12});
   chrome.alarms.create('poll', {periodInMinutes: 60});
   chrome.alarms.create('remove-entries-missing-urls', {periodInMinutes: 60 * 24 * 7});
@@ -132,14 +140,17 @@ function alarmsRegisterAll() {
   chrome.alarms.create('compact-favicon-db', {periodInMinutes: 60 * 24 * 7});
 }
 
-chrome.alarms.onAlarm.addListener(alarmsOnWakeup);
+chrome.alarms.onAlarm.addListener(onWakeup);
 
-function alarmsOnDOMContentLoaded(event) {
-  console.debug('alarmsOnDOMContentLoaded');
-  alarmsRegisterAll();
+function onDOMContentLoaded(event) {
+  console.debug('onDOMContentLoaded');
+  registerAlarms();
 }
 
-// Defer registration until dom content loaded to allow alarmsRegisterAll
+// TODO: this deferring no longer makes sense in a module context. But I am not going to change
+// the code yet until modules are working.
+
+// Defer registration until dom content loaded to allow registerAlarms
 // to use external dependencies that may not yet be loaded in script loading
 // order.
-document.addEventListener('DOMContentLoaded', alarmsOnDOMContentLoaded, {once: true});
+document.addEventListener('DOMContentLoaded', onDOMContentLoaded, {once: true});

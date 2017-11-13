@@ -1,4 +1,3 @@
-'use strict';
 
 // import rbl.js
 // import reader-storage.js

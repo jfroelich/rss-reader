@@ -1,9 +1,8 @@
-'use strict';
 
-// import dom.js
-// import rbl.js
+import {domImageHasValidSource, domImageHasSrcset} from "/src/dom.js";
+import {assert} from "/src/rbl.js";
 
-function responsiveImageFilter(doc) {
+export function responsiveImageFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
@@ -13,12 +12,12 @@ function responsiveImageFilter(doc) {
   const images = doc.body.getElementsByTagName('img');
   for(const image of images) {
     if(!domImageHasValidSource(image) && domImageHasSrcset(image)) {
-      responsiveImageFilterImage(image);
+      filterImage(image);
     }
   }
 }
 
-function responsiveImageFilterImage(image) {
+function filterImage(image) {
   const imageSrcset = image.getAttribute('srcset');
   const descriptors = domSrcsetParseFromString(imageSrcset);
 

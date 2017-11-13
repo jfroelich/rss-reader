@@ -1,17 +1,21 @@
-'use strict';
+// Module for exporting feeds to opml file
 
-// import opml-document.js
-// import opml-outline.js
-// import rbl.js
-// import xml-utils.js
+import {assert} from "/src/rbl.js";
+import {
+  opmlDocumentAppendOutlineObject,
+  opmlDocumentCreate,
+  opmlDocumentSetTitle
+} from "/src/opml-document.js";
+
+import {opmlOutlineFromFeed} from "/src/opml-outline.js";
+import {XMLUtils} from "/src/xml-utils.js";
 
 // Triggers the download of an OPML-formatted file containing the given feeds
 // @param feeds {Array}
 // @param title {String} optional
 // @param fileName {String} optional
-// @throws AssertionError
 // @throws Error opmlDocumentSetTitle head element not found error
-function readerExportFeeds(feeds, title, fileName) {
+export function readerExportFeeds(feeds, title, fileName) {
   assert(Array.isArray(feeds));
 
   const doc = opmlDocumentCreate();

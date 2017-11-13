@@ -1,9 +1,8 @@
-'use strict';
 
-// import filters/filter-helpers.js
-// import rbl.js
+import {domUnwrap} from "/src/dom.js";
+import {assert} from "/src/rbl.js";
 
-function figureFilter(doc) {
+export function figureFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

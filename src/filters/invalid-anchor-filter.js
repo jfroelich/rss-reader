@@ -1,8 +1,7 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
-function invalidAnchorFilter(doc) {
+export function invalidAnchorFilter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {
     return;
@@ -10,13 +9,13 @@ function invalidAnchorFilter(doc) {
 
   const anchors = doc.body.querySelectorAll('a');
   for(const anchor of anchors) {
-    if(invalidAnchorFilterIsInvalid(anchor)) {
+    if(isInvalidAnchor(anchor)) {
       anchor.remove();
     }
   }
 }
 
-function invalidAnchorFilterIsInvalid(anchor) {
+function isInvalidAnchor(anchor) {
   const hrefValue = anchor.getAttribute('href');
   return hrefValue && /^\s*https?:\/\/#/i.test(hrefValue);
 }

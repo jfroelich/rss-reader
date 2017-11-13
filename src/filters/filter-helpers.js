@@ -1,9 +1,8 @@
-'use strict';
 
-// import dom.js
-// import rbl.js
+import {domRename, domUnwrap} from "/src/dom.js";
+import {assert} from "/src/rbl.js";
 
-function unwrapElements(ancestorElement, selector) {
+export function unwrapElements(ancestorElement, selector) {
   assert(ancestorElement instanceof Element);
   assert(typeof selector === 'string');
   const elements = ancestorElement.querySelectorAll(selector);
@@ -12,7 +11,7 @@ function unwrapElements(ancestorElement, selector) {
   }
 }
 
-function renameElements(ancestorElement, oldName, newName, copyAttributes) {
+export function renameElements(ancestorElement, oldName, newName, copyAttributes) {
   assert(typeof oldName === 'string');
   assert(typeof newName === 'string');
 

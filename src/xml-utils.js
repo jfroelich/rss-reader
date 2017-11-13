@@ -1,14 +1,13 @@
-'use strict';
+// xml utilities module
 
-// import mime.js
-// import rbl.js
+// TODO: the class is stupid, this should just be two functions, but wait till after working
+// transition to modules
+// TODO: I don't think toString even needs to be exported?
 
-// TODO: the class is stupid, this should just be two functions in the global namespace
+import {mime} from "/src/mime.js";
+import {assert} from "/src/rbl.js";
 
-
-// NOTE: ideally this would be XMLDocument with methods, but XMLDocument is a
-// builtin object, and I don't want to deal with the complexity
-class XMLUtils {
+export class XMLUtils {
   static toString(doc) {
     assert(doc instanceof Document);
     const serializer = new XMLSerializer();

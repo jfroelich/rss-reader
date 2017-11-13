@@ -1,8 +1,7 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
-function commentFilter(doc) {
+export function commentFilter(doc) {
   assert(doc instanceof Document);
   const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_COMMENT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {

@@ -1,24 +1,27 @@
-'use strict';
+// Utilities for working with app feeds
 
-// import favicon-cache.js
-// import favicon-lookup.js
-// import html.js
-// import rbl.js
-// import url.js
+import {htmlReplaceTags, htmlTruncate} from "/src/html.js";
+import {
+  assert,
+  condenseWhitespace,
+  filterControls,
+  isPosInt
+} from "/src/rbl.js";
+import {isCanonicalURL} from "/src/url.js";
 
-function feedCreate() {
+export function feedCreate() {
   return {};
 }
 
-function feedIsFeed(feed) {
+export function feedIsFeed(feed) {
   return typeof feed === 'object';
 }
 
-function feedIsValidId(id) {
+export function feedIsValidId(id) {
   return isPosInt(id);
 }
 
-function feedHasURL(feed) {
+export function feedHasURL(feed) {
   assert(feedIsFeed(feed));
   return feed.urls && feed.urls.length;
 }
@@ -26,7 +29,7 @@ function feedHasURL(feed) {
 // Returns the last url in the feed's url list as a string
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
-function feedPeekURL(feed) {
+export function feedPeekURL(feed) {
   assert(feed && feed.urls && feed.urls.length);
   return feed.urls[feed.urls.length - 1];
 }
@@ -34,7 +37,7 @@ function feedPeekURL(feed) {
 // Appends a url to the feed's internal list. Lazily creates the list if needed
 // @param feed {Object} a feed object
 // @param urlString {String}
-function feedAppendURL(feed, urlString) {
+export function feedAppendURL(feed, urlString) {
   feed.urls = feed.urls || [];
   const urlObject = new URL(urlString);
   const normalURLString = urlObject.href;
@@ -48,7 +51,7 @@ function feedAppendURL(feed, urlString) {
 
 // Returns the url used to lookup a feed's favicon
 // @returns {URL}
-function feedCreateIconLookupURL(feed) {
+export function feedCreateIconLookupURL(feed) {
   assert(feedIsFeed(feed));
 
   // First, prefer the link, as this is the url of the webpage that is
@@ -72,6 +75,7 @@ function feedCreateIconLookupURL(feed) {
 }
 
 
+// This is experimental and not in use, so not exported at the moment
 // TODO: include this in places where sanitize is called
 // TODO: assert required properties are present
 // TODO: assert type, if set, is one of the valid types
@@ -94,9 +98,11 @@ function feedHasValidProperties(feed) {
   return true;
 }
 
+// TODO: rename to sanitize after module transition
+
 // Returns a shallow copy of the input feed with sanitized properties
 // @throws AssertionError, ParserError
-function feedSanitize(feed, titleMaxLength, descMaxLength) {
+export function feedSanitize(feed, titleMaxLength, descMaxLength) {
   assert(feedIsFeed(feed));
 
   const DEFAULT_TITLE_MAX_LEN = 1024;
@@ -139,11 +145,13 @@ function feedSanitize(feed, titleMaxLength, descMaxLength) {
   return outputFeed;
 }
 
+// TODO: rename to merge after module transition
+
 // Returns a new object that results from merging the old feed with the new
 // feed. Fields from the new feed take precedence, except for urls, which are
 // merged to generate a distinct ordered set of oldest to newest url. Impure
 // because of copying by reference.
-function feedMerge(oldFeed, newFeed) {
+export function feedMerge(oldFeed, newFeed) {
   const mergedFeed = Object.assign(feedCreate(), oldFeed, newFeed);
 
   // After assignment, the merged feed has only the urls from the new feed.

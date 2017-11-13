@@ -1,9 +1,8 @@
-'use strict';
 
-// import dom.js
-// import rbl.js
+import {domRemoveImage} from "/src/dom.js";
+import {assert} from "/src/rbl.js";
 
-function sourcelessImageFilter(doc) {
+export function sourcelessImageFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
@@ -12,13 +11,13 @@ function sourcelessImageFilter(doc) {
 
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
-    if(sourcelessImageFilterIsSourceless(image)) {
+    if(isSourceless(image)) {
       domRemoveImage(image);
     }
   }
 }
 
 // TODO: delegate to dom.js function, maybe inverse
-function sourcelessImageFilterIsSourceless(image) {
+function isSourceless(image) {
   return !image.hasAttribute('src') && !image.hasAttribute('srcset');
 }

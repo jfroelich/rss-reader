@@ -1,9 +1,8 @@
-'use strict';
 
-// import dom.js
+import {domFade} from "/src/dom.js";
 
 // TODO: instead of removing and re-adding, reset and reuse
-function optionsPageSubscriptionMonitorShow() {
+export function optionsPageSubscriptionMonitorShow() {
   let monitorElement = document.getElementById('submon');
   if(monitorElement) {
     monitorElement.remove();
@@ -20,14 +19,14 @@ function optionsPageSubscriptionMonitorShow() {
 }
 
 
-function optionsPageSubscriptionMonitorAppendMessage(message) {
+export function optionsPageSubscriptionMonitorAppendMessage(message) {
   const messageElement = document.createElement('p');
   messageElement.textContent = message;
   const monitorElement = document.getElementById('submon');
   monitorElement.appendChild(messageElement);
 }
 
-async function optionsPageSubscriptionMonitorHide() {
+export async function optionsPageSubscriptionMonitorHide() {
   const monitorElement = document.getElementById('submon');
   const duration = 2, delay = 1;
   await domFade(monitorElement, duration, delay);

@@ -1,8 +1,7 @@
-'use strict';
 
-// import dom.js
-// import rbl.js
-// import url.js
+import {domSrcsetParseFromString, domSrcsetSerialize} from "/src/dom.js";
+import {assert} from "/src/rbl.js";
+import {resolveURL} from "/src/url.js";
 
 const CANONICAL_URL_FILTER_MAP = {
   a: 'href',
@@ -35,7 +34,7 @@ const CANONICAL_URL_FILTER_MAP = {
 // @param doc {Document}
 // @param baseURL {URL}
 // @throws AssertionError
-function canonicalURLFilter(doc, baseURL) {
+export function canonicalURLFilter(doc, baseURL) {
   assert(doc instanceof Document);
   assert(baseURL instanceof URL);
 

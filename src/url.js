@@ -1,7 +1,8 @@
-'use strict';
+// Utilities for working with URL objects and url-like strings
 
-// import mime.js
-// import rbl.js
+import {mime} from "/src/mime.js";
+import {assert, isAlphanumeric, parseInt10} from "/src/rbl.js";
+
 
 // Returns true if otherURL is 'external' to the documentURL. Inaccurate and
 // insecure.
@@ -9,7 +10,7 @@
 // @param otherURL {URL}
 // @throws AssertionError
 // @return {Boolean}
-function isExternalURL(documentURL, otherURL) {
+export function isExternalURL(documentURL, otherURL) {
   const docDomain = urlGetUpperDomain(documentURL);
   const otherDomain = urlGetUpperDomain(otherURL);
   return docDomain !== otherDomain;
@@ -86,7 +87,7 @@ function isIPv6Address(hostname) {
 // '//'.
 // @param url {String} input url
 // @returns {Boolean} true if the url is canonical, otherwise false
-function isCanonicalURL(url) {
+export function isCanonicalURL(url) {
   assert(typeof url === 'string');
   return /^\s*[a-z]+:/i.test(url);
 }
@@ -98,8 +99,9 @@ const URL_MIN_SCRIPT_LENGTH = 'javascript:'.length;
 // the case of bad input.
 // @param url {String}
 // @returns {Boolean}
-function hasScriptProtocol(url) {
-  return typeof url === 'string' && url.length > URL_MIN_SCRIPT_LENGTH &&
+export function hasScriptProtocol(url) {
+  return typeof url === 'string' &&
+    url.length > URL_MIN_SCRIPT_LENGTH &&
     /^\s*javascript:/i.test(url);
 }
 
@@ -107,7 +109,7 @@ function hasScriptProtocol(url) {
 // @param url {String}
 // @param baseURL {URL}
 // @returns {URL} the absolute url, or undefined if an error occurred
-function resolveURL(url, baseURL) {
+export function resolveURL(url, baseURL) {
   assert(typeof url === 'string');
   assert(baseURL instanceof URL);
 
@@ -119,9 +121,11 @@ function resolveURL(url, baseURL) {
   return canonicalURL;
 }
 
+// TODO: is this still in use? should probably deprecate and have caller work with a URL
+// object explicitly
 // @param url {String}
 // @returns {String}
-function urlGetHostname(url) {
+export function urlGetHostname(url) {
   assert(typeof url === 'string');
   try {
     const urlObject = new URL(url);
@@ -138,7 +142,7 @@ const URL_MIN_LENGTH_INCLUSIVE = 1;
 // invalid, even though some slip through, and not unintentionally rule out good urls.
 // @param url {String}
 // @returns {Boolean}
-function isValidURL(url) {
+export function isValidURL(url) {
   if(typeof url === 'string') {
     url = url.trim();
     if(url.length < URL_MAX_LENGTH_EXCLUSIVE && url.length >= URL_MIN_LENGTH_INCLUSIVE) {
@@ -147,6 +151,9 @@ function isValidURL(url) {
   }
   return false;
 }
+
+const URL_PATH_WITH_EXTENSION_MIN_LENGTH = 3; // '/.b'
+const URL_EXTENSION_MAX_LENGTH = 255; // excluding '.'
 
 // @param url {URL}
 // @returns {String}
@@ -158,8 +165,6 @@ function getExtensionFromURL(url) {
   // a trailing slash before the file name, which is not alphanumeric. If there is both a dot in
   // a directory and a dot in the file name, the dot in the directory is not the last dot.
 
-  const URL_PATH_WITH_EXTENSION_MIN_LENGTH = 3; // '/.b'
-  const URL_EXTENSION_MAX_LENGTH = 255; // excluding '.'
   if(url.pathname.length >= URL_PATH_WITH_EXTENSION_MIN_LENGTH) {
     const lastDotPos = url.pathname.lastIndexOf('.');
     if((lastDotPos >= 0) && (lastDotPos + 1 < url.pathname.length)) {
@@ -174,7 +179,7 @@ function getExtensionFromURL(url) {
 // Return true if url probably represents a binary resource
 // @param url {URL}
 // @throws {AssertionError}
-function sniffIsBinaryURL(url) {
+export function sniffIsBinaryURL(url) {
   assert(url instanceof URL);
 
   if(url.protocol === 'data:') {
@@ -226,13 +231,13 @@ function findMimeTypeInDataURL(dataURL) {
 }
 
 // Returns a file name without its extension (and without the '.')
-function filterExtensionFromFileName(fileName) {
+export function filterExtensionFromFileName(fileName) {
   assert(typeof fileName === 'string');
   const index = fileName.lastIndexOf('.');
   return index < 0 ? fileName : fileName.substring(0, index);
 }
 
-function getFileNameFromURL(url) {
+export function getFileNameFromURL(url) {
   assert(url instanceof URL);
   const index = url.pathname.lastIndexOf('/');
   if((index > -1) && (index + 1 < url.pathname.length)) {
@@ -245,7 +250,7 @@ function getFileNameFromURL(url) {
 // @param url2 {URL}
 // @throws {AssertionError} if either parameter is not a URL
 // @return {Boolean} true if equal
-function compareURLsWithoutHash(url1, url2) {
+export function compareURLsWithoutHash(url1, url2) {
   assert(url1 instanceof URL);
   assert(url2 instanceof URL);
 

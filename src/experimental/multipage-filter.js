@@ -1,9 +1,8 @@
-'use strict';
 
-// import fetch.js
-// import mime.js
-// import pagination.js
-// import rbl.js
+import {fetchHTML} from "/src/fetch.js";
+import {paginationFindAnchors} from "/src/pagination.js";
+import {assert} from "/src/rbl.js";
+
 
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a
@@ -12,7 +11,7 @@
 // @param doc {HTMLDocument} the document
 // @param location {String} url of the document
 // @param timeoutMs {Number} timeout per page fetch
-async function multipageFilter(doc, location, timeoutMs) {
+export async function multipageFilter(doc, location, timeoutMs) {
   assert(doc instanceof Document);
   const lcaMaxDistance = 3;
   const anchors = paginationFindAnchors(doc, location, lcaMaxDistance);

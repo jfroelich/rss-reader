@@ -1,6 +1,5 @@
-'use strict';
 
-const OPTIONS_PAGE_FONTS = [
+export const OPTIONS_PAGE_FONTS = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
   'Calibri',

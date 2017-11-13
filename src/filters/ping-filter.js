@@ -1,8 +1,7 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
-function pingFilter(doc) {
+export function pingFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

@@ -1,10 +1,9 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
 // Relocates certain misnested elements
 // @throws AssertionError
-function adoptionAgencyFilter(doc) {
+export function adoptionAgencyFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

@@ -1,4 +1,3 @@
-'use strict';
 
 /*
 
@@ -53,7 +52,7 @@ parseHTMLFragment and parseHTMLDocument should be two functions?
 
 */
 
-class HTMLParser2 {
+export class HTMLParser2 {
   static parse(html) {
     // Adapted from https://stackoverflow.com/questions/10585029
     const template = document.createElement('template');

@@ -1,8 +1,9 @@
-'use strict';
 
-// import xml-parser.js
+import {XMLParser} from "/src/xml-parser.js";
 
-class OPMLParser {
+// TODO: the class is dumb now with modules, just export a function
+
+export class OPMLParser {
 
   // @param xml {String}
   // @throws {AssertionError}

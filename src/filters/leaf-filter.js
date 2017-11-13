@@ -1,14 +1,12 @@
-'use strict';
 
-// import dom.js
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
 const LEAF_FILTER_EXCEPTION_ELEMENTS = [
   'area', 'audio', 'base', 'col', 'command', 'br', 'canvas', 'col', 'hr', 'iframe', 'img', 'input',
   'keygen', 'meta', 'nobr', 'param', 'path', 'source', 'sbg', 'textarea', 'track', 'video', 'wbr'
 ];
 
-function leafFilter(doc) {
+export function leafFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
@@ -25,10 +23,10 @@ function leafFilter(doc) {
 }
 
 // Recursive
-function leafFilterIsLeaf(node) {
+export function leafFilterIsLeaf(node) {
   switch(node.nodeType) {
   case Node.ELEMENT_NODE: {
-    if(leafFilterIsException(node)) {
+    if(isExceptionalElement(node)) {
       return false;
     }
 
@@ -51,6 +49,6 @@ function leafFilterIsLeaf(node) {
   return true;
 }
 
-function leafFilterIsException(element) {
+function isExceptionalElement(element) {
   return LEAF_FILTER_EXCEPTION_ELEMENTS.includes(element.localName);
 }

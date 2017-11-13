@@ -1,20 +1,58 @@
-'use strict';
+// app storage module, mostly a wrapper around reader-db that integrates other modules
 
-// import entry.js
-// import extension.js
-// import favicon-cache.js
-// import favicon-lookup.js
-// import feed.js
-// import rbl.js
-// import reader-badge.js
-// import reader-db.js
+import {
+  entryHasURL,
+  entryIsEntry,
+  entryIsValidId,
+  entryPeekURL,
+  entrySanitize,
+  ENTRY_STATE_READ,
+  ENTRY_STATE_UNARCHIVED,
+  ENTRY_STATE_UNREAD
+} from "/src/entry.js";
+
+import {FaviconCache} from "/src/favicon-cache.js";
+import {FaviconLookup} from "/src/favicon-lookup.js";
+
+import {
+  feedCreateIconLookupURL,
+  feedHasURL,
+  feedIsFeed,
+  feedIsValidId,
+  feedSanitize
+} from "/src/feed.js";
+
+import {
+  assert,
+  filterEmptyProps,
+  isOpenDB,
+  isPosInt,
+  isUncheckedError,
+  sizeof
+} from "/src/rbl.js";
+
+import {readerBadgeUpdate} from "/src/reader-badge.js";
+
+import {
+  readerDbFindArchivableEntries,
+  readerDbFindEntryById,
+  readerDbFindEntries,
+  readerDbGetFeeds,
+  readerDbGetFeedIds,
+  readerDbPutEntry,
+  readerDbPutFeed,
+  readerDbRemoveEntries,
+  ReaderDbNotFoundError,
+  ReaderDbInvalidStateError
+} from "/src/reader-db.js";
+
 
 // Archives certain entries in the database
 // @param maxAgeMs {Number} how long before an entry is considered
 // archivable (using date entry created), in milliseconds
 // @throws AssertionError
 // @throws Error - database related
-async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
+export async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
   assert(isOpenDB(conn));
 
   const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
@@ -30,9 +68,7 @@ async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
     return entryAgeMs > maxAgeMs;
   }
 
-  // Allow errors to bubble
-  const entries = await readerDbFindArchivableEntries(conn, isArchivable,
-    limit);
+  const entries = await readerDbFindArchivableEntries(conn, isArchivable, limit);
 
   if(!entries.length) {
     console.debug('no archivable entries found');
@@ -84,7 +120,6 @@ function readerStorageEntryCompact(entry) {
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection
 // @param id {Number} an entry id
-// NOTE: async function so technically these are all promise swallowed
 // @throws AssertionError connection invalid or not open
 // @throws AssertionError id invalid
 // @throws Error database related
@@ -92,7 +127,7 @@ function readerStorageEntryCompact(entry) {
 // @throws {ReaderDbInvalidStateError} entry already read
 // @throws Error entry unlocatable (missing url)
 // @throws Error readerBadgeUpdate related error
-async function readerStorageMarkRead(conn, id) {
+export async function readerStorageMarkRead(conn, id) {
   assert(isOpenDB(conn));
   assert(entryIsValidId(id));
 
@@ -132,7 +167,7 @@ async function readerStorageMarkRead(conn, id) {
 
 // @throws AssertionError
 // @throws Error database related
-async function readerStoragePutFeed(feed, conn, skipPrep) {
+export async function readerStoragePutFeed(feed, conn, skipPrep) {
   assert(feedIsFeed(feed));
   assert(isOpenDB(conn));
 
@@ -165,7 +200,7 @@ async function readerStoragePutFeed(feed, conn, skipPrep) {
 // @param conn {IDBDatabase} an open indexedDB database connection
 // @throws AssertionError
 // @throws Error database related
-async function readerStorageAddEntry(entry, conn) {
+export async function readerStorageAddEntry(entry, conn) {
   assert(entryIsEntry(entry));
   assert(isOpenDB(conn));
 
@@ -183,7 +218,7 @@ async function readerStorageAddEntry(entry, conn) {
 // @param limit {Number}
 // @throws AssertionError
 // @throws Error - database-related error
-async function readerStorageRemoveOrphans(conn, limit) {
+export async function readerStorageRemoveOrphans(conn, limit) {
   assert(isOpenDB(conn));
 
   // Allow errors to bubble
@@ -225,7 +260,7 @@ async function readerStorageRemoveOrphans(conn, limit) {
 // @param limit {Number} optional, if specified should be positive integer > 0
 // @throws AssertionError
 // @throws Error - database related
-async function readerStorageRemoveLostEntries(conn, limit) {
+export async function readerStorageRemoveLostEntries(conn, limit) {
   assert(isOpenDB(conn));
 
   function isLost(entry) {
@@ -264,7 +299,7 @@ async function readerStorageRemoveLostEntries(conn, limit) {
 // become invalid over time.
 // @throws AssertionError
 // @throws Error - database related
-async function readerStorageRefreshFeedIcons(readerConn, iconConn) {
+export async function readerStorageRefreshFeedIcons(readerConn, iconConn) {
   assert(isOpenDB(readerConn));
   assert(isOpenDB(iconConn));
 
@@ -277,16 +312,16 @@ async function readerStorageRefreshFeedIcons(readerConn, iconConn) {
 
   const promises = [];
   for(const feed of feeds) {
-    promises.push(readerStorageUpdateIcon(feed, readerConn, iconConn,
-      SKIP_PREP));
+    promises.push(readerStorageUpdateIcon(feed, readerConn, iconConn, SKIP_PREP));
   }
 
   // Allow any individual failure to cancel iteration and bubble an error
-  // TODO: consider promiseEvery, but then how would assertion errors bubble?
+  // TODO: consider promiseEvery
   await Promise.all(promises);
 }
 
 // TODO: this should accept a cache parameter instead of iconConn
+// TODO: rename after transition to modules
 
 // Lookup the feed's icon, update the feed in db
 // @param feed {Object}

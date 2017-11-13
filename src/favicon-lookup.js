@@ -1,12 +1,15 @@
-'use strict';
 
-// import favicon-cache.js
-// import fetch.js
-// import html-parser.js
-// import rbl.js
-// import url.js
+import {FaviconCache} from "/src/favicon-cache.js";
+import {
+  fetchHTML,
+  fetchImageHead,
+  FETCH_UNKNOWN_CONTENT_LENGTH
+} from "/src/fetch.js";
+import {HTMLParser} from "/src/html-parser.js";
+import {assert, isOpenDB, isPosInt, isUncheckedError} from "/src/rbl.js";
 
-class FaviconLookup {
+
+export class FaviconLookup {
   constructor() {
     this.cache = undefined;
     this.kMaxFailureCount = 2;// (comparison is <=), 'const'
@@ -117,7 +120,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
       }
     }
   }
- 
+
   // Nullify document so there is no ambiguity regarding whether fetching/parsing failed and
   // whether an input document was specified. The document parameter variable is re-used.
   document = undefined;
@@ -186,6 +189,9 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 };
 
 FaviconLookup.prototype.hasCache = function() {
+
+  // TODO: law of demeter. should use this.cache.isOpen()
+
   return this.cache && isOpenDB(this.cache.conn);
 };
 

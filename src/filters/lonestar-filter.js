@@ -1,8 +1,7 @@
-'use strict';
 
-// import dom.js
-// import rbl.js
-// import url.js
+import {domIsHiddenInline, domRemoveImage} from "/src/dom.js";
+import {assert} from "/src/rbl.js";
+import {isCanonicalURL} from "/src/url.js";
 
 const LONESTAR_FILTER_PATTERNS = [
   /\/\/.*2o7\.net\//i,
@@ -37,7 +36,7 @@ const LONESTAR_FILTER_PATTERNS = [
 // Removes some telemetry data from a document.
 // @param doc {Document}
 // @param url {String} canonical document url
-function lonestarFilter(doc, url) {
+export function lonestarFilter(doc, url) {
   assert(doc instanceof Document);
   assert(isCanonicalURL(url));
 
@@ -55,15 +54,14 @@ function lonestarFilter(doc, url) {
 
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
-    if(domIsHiddenInline(image) || lonestarFilterIsPixel(image) ||
-      lonestarFilterHasTelemetrySource(image, documentURL)) {
+    if(domIsHiddenInline(image) || isPixel(image) || hasTelemetrySource(image, documentURL)) {
       domRemoveImage(image);
     }
   }
 }
 
 // Returns true if an image is a pixel-sized image
-function lonestarFilterIsPixel(image) {
+function isPixel(image) {
   return image.hasAttribute('src') && image.hasAttribute('width') && image.width < 2 &&
     image.hasAttribute('height') && image.height < 2;
 }
@@ -72,7 +70,7 @@ function lonestarFilterIsPixel(image) {
 // exceedingly rare mechanism for telemetry so ignore those channels.
 // @param image {Image}
 // @param documentURL {URL}
-function lonestarFilterHasTelemetrySource(image, documentURL) {
+function hasTelemetrySource(image, documentURL) {
   assert(image instanceof Element);
 
   if(!image.hasAttribute('src')) {

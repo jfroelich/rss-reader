@@ -1,9 +1,8 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
 // @throws AssertionError
-function entityDecodeFilter(doc) {
+export function entityDecodeFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

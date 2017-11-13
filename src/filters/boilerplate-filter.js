@@ -1,7 +1,9 @@
-'use strict';
 
-// import dom.js
-// import rbl.js
+
+// TODO: simplify names after module transition
+
+import {domFindCaption} from "/src/dom.js";
+import {assert, condenseWhitespace} from "/src/rbl.js";
 
 const BOILERPLATE_ANCESTOR_BIASES = {
   a: -5,
@@ -58,7 +60,7 @@ const BOILERPLATE_TOKEN_WEIGHTS = {
 };
 
 // @throws AssertionError
-function boilerplateFilter(doc) {
+export function boilerplateFilter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {
     return;
@@ -157,7 +159,7 @@ function boilerplateFindHighScoreElement(doc) {
     }
 
     score += boilerplateDeriveAncestorBias(element);
-    score += boilerplate_derive_image_bias(element);
+    score += boilerplateDeriveImageBias(element);
     score += boilerplateDeriveAttributeBias(element);
     if(score > highScore) {
       bestElement = element;
@@ -168,7 +170,7 @@ function boilerplateFindHighScoreElement(doc) {
   return bestElement;
 }
 
-function boilerplate_derive_image_bias(parentElement) {
+function boilerplateDeriveImageBias(parentElement) {
   let bias = 0;
   let imageCount = 0;
   for(let node of parentElement.childNodes) {

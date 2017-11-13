@@ -1,24 +1,40 @@
-'use strict';
 
-// import options-page/options-page-error-message.js
-// import options-page/options-page-export-opml.js
-// import options-page/options-page-fonts.js
-// import options-page/options-page-image-paths.js
-// import options-page/options-page-subscription-monitor.js
-// import entry-css.js
-// import extension.js
-// import feed.js
-// import html.js
-// import mime.js
-// import rbl.js
-// import reader-db.js
-// import reader-export.js
-// import reader-import.js
-// import subscribe-request.js
+import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
+import {
+  hasBrowserPermission,
+  requestBrowserPermission,
+  removeBrowserPermission
+} from "/src/extension.js";
+import {feedAppendURL, feedIsValidId, feedPeekURL} from "/src/feed.js";
+import {htmlTruncate} from "/src/html.js";
+import {mime} from "/src/mime.js";
+import {
+  optionsPageErrorMessageHide,
+  optionsPageErrorMessageShow
+} from "/src/options-page/options-page-error-message.js";
+import {optionsPageExportOPML} from "/src/options-page/options-page-export-opml.js";
+import {OPTIONS_PAGE_FONTS} from "/src/options-page/options-page-fonts.js";
+import {OPTIONS_PAGE_IMAGE_PATHS} from "/src/options-page/options-page-image-paths.js";
+import {
+  optionsPageSubscriptionMonitorShow,
+  optionsPageSubscriptionMonitorAppendMessage,
+  optionsPageSubscriptionMonitorHide
+} from "/src/options-page/options-page-subscription-monitor.js";
+import {assert, closeDB, parseInt10} from "/src/rbl.js";
+
+import {
+  readerDbOpen,
+  readerDbFindFeedById,
+  readerDbGetFeeds
+} from "/src/reader-db.js";
+
+import {readerImportFiles} from "/src/reader-import.js";
+import {SubscribeRequest} from "/src/subscribe-request.js";
+
 
 // Navigation tracking
-var optionsPageCurrentMenuItem;
-var optionsPageCurrentSectionElement;
+let optionsPageCurrentMenuItem;
+let optionsPageCurrentSectionElement;
 
 const optionsPageSettingsChannel = new BroadcastChannel('settings');
 optionsPageSettingsChannel.onmessage = function(event) {
@@ -33,7 +49,7 @@ optionsPageSettingsChannel.onmessageerror = function(event) {
 };
 
 
-function optionsPageDispatchSettingsChanged() {
+function dispatchSettingsChangedEvent() {
 
   // TODO: once the loopback issue is fixed, do not double call
   // HACK: for now, hard call
@@ -42,7 +58,7 @@ function optionsPageDispatchSettingsChanged() {
   optionsPageSettingsChannel.postMessage('changed');
 }
 
-function optionsPageShowSection(menuItemElement) {
+function showSection(menuItemElement) {
   assert(menuItemElement);
 
   if(optionsPageCurrentMenuItem === menuItemElement) {
@@ -72,7 +88,7 @@ function optionsPageShowSection(menuItemElement) {
 }
 
 function optionsPageShowSectionId(id) {
-  optionsPageShowSection(document.getElementById(id));
+  showSection(document.getElementById(id));
 }
 
 function optionsPageUpdateFeedCount() {
@@ -152,6 +168,7 @@ async function optionsPageFeedListItemOnclick(event) {
   const feedIdString = feedListItem.getAttribute('feed');
   const feedIdNumber = parseInt10(feedIdString);
 
+  // TODO: assert using feedIsValidId
   assert(!isNaN(feedIdNumber));
 
   // Load feed details from the database
@@ -404,13 +421,13 @@ async function optionsPageExportOPMLButtonOnclick(event) {
   }
 }
 
-function optionsPageMenuItemOnclick(event) {
+function menuItemOnclick(event) {
   const clickedElement = event.target;
   const sectionElement = event.currentTarget;
-  optionsPageShowSection(sectionElement);
+  showSection(sectionElement);
 }
 
-function optionsPageEnableNotificationsCheckboxOnclick(event) {
+function enableNotificationsCheckboxOnclick(event) {
   if(event.target.checked) {
     localStorage.SHOW_NOTIFICATIONS = '1';
   } else {
@@ -453,7 +470,7 @@ function optionsPageBgImageMenuOnchange(event) {
     delete localStorage.BG_IMAGE;
   }
 
-  optionsPageDispatchSettingsChanged();
+  dispatchSettingsChangedEvent();
 }
 
 function optionsPageHeaderFontMenuOnchange(event){
@@ -464,7 +481,7 @@ function optionsPageHeaderFontMenuOnchange(event){
     delete localStorage.HEADER_FONT_FAMILY;
   }
 
-  optionsPageDispatchSettingsChanged();
+  dispatchSettingsChangedEvent();
 }
 
 function optionsPageBodyFontMenuOnchange(event) {
@@ -475,7 +492,7 @@ function optionsPageBodyFontMenuOnchange(event) {
     delete localStorage.BODY_FONT_FAMILY;
   }
 
-  optionsPageDispatchSettingsChanged();
+  dispatchSettingsChangedEvent();
 }
 
 function optionsPageColumnCountMenuOnchange(event) {
@@ -486,7 +503,7 @@ function optionsPageColumnCountMenuOnchange(event) {
     delete localStorage.COLUMN_COUNT;
   }
 
-  optionsPageDispatchSettingsChanged();
+  dispatchSettingsChangedEvent();
 }
 
 function optionsPageEntryBgColorInputOninput(event) {
@@ -497,7 +514,7 @@ function optionsPageEntryBgColorInputOninput(event) {
     delete localStorage.BG_COLOR;
   }
 
-  optionsPageDispatchSettingsChanged();
+  dispatchSettingsChangedEvent();
 }
 
 function optionsPageEntryMarginSliderOnchange(event) {
@@ -510,7 +527,7 @@ function optionsPageEntryMarginSliderOnchange(event) {
     delete localStorage.PADDING;
   }
 
-  optionsPageDispatchSettingsChanged();
+  dispatchSettingsChangedEvent();
 }
 
 function optionsPageHeaderFontSizeSliderOnchange(event) {
@@ -521,7 +538,7 @@ function optionsPageHeaderFontSizeSliderOnchange(event) {
     delete localStorage.HEADER_FONT_SIZE;
   }
 
-  optionsPageDispatchSettingsChanged();
+  dispatchSettingsChangedEvent();
 }
 
 function optionsPageBodyFontSizeSliderOnchange(event) {
@@ -532,7 +549,7 @@ function optionsPageBodyFontSizeSliderOnchange(event) {
     delete localStorage.BODY_FONT_SIZE;
   }
 
-  optionsPageDispatchSettingsChanged();
+  dispatchSettingsChangedEvent();
 }
 
 function optionsPageJustifyTextCheckboxOnchange(event) {
@@ -542,7 +559,7 @@ function optionsPageJustifyTextCheckboxOnchange(event) {
     delete localStorage.JUSTIFY_TEXT;
   }
 
-  optionsPageDispatchSettingsChanged();
+  dispatchSettingsChangedEvent();
 }
 
 function optionsPageBodyHeightInputOninput(event) {
@@ -553,151 +570,153 @@ function optionsPageBodyHeightInputOninput(event) {
     delete localStorage.BODY_LINE_HEIGHT;
   }
 
-  optionsPageDispatchSettingsChanged();
+  dispatchSettingsChangedEvent();
 }
 
-document.addEventListener('DOMContentLoaded', function(event) {
-  entryCSSInit();
-
-  // Attach click handlers to menu items
-  // TODO: use single event listener on list itself instead
-  const menuItems = document.querySelectorAll('#navigation-menu li');
-  for(const menuItem of menuItems) {
-    menuItem.onclick = optionsPageMenuItemOnclick;
-  }
-
-  // Init Enable notifications checkbox
-  const enableNotificationsCheckbox = document.getElementById('enable-notifications');
-  enableNotificationsCheckbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
-  enableNotificationsCheckbox.onclick = optionsPageEnableNotificationsCheckboxOnclick;
-
-  initBgProcessingCheckbox();
-
-  const enableRestrictIdlePollingCheckbox = document.getElementById('enable-idle-check');
-  enableRestrictIdlePollingCheckbox.checked = 'ONLY_POLL_IF_IDLE' in localStorage;
-  enableRestrictIdlePollingCheckbox.onclick = optionsPageRestrictIdlePollingCheckboxOnclick;
-
-  const exportOPMLButton = document.getElementById('button-export-opml');
-  exportOPMLButton.onclick = optionsPageExportOPMLButtonOnclick;
-  const importOPMLButton = document.getElementById('button-import-opml');
-  importOPMLButton.onclick = optionsPageImportOPMLButtonOnclick;
-
-  optionsPageFeedListInit();
-
-  // Init feed details section unsubscribe button click handler
-  const unsubscribeButton = document.getElementById('details-unsubscribe');
-  unsubscribeButton.onclick = optionsPageUnsubscribeButtonOnclick;
-
-  // Init the subscription form section
-  const subscriptionForm = document.getElementById('subscription-form');
-  subscriptionForm.onsubmit = optionsPageSubscribeFormOnSubmit;
 
 
-  // Init background image menu
-  {
-    const backgroundImageMenu = document.getElementById('entry-background-image');
-    backgroundImageMenu.onchange = optionsPageBgImageMenuOnchange;
+// Initialization
+
+entryCSSInit();
+
+// Attach click handlers to menu items
+// TODO: use single event listener on list itself instead
+const menuItems = document.querySelectorAll('#navigation-menu li');
+for(const menuItem of menuItems) {
+  menuItem.onclick = menuItemOnclick;
+}
+
+// Init Enable notifications checkbox
+const enableNotificationsCheckbox = document.getElementById('enable-notifications');
+enableNotificationsCheckbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
+enableNotificationsCheckbox.onclick = enableNotificationsCheckboxOnclick;
+
+initBgProcessingCheckbox();
+
+const enableRestrictIdlePollingCheckbox = document.getElementById('enable-idle-check');
+enableRestrictIdlePollingCheckbox.checked = 'ONLY_POLL_IF_IDLE' in localStorage;
+enableRestrictIdlePollingCheckbox.onclick = optionsPageRestrictIdlePollingCheckboxOnclick;
+
+const exportOPMLButton = document.getElementById('button-export-opml');
+exportOPMLButton.onclick = optionsPageExportOPMLButtonOnclick;
+const importOPMLButton = document.getElementById('button-import-opml');
+importOPMLButton.onclick = optionsPageImportOPMLButtonOnclick;
+
+optionsPageFeedListInit();
+
+// Init feed details section unsubscribe button click handler
+const unsubscribeButton = document.getElementById('details-unsubscribe');
+unsubscribeButton.onclick = optionsPageUnsubscribeButtonOnclick;
+
+// Init the subscription form section
+const subscriptionForm = document.getElementById('subscription-form');
+subscriptionForm.onsubmit = optionsPageSubscribeFormOnSubmit;
+
+
+// Init background image menu
+{
+  const backgroundImageMenu = document.getElementById('entry-background-image');
+  backgroundImageMenu.onchange = optionsPageBgImageMenuOnchange;
+  let option = document.createElement('option');
+  option.value = '';
+  option.textContent = 'Use background color';
+  backgroundImageMenu.appendChild(option);
+
+  const currentBgImagePath = localStorage.BG_IMAGE;
+  const bgImagePathOffset = '/images/'.length;
+  for(const path of OPTIONS_PAGE_IMAGE_PATHS) {
     let option = document.createElement('option');
-    option.value = '';
-    option.textContent = 'Use background color';
+    option.value = path;
+    option.textContent = path.substring(bgImagePathOffset);
+    option.selected = currentBgImagePath === path;
     backgroundImageMenu.appendChild(option);
-
-    const currentBgImagePath = localStorage.BG_IMAGE;
-    const bgImagePathOffset = '/images/'.length;
-    for(const path of OPTIONS_PAGE_IMAGE_PATHS) {
-      let option = document.createElement('option');
-      option.value = path;
-      option.textContent = path.substring(bgImagePathOffset);
-      option.selected = currentBgImagePath === path;
-      backgroundImageMenu.appendChild(option);
-    }
   }
+}
 
-  {
-    const headerFontMenu = document.getElementById('select-header-font');
-    headerFontMenu.onchange = optionsPageHeaderFontMenuOnchange;
+{
+  const headerFontMenu = document.getElementById('select-header-font');
+  headerFontMenu.onchange = optionsPageHeaderFontMenuOnchange;
+  let option = document.createElement('option');
+  option.textContent = 'Use Chrome font settings';
+  headerFontMenu.appendChild(option);
+  const currentHeaderFont = localStorage.HEADER_FONT_FAMILY;
+  for(const font of OPTIONS_PAGE_FONTS) {
     let option = document.createElement('option');
-    option.textContent = 'Use Chrome font settings';
+    option.value = font;
+    option.selected = font === currentHeaderFont;
+    option.textContent = font;
     headerFontMenu.appendChild(option);
-    const currentHeaderFont = localStorage.HEADER_FONT_FAMILY;
-    for(const font of OPTIONS_PAGE_FONTS) {
-      let option = document.createElement('option');
-      option.value = font;
-      option.selected = font === currentHeaderFont;
-      option.textContent = font;
-      headerFontMenu.appendChild(option);
-    }
   }
+}
 
-  {
-    const bodyFontMenu = document.getElementById('select-body-font');
-    bodyFontMenu.onchange = optionsPageBodyFontMenuOnchange;
-    let option = document.createElement('option');
-    option.textContent = 'Use Chrome font settings';
+{
+  const bodyFontMenu = document.getElementById('select-body-font');
+  bodyFontMenu.onchange = optionsPageBodyFontMenuOnchange;
+  let option = document.createElement('option');
+  option.textContent = 'Use Chrome font settings';
+  bodyFontMenu.appendChild(option);
+
+  const currentBodyFont = localStorage.BODY_FONT_FAMILY;
+  for(const font of OPTIONS_PAGE_FONTS) {
+    option = document.createElement('option');
+    option.value = font;
+    option.selected = font === currentBodyFont;
+    option.textContent = font;
     bodyFontMenu.appendChild(option);
-
-    const currentBodyFont = localStorage.BODY_FONT_FAMILY;
-    for(const font of OPTIONS_PAGE_FONTS) {
-      option = document.createElement('option');
-      option.value = font;
-      option.selected = font === currentBodyFont;
-      option.textContent = font;
-      bodyFontMenu.appendChild(option);
-    }
   }
+}
 
-  {
-    const columnCountMenu = document.getElementById('column-count');
-    columnCountMenu.onchange = optionsPageColumnCountMenuOnchange;
-    const columnCounts = ['1', '2', '3'];
-    const currentColumnCount = localStorage.COLUMN_COUNT
-    for(const columnCount of columnCounts) {
-      const option = document.createElement('option');
-      option.value = columnCount;
-      option.selected = columnCount === currentColumnCount;
-      option.textContent = columnCount;
-      columnCountMenu.appendChild(option);
-    }
+{
+  const columnCountMenu = document.getElementById('column-count');
+  columnCountMenu.onchange = optionsPageColumnCountMenuOnchange;
+  const columnCounts = ['1', '2', '3'];
+  const currentColumnCount = localStorage.COLUMN_COUNT
+  for(const columnCount of columnCounts) {
+    const option = document.createElement('option');
+    option.value = columnCount;
+    option.selected = columnCount === currentColumnCount;
+    option.textContent = columnCount;
+    columnCountMenu.appendChild(option);
   }
+}
 
-  const bgColorInput = document.getElementById('entry-background-color');
-  bgColorInput.value = localStorage.BG_COLOR || '';
-  bgColorInput.oninput = optionsPageEntryBgColorInputOninput;
+const bgColorInput = document.getElementById('entry-background-color');
+bgColorInput.value = localStorage.BG_COLOR || '';
+bgColorInput.oninput = optionsPageEntryBgColorInputOninput;
 
-  const marginInput = document.getElementById('entry-margin');
-  marginInput.value = localStorage.PADDING || '10';
-  marginInput.onchange = optionsPageEntryMarginSliderOnchange;
+const marginInput = document.getElementById('entry-margin');
+marginInput.value = localStorage.PADDING || '10';
+marginInput.onchange = optionsPageEntryMarginSliderOnchange;
 
-  const headerFontSizeInput = document.getElementById('header-font-size');
-  headerFontSizeInput.value = localStorage.HEADER_FONT_SIZE || '1';
-  headerFontSizeInput.onchange = optionsPageHeaderFontSizeSliderOnchange;
+const headerFontSizeInput = document.getElementById('header-font-size');
+headerFontSizeInput.value = localStorage.HEADER_FONT_SIZE || '1';
+headerFontSizeInput.onchange = optionsPageHeaderFontSizeSliderOnchange;
 
-  const bodyFontSizeInput = document.getElementById('body-font-size');
-  bodyFontSizeInput.value = localStorage.BODY_FONT_SIZE || '1';
-  bodyFontSizeInput.onchange = optionsPageBodyFontSizeSliderOnchange;
+const bodyFontSizeInput = document.getElementById('body-font-size');
+bodyFontSizeInput.value = localStorage.BODY_FONT_SIZE || '1';
+bodyFontSizeInput.onchange = optionsPageBodyFontSizeSliderOnchange;
 
-  const justifyTextCheckbox = document.getElementById('justify-text');
-  justifyTextCheckbox.checked = 'JUSTIFY_TEXT' in localStorage;
-  justifyTextCheckbox.onchange = optionsPageJustifyTextCheckboxOnchange;
+const justifyTextCheckbox = document.getElementById('justify-text');
+justifyTextCheckbox.checked = 'JUSTIFY_TEXT' in localStorage;
+justifyTextCheckbox.onchange = optionsPageJustifyTextCheckboxOnchange;
 
-  const bodyLineHeightInput = document.getElementById('body-line-height');
-  bodyLineHeightInput.oninput = optionsPageBodyHeightInputOninput;
-  const bodyLineHeightNumber = parseInt10(localStorage.BODY_LINE_HEIGHT) || 10;
-  if(!isNaN(bodyLineHeightNumber)) {
-    bodyLineHeightInput.value = (bodyLineHeightNumber / 10).toFixed(2);
-  }
+const bodyLineHeightInput = document.getElementById('body-line-height');
+bodyLineHeightInput.oninput = optionsPageBodyHeightInputOninput;
+const bodyLineHeightNumber = parseInt10(localStorage.BODY_LINE_HEIGHT) || 10;
+if(!isNaN(bodyLineHeightNumber)) {
+  bodyLineHeightInput.value = (bodyLineHeightNumber / 10).toFixed(2);
+}
 
-  const manifest = chrome.runtime.getManifest();
-  const extNameElement = document.getElementById('extension-name');
-  extNameElement.textContent = manifest.name;
-  const extVersionElement = document.getElementById('extension-version');
-  extVersionElement.textValue = manifest.version;
-  const extAuthorElement = document.getElementById('extension-author');
-  extAuthorElement.textContent = manifest.author;
-  const extDescriptionElement = document.getElementById('extension-description');
-  extDescriptionElement.textContent = manifest.description || '';
-  const extURLElement = document.getElementById('extension-homepage');
-  extURLElement.textContent = manifest.homepage_url;
+const manifest = chrome.runtime.getManifest();
+const extNameElement = document.getElementById('extension-name');
+extNameElement.textContent = manifest.name;
+const extVersionElement = document.getElementById('extension-version');
+extVersionElement.textValue = manifest.version;
+const extAuthorElement = document.getElementById('extension-author');
+extAuthorElement.textContent = manifest.author;
+const extDescriptionElement = document.getElementById('extension-description');
+extDescriptionElement.textContent = manifest.description || '';
+const extURLElement = document.getElementById('extension-homepage');
+extURLElement.textContent = manifest.homepage_url;
 
-  optionsPageShowSectionId('subs-list-section');
-}, {'once': true});
+optionsPageShowSectionId('subs-list-section');

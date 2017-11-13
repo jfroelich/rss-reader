@@ -1,9 +1,8 @@
-'use strict';
 
-// import dom.js
-// import fetch.js
-// import rbl.js
-// import url.js
+import {domGetDimensions} from "/src/dom.js";
+import {fetchImage} from "/src/fetch.js";
+import {assert, parseInt10, promiseEvery} from "/src/rbl.js";
+import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url.js";
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
@@ -13,7 +12,7 @@
 // @param doc {Document}
 // @param timeoutMs {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
-async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
+export async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
   assert(doc instanceof Document);
 
   const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];
@@ -34,8 +33,7 @@ async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
   // Concurrently process each image
   const promises = [];
   for(const image of images) {
-    const promise = imageSizeFilterGetDimensions(image, allowedProtocols, timeoutMs);
-    promises.push(promise);
+    promises.push(getImageDimensions(image, allowedProtocols, timeoutMs));
   }
   const results = await promiseEvery(promises);
 
@@ -47,8 +45,7 @@ async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
   }
 }
 
-async function imageSizeFilterGetDimensions(image, allowedProtocols,
-  timeoutMs) {
+async function getImageDimensions(image, allowedProtocols, timeoutMs) {
 
   // TODO: rename hint to reason
   const result = {
@@ -80,7 +77,7 @@ async function imageSizeFilterGetDimensions(image, allowedProtocols,
     return;
   }
 
-  const urlDimensions = imageSizeFilterSniff(sourceURL);
+  const urlDimensions = sniffFromURL(sourceURL);
   if(urlDimensions) {
     result.width = urlDimensions.width;
     result.height = urlDimensions.height;
@@ -97,7 +94,7 @@ async function imageSizeFilterGetDimensions(image, allowedProtocols,
   return result;
 }
 
-function imageSizeFilterSniff(sourceURL) {
+function sniffFromURL(sourceURL) {
   // data urls will not contain useful information so ignore them
   if(sourceURL.protocol === 'data:') {
     return;

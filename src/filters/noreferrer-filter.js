@@ -1,10 +1,9 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
 // TODO: this function's behavior conflicts with attribute filter. Need to
 // whitelist this attribute (and this value) for this element.
-function noreferrerFilter(doc) {
+export function noreferrerFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

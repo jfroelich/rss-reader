@@ -1,10 +1,9 @@
-'use strict';
 
-// import dom.js
-// import rbl.js
-// import url.js
+import {domImageHasSource} from "/src/dom.js";
+import {assert} from "/src/rbl.js";
+import {isValidURL} from "/src/url.js";
 
-function lazyImageFilter(doc) {
+export function lazyImageFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

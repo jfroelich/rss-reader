@@ -1,8 +1,10 @@
-'use strict';
 
-// import mime.js
-// import rbl.js
-// import url.js
+import {mime} from "/src/mime.js";
+import {assert, isPosInt, parseInt10} from "/src/rbl.js";
+import {compareURLsWithoutHash, isValidURL} from "/src/url.js";
+
+export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
+
 
 // TODO: create FetchError, change functions to throw FetchError instead of generic Error
 
@@ -16,7 +18,7 @@
 // affect the request Accept header because servers do not appear to always
 // honor Accept headers.
 // @returns {Promise} a promise that resolves to a Response-like object
-function fetchFeed(url, timeoutMs, acceptHTML) {
+export function fetchFeed(url, timeoutMs, acceptHTML) {
 
   if(typeof acceptHTML === 'undefined') {
     acceptHTML = true;
@@ -60,7 +62,7 @@ function fetchFeed(url, timeoutMs, acceptHTML) {
 // Fetches the html content of the given url
 // @param url {String} the url to fetch
 // @param timeoutMs {Number} optional, timeout in milliseconds
-function fetchHTML(url, timeoutMs) {
+export function fetchHTML(url, timeoutMs) {
   const options = {
     credentials: 'omit',
     method: 'get',
@@ -86,7 +88,7 @@ function fetchHTML(url, timeoutMs) {
 // Sends a HEAD request for the given image.
 // @param url {String}
 // @returns a simple object with props imageSize and response_url_string
-async function fetchImageHead(url, timeoutMs) {
+export async function fetchImageHead(url, timeoutMs) {
   const headers = {'Accept': 'image/*'};
 
   // TODO: this should be refactored to use fetchInternal. But I need to
@@ -135,7 +137,7 @@ async function fetchImageHead(url, timeoutMs) {
 // TODO: maybe rename to fetch_image_element so that separate fetchImage
 // that works more like other fetches can be created, and to avoid confusion
 // TODO: it is possible this should be using the fetch API to avoid cookies?
-function fetchImage(url, timeoutMs) {
+export function fetchImage(url, timeoutMs) {
   assert(url);
 
   if(typeof timeoutMs === 'undefined') {
@@ -200,11 +202,11 @@ function fetchImage(url, timeoutMs) {
   // TODO: delegate to setTimeoutPromise
   // TODO: think about binds to reduce callback hell
   const timeoutPromise = new Promise(function timeExec(resolve, reject) {
-    timerId = setTimeout(function on_timeout() {
+    timerId = setTimeout(function onTimeout() {
       // The timeout triggered.
       // TODO: prior to settling, cancel the fetch somehow
       // TODO: it could actually be after settling too I think?
-      // TODO: i want to cancel the fetch promise itself, and also the
+      // TODO: i want to cancel the fetch itself, and also the
       // fetchPromise promise. actually there is no fetch promise in this
       // context, just the Image.src assignment call. Maybe setting proxy.src
       // to null does the trick?
@@ -333,6 +335,7 @@ function fetchURLChanged(requestURL, responseURL) {
   return !compareURLsWithoutHash(requestURL, responseURL);
 }
 
+// TODO: this is silly, do not use object namespace
 const ResponseUtils = {};
 
 // Returns the value of the Last-Modified header as a Date object
@@ -353,7 +356,6 @@ ResponseUtils.getLastModified = function(response) {
   }
 };
 
-const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
 // TODO: instead of returning an invalid value, return both an error code and
 // the value. This way there is no ambiguity, or need for global constant

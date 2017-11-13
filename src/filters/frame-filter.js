@@ -1,11 +1,13 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
-function frameFilter(doc) {
+export function frameFilter(doc) {
   assert(doc instanceof Document);
+
+  // It is a bit counterintuitive but if a document is framed then the root frame is its body,
+  // and doc.body points to it (and not some <body> element)
 
   let originalBody = doc.body;
   if(!originalBody) {

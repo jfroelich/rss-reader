@@ -1,15 +1,12 @@
-'use strict';
 
-// import filters/filter-helpers.js
-// import dom.js
-// import rbl.js
+import {domIsHiddenInline, domUnwrap} from "/src/dom.js";
+import {assert} from "/src/rbl.js";
 
 // TODO: make a github issue about optimizing recursive unwrap
-function hiddenFilter(doc) {
+export function hiddenFilter(doc) {
   assert(doc instanceof Document)
   const body = doc.body;
 
-  // Restrict analysis to body descendants
   if(!body) {
     return;
   }

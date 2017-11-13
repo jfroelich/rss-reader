@@ -1,15 +1,19 @@
-'use strict';
+// MIME utilities module
 
-// import rbl.js
+import {assert, filterWhitespace} from "/src/rbl.js";
 
-const mime = {};
+// TODO: deprecate mime namespace object after module transition
+// TODO: ensure I am not exporting things that do not need exporting
+
+export const mime = {};
 
 // Some commonly used global mime types
 mime.HTML = 'text/html';
 mime.XML = 'application/xml';
 
 // Rather arbitrary, but just as a general bound
-mime.MIME_TYPE_MIN_LENGTH = 7;// TODO: increase and test accuracy
+// TODO: increase and test accuracy
+mime.MIME_TYPE_MIN_LENGTH = 7;
 mime.MIME_TYPE_MAX_LENGTH = 100;
 
 mime.EXTENSION_TYPE_MAP = {

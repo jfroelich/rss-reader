@@ -1,14 +1,11 @@
-'use strict';
 
-// import filters/leaf-filter.js
-// import filters/transform-helpers.js
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
 // TODO: restrict children of list to proper child type. E.g. only allow li
 // or form within ul/ol, and dd/dt/form within dl. Do some type of transform
 // like move such items to within a new child
 
-function listFilter(doc) {
+export function listFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
@@ -25,18 +22,18 @@ function listFilter(doc) {
   // leaf code just removes. So that would also entail changing the meaning
   // of leaf filtering from filter to transform.
   for(const list of lists) {
-    if(listFilterIsEmpty(list)) {
-      listFilterRemoveEmptyList(list);
+    if(isEmptyList(list)) {
+      removeEmptyList(list);
     }
   }
 
   for(const list of lists) {
-    listFilterUnwrapSingleItemList(list);
+    unwrapSingleItemList(list);
   }
 }
 
 // Return true if list is 'empty'
-function listFilterIsEmpty(list) {
+function isEmptyList(list) {
   // Return true if the list has no child nodes. This is redundant with
   // leaf filtering but I think it is ok and prefer to not make assumptions
   // about composition with other filters
@@ -67,7 +64,7 @@ function listFilterIsEmpty(list) {
   return false;
 }
 
-function listFilterRemoveEmptyList(list) {
+function removeEmptyList(list) {
   const doc = list.ownerDocument;
 
   // Add leading padding
@@ -96,7 +93,7 @@ function listFilterRemoveEmptyList(list) {
 }
 
 // Unwraps single item or empty list elements
-function listFilterUnwrapSingleItemList(list) {
+function unwrapSingleItemList(list) {
 
   const listParent = list.parentNode;
   if(!listParent) {

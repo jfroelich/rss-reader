@@ -1,11 +1,10 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
 // @param doc {Document}
 // @param whitelist {Object} each property is element name, each value is array
 // of attribute names
-function attributeFilter(doc, whitelist) {
+export function attributeFilter(doc, whitelist) {
   assert(doc instanceof Document);
   assert(typeof whitelist === 'object');
 

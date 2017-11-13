@@ -1,17 +1,45 @@
-'use strict';
 
-// import filters/adoption-agency-filter.js
-// import filters/attribute-filter.js
-// import filters/base-filter.js
-// import filters/element-blacklist-filter.js
-// import filters/emphasis-filter.js
-// import filters/ensure-body-filter.js
-// import filters/frame-filter.js
-// import filters/host-template-filter.js
-// import filters/lonestar-filter.js
-// import filters/responsive-image-filter.js
-// import rbl.js
-// import url.js
+import {adoptionAgencyFilter} from "/src/filters/adoption-agency-filter.js";
+import {attributeFilter} from "/src/filters/attribute-filter.js";
+import {baseFilter} from "/src/filters/base-filter.js";
+import {boilerplateFilter} from "/src/filters/boilerplate-filter.js";
+import {brFilter} from "/src/filters/br-filter.js";
+import {canonicalURLFilter} from "/src/filters/canonical-url-filter.js";
+import {commentFilter} from "/src/filters/comment-filter.js";
+import {condenseTagnamesFilter} from "/src/filters/condense-tagnames-filter.js";
+import {containerFilter} from "/src/filters/container-filter.js";
+import {elementBlacklistFilter} from "/src/filters/element-blacklist-filter.js";
+import {emphasisFilter} from "/src/filters/emphasis-filter.js";
+import {ensureBodyFilter} from "/src/filters/ensure-body-filter.js";
+import {figureFilter} from "/src/filters/figure-filter.js";
+import {formattingAnchorFilter} from "/src/filters/formatting-anchor-filter.js";
+import {formattingFilter} from "/src/filters/formatting-filter.js";
+import {formFilter} from "/src/filters/form-filter.js";
+import {frameFilter} from "/src/filters/frame-filter.js";
+import {hairspaceFilter} from "/src/filters/hairspace-filter.js";
+import {hiddenFilter} from "/src/filters/hidden-filter.js";
+import {hostTemplateFilter} from "/src/filters/host-template-filter.js";
+import {hrFilter} from "/src/filters/hr-filter.js";
+import {iframeFilter} from "/src/filters/iframe-filter.js";
+import {imageSizeFilter} from "/src/filters/image-size-filter.js";
+import {invalidAnchorFilter} from "/src/filters/invalid-anchor-filter.js";
+import {lazyImageFilter} from "/src/filters/lazy-image-filter.js";
+import {leafFilter} from "/src/filters/leaf-filter.js";
+import {listFilter} from "/src/filters/list-filter.js";
+import {lonestarFilter} from "/src/filters/lonestar-filter.js";
+import {nodeWhitespaceFilter} from "/src/filters/node-whitespace-filter.js";
+import {noreferrerFilter} from "/src/filters/noreferrer-filter.js";
+import {noscriptFilter} from "/src/filters/noscript-filter.js";
+import {pingFilter} from "/src/filters/ping-filter.js";
+import {responsiveImageFilter} from "/src/filters/responsive-image-filter.js";
+import {scriptFilter} from "/src/filters/script-filter.js";
+import {scriptAnchorFilter} from "/src/filters/script-anchor-filter.js";
+import {semanticFilter} from "/src/filters/semantic-filter.js";
+import {sourcelessImageFilter} from "/src/filters/sourceless-image-filter.js";
+import {tableFilter} from "/src/filters/table-filter.js";
+import {trimDocumentFilter} from "/src/filters/trim-document-filter.js";
+import {assert} from "/src/rbl.js";
+import {isValidURL} from "/src/url.js";
 
 // Transforms a document's content by removing or changing nods for
 // various reasons.
@@ -20,7 +48,7 @@
 // @param fetchImageTimeoutMs {Number} optional, the number of milliseconds
 // to wait before timing out when fetching an image
 // @throws AssertionError
-async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
+export async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
   assert(doc instanceof Document);
   assert(isValidURL(url));
 
@@ -68,10 +96,10 @@ async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
 
   // This should occur after canonicalURLFilter
   // This should occur after lonestarFilter
-  let allowed_protocols; // defer to defaults
+  let allowedProtocols; // defer to defaults
 
   // Allow exceptions to bubble
-  await imageSizeFilter(doc, allowed_protocols, fetchImageTimeoutMs);
+  await imageSizeFilter(doc, allowedProtocols, fetchImageTimeoutMs);
 
   invalidAnchorFilter(doc);
   formattingAnchorFilter(doc);

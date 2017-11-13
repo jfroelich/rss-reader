@@ -1,16 +1,15 @@
-'use strict';
 
-// import feed.js
-// import rbl.js
+import {feedAppendURL, feedIsFeed, feedPeekURL} from "/src/feed.js";
+import {assert} from "/src/rbl.js";
 
-// TODO: change to class?
 
-// TODO: deprecate in favor of caller using instanceof after refactoring as class
+// TODO: create OPMLOutline?
+// TODO: deprecate in favor of caller using instanceof?
 function opmlOutlineIsOutline(outline) {
   return typeof outline === 'object';
 }
 
-function opmlOutlineToFeed(outline) {
+export function opmlOutlineToFeed(outline) {
   assert(opmlOutlineIsOutline(outline));
 
   const feed = {};
@@ -38,7 +37,7 @@ function opmlOutlineToFeed(outline) {
   return feed;
 }
 
-function opmlOutlineFromFeed(feed) {
+export function opmlOutlineFromFeed(feed) {
   assert(feedIsFeed(feed));
   const outline = {};
   outline.type = feed.type;
@@ -49,18 +48,18 @@ function opmlOutlineFromFeed(feed) {
   return outline;
 }
 
-function opmlOutlineElementHasValidType(element) {
+export function opmlOutlineElementHasValidType(element) {
   assert(element instanceof Element);
   const TYPE_PATTERN = /\s*(rss|rdf|feed)\s*/i;
   return TYPE_PATTERN.test(element.getAttribute('type'));
 }
 
-function opmlOutlineElementHasXMLURL(element) {
+export function opmlOutlineElementHasXMLURL(element) {
   let xmlUrl = element.getAttribute('xmlUrl');
   return xmlUrl && xmlUrl.trim();
 }
 
-function opmlOutlineElementNormalizeXMLURL(element) {
+export function opmlOutlineElementNormalizeXMLURL(element) {
   let url = element.getAttribute('xmlUrl');
   if(url) {
     try {
@@ -72,7 +71,7 @@ function opmlOutlineElementNormalizeXMLURL(element) {
   }
 }
 
-function opmlOutlineNormalizeHTMLURL(outline) {
+export function opmlOutlineNormalizeHTMLURL(outline) {
   assert(opmlOutlineIsOutline(outline));
 
   if(outline.htmlUrl === undefined) {
@@ -99,7 +98,7 @@ function opmlOutlineNormalizeHTMLURL(outline) {
   }
 }
 
-function opmlOutlineToElement(doc, outline) {
+export function opmlOutlineToElement(doc, outline) {
   assert(doc instanceof Document);
   assert(opmlOutlineIsOutline(outline));
 
@@ -131,7 +130,7 @@ function opmlOutlineToElement(doc, outline) {
   return element;
 }
 
-function opmlOutlineElementToObject(element) {
+export function opmlOutlineElementToObject(element) {
   const object = {};
   object.description = element.getAttribute('description');
   object.htmlUrl = element.getAttribute('htmlUrl');

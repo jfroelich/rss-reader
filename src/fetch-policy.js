@@ -1,7 +1,6 @@
-'use strict';
 
-// import rbl.js
-// import url.js
+import {assert} from "/src/rbl.js";
+import {isCanonicalURL} from "/src/url.js";
 
 // NOTE: this is the initial implementation, probably going to change
 // drastically, is definitely not very reliable or accurate
@@ -9,7 +8,9 @@
 // something for now, as a proof of concept
 // TODO: allow preference override through localStorage setting
 
-class FetchPolicy {
+// TODO: deprecate class, only need one public function
+
+export class FetchPolicy {
 
   // TODO: move to url.js?
   static isLocalURL(url) {

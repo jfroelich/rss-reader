@@ -1,11 +1,20 @@
-'use strict';
-
 // Reader Base Library
 
+// TODO: now that modules are available, importing is less of a hassle. This module should be
+// broken up into individual modules again, and probably deprecated. But I am going to wait to do
+// this until after successful transition to modules.
+
 const ASSERT_LOG_ERRORS = true;
+const INDEXEDDB_DEBUG = false;
+
+class AssertionError extends Error {
+  constructor(message) {
+    super(message || 'Assertion failed');
+  }
+}
 
 // @throws {AssertionError}
-function assert(condition, message) {
+export function assert(condition, message) {
   if(!condition) {
     const error = new AssertionError(message);
 
@@ -18,7 +27,7 @@ function assert(condition, message) {
 }
 
 // @throws {AssertionError}
-function formatDate(date, delimiter) {
+export function formatDate(date, delimiter) {
   // Tolerate some forms bad input
   if(!date) {
     return '';
@@ -35,7 +44,7 @@ function formatDate(date, delimiter) {
 
 // @param file {File}
 // @returns {Promise}
-function readFileAsText(file) {
+export function readFileAsText(file) {
   assert(file instanceof File);
   return new Promise(function executor(resolve, reject) {
     const reader = new FileReader();
@@ -48,11 +57,9 @@ function readFileAsText(file) {
 // Returns true if the conn is open. This should only be used with indexedDB
 // databases opened by this library.
 // @param conn {IDBDatabase}
-function isOpenDB(conn) {
+export function isOpenDB(conn) {
   return conn instanceof IDBDatabase && conn.onabort;
 }
-
-const INDEXEDDB_DEBUG = false;
 
 // Wraps a call to indexedDB.open that imposes a time limit and translates
 // blocked events into errors.
@@ -63,7 +70,7 @@ const INDEXEDDB_DEBUG = false;
 // @param timeoutMs {Number} optional, positive integer, how long to wait
 // in milliseconds before giving up on connecting
 // @throws {Error} if connection error or timeout occurs
-async function openDB(name, version, upgradeListener, timeoutMs) {
+export async function openDB(name, version, upgradeListener, timeoutMs) {
   assert(typeof name === 'string');
 
   if(isNaN(timeoutMs)) {
@@ -155,7 +162,7 @@ async function openDB(name, version, upgradeListener, timeoutMs) {
 
 // Requests to close 0 or more indexedDB connections
 // @param {...IDBDatabase}
-function closeDB(...conns) {
+export function closeDB(...conns) {
   // NOTE: undefined conns does not raise an error, the loop simply never
   // iterates.
   for(const conn of conns) {
@@ -172,7 +179,7 @@ function closeDB(...conns) {
   }
 }
 
-function deleteDB(name) {
+export function deleteDB(name) {
   return new Promise(function executor(resolve, reject) {
     console.debug('deleting database', name);
     const request = indexedDB.deleteDatabase(name);
@@ -185,21 +192,23 @@ function deleteDB(name) {
 // Returns false for NaN
 // Returns false for Number.POSITIVE_INFINITY
 // Returns true for 0
-function isPosInt(number) {
+export function isPosInt(number) {
   return Number.isInteger(number) && number >= 0;
 }
 
+const BASE_10_RADIX = 10;
+
 // Wraps parseInt with a base 10 parameter. This is both convenient and avoids
 // surprising parse results (such as when parsing '010').
-function parseInt10(number) {
-  const BASE_10_RADIX = 10;
+
+export function parseInt10(number) {
   return parseInt(number, BASE_10_RADIX);
 }
 
 // Returns a new object that is a copy of the input less empty properties. A
 // property is empty if it is null, undefined, or an empty string. Ignores
 // prototype, deep objects, getters, etc. Shallow copy by reference.
-function filterEmptyProps(object) {
+export function filterEmptyProps(object) {
   const hasOwnProp = Object.prototype.hasOwnProperty;
   const output = {};
   let undef;
@@ -223,7 +232,7 @@ function filterEmptyProps(object) {
 // destructuring such as const [t,p] = setTimeoutPromise(n);
 // @param timeoutMs {Number} milliseconds, must be >= 0, the browser may
 // choose to take longer than specified
-function setTimeoutPromise(timeoutMs) {
+export function setTimeoutPromise(timeoutMs) {
   assert(isPosInt(timeoutMs));
 
   // Note this is special behavior and different than calling setTimeout with
@@ -244,7 +253,7 @@ function setTimeoutPromise(timeoutMs) {
 // A variant of Promise.all that does not shortcircuit. If any promise rejects,
 // undefined is placed in the output array in place of the promise's return
 // value.
-async function promiseEvery(promises) {
+export async function promiseEvery(promises) {
   assert(Array.isArray(promises));
   const results = [];
   for(const promise of promises) {
@@ -271,11 +280,11 @@ async function promiseEvery(promises) {
 // @param {String} an input string
 // @throws {Error} if input is not a string
 // @returns {String} a condensed string
-function condenseWhitespace(string) {
+export function condenseWhitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
 }
 
-function filterWhitespace(string) {
+export function filterWhitespace(string) {
   return string.replace(/\s+/g, '');
 }
 
@@ -285,7 +294,7 @@ function filterWhitespace(string) {
 // See https://stackoverflow.com/questions/336210
 // The empty string is true, null/undefined are true
 // Does NOT support languages other than English
-function isAlphanumeric(string) {
+export function isAlphanumeric(string) {
   return /^[a-zA-Z0-9]*$/.test(string);
 }
 
@@ -295,14 +304,14 @@ function isAlphanumeric(string) {
 // http://stackoverflow.com/questions/4324790
 // http://stackoverflow.com/questions/21284228
 // http://stackoverflow.com/questions/24229262
-function filterControls(string) {
+export function filterControls(string) {
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }
 
 // Returns an array of word token strings.
 // @param string {String}
 // @returns {Array} an array of tokens
-function tokenize(string) {
+export function tokenize(string) {
   // Rather than make any assertions about the input, tolerate bad input for
   // the sake of caller convenience.
   if(typeof string !== 'string') {
@@ -333,7 +342,7 @@ function tokenize(string) {
 // @param inputValue {Any} a value of any type
 // @returns {Number} an integer representing the approximate byte size of the
 // input value
-function sizeof(inputValue) {
+export function sizeof(inputValue) {
   // visitedObjects is a memoization of previously visited objects. In theory
   // a repeated object just means enough bytes to store a reference value,
   // and only the first object actually allocates additional memory.
@@ -402,26 +411,22 @@ function sizeof(inputValue) {
   return byteCount;
 }
 
-function isUncheckedError(error) {
+// TODO: move to errors.js
+export function isUncheckedError(error) {
   return error instanceof AssertionError ||
     error instanceof TypeError ||
     error instanceof ReferenceError;
 }
 
-// Global errors
-class AssertionError extends Error {
-  constructor(message) {
-    super(message || 'Assertion failed');
-  }
-}
-
-class ParserError extends Error {
+// TODO: move to errors.js
+export class ParserError extends Error {
   constructor(message) {
     super(message || 'Parse error');
   }
 }
 
-class PermissionsError extends Error {
+// TODO: move to errors.js
+export class PermissionsError extends Error {
   constructor(message) {
     super(message || 'Not permitted');
   }

@@ -1,20 +1,23 @@
-'use strict';
 
-// import poll/poll-document-filter.js
-// import entry.js
-// import favicon-cache.js
-// import favicon-lookup.js
-// import feed.js
-// import fetch.js
-// import html.js
-// import html-parser.js
-// import rbl.js
-// import reader-db.js
-// import reader-storage.js
-// import rewrite-url.js
-// import url.js
+import {
+  entryAppendURL,
+  entryHasURL,
+  entryIsEntry,
+  entryPeekURL
+} from "/src/entry.js";
+import {FaviconLookup} from "/src/favicon-lookup.js";
+import {fetchHTML} from "/src/fetch.js";
+import {HTMLParser} from "/src/html-parser.js";
+import {pollDocumentFilter} from "/src/poll/poll-document-filter.js";
+import {assert, isUncheckedError} from "/src/rbl.js";
+import {readerDbFindEntryByURL} from "/src/reader-db.js";
+import {readerStorageAddEntry} from "/src/reader-storage.js";
+import {rewriteURL} from "/src/rewrite-url.js";
+import {isValidURL, sniffIsBinaryURL} from "/src/url.js";
 
-class PollEntryContext {
+
+
+export class PollEntryContext {
   constructor() {
     this.readerConn = null;
     this.iconCache = null;
@@ -26,7 +29,7 @@ class PollEntryContext {
 
 // @param this {PollEntryContext}
 // @throws AssertionError
-async function pollEntry(entry) {
+export async function pollEntry(entry) {
   assert(this instanceof PollEntryContext);
   assert(entryIsEntry(entry));
 
@@ -86,7 +89,6 @@ async function pollEntry(entry) {
   } catch(error) {
     // Ignore icon update failure
   }
-
 
   // Filter the entry content
   if(entryDocument) {

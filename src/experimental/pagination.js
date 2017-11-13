@@ -1,15 +1,15 @@
-'use strict';
 
-// import dom.js
-// import rbl.js
+import {domFindLCA, domIsHidden} from "/src/dom.js";
+import {assert} from "/src/rbl.js";
 
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other
 // properties
-// TODO: something that tracks how pager was found, so it can be found again
+// TODO: If returning a pager should probably be renamed to something like
+// findPager
+// TODO: return something that tracks how pager was found, so it can be found again
 // for removal. Or ... remove on find, e.g. have a bool param
-// If returning a pager should probably be renamed to something like
-// find_pager
+
 
 // @param doc {HTMLDocument}
 // @param location {String} url location of the document

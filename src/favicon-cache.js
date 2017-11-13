@@ -1,8 +1,8 @@
-'use strict';
 
-// import rbl.js
+import {assert, closeDB, isOpenDB, openDB} from "/src/rbl.js";
 
-class FaviconCache {
+
+export class FaviconCache {
   constructor() {
     this.conn = undefined;
     this.name = 'favicon-cache';
@@ -20,8 +20,8 @@ FaviconCache.MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 FaviconCache.prototype.open = async function() {
   this.conn = await openDB(this.name, this.version, this.onUpgradeNeeded, this.openTimeoutMs);
 
-  // TODO: I would prefer this would be void, first need to ensure call sites do not expect
-  // return value
+  // TODO: I would prefer this would be void, first need to ensure callers do not expect return
+  // value
   return this;
 };
 
@@ -93,6 +93,8 @@ FaviconCache.prototype.findExpired = function(maxAgeMs) {
     maxAgeMs = FaviconCache.MAX_AGE_MS;
   }
 
+  // TODO: assert maxAgeMs isPosInt
+
   return new Promise((resolve, reject) => {
     let cutoffTimeMs = Date.now() - maxAgeMs;
     cutoffTimeMs = cutoffTimeMs < 0 ? 0 : cutoffTimeMs;
@@ -123,9 +125,6 @@ FaviconCache.prototype.removeByURL = function(pageURLs) {
 FaviconCache.prototype.put = function(entry) {
   assert(isOpenDB(this.conn));
 
-  // Temporary assertion due to error
-  assert(arguments.length === 1);
-
   return new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
@@ -142,9 +141,6 @@ FaviconCache.prototype.put = function(entry) {
 // @param iconURL {String}
 FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
   assert(isOpenDB(this.conn));
-
-  // Temporary assertion due to error
-  assert(arguments.length === 2);
 
   return new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');

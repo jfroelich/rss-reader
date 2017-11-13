@@ -1,10 +1,9 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
 // Look for all <hr><hr> sequences and remove the second one. Naive in that it
 // does not fully account for new document state as hrs removed.
-function hrFilter(doc) {
+export function hrFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

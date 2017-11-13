@@ -1,8 +1,11 @@
-'use strict';
+// DOM utilities
 
-// import third-party/parseSrcset.js
-// import rbl.js
-// import url.js
+import {assert} from "/src/rbl.js";
+import * as tpps from "/src/third-party/parse-srcset.js";
+import {isValidURL} from "/src/url.js";
+
+
+// TODO: drop prefix after transition to modules
 
 // Returns the first matching css rule within the given sheet, or undefined if
 // no rules match.
@@ -10,7 +13,7 @@
 // @param sheet css style sheet
 // @param selectorText {String}
 // @returns rule {???}
-function domFindCSSRule(sheet, selectorText) {
+export function domFindCSSRule(sheet, selectorText) {
   assert(sheet);
 
   for(const rule of sheet.cssRules) {
@@ -21,7 +24,7 @@ function domFindCSSRule(sheet, selectorText) {
 }
 
 // Use the first sheet
-function domGetDefaultStylesheet() {
+export function domGetDefaultStylesheet() {
   const sheets = document.styleSheets;
   if(sheets.length) {
     return sheets[0];
@@ -30,13 +33,13 @@ function domGetDefaultStylesheet() {
 
 // Returns true if the given name is a valid name for an element. This only
 // does minimal validation and may yield false positives.
-function domIsValidElementName(name) {
+export function domIsValidElementName(name) {
   return typeof name === 'string' && name.length && !name.includes(' ');
 }
 
 // Replace an element with its children. Special care is taken to add spaces
 // if the operation would result in adjacent text nodes.
-function domUnwrap(element) {
+export function domUnwrap(element) {
   assert(element instanceof Element);
   assert(element.parentNode, 'orphaned element');
 
@@ -72,6 +75,7 @@ function domUnwrap(element) {
   parentElement.insertBefore(frag, nextSibling);
 }
 
+// TODO: rename to renameElement
 // Changes the tag name of an element. Event listeners are lost on rename. No
 // checking is done regarding whether the result is semantically correct.
 //
@@ -81,7 +85,7 @@ function domUnwrap(element) {
 // @param copyAttributes {Boolean} optional, if true then attributes are
 // maintained, defaults to true.
 // @returns {Element} the new element that replaced the old one
-function domRename(element, newName, copyAttributes) {
+export function domRename(element, newName, copyAttributes) {
 
   // Disallow createElement(null) working like createElement("null")
   assert(domIsValidElementName(newName));
@@ -137,7 +141,7 @@ function domRename(element, newName, copyAttributes) {
 // @param toElement {Element}
 // @throws {Error} if either element is not an Element
 // @returns void
-function domCopyAttributes(fromElement, toElement) {
+export function domCopyAttributes(fromElement, toElement) {
   // Use getAttributeNames in preference to element.attributes due to
   // performance issues with element.attributes, and to allow unencumbered use
   // of the for..of syntax (I had issues with NamedNodeMap and for..of).
@@ -150,7 +154,7 @@ function domCopyAttributes(fromElement, toElement) {
 
 // Only looks at inline style.
 // Returns {'width': int, 'height': int} or undefined
-function domGetDimensions(element) {
+export function domGetDimensions(element) {
 
   // Accessing element.style is a performance heavy operation sometimes, so
   // try and avoid calling it.
@@ -176,7 +180,7 @@ function domGetDimensions(element) {
 }
 
 // TODO: this could use some cleanup or at least some clarifying comments
-function domFade(element, durationSecs, delaySecs) {
+export function domFade(element, durationSecs, delaySecs) {
   return new Promise(function executor(resolve, reject) {
     const style = element.style;
     if(style.display === 'none') {
@@ -196,26 +200,26 @@ function domFade(element, durationSecs, delaySecs) {
 
 // TODO: also has source if within picture and picture has <source>, or
 // alternatively rename to domImageHasSourceAttribute
-function domImageHasSource(image) {
+export function domImageHasSource(image) {
   assert(image instanceof Element);
   return image.hasAttribute('src') || domImageHasSrcset(image);
 }
 
 // Return true if image has a valid src attribute value
-function domImageHasValidSource(image) {
+export function domImageHasValidSource(image) {
   assert(image instanceof Element);
   return isValidURL(image.getAttribute('src'));
 }
 
 // Return true if image has a non-empty srcset attribute value
-function domImageHasSrcset(image) {
+export function domImageHasSrcset(image) {
   assert(image instanceof Element);
   const imageSrcset = image.getAttribute('srcset');
   return imageSrcset && imageSrcset.trim();
 }
 
 // Searches for and returns the corresponding figcaption element
-function domFindCaption(image) {
+export function domFindCaption(image) {
   assert(image instanceof Element);
   let figcaption;
   const figure = image.closest('figure');
@@ -226,7 +230,7 @@ function domFindCaption(image) {
 }
 
 // TODO: remove picture/source/figure/figcaption
-function domRemoveImage(image) {
+export function domRemoveImage(image) {
   image.remove();
 }
 
@@ -240,7 +244,7 @@ function domRemoveImage(image) {
 //
 // TODO: change to varargs, find the LCAs of whatever args given, instead of
 // only 2. change to (...nodes)
-function domFindLCA(node1, node2) {
+export function domFindLCA(node1, node2) {
   assert(node1 instanceof Node);
   assert(node2 instanceof Node);
   assert(node1 !== node2);
@@ -265,7 +269,7 @@ function domFindLCA(node1, node2) {
 
 // Returns an array of ancestors, from deepest to shallowest.
 // The node itself is not included.
-function domAncestors(node) {
+export function domAncestors(node) {
   assert(node instanceof Node);
   const ancestors = [];
   for(let parent = node.parentNode; parent; parent = parent.parentNode) {
@@ -277,7 +281,7 @@ function domAncestors(node) {
 // @param descriptors {Array} an array of descriptors such as those produced
 // by parseSrcset (third party library)
 // @returns {String} a string suitable for storing as srcset attribute value
-function domSrcsetSerialize(descriptors) {
+export function domSrcsetSerialize(descriptors) {
   assert(Array.isArray(descriptors));
 
   const descriptorStrings = [];
@@ -307,7 +311,7 @@ function domSrcsetSerialize(descriptors) {
 // Returns an array of descriptor objects. If the input is bad, or an error
 // occurs, returns an empty array.
 // @param srcset {String}
-function domSrcsetParseFromString(srcset) {
+export function domSrcsetParseFromString(srcset) {
   const fallbackOutput = [];
 
   if(typeof srcset !== 'string') {
@@ -316,7 +320,7 @@ function domSrcsetParseFromString(srcset) {
 
   let descriptors;
   try {
-    descriptors = parseSrcset(srcset);
+    descriptors = tpps.parseSrcset(srcset);
   } catch(error) {
     return fallbackOutput;
   }
@@ -330,7 +334,7 @@ function domSrcsetParseFromString(srcset) {
 
 // Returns true if an element, or any of its ancestors, is hidden.
 // @param element {Element}
-function domIsHidden(element) {
+export function domIsHidden(element) {
   assert(element instanceof Element);
 
   const doc = element.ownerDocument;
@@ -393,7 +397,7 @@ function domIsHidden(element) {
 
 // Returns true if an element is hidden according to its inline style. Makes
 // mostly conservative guesses and misses a few cases.
-function domIsHiddenInline(element) {
+export function domIsHiddenInline(element) {
   assert(element instanceof Element);
 
   // Special handling for MathML. <math> and its subelements do not contain
@@ -432,11 +436,9 @@ function domIsNearTransparent(element) {
   return !isNaN(opacity) && opacity >= 0 && opacity <= 0.3;
 }
 
-// Returns true if the element is positioned off screen.
-// Heuristic guess. Probably several false negatives, and a few false
-// positives. The cost of guessing wrong is not too high.
-// This is pretty inaccurate. Mostly just a mental note.
-// Again, restricted to inert document context.
+// Returns true if the element is positioned off screen. Heuristic guess. Probably several false
+// negatives, and a few false positives. The cost of guessing wrong is not too high. This is pretty
+// inaccurate. Mostly just a mental note. Again, restricted to inert document context.
 function domIsOffscreen(element) {
   if(element.style.position === 'absolute') {
     const left = parseInt10(element.style.left);

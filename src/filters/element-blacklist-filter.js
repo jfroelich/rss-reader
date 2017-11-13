@@ -1,6 +1,5 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
 const BLACKLIST_FILTER_SELECTOR = [
   'applet', 'audio', 'basefont', 'bgsound', 'command', 'datalist', 'dialog', 'embed', 'head',
@@ -8,7 +7,7 @@ const BLACKLIST_FILTER_SELECTOR = [
   'style', 'svg', 'title', 'video', 'xmp'
 ].join(',');
 
-function elementBlacklistFilter(doc) {
+export function elementBlacklistFilter(doc) {
   assert(doc instanceof Document);
   const documentElement = doc.documentElement;
   const elements = doc.querySelectorAll(BLACKLIST_FILTER_SELECTOR);

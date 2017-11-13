@@ -1,6 +1,5 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
 // TODO: move to experimental and stop using for now
 // TODO: this should be part of a general character normalization filter,
@@ -8,7 +7,7 @@
 // TODO: accessing nodeValue does decoding, so maybe this doesn't work? Forgot.
 // TODO: this needs testing to test whether it actually works, I don't think
 // this works.
-function hairspaceFilter(doc) {
+export function hairspaceFilter(doc) {
   assert(doc instanceof Document);
 
   // Restrict analysis to body descendants. While hairspaces can occur

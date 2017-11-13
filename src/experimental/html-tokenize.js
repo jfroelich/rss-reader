@@ -1,6 +1,7 @@
-'use strict';
 
-// import rbl.js
+
+import {assert} from "/src/rbl.js";
+
 
 // Tokenizes an arbitrary string of html. Makes some effort to comply with
 // standards but does not fully comply.
@@ -12,7 +13,7 @@
 // @throws {TypeError} is htmlString is not a defined string-like object
 // @throws {Error} if tokenization does not end in the default state, such as
 // within a tag
-function tokenizeHTML(htmlString, inputState = 0) {
+export function tokenizeHTML(htmlString, inputState = 0) {
 
   assert(typeof htmlString === 'string');
 

@@ -1,8 +1,7 @@
-'use strict';
 
-// import rbl.js
+import {assert, condenseWhitespace} from "/src/rbl.js";
 
-function nodeWhitespaceFilter(doc) {
+export function nodeWhitespaceFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
@@ -12,7 +11,7 @@ function nodeWhitespaceFilter(doc) {
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
-    if(value.length > 3 && !nodeWhitespaceFilterIsSensitive(node)) {
+    if(value.length > 3 && !isSensitive(node)) {
       const newValue = condenseWhitespace(value);
       if(newValue.length !== value.length) {
         node.nodeValue = newValue;
@@ -21,7 +20,7 @@ function nodeWhitespaceFilter(doc) {
   }
 }
 
-function nodeWhitespaceFilterIsSensitive(node) {
+function isSensitive(node) {
   const selector = 'code, pre, ruby, script, style, textarea, xmp';
   return node.parentNode.closest(selector);
 }

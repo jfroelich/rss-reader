@@ -1,6 +1,7 @@
-'use strict';
 
-function optionsPageErrorMessageShow(message, fade) {
+import {domFade} from "/src/dom.js";
+
+export function optionsPageErrorMessageShow(message, fade) {
   optionsPageErrorMessageHide();
 
   const errorElement = document.createElement('div');
@@ -28,7 +29,7 @@ function optionsPageErrorMessageShow(message, fade) {
   }
 }
 
-function optionsPageErrorMessageHide() {
+export function optionsPageErrorMessageHide() {
   const errorMessageElement = document.getElementById('options-error-message');
   if(!errorMessageElement) {
     return;

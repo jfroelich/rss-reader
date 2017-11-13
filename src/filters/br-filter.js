@@ -1,8 +1,7 @@
-'use strict';
 
-// import rbl.js
+import {assert} from "/src/rbl.js";
 
-function brFilter(doc) {
+export function brFilter(doc) {
   assert(doc instanceof Document);
   if(doc.body) {
     const brs = doc.body.querySelectorAll('br + br');

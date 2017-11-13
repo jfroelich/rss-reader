@@ -1,20 +1,21 @@
-'use strict';
+// Module for polling feeds
 
-// import poll/poll-entry.js
-// import extension.js
-// import feed.js
-// import fetch.js
-// import rbl.js
-// import reader-badge.js
-// import reader-db.js
-// import reader-parse-feed.js
-// import reader-storage.js
+import {queryIdleState, showNotification} from "/src/extension.js";
+import {feedIsFeed, feedMerge, feedPeekURL} from "/src/feed.js";
+import {fetchFeed} from "/src/fetch.js";
+import {pollEntry, PollEntryContext} from "/src/poll/poll-entry.js";
+import {assert, promiseEvery} from "/src/rbl.js";
+import {readerBadgeUpdate} from "/src/reader-badge.js";
+import {readerDbGetFeeds} from "/src/reader-db.js";
+import {readerParseFeed} from "/src/reader-parse-feed.js";
+import {readerStoragePutFeed} from "/src/reader-storage.js";
 
+// TODO: rename pollFeeds to poll?
 // TODO: rather than context, just create a function option like
-// PollFeedOperation, or PollFeedRequest or something like this. Then
-// deprecate PollFeedsContext. Or create an IIAFE and keep context.
+// PollFeedOperation, or PollFeedRequest or something like this? Then
+// deprecate PollFeedsContext?
 
-function PollFeedsContext() {
+export function PollFeedsContext() {
   this.readerConn = undefined;
   this.iconCache = undefined;
   this.allowMeteredConnections = false;
@@ -29,7 +30,7 @@ function PollFeedsContext() {
   this.acceptHTML = true;
 }
 
-async function pollFeeds(pfc) {
+export async function pollFeeds(pfc) {
   assert(pfc instanceof PollFeedsContext);
   assert('onLine' in navigator);
   if(!navigator.onLine) {
@@ -56,7 +57,7 @@ async function pollFeeds(pfc) {
   if(!pfc.ignoreRecencyCheck) {
     const pollableFeeds = [];
     for(const feed of feeds) {
-      if(pollFeedsFeedIsPollable(feed, pfc.recencyPeriodMs)) {
+      if(isPollableFeed(feed, pfc.recencyPeriodMs)) {
         pollableFeeds.push(feed);
       }
     }
@@ -66,7 +67,7 @@ async function pollFeeds(pfc) {
   // TODO: pfc should be this bound?
   const promises = [];
   for(const feed of feeds) {
-    promises.push(pollFeedsPollFeed(feed, pfc));
+    promises.push(pollFeed(feed, pfc));
   }
   await promiseEvery(promises);
 
@@ -81,7 +82,7 @@ async function pollFeeds(pfc) {
   channel.close();
 }
 
-function pollFeedsFeedIsPollable(feed, recencyPeriodMs) {
+function isPollableFeed(feed, recencyPeriodMs) {
   if(!feed.dateFetched) {
     return true;
   }
@@ -104,7 +105,7 @@ function pollFeedsFeedIsPollable(feed, recencyPeriodMs) {
 // @throws {ParserError}
 // @throws {Error} any exception calling response.text()
 // @throws {Error} database error
-async function pollFeedsPollFeed(feed, pfc) {
+async function pollFeed(feed, pfc) {
   assert(feedIsFeed(feed));
   assert(pfc instanceof PollFeedsContext);
 
@@ -145,5 +146,7 @@ async function pollFeedsPollFeed(feed, pfc) {
   pec.fetchImageTimeoutMs = pfc.fetchImageTimeoutMs;
 
   const entryPromises = entries.map(pollEntry, pec);
+
+  // TODO: switch to using promiseEvery
   const entryResolutions = await Promise.all(entryPromises);
 }

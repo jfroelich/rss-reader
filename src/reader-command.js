@@ -1,14 +1,20 @@
-'use strict';
+// Command line interface
 
-// import poll/poll.js
-// import favicon-cache.js
-// import favicon-lookup.js
-// import rbl.js
-// import reader-db.js
-// import reader-storage.js
-// import url.js
+import {FaviconCache} from "/src/favicon-cache.js";
+import {FaviconLookup} from "/src/favicon-lookup.js";
+import {pollFeeds, PollFeedsContext} from "/src/poll/poll-feeds.js";
+import {closeDB, parseInt10} from "/src/rbl.js";
+import {readerDbOpen} from "/src/reader-db.js";
+import {
+  readerStorageArchiveEntries,
+  readerStorageRefreshFeedIcons,
+  readerStorageRemoveLostEntries,
+  readerStorageRemoveOrphans
+} from "/src/reader-storage.js";
 
-async function readerCommand(command, ...args) {
+
+
+export async function readerCommand(command, ...args) {
   switch(command) {
   case 'refreshicons': {
 
@@ -122,20 +128,21 @@ async function readerCommand(command, ...args) {
   }
   default:
     console.error('Unknown command', command);
-    print_usage();
+    printUsage();
     break;
   }
+}
 
+// TODO: reorder
 
-  function print_usage() {
-    console.debug('Commands:', [
-      'refreshicons',
-      'archive',
-      'poll',
-      'scanlost',
-      'scanorphans',
-      'clearicons',
-      'iconlookup'
-    ]);
-  }
+function printUsage() {
+  console.debug('Commands:', [
+    'refreshicons',
+    'archive',
+    'poll',
+    'scanlost',
+    'scanorphans',
+    'clearicons',
+    'iconlookup'
+  ]);
 }

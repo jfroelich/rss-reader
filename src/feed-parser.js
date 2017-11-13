@@ -1,13 +1,11 @@
-'use strict';
 
-// import rbl.js
-// import xml-parser.js
+import {assert} from "/src/rbl.js";
+import {XMLParser} from "/src/xml-parser.js";
 
 // TODO: prefer "item" over "entry" terminology?
-// TODO: yet again I think IIAFE is probably better. This is an object for no valid reason,
-// because there is no state to track.
+// TODO: there is no need for class with modules
 
-class FeedParser {}
+export class FeedParser {}
 
 // Parses the input string into a feed object
 // @param xml {String} the text to parse
