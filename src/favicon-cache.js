@@ -1,6 +1,6 @@
 
 import {assert} from "/src/assert.js";
-import {closeDB, isOpenDB, openDB} from "/src/rbl.js";
+import {closeDB, isOpenDB, openDB} from "/src/idb.js";
 
 
 export class FaviconCache {

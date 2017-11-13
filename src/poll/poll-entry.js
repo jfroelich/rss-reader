@@ -9,8 +9,9 @@ import {
 import {FaviconLookup} from "/src/favicon-lookup.js";
 import {fetchHTML} from "/src/fetch.js";
 import {HTMLParser} from "/src/html-parser.js";
+import {isOpenDB} from "/src/idb.js";
 import {pollDocumentFilter} from "/src/poll/poll-document-filter.js";
-import {isOpenDB, isUncheckedError} from "/src/rbl.js";
+import {isUncheckedError} from "/src/rbl.js";
 import {readerDbFindEntryByURL} from "/src/reader-db.js";
 import {readerStorageAddEntry} from "/src/reader-storage.js";
 import {rewriteURL} from "/src/rewrite-url.js";

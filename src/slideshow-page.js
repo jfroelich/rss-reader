@@ -2,20 +2,13 @@
 
 import {assert} from "/src/assert.js";
 import {articleTitleFilterPublisher} from "/src/article-title.js";
+import {formatDate} from "/src/date.js";
+import {entryIsValidId, entryIsEntry, entryPeekURL} from "/src/entry.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import {htmlEscape, htmlTruncate} from "/src/html.js";
-import {
-  closeDB,
-  formatDate,
-  isOpenDB,
-  parseInt10
-} from "/src/rbl.js";
-import {
-  entryIsValidId,
-  entryIsEntry,
-  entryPeekURL
-} from "/src/entry.js";
+import {closeDB, isOpenDB} from "/src/idb.js";
+import {parseInt10} from "/src/rbl.js";
 import {readerDbOpen, readerDbGetUnarchivedUnreadEntries} from "/src/reader-db.js";
 import {readerStorageMarkRead} from "/src/reader-storage.js";
 import {isCanonicalURL} from "/src/url.js";

@@ -1,11 +1,13 @@
 // See license.md
 
-// TODO: test timeouts
-// TODO: this is out of date. readerDbOpen does not accept params
-// To test, use openDB
+// TODO: this isn't a reader-db.js test, this is an idb.js test, rename files
+
 
 import {assert} from "/src/assert.js";
-import {openDB, isOpenDB, closeDB, deleteDB} from "/src/rbl.js";
+import {openDB, isOpenDB, closeDB, deleteDB} from "/src/idb.js";
+
+// TODO: i don't think this is exported
+import {readerDbOnUpgradeNeeded} from "/src/reader-db.js";
 
 async function test() {
   const name = 'test-feed-db', version = 1;

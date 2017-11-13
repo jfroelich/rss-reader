@@ -24,14 +24,8 @@ import {
   feedSanitize
 } from "/src/feed.js";
 
-import {
-  filterEmptyProps,
-  isOpenDB,
-  isPosInt,
-  isUncheckedError,
-  sizeof
-} from "/src/rbl.js";
-
+import {isOpenDB} from "/src/idb.js";
+import {filterEmptyProps, isPosInt, isUncheckedError, sizeof} from "/src/rbl.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
 
 import {

@@ -1,9 +1,8 @@
 
 import {assert} from "/src/assert.js";
 import {setBadgeText} from "/src/extension.js";
-import {isOpenDB} from "/src/rbl.js";
+import {isOpenDB} from "/src/idb.js";
 import {readerDbCountUnreadEntries} from "/src/reader-db.js";
-
 
 const DEBUG = true;
 

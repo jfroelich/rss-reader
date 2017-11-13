@@ -9,7 +9,8 @@ import {
   ENTRY_STATE_UNARCHIVED
 } from "/src/entry.js";
 import {feedIsFeed, feedIsValidId} from "/src/feed.js";
-import {openDB, isOpenDB, isPosInt} from "/src/rbl.js";
+import {openDB, isOpenDB} from "/src/idb.js";
+import {isPosInt} from "/src/rbl.js";
 import {isValidURL} from "/src/url.js";
 
 export class ReaderDbConstraintError extends Error {

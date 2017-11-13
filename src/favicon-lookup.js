@@ -6,7 +6,8 @@ import {
   FETCH_UNKNOWN_CONTENT_LENGTH
 } from "/src/fetch.js";
 import {HTMLParser} from "/src/html-parser.js";
-import {isOpenDB, isPosInt, isUncheckedError} from "/src/rbl.js";
+import {isOpenDB} from "/src/idb.js";
+import {isPosInt, isUncheckedError} from "/src/rbl.js";
 
 
 export class FaviconLookup {

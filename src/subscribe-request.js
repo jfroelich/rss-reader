@@ -20,10 +20,9 @@ import {
 } from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
 import {FetchPolicy} from "/src/fetch-policy.js";
+import {closeDB, isOpenDB} from "/src/idb.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
 import {
-  closeDB,
-  isOpenDB,
   isUncheckedError,
   PermissionsError
 } from "/src/rbl.js";

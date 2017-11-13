@@ -1,10 +1,9 @@
 // For importing feeds from opml file into the reader app
+
 import {assert} from "/src/assert.js";
-
-// TODO: order imports alphabetically by file
-
-import {closeDB, isOpenDB, readFileAsText} from "/src/rbl.js";
 import {FaviconCache} from "/src/favicon-cache.js";
+import {readFileAsText} from "/src/file.js";
+import {closeDB, isOpenDB} from "/src/idb.js";
 import {mime} from "/src/mime.js";
 import {
   opmlRemoveOutlinesWithInvalidTypes,
@@ -12,10 +11,7 @@ import {
   opmlRemoveOutlinesMissingXMLURLs,
   opmlGetOutlineObjects,
 } from "/src/opml-document.js";
-import {
-  opmlOutlineNormalizeHTMLURL,
-  opmlOutlineToFeed
-} from "/src/opml-outline.js";
+import {opmlOutlineNormalizeHTMLURL, opmlOutlineToFeed} from "/src/opml-outline.js";
 import {OPMLParser} from "/src/opml-parser.js";
 import {readerDbOpen} from "/src/reader-db.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
