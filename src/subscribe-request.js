@@ -6,7 +6,7 @@
 // function or two, but do this after successful transition to modules
 
 import {assert} from "/src/assert.js";
-
+import {isUncheckedError, PermissionsError} from "/src/errors.js";
 import {showNotification} from "/src/extension.js";
 import {FaviconCache} from "/src/favicon-cache.js";
 import {FaviconLookup} from "/src/favicon-lookup.js";
@@ -22,10 +22,7 @@ import {fetchFeed} from "/src/fetch.js";
 import {FetchPolicy} from "/src/fetch-policy.js";
 import {closeDB, isOpenDB} from "/src/idb.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
-import {
-  isUncheckedError,
-  PermissionsError
-} from "/src/rbl.js";
+
 
 import {
   readerDbOpen,

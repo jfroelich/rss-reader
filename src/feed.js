@@ -3,7 +3,7 @@
 import {assert} from "/src/assert.js";
 import {htmlReplaceTags, htmlTruncate} from "/src/html.js";
 import {isPosInt} from "/src/number.js";
-import {condenseWhitespace, filterControls} from "/src/rbl.js";
+import {condenseWhitespace, filterControls} from "/src/string.js";
 import {isCanonicalURL} from "/src/url.js";
 
 export function feedCreate() {
@@ -98,7 +98,6 @@ function feedHasValidProperties(feed) {
 // TODO: rename to sanitize after module transition
 
 // Returns a shallow copy of the input feed with sanitized properties
-// @throws AssertionError, ParserError
 export function feedSanitize(feed, titleMaxLength, descMaxLength) {
   assert(feedIsFeed(feed));
 

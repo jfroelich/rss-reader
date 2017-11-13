@@ -3,7 +3,7 @@
 import {assert} from "/src/assert.js";
 import {htmlReplaceTags, htmlTruncate} from "/src/html.js";
 import {isPosInt} from "/src/number.js";
-import {filterControls, condenseWhitespace} from "/src/rbl.js";
+import {filterControls, condenseWhitespace} from "/src/string.js";
 import {isCanonicalURL} from "/src/url.js";
 
 
@@ -62,7 +62,6 @@ export function entryAppendURL(entry, urlString) {
 
 
 // Returns a new entry object where fields have been sanitized. Impure
-// @throws AssertionError, ParserError
 export function entrySanitize(inputEntry, authorMaxLength, titleMaxLength, contextMaxLength) {
   assert(entryIsEntry(inputEntry));
 

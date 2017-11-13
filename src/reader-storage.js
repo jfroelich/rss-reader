@@ -1,7 +1,6 @@
 // app storage module, mostly a wrapper around reader-db that integrates other modules
 
 import {assert} from "/src/assert.js";
-
 import {
   entryHasURL,
   entryIsEntry,
@@ -12,10 +11,9 @@ import {
   ENTRY_STATE_UNARCHIVED,
   ENTRY_STATE_UNREAD
 } from "/src/entry.js";
-
+import {isUncheckedError} from "/src/errors.js";
 import {FaviconCache} from "/src/favicon-cache.js";
 import {FaviconLookup} from "/src/favicon-lookup.js";
-
 import {
   feedCreateIconLookupURL,
   feedHasURL,
@@ -23,13 +21,11 @@ import {
   feedIsValidId,
   feedSanitize
 } from "/src/feed.js";
-
 import {isOpenDB} from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
 import {filterEmptyProps} from "/src/object.js";
-import {isUncheckedError, sizeof} from "/src/rbl.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
-
+import {sizeof} from "/src/sizeof.js";
 import {
   readerDbFindArchivableEntries,
   readerDbFindEntryById,

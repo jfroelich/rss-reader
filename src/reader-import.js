@@ -47,8 +47,6 @@ export async function readerImportFiles(files) {
   }
 }
 
-// @throws {AssertionError}
-// @throws {ParserError}
 async function importFile(file, readerConn, iconConn) {
   assert(file instanceof File);
   assert(isOpenDB(readerConn));

@@ -1,6 +1,6 @@
 
 import {assert} from "/src/assert.js";
-import {XMLParser} from "/src/xml-parser.js";
+import {parseXML} from "/src/xml-parser.js";
 
 // TODO: prefer "item" over "entry" terminology?
 // TODO: there is no need for class with modules
@@ -10,10 +10,9 @@ export class FeedParser {}
 // Parses the input string into a feed object
 // @param xml {String} the text to parse
 // @throws {AssertionError}
-// @throws {ParserError}
 // @returns {Object} an object representing the parsed feed and its entries
 FeedParser.prototype.parseFromString = function(feedXML) {
-  const xmlDocument = XMLParser.parse(feedXML);
+  const xmlDocument = parseXML(feedXML);
   return this.unmarshallXML(xmlDocument);
 };
 

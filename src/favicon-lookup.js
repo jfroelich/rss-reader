@@ -1,4 +1,5 @@
 import {assert} from "/src/assert.js";
+import {isUncheckedError} from "/src/errors.js";
 import {FaviconCache} from "/src/favicon-cache.js";
 import {
   fetchHTML,
@@ -8,8 +9,6 @@ import {
 import {HTMLParser} from "/src/html-parser.js";
 import {isOpenDB} from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
-import {isUncheckedError} from "/src/rbl.js";
-
 
 export class FaviconLookup {
   constructor() {

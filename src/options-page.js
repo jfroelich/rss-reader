@@ -132,7 +132,6 @@ function optionsPageFeedListAppendFeed(feed) {
   let feedTitle = feed.title || 'Untitled';
 
   // TODO: handle the parse error, this is near root scope
-  // @throws AssertionError, ParserError
   feedTitle = htmlTruncate(feedTitle, 300);
   titleElement.textContent = feedTitle;
   itemElement.appendChild(titleElement);

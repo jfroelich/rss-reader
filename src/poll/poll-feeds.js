@@ -101,11 +101,6 @@ function isPollableFeed(feed, recencyPeriodMs) {
   return true;
 }
 
-// @throws {AssertionError}
-// @throws {Error} any exception thrown by fetchFeed
-// @throws {ParserError}
-// @throws {Error} any exception calling response.text()
-// @throws {Error} database error
 async function pollFeed(feed, pfc) {
   assert(feedIsFeed(feed));
   assert(pfc instanceof PollFeedsContext);

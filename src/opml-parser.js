@@ -1,17 +1,14 @@
 
-import {XMLParser} from "/src/xml-parser.js";
+import {parseXML} from "/src/xml-parser.js";
 
 // TODO: the class is dumb now with modules, just export a function
 
 export class OPMLParser {
 
   // @param xml {String}
-  // @throws {AssertionError}
-  // @throws {ParserError}
-  // @throws {Error} invalid document element
   // @returns {Document} document
   static parse(xml) {
-    const doc = XMLParser.parse(xml);
+    const doc = parseXML(xml);
     const name = doc.documentElement.localName.toLowerCase();
     if(name !== 'opml') {
       // TODO: use a more specific error

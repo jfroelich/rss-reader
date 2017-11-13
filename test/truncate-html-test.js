@@ -1,8 +1,4 @@
 
-
-// NOTE: htmlTruncate throws AssertionError, ParserError
-
-'use strict';
 const ext = '...';
 const input1 = 'a<p>b</p>c';
 console.debug(input1, '=>', htmlTruncate(input1, 2, ext));

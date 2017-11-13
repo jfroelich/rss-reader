@@ -3,7 +3,7 @@
 // TODO: simplify names after module transition
 import {assert} from "/src/assert.js";
 import {domFindCaption} from "/src/dom.js";
-import {condenseWhitespace} from "/src/rbl.js";
+import {condenseWhitespace} from "/src/string.js";
 
 const BOILERPLATE_ANCESTOR_BIASES = {
   a: -5,

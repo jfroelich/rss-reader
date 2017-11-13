@@ -13,7 +13,6 @@ import {isCanonicalURL} from "/src/url.js";
 
 // Parses an xml input string representing a feed. Returns a result with a
 // feed object and an array of entries.
-// @throws ParserError
 export function readerParseFeed(xmlString, requestURL, responseURL, lastModDate, processEntries) {
   const result = {feed: undefined, entries: []};
   const parser = new FeedParser();

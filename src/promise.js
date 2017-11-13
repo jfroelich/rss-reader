@@ -1,7 +1,7 @@
 
 import {assert} from "/src/assert.js";
+import {isUncheckedError} from "/src/errors.js";
 import {isPosInt} from "/src/number.js";
-import {isUncheckedError} from "/src/rbl.js";
 
 // Returns a promise that resolves to undefined after a certain amount of time,
 // as well as the timer id. This returns an array so that the caller can use

@@ -1,7 +1,7 @@
 // MIME utilities module
 
 import {assert} from "/src/assert.js";
-import {filterWhitespace} from "/src/rbl.js";
+import {filterWhitespace} from "/src/string.js";
 
 // TODO: deprecate mime namespace object after module transition
 // TODO: ensure I am not exporting things that do not need exporting
