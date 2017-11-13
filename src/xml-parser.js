@@ -4,10 +4,10 @@ import {assert} from "/src/assert.js";
 import {ParserError} from "/src/errors.js";
 import {mime} from "/src/mime.js";
 
-export function parseXML(xml) {
+export default function parseXML(xml) {
   assert(typeof xml === 'string');
-  const parser = new DOMParser();
 
+  const parser = new DOMParser();
   const doc = parser.parseFromString(xml, mime.XML);
   assert(doc instanceof Document);
 
@@ -18,7 +18,8 @@ export function parseXML(xml) {
   if(errorElement) {
     let errorMessage = errorElement.textContent;
 
-    // Make the error output a bit prettier for the log
+    // Tidy up the error message
+    // TODO: use string.js function
     errorMessage = errorMessage.replace(/\s+/g, ' ');
 
     throw new ParserError(errorMessage);

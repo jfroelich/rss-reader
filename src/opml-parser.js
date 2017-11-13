@@ -1,5 +1,5 @@
 
-import {parseXML} from "/src/xml-parser.js";
+import parseXML from "/src/xml-parser.js";
 
 // TODO: the class is dumb now with modules, just export a function
 
