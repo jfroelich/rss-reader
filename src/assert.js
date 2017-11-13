@@ -1,5 +1,7 @@
 // Assertions library
 
+// TODO: the assert function should be the default export
+
 // If true, any assertion errors are immediately logged. This helps avoid issues with promise-
 // swallowed exceptions
 const LOG_ERRORS = true;
