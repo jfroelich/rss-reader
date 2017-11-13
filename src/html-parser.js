@@ -1,7 +1,7 @@
 
 import assert from "/src/assert.js";
 import {ParserError} from "/src/errors.js";
-import {mime} from "/src/mime.js";
+import * as mime from "/src/mime.js";
 
 // TODO: the class is dumb now with modules, just export a function instead
 

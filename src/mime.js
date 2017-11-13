@@ -6,18 +6,17 @@ import {filterWhitespace} from "/src/string.js";
 // TODO: deprecate mime namespace object after module transition
 // TODO: ensure I am not exporting things that do not need exporting
 
-export const mime = {};
 
 // Some commonly used global mime types
-mime.HTML = 'text/html';
-mime.XML = 'application/xml';
+export const HTML = 'text/html';
+export const XML = 'application/xml';
 
 // Rather arbitrary, but just as a general bound
 // TODO: increase and test accuracy
-mime.MIME_TYPE_MIN_LENGTH = 7;
-mime.MIME_TYPE_MAX_LENGTH = 100;
+export const MIME_TYPE_MIN_LENGTH = 7;
+export const MIME_TYPE_MAX_LENGTH = 100;
 
-mime.EXTENSION_TYPE_MAP = {
+const EXTENSION_TYPE_MAP = {
   ai:   'application/postscript',
   aif:  'audio/aiff',
   atom: 'application/atom+xml',
@@ -118,7 +117,7 @@ mime.EXTENSION_TYPE_MAP = {
 // Return a mime type corresponding a file name extension
 // @param extension {String}
 // @returns {String} a mime type, or undefined on error or failed lookup
-mime.getTypeForExtension = function(extension) {
+export function getTypeForExtension(extension) {
   const extensionVarType = typeof extension;
   if(extensionVarType === 'undefined' || extension === null) {
     return;
@@ -126,13 +125,13 @@ mime.getTypeForExtension = function(extension) {
 
   assert(extensionVarType === 'string');
 
-  return mime.EXTENSION_TYPE_MAP[extension];
-};
+  return EXTENSION_TYPE_MAP[extension];
+}
 
 // Returns a normalized mime type from a content type
 // @param contentType {String} an http response header value, optional
 // @returns {String} a mime type, or undefined if error
-mime.fromContentType = function(contentType) {
+export function fromContentType(contentType) {
   const contentTypeVarType = typeof contentType;
   if(contentTypeVarType === 'undefined') {
     return;
@@ -150,20 +149,20 @@ mime.fromContentType = function(contentType) {
     mimeType = contentType.substring(fromIndex, semicolonPosition);
   }
 
-  return mime.normalize(mimeType);
-};
+  return normalize(mimeType);
+}
 
 // A basic trivial test of whether the parameter represents a mime type.
 // Inaccurate. Few false negatives but many false positives.
-mime.isMimeType = function(mimeType) {
+export function isMimeType(mimeType) {
   const MIN_LENGTH = 2, MAX_LENGTH = 100;
   return typeof mimeType === 'string' && mimeType.length > MIN_LENGTH &&
     mimeType.length < MAX_LENGTH && mimeType.includes('/') &&
     !mimeType.includes(' ');
-};
+}
 
 // Mime types that have the application super type but are not binary
-mime.APPLICATION_TEXT_TYPES = [
+const APPLICATION_TEXT_TYPES = [
   'application/atom+xml',
   'application/javascript',
   'application/json',
@@ -174,15 +173,15 @@ mime.APPLICATION_TEXT_TYPES = [
   'application/xml'
 ];
 
-mime.isBinary = function(mimeType) {
-  assert(mime.isMimeType(mimeType));
+export function isBinary(mimeType) {
+  assert(isMimeType(mimeType));
 
   const slashPosition = mimeType.indexOf('/');
   const superType = mimeType.substring(0, slashPosition);
 
   switch(superType) {
   case 'application': {
-    return !mime.APPLICATION_TEXT_TYPES.includes(mimeType);
+    return !APPLICATION_TEXT_TYPES.includes(mimeType);
   }
   case 'text':
     return false;
@@ -198,23 +197,23 @@ mime.isBinary = function(mimeType) {
     console.debug('unhandled mime type:', mimeType);
     return false;
   }
-};
+}
 
-mime.normalize = function(mimeType) {
-  assert(mime.isMimeType(mimeType));
+function normalize(mimeType) {
+  assert(isMimeType(mimeType));
   return filterWhitespace(mimeType).toLowerCase();
-};
+}
 
-mime.isHTML = function(contentType) {
+export function isHTML(contentType) {
   return /^\s*text\/html/i.test(contentType);
-};
+}
 
-mime.isImage = function(contentType) {
+export function isImage(contentType) {
   return /^\s*image\//i.test(contentType);
-};
+}
 
-mime.isXML = function(contentType) {
-  const mimeType = mime.fromContentType(contentType);
+export function isXML(contentType) {
+  const mimeType = fromContentType(contentType);
   const types = [
     'application/atom+xml',
     'application/rdf+xml',
@@ -225,4 +224,4 @@ mime.isXML = function(contentType) {
     'text/xml'
   ];
   return types.includes(mimeType);
-};
+}

@@ -4,7 +4,7 @@ import assert from "/src/assert.js";
 import {FaviconCache} from "/src/favicon-cache.js";
 import {readFileAsText} from "/src/file.js";
 import {closeDB, isOpenDB} from "/src/idb.js";
-import {mime} from "/src/mime.js";
+import * as mime from "/src/mime.js";
 import {
   opmlRemoveOutlinesWithInvalidTypes,
   opmlNormalizeOutlineXMLURLs,

@@ -1,7 +1,7 @@
 // XML utilities module
 
 import assert from "/src/assert.js";
-import {mime} from "/src/mime.js";
+import * as mime from "/src/mime.js";
 
 export function xmlToBlob(doc) {
   assert(doc instanceof Document);

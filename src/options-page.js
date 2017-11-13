@@ -10,7 +10,7 @@ import {feedAppendURL, feedIsValidId, feedPeekURL} from "/src/feed.js";
 import {FONTS} from "/src/fonts.js";
 import {htmlTruncate} from "/src/html.js";
 import {closeDB} from "/src/idb.js";
-import {mime} from "/src/mime.js";
+import * as mime from "/src/mime.js";
 import {parseInt10} from "/src/number.js";
 import {
   optionsPageErrorMessageHide,

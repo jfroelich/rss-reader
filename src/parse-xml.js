@@ -2,7 +2,7 @@
 
 import assert from "/src/assert.js";
 import {ParserError} from "/src/errors.js";
-import {mime} from "/src/mime.js";
+import * as mime from "/src/mime.js";
 
 export default function parseXML(xml) {
   assert(typeof xml === 'string');
