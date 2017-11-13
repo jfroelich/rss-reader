@@ -67,7 +67,19 @@ export async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
 
   // This should occur prior to boilerplateFilter because it has express
   // knowledge of content organization
-  hostTemplateFilter(doc, url);
+
+  let urlObject;
+  try {
+    urlObject = new URL(url);
+  } catch(error) {
+    console.warn(error);
+  }
+
+
+  if(urlObject) {
+    hostTemplateFilter(doc, urlObject);
+  }
+
 
   boilerplateFilter(doc);
 

@@ -13,15 +13,15 @@ import {isAlphanumeric} from "/src/string.js";
 // @throws AssertionError
 // @return {Boolean}
 export function isExternalURL(documentURL, otherURL) {
-  const docDomain = urlGetUpperDomain(documentURL);
-  const otherDomain = urlGetUpperDomain(otherURL);
+  const docDomain = getUpperDomain(documentURL);
+  const otherDomain = getUpperDomain(otherURL);
   return docDomain !== otherDomain;
 }
 
 // Returns the 1st and 2nd level domains as a string. Basically hostname
 // without subdomains. This only does minimal symbolic validation of values,
 // and is also inaccurate and insecure.
-function urlGetUpperDomain(url) {
+function getUpperDomain(url) {
   assert(url instanceof URL);
 
   // Treat IP as whole
@@ -44,9 +44,7 @@ function urlGetUpperDomain(url) {
   // This isn't meant to be super accurate or professional. Using the full list
   // from https://publicsuffix.org/list/public_suffix_list.dat is overkill.
   // As a compromise, just look at tld character count.
-
   const level1 = levels[levels.length - 1];
-
   if(level1.length === 2) {
     // Infer it is ccTLD, return levels 3 + 2 + 1
     const usedLevels = levels.slice(-3);
@@ -57,7 +55,6 @@ function urlGetUpperDomain(url) {
     return usedLevels.join('.');
   }
 }
-
 
 function isIPv4Address(string) {
   if(typeof string !== 'string') {
@@ -95,7 +92,7 @@ export function isCanonicalURL(url) {
 }
 
 // A url must be at least this long to be a script url
-const URL_MIN_SCRIPT_LENGTH = 'javascript:'.length;
+const MIN_SCRIPT_LENGTH = 'javascript:'.length;
 
 // Returns true if the url has the 'javascript:' protocol. Does not throw in
 // the case of bad input.
@@ -103,7 +100,7 @@ const URL_MIN_SCRIPT_LENGTH = 'javascript:'.length;
 // @returns {Boolean}
 export function hasScriptProtocol(url) {
   return typeof url === 'string' &&
-    url.length > URL_MIN_SCRIPT_LENGTH &&
+    url.length > MIN_SCRIPT_LENGTH &&
     /^\s*javascript:/i.test(url);
 }
 
@@ -123,11 +120,10 @@ export function resolveURL(url, baseURL) {
   return canonicalURL;
 }
 
-// TODO: is this still in use? should probably deprecate and have caller work with a URL
-// object explicitly
+// TODO: deprecate, have caller work with a URL object explicitly
 // @param url {String}
 // @returns {String}
-export function urlGetHostname(url) {
+export function getHostname(url) {
   assert(typeof url === 'string');
   try {
     const urlObject = new URL(url);

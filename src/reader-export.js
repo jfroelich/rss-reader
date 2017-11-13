@@ -8,7 +8,7 @@ import {
 } from "/src/opml-document.js";
 
 import {opmlOutlineFromFeed} from "/src/opml-outline.js";
-import {XMLUtils} from "/src/xml-utils.js";
+import {xmlToBlob} from "/src/xml-utils.js";
 
 // Triggers the download of an OPML-formatted file containing the given feeds
 // @param feeds {Array}
@@ -27,7 +27,7 @@ export function readerExportFeeds(feeds, title, fileName) {
     opmlDocumentAppendOutlineObject(doc, opmlOutlineFromFeed(feed));
   }
 
-  const blob = XMLUtils.toBlob(doc);
+  const blob = xmlToBlob(doc);
   const url = URL.createObjectURL(blob);
 
   const anchor = document.createElement('a');
