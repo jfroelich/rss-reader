@@ -118,18 +118,6 @@ export function resolveURL(url, baseURL) {
   return canonicalURL;
 }
 
-// TODO: deprecate, have caller work with a URL object explicitly
-// @param url {String}
-// @returns {String}
-export function getHostname(url) {
-  assert(typeof url === 'string');
-  try {
-    const urlObject = new URL(url);
-    return urlObject.hostname;
-  } catch(error) {
-  }
-}
-
 const URL_MAX_LENGTH_EXCLUSIVE = 3000;
 const URL_MIN_LENGTH_INCLUSIVE = 1;
 
