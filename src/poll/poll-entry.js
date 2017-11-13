@@ -9,7 +9,7 @@ import {FaviconLookup} from "/src/favicon-lookup.js";
 import {fetchHTML} from "/src/fetch.js";
 import {HTMLParser} from "/src/html-parser.js";
 import {pollDocumentFilter} from "/src/poll/poll-document-filter.js";
-import {assert, isUncheckedError} from "/src/rbl.js";
+import {assert, isOpenDB, isUncheckedError} from "/src/rbl.js";
 import {readerDbFindEntryByURL} from "/src/reader-db.js";
 import {readerStorageAddEntry} from "/src/reader-storage.js";
 import {rewriteURL} from "/src/rewrite-url.js";
@@ -32,6 +32,18 @@ export class PollEntryContext {
 export async function pollEntry(entry) {
   assert(this instanceof PollEntryContext);
   assert(entryIsEntry(entry));
+
+  // TEMP: researching undesired behavior. After fetch error either here or in
+  // poll-feeds, I am not sure which, causes connection to be closed before calls to
+  // storing entry. So detect if connection closed and exit. This error is most likely related
+  // to recent switch to module transition, I screwed something up and not sure what. Or this
+  // error has always been present and I am only now experiencing it. I cannot reproduce
+  // it easily at the moment.
+  if(!isOpenDB(this.readerConn)) {
+    console.warn('canceled pollEntry, readerConn connection not open');
+    return;
+  }
+
 
   // Cannot assume entry has url
   if(!entryHasURL(entry)) {
