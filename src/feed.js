@@ -1,7 +1,7 @@
 // Utilities for working with app feeds
 
 import assert from "/src/assert.js";
-import {htmlReplaceTags, htmlTruncate} from "/src/html.js";
+import {replaceTags, truncate as htmlTruncate} from "/src/html.js";
 import {isPosInt} from "/src/number.js";
 import {condenseWhitespace, filterControls} from "/src/string.js";
 import {isCanonicalURL} from "/src/url.js";
@@ -123,7 +123,7 @@ export function feedSanitize(feed, titleMaxLength, descMaxLength) {
   if(outputFeed.title) {
     let title = outputFeed.title;
     title = filterControls(title);
-    title = htmlReplaceTags(title, tagReplacement);
+    title = replaceTags(title, tagReplacement);
     title = condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength, suffix);
     outputFeed.title = title;
@@ -132,7 +132,7 @@ export function feedSanitize(feed, titleMaxLength, descMaxLength) {
   if(outputFeed.description) {
     let desc = outputFeed.description;
     desc = filterControls(desc);
-    desc = htmlReplaceTags(desc, tagReplacement);
+    desc = replaceTags(desc, tagReplacement);
     desc = condenseWhitespace(desc);
     desc = htmlTruncate(desc, descMaxLength, suffix);
     outputFeed.description = desc;

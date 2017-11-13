@@ -8,7 +8,7 @@ import {
 } from "/src/extension.js";
 import {feedAppendURL, feedIsValidId, feedPeekURL} from "/src/feed.js";
 import FONTS from "/src/fonts.js";
-import {htmlTruncate} from "/src/html.js";
+import {truncate as htmlTruncate} from "/src/html.js";
 import {closeDB} from "/src/idb.js";
 import * as mime from "/src/mime.js";
 import {parseInt10} from "/src/number.js";

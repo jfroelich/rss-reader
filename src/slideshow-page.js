@@ -6,7 +6,7 @@ import {formatDate} from "/src/date.js";
 import {entryIsValidId, entryIsEntry, entryPeekURL} from "/src/entry.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
-import {htmlEscape, htmlTruncate} from "/src/html.js";
+import {escapeHTML, truncate as htmlTruncate} from "/src/html.js";
 import {closeDB, isOpenDB} from "/src/idb.js";
 import {parseInt10} from "/src/number.js";
 import {readerDbOpen, readerDbGetUnarchivedUnreadEntries} from "/src/reader-db.js";
@@ -154,7 +154,7 @@ function createArticleTitleElement(entry) {
 
   if(entry.title) {
     let title = entry.title;
-    let safeTitle = htmlEscape(title);
+    let safeTitle = escapeHTML(title);
 
     // Set the attribute value to the full title without truncation or
     // publisher filter

@@ -1,7 +1,7 @@
 // feed entry object utilities module
 
 import assert from "/src/assert.js";
-import {htmlReplaceTags, htmlTruncate} from "/src/html.js";
+import {replaceTags, truncate as htmlTruncate} from "/src/html.js";
 import {isPosInt} from "/src/number.js";
 import {filterControls, condenseWhitespace} from "/src/string.js";
 import {isCanonicalURL} from "/src/url.js";
@@ -86,7 +86,7 @@ export function entrySanitize(inputEntry, authorMaxLength, titleMaxLength, conte
   if(outputEntry.author) {
     let author = outputEntry.author;
     author = filterControls(author);
-    author = htmlReplaceTags(author, '');
+    author = replaceTags(author, '');
     author = condenseWhitespace(author);
     author = htmlTruncate(author, authorMaxLength);
     outputEntry.author = author;
@@ -101,7 +101,7 @@ export function entrySanitize(inputEntry, authorMaxLength, titleMaxLength, conte
   if(outputEntry.title) {
     let title = outputEntry.title;
     title = filterControls(title);
-    title = htmlReplaceTags(title, '');
+    title = replaceTags(title, '');
     title = condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength);
     outputEntry.title = title;

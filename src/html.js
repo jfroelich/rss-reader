@@ -6,7 +6,7 @@ import parseHTML from "/src/parse-html.js";
 // Returns a new string where certain 'unsafe' characters in the input string
 // have been replaced with html entities. If input is not a string returns
 // undefined.
-export function htmlEscape(htmlString) {
+export function escapeHTML(htmlString) {
   if(typeof htmlString === 'string') {
     // See https://stackoverflow.com/questions/784586 for reference
     // TEMP: not replacing & due to common double encoding issue
@@ -22,7 +22,7 @@ function encodeFirst(string) {
 
 // Replaces html tags in the input string with the replacement. If no
 // replacement, then removes the tags.
-export function htmlReplaceTags(htmlString, replacement) {
+export function replaceTags(htmlString, replacement) {
   assert(typeof htmlString === 'string');
 
   // Fast case for empty strings
@@ -68,7 +68,7 @@ export function htmlReplaceTags(htmlString, replacement) {
 // @param suffix {String} optional, appended after truncation, defaults to
 // an ellipsis
 // @throws ParserError
-export function htmlTruncate(htmlString, position, suffix) {
+export function truncate(htmlString, position, suffix) {
   assert(isPosInt(position));
 
   // Tolerate some bad input for convenience
