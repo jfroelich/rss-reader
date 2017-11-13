@@ -25,7 +25,7 @@ import {isOpenDB} from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
 import {filterEmptyProps} from "/src/object.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
-import {sizeof} from "/src/sizeof.js";
+import sizeof from "/src/sizeof.js";
 import {
   readerDbFindArchivableEntries,
   readerDbFindEntryById,

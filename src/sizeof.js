@@ -12,7 +12,7 @@
 // @param inputValue {Any} a value of any type
 // @returns {Number} an integer representing the approximate byte size of the
 // input value
-export function sizeof(inputValue) {
+export default function sizeof(inputValue) {
   // visitedObjects is a memoization of previously visited objects. In theory
   // a repeated object just means enough bytes to store a reference value,
   // and only the first object actually allocates additional memory.
