@@ -1,5 +1,5 @@
 
-export const FONTS = [
+export default const FONTS = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
   'Calibri',
