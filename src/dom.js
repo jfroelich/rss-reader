@@ -1,10 +1,10 @@
 // DOM utilities
 
 import assert from "/src/assert.js";
-import {parseInt10} from "/src/number.js";
 
 // This script defines parseSrcset in global scope
 import "/src/third-party/parse-srcset.js";
+import {parseInt10} from "/src/string.js";
 
 import {isValidURL} from "/src/url.js";
 

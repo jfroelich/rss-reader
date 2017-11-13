@@ -2,9 +2,7 @@
 
 import assert from "/src/assert.js";
 import * as mime from "/src/mime.js";
-import {parseInt10} from "/src/number.js";
-import {isAlphanumeric} from "/src/string.js";
-
+import {isAlphanumeric, parseInt10} from "/src/string.js";
 
 // Returns true if otherURL is 'external' to the documentURL. Inaccurate and
 // insecure.

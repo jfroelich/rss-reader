@@ -1,7 +1,8 @@
 
 import assert from "/src/assert.js";
 import * as mime from "/src/mime.js";
-import {isPosInt, parseInt10} from "/src/number.js";
+import {isPosInt} from "/src/number.js";
+import {parseInt10} from "/src/string.js";
 import {compareURLsWithoutHash, isValidURL} from "/src/url.js";
 
 export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;

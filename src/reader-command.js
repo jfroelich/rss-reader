@@ -3,7 +3,6 @@
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {closeDB} from "/src/idb.js";
-import {parseInt10} from "/src/number.js";
 import {pollFeeds, PollFeedsContext} from "/src/poll/poll-feeds.js";
 import {readerDbOpen} from "/src/reader-db.js";
 import {
@@ -12,6 +11,7 @@ import {
   readerStorageRemoveLostEntries,
   readerStorageRemoveOrphans
 } from "/src/reader-storage.js";
+import {parseInt10} from "/src/string.js";
 
 export async function readerCommand(command, ...args) {
   switch(command) {

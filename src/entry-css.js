@@ -1,7 +1,7 @@
 
 import assert from "/src/assert.js";
 import {domFindCSSRule, domGetDefaultStylesheet} from "/src/dom.js";
-import {parseInt10} from "/src/number.js";
+import {parseInt10} from "/src/string.js";
 
 // Get the current settings from local storage and then modify the css rules
 // in the default style sheet

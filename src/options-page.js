@@ -1,3 +1,4 @@
+// Options page view module
 
 import assert from "/src/assert.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
@@ -11,7 +12,6 @@ import FONTS from "/src/fonts.js";
 import {truncate as htmlTruncate} from "/src/html.js";
 import {closeDB} from "/src/idb.js";
 import * as mime from "/src/mime.js";
-import {parseInt10} from "/src/number.js";
 import {
   optionsPageErrorMessageHide,
   optionsPageErrorMessageShow
@@ -29,6 +29,7 @@ import {
   readerDbGetFeeds
 } from "/src/reader-db.js";
 import {readerImportFiles} from "/src/reader-import.js";
+import {parseInt10} from "/src/string.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
 
 

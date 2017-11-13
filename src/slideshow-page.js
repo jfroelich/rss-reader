@@ -8,9 +8,9 @@ import {openTab} from "/src/extension.js";
 import filterPublisher from "/src/filter-publisher.js";
 import {escapeHTML, truncate as htmlTruncate} from "/src/html.js";
 import {closeDB, isOpenDB} from "/src/idb.js";
-import {parseInt10} from "/src/number.js";
 import {readerDbOpen, readerDbGetUnarchivedUnreadEntries} from "/src/reader-db.js";
 import {readerStorageMarkRead} from "/src/reader-storage.js";
+import {parseInt10} from "/src/string.js";
 import {isCanonicalURL} from "/src/url.js";
 
 // Track the currently visible slide
