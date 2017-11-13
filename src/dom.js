@@ -2,7 +2,10 @@
 
 import assert from "/src/assert.js";
 import {parseInt10} from "/src/number.js";
-import * as tpps from "/src/third-party/parse-srcset.js";
+
+// This script defines parseSrcset in global scope
+import "/src/third-party/parse-srcset.js";
+
 import {isValidURL} from "/src/url.js";
 
 
@@ -321,7 +324,7 @@ export function domSrcsetParseFromString(srcset) {
 
   let descriptors;
   try {
-    descriptors = tpps.parseSrcset(srcset);
+    descriptors = parseSrcset(srcset);
   } catch(error) {
     return fallbackOutput;
   }

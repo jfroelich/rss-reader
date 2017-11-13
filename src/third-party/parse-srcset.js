@@ -312,3 +312,5 @@ function parseSrcset(input) {
 	} // (close parseDescriptors fn)
 
 }
+
+window.parseSrcset = parseSrcset;
