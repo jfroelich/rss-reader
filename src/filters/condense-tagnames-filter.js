@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {renameElements} from "/src/filters/filter-helpers.js";
 
 // Use shorter names for common elements

@@ -1,6 +1,6 @@
 // Module for interacting with the app indexedDB database
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {
   entryIsEntry,
   entryIsValidId,

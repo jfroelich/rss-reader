@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {domRemoveImage} from "/src/dom.js";
 
 export function sourcelessImageFilter(doc) {

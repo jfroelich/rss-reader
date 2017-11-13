@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {domUnwrap} from "/src/dom.js";
 import {hasScriptProtocol} from "/src/url.js";
 

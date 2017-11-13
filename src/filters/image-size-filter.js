@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {domGetDimensions} from "/src/dom.js";
 import {fetchImage} from "/src/fetch.js";
 import {parseInt10} from "/src/number.js";

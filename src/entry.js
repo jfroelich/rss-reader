@@ -1,6 +1,6 @@
 // feed entry object utilities module
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {htmlReplaceTags, htmlTruncate} from "/src/html.js";
 import {isPosInt} from "/src/number.js";
 import {filterControls, condenseWhitespace} from "/src/string.js";

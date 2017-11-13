@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 
 export function brFilter(doc) {
   assert(doc instanceof Document);

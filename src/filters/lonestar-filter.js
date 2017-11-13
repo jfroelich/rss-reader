@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {domIsHiddenInline, domRemoveImage} from "/src/dom.js";
 import {isCanonicalURL, isExternalURL} from "/src/url.js";
 

@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {domUnwrap} from "/src/dom.js";
 
 // An anchor that acts like a span can be unwrapped

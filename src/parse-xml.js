@@ -1,6 +1,6 @@
 // xml-parsing module
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {ParserError} from "/src/errors.js";
 import {mime} from "/src/mime.js";
 

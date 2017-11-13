@@ -1,6 +1,6 @@
 
+import assert from "/src/assert.js";
 import {domSrcsetParseFromString, domSrcsetSerialize} from "/src/dom.js";
-import {assert} from "/src/assert.js";
 import {resolveURL} from "/src/url.js";
 
 const CANONICAL_URL_FILTER_MAP = {

@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {domFindLCA, domIsHidden} from "/src/dom.js";
 
 

@@ -3,7 +3,7 @@
 // TODO: this isn't a reader-db.js test, this is an idb.js test, rename files
 
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {openDB, isOpenDB, closeDB, deleteDB} from "/src/idb.js";
 
 // TODO: i don't think this is exported

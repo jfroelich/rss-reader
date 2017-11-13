@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 
 // Remove whitespace and whitespace-like content from the start and end of
 // a document's body.

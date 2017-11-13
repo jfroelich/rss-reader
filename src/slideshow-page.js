@@ -1,6 +1,6 @@
 // slideshow module
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {articleTitleFilterPublisher} from "/src/article-title.js";
 import {formatDate} from "/src/date.js";
 import {entryIsValidId, entryIsEntry, entryPeekURL} from "/src/entry.js";

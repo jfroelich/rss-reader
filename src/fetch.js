@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {mime} from "/src/mime.js";
 import {isPosInt, parseInt10} from "/src/number.js";
 import {compareURLsWithoutHash, isValidURL} from "/src/url.js";

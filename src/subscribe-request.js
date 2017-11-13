@@ -5,7 +5,7 @@
 // TODO: now that modules are available, this class barely serves any purpose. Just export a single
 // function or two, but do this after successful transition to modules
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {isUncheckedError, PermissionsError} from "/src/errors.js";
 import {showNotification} from "/src/extension.js";
 import {FaviconCache} from "/src/favicon-cache.js";

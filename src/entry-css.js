@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {domFindCSSRule, domGetDefaultStylesheet} from "/src/dom.js";
 import {parseInt10} from "/src/number.js";
 

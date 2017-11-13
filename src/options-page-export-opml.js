@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {closeDB} from "/src/idb.js";
 import {readerDbGetFeeds, readerDbOpen} from "/src/reader-db.js";
 import {readerExportFeeds} from "/src/reader-export.js";

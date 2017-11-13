@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import parseXML from "/src/parse-xml.js";
 
 // TODO: prefer "item" over "entry" terminology?

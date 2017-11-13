@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {domImageHasSource} from "/src/dom.js";
 import {isValidURL} from "/src/url.js";
 

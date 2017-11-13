@@ -1,6 +1,6 @@
 // DOM utilities
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {parseInt10} from "/src/number.js";
 import * as tpps from "/src/third-party/parse-srcset.js";
 import {isValidURL} from "/src/url.js";

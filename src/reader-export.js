@@ -1,6 +1,6 @@
 // Module for exporting feeds to opml file
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {
   opmlDocumentAppendOutlineObject,
   opmlDocumentCreate,

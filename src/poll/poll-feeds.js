@@ -1,6 +1,6 @@
 // Module for polling feeds
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {queryIdleState, showNotification} from "/src/extension.js";
 import {feedIsFeed, feedMerge, feedPeekURL} from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";

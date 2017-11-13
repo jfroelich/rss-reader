@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {isCanonicalURL} from "/src/url.js";
 
 // Applies a set of rules to a url object and returns a modified url object

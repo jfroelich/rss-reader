@@ -1,6 +1,6 @@
 // MIME utilities module
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {filterWhitespace} from "/src/string.js";
 
 // TODO: deprecate mime namespace object after module transition

@@ -1,5 +1,5 @@
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {domIsHiddenInline, domUnwrap} from "/src/dom.js";
 
 // TODO: make a github issue about optimizing recursive unwrap

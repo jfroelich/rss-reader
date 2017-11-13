@@ -1,6 +1,6 @@
 // Utilities for working with URL objects and url-like strings
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {mime} from "/src/mime.js";
 import {parseInt10} from "/src/number.js";
 import {isAlphanumeric} from "/src/string.js";

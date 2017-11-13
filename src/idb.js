@@ -1,6 +1,6 @@
 // A wrapper around indexedDB
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {isPosInt} from "/src/number.js";
 import {setTimeoutPromise} from "/src/promise.js";
 

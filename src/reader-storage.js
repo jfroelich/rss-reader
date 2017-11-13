@@ -1,6 +1,6 @@
 // app storage module, mostly a wrapper around reader-db that integrates other modules
 
-import {assert} from "/src/assert.js";
+import assert from "/src/assert.js";
 import {
   entryHasURL,
   entryIsEntry,

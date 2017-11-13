@@ -1,7 +1,9 @@
 
 
 // TODO: simplify names after module transition
-import {assert} from "/src/assert.js";
+
+
+import assert from "/src/assert.js";
 import {domFindCaption} from "/src/dom.js";
 import {condenseWhitespace} from "/src/string.js";
 
