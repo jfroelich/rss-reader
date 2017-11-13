@@ -52,9 +52,8 @@ export function fromContentType(contentType) {
 // A basic trivial test of whether the parameter represents a mime type.
 // Inaccurate. Few false negatives but many false positives.
 export function isMimeType(mimeType) {
-  const MIN_LENGTH = 2, MAX_LENGTH = 100;
-  return typeof mimeType === 'string' && mimeType.length > MIN_LENGTH &&
-    mimeType.length < MAX_LENGTH && mimeType.includes('/') &&
+  return typeof mimeType === 'string' && mimeType.length > MIME_TYPE_MIN_LENGTH &&
+    mimeType.length < MIME_TYPE_MAX_LENGTH && mimeType.includes('/') &&
     !mimeType.includes(' ');
 }
 
