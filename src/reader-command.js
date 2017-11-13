@@ -12,8 +12,6 @@ import {
   readerStorageRemoveOrphans
 } from "/src/reader-storage.js";
 
-
-
 export async function readerCommand(command, ...args) {
   switch(command) {
   case 'refreshicons': {
@@ -145,4 +143,14 @@ function printUsage() {
     'clearicons',
     'iconlookup'
   ]);
+}
+
+// Modules are basically wrapped in a promise. To enable variables to be accessible from
+// the console, which can only see global variables, and apparently not exported variables
+// from modules, the values must be defined "really" globally. Right now using window seems
+// to work. This is not a recommended practice, but I think this is an exception, because
+// it is the entire point of this module, to be callable from the console
+// TODO: maybe it should module importer's responsibility to do this
+if(window) {
+  window.readerCommand = readerCommand;
 }

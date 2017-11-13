@@ -1,7 +1,7 @@
 
 import {domIsHiddenInline, domRemoveImage} from "/src/dom.js";
 import {assert} from "/src/rbl.js";
-import {isCanonicalURL} from "/src/url.js";
+import {isCanonicalURL, isExternalURL} from "/src/url.js";
 
 const LONESTAR_FILTER_PATTERNS = [
   /\/\/.*2o7\.net\//i,

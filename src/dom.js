@@ -1,6 +1,6 @@
 // DOM utilities
 
-import {assert} from "/src/rbl.js";
+import {assert, parseInt10} from "/src/rbl.js";
 import * as tpps from "/src/third-party/parse-srcset.js";
 import {isValidURL} from "/src/url.js";
 
