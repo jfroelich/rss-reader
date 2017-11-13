@@ -1,5 +1,5 @@
 
-export const OPTIONS_PAGE_FONTS = [
+export const FONTS = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
   'Calibri',

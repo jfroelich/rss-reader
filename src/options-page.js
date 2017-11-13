@@ -6,20 +6,20 @@ import {
   removeBrowserPermission
 } from "/src/extension.js";
 import {feedAppendURL, feedIsValidId, feedPeekURL} from "/src/feed.js";
+import {FONTS} from "/src/fonts.js";
 import {htmlTruncate} from "/src/html.js";
 import {mime} from "/src/mime.js";
 import {
   optionsPageErrorMessageHide,
   optionsPageErrorMessageShow
-} from "/src/options-page/options-page-error-message.js";
-import {optionsPageExportOPML} from "/src/options-page/options-page-export-opml.js";
-import {OPTIONS_PAGE_FONTS} from "/src/options-page/options-page-fonts.js";
-import {OPTIONS_PAGE_IMAGE_PATHS} from "/src/options-page/options-page-image-paths.js";
+} from "/src/options-page-error-message.js";
+import {optionsPageExportOPML} from "/src/options-page-export-opml.js";
+import {OPTIONS_PAGE_IMAGE_PATHS} from "/src/options-page-image-paths.js";
 import {
   optionsPageSubscriptionMonitorShow,
   optionsPageSubscriptionMonitorAppendMessage,
   optionsPageSubscriptionMonitorHide
-} from "/src/options-page/options-page-subscription-monitor.js";
+} from "/src/options-page-subscription-monitor.js";
 import {assert, closeDB, parseInt10} from "/src/rbl.js";
 
 import {
@@ -640,7 +640,7 @@ subscriptionForm.onsubmit = optionsPageSubscribeFormOnSubmit;
   option.textContent = 'Use Chrome font settings';
   headerFontMenu.appendChild(option);
   const currentHeaderFont = localStorage.HEADER_FONT_FAMILY;
-  for(const font of OPTIONS_PAGE_FONTS) {
+  for(const font of FONTS) {
     let option = document.createElement('option');
     option.value = font;
     option.selected = font === currentHeaderFont;
@@ -657,7 +657,7 @@ subscriptionForm.onsubmit = optionsPageSubscribeFormOnSubmit;
   bodyFontMenu.appendChild(option);
 
   const currentBodyFont = localStorage.BODY_FONT_FAMILY;
-  for(const font of OPTIONS_PAGE_FONTS) {
+  for(const font of FONTS) {
     option = document.createElement('option');
     option.value = font;
     option.selected = font === currentBodyFont;
