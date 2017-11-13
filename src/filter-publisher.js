@@ -1,7 +1,7 @@
 import assert from "/src/assert.js";
 import {tokenize} from "/src/string.js";
 
-export function articleTitleFilterPublisher(title) {
+export default function filterPublisher(title) {
   assert(typeof title === 'string');
 
   // TODO: tolerate alternate whitespace expressions

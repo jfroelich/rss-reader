@@ -1,11 +1,11 @@
-// slideshow module
+// slideshow view module
 
 import assert from "/src/assert.js";
-import {articleTitleFilterPublisher} from "/src/article-title.js";
 import {formatDate} from "/src/date.js";
 import {entryIsValidId, entryIsEntry, entryPeekURL} from "/src/entry.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
+import filterPublisher from "/src/filter-publisher.js";
 import {escapeHTML, truncate as htmlTruncate} from "/src/html.js";
 import {closeDB, isOpenDB} from "/src/idb.js";
 import {parseInt10} from "/src/number.js";
@@ -160,7 +160,7 @@ function createArticleTitleElement(entry) {
     // publisher filter
     titleElement.setAttribute('title', safeTitle);
 
-    let filteredSafeTitle = articleTitleFilterPublisher(safeTitle);
+    let filteredSafeTitle = filterPublisher(safeTitle);
 
     try {
       filteredSafeTitle = htmlTruncate(filteredSafeTitle, 300);
