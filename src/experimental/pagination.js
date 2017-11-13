@@ -1,6 +1,7 @@
 
+import {assert} from "/src/assert.js";
 import {domFindLCA, domIsHidden} from "/src/dom.js";
-import {assert} from "/src/rbl.js";
+
 
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other

@@ -1,6 +1,6 @@
 
+import {assert} from "/src/assert.js";
 import {unwrapElements} from "/src/filters/filter-helpers.js";
-import {assert} from "/src/rbl.js";
 
 export function semanticFilter(doc) {
   assert(doc instanceof Document);

@@ -1,6 +1,6 @@
 
+import {assert} from "/src/assert.js";
 import {domRename, domUnwrap} from "/src/dom.js";
-import {assert} from "/src/rbl.js";
 
 export function unwrapElements(ancestorElement, selector) {
   assert(ancestorElement instanceof Element);

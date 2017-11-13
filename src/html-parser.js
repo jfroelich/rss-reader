@@ -1,7 +1,7 @@
 
+import {assert} from "/src/assert.js";
 import {mime} from "/src/mime.js";
-import {assert, ParserError} from "/src/rbl.js";
-
+import {ParserError} from "/src/rbl.js";
 
 // TODO: the class is dumb now with modules, just export a function instead
 

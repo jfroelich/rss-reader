@@ -1,6 +1,7 @@
 
+import {assert} from "/src/assert.js";
 import {mime} from "/src/mime.js";
-import {assert, isPosInt, parseInt10} from "/src/rbl.js";
+import {isPosInt, parseInt10} from "/src/rbl.js";
 import {compareURLsWithoutHash, isValidURL} from "/src/url.js";
 
 export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;

@@ -1,6 +1,9 @@
 // For importing feeds from opml file into the reader app
+import {assert} from "/src/assert.js";
 
-import {assert, closeDB, isOpenDB, readFileAsText} from "/src/rbl.js";
+// TODO: order imports alphabetically by file
+
+import {closeDB, isOpenDB, readFileAsText} from "/src/rbl.js";
 import {FaviconCache} from "/src/favicon-cache.js";
 import {mime} from "/src/mime.js";
 import {

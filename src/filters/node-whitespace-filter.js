@@ -1,5 +1,6 @@
 
-import {assert, condenseWhitespace} from "/src/rbl.js";
+import {assert} from "/src/assert.js";
+import {condenseWhitespace} from "/src/rbl.js";
 
 export function nodeWhitespaceFilter(doc) {
   assert(doc instanceof Document);

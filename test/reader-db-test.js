@@ -1,15 +1,15 @@
 // See license.md
 
-// import rbl.js
-// import reader-db.js
-
 // TODO: test timeouts
 // TODO: this is out of date. readerDbOpen does not accept params
 // To test, use openDB
 
+import {assert} from "/src/assert.js";
+import {openDB, isOpenDB, closeDB, deleteDB} from "/src/rbl.js";
+
 async function test() {
   const name = 'test-feed-db', version = 1;
-  let close_requested = false;
+  let closeRequested = false;
   let conn;
   try {
     conn = await openDB(name, version, readerDbOnUpgradeNeeded);
@@ -22,10 +22,10 @@ async function test() {
       console.debug('DESIRED: isOpenDB says conn closed');
     }
 
-    close_requested = true;
+    closeRequested = true;
     await deleteDB(name);
   } finally {
-    if(!close_requested) {
+    if(!closeRequested) {
       closeDB(conn);
       assert(!isOpenDB(conn));
     }

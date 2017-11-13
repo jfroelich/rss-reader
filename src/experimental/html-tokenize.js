@@ -1,6 +1,5 @@
 
-
-import {assert} from "/src/rbl.js";
+import {assert} from "/src/assert.js";
 
 
 // Tokenizes an arbitrary string of html. Makes some effort to comply with

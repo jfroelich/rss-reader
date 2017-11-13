@@ -1,5 +1,6 @@
 // Module for interacting with the app indexedDB database
 
+import {assert} from "/src/assert.js";
 import {
   entryIsEntry,
   entryIsValidId,
@@ -8,7 +9,7 @@ import {
   ENTRY_STATE_UNARCHIVED
 } from "/src/entry.js";
 import {feedIsFeed, feedIsValidId} from "/src/feed.js";
-import {assert, openDB, isOpenDB, isPosInt} from "/src/rbl.js";
+import {openDB, isOpenDB, isPosInt} from "/src/rbl.js";
 import {isValidURL} from "/src/url.js";
 
 export class ReaderDbConstraintError extends Error {

@@ -1,6 +1,6 @@
 
-// import rbl.js
-// import reader-storage.js
+import {openDB, closeDB, deleteDB} from "/src/rbl.js";
+import {readerStorageArchiveEntries} from "/src/reader-storage.js";
 
 async function test_archive_entries() {
   console.log('test_archive_entries start');
@@ -11,8 +11,7 @@ async function test_archive_entries() {
   let conn, timeoutMs = 1000, maxAgeMs;
   const limit = 5;
   try {
-    conn = await openDB(name, version, readerDbOnUpgradeNeeded,
-      timeoutMs);
+    conn = await openDB(name, version, readerDbOnUpgradeNeeded, timeoutMs);
     await readerStorageArchiveEntries(conn, maxAgeMs, limit);
     closeDB(conn);
     closeRequested = true;

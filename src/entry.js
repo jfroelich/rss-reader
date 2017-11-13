@@ -1,12 +1,8 @@
 // feed entry object utilities module
 
+import {assert} from "/src/assert.js";
 import {htmlReplaceTags, htmlTruncate} from "/src/html.js";
-import {
-  assert,
-  isPosInt,
-  filterControls,
-  condenseWhitespace
-} from "/src/rbl.js";
+import {isPosInt, filterControls, condenseWhitespace} from "/src/rbl.js";
 import {isCanonicalURL} from "/src/url.js";
 
 

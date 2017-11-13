@@ -4,27 +4,7 @@
 // broken up into individual modules again, and probably deprecated. But I am going to wait to do
 // this until after successful transition to modules.
 
-const ASSERT_LOG_ERRORS = true;
 const INDEXEDDB_DEBUG = false;
-
-class AssertionError extends Error {
-  constructor(message) {
-    super(message || 'Assertion failed');
-  }
-}
-
-// @throws {AssertionError}
-export function assert(condition, message) {
-  if(!condition) {
-    const error = new AssertionError(message);
-
-    if(ASSERT_LOG_ERRORS) {
-      console.error(error);
-    }
-
-    throw error;
-  }
-}
 
 // @throws {AssertionError}
 export function formatDate(date, delimiter) {

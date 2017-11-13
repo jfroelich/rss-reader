@@ -1,5 +1,5 @@
 
-import {assert} from "/src/rbl.js";
+import {assert} from "/src/assert.js";
 import {isCanonicalURL} from "/src/url.js";
 
 // NOTE: this is the initial implementation, probably going to change

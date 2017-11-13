@@ -1,4 +1,14 @@
 
+export class HTMLParser2 {
+  static parse(html) {
+    // Adapted from https://stackoverflow.com/questions/10585029
+    const template = document.createElement('template');
+    template.innerHTML = html;
+    console.dir(template);
+    return template.content.cloneNode(true);
+  }
+}
+
 /*
 
 This works exactly as I would want:
@@ -51,13 +61,3 @@ But, how do I deal with parsing documents? I have a feeling like
 parseHTMLFragment and parseHTMLDocument should be two functions?
 
 */
-
-export class HTMLParser2 {
-  static parse(html) {
-    // Adapted from https://stackoverflow.com/questions/10585029
-    const template = document.createElement('template');
-    template.innerHTML = html;
-    console.dir(template);
-    return template.content.cloneNode(true);
-  }
-}

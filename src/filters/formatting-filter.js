@@ -1,6 +1,6 @@
 
+import {assert} from "/src/assert.js";
 import {unwrapElements} from "/src/filters/filter-helpers.js";
-import {assert} from "/src/rbl.js";
 
 const FORMATTING_FILTER_SELECTOR = [
   'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend', 'mark', 'marquee',

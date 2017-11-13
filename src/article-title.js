@@ -1,4 +1,5 @@
-import {assert, tokenize} from "/src/rbl.js";
+import {assert} from "/src/assert.js";
+import {tokenize} from "/src/rbl.js";
 
 export function articleTitleFilterPublisher(title) {
   assert(typeof title === 'string');

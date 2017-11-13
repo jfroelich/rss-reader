@@ -1,5 +1,5 @@
 
-import {assert} from "/src/rbl.js";
+import {assert} from "/src/assert.js";
 
 // TODO: move to experimental and stop using for now
 // TODO: this should be part of a general character normalization filter,

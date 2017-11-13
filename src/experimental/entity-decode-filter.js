@@ -1,5 +1,5 @@
 
-import {assert} from "/src/rbl.js";
+import {assert} from "/src/assert.js";
 
 // @throws AssertionError
 export function entityDecodeFilter(doc) {

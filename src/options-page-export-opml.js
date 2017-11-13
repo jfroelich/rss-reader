@@ -1,8 +1,8 @@
 
-
+import {assert} from "/src/assert.js";
 import {readerDbGetFeeds, readerDbOpen} from "/src/reader-db.js";
 import {readerExportFeeds} from "/src/reader-export.js";
-import {assert, closeDB} from "/src/rbl.js";
+import {closeDB} from "/src/rbl.js";
 
 // TODO: move to reader-storage.js?
 // TODO: deprecate. this should probably be two functions that the caller has

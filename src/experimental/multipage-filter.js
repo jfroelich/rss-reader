@@ -1,8 +1,7 @@
 
+import {assert} from "/src/assert.js";
 import {fetchHTML} from "/src/fetch.js";
 import {paginationFindAnchors} from "/src/pagination.js";
-import {assert} from "/src/rbl.js";
-
 
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a

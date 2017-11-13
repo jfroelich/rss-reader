@@ -1,6 +1,6 @@
 
+import {assert} from "/src/assert.js";
 import {renameElements} from "/src/filters/filter-helpers.js";
-import {assert} from "/src/rbl.js";
 
 // Use shorter names for common elements
 export function condenseTagnamesFilter(doc, copyAttributes) {

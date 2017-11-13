@@ -1,7 +1,8 @@
 // Utilities for working with URL objects and url-like strings
 
+import {assert} from "/src/assert.js";
 import {mime} from "/src/mime.js";
-import {assert, isAlphanumeric, parseInt10} from "/src/rbl.js";
+import {isAlphanumeric, parseInt10} from "/src/rbl.js";
 
 
 // Returns true if otherURL is 'external' to the documentURL. Inaccurate and

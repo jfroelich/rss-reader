@@ -11,7 +11,6 @@ export class OPMLParser {
   // @throws {Error} invalid document element
   // @returns {Document} document
   static parse(xml) {
-    // Allow errors to bubble
     const doc = XMLParser.parse(xml);
     const name = doc.documentElement.localName.toLowerCase();
     if(name !== 'opml') {

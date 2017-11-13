@@ -1,4 +1,5 @@
 
+import {assert} from "/src/assert.js";
 import {
   opmlOutlineElementToObject,
   opmlOutlineElementHasValidType,
@@ -6,10 +7,7 @@ import {
   opmlOutlineElementNormalizeXMLURL,
   opmlOutlineToElement
 } from "/src/opml-outline.js";
-import {assert} from "/src/rbl.js";
 
-
-// @throws AssertionError
 // @throws Error missing head element
 export function opmlDocumentSetTitle(doc, title) {
   assert(doc instanceof Document);

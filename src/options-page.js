@@ -1,4 +1,5 @@
 
+import {assert} from "/src/assert.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {
   hasBrowserPermission,
@@ -20,7 +21,7 @@ import {
   optionsPageSubscriptionMonitorAppendMessage,
   optionsPageSubscriptionMonitorHide
 } from "/src/options-page-subscription-monitor.js";
-import {assert, closeDB, parseInt10} from "/src/rbl.js";
+import {closeDB, parseInt10} from "/src/rbl.js";
 
 import {
   readerDbOpen,

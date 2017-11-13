@@ -1,4 +1,5 @@
 
+import {assert} from "/src/assert.js";
 import {adoptionAgencyFilter} from "/src/filters/adoption-agency-filter.js";
 import {attributeFilter} from "/src/filters/attribute-filter.js";
 import {baseFilter} from "/src/filters/base-filter.js";
@@ -38,7 +39,6 @@ import {semanticFilter} from "/src/filters/semantic-filter.js";
 import {sourcelessImageFilter} from "/src/filters/sourceless-image-filter.js";
 import {tableFilter} from "/src/filters/table-filter.js";
 import {trimDocumentFilter} from "/src/filters/trim-document-filter.js";
-import {assert} from "/src/rbl.js";
 import {isValidURL} from "/src/url.js";
 
 // Transforms a document's content by removing or changing nods for

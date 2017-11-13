@@ -1,11 +1,10 @@
-// xml utilities module
+// XML utilities module
 
 // TODO: the class is stupid, this should just be two functions, but wait till after working
 // transition to modules
 // TODO: I don't think toString even needs to be exported?
-
+import {assert} from "/src/assert.js";
 import {mime} from "/src/mime.js";
-import {assert} from "/src/rbl.js";
 
 export class XMLUtils {
   static toString(doc) {

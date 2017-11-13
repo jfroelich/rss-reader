@@ -1,12 +1,8 @@
 // Utilities for working with app feeds
 
+import {assert} from "/src/assert.js";
 import {htmlReplaceTags, htmlTruncate} from "/src/html.js";
-import {
-  assert,
-  condenseWhitespace,
-  filterControls,
-  isPosInt
-} from "/src/rbl.js";
+import {condenseWhitespace, filterControls, isPosInt} from "/src/rbl.js";
 import {isCanonicalURL} from "/src/url.js";
 
 export function feedCreate() {

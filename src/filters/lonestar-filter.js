@@ -1,6 +1,6 @@
 
+import {assert} from "/src/assert.js";
 import {domIsHiddenInline, domRemoveImage} from "/src/dom.js";
-import {assert} from "/src/rbl.js";
 import {isCanonicalURL, isExternalURL} from "/src/url.js";
 
 const LONESTAR_FILTER_PATTERNS = [

@@ -1,8 +1,4 @@
 
-// import favicon-cache.js
-// import favicon-lookup.js
-// import rbl.js
-
 /*
 TODO:
 
@@ -22,6 +18,9 @@ delete the test db at the end of the test.
 * test cacheless versus caching?
 * test compact
 */
+
+import {FaviconCache} from "/src/favicon-cache.js";
+import {FaviconLookup} from "/src/favicon-lookup.js";
 
 async function testLookup(url, cacheless) {
   const cache = new FaviconCache();

@@ -1,6 +1,6 @@
 
+import {assert} from "/src/assert.js";
 import {domRemoveImage} from "/src/dom.js";
-import {assert} from "/src/rbl.js";
 
 export function sourcelessImageFilter(doc) {
   assert(doc instanceof Document);

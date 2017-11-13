@@ -1,4 +1,7 @@
 
+import {fetchFeed} from "/src/fetch.js";
+import {FeedParser} from "/src/feed-parser.js";
+
 async function test(url) {
   'use strict';
   let timeoutMs;

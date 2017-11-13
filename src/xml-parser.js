@@ -3,8 +3,9 @@
 // TODO: the class is stupid, this should just export a single function, but wait till after
 // working transition to modules
 
+import {assert} from "/src/assert.js";
 
-import {assert, ParserError} from "/src/rbl.js";
+import {ParserError} from "/src/rbl.js";
 import {mime} from "/src/mime.js";
 
 export class XMLParser {

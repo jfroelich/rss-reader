@@ -1,7 +1,7 @@
 
+import {assert} from "/src/assert.js";
 import {unwrapElements} from "/src/filters/filter-helpers.js";
 import {leafFilterIsLeaf} from "/src/filters/leaf-filter.js";
-import {assert} from "/src/rbl.js";
 
 export function tableFilter(doc, scanLimit) {
   assert(doc instanceof Document);

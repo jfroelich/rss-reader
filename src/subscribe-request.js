@@ -5,6 +5,8 @@
 // TODO: now that modules are available, this class barely serves any purpose. Just export a single
 // function or two, but do this after successful transition to modules
 
+import {assert} from "/src/assert.js";
+
 import {showNotification} from "/src/extension.js";
 import {FaviconCache} from "/src/favicon-cache.js";
 import {FaviconLookup} from "/src/favicon-lookup.js";
@@ -20,7 +22,6 @@ import {fetchFeed} from "/src/fetch.js";
 import {FetchPolicy} from "/src/fetch-policy.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
 import {
-  assert,
   closeDB,
   isOpenDB,
   isUncheckedError,

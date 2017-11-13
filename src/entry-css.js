@@ -1,5 +1,7 @@
+
+import {assert} from "/src/assert.js";
 import {domFindCSSRule, domGetDefaultStylesheet} from "/src/dom.js";
-import {assert, parseInt10} from "/src/rbl.js";
+import {parseInt10} from "/src/rbl.js";
 
 // Get the current settings from local storage and then modify the css rules
 // in the default style sheet

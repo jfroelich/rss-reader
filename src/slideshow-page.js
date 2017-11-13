@@ -1,11 +1,11 @@
 // slideshow module
 
+import {assert} from "/src/assert.js";
 import {articleTitleFilterPublisher} from "/src/article-title.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import {htmlEscape, htmlTruncate} from "/src/html.js";
 import {
-  assert,
   closeDB,
   formatDate,
   isOpenDB,

@@ -1,6 +1,6 @@
 
+import {assert} from "/src/assert.js";
 import {domImageHasSource} from "/src/dom.js";
-import {assert} from "/src/rbl.js";
 import {isValidURL} from "/src/url.js";
 
 export function lazyImageFilter(doc) {

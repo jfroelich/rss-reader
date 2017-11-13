@@ -1,5 +1,5 @@
 
-import {assert} from "/src/rbl.js";
+import {assert} from "/src/assert.js";
 
 // @param doc {Document}
 // @param whitelist {Object} each property is element name, each value is array

@@ -1,4 +1,4 @@
-
+import {assert} from "/src/assert.js";
 import {FaviconCache} from "/src/favicon-cache.js";
 import {
   fetchHTML,
@@ -6,7 +6,7 @@ import {
   FETCH_UNKNOWN_CONTENT_LENGTH
 } from "/src/fetch.js";
 import {HTMLParser} from "/src/html-parser.js";
-import {assert, isOpenDB, isPosInt, isUncheckedError} from "/src/rbl.js";
+import {isOpenDB, isPosInt, isUncheckedError} from "/src/rbl.js";
 
 
 export class FaviconLookup {

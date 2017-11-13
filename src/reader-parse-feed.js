@@ -4,10 +4,10 @@
 // TODO: after module transition rename to parse-feed and put in app folder or something like that
 // TODO: after module transition rename non-exported globals
 
+import {assert} from "/src/assert.js";
 import {entryAppendURL, entryHasURL, entryIsEntry} from "/src/entry.js";
 import {feedAppendURL} from "/src/feed.js";
 import {FeedParser} from "/src/feed-parser.js";
-import {assert} from "/src/rbl.js";
 import {isCanonicalURL} from "/src/url.js";
 
 

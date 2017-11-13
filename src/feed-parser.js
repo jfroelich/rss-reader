@@ -1,5 +1,5 @@
 
-import {assert} from "/src/rbl.js";
+import {assert} from "/src/assert.js";
 import {XMLParser} from "/src/xml-parser.js";
 
 // TODO: prefer "item" over "entry" terminology?

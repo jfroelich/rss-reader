@@ -1,5 +1,5 @@
 
-import {assert} from "/src/rbl.js";
+import {assert} from "/src/assert.js";
 
 // TODO: restrict children of list to proper child type. E.g. only allow li
 // or form within ul/ol, and dd/dt/form within dl. Do some type of transform

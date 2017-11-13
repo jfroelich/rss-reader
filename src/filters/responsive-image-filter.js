@@ -1,6 +1,6 @@
 
+import {assert} from "/src/assert.js";
 import {domImageHasValidSource, domImageHasSrcset} from "/src/dom.js";
-import {assert} from "/src/rbl.js";
 
 export function responsiveImageFilter(doc) {
   assert(doc instanceof Document);

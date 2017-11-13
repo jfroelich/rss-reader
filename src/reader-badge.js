@@ -1,7 +1,7 @@
 
-
+import {assert} from "/src/assert.js";
 import {setBadgeText} from "/src/extension.js";
-import {assert, isOpenDB} from "/src/rbl.js";
+import {isOpenDB} from "/src/rbl.js";
 import {readerDbCountUnreadEntries} from "/src/reader-db.js";
 
 

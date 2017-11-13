@@ -1,5 +1,5 @@
 
-import {assert} from "/src/rbl.js";
+import {assert} from "/src/assert.js";
 import {urlGetHostname} from "/src/url.js";
 
 // TODO: hostSelectorMap should be a parameter to this function so that

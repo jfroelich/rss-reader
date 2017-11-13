@@ -1,6 +1,6 @@
 
+import {assert} from "/src/assert.js";
 import {domUnwrap} from "/src/dom.js";
-import {assert} from "/src/rbl.js";
 
 export function figureFilter(doc) {
   assert(doc instanceof Document);

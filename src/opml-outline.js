@@ -1,7 +1,6 @@
 
+import {assert} from "/src/assert.js";
 import {feedAppendURL, feedIsFeed, feedPeekURL} from "/src/feed.js";
-import {assert} from "/src/rbl.js";
-
 
 // TODO: create OPMLOutline?
 // TODO: deprecate in favor of caller using instanceof?

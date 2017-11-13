@@ -1,5 +1,6 @@
+import {assert} from "/src/assert.js";
 import {HTMLParser} from "/src/html-parser.js";
-import {assert, isPosInt, isUncheckedError} from "/src/rbl.js";
+import {isPosInt, isUncheckedError} from "/src/rbl.js";
 
 // Returns a new string where certain 'unsafe' characters in the input string
 // have been replaced with html entities. If input is not a string returns

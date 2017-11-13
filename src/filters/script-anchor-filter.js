@@ -1,6 +1,6 @@
 
+import {assert} from "/src/assert.js";
 import {domUnwrap} from "/src/dom.js";
-import {assert} from "/src/rbl.js";
 import {hasScriptProtocol} from "/src/url.js";
 
 export function scriptAnchorFilter(doc) {
