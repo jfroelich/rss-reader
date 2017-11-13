@@ -75,7 +75,6 @@ export async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
     console.warn(error);
   }
 
-
   if(urlObject) {
     hostTemplateFilter(doc, urlObject);
   }

@@ -150,12 +150,12 @@ export function isValidURL(url) {
   return false;
 }
 
-const URL_PATH_WITH_EXTENSION_MIN_LENGTH = 3; // '/.b'
-const URL_EXTENSION_MAX_LENGTH = 255; // excluding '.'
+const PATH_WITH_EXTENSION_MIN_LENGTH = 3; // '/.b'
+const EXTENSION_MAX_LENGTH = 255; // excluding '.'
 
 // @param url {URL}
 // @returns {String}
-function getExtensionFromURL(url) {
+function getExtension(url) {
   assert(url instanceof URL);
 
   // It is counterintuitive at first glance but there is no need to first get the file name
@@ -163,11 +163,11 @@ function getExtensionFromURL(url) {
   // a trailing slash before the file name, which is not alphanumeric. If there is both a dot in
   // a directory and a dot in the file name, the dot in the directory is not the last dot.
 
-  if(url.pathname.length >= URL_PATH_WITH_EXTENSION_MIN_LENGTH) {
+  if(url.pathname.length >= PATH_WITH_EXTENSION_MIN_LENGTH) {
     const lastDotPos = url.pathname.lastIndexOf('.');
     if((lastDotPos >= 0) && (lastDotPos + 1 < url.pathname.length)) {
       const ext = url.pathname.substring(lastDotPos + 1); // exclude '.'
-      if(ext.length <= URL_EXTENSION_MAX_LENGTH && isAlphanumeric(ext)) {
+      if(ext.length <= EXTENSION_MAX_LENGTH && isAlphanumeric(ext)) {
         return ext;
       }
     }
@@ -181,7 +181,7 @@ export function sniffIsBinaryURL(url) {
   assert(url instanceof URL);
 
   if(url.protocol === 'data:') {
-    const mimeType = findMimeTypeInDataURL(url);
+    const mimeType = findMimeTypeInData(url);
     if(mimeType) {
       return mime.isBinary(mimeType);
     } else {
@@ -190,7 +190,7 @@ export function sniffIsBinaryURL(url) {
     }
   }
 
-  const extension = getExtensionFromURL(url);
+  const extension = getExtension(url);
   if(extension) {
     const mimeType = mime.getTypeForExtension(extension);
     if(mimeType) {
@@ -201,7 +201,7 @@ export function sniffIsBinaryURL(url) {
   return false;
 }
 
-function findMimeTypeInDataURL(dataURL) {
+function findMimeTypeInData(dataURL) {
   assert(dataURL instanceof URL);
   assert(dataURL.protocol === 'data:');
 
