@@ -17,7 +17,7 @@ import {
   optionsPageErrorMessageShow
 } from "/src/options-page-error-message.js";
 import {optionsPageExportOPML} from "/src/options-page-export-opml.js";
-import {OPTIONS_PAGE_IMAGE_PATHS} from "/src/options-page-image-paths.js";
+import OPTIONS_PAGE_IMAGE_PATHS from "/src/options-page-image-paths.js";
 import {
   optionsPageSubscriptionMonitorShow,
   optionsPageSubscriptionMonitorAppendMessage,

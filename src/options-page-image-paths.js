@@ -1,5 +1,5 @@
 
-export const OPTIONS_PAGE_IMAGE_PATHS = [
+export default const OPTIONS_PAGE_IMAGE_PATHS = [
   '/images/bgfons-paper_texture318.jpg',
   '/images/CCXXXXXXI_by_aqueous.jpg',
   '/images/paper-backgrounds-vintage-white.jpg',
