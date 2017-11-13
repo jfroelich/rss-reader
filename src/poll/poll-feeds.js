@@ -5,7 +5,7 @@ import {queryIdleState, showNotification} from "/src/extension.js";
 import {feedIsFeed, feedMerge, feedPeekURL} from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
 import {pollEntry, PollEntryContext} from "/src/poll/poll-entry.js";
-import {promiseEvery} from "/src/rbl.js";
+import {promiseEvery} from "/src/promise.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
 import {readerDbGetFeeds} from "/src/reader-db.js";
 import {readerParseFeed} from "/src/reader-parse-feed.js";
@@ -148,6 +148,6 @@ async function pollFeed(feed, pfc) {
 
   const entryPromises = entries.map(pollEntry, pec);
 
-  // TODO: switch to using promiseEvery
+  // TODO: switch to using promiseEvery?
   const entryResolutions = await Promise.all(entryPromises);
 }

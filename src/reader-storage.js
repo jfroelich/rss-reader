@@ -25,7 +25,9 @@ import {
 } from "/src/feed.js";
 
 import {isOpenDB} from "/src/idb.js";
-import {filterEmptyProps, isPosInt, isUncheckedError, sizeof} from "/src/rbl.js";
+import {isPosInt} from "/src/number.js";
+import {filterEmptyProps} from "/src/object.js";
+import {isUncheckedError, sizeof} from "/src/rbl.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
 
 import {

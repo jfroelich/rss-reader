@@ -2,7 +2,8 @@
 import {assert} from "/src/assert.js";
 import {domGetDimensions} from "/src/dom.js";
 import {fetchImage} from "/src/fetch.js";
-import {parseInt10, promiseEvery} from "/src/rbl.js";
+import {parseInt10} from "/src/number.js";
+import {promiseEvery} from "/src/promise.js";
 import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url.js";
 
 // Scans the images of a document and ensures the width and height attributes

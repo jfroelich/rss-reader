@@ -1,5 +1,5 @@
 
-import {openDB, closeDB, deleteDB} from "/src/rbl.js";
+import {openDB, closeDB, deleteDB} from "/src/idb.js";
 import {readerStorageArchiveEntries} from "/src/reader-storage.js";
 
 async function test_archive_entries() {

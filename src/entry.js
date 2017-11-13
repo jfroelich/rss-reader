@@ -2,7 +2,8 @@
 
 import {assert} from "/src/assert.js";
 import {htmlReplaceTags, htmlTruncate} from "/src/html.js";
-import {isPosInt, filterControls, condenseWhitespace} from "/src/rbl.js";
+import {isPosInt} from "/src/number.js";
+import {filterControls, condenseWhitespace} from "/src/rbl.js";
 import {isCanonicalURL} from "/src/url.js";
 
 

@@ -9,7 +9,9 @@ import {
 import {feedAppendURL, feedIsValidId, feedPeekURL} from "/src/feed.js";
 import {FONTS} from "/src/fonts.js";
 import {htmlTruncate} from "/src/html.js";
+import {closeDB} from "/src/idb.js";
 import {mime} from "/src/mime.js";
+import {parseInt10} from "/src/number.js";
 import {
   optionsPageErrorMessageHide,
   optionsPageErrorMessageShow
@@ -21,14 +23,11 @@ import {
   optionsPageSubscriptionMonitorAppendMessage,
   optionsPageSubscriptionMonitorHide
 } from "/src/options-page-subscription-monitor.js";
-import {closeDB, parseInt10} from "/src/rbl.js";
-
 import {
   readerDbOpen,
   readerDbFindFeedById,
   readerDbGetFeeds
 } from "/src/reader-db.js";
-
 import {readerImportFiles} from "/src/reader-import.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
 

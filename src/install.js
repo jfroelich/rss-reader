@@ -1,6 +1,6 @@
 
 import {FaviconCache} from "/src/favicon-cache.js";
-import {closeDB} from "/src/rbl.js";
+import {closeDB} from "/src/idb.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
 import {readerDbOpen} from "/src/reader-db.js";
 

@@ -2,7 +2,8 @@
 
 import {assert} from "/src/assert.js";
 import {mime} from "/src/mime.js";
-import {isAlphanumeric, parseInt10} from "/src/rbl.js";
+import {parseInt10} from "/src/number.js";
+import {isAlphanumeric} from "/src/rbl.js";
 
 
 // Returns true if otherURL is 'external' to the documentURL. Inaccurate and

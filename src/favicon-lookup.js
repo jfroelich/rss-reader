@@ -7,7 +7,8 @@ import {
 } from "/src/fetch.js";
 import {HTMLParser} from "/src/html-parser.js";
 import {isOpenDB} from "/src/idb.js";
-import {isPosInt, isUncheckedError} from "/src/rbl.js";
+import {isPosInt} from "/src/number.js";
+import {isUncheckedError} from "/src/rbl.js";
 
 
 export class FaviconLookup {

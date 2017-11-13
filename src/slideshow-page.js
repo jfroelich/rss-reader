@@ -8,7 +8,7 @@ import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import {htmlEscape, htmlTruncate} from "/src/html.js";
 import {closeDB, isOpenDB} from "/src/idb.js";
-import {parseInt10} from "/src/rbl.js";
+import {parseInt10} from "/src/number.js";
 import {readerDbOpen, readerDbGetUnarchivedUnreadEntries} from "/src/reader-db.js";
 import {readerStorageMarkRead} from "/src/reader-storage.js";
 import {isCanonicalURL} from "/src/url.js";

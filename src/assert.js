@@ -1,7 +1,9 @@
+// Assertions library
 
+// If true, any assertion errors are immediately logged. This helps avoid issues with promise-
+// swallowed exceptions
 const LOG_ERRORS = true;
 
-// @throws {AssertionError}
 export function assert(condition, message) {
   if(!condition) {
     const error = new AssertionError(message);
@@ -14,7 +16,7 @@ export function assert(condition, message) {
   }
 }
 
-class AssertionError extends Error {
+export class AssertionError extends Error {
   constructor(message) {
     super(message || 'Assertion failed');
   }

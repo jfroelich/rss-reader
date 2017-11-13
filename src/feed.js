@@ -2,7 +2,8 @@
 
 import {assert} from "/src/assert.js";
 import {htmlReplaceTags, htmlTruncate} from "/src/html.js";
-import {condenseWhitespace, filterControls, isPosInt} from "/src/rbl.js";
+import {isPosInt} from "/src/number.js";
+import {condenseWhitespace, filterControls} from "/src/rbl.js";
 import {isCanonicalURL} from "/src/url.js";
 
 export function feedCreate() {

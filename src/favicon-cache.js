@@ -94,7 +94,7 @@ FaviconCache.prototype.findExpired = function(maxAgeMs) {
     maxAgeMs = FaviconCache.MAX_AGE_MS;
   }
 
-  // TODO: assert maxAgeMs isPosInt
+  // TODO: assert maxAgeMs isPosInt, do not forget to import from number.js too
 
   return new Promise((resolve, reject) => {
     let cutoffTimeMs = Date.now() - maxAgeMs;

@@ -13,6 +13,7 @@ import {
 } from "/src/opml-document.js";
 import {opmlOutlineNormalizeHTMLURL, opmlOutlineToFeed} from "/src/opml-outline.js";
 import {OPMLParser} from "/src/opml-parser.js";
+import {promiseEvery} from "/src/promise.js";
 import {readerDbOpen} from "/src/reader-db.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
 
