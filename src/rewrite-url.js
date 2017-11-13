@@ -6,7 +6,7 @@ import {isCanonicalURL} from "/src/url.js";
 // Returns undefined if no rewriting occurred
 // @param url {String}
 // @returns {String}
-export function rewriteURL(url) {
+export default function rewriteURL(url) {
   assert(isCanonicalURL(url));
 
   const urlObject = new URL(url);

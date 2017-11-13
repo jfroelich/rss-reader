@@ -15,7 +15,7 @@ import {pollDocumentFilter} from "/src/poll/poll-document-filter.js";
 
 import {readerDbFindEntryByURL} from "/src/reader-db.js";
 import {readerStorageAddEntry} from "/src/reader-storage.js";
-import {rewriteURL} from "/src/rewrite-url.js";
+import rewriteURL from "/src/rewrite-url.js";
 import {isValidURL, sniffIsBinaryURL} from "/src/url.js";
 
 
