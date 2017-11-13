@@ -1,7 +1,7 @@
 // Command line interface
 
 import FaviconCache from "/src/favicon-cache.js";
-import {FaviconLookup} from "/src/favicon-lookup.js";
+import FaviconLookup from "/src/favicon-lookup.js";
 import {closeDB} from "/src/idb.js";
 import {parseInt10} from "/src/number.js";
 import {pollFeeds, PollFeedsContext} from "/src/poll/poll-feeds.js";

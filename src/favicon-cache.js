@@ -1,7 +1,7 @@
+// Favicon caching module, basically a database wrapper that supports favicon lookup
 
 import assert from "/src/assert.js";
 import {closeDB, isOpenDB, openDB} from "/src/idb.js";
-
 
 export default class FaviconCache {
   constructor() {
@@ -17,7 +17,6 @@ export default class FaviconCache {
 // 30 days in ms, used by both lookup and compact to determine whether a cache entry expired
 FaviconCache.MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
-// Opens the cache
 FaviconCache.prototype.open = async function() {
   this.conn = await openDB(this.name, this.version, this.onUpgradeNeeded, this.openTimeoutMs);
 

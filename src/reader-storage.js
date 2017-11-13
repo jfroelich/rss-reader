@@ -13,7 +13,7 @@ import {
 } from "/src/entry.js";
 import {isUncheckedError} from "/src/errors.js";
 import FaviconCache from "/src/favicon-cache.js";
-import {FaviconLookup} from "/src/favicon-lookup.js";
+import FaviconLookup from "/src/favicon-lookup.js";
 import {
   feedCreateIconLookupURL,
   feedHasURL,

@@ -7,7 +7,7 @@ import {
   entryPeekURL
 } from "/src/entry.js";
 import {isUncheckedError} from "/src/errors.js";
-import {FaviconLookup} from "/src/favicon-lookup.js";
+import FaviconLookup from "/src/favicon-lookup.js";
 import {fetchHTML} from "/src/fetch.js";
 import {HTMLParser} from "/src/html-parser.js";
 import {isOpenDB} from "/src/idb.js";

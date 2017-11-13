@@ -20,7 +20,7 @@ delete the test db at the end of the test.
 */
 
 import FaviconCache from "/src/favicon-cache.js";
-import {FaviconLookup} from "/src/favicon-lookup.js";
+import FaviconLookup from "/src/favicon-lookup.js";
 
 async function testLookup(url, cacheless) {
   const cache = new FaviconCache();

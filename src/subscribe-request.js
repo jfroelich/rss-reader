@@ -9,7 +9,7 @@ import assert from "/src/assert.js";
 import {isUncheckedError, PermissionsError} from "/src/errors.js";
 import {showNotification} from "/src/extension.js";
 import FaviconCache from "/src/favicon-cache.js";
-import {FaviconLookup} from "/src/favicon-lookup.js";
+import FaviconLookup from "/src/favicon-lookup.js";
 import {
   feedCreateIconLookupURL,
   feedHasURL,

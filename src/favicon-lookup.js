@@ -10,7 +10,7 @@ import {HTMLParser} from "/src/html-parser.js";
 import {isOpenDB} from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
 
-export class FaviconLookup {
+export default class FaviconLookup {
   constructor() {
     this.cache = undefined;
     this.kMaxFailureCount = 2;// (comparison is <=), 'const'
