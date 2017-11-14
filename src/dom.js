@@ -1,7 +1,6 @@
 // DOM utilities
 
 import assert from "/src/assert.js";
-
 import {parseInt10} from "/src/string.js";
 import {isValidURL} from "/src/url.js";
 
@@ -85,7 +84,7 @@ export function unwrap(element) {
 export function renameElement(element, newName, copyAttributesFlag) {
 
   // Disallow createElement(null) working like createElement("null")
-  assert(domIsValidElementName(newName));
+  assert(isValidElementName(newName));
 
   if(typeof copyAttributesFlag === 'undefined') {
     copyAttributesFlag = true;
@@ -180,6 +179,7 @@ export function getDimensions(element) {
 export function fadeElement(element, durationSecs, delaySecs) {
   return new Promise(function executor(resolve, reject) {
     const style = element.style;
+    assert(style);
     if(style.display === 'none') {
       style.opacity = '0';
       style.display = 'block';
