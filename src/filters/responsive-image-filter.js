@@ -1,6 +1,7 @@
 
 import assert from "/src/assert.js";
 import {imageHasValidSource, imageHasSrcset} from "/src/dom.js";
+import {parseSrcsetWrapper} from "/src/srcset.js";
 
 export function responsiveImageFilter(doc) {
   assert(doc instanceof Document);
