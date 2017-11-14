@@ -1,11 +1,9 @@
 // DOM utilities
 
 import assert from "/src/assert.js";
-
 // This script defines parseSrcset in global scope
 import "/src/third-party/parse-srcset.js";
 import {parseInt10} from "/src/string.js";
-
 import {isValidURL} from "/src/url.js";
 
 
@@ -17,7 +15,7 @@ import {isValidURL} from "/src/url.js";
 // @param sheet css style sheet
 // @param selectorText {String}
 // @returns rule {???}
-export function domFindCSSRule(sheet, selectorText) {
+export function findCSSRule(sheet, selectorText) {
   assert(sheet);
 
   for(const rule of sheet.cssRules) {
@@ -28,7 +26,7 @@ export function domFindCSSRule(sheet, selectorText) {
 }
 
 // Use the first sheet
-export function domGetDefaultStylesheet() {
+export function getDefaultStylesheet() {
   const sheets = document.styleSheets;
   if(sheets.length) {
     return sheets[0];
@@ -37,13 +35,13 @@ export function domGetDefaultStylesheet() {
 
 // Returns true if the given name is a valid name for an element. This only
 // does minimal validation and may yield false positives.
-export function domIsValidElementName(name) {
+function isValidElementName(name) {
   return typeof name === 'string' && name.length && !name.includes(' ');
 }
 
 // Replace an element with its children. Special care is taken to add spaces
 // if the operation would result in adjacent text nodes.
-export function domUnwrap(element) {
+export function unwrap(element) {
   assert(element instanceof Element);
   assert(element.parentNode, 'orphaned element');
 
@@ -79,23 +77,22 @@ export function domUnwrap(element) {
   parentElement.insertBefore(frag, nextSibling);
 }
 
-// TODO: rename to renameElement
 // Changes the tag name of an element. Event listeners are lost on rename. No
 // checking is done regarding whether the result is semantically correct.
 //
 // See https://stackoverflow.com/questions/15408394 for a basic explanation of
 // why event listeners are lost on rename.
 //
-// @param copyAttributes {Boolean} optional, if true then attributes are
+// @param copyAttributesFlag {Boolean} optional, if true then attributes are
 // maintained, defaults to true.
 // @returns {Element} the new element that replaced the old one
-export function domRename(element, newName, copyAttributes) {
+export function renameElement(element, newName, copyAttributesFlag) {
 
   // Disallow createElement(null) working like createElement("null")
   assert(domIsValidElementName(newName));
 
-  if(typeof copyAttributes === 'undefined') {
-    copyAttributes = true;
+  if(typeof copyAttributesFlag === 'undefined') {
+    copyAttributesFlag = true;
   }
 
   // Treat attempting to rename an element to the same name as a noop
@@ -122,8 +119,8 @@ export function domRename(element, newName, copyAttributes) {
 
   const newElement = element.ownerDocument.createElement(newName);
 
-  if(copyAttributes) {
-    domCopyAttributes(element, newElement);
+  if(copyAttributesFlag) {
+    copyAttributes(element, newElement);
   }
 
   // Move children
@@ -145,7 +142,7 @@ export function domRename(element, newName, copyAttributes) {
 // @param toElement {Element}
 // @throws {Error} if either element is not an Element
 // @returns void
-export function domCopyAttributes(fromElement, toElement) {
+export function copyAttributes(fromElement, toElement) {
   // Use getAttributeNames in preference to element.attributes due to
   // performance issues with element.attributes, and to allow unencumbered use
   // of the for..of syntax (I had issues with NamedNodeMap and for..of).
@@ -158,7 +155,7 @@ export function domCopyAttributes(fromElement, toElement) {
 
 // Only looks at inline style.
 // Returns {'width': int, 'height': int} or undefined
-export function domGetDimensions(element) {
+export function getDimensions(element) {
 
   // Accessing element.style is a performance heavy operation sometimes, so
   // try and avoid calling it.
@@ -184,7 +181,7 @@ export function domGetDimensions(element) {
 }
 
 // TODO: this could use some cleanup or at least some clarifying comments
-export function domFade(element, durationSecs, delaySecs) {
+export function fadeElement(element, durationSecs, delaySecs) {
   return new Promise(function executor(resolve, reject) {
     const style = element.style;
     if(style.display === 'none') {
@@ -204,26 +201,26 @@ export function domFade(element, durationSecs, delaySecs) {
 
 // TODO: also has source if within picture and picture has <source>, or
 // alternatively rename to domImageHasSourceAttribute
-export function domImageHasSource(image) {
+export function imageHasSource(image) {
   assert(image instanceof Element);
-  return image.hasAttribute('src') || domImageHasSrcset(image);
+  return image.hasAttribute('src') || imageHasSrcset(image);
 }
 
 // Return true if image has a valid src attribute value
-export function domImageHasValidSource(image) {
+export function imageHasValidSource(image) {
   assert(image instanceof Element);
   return isValidURL(image.getAttribute('src'));
 }
 
 // Return true if image has a non-empty srcset attribute value
-export function domImageHasSrcset(image) {
+export function imageHasSrcset(image) {
   assert(image instanceof Element);
   const imageSrcset = image.getAttribute('srcset');
   return imageSrcset && imageSrcset.trim();
 }
 
 // Searches for and returns the corresponding figcaption element
-export function domFindCaption(image) {
+export function findCaption(image) {
   assert(image instanceof Element);
   let figcaption;
   const figure = image.closest('figure');
@@ -234,7 +231,7 @@ export function domFindCaption(image) {
 }
 
 // TODO: remove picture/source/figure/figcaption
-export function domRemoveImage(image) {
+export function removeImage(image) {
   image.remove();
 }
 
@@ -248,14 +245,14 @@ export function domRemoveImage(image) {
 //
 // TODO: change to varargs, find the LCAs of whatever args given, instead of
 // only 2. change to (...nodes)
-export function domFindLCA(node1, node2) {
+export function findLCA(node1, node2) {
   assert(node1 instanceof Node);
   assert(node2 instanceof Node);
   assert(node1 !== node2);
   assert(node1.ownerDocument === node2.ownerDocument);
 
-  const ancestors1 = domAncestors(node1);
-  const ancestors2 = domAncestors(node2);
+  const ancestors1 = getAncestors(node1);
+  const ancestors2 = getAncestors(node2);
 
   // The +1s are for the immediate parent steps
   const len1 = ancestors1.length, len2 = ancestors2.length;
@@ -273,7 +270,7 @@ export function domFindLCA(node1, node2) {
 
 // Returns an array of ancestors, from deepest to shallowest.
 // The node itself is not included.
-export function domAncestors(node) {
+export function getAncestors(node) {
   assert(node instanceof Node);
   const ancestors = [];
   for(let parent = node.parentNode; parent; parent = parent.parentNode) {
@@ -285,7 +282,7 @@ export function domAncestors(node) {
 // @param descriptors {Array} an array of descriptors such as those produced
 // by parseSrcset (third party library)
 // @returns {String} a string suitable for storing as srcset attribute value
-export function domSrcsetSerialize(descriptors) {
+export function serializeSrcset(descriptors) {
   assert(Array.isArray(descriptors));
 
   const descriptorStrings = [];
@@ -315,7 +312,7 @@ export function domSrcsetSerialize(descriptors) {
 // Returns an array of descriptor objects. If the input is bad, or an error
 // occurs, returns an empty array.
 // @param srcset {String}
-export function domSrcsetParseFromString(srcset) {
+export function parseSrcsetWrapper(srcset) {
   const fallbackOutput = [];
 
   if(typeof srcset !== 'string') {
@@ -334,122 +331,4 @@ export function domSrcsetParseFromString(srcset) {
   }
 
   return descriptors;
-}
-
-// Returns true if an element, or any of its ancestors, is hidden.
-// @param element {Element}
-export function domIsHidden(element) {
-  assert(element instanceof Element);
-
-  const doc = element.ownerDocument;
-  const body = doc.body;
-
-  // NOTE: in an inert document, element style is lazily computed, and
-  // getComputedStyle is even more lazily computed. getComputedStyle is
-  // ridiculously slow. Combined with the fact that stylesheet information
-  // and style elements are filtered out in other areas, this is restricted
-  // to looking at the inline style (the style attribute).
-
-  // NOTE: in an inert document, offsetWidth and offsetHeight are not
-  // available. Therefore, this cannot use jQuery approach of testing if the
-  // offsets are 0. Which is unfortunate, because it is quite fast.
-
-  // TODO: consider a test that compares whether foreground color is too
-  // close to background color. This kind of applies only to text nodes.
-
-  // If a document does not have a body element, then assume it contains
-  // no visible content, and therefore consider the element as hidden.
-  if(!body) {
-    return true;
-  }
-
-  // If the element is the body, then assume visible
-  if(element === body) {
-    return false;
-  }
-
-  // Ignore detached elements and elements outside of body
-  // TODO: this should just be an if?
-  assert(body.contains(element));
-
-  // Quickly test the element itself before testing ancestors, with the hope
-  // of avoiding checking ancestors
-  if(domIsHiddenInline(element)) {
-    return true;
-  }
-
-  // TODO: the collection of ancestors should be delegated to domAncestors
-  // in node.js. This probably also entails changing the order of iteration
-  // over the ancestors in the subsequent loop.
-
-  // Walk bottom-up from after element to before body, recording the path
-  const path = [];
-  for(let e = element.parentNode; e && e !== body; e = e.parentNode) {
-    path.push(e);
-  }
-
-  // Step backward along the path and stop upon finding the first hidden node
-  // This is top down.
-  for(let i = path.length - 1; i > -1; i--) {
-    if(domIsHiddenInline(path[i])) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-// Returns true if an element is hidden according to its inline style. Makes
-// mostly conservative guesses and misses a few cases.
-export function domIsHiddenInline(element) {
-  assert(element instanceof Element);
-
-  // Special handling for MathML. <math> and its subelements do not contain
-  // a style property in a parsed DOM (apparently). I don't know if this is
-  // a bug or expected behavior. In any case, consider math elements and
-  // descendants of math elements as always visible.
-  // NOTE: closest includes the element itself
-  if(element.closest('math')) {
-    return false;
-  }
-
-  const style = element.style;
-
-  // Some elements do not have a style prop.
-  if(!style) {
-    console.debug('no style prop:', element.outerHTML.substring(0, 100));
-    return false;
-  }
-
-  // element.style only has a length if one or more explicit properties are set
-  // elements are visible by default, so if no properties set then the element
-  // cannot be hidden. Testing this helps avoid the more expensive tests
-  // later in this function.
-  if(!style.length) {
-    return false;
-  }
-
-  return style.display === 'none' || style.visibility === 'hidden' ||
-    domIsNearTransparent(element) || domIsOffscreen(element);
-}
-
-// Returns true if the element's opacity is too close to 0
-// TODO: support all formats of the opacity property?
-function domIsNearTransparent(element) {
-  const opacity = parseFloat(element.style.opacity);
-  return !isNaN(opacity) && opacity >= 0 && opacity <= 0.3;
-}
-
-// Returns true if the element is positioned off screen. Heuristic guess. Probably several false
-// negatives, and a few false positives. The cost of guessing wrong is not too high. This is pretty
-// inaccurate. Mostly just a mental note. Again, restricted to inert document context.
-function domIsOffscreen(element) {
-  if(element.style.position === 'absolute') {
-    const left = parseInt10(element.style.left);
-    if(!isNaN(left) && left < 0) {
-      return true;
-    }
-  }
-
-  return false;
 }

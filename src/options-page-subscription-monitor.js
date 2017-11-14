@@ -1,5 +1,5 @@
 
-import {domFade} from "/src/dom.js";
+import {fadeElement} from "/src/dom.js";
 
 // TODO: instead of removing and re-adding, reset and reuse
 export function optionsPageSubscriptionMonitorShow() {
@@ -29,6 +29,6 @@ export function optionsPageSubscriptionMonitorAppendMessage(message) {
 export async function optionsPageSubscriptionMonitorHide() {
   const monitorElement = document.getElementById('submon');
   const duration = 2, delay = 1;
-  await domFade(monitorElement, duration, delay);
+  await fadeElement(monitorElement, duration, delay);
   monitorElement.remove();
 }

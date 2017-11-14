@@ -1,13 +1,13 @@
 
 import assert from "/src/assert.js";
-import {domFindCSSRule, domGetDefaultStylesheet} from "/src/dom.js";
+import * as dom from "/src/dom.js";
 import {parseInt10} from "/src/string.js";
 
 // Get the current settings from local storage and then modify the css rules
 // in the default style sheet
 export function entryCSSOnChange(event) {
   console.log('entryCSSOnChange');
-  const sheet = domGetDefaultStylesheet();
+  const sheet = dom.getDefaultStylesheet();
   assert(sheet);
   entryCSSUpdateRule(sheet);
   entryCSSUpdateTitleRule(sheet);
@@ -18,7 +18,7 @@ export function entryCSSOnChange(event) {
 // append them to the default style sheet.
 export function entryCSSInit() {
   console.log('entryCSSInit');
-  const sheet = domGetDefaultStylesheet();
+  const sheet = dom.getDefaultStylesheet();
   assert(sheet);
   sheet.addRule('div.entry', entryCSSCreateEntryRuleText());
 
@@ -122,7 +122,7 @@ function entryCSSAddContentRule(sheet) {
 
 function entryCSSUpdateRule(sheet) {
   assert(sheet);
-  const rule = domFindCSSRule(sheet, 'div.entry');
+  const rule = dom.findCSSRule(sheet, 'div.entry');
   assert(rule);
   const style = rule.style;
 
@@ -146,7 +146,7 @@ function entryCSSUpdateRule(sheet) {
 
 function entryCSSUpdateTitleRule(sheet) {
   assert(sheet);
-  const rule = domFindCSSRule(sheet, 'div.entry a.entry-title');
+  const rule = dom.findCSSRule(sheet, 'div.entry a.entry-title');
   assert(rule);
   const style = rule.style;
 
@@ -161,7 +161,7 @@ function entryCSSUpdateTitleRule(sheet) {
 
 function entryCSSUpdateContentRule(sheet) {
   assert(sheet);
-  const rule = domFindCSSRule(sheet, 'div.entry span.entry-content');
+  const rule = dom.findCSSRule(sheet, 'div.entry span.entry-content');
   assert(rule);
 
   rule.style.background = '';

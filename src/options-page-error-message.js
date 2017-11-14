@@ -1,5 +1,5 @@
 
-import {domFade} from "/src/dom.js";
+import {fadeElement} from "/src/dom.js";
 
 export function optionsPageErrorMessageShow(message, fade) {
   optionsPageErrorMessageHide();
@@ -21,7 +21,7 @@ export function optionsPageErrorMessageShow(message, fade) {
     errorElement.style.opacity = '0';
     document.body.appendChild(errorElement);
     const duration = 1, delay = 0;
-    domFade(container, duration, delay);
+    fadeElement(container, duration, delay);
   } else {
     errorElement.style.opacity = '1';
     errorElement.style.display = 'block';

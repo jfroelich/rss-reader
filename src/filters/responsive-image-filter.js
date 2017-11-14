@@ -1,6 +1,6 @@
 
 import assert from "/src/assert.js";
-import {domImageHasValidSource, domImageHasSrcset} from "/src/dom.js";
+import {imageHasValidSource, imageHasSrcset} from "/src/dom.js";
 
 export function responsiveImageFilter(doc) {
   assert(doc instanceof Document);
@@ -11,7 +11,7 @@ export function responsiveImageFilter(doc) {
 
   const images = doc.body.getElementsByTagName('img');
   for(const image of images) {
-    if(!domImageHasValidSource(image) && domImageHasSrcset(image)) {
+    if(!imageHasValidSource(image) && imageHasSrcset(image)) {
       filterImage(image);
     }
   }
@@ -19,7 +19,7 @@ export function responsiveImageFilter(doc) {
 
 function filterImage(image) {
   const imageSrcset = image.getAttribute('srcset');
-  const descriptors = domSrcsetParseFromString(imageSrcset);
+  const descriptors = parseSrcsetWrapper(imageSrcset);
 
   // For the time being, the preference is whatever is first, no special
   // handling of descriptor.d, and only one dimension needed

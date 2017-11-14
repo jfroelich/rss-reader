@@ -1,7 +1,8 @@
 
 import assert from "/src/assert.js";
-import {domIsHiddenInline, domRemoveImage} from "/src/dom.js";
+import {removeImage} from "/src/dom.js";
 import {isCanonicalURL, isExternalURL} from "/src/url.js";
+import {isHiddenInlineElement} from "/src/visibility.js";
 
 const LONESTAR_FILTER_PATTERNS = [
   /\/\/.*2o7\.net\//i,
@@ -54,8 +55,8 @@ export function lonestarFilter(doc, url) {
 
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
-    if(domIsHiddenInline(image) || isPixel(image) || hasTelemetrySource(image, documentURL)) {
-      domRemoveImage(image);
+    if(isHiddenInlineElement(image) || isPixel(image) || hasTelemetrySource(image, documentURL)) {
+      removeImage(image);
     }
   }
 }

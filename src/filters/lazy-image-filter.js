@@ -1,6 +1,6 @@
 
 import assert from "/src/assert.js";
-import {domImageHasSource} from "/src/dom.js";
+import {imageHasSource} from "/src/dom.js";
 import {isValidURL} from "/src/url.js";
 
 export function lazyImageFilter(doc) {
@@ -25,7 +25,7 @@ export function lazyImageFilter(doc) {
 
   const images = doc.body.getElementsByTagName('image');
   for(const image of images) {
-    if(domImageHasSource(image)) {
+    if(imageHasSource(image)) {
       continue;
     }
 

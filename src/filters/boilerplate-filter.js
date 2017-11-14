@@ -4,7 +4,7 @@
 
 
 import assert from "/src/assert.js";
-import {domFindCaption} from "/src/dom.js";
+import {findCaption} from "/src/dom.js";
 import {condenseWhitespace} from "/src/string.js";
 
 const BOILERPLATE_ANCESTOR_BIASES = {
@@ -201,7 +201,7 @@ function boilerplateDeriveImageTextBias(image) {
     bias += 30;
   }
 
-  if(domFindCaption(image)) {
+  if(findCaption(image)) {
     bias += 100;
   }
 

@@ -1,6 +1,6 @@
 
 import assert from "/src/assert.js";
-import {domGetDimensions} from "/src/dom.js";
+import {getDimensions} from "/src/dom.js";
 import {fetchImage} from "/src/fetch.js";
 import {promiseEvery} from "/src/promise.js";
 import {parseInt10} from "/src/string.js";
@@ -61,7 +61,7 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     return;
   }
 
-  const styleDimensions = domGetDimensions(image);
+  const styleDimensions = getDimensions(image);
   if(styleDimensions) {
     result.width = styleDimensions.width;
     result.height = styleDimensions.height;

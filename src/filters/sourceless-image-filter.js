@@ -1,6 +1,6 @@
 
 import assert from "/src/assert.js";
-import {domRemoveImage} from "/src/dom.js";
+import {removeImage} from "/src/dom.js";
 
 export function sourcelessImageFilter(doc) {
   assert(doc instanceof Document);
@@ -12,7 +12,7 @@ export function sourcelessImageFilter(doc) {
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
     if(isSourceless(image)) {
-      domRemoveImage(image);
+      removeImage(image);
     }
   }
 }

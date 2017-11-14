@@ -1,6 +1,6 @@
 
 import assert from "/src/assert.js";
-import {domUnwrap} from "/src/dom.js";
+import {unwrap} from "/src/dom.js";
 import {isPosInt} from "/src/number.js";
 
 // @param maxTextLength {Number} optional, if number of non-tag characters
@@ -22,7 +22,7 @@ export function emphasisFilter(doc, maxTextLength) {
   const elements = doc.body.querySelectorAll('b, big, em, i, strong');
   for(const element of elements) {
     if(element.textContent.length > maxTextLength) {
-      domUnwrap(element);
+      unwrap(element);
     }
   }
 }

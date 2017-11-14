@@ -1,7 +1,7 @@
 
 import assert from "/src/assert.js";
-import {domFindLCA, domIsHidden} from "/src/dom.js";
-
+import {findLCA} from "/src/dom.js";
+import {isHiddenElement} from "/src/visibility.js";
 
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other
@@ -74,7 +74,7 @@ function paginationIsCandidateAnchor(anchorElement, baseURL) {
     return false;
   }
 
-  if(domIsHidden(anchorElement)) {
+  if(isHiddenElement(anchorElement)) {
     return false;
   }
 
@@ -172,7 +172,7 @@ function paginationGetPartialPath(path) {
 // TODO: maybe store the LCA within each sequence as each sequence's first value
 // before returning, as this may help avoid having to find it again later
 // TODO: if I am using a max distance to lca, then why not just restrict search
-// distance in domFindLCA and return null when no lca found within distance?
+// distance in findLCA and return null when no lca found within distance?
 function paginationFindAnchorSequences(anchors, lcaMaxDistance) {
   const anchorCount = anchors.length;
 
@@ -187,7 +187,7 @@ function paginationFindAnchorSequences(anchors, lcaMaxDistance) {
 
   for(let i = 1; i < anchorCount; i++) {
     a2 = anchors[i];
-    lca2 = domFindLCA(a1, a2);
+    lca2 = findLCA(a1, a2);
     if((lca1 && (lca2.ancestor !== lca1.ancestor)) ||
       (lca2.d1 !== lca2.d2) || (lca2.d1 > maxd)) {
 

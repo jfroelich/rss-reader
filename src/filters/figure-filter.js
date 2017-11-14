@@ -1,6 +1,6 @@
 
 import assert from "/src/assert.js";
-import {domUnwrap} from "/src/dom.js";
+import {unwrap} from "/src/dom.js";
 
 export function figureFilter(doc) {
   assert(doc instanceof Document);
@@ -14,7 +14,7 @@ export function figureFilter(doc) {
   const figures = doc.body.querySelectorAll('figure');
   for(const figure of figures) {
     if(figure.childElementCount === 1) {
-      domUnwrap(figure);
+      unwrap(figure);
     }
   }
 }

@@ -1,6 +1,6 @@
 
 import assert from "/src/assert.js";
-import {domUnwrap} from "/src/dom.js";
+import {unwrap} from "/src/dom.js";
 
 export function formFilter(doc) {
   assert(doc instanceof Document);
@@ -16,13 +16,13 @@ export function formFilter(doc) {
   // Unwrap forms
   const forms = ancestor.querySelectorAll('form');
   for(const form of forms) {
-    domUnwrap(form);
+    unwrap(form);
   }
 
   // Unwrap labels
   const labels = ancestor.querySelectorAll('label');
   for(const label of labels) {
-    domUnwrap(label);
+    unwrap(label);
   }
 
   // TODO: add contains check to reduce operations like removing option

@@ -1,6 +1,6 @@
 
 import assert from "/src/assert.js";
-import {domUnwrap} from "/src/dom.js";
+import {unwrap} from "/src/dom.js";
 import {hasScriptProtocol} from "/src/url.js";
 
 export function scriptAnchorFilter(doc) {
@@ -14,7 +14,7 @@ export function scriptAnchorFilter(doc) {
   const anchors = doc.body.querySelectorAll('a[href]');
   for(const anchor of anchors) {
     if(hasScriptProtocol(anchor.getAttribute('href'))) {
-      domUnwrap(anchor);
+      unwrap(anchor);
     }
   }
 }

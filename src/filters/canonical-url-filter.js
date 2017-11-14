@@ -1,6 +1,6 @@
 
 import assert from "/src/assert.js";
-import {domSrcsetParseFromString, domSrcsetSerialize} from "/src/dom.js";
+import {parseSrcsetWrapper, serializeSrcset} from "/src/dom.js";
 import {resolveURL} from "/src/url.js";
 
 const CANONICAL_URL_FILTER_MAP = {
@@ -85,7 +85,7 @@ function canonicalURLFilterResolveAttribute(element, baseURL) {
 
 function canonicalURLFilterResolveSrcset(element, baseURL) {
   const srcsetAttributeValue = element.getAttribute('srcset');
-  const descriptors = domSrcsetParseFromString(srcsetAttributeValue);
+  const descriptors = parseSrcsetWrapper(srcsetAttributeValue);
 
   let changeCount = 0;
   for(const descriptor of descriptors) {
@@ -97,7 +97,7 @@ function canonicalURLFilterResolveSrcset(element, baseURL) {
   }
 
   if(changeCount) {
-    const newValue = domSrcsetSerialize(descriptors);
+    const newValue = serializeSrcset(descriptors);
     if(newValue) {
       element.setAttribute('srcset', newValue);
     }
