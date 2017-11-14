@@ -4,7 +4,7 @@ import assert from "/src/assert.js";
 import {queryIdleState, showNotification} from "/src/extension.js";
 import {feedIsFeed, feedMerge, feedPeekURL} from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
-import {pollEntry, PollEntryContext} from "/src/poll/poll-entry.js";
+import {pollEntry, PollEntryContext} from "/src/poll-entry.js";
 import {promiseEvery} from "/src/promise.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
 import {readerDbGetFeeds} from "/src/reader-db.js";

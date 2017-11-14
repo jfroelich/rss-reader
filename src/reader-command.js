@@ -3,7 +3,7 @@
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {closeDB} from "/src/idb.js";
-import {pollFeeds, PollFeedsContext} from "/src/poll/poll-feeds.js";
+import {pollFeeds, PollFeedsContext} from "/src/poll-feeds.js";
 import {readerDbOpen} from "/src/reader-db.js";
 import {
   readerStorageArchiveEntries,

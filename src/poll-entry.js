@@ -11,7 +11,7 @@ import FaviconLookup from "/src/favicon-lookup.js";
 import {fetchHTML} from "/src/fetch.js";
 import {isOpenDB} from "/src/idb.js";
 import parseHTML from "/src/parse-html.js";
-import {pollDocumentFilter} from "/src/poll/poll-document-filter.js";
+import {pollDocumentFilter} from "/src/poll-document-filter.js";
 
 import {readerDbFindEntryByURL} from "/src/reader-db.js";
 import {readerStorageAddEntry} from "/src/reader-storage.js";
