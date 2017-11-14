@@ -9,16 +9,13 @@ import {
 import {isUncheckedError} from "/src/errors.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {fetchHTML} from "/src/fetch.js";
+import filterDocument from "/src/filter-document.js";
 import {isOpenDB} from "/src/idb.js";
 import parseHTML from "/src/parse-html.js";
-import {pollDocumentFilter} from "/src/poll-document-filter.js";
-
 import {readerDbFindEntryByURL} from "/src/reader-db.js";
 import {readerStorageAddEntry} from "/src/reader-storage.js";
 import rewriteURL from "/src/rewrite-url.js";
 import {isValidURL, sniffIsBinaryURL} from "/src/url.js";
-
-
 
 export class PollEntryContext {
   constructor() {
@@ -107,7 +104,7 @@ export async function pollEntry(entry) {
 
   // Filter the entry content
   if(entryDocument) {
-    await pollDocumentFilter(entryDocument, url, this.fetchImageTimeoutMs);
+    await filterDocument(entryDocument, url, this.fetchImageTimeoutMs);
 
     entry.content = entryDocument.documentElement.outerHTML.trim();
   } else {

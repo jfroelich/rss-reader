@@ -1,5 +1,10 @@
 // app storage module, mostly a wrapper around reader-db that integrates other modules
 
+// TODO: drop readerStorage prefix, that is now a concern of the importing module
+// TODO: probably should just break up into separate modules. These functions are unrelated to
+// one another apart from pertaining to the same layer. Right now this is extremely low coherency
+// and is nearly a utilities file.
+
 import assert from "/src/assert.js";
 import {
   entryHasURL,
@@ -284,101 +289,4 @@ export async function readerStorageRemoveLostEntries(conn, limit) {
     channel.postMessage(message);
   }
   channel.close();
-}
-
-// Scans through all the feeds in the database and attempts to update each
-// feed's favicon property.
-// TODO: consider overwriting existing icons too, given that some feed icons
-// become invalid over time.
-// @throws AssertionError
-// @throws Error - database related
-export async function readerStorageRefreshFeedIcons(readerConn, iconConn) {
-  assert(isOpenDB(readerConn));
-  assert(isOpenDB(iconConn));
-
-  // Allow errors to bubble
-  const feeds = await readerDbGetFeeds(readerConn);
-
-  // We control the feed object for its lifetime locally so there is no need
-  // to prepare the feed before storing it back in the database
-  const SKIP_PREP = true;
-
-  const promises = [];
-  for(const feed of feeds) {
-    promises.push(readerStorageUpdateIcon(feed, readerConn, iconConn, SKIP_PREP));
-  }
-
-  // Allow any individual failure to cancel iteration and bubble an error
-  // TODO: consider promiseEvery
-  await Promise.all(promises);
-}
-
-// TODO: this should accept a cache parameter instead of iconConn
-// TODO: rename after transition to modules
-
-// Lookup the feed's icon, update the feed in db
-// @param feed {Object}
-// @param readerConn {IDBDatabase}
-// @param iconConn {IDBDatabase}
-// @param skipPrep {Boolean} whether to skip feed preparation when updating db
-// @throws AssertionError
-// @throws Error - database related
-async function readerStorageUpdateIcon(feed, readerConn, iconConn, skipPrep) {
-  assert(feedIsFeed(feed));
-  assert(feedHasURL(feed));
-
-  const query = new FaviconLookup();
-  query.cache = new FaviconCache();
-  query.cache.conn = iconConn;
-
-  const url = feedCreateIconLookupURL(feed);
-  assert(url);
-
-  let iconURL;
-  try {
-    iconURL = await query.lookup(url);
-  } catch(error) {
-    if(isUncheckedError(error)) {
-      throw error;
-    } else {
-      console.debug('favicon lookup error', url.href, error);
-    }
-  }
-
-  const prevIconURL = feed.faviconURLString;
-
-  // For some reason, this section of code always feels confusing, so I've made it extremely
-  // explicit
-
-  if(prevIconURL && iconURL && prevIconURL !== iconURL) {
-    console.debug('feed with favicon changed favicon %s', iconURL);
-    feed.faviconURLString = iconURL;
-    await readerStoragePutFeed(feed, readerConn, skipPrep);
-    return;
-  }
-
-  if(prevIconURL && iconURL && prevIconURL === iconURL) {
-    console.debug('feed with favicon did not change (no database operation)', prevIconURL);
-    return;
-  }
-
-  if(prevIconURL && !iconURL) {
-    console.debug('removing feed favicon because lookup failed', url.href, prevIconURL);
-    feed.faviconURLString = undefined;
-    await readerStoragePutFeed(feed, readerConn, skipPrep);
-    return;
-  }
-
-  if(!prevIconURL && !iconURL) {
-    console.debug('feed did not have favicon, could not find favicon (no database operation)',
-      url.href);
-    return;
-  }
-
-  if(!prevIconURL && iconURL) {
-    console.debug('setting initial feed favicon %s', iconURL);
-    feed.faviconURLString = iconURL;
-    await readerStoragePutFeed(feed, readerConn, skipPrep);
-    return;// just for consistency
-  }
 }

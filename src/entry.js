@@ -1,4 +1,4 @@
-// feed entry object utilities module
+// feed entry object utilities
 
 import assert from "/src/assert.js";
 import {replaceTags, truncate as htmlTruncate} from "/src/html.js";
@@ -59,7 +59,6 @@ export function entryAppendURL(entry, urlString) {
 
   return true;
 }
-
 
 // Returns a new entry object where fields have been sanitized. Impure
 export function entrySanitize(inputEntry, authorMaxLength, titleMaxLength, contextMaxLength) {

@@ -1,3 +1,4 @@
+// Functionality for applying all of the application's filters to a document
 
 import assert from "/src/assert.js";
 import {adoptionAgencyFilter} from "/src/filters/adoption-agency-filter.js";
@@ -41,14 +42,16 @@ import {tableFilter} from "/src/filters/table-filter.js";
 import {trimDocumentFilter} from "/src/filters/trim-document-filter.js";
 import {isValidURL} from "/src/url.js";
 
+// TODO: this should be modified to accept a url object as input
+
+
 // Transforms a document's content by removing or changing nods for
 // various reasons.
 // @param doc {Document} the document to transform
 // @param url {String} the canonical url of the document
 // @param fetchImageTimeoutMs {Number} optional, the number of milliseconds
 // to wait before timing out when fetching an image
-// @throws AssertionError
-export async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
+export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
   assert(doc instanceof Document);
   assert(isValidURL(url));
 
@@ -78,7 +81,6 @@ export async function pollDocumentFilter(doc, url, fetchImageTimeoutMs) {
   if(urlObject) {
     hostTemplateFilter(doc, urlObject);
   }
-
 
   boilerplateFilter(doc);
 

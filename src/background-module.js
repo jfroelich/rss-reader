@@ -6,7 +6,7 @@ import {readerCommand} from "/src/reader-command.js";
 import {readerDbOpen} from "/src/reader-db.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
 
-async function initializeBadgeText() {
+async function initBadgeText() {
   // initialize badge text
   let conn;
   try {
@@ -23,10 +23,8 @@ async function onClicked(event) {
   showSlideshowTab();
 }
 
-
 // NOTE: in transition to modules I lost badge update, so calling it here. This sometimes
 // causes a duplicate update.
-initializeBadgeText();
-
+initBadgeText();
 
 chrome.browserAction.onClicked.addListener(onClicked);

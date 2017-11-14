@@ -19,7 +19,7 @@ import {
   feedPeekURL
 } from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
-import {FetchPolicy} from "/src/fetch-policy.js";
+import isAllowedURL from "/src/fetch-policy.js";
 import {closeDB, isOpenDB} from "/src/idb.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
 
@@ -81,7 +81,7 @@ export class SubscribeRequest {
 
     const url = feedPeekURL(feed);
 
-    if(!FetchPolicy.isAllowedURL(url)) {
+    if(!isAllowedURL(url)) {
       throw new PermissionsError(url + ' is not permitted');
     }
 

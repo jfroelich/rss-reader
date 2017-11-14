@@ -1,5 +1,8 @@
 // extension utilities module that provides an abstraction around platform specific functionality
 
+// TODO: rename to platform-chrome.js or something similar, and then change the nature of this
+// module to serve only as a proxy for interacting with Chrome
+
 export function openTab(url) {
   chrome.tabs.create({active: true, url: url});
 }

@@ -7,21 +7,20 @@ import {pollFeeds, PollFeedsContext} from "/src/poll-feeds.js";
 import {readerDbOpen} from "/src/reader-db.js";
 import {
   readerStorageArchiveEntries,
-  readerStorageRefreshFeedIcons,
   readerStorageRemoveLostEntries,
   readerStorageRemoveOrphans
 } from "/src/reader-storage.js";
+import refreshFeedIcons from "/src/refresh-feed-icons.js";
 import {parseInt10} from "/src/string.js";
 
 export async function readerCommand(command, ...args) {
   switch(command) {
   case 'refreshicons': {
-
     const fic = new FaviconCache();
     let readerConn, _;
     try {
       [readerConn, _] = await Promise.all([readerDbOpen(), fic.open()]);
-      await readerStorageRefreshFeedIcons(readerConn, fic.conn);
+      await refreshFeedIcons(readerConn, fic.conn);
     } finally {
       fic.close();
       closeDB(readerConn);
@@ -30,7 +29,6 @@ export async function readerCommand(command, ...args) {
   }
   case 'archive': {
     let maxAgeMs, conn, limit;
-
     if(args && args.length) {
       limit = args[0];
     }
@@ -44,18 +42,14 @@ export async function readerCommand(command, ...args) {
     break;
   }
   case 'poll': {
-
     const fic = new FaviconCache();
-
     const pfc = new PollFeedsContext();
     pfc.iconCache = fic;
     pfc.allowMeteredConnections = true;
     pfc.ignoreIdleState = true;
     pfc.ignoreRecencyCheck = true;
     pfc.ignoreModifiedCheck = true;
-
     let _;
-
     try {
       [pfc.readerConn, _] = await Promise.all([readerDbOpen(), fic.open()]);
       await pollFeeds(pfc);

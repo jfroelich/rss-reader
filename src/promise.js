@@ -1,3 +1,4 @@
+// Promise utilities
 
 import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/errors.js";

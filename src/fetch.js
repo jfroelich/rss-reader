@@ -1,3 +1,4 @@
+// Fetch utilities
 
 import assert from "/src/assert.js";
 import * as mime from "/src/mime.js";

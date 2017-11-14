@@ -1,3 +1,6 @@
+// OPML Document utilities
+
+// TODO: drop the opmlDocument prefix, that is now a responsibility of the importing module
 
 import assert from "/src/assert.js";
 import {

@@ -1,9 +1,10 @@
+// Feed parsing functionality
 
 import assert from "/src/assert.js";
 import parseXML from "/src/parse-xml.js";
 
 // TODO: prefer "item" over "entry" terminology?
-// TODO: there is no need for class with modules
+// TODO: there is no need for class with modules. Just export a function named parseFeed
 
 export class FeedParser {}
 

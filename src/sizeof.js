@@ -1,21 +1,19 @@
-
-// Calculates the approximate byte size of a value. This should only be
-// used for informational purposes because it is hilariously inaccurate.
+// Calculates the approximate byte size of a value. This should only be used for informational
+// purposes because it is hilariously inaccurate.
 //
 // Adapted from http://stackoverflow.com/questions/1248302
 //
-// Does not work with built-ins, which are objects that are a part of the
-// basic Javascript library, like Document, or Element.
+// Does not work with built-ins, which are objects that are a part of the basic Javascript library,
+// like Document, or Element.
 //
 // This uses a stack internally to avoid recursion
 //
 // @param inputValue {Any} a value of any type
-// @returns {Number} an integer representing the approximate byte size of the
-// input value
+// @returns {Number} an integer representing the approximate byte size of the input value
 export default function sizeof(inputValue) {
-  // visitedObjects is a memoization of previously visited objects. In theory
-  // a repeated object just means enough bytes to store a reference value,
-  // and only the first object actually allocates additional memory.
+  // visitedObjects is a memoization of previously visited objects. In theory a repeated object
+  // just means enough bytes to store a reference value, and only the first object actually
+  // allocates additional memory.
   const visitedObjects = [];
   const stack = [inputValue];
   const hasOwnProp = Object.prototype.hasOwnProperty;

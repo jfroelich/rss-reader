@@ -34,13 +34,21 @@ dbChannel.onmessage = function(event) {
 };
 
 const pollChannel = new BroadcastChannel('poll');
-pollChannel.onmessage = function(event) {
+pollChannel.onmessage = async function(event) {
   if(event.data === 'completed') {
     console.debug('Received poll completed message, maybe appending slides');
     const count = countUnreadSlides();
     let conn; // leave undefined
+
     if(count < 2) {
-      appendSlides(conn);
+      try {
+        conn = await readerDbOpen();
+        appendSlides(conn);
+      } catch(error) {
+        console.warn(error);
+      } finally {
+        closeDB(conn);
+      }
     }
   }
 };
@@ -81,7 +89,6 @@ async function appendSlides(conn) {
   const offset = countUnreadSlides();
 
   try {
-    conn = await readerDbOpen();
     entries = await readerDbGetUnarchivedUnreadEntries(conn, offset, limit);
   } catch(error) {
     // TODO: visual feedback in event of an error
@@ -398,17 +405,16 @@ function onSlideScroll(event) {
   scrollCallbackHandle = requestIdleCallback(onIdleCallback);
 }
 
-// TODO: waiting for dom content loaded in a module is probably not needed?
-
-async function onDOMContentLoaded(event) {
-  console.debug('onDOMContentLoaded');
+// Initialization
+async function init() {
   entryCSSInit();
   let conn;
   try {
+    conn = await readerDbOpen();
     await appendSlides(conn);
-  } catch(error) {
-    console.warn(error);
+  } finally {
+    closeDB(conn);
   }
 }
 
-document.addEventListener('DOMContentLoaded', onDOMContentLoaded, {once: true});
+init();

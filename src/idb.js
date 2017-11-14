@@ -132,6 +132,7 @@ export function closeDB(...conns) {
   }
 }
 
+// A promise wrapper around indexedDB.deleteDatabase
 export function deleteDB(name) {
   return new Promise(function executor(resolve, reject) {
     if(DEBUG) {

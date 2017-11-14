@@ -16,6 +16,10 @@ import {readerStoragePutFeed} from "/src/reader-storage.js";
 // PollFeedOperation, or PollFeedRequest or something like this? Then
 // deprecate PollFeedsContext?
 
+// The icon cache dependency should be implicit. cache should be a property of a
+// pollFeeds-like object.
+
+
 export function PollFeedsContext() {
   this.readerConn = undefined;
   this.iconCache = undefined;
