@@ -6,9 +6,6 @@ import "/src/third-party/parse-srcset.js";
 import {parseInt10} from "/src/string.js";
 import {isValidURL} from "/src/url.js";
 
-
-// TODO: drop prefix after transition to modules
-
 // Returns the first matching css rule within the given sheet, or undefined if
 // no rules match.
 //

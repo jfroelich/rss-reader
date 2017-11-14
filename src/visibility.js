@@ -15,7 +15,6 @@
 // TODO: consider a test that compares whether foreground color is too close to background color.
 // This kind of applies only to text nodes.
 
-
 import {assert} from "/src/assert.js";
 import {parseInt10} from "/src/number.js";
 
@@ -25,44 +24,39 @@ import {parseInt10} from "/src/number.js";
 // @returns {Boolean} true if hidden
 export function isHiddenElement(element) {
   assert(element instanceof Element);
-
   const doc = element.ownerDocument;
-  const body = doc.body;
-
 
   // If a document does not have a body element, then assume it contains
   // no visible content, and therefore consider the element as hidden.
-  if(!body) {
+  if(!doc.body) {
     return true;
   }
 
   // If the element is the body, then assume visible
-  if(element === body) {
+  if(element === doc.body) {
     return false;
   }
 
-  // Ignore detached elements and elements outside of body
-  // TODO: this should just be an if?
-  assert(body.contains(element));
+  // Assume all elements outside the body are not part of visible content
+  if(!doc.body.contains(element)) {
+    return true;
+  }
 
-  // Quickly test the element itself before testing ancestors, with the hope
-  // of avoiding checking ancestors
+  // Test the element itself with the hope of avoiding ancestors analysis
   if(isHiddenInlineElement(element)) {
     return true;
   }
 
-  // TODO: the collection of ancestors should be delegated to getAncestors
-  // in dom.js. This probably also entails changing the order of iteration
-  // over the ancestors in the subsequent loop.
+  // TODO: the collection of ancestors should be delegated to getAncestors in dom.js. This probably
+  // also entails changing the order of iteration over the ancestors in the subsequent loop.
 
   // Walk bottom-up from after element to before body, recording the path
   const path = [];
-  for(let e = element.parentNode; e && e !== body; e = e.parentNode) {
+  for(let e = element.parentNode; e && e !== doc.body; e = e.parentNode) {
     path.push(e);
   }
 
-  // Step backward along the path and stop upon finding the first hidden node
-  // This is top down.
+  // Step backward along the path and stop upon finding the first hidden node. This is top down.
   for(let i = path.length - 1; i > -1; i--) {
     if(isHiddenInlineElement(path[i])) {
       return true;
@@ -72,32 +66,35 @@ export function isHiddenElement(element) {
   return false;
 }
 
-// Returns true if an element is hidden according to its inline style. Makes
-// mostly conservative guesses and misses a few cases.
+// Returns true if an element is hidden according to its inline style. Makes mostly conservative
+// guesses because false positives carry a greater penalty.
 export function isHiddenInlineElement(element) {
   assert(element instanceof Element);
 
-  // Special handling for MathML. <math> and its subelements do not contain
-  // a style property in a parsed DOM (apparently). I don't know if this is
-  // a bug or expected behavior. In any case, consider math elements and
-  // descendants of math elements as always visible.
-  // NOTE: closest includes the element itself
+  // Special handling for MathML. This absence of this case was previously the source of a bug.
+  // <math> and its descendants do not contain a style property. I do not know if this is a bug or
+  // expected behavior. In any case, consider math elements and descendants of math elements as
+  // always visible. In addition, because it is counterintuitive, I am pointing out that the
+  // closest method includes a check against the element itself.
   if(element.closest('math')) {
     return false;
   }
 
   const style = element.style;
 
-  // Some elements do not have a style prop.
+  // Some elements do not have a style prop. Generally these are math elements or math descendants,
+  // but there is a special case for that above. This is a catch all for other cases. I am logging
+  // occurrences because I am interested in learning what other elements exhibit this behavior, but
+  // so far only math-related elements do. In the absence of a style property assume the element
+  // is visible.
   if(!style) {
     console.debug('no style prop:', element.outerHTML.substring(0, 100));
     return false;
   }
 
-  // element.style only has a length if one or more explicit properties are set
-  // elements are visible by default, so if no properties set then the element
-  // cannot be hidden. Testing this helps avoid the more expensive tests
-  // later in this function.
+  // element.style only has a length if one or more explicit properties are set. Elements are
+  // visible by default. If no properties set then the element is assumed to be visible. Testing
+  // this helps avoid the more expensive tests later in this function.
   if(!style.length) {
     return false;
   }
@@ -107,7 +104,7 @@ export function isHiddenInlineElement(element) {
 }
 
 // Returns true if the element's opacity is too close to 0
-// TODO: support all formats of the opacity property?
+// TODO: support other formats of the opacity property
 function isNearTransparent(element) {
   const opacity = parseFloat(element.style.opacity);
   return !isNaN(opacity) && opacity >= 0 && opacity <= 0.3;
@@ -115,7 +112,7 @@ function isNearTransparent(element) {
 
 // Returns true if the element is positioned off screen. Heuristic guess. Probably several false
 // negatives, and a few false positives. The cost of guessing wrong is not too high. This is pretty
-// inaccurate. Mostly just a mental note. Again, restricted to inert document context.
+// inaccurate. Mostly just a prototype of the idea of the test to use.
 function isOffscreen(element) {
   if(element.style.position === 'absolute') {
     const left = parseInt10(element.style.left);
