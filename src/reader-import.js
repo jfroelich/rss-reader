@@ -3,7 +3,7 @@
 import assert from "/src/assert.js";
 import FaviconCache from "/src/favicon-cache.js";
 import {readFileAsText} from "/src/file.js";
-import {isOpenDB} from "/src/idb.js";
+import {isOpen as isOpenDB} from "/src/idb.js";
 import * as mime from "/src/mime.js";
 import {
   opmlRemoveOutlinesWithInvalidTypes,

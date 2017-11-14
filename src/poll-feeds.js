@@ -6,8 +6,8 @@ import {feedIsFeed, feedMerge, feedPeekURL} from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
 import {pollEntry, PollEntryContext} from "/src/poll-entry.js";
 import {promiseEvery} from "/src/promise.js";
-import {readerBadgeUpdate} from "/src/reader-badge.js";
-import {readerDbGetFeeds} from "/src/rdb.js";
+import updateBadgeText from "/src/update-badge-text.js";
+import {getFeeds as readerDbGetFeeds} from "/src/rdb.js";
 import {readerParseFeed} from "/src/reader-parse-feed.js";
 import {readerStoragePutFeed} from "/src/reader-storage.js";
 
@@ -76,7 +76,7 @@ export async function pollFeeds(pfc) {
   }
   await promiseEvery(promises);
 
-  await readerBadgeUpdate(pfc.readerConn);
+  await updateBadgeText(pfc.readerConn);
 
   const title = 'Added articles';
   const message = 'Added articles';

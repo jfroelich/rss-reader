@@ -22,12 +22,7 @@ import {
   optionsPageSubscriptionMonitorAppendMessage,
   optionsPageSubscriptionMonitorHide
 } from "/src/options-page-subscription-monitor.js";
-import {
-  close as readerDbClose,
-  open as readerDbOpen,
-  readerDbFindFeedById,
-  readerDbGetFeeds
-} from "/src/rdb.js";
+import * as rdb from "/src/rdb.js";
 import {readerImportFiles} from "/src/reader-import.js";
 import {parseInt10} from "/src/string.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
@@ -174,14 +169,14 @@ async function optionsPageFeedListItemOnclick(event) {
   // Load feed details from the database
   let conn, feed;
   try {
-    conn = await readerDbOpen();
-    feed = await readerDbFindFeedById(conn, feedIdNumber);
+    conn = await rdb.open();
+    feed = await rdb.findFeedById(conn, feedIdNumber);
   } catch(error) {
     console.warn(error);
     // TODO: visual feedback?
     return;
   } finally {
-    readerDbClose(conn);
+    rdb.close(conn);
   }
 
   const titleElement = document.getElementById('details-title');
@@ -304,13 +299,13 @@ async function optionsPageFeedListInit() {
   const feedListElement = document.getElementById('feedlist');
   let conn, feeds;
   try {
-    conn = await readerDbOpen();
-    feeds = await readerDbGetFeeds(conn);
+    conn = await rdb.open();
+    feeds = await rdb.getFeeds(conn);
   } catch(error) {
     // TODO: react to error
     console.warn(error);
   } finally {
-    readerDbClose(conn);
+    rdb.close(conn);
   }
 
   if(!feeds) {
@@ -373,14 +368,14 @@ async function optionsPageUnsubscribeButtonOnclick(event) {
   assert(feedIsValidId(feedId));
   const request = new SubscribeRequest();
   try {
-    request.readerConn = await readerDbOpen();
+    request.readerConn = await rdb.open();
     await request.remove(feedId);
   } catch(error) {
     // TODO: visually react to unsubscribe error
     console.warn(error);
     return;
   } finally {
-    readerDbClose(request.readerConn);
+    rdb.close(request.readerConn);
   }
 
   optionsPageFeedListRemoveFeed(feedId);

@@ -7,7 +7,10 @@ import {isUncheckedError} from "/src/errors.js";
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {feedCreateIconLookupURL, feedHasURL, feedIsFeed} from "/src/feed.js";
-import {readerDbGetFeeds, readerDbIsOpen} from "/src/rdb.js";
+import {
+  getFeeds as readerDbGetFeeds,
+  isOpen as readerDbIsOpen
+} from "/src/rdb.js";
 import {readerStoragePutFeed} from "/src/reader-storage.js";
 
 // Scans through all the feeds in the database and attempts to update each

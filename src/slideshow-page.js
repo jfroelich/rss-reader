@@ -1,5 +1,8 @@
 // slideshow view module
 
+// TODO: slideshow should not be directly interacting with rdb, it should pass through some kind of
+// intermediate layer, similar to the reader storage layer.
+
 import assert from "/src/assert.js";
 import {formatDate} from "/src/date.js";
 import {entryIsValidId, entryIsEntry, entryPeekURL} from "/src/entry.js";
@@ -7,12 +10,7 @@ import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import filterPublisher from "/src/filter-publisher.js";
 import {escapeHTML, truncate as htmlTruncate} from "/src/html.js";
-import {
-  close as readerDbClose,
-  open as readerDbOpen,
-  readerDbIsOpen,
-  readerDbGetUnarchivedUnreadEntries
-} from "/src/rdb.js";
+import * as rdb from "/src/rdb.js";
 import {readerStorageMarkRead} from "/src/reader-storage.js";
 import {parseInt10} from "/src/string.js";
 import {isCanonicalURL} from "/src/url.js";
@@ -46,12 +44,12 @@ pollChannel.onmessage = async function(event) {
 
     if(count < 2) {
       try {
-        conn = await readerDbOpen();
+        conn = await rdb.open();
         appendSlides(conn);
       } catch(error) {
         console.warn(error);
       } finally {
-        readerDbClose(conn);
+        rdb.close(conn);
       }
     }
   }
@@ -64,7 +62,7 @@ function removeSlide(slideElement) {
 }
 
 async function markSlideRead(conn, slideElement) {
-  assert(readerDbIsOpen(conn));
+  assert(rdb.isOpen(conn));
 
   // This is a routine situation such as when navigating backward and therefore
   // not an error.
@@ -93,7 +91,7 @@ async function appendSlides(conn) {
   const offset = countUnreadSlides();
 
   try {
-    entries = await readerDbGetUnarchivedUnreadEntries(conn, offset, limit);
+    entries = await rdb.getUnarchivedUnreadEntries(conn, offset, limit);
   } catch(error) {
     // TODO: visual feedback in event of an error
     console.warn(error);
@@ -255,12 +253,12 @@ async function onSlideClick(event) {
 
   let conn;
   try {
-    conn = await readerDbOpen();
+    conn = await rdb.open();
     await markSlideRead(conn, currentSlide);
   } catch(error) {
     console.warn(error);
   } finally {
-    readerDbClose(conn);
+    rdb.close(conn);
   }
 
   return false;
@@ -284,7 +282,7 @@ async function showNextSlide() {
   let conn;
 
   try {
-    conn = await readerDbOpen();
+    conn = await rdb.open();
 
     // Conditionally append more slides
     if(unreadSlideElementCount < 2) {
@@ -308,7 +306,7 @@ async function showNextSlide() {
   } catch(error) {
     console.warn(error);
   } finally {
-    readerDbClose(conn);
+    rdb.close(conn);
   }
 
   if(slideAppendCount > 0) {
@@ -414,10 +412,10 @@ async function init() {
   entryCSSInit();
   let conn;
   try {
-    conn = await readerDbOpen();
+    conn = await rdb.open();
     await appendSlides(conn);
   } finally {
-    readerDbClose(conn);
+    rdb.close(conn);
   }
 }
 

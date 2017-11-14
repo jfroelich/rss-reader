@@ -20,17 +20,9 @@ import {
 } from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
 import isAllowedURL from "/src/fetch-policy.js";
-import {isOpenDB} from "/src/idb.js";
-import {readerBadgeUpdate} from "/src/reader-badge.js";
-import {
-  close as readerDbClose,
-  open as readerDbOpen,
-  readerDbIsOpen,
-  readerDbFindFeedIdByURL,
-  readerDbFindEntryIdsByFeedId,
-  readerDbRemoveFeedAndEntries,
-  ConstraintError as ReaderDbConstraintError
-} from "/src/rdb.js";
+import {isOpen as isOpenDB} from "/src/idb.js";
+import updateBadgeText from "/src/update-badge-text.js";
+import * as rdb from "/src/rdb.js";
 import {readerParseFeed} from "/src/reader-parse-feed.js";
 import {readerStoragePutFeed} from "/src/reader-storage.js";
 
@@ -47,7 +39,7 @@ export class SubscribeRequest {
   async connect() {
     this.iconCache = new FaviconCache();
     let _;
-    const promises = [readerDbOpen(), this.iconCache.open()];
+    const promises = [rdb.open(), this.iconCache.open()];
     [this.readerConn, _] = await Promise.all(promises);
   }
 
@@ -57,12 +49,12 @@ export class SubscribeRequest {
       this.iconCache.close();
     }
 
-    readerDbClose(this.readerConn);
+    rdb.close(this.readerConn);
   }
 
   // Returns a promise that resolves to the id of a feed matching the url
   isSubscribed(url) {
-    return readerDbFindFeedIdByURL(this.readerConn, url);
+    return rdb.findFeedIdByURL(this.readerConn, url);
   }
 
   // @param feed {Object} the feed to subscribe to
@@ -72,7 +64,7 @@ export class SubscribeRequest {
   // @throws {Error} fetch related
   // @returns {Object} the subscribed feed
   async subscribe(feed) {
-    assert(readerDbIsOpen(this.readerConn));
+    assert(rdb.isOpen(this.readerConn));
     assert(this.iconCache instanceof FaviconCache);
     assert(isOpenDB(this.iconCache.conn));
     assert(feedIsFeed(feed));
@@ -85,14 +77,14 @@ export class SubscribeRequest {
     }
 
     if(await this.isSubscribed(url)) {
-      throw new ReaderDbConstraintError();
+      throw new rdb.ConstraintError();
     }
 
     if(navigator.onLine || !('onLine' in navigator)) {
       const res = await fetchFeed(url, this.timeoutMs);
       if(res.redirected) {
         if(await this.isSubscribed(res.responseURL)) {
-          throw new ReaderDbConstraintError();
+          throw new rdb.ConstraintError();
         }
       }
 
@@ -144,22 +136,24 @@ export class SubscribeRequest {
     }
   }
 
-  // TODO: deprecate
-  // TODO: use promiseEvery?
+  // TODO: deprecate, inline this into caller
   // Concurrently subscribe to each feed
   subscribeAll(feeds) {
     const promises = feeds.map(this.subscribe);
+    // TODO: use promiseEvery?
     return Promise.all(promises);
   }
+
+  // TODO: move to unsubscribe.js
 
   // @throws AssertionError
   // @throws Error database-related
   async remove(feedId) {
-    assert(readerDbIsOpen(this.readerConn));
+    assert(rdb.isOpen(this.readerConn));
     assert(feedIsValidId(feedId));
-    const entryIds = await readerDbFindEntryIdsByFeedId(this.readerConn, feedId);
-    await readerDbRemoveFeedAndEntries(this.readerConn, feedId, entryIds);
-    await readerBadgeUpdate(this.readerConn);
+    const entryIds = await rdb.findEntryIdsByFeedId(this.readerConn, feedId);
+    await rdb.removeFeedAndEntries(this.readerConn, feedId, entryIds);
+    await updateBadgeText(this.readerConn);
     const channel = new BroadcastChannel('db');
     channel.postMessage({type: 'feed-deleted', id: feedId});
     for(const entryId of entryIds) {

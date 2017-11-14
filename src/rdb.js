@@ -1,7 +1,5 @@
 // Module for interacting with the app indexedDB database
 
-// TODO: drop prefix readerDb, that is only a concern for importing module
-
 import assert from "/src/assert.js";
 import {
   entryIsEntry,
@@ -11,9 +9,13 @@ import {
   ENTRY_STATE_UNARCHIVED
 } from "/src/entry.js";
 import {feedIsFeed, feedIsValidId} from "/src/feed.js";
-import {closeDB, isOpenDB, openDB} from "/src/idb.js";
+import * as idb from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
 import {isValidURL} from "/src/url.js";
+
+const NAME = 'reader';
+const VERSION = 20;
+const OPEN_TIMEOUT_MS = 500;
 
 export class ConstraintError extends Error {
   constructor(message) {
@@ -36,24 +38,15 @@ export class InvalidStateError extends Error {
 // Opens a connection to the reader-db database
 // @return {Promise} a promise that resolves to an open database connection
 export function open() {
-  const name = 'reader', version = 20, timeoutMs = 500;
-  return openDB(name, version, onUpgradeNeeded, timeoutMs);
+  return idb.open(NAME, VERSION, onUpgradeNeeded, OPEN_TIMEOUT_MS);
 }
 
-// Wrap and expose this so that user does not have to work directly with lower layer idb.js
-// in addition to rdb.js
-export function close(conn) {
-  return closeDB(conn);
-}
+export const close = idb.close;
+export const isOpen = idb.isOpen;
 
-// Wrap isOpenDB so that module importer does not need to work directly with idb.js
-export function readerDbIsOpen(conn) {
-  return isOpenDB(conn);
-}
-
-// Helper for readerDbOpen. Does the database upgrade. This should never be
+// Helper for open. Does the database upgrade. This should never be
 // called directly. To do an upgrade, call open with a higher version number.
-function onUpgradeNeeded(event) {
+export function onUpgradeNeeded(event) {
   const conn = event.target.result;
   const tx = event.target.transaction;
   let feedStore, entryStore;
@@ -80,10 +73,9 @@ function onUpgradeNeeded(event) {
 // Returns feed id if a feed with the given url exists in the database
 // @param conn {IDBDatabase}
 // @param url {String}
-export function readerDbFindFeedIdByURL(conn, url) {
-  assert(isOpenDB(conn));
+export function findFeedIdByURL(conn, url) {
+  assert(idb.isOpen(conn));
   assert(isValidURL(url));
-
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -95,9 +87,8 @@ export function readerDbFindFeedIdByURL(conn, url) {
 }
 
 // @param conn {IDBDatabase}
-export function readerDbCountUnreadEntries(conn) {
-  assert(isOpenDB(conn));
-
+export function countUnreadEntries(conn) {
+  assert(idb.isOpen(conn));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -113,10 +104,9 @@ export function readerDbCountUnreadEntries(conn) {
 // @param id {Number} id of entry to find
 // @returns {Promise} a promise that resolves to an entry object, or undefined
 // if no matching entry was found
-export function readerDbFindEntryById(conn, id) {
-  assert(isOpenDB(conn));
+export function findEntryById(conn, id) {
+  assert(idb.isOpen(conn));
   assert(entryIsValidId(id));
-
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -129,10 +119,9 @@ export function readerDbFindEntryById(conn, id) {
 // Returns an entry ID, not an entry, matching url
 // @param conn {IDBDatabase}
 // @param url {String}
-export function readerDbFindEntryByURL(conn, url) {
-  assert(isOpenDB(conn));
+export function findEntryByURL(conn, url) {
+  assert(idb.isOpen(conn));
   assert(isValidURL(url));
-
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -143,10 +132,9 @@ export function readerDbFindEntryByURL(conn, url) {
   });
 }
 
-export function readerDbFindEntryIdsByFeedId(conn, feedId) {
-  assert(isOpenDB(conn));
+export function findEntryIdsByFeedId(conn, feedId) {
+  assert(idb.isOpen(conn));
   assert(feedIsValidId(feedId));
-
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -157,10 +145,9 @@ export function readerDbFindEntryIdsByFeedId(conn, feedId) {
   });
 }
 
-export function readerDbFindFeedById(conn, feedId) {
-  assert(isOpenDB(conn));
+export function findFeedById(conn, feedId) {
+  assert(idb.isOpen(conn));
   assert(feedIsValidId(feedId));
-
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -170,22 +157,8 @@ export function readerDbFindFeedById(conn, feedId) {
   });
 }
 
-// TODO: is this in use? deprecate if not. I don't think it is
-function readerDbGetEntries(conn) {
-  assert(isOpenDB(conn));
-
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-export function readerDbGetFeeds(conn) {
-  assert(isOpenDB(conn));
-
+export function getFeeds(conn) {
+  assert(idb.isOpen(conn));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -199,9 +172,8 @@ export function readerDbGetFeeds(conn) {
 // a database error
 // @param conn {IDBDatabase}
 // @throws AssertionError
-export function readerDbGetFeedIds(conn) {
-  assert(isOpenDB(conn));
-
+export function getFeedIds(conn) {
+  assert(idb.isOpen(conn));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -217,15 +189,12 @@ export function readerDbGetFeedIds(conn) {
 // an entry is included in the output if true
 // @param limit {Number} optional, if specified then must be an integer > 0,
 // an upper bound on number of entries included in output
-// @throws AssertionError
-// @returns {Promise} resolves to an array of entry objects, or rejects with
+// @return {Promise} resolves to an array of entry objects, or rejects with
 // a database-related error.
-export function readerDbFindEntries(conn, predicate, limit) {
-  assert(isOpenDB(conn));
+export function findEntries(conn, predicate, limit) {
+  assert(idb.isOpen(conn));
   assert(typeof predicate === 'function');
-
   const limited = typeof limit !== 'undefined';
-
   if(limited) {
     assert(isPosInt(limit));
     assert(limit > 0);
@@ -237,14 +206,12 @@ export function readerDbFindEntries(conn, predicate, limit) {
     tx.onerror = function(event) {
       reject(tx.error);
     };
-
     tx.oncomplete = function(event) {
       resolve(entries);
     };
 
     const store = tx.objectStore('entry');
     const request = store.openCursor();
-
     request.onsuccess = function requestOnsuccess(event) {
       const cursor = event.target.result;
       if(!cursor) {
@@ -254,13 +221,9 @@ export function readerDbFindEntries(conn, predicate, limit) {
       }
 
       const entry = cursor.value;
-
       if(predicate(entry)) {
-        console.debug('readerDbFindEntries predicate true', entry.id);
         entries.push(entry);
-
         if(limited && entries.length === limit) {
-          console.debug('readerDbFindEntries reached limit ');
           // Do not advance. Allow the transaction to settle which allows
           // the promise to settle.
           return;
@@ -272,10 +235,10 @@ export function readerDbFindEntries(conn, predicate, limit) {
   });
 }
 
-export function readerDbFindArchivableEntries(conn, predicate, limit) {
-  assert(isOpenDB(conn));
+export function findArchivableEntries(conn, predicate, limit) {
+  assert(idb.isOpen(conn));
   assert(typeof predicate === 'function');
-
+  // TODO: rather than assert failure when limit is 0, resolve immediately with an empty array.
   // Limit is optional
   const limited = typeof limit !== 'undefined';
   if(limited) {
@@ -283,11 +246,10 @@ export function readerDbFindArchivableEntries(conn, predicate, limit) {
     assert(limit > 0);
   }
 
-  // This does two layers of filtering. It would preferably but one but
-  // a three property index involving a date gets complicated. Given the
-  // perf is not top priority this is acceptable for now. The first filter
-  // layer is at the indexedDB level, and the second is the in memory predicate.
-  // The first reduces the number of entries loaded by a large amount.
+  // This does two layers of filtering. It would preferably be one layer but a three property index
+  // involving a date gets complicated. Given the perf is not top priority this is acceptable for
+  // now. The first filter layer is at the indexedDB level, and the second is the in memory
+  // predicate. The first layer reduces the number of entries loaded by a large amount.
 
   return new Promise(function executor(resolve, reject) {
     const entries = [];
@@ -310,7 +272,6 @@ export function readerDbFindArchivableEntries(conn, predicate, limit) {
       const entry = cursor.value;
       if(predicate(entry)) {
         entries.push(entry);
-
         // Stop walking if limited and reached limit
         if(limited && (entries.length >= limit)) {
           return;
@@ -322,9 +283,8 @@ export function readerDbFindArchivableEntries(conn, predicate, limit) {
   });
 }
 
-export function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
-  assert(isOpenDB(conn));
-
+export function getUnarchivedUnreadEntries(conn, offset, limit) {
+  assert(idb.isOpen(conn));
   return new Promise(function executor(resolve, reject) {
     const entries = [];
     let counter = 0;
@@ -359,8 +319,8 @@ export function readerDbGetUnarchivedUnreadEntries(conn, offset, limit) {
   });
 }
 
-export function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
-  assert(isOpenDB(conn));
+export function removeFeedAndEntries(conn, feedId, entryIds) {
+  assert(idb.isOpen(conn));
   assert(feedIsValidId(feedId));
   assert(Array.isArray(entryIds));
 
@@ -379,11 +339,9 @@ export function readerDbRemoveFeedAndEntries(conn, feedId, entryIds) {
   });
 }
 
-// This does not validate the entry, it just puts it as is
-export function readerDbPutEntry(conn, entry) {
-  assert(isOpenDB(conn));
+export function putEntry(conn, entry) {
+  assert(idb.isOpen(conn));
   assert(entryIsEntry(entry));
-
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
@@ -393,13 +351,11 @@ export function readerDbPutEntry(conn, entry) {
   });
 }
 
-export function readerDbPutEntries(conn, entries) {
-  assert(isOpenDB(conn));
+// TODO: is this even in use?
+// TODO: this should not be setting dateUpdated that is caller's responsibility
+export function putEntries(conn, entries) {
+  assert(idb.isOpen(conn));
   assert(Array.isArray(entries));
-
-  // TODO: this should not be setting dateUpdated that is caller's
-  // responsibility
-
   return new Promise(function executor(resolve, reject) {
     const currentDate = new Date();
     const tx = conn.transaction('entry', 'readwrite');
@@ -419,10 +375,9 @@ export function readerDbPutEntries(conn, entries) {
 // There are no side effects other than the database modification.
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
-export function readerDbPutFeed(conn, feed) {
-  assert(isOpenDB(conn));
+export function putFeed(conn, feed) {
+  assert(idb.isOpen(conn));
   assert(feedIsFeed(feed));
-
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
@@ -437,10 +392,9 @@ export function readerDbPutFeed(conn, feed) {
 
 // @param conn {IDBDatabase}
 // @param ids {Array}
-export function readerDbRemoveEntries(conn, ids) {
-  assert(isOpenDB(conn));
+export function removeEntries(conn, ids) {
+  assert(idb.isOpen(conn));
   assert(Array.isArray(ids));
-
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
     tx.oncomplete = resolve;

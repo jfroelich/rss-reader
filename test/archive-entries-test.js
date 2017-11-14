@@ -1,9 +1,10 @@
 
-import {openDB, closeDB, deleteDB} from "/src/idb.js";
+import {remove as deleteDB} from "/src/idb.js";
+import * as rdb from "/src/rdb.js";
 import {readerStorageArchiveEntries} from "/src/reader-storage.js";
 
-async function test_archive_entries() {
-  console.log('test_archive_entries start');
+async function test() {
+  console.log('test start');
 
   const name = 'test-archive-entries';
   const version = 20;
@@ -11,14 +12,14 @@ async function test_archive_entries() {
   let conn, timeoutMs = 1000, maxAgeMs;
   const limit = 5;
   try {
-    conn = await openDB(name, version, readerDbOnUpgradeNeeded, timeoutMs);
+    conn = await rdb.open(name, version, rdb.onUpgradeNeeded, timeoutMs);
     await readerStorageArchiveEntries(conn, maxAgeMs, limit);
-    closeDB(conn);
+    rdb.close(conn);
     closeRequested = true;
     await deleteDB(conn.name);
   } finally {
     if(!closeRequested) {
-      closeDB(conn);
+      rdb.close(conn);
     }
   }
 }

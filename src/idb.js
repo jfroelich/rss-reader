@@ -9,7 +9,7 @@ const DEBUG = false;
 // Returns true if the conn is open. This should only be used with indexedDB
 // databases opened by this library.
 // @param conn {IDBDatabase}
-export function isOpenDB(conn) {
+export function isOpen(conn) {
   return conn instanceof IDBDatabase && conn.onabort;
 }
 
@@ -22,7 +22,7 @@ export function isOpenDB(conn) {
 // @param timeoutMs {Number} optional, positive integer, how long to wait
 // in milliseconds before giving up on connecting
 // @throws {Error} if connection error or timeout occurs
-export async function openDB(name, version, upgradeListener, timeoutMs) {
+export async function open(name, version, upgradeListener, timeoutMs) {
   assert(typeof name === 'string');
 
   if(isNaN(timeoutMs)) {
@@ -94,18 +94,15 @@ export async function openDB(name, version, upgradeListener, timeoutMs) {
     return await openPromise;
   }
 
-
   [timer, timeoutPromise] = setTimeoutPromise(timeoutMs);
 
-  // Allow exception to bubble
   const conn = await Promise.race([openPromise, timeoutPromise]);
-
   if(conn) {
     clearTimeout(timer);
   } else {
     timedout = true;
-
     // TODO: create and use a TimedOutError or something along those lines
+    // TimeoutError should be defined in errors.js
     const errorMessage = 'connecting to database ' + name + ' timed out';
     throw new Error(errorMessage);
   }
@@ -115,7 +112,7 @@ export async function openDB(name, version, upgradeListener, timeoutMs) {
 
 // Requests to close 0 or more indexedDB connections
 // @param {...IDBDatabase}
-export function closeDB(...conns) {
+export function close(...conns) {
   // NOTE: undefined conns does not raise an error, the loop simply never
   // iterates.
   for(const conn of conns) {
@@ -133,7 +130,7 @@ export function closeDB(...conns) {
 }
 
 // A promise wrapper around indexedDB.deleteDatabase
-export function deleteDB(name) {
+export function remove(name) {
   return new Promise(function executor(resolve, reject) {
     if(DEBUG) {
       console.debug('deleting database', name);

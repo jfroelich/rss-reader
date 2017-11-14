@@ -2,7 +2,7 @@
 
 import {addInstallListener} from "/src/extension.js";
 import FaviconCache from "/src/favicon-cache.js";
-import {readerBadgeUpdate} from "/src/reader-badge.js";
+import updateBadgeText from "/src/update-badge-text.js";
 import {
   close as readerDbClose,
   open as readerDbOpen
@@ -19,7 +19,7 @@ async function onInstalled(event) {
     // The background module now does this during initialization, this was leading to duplicate
     // badge updates. However, I am not certain it was correct to change that, so leaving this
     // comment here temporarily.
-    // await readerBadgeUpdate(conn);
+    // await updateBadgeText(conn);
   } catch(error) {
     console.warn(error);
   } finally {

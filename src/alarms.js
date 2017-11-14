@@ -1,10 +1,10 @@
-'use strict';
+// Registers alarms in the extension that run various background jobs. Analogous to cron.
 
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {pollFeeds, PollFeedsContext} from "/src/poll-feeds.js";
 import {
-  close as readerDbClose, 
+  close as readerDbClose,
   open as readerDbOpen
 } from "/src/rdb.js";
 import {

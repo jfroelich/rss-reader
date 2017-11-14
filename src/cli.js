@@ -1,4 +1,12 @@
-// Command line interface
+// Command line interface module
+// This module does not export anything. Instead, it defines a function in global scope (window).
+// The definition occurs as an implicit side effect of importing the module.
+//
+// Modules are basically wrapped in a promise. To enable variables to be accessible from
+// the console, which can only see global variables, and not exported variables
+// from modules, the values must be defined "really" globally. Right now using window seems
+// to work. This is not a recommended practice, but I think this is an exception, because
+// it is the entire point of this module, to be callable from the console
 
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
@@ -12,7 +20,10 @@ import {
 import refreshFeedIcons from "/src/refresh-feed-icons.js";
 import {parseInt10} from "/src/string.js";
 
-export async function readerCommand(command, ...args) {
+
+// TODO: maybe break apart back into functions and export under a cli namespace object
+
+async function execCommand(command, ...args) {
   switch(command) {
   case 'refreshicons': {
     const fic = new FaviconCache();
@@ -125,7 +136,7 @@ export async function readerCommand(command, ...args) {
   }
 }
 
-// TODO: reorder
+// TODO: reorder alphabetically
 
 function printUsage() {
   console.debug('Commands:', [
@@ -139,12 +150,7 @@ function printUsage() {
   ]);
 }
 
-// Modules are basically wrapped in a promise. To enable variables to be accessible from
-// the console, which can only see global variables, and apparently not exported variables
-// from modules, the values must be defined "really" globally. Right now using window seems
-// to work. This is not a recommended practice, but I think this is an exception, because
-// it is the entire point of this module, to be callable from the console
-// TODO: maybe it should module importer's responsibility to do this
+
 if(window) {
-  window.readerCommand = readerCommand;
+  window.execCommand = execCommand;
 }

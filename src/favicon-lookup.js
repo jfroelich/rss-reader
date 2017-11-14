@@ -6,7 +6,7 @@ import {
   fetchImageHead,
   FETCH_UNKNOWN_CONTENT_LENGTH
 } from "/src/fetch.js";
-import {isOpenDB} from "/src/idb.js";
+import {isOpen as isOpenDB} from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
 import parseHTML from "/src/parse-html.js";
 

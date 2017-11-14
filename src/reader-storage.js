@@ -1,6 +1,7 @@
 // app storage module, mostly a wrapper around reader-db that integrates other modules
 
-// TODO: drop readerStorage prefix, that is now a concern of the importing module
+// TODO: drop readerStorage prefix, that is now a concern of the importing module, except maybe
+// it is pointless given the following todo. can just drop prefix when splitting up.
 // TODO: probably should just break up into separate modules. These functions are unrelated to
 // one another apart from pertaining to the same layer. Right now this is extremely low coherency
 // and is nearly a utilities file.
@@ -23,21 +24,9 @@ import {
 } from "/src/feed.js";
 import {isPosInt} from "/src/number.js";
 import {filterEmptyProps} from "/src/object.js";
-import {readerBadgeUpdate} from "/src/reader-badge.js";
+import updateBadgeText from "/src/update-badge-text.js";
 import sizeof from "/src/sizeof.js";
-import {
-  readerDbFindArchivableEntries,
-  readerDbFindEntryById,
-  readerDbFindEntries,
-  readerDbGetFeedIds,
-  readerDbIsOpen,
-  readerDbPutEntry,
-  readerDbPutFeed,
-  readerDbRemoveEntries,
-  NotFoundError as ReaderDbNotFoundError,
-  InvalidStateError as ReaderDbInvalidStateError
-} from "/src/rdb.js";
-
+import * as rdb from "/src/rdb.js";
 
 // Archives certain entries in the database
 // @param maxAgeMs {Number} how long before an entry is considered
@@ -45,7 +34,7 @@ import {
 // @throws AssertionError
 // @throws Error - database related
 export async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
-  assert(readerDbIsOpen(conn));
+  assert(rdb.isOpen(conn));
 
   const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
   if(typeof maxAgeMs === 'undefined') {
@@ -60,7 +49,7 @@ export async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
     return entryAgeMs > maxAgeMs;
   }
 
-  const entries = await readerDbFindArchivableEntries(conn, isArchivable, limit);
+  const entries = await rdb.findArchivableEntries(conn, isArchivable, limit);
 
   if(!entries.length) {
     console.debug('no archivable entries found');
@@ -88,7 +77,7 @@ export async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
 async function readerStorageArchiveEntry(entry, conn, bc) {
   const ce = readerStorageEntryCompact(entry);
   ce.dateUpdated = new Date();
-  await readerDbPutEntry(conn, entry);
+  await rdb.putEntry(conn, entry);
   const message = {type: 'archived-entry', id: ce.id};
   bc.postMessage(message);
   return ce;
@@ -115,15 +104,15 @@ function readerStorageEntryCompact(entry) {
 // @param conn {IDBDatabase} an open database connection
 // @param id {Number} an entry id
 export async function readerStorageMarkRead(conn, id) {
-  assert(readerDbIsOpen(conn));
+  assert(rdb.isOpen(conn));
   assert(entryIsValidId(id));
 
   // Allow errors to bubble
-  const entry = await readerDbFindEntryById(conn, id);
+  const entry = await rdb.findEntryById(conn, id);
   if(!entry) {
-    throw new ReaderDbNotFoundError('' + id);
+    throw new rdb.NotFoundError('' + id);
   } else if(entry.readState === ENTRY_STATE_READ) {
-    throw new ReaderDbInvalidStateError('Entry in read state with id ' + id);
+    throw new rdb.InvalidStateError('Entry in read state with id ' + id);
   }
 
   assert(entryHasURL(entry));
@@ -132,7 +121,7 @@ export async function readerStorageMarkRead(conn, id) {
 
   // We have full control over the entry object from read to write, so
   // there is no need to re-sanitize or re-filter empty properties.
-  // TODO: create readerStoragePutEntry, delegate the call to readerDbPutEntry
+  // TODO: create readerStoragePutEntry, delegate the call to rdb.putEntry
   // to readerStoragePutEntry, specify a skip-prep parameter because we have
   // full control over the entry object lifetime from read to write
 
@@ -144,19 +133,19 @@ export async function readerStorageMarkRead(conn, id) {
   entry.dateRead = entry.dateUpdated;
 
   // Allow errors to bubble
-  await readerDbPutEntry(conn, entry);
+  await rdb.putEntry(conn, entry);
 
   console.debug('updated entry', entryURL);
 
   // Allow errors to bubble
-  await readerBadgeUpdate(conn);
+  await updateBadgeText(conn);
 }
 
 // @throws AssertionError
 // @throws Error database related
 export async function readerStoragePutFeed(feed, conn, skipPrep) {
   assert(feedIsFeed(feed));
-  assert(readerDbIsOpen(conn));
+  assert(rdb.isOpen(conn));
 
   let storable;
   if(skipPrep) {
@@ -173,14 +162,14 @@ export async function readerStoragePutFeed(feed, conn, skipPrep) {
   storable.dateUpdated = currentDate;
 
   // Allow errors to bubble
-  const newId = await readerDbPutFeed(conn, storable);
+  const newId = await rdb.putFeed(conn, storable);
   storable.id = newId;
   return storable;
 }
 
 // Stores an entry in the app's storage. This is basically a wrapper function
-// of readerDbPutEntry that attaches sanitization, initialization, and
-// verification before storing the object. Caller should use readerDbPutEntry
+// of rdb.putEntry that attaches sanitization, initialization, and
+// verification before storing the object. Caller should use rdb.putEntry
 // to store the entry object exactly as it is without any guards or init, but
 // should use this function in the ordinary case.
 // @param entry {Object} an entry object
@@ -189,7 +178,7 @@ export async function readerStoragePutFeed(feed, conn, skipPrep) {
 // @throws Error database related
 export async function readerStorageAddEntry(entry, conn) {
   assert(entryIsEntry(entry));
-  assert(readerDbIsOpen(conn));
+  assert(rdb.isOpen(conn));
 
   const san = entrySanitize(entry);
   const storable = filterEmptyProps(san);
@@ -197,7 +186,7 @@ export async function readerStorageAddEntry(entry, conn) {
   storable.archiveState = ENTRY_STATE_UNARCHIVED;
   storable.dateCreated = new Date();
 
-  await readerDbPutEntry(conn, storable);
+  await rdb.putEntry(conn, storable);
 }
 
 // Removes entries not linked to a feed from the database
@@ -206,10 +195,10 @@ export async function readerStorageAddEntry(entry, conn) {
 // @throws AssertionError
 // @throws Error - database-related error
 export async function readerStorageRemoveOrphans(conn, limit) {
-  assert(readerDbIsOpen(conn));
+  assert(rdb.isOpen(conn));
 
   // Allow errors to bubble
-  const feedIds = await readerDbGetFeedIds(conn);
+  const feedIds = await rdb.getFeedIds(conn);
 
   assert(feedIds);
 
@@ -219,7 +208,7 @@ export async function readerStorageRemoveOrphans(conn, limit) {
   }
 
   // Allow errors to bubble
-  const entries = await readerDbFindEntries(conn, isOrphan, limit);
+  const entries = await rdb.findEntries(conn, isOrphan, limit);
   console.debug('found %s orphans', entries.length);
   if(entries.length === 0) {
     return;
@@ -231,7 +220,7 @@ export async function readerStorageRemoveOrphans(conn, limit) {
   }
 
   // Allow errors to bubble
-  await readerDbRemoveEntries(conn, orphanIds);
+  await rdb.removeEntries(conn, orphanIds);
 
   const channel = new BroadcastChannel('db');
   const message = {type: 'entry-deleted', id: undefined, reason: 'orphan'};
@@ -248,17 +237,14 @@ export async function readerStorageRemoveOrphans(conn, limit) {
 // @throws AssertionError
 // @throws Error - database related
 export async function readerStorageRemoveLostEntries(conn, limit) {
-  assert(readerDbIsOpen(conn));
+  assert(rdb.isOpen(conn));
 
   function isLost(entry) {
     return !entryHasURL(entry);
   }
 
-  // Allow errors to bubble
-  const entries = await readerDbFindEntries(conn, isLost, limit);
-
+  const entries = await rdb.findEntries(conn, isLost, limit);
   console.debug('found %s lost entries', entries.length);
-
   if(entries.length === 0) {
     return;
   }
@@ -268,9 +254,7 @@ export async function readerStorageRemoveLostEntries(conn, limit) {
     ids.push(entry.id);
   }
 
-  // Allow errors to bubble
-  await readerDbRemoveEntries(conn, ids);
-
+  await rdb.removeEntries(conn, ids);
   const channel = new BroadcastChannel('db');
   const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
   for(const id of ids) {

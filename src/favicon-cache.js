@@ -1,7 +1,10 @@
 // Favicon caching module, basically a database wrapper that supports favicon lookup
 
+// TODO: not entirely sure, but maybe if conn is the only shared state, there is no need for the
+// class. I have mixed feelings.
+
 import assert from "/src/assert.js";
-import {closeDB, isOpenDB, openDB} from "/src/idb.js";
+import * as idb from "/src/idb.js";
 
 export default class FaviconCache {
   constructor() {
@@ -12,13 +15,16 @@ export default class FaviconCache {
   }
 }
 
-// This is a 'static' property, not instance property, so that it can be accessed without the need
-// to create an instance. static in the java sense, not c.
+// TODO: i think this should probably be exported separately?
 // 30 days in ms, used by both lookup and compact to determine whether a cache entry expired
 FaviconCache.MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
+
+// TODO: now that this is in a module context maybe name and version and such should all be module
+// scope constants? These properties are not shared across the instance. The only shared property
+// is the connection.
 FaviconCache.prototype.open = async function() {
-  this.conn = await openDB(this.name, this.version, this.onUpgradeNeeded, this.openTimeoutMs);
+  this.conn = await idb.open(this.name, this.version, this.onUpgradeNeeded, this.openTimeoutMs);
 
   // TODO: I would prefer this would be void, first need to ensure callers do not expect return
   // value
@@ -26,7 +32,7 @@ FaviconCache.prototype.open = async function() {
 };
 
 FaviconCache.prototype.close = function() {
-  closeDB(this.conn);
+  idb.close(this.conn);
 };
 
 FaviconCache.prototype.setup = async function() {
@@ -64,7 +70,7 @@ FaviconCache.prototype.onUpgradeNeeded = function(event) {
 };
 
 FaviconCache.prototype.clear = function() {
-  assert(isOpenDB(this.conn));
+  assert(idb.isOpen(this.conn));
   return new Promise((resolve, reject) => {
     console.debug('clearing favicon cache');
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
@@ -76,7 +82,7 @@ FaviconCache.prototype.clear = function() {
 };
 
 FaviconCache.prototype.findEntry = function(urlObject) {
-  assert(isOpenDB(this.conn));
+  assert(idb.isOpen(this.conn));
   return new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
@@ -86,14 +92,13 @@ FaviconCache.prototype.findEntry = function(urlObject) {
   });
 };
 
+// TODO: assert maxAgeMs isPosInt, do not forget to import from number.js too
 FaviconCache.prototype.findExpired = function(maxAgeMs) {
-  assert(isOpenDB(this.conn));
+  assert(idb.isOpen(this.conn));
 
   if(typeof maxAgeMs === 'undefined') {
     maxAgeMs = FaviconCache.MAX_AGE_MS;
   }
-
-  // TODO: assert maxAgeMs isPosInt, do not forget to import from number.js too
 
   return new Promise((resolve, reject) => {
     let cutoffTimeMs = Date.now() - maxAgeMs;
@@ -110,7 +115,7 @@ FaviconCache.prototype.findExpired = function(maxAgeMs) {
 };
 
 FaviconCache.prototype.removeByURL = function(pageURLs) {
-  assert(isOpenDB(this.conn));
+  assert(idb.isOpen(this.conn));
   return new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
@@ -123,14 +128,11 @@ FaviconCache.prototype.removeByURL = function(pageURLs) {
 };
 
 FaviconCache.prototype.put = function(entry) {
-  assert(isOpenDB(this.conn));
-
+  assert(idb.isOpen(this.conn));
   return new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
-
     console.debug('FaviconCache.prototype.put', entry);
-
     const request = store.put(entry);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
@@ -140,8 +142,7 @@ FaviconCache.prototype.put = function(entry) {
 // @param pageURLs {Iterable<String>}
 // @param iconURL {String}
 FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
-  assert(isOpenDB(this.conn));
-
+  assert(idb.isOpen(this.conn));
   return new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
@@ -153,23 +154,15 @@ FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
       entry.pageURLString = url;
       entry.iconURLString = iconURL;
       entry.dateUpdated = currentDate;
-
-      // TEMP: ISSUE #453
-      // This is called at least in the case of storing a succesful origin lookup.
-      // For every fetch success, reset the failure counter to 0.
-      // When creating a new entry, initialize the failure counter to 0.
       entry.failureCount = 0;
-
       store.put(entry);
     }
   });
 };
 
 // Finds expired entries in the database and removes them
-// @throws {AssertionError}
-// @throws {Error} database related
 FaviconCache.prototype.compact = async function(maxAgeMs) {
-  assert(isOpenDB(this.conn));
+  assert(idb.isOpen(this.conn));
   const entries = await this.findExpired(maxAgeMs);
   const urls = [];
   for(const entry of entries) {

@@ -11,7 +11,7 @@ import FaviconLookup from "/src/favicon-lookup.js";
 import {fetchHTML} from "/src/fetch.js";
 import filterDocument from "/src/filter-document.js";
 import parseHTML from "/src/parse-html.js";
-import {readerDbIsOpen, readerDbFindEntryByURL} from "/src/rdb.js";
+import {isOpen as readerDbIsOpen, findEntryByURL as readerDbFindEntryByURL} from "/src/rdb.js";
 import {readerStorageAddEntry} from "/src/reader-storage.js";
 import rewriteURL from "/src/rewrite-url.js";
 import {isValidURL, sniffIsBinaryURL} from "/src/url.js";
