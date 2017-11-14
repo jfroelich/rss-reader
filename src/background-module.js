@@ -1,7 +1,7 @@
 import * as alarms from "/src/alarms.js";
 import {showSlideshowTab} from "/src/extension.js";
 import {closeDB} from "/src/idb.js";
-import * as installer from "/src/install.js";
+import "/src/install.js";
 import {readerCommand} from "/src/reader-command.js";
 import {readerDbOpen} from "/src/reader-db.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
