@@ -1,7 +1,11 @@
+// OPML export functionality
 
 import assert from "/src/assert.js";
-import {closeDB} from "/src/idb.js";
-import {readerDbGetFeeds, readerDbOpen} from "/src/reader-db.js";
+import {
+  close as readerDbClose,
+  readerDbGetFeeds,
+  open as readerDbOpen
+} from "/src/rdb.js";
 import {readerExportFeeds} from "/src/reader-export.js";
 
 // TODO: move to reader-storage.js?
@@ -17,7 +21,7 @@ export async function optionsPageExportOPML() {
     conn = await readerDbOpen();
     feeds = await readerDbGetFeeds(conn);
   } finally {
-    closeDB(conn);
+    readerDbClose(conn);
   }
 
   assert(feeds);

@@ -3,7 +3,7 @@
 import assert from "/src/assert.js";
 import FaviconCache from "/src/favicon-cache.js";
 import {readFileAsText} from "/src/file.js";
-import {closeDB, isOpenDB} from "/src/idb.js";
+import {isOpenDB} from "/src/idb.js";
 import * as mime from "/src/mime.js";
 import {
   opmlRemoveOutlinesWithInvalidTypes,
@@ -14,9 +14,8 @@ import {
 import {opmlOutlineNormalizeHTMLURL, opmlOutlineToFeed} from "/src/opml-outline.js";
 import {OPMLParser} from "/src/opml-parser.js";
 import {promiseEvery} from "/src/promise.js";
-import {readerDbOpen} from "/src/reader-db.js";
+import * as rdb from "/src/rdb.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
-
 
 // Import opml files
 // @param files {FileList} a collection of File objects, such as one
@@ -25,31 +24,37 @@ import {SubscribeRequest} from "/src/subscribe-request.js";
 // @throws {Error} database related
 export async function readerImportFiles(files) {
   assert(files instanceof FileList);
-  console.log('importing %d files', files.length);
+  console.debug('importing %d files', files.length);
 
   const fic = new FaviconCache();
 
+  // TODO: revisit abbreviated destructuring syntax and use that instead of declaring and using
+  // a "_" placeholder.
+
   let readerConn, _;
   try {
-    [readerConn, _] = await Promise.all([readerDbOpen(), fic.open()]);
+    [readerConn, _] = await Promise.all([rdb.open(), fic.open()]);
 
     const promises = [];
     for(const file of files) {
       promises.push(importFile(file, readerConn, fic.conn));
     }
 
-    // TODO: if the promises are executed above, maybe this can occur after
-    // try/finally?
     await promiseEvery(promises);
   } finally {
     fic.close();
-    closeDB(readerConn);
+    rdb.close(readerConn);
   }
 }
 
+// TODO: this should accept iconCache as parameter instead of iconConn. Then isOpenDb does not
+// need to be used and can use iconCache.isOpen() instead, and then isOpenDb does not need to be
+// imported as an explicit dependency, and iconCache fully encapsulates and serves as a better
+// abstraction
+
 async function importFile(file, readerConn, iconConn) {
   assert(file instanceof File);
-  assert(isOpenDB(readerConn));
+  assert(rdb.isOpen(readerConn));
   assert(isOpenDB(iconConn));
   console.log('importing opml file', file.name);
 
@@ -71,8 +76,10 @@ async function importFile(file, readerConn, iconConn) {
     return 0;
   }
 
-  // Allow errors to bubble
   const document = OPMLParser.parse(fileContent);
+
+  // TODO: these 3 should be local function calls, these functions are currently defined in the
+  // wrong module, because this functionality is unique to this module and not all opml documents
 
   opmlRemoveOutlinesWithInvalidTypes(document);
   opmlNormalizeOutlineXMLURLs(document);

@@ -1,15 +1,14 @@
 
 import assert from "/src/assert.js";
 import {setBadgeText} from "/src/extension.js";
-import {isOpenDB} from "/src/idb.js";
-import {readerDbCountUnreadEntries} from "/src/reader-db.js";
+import {readerDbIsOpen, readerDbCountUnreadEntries} from "/src/rdb.js";
 
 const DEBUG = true;
 
 // @throws {AssertionError}
 // @throws {Error} database related
 export async function readerBadgeUpdate(conn) {
-  assert(isOpenDB(conn));
+  assert(readerDbIsOpen(conn));
 
   const count = await readerDbCountUnreadEntries(conn);
   const text = count > 999 ? '1k+' : '' + count;

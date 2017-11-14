@@ -20,18 +20,17 @@ import {
 } from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
 import isAllowedURL from "/src/fetch-policy.js";
-import {closeDB, isOpenDB} from "/src/idb.js";
+import {isOpenDB} from "/src/idb.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
-
-
 import {
-  readerDbOpen,
+  close as readerDbClose,
+  open as readerDbOpen,
+  readerDbIsOpen,
   readerDbFindFeedIdByURL,
   readerDbFindEntryIdsByFeedId,
   readerDbRemoveFeedAndEntries,
-  ReaderDbConstraintError
-} from "/src/reader-db.js";
-
+  ConstraintError as ReaderDbConstraintError
+} from "/src/rdb.js";
 import {readerParseFeed} from "/src/reader-parse-feed.js";
 import {readerStoragePutFeed} from "/src/reader-storage.js";
 
@@ -58,7 +57,7 @@ export class SubscribeRequest {
       this.iconCache.close();
     }
 
-    closeDB(this.readerConn);
+    readerDbClose(this.readerConn);
   }
 
   // Returns a promise that resolves to the id of a feed matching the url
@@ -73,7 +72,7 @@ export class SubscribeRequest {
   // @throws {Error} fetch related
   // @returns {Object} the subscribed feed
   async subscribe(feed) {
-    assert(isOpenDB(this.readerConn));
+    assert(readerDbIsOpen(this.readerConn));
     assert(this.iconCache instanceof FaviconCache);
     assert(isOpenDB(this.iconCache.conn));
     assert(feedIsFeed(feed));
@@ -156,7 +155,7 @@ export class SubscribeRequest {
   // @throws AssertionError
   // @throws Error database-related
   async remove(feedId) {
-    assert(isOpenDB(this.readerConn));
+    assert(readerDbIsOpen(this.readerConn));
     assert(feedIsValidId(feedId));
     const entryIds = await readerDbFindEntryIdsByFeedId(this.readerConn, feedId);
     await readerDbRemoveFeedAndEntries(this.readerConn, feedId, entryIds);

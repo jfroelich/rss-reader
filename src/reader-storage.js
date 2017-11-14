@@ -16,17 +16,11 @@ import {
   ENTRY_STATE_UNARCHIVED,
   ENTRY_STATE_UNREAD
 } from "/src/entry.js";
-import {isUncheckedError} from "/src/errors.js";
-import FaviconCache from "/src/favicon-cache.js";
-import FaviconLookup from "/src/favicon-lookup.js";
 import {
-  feedCreateIconLookupURL,
-  feedHasURL,
   feedIsFeed,
   feedIsValidId,
   feedSanitize
 } from "/src/feed.js";
-import {isOpenDB} from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
 import {filterEmptyProps} from "/src/object.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
@@ -35,14 +29,14 @@ import {
   readerDbFindArchivableEntries,
   readerDbFindEntryById,
   readerDbFindEntries,
-  readerDbGetFeeds,
   readerDbGetFeedIds,
+  readerDbIsOpen,
   readerDbPutEntry,
   readerDbPutFeed,
   readerDbRemoveEntries,
-  ReaderDbNotFoundError,
-  ReaderDbInvalidStateError
-} from "/src/reader-db.js";
+  NotFoundError as ReaderDbNotFoundError,
+  InvalidStateError as ReaderDbInvalidStateError
+} from "/src/rdb.js";
 
 
 // Archives certain entries in the database
@@ -51,7 +45,7 @@ import {
 // @throws AssertionError
 // @throws Error - database related
 export async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
-  assert(isOpenDB(conn));
+  assert(readerDbIsOpen(conn));
 
   const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
   if(typeof maxAgeMs === 'undefined') {
@@ -79,6 +73,8 @@ export async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
   for(const entry of entries) {
     promises.push(readerStorageArchiveEntry(entry, conn, channel));
   }
+
+  // TODO: switch from Promise.all to promiseEvery?
 
   try {
     await Promise.all(promises);
@@ -118,15 +114,8 @@ function readerStorageEntryCompact(entry) {
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection
 // @param id {Number} an entry id
-// @throws AssertionError connection invalid or not open
-// @throws AssertionError id invalid
-// @throws Error database related
-// @throws {ReaderDbNotFoundError} entry not found for id
-// @throws {ReaderDbInvalidStateError} entry already read
-// @throws Error entry unlocatable (missing url)
-// @throws Error readerBadgeUpdate related error
 export async function readerStorageMarkRead(conn, id) {
-  assert(isOpenDB(conn));
+  assert(readerDbIsOpen(conn));
   assert(entryIsValidId(id));
 
   // Allow errors to bubble
@@ -167,7 +156,7 @@ export async function readerStorageMarkRead(conn, id) {
 // @throws Error database related
 export async function readerStoragePutFeed(feed, conn, skipPrep) {
   assert(feedIsFeed(feed));
-  assert(isOpenDB(conn));
+  assert(readerDbIsOpen(conn));
 
   let storable;
   if(skipPrep) {
@@ -200,7 +189,7 @@ export async function readerStoragePutFeed(feed, conn, skipPrep) {
 // @throws Error database related
 export async function readerStorageAddEntry(entry, conn) {
   assert(entryIsEntry(entry));
-  assert(isOpenDB(conn));
+  assert(readerDbIsOpen(conn));
 
   const san = entrySanitize(entry);
   const storable = filterEmptyProps(san);
@@ -217,7 +206,7 @@ export async function readerStorageAddEntry(entry, conn) {
 // @throws AssertionError
 // @throws Error - database-related error
 export async function readerStorageRemoveOrphans(conn, limit) {
-  assert(isOpenDB(conn));
+  assert(readerDbIsOpen(conn));
 
   // Allow errors to bubble
   const feedIds = await readerDbGetFeedIds(conn);
@@ -259,7 +248,7 @@ export async function readerStorageRemoveOrphans(conn, limit) {
 // @throws AssertionError
 // @throws Error - database related
 export async function readerStorageRemoveLostEntries(conn, limit) {
-  assert(isOpenDB(conn));
+  assert(readerDbIsOpen(conn));
 
   function isLost(entry) {
     return !entryHasURL(entry);

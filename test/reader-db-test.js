@@ -1,13 +1,13 @@
 // See license.md
 
-// TODO: this isn't a reader-db.js test, this is an idb.js test, rename files
+// TODO: this isn't a rdb.js test, this is an idb.js test, rename files
 
 
 import assert from "/src/assert.js";
 import {openDB, isOpenDB, closeDB, deleteDB} from "/src/idb.js";
 
 // TODO: i don't think this is exported
-import {readerDbOnUpgradeNeeded} from "/src/reader-db.js";
+import {readerDbOnUpgradeNeeded} from "/src/rdb.js";
 
 async function test() {
   const name = 'test-feed-db', version = 1;

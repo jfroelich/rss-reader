@@ -1,22 +1,29 @@
+// Functionality related to extension installation
 
+import {addInstallListener} from "/src/extension.js";
 import FaviconCache from "/src/favicon-cache.js";
-import {closeDB} from "/src/idb.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
-import {readerDbOpen} from "/src/reader-db.js";
+import {
+  close as readerDbClose,
+  open as readerDbOpen
+} from "/src/rdb.js";
 
 async function onInstalled(event) {
   console.debug('onInstalled', event);
 
-  // Init the badge text. As a side effect this will create the
-  // reader-db database
+  // Init the badge text. As a side effect this will create the reader-db database
   let conn;
   try {
     conn = await readerDbOpen();
-    await readerBadgeUpdate(conn);
+
+    // The background module now does this during initialization, this was leading to duplicate
+    // badge updates. However, I am not certain it was correct to change that, so leaving this
+    // comment here temporarily.
+    // await readerBadgeUpdate(conn);
   } catch(error) {
     console.warn(error);
   } finally {
-    closeDB(conn);
+    readerDbClose(conn);
   }
 
   const fic = new FaviconCache();
@@ -29,5 +36,4 @@ async function onInstalled(event) {
   }
 }
 
-console.debug('binding onInstalled listener');
-chrome.runtime.onInstalled.addListener(onInstalled);
+addInstallListener(onInstalled);

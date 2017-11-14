@@ -7,8 +7,12 @@ import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import filterPublisher from "/src/filter-publisher.js";
 import {escapeHTML, truncate as htmlTruncate} from "/src/html.js";
-import {closeDB, isOpenDB} from "/src/idb.js";
-import {readerDbOpen, readerDbGetUnarchivedUnreadEntries} from "/src/reader-db.js";
+import {
+  close as readerDbClose,
+  open as readerDbOpen,
+  readerDbIsOpen,
+  readerDbGetUnarchivedUnreadEntries
+} from "/src/rdb.js";
 import {readerStorageMarkRead} from "/src/reader-storage.js";
 import {parseInt10} from "/src/string.js";
 import {isCanonicalURL} from "/src/url.js";
@@ -47,7 +51,7 @@ pollChannel.onmessage = async function(event) {
       } catch(error) {
         console.warn(error);
       } finally {
-        closeDB(conn);
+        readerDbClose(conn);
       }
     }
   }
@@ -60,7 +64,7 @@ function removeSlide(slideElement) {
 }
 
 async function markSlideRead(conn, slideElement) {
-  assert(isOpenDB(conn));
+  assert(readerDbIsOpen(conn));
 
   // This is a routine situation such as when navigating backward and therefore
   // not an error.
@@ -256,7 +260,7 @@ async function onSlideClick(event) {
   } catch(error) {
     console.warn(error);
   } finally {
-    closeDB(conn);
+    readerDbClose(conn);
   }
 
   return false;
@@ -304,7 +308,7 @@ async function showNextSlide() {
   } catch(error) {
     console.warn(error);
   } finally {
-    closeDB(conn);
+    readerDbClose(conn);
   }
 
   if(slideAppendCount > 0) {
@@ -413,7 +417,7 @@ async function init() {
     conn = await readerDbOpen();
     await appendSlides(conn);
   } finally {
-    closeDB(conn);
+    readerDbClose(conn);
   }
 }
 

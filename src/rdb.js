@@ -1,5 +1,7 @@
 // Module for interacting with the app indexedDB database
 
+// TODO: drop prefix readerDb, that is only a concern for importing module
+
 import assert from "/src/assert.js";
 import {
   entryIsEntry,
@@ -9,23 +11,23 @@ import {
   ENTRY_STATE_UNARCHIVED
 } from "/src/entry.js";
 import {feedIsFeed, feedIsValidId} from "/src/feed.js";
-import {openDB, isOpenDB} from "/src/idb.js";
+import {closeDB, isOpenDB, openDB} from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
 import {isValidURL} from "/src/url.js";
 
-export class ReaderDbConstraintError extends Error {
+export class ConstraintError extends Error {
   constructor(message) {
     super(message);
   }
 }
 
-export class ReaderDbNotFoundError extends Error {
+export class NotFoundError extends Error {
   constructor(key) {
     super('Object not found for key ' + key);
   }
 }
 
-export class ReaderDbInvalidStateError extends Error {
+export class InvalidStateError extends Error {
   constructor(message) {
     super(message);
   }
@@ -33,9 +35,20 @@ export class ReaderDbInvalidStateError extends Error {
 
 // Opens a connection to the reader-db database
 // @return {Promise} a promise that resolves to an open database connection
-export function readerDbOpen() {
+export function open() {
   const name = 'reader', version = 20, timeoutMs = 500;
   return openDB(name, version, onUpgradeNeeded, timeoutMs);
+}
+
+// Wrap and expose this so that user does not have to work directly with lower layer idb.js
+// in addition to rdb.js
+export function close(conn) {
+  return closeDB(conn);
+}
+
+// Wrap isOpenDB so that module importer does not need to work directly with idb.js
+export function readerDbIsOpen(conn) {
+  return isOpenDB(conn);
 }
 
 // Helper for readerDbOpen. Does the database upgrade. This should never be

@@ -2,9 +2,8 @@
 
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
-import {closeDB} from "/src/idb.js";
 import {pollFeeds, PollFeedsContext} from "/src/poll-feeds.js";
-import {readerDbOpen} from "/src/reader-db.js";
+import * as rdb from "/src/rdb.js";
 import {
   readerStorageArchiveEntries,
   readerStorageRemoveLostEntries,
@@ -17,13 +16,13 @@ export async function readerCommand(command, ...args) {
   switch(command) {
   case 'refreshicons': {
     const fic = new FaviconCache();
-    let readerConn, _;
+    let rConn, _;
     try {
-      [readerConn, _] = await Promise.all([readerDbOpen(), fic.open()]);
-      await refreshFeedIcons(readerConn, fic.conn);
+      [rConn, _] = await Promise.all([rdb.open(), fic.open()]);
+      await refreshFeedIcons(rConn, fic.conn);
     } finally {
       fic.close();
-      closeDB(readerConn);
+      rdb.close(rConn);
     }
     break;
   }
@@ -34,10 +33,10 @@ export async function readerCommand(command, ...args) {
     }
 
     try {
-      conn = await readerDbOpen();
+      conn = await rdb.open();
       await readerStorageArchiveEntries(conn, maxAgeMs, limit);
     } finally {
-      closeDB(conn);
+      rdb.close(conn);
     }
     break;
   }
@@ -51,31 +50,31 @@ export async function readerCommand(command, ...args) {
     pfc.ignoreModifiedCheck = true;
     let _;
     try {
-      [pfc.readerConn, _] = await Promise.all([readerDbOpen(), fic.open()]);
+      [pfc.readerConn, _] = await Promise.all([rdb.open(), fic.open()]);
       await pollFeeds(pfc);
     } finally {
       fic.close();
-      closeDB(pfc.readerConn);
+      rdb.close(pfc.readerConn);
     }
     break;
   }
   case 'scanlost': {
     let conn;
     try {
-      conn = await readerDbOpen();
+      conn = await rdb.open();
       await readerStorageRemoveLostEntries(conn, args);
     } finally {
-      closeDB(conn);
+      rdb.close(conn);
     }
     break;
   }
   case 'scanorphans': {
     let conn;
     try {
-      conn = await readerDbOpen();
+      conn = await rdb.open();
       await readerStorageRemoveOrphans(conn, args);
     } finally {
-      closeDB(conn);
+      rdb.close(conn);
     }
     break;
   }

@@ -7,7 +7,7 @@ import {fetchFeed} from "/src/fetch.js";
 import {pollEntry, PollEntryContext} from "/src/poll-entry.js";
 import {promiseEvery} from "/src/promise.js";
 import {readerBadgeUpdate} from "/src/reader-badge.js";
-import {readerDbGetFeeds} from "/src/reader-db.js";
+import {readerDbGetFeeds} from "/src/rdb.js";
 import {readerParseFeed} from "/src/reader-parse-feed.js";
 import {readerStoragePutFeed} from "/src/reader-storage.js";
 

@@ -1,23 +1,20 @@
 // Functionality for refreshing feed favicons
 
 // TODO: consider overwriting existing icons too, given that some icons become invalid
-// TODO: after moving this out of reader-storage.js, do not forget that reader-storage.js may now
-// have stale imports
 
 import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/errors.js";
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {feedCreateIconLookupURL, feedHasURL, feedIsFeed} from "/src/feed.js";
-import {isOpenDB} from "/src/idb.js";
-import {readerDbGetFeeds} from "/src/reader-db.js";
+import {readerDbGetFeeds, readerDbIsOpen} from "/src/rdb.js";
 import {readerStoragePutFeed} from "/src/reader-storage.js";
 
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.
 export default async function refreshFeedIcons(readerConn, iconConn) {
-  assert(isOpenDB(readerConn));
-  assert(isOpenDB(iconConn));
+  assert(readerDbIsOpen(readerConn));
+  assert(readerDbIsOpen(iconConn));
 
   const feeds = await readerDbGetFeeds(readerConn);
 

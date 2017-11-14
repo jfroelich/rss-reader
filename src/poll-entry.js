@@ -10,9 +10,8 @@ import {isUncheckedError} from "/src/errors.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {fetchHTML} from "/src/fetch.js";
 import filterDocument from "/src/filter-document.js";
-import {isOpenDB} from "/src/idb.js";
 import parseHTML from "/src/parse-html.js";
-import {readerDbFindEntryByURL} from "/src/reader-db.js";
+import {readerDbIsOpen, readerDbFindEntryByURL} from "/src/rdb.js";
 import {readerStorageAddEntry} from "/src/reader-storage.js";
 import rewriteURL from "/src/rewrite-url.js";
 import {isValidURL, sniffIsBinaryURL} from "/src/url.js";
@@ -39,7 +38,7 @@ export async function pollEntry(entry) {
   // to recent switch to module transition, I screwed something up and not sure what. Or this
   // error has always been present and I am only now experiencing it. I cannot reproduce
   // it easily at the moment.
-  if(!isOpenDB(this.readerConn)) {
+  if(!readerDbIsOpen(this.readerConn)) {
     console.warn('canceled pollEntry, readerConn connection not open');
     return;
   }

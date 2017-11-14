@@ -10,7 +10,6 @@ import {
 import {feedAppendURL, feedIsValidId, feedPeekURL} from "/src/feed.js";
 import FONTS from "/src/fonts.js";
 import {truncate as htmlTruncate} from "/src/html.js";
-import {closeDB} from "/src/idb.js";
 import * as mime from "/src/mime.js";
 import {
   optionsPageErrorMessageHide,
@@ -24,10 +23,11 @@ import {
   optionsPageSubscriptionMonitorHide
 } from "/src/options-page-subscription-monitor.js";
 import {
-  readerDbOpen,
+  close as readerDbClose,
+  open as readerDbOpen,
   readerDbFindFeedById,
   readerDbGetFeeds
-} from "/src/reader-db.js";
+} from "/src/rdb.js";
 import {readerImportFiles} from "/src/reader-import.js";
 import {parseInt10} from "/src/string.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
@@ -181,7 +181,7 @@ async function optionsPageFeedListItemOnclick(event) {
     // TODO: visual feedback?
     return;
   } finally {
-    closeDB(conn);
+    readerDbClose(conn);
   }
 
   const titleElement = document.getElementById('details-title');
@@ -310,7 +310,7 @@ async function optionsPageFeedListInit() {
     // TODO: react to error
     console.warn(error);
   } finally {
-    closeDB(conn);
+    readerDbClose(conn);
   }
 
   if(!feeds) {
@@ -380,7 +380,7 @@ async function optionsPageUnsubscribeButtonOnclick(event) {
     console.warn(error);
     return;
   } finally {
-    closeDB(request.readerConn);
+    readerDbClose(request.readerConn);
   }
 
   optionsPageFeedListRemoveFeed(feedId);

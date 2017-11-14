@@ -2,9 +2,11 @@
 
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
-import {closeDB} from "/src/idb.js";
 import {pollFeeds, PollFeedsContext} from "/src/poll-feeds.js";
-import {readerDbOpen} from "/src/reader-db.js";
+import {
+  close as readerDbClose, 
+  open as readerDbOpen
+} from "/src/rdb.js";
 import {
   readerStorageArchiveEntries,
   readerStorageRemoveLostEntries,
@@ -33,7 +35,7 @@ async function onWakeup(alarm) {
     } catch(error) {
       console.warn(error);
     } finally {
-      closeDB(conn);
+      readerDbClose(conn);
     }
     break;
   }
@@ -49,7 +51,7 @@ async function onWakeup(alarm) {
       console.warn(error);
     } finally {
       faviconCache.close();
-      closeDB(pfc.readerConn);
+      readerDbClose(pfc.readerConn);
     }
     break;
   }
@@ -62,7 +64,7 @@ async function onWakeup(alarm) {
     } catch(error) {
       console.warn(error);
     } finally {
-      closeDB(conn);
+      readerDbClose(conn);
     }
     break;
   }
@@ -75,7 +77,7 @@ async function onWakeup(alarm) {
     } catch(error) {
       console.warn(error);
     } finally {
-      closeDB(conn);
+      readerDbClose(conn);
     }
     break;
   }
@@ -89,7 +91,7 @@ async function onWakeup(alarm) {
       console.warn(error);
     } finally {
       fic.close();
-      closeDB(readerConn);
+      readerDbClose(readerConn);
     }
     break;
   }
