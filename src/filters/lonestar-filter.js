@@ -1,7 +1,8 @@
 
 import assert from "/src/assert.js";
 import {removeImage} from "/src/dom.js";
-import {isCanonicalURL, isExternalURL} from "/src/url.js";
+import {isExternalURL} from "/src/url.js";
+import {isCanonicalURLString} from "/src/url-string.js";
 import {isHiddenInlineElement} from "/src/visibility.js";
 
 const LONESTAR_FILTER_PATTERNS = [
@@ -39,7 +40,7 @@ const LONESTAR_FILTER_PATTERNS = [
 // @param url {String} canonical document url
 export function lonestarFilter(doc, url) {
   assert(doc instanceof Document);
-  assert(isCanonicalURL(url));
+  assert(isCanonicalURLString(url));
 
   // Analysis is limited to descendants of body
   if(!doc.body) {
@@ -103,7 +104,7 @@ function hasTelemetrySource(image, documentURL) {
 
   // Relative urls are generally not telemetry urls.
   // Protocol-agnostic urls are considered canonical (not relative), which is
-  // notably different behavior than isCanonicalURL.
+  // notably different behavior than isCanonicalURLString.
   // Urls using the 'data:' protocol are generally not telemetry urls because
   // no networking is involved. Basically only look at http and https
   // TODO: make non-capturing regex

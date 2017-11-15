@@ -4,7 +4,7 @@ import assert from "/src/assert.js";
 import {replaceTags, truncate as htmlTruncate} from "/src/html.js";
 import {isPosInt} from "/src/number.js";
 import {filterControls, condenseWhitespace} from "/src/string.js";
-import {isCanonicalURL} from "/src/url.js";
+import {isCanonicalURLString} from "/src/url-string.js";
 
 
 export const ENTRY_STATE_UNREAD = 0;
@@ -43,7 +43,7 @@ export function entryPeekURL(entry) {
 // @throws {Error} if urlString is invalid
 export function entryAppendURL(entry, urlString) {
   assert(entryIsEntry(entry));
-  assert(isCanonicalURL(urlString));
+  assert(isCanonicalURLString(urlString));
 
   const urlObject = new URL(urlString);
   const normalUrlString = urlObject.href;

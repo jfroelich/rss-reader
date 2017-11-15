@@ -8,7 +8,7 @@ import assert from "/src/assert.js";
 import {entryAppendURL, entryHasURL, entryIsEntry} from "/src/entry.js";
 import {feedAppendURL} from "/src/feed.js";
 import {FeedParser} from "/src/feed-parser.js";
-import {isCanonicalURL} from "/src/url.js";
+import {isCanonicalURLString} from "/src/url-string.js";
 
 
 // Parses an xml input string representing a feed. Returns a result with a
@@ -48,7 +48,7 @@ function readerParseFeedSetupFeed(feed, requestURL, responseURL, lastModDate) {
   feedAppendURL(feed, responseURL);
 
   // Normalize feed link if set and valid, otherwise set to undefined
-  if(feed.link && isCanonicalURL(feed.link)) {
+  if(feed.link && isCanonicalURLString(feed.link)) {
     try {
       const feedLinkURL = new URL(feed.link);
       feed.link = feedLinkURL.href;

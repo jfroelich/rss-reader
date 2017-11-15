@@ -10,7 +10,7 @@ import {escapeHTML, truncate as htmlTruncate} from "/src/html.js";
 import * as rdb from "/src/rdb.js";
 import entryMarkRead from "/src/entry-mark-read.js";
 import {parseInt10} from "/src/string.js";
-import {isCanonicalURL} from "/src/url.js";
+import {isCanonicalURLString} from "/src/url-string.js";
 
 // Track the currently visible slide
 let currentSlide;
@@ -200,7 +200,7 @@ function createFeedSourceElement(entry) {
   sourceElement.setAttribute('class', 'entry-source');
 
   if(entry.faviconURLString) {
-    assert(isCanonicalURL(entry.faviconURLString));
+    assert(isCanonicalURLString(entry.faviconURLString));
     const faviconElement = document.createElement('img');
     faviconElement.setAttribute('src', entry.faviconURLString);
     faviconElement.setAttribute('width', '16');
@@ -245,7 +245,7 @@ async function onSlideClick(event) {
   event.preventDefault();
 
   const urlString = anchor.getAttribute('href');
-  assert(isCanonicalURL(urlString));
+  assert(isCanonicalURLString(urlString));
   openTab(urlString);
 
   let conn;

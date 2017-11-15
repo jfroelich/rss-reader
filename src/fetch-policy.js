@@ -1,6 +1,6 @@
 
 import assert from "/src/assert.js";
-import {isCanonicalURL} from "/src/url.js";
+import {isCanonicalURLString} from "/src/url-string.js";
 
 // NOTE: this is the initial implementation, probably going to change drastically, is definitely
 // not very reliable or accurate
@@ -11,7 +11,7 @@ import {isCanonicalURL} from "/src/url.js";
 // Return true if the app's policy permits fetching the url
 // TODO: accept URL object instead of string
 export default function isAllowedURL(url) {
-  assert(isCanonicalURL(url));
+  assert(isCanonicalURLString(url));
   const urlo = new URL(url);
   return !urlHasCredentials(urlo) && !isLocalURL(urlo);
 }

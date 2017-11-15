@@ -79,16 +79,6 @@ function isIPv6Address(hostname) {
   return typeof hostname === 'string' && hostname.includes(':');
 }
 
-// Allows for leading whitespace characters. Returns true for javascript: and
-// mailto: and data:. Returns true for https:// and http://. Returns false for
-// '//'.
-// @param url {String} input url
-// @returns {Boolean} true if the url is canonical, otherwise false
-export function isCanonicalURL(url) {
-  assert(typeof url === 'string');
-  return /^\s*[a-z]+:/i.test(url);
-}
-
 // A url must be at least this long to be a script url
 const MIN_SCRIPT_LENGTH = 'javascript:'.length;
 

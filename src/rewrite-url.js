@@ -1,13 +1,13 @@
 
 import assert from "/src/assert.js";
-import {isCanonicalURL} from "/src/url.js";
+import {isCanonicalURLString} from "/src/url-string.js";
 
 // Applies a set of rules to a url object and returns a modified url object
 // Returns undefined if no rewriting occurred
 // @param url {String}
 // @returns {String}
 export default function rewriteURL(url) {
-  assert(isCanonicalURL(url));
+  assert(isCanonicalURLString(url));
 
   const urlObject = new URL(url);
   if(urlObject.hostname === 'news.google.com' && urlObject.pathname === '/news/url') {

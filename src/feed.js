@@ -4,7 +4,7 @@ import assert from "/src/assert.js";
 import {replaceTags, truncate as htmlTruncate} from "/src/html.js";
 import {isPosInt} from "/src/number.js";
 import {condenseWhitespace, filterControls} from "/src/string.js";
-import {isCanonicalURL} from "/src/url.js";
+import {isCanonicalURLString} from "/src/url-string.js";
 
 export function feedCreate() {
   return {};
@@ -55,7 +55,7 @@ export function feedCreateIconLookupURL(feed) {
   // associated with the feed. Cannot assume the link is set or valid
   if(feed.link) {
     // If feed.link is set it should always be canonical
-    assert(isCanonicalURL(feed.link));
+    assert(isCanonicalURLString(feed.link));
     try {
       return new URL(feed.link);
     } catch(error) {
