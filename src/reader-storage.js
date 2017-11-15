@@ -16,7 +16,6 @@ import {
 } from "/src/entry.js";
 import {
   feedIsFeed,
-  feedIsValidId,
   feedSanitize
 } from "/src/feed.js";
 import {filterEmptyProps} from "/src/object.js";
@@ -68,48 +67,6 @@ export async function readerStorageAddEntry(entry, conn) {
   storable.dateCreated = new Date();
 
   await rdb.putEntry(conn, storable);
-}
-
-// Removes entries not linked to a feed from the database
-// @param conn {IDBDatabase} an open database connection
-// @param limit {Number}
-// @throws AssertionError
-// @throws Error - database-related error
-export async function readerStorageRemoveOrphans(conn, limit) {
-  assert(rdb.isOpen(conn));
-
-  // Allow errors to bubble
-  const feedIds = await rdb.getFeedIds(conn);
-
-  assert(feedIds);
-
-  function isOrphan(entry) {
-    const id = entry.feed;
-    return !id || !feedIsValidId(id) || !feedIds.includes(id);
-  }
-
-  // Allow errors to bubble
-  const entries = await rdb.findEntries(conn, isOrphan, limit);
-  console.debug('found %s orphans', entries.length);
-  if(entries.length === 0) {
-    return;
-  }
-
-  const orphanIds = [];
-  for(const entry of entries) {
-    orphanIds.push(entry.id);
-  }
-
-  // Allow errors to bubble
-  await rdb.removeEntries(conn, orphanIds);
-
-  const channel = new BroadcastChannel('db');
-  const message = {type: 'entry-deleted', id: undefined, reason: 'orphan'};
-  for(const id of orphanIds) {
-    message.id = id;
-    channel.postMessage(message);
-  }
-  channel.close();
 }
 
 // Scans the database for entries missing urls are removes them

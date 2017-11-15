@@ -8,11 +8,9 @@ import {
   close as readerDbClose,
   open as readerDbOpen
 } from "/src/rdb.js";
-import {
-  readerStorageRemoveLostEntries,
-  readerStorageRemoveOrphans
-} from "/src/reader-storage.js";
+import {readerStorageRemoveLostEntries} from "/src/reader-storage.js";
 import refreshFeedIcons from "/src/refresh-feed-icons.js";
+import removeOrphanedEntries from "/src/remove-orphaned-entries.js";
 
 chrome.alarms.onAlarm.addListener(onWakeup);
 chrome.alarms.create('archive', {periodInMinutes: 60 * 12});
@@ -73,7 +71,7 @@ async function onWakeup(alarm) {
     let conn;
     try {
       conn = await readerDbOpen();
-      await readerStorageRemoveOrphans(conn, limit);
+      await removeOrphanedEntries(conn, limit);
     } catch(error) {
       console.warn(error);
     } finally {
