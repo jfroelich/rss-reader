@@ -11,7 +11,7 @@ import {
 import {feedIsFeed, feedIsValidId} from "/src/feed.js";
 import * as idb from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
-import {isValidURL} from "/src/url.js";
+import {isValidURLString} from "/src/url-string.js";
 
 const NAME = 'reader';
 const VERSION = 20;
@@ -75,7 +75,7 @@ export function onUpgradeNeeded(event) {
 // @param url {String}
 export function findFeedIdByURL(conn, url) {
   assert(idb.isOpen(conn));
-  assert(isValidURL(url));
+  assert(isValidURLString(url));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -121,7 +121,7 @@ export function findEntryById(conn, id) {
 // @param url {String}
 export function findEntryByURL(conn, url) {
   assert(idb.isOpen(conn));
-  assert(isValidURL(url));
+  assert(isValidURLString(url));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');

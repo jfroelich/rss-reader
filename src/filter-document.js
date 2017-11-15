@@ -40,7 +40,7 @@ import {semanticFilter} from "/src/filters/semantic-filter.js";
 import {sourcelessImageFilter} from "/src/filters/sourceless-image-filter.js";
 import {tableFilter} from "/src/filters/table-filter.js";
 import {trimDocumentFilter} from "/src/filters/trim-document-filter.js";
-import {isValidURL} from "/src/url.js";
+import {isValidURLString} from "/src/url-string.js";
 
 // TODO: this should be modified to accept a url object as input
 
@@ -53,7 +53,7 @@ import {isValidURL} from "/src/url.js";
 // to wait before timing out when fetching an image
 export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
   assert(doc instanceof Document);
-  assert(isValidURL(url));
+  assert(isValidURLString(url));
 
   frameFilter(doc);
   ensureBodyFilter(doc);

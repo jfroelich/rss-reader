@@ -4,7 +4,8 @@ import assert from "/src/assert.js";
 import * as mime from "/src/mime.js";
 import {isPosInt} from "/src/number.js";
 import {parseInt10} from "/src/string.js";
-import {compareURLsWithoutHash, isValidURL} from "/src/url.js";
+import {compareURLsWithoutHash} from "/src/url.js";
+import {isValidURLString} from "/src/url-string.js";
 
 export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
@@ -292,7 +293,7 @@ async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
 // TODO: if fetch succeeds, cancel the timeout
 // TODO: if timeout succeeds first, cancel the fetch
 function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
-  assert(isValidURL(url));
+  assert(isValidURLString(url));
   const timeoutMsType = typeof timeoutMs;
 
   // If timeout is set then check its validity

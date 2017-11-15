@@ -79,53 +79,6 @@ function isIPv6Address(hostname) {
   return typeof hostname === 'string' && hostname.includes(':');
 }
 
-// A url must be at least this long to be a script url
-const MIN_SCRIPT_LENGTH = 'javascript:'.length;
-
-// Returns true if the url has the 'javascript:' protocol. Does not throw in
-// the case of bad input.
-// @param url {String}
-// @returns {Boolean}
-export function hasScriptProtocol(url) {
-  return typeof url === 'string' &&
-    url.length > MIN_SCRIPT_LENGTH &&
-    /^\s*javascript:/i.test(url);
-}
-
-// Returns the absolute form the input url
-// @param url {String}
-// @param baseURL {URL}
-// @returns {URL} the absolute url, or undefined if an error occurred
-export function resolveURL(url, baseURL) {
-  assert(typeof url === 'string');
-  assert(baseURL instanceof URL);
-
-  let canonicalURL;
-  try {
-    canonicalURL = new URL(url, baseURL);
-  } catch(error) {
-  }
-  return canonicalURL;
-}
-
-const URL_MAX_LENGTH_EXCLUSIVE = 3000;
-const URL_MIN_LENGTH_INCLUSIVE = 1;
-
-// Only minor validation for speed. Tolerates bad input. This isn't intended to be the most
-// accurate classification. Instead, it is intended to easily find bad urls and rule them out as
-// invalid, even though some slip through, and not unintentionally rule out good urls.
-// @param url {String}
-// @returns {Boolean}
-export function isValidURL(url) {
-  if(typeof url === 'string') {
-    url = url.trim();
-    if(url.length < URL_MAX_LENGTH_EXCLUSIVE && url.length >= URL_MIN_LENGTH_INCLUSIVE) {
-      return !url.includes(' ');
-    }
-  }
-  return false;
-}
-
 const PATH_WITH_EXTENSION_MIN_LENGTH = 3; // '/.b'
 const EXTENSION_MAX_LENGTH = 255; // excluding '.'
 

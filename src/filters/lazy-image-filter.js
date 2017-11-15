@@ -1,7 +1,7 @@
 
 import assert from "/src/assert.js";
 import {imageHasSource} from "/src/dom.js";
-import {isValidURL} from "/src/url.js";
+import {isValidURLString} from "/src/url-string.js";
 
 export function lazyImageFilter(doc) {
   assert(doc instanceof Document);
@@ -32,7 +32,7 @@ export function lazyImageFilter(doc) {
     for(const lazySourceName of lazyAttributes) {
       if(image.hasAttribute(lazySourceName)) {
         const imageSource = image.getAttribute(lazySourceName);
-        if(isValidURL(imageSource)) {
+        if(isValidURLString(imageSource)) {
           //const preHTML = image.outerHTML;
           image.removeAttribute(lazySourceName);
           image.setAttribute('src', imageSource);

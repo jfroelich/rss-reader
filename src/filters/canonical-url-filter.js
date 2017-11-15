@@ -1,7 +1,7 @@
 
 import assert from "/src/assert.js";
 import {parseSrcsetWrapper, serializeSrcset} from "/src/srcset.js";
-import {resolveURL} from "/src/url.js";
+import {resolveURLString} from "/src/url-string.js";
 
 const CANONICAL_URL_FILTER_MAP = {
   a: 'href',
@@ -73,7 +73,7 @@ function canonicalURLFilterResolveAttribute(element, baseURL) {
     return;
   }
 
-  const resolvedURL = resolveURL(originalURLString, baseURL);
+  const resolvedURL = resolveURLString(originalURLString, baseURL);
   if(!resolvedURL) {
     return;
   }
@@ -89,7 +89,7 @@ function canonicalURLFilterResolveSrcset(element, baseURL) {
 
   let changeCount = 0;
   for(const descriptor of descriptors) {
-    const resolvedURL = resolveURL(descriptor.url, baseURL);
+    const resolvedURL = resolveURLString(descriptor.url, baseURL);
     if(resolvedURL && resolvedURL.href.length !== descriptor.url.length) {
       descriptor.url = resolvedURL.href;
       changeCount++;

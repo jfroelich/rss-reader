@@ -2,7 +2,7 @@
 
 import assert from "/src/assert.js";
 import {parseInt10} from "/src/string.js";
-import {isValidURL} from "/src/url.js";
+import {isValidURLString} from "/src/url-string.js";
 
 // Returns the first matching css rule within the given sheet, or undefined if
 // no rules match.
@@ -205,7 +205,7 @@ export function imageHasSource(image) {
 // Return true if image has a valid src attribute value
 export function imageHasValidSource(image) {
   assert(image instanceof Element);
-  return isValidURL(image.getAttribute('src'));
+  return isValidURLString(image.getAttribute('src'));
 }
 
 // Return true if image has a non-empty srcset attribute value

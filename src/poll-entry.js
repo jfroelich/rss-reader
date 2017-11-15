@@ -14,7 +14,8 @@ import parseHTML from "/src/parse-html.js";
 import {isOpen as readerDbIsOpen, findEntryByURL as readerDbFindEntryByURL} from "/src/rdb.js";
 import {entryAdd} from "/src/reader-storage.js";
 import rewriteURL from "/src/rewrite-url.js";
-import {isValidURL, sniffIsBinaryURL} from "/src/url.js";
+import {sniffIsBinaryURL} from "/src/url.js";
+import {isValidURLString} from "/src/url-string.js";
 
 export class PollEntryContext {
   constructor() {
@@ -43,14 +44,18 @@ export async function pollEntry(entry) {
     return;
   }
 
-
   // Cannot assume entry has url
   if(!entryHasURL(entry)) {
     return false;
   }
 
   let url = entryPeekURL(entry);
-  if(!isValidURL(url)) {
+
+  // TODO: I think that by this point I should be able to assume that if the entry has a url,
+  // then it is a valid url, because invalid urls are weeded out earlier. I should clarify that
+  // behavior. In any event, because of that assumption, this should technically be an assert
+  // because this should never be true.
+  if(!isValidURLString(url)) {
     return false;
   }
 
