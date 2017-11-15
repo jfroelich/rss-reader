@@ -24,7 +24,7 @@ import {isOpen as isOpenDB} from "/src/idb.js";
 import updateBadgeText from "/src/update-badge-text.js";
 import * as rdb from "/src/rdb.js";
 import {readerParseFeed} from "/src/reader-parse-feed.js";
-import {readerStoragePutFeed} from "/src/reader-storage.js";
+import {feedPut} from "/src/reader-storage.js";
 
 
 export class SubscribeRequest {
@@ -104,7 +104,7 @@ export class SubscribeRequest {
 
   async addFeed(feed) {
     const SKIP_PREP = false;
-    const storedFeed = await readerStoragePutFeed(feed, this.readerConn, SKIP_PREP);
+    const storedFeed = await feedPut(feed, this.readerConn, SKIP_PREP);
     return storedFeed;
   }
 

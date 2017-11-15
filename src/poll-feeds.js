@@ -9,7 +9,7 @@ import {promiseEvery} from "/src/promise.js";
 import updateBadgeText from "/src/update-badge-text.js";
 import {getFeeds as readerDbGetFeeds} from "/src/rdb.js";
 import {readerParseFeed} from "/src/reader-parse-feed.js";
-import {readerStoragePutFeed} from "/src/reader-storage.js";
+import {feedPut} from "/src/reader-storage.js";
 
 // TODO: rename pollFeeds to poll?
 // TODO: rather than context, just create a function option like
@@ -126,7 +126,7 @@ async function pollFeed(feed, pfc) {
     PROCESS_ENTRIES);
 
   const mergedFeed = feedMerge(feed, parseResult.feed);
-  const storedFeed = await readerStoragePutFeed(mergedFeed, pfc.readerConn);
+  const storedFeed = await feedPut(mergedFeed, pfc.readerConn);
   const entries = parseResult.entries;
 
   // Cascade feed properties to entries

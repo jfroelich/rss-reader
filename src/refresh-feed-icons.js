@@ -11,7 +11,7 @@ import {
   getFeeds as readerDbGetFeeds,
   isOpen as readerDbIsOpen
 } from "/src/rdb.js";
-import {readerStoragePutFeed} from "/src/reader-storage.js";
+import {feedPut} from "/src/reader-storage.js";
 
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.
@@ -76,7 +76,7 @@ async function updateFeedIcon(feed, readerConn, iconConn, skipPrep) {
   if(prevIconURL && iconURL && prevIconURL !== iconURL) {
     console.debug('feed with favicon changed favicon %s', iconURL);
     feed.faviconURLString = iconURL;
-    await readerStoragePutFeed(feed, readerConn, skipPrep);
+    await feedPut(feed, readerConn, skipPrep);
     return;
   }
 
@@ -88,7 +88,7 @@ async function updateFeedIcon(feed, readerConn, iconConn, skipPrep) {
   if(prevIconURL && !iconURL) {
     console.debug('removing feed favicon because lookup failed', url.href, prevIconURL);
     feed.faviconURLString = undefined;
-    await readerStoragePutFeed(feed, readerConn, skipPrep);
+    await feedPut(feed, readerConn, skipPrep);
     return;
   }
 
@@ -101,7 +101,7 @@ async function updateFeedIcon(feed, readerConn, iconConn, skipPrep) {
   if(!prevIconURL && iconURL) {
     console.debug('setting initial feed favicon %s', iconURL);
     feed.faviconURLString = iconURL;
-    await readerStoragePutFeed(feed, readerConn, skipPrep);
+    await feedPut(feed, readerConn, skipPrep);
     return;// just for consistency
   }
 }

@@ -12,7 +12,7 @@ import {fetchHTML} from "/src/fetch.js";
 import filterDocument from "/src/filter-document.js";
 import parseHTML from "/src/parse-html.js";
 import {isOpen as readerDbIsOpen, findEntryByURL as readerDbFindEntryByURL} from "/src/rdb.js";
-import {readerStorageAddEntry} from "/src/reader-storage.js";
+import {entryAdd} from "/src/reader-storage.js";
 import rewriteURL from "/src/rewrite-url.js";
 import {isValidURL, sniffIsBinaryURL} from "/src/url.js";
 
@@ -111,7 +111,7 @@ export async function pollEntry(entry) {
   }
 
   try {
-    await readerStorageAddEntry(entry, this.readerConn);
+    await entryAdd(entry, this.readerConn);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;

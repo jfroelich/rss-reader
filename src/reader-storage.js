@@ -1,7 +1,7 @@
-// app storage module, mostly a wrapper around reader-db that integrates other modules
+// Reader storage module, basically a layer above rdb.js that adds functionality
 
-// TODO: drop readerStorage prefix, that is now a concern of the importing module, except maybe
-// it is pointless given the following todo. can just drop prefix when splitting up.
+// TODO: maybe break into two modules, feed-store.js, and entry-store.js, that are basically
+// abstractions around rdb calls.
 
 import assert from "/src/assert.js";
 import {
@@ -17,9 +17,7 @@ import {
 import {filterEmptyProps} from "/src/object.js";
 import * as rdb from "/src/rdb.js";
 
-// @throws AssertionError
-// @throws Error database related
-export async function readerStoragePutFeed(feed, conn, skipPrep) {
+export async function feedPut(feed, conn, skipPrep) {
   assert(feedIsFeed(feed));
   assert(rdb.isOpen(conn));
 
@@ -43,16 +41,7 @@ export async function readerStoragePutFeed(feed, conn, skipPrep) {
   return storable;
 }
 
-// Stores an entry in the app's storage. This is basically a wrapper function
-// of rdb.putEntry that attaches sanitization, initialization, and
-// verification before storing the object. Caller should use rdb.putEntry
-// to store the entry object exactly as it is without any guards or init, but
-// should use this function in the ordinary case.
-// @param entry {Object} an entry object
-// @param conn {IDBDatabase} an open indexedDB database connection
-// @throws AssertionError
-// @throws Error database related
-export async function readerStorageAddEntry(entry, conn) {
+export async function entryAdd(entry, conn) {
   assert(entryIsEntry(entry));
   assert(rdb.isOpen(conn));
 
