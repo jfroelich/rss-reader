@@ -6,7 +6,7 @@
 // function or two, but do this after successful transition to modules
 
 import assert from "/src/assert.js";
-import {isUncheckedError, PermissionsError} from "/src/errors.js";
+import {check, isUncheckedError, PermissionsError} from "/src/errors.js";
 import {showNotification} from "/src/extension.js";
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
@@ -68,20 +68,14 @@ export class SubscribeRequest {
 
     const url = Feed.peekURL(feed);
 
-    if(!isAllowedURL(url)) {
-      throw new PermissionsError(url + ' is not permitted');
-    }
-
-    if(await this.isSubscribed(url)) {
-      throw new rdb.ConstraintError();
-    }
+    check(isAllowedURL(url), PermissionsError, url + ' not permitted');
+    check(!(await this.isSubscribed(url)), rdb.ConstraintError, 'already subscribed');
 
     if(navigator.onLine || !('onLine' in navigator)) {
       const res = await fetchFeed(url, this.timeoutMs);
       if(res.redirected) {
-        if(await this.isSubscribed(res.responseURL)) {
-          throw new rdb.ConstraintError();
-        }
+        check(!(await this.isSubscribed(res.responseURL)), rdb.ConstraintError,
+          'already subscribed');
       }
 
       const xml = await res.text();

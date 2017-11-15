@@ -834,6 +834,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         state = STATE_SCRIPT_POSSIBLE_REGULAR_EXPRESS_LITERAL;
         break;
       default:
+        // TODO: this should be an assertion error because this should never happen
         throw new Error('Unknown state: ' + state);
     } // end switch statement
   } // end for loop

@@ -96,6 +96,7 @@ FeedParser.prototype.findEntryElements = function(channelElement) {
     entryElementName = 'item';
   } else {
     // TODO: use a custom error here
+    // TODO: use the function check from errors.js
     throw new Error(`Invalid document element ${documentElement.nodeName}`);
   }
 

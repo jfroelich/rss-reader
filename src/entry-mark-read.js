@@ -19,9 +19,18 @@ export default async function entryMarkRead(conn, id) {
   // database should never enter into an invalid state, so these should be assertions. On the other
   // hand, the database is external and difficult to reason about statically, and in some sense
   // entries are user data as opposed to system data, so this should tolerate bad data.
+
+  // The slideshow page, which calls this function, currently is kind of sloppy and does not do
+  // a great job reasoning about database state. There are a few situations where an entry may be
+  // deleted somehow, such as by a background task, and the slideshow never the less calls this
+  // function unaware. Until the time the slideshow can properly reflect the state of the model
+  // consistently, this is better done as a check than an assert.
   check(entry, rdb.NotFoundError, '' + id);
+
+  // TODO: I am not sure this check is strict enough. Technically the entry should always be
+  // in the UNREAD state at this point.
   check(entry.readState !== Entry.STATE_READ, rdb.InvalidStateError,
-    'entry in read state with id ' + id);
+    'entry ' + id + ' already in read state');
 
   // The entry should ALWAYS have a url
   assert(Entry.hasURL(entry));

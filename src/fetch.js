@@ -1,6 +1,7 @@
 // Fetch utilities
 
 import assert from "/src/assert.js";
+import {check} from "/src/errors.js";
 import * as mime from "/src/mime.js";
 import {isPosInt} from "/src/number.js";
 import {parseInt10} from "/src/string.js";
@@ -23,7 +24,6 @@ export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 // honor Accept headers.
 // @returns {Promise} a promise that resolves to a Response-like object
 export function fetchFeed(url, timeoutMs, acceptHTML) {
-
   if(typeof acceptHTML === 'undefined') {
     acceptHTML = true;
   }
@@ -54,6 +54,7 @@ export function fetchFeed(url, timeoutMs, acceptHTML) {
     types.push(mime.HTML);
   }
 
+  // TODO: move outside of function and rename?
   function acceptPredicate(response) {
     const contentType = response.headers.get('Content-Type');
     const mimeType = mime.fromContentType(contentType);
@@ -70,7 +71,6 @@ export function fetchHTML(url, timeoutMs) {
   const options = {
     credentials: 'omit',
     method: 'get',
-    // TODO: use mime.js constant
     headers: {'Accept': mime.HTML},
     mode: 'cors',
     cache: 'default',
@@ -79,7 +79,7 @@ export function fetchHTML(url, timeoutMs) {
     referrerPolicy: 'no-referrer'
   };
 
-  // TODO: move outside of function and rename?
+  // TODO: move outside of function?
   function acceptHTMLPredicate(response) {
     const contentType = response.headers.get('Content-Type');
     const mimeType = mime.fromContentType(contentType);
@@ -91,17 +91,15 @@ export function fetchHTML(url, timeoutMs) {
 
 // Sends a HEAD request for the given image.
 // @param url {String}
-// @returns a simple object with props imageSize and response_url_string
+// @returns a simple object with props imageSize and responseURL
 export async function fetchImageHead(url, timeoutMs) {
   const headers = {'Accept': 'image/*'};
 
-  // TODO: this should be refactored to use fetchInternal. But I need to
-  // calculate content length. So fetchInternal first needs to be refactored
-  // to also calculate content length because response is not exposed, just
-  // wrapped response.
+  // TODO: this should be refactored to use fetchInternal. But I need to calculate content length.
+  // So fetchInternal first needs to be refactored to also calculate content length because response
+  // is not exposed, just wrapped response.
 
-  // TODO: set properties in a consistent manner, like I do in other fetch
-  // functions
+  // TODO: set properties in a consistent manner, like I do in other fetch functions
   const options = {};
   options.credentials = 'omit';
   options.method = 'HEAD';
@@ -115,10 +113,10 @@ export async function fetchImageHead(url, timeoutMs) {
   assert(response);
   const contentType = response.headers.get('Content-Type');
 
-  if(!mime.isImage(contentType)) {
-    throw new Error('Response content type not an image mime type: ' + contentType + ' for url ' +
-      url);
-  }
+  // TODO: use a custom error, like FetchError
+  let errorType;
+  check(mime.isImage(contentType), errorType, 'Response content type not an image mime type: ' +
+    contentType + ' for url ' + url);
 
   // TODO: create and use ReaderResponse?
   const outputResponse = {};
@@ -138,9 +136,10 @@ export async function fetchImageHead(url, timeoutMs) {
 // NOTE: timeout of 0 is equivalent to undefined, or untimed fetch
 // TODO: should this accept a host document parameter in which to create
 // the element (instead of new Image() using document.createElement('img'))
-// TODO: maybe rename to fetch_image_element so that separate fetchImage
-// that works more like other fetches can be created, and to avoid confusion
-// TODO: it is possible this should be using the fetch API to avoid cookies?
+// TODO: maybe rename to fetchImageElement so that it
+// works more like other fetches can be created, and to avoid confusion
+// TODO: it is possible this should be using the fetch API to avoid cookies? Can fetching an
+// image transmit cookie data? I think so, but I would prefer to be certain.
 export function fetchImage(url, timeoutMs) {
   assert(url);
 
@@ -192,6 +191,7 @@ export function fetchImage(url, timeoutMs) {
 
     proxy.onerror = function proxyOnerror(event) {
       clearTimeout(timerId);
+      // TODO: use a custom error like TimeoutError
       // There is no useful error object in the event, so construct our own
       reject(new Error('Failed to fetch ' + url));
     };
@@ -208,12 +208,12 @@ export function fetchImage(url, timeoutMs) {
   const timeoutPromise = new Promise(function timeExec(resolve, reject) {
     timerId = setTimeout(function onTimeout() {
       // The timeout triggered.
+      // TODO: use a custom error like FetchError? TimeoutError?
       // TODO: prior to settling, cancel the fetch somehow
       // TODO: it could actually be after settling too I think?
-      // TODO: i want to cancel the fetch itself, and also the
-      // fetchPromise promise. actually there is no fetch promise in this
-      // context, just the Image.src assignment call. Maybe setting proxy.src
-      // to null does the trick?
+      // TODO: i want to cancel the fetch itself, and also the fetchPromise promise. actually there
+      // is no fetch promise in this context, just the Image.src assignment call. Maybe setting
+      // proxy.src to null does the trick?
       reject(new Error('Fetching image timed out ' + url));
     }, timeoutMs);
   });
@@ -229,44 +229,32 @@ export function fetchImage(url, timeoutMs) {
 // response, and then the return value is asserted
 // @returns {Object} a Response-like object
 async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
-
-  // Allow exception to bubble
   const response = await fetchWithTimeout(url, options, timeoutMs);
 
-  if(!response) {
-    throw new Error('response undefined ' + url);
-  }
+  // TODO: use custom error like FetchError
+  check(response, undefined, 'undefined response for url ' + url);
+  check(response.ok, undefined, 'response not ok for url ' + url);
 
-  if(!response.ok) {
-    throw new Error('response not ok ' + url);
-  }
-
-  // The spec says 204 is ok, because response.ok is true for status codes
-  // 200-299, but I consider 204 to be an error.
+  // The spec says 204 is ok because response.ok is true for status codes 200-299, but this
+  // implementation's opinion is that 204 is an error.
   // NOTE: based on errors in the console Chrome may implicitly be treating
   // 204 as a network error, based on seeing "no content errors" that occur
   // sometimes when doing fetch. There may not be a need to explicitly check for
   // this error code. I would need to test further.
   const HTTP_STATUS_NO_CONTENT = 204;
-  if(response.status === HTTP_STATUS_NO_CONTENT) {
-    throw new Error('no content repsonse ' + url);
-  }
+  check(response.status !== HTTP_STATUS_NO_CONTENT, undefined, 'no content repsonse ' + url);
 
   if(typeof acceptPredicate === 'function') {
-    if(!acceptPredicate(response)) {
-      throw new Error('response not accepted ' + url);
-    }
+    // TODO: use a custom error like FetchError
+    check(acceptPredicate(response), undefined, 'response not accepted ' + url);
   }
 
-  // TODO: create a ReaderResponse class and use that instead of a simple
-  // object
+  // TODO: create a ReaderResponse class and use that instead of a simple object?
 
   const responseWrapper = {};
-
   responseWrapper.text = function getBodyText() {
     return response.text();
   };
-
   responseWrapper.requestURL = url;
   responseWrapper.responseURL = response.url;
   responseWrapper.lastModifiedDate = ResponseUtils.getLastModified(response);
@@ -277,12 +265,11 @@ async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
   return responseWrapper;
 }
 
-// Returns a promise. If no timeout is given the promise is the same promise
-// as yielded by calling fetch. If a timeout is given, then a timeout promise
-// is raced against the fetch, and whichever promise wins the race is returned.
-// If the fetch promise wins the race then generally it will be a resolved
-// promise, but it could be rejected for example in case of a network error.
-// If the timeout promise wins the race it is always a rejection.
+// Returns a promise. If no timeout is given the promise is the same promise as yielded by calling
+// fetch. If a timeout is given, then a timeout promise is raced against the fetch, and whichever
+// promise wins the race is returned. If the fetch promise wins the race then generally it will be
+// a resolved promise, but it could be rejected for example in case of a network error. If the
+// timeout promise wins the race it is always a rejection.
 //
 // @param url {String} the url to fetch
 // @param options {Object} optional, fetch options parameter
@@ -316,13 +303,12 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
   }
 
   // TODO: delegate to setTimeoutPromise
-  // TODO: resolve instead of reject. But think of how to represent that
-  // in case of error? Ok have the promise reject with undefined. The fetch
-  // promise never resolves with undefined. So make this function async and
-  // await the race and then check whether the response is defined.
+  // TODO: resolve instead of reject. But think of how to represent that in case of error? Ok, have
+  // the promise reject with undefined. The fetch promise never resolves with undefined. So make
+  // this function async and await the race and then check whether the response is defined.
 
-  // I am using this internal function instead of a external helper because of
-  // plans to support cancellation
+  // I am using this internal function instead of a external helper because of plans to support
+  // cancellation
   const timeoutPromise = new Promise(function executor(resolve, reject) {
     const error = new Error(errorMessage);
     timeoutId = setTimeout(reject, timeoutMs, error);
@@ -344,8 +330,8 @@ const ResponseUtils = {};
 
 // Returns the value of the Last-Modified header as a Date object
 // @param response {Response}
-// @returns {Date} the value of Last-Modified, or undefined if error such as
-// no header present or bad date
+// @returns {Date} the value of Last-Modified, or undefined if error such as no header present or
+// bad date
 ResponseUtils.getLastModified = function(response) {
   assert(response instanceof Response);
 
@@ -361,8 +347,8 @@ ResponseUtils.getLastModified = function(response) {
 };
 
 
-// TODO: instead of returning an invalid value, return both an error code and
-// the value. This way there is no ambiguity, or need for global constant
+// TODO: instead of returning an invalid value, return both an error code and the value. This way
+// there is no ambiguity, or need for global constant
 ResponseUtils.getContentLength = function(response) {
   const contentLengthString = response.headers.get('Content-Length');
   const contentLength = parseInt10(contentLengthString);

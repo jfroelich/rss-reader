@@ -3,6 +3,7 @@
 // TODO: drop the opmlDocument prefix, that is now a responsibility of the importing module
 
 import assert from "/src/assert.js";
+import {check} from "/src/errors.js";
 import {
   opmlOutlineElementToObject,
   opmlOutlineElementHasValidType,
@@ -24,13 +25,9 @@ export function opmlDocumentSetTitle(doc, title) {
       titleElement = doc.createElement('title');
       const headElement = doc.querySelector('head');
 
-      // TODO: instead of failing on not finding <head>, create
-      // <head> if needed
-
-      if(!headElement) {
-        throw new Error('missing head element');
-      }
-
+      // TODO: if the head element is missing, then instead of throwing an error, create and
+      // append the head element
+      check(headElement, undefined, 'opml document missing head element');
       headElement.appendChild(titleElement);
     }
 
