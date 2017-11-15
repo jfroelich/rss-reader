@@ -71,13 +71,9 @@ async function importFile(file, readerConn, iconConn) {
   }
 
   const document = parseOPML(fileContent);
-
-  // TODO: these 3 should be local function calls, these functions are currently defined in the
-  // wrong module, because this functionality is unique to this module and not all opml documents
-
-  OPMLDocument.removeOutlinesWithInvalidTypes(document);
-  OPMLDocument.normalizeOutlineXMLURLs(document);
-  OPMLDocument.removeOutlinesMissingXMLURLs(document);
+  removeOutlinesWithInvalidTypes(document);
+  normalizeOutlineXMLURLs(document);
+  removeOutlinesMissingXMLURLs(document);
 
   const outlines = OPMLDocument.getOutlineObjects(document);
   if(!outlines.length) {
@@ -104,9 +100,39 @@ async function importFile(file, readerConn, iconConn) {
   request.timeoutMs = timeoutMs;
   request.notify = false;
 
-  // Allow exceptions to bubble
   const subAllResults = await request.subscribeAll(feeds);
   console.log('subbed to %d feeds in file', subAllResults.length, file.name);
+}
+
+function removeOutlinesWithInvalidTypes(doc) {
+  assert(doc instanceof Document);
+  const elements = OPMLDocument.getOutlineElements(doc);
+  const initialLength = elements.length;
+  for(const element of elements) {
+    if(!OPMLOutline.elementHasValidType(element)) {
+      element.remove();
+    }
+  }
+
+  return initialLength - elements.length;
+}
+
+function normalizeOutlineXMLURLs(doc) {
+  assert(doc instanceof Document);
+  const outlines = OPMLDocument.getOutlineElements(doc);
+  for(const outline of outlines) {
+    OPMLOutline.elementNormalizeXMLURL(outline);
+  }
+}
+
+function removeOutlinesMissingXMLURLs(doc) {
+  assert(doc instanceof Document);
+  const outlines = OPMLDocument.getOutlineElements(doc);
+  for(const outline of outlines) {
+    if(!OPMLOutline.elementHasXMLURL(outline)) {
+      outline.remove();
+    }
+  }
 }
 
 // Filter duplicates, favoring earlier in array order

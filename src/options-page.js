@@ -3,6 +3,7 @@
 import assert from "/src/assert.js";
 import {fadeElement} from "/src/dom.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
+import {exportFeeds} from "/src/export-feeds.js";
 import {
   hasBrowserPermission,
   requestBrowserPermission,
@@ -12,7 +13,6 @@ import * as Feed from "/src/feed.js";
 import FONTS from "/src/fonts.js";
 import {truncate as htmlTruncate} from "/src/html.js";
 import * as mime from "/src/mime.js";
-import {optionsPageExportOPML} from "/src/options-page-export-opml.js";
 import OPTIONS_PAGE_IMAGE_PATHS from "/src/options-page-image-paths.js";
 import {
   optionsPageSubscriptionMonitorShow,
@@ -23,6 +23,7 @@ import * as rdb from "/src/rdb.js";
 import {readerImportFiles} from "/src/reader-import.js";
 import {parseInt10} from "/src/string.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
+
 
 
 // View state
@@ -440,11 +441,17 @@ async function importOPMLInputOnchange(event) {
 }
 
 async function exportOPMLButtonOnclick(event) {
+  const title = 'Subscriptions', fileName = 'subscriptions.xml';
+  let conn;
   try {
-    await optionsPageExportOPML();
+    conn = await rdb.open();
+    const feeds = await rdb.getFeeds(conn);
+    exportFeeds(feeds, title, fileName);
   } catch(error) {
     // TODO: handle error visually
     console.warn(error);
+  } finally {
+    rdb.close(conn);
   }
 }
 

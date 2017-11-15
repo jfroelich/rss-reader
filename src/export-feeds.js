@@ -1,7 +1,5 @@
 // Module for exporting feeds to opml file
 
-// TODO: rename to something like "export-feeds.js"
-
 import assert from "/src/assert.js";
 import * as Feed from "/src/feed.js";
 import * as OPMLDocument from "/src/opml-document.js";
@@ -11,23 +9,27 @@ import {xmlToBlob} from "/src/xml-utils.js";
 // @param feeds {Array}
 // @param title {String} optional
 // @param fileName {String} optional
-export function readerExportFeeds(feeds, title, fileName) {
+export function exportFeeds(feeds, title, fileName) {
   assert(Array.isArray(feeds));
-  const doc = OPMLDocument.create();
-  OPMLDocument.setTitle(doc, title);
+  const doc = createOPMLDocumentFromFeeds(feeds, title);
+  const blob = xmlToBlob(doc);
+  downloadBlob(blob, fileName);
+}
 
+function createOPMLDocumentFromFeeds(feeds, title) {
+  const doc = OPMLDocument.create(title);
   for(const feed of feeds) {
     OPMLDocument.appendOutlineObject(doc, outlineFromFeed(feed));
   }
+  return doc;
+}
 
-  const blob = xmlToBlob(doc);
+function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
-
   const anchor = document.createElement('a');
   anchor.setAttribute('download', fileName);
   anchor.href = url;
   anchor.click();
-
   URL.revokeObjectURL(url);
 }
 
