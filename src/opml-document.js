@@ -4,13 +4,7 @@
 
 import assert from "/src/assert.js";
 import {check} from "/src/errors.js";
-import {
-  opmlOutlineElementToObject,
-  opmlOutlineElementHasValidType,
-  opmlOutlineElementHasXMLURL,
-  opmlOutlineElementNormalizeXMLURL,
-  opmlOutlineToElement
-} from "/src/opml-outline.js";
+import * as OPMLOutline from "/src/opml-outline.js";
 
 // @throws Error missing head element
 export function opmlDocumentSetTitle(doc, title) {
@@ -71,7 +65,7 @@ export function opmlGetOutlineObjects(doc) {
   const elements = getOutlineElements(doc);
   const objects = [];
   for(const element of elements) {
-    objects.push(opmlOutlineElementToObject(element));
+    objects.push(OPMLOutline.fromElement(element));
   }
   return objects;
 }
@@ -81,7 +75,7 @@ export function opmlRemoveOutlinesWithInvalidTypes(doc) {
   const elements = getOutlineElements(doc);
   const initialLength = elements.length;
   for(const element of elements) {
-    if(!opmlOutlineElementHasValidType(element)) {
+    if(!OPMLOutline.elementHasValidType(element)) {
       element.remove();
     }
   }
@@ -93,7 +87,7 @@ export function opmlRemoveOutlinesMissingXMLURLs(doc) {
   assert(doc instanceof Document);
   const outlines = getOutlineElements(doc);
   for(const outline of outlines) {
-    if(!opmlOutlineElementHasXMLURL(outline)) {
+    if(!OPMLOutline.elementHasXMLURL(outline)) {
       outline.remove();
     }
   }
@@ -103,12 +97,12 @@ export function opmlNormalizeOutlineXMLURLs(doc) {
   assert(doc instanceof Document);
   const outlines = getOutlineElements(doc);
   for(const outline of outlines) {
-    opmlOutlineElementNormalizeXMLURL(outline);
+    OPMLOutline.elementNormalizeXMLURL(outline);
   }
 }
 
 export function opmlDocumentAppendOutlineObject(doc, outline) {
-  appendOutlineElement(doc, opmlOutlineToElement(doc, outline));
+  appendOutlineElement(doc, OPMLOutline.toElement(doc, outline));
 }
 
 function getOutlineElements(doc) {

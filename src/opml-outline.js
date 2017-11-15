@@ -1,19 +1,17 @@
 // OPML Outline utilities
 
-// TODO: drop the opml outline prefix, name conflicts are now a responsibility of the importing
-// module
 // TODO: I have mixed feelings about the dependency on feed. Perhaps it should be the other way
 // around, and feed should depend on this, and this should have no knowledge about feed format.
 
 import assert from "/src/assert.js";
 import * as Feed from "/src/feed.js";
 
-function opmlOutlineIsOutline(outline) {
+function isOutline(outline) {
   return typeof outline === 'object';
 }
 
-export function opmlOutlineToFeed(outline) {
-  assert(opmlOutlineIsOutline(outline));
+export function toFeed(outline) {
+  assert(isOutline(outline));
 
   const feed = {};
   if(outline.type) {
@@ -40,7 +38,7 @@ export function opmlOutlineToFeed(outline) {
   return feed;
 }
 
-export function opmlOutlineFromFeed(feed) {
+export function fromFeed(feed) {
   assert(Feed.isFeed(feed));
   const outline = {};
   outline.type = feed.type;
@@ -51,18 +49,18 @@ export function opmlOutlineFromFeed(feed) {
   return outline;
 }
 
-export function opmlOutlineElementHasValidType(element) {
+export function elementHasValidType(element) {
   assert(element instanceof Element);
   const TYPE_PATTERN = /\s*(rss|rdf|feed)\s*/i;
   return TYPE_PATTERN.test(element.getAttribute('type'));
 }
 
-export function opmlOutlineElementHasXMLURL(element) {
-  let xmlUrl = element.getAttribute('xmlUrl');
+export function elementHasXMLURL(element) {
+  const xmlUrl = element.getAttribute('xmlUrl');
   return xmlUrl && xmlUrl.trim();
 }
 
-export function opmlOutlineElementNormalizeXMLURL(element) {
+export function elementNormalizeXMLURL(element) {
   let url = element.getAttribute('xmlUrl');
   if(url) {
     try {
@@ -74,8 +72,8 @@ export function opmlOutlineElementNormalizeXMLURL(element) {
   }
 }
 
-export function opmlOutlineNormalizeHTMLURL(outline) {
-  assert(opmlOutlineIsOutline(outline));
+export function normalizeHTMLURL(outline) {
+  assert(isOutline(outline));
 
   if(outline.htmlUrl === undefined) {
     return;
@@ -101,9 +99,9 @@ export function opmlOutlineNormalizeHTMLURL(outline) {
   }
 }
 
-export function opmlOutlineToElement(doc, outline) {
+export function toElement(doc, outline) {
   assert(doc instanceof Document);
-  assert(opmlOutlineIsOutline(outline));
+  assert(isOutline(outline));
 
   const element = doc.createElement('outline');
   if(outline.type) {
@@ -133,7 +131,7 @@ export function opmlOutlineToElement(doc, outline) {
   return element;
 }
 
-export function opmlOutlineElementToObject(element) {
+export function fromElement(element) {
   const object = {};
   object.description = element.getAttribute('description');
   object.htmlUrl = element.getAttribute('htmlUrl');

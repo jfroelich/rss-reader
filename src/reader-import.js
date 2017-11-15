@@ -11,7 +11,10 @@ import {
   opmlRemoveOutlinesMissingXMLURLs,
   opmlGetOutlineObjects,
 } from "/src/opml-document.js";
-import {opmlOutlineNormalizeHTMLURL, opmlOutlineToFeed} from "/src/opml-outline.js";
+import {
+  normalizeHTMLURL as opmlOutlineNormalizeHTMLURL,
+  toFeed as opmlOutlineToFeed
+} from "/src/opml-outline.js";
 import parseOPML from "/src/parse-opml";
 import {promiseEvery} from "/src/promise.js";
 import * as rdb from "/src/rdb.js";
