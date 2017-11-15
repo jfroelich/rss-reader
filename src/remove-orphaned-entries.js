@@ -1,7 +1,7 @@
 // Scans the database for orphaned entries and removes them
 
 import assert from "/src/assert.js";
-import {feedIsValidId} from "/src/feed.js";
+import * as Feed from "/src/feed.js";
 import * as rdb from "/src/rdb.js";
 
 // Removes entries not linked to a feed from the database
@@ -13,7 +13,7 @@ export default async function removeOrphanedEntries(conn, limit) {
 
   function isOrphan(entry) {
     const id = entry.feed;
-    return !id || !feedIsValidId(id) || !feedIds.includes(id);
+    return !id || !Feed.isValidId(id) || !feedIds.includes(id);
   }
 
   const entries = await rdb.findEntries(conn, isOrphan, limit);

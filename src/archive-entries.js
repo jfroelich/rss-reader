@@ -1,7 +1,7 @@
 // Scans entries in the database and archives some of them
 
 import assert from "/src/assert.js";
-import {ENTRY_STATE_ARCHIVED} from "/src/entry.js";
+import * as Entry from "/src/entry.js";
 import {isPosInt} from "/src/number.js";
 import * as rdb from "/src/rdb.js";
 import sizeof from "/src/sizeof.js";
@@ -78,7 +78,7 @@ function compactEntry(entry) {
   ce.id = entry.id;
   ce.readState = entry.readState;
   ce.urls = entry.urls;
-  ce.archiveState = ENTRY_STATE_ARCHIVED;
+  ce.archiveState = Entry.STATE_ARCHIVED;
   ce.dateArchived = new Date();
   return ce;
 }

@@ -5,11 +5,10 @@
 // TODO: after module transition rename non-exported globals
 
 import assert from "/src/assert.js";
-import {entryAppendURL, entryHasURL, entryIsEntry} from "/src/entry.js";
-import {feedAppendURL} from "/src/feed.js";
+import * as Entry from "/src/entry.js";
+import * as Feed from "/src/feed.js";
 import {FeedParser} from "/src/feed-parser.js";
 import {isCanonicalURLString} from "/src/url-string.js";
-
 
 // Parses an xml input string representing a feed. Returns a result with a
 // feed object and an array of entries.
@@ -18,7 +17,7 @@ export function readerParseFeed(xmlString, requestURL, responseURL, lastModDate,
   const parser = new FeedParser();
   const parseResult = parser.parseFromString(xmlString);
   const feed = parseResult.feed;
-  readerParseFeedSetupFeed(feed, requestURL, responseURL, lastModDate);
+  setupFeed(feed, requestURL, responseURL, lastModDate);
   result.feed = feed;
 
   let baseURL;
@@ -31,21 +30,20 @@ export function readerParseFeed(xmlString, requestURL, responseURL, lastModDate,
   if(processEntries) {
     let entries = parseResult.entries;
     for(const entry of entries) {
-      readerParseFeedResolve(entry, baseURL);
-      readerParseFeedCoerceEntry(entry);
+      resolveFeed(entry, baseURL);
+      coerceEntry(entry);
     }
 
-    result.entries = readerParseFeedDedup(entries);
+    result.entries = dedupEntries(entries);
   }
 
   return result;
 }
 
-function readerParseFeedSetupFeed(feed, requestURL, responseURL, lastModDate) {
-
+function setupFeed(feed, requestURL, responseURL, lastModDate) {
   // Compose fetch urls as the initial feed urls
-  feedAppendURL(feed, requestURL);
-  feedAppendURL(feed, responseURL);
+  Feed.appendURL(feed, requestURL);
+  Feed.appendURL(feed, responseURL);
 
   // Normalize feed link if set and valid, otherwise set to undefined
   if(feed.link && isCanonicalURLString(feed.link)) {
@@ -71,8 +69,8 @@ function readerParseFeedSetupFeed(feed, requestURL, responseURL, lastModDate) {
 
 // If the entry has a link property, canonicalize and normalize it
 // baseURL is optional, generally should be feed.link
-function readerParseFeedResolve(entry, baseURL) {
-  assert(entryIsEntry(entry));
+function resolveFeed(entry, baseURL) {
+  assert(Entry.isEntry(entry));
   if(entry.link) {
     try {
       const url = new URL(entry.link, baseURL);
@@ -87,10 +85,10 @@ function readerParseFeedResolve(entry, baseURL) {
 // entries are fetched as objects with a link property. for each entry that
 // has a link, convert it into the app's storage format that uses a urls
 // array. this tolerates entries that do not have links
-function readerParseFeedCoerceEntry(entry) {
+function coerceEntry(entry) {
   if(entry.link) {
     try {
-      entryAppendURL(entry, entry.link);
+      Entry.appendURL(entry, entry.link);
     } catch(error) {
       console.warn('failed to coerce link to url', entry.link);
     }
@@ -100,14 +98,14 @@ function readerParseFeedCoerceEntry(entry) {
 }
 
 // Filter duplicate entries by comparing urls
-function readerParseFeedDedup(entries) {
+function dedupEntries(entries) {
   const distinctEntries = [];
   const seenURLs = [];
 
   for(const entry of entries) {
 
     // Retain entries without urls in the output without comparison
-    if(!entryHasURL(entry)) {
+    if(!Entry.hasURL(entry)) {
       distinctEntries.push(entry);
       continue;
     }

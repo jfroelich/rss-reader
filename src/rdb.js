@@ -1,14 +1,8 @@
 // Module for interacting with the app indexedDB database
 
 import assert from "/src/assert.js";
-import {
-  entryIsEntry,
-  entryIsValidId,
-  ENTRY_STATE_READ,
-  ENTRY_STATE_UNREAD,
-  ENTRY_STATE_UNARCHIVED
-} from "/src/entry.js";
-import {feedIsFeed, feedIsValidId} from "/src/feed.js";
+import * as Entry from "/src/entry.js";
+import * as Feed from "/src/feed.js";
 import * as idb from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
 import {isValidURLString} from "/src/url-string.js";
@@ -103,7 +97,7 @@ export function countUnreadEntries(conn) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('readState');
-    const request = index.count(ENTRY_STATE_UNREAD);
+    const request = index.count(Entry.STATE_UNREAD);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -116,7 +110,7 @@ export function countUnreadEntries(conn) {
 // if no matching entry was found
 export function findEntryById(conn, id) {
   assert(idb.isOpen(conn));
-  assert(entryIsValidId(id));
+  assert(Entry.isValidId(id));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -144,7 +138,7 @@ export function findEntryByURL(conn, url) {
 
 export function findEntryIdsByFeedId(conn, feedId) {
   assert(idb.isOpen(conn));
-  assert(feedIsValidId(feedId));
+  assert(Feed.isValidId(feedId));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -157,7 +151,7 @@ export function findEntryIdsByFeedId(conn, feedId) {
 
 export function findFeedById(conn, feedId) {
   assert(idb.isOpen(conn));
-  assert(feedIsValidId(feedId));
+  assert(Feed.isValidId(feedId));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -271,7 +265,7 @@ export function findArchivableEntries(conn, predicate, limit) {
 
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
+    const keyPath = [Entry.STATE_UNARCHIVED, Entry.STATE_READ];
     const request = index.openCursor(keyPath);
     request.onsuccess = function(event) {
       const cursor = event.target.result;
@@ -310,7 +304,7 @@ export function getUnarchivedUnreadEntries(conn, offset, limit) {
 
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
+    const keyPath = [Entry.STATE_UNARCHIVED, Entry.STATE_UNREAD];
     const request = index.openCursor(keyPath);
     request.onsuccess = function requestOnsuccess(event) {
       const cursor = event.target.result;
@@ -331,7 +325,7 @@ export function getUnarchivedUnreadEntries(conn, offset, limit) {
 
 export function removeFeedAndEntries(conn, feedId, entryIds) {
   assert(idb.isOpen(conn));
-  assert(feedIsValidId(feedId));
+  assert(Feed.isValidId(feedId));
   assert(Array.isArray(entryIds));
 
   return new Promise(function executor(resolve, reject) {
@@ -351,7 +345,7 @@ export function removeFeedAndEntries(conn, feedId, entryIds) {
 
 export function putEntry(conn, entry) {
   assert(idb.isOpen(conn));
-  assert(entryIsEntry(entry));
+  assert(Entry.isEntry(entry));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
@@ -387,7 +381,7 @@ export function putEntries(conn, entries) {
 // @param feed {Object} the feed object to add
 export function putFeed(conn, feed) {
   assert(idb.isOpen(conn));
-  assert(feedIsFeed(feed));
+  assert(Feed.isFeed(feed));
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');

@@ -2,7 +2,7 @@
 
 import assert from "/src/assert.js";
 import {queryIdleState, showNotification} from "/src/extension.js";
-import {feedIsFeed, feedMerge, feedPeekURL} from "/src/feed.js";
+import * as Feed from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
 import {pollEntry, PollEntryContext} from "/src/poll-entry.js";
 import {promiseEvery} from "/src/promise.js";
@@ -98,7 +98,7 @@ function isPollableFeed(feed, recencyPeriodMs) {
   if(elapsed < recencyPeriodMs) {
     // A feed has been polled too recently if not enough time has elasped from
     // the last time the feed was polled.
-    console.debug('feed polled too recently', feedPeekURL(feed));
+    console.debug('feed polled too recently', Feed.peekURL(feed));
     return false;
   }
 
@@ -106,10 +106,10 @@ function isPollableFeed(feed, recencyPeriodMs) {
 }
 
 async function pollFeed(feed, pfc) {
-  assert(feedIsFeed(feed));
+  assert(Feed.isFeed(feed));
   assert(pfc instanceof PollFeedsContext);
 
-  const url = feedPeekURL(feed);
+  const url = Feed.peekURL(feed);
   const response = await fetchFeed(url, pfc.fetchFeedTimeoutMs, pfc.acceptHTML);
 
   if(!pfc.ignoreModifiedCheck && feed.dateUpdated && feed.dateLastModified &&
@@ -125,7 +125,7 @@ async function pollFeed(feed, pfc) {
   const parseResult = readerParseFeed(feedXML, url, response.responseURL, response.lastModifiedDate,
     PROCESS_ENTRIES);
 
-  const mergedFeed = feedMerge(feed, parseResult.feed);
+  const mergedFeed = Feed.merge(feed, parseResult.feed);
   const storedFeed = await feedPut(mergedFeed, pfc.readerConn);
   const entries = parseResult.entries;
 

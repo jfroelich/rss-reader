@@ -6,20 +6,17 @@ import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/errors.js";
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
-import {feedCreateIconLookupURL, feedHasURL, feedIsFeed} from "/src/feed.js";
-import {
-  getFeeds as readerDbGetFeeds,
-  isOpen as readerDbIsOpen
-} from "/src/rdb.js";
+import * as Feed from "/src/feed.js";
+import * as rdb from "/src/rdb.js";
 import {feedPut} from "/src/reader-storage.js";
 
 // Scans through all the feeds in the database and attempts to update each
 // feed's favicon property.
 export default async function refreshFeedIcons(readerConn, iconConn) {
-  assert(readerDbIsOpen(readerConn));
-  assert(readerDbIsOpen(iconConn));
+  assert(rdb.isOpen(readerConn));
+  assert(rdb.isOpen(iconConn));
 
-  const feeds = await readerDbGetFeeds(readerConn);
+  const feeds = await rdb.getFeeds(readerConn);
 
   // This controls the feed object for its lifetime locally so there is no need
   // to prepare the feed before storing it back in the database
@@ -45,8 +42,8 @@ export default async function refreshFeedIcons(readerConn, iconConn) {
 // @throws AssertionError
 // @throws Error - database related
 async function updateFeedIcon(feed, readerConn, iconConn, skipPrep) {
-  assert(feedIsFeed(feed));
-  assert(feedHasURL(feed));
+  assert(Feed.isFeed(feed));
+  assert(Feed.hasURL(feed));
 
   // TODO: abstract the lookup section of this function into a local helper function
 
@@ -54,7 +51,7 @@ async function updateFeedIcon(feed, readerConn, iconConn, skipPrep) {
   query.cache = new FaviconCache();
   query.cache.conn = iconConn;
 
-  const url = feedCreateIconLookupURL(feed);
+  const url = Feed.createIconLookupURL(feed);
   assert(url);
 
   let iconURL;
@@ -72,6 +69,7 @@ async function updateFeedIcon(feed, readerConn, iconConn, skipPrep) {
 
   // For some reason, this section of code always feels confusing, so I've made it extremely
   // explicit
+  // TODO: remove debugging after further testing
 
   if(prevIconURL && iconURL && prevIconURL !== iconURL) {
     console.debug('feed with favicon changed favicon %s', iconURL);

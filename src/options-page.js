@@ -1,20 +1,17 @@
 // Options page view module
 
 import assert from "/src/assert.js";
+import {fadeElement} from "/src/dom.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {
   hasBrowserPermission,
   requestBrowserPermission,
   removeBrowserPermission
 } from "/src/extension.js";
-import {feedAppendURL, feedIsValidId, feedPeekURL} from "/src/feed.js";
+import * as Feed from "/src/feed.js";
 import FONTS from "/src/fonts.js";
 import {truncate as htmlTruncate} from "/src/html.js";
 import * as mime from "/src/mime.js";
-import {
-  optionsPageErrorMessageHide,
-  optionsPageErrorMessageShow
-} from "/src/options-page-error-message.js";
 import {optionsPageExportOPML} from "/src/options-page-export-opml.js";
 import OPTIONS_PAGE_IMAGE_PATHS from "/src/options-page-image-paths.js";
 import {
@@ -28,19 +25,19 @@ import {parseInt10} from "/src/string.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
 
 
-// Navigation tracking
-let optionsPageCurrentMenuItem;
-let optionsPageCurrentSectionElement;
+// View state
+let currentMenuItem;
+let currentSection;
 
-const optionsPageSettingsChannel = new BroadcastChannel('settings');
-optionsPageSettingsChannel.onmessage = function(event) {
+const settingsChannel = new BroadcastChannel('settings');
+settingsChannel.onmessage = function(event) {
   console.debug('received settings channel message:', event);
   if(event.data === 'changed') {
     entryCSSOnChange(event);
   }
 };
 
-optionsPageSettingsChannel.onmessageerror = function(event) {
+settingsChannel.onmessageerror = function(event) {
   console.error(event);
 };
 
@@ -51,22 +48,63 @@ function dispatchSettingsChangedEvent() {
   // HACK: for now, hard call
   entryCSSOnChange();
 
-  optionsPageSettingsChannel.postMessage('changed');
+  settingsChannel.postMessage('changed');
+}
+
+export function errorMessageShow(message, fade) {
+  errorMessageHide();
+
+  const errorElement = document.createElement('div');
+  errorElement.setAttribute('id','options-error-message');
+
+  const messageElement = document.createElement('span');
+  messageElement.textContent = message;
+  errorElement.appendChild(messageElement);
+
+  const dismissButton = document.createElement('button');
+  dismissButton.setAttribute('id', 'dismiss-error-button');
+  dismissButton.textContent = 'Dismiss';
+  dismissButton.onclick = errorMessageHide;
+  errorElement.appendChild(dismissButton);
+
+  if(fade) {
+    errorElement.style.opacity = '0';
+    document.body.appendChild(errorElement);
+    const duration = 1, delay = 0;
+    fadeElement(container, duration, delay);
+  } else {
+    errorElement.style.opacity = '1';
+    errorElement.style.display = 'block';
+    document.body.appendChild(errorElement);
+  }
+}
+
+export function errorMessageHide() {
+  const errorMessageElement = document.getElementById('options-error-message');
+  if(!errorMessageElement) {
+    return;
+  }
+
+  const dismissButton = document.getElementById('dismiss-error-button');
+  if(dismissButton) {
+    dismissButton.removeEventListener('click', errorMessageHide);
+  }
+  errorMessageElement.remove();
 }
 
 function showSection(menuItemElement) {
   assert(menuItemElement);
 
-  if(optionsPageCurrentMenuItem === menuItemElement) {
+  if(currentMenuItem === menuItemElement) {
     return;
   }
 
-  if(optionsPageCurrentMenuItem) {
-    optionsPageCurrentMenuItem.classList.remove('navigation-item-selected');
+  if(currentMenuItem) {
+    currentMenuItem.classList.remove('navigation-item-selected');
   }
 
-  if(optionsPageCurrentSectionElement) {
-    optionsPageCurrentSectionElement.style.display = 'none';
+  if(currentSection) {
+    currentSection.style.display = 'none';
   }
 
   menuItemElement.classList.add('navigation-item-selected');
@@ -79,15 +117,15 @@ function showSection(menuItemElement) {
   sectionElement.style.display = 'block';
 
   // Update the global tracking vars
-  optionsPageCurrentMenuItem = menuItemElement;
-  optionsPageCurrentSectionElement = sectionElement;
+  currentMenuItem = menuItemElement;
+  currentSection = sectionElement;
 }
 
-function optionsPageShowSectionId(id) {
+function showSectionById(id) {
   showSection(document.getElementById(id));
 }
 
-function optionsPageUpdateFeedCount() {
+function updateFeedCount() {
   const feedListElement = document.getElementById('feedlist');
   const count = feedListElement.childElementCount;
   const feedCountElement = document.getElementById('subscription-count');
@@ -98,7 +136,7 @@ function optionsPageUpdateFeedCount() {
   }
 }
 
-function optionsPageFeedListAppendFeed(feed) {
+function feedListAppendFeed(feed) {
   const itemElement = document.createElement('li');
   itemElement.setAttribute('sort-key', feed.title);
 
@@ -110,7 +148,7 @@ function optionsPageFeedListAppendFeed(feed) {
     itemElement.setAttribute('title', feed.description);
   }
 
-  itemElement.onclick = optionsPageFeedListItemOnclick;
+  itemElement.onclick = feedListItemOnclick;
 
   if(feed.faviconURLString) {
     const faviconElement = document.createElement('img');
@@ -154,16 +192,16 @@ function optionsPageFeedListAppendFeed(feed) {
   }
 
   assert(inserted);
-  optionsPageUpdateFeedCount();
+  updateFeedCount();
 }
 
-async function optionsPageFeedListItemOnclick(event) {
+async function feedListItemOnclick(event) {
   // Use current target to capture the element with the feed attribute
   const feedListItem = event.currentTarget;
   const feedIdString = feedListItem.getAttribute('feed');
   const feedIdNumber = parseInt10(feedIdString);
 
-  // TODO: assert using feedIsValidId
+  // TODO: assert using Feed.isValidId
   assert(!isNaN(feedIdNumber));
 
   // Load feed details from the database
@@ -203,7 +241,7 @@ async function optionsPageFeedListItemOnclick(event) {
   }
 
   const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = feedPeekURL(feed);
+  feedURLElement.textContent = Feed.peekURL(feed);
   const feedLinkElement = document.getElementById('details-feed-link');
   feedLinkElement.textContent = feed.link || '';
   const unsubscribeButton = document.getElementById('details-unsubscribe');
@@ -212,13 +250,13 @@ async function optionsPageFeedListItemOnclick(event) {
   // TODO: show num entries, num unread/red, etc
   // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 
-  optionsPageShowSectionId('mi-feed-details');
+  showSectionById('mi-feed-details');
 
   // Ensure the details are visible
   window.scrollTo(0,0);
 }
 
-async function optionsPageSubscribeFormOnSubmit(event) {
+async function subscribeFormOnsubmit(event) {
   event.preventDefault();
 
   const monitorElement = document.getElementById('submon');
@@ -260,8 +298,8 @@ async function optionsPageSubscribeFormOnSubmit(event) {
   // from user input, and would have failed earlier.
   optionsPageSubscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
 
-  const feed = feedCreate();
-  feedAppendURL(feed, url.href);
+  const feed = Feed.create();
+  Feed.appendURL(feed, url.href);
 
   let subscribedFeed;
 
@@ -280,21 +318,21 @@ async function optionsPageSubscribeFormOnSubmit(event) {
   }
 
   assert(subscribedFeed);
-  optionsPageFeedListAppendFeed(subscribedFeed);
-  const feedURL = feedPeekURL(subscribedFeed);
+  feedListAppendFeed(subscribedFeed);
+  const feedURL = Feed.peekURL(subscribedFeed);
 
   // This is safe. feedURL comes from a string that has undergone
   // deserialization into a URL object and back to a string. Unsafe user input
   // would have triggered a parsing error.
   optionsPageSubscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
   optionsPageSubscriptionMonitorHide();
-  optionsPageShowSectionId('subs-list-section');
+  showSectionById('subs-list-section');
 
   // Signal form should not be submitted
   return false;
 }
 
-async function optionsPageFeedListInit() {
+async function feedListInit() {
   const noFeedsElement = document.getElementById('nosubs');
   const feedListElement = document.getElementById('feedlist');
   let conn, feeds;
@@ -327,7 +365,7 @@ async function optionsPageFeedListInit() {
   });
 
   for(let feed of feeds) {
-    optionsPageFeedListAppendFeed(feed);
+    feedListAppendFeed(feed);
   }
 
   if(!feeds.length) {
@@ -340,17 +378,17 @@ async function optionsPageFeedListInit() {
 }
 
 // @param feedId {Number}
-function optionsPageFeedListRemoveFeed(feedId) {
+function feedListRemoveFeed(feedId) {
   const feedElement = document.querySelector(
     `#feedlist li[feed="${feedId}"]`);
 
   assert(feedElement);
 
-  feedElement.removeEventListener('click', optionsPageFeedListItemOnclick);
+  feedElement.removeEventListener('click', feedListItemOnclick);
   feedElement.remove();
 
   // Upon removing the feed, update the displayed number of feeds.
-  optionsPageUpdateFeedCount();
+  updateFeedCount();
 
   // Upon removing the feed, update the state of the feed list.
   // If the feed list has no items, hide it and show a message instead
@@ -363,9 +401,9 @@ function optionsPageFeedListRemoveFeed(feedId) {
   }
 }
 
-async function optionsPageUnsubscribeButtonOnclick(event) {
+async function unsubscribeButtonOnclick(event) {
   const feedId = parseInt10(event.target.value);
-  assert(feedIsValidId(feedId));
+  assert(Feed.isValidId(feedId));
   const request = new SubscribeRequest();
   try {
     request.readerConn = await rdb.open();
@@ -378,19 +416,19 @@ async function optionsPageUnsubscribeButtonOnclick(event) {
     rdb.close(request.readerConn);
   }
 
-  optionsPageFeedListRemoveFeed(feedId);
-  optionsPageShowSectionId('subs-list-section');
+  feedListRemoveFeed(feedId);
+  showSectionById('subs-list-section');
 }
 
-function optionsPageImportOPMLButtonOnclick(event) {
+function importOPMLButtonOnclick(event) {
   const uploaderInput = document.createElement('input');
   uploaderInput.setAttribute('type', 'file');
   uploaderInput.setAttribute('accept', mime.XML);
-  uploaderInput.addEventListener('change', optionsPageImportOPMLUploaderOnchange);
+  uploaderInput.addEventListener('change', importOPMLInputOnchange);
   uploaderInput.click();
 }
 
-async function optionsPageImportOPMLUploaderOnchange(event) {
+async function importOPMLInputOnchange(event) {
   // TODO: show operation started
 
   const uploaderInput = event.target;
@@ -407,7 +445,7 @@ async function optionsPageImportOPMLUploaderOnchange(event) {
   // TODO: refresh feed list
 }
 
-async function optionsPageExportOPMLButtonOnclick(event) {
+async function exportOPMLButtonOnclick(event) {
   try {
     await optionsPageExportOPML();
   } catch(error) {
@@ -430,7 +468,7 @@ function enableNotificationsCheckboxOnclick(event) {
   }
 }
 
-function optionsPageEnableBgProcessingCheckboxOnclick(event) {
+function enableBgProcessingCheckboxOnclick(event) {
   if(event.target.checked) {
     requestBrowserPermission('background');
   } else {
@@ -438,18 +476,18 @@ function optionsPageEnableBgProcessingCheckboxOnclick(event) {
   }
 }
 
-async function initBgProcessingCheckbox() {
+async function bgProcessingCheckboxInit() {
   const checkbox = document.getElementById('enable-background');
   assert(checkbox);
 
   // TODO: this should be using a local storage variable and instead the
   // permission should be permanently defined.
 
-  checkbox.onclick = optionsPageEnableBgProcessingCheckboxOnclick;
+  checkbox.onclick = enableBgProcessingCheckboxOnclick;
   checkbox.checked = await hasBrowserPermission('background');
 }
 
-function optionsPageRestrictIdlePollingCheckboxOnclick(event) {
+function restrictIdlePollingCheckboxOnclick(event) {
   if(event.target.checked) {
     localStorage.ONLY_POLL_IF_IDLE = '1';
   } else {
@@ -457,7 +495,7 @@ function optionsPageRestrictIdlePollingCheckboxOnclick(event) {
   }
 }
 
-function optionsPageBgImageMenuOnchange(event) {
+function bgImageMenuOnchange(event) {
   const path = event.target.value;
   if(path) {
     localStorage.BG_IMAGE = path;
@@ -468,7 +506,7 @@ function optionsPageBgImageMenuOnchange(event) {
   dispatchSettingsChangedEvent();
 }
 
-function optionsPageHeaderFontMenuOnchange(event){
+function headerFontMenuOnchange(event){
   const font = event.target.value;
   if(font) {
     localStorage.HEADER_FONT_FAMILY = font;
@@ -479,7 +517,7 @@ function optionsPageHeaderFontMenuOnchange(event){
   dispatchSettingsChangedEvent();
 }
 
-function optionsPageBodyFontMenuOnchange(event) {
+function bodyFontMenuOnchange(event) {
   const font = event.target.value;
   if(font) {
     localStorage.BODY_FONT_FAMILY = font;
@@ -490,7 +528,7 @@ function optionsPageBodyFontMenuOnchange(event) {
   dispatchSettingsChangedEvent();
 }
 
-function optionsPageColumnCountMenuOnchange(event) {
+function columnCountMenuOnchange(event) {
   const count = event.target.value;
   if(count) {
     localStorage.COLUMN_COUNT = count;
@@ -501,7 +539,7 @@ function optionsPageColumnCountMenuOnchange(event) {
   dispatchSettingsChangedEvent();
 }
 
-function optionsPageEntryBgColorInputOninput(event) {
+function entryBgColorInputOninput(event) {
   const color = event.target.value;
   if(color) {
     localStorage.BG_COLOR = color;
@@ -512,9 +550,9 @@ function optionsPageEntryBgColorInputOninput(event) {
   dispatchSettingsChangedEvent();
 }
 
-function optionsPageEntryMarginSliderOnchange(event) {
+function entryMarginSliderOnchange(event) {
   const margin = event.target.value;
-  console.log('optionsPageEntryMarginSliderOnchange new value', margin);
+  console.log('entryMarginSliderOnchange new value', margin);
 
   if(margin) {
     localStorage.PADDING = margin;
@@ -525,7 +563,7 @@ function optionsPageEntryMarginSliderOnchange(event) {
   dispatchSettingsChangedEvent();
 }
 
-function optionsPageHeaderFontSizeSliderOnchange(event) {
+function headerFontSizeSliderOnchange(event) {
   const size = event.target.value;
   if(size) {
     localStorage.HEADER_FONT_SIZE = size;
@@ -536,7 +574,7 @@ function optionsPageHeaderFontSizeSliderOnchange(event) {
   dispatchSettingsChangedEvent();
 }
 
-function optionsPageBodyFontSizeSliderOnchange(event) {
+function bodyFontSizeSliderOnchange(event) {
   const size = event.target.value;
   if(size) {
     localStorage.BODY_FONT_SIZE = size;
@@ -547,7 +585,7 @@ function optionsPageBodyFontSizeSliderOnchange(event) {
   dispatchSettingsChangedEvent();
 }
 
-function optionsPageJustifyTextCheckboxOnchange(event) {
+function justifyTextCheckboxOnchange(event) {
   if(event.target.checked) {
     localStorage.JUSTIFY_TEXT = '1';
   } else {
@@ -557,7 +595,7 @@ function optionsPageJustifyTextCheckboxOnchange(event) {
   dispatchSettingsChangedEvent();
 }
 
-function optionsPageBodyHeightInputOninput(event) {
+function bodyHeightInputOninput(event) {
   const height = event.target.value;
   if(height) {
     localStorage.BODY_LINE_HEIGHT = height;
@@ -586,32 +624,32 @@ const enableNotificationsCheckbox = document.getElementById('enable-notification
 enableNotificationsCheckbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
 enableNotificationsCheckbox.onclick = enableNotificationsCheckboxOnclick;
 
-initBgProcessingCheckbox();
+bgProcessingCheckboxInit();
 
 const enableRestrictIdlePollingCheckbox = document.getElementById('enable-idle-check');
 enableRestrictIdlePollingCheckbox.checked = 'ONLY_POLL_IF_IDLE' in localStorage;
-enableRestrictIdlePollingCheckbox.onclick = optionsPageRestrictIdlePollingCheckboxOnclick;
+enableRestrictIdlePollingCheckbox.onclick = restrictIdlePollingCheckboxOnclick;
 
 const exportOPMLButton = document.getElementById('button-export-opml');
-exportOPMLButton.onclick = optionsPageExportOPMLButtonOnclick;
+exportOPMLButton.onclick = exportOPMLButtonOnclick;
 const importOPMLButton = document.getElementById('button-import-opml');
-importOPMLButton.onclick = optionsPageImportOPMLButtonOnclick;
+importOPMLButton.onclick = importOPMLButtonOnclick;
 
-optionsPageFeedListInit();
+feedListInit();
 
 // Init feed details section unsubscribe button click handler
 const unsubscribeButton = document.getElementById('details-unsubscribe');
-unsubscribeButton.onclick = optionsPageUnsubscribeButtonOnclick;
+unsubscribeButton.onclick = unsubscribeButtonOnclick;
 
 // Init the subscription form section
 const subscriptionForm = document.getElementById('subscription-form');
-subscriptionForm.onsubmit = optionsPageSubscribeFormOnSubmit;
+subscriptionForm.onsubmit = subscribeFormOnsubmit;
 
 
 // Init background image menu
 {
   const backgroundImageMenu = document.getElementById('entry-background-image');
-  backgroundImageMenu.onchange = optionsPageBgImageMenuOnchange;
+  backgroundImageMenu.onchange = bgImageMenuOnchange;
   let option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
@@ -630,7 +668,7 @@ subscriptionForm.onsubmit = optionsPageSubscribeFormOnSubmit;
 
 {
   const headerFontMenu = document.getElementById('select-header-font');
-  headerFontMenu.onchange = optionsPageHeaderFontMenuOnchange;
+  headerFontMenu.onchange = headerFontMenuOnchange;
   let option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
   headerFontMenu.appendChild(option);
@@ -646,7 +684,7 @@ subscriptionForm.onsubmit = optionsPageSubscribeFormOnSubmit;
 
 {
   const bodyFontMenu = document.getElementById('select-body-font');
-  bodyFontMenu.onchange = optionsPageBodyFontMenuOnchange;
+  bodyFontMenu.onchange = bodyFontMenuOnchange;
   let option = document.createElement('option');
   option.textContent = 'Use Chrome font settings';
   bodyFontMenu.appendChild(option);
@@ -663,7 +701,7 @@ subscriptionForm.onsubmit = optionsPageSubscribeFormOnSubmit;
 
 {
   const columnCountMenu = document.getElementById('column-count');
-  columnCountMenu.onchange = optionsPageColumnCountMenuOnchange;
+  columnCountMenu.onchange = columnCountMenuOnchange;
   const columnCounts = ['1', '2', '3'];
   const currentColumnCount = localStorage.COLUMN_COUNT
   for(const columnCount of columnCounts) {
@@ -677,26 +715,26 @@ subscriptionForm.onsubmit = optionsPageSubscribeFormOnSubmit;
 
 const bgColorInput = document.getElementById('entry-background-color');
 bgColorInput.value = localStorage.BG_COLOR || '';
-bgColorInput.oninput = optionsPageEntryBgColorInputOninput;
+bgColorInput.oninput = entryBgColorInputOninput;
 
 const marginInput = document.getElementById('entry-margin');
 marginInput.value = localStorage.PADDING || '10';
-marginInput.onchange = optionsPageEntryMarginSliderOnchange;
+marginInput.onchange = entryMarginSliderOnchange;
 
 const headerFontSizeInput = document.getElementById('header-font-size');
 headerFontSizeInput.value = localStorage.HEADER_FONT_SIZE || '1';
-headerFontSizeInput.onchange = optionsPageHeaderFontSizeSliderOnchange;
+headerFontSizeInput.onchange = headerFontSizeSliderOnchange;
 
 const bodyFontSizeInput = document.getElementById('body-font-size');
 bodyFontSizeInput.value = localStorage.BODY_FONT_SIZE || '1';
-bodyFontSizeInput.onchange = optionsPageBodyFontSizeSliderOnchange;
+bodyFontSizeInput.onchange = bodyFontSizeSliderOnchange;
 
 const justifyTextCheckbox = document.getElementById('justify-text');
 justifyTextCheckbox.checked = 'JUSTIFY_TEXT' in localStorage;
-justifyTextCheckbox.onchange = optionsPageJustifyTextCheckboxOnchange;
+justifyTextCheckbox.onchange = justifyTextCheckboxOnchange;
 
 const bodyLineHeightInput = document.getElementById('body-line-height');
-bodyLineHeightInput.oninput = optionsPageBodyHeightInputOninput;
+bodyLineHeightInput.oninput = bodyHeightInputOninput;
 const bodyLineHeightNumber = parseInt10(localStorage.BODY_LINE_HEIGHT) || 10;
 if(!isNaN(bodyLineHeightNumber)) {
   bodyLineHeightInput.value = (bodyLineHeightNumber / 10).toFixed(2);
@@ -714,4 +752,4 @@ extDescriptionElement.textContent = manifest.description || '';
 const extURLElement = document.getElementById('extension-homepage');
 extURLElement.textContent = manifest.homepage_url;
 
-optionsPageShowSectionId('subs-list-section');
+showSectionById('subs-list-section');

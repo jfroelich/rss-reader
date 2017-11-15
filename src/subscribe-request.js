@@ -10,14 +10,7 @@ import {isUncheckedError, PermissionsError} from "/src/errors.js";
 import {showNotification} from "/src/extension.js";
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
-import {
-  feedCreateIconLookupURL,
-  feedHasURL,
-  feedIsFeed,
-  feedIsValidId,
-  feedMerge,
-  feedPeekURL
-} from "/src/feed.js";
+import * as Feed from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
 import isAllowedURL from "/src/fetch-policy.js";
 import {isOpen as isOpenDB} from "/src/idb.js";
@@ -66,11 +59,14 @@ export class SubscribeRequest {
   async subscribe(feed) {
     assert(rdb.isOpen(this.readerConn));
     assert(this.iconCache instanceof FaviconCache);
-    assert(isOpenDB(this.iconCache.conn));
-    assert(feedIsFeed(feed));
-    assert(feedHasURL(feed));
 
-    const url = feedPeekURL(feed);
+    // TODO: law of demeter violation, use this.iconCache.isOpen after implementing it
+    assert(isOpenDB(this.iconCache.conn));
+
+    assert(Feed.isFeed(feed));
+    assert(Feed.hasURL(feed));
+
+    const url = Feed.peekURL(feed);
 
     if(!isAllowedURL(url)) {
       throw new PermissionsError(url + ' is not permitted');
@@ -92,7 +88,7 @@ export class SubscribeRequest {
       const PROCESS_ENTRIES = false;
       const parseResult = readerParseFeed(xml, url, res.responseURL, res.lastModifiedDate,
         PROCESS_ENTRIES);
-      const mergedFeed = feedMerge(feed, parseResult.feed);
+      const mergedFeed = Feed.merge(feed, parseResult.feed);
       feed = mergedFeed;
     }
 
@@ -114,7 +110,7 @@ export class SubscribeRequest {
     }
 
     const title = 'Subscribed';
-    const feedName = feed.title || feedPeekURL(feed);
+    const feedName = feed.title || Feed.peekURL(feed);
     const message = 'Subscribed to ' + feedName;
     showNotification(title, message, feed.faviconURLString);
   }
@@ -123,7 +119,7 @@ export class SubscribeRequest {
     const query = new FaviconLookup();
     query.cache = this.iconCache;
     query.skipURLFetch = true;
-    const url = feedCreateIconLookupURL(feed);
+    const url = Feed.createIconLookupURL(feed);
     try {
       const iconURL = await query.lookup(url);
       feed.faviconURLString = iconURL;
@@ -150,7 +146,7 @@ export class SubscribeRequest {
   // @throws Error database-related
   async remove(feedId) {
     assert(rdb.isOpen(this.readerConn));
-    assert(feedIsValidId(feedId));
+    assert(Feed.isValidId(feedId));
     const entryIds = await rdb.findEntryIdsByFeedId(this.readerConn, feedId);
     await rdb.removeFeedAndEntries(this.readerConn, feedId, entryIds);
     await updateBadgeText(this.readerConn);

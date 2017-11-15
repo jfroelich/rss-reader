@@ -1,9 +1,8 @@
+// OPML Outline utilities
 
 import assert from "/src/assert.js";
-import {feedAppendURL, feedIsFeed, feedPeekURL} from "/src/feed.js";
+import * as Feed from "/src/feed.js";
 
-// TODO: create OPMLOutline?
-// TODO: deprecate in favor of caller using instanceof?
 function opmlOutlineIsOutline(outline) {
   return typeof outline === 'object';
 }
@@ -32,15 +31,15 @@ export function opmlOutlineToFeed(outline) {
     feed.link = outline.htmlUrl;
   }
 
-  feedAppendURL(feed, outline.xmlUrl);
+  Feed.appendURL(feed, outline.xmlUrl);
   return feed;
 }
 
 export function opmlOutlineFromFeed(feed) {
-  assert(feedIsFeed(feed));
+  assert(Feed.isFeed(feed));
   const outline = {};
   outline.type = feed.type;
-  outline.xmlUrl = feedPeekURL(feed);
+  outline.xmlUrl = Feed.peekURL(feed);
   outline.title = feed.title;
   outline.description = feed.description;
   outline.htmlUrl = feed.link;

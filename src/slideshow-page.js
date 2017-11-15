@@ -2,7 +2,7 @@
 
 import assert from "/src/assert.js";
 import {formatDate} from "/src/date.js";
-import {entryIsValidId, entryIsEntry, entryPeekURL} from "/src/entry.js";
+import * as Entry from "/src/entry.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import filterPublisher from "/src/filter-publisher.js";
@@ -69,7 +69,7 @@ async function markSlideRead(conn, slideElement) {
 
   const slideEntryAttributeValue = slideElement.getAttribute('entry');
   const entryId = parseInt10(slideEntryAttributeValue);
-  assert(entryIsValidId(entryId));
+  assert(Entry.isValidId(entryId));
 
   try {
     await entryMarkRead(conn, entryId);
@@ -104,7 +104,7 @@ async function appendSlides(conn) {
 
 // Add a new slide to the view.
 function appendSlide(entry) {
-  assert(entryIsEntry(entry));
+  assert(Entry.isEntry(entry));
 
   const containerElement = document.getElementById('slideshow-container');
   const slideElement = document.createElement('div');
@@ -153,9 +153,12 @@ function appendSlide(entry) {
 
 function createArticleTitleElement(entry) {
   const titleElement = document.createElement('a');
-  titleElement.setAttribute('href', entryPeekURL(entry));
+  titleElement.setAttribute('href', Entry.peekURL(entry));
   titleElement.setAttribute('class', 'entry-title');
+
+  // TODO: use _blank is discouraged. Need to use custom listener that opens new tab instead
   titleElement.setAttribute('target','_blank');
+
   titleElement.setAttribute('rel', 'noreferrer');
 
   if(entry.title) {

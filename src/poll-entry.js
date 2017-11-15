@@ -1,17 +1,13 @@
+// For polling an individual entry when polling feeds
 
 import assert from "/src/assert.js";
-import {
-  entryAppendURL,
-  entryHasURL,
-  entryIsEntry,
-  entryPeekURL
-} from "/src/entry.js";
+import * as Entry from "/src/entry.js";
 import {isUncheckedError} from "/src/errors.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {fetchHTML} from "/src/fetch.js";
 import filterDocument from "/src/filter-document.js";
 import parseHTML from "/src/parse-html.js";
-import {isOpen as readerDbIsOpen, findEntryByURL as readerDbFindEntryByURL} from "/src/rdb.js";
+import * as rdb from "/src/rdb.js";
 import {entryAdd} from "/src/reader-storage.js";
 import rewriteURL from "/src/rewrite-url.js";
 import {sniffIsBinaryURL} from "/src/url.js";
@@ -31,7 +27,7 @@ export class PollEntryContext {
 // @throws AssertionError
 export async function pollEntry(entry) {
   assert(this instanceof PollEntryContext);
-  assert(entryIsEntry(entry));
+  assert(Entry.isEntry(entry));
 
   // TEMP: researching undesired behavior. After fetch error either here or in
   // poll-feeds, I am not sure which, causes connection to be closed before calls to
@@ -39,17 +35,17 @@ export async function pollEntry(entry) {
   // to recent switch to module transition, I screwed something up and not sure what. Or this
   // error has always been present and I am only now experiencing it. I cannot reproduce
   // it easily at the moment.
-  if(!readerDbIsOpen(this.readerConn)) {
+  if(!rdb.isOpen(this.readerConn)) {
     console.warn('canceled pollEntry, readerConn connection not open');
     return;
   }
 
   // Cannot assume entry has url
-  if(!entryHasURL(entry)) {
+  if(!Entry.hasURL(entry)) {
     return false;
   }
 
-  let url = entryPeekURL(entry);
+  let url = Entry.peekURL(entry);
 
   // TODO: I think that by this point I should be able to assume that if the entry has a url,
   // then it is a valid url, because invalid urls are weeded out earlier. I should clarify that
@@ -61,11 +57,11 @@ export async function pollEntry(entry) {
 
   const rewrittenURL = rewriteURL(url);
   if(rewrittenURL && url !== rewrittenURL) {
-    entryAppendURL(entry, rewrittenURL);
+    Entry.appendURL(entry, rewrittenURL);
     url = rewrittenURL;
   }
 
-  if(!await pollEntryPollable(url, this.readerConn)) {
+  if(!await isPollableEntryURL(url, this.readerConn)) {
     return false;
   }
 
@@ -73,11 +69,11 @@ export async function pollEntry(entry) {
   let entryContent = entry.content;
   if(response) {
     if(response.redirected) {
-      if(!await pollEntryPollable(response.responseURL, this.readerConn)) {
+      if(!await isPollableEntryURL(response.responseURL, this.readerConn)) {
         return false;
       }
 
-      entryAppendURL(entry, response.responseURL);
+      Entry.appendURL(entry, response.responseURL);
       // TODO: attempt to rewrite the redirected url as well?
       url = response.responseURL;
     }
@@ -93,7 +89,7 @@ export async function pollEntry(entry) {
     if(isUncheckedError(error)) {
       throw error;
     } else {
-      // ignore parse error
+      // Ignore parse error
     }
   }
 
@@ -101,7 +97,7 @@ export async function pollEntry(entry) {
   const lookupDocument = response ? entryDocument : undefined;
 
   try {
-    await pollEntryUpdateIcon.call(this, entry, lookupDocument);
+    await updateEntryIcon.call(this, entry, lookupDocument);
   } catch(error) {
     // Ignore icon update failure
   }
@@ -139,26 +135,27 @@ async function pollEntryFetch(url, timeout) {
 
 // @param entry {Object} a feed entry
 // @param document {Document} optional, pre-fetched document
-async function pollEntryUpdateIcon(entry, document) {
-  assert(entryIsEntry(entry));
+async function updateEntryIcon(entry, document) {
+  assert(Entry.isEntry(entry));
   assert(this instanceof PollEntryContext);
 
   if(document) {
     assert(document instanceof Document);
   }
 
+  const pageURL = new URL(Entry.peekURL(entry);
+  let iconURL;
+
   const query = new FaviconLookup();
   query.cache = this.iconCache;
   query.skipURLFetch = true;
-
-  let iconURL;
   try {
-    iconURL = await query.lookup(new URL(entryPeekURL(entry)), document);
+    iconURL = await query.lookup(pageURL), document);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;
     } else {
-      console.debug(error);
+      console.debug(error);// temp
       // lookup error is non-fatal
       // fall through leaving iconURL undefined
     }
@@ -167,23 +164,24 @@ async function pollEntryUpdateIcon(entry, document) {
   entry.faviconURLString = iconURL || this.feedFaviconURL;
 }
 
-async function pollEntryPollable(url, conn) {
+// TODO: this should accept a URL object as input
+async function isPollableEntryURL(url, conn) {
   const urlObject = new URL(url);
   const hostname = urlObject.hostname;
 
-  if(pollEntryURLIsInterstitial(urlObject)) {
+  if(isInterstitialURL(urlObject)) {
     return false;
   }
 
-  if(pollEntryURLIsScripted(urlObject)) {
+  if(isScriptedURL(urlObject)) {
     return false;
   }
 
-  if(pollEntryURLIsPaywall(hostname)) {
+  if(isPaywallURL(hostname)) {
     return false;
   }
 
-  if(pollEntryURLRequiresCookie(hostname)) {
+  if(isRequiresCookieURL(hostname)) {
     return false;
   }
 
@@ -194,7 +192,7 @@ async function pollEntryPollable(url, conn) {
   // TODO: this should be a call to something like
   // readerStorageHasEntry that abstracts how entry comparison works
   try {
-    const exists = await readerDbFindEntryByURL(conn, url);
+    const exists = await rdb.findEntryByURL(conn, url);
     return !exists;
   } catch(error) {
     console.warn(error);
@@ -202,7 +200,7 @@ async function pollEntryPollable(url, conn) {
   }
 }
 
-function pollEntryURLIsInterstitial(url) {
+function isInterstitialURL(url) {
   const hosts = [
     'www.forbes.com',
     'forbes.com'
@@ -210,7 +208,7 @@ function pollEntryURLIsInterstitial(url) {
   return hosts.includes(url.hostname);
 }
 
-function pollEntryURLIsScripted(url) {
+function isScriptedURL(url) {
   const hosts = [
     'productforums.google.com',
     'groups.google.com'
@@ -218,7 +216,7 @@ function pollEntryURLIsScripted(url) {
   return hosts.includes(url.hostname);
 }
 
-function pollEntryURLIsPaywall(hostname) {
+function isPaywallURL(hostname) {
   const hosts = [
     'www.nytimes.com',
     'myaccount.nytimes.com',
@@ -227,7 +225,7 @@ function pollEntryURLIsPaywall(hostname) {
   return hosts.includes(hostname);
 }
 
-function pollEntryURLRequiresCookie(hostname) {
+function isRequiresCookieURL(hostname) {
   const hosts = [
     'www.heraldsun.com.au',
     'ripe73.ripe.net'
