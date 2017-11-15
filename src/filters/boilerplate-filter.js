@@ -1,13 +1,21 @@
-
-
-// TODO: simplify names after module transition
-
+// Boilerplate filtering module
 
 import assert from "/src/assert.js";
 import {findCaption} from "/src/dom.js";
 import {condenseWhitespace} from "/src/string.js";
 
-const BOILERPLATE_ANCESTOR_BIASES = {
+export default function boilerplateFilter(doc) {
+  assert(doc instanceof Document);
+  if(!doc.body) {
+    return;
+  }
+
+  const bestElement = findHighScoreElement(doc);
+  assert(bestElement);
+  prune(doc, bestElement);
+}
+
+const ANCESTOR_BIASES = {
   a: -5,
   aside: -50,
   blockquote: 20,
@@ -28,7 +36,7 @@ const BOILERPLATE_ANCESTOR_BIASES = {
   ul: -20
 };
 
-const BOILERPLATE_TOKEN_WEIGHTS = {
+const TOKEN_WEIGHTS = {
   ad: -500,
   ads: -500,
   advert: -500,
@@ -61,26 +69,14 @@ const BOILERPLATE_TOKEN_WEIGHTS = {
   zone: -50
 };
 
-// @throws AssertionError
-export function boilerplateFilter(doc) {
-  assert(doc instanceof Document);
-  if(!doc.body) {
-    return;
-  }
-
-  const bestElement = boilerplateFindHighScoreElement(doc);
-  assert(bestElement);
-  boilerplatePrune(doc, bestElement);
-}
-
-function boilerplateDeriveTextBias(element) {
+function deriveTextBias(element) {
   const text = condenseWhitespace(element.textContent);
   const textLength = text.length;
-  const anchorLength = boilerplateDeriveAnchorLength(element);
+  const anchorLength = deriveAnchorLength(element);
   return 0.25 * textLength - 0.7 * anchorLength;
 }
 
-function boilerplateDeriveAnchorLength(element) {
+function deriveAnchorLength(element) {
   const anchors = element.querySelectorAll('a[href]');
   let anchorLength = 0;
   for(const anchor of anchors) {
@@ -90,11 +86,11 @@ function boilerplateDeriveAnchorLength(element) {
   return anchorLength;
 }
 
-function boilerplateDeriveAncestorBias(element) {
+function deriveAncestorBias(element) {
   let totalBias = 0;
   for(let child = element.firstElementChild; child;
     child = child.nextElementSibling) {
-    const bias = BOILERPLATE_ANCESTOR_BIASES[child.localName];
+    const bias = ANCESTOR_BIASES[child.localName];
     if(bias) {
       totalBias = totalBias + bias;
     }
@@ -102,7 +98,7 @@ function boilerplateDeriveAncestorBias(element) {
   return totalBias;
 }
 
-function boilerplateDeriveAttributeBias(element) {
+function deriveAttributeBias(element) {
   var totalBias = 0;
   var vals = [element.id, element.name, element.className];
   var valsFlatString = vals.join(' ');
@@ -130,7 +126,7 @@ function boilerplateDeriveAttributeBias(element) {
     }
 
     seenTokens[token] = 1;
-    bias = BOILERPLATE_TOKEN_WEIGHTS[token];
+    bias = TOKEN_WEIGHTS[token];
     if(bias) {
       totalBias = totalBias + bias;
     }
@@ -139,7 +135,7 @@ function boilerplateDeriveAttributeBias(element) {
   return totalBias;
 }
 
-function boilerplateFindHighScoreElement(doc) {
+function findHighScoreElement(doc) {
   var candidateSelector = 'article, content, div, layer, main, section, span, td';
   var listSelector = 'li, ol, ul, dd, dl, dt';
   var navSelector = 'aside, header, footer, nav, menu, menuitem';
@@ -151,7 +147,7 @@ function boilerplateFindHighScoreElement(doc) {
   var elements = doc.body.querySelectorAll(candidateSelector);
   var highScore = 0;
   for(var element of elements) {
-    var score = boilerplateDeriveTextBias(element);
+    var score = deriveTextBias(element);
     if(element.closest(listSelector)) {
       score -= 200;
     }
@@ -160,9 +156,9 @@ function boilerplateFindHighScoreElement(doc) {
       score -= 500;
     }
 
-    score += boilerplateDeriveAncestorBias(element);
-    score += boilerplateDeriveImageBias(element);
-    score += boilerplateDeriveAttributeBias(element);
+    score += deriveAncestorBias(element);
+    score += deriveImageBias(element);
+    score += deriveAttributeBias(element);
     if(score > highScore) {
       bestElement = element;
       highScore = score;
@@ -172,12 +168,12 @@ function boilerplateFindHighScoreElement(doc) {
   return bestElement;
 }
 
-function boilerplateDeriveImageBias(parentElement) {
+function deriveImageBias(parentElement) {
   let bias = 0;
   let imageCount = 0;
   for(let node of parentElement.childNodes) {
     if(node.localName === 'img') {
-      bias += boilerplateDeriveImageAreaBias(node) + boilerplateDeriveImageTextBias(node);
+      bias += deriveImageAreaBias(node) + deriveImageTextBias(node);
       imageCount++;
     }
   }
@@ -191,7 +187,7 @@ function boilerplateDeriveImageBias(parentElement) {
 }
 
 // Reward supporting text of images
-function boilerplateDeriveImageTextBias(image) {
+function deriveImageTextBias(image) {
   let bias = 0;
   if(image.hasAttribute('alt')) {
     bias += 20;
@@ -208,7 +204,7 @@ function boilerplateDeriveImageTextBias(image) {
   return bias;
 }
 
-function boilerplateDeriveImageAreaBias(image) {
+function deriveImageAreaBias(image) {
   let bias = 0;
   const maxArea = 100000;
   const dampCoeff = 0.0015;
@@ -220,7 +216,7 @@ function boilerplateDeriveImageAreaBias(image) {
   return bias;
 }
 
-function boilerplatePrune(doc, bestElement) {
+function prune(doc, bestElement) {
   assert(doc.documentElement.contains(bestElement));
 
   if(bestElement === doc.documentElement) {

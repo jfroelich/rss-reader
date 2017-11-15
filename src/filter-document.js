@@ -4,7 +4,7 @@ import assert from "/src/assert.js";
 import {adoptionAgencyFilter} from "/src/filters/adoption-agency-filter.js";
 import {attributeFilter} from "/src/filters/attribute-filter.js";
 import {baseFilter} from "/src/filters/base-filter.js";
-import {boilerplateFilter} from "/src/filters/boilerplate-filter.js";
+import boilerplateFilter from "/src/filters/boilerplate-filter.js";
 import {brFilter} from "/src/filters/br-filter.js";
 import {canonicalURLFilter} from "/src/filters/canonical-url-filter.js";
 import {commentFilter} from "/src/filters/comment-filter.js";
