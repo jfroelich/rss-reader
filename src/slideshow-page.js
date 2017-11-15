@@ -1,8 +1,5 @@
 // slideshow view module
 
-// TODO: slideshow should not be directly interacting with rdb, it should pass through some kind of
-// intermediate layer, similar to the reader storage layer.
-
 import assert from "/src/assert.js";
 import {formatDate} from "/src/date.js";
 import {entryIsValidId, entryIsEntry, entryPeekURL} from "/src/entry.js";
@@ -11,7 +8,7 @@ import {openTab} from "/src/extension.js";
 import filterPublisher from "/src/filter-publisher.js";
 import {escapeHTML, truncate as htmlTruncate} from "/src/html.js";
 import * as rdb from "/src/rdb.js";
-import {readerStorageMarkRead} from "/src/reader-storage.js";
+import entryMarkRead from "/src/entry-mark-read.js";
 import {parseInt10} from "/src/string.js";
 import {isCanonicalURL} from "/src/url.js";
 
@@ -75,7 +72,7 @@ async function markSlideRead(conn, slideElement) {
   assert(entryIsValidId(entryId));
 
   try {
-    await readerStorageMarkRead(conn, entryId);
+    await entryMarkRead(conn, entryId);
   } catch(error) {
     console.warn(error);
     return;

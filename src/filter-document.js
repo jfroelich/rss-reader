@@ -90,8 +90,10 @@ export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
   const MAX_EMPHASIS_LENGTH = 300;
   emphasisFilter(doc, MAX_EMPHASIS_LENGTH);
 
-
+  // TODO: this is redundant with urlObject above
   const baseURL = new URL(url);
+
+
   canonicalURLFilter(doc, baseURL);
 
   // This should occur prior to lazyImageFilter
