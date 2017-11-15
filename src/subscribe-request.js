@@ -24,6 +24,8 @@ export class SubscribeRequest {
   constructor() {
     this.iconCache = undefined;
     this.readerConn = undefined;
+
+    // TODO: this needs to be qualified, rename to something like fetchFeedTimeoutMs
     this.timeoutMs = 2000;
     this.notify = true;
   }
