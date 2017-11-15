@@ -51,7 +51,7 @@ export function fetchFeed(url, timeoutMs, acceptHTML) {
   const types = ['application/rss+xml', 'application/rdf+xml', 'application/atom+xml',
     'application/xml', 'text/xml'];
   if(acceptHTML) {
-    types.push(mime.HTML);
+    types.push(mime.MIME_TYPE_HTML);
   }
 
   // TODO: move outside of function and rename?
@@ -71,7 +71,7 @@ export function fetchHTML(url, timeoutMs) {
   const options = {
     credentials: 'omit',
     method: 'get',
-    headers: {'Accept': mime.HTML},
+    headers: {'Accept': mime.MIME_TYPE_HTML},
     mode: 'cors',
     cache: 'default',
     redirect: 'follow',
@@ -83,7 +83,7 @@ export function fetchHTML(url, timeoutMs) {
   function acceptHTMLPredicate(response) {
     const contentType = response.headers.get('Content-Type');
     const mimeType = mime.fromContentType(contentType);
-    return mimeType === mime.HTML;
+    return mimeType === mime.MIME_TYPE_HTML;
   }
 
   return fetchInternal(url, options, timeoutMs, acceptHTMLPredicate);

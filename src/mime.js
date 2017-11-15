@@ -3,11 +3,8 @@
 import assert from "/src/assert.js";
 import {filterWhitespace} from "/src/string.js";
 
-
-// TODO: rename, add MIME_TYPE prefix, I think I prefer the qualification
-// Some commonly used global mime types
-export const HTML = 'text/html';
-export const XML = 'application/xml';
+export const MIME_TYPE_HTML = 'text/html';
+export const MIME_TYPE_XML = 'application/xml';
 
 // These constraints are rather arbitrary, but just as a general bound
 // TODO: increase and test accuracy

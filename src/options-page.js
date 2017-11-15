@@ -417,7 +417,7 @@ async function unsubscribeButtonOnclick(event) {
 function importOPMLButtonOnclick(event) {
   const uploaderInput = document.createElement('input');
   uploaderInput.setAttribute('type', 'file');
-  uploaderInput.setAttribute('accept', mime.XML);
+  uploaderInput.setAttribute('accept', mime.MIME_TYPE_XML);
   uploaderInput.addEventListener('change', importOPMLInputOnchange);
   uploaderInput.click();
 }

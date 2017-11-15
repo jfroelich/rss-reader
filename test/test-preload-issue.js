@@ -5,7 +5,7 @@ async function testPreloadIssue() {
   const options = {};
   options.credentials = 'omit';
   options.method = 'get';
-  options.headers = {Accept: mime.HTML};
+  options.headers = {Accept: mime.MIME_TYPE_HTML};
   options.mode = 'cors';
   options.cache = 'default';
   options.redirect = 'follow';

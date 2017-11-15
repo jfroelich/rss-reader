@@ -16,7 +16,7 @@ export function xmlToBlob(doc) {
   assert(doc instanceof Document);
   const xmlString = xmlToString(doc);
   const parts = [xmlString];
-  const options = {type: mime.XML};
+  const options = {type: mime.MIME_TYPE_XML};
   return new Blob(parts, options);
 }
 

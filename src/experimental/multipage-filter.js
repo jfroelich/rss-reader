@@ -29,7 +29,7 @@ export async function multipageFilter(doc, location, timeoutMs) {
     const parser = new DOMParser();
     const response = await fetchHTML(url, timeoutMs);
     const text = await response.text();
-    return parser.parseFromString(text, mime.HTML);
+    return parser.parseFromString(text, mime.MIME_TYPE_HTML);
   }
 
   // Concurrently fetch the array of urls. If any fetch fails then this fails.

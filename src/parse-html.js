@@ -10,7 +10,7 @@ import * as mime from "/src/mime.js";
 export default function parseHTML(html) {
   assert(typeof html === 'string');
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, mime.HTML);
+  const doc = parser.parseFromString(html, mime.MIME_TYPE_HTML);
   assert(doc instanceof Document);
   const errorElement = doc.querySelector('parsererror');
   // TODO: prettify the error message, strip line breaks, see what I did in xml parser and use

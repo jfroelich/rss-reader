@@ -7,7 +7,7 @@ async function test(url) {
   const options = {
     credentials: 'omit',
     method: 'get',
-    headers: {'accept': mime.HTML},
+    headers: {'accept': mime.MIME_TYPE_HTML},
     mode: 'cors',
     cache: 'default',
     redirect: 'follow',
@@ -20,7 +20,7 @@ async function test(url) {
 
   // TODO: use parseHTML from parse-html.js
   const parser = new DOMParser();
-  const doc = parser.parseFromString(text, mime.HTML);
+  const doc = parser.parseFromString(text, mime.MIME_TYPE_HTML);
   filter_hidden_elements_using_style(doc);
 }
 

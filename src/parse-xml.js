@@ -8,7 +8,7 @@ export default function parseXML(xml) {
   assert(typeof xml === 'string');
 
   const parser = new DOMParser();
-  const doc = parser.parseFromString(xml, mime.XML);
+  const doc = parser.parseFromString(xml, mime.MIME_TYPE_XML);
   assert(doc instanceof Document);
 
   // This cannot tell the difference between documents where the parser
