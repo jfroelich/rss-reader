@@ -2,8 +2,8 @@
 
 import assert from "/src/assert.js";
 import FaviconCache from "/src/favicon-cache.js";
-import {readFileAsText} from "/src/file.js";
-import {isOpen as isOpenDB} from "/src/idb.js";
+import * as FileUtils from "/src/file.js";
+import * as idb from "/src/idb.js";
 import * as mime from "/src/mime.js";
 import {
   opmlRemoveOutlinesWithInvalidTypes,
@@ -55,7 +55,7 @@ export async function readerImportFiles(files) {
 async function importFile(file, readerConn, iconConn) {
   assert(file instanceof File);
   assert(rdb.isOpen(readerConn));
-  assert(isOpenDB(iconConn));
+  assert(idb.isOpen(iconConn));
   console.log('importing opml file', file.name);
 
   if(file.size < 1) {
@@ -70,7 +70,7 @@ async function importFile(file, readerConn, iconConn) {
 
   let fileContent;
   try {
-    fileContent = await readFileAsText(file);
+    fileContent = await FileUtils.readAsText(file);
   } catch(error) {
     console.warn(error);
     return 0;
