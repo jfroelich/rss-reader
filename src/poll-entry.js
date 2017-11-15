@@ -143,14 +143,14 @@ async function updateEntryIcon(entry, document) {
     assert(document instanceof Document);
   }
 
-  const pageURL = new URL(Entry.peekURL(entry);
+  const pageURL = new URL(Entry.peekURL(entry));
   let iconURL;
 
   const query = new FaviconLookup();
   query.cache = this.iconCache;
   query.skipURLFetch = true;
   try {
-    iconURL = await query.lookup(pageURL), document);
+    iconURL = await query.lookup(pageURL, document);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;
