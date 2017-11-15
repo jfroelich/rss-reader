@@ -12,7 +12,7 @@ import {
   opmlGetOutlineObjects,
 } from "/src/opml-document.js";
 import {opmlOutlineNormalizeHTMLURL, opmlOutlineToFeed} from "/src/opml-outline.js";
-import {OPMLParser} from "/src/opml-parser.js";
+import parseOPML from "/src/parse-opml";
 import {promiseEvery} from "/src/promise.js";
 import * as rdb from "/src/rdb.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
@@ -76,7 +76,7 @@ async function importFile(file, readerConn, iconConn) {
     return 0;
   }
 
-  const document = OPMLParser.parse(fileContent);
+  const document = parseOPML(fileContent);
 
   // TODO: these 3 should be local function calls, these functions are currently defined in the
   // wrong module, because this functionality is unique to this module and not all opml documents
