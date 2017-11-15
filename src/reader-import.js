@@ -8,7 +8,7 @@ import * as idb from "/src/idb.js";
 import * as mime from "/src/mime.js";
 import * as OPMLDocument from "/src/opml-document.js";
 import * as OPMLOutline from "/src/opml-outline.js";
-import parseOPML from "/src/parse-opml";
+import parseOPML from "/src/parse-opml.js";
 import {promiseEvery} from "/src/promise.js";
 import * as rdb from "/src/rdb.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
