@@ -2,6 +2,7 @@
 
 import assert from "/src/assert.js";
 import * as Entry from "/src/entry.js";
+import {check} from "/src/errors.js";
 import * as rdb from "/src/rdb.js";
 import updateBadgeText from "/src/update-badge-text.js";
 
@@ -13,27 +14,27 @@ export default async function entryMarkRead(conn, id) {
   assert(Entry.isValidId(id));
 
   const entry = await rdb.findEntryById(conn, id);
-  if(!entry) {
-    throw new rdb.NotFoundError('' + id);
-  }
 
-  if(entry.readState === Entry.STATE_READ) {
-    throw new rdb.InvalidStateError('Entry in read state with id ' + id);
-  }
+  // I have mixed feelings about whether these should be checks or asserts. On the one hand, the
+  // database should never enter into an invalid state, so these should be assertions. On the other
+  // hand, the database is external and difficult to reason about statically, and in some sense
+  // entries are user data as opposed to system data, so this should tolerate bad data.
+  check(entry, rdb.NotFoundError, '' + id);
+  check(entry.readState !== Entry.STATE_READ, rdb.InvalidStateError,
+    'entry in read state with id ' + id);
 
+  // The entry should ALWAYS have a url
   assert(Entry.hasURL(entry));
+
   const url = Entry.peekURL(entry);
   console.debug('found entry to mark with url', url);
 
   // We have full control over the entry object from read to write, so there is no need to
   // sanitize or filter empty properties.
-
   entry.readState = Entry.STATE_READ;
   entry.dateUpdated = new Date();
   entry.dateRead = entry.dateUpdated;
-
   await rdb.putEntry(conn, entry);
-
   console.debug('marked entry as read with url', url);
   await updateBadgeText(conn);
 }

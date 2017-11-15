@@ -1,5 +1,8 @@
 
-export default const OPTIONS_PAGE_IMAGE_PATHS = [
+// Note that for some reason Chrome complains about export default const, and I do not know why,
+// so I broke apart the declaration and the export into two statements.
+
+const OPTIONS_PAGE_IMAGE_PATHS = [
   '/images/bgfons-paper_texture318.jpg',
   '/images/CCXXXXXXI_by_aqueous.jpg',
   '/images/paper-backgrounds-vintage-white.jpg',
@@ -20,3 +23,5 @@ export default const OPTIONS_PAGE_IMAGE_PATHS = [
   '/images/subtle-patterns-witewall-3.png',
   '/images/thomas-zucx-noise-lines.png'
 ];
+
+export default OPTIONS_PAGE_IMAGE_PATHS;

@@ -1,5 +1,8 @@
 
-export default const FONTS = [
+// Note that for some reason Chrome complains about export default const, and I do not know why,
+// so I broke apart the declaration and the export into two statements.
+
+const FONTS = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
   'Calibri',
@@ -19,3 +22,5 @@ export default const FONTS = [
   'PlayfairDisplaySC',
   'Roboto Regular'
 ];
+
+export default FONTS;

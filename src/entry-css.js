@@ -6,7 +6,6 @@ import {parseInt10} from "/src/string.js";
 // Get the current settings from local storage and then modify the css rules
 // in the default style sheet
 export function entryCSSOnChange(event) {
-  console.log('entryCSSOnChange');
   const sheet = dom.getDefaultStylesheet();
   assert(sheet);
   entryCSSUpdateRule(sheet);
@@ -17,13 +16,12 @@ export function entryCSSOnChange(event) {
 // Get the current settings from local storage and then create css rules and
 // append them to the default style sheet.
 export function entryCSSInit() {
-  console.log('entryCSSInit');
   const sheet = dom.getDefaultStylesheet();
   assert(sheet);
   sheet.addRule('div.entry', entryCSSCreateEntryRuleText());
 
-  // TODO: convert these two to be live above statement
-
+  // TODO: convert these two to be like above pattern where I get the text and then add
+  // the rule
   entryCSSAddTitleRule(sheet);
   entryCSSAddContentRule(sheet);
 }

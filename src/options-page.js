@@ -222,14 +222,8 @@ async function feedListItemOnclick(event) {
 
   const faviconElement = document.getElementById('details-favicon');
   if(feed.faviconURLString) {
-    console.debug('setting favicon element to ', feed.faviconURLString);
     faviconElement.setAttribute('src', feed.faviconURLString);
   } else {
-
-    // TODO: set to default favicon or something instead??? This doesn't make sense, this
-    // curretnly causes a broken image to appear
-
-    console.debug('removing faviconElement source');
     faviconElement.removeAttribute('src');
   }
 
