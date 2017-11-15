@@ -3,32 +3,20 @@
 import {addInstallListener} from "/src/extension.js";
 import FaviconCache from "/src/favicon-cache.js";
 import updateBadgeText from "/src/update-badge-text.js";
-import {
-  close as readerDbClose,
-  open as readerDbOpen
-} from "/src/rdb.js";
+import * as rdb from "/src/rdb.js";
 
 async function onInstalled(event) {
   console.debug('onInstalled', event);
 
-  // Init the badge text. As a side effect this will create the reader-db database
-  let conn;
+  // Setup the reader-db database
   try {
-    conn = await readerDbOpen();
-
-    // The background module now does this during initialization, this was leading to duplicate
-    // badge updates. However, I am not certain it was correct to change that, so leaving this
-    // comment here temporarily.
-    // await updateBadgeText(conn);
+    await rdb.setup();
   } catch(error) {
     console.warn(error);
-  } finally {
-    readerDbClose(conn);
   }
 
-  const fic = new FaviconCache();
-
   // Setup the favicon database
+  const fic = new FaviconCache();
   try {
     await fic.setup();
   } catch(error) {
