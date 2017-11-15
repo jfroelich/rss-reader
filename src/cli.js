@@ -81,7 +81,7 @@ async function execCommand(command, ...args) {
     let conn;
     try {
       conn = await rdb.open();
-      await readerStorageRemoveOrphans(conn, args);
+      await removeOrphanedEntries(conn, args);
     } finally {
       rdb.close(conn);
     }
