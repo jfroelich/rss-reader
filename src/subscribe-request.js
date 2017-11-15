@@ -68,7 +68,9 @@ export class SubscribeRequest {
 
     const url = Feed.peekURL(feed);
 
-    check(isAllowedURL(url), PermissionsError, url + ' not permitted');
+    const urlObject = new URL(url);
+
+    check(isAllowedURL(urlObject), PermissionsError, urlObject.href + ' not permitted');
     check(!(await this.isSubscribed(url)), rdb.ConstraintError, 'already subscribed');
 
     if(navigator.onLine || !('onLine' in navigator)) {

@@ -1,27 +1,20 @@
-
-import assert from "/src/assert.js";
-import {isCanonicalURLString} from "/src/url-string.js";
+// Fetch policy - what urls the app should avoid trying to access
 
 // NOTE: this is the initial implementation, probably going to change drastically, is definitely
-// not very reliable or accurate
-// NOTE: some of the tests are easily defeated, but I am simply implementing something for now, as
-// a proof of concept
+// not very reliable or accurate. Some of the tests are easily defeated, but I am simply
+// implementing something for now, as a proof of concept.
 // TODO: allow preference override through localStorage setting
 
+import assert from "/src/assert.js";
+import {isCredentialedURL} from "/src/url.js";
+
 // Return true if the app's policy permits fetching the url
-// TODO: accept URL object instead of string
 export default function isAllowedURL(url) {
-  assert(isCanonicalURLString(url));
-  const urlo = new URL(url);
-  return !urlHasCredentials(urlo) && !isLocalURL(urlo);
+  assert(url instanceof URL);
+  return !isCredentialedURL(url) && !isLocalURL(url);
 }
 
-// TODO: move to url.js?
-function urlHasCredentials(url) {
-  return url.username || url.password;
-}
-
-// TODO: move to url.js?
+// TODO: move to url.js? Should url.js be responsible for determining what is and is not 'local'?
 function isLocalURL(url) {
   const protocol = url.protocol;
   const hostname = url.hostname;

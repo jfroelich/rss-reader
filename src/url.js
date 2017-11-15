@@ -172,6 +172,12 @@ export function getFileNameFromURL(url) {
   }
 }
 
+// Returns whether the url has any credential information
+export function isCredentialedURL(url) {
+  assert(url instanceof URL);
+  return url.username || url.password;
+}
+
 // Compares two urls for equality without considering hash values
 // @param url1 {URL}
 // @param url2 {URL}
