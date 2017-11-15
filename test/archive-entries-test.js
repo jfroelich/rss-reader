@@ -1,7 +1,7 @@
 
+import archiveEntries from "/src/archive-entries.js";
 import {remove as deleteDB} from "/src/idb.js";
 import * as rdb from "/src/rdb.js";
-import {readerStorageArchiveEntries} from "/src/reader-storage.js";
 
 async function test() {
   console.log('test start');
@@ -13,7 +13,7 @@ async function test() {
   const limit = 5;
   try {
     conn = await rdb.open(name, version, rdb.onUpgradeNeeded, timeoutMs);
-    await readerStorageArchiveEntries(conn, maxAgeMs, limit);
+    await archiveEntries(conn, maxAgeMs, limit);
     rdb.close(conn);
     closeRequested = true;
     await deleteDB(conn.name);

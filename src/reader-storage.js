@@ -22,83 +22,9 @@ import {
   feedIsValidId,
   feedSanitize
 } from "/src/feed.js";
-import {isPosInt} from "/src/number.js";
 import {filterEmptyProps} from "/src/object.js";
 import updateBadgeText from "/src/update-badge-text.js";
-import sizeof from "/src/sizeof.js";
 import * as rdb from "/src/rdb.js";
-
-// Archives certain entries in the database
-// @param maxAgeMs {Number} how long before an entry is considered
-// archivable (using date entry created), in milliseconds
-// @throws AssertionError
-// @throws Error - database related
-export async function readerStorageArchiveEntries(conn, maxAgeMs, limit) {
-  assert(rdb.isOpen(conn));
-
-  const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
-  if(typeof maxAgeMs === 'undefined') {
-    maxAgeMs = TWO_DAYS_MS;
-  }
-
-  assert(isPosInt(maxAgeMs));
-
-  const currentDate = new Date();
-  function isArchivable(entry) {
-    const entryAgeMs = currentDate - entry.dateCreated;
-    return entryAgeMs > maxAgeMs;
-  }
-
-  const entries = await rdb.findArchivableEntries(conn, isArchivable, limit);
-
-  if(!entries.length) {
-    console.debug('no archivable entries found');
-    return;
-  }
-
-  // Concurrently archive and store each entry
-  const channel = new BroadcastChannel('db');
-  const promises = [];
-  for(const entry of entries) {
-    promises.push(readerStorageArchiveEntry(entry, conn, channel));
-  }
-
-  // TODO: switch from Promise.all to promiseEvery?
-
-  try {
-    await Promise.all(promises);
-  } finally {
-    channel.close();
-  }
-
-  console.log('compacted %s entries', entries.length);
-}
-
-async function readerStorageArchiveEntry(entry, conn, bc) {
-  const ce = readerStorageEntryCompact(entry);
-  ce.dateUpdated = new Date();
-  await rdb.putEntry(conn, entry);
-  const message = {type: 'archived-entry', id: ce.id};
-  bc.postMessage(message);
-  return ce;
-}
-
-// Returns a new entry object that is in a compacted form. The new entry is a
-// shallow copy of the input entry, where only certain properties are kept, and
-// a couple properties are changed.
-function readerStorageEntryCompact(entry) {
-  const ce = {};
-  ce.dateCreated = entry.dateCreated;
-  ce.dateRead = entry.dateRead;
-  ce.feed = entry.feed;
-  ce.id = entry.id;
-  ce.readState = entry.readState;
-  ce.urls = entry.urls;
-  ce.archiveState = ENTRY_STATE_ARCHIVED;
-  ce.dateArchived = new Date();
-  console.debug('before', sizeof(entry), 'after', sizeof(ce));
-  return ce;
-}
 
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection

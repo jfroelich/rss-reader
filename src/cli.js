@@ -8,12 +8,12 @@
 // to work. This is not a recommended practice, but I think this is an exception, because
 // it is the entire point of this module, to be callable from the console
 
+import archiveEntries from "/src/archive-entries.js";
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {pollFeeds, PollFeedsContext} from "/src/poll-feeds.js";
 import * as rdb from "/src/rdb.js";
 import {
-  readerStorageArchiveEntries,
   readerStorageRemoveLostEntries,
   readerStorageRemoveOrphans
 } from "/src/reader-storage.js";
@@ -45,7 +45,7 @@ async function execCommand(command, ...args) {
 
     try {
       conn = await rdb.open();
-      await readerStorageArchiveEntries(conn, maxAgeMs, limit);
+      await archiveEntries(conn, maxAgeMs, limit);
     } finally {
       rdb.close(conn);
     }
