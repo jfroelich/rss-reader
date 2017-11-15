@@ -1,8 +1,7 @@
 // This is a wrapper around FeedParser that customizes the parsed feed format to the app's feed
 // format.
 
-// TODO: after module transition rename to parse-feed and put in app folder or something like that
-// TODO: after module transition rename non-exported globals
+// TODO: after module transition rename to parse-feed.js and put in app folder or something similar
 
 import assert from "/src/assert.js";
 import * as Entry from "/src/entry.js";

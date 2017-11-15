@@ -19,7 +19,8 @@ import removeOrphanedEntries from "/src/remove-orphaned-entries.js";
 import {parseInt10} from "/src/string.js";
 
 
-// TODO: maybe break apart back into functions and export under a cli namespace object
+// TODO: maybe break apart back into functions and define each one in window, perhaps under a
+// "cli" namespace object
 
 async function execCommand(command, ...args) {
   switch(command) {

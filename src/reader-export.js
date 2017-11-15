@@ -1,5 +1,7 @@
 // Module for exporting feeds to opml file
 
+// TODO: rename to something like "export-feeds.js"
+
 import assert from "/src/assert.js";
 import {
   opmlDocumentAppendOutlineObject,

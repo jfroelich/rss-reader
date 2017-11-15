@@ -27,9 +27,8 @@ export function setTimeoutPromise(timeoutMs) {
   return [timeoutId, promise];
 }
 
-// A variant of Promise.all that does not shortcircuit. If any promise rejects,
-// undefined is placed in the output array in place of the promise's return
-// value.
+// A variant of Promise.all that does not shortcircuit. If any promise rejects, undefined is placed
+// in the output array in place of the promise's return value.
 export async function promiseEvery(promises) {
   assert(Array.isArray(promises));
   const results = [];

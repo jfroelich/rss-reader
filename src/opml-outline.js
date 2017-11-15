@@ -1,5 +1,10 @@
 // OPML Outline utilities
 
+// TODO: drop the opml outline prefix, name conflicts are now a responsibility of the importing
+// module
+// TODO: I have mixed feelings about the dependency on feed. Perhaps it should be the other way
+// around, and feed should depend on this, and this should have no knowledge about feed format.
+
 import assert from "/src/assert.js";
 import * as Feed from "/src/feed.js";
 

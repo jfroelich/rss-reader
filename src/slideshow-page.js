@@ -419,4 +419,4 @@ async function init() {
   }
 }
 
-init();
+init().catch(console.warn);

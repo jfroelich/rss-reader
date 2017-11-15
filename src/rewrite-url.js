@@ -1,3 +1,4 @@
+// URL rewriting module
 
 import assert from "/src/assert.js";
 import {isCanonicalURLString} from "/src/url-string.js";

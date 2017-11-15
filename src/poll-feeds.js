@@ -12,13 +12,6 @@ import {readerParseFeed} from "/src/reader-parse-feed.js";
 import {feedPut} from "/src/reader-storage.js";
 
 // TODO: rename pollFeeds to poll?
-// TODO: rather than context, just create a function option like
-// PollFeedOperation, or PollFeedRequest or something like this? Then
-// deprecate PollFeedsContext?
-
-// The icon cache dependency should be implicit. cache should be a property of a
-// pollFeeds-like object.
-
 
 export function PollFeedsContext() {
   this.readerConn = undefined;

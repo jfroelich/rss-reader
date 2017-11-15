@@ -15,6 +15,6 @@ export default function parseHTML(html) {
   const errorElement = doc.querySelector('parsererror');
   // TODO: prettify the error message, strip line breaks, see what I did in xml parser and use
   // the same consistent pattern
-  check(!errorElement, ParserError, errorElement.textContent);
+  check(!errorElement, ParserError, errorElement ? errorElement.textContent : '');
   return doc;
 }
