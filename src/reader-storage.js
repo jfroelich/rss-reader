@@ -2,13 +2,9 @@
 
 // TODO: drop readerStorage prefix, that is now a concern of the importing module, except maybe
 // it is pointless given the following todo. can just drop prefix when splitting up.
-// TODO: probably should just break up into separate modules. These functions are unrelated to
-// one another apart from pertaining to the same layer. Right now this is extremely low coherency
-// and is nearly a utilities file.
 
 import assert from "/src/assert.js";
 import {
-  entryHasURL,
   entryIsEntry,
   entrySanitize,
   ENTRY_STATE_UNARCHIVED,
@@ -67,37 +63,4 @@ export async function readerStorageAddEntry(entry, conn) {
   storable.dateCreated = new Date();
 
   await rdb.putEntry(conn, storable);
-}
-
-// Scans the database for entries missing urls are removes them
-// @param conn {IDBDatabase}
-// @param limit {Number} optional, if specified should be positive integer > 0
-// @throws AssertionError
-// @throws Error - database related
-export async function readerStorageRemoveLostEntries(conn, limit) {
-  assert(rdb.isOpen(conn));
-
-  function isLost(entry) {
-    return !entryHasURL(entry);
-  }
-
-  const entries = await rdb.findEntries(conn, isLost, limit);
-  console.debug('found %s lost entries', entries.length);
-  if(entries.length === 0) {
-    return;
-  }
-
-  const ids = [];
-  for(const entry of entries) {
-    ids.push(entry.id);
-  }
-
-  await rdb.removeEntries(conn, ids);
-  const channel = new BroadcastChannel('db');
-  const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
-  for(const id of ids) {
-    message.id = id;
-    channel.postMessage(message);
-  }
-  channel.close();
 }

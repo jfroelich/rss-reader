@@ -13,8 +13,8 @@ import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {pollFeeds, PollFeedsContext} from "/src/poll-feeds.js";
 import * as rdb from "/src/rdb.js";
-import {readerStorageRemoveLostEntries} from "/src/reader-storage.js";
 import refreshFeedIcons from "/src/refresh-feed-icons.js";
+import removeLostEntries from "/src/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/remove-orphaned-entries.js";
 import {parseInt10} from "/src/string.js";
 
@@ -71,7 +71,7 @@ async function execCommand(command, ...args) {
     let conn;
     try {
       conn = await rdb.open();
-      await readerStorageRemoveLostEntries(conn, args);
+      await removeLostEntries(conn, args);
     } finally {
       rdb.close(conn);
     }

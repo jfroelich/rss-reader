@@ -4,12 +4,9 @@ import archiveEntries from "/src/archive-entries.js";
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {pollFeeds, PollFeedsContext} from "/src/poll-feeds.js";
-import {
-  close as readerDbClose,
-  open as readerDbOpen
-} from "/src/rdb.js";
-import {readerStorageRemoveLostEntries} from "/src/reader-storage.js";
+import * as rdb from "/src/rdb.js";
 import refreshFeedIcons from "/src/refresh-feed-icons.js";
+import removeLostEntries from "/src/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/remove-orphaned-entries.js";
 
 chrome.alarms.onAlarm.addListener(onWakeup);
@@ -28,12 +25,12 @@ async function onWakeup(alarm) {
     let conn, maxAgeMs;
     const limit = 500;
     try {
-      conn = await readerDbOpen();
+      conn = await rdb.open();
       await archiveEntries(conn, maxAgeMs, limit);
     } catch(error) {
       console.warn(error);
     } finally {
-      readerDbClose(conn);
+      rdb.close(conn);
     }
     break;
   }
@@ -43,13 +40,13 @@ async function onWakeup(alarm) {
     pfc.iconCache = faviconCache;
     let _;
     try {
-      [pfc.readerConn, _] = await Promise.all([readerDbOpen(), faviconCache.open()]);
+      [pfc.readerConn, _] = await Promise.all([rdb.open(), faviconCache.open()]);
       await pollFeeds(pfc);
     } catch(error) {
       console.warn(error);
     } finally {
       faviconCache.close();
-      readerDbClose(pfc.readerConn);
+      rdb.close(pfc.readerConn);
     }
     break;
   }
@@ -57,12 +54,12 @@ async function onWakeup(alarm) {
     const limit = 100;
     let conn;
     try {
-      conn = await readerDbOpen();
-      await readerStorageRemoveLostEntries(conn, limit);
+      conn = await rdb.open();
+      await removeLostEntries(conn, limit);
     } catch(error) {
       console.warn(error);
     } finally {
-      readerDbClose(conn);
+      rdb.close(conn);
     }
     break;
   }
@@ -70,12 +67,12 @@ async function onWakeup(alarm) {
     const limit = 100;
     let conn;
     try {
-      conn = await readerDbOpen();
+      conn = await rdb.open();
       await removeOrphanedEntries(conn, limit);
     } catch(error) {
       console.warn(error);
     } finally {
-      readerDbClose(conn);
+      rdb.close(conn);
     }
     break;
   }
@@ -83,13 +80,13 @@ async function onWakeup(alarm) {
     const fic = new FaviconCache();
     let readerConn, _;
     try {
-      [readerConn, _] = await Promise.all([readerDbOpen(), fic.open()]);
+      [readerConn, _] = await Promise.all([rdb.open(), fic.open()]);
       await refreshFeedIcons(readerConn, fic.conn);
     } catch(error) {
       console.warn(error);
     } finally {
       fic.close();
-      readerDbClose(readerConn);
+      rdb.close(readerConn);
     }
     break;
   }
