@@ -1,52 +1,14 @@
-// OPML Outline utilities
+// OPML outline utilities
 
-// TODO: I have mixed feelings about the dependency on feed. Perhaps it should be the other way
-// around, and feed should depend on this, and this should have no knowledge about feed format.
+// TODO: I am tempted to create the class OPMLOutline. But I have to resolve the issue that some
+// of these functions operate on elements. So maybe they are out of place, or maybe I should not
+// try. Or, I should create the class and functions operating on elements should be refactored to
+// operate on class properties.
 
 import assert from "/src/assert.js";
-import * as Feed from "/src/feed.js";
 
-function isOutline(outline) {
+export function isOutline(outline) {
   return typeof outline === 'object';
-}
-
-export function toFeed(outline) {
-  assert(isOutline(outline));
-
-  const feed = {};
-  if(outline.type) {
-    feed.type = outline.type;
-  }
-
-  if(outline.title) {
-    feed.title = outline.title;
-  }
-
-  if(outline.text) {
-    feed.text = outline.text;
-  }
-
-  if(outline.description) {
-    feed.description = outline.description;
-  }
-
-  if(outline.htmlUrl) {
-    feed.link = outline.htmlUrl;
-  }
-
-  Feed.appendURL(feed, outline.xmlUrl);
-  return feed;
-}
-
-export function fromFeed(feed) {
-  assert(Feed.isFeed(feed));
-  const outline = {};
-  outline.type = feed.type;
-  outline.xmlUrl = Feed.peekURL(feed);
-  outline.title = feed.title;
-  outline.description = feed.description;
-  outline.htmlUrl = feed.link;
-  return outline;
 }
 
 export function elementHasValidType(element) {
@@ -79,8 +41,7 @@ export function normalizeHTMLURL(outline) {
     return;
   }
 
-  // Setting to undefined is preferred over deleting in order to
-  // maintain v8 object shape
+  // Setting to undefined is preferred over deleting in order to maintain v8 object shape
   if(outline.htmlUrl === null) {
     outline.htmlUrl = undefined;
     return;

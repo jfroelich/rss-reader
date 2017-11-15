@@ -1,13 +1,10 @@
 // OPML Document utilities
 
-// TODO: drop the opmlDocument prefix, that is now a responsibility of the importing module
-
 import assert from "/src/assert.js";
 import {check} from "/src/errors.js";
 import * as OPMLOutline from "/src/opml-outline.js";
 
-// @throws Error missing head element
-export function opmlDocumentSetTitle(doc, title) {
+export function setTitle(doc, title) {
   assert(doc instanceof Document);
 
   const titleVarType = typeof title;
@@ -33,7 +30,8 @@ export function opmlDocumentSetTitle(doc, title) {
   }
 }
 
-export function opmlDocumentCreate() {
+// TODO: add title parameter, internally call setTitle if title set
+export function create() {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
@@ -61,7 +59,7 @@ export function opmlDocumentCreate() {
   return doc;
 }
 
-export function opmlGetOutlineObjects(doc) {
+export function getOutlineObjects(doc) {
   const elements = getOutlineElements(doc);
   const objects = [];
   for(const element of elements) {
@@ -70,7 +68,12 @@ export function opmlGetOutlineObjects(doc) {
   return objects;
 }
 
-export function opmlRemoveOutlinesWithInvalidTypes(doc) {
+function getOutlineElements(doc) {
+  assert(doc instanceof Document);
+  return doc.querySelectorAll('opml > body > outline');
+}
+
+export function removeOutlinesWithInvalidTypes(doc) {
   assert(doc instanceof Document);
   const elements = getOutlineElements(doc);
   const initialLength = elements.length;
@@ -83,7 +86,7 @@ export function opmlRemoveOutlinesWithInvalidTypes(doc) {
   return initialLength - elements.length;
 }
 
-export function opmlRemoveOutlinesMissingXMLURLs(doc) {
+export function removeOutlinesMissingXMLURLs(doc) {
   assert(doc instanceof Document);
   const outlines = getOutlineElements(doc);
   for(const outline of outlines) {
@@ -93,7 +96,7 @@ export function opmlRemoveOutlinesMissingXMLURLs(doc) {
   }
 }
 
-export function opmlNormalizeOutlineXMLURLs(doc) {
+export function normalizeOutlineXMLURLs(doc) {
   assert(doc instanceof Document);
   const outlines = getOutlineElements(doc);
   for(const outline of outlines) {
@@ -101,13 +104,8 @@ export function opmlNormalizeOutlineXMLURLs(doc) {
   }
 }
 
-export function opmlDocumentAppendOutlineObject(doc, outline) {
+export function appendOutlineObject(doc, outline) {
   appendOutlineElement(doc, OPMLOutline.toElement(doc, outline));
-}
-
-function getOutlineElements(doc) {
-  assert(doc instanceof Document);
-  return doc.querySelectorAll('opml > body > outline');
 }
 
 function appendOutlineElement(doc, element) {
