@@ -62,7 +62,7 @@ async function archiveEntry(entry, conn, channel) {
   compacted.dateUpdated = new Date();
   const afterSize = sizeof(compacted);
   console.debug('before %d after %d', beforeSize, afterSize);
-  await rdb.putEntry(conn, entry);
+  await rdb.putEntry(conn, compacted);
   const message = {type: 'archived-entry', id: compacted.id};
   channel.postMessage(message);
   return compacted;
