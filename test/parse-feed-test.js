@@ -1,4 +1,9 @@
 
+// TODO: I now have two parse feed files. Now it is ambiguous which one this test refers to. This
+// is a consequence of a test folder. I think this is a valid reason for merging test files into
+// the source folder. I think I should do that. Take a closer look at where other popular open
+// source projects store test code.
+
 import {fetchFeed} from "/src/fetch.js";
 import parseFeed from "/src/parse-feed.js";
 

@@ -3,6 +3,16 @@
 // TODO: prefer "item" over "entry" terminology?
 // TODO: create a FeedDescriptor object and return it instead of the basic property?
 
+// This TODO was moved from /src/reader/parse-feed.js
+// TODO: I think that, before I make any changes, a good change would be to revert the fetchFeed
+// function to returning a simple "feed" object that includes an "entries" array property, instead
+// of this whole "parseResult" object with two properties. This would be fine because it is now
+// very clear that parsing has nothing to do with coercion. Parsing just produces a thing. Then
+// the rest of the app has to deal with it and format it. The thing produced by parsing is not
+// at all concerned with how the app deals with it. So, here are the individual todos:
+// TODO: change parseFeed to return a single feed object with an entries array property
+// TODO: change /reader/parse-feed to expect the different format
+
 import assert from "/src/assert.js";
 import parseXML from "/src/parse-xml.js";
 

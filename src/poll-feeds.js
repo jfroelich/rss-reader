@@ -8,7 +8,7 @@ import {pollEntry, PollEntryContext} from "/src/poll-entry.js";
 import {promiseEvery} from "/src/promise.js";
 import updateBadgeText from "/src/update-badge-text.js";
 import {getFeeds as readerDbGetFeeds} from "/src/rdb.js";
-import {readerParseFeed} from "/src/reader-parse-feed.js";
+import parseFeed from "/src/reader/parse-feed.js";
 import {feedPut} from "/src/reader-storage.js";
 
 // TODO: rename pollFeeds to poll?
@@ -114,7 +114,7 @@ async function pollFeed(feed, pfc) {
 
   const feedXML = await response.text();
   const PROCESS_ENTRIES = true;
-  const parseResult = readerParseFeed(feedXML, url, response.responseURL, response.lastModifiedDate,
+  const parseResult = parseFeed(feedXML, url, response.responseURL, response.lastModifiedDate,
     PROCESS_ENTRIES);
 
   const mergedFeed = Feed.merge(feed, parseResult.feed);

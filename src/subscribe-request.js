@@ -16,7 +16,7 @@ import isAllowedURL from "/src/fetch-policy.js";
 import {isOpen as isOpenDB} from "/src/idb.js";
 import updateBadgeText from "/src/update-badge-text.js";
 import * as rdb from "/src/rdb.js";
-import {readerParseFeed} from "/src/reader-parse-feed.js";
+import parseFeed from "/src/reader/parse-feed.js";
 import {feedPut} from "/src/reader-storage.js";
 
 
@@ -83,7 +83,7 @@ export class SubscribeRequest {
 
       const xml = await res.text();
       const PROCESS_ENTRIES = false;
-      const parseResult = readerParseFeed(xml, url, res.responseURL, res.lastModifiedDate,
+      const parseResult = parseFeed(xml, url, res.responseURL, res.lastModifiedDate,
         PROCESS_ENTRIES);
       const mergedFeed = Feed.merge(feed, parseResult.feed);
       feed = mergedFeed;
