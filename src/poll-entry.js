@@ -2,7 +2,7 @@
 
 import assert from "/src/assert.js";
 import * as Entry from "/src/entry.js";
-import {isUncheckedError} from "/src/errors.js";
+import {check, isUncheckedError} from "/src/errors.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {fetchHTML} from "/src/fetch.js";
 import filterDocument from "/src/filter-document.js";
@@ -35,49 +35,41 @@ export class PollEntryContext {
 // @param this {PollEntryContext}
 export async function pollEntry(entry) {
   assert(this instanceof PollEntryContext);
+  assert(rdb.isOpen(this.readerConn));
   assert(Entry.isEntry(entry));
 
-  // TEMP: researching undesired behavior. After fetch error either here or in poll-feeds, I am not
-  // sure which, causes connection to be closed before calls to storing entry. So detect if
-  // connection closed and exit. This error is most likely related to recent switch to module
-  // transition, I screwed something up and not sure what. Or this error has always been present
-  // and I am only now experiencing it. I cannot reproduce it easily at the moment.
-  if(!rdb.isOpen(this.readerConn)) {
-    console.warn('canceled pollEntry, readerConn not open');
-    return;
-  }
-
   // Cannot assume entry has url. There are no earlier steps in the pipeline of processing a
-  // feed that guarantee this.
-  // TODO: maybe this should be an exception?
-  if(!Entry.hasURL(entry)) {
-    return false;
-  }
+  // feed that guarantee this. However, a url is required for polling, so throw an error
+  check(Entry.hasURL(entry), undefined, 'entry has no url');
 
   let urlString = Entry.peekURL(entry);
 
-  // This is declared let instead of const currently due to issues with changing the href property
-  // of a url object. This may change in the future.
   // If a url parsing error occurs, it is fatal to polling the entry.
-  let urlObject = new URL(urlString);
+  const urlObject = new URL(urlString);
 
+  // If a rewrite error occurs, it is fatal to polling the entry
   const rewrittenURL = rewriteURL(urlObject.href);
   if(rewrittenURL && urlObject.href !== rewrittenURL) {
+    // If an appendURL error occrs, it is fatal to polling the entry
     Entry.appendURL(entry, rewrittenURL);
-
-    //urlObject = new URL(rewrittenURL);
     setURLHrefProperty(urlObject, rewrittenURL);
   }
 
-  if(!await isPollableEntryURL(urlObject.href, this.readerConn)) {
+  if(!await isPollableEntryURL(urlObject, this.readerConn)) {
     return false;
   }
 
-  const response = await pollEntryFetch(urlObject.href, this.fetchHTMLTimeoutMs);
+  let response;
+  try {
+    response = await fetchHTML(urlObject.href, this.fetchHTMLTimeoutMs);
+  } catch(error) {
+    // Ignore, not fatal to poll
+  }
+
   let entryContent = entry.content;
   if(response) {
     if(response.redirected) {
-      if(!await isPollableEntryURL(response.responseURL, this.readerConn)) {
+      if(!await isPollableEntryURL(new URL(response.responseURL), this.readerConn)) {
         return false;
       }
 
@@ -133,15 +125,6 @@ export async function pollEntry(entry) {
   return true;
 }
 
-async function pollEntryFetch(url, timeout) {
-  let response;
-  try {
-    response = await fetchHTML(url, timeout);
-  } catch(error) {
-  }
-  return response;
-}
-
 // @param entry {Object} a feed entry
 // @param document {Document} optional, pre-fetched document
 async function updateEntryIcon(entry, document) {
@@ -152,7 +135,10 @@ async function updateEntryIcon(entry, document) {
     assert(document instanceof Document);
   }
 
+  // TODO: this should be a parameter of type URL and done externally
   const pageURL = new URL(Entry.peekURL(entry));
+
+
   let iconURL;
 
   const query = new FaviconLookup();
@@ -173,41 +159,38 @@ async function updateEntryIcon(entry, document) {
   entry.faviconURLString = iconURL || this.feedFaviconURL;
 }
 
-// TODO: this should accept a URL object as input. I am currently in the process of doing this.
-// In order to do this I first have to change the caller to work with a url object.
+// @param url {URL}
 async function isPollableEntryURL(url, conn) {
-  const urlObject = new URL(url);
-  const hostname = urlObject.hostname;
 
-  if(isInterstitialURL(urlObject)) {
+  // TODO: rather than separate functions, use a single list that flags the reason each url
+  // is in the list?
+
+  if(isInterstitialURL(url)) {
     return false;
   }
-
-  if(isScriptedURL(urlObject)) {
+  if(isScriptedURL(url)) {
     return false;
   }
-
-  if(isPaywallURL(hostname)) {
+  if(isPaywallURL(url)) {
     return false;
   }
-
-  if(isRequiresCookieURL(hostname)) {
+  if(isRequiresCookieURL(url)) {
     return false;
   }
-
-  if(sniffIsBinaryURL(urlObject)) {
+  if(sniffIsBinaryURL(url)) {
     return false;
   }
 
   // TODO: this should be a call to something like "hasEntry" that abstracts how entry comparison
   // works
-  try {
-    const exists = await rdb.findEntryByURL(conn, url);
-    return !exists;
-  } catch(error) {
-    console.warn(error);
-    return false;
-  }
+  // TODO: this is the only reason this function is async. It kind of doesn't need to be async if
+  // I move this call out of here.
+  // TODO: more than that, this doesn't even belong to isPollableEntryURL, it is outside the
+  // scope of the test's meaning
+
+  // If a database error occurs, allow it to bubble
+  const exists = await rdb.findEntryByURL(conn, url.href);
+  return !exists;
 }
 
 function isInterstitialURL(url) {
@@ -226,19 +209,19 @@ function isScriptedURL(url) {
   return hosts.includes(url.hostname);
 }
 
-function isPaywallURL(hostname) {
+function isPaywallURL(url) {
   const hosts = [
     'www.nytimes.com',
     'myaccount.nytimes.com',
     'open.blogs.nytimes.com'
   ];
-  return hosts.includes(hostname);
+  return hosts.includes(url.hostname);
 }
 
-function isRequiresCookieURL(hostname) {
+function isRequiresCookieURL(url) {
   const hosts = [
     'www.heraldsun.com.au',
     'ripe73.ripe.net'
   ];
-  return hosts.includes(hostname);
+  return hosts.includes(url.hostname);
 }
