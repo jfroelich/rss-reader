@@ -4,6 +4,33 @@ import assert from "/src/assert.js";
 import * as mime from "/src/mime.js";
 import {isAlphanumeric, parseInt10} from "/src/string.js";
 
+// This disaster of a function tries to clearly expose the risk of setting a URL's href property
+// directly. Whenever there is any doubt about whether the new href value is valid, this function
+// should be used to set the href property instead of directly setting the property. The risk of
+// setting the href property directly is that the href setter implementation, at least in Chrome's
+// implementation, does not appear to undergo the same checks as the URL constructor. Casually, I
+// and probably other users of the URL object assume the behavior would be the same, and that the
+// URL object warrants it cannot contain invalid values. But this is not true. While the constructor
+// throws an error when an invalid parameter is given, the href setter does NOT. The href setter
+// merrily ignores the validity of the new value. This function imposes the same constraint on
+// the setter that is used by the constructor, that the URL cannot store an invalid URL.
+//
+// According to https://url.spec.whatwg.org/#dom-url-href, the setter should throw a TypeError.
+// Currently Chrome does not appear to do this. This behavior is easily reproduced by setting
+// the href property directly to garbage.
+export function setURLHrefProperty(url, newHrefString) {
+
+  // Because setting href does not throw the expected type error, instead, use a proxy that involves
+  // passing through the constructor, which will throw an error of some kind.
+  const guardURL = new URL(newHrefString);
+  // Then set the href value. Notably, there is NO guarantee that guardURL.href is equal to
+  // newHrefString. It very likely may not be equal. However, rather than setting href to
+  // newHrefString, I want href values to be consistent, so set it to the serialized guard value
+  // instead. Maybe that isn't important because both serialize to the same thing? Without knowing
+  // or bothering to test, I am going to assume using the guard value is safer and more consistent.
+  url.href = guardURL.href;
+}
+
 // Returns true if otherURL is 'external' to the documentURL. Inaccurate and insecure.
 // @param documentURL {URL}
 // @param otherURL {URL}

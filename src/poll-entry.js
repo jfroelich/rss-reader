@@ -10,7 +10,7 @@ import parseHTML from "/src/parse-html.js";
 import * as rdb from "/src/rdb.js";
 import {entryAdd} from "/src/reader-storage.js";
 import rewriteURL from "/src/rewrite-url.js";
-import {sniffIsBinaryURL} from "/src/url.js";
+import {setURLHrefProperty, sniffIsBinaryURL} from "/src/url.js";
 import {isValidURLString} from "/src/url-string.js";
 
 export class PollEntryContext {
@@ -22,6 +22,15 @@ export class PollEntryContext {
     this.fetchImageTimeoutMs = undefined;
   }
 }
+
+// TODO: change pollEntry to stop trying not to throw exceptions. Instead, pollEntry should be
+// called with promiseEvery instead of Promise.all. pollEntry should through some kind error in
+// cases where it encounters a problem polling the entry and should stop trying to trap its errors
+// internally. Make its return value the stored entry object. So it either always reaches the end
+// and stores an entry object, or it encounters an error and throws and thereby exits early. The
+// current behavior of returning false and such is a remnant of an older approach where I tried to
+// avoid throwing an error at all costs. But the new approach embraces the exception throwing
+// nature of JavaScript functions, so this should also embrace that style.
 
 // @param this {PollEntryContext}
 export async function pollEntry(entry) {
@@ -56,16 +65,8 @@ export async function pollEntry(entry) {
   if(rewrittenURL && urlObject.href !== rewrittenURL) {
     Entry.appendURL(entry, rewrittenURL);
 
-    // TODO: maybe it makes sense to make some kind of helper function in url.js that makes the
-    // issue with setting the href very explicit. Revisit this after finishing the transition to
-    // using urlObject in place of urlString.
-
-    // Even though it would make more sense to simply set the href property of the urlObject and
-    // not create a new object, the href setter does not seem to undergo the same checks that are
-    // done in the URL constructor. For example, setting the href happily allows me to destroy the
-    // validity of the url. Compare new URL("not a url!") to url.href = "not a url!".  Therefore,
-    // I am changing the url by pointing it to a new object.
-    urlObject = new URL(rewrittenURL);
+    //urlObject = new URL(rewrittenURL);
+    setURLHrefProperty(urlObject, rewrittenURL);
   }
 
   if(!await isPollableEntryURL(urlObject.href, this.readerConn)) {
@@ -81,10 +82,11 @@ export async function pollEntry(entry) {
       }
 
       Entry.appendURL(entry, response.responseURL);
+
       // TODO: attempt to rewrite the redirected url as well?
 
-      // TODO: see earlier notes in this function on changing url
-      urlObject = new URL(response.responseURL);
+      // Change urlObject to the redirected url
+      setURLHrefProperty(urlObject, response.responseURL);
     }
 
     // Use the full text of the response in place of the in-feed content
@@ -98,13 +100,12 @@ export async function pollEntry(entry) {
     if(isUncheckedError(error)) {
       throw error;
     } else {
-      // Ignore parse error
+      // Ignore parse error, leave entryDocument undefined and continue
     }
   }
 
   // Only use the document for lookup if it was fetched
   const lookupDocument = response ? entryDocument : undefined;
-
   try {
     await updateEntryIcon.call(this, entry, lookupDocument);
   } catch(error) {
@@ -114,7 +115,6 @@ export async function pollEntry(entry) {
   // Filter the entry content
   if(entryDocument) {
     await filterDocument(entryDocument, urlObject.href, this.fetchImageTimeoutMs);
-
     entry.content = entryDocument.documentElement.outerHTML.trim();
   } else {
     entry.content = 'Empty or malformed content';
