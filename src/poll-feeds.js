@@ -137,8 +137,8 @@ async function pollFeed(feed, pfc) {
   pec.fetchHTMLTimeoutMs = pfc.fetchHTMLTimeoutMs;
   pec.fetchImageTimeoutMs = pfc.fetchImageTimeoutMs;
 
-  const entryPromises = entries.map(pollEntry, pec);
+  const pollEntryPromises = entries.map(pollEntry, pec);
 
-  // TODO: switch to using promiseEvery?
-  const entryResolutions = await Promise.all(entryPromises);
+  // TODO: switch to using promiseEvery
+  await Promise.all(pollEntryPromises);
 }
