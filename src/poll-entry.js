@@ -1,6 +1,7 @@
 // For polling an individual entry when polling feeds
 
 import assert from "/src/assert.js";
+import config from "/src/config.js";
 import * as Entry from "/src/entry.js";
 import {check, isUncheckedError} from "/src/errors.js";
 import FaviconLookup from "/src/favicon-lookup.js";
@@ -129,27 +130,10 @@ export async function pollEntry(entry) {
 
 // Return true if url contains inaccessible content
 function isInaccessibleContentURL(url) {
-  for(const descriptor of INACCESSIBLE_CONTENT_DESCRIPTORS) {
+  for(const descriptor of config.INACCESSIBLE_CONTENT_DESCRIPTORS) {
     if(descriptor.hostname === url.hostname) {
       return true;
     }
   }
   return false;
 }
-
-// TODO: this should be configured somewhere else, I don't know, config.js or something
-// TODO: should not have to enumerable subdomains, compare top domains, use the function
-// getUpperDomain from url.js (currently not exported). Or use regexs
-
-const INACCESSIBLE_CONTENT_DESCRIPTORS = [
-  {hostname: 'www.forbes.com', reason: 'interstitial'},
-  {hostname: 'www.forbes.com', reason: 'interstitial'},
-  {hostname: 'productforums.google.com', reason: 'script-generated'},
-  {hostname: 'groups.google.com', reason: 'script-generated'},
-  {hostname: 'www.nytimes.com', reason: 'paywall'},
-  {hostname: 'nytimes.com', reason: 'paywall'},
-  {hostname: 'myaccount.nytimes.com', reason: 'paywall'},
-  {hostname: 'open.blogs.nytimes.com', reason: 'paywall'},
-  {hostname: 'www.heraldsun.com.au', reason: 'requires-cookies'},
-  {hostname: 'ripe73.ripe.net', reason: 'requires-cookies'}
-];

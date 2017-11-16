@@ -139,6 +139,5 @@ async function pollFeed(feed, pfc) {
 
   const pollEntryPromises = entries.map(pollEntry, pec);
 
-  // TODO: switch to using promiseEvery
-  await Promise.all(pollEntryPromises);
+  await promiseEvery(pollEntryPromises);
 }
