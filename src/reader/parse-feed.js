@@ -23,7 +23,6 @@
 // the pipeline of feed processing, and it feels like this is taking bits from stage 2 and 3 and 4
 // and calling it step 1.5.
 
-
 import assert from "/src/assert.js";
 import * as Entry from "/src/entry.js";
 import * as Feed from "/src/feed.js";
@@ -31,15 +30,17 @@ import parseFeed as internalParseFeed from "/src/parse-feed.js";
 import {isCanonicalURLString} from "/src/url-string.js";
 
 // Parses an xml input string representing a feed. Returns a result with a feed object and an array
-// of entries.
-export default function parseFeed(xmlString, requestURL, responseURL, lastModDate,
-  processEntries) {
-
+// of entries. Throws both checked and unchecked errors.
+export default function parseFeed(xmlString, requestURL, responseURL, lastModDate, processEntries) {
   const result = {feed: undefined, entries: []};
 
+  // Any errors produced by this call are not caught here and are passed upward
   const feed = internalParseFeed(xmlString);
 
-  // Pull the entries property out of the parsed object
+  // Pull the entries property out of the parsed feed. The interal parser includes the entries
+  // array as a part of the parsed feed, but the app's storage format does not store entries per
+  // feed, it stores feeds and entries separately, and the feeds it stores do not have an entries
+  // property.
   const entries = feed.entries;
   delete feed.entries;
 

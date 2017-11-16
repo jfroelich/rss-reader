@@ -1,13 +1,16 @@
 // Feed parsing functionality
 
 // TODO: prefer "item" over "entry" terminology?
-// TODO: create a FeedDescriptor object and return it instead of the basic property?
+// TODO: create a FeedDescriptor-like object and return it instead of a basic object?
 // TODO: findChildElementText should not normalize, this should return values as is, and move
 // normalization responsibility to caller. In fact nothing in this parser should do any
 // normalization. All of that validation and sanitization and coercion should be the caller's
-// responsibility. This function should not be concerned with those things.
+// responsibility. This function should not be concerned with those things. The goal is to maintain
+// fidelity to the input. In fact I probably should not even be trying to change strings into
+// date objects and such.
 
 import assert from "/src/assert.js";
+import {check, ParserError} from "/src/errors.js";
 import parseXML from "/src/parse-xml.js";
 
 // Parses the input string into a feed object. The feed object will always have a defined entries
@@ -28,33 +31,18 @@ export default function parseFeed(feedXMLString) {
 function unmarshallXML(document) {
   assert(document instanceof Document);
 
-  // Create and define the output object
-  const feed = {};
-  // The output always has an entries array as part of its contract
-  // TODO: if I am throwing in the case of error, I probably no longer need to do this,
-  // because it will happen later?
-  feed.entries = [];
-
-  // Check that the root element is one of the supported formats
   const documentElement = document.documentElement;
-  const rootNames = ['feed', 'rdf', 'rss'];
+  // TODO: this should be a call to getElementName in xml utils
   const documentElementName = documentElement.localName.toLowerCase();
+  const supportedNames = ['feed', 'rdf', 'rss'];
 
-  // TODO: change this to throw a checked exception, use check(). I am deferring this change
-  // until after I complete the other change to returning feed.
+  check(supportedNames.includes(documentElementName), ParserError,
+    'unsupported document element ' + documentElementName);
 
-  if(!rootNames.includes(documentElementName)) {
-    return feed;
-  }
-
-  // Check that the xml has a channel element
-  // TODO: change this to throw a checked exception, use check(). I am deferring this change
-  // until after I complete the other change to returning feed.
   const channelElement = findChannelElement(documentElement);
-  if(!channelElement) {
-    return feed;
-  }
+  check(channelElement, ParseError, 'missing channel element');
 
+  const feed = {};
   feed.type = findFeedType(documentElement);
   feed.title = findFeedTitle(channelElement);
   feed.description = findFeedDescription(document, channelElement);
