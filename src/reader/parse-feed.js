@@ -26,7 +26,7 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/entry.js";
 import * as Feed from "/src/feed.js";
-import parseFeed as internalParseFeed from "/src/parse-feed.js";
+import {parseFeed as parseFeedImpl} from "/src/parse-feed.js";
 import {isCanonicalURLString} from "/src/url-string.js";
 
 // Parses an xml input string representing a feed. Returns a result with a feed object and an array
@@ -35,7 +35,7 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   const result = {feed: undefined, entries: []};
 
   // Any errors produced by this call are not caught here and are passed upward
-  const feed = internalParseFeed(xmlString);
+  const feed = parseFeedImpl(xmlString);
 
   // Pull the entries property out of the parsed feed. The interal parser includes the entries
   // array as a part of the parsed feed, but the app's storage format does not store entries per

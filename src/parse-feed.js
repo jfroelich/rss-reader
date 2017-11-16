@@ -17,7 +17,7 @@ import {getElementName} from "/src/xml-utils.js";
 // Parses the input string into a feed object. The feed object will always have a defined entries
 // array, although it may be zero length. Throws both checked and unchecked errors if the feed
 // is not well formed or something unexpected happened.
-export default function parseFeed(feedXMLString) {
+export function parseFeed(feedXMLString) {
   const xmlDocument = parseXML(feedXMLString);
   assert(document instanceof Document);
   return unmarshallXML(xmlDocument);
@@ -32,7 +32,7 @@ function unmarshallXML(document) {
   check(supportedNames.includes(documentElementName), ParserError,
     'unsupported document element: ' + documentElementName);
   const channelElement = findChannelElement(documentElement);
-  check(channelElement, ParseError, 'missing channel element');
+  check(channelElement, ParserError, 'missing channel element');
 
   const feed = {};
   feed.type = findFeedType(documentElement);
