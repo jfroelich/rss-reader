@@ -12,33 +12,25 @@
 import assert from "/src/assert.js";
 import {check, ParserError} from "/src/errors.js";
 import parseXML from "/src/parse-xml.js";
+import {getElementName} from "/src/xml-utils.js";
 
 // Parses the input string into a feed object. The feed object will always have a defined entries
 // array, although it may be zero length. Throws both checked and unchecked errors if the feed
 // is not well formed or something unexpected happened.
 export default function parseFeed(feedXMLString) {
-
-  // Create a Document from the string. Rethrow any errors.
   const xmlDocument = parseXML(feedXMLString);
-
-  // Any assumptions about the validity of the result produced by parseXML are delegated to
-  // unmarshallXML.
+  assert(document instanceof Document);
   return unmarshallXML(xmlDocument);
 }
 
 // @param document {Document} an XML document representing a feed
 // @returns {Object} a feed object
 function unmarshallXML(document) {
-  assert(document instanceof Document);
-
   const documentElement = document.documentElement;
-  // TODO: this should be a call to getElementName in xml utils
-  const documentElementName = documentElement.localName.toLowerCase();
+  const documentElementName = getElementName(documentElement);
   const supportedNames = ['feed', 'rdf', 'rss'];
-
   check(supportedNames.includes(documentElementName), ParserError,
-    'unsupported document element ' + documentElementName);
-
+    'unsupported document element: ' + documentElementName);
   const channelElement = findChannelElement(documentElement);
   check(channelElement, ParseError, 'missing channel element');
 
@@ -49,14 +41,8 @@ function unmarshallXML(document) {
   feed.link = findFeedLink(channelElement);
   feed.datePublished = findFeedDate(channelElement);
 
-  const entryObjects = [];
   const entryElements = findEntryElements(channelElement);
-  for(const entryElement of entryElements) {
-    entryObjects.push(createEntryObject(entryElement));
-  }
-
-  // Overwrite the default empty entries array property with the processed entries array
-  feed.entries = entryObjects;
+  feed.entries = entryElements.map(createEntryObject);
 
   return feed;
 }
@@ -82,10 +68,9 @@ function findChannelElement(documentElement) {
 
 function findEntryElements(channelElement) {
   const documentElement = channelElement.ownerDocument.documentElement;
-  const documentElementName = documentElement.localName.toLowerCase();
-  const entries = [];
-  let parentNode, entryElementName;
+  const documentElementName = getElementName(documentElement);
 
+  let parentNode, entryElementName;
   if(documentElementName === 'feed') {
     parentNode = documentElement;
     entryElementName = 'entry';
@@ -96,17 +81,15 @@ function findEntryElements(channelElement) {
     parentNode = channelElement;
     entryElementName = 'item';
   } else {
-    // This should never happen because we checked previously
-    assert(false, 'unsupported document element: ' + documentElement.nodeName);
+    assert(false);
   }
 
-  for(let childElement = parentNode.firstElementChild; childElement;
-    childElement = childElement.nextElementSibling) {
-    if(childElement.localName.toLowerCase() === entryElementName) {
-      entries.push(childElement);
+  const entries = [];
+  for(let c = parentNode.firstElementChild; c; c = c.nextElementSibling) {
+    if(getElementName(c) === entryElementName) {
+      entries.push(c);
     }
   }
-
   return entries;
 }
 
@@ -157,9 +140,9 @@ function findAtomFeedLinkElement(channelElement) {
 
 function findFeedLink(channelElement) {
   const documentElement = channelElement.ownerDocument.documentElement;
-
+  const documentElementName = getElementName(documentElement);
   let linkText, linkElement;
-  if(documentElement.localName.toLowerCase() === 'feed') {
+  if(documentElementName === 'feed') {
     linkElement = findAtomFeedLinkElement(channelElement);
     if(linkElement) {
       linkText = linkElement.getAttribute('href');
@@ -240,8 +223,9 @@ function findEntryAuthor(entryElement) {
 
 function findEntryLink(entryElement) {
   const documentElement = entryElement.ownerDocument.documentElement;
+  const documentElementName = getElementName(documentElement);
   let linkText;
-  if(documentElement.localName.toLowerCase() === 'feed') {
+  if(documentElementName === 'feed') {
     let link = findChildElement(entryElement, isLinkRelAltElement);
     link = link || findChildElement(entryElement, isLinkRelSelfElement);
     link = link || findChildElement(entryElement, isLinkWithHrefElement);
@@ -255,8 +239,9 @@ function findEntryLink(entryElement) {
 
 function findEntryDate(entryElement) {
   const documentElement = entryElement.ownerDocument.documentElement;
+  const documentElementName = getElementName(documentElement);
   let dateString;
-  if(documentElement.localName.toLowerCase() === 'feed') {
+  if(documentElementName === 'feed') {
     dateString = findChildElementText(entryElement, 'published') ||
       findChildElementText(entryElement, 'updated');
   } else {
@@ -277,8 +262,9 @@ function findEntryDate(entryElement) {
 
 function findEntryContent(entryElement) {
   const documentElement = entryElement.ownerDocument.documentElement;
+  const documentElementName = getElementName(documentElement);
   let result;
-  if(documentElement.localName.toLowerCase() === 'feed') {
+  if(documentElementName === 'feed') {
     const content = findChildElementByName(entryElement, 'content');
     const nodes = content ? content.childNodes : [];
     const texts = [];
