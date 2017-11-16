@@ -1,4 +1,4 @@
-// This is a wrapper around FeedParser that customizes the parsed feed format to the app's feed
+// This is a wrapper around parse-feed.js that customizes the parsed feed format to the app's feed
 // format.
 
 // TODO: after module transition rename to parse-feed.js and put in app folder or something similar
@@ -6,15 +6,14 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/entry.js";
 import * as Feed from "/src/feed.js";
-import {FeedParser} from "/src/feed-parser.js";
+import parseFeed from "/src/parse-feed.js";
 import {isCanonicalURLString} from "/src/url-string.js";
 
 // Parses an xml input string representing a feed. Returns a result with a
 // feed object and an array of entries.
 export function readerParseFeed(xmlString, requestURL, responseURL, lastModDate, processEntries) {
   const result = {feed: undefined, entries: []};
-  const parser = new FeedParser();
-  const parseResult = parser.parseFromString(xmlString);
+  const parseResult = parseFeed(xmlString);
   const feed = parseResult.feed;
   setupFeed(feed, requestURL, responseURL, lastModDate);
   result.feed = feed;
