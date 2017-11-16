@@ -11,10 +11,7 @@ export function emphasisFilter(doc, maxTextLength) {
   if(typeof maxTextLength === 'undefined') {
     maxTextLength = 0;
   }
-
   assert(isPosInt(maxTextLength));
-
-  // Restrict analysis to body
   if(!doc.body) {
     return;
   }

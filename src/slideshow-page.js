@@ -61,8 +61,7 @@ function removeSlide(slideElement) {
 async function markSlideRead(conn, slideElement) {
   assert(rdb.isOpen(conn));
 
-  // This is a routine situation such as when navigating backward and therefore
-  // not an error.
+  // This is a routine situation such as when navigating backward and therefore not an error.
   if(slideElement.hasAttribute('read')) {
     return;
   }
@@ -142,8 +141,8 @@ function appendSlide(entry) {
 
   containerElement.appendChild(slideElement);
 
-  // TODO: this might be wrong if multiple unread slides are initially appended
-  // I need to ensure currentSlide is always set. Where do I do this?
+  // TODO: this might be wrong if multiple unread slides are initially appended. I need to ensure
+  // currentSlide is always set. Where do I do this?
   // TODO: clarify the above comment, I have no idea what I am talking about
   if(containerElement.childElementCount === 1) {
     currentSlide = slideElement;
@@ -156,7 +155,7 @@ function createArticleTitleElement(entry) {
   titleElement.setAttribute('href', Entry.peekURL(entry));
   titleElement.setAttribute('class', 'entry-title');
 
-  // TODO: use _blank is discouraged. Need to use custom listener that opens new tab instead
+  // TODO: use of _blank is discouraged. Need to use custom listener that opens new tab instead
   titleElement.setAttribute('target','_blank');
 
   titleElement.setAttribute('rel', 'noreferrer');
@@ -165,19 +164,15 @@ function createArticleTitleElement(entry) {
     let title = entry.title;
     let safeTitle = escapeHTML(title);
 
-    // Set the attribute value to the full title without truncation or
-    // publisher filter
+    // Set the attribute value to the full title without truncation or publisher filter
     titleElement.setAttribute('title', safeTitle);
 
     let filteredSafeTitle = filterPublisher(safeTitle);
-
     try {
       filteredSafeTitle = htmlTruncate(filteredSafeTitle, 300);
     } catch(error) {
       console.warn(error);
     }
-
-    //titleElement.textContent = filteredSafeTitle;
 
     // Use innerHTML to allow entities in titles
     titleElement.innerHTML = filteredSafeTitle;
@@ -210,8 +205,7 @@ function createFeedSourceElement(entry) {
     faviconElement.setAttribute('height', '16');
     sourceElement.appendChild(faviconElement);
   }
-  // TODO: why is this called title? This should be renamed to something like
-  // attributionElement
+  // TODO: why is this called title? This should be renamed to something like attributionElement
   const titleElement = document.createElement('span');
   if(entry.feedLink) {
     titleElement.setAttribute('title', entry.feedLink);
@@ -267,10 +261,9 @@ async function onSlideClick(event) {
 // TODO: visual feedback on error
 async function showNextSlide() {
 
-  // currentSlide may be undefined
-  // This isn't actually an error. For example, when initially viewing the
-  // slideshow before subscribing when there are no feeds and entries, or
-  // initially viewing the slideshow when all entries are read.
+  // currentSlide may be undefined. This isn't actually an error. For example, when initially
+  // viewing the slideshow before subscribing when there are no feeds and entries, or initially
+  // viewing the slideshow when all entries are read.
   if(!currentSlide) {
     console.warn('no current slide');
     return;
@@ -297,8 +290,7 @@ async function showNextSlide() {
       currentSlide.scrollTop = 0;
       currentSlide = currentSlide.nextSibling;
 
-      // Change the active element to the new current slide, so that scrolling
-      // with keys works
+      // Change the active element to the new current slide, so that scrolling with keys works
       currentSlide.focus();
 
       await markSlideRead(conn, oldSlideElement);
@@ -324,8 +316,8 @@ function cleanupOnAppend() {
   }
 }
 
-// Move the current slide out of view to the right, and move the previous
-// slide into view, and then update the current slide.
+// Move the current slide out of view to the right, and move the previous slide into view, and then
+// update the current slide.
 function showPreviousSlide() {
   // TODO: when is this condition ever true? Maybe this should be an assert?
   if(!currentSlide) {
@@ -342,8 +334,8 @@ function showPreviousSlide() {
   prevSlideElement.style.left = '0';
   prevSlideElement.style.right = '0';
   currentSlide = prevSlideElement;
-  // Change the active element to the new current slide, so that scrolling
-  // using keyboard keys still works
+  // Change the active element to the new current slide, so that scrolling using keyboard keys still
+  // works
   currentSlide.focus();
 }
 

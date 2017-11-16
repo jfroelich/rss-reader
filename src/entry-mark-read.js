@@ -38,8 +38,8 @@ export default async function entryMarkRead(conn, id) {
   const url = Entry.peekURL(entry);
   console.debug('found entry to mark with url', url);
 
-  // We have full control over the entry object from read to write, so there is no need to
-  // sanitize or filter empty properties.
+  // We have full control over the entry object from read to write, so there is no need to sanitize
+  // or filter empty properties.
   entry.readState = Entry.STATE_READ;
   entry.dateUpdated = new Date();
   entry.dateRead = entry.dateUpdated;

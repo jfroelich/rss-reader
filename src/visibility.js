@@ -26,8 +26,8 @@ export function isHiddenElement(element) {
   assert(element instanceof Element);
   const doc = element.ownerDocument;
 
-  // If a document does not have a body element, then assume it contains
-  // no visible content, and therefore consider the element as hidden.
+  // If a document does not have a body element, then assume it contains no visible content, and
+  // therefore consider the element as hidden.
   if(!doc.body) {
     return true;
   }

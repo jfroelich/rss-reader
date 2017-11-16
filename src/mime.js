@@ -36,9 +36,8 @@ export function fromContentType(contentType) {
   assert(contentTypeVarType === 'string');
   let mimeType = contentType;
 
-  // Strip the character encoding, if present. The substring gets all
-  // characters up to but excluding the semicolon. The coding
-  // is optional, so leave the type as is if no semicolon is present.
+  // Strip the character encoding, if present. The substring gets all characters up to but excluding
+  // the semicolon. The coding is optional, so leave the type as is if no semicolon is present.
   const fromIndex = 0;
   const semicolonPosition = contentType.indexOf(';');
   if(semicolonPosition !== -1) {
@@ -48,8 +47,8 @@ export function fromContentType(contentType) {
   return normalize(mimeType);
 }
 
-// A basic trivial test of whether the parameter represents a mime type.
-// Inaccurate. Few false negatives but many false positives.
+// A basic trivial test of whether the parameter represents a mime type. Inaccurate. Few false
+// negatives but many false positives.
 export function isMimeType(mimeType) {
   return typeof mimeType === 'string' && mimeType.length > MIME_TYPE_MIN_LENGTH &&
     mimeType.length < MIME_TYPE_MAX_LENGTH && mimeType.includes('/') &&

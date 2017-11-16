@@ -28,7 +28,6 @@ export default class FaviconLookup {
 // Looks up the favicon url for a given web page url
 // @param url {URL} the lookup url
 // @param document {Document} optional pre-fetched document for the url
-// @throws {AssertionError}
 // @throws {Error} database related
 // @returns {String} the associated favicon url or undefined if not found
 FaviconLookup.prototype.lookup = async function(url, document) {
@@ -234,7 +233,6 @@ FaviconLookup.prototype.fetchHTML = async function(url) {
 
 // Helper that traps non-assertion errors
 // @param response {Response}
-// @throws {AssertionError}
 // @returns {Document}
 FaviconLookup.prototype.parseHTMLResponse = async function(response) {
   try {
@@ -274,7 +272,6 @@ FaviconLookup.prototype.LINK_SELECTOR = [
 // Searches the document for favicon urls
 // @param document {Document}
 // @param baseURL {URL} the base url of the document for resolution purposes
-// @throws {AssertionError}
 // @returns {String} a favicon url, if found
 FaviconLookup.prototype.search = function(document, baseURL) {
   assert(document instanceof Document);
@@ -295,7 +292,6 @@ FaviconLookup.prototype.search = function(document, baseURL) {
 // Otherwise this returns a new URL representing the canonical url.
 // @param url {String} optional url to resolve
 // @param baseURL {URL}
-// @throws {AssertionError}
 // @returns {URL}
 FaviconLookup.prototype.resolveURL = function(url, baseURL) {
   assert(baseURL instanceof URL);

@@ -33,11 +33,8 @@ export function lazyImageFilter(doc) {
       if(image.hasAttribute(lazySourceName)) {
         const imageSource = image.getAttribute(lazySourceName);
         if(isValidURLString(imageSource)) {
-          //const preHTML = image.outerHTML;
           image.removeAttribute(lazySourceName);
           image.setAttribute('src', imageSource);
-          //const postHTML = image.outerHTML;
-          //console.log('lazy:', preHTML, postHTML);
           break;
         }
       }

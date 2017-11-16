@@ -319,8 +319,8 @@ function findChildElementText(parentElement, elementName) {
   if(childElement) {
     const text = childElement.textContent;
     if(text) {
-      // TODO: I shouldn't normalize, this should return values as is, and
-      // move normalization responsibility to caller.
+      // TODO: I shouldn't normalize, this should return values as is, and move normalization
+      // responsibility to caller.
       return text.trim();
     }
   }

@@ -2,9 +2,8 @@
 
 import assert from "/src/assert.js";
 
-// Allows for leading whitespace characters. Returns true for javascript: and
-// mailto: and data:. Returns true for https:// and http://. Returns false for
-// '//' (protocol-relative).
+// Allows for leading whitespace characters. Returns true for javascript: and mailto: and data:.
+// Returns true for https:// and http://. Returns false for '//' (protocol-relative).
 export function isCanonicalURLString(urlString) {
   assert(typeof urlString === 'string');
 
@@ -15,13 +14,11 @@ export function isCanonicalURLString(urlString) {
 // For a url string to have the script protocol it must be longer than this
 const JS_PREFIX_LEN = 'javascript:'.length;
 
-// Returns true if the url has the 'javascript:' protocol. Does not throw in
-// the case of bad input. Tolerates leading whitespace
+// Returns true if the url has the 'javascript:' protocol. Does not throw in the case of bad input.
+// Tolerates leading whitespace
 export function hasScriptProtocol(urlString) {
-
-  // The type check is done to allow for bad inputs for caller convenience
-  // The length check is an attempt to reduce the number of regex calls.
-
+  // The type check is done to allow for bad inputs for caller convenience. The length check is an
+  // attempt to reduce the number of regex calls.
   return typeof urlString === 'string' &&
     urlString.length > JS_PREFIX_LEN &&
     /^\s*javascript:/i.test(urlString);
@@ -35,8 +32,8 @@ export function resolveURLString(urlString, baseURL) {
   assert(typeof urlString === 'string');
   assert(baseURL instanceof URL);
 
-  // TODO: look at the code in favicon-lookup.js. I should consider the same things here.
-  // In fact I should probably modify favicon-lookup.js to call this function as a dependency.
+  // TODO: look at the code in favicon-lookup.js. I should consider the same things here. In fact I
+  // should probably modify favicon-lookup.js to call this function as a dependency.
 
   let canonicalURL;
   try {

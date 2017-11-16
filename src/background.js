@@ -1,5 +1,4 @@
-// Background page for extension
-// This should be loaded exclusively in the background page
+// Background page for extension. This should be loaded exclusively in the background page.
 
 import "/src/alarms.js";
 import "/src/cli.js";

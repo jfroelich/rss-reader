@@ -39,7 +39,6 @@ export default async function refreshFeedIcons(readerConn, iconConn) {
 // @param readerConn {IDBDatabase}
 // @param iconConn {IDBDatabase}
 // @param skipPrep {Boolean} whether to skip feed preparation when updating db
-// @throws AssertionError
 // @throws Error - database related
 async function updateFeedIcon(feed, readerConn, iconConn, skipPrep) {
   assert(Feed.isFeed(feed));

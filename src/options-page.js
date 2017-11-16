@@ -264,8 +264,7 @@ async function subscribeFormOnsubmit(event) {
     return false;
   }
 
-  // TODO: rename, this is no longer query, simply a text input that should
-  // contain a url
+  // TODO: rename, this is no longer query, simply a text input that should contain a url
   const queryElement = document.getElementById('subscribe-url');
   let queryString = queryElement.value;
   queryString = queryString || '';
@@ -289,8 +288,8 @@ async function subscribeFormOnsubmit(event) {
 
   optionsPageSubscriptionMonitorShow();
 
-  // This is safe because it is coming from the parsed url and not directly
-  // from user input, and would have failed earlier.
+  // This is safe because it is coming from the parsed url and not directly from user input, and
+  // would have failed earlier.
   optionsPageSubscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
 
   const feed = Feed.create();
@@ -316,9 +315,8 @@ async function subscribeFormOnsubmit(event) {
   feedListAppendFeed(subscribedFeed);
   const feedURL = Feed.peekURL(subscribedFeed);
 
-  // This is safe. feedURL comes from a string that has undergone
-  // deserialization into a URL object and back to a string. Unsafe user input
-  // would have triggered a parsing error.
+  // This is safe. feedURL comes from a string that has undergone deserialization into a URL object
+  // and back to a string. Unsafe user input would have triggered a parsing error.
   optionsPageSubscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
   optionsPageSubscriptionMonitorHide();
   showSectionById('subs-list-section');
@@ -385,8 +383,8 @@ function feedListRemoveFeed(feedId) {
   // Upon removing the feed, update the displayed number of feeds.
   updateFeedCount();
 
-  // Upon removing the feed, update the state of the feed list.
-  // If the feed list has no items, hide it and show a message instead
+  // Upon removing the feed, update the state of the feed list. If the feed list has no items,
+  // hide it and show a message instead.
   const feedListElement = document.getElementById('feedlist');
   if(!feedListElement.childElementCount) {
     feedListElement.style.display = 'none';
@@ -481,8 +479,8 @@ async function bgProcessingCheckboxInit() {
   const checkbox = document.getElementById('enable-background');
   assert(checkbox);
 
-  // TODO: this should be using a local storage variable and instead the
-  // permission should be permanently defined.
+  // TODO: this should be using a local storage variable and instead the permission should be
+  // permanently defined.
 
   checkbox.onclick = enableBgProcessingCheckboxOnclick;
   checkbox.checked = await hasBrowserPermission('background');

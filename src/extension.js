@@ -78,8 +78,7 @@ export function showNotification(title, message, iconURL) {
 async function notificationOnClick(event) {
   try {
     // Ensure the browser is open to avoid mac chrome crash in 55
-    // TODO: test if this behavior is still present in latest chrome and if
-    // not then remove
+    // TODO: test if this behavior is still present in latest chrome and if not then remove
     const windowHandle = window.open();
     windowHandle.close();
     await showSlideshowTab();

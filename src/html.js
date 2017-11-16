@@ -3,9 +3,8 @@ import {isUncheckedError} from "/src/errors.js";
 import {isPosInt} from "/src/number.js";
 import parseHTML from "/src/parse-html.js";
 
-// Returns a new string where certain 'unsafe' characters in the input string
-// have been replaced with html entities. If input is not a string returns
-// undefined.
+// Returns a new string where certain 'unsafe' characters in the input string have been replaced
+// with html entities. If input is not a string returns undefined.
 export function escapeHTML(htmlString) {
   if(typeof htmlString === 'string') {
     // See https://stackoverflow.com/questions/784586 for reference
@@ -20,8 +19,8 @@ function encodeFirst(string) {
   return '&#' + string.charCodeAt(0) + ';';
 }
 
-// Replaces html tags in the input string with the replacement. If no
-// replacement, then removes the tags.
+// Replaces html tags in the input string with the replacement. If no replacement, then removes the
+// tags.
 export function replaceTags(htmlString, replacement) {
   assert(typeof htmlString === 'string');
 
@@ -65,8 +64,7 @@ export function replaceTags(htmlString, replacement) {
 // Truncates an HTML string
 // @param htmlString {String}
 // @param position {Number} position after which to truncate
-// @param suffix {String} optional, appended after truncation, defaults to
-// an ellipsis
+// @param suffix {String} optional, appended after truncation, defaults to an ellipsis
 // @throws ParserError
 export function truncate(htmlString, position, suffix) {
   assert(isPosInt(position));

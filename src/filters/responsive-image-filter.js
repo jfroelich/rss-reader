@@ -22,8 +22,8 @@ function filterImage(image) {
   const imageSrcset = image.getAttribute('srcset');
   const descriptors = parseSrcsetWrapper(imageSrcset);
 
-  // For the time being, the preference is whatever is first, no special
-  // handling of descriptor.d, and only one dimension needed
+  // For the time being, the preference is whatever is first, no special handling of descriptor.d,
+  // and only one dimension needed
   let preferredDescriptor;
   for(const descriptor of descriptors) {
     if(descriptor.url && (descriptor.w || descriptor.h)) {

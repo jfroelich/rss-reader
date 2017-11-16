@@ -13,15 +13,13 @@ export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
 // TODO: create FetchError, change functions to throw FetchError instead of generic Error
 
-// Fetches a feed. Returns a basic object, similar to Response, with custom
-// properties.
+// Fetches a feed. Returns a basic object, similar to Response, with custom properties.
 // @param url {String} the url to fetch
-// @param timeoutMs {Number} optional, timeout in milliseconds, before
-// considering the fetch a failure
-// @param acceptHTML {Boolean} optional, defaults to true, on whether to
-// accept html when validating the mime type of the response. This does not
-// affect the request Accept header because servers do not appear to always
-// honor Accept headers.
+// @param timeoutMs {Number} optional, timeout in milliseconds, before considering the fetch a
+// failure
+// @param acceptHTML {Boolean} optional, defaults to true, on whether to accept html when validating
+// the mime type of the response. This does not affect the request Accept header because servers do
+// not appear to always honor Accept headers.
 // @returns {Promise} a promise that resolves to a Response-like object
 export function fetchFeed(url, timeoutMs, acceptHTML) {
   if(typeof acceptHTML === 'undefined') {
@@ -127,17 +125,16 @@ export async function fetchImageHead(url, timeoutMs) {
   return outputResponse;
 }
 
-// Fetches an image element. Returns a promise that resolves to a fetched
-// image element.
+// Fetches an image element. Returns a promise that resolves to a fetched image element.
 // @param url {String}
 // @param timeoutMs {Number}
 // @returns {Promise}
 // NOTE: urls with data: protocol are fine
 // NOTE: timeout of 0 is equivalent to undefined, or untimed fetch
-// TODO: should this accept a host document parameter in which to create
-// the element (instead of new Image() using document.createElement('img'))
-// TODO: maybe rename to fetchImageElement so that it
-// works more like other fetches can be created, and to avoid confusion
+// TODO: should this accept a host document parameter in which to create the element (instead of
+// new Image() using document.createElement('img'))
+// TODO: maybe rename to fetchImageElement so that it works more like other fetches can be created,
+// and to avoid confusion
 // TODO: it is possible this should be using the fetch API to avoid cookies? Can fetching an
 // image transmit cookie data? I think so, but I would prefer to be certain.
 export function fetchImage(url, timeoutMs) {
@@ -149,26 +146,24 @@ export function fetchImage(url, timeoutMs) {
 
   assert(isPosInt(timeoutMs));
 
-  // There is no simply way to share information between the promises, so
-  // define this in outer scope shared between both promise bodies.
+  // There is no simply way to share information between the promises, so define this in outer scope
+  //shared between both promise bodies.
   let timerId;
 
-  // There is no native way to provide a timeout parameter when fetching an
-  // image. So, race a fetch promise against a timeout promise to simulate
-  // a timeout parameter.
+  // There is no native way to provide a timeout parameter when fetching an image. So, race a fetch
+  // promise against a timeout promise to simulate a timeout parameter.
   // NOTE: there is no penalty for calling clearTimeout with an invalid timer
   const fetchPromise = new Promise(function fetchExec(resolve, reject) {
 
     // Create an image element within the document running this script
-    // TODO: if this promise is to be cancelable I think I might need to
-    // define proxy in outer scope of promise, so I can do things like
-    // unregister the callback listeners. But how do I ever force the promise
-    // to settle? Just leave it unsettled? Isn't that a mem leak? Would that
+    // TODO: if this promise is to be cancelable I think I might need to define proxy in outer scope
+    // of promise, so I can do things like unregister the callback listeners. But how do I ever
+    // force the promise to settle? Just leave it unsettled? Isn't that a mem leak? Would that
     // prevent background.js from ever being unloaded?
     const proxy = new Image();
     // Trigger the fetch
-    // NOTE: using the old code, url_object.href, was probably the source
-    // of the bug. This was getting swallowed by the promise.
+    // NOTE: using the old code, url_object.href, was probably the source of the bug. This was
+    // getting swallowed by the promise.
     proxy.src = url;
 
     // Resolve to the proxy immediately if the image is 'cached'
@@ -178,11 +173,10 @@ export function fetchImage(url, timeoutMs) {
       return;
     }
 
-    // TODO: handler attachment order may be an issue. Look into it more.
-    // I don't think so, but not sure.
-    // See https://stackoverflow.com/questions/4776670 . Apparently the proper
-    // convention is to always trigger the fetch after attaching the handlers?
-    // This should not matter.
+    // TODO: handler attachment order may be an issue. Look into it more. I don't think so, but not
+    // sure.
+    // See https://stackoverflow.com/questions/4776670 . Apparently the proper convention is to
+    // always trigger the fetch after attaching the handlers? This should not matter?
 
     proxy.onload = function proxyOnload(event) {
       clearTimeout(timerId);

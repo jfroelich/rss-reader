@@ -9,7 +9,6 @@ import assert from "/src/assert.js";
 // @param url {URL}
 export function hostTemplateFilter(doc, url) {
   assert(doc instanceof Document);
-
   if(!url) {
     return;
   }

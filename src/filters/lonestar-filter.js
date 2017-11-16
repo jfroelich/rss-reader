@@ -49,11 +49,9 @@ export function lonestarFilter(doc, url) {
 
   const documentURL = new URL(url);
 
-  // Telemetry images are usually hidden, so treat visibility as an indicator.
-  // False positives are probably not too harmful. Removing images based on
-  // visibility overlaps with sanitization, but this is intentionally naive
-  // regarding what other filters are applied to the document.
-
+  // Telemetry images are usually hidden, so treat visibility as an indicator. False positives are
+  // probably not too harmful. Removing images based on visibility overlaps with sanitization, but
+  // this is intentionally naive regarding what other filters are applied to the document.
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
     if(isHiddenInlineElement(image) || isPixel(image) || hasTelemetrySource(image, documentURL)) {
@@ -68,13 +66,12 @@ function isPixel(image) {
     image.hasAttribute('height') && image.height < 2;
 }
 
-// This test only considers the src attribute. Using srcset or picture source is
-// exceedingly rare mechanism for telemetry so ignore those channels.
+// This test only considers the src attribute. Using srcset or picture source is exceedingly rare
+// mechanism for telemetry so ignore those channels.
 // @param image {Image}
 // @param documentURL {URL}
 function hasTelemetrySource(image, documentURL) {
   assert(image instanceof Element);
-
   if(!image.hasAttribute('src')) {
     return false;
   }
@@ -84,11 +81,8 @@ function hasTelemetrySource(image, documentURL) {
     return false;
   }
 
-  // TODO: probably some part of these conditions should be delegated
-  // to url.js
-
-  // Prior to parsing the url, try and exclude some of the url strings to avoid
-  // the parsing cost.
+  // TODO: probably some part of these conditions should be delegated to url.js
+  // Prior to parsing the url, try and exclude some of the url strings to avoid the parsing cost.
 
   // Very short urls are probably not telemetry
   const MIN_IMAGE_URL_LENGTH = 's.gif'.length;
@@ -96,17 +90,16 @@ function hasTelemetrySource(image, documentURL) {
     return false;
   }
 
-  // Ignore urls that appear invalid. Invalid urls are not a telemetry concern
-  // because requests will presumably fail.
+  // Ignore urls that appear invalid. Invalid urls are not a telemetry concern because requests will
+  // presumably fail.
   if(src.includes(' ')) {
     return false;
   }
 
   // Relative urls are generally not telemetry urls.
-  // Protocol-agnostic urls are considered canonical (not relative), which is
-  // notably different behavior than isCanonicalURLString.
-  // Urls using the 'data:' protocol are generally not telemetry urls because
-  // no networking is involved. Basically only look at http and https
+  // Protocol-agnostic urls are considered canonical (not relative), which is notably different
+  // behavior than isCanonicalURLString. Urls using the 'data:' protocol are generally not telemetry
+  // urls because no networking is involved. Basically only look at http and https
   // TODO: make non-capturing regex
   const URL_START_PATTERN = /^(http:\/\/|https:\/\/|\/\/)/i;
   if(!URL_START_PATTERN.test(src)) {
@@ -117,8 +110,8 @@ function hasTelemetrySource(image, documentURL) {
   try {
     imageURL = new URL(src);
   } catch(error) {
-    // It is a relative url, or an invalid url of some kind. It is probably
-    // not telemetry, or at least, not a telemetry concern.
+    // It is a relative url, or an invalid url of some kind. It is probably not telemetry, or at
+    // least, not a telemetry concern.
     return false;
   }
 

@@ -1,7 +1,6 @@
 
 import assert from "/src/assert.js";
 
-// @throws AssertionError
 export function entityDecodeFilter(doc) {
   assert(doc instanceof Document);
 

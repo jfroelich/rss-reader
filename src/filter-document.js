@@ -45,12 +45,11 @@ import {isValidURLString} from "/src/url-string.js";
 // TODO: this should be modified to accept a url object as input
 
 
-// Transforms a document's content by removing or changing nods for
-// various reasons.
+// Transforms a document's content by removing or changing nodes for various reasons.
 // @param doc {Document} the document to transform
 // @param url {String} the canonical url of the document
-// @param fetchImageTimeoutMs {Number} optional, the number of milliseconds
-// to wait before timing out when fetching an image
+// @param fetchImageTimeoutMs {Number} optional, the number of milliseconds to wait before timing
+// out when fetching an image
 export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
   assert(doc instanceof Document);
   assert(isValidURLString(url));
@@ -68,8 +67,8 @@ export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
   elementBlacklistFilter(doc);
   scriptAnchorFilter(doc);
 
-  // This should occur prior to boilerplateFilter because it has express
-  // knowledge of content organization
+  // This should occur prior to boilerplateFilter because it has express knowledge of content
+  // organization
 
   let urlObject;
   try {
@@ -138,23 +137,21 @@ export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
   // Better to call later than earlier to reduce number of text nodes visited
   nodeWhitespaceFilter(doc);
 
-  // This should be called near the end. Most of the other filters are naive
-  // in how they leave ancestor elements meaningless or empty, and simply
-  // remove. So this is like an additional pass now that several holes have
-  // been made.
+  // This should be called near the end. Most of the other filters are naive in how they leave
+  // ancestor elements meaningless or empty, and simply remove. So this is like an additional pass
+  // now that several holes have been made.
   leafFilter(doc);
 
-  // Should be called near end because its behavior changes based on
-  // what content remains, and is faster with fewer elements
+  // Should be called near end because its behavior changes based on what content remains, and is
+  // faster with fewer elements
   trimDocumentFilter(doc);
 
-  // Primarily an attribute filter, so it should be caller as late as possible
-  // to reduce the number of elements visited
+  // Primarily an attribute filter, so it should be caller as late as possible to reduce the number
+  // of elements visited
   noreferrerFilter(doc);
   pingFilter(doc);
 
-  // Filter element attributes last because it is so slow and is sped up by
-  // processing fewer elements.
+  // Filter attributes last because it is so slow and is sped up by processing fewer elements.
   const attributeWhitelist = {
     a: ['href', 'name', 'title', 'rel'],
     iframe: ['src'],

@@ -37,8 +37,8 @@ export function frameFilter(doc) {
   }
 
   // Replace the old frameset body with the new body
-  // NOTE: this assumes the body is always located under the doc element,
-  // i think that is ok? Should maybe be stricter.
+  // TODO: this assumes the body is always located under the doc element, I think that is ok? Should
+  // maybe be stricter.
   doc.documentElement.replaceChild(newBody, originalBody);
 
   // Remove any frame or frameset elements if somehow any remain

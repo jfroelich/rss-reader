@@ -3,8 +3,8 @@ import assert from "/src/assert.js";
 import * as dom from "/src/dom.js";
 import {parseInt10} from "/src/string.js";
 
-// Get the current settings from local storage and then modify the css rules
-// in the default style sheet
+// Get the current settings from local storage and then modify the css rules in the default style
+// sheet
 export function entryCSSOnChange(event) {
   const sheet = dom.getDefaultStylesheet();
   assert(sheet);
@@ -13,15 +13,14 @@ export function entryCSSOnChange(event) {
   entryCSSUpdateContentRule(sheet);
 }
 
-// Get the current settings from local storage and then create css rules and
-// append them to the default style sheet.
+// Get the current settings from local storage and then create css rules and append them to the
+// default style sheet.
 export function entryCSSInit() {
   const sheet = dom.getDefaultStylesheet();
   assert(sheet);
   sheet.addRule('div.entry', entryCSSCreateEntryRuleText());
 
-  // TODO: convert these two to be like above pattern where I get the text and then add
-  // the rule
+  // TODO: convert these two to be like above pattern where I get the text and then add the rule
   entryCSSAddTitleRule(sheet);
   entryCSSAddContentRule(sheet);
 }
@@ -175,6 +174,7 @@ function entryCSSUpdateContentRule(sheet) {
   if(bodyFontSizeString) {
     const bodyFontSizeNumber = parseInt10(bodyFontSizeString);
 
+    // TODO:
     // Why am I dividing by 10 here??
     // Why am I using em?
     // What is the base font?

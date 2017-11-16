@@ -3,7 +3,7 @@
 // TODO: write member functions out of line so it is more readable, I hate this class syntax, it
 // is too symptomatic of trying to overly condense things to the point where intent is obfuscated
 // TODO: now that modules are available, this class barely serves any purpose. Just export a single
-// function or two, but do this after successful transition to modules
+// function or two
 
 import assert from "/src/assert.js";
 import {check, isUncheckedError, PermissionsError} from "/src/errors.js";
@@ -53,7 +53,6 @@ export class SubscribeRequest {
   }
 
   // @param feed {Object} the feed to subscribe to
-  // @throws {AssertionError}
   // @throws {Error} database-related
   // @throws {Error} parse related
   // @throws {Error} fetch related
@@ -139,8 +138,6 @@ export class SubscribeRequest {
   }
 
   // TODO: move to unsubscribe.js
-
-  // @throws AssertionError
   // @throws Error database-related
   async remove(feedId) {
     assert(rdb.isOpen(this.readerConn));

@@ -4,8 +4,7 @@ import assert from "/src/assert.js";
 import {parseInt10} from "/src/string.js";
 import {isValidURLString} from "/src/url-string.js";
 
-// Returns the first matching css rule within the given sheet, or undefined if
-// no rules match.
+// Returns the first matching css rule within the given sheet, or undefined if no rules match.
 //
 // @param sheet css style sheet
 // @param selectorText {String}
@@ -28,14 +27,14 @@ export function getDefaultStylesheet() {
   }
 }
 
-// Returns true if the given name is a valid name for an element. This only
-// does minimal validation and may yield false positives.
+// Returns true if the given name is a valid name for an element. This only does minimal validation
+// and may yield false positives.
 function isValidElementName(name) {
   return typeof name === 'string' && name.length && !name.includes(' ');
 }
 
-// Replace an element with its children. Special care is taken to add spaces
-// if the operation would result in adjacent text nodes.
+// Replace an element with its children. Special care is taken to add spaces if the operation would
+// result in adjacent text nodes.
 export function unwrap(element) {
   assert(element instanceof Element);
   assert(element.parentNode, 'orphaned element');
@@ -72,14 +71,14 @@ export function unwrap(element) {
   parentElement.insertBefore(frag, nextSibling);
 }
 
-// Changes the tag name of an element. Event listeners are lost on rename. No
-// checking is done regarding whether the result is semantically correct.
+// Changes the tag name of an element. Event listeners are lost on rename. No checking is done
+// regarding whether the result is semantically correct.
 //
-// See https://stackoverflow.com/questions/15408394 for a basic explanation of
-// why event listeners are lost on rename.
+// See https://stackoverflow.com/questions/15408394 for a basic explanation of why event listeners
+//are lost on rename.
 //
-// @param copyAttributesFlag {Boolean} optional, if true then attributes are
-// maintained, defaults to true.
+// @param copyAttributesFlag {Boolean} optional, if true then attributes are maintained, defaults to
+// true.
 // @returns {Element} the new element that replaced the old one
 export function renameElement(element, newName, copyAttributesFlag) {
 
@@ -97,8 +96,7 @@ export function renameElement(element, newName, copyAttributesFlag) {
 
   const parentElement = element.parentNode;
 
-  // Fail silently on orphaned elements. Caller not required to guarantee
-  // parent.
+  // Fail silently on orphaned elements. Caller not required to guarantee parent.
   if(!parentElement) {
     return element;
   }
@@ -106,10 +104,9 @@ export function renameElement(element, newName, copyAttributesFlag) {
   // Use next sibling to record position prior to detach. May be undefined.
   const nextSibling = element.nextSibling;
 
-  // Detach the existing node, prior to performing other dom operations, so that
-  // the other operations take place on a detached node, so that the least
-  // amount of live dom operations are made. Implicitly, this sets
-  // parentNode and nextSibling to undefined.
+  // Detach the existing node, prior to performing other dom operations, so that the other
+  // operations take place on a detached node, so that the least amount of live dom operations are
+  // made. Implicitly, this sets parentNode and nextSibling to undefined.
   element.remove();
 
   const newElement = element.ownerDocument.createElement(newName);
@@ -125,22 +122,21 @@ export function renameElement(element, newName, copyAttributesFlag) {
     childNode = element.firstChild;
   }
 
-  // Attach the new element in place of the old element
-  // If nextSibling is undefined then insertBefore simply appends
-  // Returns the new element
+  // Attach the new element in place of the old element. If nextSibling is undefined then
+  // insertBefore simply appends. Return the new element.
   return parentElement.insertBefore(newElement, nextSibling);
 }
 
-// Copies the attributes of an element to another element. Overwrites any
-// existing attributes in the other element.
+// Copies the attributes of an element to another element. Overwrites any existing attributes in the
+// other element.
 // @param fromElement {Element}
 // @param toElement {Element}
 // @throws {Error} if either element is not an Element
 // @returns void
 export function copyAttributes(fromElement, toElement) {
-  // Use getAttributeNames in preference to element.attributes due to
-  // performance issues with element.attributes, and to allow unencumbered use
-  // of the for..of syntax (I had issues with NamedNodeMap and for..of).
+  // Use getAttributeNames in preference to element.attributes due to performance issues with
+  // element.attributes, and to allow unencumbered use of the for..of syntax (I had issues with
+  // NamedNodeMap and for..of).
   const names = fromElement.getAttributeNames();
   for(const name of names) {
     const value = fromElement.getAttribute(name);
@@ -152,8 +148,7 @@ export function copyAttributes(fromElement, toElement) {
 // Returns {'width': int, 'height': int} or undefined
 export function getDimensions(element) {
 
-  // Accessing element.style is a performance heavy operation sometimes, so
-  // try and avoid calling it.
+  // Accessing element.style is a performance heavy operation sometimes, so try and avoid access.
   if(!element.hasAttribute('style')) {
     return;
   }
@@ -195,8 +190,8 @@ export function fadeElement(element, durationSecs, delaySecs) {
   });
 }
 
-// TODO: also has source if within picture and picture has <source>, or
-// alternatively rename to domImageHasSourceAttribute
+// TODO: also has source if within picture and picture has <source>, or alternatively rename to
+// imageHasSourceAttribute or similar
 export function imageHasSource(image) {
   assert(image instanceof Element);
   return image.hasAttribute('src') || imageHasSrcset(image);
@@ -231,16 +226,17 @@ export function removeImage(image) {
   image.remove();
 }
 
-// Find the lowest common ancestor of two nodes. Assumes
-// node1 does not contain node2, and node2 does not contain node1.
+// Find the lowest common ancestor of two nodes. Assumes node1 does not contain node2, and node2
+// does not contain node1.
 //
 // Adapted from https://stackoverflow.com/questions/3960843
-// Returns an object with properties ancestor, d1, and d2. ancestor is the
-// lowest common ancestor. d1 is the distance from node1 to the ancestor, in
-// terms of edge traversals. d2 is the distance from node2 to the ancestor.
 //
-// TODO: change to varargs, find the LCAs of whatever args given, instead of
-// only 2. change to (...nodes)
+// Returns an object with properties ancestor, d1, and d2. ancestor is the lowest common ancestor.
+// d1 is the distance from node1 to the ancestor, in terms of edge traversals. d2 is the distance
+// from node2 to the ancestor.
+//
+// TODO: change to varargs, find the LCAs of whatever args given, instead of only 2. change to
+// (...nodes)
 export function findLCA(node1, node2) {
   assert(node1 instanceof Node);
   assert(node2 instanceof Node);
@@ -264,8 +260,7 @@ export function findLCA(node1, node2) {
   assert(false);
 }
 
-// Returns an array of ancestors, from deepest to shallowest.
-// The node itself is not included.
+// Returns an array of ancestors, from deepest to shallowest. The node itself is excluded.
 export function getAncestors(node) {
   assert(node instanceof Node);
   const ancestors = [];

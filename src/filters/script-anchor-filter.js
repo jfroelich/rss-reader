@@ -5,8 +5,6 @@ import {hasScriptProtocol} from "/src/url-string.js";
 
 export function scriptAnchorFilter(doc) {
   assert(doc instanceof Document);
-
-  // Restrict analysis to body descendants
   if(!doc.body) {
     return;
   }

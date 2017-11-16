@@ -7,7 +7,6 @@ import * as rdb from "/src/rdb.js";
 // Scans the database for entries missing urls are removes them
 // @param conn {IDBDatabase}
 // @param limit {Number} optional, if specified should be positive integer > 0
-// @throws AssertionError
 // @throws Error - database related
 export default async function removeLostEntries(conn, limit) {
   assert(rdb.isOpen(conn));

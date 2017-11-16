@@ -1,18 +1,14 @@
 
 import assert from "/src/assert.js";
 
-// TODO: move to experimental and stop using for now
-// TODO: this should be part of a general character normalization filter,
-// or perhaps a whitespace normalization filter, or an entity filter
+// TODO: move to experimental and stop using
+// TODO: this should be part of a general character normalization filter, or perhaps a whitespace
+// normalization filter, or an entity filter
 // TODO: accessing nodeValue does decoding, so maybe this doesn't work? Forgot.
-// TODO: this needs testing to test whether it actually works, I don't think
-// this works.
+// TODO: this needs testing to test whether it actually works, I don't think this works, because
+// of how entities are decoded when accessing nodeValue
 export function hairspaceFilter(doc) {
   assert(doc instanceof Document);
-
-  // Restrict analysis to body descendants. While hairspaces can occur
-  // outside of body, we don't care about normalizing them, because they will
-  // never be displayed or processed later.
   if(!doc.body) {
     return;
   }

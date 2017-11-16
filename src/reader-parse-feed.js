@@ -65,8 +65,8 @@ function setupFeed(feed, requestURL, responseURL, lastModDate) {
 }
 
 
-// If the entry has a link property, canonicalize and normalize it
-// baseURL is optional, generally should be feed.link
+// If the entry has a link property, canonicalize and normalize it baseURL is optional, generally
+// should be feed.link
 function resolveFeed(entry, baseURL) {
   assert(Entry.isEntry(entry));
   if(entry.link) {
@@ -80,9 +80,9 @@ function resolveFeed(entry, baseURL) {
   }
 }
 
-// entries are fetched as objects with a link property. for each entry that
-// has a link, convert it into the app's storage format that uses a urls
-// array. this tolerates entries that do not have links
+// entries are fetched as objects with a link property. for each entry that has a link, convert it
+// into the app's storage format that uses a urls array. this tolerates entries that do not have
+// links
 function coerceEntry(entry) {
   if(entry.link) {
     try {

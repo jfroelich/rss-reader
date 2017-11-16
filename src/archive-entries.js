@@ -9,8 +9,8 @@ import sizeof from "/src/sizeof.js";
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 // Archives certain entries in the database
-// @param maxAgeMs {Number} how long before an entry is considered
-// archivable (using date entry created), in milliseconds
+// @param maxAgeMs {Number} how long before an entry is considered archivable (using date entry
+// created), in milliseconds
 export default async function archiveEntries(conn, maxAgeMs, limit) {
   assert(rdb.isOpen(conn));
 

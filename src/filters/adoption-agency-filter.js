@@ -2,7 +2,6 @@
 import assert from "/src/assert.js";
 
 // Relocates certain misnested elements
-// @throws AssertionError
 export function adoptionAgencyFilter(doc) {
   assert(doc instanceof Document);
 

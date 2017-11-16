@@ -34,7 +34,6 @@ export function peekURL(entry) {
 
 // Append a url to an entry's url list. Lazily creates the urls property if needed. Normalizes the
 // url. The normalized url is compared against existing urls to ensure the new url is unique.
-// @throws {AssertionError} if urlString is invalid
 // @returns {Boolean} true if entry was added, or false if the url already exists and was therefore
 // not added
 export function appendURL(entry, urlString) {

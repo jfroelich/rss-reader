@@ -175,7 +175,6 @@ export function getFeeds(conn) {
 // Returns a promise that resolves to an array of feed ids, or rejects with
 // a database error
 // @param conn {IDBDatabase}
-// @throws AssertionError
 export function getFeedIds(conn) {
   assert(idb.isOpen(conn));
   return new Promise(function executor(resolve, reject) {

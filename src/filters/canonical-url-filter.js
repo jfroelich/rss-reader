@@ -33,27 +33,26 @@ const CANONICAL_URL_FILTER_MAP = {
 
 // @param doc {Document}
 // @param baseURL {URL}
-// @throws AssertionError
 export function canonicalURLFilter(doc, baseURL) {
   assert(doc instanceof Document);
   assert(baseURL instanceof URL);
 
-  const srcSelector = canonicalURLFilterCreateSelector();
+  const srcSelector = createSelector();
 
   const srcElements = doc.querySelectorAll(srcSelector);
   for(const srcElement of srcElements) {
-    canonicalURLFilterResolveAttribute(srcElement, baseURL);
+    resolveElementAttribute(srcElement, baseURL);
   }
 
   if(doc.body) {
     const srcsetElements = doc.body.querySelectorAll('img[srcset], source[srcset]');
     for(const srcsetElement of srcsetElements) {
-      canonicalURLFilterResolveSrcset(srcsetElement, baseURL);
+      resolveSrcset(srcsetElement, baseURL);
     }
   }
 }
 
-function canonicalURLFilterCreateSelector() {
+function createSelector() {
   const tags = Object.keys(CANONICAL_URL_FILTER_MAP);
   const parts = [];
   for(const tag of tags) {
@@ -62,7 +61,7 @@ function canonicalURLFilterCreateSelector() {
   return parts.join(',');
 }
 
-function canonicalURLFilterResolveAttribute(element, baseURL) {
+function resolveElementAttribute(element, baseURL) {
   const attributeName = CANONICAL_URL_FILTER_MAP[element.localName];
   if(!attributeName) {
     return;
@@ -83,7 +82,7 @@ function canonicalURLFilterResolveAttribute(element, baseURL) {
   }
 }
 
-function canonicalURLFilterResolveSrcset(element, baseURL) {
+function resolveSrcset(element, baseURL) {
   const srcsetAttributeValue = element.getAttribute('srcset');
   const descriptors = parseSrcsetWrapper(srcsetAttributeValue);
 

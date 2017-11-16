@@ -85,12 +85,11 @@ function isPollableFeed(feed, recencyPeriodMs) {
     return true;
   }
 
-  // The amount of time that has elapsed, in milliseconds, from when the
-  // feed was last polled.
+  // The amount of time that has elapsed, in milliseconds, from when the feed was last polled.
   const elapsed = new Date() - feed.dateFetched;
   if(elapsed < recencyPeriodMs) {
-    // A feed has been polled too recently if not enough time has elasped from
-    // the last time the feed was polled.
+    // A feed has been polled too recently if not enough time has elasped from the last time the
+    // feed was polled.
     console.debug('feed polled too recently', Feed.peekURL(feed));
     return false;
   }

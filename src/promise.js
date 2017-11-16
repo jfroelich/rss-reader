@@ -4,16 +4,16 @@ import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/errors.js";
 import {isPosInt} from "/src/number.js";
 
-// Returns a promise that resolves to undefined after a certain amount of time,
-// as well as the timer id. This returns an array so that the caller can use
-// destructuring such as const [t,p] = setTimeoutPromise(n);
+// Returns a promise that resolves to undefined after a certain amount of time, as well as the
+// timer id. This returns an array so that the caller can use destructuring such as
+// const [t,p] = setTimeoutPromise(n);
 // @param timeoutMs {Number} milliseconds, must be >= 0, the browser may
 // choose to take longer than specified
 export function setTimeoutPromise(timeoutMs) {
   assert(isPosInt(timeoutMs));
 
-  // Note this is special behavior and different than calling setTimeout with
-  // a value of 0, because the browser may take even longer.
+  // Note this is special behavior and different than calling setTimeout with a value of 0, because
+  // the browser may take even longer.
   if(timeoutMs === 0) {
     const FAKE_TIMEOUT_ID = 0;
     const FAKE_RESOLVED_PROMISE = Promise.resolve();

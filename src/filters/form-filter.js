@@ -4,7 +4,6 @@ import {unwrap} from "/src/dom.js";
 
 export function formFilter(doc) {
   assert(doc instanceof Document);
-
   if(!doc.body) {
     return;
   }
@@ -25,8 +24,8 @@ export function formFilter(doc) {
     unwrap(label);
   }
 
-  // TODO: add contains check to reduce operations like removing option
-  // nested in select removed in prior iteration
+  // TODO: add contains check to reduce operations like removing option nested in select removed in
+  // prior iteration
 
   // Remove form fields
   const inputSelector = 'button, fieldset, input, optgroup, option, select, textarea';

@@ -4,7 +4,6 @@ import {unwrap} from "/src/dom.js";
 
 export function figureFilter(doc) {
   assert(doc instanceof Document);
-
   if(!doc.body) {
     return;
   }

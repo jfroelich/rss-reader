@@ -24,17 +24,15 @@ export class PollEntryContext {
 }
 
 // @param this {PollEntryContext}
-// @throws AssertionError
 export async function pollEntry(entry) {
   assert(this instanceof PollEntryContext);
   assert(Entry.isEntry(entry));
 
-  // TEMP: researching undesired behavior. After fetch error either here or in
-  // poll-feeds, I am not sure which, causes connection to be closed before calls to
-  // storing entry. So detect if connection closed and exit. This error is most likely related
-  // to recent switch to module transition, I screwed something up and not sure what. Or this
-  // error has always been present and I am only now experiencing it. I cannot reproduce
-  // it easily at the moment.
+  // TEMP: researching undesired behavior. After fetch error either here or in poll-feeds, I am not
+  // sure which, causes connection to be closed before calls to storing entry. So detect if
+  // connection closed and exit. This error is most likely related to recent switch to module
+  // transition, I screwed something up and not sure what. Or this error has always been present
+  // and I am only now experiencing it. I cannot reproduce it easily at the moment.
   if(!rdb.isOpen(this.readerConn)) {
     console.warn('canceled pollEntry, readerConn connection not open');
     return;
@@ -189,8 +187,8 @@ async function isPollableEntryURL(url, conn) {
     return false;
   }
 
-  // TODO: this should be a call to something like
-  // readerStorageHasEntry that abstracts how entry comparison works
+  // TODO: this should be a call to something like "hasEntry" that abstracts how entry comparison
+  // works
   try {
     const exists = await rdb.findEntryByURL(conn, url);
     return !exists;

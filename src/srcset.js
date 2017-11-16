@@ -4,8 +4,7 @@ import assert from "/src/assert.js";
 // This script defines parseSrcset in global scope
 import "/src/third-party/parse-srcset.js";
 
-// @param descriptors {Array} an array of descriptors such as those produced
-// by parseSrcset (third party library)
+// @param descriptors {Array} an array of descriptors such as those produced by parseSrcset
 // @returns {String} a string suitable for storing as srcset attribute value
 export function serializeSrcset(descriptors) {
   assert(Array.isArray(descriptors));
@@ -39,13 +38,10 @@ export function serializeSrcset(descriptors) {
 // Take another look at import * as foo.
 
 // Returns an array of descriptor objects. If the input is bad, or an error occurs, returns an
-// empty array.
+// empty array. This wraps a call to a third-party library so it is overly defensive.
 // @param srcset {String}
 export function parseSrcsetWrapper(srcset) {
   const fallbackOutput = [];
-
-  // This wraps a call to a third-party library so it is overly defensive.
-
   if(typeof srcset !== 'string') {
     return fallbackOutput;
   }
