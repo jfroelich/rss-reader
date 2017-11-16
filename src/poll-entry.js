@@ -129,16 +129,8 @@ export async function pollEntry(entry) {
     entry.content = 'Empty or malformed content';
   }
 
-  try {
-    await entryAdd(entry, this.readerConn);
-  } catch(error) {
-    if(isUncheckedError(error)) {
-      throw error;
-    } else {
-      return false;
-    }
-  }
-
+  // If an error occurs with storing the entry then throw the error
+  await entryAdd(entry, this.readerConn);
   return true;
 }
 
