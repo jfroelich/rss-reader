@@ -90,9 +90,8 @@ function findEntryElements(channelElement) {
     parentNode = channelElement;
     entryElementName = 'item';
   } else {
-    // TODO: use a custom error here
-    // TODO: use the function check from errors.js
-    throw new Error(`Invalid document element ${documentElement.nodeName}`);
+    // This should never happen because we checked previously
+    assert(false, 'unsupported document element: ' + documentElement.nodeName);
   }
 
   for(let childElement = parentNode.firstElementChild; childElement;
