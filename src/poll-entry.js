@@ -34,36 +34,45 @@ export async function pollEntry(entry) {
   // transition, I screwed something up and not sure what. Or this error has always been present
   // and I am only now experiencing it. I cannot reproduce it easily at the moment.
   if(!rdb.isOpen(this.readerConn)) {
-    console.warn('canceled pollEntry, readerConn connection not open');
+    console.warn('canceled pollEntry, readerConn not open');
     return;
   }
 
-  // Cannot assume entry has url
+  // Cannot assume entry has url. There are no earlier steps in the pipeline of processing a
+  // feed that guarantee this.
+  // TODO: maybe this should be an exception?
   if(!Entry.hasURL(entry)) {
     return false;
   }
 
-  let url = Entry.peekURL(entry);
+  let urlString = Entry.peekURL(entry);
 
-  // TODO: I think that by this point I should be able to assume that if the entry has a url,
-  // then it is a valid url, because invalid urls are weeded out earlier. I should clarify that
-  // behavior. In any event, because of that assumption, this should technically be an assert
-  // because this should never be true.
-  if(!isValidURLString(url)) {
-    return false;
-  }
+  // This is declared let instead of const currently due to issues with changing the href property
+  // of a url object. This may change in the future.
+  // If a url parsing error occurs, it is fatal to polling the entry.
+  let urlObject = new URL(urlString);
 
-  const rewrittenURL = rewriteURL(url);
-  if(rewrittenURL && url !== rewrittenURL) {
+  const rewrittenURL = rewriteURL(urlObject.href);
+  if(rewrittenURL && urlObject.href !== rewrittenURL) {
     Entry.appendURL(entry, rewrittenURL);
-    url = rewrittenURL;
+
+    // TODO: maybe it makes sense to make some kind of helper function in url.js that makes the
+    // issue with setting the href very explicit. Revisit this after finishing the transition to
+    // using urlObject in place of urlString.
+
+    // Even though it would make more sense to simply set the href property of the urlObject and
+    // not create a new object, the href setter does not seem to undergo the same checks that are
+    // done in the URL constructor. For example, setting the href happily allows me to destroy the
+    // validity of the url. Compare new URL("not a url!") to url.href = "not a url!".  Therefore,
+    // I am changing the url by pointing it to a new object.
+    urlObject = new URL(rewrittenURL);
   }
 
-  if(!await isPollableEntryURL(url, this.readerConn)) {
+  if(!await isPollableEntryURL(urlObject.href, this.readerConn)) {
     return false;
   }
 
-  const response = await pollEntryFetch(url, this.fetchHTMLTimeoutMs);
+  const response = await pollEntryFetch(urlObject.href, this.fetchHTMLTimeoutMs);
   let entryContent = entry.content;
   if(response) {
     if(response.redirected) {
@@ -73,7 +82,9 @@ export async function pollEntry(entry) {
 
       Entry.appendURL(entry, response.responseURL);
       // TODO: attempt to rewrite the redirected url as well?
-      url = response.responseURL;
+
+      // TODO: see earlier notes in this function on changing url
+      urlObject = new URL(response.responseURL);
     }
 
     // Use the full text of the response in place of the in-feed content
@@ -102,7 +113,7 @@ export async function pollEntry(entry) {
 
   // Filter the entry content
   if(entryDocument) {
-    await filterDocument(entryDocument, url, this.fetchImageTimeoutMs);
+    await filterDocument(entryDocument, urlObject.href, this.fetchImageTimeoutMs);
 
     entry.content = entryDocument.documentElement.outerHTML.trim();
   } else {
@@ -162,7 +173,8 @@ async function updateEntryIcon(entry, document) {
   entry.faviconURLString = iconURL || this.feedFaviconURL;
 }
 
-// TODO: this should accept a URL object as input
+// TODO: this should accept a URL object as input. I am currently in the process of doing this.
+// In order to do this I first have to change the caller to work with a url object.
 async function isPollableEntryURL(url, conn) {
   const urlObject = new URL(url);
   const hostname = urlObject.hostname;

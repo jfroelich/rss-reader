@@ -9,6 +9,10 @@
 // fidelity to the input. In fact I probably should not even be trying to change strings into
 // date objects and such.
 
+// I would prefer to export a default function, but ran into a problem when trying to rename the
+// default import in a module that imports this module that happens to use the same name as this
+// function. So, for now, I am not exporting a default. This may change.
+
 import assert from "/src/assert.js";
 import {check, ParserError} from "/src/errors.js";
 import parseXML from "/src/parse-xml.js";

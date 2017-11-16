@@ -1,6 +1,26 @@
 // This is a wrapper around parse-feed.js that customizes the parsed feed format to the app's feed
 // format.
 
+// TODO: this is currently located in /src/reader because it differentiates from app-specific
+// functionality and general purpose utilities. At least, that is the idea. However, at the moment
+// I have not moved any other functionality into /src/reader, so it looks rather awkward. I do plan
+// to move other functionality into reader. But first, I have to make up my mind. I am currently
+// sitting on the fence regarding whether it makes sense to distinguish between app-specific
+// functionality and general purpose functionality. In a way, everything is app-specific. There are
+// non-generic opinions scattered throughout the so-called "general purpose" modules. Therefore,
+// attempting to distinguish between two things that are essentially the same is stupid. Quite
+// stupid. This is a great example of a decision I sincerely struggle with, to me this is currently
+// a great unanswered question that I think requires more personal learning. Clearly something is
+// not clicking with me. One of the key features of an API is how well organized its surface is,
+// and all programming code that is publicly-accessible is API surface, so I really dislike how
+// seemingly arbitrary is the current organization. But a flattened hierarchy is a copout; just an
+// admission that I didn't bother to organize. While I wait for this stuff to magically sort itself
+// out, I am keeping this here. One to server as a reminder. Two because I obviously cannot have
+// two things named parse-feed.js in the same folder. Keep in mind this may be the wrong
+// abstraction, and may be going away, so it may become a non-issue. Regarding divide and conquer,
+// this is a divide issue.
+
+
 // TODO: I do not love the processEntries parameter. While processing entries is surely related to
 // post-fetch processing that needs to be done, I do not think it fits here. Rather than pass a
 // flag, the caller should merely decide whether to call a separate function. Not calling the
@@ -22,6 +42,8 @@
 // abstraction is wrong. It is marrying the wrong things together. There are different stages to
 // the pipeline of feed processing, and it feels like this is taking bits from stage 2 and 3 and 4
 // and calling it step 1.5.
+// TODO: I think it would make sense to clearly enumerate the use cases, then revisit how well the
+// abstraction responds to each case.
 
 import assert from "/src/assert.js";
 import * as Entry from "/src/entry.js";
@@ -43,11 +65,6 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   // property.
   const entries = feed.entries;
   delete feed.entries;
-
-  //const parseResult = internalParseFeed(xmlString);
-
-  // Setup the feed property of the result
-  //const feed = parseResult.feed;
 
   // Compose fetch urls as the initial feed urls
   Feed.appendURL(feed, requestURL);
@@ -93,7 +110,15 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
     convertEntryLinkToURL(entry);
   }
 
+  // TODO: I am not sure that filtering out duplicate entries should be a concern of this function.
+  // In fact I think it shouldn't. This is another instance of mixing together too many concerns.
+  // Dedup should be some kind of explicit step in the feed processing pipeline. I am just not
+  // sure where. And I don't like the amount of boilerplate it introduces because at some point
+  // the caller will have so much responsibility and so many concerns to take care of that the
+  // caller will probably be making mistakes.
   result.entries = dedupEntries(entries);
+
+
   return result;
 }
 

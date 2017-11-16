@@ -27,6 +27,8 @@ export function setTimeoutPromise(timeoutMs) {
   return [timeoutId, promise];
 }
 
+const DEBUG_EVERY_ERRORS = false;
+
 // A variant of Promise.all that does not shortcircuit. If any promise rejects, undefined is placed
 // in the output array in place of the promise's return value.
 export async function promiseEvery(promises) {
@@ -40,8 +42,10 @@ export async function promiseEvery(promises) {
       if(isUncheckedError(error)) {
         throw error;
       } else {
-        // Prevent the error from bubbling by ignoring it.
-        console.debug('iteration skipped error', error);
+        if(DEBUG_EVERY_ERRORS) {
+          // Prevent the error from bubbling by ignoring it.
+          console.debug('iteration skipped error', error);
+        }
       }
     }
 
