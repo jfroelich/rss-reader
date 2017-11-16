@@ -2,51 +2,59 @@
 
 // TODO: prefer "item" over "entry" terminology?
 // TODO: create a FeedDescriptor object and return it instead of the basic property?
-
-// This TODO was moved from /src/reader/parse-feed.js
-// TODO: I think that, before I make any changes, a good change would be to revert the fetchFeed
-// function to returning a simple "feed" object that includes an "entries" array property, instead
-// of this whole "parseResult" object with two properties. This would be fine because it is now
-// very clear that parsing has nothing to do with coercion. Parsing just produces a thing. Then
-// the rest of the app has to deal with it and format it. The thing produced by parsing is not
-// at all concerned with how the app deals with it. So, here are the individual todos:
-// TODO: change parseFeed to return a single feed object with an entries array property
-// TODO: change /reader/parse-feed to expect the different format
+// TODO: findChildElementText should not normalize, this should return values as is, and move
+// normalization responsibility to caller. In fact nothing in this parser should do any
+// normalization. All of that validation and sanitization and coercion should be the caller's
+// responsibility. This function should not be concerned with those things.
 
 import assert from "/src/assert.js";
 import parseXML from "/src/parse-xml.js";
 
-// Parses the input string into a results object containing feed and entries properties, where
-// feed is a feed descriptor object containing channel information, and entries is an array of
-// the items/entries from the feed. Throws an error if there is an xml syntax error or for any
-// other form of bad input.
+// Parses the input string into a feed object. The feed object will always have a defined entries
+// array, although it may be zero length. Throws both checked and unchecked errors if the feed
+// is not well formed or something unexpected happened.
 export default function parseFeed(feedXMLString) {
+
+  // Create a Document from the string. Rethrow any errors.
   const xmlDocument = parseXML(feedXMLString);
+
+  // Any assumptions about the validity of the result produced by parseXML are delegated to
+  // unmarshallXML.
   return unmarshallXML(xmlDocument);
 }
 
 // @param document {Document} an XML document representing a feed
-// @returns {Object} a simple object with properties feed and entries
+// @returns {Object} a feed object
 function unmarshallXML(document) {
+  assert(document instanceof Document);
+
+  // Create and define the output object
+  const feed = {};
+  // The output always has an entries array as part of its contract
+  // TODO: if I am throwing in the case of error, I probably no longer need to do this,
+  // because it will happen later?
+  feed.entries = [];
+
+  // Check that the root element is one of the supported formats
   const documentElement = document.documentElement;
-
-  const emptyResult = {
-    'feed': null,
-    'entries': []
-  };
-
   const rootNames = ['feed', 'rdf', 'rss'];
   const documentElementName = documentElement.localName.toLowerCase();
+
+  // TODO: change this to throw a checked exception, use check(). I am deferring this change
+  // until after I complete the other change to returning feed.
+
   if(!rootNames.includes(documentElementName)) {
-    return emptyResult;
+    return feed;
   }
 
+  // Check that the xml has a channel element
+  // TODO: change this to throw a checked exception, use check(). I am deferring this change
+  // until after I complete the other change to returning feed.
   const channelElement = findChannelElement(documentElement);
   if(!channelElement) {
-    return emptyResult;
+    return feed;
   }
 
-  const feed = {};
   feed.type = findFeedType(documentElement);
   feed.title = findFeedTitle(channelElement);
   feed.description = findFeedDescription(document, channelElement);
@@ -59,10 +67,10 @@ function unmarshallXML(document) {
     entryObjects.push(createEntryObject(entryElement));
   }
 
-  const result = {};
-  result.feed = feed;
-  result.entries = entryObjects;
-  return result;
+  // Overwrite the default empty entries array property with the processed entries array
+  feed.entries = entryObjects;
+
+  return feed;
 }
 
 function findFeedTitle(channelElement) {
@@ -329,8 +337,7 @@ function findChildElementText(parentElement, elementName) {
   if(childElement) {
     const text = childElement.textContent;
     if(text) {
-      // TODO: I shouldn't normalize, this should return values as is, and move normalization
-      // responsibility to caller.
+
       return text.trim();
     }
   }

@@ -30,16 +30,23 @@ import * as Feed from "/src/feed.js";
 import parseFeed as internalParseFeed from "/src/parse-feed.js";
 import {isCanonicalURLString} from "/src/url-string.js";
 
-// Parses an xml input string representing a feed. Returns a result with a
-// feed object and an array of entries.
+// Parses an xml input string representing a feed. Returns a result with a feed object and an array
+// of entries.
 export default function parseFeed(xmlString, requestURL, responseURL, lastModDate,
   processEntries) {
 
   const result = {feed: undefined, entries: []};
-  const parseResult = internalParseFeed(xmlString);
+
+  const feed = internalParseFeed(xmlString);
+
+  // Pull the entries property out of the parsed object
+  const entries = feed.entries;
+  delete feed.entries;
+
+  //const parseResult = internalParseFeed(xmlString);
 
   // Setup the feed property of the result
-  const feed = parseResult.feed;
+  //const feed = parseResult.feed;
 
   // Compose fetch urls as the initial feed urls
   Feed.appendURL(feed, requestURL);
@@ -80,7 +87,6 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
     return result;
   }
 
-  let entries = parseResult.entries;
   for(const entry of entries) {
     resolveEntryLink(entry, feedLinkURL);
     convertEntryLinkToURL(entry);
