@@ -42,10 +42,9 @@ export async function pollEntry(entry) {
   // feed that guarantee this. However, a url is required for polling, so throw an error
   check(Entry.hasURL(entry), undefined, 'entry has no url');
 
-  let urlString = Entry.peekURL(entry);
-
   // If a url parsing error occurs, it is fatal to polling the entry.
-  const urlObject = new URL(urlString);
+  // If peekURL fails it is fatal to polling the entry
+  const urlObject = new URL(Entry.peekURL(entry));
 
   // If a rewrite error occurs, it is fatal to polling the entry
   const rewrittenURL = rewriteURL(urlObject.href);
@@ -55,7 +54,11 @@ export async function pollEntry(entry) {
     setURLHrefProperty(urlObject, rewrittenURL);
   }
 
-  if(!await isPollableEntryURL(urlObject, this.readerConn)) {
+  if(isUnpollableURL(urlObject)) {
+    return false;
+  }
+
+  if(await entryExists(urlObject, this.readerConn)) {
     return false;
   }
 
@@ -69,7 +72,11 @@ export async function pollEntry(entry) {
   let entryContent = entry.content;
   if(response) {
     if(response.redirected) {
-      if(!await isPollableEntryURL(new URL(response.responseURL), this.readerConn)) {
+      if(isUnpollableURL(new URL(response.responseURL))) {
+        return false;
+      }
+
+      if(await entryExists(new URL(response.responseURL), this.readerConn)) {
         return false;
       }
 
@@ -77,7 +84,6 @@ export async function pollEntry(entry) {
 
       // TODO: attempt to rewrite the redirected url as well?
 
-      // Change urlObject to the redirected url
       setURLHrefProperty(urlObject, response.responseURL);
     }
 
@@ -96,13 +102,24 @@ export async function pollEntry(entry) {
     }
   }
 
+  // Lookup and set the entry's favicon
+  let iconURL;
+  const query = new FaviconLookup();
+  query.cache = this.iconCache;
+  query.skipURLFetch = true;
   // Only use the document for lookup if it was fetched
   const lookupDocument = response ? entryDocument : undefined;
   try {
-    await updateEntryIcon.call(this, entry, lookupDocument);
+    iconURL = await query.lookup(urlObject, lookupDocument);
   } catch(error) {
-    // Ignore icon update failure
+    if(isUncheckedError(error)) {
+      throw error;
+    } else {
+      // lookup error is non-fatal
+      // fall through leaving iconURL undefined
+    }
   }
+  entry.faviconURLString = iconURL || this.feedFaviconURL;
 
   // Filter the entry content
   if(entryDocument) {
@@ -125,103 +142,41 @@ export async function pollEntry(entry) {
   return true;
 }
 
-// @param entry {Object} a feed entry
-// @param document {Document} optional, pre-fetched document
-async function updateEntryIcon(entry, document) {
-  assert(Entry.isEntry(entry));
-  assert(this instanceof PollEntryContext);
+// TODO: inline?
+function entryExists(url, conn) {
+  return rdb.findEntryByURL(conn, url.href);
+}
 
-  if(document) {
-    assert(document instanceof Document);
-  }
+// TODO: inline?
+// Return true if url should not be polled
+// @param url {URL}
+function isUnpollableURL(url) {
+  return isInaccessibleContentURL(url) || sniffIsBinaryURL(url);
+}
 
-  // TODO: this should be a parameter of type URL and done externally
-  const pageURL = new URL(Entry.peekURL(entry));
-
-
-  let iconURL;
-
-  const query = new FaviconLookup();
-  query.cache = this.iconCache;
-  query.skipURLFetch = true;
-  try {
-    iconURL = await query.lookup(pageURL, document);
-  } catch(error) {
-    if(isUncheckedError(error)) {
-      throw error;
-    } else {
-      console.debug(error);// temp
-      // lookup error is non-fatal
-      // fall through leaving iconURL undefined
+// Return true if url contains inaccessible content
+function isInaccessibleContentURL(url) {
+  for(const descriptor of INACCESSIBLE_CONTENT_DESCRIPTORS) {
+    if(descriptor.hostname === url.hostname) {
+      return true;
     }
   }
-
-  entry.faviconURLString = iconURL || this.feedFaviconURL;
+  return false;
 }
 
-// @param url {URL}
-async function isPollableEntryURL(url, conn) {
+// TODO: this should be configured somewhere else, I don't know, config.js or something
+// TODO: should not have to enumerable subdomains, compare top domains, use the function
+// getUpperDomain from url.js (currently not exported). Or use regexs
 
-  // TODO: rather than separate functions, use a single list that flags the reason each url
-  // is in the list?
-
-  if(isInterstitialURL(url)) {
-    return false;
-  }
-  if(isScriptedURL(url)) {
-    return false;
-  }
-  if(isPaywallURL(url)) {
-    return false;
-  }
-  if(isRequiresCookieURL(url)) {
-    return false;
-  }
-  if(sniffIsBinaryURL(url)) {
-    return false;
-  }
-
-  // TODO: this should be a call to something like "hasEntry" that abstracts how entry comparison
-  // works
-  // TODO: this is the only reason this function is async. It kind of doesn't need to be async if
-  // I move this call out of here.
-  // TODO: more than that, this doesn't even belong to isPollableEntryURL, it is outside the
-  // scope of the test's meaning
-
-  // If a database error occurs, allow it to bubble
-  const exists = await rdb.findEntryByURL(conn, url.href);
-  return !exists;
-}
-
-function isInterstitialURL(url) {
-  const hosts = [
-    'www.forbes.com',
-    'forbes.com'
-  ];
-  return hosts.includes(url.hostname);
-}
-
-function isScriptedURL(url) {
-  const hosts = [
-    'productforums.google.com',
-    'groups.google.com'
-  ];
-  return hosts.includes(url.hostname);
-}
-
-function isPaywallURL(url) {
-  const hosts = [
-    'www.nytimes.com',
-    'myaccount.nytimes.com',
-    'open.blogs.nytimes.com'
-  ];
-  return hosts.includes(url.hostname);
-}
-
-function isRequiresCookieURL(url) {
-  const hosts = [
-    'www.heraldsun.com.au',
-    'ripe73.ripe.net'
-  ];
-  return hosts.includes(url.hostname);
-}
+const INACCESSIBLE_CONTENT_DESCRIPTORS = [
+  {hostname: 'www.forbes.com', reason: 'interstitial'},
+  {hostname: 'www.forbes.com', reason: 'interstitial'},
+  {hostname: 'productforums.google.com', reason: 'script-generated'},
+  {hostname: 'groups.google.com', reason: 'script-generated'},
+  {hostname: 'www.nytimes.com', reason: 'paywall'},
+  {hostname: 'nytimes.com', reason: 'paywall'},
+  {hostname: 'myaccount.nytimes.com', reason: 'paywall'},
+  {hostname: 'open.blogs.nytimes.com', reason: 'paywall'},
+  {hostname: 'www.heraldsun.com.au', reason: 'requires-cookies'},
+  {hostname: 'ripe73.ripe.net', reason: 'requires-cookies'}
+];
