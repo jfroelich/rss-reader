@@ -22,7 +22,7 @@ import {
 import * as rdb from "/src/rdb.js";
 import {readerImportFiles} from "/src/reader-import.js";
 import {parseInt10} from "/src/string.js";
-import * as Subscriber from "/src/subscribe-request.js";
+import * as Subscriber from "/src/subscribe.js";
 import unsubscribe from "/src/unsubscribe.js";
 
 
