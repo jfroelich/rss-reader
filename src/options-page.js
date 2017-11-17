@@ -22,7 +22,7 @@ import {
 import * as rdb from "/src/rdb.js";
 import {readerImportFiles} from "/src/reader-import.js";
 import {parseInt10} from "/src/string.js";
-import {SubscribeRequest} from "/src/subscribe-request.js";
+import * as Subscriber from "/src/subscribe-request.js";
 import unsubscribe from "/src/unsubscribe.js";
 
 
@@ -297,18 +297,17 @@ async function subscribeFormOnsubmit(event) {
 
   let subscribedFeed;
 
-  const request = new SubscribeRequest();
-
+  // TODO: show a visual error message in event of an error
+  const subContext = new Subscriber.Context();
   try {
-    await request.connect();
-    subscribedFeed = await request.subscribe(feed);
+    await subContext.connect();
+    subscribedFeed = await Subscriber.subscribe.call(subContext, feed);
   } catch(error) {
-    // TODO: show a visual error message.
     console.warn(error);
     optionsPageSubscriptionMonitorHide();
     return;
   } finally {
-    request.close();
+    subContext.close();
   }
 
   assert(subscribedFeed);
