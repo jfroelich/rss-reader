@@ -1,7 +1,7 @@
 // For polling an individual entry when polling feeds
 
 import assert from "/src/assert.js";
-import config from "/src/config.js";
+import {INACCESSIBLE_CONTENT_DESCRIPTORS} from "/src/config.js";
 import * as Entry from "/src/entry.js";
 import {check, isUncheckedError} from "/src/errors.js";
 import FaviconLookup from "/src/favicon-lookup.js";
@@ -130,7 +130,7 @@ export async function pollEntry(entry) {
 
 // Return true if url contains inaccessible content
 function isInaccessibleContentURL(url) {
-  for(const descriptor of config.INACCESSIBLE_CONTENT_DESCRIPTORS) {
+  for(const descriptor of INACCESSIBLE_CONTENT_DESCRIPTORS) {
     if(descriptor.hostname === url.hostname) {
       return true;
     }

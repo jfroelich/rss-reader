@@ -5,21 +5,11 @@
 // One thing to look into is whether I can define such things in manifest.json. Another idea
 // would be to load information from localStorage.
 
-// I am defining a config object because Chrome is whining about exporting an array, and I have
-// no idea why. I am doing the same thing I do in other modules but this particular one does
-// not work.
-
-function Config() {
-  this.INACCESSIBLE_CONTENT_DESCRIPTORS;
-}
-
-const config = new Config();
-
 // An array of descriptors. Each descriptor represents a test against a url hostname, that if
 // matched, indicates the content is not accessible. The reason indicates why.
 // TODO: should not have to enumerable subdomains, compare top domains, use the function
 // getUpperDomain from url.js (currently not exported). Or use regexs
-const INACCESSIBLE_CONTENT_DESCRIPTORS = [
+export const INACCESSIBLE_CONTENT_DESCRIPTORS = [
   {hostname: 'www.forbes.com', reason: 'interstitial'},
   {hostname: 'www.forbes.com', reason: 'interstitial'},
   {hostname: 'productforums.google.com', reason: 'script-generated'},
@@ -31,6 +21,3 @@ const INACCESSIBLE_CONTENT_DESCRIPTORS = [
   {hostname: 'www.heraldsun.com.au', reason: 'requires-cookies'},
   {hostname: 'ripe73.ripe.net', reason: 'requires-cookies'}
 ];
-
-config.INACCESSIBLE_CONTENT_DESCRIPTORS = INACCESSIBLE_CONTENT_DESCRIPTORS;
-export default config;
