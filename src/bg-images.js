@@ -1,5 +1,5 @@
 
-const OPTIONS_PAGE_IMAGE_PATHS = [
+const BG_IMAGES = [
   '/images/bgfons-paper_texture318.jpg',
   '/images/CCXXXXXXI_by_aqueous.jpg',
   '/images/paper-backgrounds-vintage-white.jpg',
@@ -21,4 +21,4 @@ const OPTIONS_PAGE_IMAGE_PATHS = [
   '/images/thomas-zucx-noise-lines.png'
 ];
 
-export default OPTIONS_PAGE_IMAGE_PATHS;
+export default BG_IMAGES;

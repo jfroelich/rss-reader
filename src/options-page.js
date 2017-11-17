@@ -1,6 +1,7 @@
 // Options page view module
 
 import assert from "/src/assert.js";
+import BG_IMAGES from "/src/bg-images.js";
 import {fadeElement} from "/src/dom.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {exportFeeds} from "/src/export-feeds.js";
@@ -13,7 +14,6 @@ import * as Feed from "/src/feed.js";
 import FONTS from "/src/fonts.js";
 import {truncate as htmlTruncate} from "/src/html.js";
 import * as mime from "/src/mime.js";
-import OPTIONS_PAGE_IMAGE_PATHS from "/src/options-page-image-paths.js";
 import {
   optionsPageSubscriptionMonitorShow,
   optionsPageSubscriptionMonitorAppendMessage,
@@ -657,7 +657,7 @@ subscriptionForm.onsubmit = subscribeFormOnsubmit;
 
   const currentBgImagePath = localStorage.BG_IMAGE;
   const bgImagePathOffset = '/images/'.length;
-  for(const path of OPTIONS_PAGE_IMAGE_PATHS) {
+  for(const path of BG_IMAGES) {
     let option = document.createElement('option');
     option.value = path;
     option.textContent = path.substring(bgImagePathOffset);
