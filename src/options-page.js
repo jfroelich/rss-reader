@@ -23,7 +23,7 @@ import * as rdb from "/src/rdb.js";
 import {readerImportFiles} from "/src/reader-import.js";
 import {parseInt10} from "/src/string.js";
 import {SubscribeRequest} from "/src/subscribe-request.js";
-
+import unsubscribe from "/src/unsubscribe.js";
 
 
 // View state
@@ -394,19 +394,21 @@ function feedListRemoveFeed(feedId) {
   }
 }
 
+
+// TODO: visually react to unsubscribe error
 async function unsubscribeButtonOnclick(event) {
   const feedId = parseInt10(event.target.value);
   assert(Feed.isValidId(feedId));
-  const request = new SubscribeRequest();
+
+  let conn;
   try {
-    request.readerConn = await rdb.open();
-    await request.remove(feedId);
+    conn = await rdb.open();
+    await unsubscribe(feedId, conn);
   } catch(error) {
-    // TODO: visually react to unsubscribe error
     console.warn(error);
     return;
   } finally {
-    rdb.close(request.readerConn);
+    rdb.close(conn);
   }
 
   feedListRemoveFeed(feedId);

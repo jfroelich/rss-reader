@@ -14,10 +14,10 @@ import * as Feed from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
 import isAllowedURL from "/src/fetch-policy.js";
 import {isOpen as isOpenDB} from "/src/idb.js";
-import updateBadgeText from "/src/update-badge-text.js";
 import * as rdb from "/src/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import {feedPut} from "/src/reader-storage.js";
+import updateBadgeText from "/src/update-badge-text.js";
 
 
 export class SubscribeRequest {
@@ -137,19 +137,4 @@ export class SubscribeRequest {
     return Promise.all(promises);
   }
 
-  // TODO: move to unsubscribe.js
-  // @throws Error database-related
-  async remove(feedId) {
-    assert(rdb.isOpen(this.readerConn));
-    assert(Feed.isValidId(feedId));
-    const entryIds = await rdb.findEntryIdsByFeedId(this.readerConn, feedId);
-    await rdb.removeFeedAndEntries(this.readerConn, feedId, entryIds);
-    await updateBadgeText(this.readerConn);
-    const channel = new BroadcastChannel('db');
-    channel.postMessage({type: 'feed-deleted', id: feedId});
-    for(const entryId of entryIds) {
-      channel.postMessage({type: 'entry-deleted', id: entryId});
-    }
-    channel.close();
-  }
 }
