@@ -22,7 +22,7 @@ export function Context() {
 }
 
 // Opens database connections
-Context.prototype.connect = function() {
+Context.prototype.connect = async function() {
   this.iconCache = new FaviconCache();
   let _;
   const promises = [rdb.open(), this.iconCache.open()];
