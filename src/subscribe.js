@@ -1,4 +1,4 @@
-// Class for subscribing to a new feed
+// Module for subscribing to a new feed
 
 import assert from "/src/assert.js";
 import {check, isUncheckedError, PermissionsError} from "/src/errors.js";

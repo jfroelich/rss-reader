@@ -1,7 +1,4 @@
 
-// Note that for some reason Chrome complains about export default const, and I do not know why,
-// so I broke apart the declaration and the export into two statements.
-
 const OPTIONS_PAGE_IMAGE_PATHS = [
   '/images/bgfons-paper_texture318.jpg',
   '/images/CCXXXXXXI_by_aqueous.jpg',
