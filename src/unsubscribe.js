@@ -5,7 +5,7 @@ import * as Feed from "/src/feed.js";
 import * as rdb from "/src/rdb.js";
 import updateBadgeText from "/src/update-badge-text.js";
 
-export default async unsubscribe(feedId, conn) {
+export default async function unsubscribe(feedId, conn) {
   assert(rdb.isOpen(conn));
   assert(Feed.isValidId(feedId));
 
