@@ -19,7 +19,6 @@ import parseFeed from "/src/reader/parse-feed.js";
 import {feedPut} from "/src/reader-storage.js";
 import updateBadgeText from "/src/update-badge-text.js";
 
-
 export class SubscribeRequest {
   constructor() {
     this.iconCache = undefined;
@@ -61,9 +60,8 @@ export class SubscribeRequest {
     assert(rdb.isOpen(this.readerConn));
     assert(this.iconCache instanceof FaviconCache);
 
-    // TODO: law of demeter violation, use this.iconCache.isOpen after implementing it
+    // TODO: law of demeter violation, implement and use this.iconCache.isOpen
     assert(isOpenDB(this.iconCache.conn));
-
     assert(Feed.isFeed(feed));
     assert(Feed.hasURL(feed));
 
@@ -128,13 +126,4 @@ export class SubscribeRequest {
       }
     }
   }
-
-  // TODO: deprecate, inline this into caller
-  // Concurrently subscribe to each feed
-  subscribeAll(feeds) {
-    const promises = feeds.map(this.subscribe);
-    // TODO: use promiseEvery?
-    return Promise.all(promises);
-  }
-
 }

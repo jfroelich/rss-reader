@@ -100,8 +100,9 @@ async function importFile(file, readerConn, iconConn) {
   request.timeoutMs = timeoutMs;
   request.notify = false;
 
-  const subAllResults = await request.subscribeAll(feeds);
-  console.log('subbed to %d feeds in file', subAllResults.length, file.name);
+  const subcribePromises = feeds.map(request.subscribe);
+  const subscribeResults = await promiseEvery(subscribePromises);
+  console.log('subbed to %d feeds in file', subscribeResults.length, file.name);
 }
 
 function removeOutlinesWithInvalidTypes(doc) {
