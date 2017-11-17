@@ -8,11 +8,9 @@ import FaviconLookup from "/src/favicon-lookup.js";
 import * as Feed from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
 import isAllowedURL from "/src/fetch-policy.js";
-import {isOpen as isOpenDB} from "/src/idb.js";
 import * as rdb from "/src/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import {feedPut} from "/src/reader-storage.js";
-import updateBadgeText from "/src/update-badge-text.js";
 
 export function Context() {
   this.iconCache = undefined;
@@ -48,9 +46,7 @@ export async function subscribe(feed) {
   assert(rdb.isOpen(this.readerConn));
   assert(this.iconCache instanceof FaviconCache);
 
-  // TODO: law of demeter violation, implement and use this.iconCache.isOpen to avoid relying
-  // on the direct call to isOpenDB
-  assert(isOpenDB(this.iconCache.conn));
+  assert(this.iconCache.isOpen());
   assert(Feed.isFeed(feed));
   assert(Feed.hasURL(feed));
 
@@ -83,7 +79,6 @@ export async function subscribe(feed) {
   return storedFeed;
 }
 
-
 // Returns a promise that resolves to the id of a feed matching the url
 function isSubscribed(url) {
   return rdb.findFeedIdByURL(this.readerConn, url);
@@ -106,8 +101,8 @@ async function setFavicon(feed) {
   query.skipURLFetch = true;
   const url = Feed.createIconLookupURL(feed);
   try {
-    const iconURL = await query.lookup(url);
-    feed.faviconURLString = iconURL;
+    const iconURLString = await query.lookup(url);
+    feed.faviconURLString = iconURLString;
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;

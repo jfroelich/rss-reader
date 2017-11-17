@@ -31,6 +31,10 @@ FaviconCache.prototype.open = async function() {
   return this;
 };
 
+FaviconCache.prototype.isOpen = function() {
+  return idb.isOpen(this.conn);
+};
+
 FaviconCache.prototype.close = function() {
   idb.close(this.conn);
 };
