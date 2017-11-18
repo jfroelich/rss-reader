@@ -29,11 +29,29 @@ export function hasScriptProtocol(urlString) {
 // @param baseURL {URL}
 // @returns {URL} the absolute url, or undefined if an error occurred
 export function resolveURLString(urlString, baseURL) {
-  assert(typeof urlString === 'string');
   assert(baseURL instanceof URL);
 
-  // TODO: look at the code in favicon-lookup.js. I should consider the same things here. In fact I
-  // should probably modify favicon-lookup.js to call this function as a dependency.
+  // Allow for bad input for caller convenience
+  // If the url is not a string (e.g. undefined), return undefined
+  if(typeof urlString !== 'string') {
+    return;
+  }
+
+  // Check if urlString is just whitespace. If just whitespace, then return undefined. This departs
+  // from the behavior of the URL constructor, which tolerates an empty or whitespace string as
+  // input. The url constructor in that case will create a new URL from the base url exclusively.
+  // That is misleading for this purpose.
+
+  // If the length of the string is 0 then return undefined
+  if(!urlString) {
+    return;
+  }
+
+  // If the trimmed length of the string is 0 then return undefined
+  if(!urlString.trim()) {
+    return;
+  }
+
 
   let canonicalURL;
   try {
