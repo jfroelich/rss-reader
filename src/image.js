@@ -3,6 +3,7 @@
 // TODO: after moving functions from dom.js, revisit what functions are named
 
 import assert from "/src/assert.js";
+import {isValidURLString} from "/src/url-string.js";
 
 // Returns true if the image element has at least one source, which could be a src attribute, a
 // srcset attribute, or an associate picture element with one or more source elements that has a
