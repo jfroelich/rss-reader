@@ -18,7 +18,6 @@ import {formattingAnchorFilter} from "/src/filters/formatting-anchor-filter.js";
 import {formattingFilter} from "/src/filters/formatting-filter.js";
 import {formFilter} from "/src/filters/form-filter.js";
 import {frameFilter} from "/src/filters/frame-filter.js";
-import {hairspaceFilter} from "/src/filters/hairspace-filter.js";
 import {hiddenFilter} from "/src/filters/hidden-filter.js";
 import {hostTemplateFilter} from "/src/filters/host-template-filter.js";
 import {hrFilter} from "/src/filters/hr-filter.js";
@@ -123,7 +122,6 @@ export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
   formattingFilter(doc);
 
   adoptionAgencyFilter(doc);
-  hairspaceFilter(doc);
 
   semanticFilter(doc);
   figureFilter(doc);

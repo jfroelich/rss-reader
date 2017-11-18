@@ -1,12 +1,13 @@
+// Remove hairspaces from document content
 
-import assert from "/src/assert.js";
-
-// TODO: move to experimental and stop using
 // TODO: this should be part of a general character normalization filter, or perhaps a whitespace
 // normalization filter, or an entity filter
 // TODO: accessing nodeValue does decoding, so maybe this doesn't work? Forgot.
 // TODO: this needs testing to test whether it actually works, I don't think this works, because
 // of how entities are decoded when accessing nodeValue
+
+import assert from "/src/assert.js";
+
 export function hairspaceFilter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {
