@@ -1,15 +1,19 @@
 // Fetch utilities
 
 import assert from "/src/assert.js";
-import {check} from "/src/errors.js";
+import {check, TimeoutError} from "/src/errors.js";
 import * as mime from "/src/mime.js";
 import {isPosInt} from "/src/number.js";
 import {parseInt10} from "/src/string.js";
 import {compareURLsWithoutHash} from "/src/url.js";
 import {isValidURLString} from "/src/url-string.js";
 
-export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
+export class FetchError extends Error {
+  constructor(message) {
+    super(message || 'Fetch error');
+  }
+}
 
 // TODO: create FetchError, change functions to throw FetchError instead of generic Error
 
@@ -107,20 +111,16 @@ export async function fetchImageHead(url, timeoutMs) {
   options.redirect = 'follow';
   options.referrer = 'no-referrer';
 
-  const response = await fetchWithTimeout(url, options, timeoutMs, 'Fetch timed out ' + url);
+  const response = await fetchWithTimeout(url, options, timeoutMs);
   assert(response);
   const contentType = response.headers.get('Content-Type');
 
-  // TODO: use a custom error, like FetchError
-  let errorType;
-  check(mime.isImage(contentType), errorType, 'Response content type not an image mime type: ' +
+  check(mime.isImage(contentType), FetchError, 'Response content type not an image mime type: ' +
     contentType + ' for url ' + url);
 
-  // TODO: create and use ReaderResponse?
+  // TODO: create and use ResponseWrapper?
   const outputResponse = {};
-  // TODO: ResponseUtils.getContentLength should be a method of ReaderResponse
-  // TODO: rename outputResponse.size to to outputResponse.contentLength
-  outputResponse.size = ResponseUtils.getContentLength(response);
+  outputResponse.size = getContentLength(response);
   outputResponse.responseURL = response.url;
   return outputResponse;
 }
@@ -162,8 +162,7 @@ export function fetchImage(url, timeoutMs) {
     // prevent background.js from ever being unloaded?
     const proxy = new Image();
     // Trigger the fetch
-    // NOTE: using the old code, url_object.href, was probably the source of the bug. This was
-    // getting swallowed by the promise.
+
     proxy.src = url;
 
     // Resolve to the proxy immediately if the image is 'cached'
@@ -173,11 +172,6 @@ export function fetchImage(url, timeoutMs) {
       return;
     }
 
-    // TODO: handler attachment order may be an issue. Look into it more. I don't think so, but not
-    // sure.
-    // See https://stackoverflow.com/questions/4776670 . Apparently the proper convention is to
-    // always trigger the fetch after attaching the handlers? This should not matter?
-
     proxy.onload = function proxyOnload(event) {
       clearTimeout(timerId);
       resolve(proxy);
@@ -185,9 +179,7 @@ export function fetchImage(url, timeoutMs) {
 
     proxy.onerror = function proxyOnerror(event) {
       clearTimeout(timerId);
-      // TODO: use a custom error like TimeoutError
-      // There is no useful error object in the event, so construct our own
-      reject(new Error('Failed to fetch ' + url));
+      reject(new TimeoutError('Timed out fetching ' + url));
     };
   });
 
@@ -196,19 +188,17 @@ export function fetchImage(url, timeoutMs) {
     return fetchPromise;
   }
 
-  // There is a timeout, so we are going to race
+  // There is a timeout provided, so we are going to race
   // TODO: delegate to setTimeoutPromise
-  // TODO: think about binds to reduce callback hell
   const timeoutPromise = new Promise(function timeExec(resolve, reject) {
     timerId = setTimeout(function onTimeout() {
       // The timeout triggered.
-      // TODO: use a custom error like FetchError? TimeoutError?
       // TODO: prior to settling, cancel the fetch somehow
       // TODO: it could actually be after settling too I think?
       // TODO: i want to cancel the fetch itself, and also the fetchPromise promise. actually there
       // is no fetch promise in this context, just the Image.src assignment call. Maybe setting
       // proxy.src to null does the trick?
-      reject(new Error('Fetching image timed out ' + url));
+      reject(new TimeoutError('Fetching image timed out ' + url));
     }, timeoutMs);
   });
 
@@ -225,9 +215,9 @@ export function fetchImage(url, timeoutMs) {
 async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
   const response = await fetchWithTimeout(url, options, timeoutMs);
 
-  // TODO: use custom error like FetchError
-  check(response, undefined, 'undefined response for url ' + url);
-  check(response.ok, undefined, 'response not ok for url ' + url);
+  check(response, FetchError, 'Undefined response for url ' + url);
+  check(response.ok, FetchError, 'Response not ok for url ' + url + ', status is ' +
+    response.status);
 
   // The spec says 204 is ok because response.ok is true for status codes 200-299, but this
   // implementation's opinion is that 204 is an error.
@@ -236,11 +226,10 @@ async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
   // sometimes when doing fetch. There may not be a need to explicitly check for
   // this error code. I would need to test further.
   const HTTP_STATUS_NO_CONTENT = 204;
-  check(response.status !== HTTP_STATUS_NO_CONTENT, undefined, 'no content repsonse ' + url);
+  check(response.status !== HTTP_STATUS_NO_CONTENT, FetchError, 'no content repsonse ' + url);
 
   if(typeof acceptPredicate === 'function') {
-    // TODO: use a custom error like FetchError
-    check(acceptPredicate(response), undefined, 'response not accepted ' + url);
+    check(acceptPredicate(response), FetchError, 'response not accepted ' + url);
   }
 
   // TODO: create a ReaderResponse class and use that instead of a simple object?
@@ -251,11 +240,11 @@ async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
   };
   responseWrapper.requestURL = url;
   responseWrapper.responseURL = response.url;
-  responseWrapper.lastModifiedDate = ResponseUtils.getLastModified(response);
+  responseWrapper.lastModifiedDate = getLastModified(response);
 
   const requestURLObject = new URL(url);
   const responseURLObject = new URL(response.url);
-  responseWrapper.redirected = fetchURLChanged(requestURLObject, responseURLObject);
+  responseWrapper.redirected = detectURLChanged(requestURLObject, responseURLObject);
   return responseWrapper;
 }
 
@@ -268,12 +257,11 @@ async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
 // @param url {String} the url to fetch
 // @param options {Object} optional, fetch options parameter
 // @param timeoutMs {Number} optional, timeout in milliseconds
-// @param errorMessage {String} optional, timeout error message content
 // @returns {Promise} the promise that wins the race
 //
 // TODO: if fetch succeeds, cancel the timeout
 // TODO: if timeout succeeds first, cancel the fetch
-function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
+function fetchWithTimeout(url, options, timeoutMs) {
   assert(isValidURLString(url));
   const timeoutMsType = typeof timeoutMs;
 
@@ -292,19 +280,14 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
   // Not much use for this right now, I think it might be important later
   let timeoutId;
 
-  if(typeof errorMessage === 'undefined') {
-    errorMessage = 'Fetch timed out for url ' + url;
-  }
-
   // TODO: delegate to setTimeoutPromise
-  // TODO: resolve instead of reject. But think of how to represent that in case of error? Ok, have
-  // the promise reject with undefined. The fetch promise never resolves with undefined. So make
+  // TODO: resolve instead of reject. The fetch promise never resolves with undefined. So make
   // this function async and await the race and then check whether the response is defined.
 
-  // I am using this internal function instead of a external helper because of plans to support
-  // cancellation
+  let errorMessage = 'Fetch timed out for url ' + url;
+
   const timeoutPromise = new Promise(function executor(resolve, reject) {
-    const error = new Error(errorMessage);
+    const error = new TimeoutError(errorMessage);
     timeoutId = setTimeout(reject, timeoutMs, error);
   });
 
@@ -315,18 +298,15 @@ function fetchWithTimeout(url, options, timeoutMs, errorMessage) {
 //
 // @param requestURL {URL}
 // @param responseURL {URL}
-function fetchURLChanged(requestURL, responseURL) {
+function detectURLChanged(requestURL, responseURL) {
   return !compareURLsWithoutHash(requestURL, responseURL);
 }
-
-// TODO: this is silly, do not use object namespace
-const ResponseUtils = {};
 
 // Returns the value of the Last-Modified header as a Date object
 // @param response {Response}
 // @returns {Date} the value of Last-Modified, or undefined if error such as no header present or
 // bad date
-ResponseUtils.getLastModified = function(response) {
+function getLastModified(response) {
   assert(response instanceof Response);
 
   const lastModifiedString = response.headers.get('Last-Modified');
@@ -337,14 +317,15 @@ ResponseUtils.getLastModified = function(response) {
   try {
     return new Date(lastModifiedString);
   } catch(error) {
+    // Ignore
   }
-};
+}
 
 
-// TODO: instead of returning an invalid value, return both an error code and the value. This way
-// there is no ambiguity, or need for global constant
-ResponseUtils.getContentLength = function(response) {
+export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
+
+function getContentLength(response) {
   const contentLengthString = response.headers.get('Content-Length');
   const contentLength = parseInt10(contentLengthString);
   return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
-};
+}
