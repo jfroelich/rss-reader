@@ -1,7 +1,7 @@
 
 import assert from "/src/assert.js";
 import {getDimensions} from "/src/dom.js";
-import {fetchImage} from "/src/fetch.js";
+import {fetchImageElement} from "/src/fetch.js";
 import {promiseEvery} from "/src/promise.js";
 import {parseInt10} from "/src/string.js";
 import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url.js";
@@ -87,7 +87,7 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     return result;
   }
 
-  const response = await fetchImage(sourceURL.href, timeoutMs);
+  const response = await fetchImageElement(sourceURL.href, timeoutMs);
 
   // Access by property, attributes are not set
   result.width = response.width;

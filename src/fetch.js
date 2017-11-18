@@ -136,13 +136,8 @@ export async function fetchImageHead(url, timeoutMs) {
 // @returns {Promise}
 // TODO: should this accept a host document parameter in which to create the element (instead of
 // new Image() using document.createElement('img'))
-// TODO: maybe rename to fetchImageElement so that it works more like other fetches can be created,
-// and to avoid confusion. For that matter, maybe create two functions. A function called
-// fetchImage that utilizes fetch, and a function called fetchImageElement that does whatever this
-// currently does.
-// TODO: it is possible this should be using the fetch API to avoid cookies? Can fetching an
-// image transmit cookie data? I think so, but I would prefer to be certain.
-export function fetchImage(url, timeoutMs) {
+// TODO: it is possible this should be using the fetch API to avoid cookies?
+export function fetchImageElement(url, timeoutMs) {
   assert(url);
 
   if(typeof timeoutMs === 'undefined') {
