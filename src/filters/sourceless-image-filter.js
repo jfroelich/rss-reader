@@ -1,7 +1,7 @@
 // Removes images that are missing source information from document content
 
 import assert from "/src/assert.js";
-import {imageHasSource, removeImage} from "/src/dom.js";
+import {imageHasSource, removeImage} from "/src/image.js";
 
 export default function filter(doc) {
   assert(doc instanceof Document);
