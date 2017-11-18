@@ -4,6 +4,7 @@ import assert from "/src/assert.js";
 import {check, TimeoutError} from "/src/errors.js";
 import * as mime from "/src/mime.js";
 import {isPosInt} from "/src/number.js";
+import {setTimeoutPromise} from "/src/promise.js";
 import {parseInt10} from "/src/string.js";
 import {compareURLsWithoutHash} from "/src/url.js";
 import {isValidURLString} from "/src/url-string.js";
@@ -101,6 +102,9 @@ export async function fetchImageHead(url, timeoutMs) {
   // So fetchInternal first needs to be refactored to also calculate content length because response
   // is not exposed, just wrapped response.
 
+  // TODO: side note, does HEAD yield 204? If so, 204 isn't an error. So using fetchInternal
+  // would be wrong, at least as it is currently implemented.
+
   // TODO: set properties in a consistent manner, like I do in other fetch functions
   const options = {};
   options.credentials = 'omit';
@@ -125,16 +129,17 @@ export async function fetchImageHead(url, timeoutMs) {
   return outputResponse;
 }
 
-// Fetches an image element. Returns a promise that resolves to a fetched image element.
+// Fetches an image element. Returns a promise that resolves to a fetched image element. Note that
+// data uris are accepted.
 // @param url {String}
 // @param timeoutMs {Number}
 // @returns {Promise}
-// NOTE: urls with data: protocol are fine
-// NOTE: timeout of 0 is equivalent to undefined, or untimed fetch
 // TODO: should this accept a host document parameter in which to create the element (instead of
 // new Image() using document.createElement('img'))
 // TODO: maybe rename to fetchImageElement so that it works more like other fetches can be created,
-// and to avoid confusion
+// and to avoid confusion. For that matter, maybe create two functions. A function called
+// fetchImage that utilizes fetch, and a function called fetchImageElement that does whatever this
+// currently does.
 // TODO: it is possible this should be using the fetch API to avoid cookies? Can fetching an
 // image transmit cookie data? I think so, but I would prefer to be certain.
 export function fetchImage(url, timeoutMs) {
@@ -214,8 +219,7 @@ export function fetchImage(url, timeoutMs) {
 // @returns {Object} a Response-like object
 async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
   const response = await fetchWithTimeout(url, options, timeoutMs);
-
-  check(response, FetchError, 'Undefined response for url ' + url);
+  assert(response);
   check(response.ok, FetchError, 'Response not ok for url ' + url + ', status is ' +
     response.status);
 
@@ -248,50 +252,32 @@ async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
   return responseWrapper;
 }
 
-// Returns a promise. If no timeout is given the promise is the same promise as yielded by calling
-// fetch. If a timeout is given, then a timeout promise is raced against the fetch, and whichever
-// promise wins the race is returned. If the fetch promise wins the race then generally it will be
-// a resolved promise, but it could be rejected for example in case of a network error. If the
-// timeout promise wins the race it is always a rejection.
-//
+// Call fetch, and race the fetch against a timeout. Throws an error if a timeout occurs, or if
+// fetch error occurs.
 // @param url {String} the url to fetch
 // @param options {Object} optional, fetch options parameter
 // @param timeoutMs {Number} optional, timeout in milliseconds
-// @returns {Promise} the promise that wins the race
-//
-// TODO: if fetch succeeds, cancel the timeout
-// TODO: if timeout succeeds first, cancel the fetch
-function fetchWithTimeout(url, options, timeoutMs) {
+// @returns {Promise} the fetch promise
+async function fetchWithTimeout(url, options, timeoutMs) {
   assert(isValidURLString(url));
-  const timeoutMsType = typeof timeoutMs;
-
-  // If timeout is set then check its validity
-  if(timeoutMsType !== 'undefined') {
-    assert(isPosInt(timeoutMs));
-  }
+  assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
 
   const fetchPromise = fetch(url, options);
-
-  // If timeout is not set then do a normal fetch
-  if(timeoutMsType === 'undefined' || timeoutMs === 0) {
+  if(!timeoutMs === 'undefined') {
     return fetchPromise;
   }
 
-  // Not much use for this right now, I think it might be important later
-  let timeoutId;
-
-  // TODO: delegate to setTimeoutPromise
-  // TODO: resolve instead of reject. The fetch promise never resolves with undefined. So make
-  // this function async and await the race and then check whether the response is defined.
-
-  let errorMessage = 'Fetch timed out for url ' + url;
-
-  const timeoutPromise = new Promise(function executor(resolve, reject) {
-    const error = new TimeoutError(errorMessage);
-    timeoutId = setTimeout(reject, timeoutMs, error);
-  });
-
-  return Promise.race([fetchPromise, timeoutPromise]);
+  const [timeoutId, timeoutPromise] = setTimeoutPromise(timeoutMs);
+  const contestants = [fetchPromise, timeoutPromise];
+  const response = await Promise.race(contestants);
+  if(response) {
+    clearTimeout(timeoutId);
+  } else {
+    // TODO: cancel/abort the fetch, if that is possible
+    const errorMessage = 'Fetch timed out for url ' + url;
+    throw new TimeoutError(errorMessage);
+  }
+  return fetchPromise;
 }
 
 // Return true if the response url is 'different' than the request url
@@ -308,19 +294,15 @@ function detectURLChanged(requestURL, responseURL) {
 // bad date
 function getLastModified(response) {
   assert(response instanceof Response);
-
   const lastModifiedString = response.headers.get('Last-Modified');
-  if(!lastModifiedString) {
-    return;
-  }
-
-  try {
-    return new Date(lastModifiedString);
-  } catch(error) {
-    // Ignore
+  if(lastModifiedString) {
+    try {
+      return new Date(lastModifiedString);
+    } catch(error) {
+      // Ignore
+    }
   }
 }
-
 
 export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
