@@ -195,7 +195,7 @@ FaviconLookup.prototype.hasOpenCache = function() {
 // Returns true if response byte size in bounds. Tolerates undefined response.
 FaviconLookup.prototype.isAcceptableImageResponse = function(response) {
   return response && (response.size === FETCH_UNKNOWN_CONTENT_LENGTH ||
-    (response.size >= this.minImageSize && response.size <= this.maxImageSize))
+    (response.size >= this.minImageSize && response.size <= this.maxImageSize));
 };
 
 // Helper that traps non-assertion errors because errors not fatal to lookup
