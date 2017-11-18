@@ -52,7 +52,6 @@ export function resolveURLString(urlString, baseURL) {
     return;
   }
 
-
   let canonicalURL;
   try {
     canonicalURL = new URL(urlString, baseURL);

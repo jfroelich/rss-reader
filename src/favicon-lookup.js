@@ -11,6 +11,7 @@ import {
 import {isPosInt} from "/src/number.js";
 import parseHTML from "/src/parse-html.js";
 import {setURLHrefProperty} from "/src/url.js";
+import {resolveURLString} from "/src/url-string.js";
 
 export default class FaviconLookup {
   constructor() {
@@ -273,44 +274,12 @@ FaviconLookup.prototype.search = function(document, baseURL) {
     const elements = document.head.querySelectorAll(this.LINK_SELECTOR);
     for(const element of elements) {
       const href = element.getAttribute('href');
-      // hrefs may be relative
-      const iconURL = this.resolveURL(href, baseURL);
+      // hrefs may be relative or undefined or empty or whitespace only
+      const iconURL = resolveURLString(href, baseURL);
       if(iconURL) {
         return iconURL.href;
       }
     }
-  }
-};
-
-// Helper that resolves a url. If url is undefined, invalid, etc, then this returns undefined.
-// Otherwise this returns a new URL representing the canonical url.
-// @param url {String} optional url to resolve
-// @param baseURL {URL}
-// @returns {URL}
-FaviconLookup.prototype.resolveURL = function(url, baseURL) {
-  assert(baseURL instanceof URL);
-
-  // TODO: switch to using resolveURLString in url-string.js
-
-  // Tolerate bad input for caller convenience
-  if(typeof url !== 'string') {
-    return;
-  }
-
-  // Do not pass an empty url to the URL constructor when base url is also defined as base url
-  // becomes the resulting url without an error. This was previously the source of a bug, so as
-  // annoying as it is, I am leaving this comment here as a continual reminder.
-
-  // Check if the url is not just whitespace
-  url = url.trim();
-  if(url.length === 0) {
-    return;
-  }
-
-  try {
-    return new URL(url, baseURL);
-  } catch(error) {
-    // Ignore
   }
 };
 
