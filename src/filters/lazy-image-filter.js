@@ -1,7 +1,7 @@
 // Transforms lazily-loaded images found in document content
 
 import assert from "/src/assert.js";
-import {imageHasSource} from "/src/image.js";
+import {hasSource} from "/src/image.js";
 import {isValidURLString} from "/src/url-string.js";
 
 const kLazyAttributeNames = [
@@ -26,7 +26,7 @@ export default function filter(doc) {
 
   const images = doc.body.getElementsByTagName('image');
   for(const image of images) {
-    if(imageHasSource(image)) {
+    if(hasSource(image)) {
       continue;
     }
 

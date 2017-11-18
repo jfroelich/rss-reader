@@ -1,14 +1,12 @@
 // Image element utilities
 
-// TODO: after moving functions from dom.js, revisit what functions are named
-
 import assert from "/src/assert.js";
 import {isValidURLString} from "/src/url-string.js";
 
 // Returns true if the image element has at least one source, which could be a src attribute, a
 // srcset attribute, or an associate picture element with one or more source elements that has a
 // src or srcset attribute.
-export function imageHasSource(image) {
+export function hasSource(image) {
   assert(image instanceof Element);
 
   if(image.hasAttribute('src') || image.hasAttribute('srcset')) {
@@ -33,13 +31,13 @@ export function imageHasSource(image) {
 }
 
 // Return true if image has a valid src attribute value
-export function imageHasValidSource(image) {
+export function hasValidSource(image) {
   assert(image instanceof Element);
   return isValidURLString(image.getAttribute('src'));
 }
 
 // Return true if image has a non-empty srcset attribute value
-export function imageHasSrcset(image) {
+export function hasSrcset(image) {
   assert(image instanceof Element);
   const imageSrcset = image.getAttribute('srcset');
   return imageSrcset && imageSrcset.trim();
