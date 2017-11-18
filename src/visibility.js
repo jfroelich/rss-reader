@@ -47,16 +47,16 @@ export function isHiddenElement(element) {
     return true;
   }
 
-  // TODO: the collection of ancestors should be delegated to getAncestors in dom.js. This probably
-  // also entails changing the order of iteration over the ancestors in the subsequent loop.
-
   // Walk bottom-up from after element to before body, recording the path
+  // This does not delegate to getAncestors in dom utils because it stops before reaching body,
+  // which would just require more special processing of the ancestors array to get only ancestors
+  // below the body.
   const path = [];
   for(let e = element.parentNode; e && e !== doc.body; e = e.parentNode) {
     path.push(e);
   }
 
-  // Step backward along the path and stop upon finding the first hidden node. This is top down.
+  // Step backward along the path and stop upon finding the first hidden node
   for(let i = path.length - 1; i > -1; i--) {
     if(isHiddenInlineElement(path[i])) {
       return true;
@@ -67,7 +67,7 @@ export function isHiddenElement(element) {
 }
 
 // Returns true if an element is hidden according to its inline style. Makes mostly conservative
-// guesses because false positives carry a greater penalty.
+// guesses because false positives carry a greater penalty than false negatives.
 export function isHiddenInlineElement(element) {
   assert(element instanceof Element);
 
@@ -94,7 +94,7 @@ export function isHiddenInlineElement(element) {
 
   // element.style only has a length if one or more explicit properties are set. Elements are
   // visible by default. If no properties set then the element is assumed to be visible. Testing
-  // this helps avoid the more expensive tests later in this function.
+  // this helps avoid the more expensive tests.
   if(!style.length) {
     return false;
   }

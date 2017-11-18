@@ -1,4 +1,5 @@
-// Utilities for working with URL objects
+// Utilities for working with URL objects. All functions that accept a url parameter expect the
+// parameter to be of type URL, not String, unless otherwise specified.
 
 import assert from "/src/assert.js";
 import * as mime from "/src/mime.js";
@@ -19,9 +20,8 @@ import {isAlphanumeric, parseInt10} from "/src/string.js";
 // Currently Chrome does not appear to do this. This behavior is easily reproduced by setting
 // the href property directly to garbage.
 export function setURLHrefProperty(url, newHrefString) {
-
   // Because setting href does not throw the expected type error, instead, use a proxy that involves
-  // passing through the constructor, which will throw an error of some kind.
+  // passing through the constructor, which will throw an error of some kind if the url is invalid.
   const guardURL = new URL(newHrefString);
   // Then set the href value. Notably, there is NO guarantee that guardURL.href is equal to
   // newHrefString. It very likely may not be equal. However, rather than setting href to
@@ -32,10 +32,18 @@ export function setURLHrefProperty(url, newHrefString) {
 }
 
 // Returns true if otherURL is 'external' to the documentURL. Inaccurate and insecure.
-// @param documentURL {URL}
-// @param otherURL {URL}
-// @return {Boolean}
 export function isExternalURL(documentURL, otherURL) {
+
+  // Certain protocols are never external in the sense that a network request is not performed
+  switch(otherURL.protocol) {
+  case 'data:':
+  case 'mailto:':
+  case 'javascript:':
+    return false;
+  default:
+    break;
+  }
+
   const docDomain = getUpperDomain(documentURL);
   const otherDomain = getUpperDomain(otherURL);
   return docDomain !== otherDomain;
@@ -106,7 +114,6 @@ function isIPv6Address(hostname) {
 const PATH_WITH_EXTENSION_MIN_LENGTH = 3; // '/.b'
 const EXTENSION_MAX_LENGTH = 255; // excluding '.'
 
-// @param url {URL}
 // @returns {String}
 function getExtension(url) {
   assert(url instanceof URL);
@@ -128,7 +135,6 @@ function getExtension(url) {
 }
 
 // Return true if url probably represents a binary resource
-// @param url {URL}
 export function sniffIsBinaryURL(url) {
   assert(url instanceof URL);
 
@@ -140,6 +146,14 @@ export function sniffIsBinaryURL(url) {
       // Assume data url objects are probably binary
       return true;
     }
+  }
+
+  switch(url.protocol) {
+  case 'mailto:':
+  case 'javascript:':
+    return false;
+  default:
+    break;
   }
 
   const extension = getExtension(url);

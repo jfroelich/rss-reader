@@ -290,6 +290,8 @@ FaviconLookup.prototype.search = function(document, baseURL) {
 FaviconLookup.prototype.resolveURL = function(url, baseURL) {
   assert(baseURL instanceof URL);
 
+  // TODO: switch to using resolveURLString in url-string.js
+
   // Tolerate bad input for caller convenience
   if(typeof url !== 'string') {
     return;
