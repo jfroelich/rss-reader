@@ -65,7 +65,7 @@ export function replaceTags(htmlString, replacement) {
 // @param htmlString {String}
 // @param position {Number} position after which to truncate
 // @param suffix {String} optional, appended after truncation, defaults to an ellipsis
-// @throws ParserError
+// @throws ParseError
 export function truncate(htmlString, position, suffix) {
   assert(isPosInt(position));
 

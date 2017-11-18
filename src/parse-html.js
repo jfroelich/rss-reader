@@ -1,7 +1,7 @@
 // HTML parsing module
 
 import assert from "/src/assert.js";
-import {check, ParserError} from "/src/errors.js";
+import {check, ParseError} from "/src/errors.js";
 import * as mime from "/src/mime.js";
 
 // When html is a fragment, it will be inserted into a new document using a default template
@@ -15,6 +15,6 @@ export default function parseHTML(html) {
   const errorElement = doc.querySelector('parsererror');
   // TODO: prettify the error message, strip line breaks, see what I did in xml parser and use
   // the same consistent pattern
-  check(!errorElement, ParserError, errorElement ? errorElement.textContent : '');
+  check(!errorElement, ParseError, errorElement ? errorElement.textContent : '');
   return doc;
 }

@@ -14,7 +14,7 @@
 // function. So, for now, I am not exporting a default. This may change.
 
 import assert from "/src/assert.js";
-import {check, ParserError} from "/src/errors.js";
+import {check, ParseError} from "/src/errors.js";
 import parseXML from "/src/parse-xml.js";
 import {getElementName} from "/src/xml-utils.js";
 
@@ -33,10 +33,10 @@ function unmarshallXML(document) {
   const documentElement = document.documentElement;
   const documentElementName = getElementName(documentElement);
   const supportedNames = ['feed', 'rdf', 'rss'];
-  check(supportedNames.includes(documentElementName), ParserError,
+  check(supportedNames.includes(documentElementName), ParseError,
     'unsupported document element: ' + documentElementName);
   const channelElement = findChannelElement(documentElement);
-  check(channelElement, ParserError, 'missing channel element');
+  check(channelElement, ParseError, 'missing channel element');
 
   const feed = {};
   feed.type = findFeedType(documentElement);

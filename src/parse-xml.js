@@ -1,7 +1,7 @@
 // XML parsing module
 
 import assert from "/src/assert.js";
-import {ParserError} from "/src/errors.js";
+import {ParseError} from "/src/errors.js";
 import * as mime from "/src/mime.js";
 import {condenseWhitespace} from "/src/string.js";
 
@@ -19,7 +19,7 @@ export default function parseXML(xml) {
   if(errorElement) {
     let errorMessage = errorElement.textContent;
     errorMessage = condenseWhitespace(errorMessage);
-    throw new ParserError(errorMessage);
+    throw new ParseError(errorMessage);
   }
 
   return doc;

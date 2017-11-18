@@ -36,7 +36,7 @@ export function isUncheckedError(error) {
 }
 
 // TODO: rename to ParseError
-export class ParserError extends Error {
+export class ParseError extends Error {
   constructor(message) {
     super(message || 'Parse error');
   }
