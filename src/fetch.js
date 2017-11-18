@@ -120,16 +120,14 @@ export async function fetchImageHead(url, timeoutMs) {
 // @param url {String}
 // @param timeoutMs {Number}
 // @returns {Promise}
-// TODO: it is possible this should be using the fetch API to avoid cookies?
-export function fetchImageElement(url, timeoutMs) {
+// TODO: use the fetch API to avoid cookies?
+export async function fetchImageElement(url, timeoutMs) {
   assert(url);
   assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
 
   const fetchPromise = new Promise(function fetchExec(resolve, reject) {
     const proxy = new Image();
     proxy.src = url;// triggers the fetch
-
-    // Resolve immediately if the image is cached
     if(proxy.complete) {
       clearTimeout(timerId);
       resolve(proxy);
@@ -142,28 +140,26 @@ export function fetchImageElement(url, timeoutMs) {
     };
     proxy.onerror = function proxyOnerror(event) {
       clearTimeout(timerId);
-      reject(new TimeoutError('Timed out fetching ' + url));
+      const errorMessage = 'Error fetching image with url ' + url;
+      const error = new FetchError(errorMessage);
+      reject(error);
     };
   });
 
-  // If no timeout specified then exit early with the fetch promise.
   if(!timeoutMs) {
     return fetchPromise;
   }
 
-  let timerId;
-
-  // There is a timeout provided, so we are going to race
-  // TODO: delegate to setTimeoutPromise
-  const timeoutPromise = new Promise(function timeExec(resolve, reject) {
-    timerId = setTimeout(function onTimeout() {
-      // The timeout triggered.
-      // TODO: prior to settling, cancel the fetch somehow
-      reject(new TimeoutError('Fetching image timed out ' + url));
-    }, timeoutMs);
-  });
-
-  return Promise.race([fetchPromise, timeoutPromise]);
+  const [timerId, timeoutPromise] = setTimeoutPromise(timeoutMs);
+  const contestants = [fetchPromise, timeoutPromise];
+  const image = await Promise.race(contestants);
+  if(image) {
+    clearTimeout(timerId);
+  } else {
+    const errorMessage = 'Timed out fetching image with url ' + url;
+    throw new TimeoutError(errorMessage);
+  }
+  return fetchPromise;
 }
 
 // Does a fetch with a timeout and a content type predicate
