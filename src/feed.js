@@ -25,7 +25,7 @@ export function hasURL(feed) {
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
 export function peekURL(feed) {
-  assert(feed && feed.urls && feed.urls.length);
+  assert(hasURL(feed));
   return feed.urls[feed.urls.length - 1];
 }
 
@@ -67,9 +67,6 @@ export function createIconLookupURL(feed) {
   const urlObject = new URL(urlString);
   return new URL(urlObject.origin);
 }
-
-
-
 
 // TODO: move to reader-storage.js
 // Returns a shallow copy of the input feed with sanitized properties
