@@ -69,28 +69,7 @@ export function createIconLookupURL(feed) {
 }
 
 
-// This is experimental and not in use so not exported
-// TODO: include this in places where sanitize is called
-// TODO: assert required properties are present
-// TODO: assert type, if set, is one of the valid types
-// TODO: assert feed has one or more urls
-// TODO: assert the type of each property?
-function isValid(feed) {
-  assert(isFeed(feed));
 
-  if('id' in feed) {
-    if(!isPosInt(feed.id)) {
-      return false;
-    }
-  }
-
-  if('type' in feed) {
-    const types = ['feed', 'rss', 'rdf'];
-    assert(types.includes(feed.type));
-  }
-
-  return true;
-}
 
 // TODO: move to reader-storage.js
 // Returns a shallow copy of the input feed with sanitized properties
