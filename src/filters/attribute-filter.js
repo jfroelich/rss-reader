@@ -1,10 +1,11 @@
+// Module for filtering element attributes from document content
 
 import assert from "/src/assert.js";
 
 // @param doc {Document}
 // @param whitelist {Object} each property is element name, each value is array
 // of attribute names
-export function attributeFilter(doc, whitelist) {
+export default function filterDocument(doc, whitelist) {
   assert(doc instanceof Document);
   assert(typeof whitelist === 'object');
 

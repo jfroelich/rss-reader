@@ -1,8 +1,10 @@
+// Resolves urls in document content
 
 import assert from "/src/assert.js";
 import {parseSrcsetWrapper, serializeSrcset} from "/src/srcset.js";
 import {resolveURLString} from "/src/url-string.js";
 
+// TODO: rename this
 const CANONICAL_URL_FILTER_MAP = {
   a: 'href',
   applet: 'codebase',
@@ -33,7 +35,7 @@ const CANONICAL_URL_FILTER_MAP = {
 
 // @param doc {Document}
 // @param baseURL {URL}
-export function canonicalURLFilter(doc, baseURL) {
+export default function canonicalURLFilter(doc, baseURL) {
   assert(doc instanceof Document);
   assert(baseURL instanceof URL);
 
@@ -52,6 +54,7 @@ export function canonicalURLFilter(doc, baseURL) {
   }
 }
 
+// TODO: now that this is modular, statically initialize
 function createSelector() {
   const tags = Object.keys(CANONICAL_URL_FILTER_MAP);
   const parts = [];

@@ -1,3 +1,4 @@
+// Module related to image size attributes
 
 import assert from "/src/assert.js";
 import {getDimensions} from "/src/dom.js";
@@ -12,9 +13,10 @@ import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url.js";
 // Assumes that if an image has a src attribute value that is a url, that the
 // url is absolute.
 // @param doc {Document}
+// @param allowedProtocols
 // @param timeoutMs {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
-export async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
+export default async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
   assert(doc instanceof Document);
 
   const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];

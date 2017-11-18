@@ -1,9 +1,10 @@
+// Transforms responsive images in document content
 
 import assert from "/src/assert.js";
 import {imageHasValidSource, imageHasSrcset} from "/src/dom.js";
 import {parseSrcsetWrapper} from "/src/srcset.js";
 
-export function responsiveImageFilter(doc) {
+export default function filterDocument(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

@@ -1,9 +1,10 @@
+// Transforms lazily-loaded images found in document content
 
 import assert from "/src/assert.js";
 import {imageHasSource} from "/src/dom.js";
 import {isValidURLString} from "/src/url-string.js";
 
-export function lazyImageFilter(doc) {
+export default function filter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

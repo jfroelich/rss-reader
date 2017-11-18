@@ -1,8 +1,9 @@
+// Filters or transforms certain form elements and form-related elements from document content
 
 import assert from "/src/assert.js";
 import {unwrap} from "/src/dom.js";
 
-export function formFilter(doc) {
+export default function formFilter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {
     return;

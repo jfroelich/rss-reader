@@ -1,3 +1,4 @@
+// Filters various telemetry-inducing content from document content
 
 import assert from "/src/assert.js";
 import {removeImage} from "/src/dom.js";
@@ -5,7 +6,8 @@ import {isExternalURL} from "/src/url.js";
 import {isCanonicalURLString} from "/src/url-string.js";
 import {isHiddenInlineElement} from "/src/visibility.js";
 
-const LONESTAR_FILTER_PATTERNS = [
+// TODO: move to config.js?
+const PATTERNS = [
   /\/\/.*2o7\.net\//i,
   /\/\/ad\.doubleclick\.net\//i,
   /\/\/ad\.linksynergy\.com\//i,
@@ -38,7 +40,7 @@ const LONESTAR_FILTER_PATTERNS = [
 // Removes some telemetry data from a document.
 // @param doc {Document}
 // @param url {String} canonical document url
-export function lonestarFilter(doc, url) {
+export default function lonestarFilter(doc, url) {
   assert(doc instanceof Document);
   assert(isCanonicalURLString(url));
 
@@ -120,7 +122,7 @@ function hasTelemetrySource(image, documentURL) {
     return false;
   }
 
-  for(const pattern of LONESTAR_FILTER_PATTERNS) {
+  for(const pattern of PATTERNS) {
     if(pattern.test(src)) {
       return true;
     }

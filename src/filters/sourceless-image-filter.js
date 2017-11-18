@@ -2,7 +2,7 @@
 import assert from "/src/assert.js";
 import {removeImage} from "/src/dom.js";
 
-export function sourcelessImageFilter(doc) {
+export default function filter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

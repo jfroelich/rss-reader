@@ -1,7 +1,7 @@
 
 import assert from "/src/assert.js";
 
-export function invalidAnchorFilter(doc) {
+export default function invalidAnchorFilter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {
     return;

@@ -3,7 +3,7 @@ import assert from "/src/assert.js";
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
-export function frameFilter(doc) {
+export default function frameFilter(doc) {
   assert(doc instanceof Document);
 
   // It is a bit counterintuitive but if a document is framed then the root frame is its body,

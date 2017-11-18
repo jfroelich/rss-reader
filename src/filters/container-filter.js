@@ -2,7 +2,7 @@
 import assert from "/src/assert.js";
 import {unwrapElements} from "/src/filters/filter-helpers.js";
 
-export function containerFilter(doc) {
+export default function containerFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

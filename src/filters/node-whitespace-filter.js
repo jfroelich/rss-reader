@@ -2,7 +2,7 @@
 import assert from "/src/assert.js";
 import {condenseWhitespace} from "/src/string.js";
 
-export function nodeWhitespaceFilter(doc) {
+export default function nodeWhitespaceFilter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

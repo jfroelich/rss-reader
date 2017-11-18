@@ -2,7 +2,7 @@
 import assert from "/src/assert.js";
 import {unwrapElements} from "/src/filters/filter-helpers.js";
 
-export function semanticFilter(doc) {
+export default function filter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {
