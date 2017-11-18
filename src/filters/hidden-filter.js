@@ -6,10 +6,9 @@ import assert from "/src/assert.js";
 import {unwrap} from "/src/dom.js";
 import {isHiddenInlineElement} from "/src/visibility.js";
 
-export default function hiddenFilter(doc) {
-  assert(doc instanceof Document)
+export default function filter(doc) {
+  assert(doc instanceof Document);
   const body = doc.body;
-
   if(!body) {
     return;
   }

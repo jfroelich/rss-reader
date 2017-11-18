@@ -1,10 +1,11 @@
+// Filters certain anchor elements from document content
 
 import assert from "/src/assert.js";
 import {unwrap} from "/src/dom.js";
 
 // An anchor that acts like a span can be unwrapped. Currently misses anchors that have href attr
 // but is empty/whitespace
-export default function formattingAnchorFilter(doc) {
+export default function filter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {
     return;

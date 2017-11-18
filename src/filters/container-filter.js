@@ -1,8 +1,9 @@
+// Unwraps container-like elements from a document
 
 import assert from "/src/assert.js";
 import {unwrapElements} from "/src/filters/filter-helpers.js";
 
-export default function containerFilter(doc) {
+export default function filter(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

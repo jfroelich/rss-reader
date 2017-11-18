@@ -2,7 +2,7 @@
 
 import assert from "/src/assert.js";
 
-export default function iframeFilter(doc) {
+export default function filter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {
     return;

@@ -1,3 +1,4 @@
+// Helper functions for filters
 
 import assert from "/src/assert.js";
 import {renameElement, unwrap} from "/src/dom.js";

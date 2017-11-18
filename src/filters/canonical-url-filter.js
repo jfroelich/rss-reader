@@ -35,7 +35,7 @@ const CANONICAL_URL_FILTER_MAP = {
 
 // @param doc {Document}
 // @param baseURL {URL}
-export default function canonicalURLFilter(doc, baseURL) {
+export default function filterDocument(doc, baseURL) {
   assert(doc instanceof Document);
   assert(baseURL instanceof URL);
 

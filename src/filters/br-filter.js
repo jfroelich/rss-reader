@@ -1,7 +1,8 @@
+// Filters certain breakrule elements from document content
 
 import assert from "/src/assert.js";
 
-export default function brFilter(doc) {
+export default function filter(doc) {
   assert(doc instanceof Document);
   if(doc.body) {
     const brs = doc.body.querySelectorAll('br + br');

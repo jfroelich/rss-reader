@@ -1,10 +1,7 @@
+// Filters empty leaf-like nodes from document content
+// This module has multiple exports and no default export
 
 import assert from "/src/assert.js";
-
-const LEAF_FILTER_EXCEPTION_ELEMENTS = [
-  'area', 'audio', 'base', 'col', 'command', 'br', 'canvas', 'col', 'hr', 'iframe', 'img', 'input',
-  'keygen', 'meta', 'nobr', 'param', 'path', 'source', 'sbg', 'textarea', 'track', 'video', 'wbr'
-];
 
 export function leafFilter(doc) {
   assert(doc instanceof Document);
@@ -49,6 +46,11 @@ export function leafFilterIsLeaf(node) {
   return true;
 }
 
+const EXCEPTION_ELEMENTS = [
+  'area', 'audio', 'base', 'col', 'command', 'br', 'canvas', 'col', 'hr', 'iframe', 'img', 'input',
+  'keygen', 'meta', 'nobr', 'param', 'path', 'source', 'sbg', 'textarea', 'track', 'video', 'wbr'
+];
+
 function isExceptionalElement(element) {
-  return LEAF_FILTER_EXCEPTION_ELEMENTS.includes(element.localName);
+  return EXCEPTION_ELEMENTS.includes(element.localName);
 }

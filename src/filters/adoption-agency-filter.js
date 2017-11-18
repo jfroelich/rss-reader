@@ -1,8 +1,9 @@
+// Removes, moves, or otherwise changes certain out-of-place elements in document content
 
 import assert from "/src/assert.js";
 
 // Relocates certain misnested elements
-export default function adoptionAgencyFilter(doc) {
+export default function filterDocument(doc) {
   assert(doc instanceof Document);
 
   if(!doc.body) {

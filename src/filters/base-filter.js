@@ -1,3 +1,4 @@
+// Remove all base elements from a document
 
 import assert from "/src/assert.js";
 

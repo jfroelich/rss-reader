@@ -1,3 +1,4 @@
+// Removes or changes frame and frame-related elements in document content
 
 import assert from "/src/assert.js";
 
@@ -10,11 +11,13 @@ export default function frameFilter(doc) {
   // and doc.body points to it (and not some <body> element)
 
   let originalBody = doc.body;
+
+  // If the document has no body or frame element, then there is nothing to do
   if(!originalBody) {
     return;
   }
 
-  // If document is not framed, then nothing else to do
+  // If the body element is a body element and not a frame element, then there is nothing to do
   if(originalBody.localName !== 'frameset') {
     return;
   }

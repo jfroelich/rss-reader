@@ -16,7 +16,7 @@ import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url.js";
 // @param allowedProtocols
 // @param timeoutMs {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
-export default async function imageSizeFilter(doc, allowedProtocols, timeoutMs) {
+export default async function filterDocument(doc, allowedProtocols, timeoutMs) {
   assert(doc instanceof Document);
 
   const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];
