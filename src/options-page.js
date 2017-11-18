@@ -14,11 +14,6 @@ import * as Feed from "/src/feed.js";
 import FONTS from "/src/fonts.js";
 import {truncate as htmlTruncate} from "/src/html.js";
 import * as mime from "/src/mime.js";
-import {
-  optionsPageSubscriptionMonitorShow,
-  optionsPageSubscriptionMonitorAppendMessage,
-  optionsPageSubscriptionMonitorHide
-} from "/src/options-page-subscription-monitor.js";
 import * as rdb from "/src/rdb.js";
 import {readerImportFiles} from "/src/reader-import.js";
 import {parseInt10} from "/src/string.js";
@@ -50,6 +45,37 @@ function dispatchSettingsChangedEvent() {
   entryCSSOnChange();
 
   settingsChannel.postMessage('changed');
+}
+
+// TODO: instead of removing and re-adding, reset and reuse
+function subscriptionMonitorShow() {
+  let monitorElement = document.getElementById('submon');
+  if(monitorElement) {
+    monitorElement.remove();
+  }
+
+  monitorElement = document.createElement('div');
+  monitorElement.setAttribute('id', 'submon');
+  monitorElement.style.opacity = '1';
+  document.body.appendChild(monitorElement);
+
+  const progressElement = document.createElement('progress');
+  progressElement.textContent = 'Working...';
+  monitorElement.appendChild(progressElement);
+}
+
+function subscriptionMonitorAppendMessage(message) {
+  const messageElement = document.createElement('p');
+  messageElement.textContent = message;
+  const monitorElement = document.getElementById('submon');
+  monitorElement.appendChild(messageElement);
+}
+
+async function subscriptionMonitorHide() {
+  const monitorElement = document.getElementById('submon');
+  const duration = 2, delay = 1;
+  await fadeElement(monitorElement, duration, delay);
+  monitorElement.remove();
 }
 
 export function errorMessageShow(message, fade) {
@@ -286,11 +312,11 @@ async function subscribeFormOnsubmit(event) {
   // Reset the input
   queryElement.value = '';
 
-  optionsPageSubscriptionMonitorShow();
+  subscriptionMonitorShow();
 
   // This is safe because it is coming from the parsed url and not directly from user input, and
   // would have failed earlier.
-  optionsPageSubscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
+  subscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
 
   const feed = Feed.create();
   Feed.appendURL(feed, url.href);
@@ -304,7 +330,7 @@ async function subscribeFormOnsubmit(event) {
     subscribedFeed = await Subscriber.subscribe.call(subContext, feed);
   } catch(error) {
     console.warn(error);
-    optionsPageSubscriptionMonitorHide();
+    subscriptionMonitorHide();
     return;
   } finally {
     subContext.close();
@@ -316,8 +342,8 @@ async function subscribeFormOnsubmit(event) {
 
   // This is safe. feedURL comes from a string that has undergone deserialization into a URL object
   // and back to a string. Unsafe user input would have triggered a parsing error.
-  optionsPageSubscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
-  optionsPageSubscriptionMonitorHide();
+  subscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
+  subscriptionMonitorHide();
   showSectionById('subs-list-section');
 
   // Signal form should not be submitted
