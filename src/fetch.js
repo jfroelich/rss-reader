@@ -105,8 +105,14 @@ export async function fetchImageHead(url, timeoutMs) {
   assert(response);
   const contentType = response.headers.get('Content-Type');
 
-  check(mime.isImage(contentType), FetchError, 'Response content type not an image mime type: ' +
-    contentType + ' for url ' + url);
+  if(contentType === 'unknown') {
+    // See https://github.com/jfroelich/rss-reader/issues/459
+    console.debug('allowing unknown content type');
+
+  } else {
+    check(mime.isImage(contentType), FetchError, 'Response content type not an image mime type: ' +
+      contentType + ' for url ' + url);
+  }
 
   // TODO: create and use ResponseWrapper?
   const outputResponse = {};
