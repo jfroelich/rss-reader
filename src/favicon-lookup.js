@@ -48,7 +48,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   let originEntry;
 
   // If the cache is available, first check if the input url is cached
-  if(this.hasCache()) {
+  if(this.hasOpenCache()) {
     const entry = await this.cache.findEntry(url);
     if(entry) {
       // If we found a fresh entry then exit early with the icon url
@@ -67,7 +67,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   if(document) {
     const iconURL = this.search(document, url);
     if(iconURL) {
-      if(this.hasCache()) {
+      if(this.hasOpenCache()) {
         // This affects both the input entry and the redirect entry
         // This does not affect the origin entry because per-page icons are not site-wide
         await this.cache.putAll(urls, iconURL);
@@ -78,7 +78,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
   // Before fetching, check if we reached the max failure count for requests to the origin, if the
   // origin is different than the input url. If the origin is the same we already checked.
-  if(this.hasCache()) {
+  if(this.hasOpenCache()) {
     if(originURL.href !== url.href) {
       originEntry = await this.cache.findEntry(originURL);
       if(originEntry && originEntry.failureCount >= this.kMaxFailureCount) {
@@ -107,7 +107,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
       // Only append if distinct from input url. We only 'redirected' if 'distinct'
       urls.push(responseURL.href);
-      if(this.hasCache()) {
+      if(this.hasOpenCache()) {
         const entry = await this.cache.findEntry(responseURL);
         if(entry && entry.iconURLString && !this.isExpired(entry)) {
           // Associate the redirect's icon with the input url.
@@ -132,7 +132,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     const baseURL = responseURL ? responseURL : url;
     const iconURL = this.search(document, baseURL);
     if(iconURL) {
-      if(this.hasCache()) {
+      if(this.hasOpenCache()) {
         // This does not modify the origin entry if it exists because a per-page icon does not apply
         // site wide. We have not yet added origin to the urls array.
         await this.cache.putAll(urls, iconURL);
@@ -142,7 +142,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   }
 
   // Check the cache for the origin url if it is distinct from other urls already checked
-  if(this.hasCache() && !urls.includes(originURL.href)) {
+  if(this.hasOpenCache() && !urls.includes(originURL.href)) {
     // Origin url may have changed, so searrch for its entry again
     const entry = await this.cache.findEntry(originURL);
 
@@ -176,22 +176,20 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   response = await this.fetchImage(imageURL);
 
   if(this.isAcceptableImageResponse(response)) {
-    if(this.hasCache()) {
+    if(this.hasOpenCache()) {
       await this.cache.putAll(urls, response.responseURL);
     }
     return response.responseURL;
   }
 
-  if(this.hasCache()) {
+  if(this.hasOpenCache()) {
     await this.onLookupFailure(originURL, originEntry);
   }
 };
 
-FaviconLookup.prototype.hasCache = function() {
-
-  // TODO: law of demeter. should use this.cache.isOpen()
-
-  return this.cache && isOpenDB(this.cache.conn);
+// Return true if there is both a connected cache and that cache is in the open state
+FaviconLookup.prototype.hasOpenCache = function() {
+  return this.cache && this.cache.isOpen();
 };
 
 // Returns true if response byte size in bounds. Tolerates undefined response.
@@ -319,7 +317,7 @@ FaviconLookup.prototype.resolveURL = function(url, baseURL) {
 // @param entry {Object} optional, the existing origin entry
 FaviconLookup.prototype.onLookupFailure = async function(originURL, entry) {
   assert(this.cache);
-  assert(isOpenDB(this.cache.conn));
+  assert(this.hasOpenCache());
 
   if(entry) {
     const newEntry = {};
