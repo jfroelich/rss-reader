@@ -11,6 +11,7 @@ import {
 import {isOpen as isOpenDB} from "/src/idb.js";
 import {isPosInt} from "/src/number.js";
 import parseHTML from "/src/parse-html.js";
+import {setURLHrefProperty} from "/src/url.js";
 
 export default class FaviconLookup {
   constructor() {
@@ -43,7 +44,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
   // Initialize the origin url to the origin of the input url. Non-const because it may change
   // on redirect.
-  let originURL = new URL(url.origin);
+  const originURL = new URL(url.origin);
   let originEntry;
 
   // If the cache is available, first check if the input url is cached
@@ -101,11 +102,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
       // If we redirected, and the origin of the response url is different than the origin of the
       // request url, then change the origin to the origin of the response url
       if(responseURL.origin !== url.origin) {
-
-        // TEMP: debugging
-        console.debug('origin url changed on redirect', url.origin, responseURL.origin);
-
-        originURL = new URL(responseURL.origin);
+        setURLHrefProperty(originURL, responseURL.origin);
       }
 
       // Only append if distinct from input url. We only 'redirected' if 'distinct'
