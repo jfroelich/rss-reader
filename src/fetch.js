@@ -9,15 +9,6 @@ import {parseInt10} from "/src/string.js";
 import {compareURLsWithoutHash} from "/src/url.js";
 import {isValidURLString} from "/src/url-string.js";
 
-
-export class FetchError extends Error {
-  constructor(message) {
-    super(message || 'Fetch error');
-  }
-}
-
-// TODO: create FetchError, change functions to throw FetchError instead of generic Error
-
 // Fetches a feed. Returns a basic object, similar to Response, with custom properties.
 // @param url {String} the url to fetch
 // @param timeoutMs {Number} optional, timeout in milliseconds, before considering the fetch a
@@ -57,7 +48,6 @@ export function fetchFeed(url, timeoutMs, acceptHTML) {
     types.push(mime.MIME_TYPE_HTML);
   }
 
-  // TODO: move outside of function and rename?
   function acceptPredicate(response) {
     const contentType = response.headers.get('Content-Type');
     const mimeType = mime.fromContentType(contentType);
@@ -82,28 +72,24 @@ export function fetchHTML(url, timeoutMs) {
     referrerPolicy: 'no-referrer'
   };
 
-  // TODO: move outside of function?
   function acceptHTMLPredicate(response) {
     const contentType = response.headers.get('Content-Type');
     const mimeType = mime.fromContentType(contentType);
     return mimeType === mime.MIME_TYPE_HTML;
   }
-
   return fetchInternal(url, options, timeoutMs, acceptHTMLPredicate);
 }
 
 // Sends a HEAD request for the given image.
 // @param url {String}
 // @returns a simple object with props imageSize and responseURL
+// TODO: this should be refactored to use fetchInternal. But I need to calculate content length.
+// So fetchInternal first needs to be refactored to also calculate content length because response
+// is not exposed, just wrapped response.
+// TODO: side note, does HEAD yield 204? If so, 204 isn't an error. So using fetchInternal
+// would be wrong, at least as it is currently implemented.
 export async function fetchImageHead(url, timeoutMs) {
   const headers = {'Accept': 'image/*'};
-
-  // TODO: this should be refactored to use fetchInternal. But I need to calculate content length.
-  // So fetchInternal first needs to be refactored to also calculate content length because response
-  // is not exposed, just wrapped response.
-
-  // TODO: side note, does HEAD yield 204? If so, 204 isn't an error. So using fetchInternal
-  // would be wrong, at least as it is currently implemented.
 
   // TODO: set properties in a consistent manner, like I do in other fetch functions
   const options = {};
@@ -134,38 +120,16 @@ export async function fetchImageHead(url, timeoutMs) {
 // @param url {String}
 // @param timeoutMs {Number}
 // @returns {Promise}
-// TODO: should this accept a host document parameter in which to create the element (instead of
-// new Image() using document.createElement('img'))
 // TODO: it is possible this should be using the fetch API to avoid cookies?
 export function fetchImageElement(url, timeoutMs) {
   assert(url);
+  assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
 
-  if(typeof timeoutMs === 'undefined') {
-    timeoutMs = 0;
-  }
-
-  assert(isPosInt(timeoutMs));
-
-  // There is no simply way to share information between the promises, so define this in outer scope
-  //shared between both promise bodies.
-  let timerId;
-
-  // There is no native way to provide a timeout parameter when fetching an image. So, race a fetch
-  // promise against a timeout promise to simulate a timeout parameter.
-  // NOTE: there is no penalty for calling clearTimeout with an invalid timer
   const fetchPromise = new Promise(function fetchExec(resolve, reject) {
-
-    // Create an image element within the document running this script
-    // TODO: if this promise is to be cancelable I think I might need to define proxy in outer scope
-    // of promise, so I can do things like unregister the callback listeners. But how do I ever
-    // force the promise to settle? Just leave it unsettled? Isn't that a mem leak? Would that
-    // prevent background.js from ever being unloaded?
     const proxy = new Image();
-    // Trigger the fetch
+    proxy.src = url;// triggers the fetch
 
-    proxy.src = url;
-
-    // Resolve to the proxy immediately if the image is 'cached'
+    // Resolve immediately if the image is cached
     if(proxy.complete) {
       clearTimeout(timerId);
       resolve(proxy);
@@ -176,7 +140,6 @@ export function fetchImageElement(url, timeoutMs) {
       clearTimeout(timerId);
       resolve(proxy);
     };
-
     proxy.onerror = function proxyOnerror(event) {
       clearTimeout(timerId);
       reject(new TimeoutError('Timed out fetching ' + url));
@@ -188,16 +151,14 @@ export function fetchImageElement(url, timeoutMs) {
     return fetchPromise;
   }
 
+  let timerId;
+
   // There is a timeout provided, so we are going to race
   // TODO: delegate to setTimeoutPromise
   const timeoutPromise = new Promise(function timeExec(resolve, reject) {
     timerId = setTimeout(function onTimeout() {
       // The timeout triggered.
       // TODO: prior to settling, cancel the fetch somehow
-      // TODO: it could actually be after settling too I think?
-      // TODO: i want to cancel the fetch itself, and also the fetchPromise promise. actually there
-      // is no fetch promise in this context, just the Image.src assignment call. Maybe setting
-      // proxy.src to null does the trick?
       reject(new TimeoutError('Fetching image timed out ' + url));
     }, timeoutMs);
   });
@@ -205,7 +166,7 @@ export function fetchImageElement(url, timeoutMs) {
   return Promise.race([fetchPromise, timeoutPromise]);
 }
 
-// A 'private' helper function for other fetch functions
+// Does a fetch with a timeout and a content type predicate
 // @param url {String} request url
 // @param options {Object} optional, fetch options parameter
 // @param timeoutMs {Number} optional, timeout in milliseconds
@@ -218,12 +179,6 @@ async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
   check(response.ok, FetchError, 'Response not ok for url ' + url + ', status is ' +
     response.status);
 
-  // The spec says 204 is ok because response.ok is true for status codes 200-299, but this
-  // implementation's opinion is that 204 is an error.
-  // NOTE: based on errors in the console Chrome may implicitly be treating
-  // 204 as a network error, based on seeing "no content errors" that occur
-  // sometimes when doing fetch. There may not be a need to explicitly check for
-  // this error code. I would need to test further.
   const HTTP_STATUS_NO_CONTENT = 204;
   check(response.status !== HTTP_STATUS_NO_CONTENT, FetchError, 'no content repsonse ' + url);
 
@@ -276,7 +231,6 @@ async function fetchWithTimeout(url, options, timeoutMs) {
 }
 
 // Return true if the response url is 'different' than the request url
-//
 // @param requestURL {URL}
 // @param responseURL {URL}
 function detectURLChanged(requestURL, responseURL) {
@@ -305,4 +259,10 @@ function getContentLength(response) {
   const contentLengthString = response.headers.get('Content-Length');
   const contentLength = parseInt10(contentLengthString);
   return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
+}
+
+export class FetchError extends Error {
+  constructor(message) {
+    super(message || 'Fetch error');
+  }
 }
