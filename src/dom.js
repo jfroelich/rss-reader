@@ -190,11 +190,31 @@ export function fadeElement(element, durationSecs, delaySecs) {
   });
 }
 
-// TODO: also has source if within picture and picture has <source>, or alternatively rename to
-// imageHasSourceAttribute or similar
+// Returns true if the image element has at least one source, which could be a src attribute, a
+// srcset attribute, or an associate picture element with one or more source elements that has a
+// src or srcset attribute.
 export function imageHasSource(image) {
   assert(image instanceof Element);
-  return image.hasAttribute('src') || imageHasSrcset(image);
+
+  if(image.hasAttribute('src') || image.hasAttribute('srcset')) {
+    return true;
+  }
+
+  const picture = image.closest('picture');
+  if(picture) {
+    const sources = picture.getElementsByTagName('source');
+    for(const source of sources) {
+      if(source.hasAttribute('src') || source.hasAttribute('srcset')) {
+
+        // TEMP: tracing new functionality
+        console.debug('found associated <source>', image.outerHTML, source.outerHTML);
+
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 // Return true if image has a valid src attribute value
