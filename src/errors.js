@@ -35,10 +35,16 @@ export function isUncheckedError(error) {
     error instanceof ReferenceError;
 }
 
-// TODO: is there a builtin ParseError object or similar? If so deprecate this and use that
+// TODO: rename to ParseError
 export class ParserError extends Error {
   constructor(message) {
     super(message || 'Parse error');
+  }
+}
+
+export class TimeoutError extends Error {
+  constructor(message) {
+    super(message || 'Operation timed out');
   }
 }
 
