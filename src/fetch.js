@@ -251,8 +251,14 @@ function getLastModified(response) {
 
 export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
+// TODO: just return NaN if NaN? NaN is suitable unknown type.
 function getContentLength(response) {
   const contentLengthString = response.headers.get('Content-Length');
+
+  if(typeof contentLengthString !== 'string' || contentLengthString.length < 1) {
+    return FETCH_UNKNOWN_CONTENT_LENGTH;
+  }
+
   const contentLength = parseInt10(contentLengthString);
   return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
 }
