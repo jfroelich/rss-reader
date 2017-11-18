@@ -209,7 +209,7 @@ async function fetchWithTimeout(url, options, timeoutMs) {
   assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
 
   const fetchPromise = fetch(url, options);
-  if(!timeoutMs === 'undefined') {
+  if(typeof timeoutMs === 'undefined') {
     return fetchPromise;
   }
 
