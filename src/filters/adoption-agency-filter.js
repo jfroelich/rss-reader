@@ -1,5 +1,8 @@
 // Removes, moves, or otherwise changes certain out-of-place elements in document content
 
+// TODO: find all source not in picture/audio/video and remove
+// TODO: find all figcaption not in figure and remove
+
 import assert from "/src/assert.js";
 
 // Relocates certain misnested elements
