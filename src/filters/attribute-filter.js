@@ -14,7 +14,7 @@ export default function filterDocument(doc, whitelist) {
 
   const elements = doc.getElementsByTagName('*');
   for(const element of elements) {
-    filterElementAttributes(element);
+    filterElementAttributes(element, whitelist);
   }
 }
 
