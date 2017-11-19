@@ -11,7 +11,7 @@ export default function formFilter(doc) {
 
   const ancestor = doc.body;
 
-  // TODO: use unwrapElements?
+  // TODO: use unwrapElements from dom/utils?
 
   // Unwrap forms
   const forms = ancestor.querySelectorAll('form');

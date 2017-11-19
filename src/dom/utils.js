@@ -3,6 +3,7 @@
 import assert from "/src/utils/assert.js";
 import {parseInt10} from "/src/utils/string.js";
 
+
 // Returns the first matching css rule within the given sheet, or undefined if no rules match.
 //
 // @param sheet css style sheet
@@ -68,6 +69,15 @@ export function unwrap(element) {
 
   // If nextSibling is undefined then insertBefore appends
   parentElement.insertBefore(frag, nextSibling);
+}
+
+export function unwrapElements(ancestorElement, selector) {
+  assert(ancestorElement instanceof Element);
+  assert(typeof selector === 'string');
+  const elements = ancestorElement.querySelectorAll(selector);
+  for(const element of elements) {
+    unwrap(element);
+  }
 }
 
 // Changes the tag name of an element. Event listeners are lost on rename. No checking is done
@@ -140,6 +150,19 @@ export function copyAttributes(fromElement, toElement) {
   for(const name of names) {
     const value = fromElement.getAttribute(name);
     toElement.setAttribute(name, value);
+  }
+}
+
+export function renameElements(ancestorElement, oldName, newName, copyAttributes) {
+  assert(typeof oldName === 'string');
+  assert(typeof newName === 'string');
+
+  if(ancestorElement) {
+    assert(ancestorElement instanceof Element);
+    const elements = ancestorElement.querySelectorAll(oldName);
+    for(const element of elements) {
+      renameElement(element, newName, copyAttributes);
+    }
   }
 }
 

@@ -1,8 +1,8 @@
 // Filters certain table elements from document content
 
-import assert from "/src/utils/assert.js";
-import {unwrapElements} from "/src/filters/filter-helpers.js";
+import {unwrapElements} from "/src/dom/utils.js";
 import {leafFilterIsLeaf} from "/src/filters/leaf-filter.js";
+import assert from "/src/utils/assert.js";
 
 export default function filterDocument(doc, scanLimit) {
   assert(doc instanceof Document);
