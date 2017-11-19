@@ -78,10 +78,10 @@ async function onWakeup(alarm) {
   }
   case 'refresh-feed-icons': {
     const fic = new FaviconCache();
-    let readerConn, _;
+    let readerConn;
     try {
-      [readerConn, _] = await Promise.all([rdb.open(), fic.open()]);
-      await refreshFeedIcons(readerConn, fic.conn);
+      [readerConn] = await Promise.all([rdb.open(), fic.open()]);
+      await refreshFeedIcons(readerConn, fic);
     } catch(error) {
       console.warn(error);
     } finally {

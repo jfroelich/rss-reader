@@ -19,7 +19,7 @@ cli.refreshIcons = async function() {
   let rConn;
   try {
     [rConn] = await Promise.all([rdb.open(), fic.open()]);
-    await refreshFeedIcons(rConn, fic.conn);
+    await refreshFeedIcons(rConn, fic);
   } finally {
     fic.close();
     rdb.close(rConn);
