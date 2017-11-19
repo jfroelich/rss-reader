@@ -2,7 +2,7 @@
 // variable in global scope (window). The definition occurs as an implicit side effect of importing
 // the module.
 
-import archiveEntries from "/src/archive-entries.js";
+import archiveEntries from "/src/archive-entries/archive-entries.js";
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import {pollFeeds, PollFeedsContext} from "/src/poll-feeds.js";
