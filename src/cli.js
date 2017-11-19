@@ -16,9 +16,9 @@ const cli = {};
 
 cli.refreshIcons = async function() {
   const fic = new FaviconCache();
-  let rConn, _;
+  let rConn;
   try {
-    [rConn, _] = await Promise.all([rdb.open(), fic.open()]);
+    [rConn] = await Promise.all([rdb.open(), fic.open()]);
     await refreshFeedIcons(rConn, fic.conn);
   } finally {
     fic.close();
@@ -44,9 +44,8 @@ cli.pollFeeds = async function() {
   pfc.ignoreIdleState = true;
   pfc.ignoreRecencyCheck = true;
   pfc.ignoreModifiedCheck = true;
-  let _;
   try {
-    [pfc.readerConn, _] = await Promise.all([rdb.open(), fic.open()]);
+    [pfc.readerConn] = await Promise.all([rdb.open(), fic.open()]);
     await pollFeeds(pfc);
   } finally {
     fic.close();
