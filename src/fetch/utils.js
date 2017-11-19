@@ -2,7 +2,7 @@
 
 import assert from "/src/utils/assert.js";
 import {check, TimeoutError} from "/src/utils/errors.js";
-import * as mime from "/src/mime-utils.js";
+import * as mime from "/src/utils/mime-utils.js";
 import {isPosInt} from "/src/utils/number.js";
 import {setTimeoutPromise} from "/src/utils/promise.js";
 import {parseInt10} from "/src/utils/string.js";

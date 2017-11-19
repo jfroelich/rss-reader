@@ -1,7 +1,7 @@
 // Fetch feed module
 
 import {fetchInternal} from "/src/fetch/utils.js";
-import * as mime from "/src/mime-utils.js";
+import * as mime from "/src/utils/mime-utils.js";
 
 // Fetches a feed. Returns a basic object, similar to Response, with custom properties.
 // @param url {String} the url to fetch

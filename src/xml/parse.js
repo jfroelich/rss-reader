@@ -8,7 +8,7 @@
 
 import assert from "/src/utils/assert.js";
 import {ParseError} from "/src/utils/errors.js";
-import * as mime from "/src/mime-utils.js";
+import * as mime from "/src/utils/mime-utils.js";
 import {condenseWhitespace} from "/src/utils/string.js";
 
 // This is an extremely expensive operation. Calling code should try and defer or avoid calling.

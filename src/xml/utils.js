@@ -1,7 +1,7 @@
 // XML utilities module
 
 import assert from "/src/utils/assert.js";
-import * as mime from "/src/mime-utils.js";
+import * as mime from "/src/utils/mime-utils.js";
 
 // Returns the unqualified name as lowercase. The lowercase call is important because of how case
 // handling differs based on whether the document is internally flagged as xml or html. Because of

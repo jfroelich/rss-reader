@@ -13,7 +13,7 @@ import {
 import * as Feed from "/src/feed.js";
 import FONTS from "/src/fonts.js";
 import {truncate as htmlTruncate} from "/src/utils/html.js";
-import * as mime from "/src/mime-utils.js";
+import * as mime from "/src/utils/mime-utils.js";
 import * as rdb from "/src/rdb.js";
 import {readerImportFiles} from "/src/reader-import.js";
 import {parseInt10} from "/src/utils/string.js";

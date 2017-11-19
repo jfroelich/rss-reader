@@ -1,11 +1,11 @@
 
-// import mime-utils.js
+import * as MimeUtils from "/src/utils/mime-utils.js";
 
 async function testPreloadIssue() {
   const options = {};
   options.credentials = 'omit';
   options.method = 'get';
-  options.headers = {Accept: mime.MIME_TYPE_HTML};
+  options.headers = {Accept: MimeUtils.MIME_TYPE_HTML};
   options.mode = 'cors';
   options.cache = 'default';
   options.redirect = 'follow';

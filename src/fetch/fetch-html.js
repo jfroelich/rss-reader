@@ -1,7 +1,7 @@
 // Fetch HTML module
 
 import {fetchInternal} from "/src/fetch/utils.js";
-import * as mime from "/src/mime-utils.js";
+import * as mime from "/src/utils/mime-utils.js";
 
 // Fetches the html content of the given url
 // @param url {String} the url to fetch
