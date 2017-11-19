@@ -5,7 +5,7 @@ import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import {escapeHTML, truncate as htmlTruncate} from "/src/html/html.js";
 import * as rdb from "/src/storage/rdb.js";
-import entryMarkRead from "/src/entry-mark-read.js";
+import entryMarkRead from "/src/storage/entry-mark-read.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import assert from "/src/utils/assert.js";
 import {formatDate} from "/src/utils/date.js";
