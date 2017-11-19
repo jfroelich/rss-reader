@@ -65,7 +65,7 @@ DOCUMENT_POSITION_CONTAINED_BY	16
 DOCUMENT_POSITION_IMPLEMENTATION_SPECIFIC	32
 
 
-var head = document.getElementsByTagName('head').item(0);
+const head = document.getElementsByTagName('head').item(0);
 
 if (head.compareDocumentPosition(document.body) &
   Node.DOCUMENT_POSITION_FOLLOWING) {

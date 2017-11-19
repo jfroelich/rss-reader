@@ -99,36 +99,21 @@ function deriveAncestorBias(element) {
 }
 
 function deriveAttributeBias(element) {
-  var totalBias = 0;
-  var vals = [element.id, element.name, element.className];
-  var valsFlatString = vals.join(' ');
+  let totalBias = 0;
+  const vals = [element.id, element.name, element.className];
+  const valsFlatString = vals.join(' ');
   if(valsFlatString.length < 3) {
     return totalBias;
   }
 
-  var normalValsString = valsFlatString.toLowerCase();
-  var tokens = normalValsString.split(/[\s\-_0-9]+/g);
-  var tokenCount = tokens.length;
+  const normalValsString = valsFlatString.toLowerCase();
+  const tokens = normalValsString.split(/[\s\-_0-9]+/g);
+  const seenTokens = {};
 
-  // TODO: use an array instead of an object, this may be the cause of deopts
-  var seenTokens = {};
-  var bias = 0;
-  var token;
-
-  for(var i = 0; i < tokenCount; i++) {
-    token = tokens[i];
-    if(!token) {
-      continue;
-    }
-
-    if(token in seenTokens) {
-      continue;
-    }
-
-    seenTokens[token] = 1;
-    bias = TOKEN_WEIGHTS[token];
-    if(bias) {
-      totalBias = totalBias + bias;
+  for(const token of tokens) {
+    if(!(token in seenTokens)) {
+      seenTokens[token] = 1;
+      totalBias += TOKEN_WEIGHTS[token] || 0;
     }
   }
 
@@ -136,18 +121,18 @@ function deriveAttributeBias(element) {
 }
 
 function findHighScoreElement(doc) {
-  var candidateSelector = 'article, content, div, layer, main, section, span, td';
-  var listSelector = 'li, ol, ul, dd, dl, dt';
-  var navSelector = 'aside, header, footer, nav, menu, menuitem';
-  var bestElement = doc.documentElement;
+  const candidateSelector = 'article, content, div, layer, main, section, span, td';
+  const listSelector = 'li, ol, ul, dd, dl, dt';
+  const navSelector = 'aside, header, footer, nav, menu, menuitem';
+  let bestElement = doc.documentElement;
   if(!doc.body) {
     return bestElement;
   }
 
-  var elements = doc.body.querySelectorAll(candidateSelector);
-  var highScore = 0;
-  for(var element of elements) {
-    var score = deriveTextBias(element);
+  const elements = doc.body.querySelectorAll(candidateSelector);
+  let highScore = 0;
+  for(const element of elements) {
+    let score = deriveTextBias(element);
     if(element.closest(listSelector)) {
       score -= 200;
     }
@@ -171,7 +156,7 @@ function findHighScoreElement(doc) {
 function deriveImageBias(parentElement) {
   let bias = 0;
   let imageCount = 0;
-  for(let node of parentElement.childNodes) {
+  for(const node of parentElement.childNodes) {
     if(node.localName === 'img') {
       bias += deriveImageAreaBias(node) + deriveImageTextBias(node);
       imageCount++;
