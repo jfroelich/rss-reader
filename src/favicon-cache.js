@@ -2,6 +2,10 @@
 
 // TODO: not entirely sure, but maybe if conn is the only shared state, there is no need for the
 // class. I have mixed feelings.
+// TODO: now that this is in a module context maybe name and version and such should all be module
+// scope constants? These properties are not shared across the instance. The only shared property
+// is the connection. On the other hand, it makes testing easier?
+// TODO: should the default max age constant probably be exported separately?
 
 import assert from "/src/assert.js";
 import * as idb from "/src/idb.js";
@@ -15,14 +19,9 @@ export default class FaviconCache {
   }
 }
 
-// TODO: i think this should probably be exported separately?
 // 30 days in ms, used by both lookup and compact to determine whether a cache entry expired
 FaviconCache.MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
-
-// TODO: now that this is in a module context maybe name and version and such should all be module
-// scope constants? These properties are not shared across the instance. The only shared property
-// is the connection.
 FaviconCache.prototype.open = async function() {
   this.conn = await idb.open(this.name, this.version, this.onUpgradeNeeded, this.openTimeoutMs);
 

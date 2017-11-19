@@ -6,7 +6,6 @@
 // TODO: assert feed has one or more urls
 // TODO: assert the type of each property?
 
-
 import assert from "/src/assert.js";
 import {check} from "/src/errors.js";
 // import {isPosInt} from "/src/number.js";
