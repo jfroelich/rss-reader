@@ -2,7 +2,7 @@
 
 import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/errors.js";
-import FaviconLookup from "/src/favicon-lookup.js";
+import FaviconLookup from "/src/favicon/lookup.js";
 import * as Feed from "/src/feed.js";
 import {promiseEvery} from "/src/promise.js";
 import * as rdb from "/src/rdb.js";

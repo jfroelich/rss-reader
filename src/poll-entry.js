@@ -4,7 +4,7 @@ import assert from "/src/assert.js";
 import {INACCESSIBLE_CONTENT_DESCRIPTORS} from "/src/config.js";
 import * as Entry from "/src/entry.js";
 import {check, isUncheckedError} from "/src/errors.js";
-import FaviconLookup from "/src/favicon-lookup.js";
+import FaviconLookup from "/src/favicon/lookup.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import filterDocument from "/src/filter-document.js";
 import parseHTML from "/src/parse-html.js";

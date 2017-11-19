@@ -2,7 +2,7 @@
 
 import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/errors.js";
-import FaviconCache from "/src/favicon-cache.js";
+import FaviconCache from "/src/favicon/cache.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import fetchImageHead from "/src/fetch/fetch-image-head.js";
 import {FETCH_UNKNOWN_CONTENT_LENGTH} from "/src/fetch/fetch-utils.js";

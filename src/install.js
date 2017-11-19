@@ -1,7 +1,7 @@
 // Functionality related to extension installation
 
 import {addInstallListener} from "/src/extension.js";
-import FaviconCache from "/src/favicon-cache.js";
+import FaviconCache from "/src/favicon/cache.js";
 import updateBadgeText from "/src/update-badge-text.js";
 import * as rdb from "/src/rdb.js";
 

@@ -1,7 +1,7 @@
 // For importing feeds from opml file into the reader app
 
 import assert from "/src/assert.js";
-import FaviconCache from "/src/favicon-cache.js";
+import FaviconCache from "/src/favicon/cache.js";
 import * as Feed from "/src/feed.js";
 import * as FileUtils from "/src/file.js";
 import * as idb from "/src/idb.js";
