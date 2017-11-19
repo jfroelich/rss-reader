@@ -1,7 +1,7 @@
 // Module related to image size attributes
 
 import assert from "/src/utils/assert.js";
-import {getDimensions} from "/src/dom/dom.js";
+import {getDimensions} from "/src/dom/utils.js";
 import fetchImageElement from "/src/fetch/fetch-image-element.js";
 import {promiseEvery} from "/src/utils/promise.js";
 import {parseInt10} from "/src/utils/string.js";

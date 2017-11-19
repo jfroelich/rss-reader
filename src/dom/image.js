@@ -1,7 +1,7 @@
 // Image element utilities
 
 import assert from "/src/utils/assert.js";
-import {unwrap} from "/src/dom/dom.js";
+import {unwrap} from "/src/dom/utils.js";
 import {isValidURLString} from "/src/url-string.js";
 
 // Returns true if the image element has at least one source, which could be a src attribute, a

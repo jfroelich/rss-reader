@@ -1,7 +1,7 @@
 // Filters certain occurrences of emphasized content from document content
 
 import assert from "/src/utils/assert.js";
-import {unwrap} from "/src/dom/dom.js";
+import {unwrap} from "/src/dom/utils.js";
 import {isPosInt} from "/src/utils/number.js";
 
 // @param maxTextLength {Number} optional, if number of non-tag characters

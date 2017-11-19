@@ -1,7 +1,7 @@
 // Transforms noscript content in document content
 
 import assert from "/src/utils/assert.js";
-import {unwrap} from "/src/dom/dom.js";
+import {unwrap} from "/src/dom/utils.js";
 
 export default function filter(doc) {
   assert(doc instanceof Document);
