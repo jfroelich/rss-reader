@@ -5,7 +5,7 @@ import {isUncheckedError} from "/src/errors.js";
 import FaviconCache from "/src/favicon/cache.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import fetchImageHead from "/src/fetch/fetch-image-head.js";
-import {FETCH_UNKNOWN_CONTENT_LENGTH} from "/src/fetch/fetch-utils.js";
+import {FETCH_UNKNOWN_CONTENT_LENGTH} from "/src/fetch/utils.js";
 import {isPosInt} from "/src/number.js";
 import parseHTML from "/src/parse-html.js";
 import {setURLHrefProperty} from "/src/url.js";

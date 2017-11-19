@@ -4,7 +4,7 @@
 
 import assert from "/src/assert.js";
 import {TimeoutError} from "/src/errors.js";
-import {FetchError} from "/src/fetch/fetch-utils.js";
+import {FetchError} from "/src/fetch/utils.js";
 import {isPosInt} from "/src/number.js";
 import {setTimeoutPromise} from "/src/promise.js";
 
