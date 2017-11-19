@@ -1,7 +1,7 @@
 // Helper functions for filters
 
 import assert from "/src/utils/assert.js";
-import {renameElement, unwrap} from "/src/utils/dom.js";
+import {renameElement, unwrap} from "/src/dom/dom.js";
 
 export function unwrapElements(ancestorElement, selector) {
   assert(ancestorElement instanceof Element);

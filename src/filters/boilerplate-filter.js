@@ -1,7 +1,7 @@
 // Boilerplate filtering module
 
+import {findCaption} from "/src/dom/image.js";
 import assert from "/src/utils/assert.js";
-import {findCaption} from "/src/image.js";
 import {condenseWhitespace} from "/src/utils/string.js";
 
 export default function boilerplateFilter(doc) {

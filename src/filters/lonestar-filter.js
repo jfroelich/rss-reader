@@ -1,10 +1,11 @@
 // Filters various telemetry-inducing content from document content
 
-import assert from "/src/utils/assert.js";
-import {removeImage} from "/src/image.js";
+import {removeImage} from "/src/dom/image.js";
+import {isHiddenInlineElement} from "/src/dom/visibility.js";
 import {isExternalURL} from "/src/url.js";
 import {isCanonicalURLString} from "/src/url-string.js";
-import {isHiddenInlineElement} from "/src/visibility.js";
+import assert from "/src/utils/assert.js";
+
 
 // TODO: move to config.js?
 const PATTERNS = [

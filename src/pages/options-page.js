@@ -2,7 +2,7 @@
 
 import assert from "/src/utils/assert.js";
 import BG_IMAGES from "/src/bg-images.js";
-import {fadeElement} from "/src/utils/dom.js";
+import {fadeElement} from "/src/dom/dom.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {exportFeeds} from "/src/export-feeds.js";
 import {

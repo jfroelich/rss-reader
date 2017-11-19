@@ -2,9 +2,9 @@
 
 // TODO: make a github issue about optimizing recursive unwrap
 
+import {unwrap} from "/src/dom/dom.js";
+import {isHiddenInlineElement} from "/src/dom/visibility.js";
 import assert from "/src/utils/assert.js";
-import {unwrap} from "/src/utils/dom.js";
-import {isHiddenInlineElement} from "/src/visibility.js";
 
 export default function filter(doc) {
   assert(doc instanceof Document);

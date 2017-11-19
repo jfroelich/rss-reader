@@ -1,7 +1,8 @@
+// Module for working with pagination
 
+import {findLCA} from "/src/dom/dom.js";
+import {isHiddenElement} from "/src/dom/visibility.js";
 import assert from "/src/utils/assert.js";
-import {findLCA} from "/src/utils/dom.js";
-import {isHiddenElement} from "/src/visibility.js";
 
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other
