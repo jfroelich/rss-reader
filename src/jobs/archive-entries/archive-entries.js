@@ -1,6 +1,6 @@
 // Scans entries in the database and archives some of them
 
-import * as Entry from "/src/entry.js";
+import * as Entry from "/src/storage/entry.js";
 import * as rdb from "/src/storage/rdb.js";
 import assert from "/src/utils/assert.js";
 import {isPosInt} from "/src/utils/number.js";

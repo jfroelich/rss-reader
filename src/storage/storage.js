@@ -4,7 +4,7 @@
 // abstractions around rdb calls.
 
 import assert from "/src/utils/assert.js";
-import * as Entry from "/src/entry.js";
+import * as Entry from "/src/storage/entry.js";
 import * as Feed from "/src/feed.js";
 import {replaceTags, truncate as htmlTruncate} from "/src/html/html.js";
 import {isPosInt} from "/src/utils/number.js";

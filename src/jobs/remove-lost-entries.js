@@ -1,7 +1,7 @@
 // Removes entries missing urls from the database
 
 import assert from "/src/utils/assert.js";
-import * as Entry from "/src/entry.js";
+import * as Entry from "/src/storage/entry.js";
 import * as rdb from "/src/storage/rdb.js";
 
 // Scans the database for entries missing urls are removes them

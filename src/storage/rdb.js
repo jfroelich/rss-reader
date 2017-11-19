@@ -1,7 +1,7 @@
 // Module for interacting with the app indexedDB database
 
 import assert from "/src/utils/assert.js";
-import * as Entry from "/src/entry.js";
+import * as Entry from "/src/storage/entry.js";
 import * as Feed from "/src/feed.js";
 import * as idb from "/src/utils/idb.js";
 import {isPosInt} from "/src/utils/number.js";

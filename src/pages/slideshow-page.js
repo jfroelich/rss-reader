@@ -1,6 +1,6 @@
 // Slideshow view module
 
-import * as Entry from "/src/entry.js";
+import * as Entry from "/src/storage/entry.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import {escapeHTML, truncate as htmlTruncate} from "/src/html/html.js";
