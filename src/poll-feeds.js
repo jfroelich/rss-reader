@@ -4,14 +4,12 @@ import assert from "/src/assert.js";
 import {queryIdleState, showNotification} from "/src/extension.js";
 import * as Feed from "/src/feed.js";
 import {fetchFeed} from "/src/fetch.js";
-import {pollEntry, PollEntryContext} from "/src/poll-entry.js";
+import * as PollEntryModule from "/src/poll-entry.js";
 import {promiseEvery} from "/src/promise.js";
 import updateBadgeText from "/src/update-badge-text.js";
 import {getFeeds as readerDbGetFeeds} from "/src/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import {feedPut} from "/src/reader-storage.js";
-
-// TODO: rename pollFeeds to poll?
 
 export function PollFeedsContext() {
   this.readerConn = undefined;
@@ -27,6 +25,8 @@ export function PollFeedsContext() {
   this.fetchImageTimeoutMs = 3000;
   this.acceptHTML = true;
 }
+
+// TODO: pfc should be this bound?
 
 export async function pollFeeds(pfc) {
   assert(pfc instanceof PollFeedsContext);
@@ -62,7 +62,6 @@ export async function pollFeeds(pfc) {
     feeds = pollableFeeds;
   }
 
-  // TODO: pfc should be this bound?
   const promises = [];
   for(const feed of feeds) {
     promises.push(pollFeed(feed, pfc));
@@ -130,14 +129,12 @@ async function pollFeed(feed, pfc) {
     }
   }
 
-  const pec = new PollEntryContext();
+  const pec = new PollEntryModule.Context();
   pec.readerConn = pfc.readerConn;
   pec.iconCache = pfc.iconCache;
   pec.feedFaviconURL = storedFeed.faviconURLString;
   pec.fetchHTMLTimeoutMs = pfc.fetchHTMLTimeoutMs;
   pec.fetchImageTimeoutMs = pfc.fetchImageTimeoutMs;
-
-  const pollEntryPromises = entries.map(pollEntry, pec);
-
+  const pollEntryPromises = entries.map(PollEntryModule.pollEntry, pec);
   await promiseEvery(pollEntryPromises);
 }

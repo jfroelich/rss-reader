@@ -14,7 +14,9 @@ import rewriteURL from "/src/rewrite-url.js";
 import {setURLHrefProperty, sniffIsBinaryURL} from "/src/url.js";
 import {isValidURLString} from "/src/url-string.js";
 
-export class PollEntryContext {
+// TODO: rename to Context
+
+export class Context {
   constructor() {
     this.readerConn = null;
     this.iconCache = null;
@@ -26,9 +28,9 @@ export class PollEntryContext {
 
 // Returns the added entry if added. Otherwise returns undefined if the entry already existed
 // or was otherwise not pollable. Throws various errors.
-// @param this {PollEntryContext}
+// @param this {Context}
 export async function pollEntry(entry) {
-  assert(this instanceof PollEntryContext);
+  assert(this instanceof Context);
   assert(rdb.isOpen(this.readerConn));
   assert(Entry.isEntry(entry));
 
