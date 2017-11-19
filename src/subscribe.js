@@ -15,9 +15,7 @@ import {feedPut} from "/src/reader-storage.js";
 export function Context() {
   this.iconCache = undefined;
   this.readerConn = undefined;
-
-  // TODO: this needs to have a more qualified name. Rename to something like fetchFeedTimeoutMs?
-  this.timeoutMs = 2000;
+  this.fetchFeedTimeoutMs = 2000;
   this.notify = true;
 }
 
@@ -58,7 +56,7 @@ export async function subscribe(feed) {
   check(!isInputURLSubscribed, rdb.ConstraintError, 'already subscribed');
 
   if(navigator.onLine || !('onLine' in navigator)) {
-    const res = await fetchFeed(url, this.timeoutMs);
+    const res = await fetchFeed(url, this.fetchFeedTimeoutMs);
     if(res.redirected) {
       const isRedirectURLSubscribed = await isSubscribed.call(this, res.responseURL);
       check(!isRedirectURLSubscribed, rdb.ConstraintError, 'already subscribed');

@@ -97,7 +97,7 @@ async function importFile(file, readerConn, iconConn) {
   const subscribeContext = new Subscriber.Context();
   subscribeContext.readerConn = readerConn;
   subscribeContext.iconConn = iconConn;
-  subscribeContext.timeoutMs = timeoutMs;
+  subscribeContext.fetchFeedTimeoutMs = timeoutMs;
   subscribeContext.notify = false;
 
   const subcribePromises = feeds.map(Subscriber.subscribe, subscribeContext);

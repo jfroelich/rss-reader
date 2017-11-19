@@ -325,6 +325,7 @@ async function subscribeFormOnsubmit(event) {
 
   // TODO: show a visual error message in event of an error
   const subContext = new Subscriber.Context();
+  subContext.fetchFeedTimeoutMs = 2000;
   try {
     await subContext.connect();
     subscribedFeed = await Subscriber.subscribe.call(subContext, feed);
