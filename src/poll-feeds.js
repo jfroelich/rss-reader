@@ -3,7 +3,7 @@
 import assert from "/src/assert.js";
 import {queryIdleState, showNotification} from "/src/extension.js";
 import * as Feed from "/src/feed.js";
-import {fetchFeed} from "/src/fetch.js";
+import fetchFeed from "/src/fetch-feed.js";
 import * as PollEntryModule from "/src/poll-entry.js";
 import {promiseEvery} from "/src/promise.js";
 import updateBadgeText from "/src/update-badge-text.js";
@@ -14,7 +14,6 @@ import {feedPut} from "/src/reader-storage.js";
 export function PollFeedsContext() {
   this.readerConn = undefined;
   this.iconCache = undefined;
-  this.allowMeteredConnections = false;
   this.ignoreRecencyCheck = false;
   this.ignoreIdleState = false;
   this.ignoreModifiedCheck = false;

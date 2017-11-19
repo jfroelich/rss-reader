@@ -6,7 +6,7 @@ import {showNotification} from "/src/extension.js";
 import FaviconCache from "/src/favicon-cache.js";
 import FaviconLookup from "/src/favicon-lookup.js";
 import * as Feed from "/src/feed.js";
-import {fetchFeed} from "/src/fetch.js";
+import fetchFeed from "/src/fetch-feed.js";
 import isAllowedURL from "/src/fetch-policy.js";
 import * as rdb from "/src/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";

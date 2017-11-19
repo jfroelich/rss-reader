@@ -9,53 +9,6 @@ import {parseInt10} from "/src/string.js";
 import {compareURLsWithoutHash} from "/src/url.js";
 import {isValidURLString} from "/src/url-string.js";
 
-// Fetches a feed. Returns a basic object, similar to Response, with custom properties.
-// @param url {String} the url to fetch
-// @param timeoutMs {Number} optional, timeout in milliseconds, before considering the fetch a
-// failure
-// @param acceptHTML {Boolean} optional, defaults to true, on whether to accept html when validating
-// the mime type of the response. This does not affect the request Accept header because servers do
-// not appear to always honor Accept headers.
-// @returns {Promise} a promise that resolves to a Response-like object
-export function fetchFeed(url, timeoutMs, acceptHTML) {
-  if(typeof acceptHTML === 'undefined') {
-    acceptHTML = true;
-  }
-
-  const ACCEPT_HEADER = [
-    'application/rss+xml',
-    'application/rdf+xml',
-    'application/atom+xml',
-    'application/xml;q=0.9',
-    'text/xml;q=0.8'
-  ].join(',');
-
-  const headers = {Accept: ACCEPT_HEADER};
-  const options = {
-    credentials: 'omit',
-    method: 'get',
-    headers: headers,
-    mode: 'cors',
-    cache: 'default',
-    redirect: 'follow',
-    referrer: 'no-referrer',
-    referrerPolicy: 'no-referrer'
-  };
-
-  const types = ['application/rss+xml', 'application/rdf+xml', 'application/atom+xml',
-    'application/xml', 'text/xml'];
-  if(acceptHTML) {
-    types.push(mime.MIME_TYPE_HTML);
-  }
-
-  function acceptPredicate(response) {
-    const contentType = response.headers.get('Content-Type');
-    const mimeType = mime.fromContentType(contentType);
-    return types.includes(mimeType);
-  }
-
-  return fetchInternal(url, options, timeoutMs, acceptPredicate);
-}
 
 // Fetches the html content of the given url
 // @param url {String} the url to fetch
@@ -175,7 +128,7 @@ export async function fetchImageElement(url, timeoutMs) {
 // @param acceptPredicate {Function} optional, if specified then is passed the
 // response, and then the return value is asserted
 // @returns {Object} a Response-like object
-async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
+export async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
   const response = await fetchWithTimeout(url, options, timeoutMs);
   assert(response);
   check(response.ok, FetchError, 'Response not ok for url ' + url + ', status is ' +
