@@ -315,13 +315,13 @@ function getContentLength(response) {
   return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
 }
 
-export class FetchError extends Error {
+export class FetchError extends NetworkError {
   constructor(message) {
     super(message || 'Fetch error');
   }
 }
 
-export class NetworkError extends FetchError {
+export class NetworkError extends Error {
   constructor(message) {
     super(message || 'Network error');
   }
