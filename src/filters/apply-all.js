@@ -41,17 +41,14 @@ import tableFilter from "/src/filters/table-filter.js";
 import trimDocumentFilter from "/src/filters/trim-document-filter.js";
 import {isValidURLString} from "/src/url-string.js";
 
-// TODO: this should be modified to accept a url object as input
-
-
 // Transforms a document's content by removing or changing nodes for various reasons.
 // @param doc {Document} the document to transform
-// @param url {String} the canonical url of the document
+// @param documentURL {URL} the url of the document
 // @param fetchImageTimeoutMs {Number} optional, the number of milliseconds to wait before timing
 // out when fetching an image
-export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
+export default async function applyAllFilters(doc, documentURL, fetchImageTimeoutMs) {
   assert(doc instanceof Document);
-  assert(isValidURLString(url));
+  assert(documentURL instanceof URL);
 
   frameFilter(doc);
   ensureBodyFilter(doc);
@@ -68,18 +65,11 @@ export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
 
   // This should occur prior to boilerplateFilter because it has express knowledge of content
   // organization
+  hostTemplateFilter(doc, documentURL);
 
-  let urlObject;
-  try {
-    urlObject = new URL(url);
-  } catch(error) {
-    console.warn(error);
-  }
-
-  if(urlObject) {
-    hostTemplateFilter(doc, urlObject);
-  }
-
+  // This should occur before filtering attributes because it makes decisions based on attribute
+  // values.
+  // This should occur after filtering hidden elements
   boilerplateFilter(doc);
 
   const copyAttributesOnCondense = false;
@@ -88,11 +78,7 @@ export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
   const MAX_EMPHASIS_LENGTH = 300;
   emphasisFilter(doc, MAX_EMPHASIS_LENGTH);
 
-  // TODO: this is redundant with urlObject above
-  const baseURL = new URL(url);
-
-
-  canonicalURLFilter(doc, baseURL);
+  canonicalURLFilter(doc, documentURL);
 
   // This should occur prior to lazyImageFilter
   // This should occur prior to imageSizeFilter
@@ -103,7 +89,7 @@ export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
   lazyImageFilter(doc);
 
   // This should occur before imageSizeFilter
-  lonestarFilter(doc, url);
+  lonestarFilter(doc, documentURL.href);
 
   sourcelessImageFilter(doc);
 
@@ -120,9 +106,7 @@ export default async function filterDocument(doc, url, fetchImageTimeoutMs) {
   brFilter(doc);
   hrFilter(doc);
   formattingFilter(doc);
-
   adoptionAgencyFilter(doc);
-
   semanticFilter(doc);
   figureFilter(doc);
   containerFilter(doc);

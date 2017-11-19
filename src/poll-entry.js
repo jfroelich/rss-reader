@@ -6,15 +6,13 @@ import * as Entry from "/src/entry.js";
 import {check, isUncheckedError} from "/src/utils/errors.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
-import filterDocument from "/src/filter-document.js";
+import applyAllDocumentFilters from "/src/filters/apply-all.js";
 import parseHTML from "/src/parse-html.js";
 import * as rdb from "/src/rdb.js";
 import {entryAdd} from "/src/reader-storage.js";
 import rewriteURL from "/src/rewrite-url.js";
 import {setURLHrefProperty, sniffIsBinaryURL} from "/src/url.js";
 import {isValidURLString} from "/src/url-string.js";
-
-// TODO: rename to Context
 
 export class Context {
   constructor() {
@@ -120,8 +118,7 @@ export async function pollEntry(entry) {
 
   // Filter the entry content
   if(entryDocument) {
-    // TODO: change filterDocument to accept a URL as input instead of a string
-    await filterDocument(entryDocument, url.href, this.fetchImageTimeoutMs);
+    await applyAllDocumentFilters(entryDocument, url, this.fetchImageTimeoutMs);
     entry.content = entryDocument.documentElement.outerHTML.trim();
   } else {
     entry.content = 'Empty or malformed content';
