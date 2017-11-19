@@ -23,9 +23,8 @@ export function Context() {
 // Opens database connections
 Context.prototype.connect = async function() {
   this.iconCache = new FaviconCache();
-  let _;
   const promises = [rdb.open(), this.iconCache.open()];
-  [this.readerConn, _] = await Promise.all(promises);
+  [this.readerConn] = await Promise.all(promises);
 };
 
 // Closes database connections
@@ -84,9 +83,9 @@ export async function subscribe(feed) {
   const query = new FaviconLookup();
   query.cache = this.iconCache;
   query.skipURLFetch = true;
-  const url = Feed.createIconLookupURL(feed);
+  const lookupURL = Feed.createIconLookupURL(feed);
   try {
-    const iconURLString = await query.lookup(url);
+    const iconURLString = await query.lookup(lookupURL);
     feed.faviconURLString = iconURLString;
   } catch(error) {
     if(isUncheckedError(error)) {
