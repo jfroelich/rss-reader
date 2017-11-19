@@ -9,54 +9,6 @@ import {parseInt10} from "/src/string.js";
 import {compareURLsWithoutHash} from "/src/url.js";
 import {isValidURLString} from "/src/url-string.js";
 
-
-// Fetches an image element. Returns a promise that resolves to a fetched image element. Note that
-// data uris are accepted.
-// @param url {String}
-// @param timeoutMs {Number}
-// @returns {Promise}
-// TODO: use the fetch API to avoid cookies?
-export async function fetchImageElement(url, timeoutMs) {
-  assert(url);
-  assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
-
-  const fetchPromise = new Promise(function fetchExec(resolve, reject) {
-    const proxy = new Image();
-    proxy.src = url;// triggers the fetch
-    if(proxy.complete) {
-      clearTimeout(timerId);
-      resolve(proxy);
-      return;
-    }
-
-    proxy.onload = function proxyOnload(event) {
-      clearTimeout(timerId);
-      resolve(proxy);
-    };
-    proxy.onerror = function proxyOnerror(event) {
-      clearTimeout(timerId);
-      const errorMessage = 'Error fetching image with url ' + url;
-      const error = new FetchError(errorMessage);
-      reject(error);
-    };
-  });
-
-  if(!timeoutMs) {
-    return fetchPromise;
-  }
-
-  const [timerId, timeoutPromise] = setTimeoutPromise(timeoutMs);
-  const contestants = [fetchPromise, timeoutPromise];
-  const image = await Promise.race(contestants);
-  if(image) {
-    clearTimeout(timerId);
-  } else {
-    const errorMessage = 'Timed out fetching image with url ' + url;
-    throw new TimeoutError(errorMessage);
-  }
-  return fetchPromise;
-}
-
 // Does a fetch with a timeout and a content type predicate
 // @param url {String} request url
 // @param options {Object} optional, fetch options parameter
@@ -71,7 +23,7 @@ export async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
     response.status);
 
   const HTTP_STATUS_NO_CONTENT = 204;
-  check(response.status !== HTTP_STATUS_NO_CONTENT, FetchError, 'no content repsonse ' + url);
+  check(response.status !== HTTP_STATUS_NO_CONTENT, FetchError, 'no content response ' + url);
 
   if(typeof acceptPredicate === 'function') {
     check(acceptPredicate(response), FetchError, 'response not accepted ' + url);
@@ -184,8 +136,6 @@ async function fetchWithTranslatedErrors(url, options) {
   return response;
 }
 
-
-
 // Return true if the response url is 'different' than the request url
 // @param requestURL {URL}
 // @param responseURL {URL}
@@ -222,7 +172,6 @@ export function getContentLength(response) {
   const contentLength = parseInt10(contentLengthString);
   return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
 }
-
 
 export class NetworkError extends Error {
   constructor(message) {
