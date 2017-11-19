@@ -247,12 +247,31 @@ async function fetchWithTimeout(url, options, timeoutMs) {
 // decided to use TypeError as a catch-all type of error.
 async function fetchWithTranslatedErrors(url, options) {
 
-  // Because TypeErrors are translated, manually check types, in case that TypeError is also thrown
-  // for non-networking reasons. In other words, deconflate the uses of TypeError. In this case,
-  // translate basic type errors into assertion errors.
-  // TODO: maybe just use check function from errors.js and actually cause TypeError errors.
-  assert(typeof url === 'string');
-  assert(typeof options === 'undefined' || typeof options === 'object');
+  // Explicitly check for and throw type errors in parameters passed to this function in order to
+  // avoid ambiguity between (1) type errors thrown by fetch due to improper variable type and (2)
+  // type errors thrown by fetch due to network errors. Coincidently this also affects a class of
+  // invalid inputs to fetch where fetch implicitly converts non-string urls to strings
+  check(typeof url === 'string', TypeError, 'url ' + url + ' must be a string');
+  check(typeof options === 'undefined' || typeof options === 'object', TypeError,
+    'options must be undefined or an object');
+
+  // We know that url is now a string, but we do not know if it is an absolute url. When calling
+  // fetch with a url string that is not absolute, fetch implicitly resolves the url using the
+  // location of the calling context. This leads to undesired behavior. Fetches to the local context
+  // should not be allowed unless it is explictly done using an absolute url pointing to a local
+  // resource (e.g. includes chrome-extension:// in the url).
+  // Avoid fetch defaulting to trying to fetch using window.location or whatever as the base url in
+  // the case of a relative url. Calling the URL constructor with a relative URL and without a base
+  // url parameter throws a TypeError.
+  // Although this additional behavior probably does not belong in this function in the sense that
+  // the absolute-url requirement is an unexpected implicit requirement, I am performing it here
+  // because of the possible confusion that arises when delegating the check to a function lower
+  // on the stack. If lower on the stack, a type error would bubble up to this function and then
+  // get translated into a network error. This isn't a network error. Similarly, if the function
+  // were higher on the stack, some confusion could occur. Well, not really. Maybe this should
+  // be higher on the stack (a wrapper function that does this check, then calls this). But the two
+  // situations are orthogonal? Anyway I am not sure, going with this implementation choice for now.
+  new URL(url);
 
   let response;
   try {
