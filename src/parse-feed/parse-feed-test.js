@@ -6,7 +6,7 @@
 // source projects store test code.
 
 import fetchFeed from "/src/fetch/fetch-feed.js";
-import parseFeed from "/src/parse-feed.js";
+import parseFeed from "/src/parse-feed/parse-feed.js";
 
 async function test(url) {
   'use strict';
