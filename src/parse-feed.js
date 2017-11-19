@@ -15,7 +15,7 @@
 
 import assert from "/src/utils/assert.js";
 import {check, ParseError} from "/src/utils/errors.js";
-import parseXML from "/src/xml/parse-xml.js";
+import parseXML from "/src/xml/parse.js";
 import {getElementName} from "/src/xml/utils.js";
 
 // Parses the input string into a feed object. The feed object will always have a defined entries
@@ -23,7 +23,6 @@ import {getElementName} from "/src/xml/utils.js";
 // is not well formed or something unexpected happened.
 export function parseFeed(feedXMLString) {
   const xmlDocument = parseXML(feedXMLString);
-  assert(document instanceof Document);
   return unmarshallXML(xmlDocument);
 }
 
