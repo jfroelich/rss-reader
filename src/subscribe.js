@@ -11,6 +11,7 @@ import isAllowedURL from "/src/fetch-policy.js";
 import * as rdb from "/src/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import {feedPut} from "/src/reader-storage.js";
+import {setURLHrefProperty} from "/src/url.js";
 
 export function Context() {
   this.iconCache = undefined;
@@ -48,51 +49,38 @@ export async function subscribe(feed) {
   assert(Feed.hasURL(feed));
 
   const url = Feed.peekURL(feed);
+
+  // Check whether policy permits subscribing to the url
   const urlObject = new URL(url);
   check(isAllowedURL(urlObject), PermissionsError, urlObject.href + ' not permitted');
 
-  const isInputURLSubscribed = await isSubscribed.call(this, url);
-  check(!isInputURLSubscribed, rdb.ConstraintError, 'already subscribed');
+  // Check that user is not already subscribed
+  let priorFeedId = await rdb.findFeedIdByURL(this.readerConn, url);
+  check(!priorFeedId, rdb.ConstraintError, 'already subscribed');
 
   if(navigator.onLine || !('onLine' in navigator)) {
+    // If online then fetch failure is fatal to subscribing
     const res = await fetchFeed(url, this.fetchFeedTimeoutMs);
+
+    // If redirected, then the url changed. Perform checks on the new url
     if(res.redirected) {
-      const isRedirectURLSubscribed = await isSubscribed.call(this, res.responseURL);
-      check(!isRedirectURLSubscribed, rdb.ConstraintError, 'already subscribed');
+      // Check whether policy permits subscribing to the redirected url
+      setURLHrefProperty(urlObject, res.responseURL);
+      check(isAllowedURL(urlObject), PermissionsError, urlObject.href + ' not permitted');
+
+      // Check that user is not already subscribed now that we know redirect
+      priorFeedId = await rdb.findFeedIdByURL(this.readerConn, res.responseURL);
+      check(!priorFeedId, rdb.ConstraintError, 'already subscribed');
     }
 
+    // Get the fetched details
     const xml = await res.text();
-    const PROCESS_ENTRIES = false;
-    const parseResult = parseFeed(xml, url, res.responseURL, res.lastModifiedDate,
-      PROCESS_ENTRIES);
-    const mergedFeed = Feed.merge(feed, parseResult.feed);
-    feed = mergedFeed;
+    const kProcEntries = false;
+    const parseResult = parseFeed(xml, url, res.responseURL, res.lastModifiedDate, kProcEntries);
+    feed = Feed.merge(feed, parseResult.feed);
   }
 
-  await setFavicon.call(this, feed);
-  const SKIP_PREP = false;
-  const storedFeed = feedPut(feed, this.readerConn, SKIP_PREP);
-  showSubscribeNotification.call(this, storedFeed);
-  return storedFeed;
-}
-
-// Returns a promise that resolves to the id of a feed matching the url
-function isSubscribed(url) {
-  return rdb.findFeedIdByURL(this.readerConn, url);
-}
-
-function showSubscribeNotification(feed) {
-  if(!this.notify) {
-    return;
-  }
-
-  const title = 'Subscribed';
-  const feedName = feed.title || Feed.peekURL(feed);
-  const message = 'Subscribed to ' + feedName;
-  showNotification(title, message, feed.faviconURLString);
-}
-
-async function setFavicon(feed) {
+  // Set the feed's favicon
   const query = new FaviconLookup();
   query.cache = this.iconCache;
   query.skipURLFetch = true;
@@ -107,4 +95,18 @@ async function setFavicon(feed) {
       // Ignore, lookup failure is non-fatal
     }
   }
+
+  // Store the feed in the database
+  const kSkipPrep = false;
+  const storedFeed = await feedPut(feed, this.readerConn, kSkipPrep);
+
+  // Send a notification of the successful subscription
+  if(this.notify) {
+    const title = 'Subscribed';
+    const feedName = storedFeed.title || Feed.peekURL(storedFeed);
+    const message = 'Subscribed to ' + feedName;
+    showNotification(title, message, storedFeed.faviconURLString);
+  }
+
+  return storedFeed;
 }
