@@ -5,7 +5,7 @@ import "/src/cli.js";
 import {addBadgeClickListener, showSlideshowTab} from "/src/extension.js";
 import "/src/install.js";
 import * as rdb from "/src/storage/rdb.js";
-import updateBadgeText from "/src/update-badge-text.js";
+import updateBadgeText from "/src/reader/update-badge-text.js";
 
 // Initialize the extension
 async function init() {

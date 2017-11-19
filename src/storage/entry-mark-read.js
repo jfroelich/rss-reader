@@ -4,7 +4,7 @@ import assert from "/src/utils/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import {check} from "/src/utils/errors.js";
 import * as rdb from "/src/storage/rdb.js";
-import updateBadgeText from "/src/update-badge-text.js";
+import updateBadgeText from "/src/reader/update-badge-text.js";
 
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection

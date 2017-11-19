@@ -2,7 +2,7 @@
 
 import {addInstallListener} from "/src/extension.js";
 import FaviconCache from "/src/favicon/cache.js";
-import updateBadgeText from "/src/update-badge-text.js";
+import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as rdb from "/src/storage/rdb.js";
 
 async function onInstalled(event) {
