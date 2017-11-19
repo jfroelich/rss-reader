@@ -5,7 +5,7 @@
 // the source folder. I think I should do that. Take a closer look at where other popular open
 // source projects store test code.
 
-import fetchFeed from "/src/fetch-feed.js";
+import fetchFeed from "/src/fetch/fetch-feed.js";
 import parseFeed from "/src/parse-feed.js";
 
 async function test(url) {

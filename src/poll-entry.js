@@ -5,7 +5,7 @@ import {INACCESSIBLE_CONTENT_DESCRIPTORS} from "/src/config.js";
 import * as Entry from "/src/entry.js";
 import {check, isUncheckedError} from "/src/errors.js";
 import FaviconLookup from "/src/favicon-lookup.js";
-import fetchHTML from "/src/fetch-html.js";
+import fetchHTML from "/src/fetch/fetch-html.js";
 import filterDocument from "/src/filter-document.js";
 import parseHTML from "/src/parse-html.js";
 import * as rdb from "/src/rdb.js";

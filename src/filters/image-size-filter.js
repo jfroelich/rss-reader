@@ -2,7 +2,7 @@
 
 import assert from "/src/assert.js";
 import {getDimensions} from "/src/dom.js";
-import fetchImageElement from "/src/fetch-image-element.js";
+import fetchImageElement from "/src/fetch/fetch-image-element.js";
 import {promiseEvery} from "/src/promise.js";
 import {parseInt10} from "/src/string.js";
 import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url.js";

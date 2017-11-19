@@ -3,7 +3,7 @@
 import assert from "/src/assert.js";
 import {queryIdleState, showNotification} from "/src/extension.js";
 import * as Feed from "/src/feed.js";
-import fetchFeed from "/src/fetch-feed.js";
+import fetchFeed from "/src/fetch/fetch-feed.js";
 import * as PollEntryModule from "/src/poll-entry.js";
 import {promiseEvery} from "/src/promise.js";
 import updateBadgeText from "/src/update-badge-text.js";

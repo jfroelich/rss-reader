@@ -8,7 +8,7 @@
 
 import assert from "/src/assert.js";
 import {check} from "/src/errors.js";
-import * as FetchUtils from "/src/fetch-utils.js";
+import * as FetchUtils from "/src/fetch/fetch-utils.js";
 import * as mime from "/src/mime.js";
 
 // Sends a HEAD request for the given image.
