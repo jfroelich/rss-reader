@@ -207,7 +207,8 @@ FaviconLookup.prototype.fetchImage = async function(url) {
     if(isUncheckedError(error)) {
       throw error;
     } else {
-      // Ignore
+      // Treat the error as non-fatal, but log for informational purposes
+      console.warn(error);
     }
   }
 };

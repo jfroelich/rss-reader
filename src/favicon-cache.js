@@ -95,7 +95,7 @@ FaviconCache.prototype.findEntry = function(urlObject) {
   });
 };
 
-// TODO: assert maxAgeMs isPosInt, do not forget to import from number.js too
+// TODO: assert maxAgeMs isPosInt, do not forget to import from number.js
 FaviconCache.prototype.findExpired = function(maxAgeMs) {
   assert(idb.isOpen(this.conn));
 
@@ -135,7 +135,6 @@ FaviconCache.prototype.put = function(entry) {
   return new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
-    console.debug('FaviconCache.prototype.put', entry);
     const request = store.put(entry);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);

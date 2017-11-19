@@ -214,7 +214,7 @@ async function fetchWithTimeout(url, options, timeoutMs) {
   assert(isValidURLString(url));
   assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
 
-  const fetchPromise = fetch(url, options);
+  const fetchPromise = fetchWithTranslatedErrors(url, options);
   if(typeof timeoutMs === 'undefined') {
     return fetchPromise;
   }
@@ -231,6 +231,52 @@ async function fetchWithTimeout(url, options, timeoutMs) {
   }
   return fetchPromise;
 }
+
+// Per MDN: https://developer.mozilla.org/en-US/docs/Web/API/GlobalFetch
+// A fetch() promise will reject with a TypeError when a network error is encountered, although
+// this usually means permissions issue or similar. An accurate check for a successful fetch()
+// would include checking that the promise resolved, then checking that the Response.ok property
+// has a value of true. An HTTP status of 404 does not constitute a network error.
+
+// In this extension, a TypeError is considered a serious error, at the level of an assertion
+// error, and not an ephemeral or bad-input error. Therefore, it is important to capture
+// errors produced by calling fetch and translate them. In this case, treat a TypeError as
+// a type of network error, which is a type of fetch error, and do not treat the error as a type
+// of TypeError, which is a programming error involving using the wrong variable type. My
+// suspicion is that the designers of the fetch API did not want to create a new error type, and
+// decided to use TypeError as a catch-all type of error.
+async function fetchWithTranslatedErrors(url, options) {
+
+  // Because TypeErrors are translated, manually check types, in case that TypeError is also thrown
+  // for non-networking reasons. In other words, deconflate the uses of TypeError. In this case,
+  // translate basic type errors into assertion errors.
+  // TODO: maybe just use check function from errors.js and actually cause TypeError errors.
+  assert(typeof url === 'string');
+  assert(typeof options === 'undefined' || typeof options === 'object');
+
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch(error) {
+    if(error instanceof TypeError) {
+      // Translate TypeErrors into NetworkErrors
+      // When fetch fails with a TypeError, its internal message property does not contain a
+      // useful value, so create an error with a useful value.
+      throw new NetworkError('Error fetching ' + url);
+    } else {
+
+      // TEMP: I am logging this immediately in case the error is promise-swallowed and there are
+      // other error types this should also be translating
+      console.error(error);
+
+      throw error;
+    }
+  }
+
+  return response;
+}
+
+
 
 // Return true if the response url is 'different' than the request url
 // @param requestURL {URL}
@@ -272,5 +318,11 @@ function getContentLength(response) {
 export class FetchError extends Error {
   constructor(message) {
     super(message || 'Fetch error');
+  }
+}
+
+export class NetworkError extends FetchError {
+  constructor(message) {
+    super(message || 'Network error');
   }
 }
