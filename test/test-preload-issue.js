@@ -1,5 +1,5 @@
 
-// import mime.js
+// import mime-utils.js
 
 async function testPreloadIssue() {
   const options = {};

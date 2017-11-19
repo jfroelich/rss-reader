@@ -9,7 +9,7 @@
 import assert from "/src/utils/assert.js";
 import {check} from "/src/utils/errors.js";
 import * as FetchUtils from "/src/fetch/utils.js";
-import * as mime from "/src/mime.js";
+import * as mime from "/src/mime-utils.js";
 
 // Sends a HEAD request for the given image.
 // @param url {String}

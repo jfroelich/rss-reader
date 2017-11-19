@@ -5,7 +5,7 @@ import FaviconCache from "/src/favicon/cache.js";
 import * as Feed from "/src/feed.js";
 import * as FileUtils from "/src/utils/file.js";
 import * as idb from "/src/utils/idb.js";
-import * as mime from "/src/mime.js";
+import * as mime from "/src/mime-utils.js";
 import * as OPMLDocument from "/src/opml-document.js";
 import * as OPMLOutline from "/src/opml-outline.js";
 import parseOPML from "/src/parse-opml.js";

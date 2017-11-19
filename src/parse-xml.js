@@ -2,7 +2,7 @@
 
 import assert from "/src/utils/assert.js";
 import {ParseError} from "/src/utils/errors.js";
-import * as mime from "/src/mime.js";
+import * as mime from "/src/mime-utils.js";
 import {condenseWhitespace} from "/src/utils/string.js";
 
 export default function parseXML(xml) {
