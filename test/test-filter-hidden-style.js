@@ -1,8 +1,7 @@
 
 async function test(url) {
 
-  // TODO: use fetchHTML instead of raw fetch. This was created before
-  // fetchHTML was more settled
+  // TODO: use fetchHTML instead of raw fetch. This was created before fetch-html.js was settled
 
   const options = {
     credentials: 'omit',

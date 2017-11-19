@@ -4,10 +4,10 @@ import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/errors.js";
 import FaviconCache from "/src/favicon-cache.js";
 import {
-  fetchHTML,
   fetchImageHead,
   FETCH_UNKNOWN_CONTENT_LENGTH
 } from "/src/fetch.js";
+import fetchHTML from "/src/fetch-html.js";
 import {isPosInt} from "/src/number.js";
 import parseHTML from "/src/parse-html.js";
 import {setURLHrefProperty} from "/src/url.js";

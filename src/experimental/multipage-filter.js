@@ -1,6 +1,6 @@
 
 import assert from "/src/assert.js";
-import {fetchHTML} from "/src/fetch.js";
+import fetchHTML from "/src/fetch-html.js";
 import {paginationFindAnchors} from "/src/pagination.js";
 
 // Investigates whether a document is a multi-page document. If the document
