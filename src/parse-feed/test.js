@@ -18,3 +18,5 @@ async function test(url) {
   const result = parseFeed(feedXML);
   console.dir(result);
 }
+
+window.test = test;
