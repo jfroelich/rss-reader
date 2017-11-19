@@ -1,6 +1,6 @@
 // Fetch HTML module
 
-import {fetchInternal} from "/src/fetch.js";
+import {fetchInternal} from "/src/fetch-utils.js";
 import * as mime from "/src/mime.js";
 
 // Fetches the html content of the given url
