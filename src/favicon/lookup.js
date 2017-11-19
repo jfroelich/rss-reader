@@ -7,7 +7,7 @@ import fetchHTML from "/src/fetch/fetch-html.js";
 import fetchImageHead from "/src/fetch/fetch-image-head.js";
 import {FETCH_UNKNOWN_CONTENT_LENGTH} from "/src/fetch/utils.js";
 import {isPosInt} from "/src/utils/number.js";
-import parseHTML from "/src/parse-html.js";
+import parseHTML from "/src/html/parse-html.js";
 import {setURLHrefProperty} from "/src/url.js";
 import {resolveURLString} from "/src/url-string.js";
 

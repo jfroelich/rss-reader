@@ -7,7 +7,7 @@ import {check, isUncheckedError} from "/src/utils/errors.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
-import parseHTML from "/src/parse-html.js";
+import parseHTML from "/src/html/parse-html.js";
 import * as rdb from "/src/rdb.js";
 import {entryAdd} from "/src/reader-storage.js";
 import rewriteURL from "/src/rewrite-url.js";

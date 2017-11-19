@@ -6,7 +6,7 @@ import * as Entry from "/src/entry.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import filterPublisher from "/src/filter-publisher.js";
-import {escapeHTML, truncate as htmlTruncate} from "/src/utils/html.js";
+import {escapeHTML, truncate as htmlTruncate} from "/src/html/html.js";
 import * as rdb from "/src/rdb.js";
 import entryMarkRead from "/src/entry-mark-read.js";
 import {parseInt10} from "/src/utils/string.js";

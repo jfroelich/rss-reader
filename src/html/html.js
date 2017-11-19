@@ -1,7 +1,7 @@
 import assert from "/src/utils/assert.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import {isPosInt} from "/src/utils/number.js";
-import parseHTML from "/src/parse-html.js";
+import parseHTML from "/src/html/parse-html.js";
 
 // Returns a new string where certain 'unsafe' characters in the input string have been replaced
 // with html entities. If input is not a string returns undefined.
