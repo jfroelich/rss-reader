@@ -2,7 +2,7 @@
 
 import assert from "/src/utils/assert.js";
 import {unwrap} from "/src/dom/utils.js";
-import {hasScriptProtocol} from "/src/url-string.js";
+import {hasScriptProtocol} from "/src/url/url-string.js";
 
 export default function filter(doc) {
   assert(doc instanceof Document);

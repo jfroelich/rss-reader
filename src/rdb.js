@@ -5,7 +5,7 @@ import * as Entry from "/src/entry.js";
 import * as Feed from "/src/feed.js";
 import * as idb from "/src/utils/idb.js";
 import {isPosInt} from "/src/utils/number.js";
-import {isValidURLString} from "/src/url-string.js";
+import {isValidURLString} from "/src/url/url-string.js";
 
 const NAME = 'reader';
 const VERSION = 20;

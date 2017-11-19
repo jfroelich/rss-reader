@@ -6,7 +6,7 @@ import {openTab} from "/src/extension.js";
 import {escapeHTML, truncate as htmlTruncate} from "/src/html/html.js";
 import * as rdb from "/src/rdb.js";
 import entryMarkRead from "/src/entry-mark-read.js";
-import {isCanonicalURLString} from "/src/url-string.js";
+import {isCanonicalURLString} from "/src/url/url-string.js";
 import assert from "/src/utils/assert.js";
 import {formatDate} from "/src/utils/date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";

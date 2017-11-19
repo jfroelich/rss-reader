@@ -1,5 +1,5 @@
 
-import {sniffIsBinaryURL} from "/src/url.js";
+import {sniffIsBinaryURL} from "/src/url/url.js";
 
 // TODO: add data uri test
 

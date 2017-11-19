@@ -2,7 +2,7 @@
 
 import assert from "/src/utils/assert.js";
 import {parseSrcsetWrapper, serializeSrcset} from "/src/dom/srcset.js";
-import {resolveURLString} from "/src/url-string.js";
+import {resolveURLString} from "/src/url/url-string.js";
 
 // TODO: rename this
 const CANONICAL_URL_FILTER_MAP = {

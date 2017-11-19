@@ -2,8 +2,8 @@
 
 import {removeImage} from "/src/dom/image.js";
 import {isHiddenInlineElement} from "/src/dom/visibility.js";
-import {isExternalURL} from "/src/url.js";
-import {isCanonicalURLString} from "/src/url-string.js";
+import {isExternalURL} from "/src/url/url.js";
+import {isCanonicalURLString} from "/src/url/url-string.js";
 import assert from "/src/utils/assert.js";
 
 

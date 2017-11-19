@@ -49,7 +49,7 @@ import assert from "/src/utils/assert.js";
 import * as Entry from "/src/entry.js";
 import * as Feed from "/src/feed.js";
 import {parseFeed as parseFeedImpl} from "/src/parse-feed.js";
-import {isCanonicalURLString} from "/src/url-string.js";
+import {isCanonicalURLString} from "/src/url/url-string.js";
 
 // Parses an xml input string representing a feed. Returns a result with a feed object and an array
 // of entries. Throws both checked and unchecked errors.

@@ -11,7 +11,7 @@ import isAllowedURL from "/src/fetch/fetch-policy.js";
 import * as rdb from "/src/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import {feedPut} from "/src/reader-storage.js";
-import {setURLHrefProperty} from "/src/url.js";
+import {setURLHrefProperty} from "/src/url/url.js";
 
 export function Context() {
   this.iconCache = undefined;

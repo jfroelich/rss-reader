@@ -5,7 +5,7 @@ import {getDimensions} from "/src/dom/utils.js";
 import fetchImageElement from "/src/fetch/fetch-image-element.js";
 import {promiseEvery} from "/src/utils/promise.js";
 import {parseInt10} from "/src/utils/string.js";
-import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url.js";
+import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url/url.js";
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions

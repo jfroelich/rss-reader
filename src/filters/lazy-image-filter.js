@@ -2,7 +2,7 @@
 
 import {hasSource} from "/src/dom/image.js";
 import assert from "/src/utils/assert.js";
-import {isValidURLString} from "/src/url-string.js";
+import {isValidURLString} from "/src/url/url-string.js";
 
 const kLazyAttributeNames = [
   'load-src',

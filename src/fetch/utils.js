@@ -6,8 +6,8 @@ import * as mime from "/src/utils/mime-utils.js";
 import {isPosInt} from "/src/utils/number.js";
 import {setTimeoutPromise} from "/src/utils/promise.js";
 import {parseInt10} from "/src/utils/string.js";
-import {compareURLsWithoutHash} from "/src/url.js";
-import {isValidURLString} from "/src/url-string.js";
+import {compareURLsWithoutHash} from "/src/url/url.js";
+import {isValidURLString} from "/src/url/url-string.js";
 
 // Does a fetch with a timeout and a content type predicate
 // @param url {String} request url

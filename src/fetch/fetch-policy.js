@@ -6,7 +6,7 @@
 // TODO: allow preference override through localStorage setting
 
 import assert from "/src/utils/assert.js";
-import {isCredentialedURL} from "/src/url.js";
+import {isCredentialedURL} from "/src/url/url.js";
 
 // Return true if the app's policy permits fetching the url
 export default function isAllowedURL(url) {
