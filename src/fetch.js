@@ -9,46 +9,6 @@ import {parseInt10} from "/src/string.js";
 import {compareURLsWithoutHash} from "/src/url.js";
 import {isValidURLString} from "/src/url-string.js";
 
-// Sends a HEAD request for the given image.
-// @param url {String}
-// @returns a simple object with props imageSize and responseURL
-// TODO: this should be refactored to use fetchInternal. But I need to calculate content length.
-// So fetchInternal first needs to be refactored to also calculate content length because response
-// is not exposed, just wrapped response.
-// TODO: side note, does HEAD yield 204? If so, 204 isn't an error. So using fetchInternal
-// would be wrong, at least as it is currently implemented.
-export async function fetchImageHead(url, timeoutMs) {
-  const headers = {'Accept': 'image/*'};
-
-  // TODO: set properties in a consistent manner, like I do in other fetch functions
-  const options = {};
-  options.credentials = 'omit';
-  options.method = 'HEAD';
-  options.headers = headers;
-  options.mode = 'cors';
-  options.cache = 'default';
-  options.redirect = 'follow';
-  options.referrer = 'no-referrer';
-
-  const response = await fetchWithTimeout(url, options, timeoutMs);
-  assert(response);
-  const contentType = response.headers.get('Content-Type');
-
-  if(contentType === 'unknown') {
-    // See https://github.com/jfroelich/rss-reader/issues/459
-    console.debug('allowing unknown content type');
-
-  } else {
-    check(mime.isImage(contentType), FetchError, 'Response content type not an image mime type: ' +
-      contentType + ' for url ' + url);
-  }
-
-  // TODO: create and use ResponseWrapper?
-  const outputResponse = {};
-  outputResponse.size = getContentLength(response);
-  outputResponse.responseURL = response.url;
-  return outputResponse;
-}
 
 // Fetches an image element. Returns a promise that resolves to a fetched image element. Note that
 // data uris are accepted.
@@ -139,7 +99,7 @@ export async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
 // @param options {Object} optional, fetch options parameter
 // @param timeoutMs {Number} optional, timeout in milliseconds
 // @returns {Promise} the fetch promise
-async function fetchWithTimeout(url, options, timeoutMs) {
+export async function fetchWithTimeout(url, options, timeoutMs) {
   assert(isValidURLString(url));
   assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
 
@@ -252,7 +212,7 @@ function getLastModified(response) {
 export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
 // TODO: just return NaN if NaN? NaN is suitable unknown type.
-function getContentLength(response) {
+export function getContentLength(response) {
   const contentLengthString = response.headers.get('Content-Length');
 
   if(typeof contentLengthString !== 'string' || contentLengthString.length < 1) {
