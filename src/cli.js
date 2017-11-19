@@ -10,7 +10,7 @@ import * as rdb from "/src/rdb.js";
 import refreshFeedIcons from "/src/refresh-feed-icons.js";
 import removeLostEntries from "/src/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/remove-orphaned-entries.js";
-import {parseInt10} from "/src/string.js";
+import {parseInt10} from "/src/utils/string.js";
 
 const cli = {};
 

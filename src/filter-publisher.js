@@ -2,8 +2,8 @@
 
 // TODO: support alternate whitespace expressions around delimiters
 
-import assert from "/src/assert.js";
-import {tokenize} from "/src/string.js";
+import assert from "/src/utils/assert.js";
+import {tokenize} from "/src/utils/string.js";
 
 // @param title {String} the title of an web page
 // @returns {String} the title without publisher information

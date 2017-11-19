@@ -1,8 +1,8 @@
 // Promise utilities
 
-import assert from "/src/assert.js";
-import {isUncheckedError} from "/src/errors.js";
-import {isPosInt} from "/src/number.js";
+import assert from "/src/utils/assert.js";
+import {isUncheckedError} from "/src/utils/errors.js";
+import {isPosInt} from "/src/utils/number.js";
 
 // Returns a promise that resolves to undefined after a certain amount of time, as well as the
 // timer id. This returns an array so that the caller can use destructuring such as

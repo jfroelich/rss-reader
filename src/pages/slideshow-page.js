@@ -1,15 +1,15 @@
 // slideshow view module
 
-import assert from "/src/assert.js";
-import {formatDate} from "/src/date.js";
+import assert from "/src/utils/assert.js";
+import {formatDate} from "/src/utils/date.js";
 import * as Entry from "/src/entry.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import filterPublisher from "/src/filter-publisher.js";
-import {escapeHTML, truncate as htmlTruncate} from "/src/html.js";
+import {escapeHTML, truncate as htmlTruncate} from "/src/utils/html.js";
 import * as rdb from "/src/rdb.js";
 import entryMarkRead from "/src/entry-mark-read.js";
-import {parseInt10} from "/src/string.js";
+import {parseInt10} from "/src/utils/string.js";
 import {isCanonicalURLString} from "/src/url-string.js";
 
 // Track the currently visible slide

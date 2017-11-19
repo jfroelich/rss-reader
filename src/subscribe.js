@@ -1,7 +1,7 @@
 // Module for subscribing to a new feed
 
-import assert from "/src/assert.js";
-import {check, isUncheckedError, PermissionsError} from "/src/errors.js";
+import assert from "/src/utils/assert.js";
+import {check, isUncheckedError, PermissionsError} from "/src/utils/errors.js";
 import {showNotification} from "/src/extension.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";

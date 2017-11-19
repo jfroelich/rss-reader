@@ -1,10 +1,10 @@
 // Module for interacting with the app indexedDB database
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import * as Entry from "/src/entry.js";
 import * as Feed from "/src/feed.js";
-import * as idb from "/src/idb.js";
-import {isPosInt} from "/src/number.js";
+import * as idb from "/src/utils/idb.js";
+import {isPosInt} from "/src/utils/number.js";
 import {isValidURLString} from "/src/url-string.js";
 
 const NAME = 'reader';

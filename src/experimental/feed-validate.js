@@ -6,9 +6,9 @@
 // TODO: assert feed has one or more urls
 // TODO: assert the type of each property?
 
-import assert from "/src/assert.js";
-import {check} from "/src/errors.js";
-// import {isPosInt} from "/src/number.js";
+import assert from "/src/utils/assert.js";
+import {check} from "/src/utils/errors.js";
+// import {isPosInt} from "/src/utils/number.js";
 import * as Feed from "/src/feed.js";
 
 export default function validateFeed(feed) {

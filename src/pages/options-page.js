@@ -1,8 +1,8 @@
 // Options page view module
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import BG_IMAGES from "/src/bg-images.js";
-import {fadeElement} from "/src/dom.js";
+import {fadeElement} from "/src/utils/dom.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {exportFeeds} from "/src/export-feeds.js";
 import {
@@ -12,11 +12,11 @@ import {
 } from "/src/extension.js";
 import * as Feed from "/src/feed.js";
 import FONTS from "/src/fonts.js";
-import {truncate as htmlTruncate} from "/src/html.js";
+import {truncate as htmlTruncate} from "/src/utils/html.js";
 import * as mime from "/src/mime.js";
 import * as rdb from "/src/rdb.js";
 import {readerImportFiles} from "/src/reader-import.js";
-import {parseInt10} from "/src/string.js";
+import {parseInt10} from "/src/utils/string.js";
 import * as Subscriber from "/src/subscribe.js";
 import unsubscribe from "/src/unsubscribe.js";
 

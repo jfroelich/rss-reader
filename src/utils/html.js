@@ -1,6 +1,6 @@
-import assert from "/src/assert.js";
-import {isUncheckedError} from "/src/errors.js";
-import {isPosInt} from "/src/number.js";
+import assert from "/src/utils/assert.js";
+import {isUncheckedError} from "/src/utils/errors.js";
+import {isPosInt} from "/src/utils/number.js";
 import parseHTML from "/src/parse-html.js";
 
 // Returns a new string where certain 'unsafe' characters in the input string have been replaced

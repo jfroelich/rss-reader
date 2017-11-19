@@ -1,6 +1,6 @@
 // Remove certain formatting elements from document content
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {unwrapElements} from "/src/filters/filter-helpers.js";
 
 const SELECTOR = [

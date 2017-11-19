@@ -1,6 +1,6 @@
 // Resolves urls in document content
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {parseSrcsetWrapper, serializeSrcset} from "/src/srcset.js";
 import {resolveURLString} from "/src/url-string.js";
 

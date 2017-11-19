@@ -1,7 +1,7 @@
 // OPML Document utilities
 
-import assert from "/src/assert.js";
-import {check} from "/src/errors.js";
+import assert from "/src/utils/assert.js";
+import {check} from "/src/utils/errors.js";
 import * as OPMLOutline from "/src/opml-outline.js";
 
 // Create a new OPML document

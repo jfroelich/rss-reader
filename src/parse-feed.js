@@ -13,8 +13,8 @@
 // default import in a module that imports this module that happens to use the same name as this
 // function. So, for now, I am not exporting a default. This may change.
 
-import assert from "/src/assert.js";
-import {check, ParseError} from "/src/errors.js";
+import assert from "/src/utils/assert.js";
+import {check, ParseError} from "/src/utils/errors.js";
 import parseXML from "/src/parse-xml.js";
 import {getElementName} from "/src/xml-utils.js";
 

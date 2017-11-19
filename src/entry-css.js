@@ -1,7 +1,7 @@
 
-import assert from "/src/assert.js";
-import * as dom from "/src/dom.js";
-import {parseInt10} from "/src/string.js";
+import assert from "/src/utils/assert.js";
+import * as dom from "/src/utils/dom.js";
+import {parseInt10} from "/src/utils/string.js";
 
 // Get the current settings from local storage and then modify the css rules in the default style
 // sheet

@@ -1,6 +1,6 @@
 // URL rewriting module
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {isCanonicalURLString} from "/src/url-string.js";
 
 // Applies a set of rules to a url object and returns a modified url object. Returns undefined if

@@ -1,9 +1,9 @@
 // XML parsing module
 
-import assert from "/src/assert.js";
-import {ParseError} from "/src/errors.js";
+import assert from "/src/utils/assert.js";
+import {ParseError} from "/src/utils/errors.js";
 import * as mime from "/src/mime.js";
-import {condenseWhitespace} from "/src/string.js";
+import {condenseWhitespace} from "/src/utils/string.js";
 
 export default function parseXML(xml) {
   assert(typeof xml === 'string');

@@ -1,6 +1,6 @@
 // Transforms lazily-loaded images found in document content
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {hasSource} from "/src/image.js";
 import {isValidURLString} from "/src/url-string.js";
 

@@ -1,6 +1,6 @@
 // Filters various telemetry-inducing content from document content
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {removeImage} from "/src/image.js";
 import {isExternalURL} from "/src/url.js";
 import {isCanonicalURLString} from "/src/url-string.js";

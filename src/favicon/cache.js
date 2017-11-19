@@ -7,8 +7,8 @@
 // is the connection. On the other hand, it makes testing easier?
 // TODO: should the default max age constant probably be exported separately?
 
-import assert from "/src/assert.js";
-import * as idb from "/src/idb.js";
+import assert from "/src/utils/assert.js";
+import * as idb from "/src/utils/idb.js";
 
 export default class FaviconCache {
   constructor() {
@@ -95,7 +95,7 @@ FaviconCache.prototype.findEntry = function(urlObject) {
   });
 };
 
-// TODO: assert maxAgeMs isPosInt, do not forget to import from number.js
+// TODO: assert maxAgeMs isPosInt, do not forget to import from utils/number.js
 FaviconCache.prototype.findExpired = function(maxAgeMs) {
   assert(idb.isOpen(this.conn));
 

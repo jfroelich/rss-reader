@@ -1,11 +1,11 @@
 // Module for polling feeds
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {queryIdleState, showNotification} from "/src/extension.js";
 import * as Feed from "/src/feed.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import * as PollEntryModule from "/src/poll-entry.js";
-import {promiseEvery} from "/src/promise.js";
+import {promiseEvery} from "/src/utils/promise.js";
 import updateBadgeText from "/src/update-badge-text.js";
 import {getFeeds as readerDbGetFeeds} from "/src/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";

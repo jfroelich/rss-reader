@@ -1,6 +1,6 @@
 // Specifies that all links are noreferrer
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 
 // TODO: this function's behavior conflicts with attribute filter. Need to whitelist this attribute
 // (and this value) for this element.

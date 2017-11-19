@@ -1,6 +1,6 @@
 // Filters certain types of elements from document content
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 
 const BLACKLIST = [
   'applet', 'audio', 'basefont', 'bgsound', 'command', 'datalist', 'dialog', 'embed', 'head',

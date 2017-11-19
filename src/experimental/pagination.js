@@ -1,6 +1,6 @@
 
-import assert from "/src/assert.js";
-import {findLCA} from "/src/dom.js";
+import assert from "/src/utils/assert.js";
+import {findLCA} from "/src/utils/dom.js";
 import {isHiddenElement} from "/src/visibility.js";
 
 // Returns an array

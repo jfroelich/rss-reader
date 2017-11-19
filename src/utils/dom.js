@@ -1,7 +1,7 @@
 // DOM utilities
 
-import assert from "/src/assert.js";
-import {parseInt10} from "/src/string.js";
+import assert from "/src/utils/assert.js";
+import {parseInt10} from "/src/utils/string.js";
 
 // Returns the first matching css rule within the given sheet, or undefined if no rules match.
 //

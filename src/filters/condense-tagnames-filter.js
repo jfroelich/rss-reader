@@ -1,6 +1,6 @@
 // Changes the names of certain elements in document content
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {renameElements} from "/src/filters/filter-helpers.js";
 
 // Use shorter names for common elements

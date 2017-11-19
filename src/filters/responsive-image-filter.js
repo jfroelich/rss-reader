@@ -1,6 +1,6 @@
 // Transforms responsive images in document content
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {hasSrcset, hasValidSource} from "/src/image.js";
 import {parseSrcsetWrapper} from "/src/srcset.js";
 

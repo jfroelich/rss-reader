@@ -1,8 +1,8 @@
 // Boilerplate filtering module
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {findCaption} from "/src/image.js";
-import {condenseWhitespace} from "/src/string.js";
+import {condenseWhitespace} from "/src/utils/string.js";
 
 export default function boilerplateFilter(doc) {
   assert(doc instanceof Document);

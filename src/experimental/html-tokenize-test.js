@@ -1,5 +1,5 @@
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 
 let input;
 let tokens;

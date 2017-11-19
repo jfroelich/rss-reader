@@ -3,7 +3,7 @@
 // placeholder urls in the content, but because script is not evaluated elsewhere the bad urls
 // all stay and this causes issues elsewhere and broken links.
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 
 export default function filterDocument(doc) {
   assert(doc instanceof Document);

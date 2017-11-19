@@ -1,8 +1,8 @@
 // A wrapper around indexedDB
 
-import assert from "/src/assert.js";
-import {isPosInt} from "/src/number.js";
-import {setTimeoutPromise} from "/src/promise.js";
+import assert from "/src/utils/assert.js";
+import {isPosInt} from "/src/utils/number.js";
+import {setTimeoutPromise} from "/src/utils/promise.js";
 
 const DEBUG = false;
 
@@ -98,7 +98,7 @@ export async function open(name, version, upgradeListener, timeoutMs) {
   } else {
     timedout = true;
     // TODO: create and use a TimedOutError or something along those lines. TimeoutError should be
-    // defined in errors.js or in promises.js.
+    // defined in utils/errors.js or in promises.js.
     const errorMessage = 'connecting to database ' + name + ' timed out';
     throw new Error(errorMessage);
   }

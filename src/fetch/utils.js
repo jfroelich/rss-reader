@@ -1,11 +1,11 @@
 // Fetch utilities
 
-import assert from "/src/assert.js";
-import {check, TimeoutError} from "/src/errors.js";
+import assert from "/src/utils/assert.js";
+import {check, TimeoutError} from "/src/utils/errors.js";
 import * as mime from "/src/mime.js";
-import {isPosInt} from "/src/number.js";
-import {setTimeoutPromise} from "/src/promise.js";
-import {parseInt10} from "/src/string.js";
+import {isPosInt} from "/src/utils/number.js";
+import {setTimeoutPromise} from "/src/utils/promise.js";
+import {parseInt10} from "/src/utils/string.js";
 import {compareURLsWithoutHash} from "/src/url.js";
 import {isValidURLString} from "/src/url-string.js";
 

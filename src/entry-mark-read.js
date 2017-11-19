@@ -1,8 +1,8 @@
 // Marks an entry as read in the database
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import * as Entry from "/src/entry.js";
-import {check} from "/src/errors.js";
+import {check} from "/src/utils/errors.js";
 import * as rdb from "/src/rdb.js";
 import updateBadgeText from "/src/update-badge-text.js";
 

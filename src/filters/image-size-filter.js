@@ -1,10 +1,10 @@
 // Module related to image size attributes
 
-import assert from "/src/assert.js";
-import {getDimensions} from "/src/dom.js";
+import assert from "/src/utils/assert.js";
+import {getDimensions} from "/src/utils/dom.js";
 import fetchImageElement from "/src/fetch/fetch-image-element.js";
-import {promiseEvery} from "/src/promise.js";
-import {parseInt10} from "/src/string.js";
+import {promiseEvery} from "/src/utils/promise.js";
+import {parseInt10} from "/src/utils/string.js";
 import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url.js";
 
 // Scans the images of a document and ensures the width and height attributes

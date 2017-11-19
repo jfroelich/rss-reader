@@ -1,15 +1,15 @@
 // For importing feeds from opml file into the reader app
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
 import * as Feed from "/src/feed.js";
-import * as FileUtils from "/src/file.js";
-import * as idb from "/src/idb.js";
+import * as FileUtils from "/src/utils/file.js";
+import * as idb from "/src/utils/idb.js";
 import * as mime from "/src/mime.js";
 import * as OPMLDocument from "/src/opml-document.js";
 import * as OPMLOutline from "/src/opml-outline.js";
 import parseOPML from "/src/parse-opml.js";
-import {promiseEvery} from "/src/promise.js";
+import {promiseEvery} from "/src/utils/promise.js";
 import * as rdb from "/src/rdb.js";
 import * as Subscriber from "/src/subscribe.js";
 

@@ -1,5 +1,5 @@
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {unwrapElements} from "/src/filters/filter-helpers.js";
 
 export default function filter(doc) {

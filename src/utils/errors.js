@@ -1,6 +1,6 @@
 // Misc errors and error-related utilities
 
-import {AssertionError} from "/src/assert.js";
+import {AssertionError} from "/src/utils/assert.js";
 
 const LOG_CHECKED_ERRORS = false;
 

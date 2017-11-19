@@ -3,7 +3,7 @@
 // TODO: find all source not in picture/audio/video and remove
 // TODO: find all figcaption not in figure and remove
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 
 // Relocates certain misnested elements
 export default function filterDocument(doc) {

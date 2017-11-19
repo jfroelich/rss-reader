@@ -1,7 +1,7 @@
 // MIME utilities module
 
-import assert from "/src/assert.js";
-import {filterWhitespace} from "/src/string.js";
+import assert from "/src/utils/assert.js";
+import {filterWhitespace} from "/src/utils/string.js";
 
 export const MIME_TYPE_HTML = 'text/html';
 export const MIME_TYPE_XML = 'application/xml';

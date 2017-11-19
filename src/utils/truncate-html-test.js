@@ -1,5 +1,5 @@
 
-import {truncate} from "/src/html.js";
+import {truncate} from "/src/utils/html.js";
 
 const ext = '...';
 const input1 = 'a<p>b</p>c';

@@ -1,9 +1,9 @@
 // For polling an individual entry when polling feeds
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {INACCESSIBLE_CONTENT_DESCRIPTORS} from "/src/config.js";
 import * as Entry from "/src/entry.js";
-import {check, isUncheckedError} from "/src/errors.js";
+import {check, isUncheckedError} from "/src/utils/errors.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import filterDocument from "/src/filter-document.js";

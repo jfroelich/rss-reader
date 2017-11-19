@@ -1,6 +1,6 @@
 // Filters certain table elements from document content
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import {unwrapElements} from "/src/filters/filter-helpers.js";
 import {leafFilterIsLeaf} from "/src/filters/leaf-filter.js";
 

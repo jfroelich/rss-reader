@@ -1,5 +1,5 @@
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import {paginationFindAnchors} from "/src/pagination.js";
 

@@ -1,8 +1,8 @@
 // Filters certain occurrences of emphasized content from document content
 
-import assert from "/src/assert.js";
-import {unwrap} from "/src/dom.js";
-import {isPosInt} from "/src/number.js";
+import assert from "/src/utils/assert.js";
+import {unwrap} from "/src/utils/dom.js";
+import {isPosInt} from "/src/utils/number.js";
 
 // @param maxTextLength {Number} optional, if number of non-tag characters
 // within emphasis element is greater than this, then the element is filtered

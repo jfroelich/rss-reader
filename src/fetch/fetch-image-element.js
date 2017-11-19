@@ -2,11 +2,11 @@
 
 // TODO: use the fetch API to avoid cookies?
 
-import assert from "/src/assert.js";
-import {TimeoutError} from "/src/errors.js";
+import assert from "/src/utils/assert.js";
+import {TimeoutError} from "/src/utils/errors.js";
 import {FetchError} from "/src/fetch/utils.js";
-import {isPosInt} from "/src/number.js";
-import {setTimeoutPromise} from "/src/promise.js";
+import {isPosInt} from "/src/utils/number.js";
+import {setTimeoutPromise} from "/src/utils/promise.js";
 
 // Fetches an image element. Returns a promise that resolves to a fetched image element. Note that
 // data uris are accepted.

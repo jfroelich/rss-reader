@@ -1,6 +1,6 @@
 // Removes comment nodes from document content
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 
 export default function commentFilter(doc) {
   assert(doc instanceof Document);

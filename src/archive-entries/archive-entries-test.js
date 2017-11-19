@@ -1,6 +1,6 @@
 
 import archiveEntries from "/src/archive-entries/archive-entries.js";
-import {remove as deleteDB} from "/src/idb.js";
+import {remove as deleteDB} from "/src/utils/idb.js";
 import * as rdb from "/src/rdb.js";
 
 async function test() {

@@ -1,6 +1,6 @@
 // Date utilities
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 
 export function formatDate(date, delimiter) {
   // Tolerate some forms bad input

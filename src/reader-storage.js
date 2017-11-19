@@ -3,14 +3,14 @@
 // TODO: maybe break into two modules, feed-store.js, and entry-store.js, that are basically
 // abstractions around rdb calls.
 
-import assert from "/src/assert.js";
+import assert from "/src/utils/assert.js";
 import * as Entry from "/src/entry.js";
 import * as Feed from "/src/feed.js";
-import {replaceTags, truncate as htmlTruncate} from "/src/html.js";
-import {isPosInt} from "/src/number.js";
-import {filterEmptyProps} from "/src/object.js";
+import {replaceTags, truncate as htmlTruncate} from "/src/utils/html.js";
+import {isPosInt} from "/src/utils/number.js";
+import {filterEmptyProps} from "/src/utils/object.js";
 import * as rdb from "/src/rdb.js";
-import {filterControls, condenseWhitespace} from "/src/string.js";
+import {filterControls, condenseWhitespace} from "/src/utils/string.js";
 
 export async function feedPut(feed, conn, skipPrep) {
   assert(Feed.isFeed(feed));
