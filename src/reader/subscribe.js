@@ -5,7 +5,7 @@ import {check, isUncheckedError, PermissionsError} from "/src/utils/errors.js";
 import {showNotification} from "/src/extension.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
-import * as Feed from "/src/feed.js";
+import * as Feed from "/src/storage/feed.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import isAllowedURL from "/src/fetch/fetch-policy.js";
 import * as rdb from "/src/storage/rdb.js";

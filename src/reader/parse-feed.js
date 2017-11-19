@@ -47,7 +47,7 @@
 
 import assert from "/src/utils/assert.js";
 import * as Entry from "/src/storage/entry.js";
-import * as Feed from "/src/feed.js";
+import * as Feed from "/src/storage/feed.js";
 import {parseFeed as parseFeedImpl} from "/src/parse-feed/parse-feed.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 

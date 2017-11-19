@@ -2,7 +2,7 @@
 
 import assert from "/src/utils/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
-import * as Feed from "/src/feed.js";
+import * as Feed from "/src/storage/feed.js";
 import * as FileUtils from "/src/utils/file.js";
 import * as idb from "/src/utils/idb.js";
 import * as mime from "/src/utils/mime-utils.js";

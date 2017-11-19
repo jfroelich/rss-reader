@@ -1,7 +1,7 @@
 // Unsubscribe from a feed
 
 import assert from "/src/utils/assert.js";
-import * as Feed from "/src/feed.js";
+import * as Feed from "/src/storage/feed.js";
 import * as rdb from "/src/storage/rdb.js";
 import updateBadgeText from "/src/update-badge-text.js";
 

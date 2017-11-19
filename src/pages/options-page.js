@@ -9,7 +9,7 @@ import {
   requestBrowserPermission,
   removeBrowserPermission
 } from "/src/extension.js";
-import * as Feed from "/src/feed.js";
+import * as Feed from "/src/storage/feed.js";
 import FONTS from "/src/fonts.js";
 import {truncate as htmlTruncate} from "/src/html/html.js";
 import readerImportFiles from "/src/backup/import-opml-files.js";

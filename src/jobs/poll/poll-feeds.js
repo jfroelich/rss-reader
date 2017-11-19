@@ -2,7 +2,7 @@
 
 import assert from "/src/utils/assert.js";
 import {queryIdleState, showNotification} from "/src/extension.js";
-import * as Feed from "/src/feed.js";
+import * as Feed from "/src/storage/feed.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
 import {promiseEvery} from "/src/utils/promise.js";

@@ -9,7 +9,7 @@
 import assert from "/src/utils/assert.js";
 import {check} from "/src/utils/errors.js";
 // import {isPosInt} from "/src/utils/number.js";
-import * as Feed from "/src/feed.js";
+import * as Feed from "/src/storage/feed.js";
 
 export default function validateFeed(feed) {
   // Unlike the other error handling, passing a non-feed value to this function is indicative of a

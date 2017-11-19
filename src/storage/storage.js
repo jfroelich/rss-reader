@@ -5,7 +5,7 @@
 
 import assert from "/src/utils/assert.js";
 import * as Entry from "/src/storage/entry.js";
-import * as Feed from "/src/feed.js";
+import * as Feed from "/src/storage/feed.js";
 import {replaceTags, truncate as htmlTruncate} from "/src/html/html.js";
 import {isPosInt} from "/src/utils/number.js";
 import {filterEmptyProps} from "/src/utils/object.js";

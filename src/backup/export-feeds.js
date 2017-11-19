@@ -1,7 +1,7 @@
 // Module for exporting feeds to opml file
 
 import assert from "/src/utils/assert.js";
-import * as Feed from "/src/feed.js";
+import * as Feed from "/src/storage/feed.js";
 import * as OPMLDocument from "/src/opml/opml-document.js";
 import {xmlToBlob} from "/src/xml/utils.js";
 

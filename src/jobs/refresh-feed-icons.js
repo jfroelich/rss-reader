@@ -3,7 +3,7 @@
 import assert from "/src/utils/assert.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import FaviconLookup from "/src/favicon/lookup.js";
-import * as Feed from "/src/feed.js";
+import * as Feed from "/src/storage/feed.js";
 import {promiseEvery} from "/src/utils/promise.js";
 import * as rdb from "/src/storage/rdb.js";
 import {feedPut} from "/src/storage/storage.js";
