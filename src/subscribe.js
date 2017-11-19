@@ -43,7 +43,6 @@ export async function subscribe(feed) {
   assert(this instanceof Context);
   assert(rdb.isOpen(this.readerConn));
   assert(this.iconCache instanceof FaviconCache);
-
   assert(this.iconCache.isOpen());
   assert(Feed.isFeed(feed));
   assert(Feed.hasURL(feed));
