@@ -15,8 +15,8 @@
 
 import assert from "/src/utils/assert.js";
 import {check, ParseError} from "/src/utils/errors.js";
-import parseXML from "/src/parse-xml.js";
-import {getElementName} from "/src/xml-utils.js";
+import parseXML from "/src/xml/parse-xml.js";
+import {getElementName} from "/src/xml/utils.js";
 
 // Parses the input string into a feed object. The feed object will always have a defined entries
 // array, although it may be zero length. Throws both checked and unchecked errors if the feed

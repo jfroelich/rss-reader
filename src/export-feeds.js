@@ -3,7 +3,7 @@
 import assert from "/src/utils/assert.js";
 import * as Feed from "/src/feed.js";
 import * as OPMLDocument from "/src/opml/opml-document.js";
-import {xmlToBlob} from "/src/xml-utils.js";
+import {xmlToBlob} from "/src/xml/utils.js";
 
 // Triggers the download of an OPML-formatted file containing the given feeds
 // @param feeds {Array}

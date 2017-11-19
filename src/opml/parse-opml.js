@@ -1,8 +1,8 @@
 // OPML parsing
 
 import {check, ParseError} from "/src/utils/errors.js";
-import parseXML from "/src/parse-xml.js";
-import {getElementName} from "/src/xml-utils.js";
+import parseXML from "/src/xml/parse-xml.js";
+import {getElementName} from "/src/xml/utils.js";
 
 // Returns the parsed document or throws an error
 export default function parseOPML(xmlString) {
