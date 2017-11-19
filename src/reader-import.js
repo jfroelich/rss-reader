@@ -21,19 +21,13 @@ export async function readerImportFiles(files) {
   console.debug('importing %d files', files.length);
 
   const fic = new FaviconCache();
-
-  // TODO: revisit abbreviated destructuring syntax and use that instead of declaring and using
-  // a "_" placeholder.
-
-  let readerConn, _;
+  let readerConn;
   try {
-    [readerConn, _] = await Promise.all([rdb.open(), fic.open()]);
-
+    [readerConn] = await Promise.all([rdb.open(), fic.open()]);
     const promises = [];
     for(const file of files) {
-      promises.push(importFile(file, readerConn, fic.conn));
+      promises.push(importFile(file, readerConn, fic));
     }
-
     await promiseEvery(promises);
   } finally {
     fic.close();
@@ -41,15 +35,10 @@ export async function readerImportFiles(files) {
   }
 }
 
-// TODO: this should accept iconCache as parameter instead of iconConn. Then isOpenDb does not
-// need to be used and can use iconCache.isOpen() instead, and then isOpenDb does not need to be
-// imported as an explicit dependency, and iconCache fully encapsulates and serves as a better
-// abstraction
-
-async function importFile(file, readerConn, iconConn) {
+async function importFile(file, readerConn, iconCache) {
   assert(file instanceof File);
   assert(rdb.isOpen(readerConn));
-  assert(idb.isOpen(iconConn));
+  assert(iconCache.isOpen());
   console.log('importing opml file', file.name);
 
   if(file.size < 1) {
@@ -96,7 +85,7 @@ async function importFile(file, readerConn, iconConn) {
 
   const subscribeContext = new Subscriber.Context();
   subscribeContext.readerConn = readerConn;
-  subscribeContext.iconConn = iconConn;
+  subscribeContext.iconConn = iconCache.conn;
   subscribeContext.fetchFeedTimeoutMs = timeoutMs;
   subscribeContext.notify = false;
 
