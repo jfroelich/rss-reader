@@ -30,22 +30,11 @@ export function PollFeedsContext() {
 
 export async function pollFeeds(pfc) {
   assert(pfc instanceof PollFeedsContext);
-  assert('onLine' in navigator);
-  if(!navigator.onLine) {
-    console.debug('offline');
-    return;
-  }
-
-  if(!pfc.allowMeteredConnections && 'NO_POLL_METERED' in localStorage && navigator.connection &&
-    navigator.connection.metered) {
-    console.debug('metered connection');
-    return;
-  }
 
   if(!pfc.ignoreIdleState && 'ONLY_POLL_IF_IDLE' in localStorage) {
     const state = await queryIdleState(pfc.idlePeriodSecs);
     if(state !== 'locked' && state !== 'idle') {
-      console.debug('idle');
+      console.debug('polling canceled because not idle');
       return;
     }
   }
@@ -101,6 +90,14 @@ async function pollFeed(feed, pfc) {
   assert(pfc instanceof PollFeedsContext);
 
   const url = Feed.peekURL(feed);
+
+  // TODO: perhaps this check should be delegated to fetchFeed, which throws some type of
+  // OfflineError or FetchError
+  if(!navigator.onLine) {
+    console.debug('failed to fetch feed %s while offline', url);
+    return;
+  }
+
   const response = await fetchFeed(url, pfc.fetchFeedTimeoutMs, pfc.acceptHTML);
 
   if(!pfc.ignoreModifiedCheck && feed.dateUpdated && feed.dateLastModified &&
