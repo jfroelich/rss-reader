@@ -58,42 +58,23 @@ export function findCaption(image) {
 export function removeImage(image) {
   const figure = image.closest('figure');
   if(figure) {
-    // Remove any caption elements
     const captions = figure.querySelectorAll('figcaption');
     for(const caption of captions) {
-
-      // TEMP: tracing new functionality
-      console.debug('removing caption associated with image', caption.outerHTML, image.outerHTML);
-
       caption.remove();
     }
 
-    // TEMP: tracing new functionality
-    console.debug('unwrapping figure associated with image', figure.outerHTML, image.outerHTML);
-
-    // Remove the figure but keep the children
     unwrap(figure);
   }
 
   const picture = image.closest('picture');
   if(picture) {
-    // Remove any sources of the picture
     const sources = picture.querySelectorAll('source');
     for(const source of sources) {
-
-      // TEMP: tracing new functionality
-      console.debug('removing source associated with image', source.outerHTML, image.outerHTML);
-
       source.remove();
     }
 
-    // TEMP: tracing new functionality
-    console.debug('unwrapping picture associated with image', picture.outerHTML, image.outerHTML);
-
-    // Remove the picture but keep the children
     unwrap(picture);
   }
 
-  // Remove the image itself
   image.remove();
 }
