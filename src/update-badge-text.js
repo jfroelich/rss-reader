@@ -1,7 +1,7 @@
 
 import assert from "/src/utils/assert.js";
 import * as platform from "/src/extension.js";
-import * as rdb from "/src/rdb.js";
+import * as rdb from "/src/storage/rdb.js";
 
 const DEBUG = true;
 

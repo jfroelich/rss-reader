@@ -4,12 +4,12 @@ import assert from "/src/utils/assert.js";
 import {queryIdleState, showNotification} from "/src/extension.js";
 import * as Feed from "/src/feed.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
-import * as PollEntryModule from "/src/poll/poll-entry.js";
+import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
 import {promiseEvery} from "/src/utils/promise.js";
 import updateBadgeText from "/src/update-badge-text.js";
-import {getFeeds as readerDbGetFeeds} from "/src/rdb.js";
+import {getFeeds as readerDbGetFeeds} from "/src/storage/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";
-import {feedPut} from "/src/reader-storage.js";
+import {feedPut} from "/src/storage/storage.js";
 
 export function PollFeedsContext() {
   this.readerConn = undefined;

@@ -14,7 +14,7 @@ import * as Feed from "/src/feed.js";
 import FONTS from "/src/fonts.js";
 import {truncate as htmlTruncate} from "/src/html/html.js";
 import * as mime from "/src/utils/mime-utils.js";
-import * as rdb from "/src/rdb.js";
+import * as rdb from "/src/storage/rdb.js";
 import {readerImportFiles} from "/src/reader-import.js";
 import {parseInt10} from "/src/utils/string.js";
 import * as Subscriber from "/src/subscribe.js";

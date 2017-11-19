@@ -8,9 +8,9 @@ import FaviconLookup from "/src/favicon/lookup.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
 import parseHTML from "/src/html/parse-html.js";
-import * as rdb from "/src/rdb.js";
-import {entryAdd} from "/src/reader-storage.js";
-import rewriteURL from "/src/poll/rewrite-url.js";
+import * as rdb from "/src/storage/rdb.js";
+import {entryAdd} from "/src/storage/storage.js";
+import rewriteURL from "/src/jobs/poll/rewrite-url.js";
 import {setURLHrefProperty, sniffIsBinaryURL} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
 

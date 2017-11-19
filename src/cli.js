@@ -2,14 +2,14 @@
 // variable in global scope (window). The definition occurs as an implicit side effect of importing
 // the module.
 
-import archiveEntries from "/src/archive-entries/archive-entries.js";
+import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
-import {pollFeeds, PollFeedsContext} from "/src/poll/poll-feeds.js";
-import * as rdb from "/src/rdb.js";
-import refreshFeedIcons from "/src/refresh-feed-icons.js";
-import removeLostEntries from "/src/remove-lost-entries.js";
-import removeOrphanedEntries from "/src/remove-orphaned-entries.js";
+import {pollFeeds, PollFeedsContext} from "/src/jobs/poll/poll-feeds.js";
+import * as rdb from "/src/storage/rdb.js";
+import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
+import removeLostEntries from "/src/jobs/remove-lost-entries.js";
+import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 import {parseInt10} from "/src/utils/string.js";
 
 const cli = {};

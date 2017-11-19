@@ -1,13 +1,13 @@
 // Registers alarms in the extension that run various background jobs. Analogous to cron.
 
-import archiveEntries from "/src/archive-entries/archive-entries.js";
+import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
-import {pollFeeds, PollFeedsContext} from "/src/poll/poll-feeds.js";
-import * as rdb from "/src/rdb.js";
-import refreshFeedIcons from "/src/refresh-feed-icons.js";
-import removeLostEntries from "/src/remove-lost-entries.js";
-import removeOrphanedEntries from "/src/remove-orphaned-entries.js";
+import {pollFeeds, PollFeedsContext} from "/src/jobs/poll/poll-feeds.js";
+import * as rdb from "/src/storage/rdb.js";
+import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
+import removeLostEntries from "/src/jobs/remove-lost-entries.js";
+import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 
 chrome.alarms.onAlarm.addListener(onWakeup);
 chrome.alarms.create('archive', {periodInMinutes: 60 * 12});

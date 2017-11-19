@@ -4,7 +4,7 @@ import "/src/alarms.js";
 import "/src/cli.js";
 import {addBadgeClickListener, showSlideshowTab} from "/src/extension.js";
 import "/src/install.js";
-import * as rdb from "/src/rdb.js";
+import * as rdb from "/src/storage/rdb.js";
 import updateBadgeText from "/src/update-badge-text.js";
 
 // Initialize the extension
