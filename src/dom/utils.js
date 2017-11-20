@@ -2,7 +2,7 @@
 
 import assert from "/src/utils/assert.js";
 import {parseInt10} from "/src/utils/string.js";
-
+import unwrap from "/src/unwrap-element.js";
 
 // Returns the first matching css rule within the given sheet, or undefined if no rules match.
 //
@@ -27,44 +27,6 @@ export function getDefaultStylesheet() {
   }
 }
 
-// Replace an element with its children. Special care is taken to add spaces if the operation would
-// result in adjacent text nodes.
-export function unwrap(element) {
-  assert(element instanceof Element);
-  assert(element.parentNode, 'orphaned element');
-
-  const parentElement = element.parentNode;
-  const previousSibling = element.previousSibling;
-  const nextSibling = element.nextSibling;
-  const firstChild = element.firstChild;
-  const lastChild = element.lastChild;
-  const TEXT = Node.TEXT_NODE;
-  const frag = element.ownerDocument.createDocumentFragment();
-
-  // Detach upfront for O(2) live dom ops, compared to O(n-children) otherwise
-  element.remove();
-
-  // Add leading padding
-  if(previousSibling && previousSibling.nodeType === TEXT && firstChild &&
-    firstChild.nodeType === TEXT) {
-    frag.appendChild(element.ownerDocument.createTextNode(' '));
-  }
-
-  // Move children to fragment, maintaining order
-  for(let node = firstChild; node; node = element.firstChild) {
-    frag.appendChild(node);
-  }
-
-  // Add trailing padding
-  if(lastChild && firstChild !== lastChild && nextSibling && nextSibling.nodeType === TEXT &&
-    lastChild.nodeType === TEXT) {
-    frag.appendChild(element.ownerDocument.createTextNode(' '));
-  }
-
-  // If nextSibling is undefined then insertBefore appends
-  parentElement.insertBefore(frag, nextSibling);
-}
-
 export function unwrapElements(ancestorElement, selector) {
   assert(ancestorElement instanceof Element);
   assert(typeof selector === 'string');
@@ -73,7 +35,6 @@ export function unwrapElements(ancestorElement, selector) {
     unwrap(element);
   }
 }
-
 
 // Only looks at inline style.
 // Returns {'width': int, 'height': int} or undefined

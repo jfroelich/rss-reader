@@ -1,9 +1,9 @@
 // Transforms noscript content in document content
 
+import unwrap from "/src/dom/unwrap-element.js";
 import assert from "/src/utils/assert.js";
-import {unwrap} from "/src/dom/utils.js";
 
-export default function filter(doc) {
+export default function filterDocument(doc) {
   assert(doc instanceof Document);
 
   const noscripts = doc.querySelectorAll('noscript');
