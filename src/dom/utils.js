@@ -27,12 +27,6 @@ export function getDefaultStylesheet() {
   }
 }
 
-// Returns true if the given name is a valid name for an element. This only does minimal validation
-// and may yield false positives.
-function isValidElementName(name) {
-  return typeof name === 'string' && name.length && !name.includes(' ');
-}
-
 // Replace an element with its children. Special care is taken to add spaces if the operation would
 // result in adjacent text nodes.
 export function unwrap(element) {
@@ -80,78 +74,6 @@ export function unwrapElements(ancestorElement, selector) {
   }
 }
 
-// Changes the tag name of an element. Event listeners are lost on rename. No checking is done
-// regarding whether the result is semantically correct.
-//
-// See https://stackoverflow.com/questions/15408394 for a basic explanation of why event listeners
-//are lost on rename.
-//
-// @param copyAttributesFlag {Boolean} optional, if true then attributes are maintained, defaults to
-// true.
-// @returns {Element} the new element that replaced the old one
-export function renameElement(element, newName, copyAttributesFlag) {
-
-  // Disallow createElement(null) working like createElement("null")
-  assert(isValidElementName(newName));
-
-  if(typeof copyAttributesFlag === 'undefined') {
-    copyAttributesFlag = true;
-  }
-
-  // Treat attempting to rename an element to the same name as a noop
-  if(element.localName === newName.toLowerCase()) {
-    return element;
-  }
-
-  const parentElement = element.parentNode;
-
-  // Fail silently on orphaned elements. Caller not required to guarantee parent.
-  if(!parentElement) {
-    return element;
-  }
-
-  // Use next sibling to record position prior to detach. May be undefined.
-  const nextSibling = element.nextSibling;
-
-  // Detach the existing node, prior to performing other dom operations, so that the other
-  // operations take place on a detached node, so that the least amount of live dom operations are
-  // made. Implicitly, this sets parentNode and nextSibling to undefined.
-  element.remove();
-
-  const newElement = element.ownerDocument.createElement(newName);
-
-  if(copyAttributesFlag) {
-    copyAttributes(element, newElement);
-  }
-
-  // Move children
-  let childNode = element.firstChild;
-  while(childNode) {
-    newElement.appendChild(childNode);
-    childNode = element.firstChild;
-  }
-
-  // Attach the new element in place of the old element. If nextSibling is undefined then
-  // insertBefore simply appends. Return the new element.
-  return parentElement.insertBefore(newElement, nextSibling);
-}
-
-// Copies the attributes of an element to another element. Overwrites any existing attributes in the
-// other element.
-// @param fromElement {Element}
-// @param toElement {Element}
-// @throws {Error} if either element is not an Element
-// @returns void
-function copyAttributes(fromElement, toElement) {
-  // Use getAttributeNames in preference to element.attributes due to performance issues with
-  // element.attributes, and to allow unencumbered use of the for..of syntax (I had issues with
-  // NamedNodeMap and for..of).
-  const names = fromElement.getAttributeNames();
-  for(const name of names) {
-    const value = fromElement.getAttribute(name);
-    toElement.setAttribute(name, value);
-  }
-}
 
 // Only looks at inline style.
 // Returns {'width': int, 'height': int} or undefined

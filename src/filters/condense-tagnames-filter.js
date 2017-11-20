@@ -1,6 +1,6 @@
 // Changes the names of certain elements in document content
 
-import {renameElement} from "/src/dom/utils.js";
+import coerceElement from "/src/dom/coerce-element.js";
 import assert from "/src/utils/assert.js";
 
 // Use shorter names for common elements
@@ -11,19 +11,22 @@ export default function main(doc, copyAttributesFlag) {
     return;
   }
 
-  renameElements(doc.body, 'strong', 'b', copyAttributesFlag);
-  renameElements(doc.body, 'em', 'i', copyAttributesFlag);
+  coerceElements(doc.body, 'strong', 'b', copyAttributesFlag);
+  coerceElements(doc.body, 'em', 'i', copyAttributesFlag);
 }
 
-function renameElements(ancestorElement, oldName, newName, copyAttributesFlag) {
+function coerceElements(ancestorElement, oldName, newName, copyAttributesFlag) {
   assert(typeof oldName === 'string');
   assert(typeof newName === 'string');
+
+  // TODO: why this check for definedness of ancestorElement? Should it be always required? I
+  // think so. I cannot recall why I did this.
 
   if(ancestorElement) {
     assert(ancestorElement instanceof Element);
     const elements = ancestorElement.querySelectorAll(oldName);
     for(const element of elements) {
-      renameElement(element, newName, copyAttributesFlag);
+      coerceElement(element, newName, copyAttributesFlag);
     }
   }
 }
