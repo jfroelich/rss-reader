@@ -7,6 +7,9 @@ import FaviconCache from "/src/favicon/cache.js";
 import * as rdb from "/src/storage/rdb.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 
+// Top level async is not allowed in modules, at least not right now. This helper function exists
+// to allow for the await, and to allow for finally to work given that some functions throw
+// assertion errors outside of returned promises.
 async function initBadgeText() {
   let conn;
   try {
