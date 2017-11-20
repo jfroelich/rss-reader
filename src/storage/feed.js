@@ -1,7 +1,7 @@
 // Utilities for working with app feeds
 
 import assert from "/src/utils/assert.js";
-import {replaceTags} from "/src/html/html.js";
+import replaceTags from "/src/html/replace-tags.js";
 import htmlTruncate from "/src/html/truncate.js";
 import {isPosInt} from "/src/utils/number.js";
 import {condenseWhitespace, filterControls} from "/src/utils/string.js";
