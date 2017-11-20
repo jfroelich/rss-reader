@@ -9,7 +9,7 @@ import {xmlToBlob} from "/src/xml/utils.js";
 // @param feeds {Array}
 // @param title {String} optional
 // @param fileName {String} optional
-export function exportFeeds(feeds, title, fileName) {
+export default function exportFeeds(feeds, title, fileName) {
   assert(Array.isArray(feeds));
   const doc = createOPMLDocumentFromFeeds(feeds, title);
   const blob = xmlToBlob(doc);
