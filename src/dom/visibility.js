@@ -48,9 +48,6 @@ export function isHiddenElement(element) {
   }
 
   // Walk bottom-up from after element to before body, recording the path
-  // This does not delegate to getAncestors in dom utils because it stops before reaching body,
-  // which would just require more special processing of the ancestors array to get only ancestors
-  // below the body.
   const path = [];
   for(let e = element.parentNode; e && e !== doc.body; e = e.parentNode) {
     path.push(e);
