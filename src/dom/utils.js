@@ -26,31 +26,6 @@ export function getDefaultStylesheet() {
   }
 }
 
-// Only looks at inline style.
-// Returns {'width': int, 'height': int} or undefined
-export function getDimensions(element) {
-  // Accessing element.style is a performance heavy operation sometimes, so try and avoid access.
-  if(!element.hasAttribute('style')) {
-    return;
-  }
-
-  // Some elements do not have a defined style property.
-  if(!element.style) {
-    return;
-  }
-
-  // TODO: support all value formats
-  const dims = {};
-  dims.width = parseInt10(element.style.width);
-  dims.height = parseInt10(element.style.height);
-
-  if(isNaN(dims.width) || isNaN(dims.height)) {
-    return;
-  } else {
-    return dims;
-  }
-}
-
 // TODO: this could use some cleanup or at least some clarifying comments
 export function fadeElement(element, durationSecs, delaySecs) {
   return new Promise(function executor(resolve, reject) {

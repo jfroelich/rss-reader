@@ -1,11 +1,14 @@
 // Module related to image size attributes
 
 import assert from "/src/utils/assert.js";
-import {getDimensions} from "/src/dom/utils.js";
+
 import fetchImageElement from "/src/fetch/fetch-image-element.js";
 import {promiseEvery} from "/src/utils/promise.js";
 import {parseInt10} from "/src/utils/string.js";
 import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url/url.js";
+
+
+const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
@@ -19,7 +22,6 @@ import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url/url.js";
 export default async function filterDocument(doc, allowedProtocols, timeoutMs) {
   assert(doc instanceof Document);
 
-  const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];
   if(typeof allowedProtocols === 'undefined') {
     allowedProtocols = DEFAULT_ALLOWED_PROTOCOLS;
   }
@@ -63,7 +65,7 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     return;
   }
 
-  const styleDimensions = getDimensions(image);
+  const styleDimensions = getInlineStyleDimensions(image);
   if(styleDimensions) {
     result.width = styleDimensions.width;
     result.height = styleDimensions.height;
@@ -81,7 +83,7 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     return;
   }
 
-  const urlDimensions = sniffFromURL(sourceURL);
+  const urlDimensions = sniffDimensionsFromURL(sourceURL);
   if(urlDimensions) {
     result.width = urlDimensions.width;
     result.height = urlDimensions.height;
@@ -98,7 +100,7 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
   return result;
 }
 
-function sniffFromURL(sourceURL) {
+function sniffDimensionsFromURL(sourceURL) {
   // data urls will not contain useful information so ignore them
   if(sourceURL.protocol === 'data:') {
     return;
@@ -150,5 +152,31 @@ function sniffFromURL(sourceURL) {
     if(partialFileName) {
       // not implemented
     }
+  }
+}
+
+
+// Only looks at inline style.
+// Returns {'width': int, 'height': int} or undefined
+function getInlineStyleDimensions(element) {
+  // Accessing element.style is a performance heavy operation sometimes, so try and avoid access.
+  if(!element.hasAttribute('style')) {
+    return;
+  }
+
+  // Some elements do not have a defined style property.
+  if(!element.style) {
+    return;
+  }
+
+  // TODO: support all value formats
+  const dims = {};
+  dims.width = parseInt10(element.style.width);
+  dims.height = parseInt10(element.style.height);
+
+  if(isNaN(dims.width) || isNaN(dims.height)) {
+    return;
+  } else {
+    return dims;
   }
 }
