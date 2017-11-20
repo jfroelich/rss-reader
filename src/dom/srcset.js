@@ -33,16 +33,19 @@ export function serializeSrcset(descriptors) {
   return descriptorStrings.join(', ');
 }
 
-// TODO: figure out how to import the third-party library and just export a function named
-// parseSrcset. The library doesn't export anything, so look into ways to still get its contents.
-// Take another look at import * as foo.
-
 // Returns an array of descriptor objects. If the input is bad, or an error occurs, returns an
 // empty array. This wraps a call to a third-party library so it is overly defensive.
 // @param srcset {String}
 export function parseSrcsetWrapper(srcset) {
   const fallbackOutput = [];
+
+  // Try and avoid the call in case of unexpected output. Not an assertion error for convenience
   if(typeof srcset !== 'string') {
+    return fallbackOutput;
+  }
+
+  // Try and avoid the call in case of empty string
+  if(!srcset) {
     return fallbackOutput;
   }
 
@@ -50,6 +53,7 @@ export function parseSrcsetWrapper(srcset) {
   try {
     descriptors = parseSrcset(srcset);
   } catch(error) {
+    console.warn('Error parsing srcset ignored: ' + srcset);
     return fallbackOutput;
   }
 

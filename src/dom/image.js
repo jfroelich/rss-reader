@@ -6,7 +6,8 @@ import {isValidURLString} from "/src/url/url-string.js";
 
 // Returns true if the image element has at least one source, which could be a src attribute, a
 // srcset attribute, or an associate picture element with one or more source elements that has a
-// src or srcset attribute.
+// src or srcset attribute. This does not check the validity of the values of the attributes, just
+// the presence of such attributes.
 export function hasSource(image) {
   assert(image instanceof Element);
 
@@ -19,10 +20,6 @@ export function hasSource(image) {
     const sources = picture.getElementsByTagName('source');
     for(const source of sources) {
       if(source.hasAttribute('src') || source.hasAttribute('srcset')) {
-
-        // TEMP: tracing new functionality
-        console.debug('found associated <source>', image.outerHTML, source.outerHTML);
-
         return true;
       }
     }
@@ -31,30 +28,19 @@ export function hasSource(image) {
   return false;
 }
 
-// Return true if image has a valid src attribute value
-export function hasValidSource(image) {
-  assert(image instanceof Element);
-  return isValidURLString(image.getAttribute('src'));
-}
-
-// Return true if image has a non-empty srcset attribute value
-export function hasSrcset(image) {
-  assert(image instanceof Element);
-  const imageSrcset = image.getAttribute('srcset');
-  return imageSrcset && imageSrcset.trim();
-}
-
 // Searches for and returns the corresponding figcaption element
 export function findCaption(image) {
   assert(image instanceof Element);
-  let figcaption;
   const figure = image.closest('figure');
   if(figure) {
-    figcaption = figure.querySelector('figcaption');
+    const captions = figure.getElementsByTagName('figcaption');
+    if(captions && captions.length) {
+      return captions[0];
+    }
   }
-  return figcaption;
 }
 
+// Removes an image along with any baggage
 export function removeImage(image) {
   const figure = image.closest('figure');
   if(figure) {
@@ -63,6 +49,8 @@ export function removeImage(image) {
       caption.remove();
     }
 
+    // The figure may be used as a general container and contain content not related to the
+    // image. Removing it would risk data loss so instead unwrap it.
     unwrap(figure);
   }
 
@@ -73,6 +61,7 @@ export function removeImage(image) {
       source.remove();
     }
 
+    // Picture can also be used as general container, so remove it but retain its children
     unwrap(picture);
   }
 
