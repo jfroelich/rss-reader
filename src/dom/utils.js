@@ -142,7 +142,7 @@ export function renameElement(element, newName, copyAttributesFlag) {
 // @param toElement {Element}
 // @throws {Error} if either element is not an Element
 // @returns void
-export function copyAttributes(fromElement, toElement) {
+function copyAttributes(fromElement, toElement) {
   // Use getAttributeNames in preference to element.attributes due to performance issues with
   // element.attributes, and to allow unencumbered use of the for..of syntax (I had issues with
   // NamedNodeMap and for..of).
