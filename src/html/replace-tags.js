@@ -21,7 +21,6 @@ export function replaceTags(htmlString, replacement) {
 
   let doc;
 
-  // TODO: do not catch?
   try {
     doc = parseHTML(htmlString);
   } catch(error) {
