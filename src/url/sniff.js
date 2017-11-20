@@ -2,17 +2,16 @@
 
 import assert from "/src/utils/assert.js";
 import * as mime from "/src/utils/mime-utils.js";
+import {isAlphanumeric} from "/src/utils/string.js";
 
 // Return true if url probably represents a binary resource. This is shallow in the sense that it
 // does not actually investigate the bytes of the resource, nor does it fetch the resource. This
 // sniffer looks purely at the url itself.
 export default function isBinaryURL(url) {
   assert(url instanceof URL);
-
   if(url.protocol === 'data:') {
     return isBinaryDataURL(url);
   }
-
   return !hasTextProtocol(url) && hasBinaryExtension(url);
 }
 
@@ -54,6 +53,7 @@ function findMimeTypeInDataURL(url) {
 
 // Protocols which are known to be text
 // TODO: make exhaustive
+// TODO: do not repeat the ':', caller should strip it
 const TEXT_PROTOCOLS = [
   'tel:', 'mailto:', 'javascript:'
 ];
@@ -82,10 +82,10 @@ const EXTENSION_MAX_LENGTH = 255; // excluding '.'
 // @returns {String}
 function getExtensionFromURL(url) {
 
-  // It is counterintuitive at first glance but there is no need to first get the file name
-  // then get the extension. If there is a dot in a directory part of the path, there is still
-  // a trailing slash before the file name, which is not alphanumeric. If there is both a dot in
-  // a directory and a dot in the file name, the dot in the directory is not the last dot.
+  // There is no need to first get the file name then get the extension. If there is a dot in a
+  // directory part of the path, there is still a trailing slash before the file name, which is not
+  // alphanumeric. If there is both a dot in a directory and a dot in the file name, the dot in the
+  // directory is not the last dot.
 
   if(url.pathname.length >= PATH_WITH_EXTENSION_MIN_LENGTH) {
     const lastDotPos = url.pathname.lastIndexOf('.');

@@ -2,8 +2,7 @@
 // parameter to be of type URL, not String, unless otherwise specified.
 
 import assert from "/src/utils/assert.js";
-import * as mime from "/src/utils/mime-utils.js";
-import {isAlphanumeric, parseInt10} from "/src/utils/string.js";
+import {parseInt10} from "/src/utils/string.js";
 
 // This disaster of a function tries to clearly expose the risk of setting a URL's href property
 // directly. Whenever there is any doubt about whether the new href value is valid, this function
