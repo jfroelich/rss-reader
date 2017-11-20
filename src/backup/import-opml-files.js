@@ -97,14 +97,11 @@ async function importFile(file, readerConn, iconCache) {
 function removeOutlinesWithInvalidTypes(doc) {
   assert(doc instanceof Document);
   const elements = OPMLDocument.getOutlineElements(doc);
-  const initialLength = elements.length;
   for(const element of elements) {
     if(!OPMLOutline.elementHasValidType(element)) {
       element.remove();
     }
   }
-
-  return initialLength - elements.length;
 }
 
 function normalizeOutlineXMLURLs(doc) {
