@@ -1,6 +1,7 @@
+// HTML utilities
+
 import assert from "/src/utils/assert.js";
 import {isUncheckedError} from "/src/utils/errors.js";
-import {isPosInt} from "/src/utils/number.js";
 import parseHTML from "/src/html/parse-html.js";
 
 // Returns a new string where certain 'unsafe' characters in the input string have been replaced
@@ -59,47 +60,4 @@ export function replaceTags(htmlString, replacement) {
   }
 
   return nodeValues.join(replacement);
-}
-
-// Truncates an HTML string
-// @param htmlString {String}
-// @param position {Number} position after which to truncate
-// @param suffix {String} optional, appended after truncation, defaults to an ellipsis
-// @throws ParseError
-export function truncate(htmlString, position, suffix) {
-  assert(isPosInt(position));
-
-  // Tolerate some bad input for convenience
-  if(typeof htmlString !== 'string') {
-    return '';
-  }
-
-  const ELLIPSIS = '\u2026';
-  if(typeof suffix !== 'string') {
-    suffix = ELLIPSIS;
-  }
-
-  const doc = parseHTML(htmlString);
-  const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
-  let totalLength = 0;
-  // Search for the text node in which truncation should occur and truncate it
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
-    const value = node.nodeValue;
-    const valueLength = value.length;
-    if(totalLength + valueLength >= position) {
-      const remainingLength = position - totalLength;
-      node.nodeValue = value.substr(0, remainingLength) + suffix;
-      break;
-    } else {
-      totalLength += valueLength;
-    }
-  }
-
-  // Remove remaining nodes past the truncation point
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
-    node.remove();
-  }
-
-  return /<html/i.test(htmlString) ?
-    doc.documentElement.outerHTML : doc.body.innerHTML;
 }
