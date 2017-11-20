@@ -3,7 +3,7 @@
 import * as Entry from "/src/storage/entry.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
-import {escapeHTML} from "/src/html/html.js";
+import escapeHTML from "/src/html/escape.js";
 import htmlTruncate from "/src/html/truncate.js";
 import * as rdb from "/src/storage/rdb.js";
 import entryMarkRead from "/src/storage/entry-mark-read.js";
