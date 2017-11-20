@@ -1,11 +1,11 @@
 // Lowest common ancestor utility for the DOM
 
+// NOTE: this functionality is working, but it is only in use by an experimental module, so I have
+// decided to leave it out of the dom folder.
+
 // TODO: change findLCA to varargs, find the LCAs of whatever args given, instead of only 2.
 // In other words, change to (...nodes).
 // TODO: look again at native functionality, I think something in Range already does this?
-
-// TODO: consider moving this back to experimental. It is currently only used by an experimental
-// module, so it kind of doesn't belong here yet.
 
 import assert from "/src/utils/assert.js";
 
