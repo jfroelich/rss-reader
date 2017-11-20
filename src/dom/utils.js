@@ -153,19 +153,6 @@ function copyAttributes(fromElement, toElement) {
   }
 }
 
-export function renameElements(ancestorElement, oldName, newName, copyAttributes) {
-  assert(typeof oldName === 'string');
-  assert(typeof newName === 'string');
-
-  if(ancestorElement) {
-    assert(ancestorElement instanceof Element);
-    const elements = ancestorElement.querySelectorAll(oldName);
-    for(const element of elements) {
-      renameElement(element, newName, copyAttributes);
-    }
-  }
-}
-
 // Only looks at inline style.
 // Returns {'width': int, 'height': int} or undefined
 export function getDimensions(element) {
