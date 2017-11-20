@@ -46,6 +46,9 @@ export default function truncate(htmlString, position, suffix) {
     node.remove();
   }
 
+  // parseHTML introduces body text for fragments. If full text then return full text, otherwise
+  // strip the added elements
+
   return isNotFragment(htmlString) ? doc.documentElement.outerHTML : doc.body.innerHTML;
 }
 
