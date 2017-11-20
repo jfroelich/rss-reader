@@ -39,7 +39,7 @@ export function serializeSrcset(descriptors) {
 export function parseSrcsetWrapper(srcset) {
   const fallbackOutput = [];
 
-  // Try and avoid the call in case of unexpected output. Not an assertion error for convenience
+  // Try and avoid the call in case of unexpected input. Not an assertion error for convenience
   if(typeof srcset !== 'string') {
     return fallbackOutput;
   }
