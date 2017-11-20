@@ -1,4 +1,4 @@
-// DOM utilities
+// css utilities
 
 import assert from "/src/utils/assert.js";
 
