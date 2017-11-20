@@ -17,7 +17,7 @@ async function test(url) {
   const response = await fetch(url, options);
   const text = await response.text();
 
-  // TODO: use /src/html/parse-html.js
+  // TODO: use /src/html/parse.js
   const parser = new DOMParser();
   const doc = parser.parseFromString(text, mime.MIME_TYPE_HTML);
   filter_hidden_elements_using_style(doc);
