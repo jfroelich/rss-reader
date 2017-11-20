@@ -2,7 +2,7 @@
 
 import assert from "/src/utils/assert.js";
 import {check} from "/src/utils/errors.js";
-import * as OPMLOutline from "/src/opml/opml-outline.js";
+import * as OPMLOutline from "/src/opml/outline.js";
 
 // Create a new OPML document
 // @param title {String} optional document title
