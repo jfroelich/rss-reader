@@ -1,21 +1,21 @@
 // Options page view module
 
-import BG_IMAGES from "/src/bg-images.js";
-import {fadeElement} from "/src/dom/utils.js";
-import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {exportFeeds} from "/src/backup/export-feeds.js";
+import readerImportFiles from "/src/backup/import-opml-files.js";
+import BG_IMAGES from "/src/bg-images.js";
+import fadeElement from "/src/dom/fade-element.js";
+import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {
   hasBrowserPermission,
   requestBrowserPermission,
   removeBrowserPermission
 } from "/src/extension.js";
-import * as Feed from "/src/storage/feed.js";
 import FONTS from "/src/fonts.js";
 import htmlTruncate from "/src/html/truncate.js";
-import readerImportFiles from "/src/backup/import-opml-files.js";
 import * as rdb from "/src/storage/rdb.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
+import * as Feed from "/src/storage/feed.js";
 import assert from "/src/utils/assert.js";
 import * as mime from "/src/utils/mime-utils.js";
 import {parseInt10} from "/src/utils/string.js";

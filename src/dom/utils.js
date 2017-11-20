@@ -26,26 +26,6 @@ export function getDefaultStylesheet() {
   }
 }
 
-// TODO: this could use some cleanup or at least some clarifying comments
-export function fadeElement(element, durationSecs, delaySecs) {
-  return new Promise(function executor(resolve, reject) {
-    const style = element.style;
-    assert(style);
-    if(style.display === 'none') {
-      style.opacity = '0';
-      style.display = 'block';
-    } else {
-      style.opacity = '1';
-    }
-
-    element.addEventListener('webkitTransitionEnd', resolve, {'once': true});
-
-    // property duration function delay
-    style.transition = `opacity ${durationSecs}s ease ${delaySecs}s`;
-    style.opacity = style.opacity === '1' ? '0' : '1';
-  });
-}
-
 // Find the lowest common ancestor of two nodes. Assumes node1 does not contain node2, and node2
 // does not contain node1.
 //
