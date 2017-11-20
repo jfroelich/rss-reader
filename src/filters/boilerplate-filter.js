@@ -1,8 +1,9 @@
 // Boilerplate filtering module
 
-import {findCaption} from "/src/dom/image.js";
 import assert from "/src/utils/assert.js";
 import {condenseWhitespace} from "/src/utils/string.js";
+
+
 
 export default function boilerplateFilter(doc) {
   assert(doc instanceof Document);
@@ -187,6 +188,18 @@ function deriveImageTextBias(image) {
   }
 
   return bias;
+}
+
+// Searches for and returns the corresponding figcaption element
+function findCaption(image) {
+  assert(image instanceof Element);
+  const figure = image.closest('figure');
+  if(figure) {
+    const captions = figure.getElementsByTagName('figcaption');
+    if(captions && captions.length) {
+      return captions[0];
+    }
+  }
 }
 
 function deriveImageAreaBias(image) {

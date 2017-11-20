@@ -27,18 +27,6 @@ export function hasSource(image) {
   return false;
 }
 
-// Searches for and returns the corresponding figcaption element
-export function findCaption(image) {
-  assert(image instanceof Element);
-  const figure = image.closest('figure');
-  if(figure) {
-    const captions = figure.getElementsByTagName('figcaption');
-    if(captions && captions.length) {
-      return captions[0];
-    }
-  }
-}
-
 // Removes an image along with any baggage
 export function removeImage(image) {
   const figure = image.closest('figure');
