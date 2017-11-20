@@ -11,7 +11,8 @@ import parseHTML from "/src/html/parse.js";
 import * as rdb from "/src/storage/rdb.js";
 import {entryAdd} from "/src/storage/storage.js";
 import rewriteURL from "/src/jobs/poll/rewrite-url.js";
-import {setURLHrefProperty, sniffIsBinaryURL} from "/src/url/url.js";
+import sniffIsBinaryURL from "/src/url/sniff.js";
+import {setURLHrefProperty} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
 
 export class Context {
