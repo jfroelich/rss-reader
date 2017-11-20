@@ -1,6 +1,6 @@
 
 import assert from "/src/utils/assert.js";
-import unwrap from "/src/unwrap-element.js";
+import unwrap from "/src/dom/unwrap-element.js";
 
 export default function unwrapDescendantsMatchingSelector(ancestorElement, selector) {
   assert(ancestorElement instanceof Element);
