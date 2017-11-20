@@ -6,7 +6,7 @@ import parseHTML from "/src/html/parse-html.js";
 
 // Replaces tags in the input string with the replacement. If no replacement, then removes the
 // tags.
-export function replaceTags(htmlString, replacement) {
+export default function replaceTags(htmlString, replacement) {
   assert(typeof htmlString === 'string');
 
   // Fast case for empty strings
