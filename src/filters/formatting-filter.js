@@ -1,6 +1,6 @@
 // Remove certain formatting elements from document content
 
-import {unwrapElements} from "/src/dom/utils.js";
+import unwrapElements from "/src/dom/unwrap-elements.js";
 import assert from "/src/utils/assert.js";
 
 const SELECTOR = [
@@ -8,12 +8,11 @@ const SELECTOR = [
   'meter', 'nobr', 'span', 'big', 'blink', 'font', 'plaintext', 'small', 'tt'
 ].join(',');
 
-export default function formattingFilter(doc) {
-  assert(doc instanceof Document);
-
-  if(!doc.body) {
+export default function filterDocument(document) {
+  assert(document instanceof Document);
+  if(!document.body) {
     return;
   }
 
-  unwrapElements(doc.body, SELECTOR);
+  unwrapElements(document.body, SELECTOR);
 }

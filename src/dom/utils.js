@@ -11,7 +11,6 @@ import unwrap from "/src/unwrap-element.js";
 // @returns rule {???}
 export function findCSSRule(sheet, selectorText) {
   assert(sheet);
-
   for(const rule of sheet.cssRules) {
     if(rule.selectorText === selectorText) {
       return rule;
@@ -27,19 +26,9 @@ export function getDefaultStylesheet() {
   }
 }
 
-export function unwrapElements(ancestorElement, selector) {
-  assert(ancestorElement instanceof Element);
-  assert(typeof selector === 'string');
-  const elements = ancestorElement.querySelectorAll(selector);
-  for(const element of elements) {
-    unwrap(element);
-  }
-}
-
 // Only looks at inline style.
 // Returns {'width': int, 'height': int} or undefined
 export function getDimensions(element) {
-
   // Accessing element.style is a performance heavy operation sometimes, so try and avoid access.
   if(!element.hasAttribute('style')) {
     return;
