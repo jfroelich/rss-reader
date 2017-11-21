@@ -1,10 +1,7 @@
 // Utilities for working with app feeds
 
 import assert from "/src/utils/assert.js";
-import replaceTags from "/src/html/replace-tags.js";
-import htmlTruncate from "/src/html/truncate.js";
 import {isPosInt} from "/src/utils/number.js";
-import {condenseWhitespace, filterControls} from "/src/utils/string.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 
 export function create() {
@@ -67,51 +64,6 @@ export function createIconLookupURL(feed) {
   const urlString = peekURL(feed);
   const urlObject = new URL(urlString);
   return new URL(urlObject.origin);
-}
-
-// TODO: move to reader-storage.js
-// Returns a shallow copy of the input feed with sanitized properties
-export function sanitize(feed, titleMaxLength, descMaxLength) {
-  assert(isFeed(feed));
-
-  const DEFAULT_TITLE_MAX_LEN = 1024;
-  const DEFAULT_DESC_MAX_LEN = 1024 * 10;
-
-  if(typeof titleMaxLength === 'undefined') {
-    titleMaxLength = DEFAULT_TITLE_MAX_LEN;
-  } else {
-    assert(isPosInt(titleMaxLength));
-  }
-
-  if(typeof descMaxLength === 'undefined') {
-    descMaxLength = DEFAULT_DESC_MAX_LEN;
-  } else {
-    assert(isPosInt(descMaxLength));
-  }
-
-  const outputFeed = Object.assign({}, feed);
-  const tagReplacement = '';
-  const suffix = '';
-
-  if(outputFeed.title) {
-    let title = outputFeed.title;
-    title = filterControls(title);
-    title = replaceTags(title, tagReplacement);
-    title = condenseWhitespace(title);
-    title = htmlTruncate(title, titleMaxLength, suffix);
-    outputFeed.title = title;
-  }
-
-  if(outputFeed.description) {
-    let desc = outputFeed.description;
-    desc = filterControls(desc);
-    desc = replaceTags(desc, tagReplacement);
-    desc = condenseWhitespace(desc);
-    desc = htmlTruncate(desc, descMaxLength, suffix);
-    outputFeed.description = desc;
-  }
-
-  return outputFeed;
 }
 
 // Returns a new object that results from merging the old feed with the new feed. Fields from the

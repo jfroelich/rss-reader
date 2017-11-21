@@ -11,7 +11,7 @@ import htmlTruncate from "/src/html/truncate.js";
 import {isPosInt} from "/src/utils/number.js";
 import {filterEmptyProps} from "/src/utils/object.js";
 import * as rdb from "/src/storage/rdb.js";
-import {filterControls, condenseWhitespace} from "/src/utils/string.js";
+import {condenseWhitespace, filterControls} from "/src/utils/string.js";
 
 export async function feedPut(feed, conn, skipPrep) {
   assert(Feed.isFeed(feed));
@@ -21,7 +21,7 @@ export async function feedPut(feed, conn, skipPrep) {
   if(skipPrep) {
     storable = feed;
   } else {
-    storable = Feed.sanitize(feed);
+    storable = sanitizeFeed(feed);
     storable = filterEmptyProps(storable);
   }
 
@@ -35,6 +35,51 @@ export async function feedPut(feed, conn, skipPrep) {
   storable.id = newId;
   return storable;
 }
+
+// Returns a shallow copy of the input feed with sanitized properties
+export function sanitize(feed, titleMaxLength, descMaxLength) {
+  assert(isFeed(feed));
+
+  const DEFAULT_TITLE_MAX_LEN = 1024;
+  const DEFAULT_DESC_MAX_LEN = 1024 * 10;
+
+  if(typeof titleMaxLength === 'undefined') {
+    titleMaxLength = DEFAULT_TITLE_MAX_LEN;
+  } else {
+    assert(isPosInt(titleMaxLength));
+  }
+
+  if(typeof descMaxLength === 'undefined') {
+    descMaxLength = DEFAULT_DESC_MAX_LEN;
+  } else {
+    assert(isPosInt(descMaxLength));
+  }
+
+  const outputFeed = Object.assign({}, feed);
+  const tagReplacement = '';
+  const suffix = '';
+
+  if(outputFeed.title) {
+    let title = outputFeed.title;
+    title = filterControls(title);
+    title = replaceTags(title, tagReplacement);
+    title = condenseWhitespace(title);
+    title = htmlTruncate(title, titleMaxLength, suffix);
+    outputFeed.title = title;
+  }
+
+  if(outputFeed.description) {
+    let desc = outputFeed.description;
+    desc = filterControls(desc);
+    desc = replaceTags(desc, tagReplacement);
+    desc = condenseWhitespace(desc);
+    desc = htmlTruncate(desc, descMaxLength, suffix);
+    outputFeed.description = desc;
+  }
+
+  return outputFeed;
+}
+
 
 export async function entryAdd(entry, conn) {
   assert(Entry.isEntry(entry));
