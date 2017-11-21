@@ -1,8 +1,7 @@
 // Misc errors and error-related utilities
 
-// TODO: message should be varargs, like ...message, wait for sprintf.js to settle
-
 import {AssertionError} from "/src/assert.js";
+import sprintf from "/src/utils/sprintf.js";
 
 const LOG_CHECKED_ERRORS = false;
 
@@ -10,13 +9,14 @@ const LOG_CHECKED_ERRORS = false;
 // error. assert is intended to be used only for "this should never happen situations" that
 // represent static programming errors based on very faulty assumptions. Checked errors represent
 // errors that happen in expected, typical situations, such as receiving bad input.
-export function check(condition, errorConstructor, message) {
+export function check(condition, errorConstructor, ...varargs) {
   if(condition) {
     return;
   }
 
   errorConstructor = errorConstructor || Error;
-  message = message || 'Unknown error';
+
+  const message = sprintf(...varargs) || 'Unknown error';
 
   const error = new errorConstructor(message);
 
