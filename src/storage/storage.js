@@ -37,8 +37,8 @@ export async function feedPut(feed, conn, skipPrep) {
 }
 
 // Returns a shallow copy of the input feed with sanitized properties
-export function sanitize(feed, titleMaxLength, descMaxLength) {
-  assert(isFeed(feed));
+function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
+  assert(Feed.isFeed(feed));
 
   const DEFAULT_TITLE_MAX_LEN = 1024;
   const DEFAULT_DESC_MAX_LEN = 1024 * 10;
