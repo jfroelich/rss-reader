@@ -54,14 +54,10 @@ export default function sprintf(...args) {
     // Replace the thing with the argument, and advance the index
     // The post-increment write occurs after the value is read
     switch(match) {
-    case '%s':
-      return '' + args[argIndex++];
-    case '%d':
-      return numberToString(args[argIndex++]);
-    case '%o':
-      return objectToString(args[argIndex++]);
-    default:
-      return match;
+    case '%s':  return valueToString(args[argIndex++]);
+    case '%d':  return numberToString(args[argIndex++]);
+    case '%o':  return objectToString(args[argIndex++]);
+    default:    return match;
     }
   });
 
