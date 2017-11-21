@@ -86,7 +86,8 @@ export default function sprintf(...args) {
     buffer.push(' ' + anyTypeToStringString(args[argIndex]));
   }
 
-  // TODO: is empty string required or would buffer.join() work?
+  // If no parameter is passed to join, it uses a comma. Use an empty string so that elements in the
+  // buffer are appended contiguously.
   return buffer.join('');
 }
 
