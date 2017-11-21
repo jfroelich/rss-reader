@@ -5,8 +5,8 @@ import {isUncheckedError} from "/src/utils/errors.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import * as Feed from "/src/storage/feed.js";
 import {promiseEvery} from "/src/utils/promise.js";
+import feedPut from "/src/storage/feed-put.js";
 import * as rdb from "/src/storage/rdb.js";
-import {feedPut} from "/src/storage/storage.js";
 
 export default async function main(readerConn, iconCache) {
   assert(rdb.isOpen(readerConn));

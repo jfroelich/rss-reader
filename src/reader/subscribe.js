@@ -10,7 +10,7 @@ import fetchFeed from "/src/fetch/fetch-feed.js";
 import isAllowedURL from "/src/fetch/fetch-policy.js";
 import * as rdb from "/src/storage/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";
-import {feedPut} from "/src/storage/storage.js";
+import feedPut from "/src/storage/feed-put.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 
 export function Context() {

@@ -9,7 +9,7 @@ import {promiseEvery} from "/src/utils/promise.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import {getFeeds as readerDbGetFeeds} from "/src/storage/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";
-import {feedPut} from "/src/storage/storage.js";
+import feedPut from "/src/storage/feed-put.js";
 
 export function PollFeedsContext() {
   this.readerConn = undefined;
