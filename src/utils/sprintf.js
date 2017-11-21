@@ -21,6 +21,11 @@ export default function sprintf(...args) {
   // args uses spread operator, so it will be defined even when there are no arguments. When there
   // are no arguments, args.length will be 0.
 
+  // We cannot rely on assert.js because assert.js relies on this. Also, we don't want to raise
+  // an error within assert. Therefore, use the builtin weak assert to test the assumption that
+  // a spread argument is always defined, to clarify why calling args.length would fail.
+  console.assert(args);
+
   // Cache the number of args. It will not change for the rest of this function. Internally it is
   // implemented as a 'getter' function, so it is faster to cache than re-evaluate the getter each
   // time.
@@ -78,6 +83,8 @@ export default function sprintf(...args) {
   for(; argIndex < argCount; argIndex++) {
     buffer.push(' ' + anyTypeToStringString(args[argIndex]));
   }
+
+  // TODO: is empty string required or would buffer.join() work?
   return buffer.join('');
 }
 
@@ -85,8 +92,12 @@ function anyTypeToNumberString(value) {
   if(typeof value === 'number') {
 
     if(Object.is(value, -0)) {
+      // Special case for negative zero because otherwise ('' + -0) yields '0'.
+      // This matches console.log behavior.
       return '-0';
     } else {
+      // Convert the number to a string. I've chosen this syntax because apparently it is faster
+      // than calling the String constructor (either as a function or a constructor function).
       return '' + value;
     }
 
@@ -95,6 +106,8 @@ function anyTypeToNumberString(value) {
   }
 }
 
+// Cache the reference to the native function so that the property lookup does not occur each
+// time anyTypeToObjectString is evaluated.
 const nativeHasOwn = Object.prototype.hasOwnProperty;
 
 // Convert an object into a string. This does not assume the input is an object.
