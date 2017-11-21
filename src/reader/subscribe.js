@@ -51,7 +51,7 @@ export async function subscribe(feed) {
 
   // Check whether policy permits subscribing to the url
   const urlObject = new URL(url);
-  check(isAllowedURL(urlObject), PermissionsError, urlObject.href + ' not permitted');
+  check(isAllowedURL(urlObject), PermissionsError, urlObject, 'not permitted');
 
   // Check that user is not already subscribed
   let priorFeedId = await rdb.findFeedIdByURL(this.readerConn, url);
@@ -65,7 +65,7 @@ export async function subscribe(feed) {
     if(res.redirected) {
       // Check whether policy permits subscribing to the redirected url
       setURLHrefProperty(urlObject, res.responseURL);
-      check(isAllowedURL(urlObject), PermissionsError, urlObject.href + ' not permitted');
+      check(isAllowedURL(urlObject), PermissionsError, urlObject, 'not permitted');
 
       // Check that user is not already subscribed now that we know redirect
       priorFeedId = await rdb.findFeedIdByURL(this.readerConn, res.responseURL);

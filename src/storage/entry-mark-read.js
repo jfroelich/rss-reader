@@ -23,12 +23,12 @@ export default async function entryMarkRead(conn, id) {
   // deleted somehow, such as by a background task, and the slideshow never the less calls this
   // function unaware. Until the time the slideshow can properly reflect the state of the model
   // consistently, this is better done as a check than an assert.
-  check(entry, rdb.NotFoundError, '' + id);
+  check(entry, rdb.NotFoundError, id);
 
   // TODO: I am not sure this check is strict enough. Technically the entry should always be
   // in the UNREAD state at this point.
   check(entry.readState !== Entry.STATE_READ, rdb.InvalidStateError,
-    'entry ' + id + ' already in read state');
+    'entry %d already in read state', id);
 
   // The entry should ALWAYS have a url
   assert(Entry.hasURL(entry));

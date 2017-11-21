@@ -8,6 +8,6 @@ import {getElementName} from "/src/xml/utils.js";
 export default function parseOPML(xmlString) {
   const doc = parseXML(xmlString);
   const name = getElementName(doc.documentElement);
-  check(name === 'opml', ParseError, 'document element "' + name + '" is not opml');
+  check(name === 'opml', ParseError, 'document element "%s" is not opml', name);
   return doc;
 }

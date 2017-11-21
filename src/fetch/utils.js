@@ -19,14 +19,13 @@ import {isValidURLString} from "/src/url/url-string.js";
 export async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
   const response = await fetchWithTimeout(url, options, timeoutMs);
   assert(response);
-  check(response.ok, FetchError, 'Response not ok for url ' + url + ', status is ' +
-    response.status);
+  check(response.ok, FetchError, 'Response not ok for url', url, 'and status is', response.status);
 
   const HTTP_STATUS_NO_CONTENT = 204;
-  check(response.status !== HTTP_STATUS_NO_CONTENT, FetchError, 'no content response ' + url);
+  check(response.status !== HTTP_STATUS_NO_CONTENT, FetchError, 'No content response', url);
 
   if(typeof acceptPredicate === 'function') {
-    check(acceptPredicate(response), FetchError, 'response not accepted ' + url);
+    check(acceptPredicate(response), FetchError, 'Response not accepted', url);
   }
 
   // TODO: create a ReaderResponse class and use that instead of a simple object?
@@ -88,11 +87,12 @@ export async function fetchWithTimeout(url, options, timeoutMs) {
 // decided to use TypeError as a catch-all type of error.
 async function fetchWithTranslatedErrors(url, options) {
 
+  // TODO: should these checks be asserts?
   // Explicitly check for and throw type errors in parameters passed to this function in order to
   // avoid ambiguity between (1) type errors thrown by fetch due to improper variable type and (2)
   // type errors thrown by fetch due to network errors. Coincidently this also affects a class of
   // invalid inputs to fetch where fetch implicitly converts non-string urls to strings
-  check(typeof url === 'string', TypeError, 'url ' + url + ' must be a string');
+  check(typeof url === 'string', TypeError, 'url', url, 'must be a string');
   check(typeof options === 'undefined' || typeof options === 'object', TypeError,
     'options must be undefined or an object');
 

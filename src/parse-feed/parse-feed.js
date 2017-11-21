@@ -33,7 +33,7 @@ function unmarshallXML(document) {
   const documentElementName = getElementName(documentElement);
   const supportedNames = ['feed', 'rdf', 'rss'];
   check(supportedNames.includes(documentElementName), ParseError,
-    'unsupported document element: ' + documentElementName);
+    'unsupported document element', documentElementName);
   const channelElement = findChannelElement(documentElement);
   check(channelElement, ParseError, 'missing channel element');
 

@@ -40,7 +40,7 @@ export default async function fetchImageHead(url, timeoutMs) {
     console.debug('allowing unknown content type of response when requesting', url);
   } else {
     check(mime.isImage(contentType), FetchUtils.FetchError,
-      'Response content type not an image mime type: ' + contentType + ' for url ' + url);
+      'Response content type not an image mime type', contentType, 'for url', url);
   }
 
   // TODO: create and use ResponseWrapper?
