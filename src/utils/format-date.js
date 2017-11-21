@@ -1,11 +1,6 @@
-// Date utilities
-
-// TODO: this file only includes one function. Rename the file to format-date.js, and
-// export the function as default
-
 import assert from "/src/utils/assert.js";
 
-export function formatDate(date, delimiter) {
+export default function formatDate(date, delimiter) {
   // Tolerate some forms bad input
   if(!date) {
     return '';

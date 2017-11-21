@@ -9,7 +9,7 @@ import * as rdb from "/src/storage/rdb.js";
 import entryMarkRead from "/src/storage/entry-mark-read.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import assert from "/src/utils/assert.js";
-import {formatDate} from "/src/utils/date.js";
+import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";
 import {parseInt10} from "/src/utils/string.js";
 

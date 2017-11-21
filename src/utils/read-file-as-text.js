@@ -1,5 +1,3 @@
-// File utilities module
-
 import assert from "/src/utils/assert.js";
 
 // @param file {File}
