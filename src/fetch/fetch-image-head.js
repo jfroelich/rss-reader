@@ -6,7 +6,7 @@
 // TODO: side note, does HEAD yield 204? If so, 204 isn't an error. So using fetchInternal
 // would be wrong, at least as it is currently implemented.
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import {check} from "/src/utils/errors.js";
 import * as FetchUtils from "/src/fetch/utils.js";
 import * as mime from "/src/utils/mime-utils.js";

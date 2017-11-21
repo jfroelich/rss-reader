@@ -1,7 +1,7 @@
 // Unwraps non-semantic container-like elements from a document
 
 import unwrapElements from "/src/dom/unwrap-elements.js";
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 export default function filterDocument(document) {
   assert(document instanceof Document);

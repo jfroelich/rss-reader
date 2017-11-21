@@ -1,6 +1,6 @@
 // Favicion lookup functionality
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import FaviconCache from "/src/favicon/cache.js";
 import fetchHTML from "/src/fetch/fetch-html.js";

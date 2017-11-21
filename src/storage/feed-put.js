@@ -1,6 +1,4 @@
-// Reader storage module, basically a layer above rdb.js that adds functionality
-
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import * as Feed from "/src/storage/feed.js";
 import replaceTags from "/src/html/replace-tags.js";
 import htmlTruncate from "/src/html/truncate.js";

@@ -1,6 +1,6 @@
 // Utilities for working with strings that represent urls
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 // Allows for leading whitespace characters. Returns true for javascript: and mailto: and data:.
 // Returns true for https:// and http://. Returns false for '//' (protocol-relative).

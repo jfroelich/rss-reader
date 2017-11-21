@@ -2,7 +2,7 @@
 
 import findLCA from "/src/experimental/lca.js";
 import {isHiddenElement} from "/src/dom/visibility.js";
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other

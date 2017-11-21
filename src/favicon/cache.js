@@ -7,7 +7,7 @@
 // is the connection. On the other hand, it makes testing easier?
 // TODO: should the default max age constant probably be exported separately?
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import * as idb from "/src/utils/idb.js";
 
 export default class FaviconCache {

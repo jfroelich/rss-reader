@@ -1,6 +1,6 @@
 // For polling an individual entry when polling feeds
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import {INACCESSIBLE_CONTENT_DESCRIPTORS} from "/src/config.js";
 import * as Entry from "/src/storage/entry.js";
 import {check, isUncheckedError} from "/src/utils/errors.js";

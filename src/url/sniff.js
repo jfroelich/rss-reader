@@ -1,6 +1,6 @@
 // shallow sniffing of url
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import * as mime from "/src/utils/mime-utils.js";
 import {isAlphanumeric} from "/src/utils/string.js";
 

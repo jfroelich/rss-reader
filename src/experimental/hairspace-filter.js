@@ -6,7 +6,7 @@
 // TODO: this needs testing to test whether it actually works, I don't think this works, because
 // of how entities are decoded when accessing nodeValue
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 export function hairspaceFilter(doc) {
   assert(doc instanceof Document);

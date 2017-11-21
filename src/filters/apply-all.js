@@ -1,6 +1,6 @@
 // Functionality for applying all of the application's filters to a document
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import adoptionAgencyFilter from "/src/filters/adoption-agency-filter.js";
 import attributeFilter from "/src/filters/attribute-filter.js";
 import baseFilter from "/src/filters/base-filter.js";

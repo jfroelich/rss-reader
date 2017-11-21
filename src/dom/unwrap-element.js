@@ -1,6 +1,6 @@
 // HTML element unwrap helper
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 // Replace an element with its children. Special care is taken to add spaces if the operation would
 // result in adjacent text nodes.

@@ -5,7 +5,7 @@
 // try. Or, I should create the class and functions operating on elements should be refactored to
 // operate on class properties.
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 export function isOutline(outline) {
   return typeof outline === 'object';

@@ -1,6 +1,6 @@
 // Image element utilities
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import unwrap from "/src/dom/unwrap-element.js";
 
 // Returns true if the image element has at least one source, which could be a src attribute, a

@@ -1,7 +1,7 @@
 // Transforms lazily-loaded images found in document content
 
 import {hasSource} from "/src/dom/image.js";
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import {isValidURLString} from "/src/url/url-string.js";
 
 const kLazyAttributeNames = [

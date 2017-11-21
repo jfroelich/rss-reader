@@ -1,6 +1,6 @@
 // Removes or changes frame and frame-related elements in document content
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify

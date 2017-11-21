@@ -1,6 +1,6 @@
 // Boilerplate filtering module
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import {condenseWhitespace} from "/src/utils/string.js";
 
 

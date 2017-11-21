@@ -3,7 +3,7 @@
 // TODO: look into skipping child element copy if target is void.
 // See https://html.spec.whatwg.org/multipage/syntax.html#void-elements
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 // Changes the tag name of an element. No checking is done regarding whether the result is
 // semantically correct. For example, there is no guarantee that the attributes fit the new

@@ -1,7 +1,7 @@
 
 // TODO: again, rename to something better, like display-settings.js?
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import * as CSSUtils from "/src/dom/css-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 

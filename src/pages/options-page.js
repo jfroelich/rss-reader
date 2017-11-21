@@ -16,7 +16,7 @@ import * as rdb from "/src/storage/rdb.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
 import * as Feed from "/src/storage/feed.js";
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import * as mime from "/src/utils/mime-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 

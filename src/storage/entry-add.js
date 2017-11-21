@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import replaceTags from "/src/html/replace-tags.js";
 import htmlTruncate from "/src/html/truncate.js";

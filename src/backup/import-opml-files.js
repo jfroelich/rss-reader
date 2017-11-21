@@ -7,7 +7,7 @@ import parseOPML from "/src/opml/parse.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import * as Feed from "/src/storage/feed.js";
 import * as rdb from "/src/storage/rdb.js";
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import * as idb from "/src/utils/idb.js";
 import * as mime from "/src/utils/mime-utils.js";
 import {promiseEvery} from "/src/utils/promise.js";

@@ -1,7 +1,7 @@
 // Changes the names of certain elements in document content
 
 import coerceElement from "/src/dom/coerce-element.js";
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 // Use shorter names for common elements
 // @param copyAttributesFlag {Boolean} optional, if true then copy attributes when renaming

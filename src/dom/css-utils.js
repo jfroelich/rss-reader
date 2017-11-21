@@ -1,6 +1,6 @@
 // css utilities
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 // Returns the first matching css rule within the given sheet, or undefined if no rules match.
 //

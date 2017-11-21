@@ -1,6 +1,6 @@
 // Fetch utilities
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import {check, TimeoutError} from "/src/utils/errors.js";
 import * as mime from "/src/utils/mime-utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";

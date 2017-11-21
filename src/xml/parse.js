@@ -6,7 +6,7 @@
 // parsing brings with it a ton of complexity. Another thing to consider is a streaming parser,
 // e.g. SAX-style, perhaps that would be faster?
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import {ParseError} from "/src/utils/errors.js";
 import * as mime from "/src/utils/mime-utils.js";
 import {condenseWhitespace} from "/src/utils/string.js";

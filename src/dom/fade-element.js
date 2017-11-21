@@ -1,6 +1,6 @@
 // Fades an element into or out of view
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 // TODO: this could use some cleanup or at least some clarifying comments
 export default function fadeElement(element, durationSecs, delaySecs) {

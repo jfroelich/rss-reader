@@ -1,6 +1,4 @@
-// feed entry object utilities
-
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 

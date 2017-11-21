@@ -1,6 +1,6 @@
 // Module for interacting with the app indexedDB database
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import * as Feed from "/src/storage/feed.js";
 import * as idb from "/src/utils/idb.js";
@@ -10,24 +10,6 @@ import {isValidURLString} from "/src/url/url-string.js";
 const NAME = 'reader';
 const VERSION = 20;
 const OPEN_TIMEOUT_MS = 500;
-
-export class ConstraintError extends Error {
-  constructor(message) {
-    super(message);
-  }
-}
-
-export class NotFoundError extends Error {
-  constructor(key) {
-    super('Object not found for key ' + key);
-  }
-}
-
-export class InvalidStateError extends Error {
-  constructor(message) {
-    super(message);
-  }
-}
 
 // Opens a connection to the reader-db database
 // @return {Promise} a promise that resolves to an open database connection
@@ -407,4 +389,22 @@ export function removeEntries(conn, ids) {
       store.delete(id);
     }
   });
+}
+
+export class ConstraintError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
+export class NotFoundError extends Error {
+  constructor(key) {
+    super('Object not found for key ' + key);
+  }
+}
+
+export class InvalidStateError extends Error {
+  constructor(message) {
+    super(message);
+  }
 }

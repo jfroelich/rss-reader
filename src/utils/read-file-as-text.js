@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 // @param file {File}
 // @returns {Promise}

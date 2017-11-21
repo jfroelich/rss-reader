@@ -1,6 +1,6 @@
 // Filters certain anchor elements from document content
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import unwrap from "/src/dom/unwrap-element.js";
 
 // An anchor that acts like a span can be unwrapped. Currently misses anchors that have href attr

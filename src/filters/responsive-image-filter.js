@@ -5,7 +5,7 @@
 // and changes them to use one of the descriptors from the srcset as the src.
 
 import {parseSrcsetWrapper} from "/src/dom/srcset.js";
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 export default function main(doc) {
   assert(doc instanceof Document);

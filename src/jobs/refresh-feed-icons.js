@@ -1,6 +1,6 @@
 // Functionality for refreshing feed favicons
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import * as Feed from "/src/storage/feed.js";

@@ -15,7 +15,7 @@
 // TODO: consider a test that compares whether foreground color is too close to background color.
 // This kind of applies only to text nodes.
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import {parseInt10} from "/src/utils/string.js";
 
 // Checks whether an element is hidden because the element itself is hidden, or any of its

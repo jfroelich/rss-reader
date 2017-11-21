@@ -6,7 +6,7 @@
 // TODO: assert feed has one or more urls
 // TODO: assert the type of each property?
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import {check} from "/src/utils/errors.js";
 import * as Feed from "/src/storage/feed.js";
 

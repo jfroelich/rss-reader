@@ -1,6 +1,6 @@
 // Module for filtering element attributes from document content
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 // @param doc {Document}
 // @param whitelist {Object} each property is element name, each value is array

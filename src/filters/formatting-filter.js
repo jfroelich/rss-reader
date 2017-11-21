@@ -1,7 +1,7 @@
 // Remove certain formatting elements from document content
 
 import unwrapElements from "/src/dom/unwrap-elements.js";
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 const SELECTOR = [
   'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend', 'mark', 'marquee',

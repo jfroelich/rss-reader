@@ -1,15 +1,15 @@
-// Utilities for working with app feeds
-
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 
+// Create a feed
 export function create() {
   return {};
 }
 
-export function isFeed(feed) {
-  return typeof feed === 'object';
+// Return true if the input value is a feed
+export function isFeed(value) {
+  return typeof value === 'object';
 }
 
 export const isValidId = isPosInt;

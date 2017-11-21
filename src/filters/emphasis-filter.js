@@ -1,6 +1,6 @@
 // Filters certain occurrences of emphasized content from document content
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import unwrap from "/src/dom/unwrap-element.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 

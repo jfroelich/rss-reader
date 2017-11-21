@@ -7,7 +7,7 @@
 // In other words, change to (...nodes).
 // TODO: look again at native functionality, I think something in Range already does this?
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 
 // Find the lowest common ancestor of two nodes.
 

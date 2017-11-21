@@ -25,7 +25,7 @@
 // TODO: I think it would make sense to clearly enumerate the use cases, then revisit how well the
 // abstraction responds to each case.
 
-import assert from "/src/utils/assert.js";
+import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import * as Feed from "/src/storage/feed.js";
 import {parseFeed as parseFeedImpl} from "/src/parse-feed/parse-feed.js";
