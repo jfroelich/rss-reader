@@ -1,5 +1,7 @@
 // Misc errors and error-related utilities
 
+// TODO: message should be varargs, like ...message, wait for sprintf.js to settle
+
 import {AssertionError} from "/src/assert.js";
 
 const LOG_CHECKED_ERRORS = false;
@@ -8,8 +10,6 @@ const LOG_CHECKED_ERRORS = false;
 // error. assert is intended to be used only for "this should never happen situations" that
 // represent static programming errors based on very faulty assumptions. Checked errors represent
 // errors that happen in expected, typical situations, such as receiving bad input.
-// TODO: message should be varargs, like ...message, but to do that I need to first implement some
-// kind of printf function that simulates how console log functions accept parameters
 export function check(condition, errorConstructor, message) {
   if(condition) {
     return;

@@ -1,5 +1,7 @@
 // Assertions library
 
+// TODO: change assert to accept varargs instead of message once sprintf.js settles
+
 // If true, any assertion errors are immediately logged. This helps avoid issues with promise-
 // swallowed exceptions
 const LOG_ERRORS = true;

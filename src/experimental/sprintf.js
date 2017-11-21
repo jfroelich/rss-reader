@@ -1,9 +1,9 @@
-// A simple, slightly perverse, implementation of the sprintf function, adapted for JavaScript.
-// Much of this implementation was inspired by node.js's utils.format function.
+// A simple, slightly perverse, implementation of c's sprintf function, adapted for JavaScript.
+// Much of the original implementation was inspired by node.js's utils.format function.
 // Because strings are immutable, this cannot write to a string reference-pointer thing, so instead
 // the output of the function is the string. So the name of the function is a bit misleading. The
 // other major difference is that this operates more like console.log, and that this only supports
-// a subset of the formatting syntax.
+// a subset of the formatting syntax, and works a bit differently for certain expressions.
 
 // Match occurrences of %s, %d, %o
 const syntaxPattern = /%[sdo]/g;
@@ -19,15 +19,15 @@ export default function sprintf(...args) {
   // time.
   const argCount = args.length;
 
-  // Handle the simple no arguments case. Note this returns undefined in this case, not a string.
+  // Handle the simple no arguments case
+  // TODO: would it be more appropriate to return undefined in this case?
   if(argCount === 0) {
-    return;
+    return '';
   }
 
   // Track where we are in interating over arguments
   let argIndex = 0;
 
-  // The first argument is the formatArg
   const formatArg = args[argIndex];
 
   // If the first argument isn't a string, then just group the arguments together as a string
@@ -57,13 +57,9 @@ export default function sprintf(...args) {
     case '%s':
       return '' + args[argIndex++];
     case '%d':
-      return Number(args[argIndex++]);
+      return numberToString(args[argIndex++]);
     case '%o':
-      try {
-        return JSON.stringify(args[argIndex++]);
-      } catch(error) {
-        return '{Object(Uncoercable)}';
-      }
+      return objectToString(args[argIndex++]);
     default:
       return match;
     }
@@ -81,28 +77,81 @@ export default function sprintf(...args) {
   return buffer.join('');
 }
 
+function numberToString(number) {
 
+  // NOTE: isNaN(null) is false, do not simply check isNaN
+
+  if(number === null) {
+    return 'NaN';
+  } else if(number === void 0) {
+    return 'NaN';
+  } else if(isNaN(number)) {
+    return 'NaN';
+  } else {
+    return '' + number;
+  }
+}
+
+
+
+const nativeHasOwn = Object.prototype.hasOwnProperty;
+
+// Convert an object into a string. This does not assume the input is an object.
+function objectToString(object) {
+
+  // typeof null === 'object', so special case for null. Cannot assume caller already checked
+  // for this situation.
+  if(object === null) {
+    return 'null';
+  }
+
+  // NOTE: special case for undefined. Without this case, the call to nativeHasOwn.call below would
+  // throw an exception "TypeError: Cannot convert undefined or null to object"
+  // NOTE: undefined === void 0
+  // NOTE: do not use void(0), void is an operator, not a function
+  if(object === void 0) {
+    return 'undefined';
+  }
+
+  // All objects subclass Object. And Object has a default toString implementation. So simply
+  // checking object.toString is wrong, because that property lookup will eventually go up the
+  // prototype chain and find Object.prototype.toString. Therefore, we want to test if the
+  // object itself has a toString method defined using the hasOwnProperty method. But, we don't
+  // want to use object.hasOwnProperty, because the object may have messed with it. So we use
+  // the native hasOwnProperty call of the base Object object. Which also may have been messed
+  // with but at that point it is overly-defensive.
+
+  if(nativeHasOwn.call(object, 'toString')) {
+    // The valueToString call is rather superfluous but it protects against custom objects or
+    // manipulations of builtin objects that return the improper type.
+    return valueToString(object.toString());
+  }
+
+  // NOTE: url.hasOwnProperty('toString') === false
+
+  if(object instanceof URL) {
+    return object.href;
+  }
+
+  try {
+    return JSON.stringify(object);
+  } catch(error) {
+    return '{Object(Uncoercable)}';
+  }
+}
+
+// Convert a value of an unknown type into a string
 function valueToString(value) {
-
   if(value === null) {
     return 'null';
   }
 
   const type = typeof value;
   switch(type) {
-  case 'undefined':
-    return 'undefined';
-  case 'number':
-    return '' + value;
-  case 'string':
-    return value;
-  case 'object':
-    try {
-      return JSON.stringify(value);
-    } catch(error) {
-      return '{Object(Uncoercable)}';
-    }
-  default:
-    return '' + value;
+  case 'undefined': return 'undefined';
+  case 'number':    return numberToString(value);
+  case 'string':    return value;
+  case 'object':    return objectToString(value);
+  default:          return '' + value;
   }
 }
