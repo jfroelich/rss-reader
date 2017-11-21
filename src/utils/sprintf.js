@@ -14,10 +14,12 @@
 // %% - literal '%'
 const syntaxPattern = /%[sdo%]/g;
 
-// Returns a formatted string. Works kind of like console.arg
 export default function sprintf(...args) {
 
   // To avoid touching the implicit 'arguments' variable, this uses the spread operator.
+  // Why avoid using arguments? Because:
+  // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers
+
   // args uses spread operator, so it will be defined even when there are no arguments. When there
   // are no arguments, args.length will be 0.
 
