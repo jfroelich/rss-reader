@@ -1,26 +1,6 @@
 // This is a wrapper around parse-feed.js that customizes the parsed feed format to the app's feed
 // format.
 
-// TODO: this is currently located in /src/reader because it differentiates from app-specific
-// functionality and general purpose utilities. At least, that is the idea. However, at the moment
-// I have not moved any other functionality into /src/reader, so it looks rather awkward. I do plan
-// to move other functionality into reader. But first, I have to make up my mind. I am currently
-// sitting on the fence regarding whether it makes sense to distinguish between app-specific
-// functionality and general purpose functionality. In a way, everything is app-specific. There are
-// non-generic opinions scattered throughout the so-called "general purpose" modules. Therefore,
-// attempting to distinguish between two things that are essentially the same is stupid. Quite
-// stupid. This is a great example of a decision I sincerely struggle with, to me this is currently
-// a great unanswered question that I think requires more personal learning. Clearly something is
-// not clicking with me. One of the key features of an API is how well organized its surface is,
-// and all programming code that is publicly-accessible is API surface, so I really dislike how
-// seemingly arbitrary is the current organization. But a flattened hierarchy is a copout; just an
-// admission that I didn't bother to organize. While I wait for this stuff to magically sort itself
-// out, I am keeping this here. One to server as a reminder. Two because I obviously cannot have
-// two things named parse-feed.js in the same folder. Keep in mind this may be the wrong
-// abstraction, and may be going away, so it may become a non-issue. Regarding divide and conquer,
-// this is a divide issue.
-
-
 // TODO: I do not love the processEntries parameter. While processing entries is surely related to
 // post-fetch processing that needs to be done, I do not think it fits here. Rather than pass a
 // flag, the caller should merely decide whether to call a separate function. Not calling the
