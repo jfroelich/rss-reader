@@ -11,19 +11,6 @@ export function isCanonicalURLString(urlString) {
   return /^\s*[a-z]+:/i.test(urlString);
 }
 
-// For a url string to have the script protocol it must be longer than this
-const JS_PREFIX_LEN = 'javascript:'.length;
-
-// Returns true if the url has the 'javascript:' protocol. Does not throw in the case of bad input.
-// Tolerates leading whitespace
-export function hasScriptProtocol(urlString) {
-  // The type check is done to allow for bad inputs for caller convenience. The length check is an
-  // attempt to reduce the number of regex calls.
-  return typeof urlString === 'string' &&
-    urlString.length > JS_PREFIX_LEN &&
-    /^\s*javascript:/i.test(urlString);
-}
-
 // Returns the absolute form the input url
 // @param urlString {String}
 // @param baseURL {URL}
