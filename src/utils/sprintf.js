@@ -76,6 +76,7 @@ export default function sprintf(...args) {
     }
   });
 
+  // Exit early if all arguments processed
   if(argIndex >= argCount) {
     return replacedString;
   }
@@ -84,9 +85,7 @@ export default function sprintf(...args) {
   // string. Some of the arguments were used to do replacements so far, but possibly not all of the
   // arguments have been used. Append the remaining unused arguments as strings to a buffer of
   // strings, then join the strings together using a space delimiter and return the joined string.
-  // If there were not enough arguments to even do replacements, the loop is skipped, in which case
-  // the buffer is just the replacedString itself, in which case join knows to avoid adding a
-  // delimiter when its array length is less than 2.
+  // Note this still works even if the above check was not present.
   const buffer = [replacedString];
   while(argIndex < argCount) {
     buffer.push(anyTypeToStringString(args[argIndex++]));
