@@ -1,12 +1,9 @@
 // Object utilities
 
-// TODO: this file basically only exports one function. Rename the file to filter-empty-props.js
-// and export the function as default
-
 // Returns a new object that is a copy of the input less empty properties. A property is empty if it
 // is null, undefined, or an empty string. Ignores prototype, deep objects, getters, etc. Shallow
 // copy by reference.
-export function filterEmptyProps(object) {
+export default function filterEmptyProps(object) {
   const hasOwnProp = Object.prototype.hasOwnProperty;
   const output = {};
   let undef;
