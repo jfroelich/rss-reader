@@ -3,7 +3,7 @@
 import * as Entry from "/src/storage/entry.js";
 import * as rdb from "/src/storage/rdb.js";
 import assert from "/src/utils/assert.js";
-import {isPosInt} from "/src/utils/number.js";
+import isPosInt from "/src/utils/is-pos-int.js";
 import sizeof from "/src/utils/sizeof.js";
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;

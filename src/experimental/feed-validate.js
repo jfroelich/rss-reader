@@ -8,7 +8,6 @@
 
 import assert from "/src/utils/assert.js";
 import {check} from "/src/utils/errors.js";
-// import {isPosInt} from "/src/utils/number.js";
 import * as Feed from "/src/storage/feed.js";
 
 export default function validateFeed(feed) {

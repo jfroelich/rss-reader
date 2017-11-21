@@ -4,7 +4,7 @@ import assert from "/src/utils/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import * as Feed from "/src/storage/feed.js";
 import * as idb from "/src/utils/idb.js";
-import {isPosInt} from "/src/utils/number.js";
+import isPosInt from "/src/utils/is-pos-int.js";
 import {isValidURLString} from "/src/url/url-string.js";
 
 const NAME = 'reader';

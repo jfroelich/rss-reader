@@ -4,7 +4,7 @@ import assert from "/src/utils/assert.js";
 import * as Feed from "/src/storage/feed.js";
 import replaceTags from "/src/html/replace-tags.js";
 import htmlTruncate from "/src/html/truncate.js";
-import {isPosInt} from "/src/utils/number.js";
+import isPosInt from "/src/utils/is-pos-int.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import * as rdb from "/src/storage/rdb.js";
 import {condenseWhitespace, filterControls} from "/src/utils/string.js";

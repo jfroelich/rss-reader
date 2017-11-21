@@ -6,7 +6,7 @@ import FaviconCache from "/src/favicon/cache.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import fetchImageHead from "/src/fetch/fetch-image-head.js";
 import {FETCH_UNKNOWN_CONTENT_LENGTH} from "/src/fetch/utils.js";
-import {isPosInt} from "/src/utils/number.js";
+import isPosInt from "/src/utils/is-pos-int.js";
 import parseHTML from "/src/html/parse.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {resolveURLString} from "/src/url/url-string.js";

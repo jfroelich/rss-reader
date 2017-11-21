@@ -1,7 +1,7 @@
 // feed entry object utilities
 
 import assert from "/src/utils/assert.js";
-import {isPosInt} from "/src/utils/number.js";
+import isPosInt from "/src/utils/is-pos-int.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 
 export const STATE_UNREAD = 0;

@@ -95,7 +95,7 @@ FaviconCache.prototype.findEntry = function(urlObject) {
   });
 };
 
-// TODO: assert maxAgeMs isPosInt, do not forget to import from utils/number.js
+// TODO: assert maxAgeMs isPosInt, do not forget to import from utils/is-pos-int.js
 FaviconCache.prototype.findExpired = function(maxAgeMs) {
   assert(idb.isOpen(this.conn));
 
