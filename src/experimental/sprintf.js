@@ -5,12 +5,19 @@
 // other major difference is that this operates more like console.log, and that this only supports
 // a subset of the formatting syntax, and works a bit differently for certain expressions.
 
-// Match occurrences of %s, %d, %o
-const syntaxPattern = /%[sdo]/g;
+// TODO: should syntaxPattern be case-insensitive? Test if %O works in console, or means something
+// entirely different
+
+// %s - string
+// %d - number
+// %o - object
+// %% - literal '%'
+const syntaxPattern = /%[sdo%]/g;
 
 // Returns a formatted string. Works kind of like console.arg
 export default function sprintf(...args) {
 
+  // To avoid touching the implicit 'arguments' variable, this uses the spread operator.
   // args uses spread operator, so it will be defined even when there are no arguments. When there
   // are no arguments, args.length will be 0.
 
@@ -33,7 +40,7 @@ export default function sprintf(...args) {
   // If the first argument isn't a string, then just group the arguments together as a string
   // that is space separated and return.
   if(typeof formatArg !== 'string') {
-    return args.map(valueToString).join(' ');
+    return args.map(anyTypeToStringString).join(' ');
   }
 
   // Advance to the first argument after the formatArg
@@ -54,9 +61,10 @@ export default function sprintf(...args) {
     // Replace the thing with the argument, and advance the index
     // The post-increment write occurs after the value is read
     switch(match) {
-    case '%s':  return valueToString(args[argIndex++]);
-    case '%d':  return numberToString(args[argIndex++]);
-    case '%o':  return objectToString(args[argIndex++]);
+    case '%%':  return '%';
+    case '%s':  return anyTypeToStringString(args[argIndex++]);
+    case '%d':  return anyTypeToNumberString(args[argIndex++]);
+    case '%o':  return anyTypeToObjectString(args[argIndex++]);
     default:    return match;
     }
   });
@@ -68,36 +76,33 @@ export default function sprintf(...args) {
   // Append the remaining arguments as strings
   const buffer = [replacedString];
   for(; argIndex < argCount; argIndex++) {
-    buffer.push(' ' + valueToString(args[argIndex]));
+    buffer.push(' ' + anyTypeToStringString(args[argIndex]));
   }
   return buffer.join('');
 }
 
-function numberToString(number) {
+function anyTypeToNumberString(value) {
+  if(typeof value === 'number') {
 
-  // NOTE: isNaN(null) is false, do not simply check isNaN
+    if(Object.is(value, -0)) {
+      return '-0';
+    } else {
+      return '' + value;
+    }
 
-  if(number === null) {
-    return 'NaN';
-  } else if(number === void 0) {
-    return 'NaN';
-  } else if(isNaN(number)) {
-    return 'NaN';
   } else {
-    return '' + number;
+    return 'NaN';
   }
 }
-
-
 
 const nativeHasOwn = Object.prototype.hasOwnProperty;
 
 // Convert an object into a string. This does not assume the input is an object.
-function objectToString(object) {
+function anyTypeToObjectString(value) {
 
   // typeof null === 'object', so special case for null. Cannot assume caller already checked
   // for this situation.
-  if(object === null) {
+  if(value === null) {
     return 'null';
   }
 
@@ -105,39 +110,58 @@ function objectToString(object) {
   // throw an exception "TypeError: Cannot convert undefined or null to object"
   // NOTE: undefined === void 0
   // NOTE: do not use void(0), void is an operator, not a function
-  if(object === void 0) {
+  if(value === void 0) {
     return 'undefined';
   }
 
+  // Do not delegate to JSON.stringify because that wraps string in quotes
+  if(typeof value === 'string') {
+    return value;
+  }
+
+  // Handle date specifically, do not delegate to JSON.stringify
+  if(value instanceof Date) {
+    return value.toString();
+  }
+
   // All objects subclass Object. And Object has a default toString implementation. So simply
-  // checking object.toString is wrong, because that property lookup will eventually go up the
+  // checking value.toString is wrong, because that property lookup will eventually go up the
   // prototype chain and find Object.prototype.toString. Therefore, we want to test if the
   // object itself has a toString method defined using the hasOwnProperty method. But, we don't
-  // want to use object.hasOwnProperty, because the object may have messed with it. So we use
+  // want to use value.hasOwnProperty, because the value may have messed with it. So we use
   // the native hasOwnProperty call of the base Object object. Which also may have been messed
   // with but at that point it is overly-defensive.
 
-  if(nativeHasOwn.call(object, 'toString')) {
-    // The valueToString call is rather superfluous but it protects against custom objects or
-    // manipulations of builtin objects that return the improper type.
-    return valueToString(object.toString());
+  if(nativeHasOwn.call(value, 'toString')) {
+    // The anyTypeToStringString call is rather superfluous but it protects against custom objects
+    // or manipulations of builtin objects that return the improper type.
+    // TODO: I'd rather this not be recursive-like, functions should not call each other
+    return anyTypeToStringString(value.toString());
   }
 
   // NOTE: url.hasOwnProperty('toString') === false
+  // NOTE: href is canonicalized, e.g. "p://a.b" becomes "p://a.b/" (trailing slash)
+  if(value instanceof URL) {
+    return value.href;
+  }
 
-  if(object instanceof URL) {
-    return object.href;
+  if(typeof value === 'function') {
+    return value.toString();
   }
 
   try {
-    return JSON.stringify(object);
+    return JSON.stringify(value);
   } catch(error) {
     return '{Object(Uncoercable)}';
   }
 }
 
+function functionToString(f) {
+  return f.toString();
+}
+
 // Convert a value of an unknown type into a string
-function valueToString(value) {
+function anyTypeToStringString(value) {
   if(value === null) {
     return 'null';
   }
@@ -145,9 +169,10 @@ function valueToString(value) {
   const type = typeof value;
   switch(type) {
   case 'undefined': return 'undefined';
-  case 'number':    return numberToString(value);
+  case 'function':  return functionToString(value);
+  case 'number':    return anyTypeToNumberString(value);
   case 'string':    return value;
-  case 'object':    return objectToString(value);
+  case 'object':    return anyTypeToObjectString(value);
   default:          return '' + value;
   }
 }
