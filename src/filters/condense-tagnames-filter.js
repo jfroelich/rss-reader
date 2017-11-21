@@ -1,5 +1,10 @@
 // Changes the names of certain elements in document content
 
+// TODO: take a look at the following article
+// https://blog.usejournal.com/of-svg-minification-and-gzip-21cd26a5d007
+// Look into how the html is stored in indexedDB, e.g. what compression, and then reconsider if this
+// filter is more harmful than helpful.
+
 import coerceElement from "/src/dom/coerce-element.js";
 import assert from "/src/assert.js";
 
