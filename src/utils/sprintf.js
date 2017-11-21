@@ -80,20 +80,22 @@ export default function sprintf(...args) {
     return replacedString;
   }
 
-  // Append the remaining arguments as strings
+  // There may be more arguments to the function than there are things to replace in the format
+  // string. Some of the arguments were used to do replacements so far, but possibly not all of the
+  // arguments have been used. Append the remaining unused arguments as strings to a buffer of
+  // strings, then join the strings together using a space delimiter and return the joined string.
+  // If there were not enough arguments to even do replacements, the loop is skipped, in which case
+  // the buffer is just the replacedString itself, in which case join knows to avoid adding a
+  // delimiter when its array length is less than 2.
   const buffer = [replacedString];
-  for(; argIndex < argCount; argIndex++) {
-    buffer.push(' ' + anyTypeToStringString(args[argIndex]));
+  while(argIndex < argCount) {
+    buffer.push(anyTypeToStringString(args[argIndex++]));
   }
-
-  // If no parameter is passed to join, it uses a comma. Use an empty string so that elements in the
-  // buffer are appended contiguously.
-  return buffer.join('');
+  return buffer.join(' ');
 }
 
 function anyTypeToNumberString(value) {
   if(typeof value === 'number') {
-
     if(Object.is(value, -0)) {
       // Special case for negative zero because otherwise ('' + -0) yields '0'.
       // This matches console.log behavior.
@@ -103,7 +105,6 @@ function anyTypeToNumberString(value) {
       // than calling the String constructor (either as a function or a constructor function).
       return '' + value;
     }
-
   } else {
     return 'NaN';
   }
