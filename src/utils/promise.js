@@ -1,5 +1,9 @@
 // Promise utilities
 
+// TODO: break apart into two files, export default from each. While these functions both deal with
+// promises, there is actually very little coherency. The functions do not call each other.
+
+
 import assert from "/src/utils/assert.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import {isPosInt} from "/src/utils/number.js";

@@ -1,5 +1,9 @@
 // Assertions library
 
+// TODO: this function is so popular that I think it exceeds being a utility and is more like some
+// form of a base library function. I think it belongs in the root folder.
+
+
 // TODO: should I demand or warn when condition is not boolean? Something about using
 // monomorphic functions. http://mrale.ph/blog/2015/01/11/whats-up-with-monomorphism.html
 // The idea is that I want to signal to v8 to inline. It would be interesting to learn more about
