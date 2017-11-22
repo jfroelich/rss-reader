@@ -1,5 +1,3 @@
-// Module for filtering element attributes from document content
-
 import assert from "/src/assert.js";
 
 // @param doc {Document}

@@ -1,3 +1,8 @@
+import assert from "/src/assert.js";
+import {check, ParseError} from "/src/utils/errors.js";
+import parseXML from "/src/xml/parse.js";
+import {getElementName} from "/src/xml/utils.js";
+
 // Feed parsing functionality
 
 // TODO: prefer "item" over "entry" terminology?
@@ -13,10 +18,6 @@
 // default import in a module that imports this module that happens to use the same name as this
 // function. So, for now, I am not exporting a default. This may change.
 
-import assert from "/src/assert.js";
-import {check, ParseError} from "/src/utils/errors.js";
-import parseXML from "/src/xml/parse.js";
-import {getElementName} from "/src/xml/utils.js";
 
 // Parses the input string into a feed object. The feed object will always have a defined entries
 // array, although it may be zero length. Throws both checked and unchecked errors if the feed

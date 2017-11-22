@@ -1,3 +1,10 @@
+import assert from "/src/assert.js";
+import {ParseError} from "/src/utils/errors.js";
+import * as mime from "/src/utils/mime-utils.js";
+import {condenseWhitespace} from "/src/utils/string.js";
+
+
+
 // XML parsing module. The purpose of this module is to abstract the process of parsing a string of
 // xml into a document.
 
@@ -5,11 +12,6 @@
 // a custom parser would speed it up, but I doubt it because the parser is native code, and custom
 // parsing brings with it a ton of complexity. Another thing to consider is a streaming parser,
 // e.g. SAX-style, perhaps that would be faster?
-
-import assert from "/src/assert.js";
-import {ParseError} from "/src/utils/errors.js";
-import * as mime from "/src/utils/mime-utils.js";
-import {condenseWhitespace} from "/src/utils/string.js";
 
 // This is an extremely expensive operation. Calling code should try and defer or avoid calling.
 

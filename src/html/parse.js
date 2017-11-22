@@ -1,5 +1,3 @@
-// HTML parsing module
-
 import assert from "/src/assert.js";
 import {check, ParseError} from "/src/utils/errors.js";
 import * as mime from "/src/utils/mime-utils.js";

@@ -1,5 +1,3 @@
-// Options page view module
-
 import exportFeeds from "/src/backup/export-feeds.js";
 import readerImportFiles from "/src/backup/import-opml-files.js";
 import BG_IMAGES from "/src/bg-images.js";

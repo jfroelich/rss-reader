@@ -1,7 +1,8 @@
-// Misc errors and error-related utilities
-
 import {AssertionError} from "/src/assert.js";
 import sprintf from "/src/utils/sprintf.js";
+
+// Misc errors and error-related utilities
+
 
 const LOG_CHECKED_ERRORS = false;
 

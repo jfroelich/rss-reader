@@ -1,4 +1,3 @@
-
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import {remove as deleteDB} from "/src/utils/idb.js";
 import * as rdb from "/src/storage/rdb.js";

@@ -1,8 +1,7 @@
-// Filters certain figure elements from document content
-
 import assert from "/src/assert.js";
 import unwrap from "/src/dom/unwrap-element.js";
 
+// Filters certain figure elements from document content
 export default function figureFilter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {

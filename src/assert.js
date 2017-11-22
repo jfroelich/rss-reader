@@ -1,5 +1,3 @@
-// Assertions library
-
 import sprintf from "/src/utils/sprintf.js";
 
 // If true, any assertion errors are immediately logged. This helps avoid issues with promise-

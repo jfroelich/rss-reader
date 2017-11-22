@@ -1,5 +1,3 @@
-// Fetch utilities
-
 import assert from "/src/assert.js";
 import {check, TimeoutError} from "/src/utils/errors.js";
 import * as mime from "/src/utils/mime-utils.js";

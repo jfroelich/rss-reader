@@ -1,5 +1,3 @@
-// Removes comment nodes from document content
-
 import assert from "/src/assert.js";
 
 export default function commentFilter(doc) {

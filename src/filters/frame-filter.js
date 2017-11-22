@@ -1,5 +1,3 @@
-// Removes or changes frame and frame-related elements in document content
-
 import assert from "/src/assert.js";
 
 // Removes frame content from a document

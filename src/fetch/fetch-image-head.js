@@ -1,4 +1,7 @@
-// Fetch image head module
+import assert from "/src/assert.js";
+import {check} from "/src/utils/errors.js";
+import * as FetchUtils from "/src/fetch/utils.js";
+import * as mime from "/src/utils/mime-utils.js";
 
 // TODO: this should be refactored to use fetchInternal. But I need to calculate content length.
 // So fetchInternal first needs to be refactored to also calculate content length because response
@@ -6,10 +9,6 @@
 // TODO: side note, does HEAD yield 204? If so, 204 isn't an error. So using fetchInternal
 // would be wrong, at least as it is currently implemented.
 
-import assert from "/src/assert.js";
-import {check} from "/src/utils/errors.js";
-import * as FetchUtils from "/src/fetch/utils.js";
-import * as mime from "/src/utils/mime-utils.js";
 
 // Sends a HEAD request for the given image.
 // @param url {String}

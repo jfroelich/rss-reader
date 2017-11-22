@@ -1,5 +1,3 @@
-// Filters certain types of elements from document content
-
 import assert from "/src/assert.js";
 
 const BLACKLIST = [
@@ -7,6 +5,8 @@ const BLACKLIST = [
   'isindex', 'link', 'math', 'meta', 'object', 'output', 'param', 'path', 'progress', 'spacer',
   'style', 'svg', 'title', 'video', 'xmp'
 ].join(',');
+
+// Filters certain types of elements from document content
 
 export default function elementBlacklistFilter(doc) {
   assert(doc instanceof Document);

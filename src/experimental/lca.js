@@ -1,4 +1,4 @@
-// Lowest common ancestor utility for the DOM
+import assert from "/src/assert.js";
 
 // NOTE: this functionality is working, but it is only in use by an experimental module, so I have
 // decided to leave it out of the dom folder.
@@ -7,7 +7,6 @@
 // In other words, change to (...nodes).
 // TODO: look again at native functionality, I think something in Range already does this?
 
-import assert from "/src/assert.js";
 
 // Find the lowest common ancestor of two nodes.
 

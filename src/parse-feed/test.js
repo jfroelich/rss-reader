@@ -1,3 +1,6 @@
+import fetchFeed from "/src/fetch/fetch-feed.js";
+import parseFeed from "/src/parse-feed/parse-feed.js";
+
 // Test parseFeed module
 
 // TODO: I now have two parse feed files. Now it is ambiguous which one this test refers to. This
@@ -5,8 +8,6 @@
 // the source folder. I think I should do that. Take a closer look at where other popular open
 // source projects store test code.
 
-import fetchFeed from "/src/fetch/fetch-feed.js";
-import parseFeed from "/src/parse-feed/parse-feed.js";
 
 async function test(url) {
   'use strict';

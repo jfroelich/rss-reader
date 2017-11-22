@@ -1,9 +1,8 @@
-// Filters certain occurrences of emphasized content from document content
-
 import assert from "/src/assert.js";
 import unwrap from "/src/dom/unwrap-element.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
+// Filters certain occurrences of emphasized content from document content
 // @param maxTextLength {Number} optional, if number of non-tag characters
 // within emphasis element is greater than this, then the element is filtered
 export default function emphasisFilter(doc, maxTextLength) {

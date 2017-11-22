@@ -1,7 +1,5 @@
-
 // Testing issue with picking up a broadcast channel message sent from a tab
 // to the same tab
-
 // NOTE: so far my suspicion confirmed, I do not understand why I do not
 // see event message in console.
 

@@ -1,10 +1,9 @@
-// Filter publisher information from an article title
-
-// TODO: support alternate whitespace expressions around delimiters
-
 import assert from "/src/assert.js";
 import {tokenize} from "/src/utils/string.js";
 
+
+// Filter publisher information from an article title
+// TODO: support alternate whitespace expressions around delimiters
 // @param title {String} the title of an web page
 // @returns {String} the title without publisher information
 export default function filterPublisher(title) {

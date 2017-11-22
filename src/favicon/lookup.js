@@ -1,5 +1,3 @@
-// Favicion lookup functionality
-
 import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import FaviconCache from "/src/favicon/cache.js";
@@ -11,6 +9,7 @@ import parseHTML from "/src/html/parse.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {resolveURLString} from "/src/url/url-string.js";
 
+// Class that provides favicon lookup
 export default class FaviconLookup {
   constructor() {
     this.cache = undefined;

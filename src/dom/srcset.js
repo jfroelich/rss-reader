@@ -1,7 +1,5 @@
-// Functions for working with the srcset attribute of a DOM element
-
 import assert from "/src/assert.js";
-// This script defines parseSrcset in global scope
+// This defines parseSrcset in global scope
 import "/src/third-party/parse-srcset.js";
 
 // @param descriptors {Array} an array of descriptors such as those produced by parseSrcset

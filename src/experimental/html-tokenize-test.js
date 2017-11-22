@@ -1,4 +1,3 @@
-
 import assert from "/src/assert.js";
 
 let input;

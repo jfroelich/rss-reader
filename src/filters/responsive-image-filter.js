@@ -1,11 +1,11 @@
+import {parseSrcsetWrapper} from "/src/dom/srcset.js";
+import assert from "/src/assert.js";
+
 // Transforms responsive images in document content
 
 // An image is 'responsive' if it uses a srcset instead of a src, such that the actual image used
 // is derived dynamically after the document has been loaded. This filter looks for such images
 // and changes them to use one of the descriptors from the srcset as the src.
-
-import {parseSrcsetWrapper} from "/src/dom/srcset.js";
-import assert from "/src/assert.js";
 
 export default function main(doc) {
   assert(doc instanceof Document);

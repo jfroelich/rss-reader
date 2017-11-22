@@ -1,7 +1,8 @@
+import assert from "/src/assert.js";
+
 // Filters empty leaf-like nodes from document content
 // This module has multiple exports and no default export
 
-import assert from "/src/assert.js";
 
 export function leafFilter(doc) {
   assert(doc instanceof Document);

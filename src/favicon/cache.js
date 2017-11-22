@@ -1,4 +1,5 @@
-// Favicon caching module, basically a database wrapper that supports favicon lookup
+import assert from "/src/assert.js";
+import * as idb from "/src/utils/idb.js";
 
 // TODO: not entirely sure, but maybe if conn is the only shared state, there is no need for the
 // class. I have mixed feelings.
@@ -7,8 +8,6 @@
 // is the connection. On the other hand, it makes testing easier?
 // TODO: should the default max age constant probably be exported separately?
 
-import assert from "/src/assert.js";
-import * as idb from "/src/utils/idb.js";
 
 export default class FaviconCache {
   constructor() {

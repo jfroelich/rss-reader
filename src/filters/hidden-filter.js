@@ -1,10 +1,10 @@
-// Module for filtering hidden elements from a document
-
-// TODO: make a github issue about optimizing recursive unwrap
-
 import unwrap from "/src/dom/unwrap-element.js";
 import {isHiddenInlineElement} from "/src/dom/visibility.js";
 import assert from "/src/assert.js";
+
+// TODO: make a github issue about optimizing recursive unwrap
+
+// Module for filtering hidden elements from a document
 
 export default function filter(doc) {
   assert(doc instanceof Document);

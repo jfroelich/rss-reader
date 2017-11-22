@@ -1,11 +1,12 @@
-// Background page for extension. This should be loaded exclusively in the background page.
-
 import "/src/alarms.js";
 import "/src/cli.js";
 import {addBadgeClickListener, addInstallListener, showSlideshowTab} from "/src/extension.js";
 import FaviconCache from "/src/favicon/cache.js";
 import * as rdb from "/src/storage/rdb.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
+
+// Background page for extension. This should be loaded exclusively in the background page.
+
 
 // Top level async is not allowed in modules, at least not right now. This helper function exists
 // to allow for the await, and to allow for finally to work given that some functions throw

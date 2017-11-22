@@ -1,5 +1,3 @@
-// HTML replace tags helper function
-
 import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import parseHTML from "/src/html/parse.js";

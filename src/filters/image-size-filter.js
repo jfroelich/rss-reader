@@ -1,11 +1,11 @@
-// Module related to image size attributes
-
 import assert from "/src/assert.js";
-
 import fetchImageElement from "/src/fetch/fetch-image-element.js";
 import {promiseEvery} from "/src/utils/promise.js";
 import {parseInt10} from "/src/utils/string.js";
 import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url/url.js";
+
+
+// Module related to image size attributes
 
 
 const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];

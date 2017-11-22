@@ -1,6 +1,4 @@
-
 import assert from "/src/assert.js";
-
 
 // Tokenizes an arbitrary string of html. Makes some effort to comply with
 // standards but does not fully comply.
@@ -13,7 +11,6 @@ import assert from "/src/assert.js";
 // @throws {Error} if tokenization does not end in the default state, such as
 // within a tag
 export function tokenizeHTML(htmlString, inputState = 0) {
-
   assert(typeof htmlString === 'string');
 
   const inputStringLength = htmlString.length;

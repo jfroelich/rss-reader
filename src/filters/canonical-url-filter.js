@@ -1,5 +1,3 @@
-// Resolves urls in document content
-
 import assert from "/src/assert.js";
 import {parseSrcsetWrapper, serializeSrcset} from "/src/dom/srcset.js";
 import {resolveURLString} from "/src/url/url-string.js";

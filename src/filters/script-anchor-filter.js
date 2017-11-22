@@ -1,7 +1,8 @@
-// Unwraps anchor elements containing href attribute values that are javascript
-
 import assert from "/src/assert.js";
 import unwrap from "/src/dom/unwrap-element.js";
+
+
+// Unwraps anchor elements containing href attribute values that are javascript
 
 export default function filterDocument(document) {
   assert(document instanceof Document);

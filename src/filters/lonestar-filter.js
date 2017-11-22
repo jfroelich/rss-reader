@@ -1,40 +1,10 @@
-// Filters various telemetry-inducing content from document content
-
 import {removeImage} from "/src/dom/image.js";
 import {isHiddenInlineElement} from "/src/dom/visibility.js";
 import {isExternalURL} from "/src/url/url.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import assert from "/src/assert.js";
 
-
-// TODO: move to config.js?
-const PATTERNS = [
-  /\/\/.*2o7\.net\//i,
-  /\/\/ad\.doubleclick\.net\//i,
-  /\/\/ad\.linksynergy\.com\//i,
-  /\/\/analytics\.twitter\.com\//i,
-  /\/\/anon-stats\.eff\.org\//i,
-  /\/\/bat\.bing\.com\//i,
-  /\/\/b\.scorecardresearch\.com\//i,
-  /\/\/beacon\.gu-web\.net\//i,
-  /\/\/.*cloudfront\.net\//,
-  /\/\/googleads\.g\.doubleclick\.net\//i,
-  /\/\/in\.getclicky\.com\//i,
-  /\/\/insight\.adsrvr\.org\//i,
-  /\/\/me\.effectivemeasure\.net\//i,
-  /\/\/metrics\.foxnews\.com\//i,
-  /\/\/.*moatads\.com\//i,
-  /\/\/pagead2\.googlesyndication\.com\//i,
-  /\/\/pixel\.quantserve\.com\//i,
-  /\/\/pixel\.wp\.com\//i,
-  /\/\/pubads\.g\.doubleclick\.net\//i,
-  /\/\/sb\.scorecardresearch\.com\//i,
-  /\/\/stats\.bbc\.co\.uk\//i,
-  /\/\/statse\.webtrendslive\.com\//i,
-  /\/\/pixel\.wp\.com\//i,
-  /\/\/t\.co\//i,
-  /\/\/www\.facebook\.com\/tr/i
-];
+// Filters various telemetry-inducing content from document content
 
 // TODO: switch to accepting url object instead of url string
 
@@ -131,3 +101,34 @@ function hasTelemetrySource(image, documentURL) {
 
   return false;
 }
+
+
+
+// TODO: move to config.js?
+const PATTERNS = [
+  /\/\/.*2o7\.net\//i,
+  /\/\/ad\.doubleclick\.net\//i,
+  /\/\/ad\.linksynergy\.com\//i,
+  /\/\/analytics\.twitter\.com\//i,
+  /\/\/anon-stats\.eff\.org\//i,
+  /\/\/bat\.bing\.com\//i,
+  /\/\/b\.scorecardresearch\.com\//i,
+  /\/\/beacon\.gu-web\.net\//i,
+  /\/\/.*cloudfront\.net\//,
+  /\/\/googleads\.g\.doubleclick\.net\//i,
+  /\/\/in\.getclicky\.com\//i,
+  /\/\/insight\.adsrvr\.org\//i,
+  /\/\/me\.effectivemeasure\.net\//i,
+  /\/\/metrics\.foxnews\.com\//i,
+  /\/\/.*moatads\.com\//i,
+  /\/\/pagead2\.googlesyndication\.com\//i,
+  /\/\/pixel\.quantserve\.com\//i,
+  /\/\/pixel\.wp\.com\//i,
+  /\/\/pubads\.g\.doubleclick\.net\//i,
+  /\/\/sb\.scorecardresearch\.com\//i,
+  /\/\/stats\.bbc\.co\.uk\//i,
+  /\/\/statse\.webtrendslive\.com\//i,
+  /\/\/pixel\.wp\.com\//i,
+  /\/\/t\.co\//i,
+  /\/\/www\.facebook\.com\/tr/i
+];

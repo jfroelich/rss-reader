@@ -1,5 +1,3 @@
-// Removes certain elements from the start and end of document content
-
 import assert from "/src/assert.js";
 
 // Remove whitespace and whitespace-like content from the start and end of a document's body.

@@ -1,5 +1,3 @@
-// Functionality related to whether nodes appear in content
-
 // These functions assume a document is "inert", such as one created by DOMParser, or from
 // XMLHttpRequest.
 //

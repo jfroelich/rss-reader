@@ -1,10 +1,8 @@
-// Boilerplate filtering module
-
 import assert from "/src/assert.js";
 import {condenseWhitespace} from "/src/utils/string.js";
 
 
-
+// Boilerplate filtering module
 export default function boilerplateFilter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {

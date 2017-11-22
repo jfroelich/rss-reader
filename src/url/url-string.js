@@ -1,5 +1,3 @@
-// Utilities for working with strings that represent urls
-
 import assert from "/src/assert.js";
 
 // Allows for leading whitespace characters. Returns true for javascript: and mailto: and data:.

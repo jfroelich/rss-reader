@@ -1,5 +1,3 @@
-// Module for polling feeds
-
 import assert from "/src/assert.js";
 import {queryIdleState, showNotification} from "/src/extension.js";
 import * as Feed from "/src/storage/feed.js";

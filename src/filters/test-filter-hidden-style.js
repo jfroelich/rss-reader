@@ -1,4 +1,6 @@
 
+window.test = test;
+
 async function test(url) {
 
   // TODO: use fetchHTML instead of raw fetch. This was created before fetch-html.js was settled

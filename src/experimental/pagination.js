@@ -1,5 +1,3 @@
-// Module for working with pagination
-
 import findLCA from "/src/experimental/lca.js";
 import {isHiddenElement} from "/src/dom/visibility.js";
 import assert from "/src/assert.js";

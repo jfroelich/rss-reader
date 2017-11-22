@@ -1,11 +1,9 @@
-// Removes, moves, or otherwise changes certain out-of-place elements in document content
+import assert from "/src/assert.js";
 
 // TODO: find all source not in picture/audio/video and remove
 // TODO: find all figcaption not in figure and remove
 
-import assert from "/src/assert.js";
-
-// Relocates certain misnested elements
+// Removes, moves, or otherwise changes certain out-of-place elements in document content
 export default function filterDocument(doc) {
   assert(doc instanceof Document);
 

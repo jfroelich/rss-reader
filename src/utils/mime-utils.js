@@ -1,5 +1,3 @@
-// MIME utilities module
-
 import assert from "/src/assert.js";
 import {filterWhitespace} from "/src/utils/string.js";
 

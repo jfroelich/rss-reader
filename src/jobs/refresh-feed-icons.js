@@ -1,5 +1,3 @@
-// Functionality for refreshing feed favicons
-
 import assert from "/src/assert.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import FaviconLookup from "/src/favicon/lookup.js";

@@ -1,4 +1,3 @@
-
 import * as mime from "/src/utils/mime-utils.js";
 
 async function registerDWLinkFilterRule() {

@@ -1,4 +1,3 @@
-
 import assert from "/src/assert.js";
 import {condenseWhitespace} from "/src/utils/string.js";
 

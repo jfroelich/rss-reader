@@ -1,12 +1,10 @@
-// Fetch policy - what urls the app should avoid trying to access
+import assert from "/src/assert.js";
+import {isCredentialedURL} from "/src/url/url.js";
 
 // NOTE: this is the initial implementation, probably going to change drastically, is definitely
 // not very reliable or accurate. Some of the tests are easily defeated, but I am simply
 // implementing something for now, as a proof of concept.
 // TODO: allow preference override through localStorage setting
-
-import assert from "/src/assert.js";
-import {isCredentialedURL} from "/src/url/url.js";
 
 // Return true if the app's policy permits fetching the url
 export default function isAllowedURL(url) {

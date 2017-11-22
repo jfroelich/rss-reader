@@ -1,3 +1,9 @@
+import assert from "/src/assert.js";
+import * as Entry from "/src/storage/entry.js";
+import * as Feed from "/src/storage/feed.js";
+import {parseFeed as parseFeedImpl} from "/src/parse-feed/parse-feed.js";
+import {isCanonicalURLString} from "/src/url/url-string.js";
+
 // This is a wrapper around parse-feed.js that customizes the parsed feed format to the app's feed
 // format.
 
@@ -25,11 +31,6 @@
 // TODO: I think it would make sense to clearly enumerate the use cases, then revisit how well the
 // abstraction responds to each case.
 
-import assert from "/src/assert.js";
-import * as Entry from "/src/storage/entry.js";
-import * as Feed from "/src/storage/feed.js";
-import {parseFeed as parseFeedImpl} from "/src/parse-feed/parse-feed.js";
-import {isCanonicalURLString} from "/src/url/url-string.js";
 
 // Parses an xml input string representing a feed. Returns a result with a feed object and an array
 // of entries. Throws both checked and unchecked errors.

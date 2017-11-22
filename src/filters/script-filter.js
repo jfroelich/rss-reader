@@ -1,6 +1,6 @@
-// Removes script elements from document content
-
 import assert from "/src/assert.js";
+
+// Removes script elements from document content
 
 export default function filter(doc) {
   assert(doc instanceof Document);

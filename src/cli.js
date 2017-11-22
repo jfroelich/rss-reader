@@ -1,7 +1,3 @@
-// Command line interface module. This module does not export anything. Instead, it defines a
-// variable in global scope (window). The definition occurs as an implicit side effect of importing
-// the module.
-
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
@@ -12,6 +8,9 @@ import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 import {parseInt10} from "/src/utils/string.js";
 
+// Command line interface module. This module does not export anything. Instead, it defines a
+// variable in global scope (window). The definition occurs as an implicit side effect of importing
+// the module.
 const cli = {};
 
 cli.refreshIcons = async function() {

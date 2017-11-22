@@ -1,5 +1,3 @@
-// Fetch feed module
-
 import {fetchInternal} from "/src/fetch/utils.js";
 import * as mime from "/src/utils/mime-utils.js";
 

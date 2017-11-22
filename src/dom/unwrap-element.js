@@ -1,5 +1,3 @@
-// HTML element unwrap helper
-
 import assert from "/src/assert.js";
 
 // Replace an element with its children. Special care is taken to add spaces if the operation would

@@ -1,4 +1,3 @@
-
 import truncate from "/src/html/truncate.js";
 
 const ext = '...';

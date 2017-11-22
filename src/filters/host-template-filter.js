@@ -1,4 +1,3 @@
-
 import assert from "/src/assert.js";
 
 // TODO: hostSelectorMap should be a parameter to this function so that configuration is defined

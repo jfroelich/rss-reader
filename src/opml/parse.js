@@ -1,5 +1,3 @@
-// OPML parsing
-
 import {check, ParseError} from "/src/utils/errors.js";
 import parseXML from "/src/xml/parse.js";
 import {getElementName} from "/src/xml/utils.js";

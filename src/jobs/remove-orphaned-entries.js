@@ -1,5 +1,3 @@
-// Scans the database for orphaned entries and removes them
-
 import assert from "/src/assert.js";
 import * as Feed from "/src/storage/feed.js";
 import * as rdb from "/src/storage/rdb.js";

@@ -1,5 +1,3 @@
-// Module for subscribing to a new feed
-
 import assert from "/src/assert.js";
 import {check, isUncheckedError, PermissionsError} from "/src/utils/errors.js";
 import {showNotification} from "/src/extension.js";
@@ -12,6 +10,9 @@ import * as rdb from "/src/storage/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import feedPut from "/src/storage/feed-put.js";
 import {setURLHrefProperty} from "/src/url/url.js";
+
+// Module for subscribing to a new feed
+
 
 export function Context() {
   this.iconCache = undefined;

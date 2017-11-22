@@ -1,6 +1,7 @@
+import assert from "/src/assert.js";
+
 // Filters certain horizontal rule elements from document content
 
-import assert from "/src/assert.js";
 
 // Look for all <hr><hr> sequences and remove the second one. Naive in that it
 // does not fully account for new document state as hrs removed.

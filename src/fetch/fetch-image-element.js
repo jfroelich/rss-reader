@@ -1,12 +1,11 @@
-// Fetch image element module
-
-// TODO: use the fetch API to avoid cookies?
-
 import assert from "/src/assert.js";
 import {TimeoutError} from "/src/utils/errors.js";
 import {FetchError} from "/src/fetch/utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import {setTimeoutPromise} from "/src/utils/promise.js";
+
+// TODO: use the fetch API to avoid cookies?
+
 
 // Fetches an image element. Returns a promise that resolves to a fetched image element. Note that
 // data uris are accepted.

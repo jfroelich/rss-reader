@@ -1,4 +1,3 @@
-
 import fetchHTML from "/src/fetch/fetch-html.js";
 
 async function test(url, timeout) {

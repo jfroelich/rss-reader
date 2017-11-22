@@ -1,11 +1,12 @@
-// OPML outline utilities
+import assert from "/src/assert.js";
+
+
 
 // TODO: I am tempted to create the class OPMLOutline. But I have to resolve the issue that some
 // of these functions operate on elements. So maybe they are out of place, or maybe I should not
 // try. Or, I should create the class and functions operating on elements should be refactored to
 // operate on class properties.
 
-import assert from "/src/assert.js";
 
 export function isOutline(outline) {
   return typeof outline === 'object';

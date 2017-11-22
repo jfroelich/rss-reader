@@ -1,8 +1,9 @@
+import assert from "/src/assert.js";
+import {parseInt10} from "/src/utils/string.js";
+
 // Utilities for working with URL objects. All functions that accept a url parameter expect the
 // parameter to be of type URL, not String, unless otherwise specified.
 
-import assert from "/src/assert.js";
-import {parseInt10} from "/src/utils/string.js";
 
 // This disaster of a function tries to clearly expose the risk of setting a URL's href property
 // directly. Whenever there is any doubt about whether the new href value is valid, this function

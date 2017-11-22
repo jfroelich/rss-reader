@@ -1,7 +1,6 @@
-// Specifies that all links are noreferrer
-
 import assert from "/src/assert.js";
 
+// Specifies that all links are noreferrer
 // TODO: this function's behavior conflicts with attribute filter. Need to whitelist this attribute
 // (and this value) for this element.
 export default function filter(doc) {
