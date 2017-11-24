@@ -53,7 +53,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
         return entry.iconURLString;
       }
 
-      // Otherwise, if the input url is an origin, then check failure count
+      // Otherwise, if the input url is an origin url itself, then check failure count
       if(originURL.href === url.href && entry.failureCount >= this.kMaxFailureCount) {
         return;
       }
@@ -65,8 +65,11 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     const iconURL = this.search(document, url);
     if(iconURL) {
       if(this.hasOpenCache()) {
-        // This affects both the input entry and the redirect entry
-        // This does not affect the origin entry because per-page icons are not site-wide
+        // This affects both the input entry and the redirect entry. However, since we have not yet
+        // checked for the redirect, this basically only affects the input url
+        // This does not affect the origin entry because per-page icons are not site-wide. That is,
+        // they could be, but it is not guaranteed. The only thing that guarantees site wide if is
+        // origin is found and page does not specify.
         await this.cache.putAll(urls, iconURL);
       }
       return iconURL;
@@ -74,13 +77,14 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   }
 
   // Before fetching, check if we reached the max failure count for requests to the origin, if the
-  // origin is different than the input url. If the origin is the same we already checked.
-  if(this.hasOpenCache()) {
-    if(originURL.href !== url.href) {
-      originEntry = await this.cache.findEntry(originURL);
-      if(originEntry && originEntry.failureCount >= this.kMaxFailureCount) {
-        return;
-      }
+  // origin is different than the input url. If the origin is the same, meaning that the input
+  // url was itself an origin url, then we already checked.
+  if(this.hasOpenCache() && originURL.href !== url.href) {
+    // Set origin entry for use near the end of the lookup, so that we do not have to set it again
+    // later and avoid doing a second call to findEntry.
+    originEntry = await this.cache.findEntry(originURL);
+    if(originEntry && originEntry.failureCount >= this.kMaxFailureCount) {
+      return;
     }
   }
 
@@ -104,6 +108,8 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
       // Only append if distinct from input url. We only 'redirected' if 'distinct'
       urls.push(responseURL.href);
+
+      // If redirected, then check the cache for the redirect.
       if(this.hasOpenCache()) {
         const entry = await this.cache.findEntry(responseURL);
         if(entry && entry.iconURLString && !this.isExpired(entry)) {
@@ -120,6 +126,10 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   // Nullify document so there is no ambiguity regarding whether fetching/parsing failed and
   // whether an input document was specified. The document parameter variable is re-used.
   document = undefined;
+
+  // If we successfully fetched the content for the url, parse it into a document in preparation for
+  // searching the document. This is not delegated to search because search is sync should not
+  // involve networking.
   if(response) {
     document = await this.parseHTMLResponse(response);
   }
@@ -134,20 +144,27 @@ FaviconLookup.prototype.lookup = async function(url, document) {
         // site wide. We have not yet added origin to the urls array.
         await this.cache.putAll(urls, iconURL);
       }
+
       return iconURL;
     }
   }
 
   // Check the cache for the origin url if it is distinct from other urls already checked
   if(this.hasOpenCache() && !urls.includes(originURL.href)) {
-    // Origin url may have changed, so searrch for its entry again
+    // TODO: this block was written before originEntry was global to the lookup function. This
+    // should be refactored to not use a block-local "entry" variable and instead just reuse the
+    // originEntry variable.
+
+
+    // Origin url may have changed, so search for its entry again
     const entry = await this.cache.findEntry(originURL);
 
     // Set the shared origin entry to the new origin entry, which signals to the lookup failure
     // handler not to perform the lookup again
     // TODO: except it doesn't signal to avoid the additional findEntry call properly,
     // because it may be undefined ... maybe the lookup handler should just accept an entry as
-    // input instead of the origin url?
+    // input instead of the origin url? Or maybe the lookup handler receiving undefined means that
+    // we know that entry does not exist.
     originEntry = entry;
 
     if(entry) {
@@ -164,11 +181,19 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   }
 
   // Now append origin to urls list in prep for next step so that it is included in the putAll call
+  // TODO: this basically only matters in the block calling the putAll call, so make this operation
+  // only occur within that block
   if(!urls.includes(originURL.href)) {
     urls.push(originURL.href);
   }
 
   // Check for favicon in the origin root directory
+  // TODO: this should be considering the redirect url if available, and using the
+  // redirect url instead. This avoids cases of 404s, or client-side redirects
+  // when Chrome auto-promotes http requests to https. By avoid I mean it skips making the browser
+  // do the same work again. Since we update origin url on redirect, this should probably just
+  // be doing something like originURL.href + 'favicon.ico'.  Note the lack of the leading slash,
+  // because whereas origin excludes the slash so it must be added, href includes the slash.
   const imageURL = url.origin + '/favicon.ico';
   response = await this.fetchImage(imageURL);
 
@@ -182,6 +207,8 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   if(this.hasOpenCache()) {
     await this.onLookupFailure(originURL, originEntry);
   }
+
+  // Default to return undefined, which indicates no favicon found.
 };
 
 // Return true if there is both a connected cache and that cache is in the open state
@@ -225,9 +252,11 @@ FaviconLookup.prototype.fetchHTML = async function(url) {
 };
 
 // Helper that traps non-assertion errors
-// @param response {Response}
+// @param response {Response or response wrapper}
 // @returns {Document}
 FaviconLookup.prototype.parseHTMLResponse = async function(response) {
+  // Definedness is sufficient
+  assert(response);
   try {
     const text = await response.text();
     return parseHTML(text);
