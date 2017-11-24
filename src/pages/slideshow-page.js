@@ -1,3 +1,4 @@
+import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
@@ -6,7 +7,7 @@ import htmlTruncate from "/src/html/truncate.js";
 import * as rdb from "/src/storage/rdb.js";
 import entryMarkRead from "/src/storage/entry-mark-read.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
-import assert from "/src/assert.js";
+//import {setTimeoutPromise} from "/src/utils/promise.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";
 import {parseInt10} from "/src/utils/string.js";
@@ -50,6 +51,18 @@ pollChannel.onmessage = async function(event) {
     }
   }
 };
+
+function showLoadingInformation() {
+  const loadingElement = document.getElementById('initial-loading-panel');
+  assert(loadingElement);
+  loadingElement.style.display = 'block';
+}
+
+function hideLoadingInformation() {
+  const loadingElement = document.getElementById('initial-loading-panel');
+  assert(loadingElement);
+  loadingElement.style.display = 'none';
+}
 
 function removeSlide(slideElement) {
   assert(slideElement instanceof Element);
@@ -400,12 +413,20 @@ function onSlideScroll(event) {
 
 // Initialization
 async function init() {
+  showLoadingInformation();
+
   entryCSSInit();
   let conn;
   try {
+
+    // TEMP: fake a delay in loading
+    //const [timerId, timeoutPromise] = setTimeoutPromise(1200);
+    //await timeoutPromise;
+
     conn = await rdb.open();
     await appendSlides(conn);
   } finally {
+    hideLoadingInformation();
     rdb.close(conn);
   }
 }
