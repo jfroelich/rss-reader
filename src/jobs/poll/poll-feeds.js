@@ -3,11 +3,11 @@ import {queryIdleState, showNotification} from "/src/extension.js";
 import * as Feed from "/src/storage/feed.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
-import {promiseEvery} from "/src/utils/promise.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import {getFeeds as readerDbGetFeeds} from "/src/storage/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import feedPut from "/src/storage/feed-put.js";
+import promiseEvery from "/src/utils/promise-every.js";
 
 export function PollFeedsContext() {
   this.readerConn = undefined;

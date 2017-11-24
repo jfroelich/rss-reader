@@ -1,10 +1,11 @@
 import assert from "/src/assert.js";
-import {isUncheckedError} from "/src/utils/errors.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import * as Feed from "/src/storage/feed.js";
-import {promiseEvery} from "/src/utils/promise.js";
 import feedPut from "/src/storage/feed-put.js";
 import * as rdb from "/src/storage/rdb.js";
+import {isUncheckedError} from "/src/utils/errors.js";
+import promiseEvery from "/src/utils/promise-every.js";
+
 
 export default async function main(readerConn, iconCache) {
   assert(rdb.isOpen(readerConn));

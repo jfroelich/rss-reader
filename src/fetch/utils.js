@@ -1,11 +1,11 @@
 import assert from "/src/assert.js";
-import {check, TimeoutError} from "/src/utils/errors.js";
-import * as mime from "/src/utils/mime-utils.js";
-import isPosInt from "/src/utils/is-pos-int.js";
-import {setTimeoutPromise} from "/src/utils/promise.js";
-import {parseInt10} from "/src/utils/string.js";
 import {compareURLsWithoutHash} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
+import {check, TimeoutError} from "/src/utils/errors.js";
+import isPosInt from "/src/utils/is-pos-int.js";
+import * as mime from "/src/utils/mime-utils.js";
+import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
+import {parseInt10} from "/src/utils/string.js";
 
 // Does a fetch with a timeout and a content type predicate
 // @param url {String} request url

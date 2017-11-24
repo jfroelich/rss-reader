@@ -8,7 +8,7 @@ import * as rdb from "/src/storage/rdb.js";
 import assert from "/src/assert.js";
 import * as idb from "/src/utils/idb.js";
 import * as mime from "/src/utils/mime-utils.js";
-import {promiseEvery} from "/src/utils/promise.js";
+import promiseEvery from "/src/utils/promise-every.js";
 import readFileAsText from "/src/utils/read-file-as-text.js";
 
 // Import opml files
