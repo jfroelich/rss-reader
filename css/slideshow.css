@@ -1,19 +1,32 @@
+
+#initial-loading-panel {
+  position: absolute;
+  display: none;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  padding: 100px;
+  font-size: 40px;
+}
+
+
 #slideshow-container {
   overflow:none;
   position:fixed;
-  left:0px;
-  right:0px;
-  top:0px;
-  bottom:0px;
-  margin:0px;
-  padding-top:0px;
-  padding-left:0px;
-  padding-bottom:0px;
-  padding-right:0px;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: 0;
+  padding-top: 0;
+  padding-left: 0;
+  padding-bottom: 0;
+  padding-right: 0;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-weight:normal;
+  font-weight: normal;
   font-size: 120%;
 }
 
