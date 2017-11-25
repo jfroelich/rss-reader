@@ -1,72 +1,46 @@
-// A simple, slightly perverse, implementation of c's sprintf function, adapted for JavaScript.
-// Much of the original implementation was inspired by node.js's utils.format function.
-// Because strings are immutable, this cannot write to a string reference-pointer thing, so instead
-// the output of the function is the string. So the name of the function is a bit misleading. The
-// other major difference is that this operates more like console.log, and that this only supports
-// a subset of the formatting syntax, and works a bit differently for certain expressions.
-
-// TODO: should syntaxPattern be case-insensitive? Test if %O works in console, or means something
-// entirely different
-
+// Basic string formatting. sprintf returns a formatted string.
+// Case sensitive
 // %s - string
 // %d - number
 // %o - object
 // %% - literal '%'
+
+
 const syntaxPattern = /%[sdo%]/g;
 
+// Use the spread operator to avoid touching arguments:
+// https://github.com/petkaantonov/bluebird/wiki/Optimization-killers
+
 export default function sprintf(...args) {
-
-  // To avoid touching the implicit 'arguments' variable, this uses the spread operator.
-  // Why avoid using arguments? Because:
-  // https://github.com/petkaantonov/bluebird/wiki/Optimization-killers
-
-  // args uses spread operator, so it will be defined even when there are no arguments. When there
-  // are no arguments, args.length will be 0.
-
-  // We cannot rely on assert.js because assert.js relies on this. Also, we don't want to raise
-  // an error within assert. Therefore, use the builtin weak assert to test the assumption that
-  // a spread argument is always defined, to clarify why calling args.length would fail.
-  console.assert(args);
-
-  // Cache the number of args. It will not change for the rest of this function. Internally it is
-  // implemented as a 'getter' function, so it is faster to cache than re-evaluate the getter each
-  // time.
+  // args is defined even when there are no arguments
   const argCount = args.length;
-
-  // Handle the simple no arguments case
-  // TODO: would it be more appropriate to return undefined in this case?
   if(argCount === 0) {
     return '';
   }
 
-  // Track where we are in interating over arguments
   let argIndex = 0;
-
   const formatArg = args[argIndex];
-
-  // If the first argument isn't a string, then just group the arguments together as a string
-  // that is space separated and return.
   if(typeof formatArg !== 'string') {
     return args.map(anyTypeToStringString).join(' ');
   }
 
-  // Advance to the first argument after the formatArg
   argIndex++;
 
-  // If there was only 1 argument, it is the formatArg, just return it as is
   if(argIndex === argCount) {
     return formatArg;
   }
 
+  // Walk over each formatting argument thing in the format string, and replace it with one
+  // of the remaining arguments. We know there is at least one other argument.
   const replacedString = formatArg.replace(syntaxPattern, function replacer(match) {
     // If we've reached or moved past the end, then there are more occurrences of
-    // %s things than arguments, just return the thing as is
+    // formatting codes than arguments. Stop doing any replacements.
     if(argIndex >= argCount) {
       return match;
     }
 
-    // Replace the thing with the argument, and advance the index
-    // The post-increment write occurs after the value is read
+    // Replace the matched formatting code with the current argument, and advance the argument
+    // index to the next argument. The post-increment occurs after the value is read
     switch(match) {
     case '%%':  return '%';
     case '%s':  return anyTypeToStringString(args[argIndex++]);
@@ -81,11 +55,10 @@ export default function sprintf(...args) {
     return replacedString;
   }
 
-  // There may be more arguments to the function than there are things to replace in the format
+  // There may be more arguments to the function than there are codes to replace in the format
   // string. Some of the arguments were used to do replacements so far, but possibly not all of the
-  // arguments have been used. Append the remaining unused arguments as strings to a buffer of
-  // strings, then join the strings together using a space delimiter and return the joined string.
-  // Note this still works even if the above check was not present.
+  // arguments have been used. Append the remaining unused arguments to a buffer, then join them.
+  // This still works even if the above check was not present.
   const buffer = [replacedString];
   while(argIndex < argCount) {
     buffer.push(anyTypeToStringString(args[argIndex++]));
