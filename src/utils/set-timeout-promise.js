@@ -3,7 +3,7 @@ import isPosInt from "/src/utils/is-pos-int.js";
 
 // Returns a promise that resolves to undefined after a certain amount of time, as well as a
 // timer id corresponding to the id of the internal setTimeout call. This returns an array so that
-//the caller can use destructuring such as `const [t,p] = setTimeoutPromise(n);`.
+// the caller can use destructuring such as `const [t,p] = setTimeoutPromise(n);`.
 // @param timeoutMs {Number} milliseconds, must be >= 0, that represents the deadline after to
 // resolve. This only guarantees that it waits at least that long, and it may wait longer, because
 // some browsers do not respect low timeout values (e.g. under about 16ms).
