@@ -1,5 +1,6 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
+import findArchivableEntriesInDb from "/src/storage/find-archivable-entries.js";
 import putEntryInDb from "/src/storage/put-entry.js";
 import * as rdb from "/src/storage/rdb.js";
 import isPosInt from "/src/utils/is-pos-int.js";
@@ -25,7 +26,7 @@ export default async function archiveEntries(conn, maxAgeMs, limit) {
     return entryAgeMs > maxAgeMs;
   }
 
-  const entries = await rdb.findArchivableEntries(conn, isArchivable, limit);
+  const entries = await findArchivableEntriesInDb(conn, isArchivable, limit);
 
   if(!entries.length) {
     console.debug('no archivable entries found');
