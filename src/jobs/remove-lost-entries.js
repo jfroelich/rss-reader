@@ -1,6 +1,7 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import * as rdb from "/src/storage/rdb.js";
+import findEntriesInDb from "/src/storage/find-entries.js";
 import removeEntriesFromDb from "/src/storage/remove-entries.js";
 
 // Scans the database for entries missing urls are removes them
@@ -14,7 +15,7 @@ export default async function removeLostEntries(conn, limit) {
     return !Entry.hasURL(entry);
   }
 
-  const entries = await rdb.findEntries(conn, isLost, limit);
+  const entries = await findEntriesInDb(conn, isLost, limit);
   console.debug('found %s lost entries', entries.length);
   if(entries.length === 0) {
     return;

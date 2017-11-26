@@ -1,5 +1,6 @@
 import assert from "/src/assert.js";
 import * as Feed from "/src/storage/feed.js";
+import findEntriesInDb from "/src/storage/find-entries.js";
 import * as rdb from "/src/storage/rdb.js";
 import removeEntriesFromDb from "/src/storage/remove-entries.js";
 
@@ -15,7 +16,7 @@ export default async function removeOrphanedEntries(conn, limit) {
     return !id || !Feed.isValidId(id) || !feedIds.includes(id);
   }
 
-  const entries = await rdb.findEntries(conn, isOrphan, limit);
+  const entries = await findEntriesInDb(conn, isOrphan, limit);
   console.debug('found %s orphans', entries.length);
   if(entries.length === 0) {
     return;
