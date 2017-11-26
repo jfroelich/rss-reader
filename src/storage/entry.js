@@ -2,14 +2,22 @@ import assert from "/src/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 
+export const ENTRY_MAGIC = 0xdeadbeef;
+
 export const STATE_UNREAD = 0;
 export const STATE_READ = 1;
 export const STATE_UNARCHIVED = 0;
 export const STATE_ARCHIVED = 1;
 
+export function createEntry() {
+  const entry = {};
+  entry.magic = ENTRY_MAGIC;
+  return entry;
+}
+
 // Return true if the first parameter is an entry object
 export function isEntry(entry) {
-  return typeof entry === 'object';
+  return typeof entry === 'object' && entry.magic === ENTRY_MAGIC;
 }
 
 // Returns true if the id is a valid entry id, structurally. This does not check if the id actually

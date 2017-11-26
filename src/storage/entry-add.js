@@ -15,7 +15,7 @@ export default async function entryAdd(entry, conn) {
   storable.readState = Entry.STATE_UNREAD;
   storable.archiveState = Entry.STATE_UNARCHIVED;
   storable.dateCreated = new Date();
-  await rdb.putEntry(conn, storable);
+  return await rdb.putEntry(conn, storable);
 }
 
 // Returns a new entry object where fields have been sanitized. Impure
@@ -38,7 +38,8 @@ function entrySanitize(inputEntry, authorMaxLength, titleMaxLength, contextMaxLe
   assert(isPosInt(titleMaxLength));
   assert(isPosInt(contextMaxLength));
 
-  const outputEntry = Object.assign({}, inputEntry);
+  const blankEntry = Entry.createEntry();
+  const outputEntry = Object.assign(blankEntry, inputEntry);
 
   if(outputEntry.author) {
     let author = outputEntry.author;

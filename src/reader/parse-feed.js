@@ -87,6 +87,16 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   }
 
   for(const entry of entries) {
+
+    // Turn the generic entry object into a reader storage entry object by setting the magic
+    // property.
+    // TODO: should this be a function call that encapsulates the magic that occurs here so that
+    // ENTRY_MAGIC can stay private (not exported from entry module) and is abstracted away?
+    // TODO: should this be done in a separate for loop, earlier, to indicate that its behavior
+    // is not linked to these other entry actions? Or does this for loop represent a generic
+    // operation of coercion across all entries and therefore suffices?
+    entry.magic = Entry.ENTRY_MAGIC;
+
     resolveEntryLink(entry, feedLinkURL);
     convertEntryLinkToURL(entry);
   }
@@ -97,6 +107,9 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   // sure where. And I don't like the amount of boilerplate it introduces because at some point
   // the caller will have so much responsibility and so many concerns to take care of that the
   // caller will probably be making mistakes.
+  // On the other hand, pretty much every caller wants to make uses of this functionality at this
+  // stage of the pipeline. All I would be doing is placing more burden on the caller by making
+  // more pipeline steps explicit?
   result.entries = dedupEntries(entries);
 
 

@@ -69,7 +69,11 @@ async function archiveEntry(entry, conn, channel) {
 // Returns a new entry object that is in a compacted form. The new entry is a shallow copy of the
 // input entry, where only certain properties are kept, and a couple properties are changed.
 function compactEntry(entry) {
-  const ce = {};
+
+  // Consistently create the entry using the createEntry method, instead of creating a generic
+  // object, so that any implicit fields and such are present.
+  const ce = Entry.createEntry();
+
   ce.dateCreated = entry.dateCreated;
   ce.dateRead = entry.dateRead;
   ce.feed = entry.feed;

@@ -75,6 +75,8 @@ export async function subscribe(feed) {
 
     // Get the fetched details
     const xml = await res.text();
+
+    // Do not process or store entries when subscribing
     const kProcEntries = false;
     const parseResult = parseFeed(xml, url, res.responseURL, res.lastModifiedDate, kProcEntries);
     feed = Feed.merge(feed, parseResult.feed);

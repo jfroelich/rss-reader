@@ -8,7 +8,7 @@ import {isValidURLString} from "/src/url/url-string.js";
 // Module for interacting with the app indexedDB database
 
 const NAME = 'reader';
-const VERSION = 20;
+const VERSION = 21;
 const OPEN_TIMEOUT_MS = 500;
 
 // Opens a connection to the reader-db database
@@ -54,7 +54,36 @@ export function onUpgradeNeeded(event) {
     feedStore = tx.objectStore('feed');
     entryStore = tx.objectStore('entry');
   }
+
+  if(event.oldVersion < 21) {
+    // Add magic to all older entries
+    addEntryMagic(tx);
+  }
 }
+
+// Expects the transaction to be writable (either readwrite or versionchange)
+function addEntryMagic(tx) {
+  console.debug('Adding entry magic');
+  const store = tx.objectStore('entry');
+  const getAllEntriesRequest = store.getAll();
+  getAllEntriesRequest.onerror = function(event) {
+    console.warn('Error adding entry magic', getAllEntriesRequest.error);
+  };
+  getAllEntriesRequest.onsuccess = function(event) {
+    const entries = event.target.result;
+    console.debug('Loaded %d entries to set magic on', entries.length);
+    writeEntriesWithMagic(store, entries);
+  };
+}
+
+function writeEntriesWithMagic(entryStore, entries) {
+  for(const entry of entries) {
+    console.debug('Set entry magic on entry with id', entry.id);
+    entry.magic = Entry.ENTRY_MAGIC;
+    entryStore.put(entry);
+  }
+}
+
 
 // Returns feed id if a feed with the given url exists in the database
 // @param conn {IDBDatabase}
