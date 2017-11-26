@@ -12,7 +12,7 @@ import {isCanonicalURLString} from "/src/url/url-string.js";
 // object is both an object and has the secret property with the given 'magic' value.
 //
 // Note that I prefer this object to not be exported. So callers should not use it. However,
-// at the moment, rdb.js relies on it being public, so it must be exported.
+// at the moment, open.js relies on it being public, so it must be exported.
 export const ENTRY_MAGIC = 0xdeadbeef;
 
 export const STATE_UNREAD = 0;

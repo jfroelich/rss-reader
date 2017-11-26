@@ -3,25 +3,25 @@ import * as Entry from "/src/storage/entry.js";
 import * as Feed from "/src/storage/feed.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 
-// Open a connection to the reader database
-
-// TODO: refactor this file to default export the open function and nothing else.
 // TODO: rename "/storage/" folder to "/db/" or "/reader-db/"
 
 
+// TODO: this should come from config?
 const NAME = 'reader';
 const VERSION = 22;
+
+// TODO: this should come from config?
 const OPEN_TIMEOUT_MS = 500;
 
-// Opens a connection to the reader-db database
+// Opens a connection to the reader database
 // @return {Promise} a promise that resolves to an open database connection
-export function open() {
+export default function open() {
   return idb.open(NAME, VERSION, onUpgradeNeeded, OPEN_TIMEOUT_MS);
 }
 
 // Helper for open. Does the database upgrade. This should never be
 // called directly. To do an upgrade, call open with a higher version number.
-export function onUpgradeNeeded(event) {
+function onUpgradeNeeded(event) {
   const conn = event.target.result;
   const tx = event.target.transaction;
   let feedStore, entryStore;

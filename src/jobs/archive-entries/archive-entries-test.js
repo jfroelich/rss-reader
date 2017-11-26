@@ -1,5 +1,5 @@
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
-import * as rdb from "/src/storage/rdb.js";
+import openReaderDb from "/src/storage/open.js";
 import {close as closeDb, remove as removeDb} from "/src/utils/indexeddb-utils.js";
 
 async function test() {
@@ -11,7 +11,7 @@ async function test() {
   let conn, timeoutMs = 1000, maxAgeMs;
   const limit = 5;
   try {
-    conn = await rdb.open(name, version, rdb.onUpgradeNeeded, timeoutMs);
+    conn = await openReaderDb(name, version, undefined, timeoutMs);
     await archiveEntries(conn, maxAgeMs, limit);
     closeDb(conn);
     closeRequested = true;

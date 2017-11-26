@@ -2,7 +2,6 @@ import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import findArchivableEntriesInDb from "/src/storage/find-archivable-entries.js";
 import putEntryInDb from "/src/storage/put-entry.js";
-import * as rdb from "/src/storage/rdb.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import sizeof from "/src/utils/sizeof.js";

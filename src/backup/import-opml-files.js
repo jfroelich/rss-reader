@@ -4,7 +4,7 @@ import * as OPMLOutline from "/src/opml/outline.js";
 import parseOPML from "/src/opml/parse.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import * as Feed from "/src/storage/feed.js";
-import * as rdb from "/src/storage/rdb.js";
+import openReaderDb from "/src/storage/open.js";
 import assert from "/src/assert.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import * as mime from "/src/utils/mime-utils.js";
@@ -21,7 +21,7 @@ export default async function main(files) {
   const fic = new FaviconCache();
   let readerConn;
   try {
-    [readerConn] = await Promise.all([rdb.open(), fic.open()]);
+    [readerConn] = await Promise.all([openReaderDb(), fic.open()]);
     const promises = [];
     for(const file of files) {
       promises.push(importFile(file, readerConn, fic));

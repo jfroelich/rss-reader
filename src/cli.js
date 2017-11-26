@@ -1,11 +1,11 @@
-import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
+import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import {pollFeeds, PollFeedsContext} from "/src/jobs/poll/poll-feeds.js";
-import * as rdb from "/src/storage/rdb.js";
 import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
+import openReaderDb from "/src/storage/open.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 
@@ -18,7 +18,7 @@ cli.refreshIcons = async function() {
   const fic = new FaviconCache();
   let rConn;
   try {
-    [rConn] = await Promise.all([rdb.open(), fic.open()]);
+    [rConn] = await Promise.all([openReaderDb(), fic.open()]);
     await refreshFeedIcons(rConn, fic);
   } finally {
     fic.close();
@@ -29,7 +29,7 @@ cli.refreshIcons = async function() {
 cli.archiveEntries = async function(limit) {
   let maxAgeMs, conn;
   try {
-    conn = await rdb.open();
+    conn = await openReaderDb();
     await archiveEntries(conn, maxAgeMs, limit);
   } finally {
     idb.close(conn);
@@ -45,7 +45,7 @@ cli.pollFeeds = async function() {
   pfc.ignoreRecencyCheck = true;
   pfc.ignoreModifiedCheck = true;
   try {
-    [pfc.readerConn] = await Promise.all([rdb.open(), fic.open()]);
+    [pfc.readerConn] = await Promise.all([openReaderDb(), fic.open()]);
     await pollFeeds(pfc);
   } finally {
     fic.close();
@@ -56,7 +56,7 @@ cli.pollFeeds = async function() {
 cli.removeListEntries = async function() {
   let conn;
   try {
-    conn = await rdb.open();
+    conn = await openReaderDb();
     await removeLostEntries(conn, args);
   } finally {
     idb.close(conn);
@@ -66,7 +66,7 @@ cli.removeListEntries = async function() {
 cli.removeOrphanedEntries = async function() {
   let conn;
   try {
-    conn = await rdb.open();
+    conn = await openReaderDb();
     await removeOrphanedEntries(conn, args);
   } finally {
     idb.close(conn);

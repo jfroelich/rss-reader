@@ -9,7 +9,7 @@ import * as Feed from "/src/storage/feed.js";
 import {ConstraintError} from "/src/storage/errors.js";
 import feedPut from "/src/storage/feed-put.js";
 import findFeedIdByURLInDb from "/src/storage/find-feed-id-by-url.js";
-import * as rdb from "/src/storage/rdb.js";
+import openReaderDb from "/src/storage/open.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {check, isUncheckedError, PermissionsError} from "/src/utils/errors.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
@@ -27,7 +27,7 @@ export function Context() {
 // Opens database connections
 Context.prototype.connect = async function() {
   this.iconCache = new FaviconCache();
-  const promises = [rdb.open(), this.iconCache.open()];
+  const promises = [openReaderDb(), this.iconCache.open()];
   [this.readerConn] = await Promise.all(promises);
 };
 

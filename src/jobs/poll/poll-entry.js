@@ -6,7 +6,6 @@ import FaviconLookup from "/src/favicon/lookup.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
 import parseHTML from "/src/html/parse.js";
-import * as rdb from "/src/storage/rdb.js";
 import entryAdd from "/src/storage/entry-add.js";
 import findEntryByURLInDb from "/src/storage/find-entry-by-url.js";
 import rewriteURL from "/src/jobs/poll/rewrite-url.js";

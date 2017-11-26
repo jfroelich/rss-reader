@@ -1,6 +1,5 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
-import * as rdb from "/src/storage/rdb.js";
 import findEntriesInDb from "/src/storage/find-entries.js";
 import removeEntriesFromDb from "/src/storage/remove-entries.js";
 import * as idb from "/src/utils/indexeddb-utils.js";

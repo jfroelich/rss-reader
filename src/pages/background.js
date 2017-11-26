@@ -3,7 +3,7 @@ import "/src/cli.js";
 import {addBadgeClickListener, addInstallListener, showSlideshowTab} from "/src/extension.js";
 import FaviconCache from "/src/favicon/cache.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import * as rdb from "/src/storage/rdb.js";
+import openReaderDb from "/src/storage/open.js";
 import setupReaderDb from "/src/storage/setup.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 
@@ -15,7 +15,7 @@ import * as idb from "/src/utils/indexeddb-utils.js";
 async function initBadgeText() {
   let conn;
   try {
-    conn = await rdb.open();
+    conn = await openReaderDb();
     await updateBadgeText(conn);
   } catch(error) {
     console.warn(error);

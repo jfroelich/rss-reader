@@ -4,7 +4,7 @@ import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import escapeHTML from "/src/html/escape.js";
 import htmlTruncate from "/src/html/truncate.js";
-import * as rdb from "/src/storage/rdb.js";
+import openReaderDb from "/src/storage/open.js";
 import entryMarkRead from "/src/storage/entry-mark-read.js";
 import findViewableEntriesInDb from "/src/storage/find-viewable-entries.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
@@ -42,7 +42,7 @@ pollChannel.onmessage = async function(event) {
 
     if(count < 2) {
       try {
-        conn = await rdb.open();
+        conn = await openReaderDb();
         appendSlides(conn);
       } catch(error) {
         console.warn(error);
@@ -260,7 +260,7 @@ async function onSlideClick(event) {
 
   let conn;
   try {
-    conn = await rdb.open();
+    conn = await openReaderDb();
     await markSlideRead(conn, currentSlide);
   } catch(error) {
     console.warn(error);
@@ -288,7 +288,7 @@ async function showNextSlide() {
   let conn;
 
   try {
-    conn = await rdb.open();
+    conn = await openReaderDb();
 
     // Conditionally append more slides
     if(unreadSlideElementCount < 2) {
@@ -418,7 +418,7 @@ async function init() {
   entryCSSInit();
   let conn;
   try {
-    conn = await rdb.open();
+    conn = await openReaderDb();
     await appendSlides(conn);
   } finally {
     hideLoadingInformation();

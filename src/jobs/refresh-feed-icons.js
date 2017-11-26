@@ -3,11 +3,9 @@ import FaviconLookup from "/src/favicon/lookup.js";
 import * as Feed from "/src/storage/feed.js";
 import feedPut from "/src/storage/feed-put.js";
 import getFeedsFromDb from "/src/storage/get-feeds.js";
-import * as rdb from "/src/storage/rdb.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import promiseEvery from "/src/utils/promise-every.js";
-
 
 export default async function main(readerConn, iconCache) {
   assert(idb.isOpen(readerConn));

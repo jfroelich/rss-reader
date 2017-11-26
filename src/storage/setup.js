@@ -1,11 +1,11 @@
-import {open} from "/src/storage/rdb.js";
+import open as openDb from "/src/storage/open.js";
 import {close as closeDb} from "/src/utils/indexeddb-utils.js";
 
 // Create the reader-db database
-export default async function setup() {
+export default async function main() {
   let conn;
   try {
-    conn = await open();
+    conn = await openDb();
   } finally {
     closeDb(conn);
   }

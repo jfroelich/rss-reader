@@ -10,7 +10,7 @@ import {
 } from "/src/extension.js";
 import FONTS from "/src/fonts.js";
 import htmlTruncate from "/src/html/truncate.js";
-import * as rdb from "/src/storage/rdb.js";
+import openReaderDb from "/src/storage/open.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
 import * as Feed from "/src/storage/feed.js";
@@ -234,7 +234,7 @@ async function feedListItemOnclick(event) {
   // Load feed details from the database
   let conn, feed;
   try {
-    conn = await rdb.open();
+    conn = await openReaderDb();
     feed = await findFeedByIdInDb(conn, feedIdNumber);
   } catch(error) {
     console.warn(error);
@@ -359,7 +359,7 @@ async function feedListInit() {
   const feedListElement = document.getElementById('feedlist');
   let conn, feeds;
   try {
-    conn = await rdb.open();
+    conn = await openReaderDb();
     feeds = await getFeedsFromDb(conn);
   } catch(error) {
     // TODO: react to error
@@ -431,7 +431,7 @@ async function unsubscribeButtonOnclick(event) {
 
   let conn;
   try {
-    conn = await rdb.open();
+    conn = await openReaderDb();
     await unsubscribe(feedId, conn);
   } catch(error) {
     console.warn(error);
@@ -473,7 +473,7 @@ async function exportOPMLButtonOnclick(event) {
   const title = 'Subscriptions', fileName = 'subscriptions.xml';
   let conn;
   try {
-    conn = await rdb.open();
+    conn = await openReaderDb();
     const feeds = await getFeedsFromDb(conn);
     exportFeeds(feeds, title, fileName);
   } catch(error) {

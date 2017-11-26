@@ -5,7 +5,7 @@ import {pollFeeds, PollFeedsContext} from "/src/jobs/poll/poll-feeds.js";
 import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
-import * as rdb from "/src/storage/rdb.js";
+import openReaderDb from "/src/storage/open.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 
 // Registers alarms in the extension that run various background jobs. Analogous to cron.
@@ -26,7 +26,7 @@ async function onWakeup(alarm) {
     let conn, maxAgeMs;
     const limit = 500;
     try {
-      conn = await rdb.open();
+      conn = await openReaderDb();
       await archiveEntries(conn, maxAgeMs, limit);
     } catch(error) {
       console.warn(error);
@@ -41,7 +41,7 @@ async function onWakeup(alarm) {
     pfc.iconCache = faviconCache;
     let _;
     try {
-      [pfc.readerConn, _] = await Promise.all([rdb.open(), faviconCache.open()]);
+      [pfc.readerConn, _] = await Promise.all([openReaderDb(), faviconCache.open()]);
       await pollFeeds(pfc);
     } catch(error) {
       console.warn(error);
@@ -55,7 +55,7 @@ async function onWakeup(alarm) {
     const limit = 100;
     let conn;
     try {
-      conn = await rdb.open();
+      conn = await openReaderDb();
       await removeLostEntries(conn, limit);
     } catch(error) {
       console.warn(error);
@@ -68,7 +68,7 @@ async function onWakeup(alarm) {
     const limit = 100;
     let conn;
     try {
-      conn = await rdb.open();
+      conn = await openReaderDb();
       await removeOrphanedEntries(conn, limit);
     } catch(error) {
       console.warn(error);
@@ -81,7 +81,7 @@ async function onWakeup(alarm) {
     const fic = new FaviconCache();
     let readerConn;
     try {
-      [readerConn] = await Promise.all([rdb.open(), fic.open()]);
+      [readerConn] = await Promise.all([openReaderDb(), fic.open()]);
       await refreshFeedIcons(readerConn, fic);
     } catch(error) {
       console.warn(error);
