@@ -182,15 +182,3 @@ export function findEntryIdsByFeedId(conn, feedId) {
     request.onerror = () => reject(request.error);
   });
 }
-
-export function findFeedById(conn, feedId) {
-  assert(idb.isOpen(conn));
-  assert(Feed.isValidId(feedId));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('feed');
-    const store = tx.objectStore('feed');
-    const request = store.get(feedId);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
