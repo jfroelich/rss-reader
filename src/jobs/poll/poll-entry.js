@@ -8,6 +8,7 @@ import applyAllDocumentFilters from "/src/filters/apply-all.js";
 import parseHTML from "/src/html/parse.js";
 import * as rdb from "/src/storage/rdb.js";
 import entryAdd from "/src/storage/entry-add.js";
+import findEntryByURLInDb from "/src/storage/find-entry-by-url.js";
 import rewriteURL from "/src/jobs/poll/rewrite-url.js";
 import sniffIsBinaryURL from "/src/url/sniff.js";
 import {setURLHrefProperty} from "/src/url/url.js";
@@ -47,7 +48,7 @@ export async function pollEntry(entry) {
     return;
   }
 
-  if(await rdb.findEntryByURL(this.readerConn, url.href)) {
+  if(await findEntryByURLInDb(this.readerConn, url.href)) {
     return;
   }
 
@@ -71,7 +72,7 @@ export async function pollEntry(entry) {
         return;
       }
 
-      if(await rdb.findEntryByURL(this.readerConn, responseURL.href)) {
+      if(await findEntryByURLInDb(this.readerConn, responseURL.href)) {
         return;
       }
 

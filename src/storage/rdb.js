@@ -153,19 +153,3 @@ export function findEntryById(conn, id) {
     request.onerror = () => reject(request.error);
   });
 }
-
-// Returns an entry ID, not an entry, matching url
-// @param conn {IDBDatabase}
-// @param url {String}
-export function findEntryByURL(conn, url) {
-  assert(idb.isOpen(conn));
-  assert(isValidURLString(url));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const index = store.index('urls');
-    const request = index.getKey(url);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
