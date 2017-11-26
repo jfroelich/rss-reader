@@ -21,3 +21,46 @@ export const INACCESSIBLE_CONTENT_DESCRIPTORS = [
   {hostname: 'www.heraldsun.com.au', reason: 'requires-cookies'},
   {hostname: 'ripe73.ripe.net', reason: 'requires-cookies'}
 ];
+
+export const FONTS = [
+  'ArchivoNarrow-Regular',
+  'Arial, sans-serif',
+  'Calibri',
+  'Calibri Light',
+  'Cambria',
+  'CartoGothicStd',
+  'Clearly Different',
+  'Essays1743',
+  'FeltTip',
+  'Georgia',
+  'Montserrat',
+  'MS Sans Serif',
+  'News Cycle, sans-serif',
+  'Noto Sans',
+  'Open Sans Regular',
+  'PathwayGothicOne',
+  'PlayfairDisplaySC',
+  'Roboto Regular'
+];
+
+export const BG_IMAGES = [
+  '/images/bgfons-paper_texture318.jpg',
+  '/images/CCXXXXXXI_by_aqueous.jpg',
+  '/images/paper-backgrounds-vintage-white.jpg',
+  '/images/pickering-texturetastic-gray.png',
+  '/images/reusage-recycled-paper-white-first.png',
+  '/images/subtle-patterns-beige-paper.png',
+  '/images/subtle-patterns-cream-paper.png',
+  '/images/subtle-patterns-exclusive-paper.png',
+  '/images/subtle-patterns-groove-paper.png',
+  '/images/subtle-patterns-handmade-paper.png',
+  '/images/subtle-patterns-paper-1.png',
+  '/images/subtle-patterns-paper-2.png',
+  '/images/subtle-patterns-paper.png',
+  '/images/subtle-patterns-rice-paper-2.png',
+  '/images/subtle-patterns-rice-paper-3.png',
+  '/images/subtle-patterns-soft-wallpaper.png',
+  '/images/subtle-patterns-white-wall.png',
+  '/images/subtle-patterns-witewall-3.png',
+  '/images/thomas-zucx-noise-lines.png'
+];

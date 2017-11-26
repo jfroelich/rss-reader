@@ -1,6 +1,6 @@
 import exportFeeds from "/src/backup/export-feeds.js";
 import readerImportFiles from "/src/backup/import-opml-files.js";
-import BG_IMAGES from "/src/bg-images.js";
+import {BG_IMAGES, FONTS} from "/src/config.js";
 import fadeElement from "/src/dom/fade-element.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {
@@ -8,7 +8,6 @@ import {
   requestBrowserPermission,
   removeBrowserPermission
 } from "/src/extension.js";
-import FONTS from "/src/fonts.js";
 import htmlTruncate from "/src/html/truncate.js";
 import openReaderDb from "/src/reader-db/open.js";
 import * as Subscriber from "/src/reader/subscribe.js";
