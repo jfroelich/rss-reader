@@ -169,16 +169,3 @@ export function findEntryByURL(conn, url) {
     request.onerror = () => reject(request.error);
   });
 }
-
-export function findEntryIdsByFeedId(conn, feedId) {
-  assert(idb.isOpen(conn));
-  assert(Feed.isValidId(feedId));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const index = store.index('feed');
-    const request = index.getAllKeys(feedId);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
