@@ -21,16 +21,6 @@ export function open() {
 export const close = idb.close;
 export const isOpen = idb.isOpen;
 
-// Create the reader-db database
-export async function setup() {
-  let conn;
-  try {
-    conn = await open();
-  } finally {
-    close(conn);
-  }
-}
-
 // Helper for open. Does the database upgrade. This should never be
 // called directly. To do an upgrade, call open with a higher version number.
 export function onUpgradeNeeded(event) {

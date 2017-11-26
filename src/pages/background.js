@@ -2,8 +2,9 @@ import "/src/alarms.js";
 import "/src/cli.js";
 import {addBadgeClickListener, addInstallListener, showSlideshowTab} from "/src/extension.js";
 import FaviconCache from "/src/favicon/cache.js";
-import * as rdb from "/src/storage/rdb.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
+import * as rdb from "/src/storage/rdb.js";
+import setupReaderDb from "/src/storage/setup.js";
 
 // Background page for extension. This should be loaded exclusively in the background page.
 
@@ -26,9 +27,8 @@ async function initBadgeText() {
 async function onInstalled(event) {
   console.debug('onInstalled', event);
 
-  // Setup the reader-db database
   try {
-    await rdb.setup();
+    await setupReaderDb();
   } catch(error) {
     console.warn(error);
   }
@@ -47,7 +47,7 @@ async function onClicked(event) {
 }
 
 
-console.debug('initializing background page');
+console.debug('Initializing background page');
 
 addInstallListener(onInstalled);
 addBadgeClickListener(onClicked);
