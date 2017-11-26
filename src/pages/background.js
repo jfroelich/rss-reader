@@ -5,7 +5,7 @@ import FaviconCache from "/src/favicon/cache.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as rdb from "/src/storage/rdb.js";
 import setupReaderDb from "/src/storage/setup.js";
-import * as idb from "/src/utils/idb.js";
+import * as idb from "/src/utils/indexeddb-utils.js";
 
 // Background page for extension. This should be loaded exclusively in the background page.
 

@@ -6,7 +6,7 @@ import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 import * as rdb from "/src/storage/rdb.js";
-import * as idb from "/src/utils/idb.js";
+import * as idb from "/src/utils/indexeddb-utils.js";
 
 // Registers alarms in the extension that run various background jobs. Analogous to cron.
 

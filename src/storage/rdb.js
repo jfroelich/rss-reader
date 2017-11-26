@@ -1,7 +1,7 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import * as Feed from "/src/storage/feed.js";
-import * as idb from "/src/utils/idb.js";
+import * as idb from "/src/utils/indexeddb-utils.js";
 
 // Open a connection to the reader database
 

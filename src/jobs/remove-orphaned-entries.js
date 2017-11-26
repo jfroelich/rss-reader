@@ -3,7 +3,7 @@ import * as Feed from "/src/storage/feed.js";
 import findEntriesInDb from "/src/storage/find-entries.js";
 import getFeedIdsInDb from "/src/storage/get-feed-ids.js";
 import removeEntriesFromDb from "/src/storage/remove-entries.js";
-import {isOpen} from "/src/utils/idb.js";
+import {isOpen} from "/src/utils/indexeddb-utils.js";
 
 // Removes entries not linked to a feed from the database
 // @param conn {IDBDatabase} an open database connection

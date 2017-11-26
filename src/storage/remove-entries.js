@@ -1,6 +1,6 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
-import {isOpen} from "/src/utils/idb.js";
+import {isOpen} from "/src/utils/indexeddb-utils.js";
 
 // @param conn {IDBDatabase} an open connection to the reader database
 // @param ids {Array} an array of entry ids

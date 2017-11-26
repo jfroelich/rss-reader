@@ -13,7 +13,7 @@ import rewriteURL from "/src/jobs/poll/rewrite-url.js";
 import sniffIsBinaryURL from "/src/url/sniff.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
-import * as idb from "/src/utils/idb.js";
+import * as idb from "/src/utils/indexeddb-utils.js";
 
 export class Context {
   constructor() {

@@ -1,6 +1,6 @@
 import assert from "/src/assert.js";
 import {isEntry} from "/src/storage/entry.js";
-import {isOpen} from "/src/utils/idb.js";
+import {isOpen} from "/src/utils/indexeddb-utils.js";
 
 export default function putEntryInDb(conn, entry) {
   return new Promise(function executor(resolve, reject) {

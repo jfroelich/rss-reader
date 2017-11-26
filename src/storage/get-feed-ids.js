@@ -1,5 +1,5 @@
 import assert from "/src/assert.js";
-import {isOpen} from "/src/utils/idb.js";
+import {isOpen} from "/src/utils/indexeddb-utils.js";
 
 // Returns a promise that resolves to an array of feed ids, or rejects with a database error
 // @param conn {IDBDatabase} an open database connection to the reader database

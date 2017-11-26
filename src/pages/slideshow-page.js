@@ -10,7 +10,7 @@ import findViewableEntriesInDb from "/src/storage/find-viewable-entries.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";
-import * as idb from "/src/utils/idb.js";
+import * as idb from "/src/utils/indexeddb-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 
 // Track the currently visible slide

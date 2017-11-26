@@ -5,15 +5,15 @@ import htmlTruncate from "/src/html/truncate.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import putEntryInDb from "/src/storage/put-entry.js";
-import * as rdb from "/src/storage/rdb.js";
+import {isOpen as isOpenDb} from "/src/utils/indexeddb-utils.js";
 import {condenseWhitespace, filterControls} from "/src/utils/string.js";
-import * as idb from "/src/utils/idb.js";
+
 
 // TODO: this does not need to be async, this can be a promise returning function
 
 export default async function entryAdd(entry, conn) {
   assert(Entry.isEntry(entry));
-  assert(idb.isOpen(conn));
+  assert(isOpenDb(conn));
   const sanitized = entrySanitize(entry);
   const storable = filterEmptyProps(sanitized);
   storable.readState = Entry.STATE_UNREAD;

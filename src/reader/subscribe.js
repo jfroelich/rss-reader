@@ -12,7 +12,7 @@ import findFeedIdByURLInDb from "/src/storage/find-feed-id-by-url.js";
 import * as rdb from "/src/storage/rdb.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {check, isUncheckedError, PermissionsError} from "/src/utils/errors.js";
-import * as idb from "/src/utils/idb.js";
+import * as idb from "/src/utils/indexeddb-utils.js";
 
 // Module for subscribing to a new feed
 

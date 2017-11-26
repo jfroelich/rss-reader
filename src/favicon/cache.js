@@ -1,5 +1,5 @@
 import assert from "/src/assert.js";
-import * as idb from "/src/utils/idb.js";
+import * as idb from "/src/utils/indexeddb-utils.js";
 
 // TODO: not entirely sure, but maybe if conn is the only shared state, there is no need for the
 // class. I have mixed feelings.

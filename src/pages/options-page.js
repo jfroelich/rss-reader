@@ -17,7 +17,7 @@ import * as Feed from "/src/storage/feed.js";
 import findFeedByIdInDb from "/src/storage/find-feed-by-id.js";
 import getFeedsFromDb from "/src/storage/get-feeds.js";
 import assert from "/src/assert.js";
-import * as idb from "/src/utils/idb.js";
+import * as idb from "/src/utils/indexeddb-utils.js";
 import * as mime from "/src/utils/mime-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 

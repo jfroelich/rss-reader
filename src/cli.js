@@ -6,7 +6,7 @@ import * as rdb from "/src/storage/rdb.js";
 import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
-import * as idb from "/src/utils/idb.js";
+import * as idb from "/src/utils/indexeddb-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 
 // Command line interface module. This module does not export anything. Instead, it defines a

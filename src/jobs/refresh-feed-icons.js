@@ -5,7 +5,7 @@ import feedPut from "/src/storage/feed-put.js";
 import getFeedsFromDb from "/src/storage/get-feeds.js";
 import * as rdb from "/src/storage/rdb.js";
 import {isUncheckedError} from "/src/utils/errors.js";
-import * as idb from "/src/utils/idb.js";
+import * as idb from "/src/utils/indexeddb-utils.js";
 import promiseEvery from "/src/utils/promise-every.js";
 
 

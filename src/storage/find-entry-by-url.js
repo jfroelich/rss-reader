@@ -1,6 +1,6 @@
 import assert from "/src/assert.js";
 import {isValidURLString} from "/src/url/url-string.js";
-import {isOpen} from "/src/utils/idb.js";
+import {isOpen} from "/src/utils/indexeddb-utils.js";
 
 // TODO: this returns an id. It should be renamed appropriately.
 // TODO: perhaps this should accept a URL instead of a url string, so that there is no ambiguity

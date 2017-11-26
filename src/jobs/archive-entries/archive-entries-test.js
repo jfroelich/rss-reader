@@ -1,6 +1,6 @@
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import * as rdb from "/src/storage/rdb.js";
-import {close as closeDb, remove as removeDb} from "/src/utils/idb.js";
+import {close as closeDb, remove as removeDb} from "/src/utils/indexeddb-utils.js";
 
 async function test() {
   console.log('test start');

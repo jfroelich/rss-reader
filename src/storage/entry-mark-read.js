@@ -4,7 +4,7 @@ import * as Entry from "/src/storage/entry.js";
 import {InvalidStateError, NotFoundError} from "/src/storage/errors.js";
 import findEntryByIdInDb from "/src/storage/find-entry-by-id.js";
 import putEntryInDb from "/src/storage/put-entry.js";
-import {isOpen} from "/src/utils/idb.js";
+import {isOpen} from "/src/utils/indexeddb-utils.js";
 import {check} from "/src/utils/errors.js";
 
 // Mark the entry with the given id as read in the database
