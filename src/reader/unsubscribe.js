@@ -1,6 +1,7 @@
 import assert from "/src/assert.js";
 import * as Feed from "/src/storage/feed.js";
 import * as rdb from "/src/storage/rdb.js";
+import removeFeedFromDb from "/src/storage/remove-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 
 export default async function unsubscribe(feedId, conn) {
@@ -8,7 +9,7 @@ export default async function unsubscribe(feedId, conn) {
   assert(Feed.isValidId(feedId));
 
   const entryIds = await rdb.findEntryIdsByFeedId(conn, feedId);
-  await rdb.removeFeedAndEntries(conn, feedId, entryIds);
+  await removeFeedFromDb(conn, feedId, entryIds);
 
   const channel = new BroadcastChannel('db');
   channel.postMessage({type: 'feed-deleted', id: feedId});

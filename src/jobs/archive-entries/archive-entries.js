@@ -1,6 +1,7 @@
-import * as Entry from "/src/storage/entry.js";
-import * as rdb from "/src/storage/rdb.js";
 import assert from "/src/assert.js";
+import * as Entry from "/src/storage/entry.js";
+import putEntryInDb from "/src/storage/put-entry.js";
+import * as rdb from "/src/storage/rdb.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import sizeof from "/src/utils/sizeof.js";
 
@@ -60,7 +61,7 @@ async function archiveEntry(entry, conn, channel) {
   compacted.dateUpdated = new Date();
   const afterSize = sizeof(compacted);
   console.debug('before %d after %d', beforeSize, afterSize);
-  await rdb.putEntry(conn, compacted);
+  await putEntryInDb(conn, compacted);
   const message = {type: 'archived-entry', id: compacted.id};
   channel.postMessage(message);
   return compacted;

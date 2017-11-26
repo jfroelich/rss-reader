@@ -344,59 +344,6 @@ export function getUnarchivedUnreadEntries(conn, offset, limit) {
   });
 }
 
-export function removeFeedAndEntries(conn, feedId, entryIds) {
-  assert(idb.isOpen(conn));
-  assert(Feed.isValidId(feedId));
-  assert(Array.isArray(entryIds));
-
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction(['feed', 'entry'], 'readwrite');
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-
-    const feedStore = tx.objectStore('feed');
-    feedStore.delete(feedId);
-
-    const entryStore = tx.objectStore('entry');
-    for(const entryId of entryIds) {
-      entryStore.delete(entryId);
-    }
-  });
-}
-
-export function putEntry(conn, entry) {
-  assert(idb.isOpen(conn));
-  assert(Entry.isEntry(entry));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('entry', 'readwrite');
-    const store = tx.objectStore('entry');
-    const request = store.put(entry);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// TODO: is this even in use?
-// TODO: this should not be setting dateUpdated that is caller's responsibility
-export function putEntries(conn, entries) {
-  assert(idb.isOpen(conn));
-  assert(Array.isArray(entries));
-  return new Promise(function executor(resolve, reject) {
-    const currentDate = new Date();
-    const tx = conn.transaction('entry', 'readwrite');
-    tx.oncomplete = resolve;
-    tx.onerror = function txOnerror(event) {
-      reject(tx.error);
-    };
-    const entryStore = tx.objectStore('entry');
-    for(const entry of entries) {
-      entry.dateUpdated = currentDate;
-      entryStore.put(entry);
-    }
-  });
-}
-
-
 
 
 export class ConstraintError extends Error {

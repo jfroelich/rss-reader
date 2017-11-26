@@ -4,8 +4,11 @@ import replaceTags from "/src/html/replace-tags.js";
 import htmlTruncate from "/src/html/truncate.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
+import putEntryInDb from "/src/storage/put-entry.js";
 import * as rdb from "/src/storage/rdb.js";
 import {condenseWhitespace, filterControls} from "/src/utils/string.js";
+
+// TODO: this does not need to be async, this can be a promise returning function
 
 export default async function entryAdd(entry, conn) {
   assert(Entry.isEntry(entry));
@@ -15,7 +18,7 @@ export default async function entryAdd(entry, conn) {
   storable.readState = Entry.STATE_UNREAD;
   storable.archiveState = Entry.STATE_UNARCHIVED;
   storable.dateCreated = new Date();
-  return await rdb.putEntry(conn, storable);
+  return await putEntryInDb(conn, storable);
 }
 
 // Returns a new entry object where fields have been sanitized. Impure

@@ -1,6 +1,7 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import {check} from "/src/utils/errors.js";
+import putEntryInDb from "/src/storage/put-entry.js";
 import * as rdb from "/src/storage/rdb.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 
@@ -41,7 +42,7 @@ export default async function entryMarkRead(conn, id) {
   entry.readState = Entry.STATE_READ;
   entry.dateUpdated = new Date();
   entry.dateRead = entry.dateUpdated;
-  await rdb.putEntry(conn, entry);
+  await putEntryInDb(conn, entry);
   console.debug('marked entry as read with url', url);
   await updateBadgeText(conn);
 }
