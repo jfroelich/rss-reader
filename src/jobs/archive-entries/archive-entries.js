@@ -3,6 +3,7 @@ import * as Entry from "/src/storage/entry.js";
 import findArchivableEntriesInDb from "/src/storage/find-archivable-entries.js";
 import putEntryInDb from "/src/storage/put-entry.js";
 import * as rdb from "/src/storage/rdb.js";
+import * as idb from "/src/utils/idb.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import sizeof from "/src/utils/sizeof.js";
 
@@ -12,7 +13,7 @@ const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 // @param maxAgeMs {Number} how long before an entry is considered archivable (using date entry
 // created), in milliseconds
 export default async function archiveEntries(conn, maxAgeMs, limit) {
-  assert(rdb.isOpen(conn));
+  assert(idb.isOpen(conn));
 
   if(typeof maxAgeMs === 'undefined') {
     maxAgeMs = TWO_DAYS_MS;

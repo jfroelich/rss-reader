@@ -4,14 +4,13 @@ import * as Entry from "/src/storage/entry.js";
 import {InvalidStateError, NotFoundError} from "/src/storage/errors.js";
 import findEntryByIdInDb from "/src/storage/find-entry-by-id.js";
 import putEntryInDb from "/src/storage/put-entry.js";
-import {isOpen} from "/src/storage/rdb.js";
-
+import {isOpen} from "/src/utils/idb.js";
 import {check} from "/src/utils/errors.js";
 
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection
 // @param id {Number} an entry id
-export default async function entryMarkRead(conn, id) {
+export default async function main(conn, id) {
   assert(isOpen(conn));
   assert(Entry.isValidId(id));
 

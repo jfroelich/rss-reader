@@ -1,6 +1,6 @@
 import assert from "/src/assert.js";
 import {STATE_UNREAD} from "/src/storage/entry.js";
-import {isOpen} from "/src/storage/rdb.js";
+import {isOpen} from "/src/utils/idb.js";
 
 // Returns a promise that resolves to a count of unread entries in the database
 // Throws an unchecked error if the database is closed or invalid.

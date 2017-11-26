@@ -3,13 +3,14 @@ import * as Entry from "/src/storage/entry.js";
 import * as rdb from "/src/storage/rdb.js";
 import findEntriesInDb from "/src/storage/find-entries.js";
 import removeEntriesFromDb from "/src/storage/remove-entries.js";
+import * as idb from "/src/utils/idb.js";
 
 // Scans the database for entries missing urls are removes them
 // @param conn {IDBDatabase}
 // @param limit {Number} optional, if specified should be positive integer > 0
 // @throws Error - database related
 export default async function removeLostEntries(conn, limit) {
-  assert(rdb.isOpen(conn));
+  assert(idb.isOpen(conn));
 
   function isLost(entry) {
     return !Entry.hasURL(entry);

@@ -1,5 +1,5 @@
 import assert from "/src/assert.js";
-import {isOpen} from "/src/storage/rdb.js";
+import {isOpen} from "/src/utils/idb.js";
 
 // Load all feeds from the database
 // Returns a promise that resolves to an array of feed objects

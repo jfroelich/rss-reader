@@ -13,6 +13,7 @@ import rewriteURL from "/src/jobs/poll/rewrite-url.js";
 import sniffIsBinaryURL from "/src/url/sniff.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
+import * as idb from "/src/utils/idb.js";
 
 export class Context {
   constructor() {
@@ -29,7 +30,7 @@ export class Context {
 // @param this {Context}
 export async function pollEntry(entry) {
   assert(this instanceof Context);
-  assert(rdb.isOpen(this.readerConn));
+  assert(idb.isOpen(this.readerConn));
   assert(Entry.isEntry(entry));
 
   // Cannot assume entry has url (not an error)

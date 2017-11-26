@@ -35,7 +35,7 @@ export default async function main(files) {
 
 async function importFile(file, readerConn, iconCache) {
   assert(file instanceof File);
-  assert(rdb.isOpen(readerConn));
+  assert(idb.isOpen(readerConn));
   assert(iconCache.isOpen());
   console.log('importing opml file', file.name);
 

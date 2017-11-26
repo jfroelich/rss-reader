@@ -2,8 +2,8 @@ import assert from "/src/assert.js";
 import * as Feed from "/src/storage/feed.js";
 import findEntriesInDb from "/src/storage/find-entries.js";
 import getFeedIdsInDb from "/src/storage/get-feed-ids.js";
-import {isOpen} from "/src/storage/rdb.js";
 import removeEntriesFromDb from "/src/storage/remove-entries.js";
+import {isOpen} from "/src/utils/idb.js";
 
 // Removes entries not linked to a feed from the database
 // @param conn {IDBDatabase} an open database connection

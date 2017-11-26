@@ -45,7 +45,7 @@ Context.prototype.close = function() {
 // @returns {Object} the subscribed feed
 export async function subscribe(feed) {
   assert(this instanceof Context);
-  assert(rdb.isOpen(this.readerConn));
+  assert(idb.isOpen(this.readerConn));
   assert(this.iconCache instanceof FaviconCache);
   assert(this.iconCache.isOpen());
   assert(Feed.isFeed(feed));

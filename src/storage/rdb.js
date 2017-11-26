@@ -5,8 +5,7 @@ import * as idb from "/src/utils/idb.js";
 
 // Open a connection to the reader database
 
-// TODO: deprecate close and isOpen, require caller to use idb.js directly, then refactor this
-// file to default exoprt the open function and nothing else.
+// TODO: refactor this file to default export the open function and nothing else.
 // TODO: rename "/storage/" folder to "/db/" or "/reader-db/"
 
 
@@ -19,8 +18,6 @@ const OPEN_TIMEOUT_MS = 500;
 export function open() {
   return idb.open(NAME, VERSION, onUpgradeNeeded, OPEN_TIMEOUT_MS);
 }
-
-export const isOpen = idb.isOpen;
 
 // Helper for open. Does the database upgrade. This should never be
 // called directly. To do an upgrade, call open with a higher version number.

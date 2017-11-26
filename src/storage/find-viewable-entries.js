@@ -1,6 +1,6 @@
 import assert from "/src/assert.js";
 import {STATE_UNARCHIVED, STATE_UNREAD} from "/src/storage/entry.js";
-import {isOpen} from "/src/storage/rdb.js";
+import {isOpen} from "/src/utils/idb.js";
 
 // Loads entries from the database that are for viewing
 // Specifically these are entries that are unread, and not archived

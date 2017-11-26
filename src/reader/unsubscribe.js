@@ -4,9 +4,10 @@ import * as rdb from "/src/storage/rdb.js";
 import findEntryIdsByFeedIdInDb from "/src/storage/find-entry-ids-by-feed-id.js";
 import removeFeedFromDb from "/src/storage/remove-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
+import * as idb from "/src/utils/idb.js";
 
 export default async function unsubscribe(feedId, conn) {
-  assert(rdb.isOpen(conn));
+  assert(idb.isOpen(conn));
   assert(Feed.isValidId(feedId));
 
   const entryIds = await findEntryIdsByFeedIdInDb(conn, feedId);

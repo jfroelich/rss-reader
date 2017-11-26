@@ -4,6 +4,7 @@ import htmlTruncate from "/src/html/truncate.js";
 import * as Feed from "/src/storage/feed.js";
 import * as rdb from "/src/storage/rdb.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
+import * as idb from "/src/utils/idb.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import {condenseWhitespace, filterControls} from "/src/utils/string.js";
 
@@ -13,7 +14,7 @@ import {condenseWhitespace, filterControls} from "/src/utils/string.js";
 
 export default async function feedPut(feed, conn, skipPrep) {
   assert(Feed.isFeed(feed));
-  assert(rdb.isOpen(conn));
+  assert(idb.isOpen(conn));
 
   let storable;
   if(skipPrep) {

@@ -1,5 +1,5 @@
 import assert from "/src/assert.js";
-import {isOpen} from "/src/storage/rdb.js";
+import {isOpen} from "/src/utils/idb.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
 // Scans the entry object store for entries matching the predicate

@@ -72,7 +72,7 @@ function removeSlide(slideElement) {
 }
 
 async function markSlideRead(conn, slideElement) {
-  assert(rdb.isOpen(conn));
+  assert(idb.isOpen(conn));
 
   // This is a routine situation such as when navigating backward and therefore not an error.
   if(slideElement.hasAttribute('read')) {
