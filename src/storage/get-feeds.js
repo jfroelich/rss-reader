@@ -4,8 +4,8 @@ import {isOpen} from "/src/storage/rdb.js";
 // Load all feeds from the database
 // Returns a promise that resolves to an array of feed objects
 export default function getFeedsFromDb(conn) {
-  assert(isOpen(conn));
   return new Promise(function executor(resolve, reject) {
+    assert(isOpen(conn));
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.getAll();
