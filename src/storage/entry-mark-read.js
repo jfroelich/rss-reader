@@ -1,6 +1,7 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import {check} from "/src/utils/errors.js";
+import {InvalidStateError, NotFoundError} from "/src/storage/errors.js";
 import putEntryInDb from "/src/storage/put-entry.js";
 import * as rdb from "/src/storage/rdb.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
@@ -24,11 +25,11 @@ export default async function entryMarkRead(conn, id) {
   // deleted somehow, such as by a background task, and the slideshow never the less calls this
   // function unaware. Until the time the slideshow can properly reflect the state of the model
   // consistently, this is better done as a check than an assert.
-  check(entry, rdb.NotFoundError, id);
+  check(entry, NotFoundError, id);
 
   // TODO: I am not sure this check is strict enough. Technically the entry should always be
   // in the UNREAD state at this point.
-  check(entry.readState !== Entry.STATE_READ, rdb.InvalidStateError,
+  check(entry.readState !== Entry.STATE_READ, InvalidStateError,
     'entry %d already in read state', id);
 
   // The entry should ALWAYS have a url

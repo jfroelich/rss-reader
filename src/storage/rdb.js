@@ -7,6 +7,9 @@ import {isValidURLString} from "/src/url/url-string.js";
 
 // Module for interacting with the app indexedDB database
 
+// TODO: break up into individual files as there is too little coherency here
+// TODO: rename "/storage/" folder to "/db/" or "/reader-db/"
+
 const NAME = 'reader';
 const VERSION = 22;
 const OPEN_TIMEOUT_MS = 500;
@@ -306,25 +309,4 @@ export function findArchivableEntries(conn, predicate, limit) {
       cursor.continue();
     };
   });
-}
-
-
-
-
-export class ConstraintError extends Error {
-  constructor(message) {
-    super(message);
-  }
-}
-
-export class NotFoundError extends Error {
-  constructor(key) {
-    super('Object not found for key ' + key);
-  }
-}
-
-export class InvalidStateError extends Error {
-  constructor(message) {
-    super(message);
-  }
 }

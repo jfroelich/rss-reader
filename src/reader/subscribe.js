@@ -8,6 +8,7 @@ import fetchFeed from "/src/fetch/fetch-feed.js";
 import isAllowedURL from "/src/fetch/fetch-policy.js";
 import * as rdb from "/src/storage/rdb.js";
 import parseFeed from "/src/reader/parse-feed.js";
+import {ConstraintError} from "/src/storage/errors.js";
 import feedPut from "/src/storage/feed-put.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 
@@ -56,7 +57,7 @@ export async function subscribe(feed) {
 
   // Check that user is not already subscribed
   let priorFeedId = await rdb.findFeedIdByURL(this.readerConn, url);
-  check(!priorFeedId, rdb.ConstraintError, 'already subscribed');
+  check(!priorFeedId, ConstraintError, 'already subscribed');
 
   if(navigator.onLine || !('onLine' in navigator)) {
     // If online then fetch failure is fatal to subscribing
@@ -70,7 +71,7 @@ export async function subscribe(feed) {
 
       // Check that user is not already subscribed now that we know redirect
       priorFeedId = await rdb.findFeedIdByURL(this.readerConn, res.responseURL);
-      check(!priorFeedId, rdb.ConstraintError, 'already subscribed');
+      check(!priorFeedId, ConstraintError, 'already subscribed');
     }
 
     // Get the fetched details
