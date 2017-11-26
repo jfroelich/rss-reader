@@ -27,8 +27,8 @@ export function createEntry() {
 }
 
 // Return true if the first parameter is an entry object
-export function isEntry(entry) {
-  return typeof entry === 'object' && entry.magic === ENTRY_MAGIC;
+export function isEntry(value) {
+  return typeof value === 'object' && value.magic === ENTRY_MAGIC;
 }
 
 // Returns true if the id is a valid entry id, structurally. This does not check if the id actually

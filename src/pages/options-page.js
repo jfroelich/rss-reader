@@ -315,7 +315,10 @@ async function subscribeFormOnsubmit(event) {
   // would have failed earlier.
   subscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
 
+  // Note this uses create to create the feed object, and does not try to create a simple
+  // object, to allow magic to happen
   const feed = Feed.create();
+
   Feed.appendURL(feed, url.href);
 
   let subscribedFeed;

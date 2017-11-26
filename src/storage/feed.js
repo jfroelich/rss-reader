@@ -2,14 +2,19 @@ import assert from "/src/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 
+// TODO: I would prefer not to export but certain functionality needs it at the moment
+export const FEED_MAGIC = 0xfeedfeed;
+
 // Create a feed
 export function create() {
-  return {};
+  const blankFeed = {};
+  blankFeed.magic = FEED_MAGIC;
+  return blankFeed;
 }
 
 // Return true if the input value is a feed
 export function isFeed(value) {
-  return typeof value === 'object';
+  return typeof value === 'object' && value.magic === FEED_MAGIC;
 }
 
 export const isValidId = isPosInt;

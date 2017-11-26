@@ -137,7 +137,9 @@ function groupOutlines(outlines) {
 function outlineToFeed(outline) {
   assert(OPMLOutline.isOutline(outline));
 
-  const feed = {};
+  // Note that this uses create, not a simple object, to allow magic to happen
+  const feed = Feed.create();
+
   if(outline.type) {
     feed.type = outline.type;
   }
