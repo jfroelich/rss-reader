@@ -2,8 +2,6 @@ import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import * as Feed from "/src/storage/feed.js";
 import * as idb from "/src/utils/idb.js";
-import isPosInt from "/src/utils/is-pos-int.js";
-import {isValidURLString} from "/src/url/url-string.js";
 
 // Module for interacting with the app indexedDB database
 
@@ -105,21 +103,4 @@ function addFeedMagic(tx) {
       store.put(feed);
     }
   }
-}
-
-
-// Returns feed id if a feed with the given url exists in the database
-// @param conn {IDBDatabase}
-// @param url {String}
-export function findFeedIdByURL(conn, url) {
-  assert(idb.isOpen(conn));
-  assert(isValidURLString(url));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('feed');
-    const store = tx.objectStore('feed');
-    const index = store.index('urls');
-    const request = index.getKey(url);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
 }
