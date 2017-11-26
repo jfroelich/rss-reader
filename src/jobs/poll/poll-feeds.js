@@ -6,7 +6,7 @@ import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
 import parseFeed from "/src/reader/parse-feed.js";
-import feedPut from "/src/reader-db/feed-put.js";
+import feedPut from "/src/reader-db/put-feed.js";
 import promiseEvery from "/src/utils/promise-every.js";
 
 export function PollFeedsContext() {

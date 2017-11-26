@@ -1,7 +1,7 @@
 import assert from "/src/assert.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import * as Feed from "/src/reader-db/feed.js";
-import feedPut from "/src/reader-db/feed-put.js";
+import feedPut from "/src/reader-db/put-feed.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
