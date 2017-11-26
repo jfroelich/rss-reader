@@ -136,20 +136,3 @@ export function countUnreadEntries(conn) {
     request.onerror = () => reject(request.error);
   });
 }
-
-// Searches for and returns an entry object matching the id
-// @param conn {IDBDatabase} an open database connection
-// @param id {Number} id of entry to find
-// @returns {Promise} a promise that resolves to an entry object, or undefined
-// if no matching entry was found
-export function findEntryById(conn, id) {
-  assert(idb.isOpen(conn));
-  assert(Entry.isValidId(id));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const request = store.get(id);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}

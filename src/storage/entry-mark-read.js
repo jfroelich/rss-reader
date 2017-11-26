@@ -1,28 +1,32 @@
 import assert from "/src/assert.js";
-import * as Entry from "/src/storage/entry.js";
-import {check} from "/src/utils/errors.js";
-import {InvalidStateError, NotFoundError} from "/src/storage/errors.js";
-import putEntryInDb from "/src/storage/put-entry.js";
-import * as rdb from "/src/storage/rdb.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
+import * as Entry from "/src/storage/entry.js";
+import {InvalidStateError, NotFoundError} from "/src/storage/errors.js";
+import findEntryByIdInDb from "/src/storage/find-entry-by-id.js";
+import putEntryInDb from "/src/storage/put-entry.js";
+import {isOpen} from "/src/storage/rdb.js";
+
+import {check} from "/src/utils/errors.js";
 
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection
 // @param id {Number} an entry id
 export default async function entryMarkRead(conn, id) {
-  assert(rdb.isOpen(conn));
+  assert(isOpen(conn));
   assert(Entry.isValidId(id));
 
-  const entry = await rdb.findEntryById(conn, id);
+  const entry = await findEntryByIdInDb(conn, id);
 
+  // TODO: possibly change check to assert to represent that the error is unexpected instead of
+  // expected.
   // I have mixed feelings about whether these should be checks or asserts. On the one hand, the
   // database should never enter into an invalid state, so these should be assertions. On the other
   // hand, the database is external and difficult to reason about statically, and in some sense
-  // entries are user data as opposed to system data, so this should tolerate bad data.
-
+  // entries are user data as opposed to system data, so bad data is expected.
+  //
   // The slideshow page, which calls this function, currently is kind of sloppy and does not do
   // a great job reasoning about database state. There are a few situations where an entry may be
-  // deleted somehow, such as by a background task, and the slideshow never the less calls this
+  // deleted, such as by a background task, and the slideshow never the less calls this
   // function unaware. Until the time the slideshow can properly reflect the state of the model
   // consistently, this is better done as a check than an assert.
   check(entry, NotFoundError, id);
