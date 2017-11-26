@@ -2,6 +2,7 @@ import assert from "/src/assert.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import * as Feed from "/src/storage/feed.js";
 import feedPut from "/src/storage/feed-put.js";
+import getFeedsFromDb from "/src/storage/get-feeds.js";
 import * as rdb from "/src/storage/rdb.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import promiseEvery from "/src/utils/promise-every.js";
@@ -10,7 +11,7 @@ import promiseEvery from "/src/utils/promise-every.js";
 export default async function main(readerConn, iconCache) {
   assert(rdb.isOpen(readerConn));
   assert(iconCache.isOpen());
-  const feeds = await rdb.getFeeds(readerConn);
+  const feeds = await getFeedsFromDb(readerConn);
   const context = {readerConn: readerConn, iconCache: iconCache};
   await promiseEvery(feeds.map(updateFeedIcon, context));
 }

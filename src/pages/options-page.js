@@ -14,6 +14,7 @@ import * as rdb from "/src/storage/rdb.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
 import * as Feed from "/src/storage/feed.js";
+import getFeedsFromDb from "/src/storage/get-feeds.js";
 import assert from "/src/assert.js";
 import * as mime from "/src/utils/mime-utils.js";
 import {parseInt10} from "/src/utils/string.js";
@@ -357,7 +358,7 @@ async function feedListInit() {
   let conn, feeds;
   try {
     conn = await rdb.open();
-    feeds = await rdb.getFeeds(conn);
+    feeds = await getFeedsFromDb(conn);
   } catch(error) {
     // TODO: react to error
     console.warn(error);
@@ -471,7 +472,7 @@ async function exportOPMLButtonOnclick(event) {
   let conn;
   try {
     conn = await rdb.open();
-    const feeds = await rdb.getFeeds(conn);
+    const feeds = await getFeedsFromDb(conn);
     exportFeeds(feeds, title, fileName);
   } catch(error) {
     // TODO: handle error visually

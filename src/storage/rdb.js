@@ -192,16 +192,7 @@ export function findFeedById(conn, feedId) {
   });
 }
 
-export function getFeeds(conn) {
-  assert(idb.isOpen(conn));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('feed');
-    const store = tx.objectStore('feed');
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
+
 
 // Returns a promise that resolves to an array of feed ids, or rejects with
 // a database error
