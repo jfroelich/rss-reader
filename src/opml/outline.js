@@ -9,7 +9,7 @@ import assert from "/src/assert.js";
 
 
 export function isOutline(outline) {
-  return typeof outline === 'object';
+  return typeof outline === 'object' && outline !== null;
 }
 
 export function elementHasValidType(element) {

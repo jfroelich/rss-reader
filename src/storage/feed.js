@@ -14,7 +14,9 @@ export function create() {
 
 // Return true if the input value is a feed
 export function isFeed(value) {
-  return typeof value === 'object' && value.magic === FEED_MAGIC;
+  // the null check is done to avoid error that occurs due to typeof null being object
+
+  return typeof value === 'object' && value !== null && value.magic === FEED_MAGIC;
 }
 
 export const isValidId = isPosInt;

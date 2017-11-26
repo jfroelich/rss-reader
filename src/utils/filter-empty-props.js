@@ -6,7 +6,7 @@ export default function filterEmptyProps(object) {
   const output = {};
   let undef;
 
-  if(typeof object === 'object') {
+  if(typeof object === 'object' && object !== null) {
     for(const key in object) {
       if(hasOwnProp.call(object, key)) {
         const value = object[key];

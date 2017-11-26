@@ -91,8 +91,8 @@ async function fetchWithTranslatedErrors(url, options) {
   // type errors thrown by fetch due to network errors. Coincidently this also affects a class of
   // invalid inputs to fetch where fetch implicitly converts non-string urls to strings
   check(typeof url === 'string', TypeError, 'url', url, 'must be a string');
-  check(typeof options === 'undefined' || typeof options === 'object', TypeError,
-    'options must be undefined or an object');
+  check(typeof options === 'undefined' || typeof options === 'object' || options === null,
+    TypeError, 'options must be undefined or an object');
 
   // We know that url is now a string, but we do not know if it is an absolute url. When calling
   // fetch with a url string that is not absolute, fetch implicitly resolves the url using the

@@ -5,7 +5,7 @@ import assert from "/src/assert.js";
 // of attribute names
 export default function filterDocument(doc, whitelist) {
   assert(doc instanceof Document);
-  assert(typeof whitelist === 'object');
+  assert(typeof whitelist === 'object' && whitelist !== null);
 
   // Use getElementsByTagName because there is no concern about removing attributes while
   // iterating over the collection
