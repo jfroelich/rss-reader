@@ -123,16 +123,3 @@ export function findFeedIdByURL(conn, url) {
     request.onerror = () => reject(request.error);
   });
 }
-
-// @param conn {IDBDatabase}
-export function countUnreadEntries(conn) {
-  assert(idb.isOpen(conn));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const index = store.index('readState');
-    const request = index.count(Entry.STATE_UNREAD);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}

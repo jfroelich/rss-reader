@@ -1,16 +1,19 @@
 import assert from "/src/assert.js";
-import * as platform from "/src/extension.js";
-import * as rdb from "/src/storage/rdb.js";
+import {setBadgeText} from "/src/extension.js";
+import countUnreadEntriesInDb from "/src/storage/count-unread-entries.js";
+import {isOpen} from "/src/storage/rdb.js";
 
 const DEBUG = true;
 
 export default async function updateBadgeText(conn) {
-  assert(rdb.isOpen(conn));
-  const count = await rdb.countUnreadEntries(conn);
+  assert(isOpen(conn));
+
+  const count = await countUnreadEntriesInDb(conn);
   const text = count > 999 ? '1k+' : '' + count;
+
   if(DEBUG) {
     console.debug('setting badge text to', text);
   }
 
-  platform.setBadgeText(text);
+  setBadgeText(text);
 }
