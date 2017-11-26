@@ -43,7 +43,8 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   // Pull the entries property out of the parsed feed. The interal parser includes the entries
   // array as a part of the parsed feed, but the app's storage format does not store entries per
   // feed, it stores feeds and entries separately, and the feeds it stores do not have an entries
-  // property.
+  // property. We have to do this now, even if entries are not processed later, because entries
+  // cannot be defined as a feed property.
   const entries = feed.entries;
   delete feed.entries;
 
@@ -86,20 +87,7 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
     return result;
   }
 
-  for(const entry of entries) {
-
-    // Turn the generic entry object into a reader storage entry object by setting the magic
-    // property.
-    // TODO: should this be a function call that encapsulates the magic that occurs here so that
-    // ENTRY_MAGIC can stay private (not exported from entry module) and is abstracted away?
-    // TODO: should this be done in a separate for loop, earlier, to indicate that its behavior
-    // is not linked to these other entry actions? Or does this for loop represent a generic
-    // operation of coercion across all entries and therefore suffices?
-    entry.magic = Entry.ENTRY_MAGIC;
-
-    resolveEntryLink(entry, feedLinkURL);
-    convertEntryLinkToURL(entry);
-  }
+  result.entries = entries.map(coerceEntry);
 
   // TODO: I am not sure that filtering out duplicate entries should be a concern of this function.
   // In fact I think it shouldn't. This is another instance of mixing together too many concerns.
@@ -110,10 +98,27 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   // On the other hand, pretty much every caller wants to make uses of this functionality at this
   // stage of the pipeline. All I would be doing is placing more burden on the caller by making
   // more pipeline steps explicit?
-  result.entries = dedupEntries(entries);
+  result.entries = dedupEntries(result.entries);
 
 
   return result;
+}
+
+// Coerce a parsed entry object into a reader storage entry object.
+// Although this should technically create and return a new entry object, it is currently designed
+// to simply reuse the input entry object. It is therefore impure, and caller should be careful
+// about modifying the original entry after this call.
+function coerceEntry(entry) {
+
+  // Turn the generic entry object into a reader storage entry object by setting the magic
+  // property.
+  // TODO: should this be a function call that encapsulates the magic that occurs here so that
+  // ENTRY_MAGIC can stay private (not exported from entry module) and is abstracted away?
+  entry.magic = Entry.ENTRY_MAGIC;
+
+  resolveEntryLink(entry, feedLinkURL);
+  convertEntryLinkToURL(entry);
+  return entry;
 }
 
 // If the entry has a link property, canonicalize and normalize it, baseURL is optional, generally
