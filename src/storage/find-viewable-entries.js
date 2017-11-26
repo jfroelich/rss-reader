@@ -1,10 +1,13 @@
 import assert from "/src/assert.js";
-import * as Entry from "/src/storage/entry.js";
+import {STATE_UNARCHIVED, STATE_UNREAD} from "/src/storage/entry.js";
 import {isOpen} from "/src/storage/rdb.js";
+
+// Loads entries from the database that are for viewing
+// Specifically these are entries that are unread, and not archived
 
 // TODO: look into using getAll again
 
-export default function findViewableEntries(conn, offset, limit) {
+export default function main(conn, offset, limit) {
   return new Promise(function executor(resolve, reject) {
     assert(isOpen(conn));
 
@@ -22,7 +25,7 @@ export default function findViewableEntries(conn, offset, limit) {
 
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [Entry.STATE_UNARCHIVED, Entry.STATE_UNREAD];
+    const keyPath = [STATE_UNARCHIVED, STATE_UNREAD];
     const request = index.openCursor(keyPath);
     request.onsuccess = function requestOnsuccess(event) {
       const cursor = event.target.result;
