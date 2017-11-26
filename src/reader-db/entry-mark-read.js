@@ -1,9 +1,9 @@
 import assert from "/src/assert.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import * as Entry from "/src/storage/entry.js";
-import {InvalidStateError, NotFoundError} from "/src/storage/errors.js";
-import findEntryByIdInDb from "/src/storage/find-entry-by-id.js";
-import putEntryInDb from "/src/storage/put-entry.js";
+import * as Entry from "/src/reader-db/entry.js";
+import {InvalidStateError, NotFoundError} from "/src/reader-db/errors.js";
+import findEntryByIdInDb from "/src/reader-db/find-entry-by-id.js";
+import putEntryInDb from "/src/reader-db/put-entry.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 import {check} from "/src/utils/errors.js";
 

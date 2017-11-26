@@ -1,12 +1,12 @@
 import assert from "/src/assert.js";
 import {queryIdleState, showNotification} from "/src/extension.js";
-import * as Feed from "/src/storage/feed.js";
+import * as Feed from "/src/reader-db/feed.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import getFeedsFromDb from "/src/storage/get-feeds.js";
+import getFeedsFromDb from "/src/reader-db/get-feeds.js";
 import parseFeed from "/src/reader/parse-feed.js";
-import feedPut from "/src/storage/feed-put.js";
+import feedPut from "/src/reader-db/feed-put.js";
 import promiseEvery from "/src/utils/promise-every.js";
 
 export function PollFeedsContext() {

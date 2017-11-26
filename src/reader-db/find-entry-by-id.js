@@ -1,20 +1,19 @@
 import assert from "/src/assert.js";
-import {STATE_UNREAD} from "/src/storage/entry.js";
+import {isValidId as isValidEntryId} from "/src/reader-db/entry.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 
-// Returns a promise that resolves to a count of unread entries in the database
-// Throws an unchecked error if the database is closed or invalid.
-// Throws a checked error if a database error occurs.
-//
+// Searches for and returns an entry object matching the id
 // @param conn {IDBDatabase} an open database connection
-// @return {Promise}
-export default function main(conn) {
+// @param id {Number} id of entry to find
+// @returns {Promise} a promise that resolves to an entry object, or undefined
+// if no matching entry was found
+export default function main(conn, id) {
   return new Promise(function executor(resolve, reject) {
     assert(isOpen(conn));
+    assert(isValidEntryId(id));
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
-    const index = store.index('readState');
-    const request = index.count(STATE_UNREAD);
+    const request = store.get(id);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });

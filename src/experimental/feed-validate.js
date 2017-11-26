@@ -1,6 +1,6 @@
 import assert from "/src/assert.js";
 import {check} from "/src/utils/errors.js";
-import * as Feed from "/src/storage/feed.js";
+import * as Feed from "/src/reader-db/feed.js";
 
 // TODO: include this in places where sanitize is called
 // TODO: assert required properties are present

@@ -1,12 +1,12 @@
 import assert from "/src/assert.js";
-import * as Entry from "/src/storage/entry.js";
+import * as Entry from "/src/reader-db/entry.js";
 import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
 import {openTab} from "/src/extension.js";
 import escapeHTML from "/src/html/escape.js";
 import htmlTruncate from "/src/html/truncate.js";
-import openReaderDb from "/src/storage/open.js";
-import entryMarkRead from "/src/storage/entry-mark-read.js";
-import findViewableEntriesInDb from "/src/storage/find-viewable-entries.js";
+import openReaderDb from "/src/reader-db/open.js";
+import entryMarkRead from "/src/reader-db/entry-mark-read.js";
+import findViewableEntriesInDb from "/src/reader-db/find-viewable-entries.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";

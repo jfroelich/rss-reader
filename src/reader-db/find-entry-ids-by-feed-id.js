@@ -1,5 +1,5 @@
 import assert from "/src/assert.js";
-import {isValidId as isValidFeedId} from "/src/storage/feed.js";
+import {isValidId as isValidFeedId} from "/src/reader-db/feed.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 
 // Returns a promise that resolves to an array of entry ids that are associated with the given

@@ -1,13 +1,13 @@
 import assert from "/src/assert.js";
 import {INACCESSIBLE_CONTENT_DESCRIPTORS} from "/src/config.js";
-import * as Entry from "/src/storage/entry.js";
+import * as Entry from "/src/reader-db/entry.js";
 import {check, isUncheckedError} from "/src/utils/errors.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
 import parseHTML from "/src/html/parse.js";
-import entryAdd from "/src/storage/entry-add.js";
-import findEntryByURLInDb from "/src/storage/find-entry-by-url.js";
+import entryAdd from "/src/reader-db/entry-add.js";
+import findEntryByURLInDb from "/src/reader-db/find-entry-by-url.js";
 import rewriteURL from "/src/jobs/poll/rewrite-url.js";
 import sniffIsBinaryURL from "/src/url/sniff.js";
 import {setURLHrefProperty} from "/src/url/url.js";

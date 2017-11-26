@@ -1,8 +1,8 @@
 import assert from "/src/assert.js";
-import * as Feed from "/src/storage/feed.js";
-import findEntriesInDb from "/src/storage/find-entries.js";
-import getFeedIdsInDb from "/src/storage/get-feed-ids.js";
-import removeEntriesFromDb from "/src/storage/remove-entries.js";
+import * as Feed from "/src/reader-db/feed.js";
+import findEntriesInDb from "/src/reader-db/find-entries.js";
+import getFeedIdsInDb from "/src/reader-db/get-feed-ids.js";
+import removeEntriesFromDb from "/src/reader-db/remove-entries.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 
 // Removes entries not linked to a feed from the database

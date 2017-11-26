@@ -1,10 +1,7 @@
 import assert from "/src/assert.js";
-import * as Entry from "/src/storage/entry.js";
-import * as Feed from "/src/storage/feed.js";
+import * as Entry from "/src/reader-db/entry.js";
+import * as Feed from "/src/reader-db/feed.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
-
-// TODO: rename "/storage/" folder to "/db/" or "/reader-db/"
-
 
 // TODO: this should come from config?
 const NAME = 'reader';

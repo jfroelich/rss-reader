@@ -1,5 +1,5 @@
 import assert from "/src/assert.js";
-import {isEntry} from "/src/storage/entry.js";
+import {isEntry} from "/src/reader-db/entry.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 
 export default function putEntryInDb(conn, entry) {

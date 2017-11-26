@@ -1,6 +1,6 @@
 import assert from "/src/assert.js";
-import * as Entry from "/src/storage/entry.js";
-import * as Feed from "/src/storage/feed.js";
+import * as Entry from "/src/reader-db/entry.js";
+import * as Feed from "/src/reader-db/feed.js";
 import {parseFeed as parseFeedImpl} from "/src/parse-feed/parse-feed.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 

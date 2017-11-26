@@ -3,8 +3,8 @@ import "/src/cli.js";
 import {addBadgeClickListener, addInstallListener, showSlideshowTab} from "/src/extension.js";
 import FaviconCache from "/src/favicon/cache.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import openReaderDb from "/src/storage/open.js";
-import setupReaderDb from "/src/storage/setup.js";
+import openReaderDb from "/src/reader-db/open.js";
+import setupReaderDb from "/src/reader-db/setup.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 
 // Background page for extension. This should be loaded exclusively in the background page.

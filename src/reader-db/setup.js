@@ -1,4 +1,4 @@
-import open as openDb from "/src/storage/open.js";
+import open as openDb from "/src/reader-db/open.js";
 import {close as closeDb} from "/src/utils/indexeddb-utils.js";
 
 // Create the reader-db database

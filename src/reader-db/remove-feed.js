@@ -1,5 +1,5 @@
 import assert from "/src/assert.js";
-import {isValidId as isValidFeedId} from "/src/storage/feed.js";
+import {isValidId as isValidFeedId} from "/src/reader-db/feed.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 
 // TODO: this should not accept entryIds as parameter, it should find the entries as part of the

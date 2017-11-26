@@ -1,5 +1,5 @@
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
-import openReaderDb from "/src/storage/open.js";
+import openReaderDb from "/src/reader-db/open.js";
 import {close as closeDb, remove as removeDb} from "/src/utils/indexeddb-utils.js";
 
 async function test() {

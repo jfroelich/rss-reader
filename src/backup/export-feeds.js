@@ -1,5 +1,5 @@
 import assert from "/src/assert.js";
-import * as Feed from "/src/storage/feed.js";
+import * as Feed from "/src/reader-db/feed.js";
 import * as OPMLDocument from "/src/opml/document.js";
 import {xmlToBlob} from "/src/xml/utils.js";
 

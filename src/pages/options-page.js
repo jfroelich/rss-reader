@@ -10,12 +10,12 @@ import {
 } from "/src/extension.js";
 import FONTS from "/src/fonts.js";
 import htmlTruncate from "/src/html/truncate.js";
-import openReaderDb from "/src/storage/open.js";
+import openReaderDb from "/src/reader-db/open.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
-import * as Feed from "/src/storage/feed.js";
-import findFeedByIdInDb from "/src/storage/find-feed-by-id.js";
-import getFeedsFromDb from "/src/storage/get-feeds.js";
+import * as Feed from "/src/reader-db/feed.js";
+import findFeedByIdInDb from "/src/reader-db/find-feed-by-id.js";
+import getFeedsFromDb from "/src/reader-db/get-feeds.js";
 import assert from "/src/assert.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import * as mime from "/src/utils/mime-utils.js";

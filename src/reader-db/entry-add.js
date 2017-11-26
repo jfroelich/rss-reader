@@ -1,10 +1,10 @@
 import assert from "/src/assert.js";
-import * as Entry from "/src/storage/entry.js";
+import * as Entry from "/src/reader-db/entry.js";
 import replaceTags from "/src/html/replace-tags.js";
 import htmlTruncate from "/src/html/truncate.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
-import putEntryInDb from "/src/storage/put-entry.js";
+import putEntryInDb from "/src/reader-db/put-entry.js";
 import {isOpen as isOpenDb} from "/src/utils/indexeddb-utils.js";
 import {condenseWhitespace, filterControls} from "/src/utils/string.js";
 

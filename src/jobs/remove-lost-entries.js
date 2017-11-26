@@ -1,7 +1,7 @@
 import assert from "/src/assert.js";
-import * as Entry from "/src/storage/entry.js";
-import findEntriesInDb from "/src/storage/find-entries.js";
-import removeEntriesFromDb from "/src/storage/remove-entries.js";
+import * as Entry from "/src/reader-db/entry.js";
+import findEntriesInDb from "/src/reader-db/find-entries.js";
+import removeEntriesFromDb from "/src/reader-db/remove-entries.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 
 // Scans the database for entries missing urls are removes them

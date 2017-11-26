@@ -5,7 +5,7 @@ import {pollFeeds, PollFeedsContext} from "/src/jobs/poll/poll-feeds.js";
 import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
-import openReaderDb from "/src/storage/open.js";
+import openReaderDb from "/src/reader-db/open.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 
