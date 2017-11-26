@@ -93,7 +93,7 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
 
   // parseFeed warrants that if entries are parsed, that the entries property of the output
   // object is a defined array; albeit possibly empty. Using map implicitly warrants this.
-  result.entries = entries.map(coerceEntry);
+  result.entries = entries.map(coerceEntry.bind(null, feedLinkURL));
 
   // TODO: I am not sure that filtering out duplicate entries should be a concern of this function.
   // In fact I think it shouldn't. This is another instance of mixing together too many concerns.
@@ -109,20 +109,15 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
 }
 
 // Coerce a parsed entry object into a reader storage entry object.
-// Although this should technically create and return a new entry object, it is currently designed
-// to simply reuse the input entry object. It is therefore impure, and caller should be careful
-// about modifying the original entry after this call.
-function coerceEntry(entry) {
+function coerceEntry(feedLinkURL, parsedEntry) {
 
-  // Turn the generic entry object into a reader storage entry object by setting the magic
-  // property.
-  // TODO: should this be a function call that encapsulates the magic that occurs here so that
-  // ENTRY_MAGIC can stay private (not exported from entry module) and is abstracted away?
-  entry.magic = Entry.ENTRY_MAGIC;
+  // Create a blank storable entry, and copy over all properties from the parsed entry
+  const storableEntry = Object.assign(Entry.createEntry(), parsedEntry);
 
-  resolveEntryLink(entry, feedLinkURL);
-  convertEntryLinkToURL(entry);
-  return entry;
+  // Mutate the storable entry
+  resolveEntryLink(storableEntry, feedLinkURL);
+  convertEntryLinkToURL(storableEntry);
+  return storableEntry;
 }
 
 // If the entry has a link property, canonicalize and normalize it, baseURL is optional, generally
@@ -148,9 +143,10 @@ function convertEntryLinkToURL(entry) {
     try {
       Entry.appendURL(entry, entry.link);
     } catch(error) {
-      console.warn('failed to coerce link to url', entry.link);
+      console.warn('failed to coerce entry link to url', entry.link);
     }
 
+    // Regardless of above success, unset
     delete entry.link;
   }
 }
