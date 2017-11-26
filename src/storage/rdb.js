@@ -308,41 +308,6 @@ export function findArchivableEntries(conn, predicate, limit) {
   });
 }
 
-export function getUnarchivedUnreadEntries(conn, offset, limit) {
-  assert(idb.isOpen(conn));
-  return new Promise(function executor(resolve, reject) {
-    const entries = [];
-    let counter = 0;
-    let advanced = false;
-    const limited = limit > 0;
-    const tx = conn.transaction('entry');
-    tx.oncomplete = function(event) {
-      resolve(entries);
-    };
-    tx.onerror = function(event) {
-      reject(tx.error);
-    };
-
-    const store = tx.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const keyPath = [Entry.STATE_UNARCHIVED, Entry.STATE_UNREAD];
-    const request = index.openCursor(keyPath);
-    request.onsuccess = function requestOnsuccess(event) {
-      const cursor = event.target.result;
-      if(cursor) {
-        if(offset && !advanced) {
-          advanced = true;
-          cursor.advance(offset);
-        } else {
-          entries.push(cursor.value);
-          if(limited && ++counter < limit) {
-            cursor.continue();
-          }
-        }
-      }
-    };
-  });
-}
 
 
 

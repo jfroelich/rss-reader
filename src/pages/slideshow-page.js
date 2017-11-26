@@ -6,6 +6,7 @@ import escapeHTML from "/src/html/escape.js";
 import htmlTruncate from "/src/html/truncate.js";
 import * as rdb from "/src/storage/rdb.js";
 import entryMarkRead from "/src/storage/entry-mark-read.js";
+import findViewableEntriesInDb from "/src/storage/find-viewable-entries.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";
@@ -98,7 +99,7 @@ async function appendSlides(conn) {
   const offset = countUnreadSlides();
 
   try {
-    entries = await rdb.getUnarchivedUnreadEntries(conn, offset, limit);
+    entries = await findViewableEntriesInDb(conn, offset, limit);
   } catch(error) {
     // TODO: visual feedback in event of an error
     console.warn(error);
