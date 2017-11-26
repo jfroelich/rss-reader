@@ -2,6 +2,17 @@ import assert from "/src/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 
+// entry.js provides utility functions for working with model objects. Because the extension works
+// with indexedDB, it can only store structured clonable objects. Function objects (e.g. new Entry)
+// are not structured clonable. Marshalling objects from basic objects to function objects and back
+// for all the various reading and writing is very slow. Therefore, entry objects must be plain
+// old objects. Unfortunately, this leaves the app with very little type safety. To counter this
+// lack of type safety, entry objects are stored and operated upon using a 'secret' property so
+// that functions can assert that a given object 'is' an entry object by checking that a given
+// object is both an object and has the secret property with the given 'magic' value.
+//
+// Note that I prefer this object to not be exported. So callers should not use it. However,
+// at the moment, rdb.js relies on it being public, so it must be exported.
 export const ENTRY_MAGIC = 0xdeadbeef;
 
 export const STATE_UNREAD = 0;
