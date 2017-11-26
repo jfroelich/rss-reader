@@ -1,15 +1,16 @@
 import assert from "/src/assert.js";
 import * as Feed from "/src/storage/feed.js";
 import findEntriesInDb from "/src/storage/find-entries.js";
-import * as rdb from "/src/storage/rdb.js";
+import findFeedIdsInDb from "/src/storage/find-feed-ids.js";
+import {isOpen} from "/src/storage/rdb.js";
 import removeEntriesFromDb from "/src/storage/remove-entries.js";
 
 // Removes entries not linked to a feed from the database
 // @param conn {IDBDatabase} an open database connection
 // @param limit {Number}
 export default async function removeOrphanedEntries(conn, limit) {
-  assert(rdb.isOpen(conn));
-  const feedIds = await rdb.getFeedIds(conn);
+  assert(isOpen(conn));
+  const feedIds = await findFeedIdsInDb(conn);
 
   function isOrphan(entry) {
     const id = entry.feed;
