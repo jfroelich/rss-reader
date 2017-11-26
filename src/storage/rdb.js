@@ -405,24 +405,7 @@ export function putEntries(conn, entries) {
   });
 }
 
-// Adds or overwrites a feed in storage. Resolves with the new feed id if add.
-// There are no side effects other than the database modification.
-// @param conn {IDBDatabase} an open database connection
-// @param feed {Object} the feed object to add
-export function putFeed(conn, feed) {
-  assert(idb.isOpen(conn));
-  assert(Feed.isFeed(feed));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('feed', 'readwrite');
-    const store = tx.objectStore('feed');
-    const request = store.put(feed);
-    request.onsuccess = () => {
-      const feedId = request.result;
-      resolve(feedId);
-    };
-    request.onerror = () => reject(request.error);
-  });
-}
+
 
 // @param conn {IDBDatabase}
 // @param ids {Array}

@@ -1,11 +1,15 @@
 import assert from "/src/assert.js";
-import * as Feed from "/src/storage/feed.js";
 import replaceTags from "/src/html/replace-tags.js";
 import htmlTruncate from "/src/html/truncate.js";
-import isPosInt from "/src/utils/is-pos-int.js";
-import filterEmptyProps from "/src/utils/filter-empty-props.js";
+import * as Feed from "/src/storage/feed.js";
 import * as rdb from "/src/storage/rdb.js";
+import filterEmptyProps from "/src/utils/filter-empty-props.js";
+import isPosInt from "/src/utils/is-pos-int.js";
 import {condenseWhitespace, filterControls} from "/src/utils/string.js";
+
+// TODO: maybe this should be refactored as a non-async, promise-returning function. There is no
+// need to use async-await when this is basically a wrapped call to another promise-returning
+// function.
 
 export default async function feedPut(feed, conn, skipPrep) {
   assert(Feed.isFeed(feed));
@@ -25,7 +29,7 @@ export default async function feedPut(feed, conn, skipPrep) {
   }
   storable.dateUpdated = currentDate;
 
-  const newId = await rdb.putFeed(conn, storable);
+  const newId = await putFeedInDb(conn, storable);
   storable.id = newId;
   return storable;
 }
@@ -72,4 +76,22 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
   }
 
   return outputFeed;
+}
+
+// Adds or overwrites a feed in storage. Resolves with the new feed id if add.
+// There are no side effects other than the database modification.
+// @param conn {IDBDatabase} an open database connection
+// @param feed {Object} the feed object to add
+// @return {Promise} a promise that resolves to the id of the stored feed
+function putFeedInDb(conn, feed) {
+  return new Promise(function executor(resolve, reject) {
+    const tx = conn.transaction('feed', 'readwrite');
+    const store = tx.objectStore('feed');
+    const request = store.put(feed);
+    request.onsuccess = () => {
+      const feedId = request.result;
+      resolve(feedId);
+    };
+    request.onerror = () => reject(request.error);
+  });
 }
