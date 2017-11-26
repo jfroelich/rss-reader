@@ -11,7 +11,7 @@ import {condenseWhitespace, filterControls} from "/src/utils/string.js";
 // need to use async-await when this is basically a wrapped call to another promise-returning
 // function.
 
-export default async function feedPut(feed, conn, skipPrep) {
+export default async function putFeed(feed, conn, skipPrep) {
   assert(Feed.isFeed(feed));
   assert(idb.isOpen(conn));
 
@@ -29,7 +29,7 @@ export default async function feedPut(feed, conn, skipPrep) {
   }
   storable.dateUpdated = currentDate;
 
-  const newId = await putFeedInDb(conn, storable);
+  const newId = await putFeedRaw(conn, storable);
   storable.id = newId;
   return storable;
 }
@@ -83,7 +83,7 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
 // @param conn {IDBDatabase} an open database connection
 // @param feed {Object} the feed object to add
 // @return {Promise} a promise that resolves to the id of the stored feed
-function putFeedInDb(conn, feed) {
+function putFeedRaw(conn, feed) {
   return new Promise(function executor(resolve, reject) {
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');

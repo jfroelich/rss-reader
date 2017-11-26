@@ -1,7 +1,7 @@
 import assert from "/src/assert.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import * as Feed from "/src/reader-db/feed.js";
-import feedPut from "/src/reader-db/put-feed.js";
+import putFeed from "/src/reader-db/put-feed.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
@@ -49,7 +49,7 @@ async function updateFeedIcon(feed) {
   // The feed had a favicon, and it changed to a different favicon
   if(prevIconURL && iconURL && prevIconURL !== iconURL) {
     feed.faviconURLString = iconURL;
-    await feedPut(feed, this.readerConn, skipPrep);
+    await putFeed(feed, this.readerConn, skipPrep);
     return;
   }
 
@@ -61,7 +61,7 @@ async function updateFeedIcon(feed) {
   // The feed had a favicon, but no new favicon found
   if(prevIconURL && !iconURL) {
     feed.faviconURLString = undefined;
-    await feedPut(feed, this.readerConn, skipPrep);
+    await putFeed(feed, this.readerConn, skipPrep);
     return;
   }
 
@@ -73,7 +73,7 @@ async function updateFeedIcon(feed) {
   // The feed did not have a favicon, but a new favicon was found
   if(!prevIconURL && iconURL) {
     feed.faviconURLString = iconURL;
-    await feedPut(feed, this.readerConn, skipPrep);
+    await putFeed(feed, this.readerConn, skipPrep);
     return;// just for consistency
   }
 }

@@ -7,7 +7,7 @@ import isAllowedURL from "/src/fetch/fetch-policy.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import * as Feed from "/src/reader-db/feed.js";
 import {ConstraintError} from "/src/reader-db/errors.js";
-import feedPut from "/src/reader-db/put-feed.js";
+import putFeed from "/src/reader-db/put-feed.js";
 import findFeedIdByURLInDb from "/src/reader-db/find-feed-id-by-url.js";
 import openReaderDb from "/src/reader-db/open.js";
 import {setURLHrefProperty} from "/src/url/url.js";
@@ -103,7 +103,7 @@ export async function subscribe(feed) {
 
   // Store the feed in the database
   const kSkipPrep = false;
-  const storedFeed = await feedPut(feed, this.readerConn, kSkipPrep);
+  const storedFeed = await putFeed(feed, this.readerConn, kSkipPrep);
 
   // Send a notification of the successful subscription
   if(this.notify) {
