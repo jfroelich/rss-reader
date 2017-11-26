@@ -1,7 +1,12 @@
 import assert from "/src/assert.js";
 
-// Allows for leading whitespace characters. Returns true for javascript: and mailto: and data:.
-// Returns true for https:// and http://. Returns false for '//' (protocol-relative).
+// Returns true if a string represents a canonical url. The string may contain leading or trailing
+// whitespace.
+// Returns true for javascript: and mailto: and data:.
+// Returns true for https:// and http://.
+// Returns false for '//' (protocol-relative).
+// Returns false for local host.
+// Returns false for ip addresses.
 export function isCanonicalURLString(urlString) {
   assert(typeof urlString === 'string');
 
@@ -61,10 +66,10 @@ function isInRange(urlString) {
 // Only minor validation for speed. Tolerates bad input. This isn't intended to be the most
 // accurate classification. Instead, it is intended to easily find bad urls and rule them out as
 // invalid, even though some slip through, and not unintentionally rule out good urls.
-// @param urlString {String}
+// @param value {String}
 // @returns {Boolean}
-export function isValidURLString(urlString) {
-  return typeof urlString === 'string' &&
-    isInRange(urlString) &&
-    !urlString.trim().includes(' ');
+export function isValidURLString(value) {
+  return typeof value === 'string' &&
+    isInRange(value) &&
+    !value.trim().includes(' ');
 }

@@ -72,9 +72,9 @@ FaviconCache.prototype.onUpgradeNeeded = function(event) {
 };
 
 FaviconCache.prototype.clear = function() {
-  assert(idb.isOpen(this.conn));
   return new Promise((resolve, reject) => {
-    console.debug('clearing favicon cache');
+    assert(idb.isOpen(this.conn));
+    console.debug('Clearing favicon cache');
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
     const request = store.clear();
@@ -84,8 +84,9 @@ FaviconCache.prototype.clear = function() {
 };
 
 FaviconCache.prototype.findEntry = function(urlObject) {
-  assert(idb.isOpen(this.conn));
+
   return new Promise((resolve, reject) => {
+    assert(idb.isOpen(this.conn));
     const tx = this.conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
     const request = store.get(urlObject.href);
@@ -96,13 +97,14 @@ FaviconCache.prototype.findEntry = function(urlObject) {
 
 // TODO: assert maxAgeMs isPosInt, do not forget to import from utils/is-pos-int.js
 FaviconCache.prototype.findExpired = function(maxAgeMs) {
-  assert(idb.isOpen(this.conn));
-
-  if(typeof maxAgeMs === 'undefined') {
-    maxAgeMs = FaviconCache.MAX_AGE_MS;
-  }
-
   return new Promise((resolve, reject) => {
+
+    assert(idb.isOpen(this.conn));
+
+    if(typeof maxAgeMs === 'undefined') {
+      maxAgeMs = FaviconCache.MAX_AGE_MS;
+    }
+
     let cutoffTimeMs = Date.now() - maxAgeMs;
     cutoffTimeMs = cutoffTimeMs < 0 ? 0 : cutoffTimeMs;
     const tx = this.conn.transaction('favicon-cache');
@@ -117,8 +119,8 @@ FaviconCache.prototype.findExpired = function(maxAgeMs) {
 };
 
 FaviconCache.prototype.removeByURL = function(pageURLs) {
-  assert(idb.isOpen(this.conn));
   return new Promise((resolve, reject) => {
+    assert(idb.isOpen(this.conn));
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
@@ -130,8 +132,8 @@ FaviconCache.prototype.removeByURL = function(pageURLs) {
 };
 
 FaviconCache.prototype.put = function(entry) {
-  assert(idb.isOpen(this.conn));
   return new Promise((resolve, reject) => {
+    assert(idb.isOpen(this.conn));
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
     const request = store.put(entry);
@@ -143,8 +145,8 @@ FaviconCache.prototype.put = function(entry) {
 // @param pageURLs {Iterable<String>}
 // @param iconURL {String}
 FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
-  assert(idb.isOpen(this.conn));
   return new Promise((resolve, reject) => {
+    assert(idb.isOpen(this.conn));
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);

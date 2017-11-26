@@ -6,6 +6,7 @@ export const MIME_TYPE_XML = 'application/xml';
 
 // These constraints are rather arbitrary, but just as a general bound
 // TODO: increase and test accuracy
+// TODO: do not export
 export const MIME_TYPE_MIN_LENGTH = 7;
 export const MIME_TYPE_MAX_LENGTH = 100;
 
