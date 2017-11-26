@@ -1,6 +1,7 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/storage/entry.js";
 import * as rdb from "/src/storage/rdb.js";
+import removeEntriesFromDb from "/src/storage/remove-entries.js";
 
 // Scans the database for entries missing urls are removes them
 // @param conn {IDBDatabase}
@@ -24,7 +25,7 @@ export default async function removeLostEntries(conn, limit) {
     ids.push(entry.id);
   }
 
-  await rdb.removeEntries(conn, ids);
+  await removeEntriesFromDb(conn, ids);
   const channel = new BroadcastChannel('db');
   const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
   for(const id of ids) {

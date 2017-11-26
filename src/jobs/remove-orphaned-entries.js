@@ -1,6 +1,7 @@
 import assert from "/src/assert.js";
 import * as Feed from "/src/storage/feed.js";
 import * as rdb from "/src/storage/rdb.js";
+import removeEntriesFromDb from "/src/storage/remove-entries.js";
 
 // Removes entries not linked to a feed from the database
 // @param conn {IDBDatabase} an open database connection
@@ -25,7 +26,7 @@ export default async function removeOrphanedEntries(conn, limit) {
     orphanIds.push(entry.id);
   }
 
-  await rdb.removeEntries(conn, orphanIds);
+  await removeEntriesFromDb(conn, orphanIds);
 
   const channel = new BroadcastChannel('db');
   const message = {type: 'entry-deleted', id: undefined, reason: 'orphan'};

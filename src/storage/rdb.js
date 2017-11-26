@@ -398,21 +398,6 @@ export function putEntries(conn, entries) {
 
 
 
-// @param conn {IDBDatabase}
-// @param ids {Array}
-export function removeEntries(conn, ids) {
-  assert(idb.isOpen(conn));
-  assert(Array.isArray(ids));
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('entry', 'readwrite');
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-    const store = tx.objectStore('entry');
-    for(const id of ids) {
-      store.delete(id);
-    }
-  });
-}
 
 export class ConstraintError extends Error {
   constructor(message) {
