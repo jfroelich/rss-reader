@@ -10,6 +10,7 @@ import findViewableEntriesInDb from "/src/storage/find-viewable-entries.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";
+import * as idb from "/src/utils/idb.js";
 import {parseInt10} from "/src/utils/string.js";
 
 // Track the currently visible slide
@@ -46,7 +47,7 @@ pollChannel.onmessage = async function(event) {
       } catch(error) {
         console.warn(error);
       } finally {
-        rdb.close(conn);
+        idb.close(conn);
       }
     }
   }
@@ -264,7 +265,7 @@ async function onSlideClick(event) {
   } catch(error) {
     console.warn(error);
   } finally {
-    rdb.close(conn);
+    idb.close(conn);
   }
 
   return false;
@@ -310,7 +311,7 @@ async function showNextSlide() {
   } catch(error) {
     console.warn(error);
   } finally {
-    rdb.close(conn);
+    idb.close(conn);
   }
 
   if(slideAppendCount > 0) {
@@ -421,7 +422,7 @@ async function init() {
     await appendSlides(conn);
   } finally {
     hideLoadingInformation();
-    rdb.close(conn);
+    idb.close(conn);
   }
 }
 

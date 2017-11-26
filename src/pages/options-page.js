@@ -17,6 +17,7 @@ import * as Feed from "/src/storage/feed.js";
 import findFeedByIdInDb from "/src/storage/find-feed-by-id.js";
 import getFeedsFromDb from "/src/storage/get-feeds.js";
 import assert from "/src/assert.js";
+import * as idb from "/src/utils/idb.js";
 import * as mime from "/src/utils/mime-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 
@@ -240,7 +241,7 @@ async function feedListItemOnclick(event) {
     // TODO: visual feedback?
     return;
   } finally {
-    rdb.close(conn);
+    idb.close(conn);
   }
 
   const titleElement = document.getElementById('details-title');
@@ -364,7 +365,7 @@ async function feedListInit() {
     // TODO: react to error
     console.warn(error);
   } finally {
-    rdb.close(conn);
+    idb.close(conn);
   }
 
   if(!feeds) {
@@ -436,7 +437,7 @@ async function unsubscribeButtonOnclick(event) {
     console.warn(error);
     return;
   } finally {
-    rdb.close(conn);
+    idb.close(conn);
   }
 
   feedListRemoveFeed(feedId);
@@ -479,7 +480,7 @@ async function exportOPMLButtonOnclick(event) {
     // TODO: handle error visually
     console.warn(error);
   } finally {
-    rdb.close(conn);
+    idb.close(conn);
   }
 }
 

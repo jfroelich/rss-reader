@@ -3,10 +3,12 @@ import * as Entry from "/src/storage/entry.js";
 import * as Feed from "/src/storage/feed.js";
 import * as idb from "/src/utils/idb.js";
 
-// Module for interacting with the app indexedDB database
+// Open a connection to the reader database
 
-// TODO: break up into individual files as there is too little coherency here
+// TODO: deprecate close and isOpen, require caller to use idb.js directly, then refactor this
+// file to default exoprt the open function and nothing else.
 // TODO: rename "/storage/" folder to "/db/" or "/reader-db/"
+
 
 const NAME = 'reader';
 const VERSION = 22;
@@ -18,7 +20,6 @@ export function open() {
   return idb.open(NAME, VERSION, onUpgradeNeeded, OPEN_TIMEOUT_MS);
 }
 
-export const close = idb.close;
 export const isOpen = idb.isOpen;
 
 // Helper for open. Does the database upgrade. This should never be

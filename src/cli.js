@@ -6,6 +6,7 @@ import * as rdb from "/src/storage/rdb.js";
 import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
+import * as idb from "/src/utils/idb.js";
 import {parseInt10} from "/src/utils/string.js";
 
 // Command line interface module. This module does not export anything. Instead, it defines a
@@ -21,7 +22,7 @@ cli.refreshIcons = async function() {
     await refreshFeedIcons(rConn, fic);
   } finally {
     fic.close();
-    rdb.close(rConn);
+    idb.close(rConn);
   }
 };
 
@@ -31,7 +32,7 @@ cli.archiveEntries = async function(limit) {
     conn = await rdb.open();
     await archiveEntries(conn, maxAgeMs, limit);
   } finally {
-    rdb.close(conn);
+    idb.close(conn);
   }
 };
 
@@ -48,7 +49,7 @@ cli.pollFeeds = async function() {
     await pollFeeds(pfc);
   } finally {
     fic.close();
-    rdb.close(pfc.readerConn);
+    idb.close(pfc.readerConn);
   }
 };
 
@@ -58,7 +59,7 @@ cli.removeListEntries = async function() {
     conn = await rdb.open();
     await removeLostEntries(conn, args);
   } finally {
-    rdb.close(conn);
+    idb.close(conn);
   }
 };
 
@@ -68,7 +69,7 @@ cli.removeOrphanedEntries = async function() {
     conn = await rdb.open();
     await removeOrphanedEntries(conn, args);
   } finally {
-    rdb.close(conn);
+    idb.close(conn);
   }
 };
 

@@ -1,11 +1,12 @@
-import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
+import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import {pollFeeds, PollFeedsContext} from "/src/jobs/poll/poll-feeds.js";
-import * as rdb from "/src/storage/rdb.js";
 import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
+import * as rdb from "/src/storage/rdb.js";
+import * as idb from "/src/utils/idb.js";
 
 // Registers alarms in the extension that run various background jobs. Analogous to cron.
 
@@ -30,7 +31,7 @@ async function onWakeup(alarm) {
     } catch(error) {
       console.warn(error);
     } finally {
-      rdb.close(conn);
+      idb.close(conn);
     }
     break;
   }
@@ -46,7 +47,7 @@ async function onWakeup(alarm) {
       console.warn(error);
     } finally {
       faviconCache.close();
-      rdb.close(pfc.readerConn);
+      idb.close(pfc.readerConn);
     }
     break;
   }
@@ -59,7 +60,7 @@ async function onWakeup(alarm) {
     } catch(error) {
       console.warn(error);
     } finally {
-      rdb.close(conn);
+      idb.close(conn);
     }
     break;
   }
@@ -72,7 +73,7 @@ async function onWakeup(alarm) {
     } catch(error) {
       console.warn(error);
     } finally {
-      rdb.close(conn);
+      idb.close(conn);
     }
     break;
   }
@@ -86,7 +87,7 @@ async function onWakeup(alarm) {
       console.warn(error);
     } finally {
       fic.close();
-      rdb.close(readerConn);
+      idb.close(readerConn);
     }
     break;
   }

@@ -1,4 +1,5 @@
-import {close, open} from "/src/storage/rdb.js";
+import {open} from "/src/storage/rdb.js";
+import {close as closeDb} from "/src/utils/idb.js";
 
 // Create the reader-db database
 export default async function setup() {
@@ -6,6 +7,6 @@ export default async function setup() {
   try {
     conn = await open();
   } finally {
-    close(conn);
+    closeDb(conn);
   }
 }

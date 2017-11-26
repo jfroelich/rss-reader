@@ -29,7 +29,7 @@ export default async function main(files) {
     await promiseEvery(promises);
   } finally {
     fic.close();
-    rdb.close(readerConn);
+    idb.close(readerConn);
   }
 }
 

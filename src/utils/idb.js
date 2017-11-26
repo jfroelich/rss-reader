@@ -2,6 +2,8 @@ import assert from "/src/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 
+// TODO: rename file to indexeddb-utils.js
+
 const DEBUG = false;
 
 // Returns true if the conn is open. This should only be used with indexedDB databases opened by

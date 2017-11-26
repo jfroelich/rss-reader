@@ -1,6 +1,6 @@
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
-import {remove as deleteDB} from "/src/utils/idb.js";
 import * as rdb from "/src/storage/rdb.js";
+import {close as closeDb, remove as removeDb} from "/src/utils/idb.js";
 
 async function test() {
   console.log('test start');
@@ -13,12 +13,12 @@ async function test() {
   try {
     conn = await rdb.open(name, version, rdb.onUpgradeNeeded, timeoutMs);
     await archiveEntries(conn, maxAgeMs, limit);
-    rdb.close(conn);
+    closeDb(conn);
     closeRequested = true;
-    await deleteDB(conn.name);
+    await removeDb(conn.name);
   } finally {
     if(!closeRequested) {
-      rdb.close(conn);
+      closeDb(conn);
     }
   }
 }

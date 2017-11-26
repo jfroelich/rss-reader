@@ -5,9 +5,9 @@ import FaviconCache from "/src/favicon/cache.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as rdb from "/src/storage/rdb.js";
 import setupReaderDb from "/src/storage/setup.js";
+import * as idb from "/src/utils/idb.js";
 
 // Background page for extension. This should be loaded exclusively in the background page.
-
 
 // Top level async is not allowed in modules, at least not right now. This helper function exists
 // to allow for the await, and to allow for finally to work given that some functions throw
@@ -20,7 +20,7 @@ async function initBadgeText() {
   } catch(error) {
     console.warn(error);
   } finally {
-    rdb.close(conn);
+    idb.close(conn);
   }
 }
 
