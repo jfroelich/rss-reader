@@ -2,11 +2,10 @@ import assert from "/src/assert.js";
 import {isValidURLString} from "/src/url/url-string.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 
-// TODO: this returns an id. It should be renamed appropriately.
 // TODO: perhaps this should accept a URL instead of a url string, so that there is no ambiguity
 // and there is no need to assert the url is valid, given that entry urls are always valid
 
-// Returns an entry ID, not an entry, matching url
+// Returns an entry id matching url
 // @param conn {IDBDatabase}
 // @param url {String}
 export default function main(conn, urlString) {

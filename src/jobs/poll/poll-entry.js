@@ -7,7 +7,7 @@ import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
 import parseHTML from "/src/html/parse.js";
 import entryAdd from "/src/reader-db/entry-add.js";
-import findEntryByURLInDb from "/src/reader-db/find-entry-by-url.js";
+import findEntryIdByURLInDb from "/src/reader-db/find-entry-id-by-url.js";
 import rewriteURL from "/src/jobs/poll/rewrite-url.js";
 import sniffIsBinaryURL from "/src/url/sniff.js";
 import {setURLHrefProperty} from "/src/url/url.js";
@@ -48,7 +48,7 @@ export async function pollEntry(entry) {
     return;
   }
 
-  if(await findEntryByURLInDb(this.readerConn, url.href)) {
+  if(await findEntryIdByURLInDb(this.readerConn, url.href)) {
     return;
   }
 
@@ -72,7 +72,7 @@ export async function pollEntry(entry) {
         return;
       }
 
-      if(await findEntryByURLInDb(this.readerConn, responseURL.href)) {
+      if(await findEntryIdByURLInDb(this.readerConn, responseURL.href)) {
         return;
       }
 
