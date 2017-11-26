@@ -1,7 +1,7 @@
 import assert from "/src/assert.js";
 import * as Feed from "/src/storage/feed.js";
 import findEntriesInDb from "/src/storage/find-entries.js";
-import findFeedIdsInDb from "/src/storage/find-feed-ids.js";
+import getFeedIdsInDb from "/src/storage/get-feed-ids.js";
 import {isOpen} from "/src/storage/rdb.js";
 import removeEntriesFromDb from "/src/storage/remove-entries.js";
 
@@ -10,7 +10,7 @@ import removeEntriesFromDb from "/src/storage/remove-entries.js";
 // @param limit {Number}
 export default async function removeOrphanedEntries(conn, limit) {
   assert(isOpen(conn));
-  const feedIds = await findFeedIdsInDb(conn);
+  const feedIds = await getFeedIdsInDb(conn);
 
   function isOrphan(entry) {
     const id = entry.feed;
