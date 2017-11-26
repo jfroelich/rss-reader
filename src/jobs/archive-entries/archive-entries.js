@@ -72,6 +72,17 @@ function compactEntry(entry) {
 
   // Consistently create the entry using the createEntry method, instead of creating a generic
   // object, so that any implicit fields and such are present.
+  //
+  // This function requires in depth knowledge of the entry object type. I could choose to inline
+  // the internals of createEntry here based on that reason. However, I still want some abstraction
+  // and am not entirely happy about how much knowledge this function has of entry properties. On
+  // the other hand, the concept of compacting an entry is distinct to this module, and not a
+  // general concern of entries.
+  // TODO: maybe the best way to alleviate the above concern is to have a proxy. Design an
+  // intermediate module called compact-entry.js. It would be an extension of the general entry.js
+  // module that introduces the compact transform concept to entries. Then the archive entries
+  // module calls to it. That seems like a nice trade off. On the other hand, this starts to create
+  // a lot of layers and a lot of files. At least for now I am going to leave it as is.
   const ce = Entry.createEntry();
 
   ce.dateCreated = entry.dateCreated;

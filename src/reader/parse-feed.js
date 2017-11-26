@@ -87,6 +87,12 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
     return result;
   }
 
+
+  // Whereever entries came from earlier, it should be defined at this point.
+  assert(Array.isArray(entries));
+
+  // parseFeed warrants that if entries are parsed, that the entries property of the output
+  // object is a defined array; albeit possibly empty. Using map implicitly warrants this.
   result.entries = entries.map(coerceEntry);
 
   // TODO: I am not sure that filtering out duplicate entries should be a concern of this function.
@@ -99,8 +105,6 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   // stage of the pipeline. All I would be doing is placing more burden on the caller by making
   // more pipeline steps explicit?
   result.entries = dedupEntries(result.entries);
-
-
   return result;
 }
 
