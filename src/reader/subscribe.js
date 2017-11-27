@@ -63,6 +63,12 @@ export async function subscribe(feed) {
 
   if(navigator.onLine || !('onLine' in navigator)) {
     // If online then fetch failure is fatal to subscribing
+    // TODO: unless the error is OfflineError, which fetchFeed may now throw because I recently
+    // added connectivity check to fetch. I think in this case, when fetch fails with offline
+    // error and not some other error, we want it to not be fatal. In fact, probably should not
+    // even check offline case at start of this block, instead proceed with try/catch and check
+    // if error is offlineerror within catch block.
+
     const res = await fetchFeed(url, this.fetchFeedTimeoutMs);
 
     // If redirected, then the url changed. Perform checks on the new url
