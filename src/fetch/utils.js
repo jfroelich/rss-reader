@@ -90,9 +90,18 @@ async function fetchWithTranslatedErrors(url, options) {
   // avoid ambiguity between (1) type errors thrown by fetch due to improper variable type and (2)
   // type errors thrown by fetch due to network errors. Coincidently this also affects a class of
   // invalid inputs to fetch where fetch implicitly converts non-string urls to strings
-  check(typeof url === 'string', TypeError, 'url', url, 'must be a string');
+  check(typeof url === 'string', TypeError, 'url must be a string', url);
   check(typeof options === 'undefined' || typeof options === 'object' || options === null,
     TypeError, 'options must be undefined or an object');
+
+
+  // If we are able to detect connectivity, then check if we are offline. If we are offline then
+  // fetch will fail. But I want to clearly differentiate between a site being unreachable because
+  // we are offline from a site being unreachable because the site does not exist.
+  if(navigator and 'onLine' in navigator) {
+    check(navigator.onLine, OfflineError, 'Unable to fetch url "%s" while offline', url);
+  }
+
 
   // We know that url is now a string, but we do not know if it is an absolute url. When calling
   // fetch with a url string that is not absolute, fetch implicitly resolves the url using the
@@ -116,16 +125,17 @@ async function fetchWithTranslatedErrors(url, options) {
   try {
     response = await fetch(url, options);
   } catch(error) {
+
+    // TEMP: I am logging this immediately in case the error is promise-swallowed and there are
+    // other error types this should also be translating
+    console.error(error);
+
     if(error instanceof TypeError) {
       // Translate TypeErrors into NetworkErrors
       // When fetch fails with a TypeError, its internal message property does not contain a
       // useful value, so create an error with a useful value.
       throw new NetworkError('Error fetching ' + url);
     } else {
-
-      // TEMP: I am logging this immediately in case the error is promise-swallowed and there are
-      // other error types this should also be translating
-      console.error(error);
 
       throw error;
     }
@@ -169,6 +179,14 @@ export function getContentLength(response) {
 
   const contentLength = parseInt10(contentLengthString);
   return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
+}
+
+// TODO: I implemented this without thinking how it relates to other errors. It may be more
+// appropriate to extend networkerror or whatever.
+export class OfflineError extends Error {
+  constructor(message) {
+    super(message || 'Offline error');
+  }
 }
 
 export class NetworkError extends Error {

@@ -53,8 +53,6 @@ export async function pollFeeds() {
   showNotification(title, message);
 }
 
-
-
 async function pollFeed(feed) {
   assert(Feed.isFeed(feed));
   assert(this instanceof PollFeedsContext);
@@ -75,15 +73,6 @@ async function pollFeed(feed) {
   }
 
   const url = Feed.peekURL(feed);
-
-  // If offline, then exit early.
-  // TODO: this check should be delegated to fetchFeed, which throws some type of error. The error
-  // type should be distinct from other fetch errors (like 404) to indicate that the feed may still
-  // exist, it is just not possible to fetch at the moment.
-  if(!navigator.onLine) {
-    console.debug('Cannot fetch feed with url while offline', url);
-    return;
-  }
 
   const response = await fetchFeed(url, this.fetchFeedTimeoutMs, this.acceptHTML);
 
