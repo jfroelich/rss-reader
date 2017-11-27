@@ -9,6 +9,19 @@ import parseFeed from "/src/reader/parse-feed.js";
 import putFeed from "/src/reader-db/put-feed.js";
 import promiseEvery from "/src/utils/promise-every.js";
 
+// TODO: in order to make pollFeed directly callable, it needs to still be able to send a
+// notification when finished. Right now, I send one notification when polling all feeds. So there
+// are basically 2-3 modes: notify once for all feeds, notify per feed, do not notify.
+
+// TODO: sending a BroadcastChannel message when polling completes is pointless. The event is not
+// significant because it represents too many things that may have just happened. This should
+// only be broadcasting interesting, granular events. For example, when an entry is added, or
+// when a feed's details change in the database or something. Furthermore, the responsibility for
+// broadcasting that message no longer feels like it is a concern of polling, but rather a concern
+// for whatever lower level function is doing something. E.g. putEntry or whatever in the database
+// can broadcast a message when an entry is added, and that means polling does not need to do.
+// In the interim, I should disable the poll broadcast channel
+
 export function PollFeedsContext() {
   this.readerConn = undefined;
   this.iconCache = undefined;
@@ -36,17 +49,10 @@ export async function pollFeeds(pfc) {
     }
   }
 
-  let feeds = await getFeedsFromDb(pfc.readerConn);
+  const feeds = await getFeedsFromDb(pfc.readerConn);
 
-  if(!pfc.ignoreRecencyCheck) {
-    const pollableFeeds = [];
-    for(const feed of feeds) {
-      if(isPollableFeed(feed, pfc.recencyPeriodMs)) {
-        pollableFeeds.push(feed);
-      }
-    }
-    feeds = pollableFeeds;
-  }
+  // TODO: once pollFeed uses a this-bound pfc context, then this should be changed to just
+  // call map and pass pfc as the thisArg to map (its rarely used 2nd argument).
 
   const promises = [];
   for(const feed of feeds) {
@@ -54,53 +60,48 @@ export async function pollFeeds(pfc) {
   }
   await promiseEvery(promises);
 
-  await updateBadgeText(pfc.readerConn);
-
   const title = 'Added articles';
   const message = 'Added articles';
   showNotification(title, message);
 
-  const channel = new BroadcastChannel('poll');
-  channel.postMessage('completed');
-  channel.close();
+  //const channel = new BroadcastChannel('poll');
+  //channel.postMessage('completed');
+  //channel.close();
 }
 
-function isPollableFeed(feed, recencyPeriodMs) {
-  if(!feed.dateFetched) {
-    return true;
-  }
 
-  // The amount of time that has elapsed, in milliseconds, from when the feed was last polled.
-  const elapsed = new Date() - feed.dateFetched;
-  if(elapsed < recencyPeriodMs) {
-    // A feed has been polled too recently if not enough time has elasped from the last time the
-    // feed was polled.
-    console.debug('feed polled too recently', Feed.peekURL(feed));
-    return false;
-  }
 
-  return true;
-}
-
+// TODO: pfc should be this bound, not a parameter
 async function pollFeed(feed, pfc) {
   assert(Feed.isFeed(feed));
   assert(pfc instanceof PollFeedsContext);
 
-  const url = Feed.peekURL(feed);
+  // If the feed was polled too recently, then exit early.
+  if(!pfc.ignoreRecencyCheck && feed.dateFetched) {
+    const elapsedSinceLastPollMs = new Date() - feed.dateFetched;
+    if(elapsedSinceLastPollMs > pfc.recencyPeriodMs) {
+      return;
+    }
+  }
 
-  // TODO: perhaps this check should be delegated to fetchFeed, which throws some type of
-  // OfflineError or FetchError
+  // If offline, then exit early.
+  // TODO: this check should be delegated to fetchFeed, which throws some type of error. The error
+  // type should be distinct from other fetch errors (like 404) to indicate that the feed may still
+  // exist, it is just not possible to fetch at the moment.
   if(!navigator.onLine) {
-    console.debug('failed to fetch feed %s while offline', url);
+    console.debug('Cannot fetch feed with url while offline', url);
     return;
   }
+
+
+  const url = Feed.peekURL(feed);
 
   const response = await fetchFeed(url, pfc.fetchFeedTimeoutMs, pfc.acceptHTML);
 
   if(!pfc.ignoreModifiedCheck && feed.dateUpdated && feed.dateLastModified &&
     response.lastModifiedDate && feed.dateLastModified.getTime() ===
     response.lastModifiedDate.getTime()) {
-    console.debug('skipping unmodified feed', url, feed.dateLastModified,
+    console.debug('Skipping unmodified feed', url, feed.dateLastModified,
       response.lastModifiedDate);
     return;
   }
@@ -131,4 +132,6 @@ async function pollFeed(feed, pfc) {
   pec.fetchImageTimeoutMs = pfc.fetchImageTimeoutMs;
   const pollEntryPromises = entries.map(PollEntryModule.pollEntry, pec);
   await promiseEvery(pollEntryPromises);
+
+  await updateBadgeText(pfc.readerConn);
 }
