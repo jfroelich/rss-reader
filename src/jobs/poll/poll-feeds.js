@@ -1,5 +1,5 @@
 import assert from "/src/assert.js";
-import {queryIdleState, showNotification} from "/src/extension.js";
+import {showNotification} from "/src/extension.js";
 import * as Feed from "/src/reader-db/feed.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
@@ -34,28 +34,20 @@ export function PollFeedsContext() {
   this.acceptHTML = true;
 }
 
-// TODO: pfc should be this bound
-
 export async function pollFeeds() {
   assert(this instanceof PollFeedsContext);
 
+  // Get all feeds from the database
   const feeds = await getFeedsFromDb(this.readerConn);
-
-  // TODO: once pollFeed uses a this-bound pfc context, then this should be changed to just
-  // call map and pass pfc as the thisArg to map (its rarely used 2nd argument).
-
-  const promises = [];
-  for(const feed of feeds) {
-    promises.push(pollFeed(feed, this));
-  }
+  // Concurrently poll each feed
+  const promises = feeds.map(pollFeed, this);
+  // Wait for all feed poll operations to complete
   await promiseEvery(promises);
-
 
   // TODO: this notification could be more informative, should report the number of articles added
   // like I did before. In order to do that, I need to modify pollFeed to return the number of
   // articles added for that feed, then collect the resolutions of the promises above, and then
   // derive the sum from the resolutions.
-
   const title = 'Added articles';
   const message = 'Added articles';
   showNotification(title, message);
@@ -63,17 +55,16 @@ export async function pollFeeds() {
 
 
 
-// TODO: pfc should be this bound, not a parameter
-async function pollFeed(feed, pfc) {
+async function pollFeed(feed) {
   assert(Feed.isFeed(feed));
-  assert(pfc instanceof PollFeedsContext);
+  assert(this instanceof PollFeedsContext);
 
   console.log('Polling feed', Feed.peekURL(feed));
 
   // If the feed was polled too recently, then exit early.
-  if(!pfc.ignoreRecencyCheck && feed.dateFetched instanceof Date) {
+  if(!this.ignoreRecencyCheck && feed.dateFetched instanceof Date) {
     const elapsedSinceLastPollMs = new Date() - feed.dateFetched;
-    if(elapsedSinceLastPollMs > pfc.recencyPeriodMs) {
+    if(elapsedSinceLastPollMs > this.recencyPeriodMs) {
 
       // TEMP: testing whether this is causing no feeds to update when ignoreRecencyCheck
       // is false.
@@ -94,9 +85,9 @@ async function pollFeed(feed, pfc) {
     return;
   }
 
-  const response = await fetchFeed(url, pfc.fetchFeedTimeoutMs, pfc.acceptHTML);
+  const response = await fetchFeed(url, this.fetchFeedTimeoutMs, this.acceptHTML);
 
-  if(!pfc.ignoreModifiedCheck && feed.dateUpdated && feed.dateLastModified &&
+  if(!this.ignoreModifiedCheck && feed.dateUpdated && feed.dateLastModified &&
     response.lastModifiedDate && feed.dateLastModified.getTime() ===
     response.lastModifiedDate.getTime()) {
     console.debug('Skipping unmodified feed', url, feed.dateLastModified,
@@ -110,7 +101,7 @@ async function pollFeed(feed, pfc) {
     PROCESS_ENTRIES);
 
   const mergedFeed = Feed.merge(feed, parseResult.feed);
-  const storedFeed = await putFeed(mergedFeed, pfc.readerConn);
+  const storedFeed = await putFeed(mergedFeed, this.readerConn);
   const entries = parseResult.entries;
 
   // Cascade feed properties to entries
@@ -123,11 +114,11 @@ async function pollFeed(feed, pfc) {
   }
 
   const pec = new PollEntryModule.Context();
-  pec.readerConn = pfc.readerConn;
-  pec.iconCache = pfc.iconCache;
+  pec.readerConn = this.readerConn;
+  pec.iconCache = this.iconCache;
   pec.feedFaviconURL = storedFeed.faviconURLString;
-  pec.fetchHTMLTimeoutMs = pfc.fetchHTMLTimeoutMs;
-  pec.fetchImageTimeoutMs = pfc.fetchImageTimeoutMs;
+  pec.fetchHTMLTimeoutMs = this.fetchHTMLTimeoutMs;
+  pec.fetchImageTimeoutMs = this.fetchImageTimeoutMs;
   const pollEntryPromises = entries.map(PollEntryModule.pollEntry, pec);
   await promiseEvery(pollEntryPromises);
 
@@ -136,5 +127,5 @@ async function pollFeed(feed, pfc) {
   // whether the number of entries added is not zero. Then only call updateBadgeText if the number
   // is not zero.
 
-  await updateBadgeText(pfc.readerConn);
+  await updateBadgeText(this.readerConn);
 }
