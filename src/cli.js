@@ -50,7 +50,7 @@ cli.pollFeeds = async function() {
   pfc.ignoreModifiedCheck = true;
   try {
     [pfc.readerConn] = await Promise.all([openReaderDb(), fic.open()]);
-    await pollFeeds(pfc);
+    await pollFeeds.call(pfc);
   } finally {
     fic.close();
     idb.close(pfc.readerConn);

@@ -36,17 +36,17 @@ export function PollFeedsContext() {
 
 // TODO: pfc should be this bound
 
-export async function pollFeeds(pfc) {
-  assert(pfc instanceof PollFeedsContext);
+export async function pollFeeds() {
+  assert(this instanceof PollFeedsContext);
 
-  const feeds = await getFeedsFromDb(pfc.readerConn);
+  const feeds = await getFeedsFromDb(this.readerConn);
 
   // TODO: once pollFeed uses a this-bound pfc context, then this should be changed to just
   // call map and pass pfc as the thisArg to map (its rarely used 2nd argument).
 
   const promises = [];
   for(const feed of feeds) {
-    promises.push(pollFeed(feed, pfc));
+    promises.push(pollFeed(feed, this));
   }
   await promiseEvery(promises);
 

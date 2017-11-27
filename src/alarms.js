@@ -113,7 +113,7 @@ async function handlePollFeedsAlarmWakeup(alarm) {
   pfc.iconCache = faviconCache;
   try {
     [pfc.readerConn] = await Promise.all([openReaderDb(), faviconCache.open()]);
-    await pollFeeds(pfc);
+    await pollFeeds.call(pfc);
   } finally {
     faviconCache.close();
     idb.close(pfc.readerConn);
