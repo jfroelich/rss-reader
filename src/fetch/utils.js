@@ -94,14 +94,12 @@ async function fetchWithTranslatedErrors(url, options) {
   check(typeof options === 'undefined' || typeof options === 'object' || options === null,
     TypeError, 'options must be undefined or an object');
 
-
   // If we are able to detect connectivity, then check if we are offline. If we are offline then
   // fetch will fail. But I want to clearly differentiate between a site being unreachable because
   // we are offline from a site being unreachable because the site does not exist.
-  if(navigator and 'onLine' in navigator) {
+  if((typeof navigator !== 'undefined') && ('onLine' in navigator)) {
     check(navigator.onLine, OfflineError, 'Unable to fetch url "%s" while offline', url);
   }
-
 
   // We know that url is now a string, but we do not know if it is an absolute url. When calling
   // fetch with a url string that is not absolute, fetch implicitly resolves the url using the
