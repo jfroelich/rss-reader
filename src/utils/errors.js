@@ -33,7 +33,11 @@ export function check(condition, errorConstructor, ...varargs) {
 export function isUncheckedError(error) {
   return error instanceof AssertionError ||
     error instanceof TypeError ||
-    error instanceof ReferenceError;
+    error instanceof ReferenceError ||
+    error instanceof RangeError ||
+    error instanceof SyntaxError ||
+    error instanceof URIError ||
+    error instanceof EvalError;
 }
 
 // TODO: rename to ParseError
