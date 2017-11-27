@@ -35,22 +35,10 @@ async function onWakeup(alarm) {
     }
     break;
   }
-  case 'poll': {
-    const faviconCache = new FaviconCache();
-    const pfc = new PollFeedsContext();
-    pfc.iconCache = faviconCache;
-    let _;
-    try {
-      [pfc.readerConn, _] = await Promise.all([openReaderDb(), faviconCache.open()]);
-      await pollFeeds(pfc);
-    } catch(error) {
-      console.warn(error);
-    } finally {
-      faviconCache.close();
-      idb.close(pfc.readerConn);
-    }
+  case 'poll':
+    // Non-awaited call to async promise-returning function
+    handlePollFeedsAlarmWakeup(alarm).catch(console.warn);
     break;
-  }
   case 'remove-entries-missing-urls': {
     const limit = 100;
     let conn;
@@ -106,5 +94,28 @@ async function onWakeup(alarm) {
   default:
     console.warn('unhandled alarm', alarm.name);
     break;
+  }
+}
+
+async function handlePollFeedsAlarmWakeup(alarm) {
+  // If the non-idle restriction is in place, and the computer is not idle, then avoid polling.
+  if('ONLY_POLL_IF_IDLE' in localStorage) {
+    const idlePeriodSecs = 30;
+    const state = await queryIdleState(idlePeriodSecs);
+    if(state !== 'locked' || state !== 'idle') {
+      console.debug('not idle, avoiding polling');
+      return;
+    }
+  }
+
+  const faviconCache = new FaviconCache();
+  const pfc = new PollFeedsContext();
+  pfc.iconCache = faviconCache;
+  try {
+    [pfc.readerConn] = await Promise.all([openReaderDb(), faviconCache.open()]);
+    await pollFeeds(pfc);
+  } finally {
+    faviconCache.close();
+    idb.close(pfc.readerConn);
   }
 }

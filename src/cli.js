@@ -37,11 +37,15 @@ cli.archiveEntries = async function(limit) {
 };
 
 cli.pollFeeds = async function() {
+
+  // When polling feeds from the command line, there is no need to check whether the computer is
+  // currently idle, because the caller, by calling, signaled the intent to poll without regard to
+  // idle state.
+
   const fic = new FaviconCache();
   const pfc = new PollFeedsContext();
   pfc.iconCache = fic;
   pfc.allowMeteredConnections = true;
-  pfc.ignoreIdleState = true;
   pfc.ignoreRecencyCheck = true;
   pfc.ignoreModifiedCheck = true;
   try {

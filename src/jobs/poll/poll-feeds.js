@@ -26,9 +26,7 @@ export function PollFeedsContext() {
   this.readerConn = undefined;
   this.iconCache = undefined;
   this.ignoreRecencyCheck = false;
-  this.ignoreIdleState = false;
   this.ignoreModifiedCheck = false;
-  this.idlePeriodSecs = 30;
   this.recencyPeriodMs = 5 * 60 * 1000;
   this.fetchFeedTimeoutMs = 5000;
   this.fetchHTMLTimeoutMs = 5000;
@@ -41,14 +39,6 @@ export function PollFeedsContext() {
 export async function pollFeeds(pfc) {
   assert(pfc instanceof PollFeedsContext);
 
-  if(!pfc.ignoreIdleState && 'ONLY_POLL_IF_IDLE' in localStorage) {
-    const state = await queryIdleState(pfc.idlePeriodSecs);
-    if(state !== 'locked' && state !== 'idle') {
-      console.debug('polling canceled because not idle');
-      return;
-    }
-  }
-
   const feeds = await getFeedsFromDb(pfc.readerConn);
 
   // TODO: once pollFeed uses a this-bound pfc context, then this should be changed to just
@@ -60,13 +50,15 @@ export async function pollFeeds(pfc) {
   }
   await promiseEvery(promises);
 
+
+  // TODO: this notification could be more informative, should report the number of articles added
+  // like I did before. In order to do that, I need to modify pollFeed to return the number of
+  // articles added for that feed, then collect the resolutions of the promises above, and then
+  // derive the sum from the resolutions.
+
   const title = 'Added articles';
   const message = 'Added articles';
   showNotification(title, message);
-
-  //const channel = new BroadcastChannel('poll');
-  //channel.postMessage('completed');
-  //channel.close();
 }
 
 
@@ -76,13 +68,22 @@ async function pollFeed(feed, pfc) {
   assert(Feed.isFeed(feed));
   assert(pfc instanceof PollFeedsContext);
 
+  console.log('Polling feed', Feed.peekURL(feed));
+
   // If the feed was polled too recently, then exit early.
-  if(!pfc.ignoreRecencyCheck && feed.dateFetched) {
+  if(!pfc.ignoreRecencyCheck && feed.dateFetched instanceof Date) {
     const elapsedSinceLastPollMs = new Date() - feed.dateFetched;
     if(elapsedSinceLastPollMs > pfc.recencyPeriodMs) {
+
+      // TEMP: testing whether this is causing no feeds to update when ignoreRecencyCheck
+      // is false.
+      console.debug('Canceling feed poll, polled too recently,', Feed.peekURL(feed));
+
       return;
     }
   }
+
+  const url = Feed.peekURL(feed);
 
   // If offline, then exit early.
   // TODO: this check should be delegated to fetchFeed, which throws some type of error. The error
@@ -92,9 +93,6 @@ async function pollFeed(feed, pfc) {
     console.debug('Cannot fetch feed with url while offline', url);
     return;
   }
-
-
-  const url = Feed.peekURL(feed);
 
   const response = await fetchFeed(url, pfc.fetchFeedTimeoutMs, pfc.acceptHTML);
 
@@ -132,6 +130,11 @@ async function pollFeed(feed, pfc) {
   pec.fetchImageTimeoutMs = pfc.fetchImageTimeoutMs;
   const pollEntryPromises = entries.map(PollEntryModule.pollEntry, pec);
   await promiseEvery(pollEntryPromises);
+
+  // TODO: the badge text call should not occur when no entries have been processed. This needs to
+  // get information back from pollEntry, in the form of an array of resolutions, that ascertains
+  // whether the number of entries added is not zero. Then only call updateBadgeText if the number
+  // is not zero.
 
   await updateBadgeText(pfc.readerConn);
 }

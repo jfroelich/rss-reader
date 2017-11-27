@@ -33,6 +33,10 @@ dbChannel.onmessage = function(event) {
   }
 };
 
+/*
+// TODO: poll no longer broadcasts messages itself. Instead the database may broadcast messages
+// when changing feeds or entries. This needs to instead respond to that.
+
 const pollChannel = new BroadcastChannel('poll');
 pollChannel.onmessage = async function(event) {
   if(event.data === 'completed') {
@@ -52,6 +56,7 @@ pollChannel.onmessage = async function(event) {
     }
   }
 };
+*/
 
 function showLoadingInformation() {
   const loadingElement = document.getElementById('initial-loading-panel');
