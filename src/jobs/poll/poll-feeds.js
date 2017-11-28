@@ -32,6 +32,9 @@ export function PollFeedsContext() {
   this.fetchHTMLTimeoutMs = 5000;
   this.fetchImageTimeoutMs = 3000;
   this.acceptHTML = true;
+
+  // If true, this signals to pollFeed that it is being called multiple times
+  this.batchMode = true;
 }
 
 export async function pollFeeds() {
@@ -43,6 +46,12 @@ export async function pollFeeds() {
   const promises = feeds.map(pollFeed, this);
   // Wait for all feed poll operations to complete
   await promiseEvery(promises);
+
+  // This happens regardless of the batch mode setting, because calling this implies batch mode.
+  // While it would probably be better implemented as a parameter to pollFeed, this way avoids the
+  // need to use an explict bind or care about parameter order when mapping above.
+  // TODO: this should conditionally be called, only if the number of entries added is > 0.
+  await updateBadgeText(this.readerConn);
 
   // TODO: this notification could be more informative, should report the number of articles added
   // like I did before. In order to do that, I need to modify pollFeed to return the number of
@@ -120,6 +129,7 @@ async function pollFeed(feed) {
   // get information back from pollEntry, in the form of an array of resolutions, that ascertains
   // whether the number of entries added is not zero. Then only call updateBadgeText if the number
   // is not zero.
-
-  await updateBadgeText(this.readerConn);
+  if(!this.batchMode) {
+    await updateBadgeText(this.readerConn);
+  }
 }
