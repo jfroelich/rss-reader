@@ -1,4 +1,6 @@
 import assert from "/src/assert.js";
+import {showNotification} from "/src/extension.js";
+
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
@@ -78,4 +80,15 @@ export default async function pollFeed(feed) {
   if(!this.batchMode) {
     await updateBadgeText(this.readerConn);
   }
+
+  // If not in batch mode then send a notification
+  // TODO: use more specific title and message given that this is about a feed
+  // TODO: do not show a notification if no entries added, but to do this I need to get the
+  // number of entries added, so that will have to wait until pollEntry returns that.
+  if(!this.batchMode) {
+    const title = 'Added articles for feed';
+    const message = 'Added articles for feed';
+    showNotification(title, message);
+  }
+
 }

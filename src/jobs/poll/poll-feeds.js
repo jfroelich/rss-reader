@@ -6,10 +6,6 @@ import updateBadgeText from "/src/reader/update-badge-text.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
 import promiseEvery from "/src/utils/promise-every.js";
 
-// TODO: in order to make pollFeed directly callable, it needs to still be able to send a
-// notification when finished. Right now, I send one notification when polling all feeds. So there
-// are basically 2-3 modes: notify once for all feeds, notify per feed, do not notify.
-
 // TODO: sending a BroadcastChannel message when polling completes is pointless. The event is not
 // significant because it represents too many things that may have just happened. This should
 // only be broadcasting interesting, granular events. For example, when an entry is added, or
@@ -17,7 +13,7 @@ import promiseEvery from "/src/utils/promise-every.js";
 // broadcasting that message no longer feels like it is a concern of polling, but rather a concern
 // for whatever lower level function is doing something. E.g. putEntry or whatever in the database
 // can broadcast a message when an entry is added, and that means polling does not need to do.
-// In the interim, I should disable the poll broadcast channel
+// In the interim, I removed the poll broadcast channel
 
 export default async function pollFeeds() {
   assert(this instanceof PollContext);
@@ -39,7 +35,12 @@ export default async function pollFeeds() {
   // like I did before. In order to do that, I need to modify pollFeed to return the number of
   // articles added for that feed, then collect the resolutions of the promises above, and then
   // derive the sum from the resolutions.
-  const title = 'Added articles';
-  const message = 'Added articles';
-  showNotification(title, message);
+
+  // Only send a notification if in batch mode. In non-batch mode, pollFeed does notifications
+  if(this.batchMode) {
+    const title = 'Added articles';
+    const message = 'Added articles';
+    showNotification(title, message);
+  }
+
 }
