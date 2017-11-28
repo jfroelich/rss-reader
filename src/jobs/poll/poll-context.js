@@ -1,3 +1,6 @@
+
+// TODO: consider that some of these defaults should come from the global config file?
+
 // A PollContext is a basic function object that is intended to be used when calling pollFeed or
 // pollFeeds. It helps simplify the number of arguments that each function needs. It is a function
 // instead of a simple object to allow for simple allocation (use of "new").

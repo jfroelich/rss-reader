@@ -21,7 +21,8 @@ export default async function pollFeeds() {
   // Ensure that batch mode is on. This overrides whatever custom setting was used. The default
   // is false, so this has to happen. It seems reasonable to do it here because calling pollFeeds
   // indicates batch mode implicitly, and I chose to use batch mode as a context flag instead of
-  // a parameter to the pollFeed function to make it simpler to call pollFeed.
+  // a parameter to the pollFeed function to make it simpler to call pollFeed. Setting it here also
+  // simplifies calling pollFeeds as the caller does not need to be concerned with setting it.
   this.batchMode = true;
 
   // Get all feeds from the database
@@ -48,5 +49,4 @@ export default async function pollFeeds() {
     const message = 'Added articles';
     showNotification(title, message);
   }
-
 }
