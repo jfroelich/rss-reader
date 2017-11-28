@@ -1,7 +1,7 @@
 import assert from "/src/assert.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
+import PollContext from "/src/jobs/poll/poll-context.js";
 import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
-import PollContext from "/src/jobs/poll/poll-feed-context.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import putFeed from "/src/reader-db/put-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
