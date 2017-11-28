@@ -4,6 +4,8 @@ import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import isAllowedURL from "/src/fetch/fetch-policy.js";
+import PollContext from "/src/jobs/poll/poll-context.js";
+import pollFeed from "/src/jobs/poll/poll-feed.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import * as Feed from "/src/reader-db/feed.js";
 import {ConstraintError} from "/src/reader-db/errors.js";
@@ -13,6 +15,7 @@ import openReaderDb from "/src/reader-db/open.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {check, isUncheckedError, PermissionsError} from "/src/utils/errors.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
+import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 
 // Module for subscribing to a new feed
 
@@ -21,6 +24,7 @@ export function Context() {
   this.iconCache = undefined;
   this.readerConn = undefined;
   this.fetchFeedTimeoutMs = 2000;
+  this.concurrent = false;
   this.notify = true;
 }
 
@@ -119,5 +123,42 @@ export async function subscribe(feed) {
     showNotification(title, message, storedFeed.faviconURLString);
   }
 
+  // Call non-awaited to allow for subscribe to settle before deferredPollFeed settles. This is
+  // basically a fork. This only happens when calling non-concurrently.
+  // This cannot share resources like database connection with subscribe, because subscribe can
+  // settle prior to this completing, and callers can freely close connection used by subscribe
+  // once it settles.
+  if(!this.concurrent) {
+    deferredPollFeed(storedFeed).catch(console.warn);
+  }
+
   return storedFeed;
+}
+
+// Returns a promise that resolves after the given number of milliseconds
+function sleep(ms) {
+  const [timer, timeoutPromise] = setTimeoutPromise(ms);
+  return timeoutPromise;
+}
+
+// This is the initial implementation of Github issue #462
+async function deferredPollFeed(feed) {
+  await sleep(1000);
+
+  const pc = new PollContext();
+  pc.iconCache = new FaviconCache();
+
+  // We just fetched the feed. We definitely want to be able to process its entries.
+  pc.ignoreRecencyCheck = true;
+  pc.ignoreModifiedCheck = true;
+
+  try {
+    [pc.readerConn] = await Promise.all([openReaderDb(), pc.iconCache.open()]);
+    await pollFeed.call(pc, feed);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    pc.iconCache.close();
+    idb.close(pc.readerConn);
+  }
 }

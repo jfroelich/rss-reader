@@ -87,6 +87,9 @@ async function importFile(file, readerConn, iconCache) {
   subscribeContext.fetchFeedTimeoutMs = timeoutMs;
   subscribeContext.notify = false;
 
+  // Signal to subscribe that it should not attempt to poll the feed's entries
+  subscribeContext.concurrent = true;
+
   const subcribePromises = feeds.map(Subscriber.subscribe, subscribeContext);
   const subscribeResults = await promiseEvery(subscribePromises);
   console.log('subbed to %d feeds in file', subscribeResults.length, file.name);

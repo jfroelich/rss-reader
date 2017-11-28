@@ -328,6 +328,11 @@ async function subscribeFormOnsubmit(event) {
   // TODO: show a visual error message in event of an error
   const subContext = new Subscriber.Context();
   subContext.fetchFeedTimeoutMs = 2000;
+
+  // This is false by default but I want to clearly communicate intent. When false, subscribe will
+  // poll the feed's entries as well.
+  subContext.concurrent = false;
+
   try {
     await subContext.connect();
     subscribedFeed = await Subscriber.subscribe.call(subContext, feed);
