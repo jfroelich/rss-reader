@@ -1,6 +1,6 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/reader-db/entry.js";
-import {entryCSSInit, entryCSSOnChange} from "/src/entry-css.js";
+import {entryCSSInit, entryCSSOnChange} from "/src/page-style-settings.js";
 import {openTab} from "/src/extension.js";
 import escapeHTML from "/src/html/escape.js";
 import htmlTruncate from "/src/html/truncate.js";
