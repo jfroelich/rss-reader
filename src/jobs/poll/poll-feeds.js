@@ -20,8 +20,7 @@ import promiseEvery from "/src/utils/promise-every.js";
 // In the interim, I should disable the poll broadcast channel
 
 
-
-export async function pollFeeds() {
+export default async function pollFeeds() {
   assert(this instanceof PollFeedsContext);
 
   // Get all feeds from the database
