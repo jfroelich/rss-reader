@@ -2,7 +2,10 @@ import exportFeeds from "/src/backup/export-feeds.js";
 import readerImportFiles from "/src/backup/import-opml-files.js";
 import {BG_IMAGES, FONTS} from "/src/config.js";
 import fadeElement from "/src/dom/fade-element.js";
-import {pageStyleSettingsOnload, pageStyleSettingsOnchange} from "/src/page-style-settings.js";
+import {
+  pageStyleSettingsOnload,
+  pageStyleSettingsOnchange
+} from "/src/page-style/page-style-settings.js";
 import {
   hasBrowserPermission,
   requestBrowserPermission,

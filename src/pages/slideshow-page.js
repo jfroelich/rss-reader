@@ -1,6 +1,9 @@
 import assert from "/src/assert.js";
 import * as Entry from "/src/reader-db/entry.js";
-import {pageStyleSettingsOnload, pageStyleSettingsOnchange} from "/src/page-style-settings.js";
+import {
+  pageStyleSettingsOnload,
+  pageStyleSettingsOnchange
+} from "/src/page-style/page-style-settings.js";
 import {openTab} from "/src/extension.js";
 import escapeHTML from "/src/html/escape.js";
 import htmlTruncate from "/src/html/truncate.js";
