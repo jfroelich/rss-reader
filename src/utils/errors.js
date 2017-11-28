@@ -13,10 +13,3 @@ export function isUncheckedError(error) {
     error instanceof URIError ||
     error instanceof EvalError;
 }
-
-// TODO: move to operations/restricted-operation.js
-export class PermissionsError extends Error {
-  constructor(message) {
-    super(message || 'Not permitted');
-  }
-}

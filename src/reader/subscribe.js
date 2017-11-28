@@ -6,6 +6,7 @@ import fetchFeed from "/src/fetch/fetch-feed.js";
 import isAllowedURL from "/src/fetch/fetch-policy.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeed from "/src/jobs/poll/poll-feed.js";
+import {PermissionsError} from "/src/operations/restricted-operation.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import * as Feed from "/src/reader-db/feed.js";
 import {ConstraintError} from "/src/reader-db/errors.js";
@@ -14,7 +15,7 @@ import findFeedIdByURLInDb from "/src/reader-db/find-feed-id-by-url.js";
 import openReaderDb from "/src/reader-db/open.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import check from "/src/utils/check.js";
-import {isUncheckedError, PermissionsError} from "/src/utils/errors.js";
+import {isUncheckedError} from "/src/utils/errors.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 
