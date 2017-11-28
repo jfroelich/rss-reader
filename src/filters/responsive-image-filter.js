@@ -43,6 +43,13 @@ function findBestSrcsetDescriptorForImage(image) {
       return desc;
     }
   }
+
+  // If we did not find a descriptor above, search again but relax the dimensions requirement
+  for(const desc of descriptors) {
+    if(desc.url) {
+      return desc;
+    }
+  }
 }
 
 // Changes the src, width, and height of an image to the properties of the given descriptor,
