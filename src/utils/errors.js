@@ -3,6 +3,7 @@ import sprintf from "/src/utils/sprintf.js";
 
 // Misc errors and error-related utilities
 
+// TODO: move check function to its own file
 
 const LOG_CHECKED_ERRORS = false;
 
@@ -40,7 +41,6 @@ export function isUncheckedError(error) {
     error instanceof EvalError;
 }
 
-// TODO: rename to ParseError
 export class ParseError extends Error {
   constructor(message) {
     super(message || 'Parse error');
