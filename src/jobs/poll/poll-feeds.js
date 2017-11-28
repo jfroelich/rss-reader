@@ -1,6 +1,7 @@
 import assert from "/src/assert.js";
 import {showNotification} from "/src/extension.js";
 import pollFeed from "/src/jobs/poll/poll-feed.js";
+import PollFeedsContext from "/src/jobs/poll/poll-feed-context.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
 import promiseEvery from "/src/utils/promise-every.js";
@@ -18,20 +19,7 @@ import promiseEvery from "/src/utils/promise-every.js";
 // can broadcast a message when an entry is added, and that means polling does not need to do.
 // In the interim, I should disable the poll broadcast channel
 
-export function PollFeedsContext() {
-  this.readerConn = undefined;
-  this.iconCache = undefined;
-  this.ignoreRecencyCheck = false;
-  this.ignoreModifiedCheck = false;
-  this.recencyPeriodMs = 5 * 60 * 1000;
-  this.fetchFeedTimeoutMs = 5000;
-  this.fetchHTMLTimeoutMs = 5000;
-  this.fetchImageTimeoutMs = 3000;
-  this.acceptHTML = true;
 
-  // If true, this signals to pollFeed that it is being called multiple times
-  this.batchMode = true;
-}
 
 export async function pollFeeds() {
   assert(this instanceof PollFeedsContext);
