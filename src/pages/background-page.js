@@ -1,6 +1,6 @@
-import "/src/alarms.js";
 import {addBadgeClickListener, addInstallListener, showSlideshowTab} from "/src/extension.js";
 import FaviconCache from "/src/favicon/cache.js";
+import "/src/reader/alarms.js";
 import "/src/reader/cli.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import openReaderDb from "/src/reader-db/open.js";
