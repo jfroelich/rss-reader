@@ -2,7 +2,7 @@ import exportFeeds from "/src/backup/export-feeds.js";
 import readerImportFiles from "/src/backup/import-opml-files.js";
 import {BG_IMAGES, FONTS} from "/src/config.js";
 import fadeElement from "/src/dom/fade-element.js";
-import {entryCSSInit, entryCSSOnChange} from "/src/page-style-settings.js";
+import {pageStyleSettingsOnload, pageStyleSettingsOnchange} from "/src/page-style-settings.js";
 import {
   hasBrowserPermission,
   requestBrowserPermission,
@@ -28,7 +28,7 @@ const settingsChannel = new BroadcastChannel('settings');
 settingsChannel.onmessage = function(event) {
   console.debug('received settings channel message:', event);
   if(event.data === 'changed') {
-    entryCSSOnChange(event);
+    pageStyleSettingsOnchange(event);
   }
 };
 
@@ -41,7 +41,7 @@ function dispatchSettingsChangedEvent() {
 
   // TODO: once the loopback issue is fixed, do not double call
   // HACK: for now, hard call
-  entryCSSOnChange();
+  pageStyleSettingsOnchange();
 
   settingsChannel.postMessage('changed');
 }
@@ -644,7 +644,7 @@ function bodyHeightInputOninput(event) {
 
 // Initialization
 
-entryCSSInit();
+pageStyleSettingsOnload();
 
 // Attach click handlers to menu items
 // TODO: use single event listener on list itself instead

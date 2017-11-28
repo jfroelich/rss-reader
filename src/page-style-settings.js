@@ -2,13 +2,9 @@ import assert from "/src/assert.js";
 import * as CSSUtils from "/src/dom/css-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 
-
-// TODO: again, rename to something better, like display-settings.js?
-
-
 // Get the current settings from local storage and then modify the css rules in the default style
 // sheet
-export function entryCSSOnChange(event) {
+export function pageStyleSettingsOnchange(event) {
   const sheet = CSSUtils.getDefaultStylesheet();
   assert(sheet);
   entryCSSUpdateRule(sheet);
@@ -18,7 +14,7 @@ export function entryCSSOnChange(event) {
 
 // Get the current settings from local storage and then create css rules and append them to the
 // default style sheet.
-export function entryCSSInit() {
+export function pageStyleSettingsOnload() {
   const sheet = CSSUtils.getDefaultStylesheet();
   assert(sheet);
   sheet.addRule('div.entry', entryCSSCreateEntryRuleText());
