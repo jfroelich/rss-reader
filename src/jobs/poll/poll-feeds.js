@@ -19,7 +19,6 @@ import promiseEvery from "/src/utils/promise-every.js";
 // can broadcast a message when an entry is added, and that means polling does not need to do.
 // In the interim, I should disable the poll broadcast channel
 
-
 export default async function pollFeeds() {
   assert(this instanceof PollContext);
 

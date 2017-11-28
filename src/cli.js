@@ -16,13 +16,13 @@ import {parseInt10} from "/src/utils/string.js";
 const cli = {};
 
 cli.refreshIcons = async function() {
-  const fic = new FaviconCache();
+  const fc = new FaviconCache();
   let rConn;
   try {
-    [rConn] = await Promise.all([openReaderDb(), fic.open()]);
-    await refreshFeedIcons(rConn, fic);
+    [rConn] = await Promise.all([openReaderDb(), fc.open()]);
+    await refreshFeedIcons(rConn, fc);
   } finally {
-    fic.close();
+    fc.close();
     idb.close(rConn);
   }
 };
@@ -38,23 +38,18 @@ cli.archiveEntries = async function(limit) {
 };
 
 cli.pollFeeds = async function() {
-
-  // When polling feeds from the command line, there is no need to check whether the computer is
-  // currently idle, because the caller, by calling, signaled the intent to poll without regard to
-  // idle state.
-
-  const fic = new FaviconCache();
-  const pfc = new PollContext();
-  pfc.iconCache = fic;
-  pfc.allowMeteredConnections = true;
-  pfc.ignoreRecencyCheck = true;
-  pfc.ignoreModifiedCheck = true;
+  const fc = new FaviconCache();
+  const pc = new PollContext();
+  pc.iconCache = fc;
+  pc.allowMeteredConnections = true;
+  pc.ignoreRecencyCheck = true;
+  pc.ignoreModifiedCheck = true;
   try {
-    [pfc.readerConn] = await Promise.all([openReaderDb(), fic.open()]);
-    await pollFeeds.call(pfc);
+    [pc.readerConn] = await Promise.all([openReaderDb(), fc.open()]);
+    await pollFeeds.call(pc);
   } finally {
-    fic.close();
-    idb.close(pfc.readerConn);
+    fc.close();
+    idb.close(pc.readerConn);
   }
 };
 
@@ -79,12 +74,12 @@ cli.removeOrphanedEntries = async function() {
 };
 
 cli.clearFavicons = async function() {
-  const fic = new FaviconCache();
+  const fc = new FaviconCache();
   try {
-    await fic.open();
-    await fic.clear();
+    await fc.open();
+    await fc.clear();
   } finally {
-    fic.close();
+    fc.close();
   }
 };
 

@@ -112,13 +112,13 @@ async function handlePollFeedsAlarmWakeup(alarm) {
   }
 
   const faviconCache = new FaviconCache();
-  const pfc = new PollContext();
-  pfc.iconCache = faviconCache;
+  const pc = new PollContext();
+  pc.iconCache = faviconCache;
   try {
-    [pfc.readerConn] = await Promise.all([openReaderDb(), faviconCache.open()]);
-    await pollFeeds.call(pfc);
+    [pc.readerConn] = await Promise.all([openReaderDb(), faviconCache.open()]);
+    await pollFeeds.call(pc);
   } finally {
     faviconCache.close();
-    idb.close(pfc.readerConn);
+    idb.close(pc.readerConn);
   }
 }
