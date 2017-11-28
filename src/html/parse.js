@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
+import {ParseError} from "/src/operations/parse-operation.js";
 import check from "/src/utils/check.js";
-import {ParseError} from "/src/utils/errors.js";
 import * as mime from "/src/utils/mime-utils.js";
 
 // When html is a fragment, it will be inserted into a new document using a default template
