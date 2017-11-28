@@ -153,12 +153,11 @@ async function deferredPollFeed(feed) {
   pc.ignoreModifiedCheck = true;
 
   try {
-    [pc.readerConn] = await Promise.all([openReaderDb(), pc.iconCache.open()]);
+    await pc.open();
     await pollFeed.call(pc, feed);
   } catch(error) {
     console.warn(error);
   } finally {
-    pc.iconCache.close();
-    idb.close(pc.readerConn);
+    pc.close();
   }
 }

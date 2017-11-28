@@ -6,6 +6,9 @@ import updateBadgeText from "/src/reader/update-badge-text.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
 import promiseEvery from "/src/utils/promise-every.js";
 
+// TODO: pollFeeds is a job, but pollFeed no longer is a job, it is now a shared module that is
+// also used by subscribe to get a feed's entries.
+
 // TODO: sending a BroadcastChannel message when polling completes is pointless. The event is not
 // significant because it represents too many things that may have just happened. This should
 // only be broadcasting interesting, granular events. For example, when an entry is added, or

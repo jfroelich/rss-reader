@@ -38,18 +38,16 @@ cli.archiveEntries = async function(limit) {
 };
 
 cli.pollFeeds = async function() {
-  const fc = new FaviconCache();
   const pc = new PollContext();
-  pc.iconCache = fc;
+  pc.iconCache = new FaviconCache();
   pc.allowMeteredConnections = true;
   pc.ignoreRecencyCheck = true;
   pc.ignoreModifiedCheck = true;
   try {
-    [pc.readerConn] = await Promise.all([openReaderDb(), fc.open()]);
+    await pc.open();
     await pollFeeds.call(pc);
   } finally {
-    fc.close();
-    idb.close(pc.readerConn);
+    pc.close();
   }
 };
 
