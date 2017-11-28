@@ -4,7 +4,7 @@ import {AssertionError} from "/src/assert/assert.js";
 
 // A helper for use in catch blocks that want to re-throw unexpected errors that should not be
 // caught.
-export function isUncheckedError(error) {
+export default function isUncheckedError(error) {
   return error instanceof AssertionError ||
     error instanceof TypeError ||
     error instanceof ReferenceError ||

@@ -15,8 +15,8 @@ import findFeedIdByURLInDb from "/src/reader-db/find-feed-id-by-url.js";
 import openReaderDb from "/src/reader-db/open.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import check from "/src/utils/check.js";
-import {isUncheckedError} from "/src/utils/errors.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
+import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 
 // Module for subscribing to a new feed

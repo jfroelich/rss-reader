@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import {isUncheckedError} from "/src/utils/errors.js";
+import isUncheckedError from "/src/utils/is-unchecked-error.js";
 
 const DEBUG = false;
 

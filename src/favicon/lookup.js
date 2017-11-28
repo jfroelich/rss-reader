@@ -1,5 +1,4 @@
 import assert from "/src/assert/assert.js";
-import {isUncheckedError} from "/src/utils/errors.js";
 import FaviconCache from "/src/favicon/cache.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import fetchImageHead from "/src/fetch/fetch-image-head.js";
@@ -8,6 +7,7 @@ import isPosInt from "/src/utils/is-pos-int.js";
 import parseHTML from "/src/html/parse.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {resolveURLString} from "/src/url/url-string.js";
+import isUncheckedError from "/src/utils/is-unchecked-error.js";
 
 // Class that provides favicon lookup
 export default class FaviconLookup {

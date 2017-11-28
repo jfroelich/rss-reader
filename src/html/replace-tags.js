@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
-import {isUncheckedError} from "/src/utils/errors.js";
 import parseHTML from "/src/html/parse.js";
+import isUncheckedError from "/src/utils/is-unchecked-error.js";
 
 // Replaces tags in the input string with the replacement. If no replacement, then removes the
 // tags.
