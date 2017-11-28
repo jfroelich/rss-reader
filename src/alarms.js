@@ -3,7 +3,7 @@ import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import pollFeeds from "/src/jobs/poll/poll-feeds.js";
-import PollFeedsContext from "/src/jobs/poll/poll-feed-context.js";
+import PollContext from "/src/jobs/poll/poll-feed-context.js";
 import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
@@ -112,7 +112,7 @@ async function handlePollFeedsAlarmWakeup(alarm) {
   }
 
   const faviconCache = new FaviconCache();
-  const pfc = new PollFeedsContext();
+  const pfc = new PollContext();
   pfc.iconCache = faviconCache;
   try {
     [pfc.readerConn] = await Promise.all([openReaderDb(), faviconCache.open()]);

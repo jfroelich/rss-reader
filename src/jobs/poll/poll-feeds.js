@@ -1,7 +1,7 @@
 import assert from "/src/assert.js";
 import {showNotification} from "/src/extension.js";
 import pollFeed from "/src/jobs/poll/poll-feed.js";
-import PollFeedsContext from "/src/jobs/poll/poll-feed-context.js";
+import PollContext from "/src/jobs/poll/poll-feed-context.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
 import promiseEvery from "/src/utils/promise-every.js";
@@ -21,7 +21,7 @@ import promiseEvery from "/src/utils/promise-every.js";
 
 
 export default async function pollFeeds() {
-  assert(this instanceof PollFeedsContext);
+  assert(this instanceof PollContext);
 
   // Get all feeds from the database
   const feeds = await getFeedsFromDb(this.readerConn);
