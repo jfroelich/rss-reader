@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 
 // Removes ping attributes from anchor elements in document content
 

@@ -1,5 +1,5 @@
 import {hasSource, removeImage} from "/src/dom/image.js";
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 
 // Removes images that are missing source information from document content
 

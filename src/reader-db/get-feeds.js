@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 
 // Load all feeds from the database

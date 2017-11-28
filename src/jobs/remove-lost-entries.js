@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import * as Entry from "/src/reader-db/entry.js";
 import findEntriesInDb from "/src/reader-db/find-entries.js";
 import removeEntriesFromDb from "/src/reader-db/remove-entries.js";

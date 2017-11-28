@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import {filterWhitespace} from "/src/utils/string.js";
 
 export const MIME_TYPE_HTML = 'text/html';

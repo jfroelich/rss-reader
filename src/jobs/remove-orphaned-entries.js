@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import * as Feed from "/src/reader-db/feed.js";
 import findEntriesInDb from "/src/reader-db/find-entries.js";
 import getFeedIdsInDb from "/src/reader-db/get-feed-ids.js";

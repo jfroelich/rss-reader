@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import fetchImageElement from "/src/fetch/fetch-image-element.js";
 import promiseEvery from "/src/utils/promise-every.js";
 import {parseInt10} from "/src/utils/string.js";

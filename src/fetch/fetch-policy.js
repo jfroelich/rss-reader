@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import {isCredentialedURL} from "/src/url/url.js";
 
 // NOTE: this is the initial implementation, probably going to change drastically, is definitely

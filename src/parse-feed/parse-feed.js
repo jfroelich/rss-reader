@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import {check, ParseError} from "/src/utils/errors.js";
 import parseXML from "/src/xml/parse.js";
 import {getElementName} from "/src/xml/utils.js";

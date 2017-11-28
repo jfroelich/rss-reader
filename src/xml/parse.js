@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import {ParseError} from "/src/utils/errors.js";
 import * as mime from "/src/utils/mime-utils.js";
 import {condenseWhitespace} from "/src/utils/string.js";

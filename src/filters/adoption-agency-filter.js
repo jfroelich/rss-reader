@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 
 // TODO: find all source not in picture/audio/video and remove
 // TODO: find all figcaption not in figure and remove

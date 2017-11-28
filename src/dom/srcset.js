@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 // This defines parseSrcset in global scope
 import "/src/third-party/parse-srcset.js";
 

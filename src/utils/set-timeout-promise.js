@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
 // Returns a promise that resolves to undefined after a certain amount of time, as well as a

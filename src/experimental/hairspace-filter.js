@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 
 // TODO: this should be part of a general character normalization filter, or perhaps a whitespace
 // normalization filter, or an entity filter

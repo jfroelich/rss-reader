@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 
 function fakeOnUpgradeNeeded() {}

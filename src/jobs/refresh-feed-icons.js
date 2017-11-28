@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import * as Feed from "/src/reader-db/feed.js";
 import putFeed from "/src/reader-db/put-feed.js";

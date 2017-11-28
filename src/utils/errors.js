@@ -1,4 +1,4 @@
-import {AssertionError} from "/src/assert.js";
+import {AssertionError} from "/src/assert/assert.js";
 import sprintf from "/src/utils/sprintf.js";
 
 // Misc errors and error-related utilities

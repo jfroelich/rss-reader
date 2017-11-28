@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import {isUncheckedError} from "/src/utils/errors.js";
 
 const DEBUG = false;

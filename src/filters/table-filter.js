@@ -1,6 +1,6 @@
 import unwrapElements from "/src/dom/unwrap-elements.js";
 import {leafFilterIsLeaf} from "/src/filters/leaf-filter.js";
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 
 
 // Filters certain table elements from document content

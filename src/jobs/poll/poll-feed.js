@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import {showNotification} from "/src/extension.js";
 
 import fetchFeed from "/src/fetch/fetch-feed.js";

@@ -1,6 +1,6 @@
 import unwrap from "/src/dom/unwrap-element.js";
 import {isHiddenInlineElement} from "/src/dom/visibility.js";
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 
 // TODO: make a github issue about optimizing recursive unwrap
 

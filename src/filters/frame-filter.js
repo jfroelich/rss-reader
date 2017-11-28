@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify

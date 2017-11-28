@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import {isEntry} from "/src/reader-db/entry.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 

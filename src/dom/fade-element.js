@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 
 // TODO: this could use some cleanup or at least some clarifying comments
 export default function fadeElement(element, durationSecs, delaySecs) {

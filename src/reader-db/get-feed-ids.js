@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 
 // Returns a promise that resolves to an array of feed ids, or rejects with a database error

@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
 import openReaderDb from "/src/reader-db/open.js";
 import {close as closeDb} from "/src/utils/indexeddb-utils.js";

@@ -1,4 +1,4 @@
-import assert from "/src/assert.js";
+import assert from "/src/assert/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import parseHTML from "/src/html/parse.js";
 
