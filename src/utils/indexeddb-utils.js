@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import {TimeoutError} from "/src/utils/errors.js";
+import {TimeoutError} from "/src/operations/timed-operation.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 
@@ -96,7 +96,7 @@ export async function open(name, version, upgradeListener, timeoutMs) {
     clearTimeout(timer);
   } else {
     timedout = true;
-    const errorMessage = 'connecting to database ' + name + ' timed out';
+    const errorMessage = 'Connecting to database ' + name + ' timed out';
     throw new TimeoutError(errorMessage);
   }
 

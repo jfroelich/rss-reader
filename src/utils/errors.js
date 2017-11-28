@@ -14,18 +14,14 @@ export function isUncheckedError(error) {
     error instanceof EvalError;
 }
 
+// TODO: move to something like parse-operation.js?
 export class ParseError extends Error {
   constructor(message) {
     super(message || 'Parse error');
   }
 }
 
-export class TimeoutError extends Error {
-  constructor(message) {
-    super(message || 'Operation timed out');
-  }
-}
-
+// TODO: move to operations/restricted-operation.js
 export class PermissionsError extends Error {
   constructor(message) {
     super(message || 'Not permitted');
