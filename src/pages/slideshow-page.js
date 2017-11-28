@@ -4,7 +4,7 @@ import {
   pageStyleSettingsOnload,
   pageStyleSettingsOnchange
 } from "/src/page-style/page-style-settings.js";
-import {openTab} from "/src/extension.js";
+import {openTab} from "/src/platform/platform.js";
 import escapeHTML from "/src/html/escape.js";
 import htmlTruncate from "/src/html/truncate.js";
 import openReaderDb from "/src/reader-db/open.js";

@@ -10,7 +10,7 @@ import {
   hasBrowserPermission,
   requestBrowserPermission,
   removeBrowserPermission
-} from "/src/extension.js";
+} from "/src/platform/platform.js";
 import htmlTruncate from "/src/html/truncate.js";
 import openReaderDb from "/src/reader-db/open.js";
 import * as Subscriber from "/src/reader/subscribe.js";

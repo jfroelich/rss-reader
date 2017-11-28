@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import {setBadgeText} from "/src/extension.js";
+import {setBadgeText} from "/src/platform/platform.js";
 import countUnreadEntriesInDb from "/src/reader-db/count-unread-entries.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 

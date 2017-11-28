@@ -1,4 +1,4 @@
-import {addBadgeClickListener, addInstallListener, showSlideshowTab} from "/src/extension.js";
+import {addBadgeClickListener, addInstallListener, showSlideshowTab} from "/src/platform/platform.js";
 import FaviconCache from "/src/favicon/cache.js";
 import "/src/reader/alarms.js";
 import "/src/reader/cli.js";

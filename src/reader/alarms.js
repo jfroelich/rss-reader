@@ -1,4 +1,4 @@
-import {queryIdleState} from "/src/extension.js";
+import {queryIdleState} from "/src/platform/platform.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
