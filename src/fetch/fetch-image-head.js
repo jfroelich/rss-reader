@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import {check} from "/src/utils/errors.js";
+import check from "/src/utils/check.js";
 import * as FetchUtils from "/src/fetch/utils.js";
 import * as mime from "/src/utils/mime-utils.js";
 

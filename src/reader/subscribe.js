@@ -13,7 +13,8 @@ import putFeed from "/src/reader-db/put-feed.js";
 import findFeedIdByURLInDb from "/src/reader-db/find-feed-id-by-url.js";
 import openReaderDb from "/src/reader-db/open.js";
 import {setURLHrefProperty} from "/src/url/url.js";
-import {check, isUncheckedError, PermissionsError} from "/src/utils/errors.js";
+import check from "/src/utils/check.js";
+import {isUncheckedError, PermissionsError} from "/src/utils/errors.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 

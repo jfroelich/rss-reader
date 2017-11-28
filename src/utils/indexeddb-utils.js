@@ -1,4 +1,5 @@
 import assert from "/src/assert/assert.js";
+import {TimeoutError} from "/src/utils/errors.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 
@@ -95,10 +96,8 @@ export async function open(name, version, upgradeListener, timeoutMs) {
     clearTimeout(timer);
   } else {
     timedout = true;
-    // TODO: create and use a TimedOutError or something along those lines. TimeoutError should be
-    // defined in utils/errors.js or in promises.js.
     const errorMessage = 'connecting to database ' + name + ' timed out';
-    throw new Error(errorMessage);
+    throw new TimeoutError(errorMessage);
   }
 
   return conn;

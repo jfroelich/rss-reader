@@ -1,7 +1,8 @@
 import assert from "/src/assert/assert.js";
+import check from "/src/utils/check.js";
 import {compareURLsWithoutHash} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
-import {check, TimeoutError} from "/src/utils/errors.js";
+import {TimeoutError} from "/src/utils/errors.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import * as mime from "/src/utils/mime-utils.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";

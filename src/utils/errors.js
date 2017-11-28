@@ -1,33 +1,6 @@
 import {AssertionError} from "/src/assert/assert.js";
-import sprintf from "/src/utils/sprintf.js";
 
 // Misc errors and error-related utilities
-
-// TODO: move check function to its own file
-
-const LOG_CHECKED_ERRORS = false;
-
-// This function works similar to assert, but throws a checked error as opposed to an assertion
-// error. assert is intended to be used only for "this should never happen situations" that
-// represent static programming errors based on very faulty assumptions. Checked errors represent
-// errors that happen in expected, typical situations, such as receiving bad input.
-export function check(condition, errorConstructor, ...varargs) {
-  if(condition) {
-    return;
-  }
-
-  errorConstructor = errorConstructor || Error;
-
-  const message = sprintf(...varargs) || 'Unknown error';
-
-  const error = new errorConstructor(message);
-
-  if(LOG_CHECKED_ERRORS) {
-    console.error(error);
-  }
-
-  throw error;
-}
 
 // A helper for use in catch blocks that want to re-throw unexpected errors that should not be
 // caught.

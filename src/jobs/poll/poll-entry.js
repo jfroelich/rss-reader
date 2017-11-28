@@ -1,7 +1,7 @@
 import assert from "/src/assert/assert.js";
 import {INACCESSIBLE_CONTENT_DESCRIPTORS} from "/src/config.js";
 import * as Entry from "/src/reader-db/entry.js";
-import {check, isUncheckedError} from "/src/utils/errors.js";
+import {isUncheckedError} from "/src/utils/errors.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
@@ -12,6 +12,7 @@ import rewriteURL from "/src/jobs/poll/rewrite-url.js";
 import sniffIsBinaryURL from "/src/url/sniff.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
+import check from "/src/utils/check.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 
 export class Context {
