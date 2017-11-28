@@ -18,6 +18,12 @@ import promiseEvery from "/src/utils/promise-every.js";
 export default async function pollFeeds() {
   assert(this instanceof PollContext);
 
+  // Ensure that batch mode is on. This overrides whatever custom setting was used. The default
+  // is false, so this has to happen. It seems reasonable to do it here because calling pollFeeds
+  // indicates batch mode implicitly, and I chose to use batch mode as a context flag instead of
+  // a parameter to the pollFeed function to make it simpler to call pollFeed.
+  this.batchMode = true;
+
   // Get all feeds from the database
   const feeds = await getFeedsFromDb(this.readerConn);
   // Concurrently poll each feed

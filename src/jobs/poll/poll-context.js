@@ -32,5 +32,5 @@ export default function PollContext() {
   this.acceptHTML = true;
 
   // {Boolean} If true, this signals to pollFeed that it is being called concurrently
-  this.batchMode = true;
+  this.batchMode = false;
 }
