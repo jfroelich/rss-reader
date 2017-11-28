@@ -61,13 +61,18 @@ async function pollFeed(feed) {
 
   // If the feed was polled too recently, then exit early.
   if(!this.ignoreRecencyCheck && feed.dateFetched instanceof Date) {
-    const elapsedSinceLastPollMs = new Date() - feed.dateFetched;
-    if(elapsedSinceLastPollMs > this.recencyPeriodMs) {
+    const currentDate = new Date();
+    const elapsedSinceLastPollMs = currentDate - feed.dateFetched;
+
+    // If the amount of time since the feed was last fetched is less than the recency period,
+    // then the feed was fetched too recently.
+
+    if(elapsedSinceLastPollMs < this.recencyPeriodMs) {
 
       // TEMP: testing whether this is causing no feeds to update when ignoreRecencyCheck
       // is false.
-      console.debug('Canceling feed poll, polled too recently,', Feed.peekURL(feed));
-
+      console.debug('Canceling feed poll, fetched too recently,', Feed.peekURL(feed),
+        elapsedSinceLastPollMs, this.recencyPeriodMs);
       return;
     }
   }

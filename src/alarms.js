@@ -21,6 +21,7 @@ chrome.alarms.create('compact-favicon-db', {periodInMinutes: 60 * 24 * 7});
 
 async function onWakeup(alarm) {
   console.debug('onWakeup', alarm.name);
+  localStorage.LAST_ALARM = alarm.name;
 
   switch(alarm.name) {
   case 'archive': {
