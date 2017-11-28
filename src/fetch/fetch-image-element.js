@@ -16,7 +16,7 @@ export default async function fetchImageElement(url, timeoutMs) {
   assert(url);
   assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
 
-  // Note that even those the timerId is used after it would be defined later, it still must be
+  // Note that even though the timerId is used after it would be defined later, it still must be
   // defined now. I am not 100% sure why. For simplicity with destructuring call later I also
   // define timeoutPromise here too.
   let timerId, timeoutPromise;
