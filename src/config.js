@@ -10,16 +10,12 @@
 // TODO: should not have to enumerable subdomains, compare top domains, use the function
 // getUpperDomain from url.js (currently not exported). Or use regexs
 export const INACCESSIBLE_CONTENT_DESCRIPTORS = [
-  {hostname: 'www.forbes.com', reason: 'interstitial'},
-  {hostname: 'www.forbes.com', reason: 'interstitial'},
-  {hostname: 'productforums.google.com', reason: 'script-generated'},
-  {hostname: 'groups.google.com', reason: 'script-generated'},
-  {hostname: 'www.nytimes.com', reason: 'paywall'},
-  {hostname: 'nytimes.com', reason: 'paywall'},
-  {hostname: 'myaccount.nytimes.com', reason: 'paywall'},
-  {hostname: 'open.blogs.nytimes.com', reason: 'paywall'},
-  {hostname: 'www.heraldsun.com.au', reason: 'requires-cookies'},
-  {hostname: 'ripe73.ripe.net', reason: 'requires-cookies'}
+  {pattern: /forbes\.com$/i, reason: 'interstitial-advert'},
+  {pattern: /productforums\.google\.com/i, reason: 'script-generated'},
+  {pattern: /groups\.google\.com/i, reason: 'script-generated'},
+  {pattern: /nytimes\.com$/i, reason: 'paywall'},
+  {pattern: /heraldsun\.com\.au$/i, reason: 'requires-cookies'},
+  {pattern: /ripe\.net$/i, reason: 'requires-cookies'}
 ];
 
 export const FONTS = [

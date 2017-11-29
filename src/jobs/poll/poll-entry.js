@@ -53,22 +53,12 @@ export async function pollEntry(entry) {
     return;
   }
 
-  let response;
-  try {
-    response = await fetchHTML(url.href, this.fetchHTMLTimeoutMs);
-  } catch(error) {
-    if(isUncheckedError(error)) {
-      throw error;
-    } else {
-      // Ignore, not fatal
-    }
-  }
-
   let entryContent = entry.content;
+
+  const response = await fetchHTMLHelper.call(this, url);
   if(response) {
     if(response.redirected) {
       const responseURL = new URL(response.responseURL);
-
       if(isInaccessibleContentURL(responseURL) || sniffIsBinaryURL(responseURL)) {
         return;
       }
@@ -80,7 +70,6 @@ export async function pollEntry(entry) {
       Entry.appendURL(entry, response.responseURL);
 
       // TODO: attempt to rewrite the redirected url as well?
-
       setURLHrefProperty(url, response.responseURL);
     }
 
@@ -128,10 +117,26 @@ export async function pollEntry(entry) {
   return await entryAdd(entry, this.readerConn);
 }
 
+async function fetchHTMLHelper(url) {
+  assert(this instanceof Context);
+  let response;
+  try {
+    response = await fetchHTML(url.href, this.fetchHTMLTimeoutMs);
+  } catch(error) {
+    if(isUncheckedError(error)) {
+      throw error;
+    } else {
+      // Ignore, not fatal
+    }
+  }
+
+  return response;
+}
+
 // Return true if url contains inaccessible content
 function isInaccessibleContentURL(url) {
-  for(const descriptor of INACCESSIBLE_CONTENT_DESCRIPTORS) {
-    if(descriptor.hostname === url.hostname) {
+  for(const des of INACCESSIBLE_CONTENT_DESCRIPTORS) {
+    if(des.pattern && des.pattern.test(url.hostname)) {
       return true;
     }
   }
