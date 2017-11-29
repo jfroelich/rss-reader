@@ -69,3 +69,13 @@ PollContext.prototype.close = function() {
 
   closeDb(this.readerConn);
 };
+
+// This is a simple helper function that in some cases helps the caller avoid the need to explicitly
+// create and link a FaviconCache, which in turn basically allows the caller to avoid even importing
+// the FaviconCache (assuming it is of course not in use in the module for other reasons).
+// I currently have mixed feelings about initializing this in the constructor, because of things
+// like inversion of control, dependency injection, etc, so I've added this for now but I may
+// decide to just deprecate it eventually.
+PollContext.prototype.initFaviconCache = function() {
+  this.iconCache = new FaviconCache();
+};

@@ -2,7 +2,6 @@ import exportFeeds from "/src/backup/export-feeds.js";
 import readerImportFiles from "/src/backup/import-opml-files.js";
 import {BG_IMAGES, FONTS} from "/src/config.js";
 import fadeElement from "/src/dom/fade-element.js";
-import FaviconCache from "/src/favicon/cache.js";
 import {
   pageStyleSettingsOnload,
   pageStyleSettingsOnchange
@@ -512,7 +511,7 @@ async function checkForUpdatesButtonOnclick(event) {
 
 
   const pc = new PollContext();
-  pc.iconCache = new FaviconCache();
+  pc.initFaviconCache();
   pc.allowMeteredConnections = true;
   pc.ignoreRecencyCheck = true;
   pc.ignoreModifiedCheck = true;
