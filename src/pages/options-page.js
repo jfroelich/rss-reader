@@ -2,6 +2,7 @@ import exportFeeds from "/src/backup/export-feeds.js";
 import readerImportFiles from "/src/backup/import-opml-files.js";
 import {BG_IMAGES, FONTS} from "/src/config.js";
 import fadeElement from "/src/dom/fade-element.js";
+import FaviconCache from "/src/favicon/cache.js";
 import {
   pageStyleSettingsOnload,
   pageStyleSettingsOnchange
@@ -12,6 +13,8 @@ import {
   removeBrowserPermission
 } from "/src/platform/platform.js";
 import htmlTruncate from "/src/html/truncate.js";
+import PollContext from "/src/jobs/poll/poll-context.js";
+import pollFeeds from "/src/jobs/poll/poll-feeds.js";
 import openReaderDb from "/src/reader-db/open.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
@@ -497,6 +500,37 @@ function menuItemOnclick(event) {
   showSection(sectionElement);
 }
 
+// TODO: provide visual feedback, like progress bar, popup modal panel, something
+async function checkForUpdatesButtonOnclick(event) {
+  console.debug('clicked check for updates button');
+
+  const button = event.target;
+
+  // Disable the button to prevent a check from happening again while another check is in
+  // progress.
+  button.disabled = true;
+
+
+  const pc = new PollContext();
+  pc.iconCache = new FaviconCache();
+  pc.allowMeteredConnections = true;
+  pc.ignoreRecencyCheck = true;
+  pc.ignoreModifiedCheck = true;
+  try {
+    await pc.open();
+    await pollFeeds.call(pc);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    pc.close();
+
+    // Renable the button at the end, regardless of how the process completed, either due to an
+    // error occurring or because it completed naturally.
+    button.disabled = false;
+  }
+}
+
+
 function enableNotificationsCheckboxOnclick(event) {
   if(event.target.checked) {
     localStorage.SHOW_NOTIFICATIONS = '1';
@@ -655,6 +689,12 @@ const menuItems = document.querySelectorAll('#navigation-menu li');
 for(const menuItem of menuItems) {
   menuItem.onclick = menuItemOnclick;
 }
+
+{
+  const checkForUpdatesButton = document.getElementById('check-for-updates');
+  checkForUpdatesButton.onclick = checkForUpdatesButtonOnclick;
+}
+
 
 // Init Enable notifications checkbox
 const enableNotificationsCheckbox = document.getElementById('enable-notifications');

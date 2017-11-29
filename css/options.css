@@ -132,6 +132,10 @@ ul#navigation-menu li.navigation-item-selected {
   pointer-events: none;
 }
 
+#check-for-updates {
+  margin-left: 20px;
+}
+
 /***************************** SUBSCRIBE *****************/
 
 #section-add-subscription {
