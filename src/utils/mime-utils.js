@@ -27,12 +27,18 @@ export function getTypeForExtension(extension) {
 // @param contentType {String} an http response header value, optional
 // @returns {String} a mime type, or undefined if error
 export function fromContentType(contentType) {
+  if(contentType === null) {
+    return;
+  }
+
   const contentTypeVarType = typeof contentType;
   if(contentTypeVarType === 'undefined') {
     return;
   }
 
-  assert(contentTypeVarType === 'string');
+  assert(contentTypeVarType === 'string', 'invalid variable type %s of contentType',
+    contentTypeVarType, contentType);
+
   let mimeType = contentType;
 
   // Strip the character encoding, if present. The substring gets all characters up to but excluding

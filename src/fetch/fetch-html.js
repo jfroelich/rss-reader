@@ -17,6 +17,13 @@ export default function fetchHTML(url, timeoutMs) {
   };
 
   function acceptHTMLPredicate(response) {
+    // NOTE: apparently headers.get can return null when the header is not present. I finally
+    // witnessed this event and it caused an assertion error in fromContentType. I modified
+    // fromContentType to tolerate nulls so the assertion error no longer occurs. I should probably
+    // revisit the documentation on response.headers.get because my belief is this is either
+    // undocumented or perhaps some subtle behavior was changed in Chrome. It seems odd that this
+    // is the first time ever seeing a request without a Content-Type header.
+
     const contentType = response.headers.get('Content-Type');
     const mimeType = mime.fromContentType(contentType);
     return mimeType === mime.MIME_TYPE_HTML;
