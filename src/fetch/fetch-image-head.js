@@ -32,15 +32,16 @@ export default async function fetchImageHead(url, timeoutMs) {
   const response = await FetchUtils.fetchWithTimeout(url, options, timeoutMs);
   assert(response);
 
-  // Validate the content type
+  // Validate the response content type header. As a policy matter, it must be an image mime type.
+  // This currently does not do any byte inspection because that requires loading the whole file
+  // via GET and some very slow and messy parsing stuff. Note that, as a result, this differs in
+  // behavior from the browser, which can accept an invalid content type for an image but still
+  // show or use the image because it does byte inspection or something that allows the bytes to
+  // still be used. For example, https://www.oracle.com/favicon.ico responds with content type
+  // "unknown", and Chrome is able to use it, but this rejects it.
   const contentType = response.headers.get('Content-Type');
-  if(contentType === 'unknown') {
-    // See https://github.com/jfroelich/rss-reader/issues/459
-    console.debug('allowing unknown content type of response when requesting', url);
-  } else {
-    check(mime.isImage(contentType), FetchUtils.FetchError,
-      'Response content type not an image mime type', contentType, 'for url', url);
-  }
+  check(mime.isImage(contentType), FetchUtils.FetchError,
+    'Response content type header not an image mime type %s for url', contentType, url);
 
   // TODO: create and use ResponseWrapper?
   const wrappedResponse = {};
