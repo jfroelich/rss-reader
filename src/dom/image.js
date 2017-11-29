@@ -3,20 +3,29 @@ import unwrap from "/src/dom/unwrap-element.js";
 
 // Returns true if the image element has at least one source, which could be a src attribute, a
 // srcset attribute, or an associate picture element with one or more source elements that has a
-// src or srcset attribute. This does not check the validity of the values of the attributes, just
-// the presence of such attributes.
+// src or srcset attribute.
+//
+// This does not check the validity of the values, such as whether an attribute that should contain
+// a url contains a syntactically-correct url, but this does check that the value is not empty after
+// trimming.
 export function hasSource(image) {
   assert(image instanceof Element);
 
-  if(image.hasAttribute('src') || image.hasAttribute('srcset')) {
+  // Alias the helper function name for brevity
+  const has = elementHasNonEmptyAttributeValueAfterTrim;
+
+  // Check if the image element itself has a source
+  if(has(image, 'src') || has(image, 'srcset')) {
     return true;
   }
 
+  // Check if the image element is part of a picture that has a descendant source with a source
+  // attribute value
   const picture = image.closest('picture');
   if(picture) {
     const sources = picture.getElementsByTagName('source');
     for(const source of sources) {
-      if(source.hasAttribute('src') || source.hasAttribute('srcset')) {
+      if(has(source, 'src') || has(source, 'srcset')) {
         return true;
       }
     }
@@ -51,4 +60,10 @@ export function removeImage(image) {
   }
 
   image.remove();
+}
+
+
+function elementHasNonEmptyAttributeValueAfterTrim(element, attributeName) {
+  const value = element.getAttribute(attributeName);
+  return value && value.trim();
 }
