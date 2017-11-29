@@ -38,21 +38,19 @@ export default async function pollFeed(feed) {
 
   cascadeFeedPropertiesToEntries(storedFeed, entries);
 
-  await pollEntries.call(this, storedFeed, entries);
+  const numEntriesAdded = await pollEntries.call(this, storedFeed, entries);
 
-  // TODO: the badge text call should not occur when no entries have been processed. This needs to
-  // get information back from pollEntry, in the form of an array of resolutions, that ascertains
-  // whether the number of entries added is not zero. Then only call updateBadgeText if the number
-  // is not zero.
-  if(!this.batchMode) {
+  // TEMP: debugging new functionality
+  assert(typeof numEntriesAdded === 'number' && numEntriesAdded >= 0);
+
+  // If not in batch mode and some entries were added, update the badge.
+  if(!this.batchMode && numEntriesAdded > 0) {
     await updateBadgeText(this.readerConn);
   }
 
-  // If not in batch mode then send a notification
+  // If not in batch mode and some entries were added, then show a notification
   // TODO: use more specific title and message given that this is about a feed
-  // TODO: do not show a notification if no entries added, but to do this I need to get the
-  // number of entries added, so that will have to wait until pollEntry returns that.
-  if(!this.batchMode) {
+  if(!this.batchMode && numEntriesAdded > 0) {
     const title = 'Added articles for feed';
     const message = 'Added articles for feed';
     showNotification(title, message);
@@ -156,7 +154,6 @@ function cascadeFeedPropertiesToEntries(feed, entries) {
   }
 }
 
-// TODO: this should return the number of entries added
 async function pollEntries(feed, entries) {
   assert(this instanceof PollContext);
 
@@ -169,5 +166,19 @@ async function pollEntries(feed, entries) {
 
   // Concurrently process entries
   const pollEntryPromises = entries.map(PollEntryModule.pollEntry, pec);
-  await promiseEvery(pollEntryPromises);
+  const pollEntryResolutions = await promiseEvery(pollEntryPromises);
+
+  // pollEntry returns the entry that was added, otherwise it returns undefined if the entry was
+  // not added. If it throws, then promiseEvery yields undefined in place of the rejection in
+  // the resolutions array. Therefore, to get the number of entries added we simply iterate over
+  // the resolutions array for defined things.
+
+  let numEntriesAdded = 0;
+  for(const resolution of pollEntryResolutions) {
+    if(resolution) {
+      numEntriesAdded++;
+    }
+  }
+
+  return numEntriesAdded;
 }
