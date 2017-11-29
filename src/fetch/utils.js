@@ -8,6 +8,8 @@ import * as mime from "/src/utils/mime-utils.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 import {parseInt10} from "/src/utils/string.js";
 
+// TODO: this grew kind of large for my taste, move some functions into separate files
+
 // Does a fetch with a timeout and a content type predicate
 // @param url {String} request url
 // @param options {Object} optional, fetch options parameter
@@ -179,6 +181,8 @@ export function getContentLength(response) {
   const contentLength = parseInt10(contentLengthString);
   return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
 }
+
+// TODO: move these to /src/fetch/errors.js
 
 // TODO: I implemented this without thinking how it relates to other errors. It may be more
 // appropriate to extend networkerror or whatever.
