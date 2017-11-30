@@ -58,6 +58,8 @@ export async function subscribe(feed) {
 
   const url = Feed.peekURL(feed);
 
+  console.debug('Subscribing to feed with url', url);
+
   // Convert the url string into a URL object. This implicitly validates that the url is valid,
   // and canonical, and normalizes the url as a string if and whenever the url is later serialized
   // back into a string. The url object is also used to track changes to the url during the course
@@ -80,7 +82,7 @@ export async function subscribe(feed) {
 
   // Check that user is not already subscribed
   let priorFeedId = await findFeedIdByURLInDb(this.readerConn, url);
-  check(!priorFeedId, ConstraintError, 'already subscribed');
+  check(!priorFeedId, ConstraintError, 'already subscribed to feed with url', url);
 
   if(navigator.onLine || !('onLine' in navigator)) {
     // If online, then fetch the feed at the given url. Do not catch any fetch errors, because

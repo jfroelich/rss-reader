@@ -1,7 +1,10 @@
 import exportFeeds from "/src/backup/export-feeds.js";
-import readerImportFiles from "/src/backup/import-opml-files.js";
+import importFiles, {
+  Context as ImportFilesContext
+} from "/src/backup/import-opml-files.js";
 import {BG_IMAGES, FONTS} from "/src/config.js";
 import fadeElement from "/src/dom/fade-element.js";
+import FaviconCache from "/src/favicon/cache.js";
 import {
   pageStyleSettingsOnload,
   pageStyleSettingsOnchange
@@ -466,16 +469,23 @@ async function importOPMLInputOnchange(event) {
 
   const uploaderInput = event.target;
 
+  const context = new ImportFilesContext();
+  context.iconCache = new FaviconCache();
+  context.fetchFeedTimeoutMs = 10 * 1000;
+
   try {
-    await readerImportFiles(uploaderInput.files);
+    await context.open();
+    await importFiles.call(context, uploaderInput.files);
   } catch(error) {
     // TODO: visual feedback in event an error
     console.warn(error);
-    return;
+  } finally {
+    context.close();
   }
 
   // TODO: show operation completed successfully
   // TODO: refresh feed list
+  // TODO: switch to feed list section?
 }
 
 async function exportOPMLButtonOnclick(event) {
