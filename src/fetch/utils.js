@@ -127,13 +127,6 @@ async function fetchWithTranslatedErrors(url, options) {
     response = await fetch(url, options);
   } catch(error) {
     if(error instanceof TypeError) {
-      // fetch throws a TypeError for certain network errors. This would ordinarily be acceptable
-      // behavior in other applications, but in this application a type error is unchecked.
-      // Therefore, this translates type errors into network errors. Type errors are unchecked and
-      // represent incorrect use of a variable. NetworkErrors are checked and represent a kind of
-      // fetch error.
-      // The type error message is not useful or revealing, it just says "Failed to fetch", so
-      // create a more useful message.
       throw new NetworkError('Failed to fetch ' + url);
     } else {
       throw error;
