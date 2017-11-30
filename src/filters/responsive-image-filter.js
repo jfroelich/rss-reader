@@ -68,7 +68,7 @@ function transformImageToDescriptor(image, descriptor) {
     image.removeAttribute('width');
   }
 
-  if(preferredDescriptor.h) {
+  if(descriptor.h) {
     image.setAttribute('height', '' + descriptor.h);
   } else {
     image.removeAttribute('height');
