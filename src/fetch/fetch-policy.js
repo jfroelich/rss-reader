@@ -1,5 +1,4 @@
 import assert from "/src/assert/assert.js";
-import {isCredentialedURL} from "/src/url/url.js";
 
 // NOTE: this is the initial implementation, probably going to change drastically, is definitely
 // not very reliable or accurate. Some of the tests are easily defeated, but I am simply
@@ -22,4 +21,10 @@ function isLocalURL(url) {
   const protocol = url.protocol;
   const hostname = url.hostname;
   return hostname === 'localhost' || hostname === '127.0.0.1' || protocol === 'file:';
+}
+
+// Returns whether the url has any credential information
+function isCredentialedURL(url) {
+  assert(url instanceof URL);
+  return url.username || url.password;
 }
