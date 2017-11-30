@@ -310,10 +310,10 @@ FaviconLookup.prototype.search = function(document, baseURL) {
   }
 };
 
+// Returns a promise
 // @param originURL {URL}
 // @param entry {Object} optional, the existing origin entry
-FaviconLookup.prototype.onLookupFailure = async function(originURL, entry) {
-  assert(this.cache);
+FaviconLookup.prototype.onLookupFailure = function(originURL, entry) {
   assert(this.hasOpenCache());
 
   if(entry) {
@@ -324,11 +324,11 @@ FaviconLookup.prototype.onLookupFailure = async function(originURL, entry) {
     if('failureCount' in entry) {
       if(entry.failureCount <= this.kMaxFailureCount) {
         newEntry.failureCount = entry.failureCount + 1;
-        await this.cache.put(newEntry);
+        return this.cache.put(newEntry);
       }
     } else {
       newEntry.failureCount = 1;
-      await this.cache.put(newEntry);
+      return this.cache.put(newEntry);
     }
   } else {
     const newEntry = {};
@@ -336,6 +336,9 @@ FaviconLookup.prototype.onLookupFailure = async function(originURL, entry) {
     newEntry.iconURLString = undefined;
     newEntry.dateUpdated = new Date();
     newEntry.failureCount = 1;
-    await this.cache.put(newEntry);
+    return this.cache.put(newEntry);
   }
+
+  // Default to returning a no-op resolved promise
+  return Promise.resolve();
 };
