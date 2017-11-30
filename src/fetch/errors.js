@@ -10,12 +10,12 @@ export class NetworkError extends Error {
 
 export class OfflineError extends NetworkError {
   constructor(...args) {
-    super(args.length ? ... args : 'Offline error');
+    super(args.length ? ...args : 'Offline error');
   }
 }
 
 export class FetchError extends NetworkError {
   constructor(...args) {
-    super(args.length ? ... args : 'Fetch error');
+    super(args.length ? ...args : 'Fetch error');
   }
 }
