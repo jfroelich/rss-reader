@@ -123,7 +123,7 @@ async function fetchWithTranslatedErrors(url, options) {
   } catch(error) {
     if(error instanceof TypeError) {
       // Change type error into network error
-      throw new NetworkError('Failed to fetch ' + url);
+      throw new NetworkError('Failed to fetch', url);
     } else {
       console.warn('Untranslated error', error);
       throw error;

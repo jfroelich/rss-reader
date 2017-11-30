@@ -36,8 +36,7 @@ export default async function fetchImageElement(url, timeoutMs) {
     };
     proxy.onerror = function proxyOnerror(event) {
       clearTimeout(timerId);
-      const errorMessage = 'Error fetching image with url ' + url;
-      const error = new FetchError(errorMessage);
+      const error = new FetchError('Error fetching image with url', url);
       reject(error);
     };
   });
