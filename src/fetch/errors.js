@@ -12,7 +12,11 @@ export class NetworkError extends Error {
 // resources on other machines
 export class OfflineError extends NetworkError {
   constructor(...args) {
-    super(args.length ? ...args : 'Offline error');
+    if(args.length) {
+      super(...args);
+    } else {
+      super('Offline error');
+    }
   }
 }
 
@@ -20,6 +24,10 @@ export class OfflineError extends NetworkError {
 // as requesting the wrong type of resource, or unauthorized, etc.
 export class FetchError extends NetworkError {
   constructor(...args) {
-    super(args.length ? ...args : 'Fetch error');
+    if(args.length) {
+      super(...args);
+    } else {
+      super('Fetch error');
+    }
   }
 }
