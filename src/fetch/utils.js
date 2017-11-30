@@ -174,10 +174,7 @@ export function getContentLength(response) {
 }
 
 // TODO: move these to /src/fetch/errors.js
-
-// TODO: I implemented this without thinking how it relates to other errors. It may be more
-// appropriate to extend networkerror or whatever.
-export class OfflineError extends Error {
+export class OfflineError extends NetworkError {
   constructor(message) {
     super(message || 'Offline error');
   }
