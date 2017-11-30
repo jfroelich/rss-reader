@@ -115,7 +115,17 @@ async function fetchWithTranslatedErrors(url, options) {
   // without a try/catch, allowing the TypeError to bubble. Type errors are unchecked errors,
   // similar to assertions, which effectively means that calling this function with a relative url
   // is a programmer error.
-  const ensureURLIsNotRelativeURL = new URL(url);
+  try {
+    const ensureURLIsNotRelativeURL = new URL(url);
+  } catch(error) {
+    // In this case I am simply translating a type error into a simpler type error because I am
+    // not a fan of the verbosity of the native type error message. The caller of
+    // fetchWithTranslatedErrors isn't concerned with url construction or how the url is validated.
+    // This could even be an assertion error, but both are unchecked, and type error is more
+    // specific. Calling this function with a relative uri instead of a resolved uri effictively
+    // means the caller called the function with the wrong 'type' of input.
+    throw new TypeError('Invalid url ' + url);
+  }
 
   let response;
   try {
