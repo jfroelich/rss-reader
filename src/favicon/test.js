@@ -1,8 +1,6 @@
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 
-
-
 /*
 TODO:
 
@@ -42,6 +40,10 @@ async function testLookup(url, cacheless) {
     }
   }
 }
+
+// Expose to console
+window.testLookup = testLookup;
+
 
 async function test_clear_icon_db() {
   const cache = new FaviconCache();
