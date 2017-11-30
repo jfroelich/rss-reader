@@ -81,55 +81,51 @@ export async function fetchWithTimeout(url, options, timeoutMs) {
 // has a value of true. An HTTP status of 404 does not constitute a network error.
 
 // In this extension, a TypeError is considered a serious error, at the level of an assertion
-// error, and not an ephemeral or bad-input error. Therefore, it is important to capture
-// errors produced by calling fetch and translate them. In this case, treat a TypeError as
-// a type of network error, which is a type of fetch error, and do not treat the error as a type
-// of TypeError, which is a programming error involving using the wrong variable type. My
-// suspicion is that the designers of the fetch API did not want to create a new error type, and
-// decided to use TypeError as a catch-all type of error.
+// error, and not an ephemeral error. Therefore, it is important to capture errors produced by
+// calling fetch and translate them. In this case, treat a TypeError as a type of network error,
+// which is a type of fetch error, and do not treat the error as a type of TypeError, which is a
+// programming error involving using the wrong variable type.
 async function fetchWithTranslatedErrors(url, options) {
 
-  // TODO: should these checks be asserts?
+  // TODO: should these checks be asserts? Right now this is basically using check to throw an
+  // unchecked kind of error. TypeError is more specific than AssertionError and both are unchecked.
+  // But maybe that specificity isn't worth the fact that this is not the intended use of check,
+  // which is only to look at checked errors.
+
   // Explicitly check for and throw type errors in parameters passed to this function in order to
   // avoid ambiguity between (1) type errors thrown by fetch due to improper variable type and (2)
   // type errors thrown by fetch due to network errors. Coincidently this also affects a class of
-  // invalid inputs to fetch where fetch implicitly converts non-string urls to strings
+  // invalid inputs to fetch where fetch implicitly converts non-string URLs to strings
   check(typeof url === 'string', TypeError, 'url must be a string', url);
   check(typeof options === 'undefined' || typeof options === 'object' || options === null,
     TypeError, 'options must be undefined or an object');
 
   // If we are able to detect connectivity, then check if we are offline. If we are offline then
-  // fetch will fail. But I want to clearly differentiate between a site being unreachable because
-  // we are offline from a site being unreachable because the site does not exist.
+  // fetch will fail with a TypeError. But I want to clearly differentiate between a site being
+  // unreachable because we are offline from a site being unreachable because the site does not
+  // exist. If we cannot detect connectivity then defer to fetch.
   if((typeof navigator !== 'undefined') && ('onLine' in navigator)) {
     check(navigator.onLine, OfflineError, 'Unable to fetch url "%s" while offline', url);
   }
 
-  // We know that url is now a string, but we do not know if it is an absolute url. When calling
-  // fetch with a url string that is not absolute, fetch implicitly resolves the url using the
-  // location of the calling context. This leads to undesired behavior. Fetches to the local context
-  // should not be allowed unless it is explictly done using an absolute url pointing to a local
-  // resource (e.g. includes chrome-extension:// in the url).
-  // Avoid fetch defaulting to trying to fetch using window.location or whatever as the base url in
-  // the case of a relative url. Calling the URL constructor with a relative URL and without a base
-  // url parameter throws a TypeError.
-  // Although this additional behavior probably does not belong in this function in the sense that
-  // the absolute-url requirement is an unexpected implicit requirement, I am performing it here
-  // because of the possible confusion that arises when delegating the check to a function lower
-  // on the stack. If lower on the stack, a type error would bubble up to this function and then
-  // get translated into a network error. This isn't a network error. Similarly, if the function
-  // were higher on the stack, some confusion could occur. Well, not really. Maybe this should
-  // be higher on the stack (a wrapper function that does this check, then calls this). But the two
-  // situations are orthogonal? Anyway I am not sure, going with this implementation choice for now.
-  new URL(url);
+  // Prevent fetch from implicitly assuming that it should use the contextual url of the script as
+  // the base url when requesting a relative URI by explicitly checking if the url is relative.
+  // When calling the URL constructor without a base url and with a relative url, the constructor
+  // throws a TypeError with a message like "Failed to construct URL". This calls the constructor
+  // without a try/catch, allowing the TypeError to bubble. Type errors are unchecked errors,
+  // similar to assertions, which effectively means that calling this function with a relative url
+  // is a programmer error.
+  const ensureURLIsNotRelativeURL = new URL(url);
 
   let response;
   try {
     response = await fetch(url, options);
   } catch(error) {
     if(error instanceof TypeError) {
+      // Change type error into network error
       throw new NetworkError('Failed to fetch ' + url);
     } else {
+      console.warn('Untranslated error', error);
       throw error;
     }
   }
