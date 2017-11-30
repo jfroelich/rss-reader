@@ -1,6 +1,7 @@
 import assert from "/src/assert/assert.js";
-import check from "/src/utils/check.js";
+import {FetchError} from "/src/fetch/errors.js";
 import * as FetchUtils from "/src/fetch/utils.js";
+import check from "/src/utils/check.js";
 import * as mime from "/src/utils/mime-utils.js";
 
 // TODO: this should be refactored to use fetchInternal. But I need to calculate content length.
@@ -40,7 +41,7 @@ export default async function fetchImageHead(url, timeoutMs) {
   // still be used. For example, https://www.oracle.com/favicon.ico responds with content type
   // "unknown", and Chrome is able to use it, but this rejects it.
   const contentType = response.headers.get('Content-Type');
-  check(mime.isImage(contentType), FetchUtils.FetchError,
+  check(mime.isImage(contentType), FetchError,
     'Response content type header not an image mime type %s for url', contentType, url);
 
   // TODO: create and use ResponseWrapper?

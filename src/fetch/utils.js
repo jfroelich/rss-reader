@@ -1,14 +1,15 @@
 import assert from "/src/assert/assert.js";
+import {FetchError, NetworkError, OfflineError} "/src/fetch/errors.js";
 import {TimeoutError} from "/src/operations/timed-operation.js";
-import check from "/src/utils/check.js";
 import {compareURLsWithoutHash} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
+import check from "/src/utils/check.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import * as mime from "/src/utils/mime-utils.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 import {parseInt10} from "/src/utils/string.js";
 
-// TODO: this grew kind of large for my taste, move some functions into separate files
+// TODO: this module grew kind of large for my taste, move some functions into separate files
 
 // Does a fetch with a timeout and a content type predicate
 // @param url {String} request url
@@ -171,23 +172,4 @@ export function getContentLength(response) {
 
   const contentLength = parseInt10(contentLengthString);
   return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
-}
-
-// TODO: move these to /src/fetch/errors.js
-export class OfflineError extends NetworkError {
-  constructor(message) {
-    super(message || 'Offline error');
-  }
-}
-
-export class NetworkError extends Error {
-  constructor(message) {
-    super(message || 'Network error');
-  }
-}
-
-export class FetchError extends NetworkError {
-  constructor(message) {
-    super(message || 'Fetch error');
-  }
 }
