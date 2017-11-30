@@ -21,7 +21,6 @@ import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 
 // Module for subscribing to a new feed
 
-
 export function Context() {
   this.iconCache = undefined;
   this.readerConn = undefined;
@@ -59,15 +58,36 @@ export async function subscribe(feed) {
 
   const url = Feed.peekURL(feed);
 
-  // Check whether policy permits subscribing to the url
+  // Convert the url string into a URL object. This implicitly validates that the url is valid,
+  // and canonical, and normalizes the url as a string if and whenever the url is later serialized
+  // back into a string. The url object is also used to track changes to the url during the course
+  // of this subscribe function.
   const urlObject = new URL(url);
-  check(isAllowedURL(urlObject), PermissionsError, urlObject, 'not permitted');
+
+
+  // Check whether policy permits subscribing to the url
+  // Issue #418
+  // TODO: I've moved the policy check concern from here to fetchFeed given that it is shared by
+  // several other components that depend on fetching. However, while it works in the destination
+  // of the move, I have not fully removed all logic from here yet. See the following todos.
+  // TODO: now that isAllowedURL is no longer called, I think PermissionsError no longer is
+  // needed as an explicit import? And also isAllowedURL is no longer needed?
+  // TODO: now that isAllowedURL is no longer called, consider that I still want to pre-emptively
+  // check it instead of delegating the functionality to fetchFeed later. Checking it earlier
+  // would improve the performance, because it is a simple function, and would avoid the database
+  // request.
+  //check(isAllowedURL(urlObject), PermissionsError, urlObject, 'not permitted');
 
   // Check that user is not already subscribed
   let priorFeedId = await findFeedIdByURLInDb(this.readerConn, url);
   check(!priorFeedId, ConstraintError, 'already subscribed');
 
   if(navigator.onLine || !('onLine' in navigator)) {
+    // If online, then fetch the feed at the given url. Do not catch any fetch errors, because
+    // a fetch failure when online indicates the feed is 'invalid', which is fatal because I want
+    // to prevent the ability to subscribe to an invalid feed. Subscribe isn't just a simple
+    // database operation it is also a verification check.
+
     // If online then fetch failure is fatal to subscribing
     // TODO: unless the error is OfflineError, which fetchFeed may now throw because I recently
     // added connectivity check to fetch. I think in this case, when fetch fails with offline
@@ -77,19 +97,39 @@ export async function subscribe(feed) {
 
     const res = await fetchFeed(url, this.fetchFeedTimeoutMs);
 
-    // If redirected, then the url changed. Perform checks on the new url
+    // If redirected, then the url changed. Perform checks on the post-redirect url
     if(res.redirected) {
-      // Check whether policy permits subscribing to the redirected url
+
+      // TODO: this change may no longer be needed due to 418, I think the variable is no longer
+      // in use?
       setURLHrefProperty(urlObject, res.responseURL);
-      check(isAllowedURL(urlObject), PermissionsError, urlObject, 'not permitted');
+
+      // Check whether policy permits subscribing to the redirected url
+      // NOTE: as a result of 418 change, redirect is not checked by isAllowedURL. This is a change
+      // in behavior as a result.
+      // TODO: in the event of a redirect, do I not also need to verify the redirected url is
+      // a permitted url? Or should this also be a concern of fetchFeed? Or is the policy of
+      // fetching distinct, partially or completely, from the policy of storing? Or basically am
+      // I delegating cache-entry policy to fetch-policy implicitly, and I shouldn't be doing that,
+      // so I actually need to go and create a cache-entry policy that allows or disallows entry
+      // into the database of feeds with certain urls?
+
+      //check(isAllowedURL(urlObject), PermissionsError, urlObject, 'not permitted');
 
       // Check that user is not already subscribed now that we know redirect
       priorFeedId = await findFeedIdByURLInDb(this.readerConn, res.responseURL);
+
+      // TODO: this is a pretty weak check, maybe use Feed.isValidFeedId?
       check(!priorFeedId, ConstraintError, 'already subscribed');
     }
 
-    // Get the fetched details
+    // Get the full response body in preparation for parsing now that we know we are going to
+    // continue.
     const xml = await res.text();
+
+    // TODO: I just realized, that this isn't catching redirect? Shouldn't url here be
+    // responseURL? The response url should be the base url. Now it is confusing because I've
+    // wrapped up so much functionality in the parseFeed function, see all the comments there.
 
     // Do not process or store entries when subscribing
     const kProcEntries = false;

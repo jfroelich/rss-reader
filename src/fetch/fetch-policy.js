@@ -9,7 +9,12 @@ import {isCredentialedURL} from "/src/url/url.js";
 // Return true if the app's policy permits fetching the url
 export default function isAllowedURL(url) {
   assert(url instanceof URL);
-  return !isCredentialedURL(url) && !isLocalURL(url);
+  const allowed = !isCredentialedURL(url) && !isLocalURL(url);
+
+  // TEMP: debugging issue #418, I want to add a temporary trace
+  console.debug('Policy check result', url.href, allowed);
+
+  return allowed;
 }
 
 // TODO: move to url.js? Should url.js be responsible for determining what is and is not 'local'?

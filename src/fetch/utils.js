@@ -1,5 +1,7 @@
 import assert from "/src/assert/assert.js";
 import {FetchError, NetworkError, OfflineError} from "/src/fetch/errors.js";
+import isAllowedURL from "/src/fetch/fetch-policy.js";
+import {PermissionsError} from "/src/operations/restricted-operation.js";
 import {TimeoutError} from "/src/operations/timed-operation.js";
 import {compareURLsWithoutHash} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
@@ -19,6 +21,42 @@ import {parseInt10} from "/src/utils/string.js";
 // response, and then the return value is asserted
 // @returns {Object} a Response-like object
 export async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
+
+
+  // Convert the input url string into an object. Note that this is now needed because of the call
+  // to isAllowedURL which was added later, way after the design of the original function, which
+  // was designed around accepting a url string.
+
+  // TODO: consider changing fetchInternal to demand a URL object as input instead of a string, so
+  // that the check is pushed back to the caller and there is no longer a concern here. I also
+  // rather like the idea that URL is a more specific, specialized type than string. The tradeoff
+  // I suppose is the inconvenience. Note this will have a substantial ripple effect and may
+  // result in having to change the inputs to calling functions too, because callers typically
+  // also accept strings at the moment, I think.
+
+  // TODO: now that this creates the url object, it is redundant with the check that occurs later
+  // in fetchWithTranslatedErrors. I should consider removing that check. But the concern is that
+  // it means callers shouldn't directly call to fetchWithTranslatedErrors otherwise they don't
+  // get the benefit of that check. That check has several benefits, outlined in comment in
+  // fetchWithTranslatedErrors function body.
+
+  let urlObject;
+  try {
+    urlObject = new URL(url);
+  } catch(error) {
+    // Catch and basically rethrow the same TypeError but with a nicer message
+    throw new TypeError('Invalid url ' + url);
+  }
+
+  // Issue #418: before fetching, check if the url meets the fetch policy for this app. This
+  // function is called by both fetchHTML and fetchFeed, so it will appropriately affect polling
+  // and subscribing.
+
+  // TODO: use a nicer error message
+  check(isAllowedURL(urlObject), PermissionsError, 'Refused to fetch url', url);
+
+
+
   const response = await fetchWithTimeout(url, options, timeoutMs);
   assert(response);
   check(response.ok, FetchError, 'Response not ok for url', url, 'and status is', response.status);
