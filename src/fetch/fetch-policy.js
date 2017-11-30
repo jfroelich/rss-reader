@@ -1,30 +1,51 @@
 import assert from "/src/assert/assert.js";
 
+// This module is a simple abstraction for determining whether or not a url is permitted to be
+// fetched. It should be used for example to avoid trying to fetch various urls, such as file://
+// urls.
+
 // NOTE: this is the initial implementation, probably going to change drastically, is definitely
-// not very reliable or accurate. Some of the tests are easily defeated, but I am simply
-// implementing something for now, as a proof of concept.
-// TODO: allow preference override through localStorage setting
+// not very reliable or accurate. Some of the tests are easily defeated and the tests are not
+// exhaustive (e.g. ip6 ignored). However, I am simply implementing something for now because I want
+// this concept to exist, even if poorly realized. The primary concern is security. One could argue
+// this is pretty weak security, and weak security is stupid, but I still like the idea of at least
+// giving a nod to it. Also, this is kind of a superfluous layer over whatever internal logic is
+// done by fetch, but I want to be explicit and my policy may be different.
+
+// TODO: allow various overrides through localStorage setting or some config setting?
+// TODO: disallow fetches of chrome-extension:// and chrome://
+// TODO: disallow about:blank and friends
+
 
 // Return true if the app's policy permits fetching the url
 export default function isAllowedURL(url) {
   assert(url instanceof URL);
-  const allowed = !isCredentialedURL(url) && !isLocalURL(url);
 
-  // TEMP: debugging issue #418, I want to add a temporary trace
-  console.debug('Policy check result', url.href, allowed);
-
-  return allowed;
-}
-
-// TODO: move to url.js? Should url.js be responsible for determining what is and is not 'local'?
-function isLocalURL(url) {
-  const protocol = url.protocol;
   const hostname = url.hostname;
-  return hostname === 'localhost' || hostname === '127.0.0.1' || protocol === 'file:';
-}
 
-// Returns whether the url has any credential information
-function isCredentialedURL(url) {
-  assert(url instanceof URL);
-  return url.username || url.password;
+  // Of course things like hosts file can be manipulated to whatever. This is just one of the
+  // low-hanging fruits. Prevent fetches to local host urls.
+  if(hostname === 'localhost') {
+    return false;
+  }
+
+  // Again, ignores things like punycode, IPv6, host manipulation, local dns manipulation, etc.
+  // This is just a simple and typical case
+  if(hostname === '127.0.0.1') {
+    return false;
+  }
+
+  const protocol = url.protocol;
+
+  // Disallow fetches of file urls
+  if(protocol === 'file:') {
+    return false;
+  }
+
+  // Prevent fetches of urls containing credentials
+  if(url.username || url.password) {
+    return false;
+  }
+
+  return true;
 }
