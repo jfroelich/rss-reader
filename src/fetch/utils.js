@@ -48,14 +48,12 @@ export async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
     throw new TypeError('Invalid url ' + url);
   }
 
-  // Issue #418: before fetching, check if the url meets the fetch policy for this app. This
-  // function is called by both fetchHTML and fetchFeed, so it will appropriately affect polling
-  // and subscribing.
-
-  // TODO: use a nicer error message
+  // Before fetching, check whether the url is fetchable according to this app's fetch policy.
+  // TODO: PermissionsError feels like a misnomer? Maybe stop trying to be so abstract and call it
+  // precisely what it is, a FetchPolicyRejectionError or something.
+  // TODO: maybe isAllowedURL should just throw the error and this should just be a call to a
+  // function named something like checkIsAllowedURL.
   check(isAllowedURL(urlObject), PermissionsError, 'Refused to fetch url', url);
-
-
 
   const response = await fetchWithTimeout(url, options, timeoutMs);
   assert(response);
