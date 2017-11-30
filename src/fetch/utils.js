@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import {FetchError, NetworkError, OfflineError} "/src/fetch/errors.js";
+import {FetchError, NetworkError, OfflineError} from "/src/fetch/errors.js";
 import {TimeoutError} from "/src/operations/timed-operation.js";
 import {compareURLsWithoutHash} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
