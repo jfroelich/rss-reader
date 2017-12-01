@@ -14,6 +14,7 @@ export default function fetchHTML(url, timeoutMs) {
   // There is that principle of accepting garbage as input on the web, I forget the name of it, this
   // is probably an example of that. This one Apache server has a distinctive configuration that
   // is causing this behavior.
+  // Fixed issue #271.
 
   const accept = [
     mime.MIME_TYPE_HTML,
