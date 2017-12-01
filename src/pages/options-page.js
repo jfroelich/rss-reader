@@ -391,6 +391,11 @@ async function feedListInit() {
     feed.title = feed.title || feed.link || 'Untitled';
   }
 
+  // Sorting in does in memory as opposed to leveraging the lexicographic order of an index on
+  // the title property. The lexicographic order is not the desired order necessarily. Also, the
+  // title index excludes feeds missing a title, which would be bad. The index on title that was
+  // previously used was deprecated in switching to version 23 of the reader database.
+
   // Sort the feeds by title using indexedDB.cmp
   feeds.sort(function(a, b) {
     const atitle = a.title ? a.title.toLowerCase() : '';

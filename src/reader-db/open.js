@@ -5,7 +5,7 @@ import * as idb from "/src/utils/indexeddb-utils.js";
 
 // TODO: this should come from config?
 const NAME = 'reader';
-const VERSION = 22;
+const VERSION = 23;
 
 // TODO: this should come from config?
 const OPEN_TIMEOUT_MS = 500;
@@ -31,7 +31,9 @@ function onUpgradeNeeded(event) {
     feedStore = conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
     entryStore = conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
     feedStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
-    feedStore.createIndex('title', 'title');
+
+    //feedStore.createIndex('title', 'title');
+
     entryStore.createIndex('readState', 'readState');
     entryStore.createIndex('feed', 'feed');
     entryStore.createIndex('archiveState-readState', ['archiveState', 'readState']);
@@ -48,6 +50,21 @@ function onUpgradeNeeded(event) {
 
   if(event.oldVersion < 22) {
     addFeedMagic(tx);
+  }
+
+  if(event.oldVersion < 23) {
+    // Delete the title index in feed store. It is no longer in use. Because it is no longer
+    // created, and the db could be at any prior version, ensure that it exists before calling
+    // deleteIndex to avoid the NotFoundError deleteIndex throws when deleting a non-existent index.
+
+    // @type {DOMStringList}
+    const indices = feedStore.indexNames;
+    if(indices.contains('title')) {
+      console.debug('deleting title index of feed store as part of upgrade');
+      feedStore.deleteIndex('title');
+    } else {
+      console.debug('no title index found to delete during upgrade past version 22');
+    }
   }
 }
 
