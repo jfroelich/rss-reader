@@ -53,23 +53,48 @@ export default async function filterDocument(doc, allowedProtocols, timeoutMs) {
 
 async function getImageDimensions(image, allowedProtocols, timeoutMs) {
 
-  // TODO: rename hint to reason
   const result = {
     image: image,
     width: undefined,
     height: undefined,
-    hint: undefined
+    reason: undefined
   };
 
+  // If both attributes are present, then immediately resolve with undefined to indicate no
+  // change should be made to the image.
   if(image.hasAttribute('width') && image.hasAttribute('height')) {
     return;
+  }
+
+  // Square inference
+  // If the image has width, then we know it does not have height due to the above condition.
+  // To improve performance, infer that the image is a square
+  if(image.hasAttribute('width')) {
+    // Keep width as width. We know image.width will be set because the parser set the property
+    // given the presence of the attribute
+    result.width = image.width;
+    // Set height to width
+    result.height = image.width;
+    result.reason = 'height-inferred-from-width';
+    return result;
+  }
+
+  // Square inference
+  // Do the same thing for an image that just has height. We still have to check, because the image
+  // could have neither.
+  if(image.hasAttribute('height')) {
+    // Infer width from height
+    result.width = image.height;
+    result.height = image.height;
+    result.reason = 'width-inferred-from-height';
+    return result;
   }
 
   const styleDimensions = getInlineStyleDimensions(image);
   if(styleDimensions) {
     result.width = styleDimensions.width;
     result.height = styleDimensions.height;
-    result.hint = 'style';
+    result.reason = 'style';
     return result;
   }
 
@@ -87,7 +112,7 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
   if(urlDimensions) {
     result.width = urlDimensions.width;
     result.height = urlDimensions.height;
-    result.hint = 'url';
+    result.reason = 'url';
     return result;
   }
 
@@ -96,7 +121,7 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
   // Access by property, attributes are not set
   result.width = response.width;
   result.height = response.height;
-  result.hint = 'fetch';
+  result.reason = 'fetch';
   return result;
 }
 
