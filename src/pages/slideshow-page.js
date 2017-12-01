@@ -127,9 +127,9 @@ function appendSlide(entry) {
   assert(Entry.isEntry(entry));
 
   const containerElement = document.getElementById('slideshow-container');
-  const slideElement = document.createElement('div');
+  const slideElement = document.createElement('article');
 
-  // tabindex must be explicitly defined for div.focus()
+  // tabindex must be explicitly defined for article.focus()
   slideElement.setAttribute('tabindex', '-1');
   slideElement.setAttribute('entry', entry.id);
   slideElement.setAttribute('feed', entry.feed);
@@ -361,7 +361,7 @@ function showPreviousSlide() {
 }
 
 function countUnreadSlides() {
-  const slides = document.body.querySelectorAll('div[entry]:not([read])');
+  const slides = document.body.querySelectorAll('article[entry]:not([read])');
   return slides.length;
 }
 

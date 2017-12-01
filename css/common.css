@@ -2,14 +2,14 @@ body {
   margin: 0px;
 }
 
-div.entry a {
-  text-decoration:none;
-  margin-left: 1px;
-  margin-right: 3px;
+article.entry a {
+  text-decoration: none;
+  /*margin-left: 1px;
+  margin-right: 3px;*/
   color: rgba(0, 84, 129, 0.84);
 }
 
-div.entry img {
+article.entry img {
   border: 1px solid #777777;
   max-width: 100%;
 }
@@ -20,7 +20,7 @@ within a table cell
 http://stackoverflow.com/questions/1258416
 http://stackoverflow.com/questions/1057574
 */
-div.entry span.entry-content td {
+article.entry span.entry-content td {
   vertical-align: top;
   white-space: normal;
   /* We have to change from break-word to break-all to get
@@ -33,14 +33,14 @@ div.entry span.entry-content td {
   */
 }
 
-div.entry span.entry-content img {
+article.entry span.entry-content img {
   display: block;
   margin-left: auto;
   margin-right: auto;
   margin-top: 1px;
   margin-bottom: 1px;
-  padding: 0px;
-  -webkit-margin: 0px;
+  padding: 0;
+  -webkit-margin: 0;
 
   /* Messing around with giving images a 3d effect */
   box-shadow: 0 8px 6px -6px #222222;
@@ -48,8 +48,8 @@ div.entry span.entry-content img {
 
 .entry-source {
   display: block;
-  font-size:10pt;
-  color:#cccccc;
+  font-size: 10pt;
+  color: #cccccc;
   margin-top: 6px;
   margin-bottom: 3px;
 }

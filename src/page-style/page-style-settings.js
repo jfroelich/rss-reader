@@ -17,7 +17,7 @@ export function pageStyleSettingsOnchange(event) {
 export function pageStyleSettingsOnload() {
   const sheet = CSSUtils.getDefaultStylesheet();
   assert(sheet);
-  sheet.addRule('div.entry', entryCSSCreateEntryRuleText());
+  sheet.addRule('article.entry', entryCSSCreateEntryRuleText());
 
   // TODO: convert these two to be like above pattern where I get the text and then add the rule
   entryCSSAddTitleRule(sheet);
@@ -67,7 +67,7 @@ function entryCSSAddTitleRule(sheet) {
   buffer.push('text-transform: capitalize;');
   buffer.push('margin: 0px');
   buffer.push('padding:0px');
-  sheet.addRule('div.entry a.entry-title', buffer.join(''));
+  sheet.addRule('article.entry a.entry-title', buffer.join(''));
 }
 
 function entryCSSAddContentRule(sheet) {
@@ -113,12 +113,12 @@ function entryCSSAddContentRule(sheet) {
     buffer.push('-webkit-column-rule: 1px outset #AAAAAA;');
   }
 
-  sheet.addRule('div.entry span.entry-content', buffer.join(''));
+  sheet.addRule('article.entry span.entry-content', buffer.join(''));
 }
 
 function entryCSSUpdateRule(sheet) {
   assert(sheet);
-  const rule = CSSUtils.findCSSRule(sheet, 'div.entry');
+  const rule = CSSUtils.findCSSRule(sheet, 'article.entry');
   assert(rule);
   const style = rule.style;
 
@@ -142,7 +142,7 @@ function entryCSSUpdateRule(sheet) {
 
 function entryCSSUpdateTitleRule(sheet) {
   assert(sheet);
-  const rule = CSSUtils.findCSSRule(sheet, 'div.entry a.entry-title');
+  const rule = CSSUtils.findCSSRule(sheet, 'article.entry a.entry-title');
   assert(rule);
   const style = rule.style;
 
@@ -157,7 +157,7 @@ function entryCSSUpdateTitleRule(sheet) {
 
 function entryCSSUpdateContentRule(sheet) {
   assert(sheet);
-  const rule = CSSUtils.findCSSRule(sheet, 'div.entry span.entry-content');
+  const rule = CSSUtils.findCSSRule(sheet, 'article.entry span.entry-content');
   assert(rule);
 
   rule.style.background = '';
