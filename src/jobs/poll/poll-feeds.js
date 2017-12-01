@@ -33,21 +33,26 @@ export default async function pollFeeds() {
   // Concurrently poll each feed
   const promises = feeds.map(pollFeed, this);
   // Wait for all feed poll operations to complete
-  await promiseEvery(promises);
+  const pollFeedResolutions = await promiseEvery(promises);
 
-  // This happens regardless of the batch mode setting, because calling this implies batch mode.
-  // While it would probably be better implemented as a parameter to pollFeed, this way avoids the
-  // need to use an explict bind or care about parameter order when mapping above.
-  // TODO: this should conditionally be called, only if the number of entries added is > 0.
-  await updateBadgeText(this.readerConn);
+  // Get the total entries added. pollFeed returns the number of entries added, or throws an error.
+  // If it throws an error, promiseEvery stores an undefined value in the output array. Therefore,
+  // iterate over the resolutions checking if the value is defined. This is done using the simple
+  // truthy condition test, which is false for 0, but not adding 0 is fine.
+  let totalNumEntriesAdded = 0;
+  for(const res of pollFeedResolutions) {
+    if(res) {
+      totalNumEntriesAdded += res;
+    }
+  }
 
-  // TODO: this notification could be more informative, should report the number of articles added
-  // like I did before. In order to do that, I need to modify pollFeed to return the number of
-  // articles added for that feed, then collect the resolutions of the promises above, and then
-  // derive the sum from the resolutions.
+  // Regardless of batch mode, refresh the unread count of the extension's badge
+  if(totalNumEntriesAdded > 0) {
+    await updateBadgeText(this.readerConn);
+  }
 
-  // Only send a notification if in batch mode. In non-batch mode, pollFeed does notifications
-  if(this.batchMode) {
+  // Regardless of batch mode, show a notification if entries were addded
+  if(totalNumEntriesAdded > 0) {
     const title = 'Added articles';
     const message = 'Added articles';
     showNotification(title, message);

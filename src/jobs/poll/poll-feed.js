@@ -55,6 +55,8 @@ export default async function pollFeed(feed) {
     const message = 'Added articles for feed';
     showNotification(title, message);
   }
+
+  return numEntriesAdded;
 }
 
 function didPollFeedRecently(feed) {
