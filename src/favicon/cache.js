@@ -1,5 +1,6 @@
 import assert from "/src/assert/assert.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
+import isPosInt from "/src/utils/is-pos-int.js";
 
 // TODO: not entirely sure, but maybe if conn is the only shared state, there is no need for the
 // class. I have mixed feelings.
@@ -95,15 +96,23 @@ FaviconCache.prototype.findEntry = function(urlObject) {
   });
 };
 
-// TODO: assert maxAgeMs isPosInt, do not forget to import from utils/is-pos-int.js
-FaviconCache.prototype.findExpired = function(maxAgeMs) {
-  return new Promise((resolve, reject) => {
+// TODO: if I only need entry ids in calling contexts, which currently I think is only compact,
+// then this should be using getAllKeys instead of getAll?
+// Returns a promise that resolves to an array of expired entries
+FaviconCache.prototype.findExpired = function(maxAgeMs, limit) {
 
+  // NOTE: using the fat arrow function here is not just use of a more succinct syntax. The promise
+  // executor function here relies on the fact that 'this' is implicitly bound.
+
+  return new Promise((resolve, reject) => {
     assert(idb.isOpen(this.conn));
 
     if(typeof maxAgeMs === 'undefined') {
       maxAgeMs = FaviconCache.MAX_AGE_MS;
     }
+
+    assert(isPosInt(maxAgeMs));
+    assert(typeof limit === 'undefined' || isPosInt(limit));
 
     let cutoffTimeMs = Date.now() - maxAgeMs;
     cutoffTimeMs = cutoffTimeMs < 0 ? 0 : cutoffTimeMs;
@@ -112,13 +121,29 @@ FaviconCache.prototype.findExpired = function(maxAgeMs) {
     const index = store.index('dateUpdated');
     const cutoffDate = new Date(cutoffTimeMs);
     const range = IDBKeyRange.upperBound(cutoffDate);
-    const request = index.getAll(range);
+
+    // Limit the number of items loaded into memory from the database by specifying the count
+    // parameter to getAll.
+    // https://w3c.github.io/IndexedDB/#dom-idbindex-getall
+    // If count is specified and there are more than count records in range, only the first count
+    // will be retrieved.
+    // getAll is supported in Chrome 48, Firefox 44, and Safari 10.1.
+    // In the section on retrieving multiple values: if count is not given or is 0, count is treated
+    // as Infinity.
+    // I assume that if limit is undefined this is the equivalent of "not given".
+    const request = index.getAll(range, limit);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => resolve(request.error);
   });
 };
 
+// Removes entries corresponding to the given page urls
+// @param pageURLs {Array} an array of url strings
+// @return {Promise}
 FaviconCache.prototype.removeByURL = function(pageURLs) {
+
+  // NOTE: uses fat arrow syntax to enable 'this' binding implicitly
+
   return new Promise((resolve, reject) => {
     assert(idb.isOpen(this.conn));
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
@@ -164,9 +189,16 @@ FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
 };
 
 // Finds expired entries in the database and removes them
-FaviconCache.prototype.compact = async function(maxAgeMs) {
+// @param limit {Number} optional, the maximum number of records that may be compacted. Specifying
+// a limit is helpful when there may be a large number of records, where there are so many that
+// there is a risk of memory or performance issues. If not specified then all possible compactable
+// records will be compacted. Specifying a limit of 0 is equivalent to specifying undefined.
+FaviconCache.prototype.compact = async function(maxAgeMs, limit) {
+  console.debug('Compacting favicon entries using maxAgeMs %d and limit', maxAgeMs, limit);
+
   assert(idb.isOpen(this.conn));
-  const entries = await this.findExpired(maxAgeMs);
+  const entries = await this.findExpired(maxAgeMs, limit);
+  console.debug('Found %d expired entries suitable for compaction', entries.length);
   const urls = [];
   for(const entry of entries) {
     urls.push(entry.pageURLString);

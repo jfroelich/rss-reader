@@ -84,9 +84,14 @@ async function onWakeup(alarm) {
   }
   case 'compact-favicon-db': {
     const cache = new FaviconCache();
+    let maxAgeMs;
+
+    // Hard code a sensible limit on the number of entries processed per alarm wakeup
+    // TODO: perhaps this should come from config.js
+    const limit = 300;
     try {
       await cache.open();
-      await cache.compact();
+      await cache.compact(maxAgeMs, limit);
     } catch(error) {
       console.warn(error);
     } finally {

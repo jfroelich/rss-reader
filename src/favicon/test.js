@@ -55,11 +55,14 @@ async function test_clear_icon_db() {
   }
 }
 
-async function test_compact_icon_db() {
+async function test_compact_icon_db(limit) {
+
+  let customMaxAge;
+
   const cache = new FaviconCache();
   try {
     await cache.open();
-    await cache.compact();
+    await cache.compact(customMaxAge, limit);
   } finally {
     cache.close();
   }

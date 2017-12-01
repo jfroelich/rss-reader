@@ -81,6 +81,17 @@ cli.clearFavicons = async function() {
   }
 };
 
+cli.compactFavicons = async function(limit) {
+  const fc = new FaviconCache();
+  let maxAgeMs;
+  try {
+    await fc.open();
+    await fc.compact(maxAgeMs, limit);
+  } finally {
+    fc.close();
+  }
+};
+
 cli.lookupFavicon = async function(url, timeout, cacheless = true) {
   const query = new FaviconLookup();
   query.cache = new FaviconCache();
