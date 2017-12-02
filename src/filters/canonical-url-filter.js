@@ -114,6 +114,14 @@ function resolveElementAttribute(element, baseURL) {
     // focus on the todo rather soon.
     console.debug('canonicalization change', originalURLString, resolvedURL.href);
 
+    // NOTE: gathering some interesting messages
+    // - if url is just '#' then it becomes just full link with # appended. I probably should not
+    // be trying to canonical mailto at all.
+    // - if url is mailto, it basically just encodes the url (e.g. spaces escaped). Probably should
+    // just strip the #? Beware the bug i had last time with google groups urls, a webserver can
+    // interpret # as ?
+
+
     element.setAttribute(attributeName, resolvedURL.href);
   }
 }
