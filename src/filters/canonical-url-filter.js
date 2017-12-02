@@ -95,6 +95,10 @@ function resolveElementAttribute(element, baseURL) {
   // variable originalURLString better, and avoids the possible case that Chrome doesn't do
   // lazy-setter-call-memoization?
 
+  // Another note. If I am doing condense, then I may still want to condense the original url
+  // EVEN IF it did not change due to canonicalization. So it should not only be done for
+  // length change. So the exit early thing would be less convenient, or rather, naive.
+
   // TODO: separate idea to explore, what if i have a url-condense-filter that is also site aware
   // and does things like (if stackoverflow keep only the question id part of the url and strip
   // the rest)? At this point I am moving way beyond the concerns of canonicalization and in this
