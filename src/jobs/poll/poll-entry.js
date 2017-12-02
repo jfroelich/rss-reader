@@ -19,6 +19,10 @@ export class Context {
   constructor() {
     this.readerConn = null;
     this.iconCache = null;
+    this.channel = null;
+
+    // TODO: this doesn't need to be called feedFaviconURL, it just represents the fallback url,
+    // so it would be better named as something like defaultFaviconURL
     this.feedFaviconURL = null;
     this.fetchHTMLTimeoutMs = undefined;
     this.fetchImageTimeoutMs = undefined;
@@ -107,7 +111,8 @@ export async function pollEntry(entry) {
   entry.faviconURLString = iconURL || this.feedFaviconURL;
 
   // TODO: if entry.title is undefined, try and extract it from entryDocument title element
-
+  // For that matter, the whole 'set-entry-title' component should be abstracted into its own
+  // module that deals with the concerns of the variety of sources for an entry?
 
   // Filter the entry content
   if(entryDocument) {
@@ -117,7 +122,8 @@ export async function pollEntry(entry) {
     entry.content = 'Empty or malformed content';
   }
 
-  return await entryAdd(entry, this.readerConn);
+  const newEntryId = await entryAdd(entry, this.readerConn, this.channel);
+  return newEntryId;
 }
 
 async function fetchHTMLHelper(url) {

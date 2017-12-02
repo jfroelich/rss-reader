@@ -3,6 +3,21 @@ import FaviconCache from "/src/favicon/cache.js";
 import openReaderDb from "/src/reader-db/open.js";
 import {close as closeDb} from "/src/utils/indexeddb-utils.js";
 
+// BUG: loopback messages are not handled correctly, so polling from slideshow context will not
+// trigger listener call. To fix it I guess I have to handcraft a separate, redundant channel
+// mechanism? Rather than redundant, I mean substitute?
+// TODO: check if the above bug is fixed, I think last time I checked this was like 1000 Chrome
+// builds ago. I believe there is still a loopback channel test in experimental.
+// NOTE: I believe the bug is fixed, just got a working message when polling from slideshow
+// TODO: before I delete these comments, cleanup options page, and the loopback test, because I
+// think the bug is gone now. Probably also need to check github to see if I created some issue
+// about this and close it.
+
+
+// TODO: this should probably be defined externally, because multiple modules are concerned with
+// either sending or receiving messages from and to this channel
+const CHANNEL_NAME = 'reader';
+
 // TODO: consider that some of these defaults should come from the global config file?
 
 // A PollContext is a basic function object that is intended to be used when calling pollFeed or
@@ -40,6 +55,9 @@ export default function PollContext() {
 
   // {Boolean} If true, this signals to pollFeed that it is being called concurrently
   this.batchMode = false;
+
+  // {BroadcastChannel} the channel on which to notify listeners of cross-window events
+  this.channel = null;
 }
 
 // Open database connections
@@ -56,13 +74,19 @@ PollContext.prototype.open = async function() {
   // Use partial destructuring. Grab the reader connection from the resolutions array but ignore
   // the iconCache result.
   [this.readerConn] = await Promise.all(promises);
+
+  // Create a channel that will be used to broadcast messages such as when a new entry is added to
+  // the database.
+  this.channel = new BroadcastChannel(CHANNEL_NAME);
 };
 
 // Close database connections
 PollContext.prototype.close = function() {
+  // The if checks are for caller convenience given that close is often called from finally block
+  if(this.channel) {
+    this.channel.close();
+  }
 
-  // In event of an error somewhere iconCache may not be defined. This null check is just for
-  // convenience. Using an assert would make using try/catch/finally rather annoying to use.
   if(this.iconCache) {
     this.iconCache.close();
   }

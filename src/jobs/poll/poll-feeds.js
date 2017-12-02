@@ -21,6 +21,9 @@ import promiseEvery from "/src/utils/promise-every.js";
 export default async function pollFeeds() {
   assert(this instanceof PollContext);
 
+  // The caller is responsible for wiring up a valid channel. If the channel is defined it is open
+  assert(this.channel instanceof BroadcastChannel);
+
   // Ensure that batch mode is on. This overrides whatever custom setting was used. The default
   // is false, so this has to happen. It seems reasonable to do it here because calling pollFeeds
   // indicates batch mode implicitly, and I chose to use batch mode as a context flag instead of

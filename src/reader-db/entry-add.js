@@ -9,9 +9,20 @@ import {isOpen as isOpenDb} from "/src/utils/indexeddb-utils.js";
 import {condenseWhitespace, filterControls} from "/src/utils/string.js";
 
 
+// TODO: the message format should be defined externally so that it is consistent. I think this is
+// what is meant by a 'protocol'? So maybe there should be some protocol module where a standard
+// message object format is defined, and this uses that or something? For now just get it working
+// with per-call custom message.
+
+// TODO: this should probably return the newly added entry instead of its id, to let caller decide
+// what to do with the info? Or is id always sufficient?
+
 // TODO: this does not need to be async, this can be a promise returning function
 
-export default async function entryAdd(entry, conn) {
+// @param channel {BroadcastChannel} optional, if defined an 'entry-added' type message will be
+// sent to the channel with the new entry's id
+// @return {Number} the id of the added entry
+export default async function entryAdd(entry, conn, channel) {
   assert(Entry.isEntry(entry));
   assert(isOpenDb(conn));
   const sanitized = entrySanitize(entry);
@@ -19,7 +30,19 @@ export default async function entryAdd(entry, conn) {
   storable.readState = Entry.STATE_UNREAD;
   storable.archiveState = Entry.STATE_UNARCHIVED;
   storable.dateCreated = new Date();
-  return await putEntryInDb(conn, storable);
+  const newEntryId = await putEntryInDb(conn, storable);
+
+  // If a channel was provided, send a message
+  if(channel) {
+    const message = {type: 'entry-added', id: newEntryId};
+
+    // TEMP: debugging new messaging
+    console.debug('Sending entry-added message %o to channel', message, channel.name);
+
+    channel.postMessage(message);
+  }
+
+  return newEntryId;
 }
 
 // Returns a new entry object where fields have been sanitized. Impure

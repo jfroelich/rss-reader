@@ -21,6 +21,7 @@ import {parseInt10} from "/src/utils/string.js";
 // Track the currently visible slide
 let currentSlide;
 
+// TODO: deprecate, use 'reader' instead
 const settingsChannel = new BroadcastChannel('settings');
 settingsChannel.onmessage = function(event) {
   if(event.data === 'changed') {
@@ -29,39 +30,117 @@ settingsChannel.onmessage = function(event) {
   }
 };
 
+// TODO: deprecate, use 'reader' instead
 const dbChannel = new BroadcastChannel('db');
 dbChannel.onmessage = function(event) {
-  if(event.data && event.data.type === 'entry-archived') {
-    console.log('Received archive entry request message');
-  } else if(event.data && event.data.type === 'entry-deleted') {
-    console.log('Received entry delete request message');
+
+  if(!event) {
+    console.warn('db channel received undefined event');
+    return;
+  }
+
+  if(!event.data) {
+    console.warn('db channel received event without data property', event);
+    return;
+  }
+
+  const eventType = event.data.type;
+  if(!eventType) {
+    console.warn('db channel received event data without type property', event);
+    return;
+  }
+
+  switch(eventType) {
+  case 'entry-archived':
+    console.debug('received entry-archived event, listener not implemented');
+    break;
+  case 'entry-deleted':
+    console.debug('received entry-deleted event, listener not implemented');
+    break;
+  case 'entry-added':
+    onEntryAddedMessage(event.data).catch(console.warn);
+    break;
+  default:
+    console.warn('received event with unknown type', event);
+    break;
   }
 };
 
-/*
-// TODO: poll no longer broadcasts messages itself. Instead the database may broadcast messages
-// when changing feeds or entries. This needs to instead respond to that.
+// Define a channel that remains open for the lifetime of the slideshow page. It will listen to
+// events coming in from other pages, or the page itself, and react to them. Ordinarily a channel
+// should be not remain open indefinitely but here it makes sense.
+// TODO: channel name constant should come from somewhere else to coordinate multiple modules?
+const readerChannel = new BroadcastChannel('reader');
+readerChannel.onmessage = function(event) {
+  // TODO: implement
 
-const pollChannel = new BroadcastChannel('poll');
-pollChannel.onmessage = async function(event) {
-  if(event.data === 'completed') {
-    console.debug('Received poll completed message, maybe appending slides');
-    const count = countUnreadSlides();
-    let conn; // leave undefined
+  // TEMP: tracing new message handling functionality
+  console.debug('Received message event', event);
 
-    if(count < 2) {
-      try {
-        conn = await openReaderDb();
-        appendSlides(conn);
-      } catch(error) {
-        console.warn(error);
-      } finally {
-        idb.close(conn);
-      }
-    }
+  // Avoid the case where this was not called correctly
+  if(!(event instanceof MessageEvent)) {
+    console.warn('message event is not MessageEvent', event);
+    return;
+  }
+
+  // NOTE: I am not sure if this property is standardized, devtools shows it on inspection but
+  // MDB does not document it. I did not check the spec. I am not even sure if this is proper
+  // to do, or needed.
+  if(!event.isTrusted) {
+    console.debug('Ignoring untrusted message event', event);
+    return;
+  }
+
+  const message = event.data;
+
+  // TODO: in deprecating settings channel, note that previously the message was just a string, so
+  // event.data was a string. Now it should be a message object with a type. So I need to update
+  // all posters of such messages. I also changed the name of the type from 'changed' to
+  // 'display-settings-changed'
+
+  // TODO: set magic on message objects, write a helper somewhere named something like
+  // isReaderMessage(message) that checks against the magic property
+  if(typeof message !== 'object' || message === null) {
+    console.warn('message event contains invalid message', message);
+    return false;
+  }
+
+
+  switch(message.type) {
+  case 'display-settings-changed':
+    pageStyleSettingsOnchange(message);
+    break;
+  case 'entry-added':
+    onEntryAddedMessage(message).catch(console.warn);
+    break;
+  default:
+    console.warn('unknown message type', message);
+    break;
   }
 };
-*/
+
+
+
+async function onEntryAddedMessage(message) {
+  console.debug('received entry-added event, listener not fully implemented', message);
+
+  // Do not append if several unread slides are still loaded
+  const unreadSlideCount = countUnreadSlides();
+  if(unreadSlideCount > 1) {
+    return;
+  }
+
+  // Load new articles
+  let conn;
+  try {
+    conn = await openReaderDb();
+    await appendSlides(conn);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    idb.close(conn);
+  }
+}
 
 function showLoadingInformation() {
   const loadingElement = document.getElementById('initial-loading-panel');
@@ -442,6 +521,7 @@ async function refreshAnchorOnclick(event) {
   pc.allowMeteredConnections = true;
   pc.ignoreRecencyCheck = true;
   pc.ignoreModifiedCheck = true;
+
   try {
     await pc.open();
     await pollFeeds.call(pc);

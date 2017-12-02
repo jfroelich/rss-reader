@@ -162,9 +162,12 @@ async function pollEntries(feed, entries) {
   const pec = new PollEntryModule.Context();
   pec.readerConn = this.readerConn;
   pec.iconCache = this.iconCache;
+  pec.channel = this.channel;
+
   pec.feedFaviconURL = feed.faviconURLString;
   pec.fetchHTMLTimeoutMs = this.fetchHTMLTimeoutMs;
   pec.fetchImageTimeoutMs = this.fetchImageTimeoutMs;
+
 
   // Concurrently process entries
   const pollEntryPromises = entries.map(PollEntryModule.pollEntry, pec);

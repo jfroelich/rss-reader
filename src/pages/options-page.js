@@ -524,18 +524,20 @@ async function checkForUpdatesButtonOnclick(event) {
   // progress.
   button.disabled = true;
 
-
   const pc = new PollContext();
   pc.initFaviconCache();
   pc.allowMeteredConnections = true;
   pc.ignoreRecencyCheck = true;
   pc.ignoreModifiedCheck = true;
+  pc.channel = new BroadcastChannel('reader');
+
   try {
     await pc.open();
     await pollFeeds.call(pc);
   } catch(error) {
     console.warn(error);
   } finally {
+    pc.channel.close();
     pc.close();
 
     // Renable the button at the end, regardless of how the process completed, either due to an

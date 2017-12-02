@@ -43,6 +43,7 @@ cli.pollFeeds = async function() {
   pc.allowMeteredConnections = true;
   pc.ignoreRecencyCheck = true;
   pc.ignoreModifiedCheck = true;
+
   try {
     await pc.open();
     await pollFeeds.call(pc);
