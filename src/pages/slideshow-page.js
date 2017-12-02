@@ -1,4 +1,6 @@
 import assert from "/src/assert/assert.js";
+import PollContext from "/src/jobs/poll/poll-context.js";
+import pollFeeds from "/src/jobs/poll/poll-feeds.js";
 import * as Entry from "/src/reader-db/entry.js";
 import {
   pageStyleSettingsOnload,
@@ -420,9 +422,51 @@ function onSlideScroll(event) {
   scrollCallbackHandle = requestIdleCallback(onIdleCallback);
 }
 
+
+let refreshInProgress = false;
+async function refreshAnchorOnclick(event) {
+  event.preventDefault();
+
+  console.log('Clicked refresh button');
+
+  if(refreshInProgress) {
+    console.debug('Ignoring refresh button click');
+    return;
+  }
+
+  refreshInProgress = true;
+
+  const pc = new PollContext();
+  pc.initFaviconCache();
+  pc.allowMeteredConnections = true;
+  pc.ignoreRecencyCheck = true;
+  pc.ignoreModifiedCheck = true;
+  try {
+    await pc.open();
+    await pollFeeds.call(pc);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    pc.close();
+
+    console.debug('Re-enabling refresh button');
+    // Always renable
+    refreshInProgress = false;
+  }
+}
+
+
 // Initialization
 async function init() {
   showLoadingInformation();
+
+  // Initialize the menu
+
+  // Initialize the refresh icon
+  const refreshAnchor = document.getElementById('refresh');
+  refreshAnchor.onclick = refreshAnchorOnclick;
+
+
   pageStyleSettingsOnload();
   let conn;
   try {
