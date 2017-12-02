@@ -6,6 +6,8 @@ import * as idb from "/src/utils/indexeddb-utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import sizeof from "/src/utils/sizeof.js";
 
+const CHANNEL_NAME = 'reader';
+
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 // Archives certain entries in the database
@@ -27,7 +29,6 @@ export default async function archiveEntries(conn, maxAgeMs, limit) {
   }
 
   const entries = await findArchivableEntriesInDb(conn, isArchivable, limit);
-
   if(!entries.length) {
     console.debug('no archivable entries found');
     return;
@@ -41,7 +42,7 @@ export default async function archiveEntries(conn, maxAgeMs, limit) {
   // prior to the error. However, this function accepts a limit, so the caller understands there
   // is only partial success, so it is not too big of a deal.
 
-  const channel = new BroadcastChannel('db');
+  const channel = new BroadcastChannel(CHANNEL_NAME);
   const promises = [];
   for(const entry of entries) {
     promises.push(archiveEntry(entry, conn, channel));
@@ -53,7 +54,7 @@ export default async function archiveEntries(conn, maxAgeMs, limit) {
     channel.close();
   }
 
-  console.log('compacted %s entries', entries.length);
+  console.log('Compacted %s entries', entries.length);
 }
 
 async function archiveEntry(entry, conn, channel) {
@@ -63,7 +64,7 @@ async function archiveEntry(entry, conn, channel) {
   const afterSize = sizeof(compacted);
   console.debug('before %d after %d', beforeSize, afterSize);
   await putEntryInDb(conn, compacted);
-  const message = {type: 'archived-entry', id: compacted.id};
+  const message = {type: 'entry-archived', id: compacted.id};
   channel.postMessage(message);
   return compacted;
 }

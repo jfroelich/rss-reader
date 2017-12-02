@@ -32,27 +32,35 @@ import {parseInt10} from "/src/utils/string.js";
 let currentMenuItem;
 let currentSection;
 
-const settingsChannel = new BroadcastChannel('settings');
-settingsChannel.onmessage = function(event) {
-  console.debug('received settings channel message:', event);
-  if(event.data === 'changed') {
+const CHANNEL_NAME = 'reader';
+const readerChannel = new BroadcastChannel(CHANNEL_NAME);
+readerChannel.onmessage = function(event) {
+  if(!event) {
+    return;
+  }
+
+  if(!event.isTrusted) {
+    return;
+  }
+
+  const message = event.data;
+  if(!message) {
+    return;
+  }
+
+  switch(message.type) {
+  case 'display-settings-changed':
     pageStyleSettingsOnchange(event);
+    break;
+  default:
+    // Ignore all other message types
+    break;
   }
 };
 
-settingsChannel.onmessageerror = function(event) {
-  console.error(event);
+readerChannel.onmessageerror = function(event) {
+  console.warn('Error deserializing message', event);
 };
-
-
-function dispatchSettingsChangedEvent() {
-
-  // TODO: once the loopback issue is fixed, do not double call
-  // HACK: for now, hard call
-  pageStyleSettingsOnchange();
-
-  settingsChannel.postMessage('changed');
-}
 
 // TODO: instead of removing and re-adding, reset and reuse
 function subscriptionMonitorShow() {
@@ -446,10 +454,11 @@ async function unsubscribeButtonOnclick(event) {
   const feedId = parseInt10(event.target.value);
   assert(Feed.isValidId(feedId));
 
+
   let conn;
   try {
     conn = await openReaderDb();
-    await unsubscribe(feedId, conn);
+    await unsubscribe(feedId, conn, readerChannel);
   } catch(error) {
     console.warn(error);
     return;
@@ -529,7 +538,6 @@ async function checkForUpdatesButtonOnclick(event) {
   pc.allowMeteredConnections = true;
   pc.ignoreRecencyCheck = true;
   pc.ignoreModifiedCheck = true;
-  pc.channel = new BroadcastChannel('reader');
 
   try {
     await pc.open();
@@ -537,7 +545,6 @@ async function checkForUpdatesButtonOnclick(event) {
   } catch(error) {
     console.warn(error);
   } finally {
-    pc.channel.close();
     pc.close();
 
     // Renable the button at the end, regardless of how the process completed, either due to an
@@ -590,7 +597,7 @@ function bgImageMenuOnchange(event) {
     delete localStorage.BG_IMAGE;
   }
 
-  dispatchSettingsChangedEvent();
+  readerChannel.postMessage({type: 'display-settings-changed'});
 }
 
 function headerFontMenuOnchange(event){
@@ -601,7 +608,7 @@ function headerFontMenuOnchange(event){
     delete localStorage.HEADER_FONT_FAMILY;
   }
 
-  dispatchSettingsChangedEvent();
+  readerChannel.postMessage({type: 'display-settings-changed'});
 }
 
 function bodyFontMenuOnchange(event) {
@@ -612,7 +619,7 @@ function bodyFontMenuOnchange(event) {
     delete localStorage.BODY_FONT_FAMILY;
   }
 
-  dispatchSettingsChangedEvent();
+  readerChannel.postMessage({type: 'display-settings-changed'});
 }
 
 function columnCountMenuOnchange(event) {
@@ -623,7 +630,7 @@ function columnCountMenuOnchange(event) {
     delete localStorage.COLUMN_COUNT;
   }
 
-  dispatchSettingsChangedEvent();
+  readerChannel.postMessage({type: 'display-settings-changed'});
 }
 
 function entryBgColorInputOninput(event) {
@@ -634,7 +641,7 @@ function entryBgColorInputOninput(event) {
     delete localStorage.BG_COLOR;
   }
 
-  dispatchSettingsChangedEvent();
+  readerChannel.postMessage({type: 'display-settings-changed'});
 }
 
 function entryMarginSliderOnchange(event) {
@@ -647,7 +654,7 @@ function entryMarginSliderOnchange(event) {
     delete localStorage.PADDING;
   }
 
-  dispatchSettingsChangedEvent();
+  readerChannel.postMessage({type: 'display-settings-changed'});
 }
 
 function headerFontSizeSliderOnchange(event) {
@@ -658,7 +665,7 @@ function headerFontSizeSliderOnchange(event) {
     delete localStorage.HEADER_FONT_SIZE;
   }
 
-  dispatchSettingsChangedEvent();
+  readerChannel.postMessage({type: 'display-settings-changed'});
 }
 
 function bodyFontSizeSliderOnchange(event) {
@@ -669,7 +676,7 @@ function bodyFontSizeSliderOnchange(event) {
     delete localStorage.BODY_FONT_SIZE;
   }
 
-  dispatchSettingsChangedEvent();
+  readerChannel.postMessage({type: 'display-settings-changed'});
 }
 
 function justifyTextCheckboxOnchange(event) {
@@ -679,7 +686,7 @@ function justifyTextCheckboxOnchange(event) {
     delete localStorage.JUSTIFY_TEXT;
   }
 
-  dispatchSettingsChangedEvent();
+  readerChannel.postMessage({type: 'display-settings-changed'});
 }
 
 function bodyHeightInputOninput(event) {
@@ -690,7 +697,7 @@ function bodyHeightInputOninput(event) {
     delete localStorage.BODY_LINE_HEIGHT;
   }
 
-  dispatchSettingsChangedEvent();
+  readerChannel.postMessage({type: 'display-settings-changed'});
 }
 
 

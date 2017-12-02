@@ -86,6 +86,14 @@ PollContext.prototype.open = async function() {
   // This function creates and assigns a new channel. If channel is already defined, that would
   // result in losing the reference to the previous channel. That could mean that the previous
   // channel is left open indefinitely, kind of like a memory leak, so avoid that.
+
+  // See the note:
+  // https://html.spec.whatwg.org/multipage/web-messaging.html#dom-broadcastchannel-postmessage
+  // Authors are strongly encouraged to explicitly close BroadcastChannel objects when they are no
+  // longer needed, so that they can be garbage collected. Creating many BroadcastChannel objects
+  // and discarding them while leaving them with an event listener and without closing them can lead
+  // to an apparent memory leak, since the objects will continue to live for as long as they have an
+  // event listener (or until their page or worker is closed).
   assert(!this.channel);
 
   // Open both connections concurrently

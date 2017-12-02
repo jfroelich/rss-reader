@@ -5,19 +5,21 @@ import removeFeedFromDb from "/src/reader-db/remove-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 
-export default async function unsubscribe(feedId, conn) {
+// @param channel {BroadcastChannel} optional, if specified then this dispatches feed deleted and
+// entry deleted type messages to the channel
+export default async function unsubscribe(feedId, conn, channel) {
   assert(idb.isOpen(conn));
   assert(Feed.isValidId(feedId));
 
   const entryIds = await findEntryIdsByFeedIdInDb(conn, feedId);
   await removeFeedFromDb(conn, feedId, entryIds);
 
-  const channel = new BroadcastChannel('db');
-  channel.postMessage({type: 'feed-deleted', id: feedId});
-  for(const entryId of entryIds) {
-    channel.postMessage({type: 'entry-deleted', id: entryId});
+  if(channel) {
+    channel.postMessage({type: 'feed-deleted', id: feedId, reason: 'unsubscribe'});
+    for(const entryId of entryIds) {
+      channel.postMessage({type: 'entry-deleted', id: entryId, reason: 'unsubscribe'});
+    }
   }
-  channel.close();
 
   await updateBadgeText(conn);
 }

@@ -99,6 +99,9 @@ function resolveElementAttribute(element, baseURL) {
   // EVEN IF it did not change due to canonicalization. So it should not only be done for
   // length change. So the exit early thing would be less convenient, or rather, naive.
 
+  // TODO: separate concern, https://github.com/omidh28/clarifyjs#### should be changed to
+  // https://github.com/omidh28/clarifyjs# or just https://github.com/omidh28/clarifyjs
+
   // TODO: separate idea to explore, what if i have a url-condense-filter that is also site aware
   // and does things like (if stackoverflow keep only the question id part of the url and strip
   // the rest)? At this point I am moving way beyond the concerns of canonicalization and in this
@@ -120,6 +123,8 @@ function resolveElementAttribute(element, baseURL) {
     // - if url is mailto, it basically just encodes the url (e.g. spaces escaped). Probably should
     // just strip the #? Beware the bug i had last time with google groups urls, a webserver can
     // interpret # as ?
+    // - https://play.freeciv.org https://play.freeciv.org/  . So yep, this is exactly the concern,
+    // that i talked above above, all that canonicalization accomplished was add a trailing slash.
 
 
     element.setAttribute(attributeName, resolvedURL.href);

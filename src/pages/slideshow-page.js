@@ -18,80 +18,25 @@ import filterPublisher from "/src/utils/filter-publisher.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 
+// TODO: this should come from somewhere else
+const CHANNEL_NAME = 'reader';
+
 // Track the currently visible slide
 let currentSlide;
 
-// TODO: deprecate, use 'reader' instead
-const settingsChannel = new BroadcastChannel('settings');
-settingsChannel.onmessage = function(event) {
-  if(event.data === 'changed') {
-    console.debug('settings change detected');
-    pageStyleSettingsOnchange(event);
-  }
-};
-
-// TODO: deprecate, use 'reader' instead
-const dbChannel = new BroadcastChannel('db');
-dbChannel.onmessage = function(event) {
-
-  if(!event) {
-    console.warn('db channel received undefined event');
-    return;
-  }
-
-  if(!event.data) {
-    console.warn('db channel received event without data property', event);
-    return;
-  }
-
-  const eventType = event.data.type;
-  if(!eventType) {
-    console.warn('db channel received event data without type property', event);
-    return;
-  }
-
-  switch(eventType) {
-  case 'entry-archived':
-    console.debug('received entry-archived event, listener not implemented');
-    break;
-  case 'entry-deleted':
-    console.debug('received entry-deleted event, listener not implemented');
-    break;
-  case 'entry-added':
-    onEntryAddedMessage(event.data).catch(console.warn);
-    break;
-  default:
-    console.warn('received event with unknown type', event);
-    break;
-  }
-};
-
 // Define a channel that remains open for the lifetime of the slideshow page. It will listen to
 // events coming in from other pages, or the page itself, and react to them. Ordinarily a channel
-// should be not remain open indefinitely but here it makes sense.
-// TODO: channel name constant should come from somewhere else to coordinate multiple modules?
-const readerChannel = new BroadcastChannel('reader');
+// should not remain open indefinitely but here it makes sense.
+const readerChannel = new BroadcastChannel(CHANNEL_NAME);
 readerChannel.onmessage = function(event) {
-  // TODO: implement
-
-  // TEMP: tracing new message handling functionality
-  console.debug('Received message event', event);
-
-  // Avoid the case where this was not called correctly
   if(!(event instanceof MessageEvent)) {
-    console.warn('message event is not MessageEvent', event);
     return;
   }
 
-  // NOTE: I am not sure if this property is standardized, devtools shows it on inspection but
-  // MDB does not document it. I did not check the spec. I am not even sure if this is proper
-  // to do, or needed.
   if(!event.isTrusted) {
     console.debug('Ignoring untrusted message event', event);
     return;
   }
-
-  const message = event.data;
 
   // TODO: in deprecating settings channel, note that previously the message was just a string, so
   // event.data was a string. Now it should be a message object with a type. So I need to update
@@ -100,11 +45,12 @@ readerChannel.onmessage = function(event) {
 
   // TODO: set magic on message objects, write a helper somewhere named something like
   // isReaderMessage(message) that checks against the magic property
+
+  const message = event.data;
   if(typeof message !== 'object' || message === null) {
     console.warn('message event contains invalid message', message);
     return false;
   }
-
 
   switch(message.type) {
   case 'display-settings-changed':
@@ -113,10 +59,23 @@ readerChannel.onmessage = function(event) {
   case 'entry-added':
     onEntryAddedMessage(message).catch(console.warn);
     break;
+  case 'entry-deleted':
+    console.warn('Unhandled entry-deleted message', message);
+    break;
+  case 'entry-archived':
+    console.warn('Unhandled entry-archived message', message);
+    break;
+  case 'feed-deleted':
+    console.warn('Unhandled feed-deleted message', message);
+    break;
   default:
     console.warn('unknown message type', message);
     break;
   }
+};
+
+readerChannel.onmessageerror = function(event) {
+  console.warn('Could not deserialize message from channel', event);
 };
 
 

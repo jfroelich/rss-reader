@@ -4,6 +4,8 @@ import findEntriesInDb from "/src/reader-db/find-entries.js";
 import removeEntriesFromDb from "/src/reader-db/remove-entries.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 
+const CHANNEL_NAME = 'reader';
+
 // Scans the database for entries missing urls are removes them
 // @param conn {IDBDatabase}
 // @param limit {Number} optional, if specified should be positive integer > 0
@@ -27,7 +29,7 @@ export default async function removeLostEntries(conn, limit) {
   }
 
   await removeEntriesFromDb(conn, ids);
-  const channel = new BroadcastChannel('db');
+  const channel = new BroadcastChannel(CHANNEL_NAME);
   const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
   for(const id of ids) {
     message.id = id;

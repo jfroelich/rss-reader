@@ -8,7 +8,6 @@ import putEntryInDb from "/src/reader-db/put-entry.js";
 import {isOpen as isOpenDb} from "/src/utils/indexeddb-utils.js";
 import {condenseWhitespace, filterControls} from "/src/utils/string.js";
 
-
 // TODO: the message format should be defined externally so that it is consistent. I think this is
 // what is meant by a 'protocol'? So maybe there should be some protocol module where a standard
 // message object format is defined, and this uses that or something? For now just get it working
@@ -16,8 +15,6 @@ import {condenseWhitespace, filterControls} from "/src/utils/string.js";
 
 // TODO: this should probably return the newly added entry instead of its id, to let caller decide
 // what to do with the info? Or is id always sufficient?
-
-// TODO: this does not need to be async, this can be a promise returning function
 
 // @param channel {BroadcastChannel} optional, if defined an 'entry-added' type message will be
 // sent to the channel with the new entry's id
@@ -32,13 +29,23 @@ export default async function entryAdd(entry, conn, channel) {
   storable.dateCreated = new Date();
   const newEntryId = await putEntryInDb(conn, storable);
 
-  // If a channel was provided, send a message
+  // If the above call to putEntryInDb did not throw an exception, then the entry storage operation
+  // committed, so it is safe to notify listeners of the model change. If a channel was provided,
+  // send a message. The reason entryAdd is async is so that the above call can be awaited and
+  // guarantee this message is only sent on resolution, and not prior to settling where there is
+  // still the chance of rejection. Otherwise entryAdd would better be implemented as a simpler
+  // promise-returning function that does not involve the async function specifier.
+
+  // Messages passed over a broadcast channel must be serializable, and should generally be small
+  // because of high performance cost of serialization and deserialization. An entry object can be
+  // considerably 'large' in that respect, so it is preferable to only pass a limited set of
+  // properties. At the moment, I am only passing entry id.
+
+  // For reference see the following url:
+  // https://html.spec.whatwg.org/multipage/structured-data.html#structuredserializeinternal
+
   if(channel) {
     const message = {type: 'entry-added', id: newEntryId};
-
-    // TEMP: debugging new messaging
-    console.debug('Sending entry-added message %o to channel', message, channel.name);
-
     channel.postMessage(message);
   }
 

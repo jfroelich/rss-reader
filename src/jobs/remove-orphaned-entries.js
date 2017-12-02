@@ -5,6 +5,8 @@ import getFeedIdsInDb from "/src/reader-db/get-feed-ids.js";
 import removeEntriesFromDb from "/src/reader-db/remove-entries.js";
 import {isOpen} from "/src/utils/indexeddb-utils.js";
 
+const CHANNEL_NAME = 'reader';
+
 // Removes entries not linked to a feed from the database
 // @param conn {IDBDatabase} an open database connection
 // @param limit {Number}
@@ -28,9 +30,14 @@ export default async function removeOrphanedEntries(conn, limit) {
     orphanIds.push(entry.id);
   }
 
+  // Exit early when no orphans found. This avoids some substantial processing.
+  if(orphanIds.length < 1) {
+    return;
+  }
+
   await removeEntriesFromDb(conn, orphanIds);
 
-  const channel = new BroadcastChannel('db');
+  const channel = new BroadcastChannel(CHANNEL_NAME);
   const message = {type: 'entry-deleted', id: undefined, reason: 'orphan'};
   for(const id of orphanIds) {
     message.id = id;
