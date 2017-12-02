@@ -1,7 +1,7 @@
 import assert from "/src/assert/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
 import openReaderDb from "/src/reader-db/open.js";
-import {close as closeDb} from "/src/utils/indexeddb-utils.js";
+import {close as closeDb, isOpen as isOpenDb} from "/src/utils/indexeddb-utils.js";
 
 // BUG: loopback messages are not handled correctly, so polling from slideshow context will not
 // trigger listener call. To fix it I guess I have to handcraft a separate, redundant channel
@@ -62,10 +62,31 @@ export default function PollContext() {
 
 // Open database connections
 PollContext.prototype.open = async function() {
-  // The caller may have forgotten to initialize iconCache prior to calling this function
+  // The caller is responsible for wiring up an instance of FaviconCache prior to opening the
+  // context.
   assert(this.iconCache instanceof FaviconCache);
 
-  // TODO: assert that connections are not already open?
+  // TODO: if the open stuff happened as part of the construction of the context, then there would
+  // be no risk of duplicate stuff happening, like duplicate calls to open, or the context being
+  // in an incorrect state prior to calling open. However I cannot use async constructor. So this
+  // suggests a builder or factory pattern would be 'better' because it is safer by making it
+  // more difficult to do something incorrect. It would remove the need to even make such assertions
+  // because the factory function body has full control of the variable from definition to
+  // configuration, and each call to the function already returns a new variable. It would also
+  // remove the need to do the prior assert because I could make the cache an optional parameter
+  // that is lazily created and assigned if not specified. I could also avoid even exporting the
+  // PollContext class itself, and just export the factory function. On the other hand, how does it
+  // affect testing? What if I want to, for example, use a custom db? Test behavior in the absence
+  // of a cache? etc.
+
+  // Ensure that the connections are not already open
+  assert(!isOpenDb(this.readerConn));
+  assert(!this.iconCache.isOpen());
+
+  // This function creates and assigns a new channel. If channel is already defined, that would
+  // result in losing the reference to the previous channel. That could mean that the previous
+  // channel is left open indefinitely, kind of like a memory leak, so avoid that.
+  assert(!this.channel);
 
   // Open both connections concurrently
   const promises = [openReaderDb(), this.iconCache.open()];
