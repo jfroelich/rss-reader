@@ -106,6 +106,9 @@ export async function pollEntry(entry) {
   }
   entry.faviconURLString = iconURL || this.feedFaviconURL;
 
+  // TODO: if entry.title is undefined, try and extract it from entryDocument title element
+
+
   // Filter the entry content
   if(entryDocument) {
     await applyAllDocumentFilters(entryDocument, url, this.fetchImageTimeoutMs);
