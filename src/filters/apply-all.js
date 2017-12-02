@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import adoptionAgencyFilter from "/src/filters/adoption-agency-filter.js";
-import attributeFilter from "/src/filters/attribute-filter.js";
+import attributeFilter from "/src/filters/attribute-whitelist-filter.js";
 import baseFilter from "/src/filters/base-filter.js";
 import boilerplateFilter from "/src/filters/boilerplate-filter.js";
 import brFilter from "/src/filters/br-filter.js";
