@@ -58,15 +58,6 @@ function entryCSSAddTitleRule(sheet) {
     buffer.push(`font-family:${headerFontFamily};`);
   }
 
-  buffer.push('letter-spacing:-0.03em;');
-  buffer.push('color:rgba(50, 50, 50, 0.9);');
-  buffer.push('text-decoration:none;');
-  buffer.push('display:block;');
-  buffer.push('word-wrap: break-word;');
-  buffer.push('text-shadow: 1px 1px 2px #cccccc;');
-  buffer.push('text-transform: capitalize;');
-  buffer.push('margin: 0px');
-  buffer.push('padding:0px');
   sheet.addRule('article.entry a.entry-title', buffer.join(''));
 }
 
