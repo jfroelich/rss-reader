@@ -188,6 +188,7 @@ function createArticleTitleElement(entry) {
     let safeTitle = escapeHTML(title);
 
     // Set the attribute value to the full title without truncation or publisher filter
+    // BUG: this is double encoding entities somehow, so entities show up in the value
     titleElement.setAttribute('title', safeTitle);
 
     let filteredSafeTitle = filterPublisher(safeTitle);
