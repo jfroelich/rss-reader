@@ -18,6 +18,8 @@ import filterPublisher from "/src/utils/filter-publisher.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 
+// TODO: set magic on message objects, write a helper somewhere named something like
+// isReaderMessage(message) that checks against the magic property
 // TODO: this should come from somewhere else
 const CHANNEL_NAME = 'reader';
 
@@ -37,14 +39,6 @@ readerChannel.onmessage = function(event) {
     console.debug('Ignoring untrusted message event', event);
     return;
   }
-
-  // TODO: in deprecating settings channel, note that previously the message was just a string, so
-  // event.data was a string. Now it should be a message object with a type. So I need to update
-  // all posters of such messages. I also changed the name of the type from 'changed' to
-  // 'display-settings-changed'
-
-  // TODO: set magic on message objects, write a helper somewhere named something like
-  // isReaderMessage(message) that checks against the magic property
 
   const message = event.data;
   if(typeof message !== 'object' || message === null) {
@@ -77,8 +71,6 @@ readerChannel.onmessage = function(event) {
 readerChannel.onmessageerror = function(event) {
   console.warn('Could not deserialize message from channel', event);
 };
-
-
 
 async function onEntryAddedMessage(message) {
   console.debug('received entry-added event, listener not fully implemented', message);
