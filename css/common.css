@@ -1,11 +1,15 @@
+html {
+  margin: 0;
+  padding: 0;
+}
+
 body {
-  margin: 0px;
+  margin: 0;
+  padding: 0;
 }
 
 article.entry a {
   text-decoration: none;
-  /*margin-left: 1px;
-  margin-right: 3px;*/
   color: rgba(0, 84, 129, 0.84);
 }
 
@@ -70,34 +74,8 @@ article.entry span.entry-content img {
 }
 
 @font-face {
-  /*
-  http://jaydorsey.com/free-traffic-font/
-  Clearly Different is released under the SIL Open Font License (OFL) 1.1.
-  Based on http://mutcd.fhwa.dot.gov/pdfs/clearviewspacingia5.pdf
-  */
-  font-family: Clearly Different;
-  src: url('/fonts/ClearlyDifferent1WNegativeContrast-Regular.otf') format('opentype');
-}
-
-@font-face {
-  /* By John Stracke, Released under the OFL. Downloaded from his website */
-  font-family: Essays1743;
-  src: url('/fonts/Essays1743.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: FeltTip;
-  src: url('/fonts/FontPalace-Free-Felt-Tip-Roman.ttf') format('truetype');
-}
-
-@font-face {
   font-family: Montserrat;
   src: url('/fonts/Montserrat-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: News Cycle;
-  src: url('/fonts/NewsCycle-Regular.ttf') format('truetype');
 }
 
 @font-face {

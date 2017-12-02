@@ -805,7 +805,11 @@ subscriptionForm.onsubmit = subscribeFormOnsubmit;
 }
 
 const bgColorInput = document.getElementById('entry-background-color');
-bgColorInput.value = localStorage.BG_COLOR || '';
+if(localStorage.BG_COLOR) {
+  bgColorInput.value = localStorage.BG_COLOR;
+} else {
+  bgColorInput.removeAttribute('value');
+}
 bgColorInput.oninput = entryBgColorInputOninput;
 
 const marginInput = document.getElementById('entry-margin');

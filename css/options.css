@@ -1,17 +1,8 @@
-html {
-  margin: 0px;
-  padding: 0px;
-}
-
-body {
-  margin:0px;
-  padding:0px;
-}
 
 #f-it {
   position: absolute;
   width: 100%;
-  border-spacing: 0px;
+  border-spacing: 0;
   height: 100%;
 }
 
@@ -23,15 +14,15 @@ body {
 }
 
 .options-section {
-  margin-top: 0px;
+  margin-top: 0;
   margin-left: 1px;
   padding-top: 10px;
-  padding-left: 0px;
+  padding-left: 0;
 }
 
 form {
-  padding: 0px;
-  margin: 0px;
+  padding: 0;
+  margin: 0;
 }
 
 .option-text {
@@ -40,7 +31,7 @@ form {
 
 h1 {
   color: rgb(48, 57, 66);
-  margin-top: 0px;
+  margin-top: 0;
   font-weight: 400;
   font-family: 'Segoe UI', Tahoma, sans-serif;
   padding-bottom: 8px;
@@ -49,7 +40,7 @@ h1 {
 
 h2 {
   color: rgb(48, 57, 66);
-  margin-top: 0px;
+  margin-top: 0;
   font-weight: 400;
   font-family: 'Segoe UI', Tahoma, sans-serif;
   padding-bottom: 8px;
@@ -156,7 +147,7 @@ ul#navigation-menu li.navigation-item-selected {
     font-family: 'Segoe UI', Tahoma, sans-serif;
     padding: 0;
     margin: 0;
-    border-spacing:10px;
+    border-spacing: 10px;
 }
 
 #general-settings-table td {
@@ -171,17 +162,17 @@ ul#navigation-menu li.navigation-item-selected {
 
 #feedlist {
   font-family: 'Segoe UI', Tahoma, sans-serif;
-  font-size:94%;
-  list-style-type:none;
-  padding-left:0px;
+  font-size: 94%;
+  list-style-type: none;
+  padding-left: 0;
 }
 
 #feedlist li {
   cursor: pointer;
-  padding-left:5px;
-  padding-top:5px;
-  padding-bottom:5px;
-  padding-right:8px;
+  padding-left: 5px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  padding-right: 8px;
   border-bottom: 1px solid #cccccc;
   -webkit-user-select: none;
 }
