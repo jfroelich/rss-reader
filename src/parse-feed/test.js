@@ -1,20 +1,27 @@
 import fetchFeed from "/src/fetch/fetch-feed.js";
-import parseFeed from "/src/parse-feed/parse-feed.js";
+import {parseFeed} from "/src/parse-feed/parse-feed.js";
 
-// Test parseFeed module
+// Test parseFeed module. At the moment this just exposes a testing function to the console that
+// executes the fetchFeed function.
+// TODO: write specific tests that test various assertions, e.g. preconditions, postconditions
 
-// TODO: I now have two parse feed files. Now it is ambiguous which one this test refers to. This
-// is a consequence of a test folder. I think this is a valid reason for merging test files into
-// the source folder. I think I should do that. Take a closer look at where other popular open
-// source projects store test code.
-
+// TODO: test if this now fixes issue #269 and the feed http://www.lispcast.com/feed
 
 async function test(url) {
   'use strict';
+
+  // In console-driven test mode, leave out timeout
   let timeoutMs;
-  const acceptHTML = true;
-  const response = await fetchFeed(url, timeoutMs, acceptHTML);
+
+  // Support additional types in the general case
+  let extendedTypes = [
+    'text/html',
+    'application/octet-stream'
+  ];
+
+  const response = await fetchFeed(url, timeoutMs, extendedTypes);
   console.dir(response);
+
   const feedXML = await response.text();
   const result = parseFeed(feedXML);
   console.dir(result);

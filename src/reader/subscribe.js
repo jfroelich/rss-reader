@@ -27,6 +27,12 @@ export function Context() {
   this.fetchFeedTimeoutMs = 2000;
   this.concurrent = false;
   this.notify = true;
+
+  // Accept these additional mime types when fetching a feed by default
+  this.extendedFeedTypes = [
+    'text/html',
+    'application/octet-stream'
+  ];
 }
 
 // Opens database connections
@@ -97,7 +103,7 @@ export async function subscribe(feed) {
     // even check offline case at start of this block, instead proceed with try/catch and check
     // if error is offlineerror within catch block.
 
-    const res = await fetchFeed(url, this.fetchFeedTimeoutMs);
+    const res = await fetchFeed(url, this.fetchFeedTimeoutMs, this.extendedFeedTypes);
 
     // If redirected, then the url changed. Perform checks on the post-redirect url
     if(res.redirected) {
@@ -173,7 +179,7 @@ export async function subscribe(feed) {
   // settle prior to this completing, and callers can freely close connection used by subscribe
   // once it settles.
   if(!this.concurrent) {
-    deferredPollFeed(storedFeed).catch(console.warn);
+    deferredPollFeed(storedFeed, this.extendedFeedTypes).catch(console.warn);
   }
 
   return storedFeed;
@@ -186,7 +192,7 @@ function sleep(ms) {
 }
 
 // This is the initial implementation of Github issue #462
-async function deferredPollFeed(feed) {
+async function deferredPollFeed(feed, extendedFeedTypes) {
   await sleep(1000);
 
   const pc = new PollContext();
@@ -195,6 +201,10 @@ async function deferredPollFeed(feed) {
   // We just fetched the feed. We definitely want to be able to process its entries.
   pc.ignoreRecencyCheck = true;
   pc.ignoreModifiedCheck = true;
+
+  // TODO: this is the default for PollContext, right? So maybe no need to be explicit here, can
+  // just remove this statement, and maybe also the parameter?
+  pc.extendedFeedTypes = extendedFeedTypes;
 
   try {
     await pc.open();

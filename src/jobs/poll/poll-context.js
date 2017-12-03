@@ -50,8 +50,12 @@ export default function PollContext() {
   // {Number} How long to wait before considering a fetch of an image to be a failure
   this.fetchImageTimeoutMs = 3000;
 
-  // {Boolean} Whether to accept an html mime type when fetching a feed
-  this.acceptHTML = true;
+  // {Array} Additional accepted mime types when fetching a feed. Default to supporting
+  // html and text-as-binary.
+  this.extendedFeedTypes = [
+    'application/octet-stream',
+    'text/html'
+  ];
 
   // {Boolean} If true, this signals to pollFeed that it is being called concurrently
   this.batchMode = false;

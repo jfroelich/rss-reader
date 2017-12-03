@@ -15,10 +15,10 @@ import {getElementName} from "/src/xml/utils.js";
 // fidelity to the input. In fact I probably should not even be trying to change strings into
 // date objects and such.
 
-// I would prefer to export a default function, but ran into a problem when trying to rename the
+// NOTE: I would prefer to export a default function, but ran into a problem when trying to rename the
 // default import in a module that imports this module that happens to use the same name as this
-// function. So, for now, I am not exporting a default. This may change.
-
+// function. So, for now, I am not exporting a default. This may change. Note I tested this again
+// and still got an error, I must be misunderstanding something about renaming defaults
 
 // Parses the input string into a feed object. The feed object will always have a defined entries
 // array, although it may be zero length. Throws both checked and unchecked errors if the feed

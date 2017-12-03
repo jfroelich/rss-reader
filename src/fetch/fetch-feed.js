@@ -1,17 +1,17 @@
 import {fetchInternal} from "/src/fetch/utils.js";
 import * as mime from "/src/utils/mime-utils.js";
 
+// TODO: issue #269 and the feed http://www.lispcast.com/feed
+
 // Fetches a feed. Returns a basic object, similar to Response, with custom properties.
 // @param url {String} the url to fetch
 // @param timeoutMs {Number} optional, timeout in milliseconds, before considering the fetch a
 // failure
-// @param acceptHTML {Boolean} optional, defaults to true, on whether to accept html when validating
-// the mime type of the response. This does not affect the request Accept header because servers do
-// not appear to always honor Accept headers.
+// @param extendedTypes {Array} optional, an array of other mime types to support
 // @returns {Promise} a promise that resolves to a Response-like object
-export default function fetchFeed(url, timeoutMs, acceptHTML) {
-  if(typeof acceptHTML === 'undefined') {
-    acceptHTML = true;
+export default function fetchFeed(url, timeoutMs, extendedTypes) {
+  if(typeof extendedTypes === 'undefined') {
+    extendedTypes = [];
   }
 
   const ACCEPT_HEADER = [
@@ -34,11 +34,13 @@ export default function fetchFeed(url, timeoutMs, acceptHTML) {
     referrerPolicy: 'no-referrer'
   };
 
-  const types = ['application/rss+xml', 'application/rdf+xml', 'application/atom+xml',
+  // TODO: this should probably come from mie or some joined thing. Also the builder should
+  // also build from this rather than duplicate the list.
+  const xmlTypes = ['application/rss+xml', 'application/rdf+xml', 'application/atom+xml',
     'application/xml', 'text/xml'];
-  if(acceptHTML) {
-    types.push(mime.MIME_TYPE_HTML);
-  }
+
+  // Merge the builtin types with the extended types into a new array.
+  const types = xmlTypes.concat(extendedTypes);
 
   function acceptPredicate(response) {
     const contentType = response.headers.get('Content-Type');

@@ -21,7 +21,7 @@ export default async function pollFeed(feed) {
   }
 
   const url = Feed.peekURL(feed);
-  const response = await fetchFeed(url, this.fetchFeedTimeoutMs, this.acceptHTML);
+  const response = await fetchFeed(url, this.fetchFeedTimeoutMs, this.extendedFeedTypes);
 
   if(isUnmodifiedFeed.call(this, feed, response)) {
     return;

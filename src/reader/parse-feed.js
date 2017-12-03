@@ -4,8 +4,8 @@ import * as Feed from "/src/reader-db/feed.js";
 import {parseFeed as parseFeedImpl} from "/src/parse-feed/parse-feed.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 
-// This is a wrapper around parse-feed.js that customizes the parsed feed format to the app's feed
-// format.
+// This is a wrapper around the generic parse-feed.js that translates the generic parsed feed format
+// into the app's specific storable feed format.
 
 // TODO: I do not love the processEntries parameter. While processing entries is surely related to
 // post-fetch processing that needs to be done, I do not think it fits here. Rather than pass a
