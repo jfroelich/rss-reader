@@ -4,19 +4,12 @@ import * as mime from "/src/utils/mime-utils.js";
 
 // Fetches the html content of the given url
 // @param url {URL} request url
-// @param timeoutMs {Number} optional, timeout in milliseconds
+// @param timeoutMs {Number} optional, in milliseconds, how long to wait before considering the
+// fetch to be a failure.
 export default function fetchHTML(url, timeoutMs) {
   assert(url instanceof URL);
 
-  // NOTE: some websites appear to require a fallback */* otherwise a 406 not acceptable response
-  // status code is returned as a result of GET. For a reproducible test case, use the url
-  // http://daringfireball.net/linked/2016/10/31/intel-mbp-ram. By appending the fallback of */*
-  // with a lower priority (that is the "q" below), I no longer get a 406. I do not really have an
-  // explanation for this behavior nor do I fully understand it. But it is now working.
-  // There is that principle of accepting garbage as input on the web, I forget the name of it, this
-  // is probably an example of that. This one Apache server has a distinctive configuration that
-  // is causing this behavior. Added */* fixed issue #271.
-
+  // NOTE: accept */* to fix issue #271 and avoid 406 response code
   const acceptHeaderValue = [
     mime.MIME_TYPE_HTML,
     '*/*;q=0.9'
