@@ -5,8 +5,6 @@ import {parseFeed} from "/src/parse-feed/parse-feed.js";
 // executes the fetchFeed function.
 // TODO: write specific tests that test various assertions, e.g. preconditions, postconditions
 
-// TODO: test if this now fixes issue #269 and the feed http://www.lispcast.com/feed
-
 async function test(url) {
   'use strict';
 

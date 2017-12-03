@@ -1,19 +1,22 @@
 import {fetchInternal} from "/src/fetch/utils.js";
 import * as mime from "/src/utils/mime-utils.js";
 
-// TODO: issue #269 and the feed http://www.lispcast.com/feed
-
 // Fetches a feed. Returns a basic object, similar to Response, with custom properties.
 // @param url {String} the url to fetch
 // @param timeoutMs {Number} optional, timeout in milliseconds, before considering the fetch a
 // failure
-// @param extendedTypes {Array} optional, an array of other mime types to support
+// @param extendedTypes {Array} optional, an array of other mime types to support, each mime type
+// should be a normalized canonical mime type string, like "text/html"
 // @returns {Promise} a promise that resolves to a Response-like object
 export default function fetchFeed(url, timeoutMs, extendedTypes) {
-  if(typeof extendedTypes === 'undefined') {
-    extendedTypes = [];
-  }
+  assert(typeof extendedTypes === 'undefined' || Array.isArray(extendedTypes));
 
+  // TODO: this should probably come from mime-utils or somewhere
+  const xmlTypes = ['application/rss+xml', 'application/rdf+xml', 'application/atom+xml',
+    'application/xml', 'text/xml'];
+
+  // TODO: this should somehow be constructed from the above list rather than specified redundantly
+  // I think its ok to drop the qualifier off text/html too.
   const ACCEPT_HEADER = [
     'application/rss+xml',
     'application/rdf+xml',
@@ -34,13 +37,8 @@ export default function fetchFeed(url, timeoutMs, extendedTypes) {
     referrerPolicy: 'no-referrer'
   };
 
-  // TODO: this should probably come from mie or some joined thing. Also the builder should
-  // also build from this rather than duplicate the list.
-  const xmlTypes = ['application/rss+xml', 'application/rdf+xml', 'application/atom+xml',
-    'application/xml', 'text/xml'];
-
   // Merge the builtin types with the extended types into a new array.
-  const types = xmlTypes.concat(extendedTypes);
+  const types = extendedTypes ? xmlTypes.concat(extendedTypes) : xmlTypes;
 
   function acceptPredicate(response) {
     const contentType = response.headers.get('Content-Type');

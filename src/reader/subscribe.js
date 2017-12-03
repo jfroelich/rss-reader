@@ -179,7 +179,7 @@ export async function subscribe(feed) {
   // settle prior to this completing, and callers can freely close connection used by subscribe
   // once it settles.
   if(!this.concurrent) {
-    deferredPollFeed(storedFeed, this.extendedFeedTypes).catch(console.warn);
+    deferredPollFeed(storedFeed).catch(console.warn);
   }
 
   return storedFeed;
@@ -192,7 +192,7 @@ function sleep(ms) {
 }
 
 // This is the initial implementation of Github issue #462
-async function deferredPollFeed(feed, extendedFeedTypes) {
+async function deferredPollFeed(feed) {
   await sleep(1000);
 
   const pc = new PollContext();
@@ -202,9 +202,9 @@ async function deferredPollFeed(feed, extendedFeedTypes) {
   pc.ignoreRecencyCheck = true;
   pc.ignoreModifiedCheck = true;
 
-  // TODO: this is the default for PollContext, right? So maybe no need to be explicit here, can
-  // just remove this statement, and maybe also the parameter?
-  pc.extendedFeedTypes = extendedFeedTypes;
+  // NOTE: this relies on the default extended accepted feed mime types rather than explicitly
+  // configuring them here. Keep in mind this may be different than the explicitly specified types
+  // in the main function. Generally the two should be the same but this isn't guaranteed.
 
   try {
     await pc.open();

@@ -3,17 +3,6 @@ import FaviconCache from "/src/favicon/cache.js";
 import openReaderDb from "/src/reader-db/open.js";
 import {close as closeDb, isOpen as isOpenDb} from "/src/utils/indexeddb-utils.js";
 
-// BUG: loopback messages are not handled correctly, so polling from slideshow context will not
-// trigger listener call. To fix it I guess I have to handcraft a separate, redundant channel
-// mechanism? Rather than redundant, I mean substitute?
-// TODO: check if the above bug is fixed, I think last time I checked this was like 1000 Chrome
-// builds ago. I believe there is still a loopback channel test in experimental.
-// NOTE: I believe the bug is fixed, just got a working message when polling from slideshow
-// TODO: before I delete these comments, cleanup options page, and the loopback test, because I
-// think the bug is gone now. Probably also need to check github to see if I created some issue
-// about this and close it.
-
-
 // TODO: this should probably be defined externally, because multiple modules are concerned with
 // either sending or receiving messages from and to this channel
 const CHANNEL_NAME = 'reader';
@@ -72,7 +61,7 @@ PollContext.prototype.open = async function() {
 
   // TODO: if the open stuff happened as part of the construction of the context, then there would
   // be no risk of duplicate stuff happening, like duplicate calls to open, or the context being
-  // in an incorrect state prior to calling open. However I cannot use async constructor. So this
+  // in an incorrect state prior to calling open. However I cannot use an async constructor. So this
   // suggests a builder or factory pattern would be 'better' because it is safer by making it
   // more difficult to do something incorrect. It would remove the need to even make such assertions
   // because the factory function body has full control of the variable from definition to
