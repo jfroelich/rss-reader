@@ -8,10 +8,11 @@ import * as mime from "/src/utils/mime-utils.js";
 // TODO: this should be refactored to use fetchInternal. But I need to calculate content length.
 // So fetchInternal first needs to be refactored to also calculate content length because response
 // is not exposed, just wrapped response.
-// TODO: side note, does HEAD yield 204? If so, 204 isn't an error. So using fetchInternal
-// would be wrong, at least as it is currently implemented. Or rather, fetchinternal should be
+// TODO: 204 isn't an error for head, so using fetchInternal
+// would be wrong, at least as it is currently implemented. fetchinternal should be
 // refactored to check if method is HEAD and if so, tolerate 204.
 
+// TODO: change url parameter type from String to URL
 
 // Sends a HEAD request for the given image.
 // @param url {String}
@@ -32,7 +33,8 @@ export default async function fetchImageHead(url, timeoutMs) {
   options.redirect = 'follow';
   options.referrer = 'no-referrer';
 
-  const response = await fetchWithTimeout(url, options, timeoutMs);
+  const requestURLObject = new URL(url);
+  const response = await fetchWithTimeout(requestURLObject, options, timeoutMs);
   assert(response);
 
   // Validate the response content type header. As a policy matter, it must be an image mime type.

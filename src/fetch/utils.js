@@ -34,7 +34,7 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
   // function named something like checkIsAllowedURL.
   check(isAllowedURL(url), PermissionsError, 'Refused to fetch url', url);
 
-  const response = await fetchWithTimeout(url.href, options, timeoutMs);
+  const response = await fetchWithTimeout(url, options, timeoutMs);
 
   // Throw an unchecked error if response is undefined as this represents a violation of a
   // contractual invariant. This should never happen and is unexpected.
@@ -60,8 +60,6 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
     // TODO: perhaps throw a subclass of FetchError, like NotAcceptedError
     check(acceptedMimeTypes.includes(mimeType), FetchError, 'Response not accepted', url);
   }
-
-
 
   const responseWrapper = {};
   responseWrapper.text = function getBodyText() {
