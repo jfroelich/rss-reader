@@ -1,5 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {FetchError} from "/src/fetch/errors.js";
+import fetchWithTimeout from "/src/fetch/fetch-with-timeout.js";
 import * as FetchUtils from "/src/fetch/utils.js";
 import check from "/src/utils/check.js";
 import * as mime from "/src/utils/mime-utils.js";
@@ -31,7 +32,7 @@ export default async function fetchImageHead(url, timeoutMs) {
   options.redirect = 'follow';
   options.referrer = 'no-referrer';
 
-  const response = await FetchUtils.fetchWithTimeout(url, options, timeoutMs);
+  const response = await fetchWithTimeout(url, options, timeoutMs);
   assert(response);
 
   // Validate the response content type header. As a policy matter, it must be an image mime type.

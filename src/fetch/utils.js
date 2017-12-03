@@ -1,9 +1,8 @@
 import assert from "/src/assert/assert.js";
 import {FetchError, NetworkError, OfflineError} from "/src/fetch/errors.js";
 import isAllowedURL from "/src/fetch/fetch-policy.js";
-import fetchWithTranslatedErrors from "/src/fetch/fetch-with-translated-errors.js";
+import fetchWithTimeout from "/src/fetch/fetch-with-timeout.js";
 import {PermissionsError} from "/src/operations/restricted-operation.js";
-import {TimeoutError} from "/src/operations/timed-operation.js";
 import {compareURLsWithoutHash} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
 import check from "/src/utils/check.js";
@@ -95,35 +94,6 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
   responseWrapper.redirected = detectURLChanged(requestURLObject, responseURLObject);
   return responseWrapper;
 }
-
-// Call fetch, and race the fetch against a timeout. Throws an error if a timeout occurs, or if
-// fetch error occurs.
-// @param url {String} the url to fetch
-// @param options {Object} optional, fetch options parameter
-// @param timeoutMs {Number} optional, timeout in milliseconds
-// @returns {Promise} the fetch promise
-export async function fetchWithTimeout(url, options, timeoutMs) {
-  assert(isValidURLString(url));
-  assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
-
-  const fetchPromise = fetchWithTranslatedErrors(url, options);
-  if(typeof timeoutMs === 'undefined') {
-    return fetchPromise;
-  }
-
-  const [timeoutId, timeoutPromise] = setTimeoutPromise(timeoutMs);
-  const contestants = [fetchPromise, timeoutPromise];
-  const response = await Promise.race(contestants);
-  if(response) {
-    clearTimeout(timeoutId);
-  } else {
-    // TODO: cancel/abort the fetch, if that is possible
-    const errorMessage = 'Fetch timed out for url ' + url;
-    throw new TimeoutError(errorMessage);
-  }
-  return fetchPromise;
-}
-
 
 // Return true if the response url is 'different' than the request url
 // @param requestURL {URL}
