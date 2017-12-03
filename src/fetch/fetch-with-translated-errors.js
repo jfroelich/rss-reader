@@ -1,5 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {NetworkError, OfflineError} from "/src/fetch/errors.js";
+import {isOnline} from "/src/platform/platform.js";
 import check from "/src/utils/check.js";
 
 // Wraps a call to fetch and changes the types of certain errors thrown. The primary problem
@@ -22,31 +23,16 @@ export default async function fetchWithTranslatedErrors(url, options) {
   // TypeError in that both are unchecked.
   assert(typeof options === 'undefined' || typeof options === 'object' || options === null);
 
-  // If we are able to detect connectivity, then check if we are offline. If we are offline then
-  // fetch will fail with a TypeError. But I want to clearly differentiate between a site being
-  // unreachable because we are offline from a site being unreachable because the site does not
-  // exist. Also, a TypeError indicates an unchecked kind of error, like a programming error, but
-  // should instead be treated as an ephemeral error.
-  // If we cannot detect connectivity then defer to fetch.
-
-  // TODO: do this next, create helper isOnline in platform.js and call it here
-  // TODO: when is nav undef? This is a platform concern. So maybe this should call out to a
-  // function in platform.js or whatever in that case, and stop pussyfooting around here.
-
-  if((typeof navigator !== 'undefined') && ('onLine' in navigator)) {
-    check(navigator.onLine, OfflineError, 'Unable to fetch url "%s" while offline', url);
-  }
-
-  // Serialize the request url back to a string, because fetch's first parameter must be either a
-  // Request or a string
-  const requestURLUSVString = url.href;
+  // fetch fails with a TypeError when offline. This would ordinarily later be translated to a
+  // NetworkError, but I want to the caller to be able to distinguish between a site being
+  // unreachable while online, and a site being unreachable while offline.
+  check(isOnline(), OfflineError, 'Unable to fetch url "%s" while offline', url);
 
   let response;
   try {
-    response = await fetch(requestURLUSVString, options);
+    response = await fetch(url.href, options);
   } catch(error) {
-    const translatedError = translateError(error);
-    throw translatedError;
+    throw translateError(error);
   }
 
   // fetchWithTranslatedErrors warrants that the output object is defined
