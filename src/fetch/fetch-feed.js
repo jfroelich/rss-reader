@@ -1,6 +1,8 @@
 import {fetchInternal} from "/src/fetch/utils.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
 
+// TODO: change to expect url parameter to be URL instead of String
+
 // TODO: i think this is the wrong abstraction. See the following article
 // https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction
 // * I do not like how fetch options are hardcoded. This is too opinionated.
@@ -40,6 +42,8 @@ export default function fetchFeed(url, timeoutMs, extendedTypes) {
     referrerPolicy: 'no-referrer'
   };
 
+  const requestURLObject = new URL(url);
+
   const acceptedMimeTypes = extendedTypes ? XML_MIME_TYPES.concat(extendedTypes) : XML_MIME_TYPES;
-  return fetchInternal(url, options, timeoutMs, acceptedMimeTypes);
+  return fetchInternal(requestURLObject, options, timeoutMs, acceptedMimeTypes);
 }

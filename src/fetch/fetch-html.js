@@ -1,10 +1,14 @@
 import {fetchInternal} from "/src/fetch/utils.js";
 import * as mime from "/src/utils/mime-utils.js";
 
+// TODO: change to expect url to be URL object instead of String
+
 // Fetches the html content of the given url
 // @param url {String} the url to fetch
 // @param timeoutMs {Number} optional, timeout in milliseconds
 export default function fetchHTML(url, timeoutMs) {
+
+  const requestURLObject = new URL(url);
 
   // NOTE: some websites appear to require a fallback */* otherwise a 406 not acceptable response
   // status code is returned as a result of GET. For a reproducible test case, use the url
@@ -32,5 +36,5 @@ export default function fetchHTML(url, timeoutMs) {
   };
 
   const acceptedMimeTypes = [mime.MIME_TYPE_HTML];
-  return fetchInternal(url, options, timeoutMs, acceptedMimeTypes);
+  return fetchInternal(requestURLObject, options, timeoutMs, acceptedMimeTypes);
 }

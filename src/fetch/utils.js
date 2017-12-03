@@ -11,54 +11,36 @@ import * as mime from "/src/utils/mime-utils.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 import {parseInt10} from "/src/utils/string.js";
 
-// TODO: this module grew kind of large for my taste, move some functions into separate files
+// NOTE: implicitly, by accepting a URL parameter, this guarantees the input request url is
+// canonical. This avoids an implicit behavior of fetch where the url of the calling context is
+// used for relative urls.
 
-// TODO: consider changing fetchInternal to demand a URL object as input instead of a string, so
-// that the check is pushed back to the caller and there is no longer a concern here. I also
-// rather like the idea that URL is a more specific, specialized type than string. The tradeoff
-// I suppose is the inconvenience. Note this will have a substantial ripple effect and may
-// result in having to change the inputs to calling functions too, because callers typically
-// also accept strings at the moment, I think.
-
-// TODO: now that fetchInternal creates a url object, it is redundant with the check that occurs
-// later in fetchWithTranslatedErrors. I should consider removing that check. But the concern is
-// that it means callers shouldn't directly call to fetchWithTranslatedErrors otherwise they don't
-// get the benefit of that check. That check has several benefits, outlined in comment in
-// fetchWithTranslatedErrors function body.
+// TODO: create a CustomResponse class and use that instead of returning a simple object?
 
 // Does a fetch with a timeout and a content type predicate
-// @param url {String} request url
+// @param url {URL} request url
 // @param options {Object} optional, fetch options parameter
 // @param timeoutMs {Number} optional, timeout in milliseconds
 // @param acceptedMimeTypes {Array} optional, if specified then this checks if the response mime
 // type is in the list of accepted types and throws a fetch error if not.
 // @returns {Object} a Response-like object
 export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) {
-
-  // Create a url object from the input string. This both asserts that the url is canonical, and
-  // also prepares for the call to isAllowedURL
-  let urlObject;
-  try {
-    urlObject = new URL(url);
-  } catch(error) {
-    // Catch and basically rethrow the same TypeError but with a nicer message
-    throw new TypeError('Invalid url ' + url);
-  }
+  assert(url instanceof URL);
 
   // Before fetching, check whether the url is fetchable according to this app's fetch policy.
   // TODO: PermissionsError feels like a misnomer? Maybe stop trying to be so abstract and call it
   // precisely what it is, a FetchPolicyRejectionError or something.
   // TODO: maybe isAllowedURL should just throw the error and this should just be a call to a
   // function named something like checkIsAllowedURL.
-  check(isAllowedURL(urlObject), PermissionsError, 'Refused to fetch url', url);
+  check(isAllowedURL(url), PermissionsError, 'Refused to fetch url', url);
 
-  const response = await fetchWithTimeout(url, options, timeoutMs);
+  const response = await fetchWithTimeout(url.href, options, timeoutMs);
 
   // Throw an unchecked error if response is undefined as this represents a violation of a
   // contractual invariant. This should never happen and is unexpected.
   assert(response);
 
-  check(response.ok, FetchError, 'Response not ok for url', url, 'and status is', response.status);
+  check(response.ok, FetchError, 'Response not ok for url "%s", status is', url, response.status);
 
   const HTTP_STATUS_NO_CONTENT = 204;
   check(response.status !== HTTP_STATUS_NO_CONTENT, FetchError, 'No content response', url);
@@ -80,18 +62,18 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
   }
 
 
-  // TODO: create a ReaderResponse class and use that instead of a simple object?
+
   const responseWrapper = {};
   responseWrapper.text = function getBodyText() {
     return response.text();
   };
-  responseWrapper.requestURL = url;
+  responseWrapper.requestURL = url.href;
   responseWrapper.responseURL = response.url;
   responseWrapper.lastModifiedDate = getLastModified(response);
 
-  const requestURLObject = new URL(url);
+  // This should never throw as the browser never generates a bad property value
   const responseURLObject = new URL(response.url);
-  responseWrapper.redirected = detectURLChanged(requestURLObject, responseURLObject);
+  responseWrapper.redirected = detectURLChanged(url, responseURLObject);
   return responseWrapper;
 }
 
@@ -117,6 +99,10 @@ function getLastModified(response) {
     }
   }
 }
+
+// TODO: actually this is only ever called by fetch-image-head, move it back to there so that
+// utils becomes a file of just fetchInternal, at which point I can rename utils.js to something
+// more specific, and change it to export a default function.
 
 export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
 
