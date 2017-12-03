@@ -11,9 +11,7 @@ import * as mime from "/src/utils/mime-utils.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 import {parseInt10} from "/src/utils/string.js";
 
-// NOTE: implicitly, by accepting a URL parameter, this guarantees the input request url is
-// canonical. This avoids an implicit behavior of fetch where the url of the calling context is
-// used for relative urls.
+// TODO: rename to something like fetch-base.js
 
 // TODO: create a CustomResponse class and use that instead of returning a simple object?
 

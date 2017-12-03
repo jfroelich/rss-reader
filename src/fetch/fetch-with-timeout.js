@@ -15,7 +15,7 @@ export default async function fetchWithTimeout(url, options, timeoutMs) {
   assert(url instanceof URL);
   assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
 
-  const fetchPromise = fetchWithTranslatedErrors(url.href, options);
+  const fetchPromise = fetchWithTranslatedErrors(url, options);
   if(typeof timeoutMs === 'undefined') {
     return fetchPromise;
   }
