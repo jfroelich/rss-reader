@@ -13,10 +13,9 @@ export default function fetchHTML(url, timeoutMs) {
   // explanation for this behavior nor do I fully understand it. But it is now working.
   // There is that principle of accepting garbage as input on the web, I forget the name of it, this
   // is probably an example of that. This one Apache server has a distinctive configuration that
-  // is causing this behavior.
-  // Fixed issue #271.
+  // is causing this behavior. Added */* fixed issue #271.
 
-  const accept = [
+  const acceptHeaderValue = [
     mime.MIME_TYPE_HTML,
     '*/*;q=0.9'
   ].join(',');
@@ -24,7 +23,7 @@ export default function fetchHTML(url, timeoutMs) {
   const options = {
     credentials: 'omit',
     method: 'get',
-    headers: {'Accept': accept},
+    headers: {accept: acceptHeaderValue},
     mode: 'cors',
     cache: 'default',
     redirect: 'follow',
@@ -32,17 +31,6 @@ export default function fetchHTML(url, timeoutMs) {
     referrerPolicy: 'no-referrer'
   };
 
-  function acceptHTMLPredicate(response) {
-    // NOTE: apparently headers.get can return null when the header is not present. I finally
-    // witnessed this event and it caused an assertion error in fromContentType. I modified
-    // fromContentType to tolerate nulls so the assertion error no longer occurs. I should probably
-    // revisit the documentation on response.headers.get because my belief is this is either
-    // undocumented or perhaps some subtle behavior was changed in Chrome. It seems odd that this
-    // is the first time ever seeing a request without a Content-Type header.
-
-    const contentType = response.headers.get('Content-Type');
-    const mimeType = mime.fromContentType(contentType);
-    return mimeType === mime.MIME_TYPE_HTML;
-  }
-  return fetchInternal(url, options, timeoutMs, acceptHTMLPredicate);
+  const acceptedMimeTypes = [mime.MIME_TYPE_HTML];
+  return fetchInternal(url, options, timeoutMs, acceptedMimeTypes);
 }

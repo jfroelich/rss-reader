@@ -13,33 +13,30 @@ import {parseInt10} from "/src/utils/string.js";
 
 // TODO: this module grew kind of large for my taste, move some functions into separate files
 
+// TODO: consider changing fetchInternal to demand a URL object as input instead of a string, so
+// that the check is pushed back to the caller and there is no longer a concern here. I also
+// rather like the idea that URL is a more specific, specialized type than string. The tradeoff
+// I suppose is the inconvenience. Note this will have a substantial ripple effect and may
+// result in having to change the inputs to calling functions too, because callers typically
+// also accept strings at the moment, I think.
+
+// TODO: now that fetchInternal creates a url object, it is redundant with the check that occurs
+// later in fetchWithTranslatedErrors. I should consider removing that check. But the concern is
+// that it means callers shouldn't directly call to fetchWithTranslatedErrors otherwise they don't
+// get the benefit of that check. That check has several benefits, outlined in comment in
+// fetchWithTranslatedErrors function body.
+
 // Does a fetch with a timeout and a content type predicate
 // @param url {String} request url
 // @param options {Object} optional, fetch options parameter
 // @param timeoutMs {Number} optional, timeout in milliseconds
-// @param acceptPredicate {Function} optional, if specified then is passed the
-// response, and then the return value is asserted
+// @param acceptedMimeTypes {Array} optional, if specified then this checks if the response mime
+// type is in the list of accepted types and throws a fetch error if not.
 // @returns {Object} a Response-like object
-export async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
+export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) {
 
-
-  // Convert the input url string into an object. Note that this is now needed because of the call
-  // to isAllowedURL which was added later, way after the design of the original function, which
-  // was designed around accepting a url string.
-
-  // TODO: consider changing fetchInternal to demand a URL object as input instead of a string, so
-  // that the check is pushed back to the caller and there is no longer a concern here. I also
-  // rather like the idea that URL is a more specific, specialized type than string. The tradeoff
-  // I suppose is the inconvenience. Note this will have a substantial ripple effect and may
-  // result in having to change the inputs to calling functions too, because callers typically
-  // also accept strings at the moment, I think.
-
-  // TODO: now that this creates the url object, it is redundant with the check that occurs later
-  // in fetchWithTranslatedErrors. I should consider removing that check. But the concern is that
-  // it means callers shouldn't directly call to fetchWithTranslatedErrors otherwise they don't
-  // get the benefit of that check. That check has several benefits, outlined in comment in
-  // fetchWithTranslatedErrors function body.
-
+  // Create a url object from the input string. This both asserts that the url is canonical, and
+  // also prepares for the call to isAllowedURL
   let urlObject;
   try {
     urlObject = new URL(url);
@@ -56,18 +53,34 @@ export async function fetchInternal(url, options, timeoutMs, acceptPredicate) {
   check(isAllowedURL(urlObject), PermissionsError, 'Refused to fetch url', url);
 
   const response = await fetchWithTimeout(url, options, timeoutMs);
+
+  // Throw an unchecked error if response is undefined as this represents a violation of a
+  // contractual invariant. This should never happen and is unexpected.
   assert(response);
+
   check(response.ok, FetchError, 'Response not ok for url', url, 'and status is', response.status);
 
   const HTTP_STATUS_NO_CONTENT = 204;
   check(response.status !== HTTP_STATUS_NO_CONTENT, FetchError, 'No content response', url);
 
-  if(typeof acceptPredicate === 'function') {
-    check(acceptPredicate(response), FetchError, 'Response not accepted', url);
+  // If the caller provided an array of acceptable mime types, then check whether the response
+  // mime type is in the list of acceptable mime types
+  if(Array.isArray(acceptedMimeTypes) && acceptedMimeTypes.length > 0) {
+    const contentType = response.headers.get('Content-Type');
+    // NOTE: apparently headers.get can return null when the header is not present. I finally
+    // witnessed this event and it caused an assertion error in fromContentType. I modified
+    // fromContentType to tolerate nulls so the assertion error no longer occurs. I should probably
+    // revisit the documentation on response.headers.get because my belief is this is either
+    // undocumented or perhaps some subtle behavior was changed in Chrome. It seems odd that this
+    // is the first time ever seeing a response without a Content-Type header.
+    const mimeType = mime.fromContentType(contentType);
+
+    // TODO: perhaps throw a subclass of FetchError, like NotAcceptedError
+    check(acceptedMimeTypes.includes(mimeType), FetchError, 'Response not accepted', url);
   }
 
-  // TODO: create a ReaderResponse class and use that instead of a simple object?
 
+  // TODO: create a ReaderResponse class and use that instead of a simple object?
   const responseWrapper = {};
   responseWrapper.text = function getBodyText() {
     return response.text();

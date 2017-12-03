@@ -8,7 +8,8 @@ import * as mime from "/src/utils/mime-utils.js";
 // So fetchInternal first needs to be refactored to also calculate content length because response
 // is not exposed, just wrapped response.
 // TODO: side note, does HEAD yield 204? If so, 204 isn't an error. So using fetchInternal
-// would be wrong, at least as it is currently implemented.
+// would be wrong, at least as it is currently implemented. Or rather, fetchinternal should be
+// refactored to check if method is HEAD and if so, tolerate 204.
 
 
 // Sends a HEAD request for the given image.

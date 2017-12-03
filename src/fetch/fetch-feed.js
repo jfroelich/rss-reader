@@ -1,5 +1,22 @@
 import {fetchInternal} from "/src/fetch/utils.js";
-import * as mime from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
+
+// TODO: i think this is the wrong abstraction. See the following article
+// https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction
+// * I do not like how fetch options are hardcoded. This is too opinionated.
+// * I do not love the extendedTypes parameter although this does what I want at the moment. This is
+// an example of one those parameters that changes default behavior mentioned in above article
+// * I do not love how timeoutMs is separate from options, if options were to become a parameter
+
+const XML_MIME_TYPES = [
+  'application/rss+xml',
+  'application/rdf+xml',
+  'application/atom+xml',
+  'application/xml',
+  'text/xml'
+];
+
+const STANDARD_FEED_ACCEPT_HEADER_VALUE = XML_MIME_TYPES.join(',');
 
 // Fetches a feed. Returns a basic object, similar to Response, with custom properties.
 // @param url {String} the url to fetch
@@ -11,21 +28,7 @@ import * as mime from "/src/utils/mime-utils.js";
 export default function fetchFeed(url, timeoutMs, extendedTypes) {
   assert(typeof extendedTypes === 'undefined' || Array.isArray(extendedTypes));
 
-  // TODO: this should probably come from mime-utils or somewhere
-  const xmlTypes = ['application/rss+xml', 'application/rdf+xml', 'application/atom+xml',
-    'application/xml', 'text/xml'];
-
-  // TODO: this should somehow be constructed from the above list rather than specified redundantly
-  // I think its ok to drop the qualifier off text/html too.
-  const ACCEPT_HEADER = [
-    'application/rss+xml',
-    'application/rdf+xml',
-    'application/atom+xml',
-    'application/xml;q=0.9',
-    'text/xml;q=0.8'
-  ].join(',');
-
-  const headers = {Accept: ACCEPT_HEADER};
+  const headers = {accept: STANDARD_FEED_ACCEPT_HEADER_VALUE};
   const options = {
     credentials: 'omit',
     method: 'get',
@@ -37,14 +40,6 @@ export default function fetchFeed(url, timeoutMs, extendedTypes) {
     referrerPolicy: 'no-referrer'
   };
 
-  // Merge the builtin types with the extended types into a new array.
-  const types = extendedTypes ? xmlTypes.concat(extendedTypes) : xmlTypes;
-
-  function acceptPredicate(response) {
-    const contentType = response.headers.get('Content-Type');
-    const mimeType = mime.fromContentType(contentType);
-    return types.includes(mimeType);
-  }
-
-  return fetchInternal(url, options, timeoutMs, acceptPredicate);
+  const acceptedMimeTypes = extendedTypes ? XML_MIME_TYPES.concat(extendedTypes) : XML_MIME_TYPES;
+  return fetchInternal(url, options, timeoutMs, acceptedMimeTypes);
 }
