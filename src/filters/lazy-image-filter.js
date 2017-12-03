@@ -4,6 +4,12 @@ import {isValidURLString} from "/src/url/url-string.js";
 
 // Transforms lazily-loaded images found in document content
 
+// BUG: This type of message should not have shown up in the log:
+// removing sourceless image <img data-src="url" alt="" content="url">
+// This should have fixed that. I think. What about picture? I need to improve that debugging
+// message so it checks for picture. Suspicion is this is all fallout from switching to
+// hasSource. 
+
 const kLazyAttributeNames = [
   'load-src',
   'data-src',
