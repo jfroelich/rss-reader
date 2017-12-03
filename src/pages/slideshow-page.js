@@ -54,10 +54,10 @@ readerChannel.onmessage = function(event) {
     onEntryAddedMessage(message).catch(console.warn);
     break;
   case 'entry-deleted':
-    console.warn('Unhandled entry-deleted message', message);
+    onEntryBecameUnviewable(message.id, 'deleted').catch(console.warn);
     break;
   case 'entry-archived':
-    console.warn('Unhandled entry-archived message', message);
+    onEntryBecameUnviewable(message.id, 'archived').catch(console.warn);
     break;
   case 'feed-deleted':
     console.warn('Unhandled feed-deleted message', message);
@@ -72,9 +72,9 @@ readerChannel.onmessageerror = function(event) {
   console.warn('Could not deserialize message from channel', event);
 };
 
+// Responds to the adding of an entry to the database from some background task. Conditionally
+// appends new articles as slides.
 async function onEntryAddedMessage(message) {
-  console.debug('received entry-added event, listener not fully implemented', message);
-
   // Do not append if several unread slides are still loaded
   const unreadSlideCount = countUnreadSlides();
   if(unreadSlideCount > 1) {
@@ -91,6 +91,33 @@ async function onEntryAddedMessage(message) {
   } finally {
     idb.close(conn);
   }
+}
+
+async function onEntryBecameUnviewable(entryId, reason) {
+  // TEMP: note that entry id arrived possibly over the wire. I believe deserialization converts
+  // it correctly back to an number. Not entirely sure. This assert is both to check that and
+  // just to check in general.
+  assert(Entry.isValidId(entryId));
+
+  // Find all slides and remove them.
+
+  // Find the entry's slide. There should only be one so the first match is fine.
+  const slide = document.querySelector('article[entry="' + entryId + '"]');
+  if(!slide) {
+    return;
+  }
+
+  // TODO: once I get the new mechanism working, rename the attribute to 'stale'. Use the concept
+  // of stale/fresh to indicate whether a slide loaded into the view is still present/active in the
+  // database. I think freshness is just a better representation.
+
+  if(slide === currentSlide) {
+    console.warn('cannot remove current slide after load');
+    slide.setAttribute('removed-after-load', '');
+    return;
+  }
+
+  removeSlide(slide);
 }
 
 function showLoadingInformation() {
@@ -112,15 +139,28 @@ function removeSlide(slideElement) {
 }
 
 async function markSlideRead(conn, slideElement) {
-  assert(idb.isOpen(conn));
+
+  // Immediately check if the slide should be ignored. One reason is that it was externally
+  // made unviewable by some other background process like unsubscribe or archive after the slide
+  // was loaded into view, but at the time it was made unviewable it was not unloadable from the
+  // view.
+  if(slideElement.hasAttribute('removed-after-load')) {
+    console.debug('canceling mark as read given that slide removed after load',
+      slideElement.getAttribute('entry'));
+    return;
+  }
 
   // This is a routine situation such as when navigating backward and therefore not an error.
   if(slideElement.hasAttribute('read')) {
+    console.debug('canceling mark as read as slide already marked',
+      slideElement.getAttribute('entry'));
     return;
   }
 
   const slideEntryAttributeValue = slideElement.getAttribute('entry');
   const entryId = parseInt10(slideEntryAttributeValue);
+
+  assert(idb.isOpen(conn));
   assert(Entry.isValidId(entryId));
 
   try {
@@ -279,36 +319,97 @@ function createFeedSourceElement(entry) {
 }
 
 async function onSlideClick(event) {
+
+  // We only care about responding to left click. Ignore all other buttons like right click and
+  // mouse wheel.
   const CODE_LEFT_MOUSE_BUTTON = 1;
   if(event.which !== CODE_LEFT_MOUSE_BUTTON) {
     return true;
   }
 
+  // Find the most immediate containing anchor. In theory there shouldn't be anchors nested in
+  // anchors. Also note this can fail to find one (which is not an unexpected error).
+  // event.target is the element that was clicked. This could be several things:
+  // * a slide, clicked on misc area of a slide
+  // * an anchor in a slide
+  // * an element within an anchor, like a clickable image
   const anchor = event.target.closest('a');
+
+  // Ignore non-anchor-involved clicks, leave the click as is and defer click handling to
+  // browser.
   if(!anchor) {
     return true;
   }
 
+  // Technically this should never happen, right? Because all such anchors should have been
+  // removed by the content-filters in document preprocessing. Therefore, log a warning
+  // message and exit. Perhaps this should show an error message eventually.
   if(!anchor.hasAttribute('href')) {
+    console.warn('clicked anchor without href that should have been caught by preprocessing',
+      anchor.outerHTML);
     return true;
   }
 
+  // We've determined at this point we are going to handle the click. Inform the browser that we
+  // are intercepting.
   event.preventDefault();
 
+  // Get the url and open the url in a new tab.
+  // TODO: yes, this is worthy of an assert in the sense that all urls should have been made
+  // canonical. But now we are at the point of the UI where even when bad things happen it should
+  // still be a nice experience. Instead of just logging an error to the console. Show an alert
+  // or something to the user, and exit early. Also note that we don't want to allow openTab
+  // to substitute in chrome-extension://. Basically disallow that behavior unless the anchor
+  // itself is a canonical url with that protocol. If it is, allow the click, as I don't think
+  // it our concern any longer if something bad happens.
   const urlString = anchor.getAttribute('href');
   assert(isCanonicalURLString(urlString));
   openTab(urlString);
 
+  // After opening the link in a new tab, then continue processing. Next, find the slide that was
+  // clicked. This is typically the current slide, but that isn't guaranteed. Article elements are
+  // filtered from document content, so the only time an ancestor of the anchor is an article is
+  // when it is the slide that contains the anchor.
+  // TODO: could this be sped up given closest includes self behavior to call closed on parent node
+  // instead of the anchor itself?
+  const clickedSlide = anchor.closest('article');
+
+  // Throw an assertion error if we didn't find the containing slide.
+  // TODO: don't assert at the UI level. Do something like show a human-friendly error message and
+  // exit early.
+  assert(clickedSlide instanceof Element);
+
+  // Weak sanity check that the element is a slide, mostly just to monitor the recent changes to
+  // this function.
+  if(clickedSlide !== currentSlide) {
+    console.debug('Determined that clicked slide is different than current slide', clickedSlide,
+      currentSlide);
+  }
+
+  // Before even calling mark as read, and even though mark as read also does this check, check
+  // here if the slide was made unviewable after load and exit early in this case. I am assuming
+  // that the duplicate check and redundant concern is worth it due to the performance overhead
+  // of opening a new connection and calling more functions. Although admittedly this isn't
+  // performance sensitive I feel it is more polite.
+  if(clickedSlide.hasAttribute('removed-after-load')) {
+    console.debug('exiting click handler early due to delete-after-load situation');
+    return false;
+  }
+
+  // in the current tab and mark the
+  // slide as read.
   let conn;
   try {
     conn = await openReaderDb();
-    await markSlideRead(conn, currentSlide);
+    await markSlideRead(conn, clickedSlide);
   } catch(error) {
     console.warn(error);
   } finally {
     idb.close(conn);
   }
 
+  // Still signal the click should not default to normal click behavior, the browser should not
+  // react to the click on its own. Even though I already called preventDefault.
   return false;
 }
 
@@ -323,15 +424,60 @@ async function showNextSlide() {
     return;
   }
 
+  // TODO: why is this always opening a connection even if there is no nextSibling?
+  // That seems wrong, in the performance sense. But not sure.
+
+  // TODO: we cannot naively use nextSibling. nextSibling may have been marked as
+  // 'deleted-after-load'. We want to scan forward to the first subsequent slide that is not
+  // deleted after load, and then switch to that.
+
+  // Change this to first synchronously find the next slide to navigate to. Do not assume it is
+  // next sibling.
+
+  // If no next sibling is found, then this should exit early, or try and load new slides and
+  // then navigate to. The deleted-after-load should no longer be a concern because the slides
+  // are fresh.
+
+  // TODO: also, if the currentSlide was marked as 'deleted-after-load' it should now be
+  // immediately unloaded on navigation away? But does that cause surprise? Maybe call a helper
+  // like 'onSlideLeavingView' that does this check?
+
+
+  // Search for the next slide to show. The next slide is not necessarily adjacent.
+  // TODO: cleanup the iteration logic once it becomes clearer to me.
+  let nextSlide;
+  let slideCursor = currentSlide;
+  while(true) {
+    slideCursor = slideCursor.nextSibling;
+    if(slideCursor) {
+
+      if(slideCursor.hasAttribute('removed-after-load')) {
+        continue;
+      } else {
+        nextSlide = slideCursor;
+        break;
+      }
+
+    } else {
+      // If we advanced and there was no next sibling, leave nextSlide undefined and end search
+      break;
+    }
+  }
+
+  // I am not implementing this fully. First check the results of finding next slide in situations
+  // such as no additional slides preloaded, or slides loaded but skipped because removed after
+  // load.
+  console.debug('next slide vs nextSibling', nextSlide, currentSlide.nextSibling);
+
+
   const oldSlideElement = currentSlide;
-  const unreadSlideElementCount = countUnreadSlides();
   let slideAppendCount = 0;
   let conn;
-
   try {
     conn = await openReaderDb();
 
     // Conditionally append more slides
+    const unreadSlideElementCount = countUnreadSlides();
     if(unreadSlideElementCount < 2) {
       slideAppendCount = await appendSlides(conn);
     }
@@ -347,6 +493,8 @@ async function showNextSlide() {
       // Change the active element to the new current slide, so that scrolling with keys works
       currentSlide.focus();
 
+      // Only mark the slide as read if navigation occurs, which only occurs if there was a next
+      // slide
       await markSlideRead(conn, oldSlideElement);
     }
   } catch(error) {
@@ -355,28 +503,33 @@ async function showNextSlide() {
     idb.close(conn);
   }
 
-  if(slideAppendCount > 0) {
-    cleanupOnAppend();
-  }
-}
+  // If more slides were appended, then reduce the number of slides loaded.
+  // TODO: should this do a scan of slides that are marked 'removed-after-load' at this time and
+  // try and remove any of them, regardless of max slide count or min slide count or whatever? And
+  // regardless of whether slides were appended?
 
-function cleanupOnAppend() {
-  assert(currentSlide);
-  const maxSlideCount = 6;
-  const containerElement = document.getElementById('slideshow-container');
-  while(containerElement.childElementCount > maxSlideCount && containerElement.firstChild !==
-    currentSlide) {
-    removeSlide(containerElement.firstChild);
+  if(slideAppendCount > 0) {
+    assert(currentSlide);
+    const maxSlideCount = 6;
+    const containerElement = document.getElementById('slideshow-container');
+    while(containerElement.childElementCount > maxSlideCount && containerElement.firstChild !==
+      currentSlide) {
+      removeSlide(containerElement.firstChild);
+    }
   }
 }
 
 // Move the current slide out of view to the right, and move the previous slide into view, and then
 // update the current slide.
 function showPreviousSlide() {
-  // TODO: when is this condition ever true? Maybe this should be an assert?
+
+  // There may not be a current slide when no slides are loaded
   if(!currentSlide) {
     return;
   }
+
+  // TODO: refactor this function to account for removed-after-load characteristic. I am going to
+  // wait to do this until I update showNextSlide
 
   const prevSlideElement = currentSlide.previousSibling;
   if(!prevSlideElement) {
@@ -394,6 +547,9 @@ function showPreviousSlide() {
 }
 
 function countUnreadSlides() {
+
+  // TODO: change this to also exclude removed-after-load slides from the count?
+
   const slides = document.body.querySelectorAll('article[entry]:not([read])');
   return slides.length;
 }
@@ -426,7 +582,6 @@ function onKeyDown(event) {
   default:
     break;
   }
-
 }
 
 window.addEventListener('keydown', onKeyDown);
@@ -498,8 +653,10 @@ async function init() {
   const refreshAnchor = document.getElementById('refresh');
   refreshAnchor.onclick = refreshAnchorOnclick;
 
-
+  // Initialize entry display settings
   pageStyleSettingsOnload();
+
+  // Load and append slides
   let conn;
   try {
     conn = await openReaderDb();
