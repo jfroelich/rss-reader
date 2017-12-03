@@ -19,7 +19,8 @@ import * as idb from "/src/utils/indexeddb-utils.js";
 import {parseInt10} from "/src/utils/string.js";
 
 // TODO: set magic on message objects, write a helper somewhere named something like
-// isReaderMessage(message) that checks against the magic property
+// isReaderMessage(message) that checks against the magic property. This should wait until I
+// define some helper kind of module like 'channel-coordinator.js' that organizes all of this.
 // TODO: this should come from somewhere else
 const CHANNEL_NAME = 'reader';
 
@@ -641,7 +642,6 @@ async function refreshAnchorOnclick(event) {
     refreshInProgress = false;
   }
 }
-
 
 // Initialization
 async function init() {
