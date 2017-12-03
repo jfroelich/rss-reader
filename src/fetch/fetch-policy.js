@@ -4,6 +4,10 @@ import assert from "/src/assert/assert.js";
 // fetched. It should be used for example to avoid trying to fetch various urls, such as file://
 // urls.
 
+// NOTE: the credentialed url check is apparently a tad redundant. Calling fetch with such a url
+// will automatically throw a TypeError, just learned that. No longer sure if I need to, or want
+// to, have an explicit check for such urls.
+
 // NOTE: this is the initial implementation, probably going to change drastically, is definitely
 // not very reliable or accurate. Some of the tests are easily defeated and the tests are not
 // exhaustive (e.g. ip6 ignored). However, I am simply implementing something for now because I want

@@ -11,7 +11,7 @@ import * as mime from "/src/utils/mime-utils.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 import {parseInt10} from "/src/utils/string.js";
 
-// TODO: rename to something like fetch-base.js
+// TODO: rename to something like fetch-base.js or fetch-wrapper.js
 
 // TODO: create a CustomResponse class and use that instead of returning a simple object?
 
@@ -28,8 +28,7 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
   // Before fetching, check whether the url is fetchable according to this app's fetch policy.
   // TODO: PermissionsError feels like a misnomer? Maybe stop trying to be so abstract and call it
   // precisely what it is, a FetchPolicyRejectionError or something.
-  // TODO: maybe isAllowedURL should just throw the error and this should just be a call to a
-  // function named something like checkIsAllowedURL.
+
   check(isAllowedURL(url), PermissionsError, 'Refused to fetch url', url);
 
   const response = await fetchWithTimeout(url, options, timeoutMs);
@@ -47,15 +46,7 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
   // mime type is in the list of acceptable mime types
   if(Array.isArray(acceptedMimeTypes) && acceptedMimeTypes.length > 0) {
     const contentType = response.headers.get('Content-Type');
-    // NOTE: apparently headers.get can return null when the header is not present. I finally
-    // witnessed this event and it caused an assertion error in fromContentType. I modified
-    // fromContentType to tolerate nulls so the assertion error no longer occurs. I should probably
-    // revisit the documentation on response.headers.get because my belief is this is either
-    // undocumented or perhaps some subtle behavior was changed in Chrome. It seems odd that this
-    // is the first time ever seeing a response without a Content-Type header.
     const mimeType = mime.fromContentType(contentType);
-
-    // TODO: perhaps throw a subclass of FetchError, like NotAcceptedError
     check(acceptedMimeTypes.includes(mimeType), FetchError, 'Response not accepted', url);
   }
 

@@ -12,13 +12,11 @@ import * as mime from "/src/utils/mime-utils.js";
 // would be wrong, at least as it is currently implemented. fetchinternal should be
 // refactored to check if method is HEAD and if so, tolerate 204.
 
-// TODO: change url parameter type from String to URL
-
 // Sends a HEAD request for the given image.
-// @param url {String}
+// @param url {URL}
 // @returns a simple object with props size and responseURL
 export default async function fetchImageHead(url, timeoutMs) {
-  assert(typeof url === 'string');
+  assert(url instanceof URL);
   // TODO: sanity check timeoutMs
 
   const headers = {Accept: 'image/*'};
@@ -33,8 +31,7 @@ export default async function fetchImageHead(url, timeoutMs) {
   options.redirect = 'follow';
   options.referrer = 'no-referrer';
 
-  const requestURLObject = new URL(url);
-  const response = await fetchWithTimeout(requestURLObject, options, timeoutMs);
+  const response = await fetchWithTimeout(url, options, timeoutMs);
   assert(response);
 
   // Validate the response content type header. As a policy matter, it must be an image mime type.

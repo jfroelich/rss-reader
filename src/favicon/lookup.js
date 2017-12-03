@@ -194,8 +194,9 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   // do the same work again. Since we update origin url on redirect, this should probably just
   // be doing something like originURL.href + 'favicon.ico'.  Note the lack of the leading slash,
   // because whereas origin excludes the slash so it must be added, href includes the slash.
-  const imageURL = url.origin + '/favicon.ico';
-  response = await this.fetchImage(imageURL);
+  const imageURLString = url.origin + '/favicon.ico';
+  const imageURLObject = new URL(imageURLString);
+  response = await this.fetchImage(imageURLObject);
 
   if(this.isAcceptableImageResponse(response)) {
     if(this.hasOpenCache()) {
@@ -224,15 +225,14 @@ FaviconLookup.prototype.isAcceptableImageResponse = function(response) {
 
 // Helper that traps non-assertion errors because errors not fatal to lookup
 FaviconLookup.prototype.fetchImage = async function(url) {
-  assert(typeof url === 'string');
+  assert(url instanceof URL);
   try {
     return await fetchImageHead(url, this.fetchImageTimeoutMs);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;
     } else {
-      // Treat the error as non-fatal, but log for informational purposes
-      console.warn(error);
+      // Ignore
     }
   }
 };
