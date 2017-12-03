@@ -69,7 +69,7 @@ export async function subscribe(feed) {
   // Convert the url string into a URL object. This implicitly validates that the url is valid,
   // and canonical, and normalizes the url as a string if and whenever the url is later serialized
   // back into a string. The url object is also used to track changes to the url during the course
-  // of this subscribe function.
+  // of this subscribe function, and to fetch the feed.
   const urlObject = new URL(url);
 
 
@@ -90,6 +90,11 @@ export async function subscribe(feed) {
   let priorFeedId = await findFeedIdByURLInDb(this.readerConn, url);
   check(!priorFeedId, ConstraintError, 'already subscribed to feed with url', url);
 
+  // TODO: fetchFeed (internally) is responsible for handling online/offline detection. Also,
+  // there is now an isOnline function in platform.js. Instead of checking if online, this should
+  // immediately try and fetch the feed, and then check if the fetch error is instanceof
+  // OfflineError
+
   if(navigator.onLine || !('onLine' in navigator)) {
     // If online, then fetch the feed at the given url. Do not catch any fetch errors, because
     // a fetch failure when online indicates the feed is 'invalid', which is fatal because I want
@@ -103,7 +108,7 @@ export async function subscribe(feed) {
     // even check offline case at start of this block, instead proceed with try/catch and check
     // if error is offlineerror within catch block.
 
-    const res = await fetchFeed(url, this.fetchFeedTimeoutMs, this.extendedFeedTypes);
+    const res = await fetchFeed(urlObject, this.fetchFeedTimeoutMs, this.extendedFeedTypes);
 
     // If redirected, then the url changed. Perform checks on the post-redirect url
     if(res.redirected) {

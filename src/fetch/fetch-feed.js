@@ -2,8 +2,6 @@ import assert from "/src/assert/assert.js";
 import {fetchInternal} from "/src/fetch/utils.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
 
-// TODO: change to expect url parameter to be URL instead of String
-
 // TODO: i think this is the wrong abstraction. See the following article
 // https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction
 // * I do not like how fetch options are hardcoded. This is too opinionated.
@@ -19,10 +17,10 @@ const XML_MIME_TYPES = [
   'text/xml'
 ];
 
-const STANDARD_FEED_ACCEPT_HEADER_VALUE = XML_MIME_TYPES.join(',');
+const DEFAULT_ACCEPT_HEADER_VALUE = XML_MIME_TYPES.join(',');
 
 // Fetches a feed. Returns a basic object, similar to Response, with custom properties.
-// @param url {String} the url to fetch
+// @param url {URL} request url
 // @param timeoutMs {Number} optional, timeout in milliseconds, before considering the fetch a
 // failure
 // @param extendedTypes {Array} optional, an array of other mime types to support, each mime type
@@ -31,7 +29,7 @@ const STANDARD_FEED_ACCEPT_HEADER_VALUE = XML_MIME_TYPES.join(',');
 export default function fetchFeed(url, timeoutMs, extendedTypes) {
   assert(typeof extendedTypes === 'undefined' || Array.isArray(extendedTypes));
 
-  const headers = {accept: STANDARD_FEED_ACCEPT_HEADER_VALUE};
+  const headers = {accept: DEFAULT_ACCEPT_HEADER_VALUE};
   const options = {
     credentials: 'omit',
     method: 'get',
@@ -43,8 +41,6 @@ export default function fetchFeed(url, timeoutMs, extendedTypes) {
     referrerPolicy: 'no-referrer'
   };
 
-  const requestURLObject = new URL(url);
-
   const acceptedMimeTypes = extendedTypes ? XML_MIME_TYPES.concat(extendedTypes) : XML_MIME_TYPES;
-  return fetchInternal(requestURLObject, options, timeoutMs, acceptedMimeTypes);
+  return fetchInternal(url, options, timeoutMs, acceptedMimeTypes);
 }
