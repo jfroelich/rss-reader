@@ -128,9 +128,11 @@ export async function pollEntry(entry) {
 
 async function fetchHTMLHelper(url) {
   assert(this instanceof Context);
+  assert(url instanceof URL);
+
   let response;
   try {
-    response = await fetchHTML(url.href, this.fetchHTMLTimeoutMs);
+    response = await fetchHTML(url, this.fetchHTMLTimeoutMs);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;

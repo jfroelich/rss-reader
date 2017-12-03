@@ -1,7 +1,8 @@
 import fetchHTML from "/src/fetch/fetch-html.js";
 
-async function test(url, timeout) {
-  const result = await fetchHTML(url, timeout);
+async function test(urlString, timeout) {
+  const urlObject = new URL(urlString);
+  const result = await fetchHTML(urlObject, timeout);
   console.log(result);
 }
 

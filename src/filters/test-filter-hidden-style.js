@@ -1,9 +1,8 @@
 
-window.test = test;
+// TODO: use fetchHTML instead of raw fetch. This was created before fetch-html.js was settled
+// TODO: use /src/html/parse.js
 
 async function test(url) {
-
-  // TODO: use fetchHTML instead of raw fetch. This was created before fetch-html.js was settled
 
   const options = {
     credentials: 'omit',
@@ -19,7 +18,7 @@ async function test(url) {
   const response = await fetch(url, options);
   const text = await response.text();
 
-  // TODO: use /src/html/parse.js
+
   const parser = new DOMParser();
   const doc = parser.parseFromString(text, mime.MIME_TYPE_HTML);
   filter_hidden_elements_using_style(doc);
@@ -51,3 +50,5 @@ function is_hidden_element_using_style(element) {
     return true;
   return is_hidden_element_using_style_opacity(element);
 }
+
+window.test = test;

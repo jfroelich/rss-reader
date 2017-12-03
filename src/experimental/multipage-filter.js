@@ -26,7 +26,8 @@ export async function multipageFilter(doc, location, timeoutMs) {
   // TODO: use HTMLParser
   async function fetchAndParseHTML(url, timeoutMs) {
     const parser = new DOMParser();
-    const response = await fetchHTML(url, timeoutMs);
+    const requestURLObject = new URL(url);
+    const response = await fetchHTML(requestURLObject, timeoutMs);
     const text = await response.text();
     return parser.parseFromString(text, mime.MIME_TYPE_HTML);
   }

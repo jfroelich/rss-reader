@@ -91,7 +91,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   // Fetch the url's response, failure is not fatal
   let response;
   if(!document && !this.skipURLFetch) {
-    response = await this.fetchHTML(url.href);
+    response = await this.fetchHTML(url);
   }
 
   // Check if the response redirected and is in the cache
@@ -239,7 +239,7 @@ FaviconLookup.prototype.fetchImage = async function(url) {
 
 // Helper that traps non-assertion errors as those are non-fatal to lookup
 FaviconLookup.prototype.fetchHTML = async function(url) {
-  assert(typeof url === 'string');
+  assert(url instanceof URL);
   try {
     return await fetchHTML(url, this.fetchHTMLTimeoutMs);
   } catch(error) {
