@@ -115,7 +115,7 @@ function resolveElementAttribute(element, baseURL) {
 
     // TEMP: monitoring urls for above todo. This is going to spam but I think I will probably
     // focus on the todo rather soon.
-    console.debug('canonicalization change', originalURLString, resolvedURL.href);
+    //console.debug('canonicalization change', originalURLString, resolvedURL.href);
 
     // NOTE: gathering some interesting messages
     // - if url is just '#' then it becomes just full link with # appended. I probably should not
