@@ -39,8 +39,13 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
 
   check(response.ok, FetchError, 'Response not ok for url "%s", status is', url, response.status);
 
-  const HTTP_STATUS_NO_CONTENT = 204;
-  check(response.status !== HTTP_STATUS_NO_CONTENT, FetchError, 'No content response', url);
+  // This is a caveat of not passing options along. But I want to programmatically specify that
+  // 204 is only an error for certain methods
+  const method = 'GET';
+  if(method === 'GET' || method === 'POST') {
+    const HTTP_STATUS_NO_CONTENT = 204;
+    check(response.status !== HTTP_STATUS_NO_CONTENT, FetchError, 'No content for GET/POST', url);
+  }
 
   // If the caller provided an array of acceptable mime types, then check whether the response
   // mime type is in the list of acceptable mime types
