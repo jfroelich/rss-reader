@@ -204,7 +204,19 @@ function deriveImageAreaBias(image) {
   let bias = 0;
   const maxArea = 100000;
   const dampCoeff = 0.0015;
-  const area = image.width * image.height;
+
+  // For images missing a dimension, assume the image is a square.
+  let area;
+  if(image.width && image.height) {
+    area = image.width * image.height;
+  } else if(image.width) {
+    area = image.width * image.width;
+  } else if(image.height) {
+    area = image.height * image.height;
+  } else {
+    // Leave area undefined
+  }
+
   if(area) {
     bias = dampCoeff * Math.min(maxArea, area);
   }
