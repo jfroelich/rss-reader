@@ -13,8 +13,6 @@ async function test(urlString) {
 
   // Call this subsequently because it prints out missing images
   filterSourcelessImages(document);
-
-  console.debug('test complete');
 }
 
 

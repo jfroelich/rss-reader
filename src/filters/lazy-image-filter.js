@@ -7,6 +7,7 @@ import {isValidURLString} from "/src/url/url-string.js";
 // TODO: try and determine if an image with a src attribute is using a placeholder image in the
 // src attribute and a full image from another attribute
 
+const DEBUG = true;
 
 const kLazyAttributeNames = [
   'load-src',
@@ -32,9 +33,6 @@ export default function filter(doc) {
     return;
   }
 
-  // Aha, this was the culprit of the bug! This was searching for 'image' not 'img', which I
-  // inadvertantly set when changing use of img to image in variable names using find and replace
-  // in code editor.
   const images = doc.body.getElementsByTagName('img');
 
   for(const image of images) {
@@ -44,20 +42,33 @@ export default function filter(doc) {
 
     const attributeNames = image.getAttributeNames();
 
-    for(const lazySourceName of kLazyAttributeNames) {
-      if(attributeNames.includes(lazySourceName)) {
-        const lazySourceAttributeValue = image.getAttribute(lazySourceName);
-        if(isValidURLString(lazySourceAttributeValue)) {
-          image.removeAttribute(lazySourceName);
-          image.setAttribute('src', lazySourceAttributeValue);
-
-          console.debug('lazy transform', image.outerHTML);
-
+    for(const lazyAttributeName of kLazyAttributeNames) {
+      if(attributeNames.includes(lazyAttributeName)) {
+        const lazyAttributeValue = image.getAttribute(lazyAttributeName);
+        if(isValidURLString(lazyAttributeValue)) {
+          transform(image, lazyAttributeName, lazyAttributeValue);
           break;
-        } else {
-          console.debug('found lazy attribute but its value was invalid', image.outerHTML);
         }
       }
     }
+  }
+}
+
+function transform(image, lazyAttributeName, lazyAttributeValue) {
+  let before;
+  if(DEBUG) {
+    before = image.outerHTML;
+  }
+
+  // Remove the lazy attribute, it is no longer needed.
+  image.removeAttribute(lazyAttributeName);
+
+  // Create a src, or replace whatever is in the current src, with the value from the lazy
+  // attribute.
+  image.setAttribute('src', lazyAttributeValue);
+
+  if(DEBUG) {
+    const after = image.outerHTML;
+    console.debug('transform', before, after);
   }
 }
