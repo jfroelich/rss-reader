@@ -33,8 +33,19 @@ async function test(urlString) {
   // Set image sizes to more accurately test image bias
   await setImageSizes(document);
 
-  filterBoilerplate(document);
+  // Finally filter boilerplate, use annotations and do not prune
+  const bpfOptions = {
+    annotate: true
+  };
+  filterBoilerplate(document, bpfOptions);
 
+  // Find the best element and outline it.
+  const bestElement = document.querySelector('[data-bp-max]');
+  if(bestElement) {
+    bestElement.style.border = '3px solid green';
+  }
+
+  // Update preview
   const preview = window.document.getElementById('preview');
   preview.innerHTML = document.body.innerHTML;
 }

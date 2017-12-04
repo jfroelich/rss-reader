@@ -3,15 +3,21 @@ import {condenseWhitespace} from "/src/utils/string.js";
 
 
 // Boilerplate filtering module
-export default function boilerplateFilter(doc) {
+export default function boilerplateFilter(doc, options) {
   assert(doc instanceof Document);
   if(!doc.body) {
     return;
   }
 
-  const bestElement = findHighScoreElement(doc);
+  options = options || {};
+
+  const bestElement = findHighScoreElement(doc, options);
   assert(bestElement);
-  prune(doc, bestElement);
+
+  const annotate = 'annotate' in options;
+  if(!annotate) {
+    prune(doc, bestElement);
+  }
 }
 
 const ANCESTOR_BIASES = {
@@ -119,7 +125,7 @@ function deriveAttributeBias(element) {
   return totalBias;
 }
 
-function findHighScoreElement(doc) {
+function findHighScoreElement(doc, options) {
   const candidateSelector = 'article, content, div, layer, main, section, span, td';
   const listSelector = 'li, ol, ul, dd, dl, dt';
   const navSelector = 'aside, header, footer, nav, menu, menuitem';
@@ -128,25 +134,68 @@ function findHighScoreElement(doc) {
     return bestElement;
   }
 
+  const annotate = 'annotate' in options;
+
   const elements = doc.body.querySelectorAll(candidateSelector);
   let highScore = 0;
   for(const element of elements) {
-    let score = deriveTextBias(element);
+
+    if(annotate) {
+      element.dataset.bpAnalyzed = 'true';
+    }
+
+    let score = 0;
+
+    const textBias = deriveTextBias(element);
+    score += textBias;
+    if(annotate) {
+      element.dataset.bpTextBias = textBias;
+    }
+
     if(element.closest(listSelector)) {
       score -= 200;
+      if(annotate) {
+        element.dataset.bpListBias = -200;
+      }
     }
 
     if(element.closest(navSelector)) {
       score -= 500;
+      if(annotate) {
+        element.dataset.bpNavBias = -500;
+      }
     }
 
-    score += deriveAncestorBias(element);
-    score += deriveImageBias(element);
-    score += deriveAttributeBias(element);
+    const ancestorBias = deriveAncestorBias(element);
+    score += ancestorBias;
+    if(annotate) {
+      element.dataset.bpAncestorBias = ancestorBias;
+    }
+
+    const imageBias = deriveImageBias(element);
+    score += imageBias;
+    if(annotate) {
+      element.dataset.bpImageBias = imageBias;
+    }
+
+    const attrBias = deriveAttributeBias(element);
+    score += attrBias;
+    if(annotate) {
+      element.dataset.bpAttrBias = attrBias;
+    }
+
+    if(annotate) {
+      element.dataset.bpScore = score;
+    }
+
     if(score > highScore) {
       bestElement = element;
       highScore = score;
     }
+  }
+
+  if(annotate) {
+    bestElement.dataset.bpMax = 'true';
   }
 
   return bestElement;
