@@ -22,7 +22,6 @@ async function test(urlString) {
   // because of CSP protections.
   filterScript(document);
 
-
   // Strip some object stuff
   filterBlacklistedElements(document);
 
@@ -34,10 +33,7 @@ async function test(urlString) {
   // Set image sizes to more accurately test image bias
   await setImageSizes(document);
 
-
   filterBoilerplate(document);
-
-
 
   const preview = window.document.getElementById('preview');
   preview.innerHTML = document.body.innerHTML;

@@ -201,8 +201,10 @@ function findCaption(image) {
 }
 
 function deriveImageAreaBias(image) {
-
   // Calculate the area of the image. For images missing a dimension, assume the image is a square.
+  // Inferring the missing dimension leads to a more accurate measure of image size, and lets
+  // image size contribute to bias more often, which generally leads to more accurate boilerplate
+  // analysis.
   let area;
   if(image.width && image.height) {
     area = image.width * image.height;
@@ -215,7 +217,9 @@ function deriveImageAreaBias(image) {
   }
 
   // Calculate the bias. Bin the area into a few labeled buckets using hand-crafted boundaries,
-  // and use hand crafted bias value.
+  // and use hand crafted bias value. Previously this calculated bias as a function of area
+  // that was then clamped and dampened. After some reflection, I think basic hacky binning is just
+  // as good if not better.
   let bias = 0;
 
   if(area > 100000) {
@@ -233,16 +237,6 @@ function deriveImageAreaBias(image) {
   } else {
     // Unknown area, leave bias as is, 0
   }
-
-  //const maxArea = 100000;
-  //const dampCoeff = 0.0015;
-
-  //if(area) {
-  //  bias = Math.trunc(dampCoeff * Math.min(maxArea, area));
-  //}
-
-  // TEMP: debugging new functionality
-  console.debug('image %s area %d bias %d', image.outerHTML, area, bias);
 
   return bias;
 }
