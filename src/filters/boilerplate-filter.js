@@ -201,11 +201,8 @@ function findCaption(image) {
 }
 
 function deriveImageAreaBias(image) {
-  let bias = 0;
-  const maxArea = 100000;
-  const dampCoeff = 0.0015;
 
-  // For images missing a dimension, assume the image is a square.
+  // Calculate the area of the image. For images missing a dimension, assume the image is a square.
   let area;
   if(image.width && image.height) {
     area = image.width * image.height;
@@ -217,9 +214,35 @@ function deriveImageAreaBias(image) {
     // Leave area undefined
   }
 
-  if(area) {
-    bias = dampCoeff * Math.min(maxArea, area);
+  // Calculate the bias. Bin the area into a few labeled buckets using hand-crafted boundaries,
+  // and use hand crafted bias value.
+  let bias = 0;
+
+  if(area > 100000) {
+    // Very large image
+    bias = 500;
+  } else if(area > 50000) {
+    // Large image
+    bias = 300;
+  } else if(area > 20000) {
+    // Medium image
+    bias = 50;
+  } else if(!isNaN(area)){
+    // Penalty for very small image.
+    bias = -10;
+  } else {
+    // Unknown area, leave bias as is, 0
   }
+
+  //const maxArea = 100000;
+  //const dampCoeff = 0.0015;
+
+  //if(area) {
+  //  bias = Math.trunc(dampCoeff * Math.min(maxArea, area));
+  //}
+
+  // TEMP: debugging new functionality
+  console.debug('image %s area %d bias %d', image.outerHTML, area, bias);
 
   return bias;
 }
