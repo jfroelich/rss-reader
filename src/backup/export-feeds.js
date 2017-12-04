@@ -36,7 +36,7 @@ function createOPMLDocumentFromFeeds(feeds, title) {
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
-  anchor.setAttribute('download', fileName);
+  anchor.setAttribute('download', filename);
   anchor.href = url;
   anchor.click();
   URL.revokeObjectURL(url);
