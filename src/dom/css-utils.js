@@ -5,7 +5,7 @@ import assert from "/src/assert/assert.js";
 // @param sheet css style sheet
 // @param selectorText {String}
 // @returns rule {???}
-export function findCSSRule(sheet, selectorText) {
+export function findRule(sheet, selectorText) {
   assert(sheet);
   for(const rule of sheet.cssRules) {
     if(rule.selectorText === selectorText) {

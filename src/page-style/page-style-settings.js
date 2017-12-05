@@ -109,7 +109,7 @@ function entryCSSAddContentRule(sheet) {
 
 function entryCSSUpdateRule(sheet) {
   assert(sheet);
-  const rule = CSSUtils.findCSSRule(sheet, 'article.entry');
+  const rule = CSSUtils.findRule(sheet, 'article.entry');
   assert(rule);
   const style = rule.style;
 
@@ -133,7 +133,7 @@ function entryCSSUpdateRule(sheet) {
 
 function entryCSSUpdateTitleRule(sheet) {
   assert(sheet);
-  const rule = CSSUtils.findCSSRule(sheet, 'article.entry a.entry-title');
+  const rule = CSSUtils.findRule(sheet, 'article.entry a.entry-title');
   assert(rule);
   const style = rule.style;
 
@@ -148,7 +148,7 @@ function entryCSSUpdateTitleRule(sheet) {
 
 function entryCSSUpdateContentRule(sheet) {
   assert(sheet);
-  const rule = CSSUtils.findCSSRule(sheet, 'article.entry span.entry-content');
+  const rule = CSSUtils.findRule(sheet, 'article.entry span.entry-content');
   assert(rule);
 
   rule.style.background = '';
