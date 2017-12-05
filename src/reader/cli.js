@@ -8,7 +8,7 @@ import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 import openReaderDb from "/src/reader-db/open.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
-import {parseInt10} from "/src/utils/string.js";
+import parseInt10 from "/src/utils/parse-int-10.js";
 
 // Command line interface module. This module does not export anything. Instead, it defines a
 // variable in global scope (window). The definition occurs as an implicit side effect of importing

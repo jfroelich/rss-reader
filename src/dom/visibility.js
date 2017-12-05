@@ -14,7 +14,7 @@
 // This kind of applies only to text nodes.
 
 import assert from "/src/assert/assert.js";
-import {parseInt10} from "/src/utils/string.js";
+import parseInt10 from "/src/utils/parse-int-10.js";
 
 // Checks whether an element is hidden because the element itself is hidden, or any of its
 // ancestors are hidden.

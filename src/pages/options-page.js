@@ -1,10 +1,16 @@
+import assert from "/src/assert/assert.js";
 import exportFeeds from "/src/backup/export-feeds.js";
 import importFiles, {
   Context as ImportFilesContext
 } from "/src/backup/import-opml-files.js";
+
+// TODO: use * as Config or something like that
 import {BG_IMAGES, FONTS} from "/src/config.js";
 import fadeElement from "/src/dom/fade-element.js";
 import FaviconCache from "/src/favicon/cache.js";
+import htmlTruncate from "/src/html/truncate.js";
+import PollContext from "/src/jobs/poll/poll-context.js";
+import pollFeeds from "/src/jobs/poll/poll-feeds.js";
 import {
   pageStyleSettingsOnload,
   pageStyleSettingsOnchange
@@ -14,19 +20,15 @@ import {
   requestBrowserPermission,
   removeBrowserPermission
 } from "/src/platform/platform.js";
-import htmlTruncate from "/src/html/truncate.js";
-import PollContext from "/src/jobs/poll/poll-context.js";
-import pollFeeds from "/src/jobs/poll/poll-feeds.js";
 import openReaderDb from "/src/reader-db/open.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
 import * as Feed from "/src/reader-db/feed.js";
 import findFeedByIdInDb from "/src/reader-db/find-feed-by-id.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
-import assert from "/src/assert/assert.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import * as mime from "/src/utils/mime-utils.js";
-import {parseInt10} from "/src/utils/string.js";
+import parseInt10 from "/src/utils/parse-int-10.js";
 
 // View state
 let currentMenuItem;

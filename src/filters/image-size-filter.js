@@ -1,7 +1,7 @@
 import assert from "/src/assert/assert.js";
 import fetchImageElement from "/src/fetch/fetch-image-element.js";
+import parseInt10 from "/src/utils/parse-int-10.js";
 import promiseEvery from "/src/utils/promise-every.js";
-import {parseInt10} from "/src/utils/string.js";
 import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url/url.js";
 
 

@@ -9,7 +9,7 @@ import check from "/src/utils/check.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import * as mime from "/src/utils/mime-utils.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
-import {parseInt10} from "/src/utils/string.js";
+import parseInt10 from "/src/utils/parse-int-10.js";
 
 // TODO: rename to something like fetch-base.js or fetch-wrapper.js
 
