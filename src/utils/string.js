@@ -32,27 +32,6 @@ export function filterControls(string) {
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }
 
-// Returns an array of word token strings.
-// @param string {String}
-// @returns {Array} an array of tokens
-export function tokenize(string) {
-  // Rather than make any assertions about the input, tolerate bad input for the sake of caller
-  // convenience.
-  if(typeof string !== 'string') {
-    return [];
-  }
-
-  // Trim to avoid leading/trailing space leading to empty tokens
-  const trimmedInput = string.trim();
-
-  // Special case for empty string to avoid producing empty token
-  if(!trimmedInput) {
-    return [];
-  }
-
-  return trimmedInput.split(/\s+/g);
-}
-
 // Wraps a call to parseInt with a base 10 parameter. General guidance is that parseInt should
 // always be called with its radix parameter to avoid surprising results. For example, if no radix
 // is specified, then '010' is parsed as octal instead of decimal. Rather than remember this
