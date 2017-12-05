@@ -8,7 +8,7 @@ import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 import openReaderDb from "/src/reader-db/open.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 
 // Registers alarms in the extension that run various background jobs. Analogous to cron.
 
@@ -34,7 +34,7 @@ async function onWakeup(alarm) {
     } catch(error) {
       console.warn(error);
     } finally {
-      idb.close(conn);
+      IndexedDbUtils.close(conn);
     }
     break;
   }
@@ -51,7 +51,7 @@ async function onWakeup(alarm) {
     } catch(error) {
       console.warn(error);
     } finally {
-      idb.close(conn);
+      IndexedDbUtils.close(conn);
     }
     break;
   }
@@ -64,7 +64,7 @@ async function onWakeup(alarm) {
     } catch(error) {
       console.warn(error);
     } finally {
-      idb.close(conn);
+      IndexedDbUtils.close(conn);
     }
     break;
   }
@@ -78,7 +78,7 @@ async function onWakeup(alarm) {
       console.warn(error);
     } finally {
       fic.close();
-      idb.close(readerConn);
+      IndexedDbUtils.close(readerConn);
     }
     break;
   }

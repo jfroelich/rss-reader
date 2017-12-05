@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 
 function fakeOnUpgradeNeeded() {}
 
@@ -9,22 +9,22 @@ window.test = async function() {
   let conn;
   try {
     // TODO: use timeout
-    conn = await idb.open(name, version, fakeOnUpgradeNeeded);
-    assert(idb.isOpen(conn));
-    idb.close(conn);
+    conn = await IndexedDbUtils.open(name, version, fakeOnUpgradeNeeded);
+    assert(IndexedDbUtils.isOpen(conn));
+    IndexedDbUtils.close(conn);
 
-    if(idb.isOpen(conn)) {
-      console.debug('NOT DESIRED: idb.isOpen says open after conn closed');
+    if(IndexedDbUtils.isOpen(conn)) {
+      console.debug('NOT DESIRED: IndexedDbUtils.isOpen says open after conn closed');
     } else {
-      console.debug('DESIRED: idb.isOpen says conn closed');
+      console.debug('DESIRED: IndexedDbUtils.isOpen says conn closed');
     }
 
     closeRequested = true;
-    await idb.remove(name);
+    await IndexedDbUtils.remove(name);
   } finally {
     if(!closeRequested) {
-      idb.close(conn);
-      assert(!idb.isOpen(conn));
+      IndexedDbUtils.close(conn);
+      assert(!IndexedDbUtils.isOpen(conn));
     }
   }
 }

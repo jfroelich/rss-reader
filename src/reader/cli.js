@@ -7,7 +7,7 @@ import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 import openReaderDb from "/src/reader-db/open.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // Command line interface module. This module does not export anything. Instead, it defines a
@@ -23,7 +23,7 @@ cli.refreshIcons = async function() {
     await refreshFeedIcons(rConn, fc);
   } finally {
     fc.close();
-    idb.close(rConn);
+    IndexedDbUtils.close(rConn);
   }
 };
 
@@ -33,7 +33,7 @@ cli.archiveEntries = async function(limit) {
     conn = await openReaderDb();
     await archiveEntries(conn, maxAgeMs, limit);
   } finally {
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 };
 
@@ -58,7 +58,7 @@ cli.removeListEntries = async function() {
     conn = await openReaderDb();
     await removeLostEntries(conn, args);
   } finally {
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 };
 
@@ -68,7 +68,7 @@ cli.removeOrphanedEntries = async function() {
     conn = await openReaderDb();
     await removeOrphanedEntries(conn, args);
   } finally {
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 };
 

@@ -2,7 +2,7 @@ import assert from "/src/assert/assert.js";
 import * as Entry from "/src/reader-db/entry.js";
 import findEntriesInDb from "/src/reader-db/find-entries.js";
 import removeEntriesFromDb from "/src/reader-db/remove-entries.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 
 const CHANNEL_NAME = 'reader';
 
@@ -11,7 +11,7 @@ const CHANNEL_NAME = 'reader';
 // @param limit {Number} optional, if specified should be positive integer > 0
 // @throws Error - database related
 export default async function removeLostEntries(conn, limit) {
-  assert(idb.isOpen(conn));
+  assert(IndexedDbUtils.isOpen(conn));
 
   function isLost(entry) {
     return !Entry.hasURL(entry);

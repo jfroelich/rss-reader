@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
 // TODO: not entirely sure, but maybe if conn is the only shared state, there is no need for the
@@ -23,19 +23,20 @@ export default class FaviconCache {
 FaviconCache.MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 FaviconCache.prototype.open = async function() {
-  this.conn = await idb.open(this.name, this.version, this.onUpgradeNeeded, this.openTimeoutMs);
+  this.conn = await IndexedDbUtils.open(this.name, this.version, this.onUpgradeNeeded,
+    this.openTimeoutMs);
 
   // TODO: I would prefer this would be void, first need to ensure callers do not expect return
-  // value
+  // value. Note I believe this is now the case, but I have not reviewed since.
   return this;
 };
 
 FaviconCache.prototype.isOpen = function() {
-  return idb.isOpen(this.conn);
+  return IndexedDbUtils.isOpen(this.conn);
 };
 
 FaviconCache.prototype.close = function() {
-  idb.close(this.conn);
+  IndexedDbUtils.close(this.conn);
 };
 
 FaviconCache.prototype.setup = async function() {
@@ -74,7 +75,7 @@ FaviconCache.prototype.onUpgradeNeeded = function(event) {
 
 FaviconCache.prototype.clear = function() {
   return new Promise((resolve, reject) => {
-    assert(idb.isOpen(this.conn));
+    assert(IndexedDbUtils.isOpen(this.conn));
     console.debug('Clearing favicon cache');
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
@@ -87,7 +88,7 @@ FaviconCache.prototype.clear = function() {
 FaviconCache.prototype.findEntry = function(urlObject) {
 
   return new Promise((resolve, reject) => {
-    assert(idb.isOpen(this.conn));
+    assert(IndexedDbUtils.isOpen(this.conn));
     const tx = this.conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
     const request = store.get(urlObject.href);
@@ -105,7 +106,7 @@ FaviconCache.prototype.findExpired = function(maxAgeMs, limit) {
   // executor function here relies on the fact that 'this' is implicitly bound.
 
   return new Promise((resolve, reject) => {
-    assert(idb.isOpen(this.conn));
+    assert(IndexedDbUtils.isOpen(this.conn));
 
     if(typeof maxAgeMs === 'undefined') {
       maxAgeMs = FaviconCache.MAX_AGE_MS;
@@ -145,7 +146,7 @@ FaviconCache.prototype.removeByURL = function(pageURLs) {
   // NOTE: uses fat arrow syntax to enable 'this' binding implicitly
 
   return new Promise((resolve, reject) => {
-    assert(idb.isOpen(this.conn));
+    assert(IndexedDbUtils.isOpen(this.conn));
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
@@ -158,7 +159,7 @@ FaviconCache.prototype.removeByURL = function(pageURLs) {
 
 FaviconCache.prototype.put = function(entry) {
   return new Promise((resolve, reject) => {
-    assert(idb.isOpen(this.conn));
+    assert(IndexedDbUtils.isOpen(this.conn));
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
     const request = store.put(entry);
@@ -171,7 +172,7 @@ FaviconCache.prototype.put = function(entry) {
 // @param iconURL {String}
 FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
   return new Promise((resolve, reject) => {
-    assert(idb.isOpen(this.conn));
+    assert(IndexedDbUtils.isOpen(this.conn));
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
@@ -196,7 +197,7 @@ FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
 FaviconCache.prototype.compact = async function(maxAgeMs, limit) {
   console.debug('Compacting favicon entries using maxAgeMs %d and limit', maxAgeMs, limit);
 
-  assert(idb.isOpen(this.conn));
+  assert(IndexedDbUtils.isOpen(this.conn));
   const entries = await this.findExpired(maxAgeMs, limit);
   console.debug('Found %d expired entries suitable for compaction', entries.length);
   const urls = [];

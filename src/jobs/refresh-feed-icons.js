@@ -3,12 +3,12 @@ import FaviconLookup from "/src/favicon/lookup.js";
 import * as Feed from "/src/reader-db/feed.js";
 import putFeed from "/src/reader-db/put-feed.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import promiseEvery from "/src/utils/promise-every.js";
 
 export default async function main(readerConn, iconCache) {
-  assert(idb.isOpen(readerConn));
+  assert(IndexedDbUtils.isOpen(readerConn));
   assert(iconCache.isOpen());
   const feeds = await getFeedsFromDb(readerConn);
   const context = {readerConn: readerConn, iconCache: iconCache};

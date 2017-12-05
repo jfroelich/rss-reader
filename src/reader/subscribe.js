@@ -14,7 +14,7 @@ import findFeedIdByURLInDb from "/src/reader-db/find-feed-id-by-url.js";
 import openReaderDb from "/src/reader-db/open.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import check from "/src/utils/check.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 
@@ -53,7 +53,7 @@ Context.prototype.close = function() {
     this.iconCache.close();
   }
 
-  idb.close(this.readerConn);
+  IndexedDbUtils.close(this.readerConn);
 };
 
 // @param this {Context}
@@ -61,7 +61,7 @@ Context.prototype.close = function() {
 // @returns {Object} the subscribed feed
 export async function subscribe(feed) {
   assert(this instanceof Context);
-  assert(idb.isOpen(this.readerConn));
+  assert(IndexedDbUtils.isOpen(this.readerConn));
   assert(this.iconCache instanceof FaviconCache);
   assert(this.iconCache.isOpen());
   assert(Feed.isFeed(feed));

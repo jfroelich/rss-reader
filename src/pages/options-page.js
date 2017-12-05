@@ -26,7 +26,7 @@ import unsubscribe from "/src/reader/unsubscribe.js";
 import * as Feed from "/src/reader-db/feed.js";
 import findFeedByIdInDb from "/src/reader-db/find-feed-by-id.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import * as MimeUtils from "/src/mime/utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
@@ -258,7 +258,7 @@ async function feedListItemOnclick(event) {
     // TODO: visual feedback?
     return;
   } finally {
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 
   const titleElement = document.getElementById('details-title');
@@ -387,7 +387,7 @@ async function feedListInit() {
     // TODO: react to error
     console.warn(error);
   } finally {
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 
   if(!feeds) {
@@ -465,7 +465,7 @@ async function unsubscribeButtonOnclick(event) {
     console.warn(error);
     return;
   } finally {
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 
   feedListRemoveFeed(feedId);
@@ -515,7 +515,7 @@ async function exportOPMLButtonOnclick(event) {
     // TODO: handle error visually
     console.warn(error);
   } finally {
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 }
 

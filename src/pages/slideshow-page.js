@@ -15,7 +15,7 @@ import findViewableEntriesInDb from "/src/reader-db/find-viewable-entries.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // TODO: set magic on message objects, write a helper somewhere named something like
@@ -90,7 +90,7 @@ async function onEntryAddedMessage(message) {
   } catch(error) {
     console.warn(error);
   } finally {
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 }
 
@@ -161,7 +161,7 @@ async function markSlideRead(conn, slideElement) {
   const slideEntryAttributeValue = slideElement.getAttribute('entry');
   const entryId = parseInt10(slideEntryAttributeValue);
 
-  assert(idb.isOpen(conn));
+  assert(IndexedDbUtils.isOpen(conn));
   assert(Entry.isValidId(entryId));
 
   try {
@@ -406,7 +406,7 @@ async function onSlideClick(event) {
   } catch(error) {
     console.warn(error);
   } finally {
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 
   // Still signal the click should not default to normal click behavior, the browser should not
@@ -501,7 +501,7 @@ async function showNextSlide() {
   } catch(error) {
     console.warn(error);
   } finally {
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 
   // If more slides were appended, then reduce the number of slides loaded.
@@ -663,7 +663,7 @@ async function init() {
     await appendSlides(conn);
   } finally {
     hideLoadingInformation();
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 }
 

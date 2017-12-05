@@ -1,7 +1,7 @@
 import assert from "/src/assert/assert.js";
 import * as Entry from "/src/reader-db/entry.js";
 import * as Feed from "/src/reader-db/feed.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 
 // TODO: this should come from config?
 const NAME = 'reader';
@@ -13,7 +13,7 @@ const OPEN_TIMEOUT_MS = 500;
 // Opens a connection to the reader database
 // @return {Promise} a promise that resolves to an open database connection
 export default function open() {
-  return idb.open(NAME, VERSION, onUpgradeNeeded, OPEN_TIMEOUT_MS);
+  return IndexedDbUtils.open(NAME, VERSION, onUpgradeNeeded, OPEN_TIMEOUT_MS);
 }
 
 // Helper for open. Does the database upgrade. This should never be

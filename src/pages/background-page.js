@@ -5,7 +5,7 @@ import "/src/reader/cli.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import openReaderDb from "/src/reader-db/open.js";
 import setupReaderDb from "/src/reader-db/setup.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 
 // Background page for extension. This should be loaded exclusively in the background page.
 
@@ -20,7 +20,7 @@ async function initBadgeText() {
   } catch(error) {
     console.warn(error);
   } finally {
-    idb.close(conn);
+    IndexedDbUtils.close(conn);
   }
 }
 

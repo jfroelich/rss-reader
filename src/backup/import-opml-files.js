@@ -1,13 +1,13 @@
 import assert from "/src/assert/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
+import * as MimeUtils from "/src/mime/utils.js";
 import * as OPMLDocument from "/src/opml/document.js";
 import * as OPMLOutline from "/src/opml/outline.js";
 import parseOPML from "/src/opml/parse.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import * as Feed from "/src/reader-db/feed.js";
 import openReaderDb from "/src/reader-db/open.js";
-import * as MimeUtils from "/src/mime/utils.js";
 import promiseEvery from "/src/utils/promise-every.js";
 
 export function Context() {
@@ -27,7 +27,7 @@ Context.prototype.close = function() {
     this.iconCache.close();
   }
 
-  idb.close(this.readerConn);
+  IndexedDbUtils.close(this.readerConn);
 };
 
 // Import opml files
@@ -48,7 +48,7 @@ export default function main(files) {
 async function importFile(file) {
   assert(this instanceof Context);
   assert(file instanceof File);
-  assert(idb.isOpen(this.readerConn));
+  assert(IndexedDbUtils.isOpen(this.readerConn));
   assert(this.iconCache.isOpen());
 
   console.log('Importing file', file.name);

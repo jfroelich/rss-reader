@@ -12,7 +12,7 @@ import sniffIsBinaryURL from "/src/url/sniff.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
 import check from "/src/utils/check.js";
-import * as idb from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 
 export class Context {
@@ -34,7 +34,7 @@ export class Context {
 // @param this {Context}
 export async function pollEntry(entry) {
   assert(this instanceof Context);
-  assert(idb.isOpen(this.readerConn));
+  assert(IndexedDbUtils.isOpen(this.readerConn));
   assert(Entry.isEntry(entry));
 
   // Cannot assume entry has url (not an error)
