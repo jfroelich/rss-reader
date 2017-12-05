@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import * as MimeUtils from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/mime/utils.js";
 
 // XML utilities module
 

@@ -1,7 +1,7 @@
 import assert from "/src/assert/assert.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import {paginationFindAnchors} from "/src/pagination.js";
-import * as MimeUtils from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/mime/utils.js";
 
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a

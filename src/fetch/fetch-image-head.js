@@ -3,7 +3,7 @@ import {FetchError} from "/src/fetch/errors.js";
 import fetchWithTimeout from "/src/fetch/fetch-with-timeout.js";
 import * as FetchUtils from "/src/fetch/utils.js";
 import check from "/src/utils/check.js";
-import * as MimeUtils from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/mime/utils.js";
 
 // TODO: this should be refactored to use fetchInternal. But I need to calculate content length.
 // So fetchInternal first needs to be refactored to also calculate content length because response

@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import isAlphanumeric from "/src/utils/is-alphanumeric.js";
-import * as MimeUtils from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/mime/utils.js";
 
 // Return true if url probably represents a binary resource. This is shallow in the sense that it
 // does not actually investigate the bytes of the resource, nor does it fetch the resource. This
