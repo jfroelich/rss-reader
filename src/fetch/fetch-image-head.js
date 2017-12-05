@@ -3,7 +3,7 @@ import {FetchError} from "/src/fetch/errors.js";
 import fetchWithTimeout from "/src/fetch/fetch-with-timeout.js";
 import * as FetchUtils from "/src/fetch/utils.js";
 import check from "/src/utils/check.js";
-import * as mime from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
 
 // TODO: this should be refactored to use fetchInternal. But I need to calculate content length.
 // So fetchInternal first needs to be refactored to also calculate content length because response
@@ -34,7 +34,7 @@ export default async function fetchImageHead(url, timeoutMs) {
   assert(response);
 
   const contentType = response.headers.get('Content-Type');
-  check(mime.isImage(contentType), FetchError, 'Unacceptable mime type', contentType, url);
+  check(MimeUtils.isImage(contentType), FetchError, 'Unacceptable mime type', contentType, url);
 
   const wrappedResponse = {};
   wrappedResponse.size = FetchUtils.getContentLength(response);

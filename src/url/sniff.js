@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import isAlphanumeric from "/src/utils/is-alphanumeric.js";
-import * as mime from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
 
 // Return true if url probably represents a binary resource. This is shallow in the sense that it
 // does not actually investigate the bytes of the resource, nor does it fetch the resource. This
@@ -17,7 +17,7 @@ export default function isBinaryURL(url) {
 function isBinaryDataURL(url) {
   const mimeType = findMimeTypeInDataURL(url);
   if(mimeType) {
-    return mime.isBinary(mimeType);
+    return MimeUtils.isBinary(mimeType);
   }
 
   // Assume data url objects with unclear mime type are probably binary
@@ -29,14 +29,14 @@ function findMimeTypeInDataURL(url) {
   const href = url.href;
 
   // If the url is too short to even contain the mime type, fail.
-  if(href.length < mime.MIME_TYPE_MIN_LENGTH) {
+  if(href.length < MimeUtils.MIME_TYPE_MIN_LENGTH) {
     return;
   }
 
   const PREFIX_LENGTH = 'data:'.length;
 
   // Limit the scope of the search
-  const haystack = href.substring(PREFIX_LENGTH, PREFIX_LENGTH + mime.MIME_TYPE_MAX_LENGTH);
+  const haystack = href.substring(PREFIX_LENGTH, PREFIX_LENGTH + MimeUtils.MIME_TYPE_MAX_LENGTH);
 
   const semicolonPosition = haystack.indexOf(';');
   if(semicolonPosition < 0) {
@@ -44,7 +44,7 @@ function findMimeTypeInDataURL(url) {
   }
 
   const mimeType = haystack.substring(0, semicolonPosition);
-  if(mime.isMimeType(mimeType)) {
+  if(MimeUtils.isMimeType(mimeType)) {
     return mimeType;
   }
 }
@@ -63,9 +63,9 @@ function hasTextProtocol(url) {
 function hasBinaryExtension(url) {
   const extension = getExtensionFromURL(url);
   if(extension) {
-    const mimeType = mime.getTypeForExtension(extension);
+    const mimeType = MimeUtils.getTypeForExtension(extension);
     if(mimeType) {
-      return mime.isBinary(mimeType);
+      return MimeUtils.isBinary(mimeType);
     }
   }
 

@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {fetchInternal} from "/src/fetch/utils.js";
-import * as mime from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
 
 // Fetches the html content of the given url
 // @param url {URL} request url
@@ -11,7 +11,7 @@ export default function fetchHTML(url, timeoutMs) {
 
   // NOTE: accept */* to fix issue #271 and avoid 406 response code
   const acceptHeaderValue = [
-    mime.MIME_TYPE_HTML,
+    MimeUtils.MIME_TYPE_HTML,
     '*/*;q=0.9'
   ].join(',');
 
@@ -26,6 +26,6 @@ export default function fetchHTML(url, timeoutMs) {
     referrerPolicy: 'no-referrer'
   };
 
-  const acceptedMimeTypes = [mime.MIME_TYPE_HTML];
+  const acceptedMimeTypes = [MimeUtils.MIME_TYPE_HTML];
   return fetchInternal(url, options, timeoutMs, acceptedMimeTypes);
 }

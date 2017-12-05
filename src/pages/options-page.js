@@ -27,7 +27,7 @@ import * as Feed from "/src/reader-db/feed.js";
 import findFeedByIdInDb from "/src/reader-db/find-feed-by-id.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
 import * as idb from "/src/indexeddb/utils.js";
-import * as mime from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // View state
@@ -475,7 +475,7 @@ async function unsubscribeButtonOnclick(event) {
 function importOPMLButtonOnclick(event) {
   const uploaderInput = document.createElement('input');
   uploaderInput.setAttribute('type', 'file');
-  uploaderInput.setAttribute('accept', mime.MIME_TYPE_XML);
+  uploaderInput.setAttribute('accept', MimeUtils.MIME_TYPE_XML);
   uploaderInput.addEventListener('change', importOPMLInputOnchange);
   uploaderInput.click();
 }

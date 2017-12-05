@@ -7,7 +7,7 @@ import parseOPML from "/src/opml/parse.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import * as Feed from "/src/reader-db/feed.js";
 import openReaderDb from "/src/reader-db/open.js";
-import * as mime from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
 import promiseEvery from "/src/utils/promise-every.js";
 
 export function Context() {
@@ -58,7 +58,7 @@ async function importFile(file) {
     return 0;
   }
 
-  if(!mime.isXML(file.type)) {
+  if(!MimeUtils.isXML(file.type)) {
     console.log('File %s is not mime type xml', file.type);
     return 0;
   }

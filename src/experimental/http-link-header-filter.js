@@ -1,11 +1,11 @@
-import * as mime from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
 
 async function registerDWLinkFilterRule() {
   if(localStorage.DW_LINK_RULE_ID)
     return;
   const linkMatcher = new chrome.declarativeWebRequest.RequestMatcher({
     resourceType: ['xmlhttprequest'],
-    contentType: [mime.MIME_TYPE_HTML]
+    contentType: [MimeUtils.MIME_TYPE_HTML]
   });
   const linkAction = new chrome.declarativeWebRequest.RemoveResponseHeader(
     {name: 'link'});

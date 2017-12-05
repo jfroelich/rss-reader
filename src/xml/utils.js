@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import * as mime from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
 
 // XML utilities module
 
@@ -15,7 +15,7 @@ export function xmlToBlob(doc) {
   assert(doc instanceof Document);
   const xmlString = xmlToString(doc);
   const parts = [xmlString];
-  const options = {type: mime.MIME_TYPE_XML};
+  const options = {type: MimeUtils.MIME_TYPE_XML};
   return new Blob(parts, options);
 }
 

@@ -7,7 +7,7 @@ import {compareURLsWithoutHash} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
 import check from "/src/utils/check.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import * as mime from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
 import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
@@ -51,7 +51,7 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
   // mime type is in the list of acceptable mime types
   if(Array.isArray(acceptedMimeTypes) && acceptedMimeTypes.length > 0) {
     const contentType = response.headers.get('Content-Type');
-    const mimeType = mime.fromContentType(contentType);
+    const mimeType = MimeUtils.fromContentType(contentType);
     check(acceptedMimeTypes.includes(mimeType), FetchError, 'Response not accepted', url);
   }
 
