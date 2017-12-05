@@ -47,19 +47,7 @@ header {
   font-size: 40px;
 }
 
-#slideshow-container {
-  overflow: none;
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 53px;
-  bottom: 0;
-  margin: 0;
-  padding-top: 0;
-  padding-left: 0;
-  padding-bottom: 0;
-  padding-right: 0;
-}
+
 
 h1, h2, h3, h4, h5, h6 {
   font-weight: normal;
@@ -75,4 +63,38 @@ pre {
   white-space: pre-wrap;
   word-wrap: break-word;
   word-break: break-all;
+}
+
+#slideshow-container {
+  overflow: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 53px;
+  bottom: 0;
+  margin: 0;
+  padding-top: 0;
+  padding-left: 0;
+  padding-bottom: 0;
+  padding-right: 0;
+}
+
+.entry img {
+  /* I don't want the border, it looks bad. I just want the shadow */
+  /*border: 1px solid #777777;*/
+
+  max-width: 100%;
+}
+
+.entry span.entry-content img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1px;
+  margin-bottom: 1px;
+  padding: 0;
+  -webkit-margin: 0;
+
+  /* Messing around with giving images a 3d effect */
+  box-shadow: 0 8px 6px -6px #222222;
 }
