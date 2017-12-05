@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import {filterWhitespace} from "/src/utils/string.js";
+import filterWhitespace from "/src/utils/filter-whitespace.js";
 
 export const MIME_TYPE_HTML = 'text/html';
 export const MIME_TYPE_XML = 'application/xml';

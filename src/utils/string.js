@@ -1,9 +1,5 @@
 // String utilities
 
-export function filterWhitespace(string) {
-  return string.replace(/\s+/g, '');
-}
-
 // From the start of the string to its end, if one or more of the characters is not in the class of
 // alphanumeric characters, then the string is not alphanumeric.
 // See https://stackoverflow.com/questions/4434076
