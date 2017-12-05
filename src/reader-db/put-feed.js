@@ -2,10 +2,11 @@ import assert from "/src/assert/assert.js";
 import replaceTags from "/src/html/replace-tags.js";
 import htmlTruncate from "/src/html/truncate.js";
 import * as Feed from "/src/reader-db/feed.js";
+import condenseWhitespace from "/src/utils/condense-whitespace.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import * as idb from "/src/utils/indexeddb-utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import {condenseWhitespace, filterControls} from "/src/utils/string.js";
+import {filterControls} from "/src/utils/string.js";
 
 // TODO: maybe this should be refactored as a non-async, promise-returning function. There is no
 // need to use async-await when this is basically a wrapped call to another promise-returning

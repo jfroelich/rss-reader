@@ -1,14 +1,5 @@
 // String utilities
 
-// Returns a new string object where sequences of whitespace characters in the input string are
-// replaced with a single space character.
-// @param {String} an input string
-// @throws {Error} if input is not a string
-// @returns {String} a condensed string
-export function condenseWhitespace(string) {
-  return string.replace(/\s{2,}/g, ' ');
-}
-
 export function filterWhitespace(string) {
   return string.replace(/\s+/g, '');
 }

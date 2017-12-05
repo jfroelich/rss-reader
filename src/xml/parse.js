@@ -1,10 +1,13 @@
 import assert from "/src/assert/assert.js";
 import {ParseError} from "/src/operations/parse-operation.js";
+import condenseWhitespace from "/src/utils/condense-whitespace.js";
 import * as mime from "/src/utils/mime-utils.js";
-import {condenseWhitespace} from "/src/utils/string.js";
 
 // XML parsing module. The purpose of this module is to abstract the process of parsing a string of
 // xml into a document.
+
+// Reformat an error message show that it is nicer looking when printed to console
+const prettifyErrorMessage = condenseWhitespace;
 
 // TODO: profiling shows this is one of the slowest functions in the entire app. Perhaps writing
 // a custom parser would speed it up, but I doubt it because the parser is native code, and custom
@@ -20,7 +23,6 @@ import {condenseWhitespace} from "/src/utils/string.js";
 // may be included.
 
 export default function parse(xmlString) {
-
   // Although DOMParser.prototype.parseFromString tolerates non-string input without exception and
   // simply produces a document with an embedded error object, I prefer to treat passing of a
   // non-string type as a programming error. This should never happen, and if it does, the caller
@@ -72,5 +74,3 @@ export default function parse(xmlString) {
 
   return document;
 }
-
-const prettifyErrorMessage = condenseWhitespace;

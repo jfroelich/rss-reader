@@ -1,18 +1,22 @@
 import assert from "/src/assert/assert.js";
-import {condenseWhitespace} from "/src/utils/string.js";
+import condenseWhitespace from "/src/utils/condense-whitespace.js";
 
 export default function nodeWhitespaceFilter(doc) {
   assert(doc instanceof Document);
-
   if(!doc.body) {
     return;
   }
 
+  // Ignore node values less than this (exclusive)
+  const minNodeValueLength = 3;
+
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
-    if(value.length > 3 && !isSensitive(node)) {
+    if(value.length > minNodeValueLength && !isSensitive(node)) {
       const newValue = condenseWhitespace(value);
+
+      // Only set if value length changed
       if(newValue.length !== value.length) {
         node.nodeValue = newValue;
       }
