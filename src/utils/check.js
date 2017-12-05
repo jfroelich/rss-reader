@@ -1,4 +1,4 @@
-import sprintf from "/src/utils/sprintf.js";
+import sprintf from "/src/string/sprintf.js";
 
 // The check function works similar to assert, but throws a checked error as opposed to an assertion
 // error. assert is intended to be used only for "this should never happen situations" that

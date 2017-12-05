@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import tokenize from "/src/utils/tokenize.js";
+import tokenize from "/src/string/tokenize.js";
 
 // Filter publisher information from an article title
 // TODO: support alternate whitespace expressions around delimiters

@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import condenseWhitespace from "/src/utils/condense-whitespace.js";
+import condenseWhitespace from "/src/string/condense-whitespace.js";
 
 export default function nodeWhitespaceFilter(doc) {
   assert(doc instanceof Document);

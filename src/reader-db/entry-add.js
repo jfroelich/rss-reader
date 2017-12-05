@@ -5,9 +5,9 @@ import htmlTruncate from "/src/html/truncate.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import putEntryInDb from "/src/reader-db/put-entry.js";
-import condenseWhitespace from "/src/utils/condense-whitespace.js";
+import condenseWhitespace from "/src/string/condense-whitespace.js";
 import {isOpen as isOpenDb} from "/src/indexeddb/utils.js";
-import filterControls from "/src/utils/filter-controls.js";
+import filterControls from "/src/string/filter-controls.js";
 
 // TODO: the message format should be defined externally so that it is consistent. I think this is
 // what is meant by a 'protocol'? So maybe there should be some protocol module where a standard

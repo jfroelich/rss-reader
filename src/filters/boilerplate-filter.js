@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import condenseWhitespace from "/src/utils/condense-whitespace.js";
+import condenseWhitespace from "/src/string/condense-whitespace.js";
 
 // Boilerplate filtering module
 export default function boilerplateFilter(doc, options) {

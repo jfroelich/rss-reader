@@ -1,4 +1,4 @@
-import sprintf from "/src/utils/sprintf.js";
+import sprintf from "/src/string/sprintf.js";
 
 // Represents a general class of networking errors, such as unavailability or unreachability of a
 // resource located on a different machine

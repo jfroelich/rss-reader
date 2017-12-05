@@ -1,4 +1,4 @@
-import sprintf from "/src/utils/sprintf.js";
+import sprintf from "/src/string/sprintf.js";
 
 // If true, any assertion errors are immediately logged. This helps avoid issues with promise-
 // swallowed exceptions. This is tested against every time function is called.

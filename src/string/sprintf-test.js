@@ -1,4 +1,4 @@
-import sprintf from "/src/utils/sprintf.js";
+import sprintf from "/src/string/sprintf.js";
 
 // Enable direct calling in console
 window.sprintf = sprintf;

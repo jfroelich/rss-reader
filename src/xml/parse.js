@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {ParseError} from "/src/operations/parse-operation.js";
-import condenseWhitespace from "/src/utils/condense-whitespace.js";
+import condenseWhitespace from "/src/string/condense-whitespace.js";
 import * as MimeUtils from "/src/mime/utils.js";
 
 // XML parsing module. The purpose of this module is to abstract the process of parsing a string of
