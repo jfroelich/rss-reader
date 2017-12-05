@@ -108,12 +108,8 @@ async function onEntryBecameUnviewable(entryId, reason) {
     return;
   }
 
-  // TODO: once I get the new mechanism working, rename the attribute to 'stale'. Use the concept
-  // of stale/fresh to indicate whether a slide loaded into the view is still present/active in the
-  // database. I think freshness is just a better representation.
-
   if(slide === currentSlide) {
-    console.warn('cannot remove current slide after load');
+    console.warn('cannot remove current slide after load, reason was', reason);
     slide.setAttribute('removed-after-load', '');
     return;
   }
@@ -469,6 +465,16 @@ async function showNextSlide() {
   // such as no additional slides preloaded, or slides loaded but skipped because removed after
   // load.
   console.debug('next slide vs nextSibling', nextSlide, currentSlide.nextSibling);
+
+  // NOTE: this is now leading to failures after unsubscribing from a feed while the slideshow was
+  // open and then continuing the navigate to the next slide. The above log message prints
+  // undefined for both nextSlide and currentSlide.nextSibling. Because nothing was appended I
+  // guess. Part of the problem is below, the condition that unreadSlideElementCount is < 2,
+  // apparently is no longer true, because slides I guess were not unloaded, so nothing ever gets
+  // appended dynamically before continuing. I think this is because I haven't fully implemented
+  // the new logic, part of which is that I want to move some of the if checks to outside of and
+  // before the or containing the try/catch.
+
 
 
   const oldSlideElement = currentSlide;
