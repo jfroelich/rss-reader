@@ -3,7 +3,7 @@ import * as Feed from "/src/reader-db/feed.js";
 import findEntryIdsByFeedIdInDb from "/src/reader-db/find-entry-ids-by-feed-id.js";
 import removeFeedFromDb from "/src/reader-db/remove-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import * as idb from "/src/utils/indexeddb-utils.js";
+import * as idb from "/src/indexeddb/utils.js";
 
 // @param channel {BroadcastChannel} optional, if specified then this dispatches feed deleted and
 // entry deleted type messages to the channel

@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import * as idb from "/src/utils/indexeddb-utils.js";
+import * as idb from "/src/indexeddb/utils.js";
 
 function fakeOnUpgradeNeeded() {}
 
@@ -8,7 +8,7 @@ window.test = async function() {
   let closeRequested = false;
   let conn;
   try {
-    // TODO: use timeout parameter
+    // TODO: use timeout
     conn = await idb.open(name, version, fakeOnUpgradeNeeded);
     assert(idb.isOpen(conn));
     idb.close(conn);

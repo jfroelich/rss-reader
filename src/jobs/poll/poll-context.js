@@ -1,7 +1,7 @@
 import assert from "/src/assert/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
 import openReaderDb from "/src/reader-db/open.js";
-import {close as closeDb, isOpen as isOpenDb} from "/src/utils/indexeddb-utils.js";
+import {close as closeDb, isOpen as isOpenDb} from "/src/indexeddb/utils.js";
 
 // TODO: this should probably be defined externally, because multiple modules are concerned with
 // either sending or receiving messages from and to this channel

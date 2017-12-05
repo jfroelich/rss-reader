@@ -15,7 +15,7 @@ import findViewableEntriesInDb from "/src/reader-db/find-viewable-entries.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";
-import * as idb from "/src/utils/indexeddb-utils.js";
+import * as idb from "/src/indexeddb/utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // TODO: set magic on message objects, write a helper somewhere named something like

@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import * as Entry from "/src/reader-db/entry.js";
-import {isOpen} from "/src/utils/indexeddb-utils.js";
+import {isOpen} from "/src/indexeddb/utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
 // Loads archivable entries from the database. An entry is archivable if it has not already been

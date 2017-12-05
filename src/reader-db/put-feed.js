@@ -5,7 +5,7 @@ import * as Feed from "/src/reader-db/feed.js";
 import condenseWhitespace from "/src/utils/condense-whitespace.js";
 import filterControls from "/src/utils/filter-controls.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
-import * as idb from "/src/utils/indexeddb-utils.js";
+import * as idb from "/src/indexeddb/utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
 // TODO: maybe this should be refactored as a non-async, promise-returning function. There is no

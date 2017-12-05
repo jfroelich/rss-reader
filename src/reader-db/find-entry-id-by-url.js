@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {isValidURLString} from "/src/url/url-string.js";
-import {isOpen} from "/src/utils/indexeddb-utils.js";
+import {isOpen} from "/src/indexeddb/utils.js";
 
 // TODO: perhaps this should accept a URL instead of a url string, so that there is no ambiguity
 // and there is no need to assert the url is valid, given that entry urls are always valid

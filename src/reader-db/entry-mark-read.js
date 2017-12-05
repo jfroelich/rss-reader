@@ -4,7 +4,7 @@ import * as Entry from "/src/reader-db/entry.js";
 import {InvalidStateError, NotFoundError} from "/src/reader-db/errors.js";
 import findEntryByIdInDb from "/src/reader-db/find-entry-by-id.js";
 import putEntryInDb from "/src/reader-db/put-entry.js";
-import {isOpen} from "/src/utils/indexeddb-utils.js";
+import {isOpen} from "/src/indexeddb/utils.js";
 import check from "/src/utils/check.js";
 
 // Mark the entry with the given id as read in the database

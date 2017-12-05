@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {isValidId as isValidEntryId} from "/src/reader-db/entry.js";
-import {isOpen} from "/src/utils/indexeddb-utils.js";
+import {isOpen} from "/src/indexeddb/utils.js";
 
 // Searches for and returns an entry object matching the id
 // @param conn {IDBDatabase} an open database connection

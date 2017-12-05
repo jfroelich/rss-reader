@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {isValidId as isValidFeedId} from "/src/reader-db/feed.js";
-import {isOpen} from "/src/utils/indexeddb-utils.js";
+import {isOpen} from "/src/indexeddb/utils.js";
 
 // Returns a promise that resolves to an array of entry ids that are associated with the given
 // feed id. Throws an unchecked error if the connection is invalid or not open, or if the feed id

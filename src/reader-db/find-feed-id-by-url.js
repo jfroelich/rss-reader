@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {isValidURLString} from "/src/url/url-string.js";
-import {isOpen} from "/src/utils/indexeddb-utils.js";
+import {isOpen} from "/src/indexeddb/utils.js";
 
 // Returns feed id if a feed with the given url exists in the database
 // @param conn {IDBDatabase}

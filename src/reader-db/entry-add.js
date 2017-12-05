@@ -6,7 +6,7 @@ import isPosInt from "/src/utils/is-pos-int.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import putEntryInDb from "/src/reader-db/put-entry.js";
 import condenseWhitespace from "/src/utils/condense-whitespace.js";
-import {isOpen as isOpenDb} from "/src/utils/indexeddb-utils.js";
+import {isOpen as isOpenDb} from "/src/indexeddb/utils.js";
 import filterControls from "/src/utils/filter-controls.js";
 
 // TODO: the message format should be defined externally so that it is consistent. I think this is

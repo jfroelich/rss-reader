@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {isValidId as isValidFeedId} from "/src/reader-db/feed.js";
-import {isOpen} from "/src/utils/indexeddb-utils.js";
+import {isOpen} from "/src/indexeddb/utils.js";
 
 // TODO: this should not accept entryIds as parameter, it should find the entries as part of the
 // transaction implicitly. Once that it done there is no need to assert against entryIds as

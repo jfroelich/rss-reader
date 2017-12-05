@@ -5,7 +5,7 @@ import "/src/reader/cli.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import openReaderDb from "/src/reader-db/open.js";
 import setupReaderDb from "/src/reader-db/setup.js";
-import * as idb from "/src/utils/indexeddb-utils.js";
+import * as idb from "/src/indexeddb/utils.js";
 
 // Background page for extension. This should be loaded exclusively in the background page.
 

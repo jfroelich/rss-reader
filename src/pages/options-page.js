@@ -26,7 +26,7 @@ import unsubscribe from "/src/reader/unsubscribe.js";
 import * as Feed from "/src/reader-db/feed.js";
 import findFeedByIdInDb from "/src/reader-db/find-feed-by-id.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
-import * as idb from "/src/utils/indexeddb-utils.js";
+import * as idb from "/src/indexeddb/utils.js";
 import * as mime from "/src/utils/mime-utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 

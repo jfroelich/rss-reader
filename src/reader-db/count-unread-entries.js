@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {STATE_UNREAD} from "/src/reader-db/entry.js";
-import {isOpen} from "/src/utils/indexeddb-utils.js";
+import {isOpen} from "/src/indexeddb/utils.js";
 
 // Returns a promise that resolves to a count of unread entries in the database
 // Throws an unchecked error if the database is closed or invalid.

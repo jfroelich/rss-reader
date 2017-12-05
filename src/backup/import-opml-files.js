@@ -1,12 +1,12 @@
 import assert from "/src/assert/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
+import * as idb from "/src/indexeddb/utils.js";
 import * as OPMLDocument from "/src/opml/document.js";
 import * as OPMLOutline from "/src/opml/outline.js";
 import parseOPML from "/src/opml/parse.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import * as Feed from "/src/reader-db/feed.js";
 import openReaderDb from "/src/reader-db/open.js";
-import * as idb from "/src/utils/indexeddb-utils.js";
 import * as mime from "/src/utils/mime-utils.js";
 import promiseEvery from "/src/utils/promise-every.js";
 

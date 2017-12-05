@@ -3,7 +3,7 @@ import * as Feed from "/src/reader-db/feed.js";
 import findEntriesInDb from "/src/reader-db/find-entries.js";
 import getFeedIdsInDb from "/src/reader-db/get-feed-ids.js";
 import removeEntriesFromDb from "/src/reader-db/remove-entries.js";
-import {isOpen} from "/src/utils/indexeddb-utils.js";
+import {isOpen} from "/src/indexeddb/utils.js";
 
 const CHANNEL_NAME = 'reader';
 
