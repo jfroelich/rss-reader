@@ -1,7 +1,7 @@
 import assert from "/src/assert/assert.js";
 import {TimeoutError} from "/src/operations/timed-operation.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
+import setTimeoutPromise from "/src/promise/set-timeout.js";
 
 const DEBUG = false;
 

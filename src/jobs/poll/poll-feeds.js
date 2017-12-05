@@ -4,7 +4,7 @@ import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeed from "/src/jobs/poll/poll-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
-import promiseEvery from "/src/utils/promise-every.js";
+import promiseEvery from "/src/promise/every.js";
 
 // TODO: pollFeeds is a job, but pollFeed no longer is a job, it is now a shared module that is
 // also used by subscribe to get a feed's entries.

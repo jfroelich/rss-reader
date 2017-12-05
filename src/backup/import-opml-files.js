@@ -8,7 +8,7 @@ import parseOPML from "/src/opml/parse.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import * as Feed from "/src/reader-db/feed.js";
 import openReaderDb from "/src/reader-db/open.js";
-import promiseEvery from "/src/utils/promise-every.js";
+import promiseEvery from "/src/promise/every.js";
 
 export function Context() {
   this.readerConn;

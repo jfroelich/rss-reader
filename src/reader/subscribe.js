@@ -16,7 +16,7 @@ import {setURLHrefProperty} from "/src/url/url.js";
 import check from "/src/utils/check.js";
 import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
-import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
+import setTimeoutPromise from "/src/promise/set-timeout.js";
 
 
 // TODO: both subscribe and pollFeed have extremely similar functionality. Consider that I should

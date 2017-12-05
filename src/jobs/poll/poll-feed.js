@@ -7,7 +7,7 @@ import parseFeed from "/src/reader/parse-feed.js";
 import putFeed from "/src/reader-db/put-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as Feed from "/src/reader-db/feed.js";
-import promiseEvery from "/src/utils/promise-every.js";
+import promiseEvery from "/src/promise/every.js";
 
 // Check for updated content for the given feed
 export default async function pollFeed(feed) {

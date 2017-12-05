@@ -2,7 +2,7 @@ import assert from "/src/assert/assert.js";
 import {FetchError} from "/src/fetch/errors.js";
 import {TimeoutError} from "/src/operations/timed-operation.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import setTimeoutPromise from "/src/utils/set-timeout-promise.js";
+import setTimeoutPromise from "/src/promise/set-timeout.js";
 
 // TODO: use the fetch API to avoid cookies?
 

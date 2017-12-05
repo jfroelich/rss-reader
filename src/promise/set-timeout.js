@@ -10,8 +10,7 @@ import isPosInt from "/src/utils/is-pos-int.js";
 // the promise resolved without error. This approach also simplifies how the timeout promise can be
 // used in conjunction with Promise.race without the need to resort to using try/catch and checking
 // if the rejection reason is due to a timeout (the timeout promise winning the race) or due to an
-// actual error of some kind (the other promise(s) raced against the timeout rejected).
-
+// actual error of some kind (the other promise(s) raced against the timeout promise rejected).
 
 // Returns a promise that resolves to undefined after a certain amount of time, as well as a
 // timer id corresponding to the id of the internal setTimeout call. This returns an array so that
@@ -21,8 +20,12 @@ import isPosInt from "/src/utils/is-pos-int.js";
 // id immediately is a gimmicky way of making the timeout promise cancelable.
 // @param timeoutMs {Number} milliseconds, must be >= 0, that represents the deadline after which to
 // resolve. This only guarantees that it waits at least that long, and it may wait longer, because
-// some browsers do not respect low timeout values (e.g. under about 16ms).
+// some browsers do not respect low timeout values (e.g. under about 16ms). However, this bypasses
+// the minimum deadline in the special case of 0, in that case this resolves immediately, where
+// immediately means on next-tick not synchronously.
 export default function setTimeoutPromise(timeoutMs) {
+
+  // Calling this with an invalid timeout is indicative of a programmer error.
   assert(isPosInt(timeoutMs));
 
   // Note this is special behavior and different than calling setTimeout with a value of 0, because
