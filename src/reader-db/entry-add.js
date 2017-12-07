@@ -6,6 +6,7 @@ import isPosInt from "/src/utils/is-pos-int.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import putEntryInDb from "/src/reader-db/put-entry.js";
 import condenseWhitespace from "/src/string/condense-whitespace.js";
+import filterUnprintableCharacters from "/src/string/filter-unprintable-characters.js";
 import {isOpen as isOpenDb} from "/src/indexeddb/utils.js";
 import filterControls from "/src/string/filter-controls.js";
 
@@ -87,6 +88,18 @@ function entrySanitize(inputEntry, authorMaxLength, titleMaxLength, contextMaxLe
 
   if(outputEntry.content) {
     let content = outputEntry.content;
+
+    // TEMP: monitoring new filter call for issue #378
+    const beforeFilterLength = content.length;// TEMP
+
+    content = filterUnprintableCharacters(content);
+
+    const afterFilterLength = content.length;// TEMP
+
+    // TEMP
+    console.debug('filterUnprintableCharacters entry content before length %d after length %d',
+      beforeFilterLength, afterFilterLength);
+
     content = htmlTruncate(content, contextMaxLength);
     outputEntry.content = content;
   }
