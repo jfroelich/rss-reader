@@ -1,34 +1,32 @@
 import assert from "/src/assert/assert.js";
 
-
-// TODO: look into skipping child element copy if target is void.
-// See https://html.spec.whatwg.org/multipage/syntax.html#void-elements
-
-
-// Changes the tag name of an element. No checking is done regarding whether the result is
-// semantically correct. For example, there is no guarantee that the attributes fit the new
-// element, e.g., if you rename an img element to a, the a may have a src attribute. There is no
-// guarantee that the child elements, when moved, belong under the new element. E.g. you could
-// rename a table into an void img, and now the img has child trs. It is the caller's responsibility
-// to deal with any mess created.
+// This module exports a single function, coerceElement, that changes the type of an element. An
+// element's type is indicated by its name. This is essentially a renaming of the element.
+//
+// The element's child nodes are retained. However, if the new name is the name of one of HTML's
+// void elements, then the child nodes of the element are effectively removed from the document.
 //
 // Event listeners are lost on rename. See https://stackoverflow.com/questions/15408394.
+//
+// coerceElement does not validate whether the result is correct. It is the caller's responsibility
+// to ensure that the coercion makes sense and that the resulting document is still 'well-formed',
+// supposing that well-formedness is a requirement.
 //
 // @param element {Element} the element to change
 // @param newName {String} the name of the element's new type
 // @param copyAttributesFlag {Boolean} optional, if true then attributes are maintained, defaults to
 // true.
-// @returns {Element} the new element that replaced the old one
+// @throws {AssertionError} if the element is not a type of Element, such as when it is undefined
+// @throws {AssertionError} if the new name is not valid, the validity check is very minimal and
+// not spec compliant.
+// @return {Element} the new element that replaced the old one
 export default function coerceElement(element, newName, copyAttributesFlag) {
-
   assert(element instanceof Element);
 
   // Document.prototype.createElement is very forgiving regarding a new element's name. For example,
   // if you pass a null value, it will create an element named "null". I find this behavior very
   // confusing and misleading. To avoid this, treat any attempt to use an invalid name as an
-  // assertion error.
-
-  // Disallow createElement(null) working like createElement("null")
+  // assertion error. Specifically disallow createElement(null) working like createElement("null")
   assert(isValidElementName(newName));
 
   if(typeof copyAttributesFlag === 'undefined') {
@@ -80,8 +78,14 @@ export default function coerceElement(element, newName, copyAttributesFlag) {
 // children, the new elements are appended at the end.
 // NOTE: I've looked for ways of doing this faster, but nothing seems to work. There is no batch
 // move operation in native dom.
-// TODO: one possible speedup might be using a document fragment, but I am not sure.
+// TODO: one possible speedup might be using a document fragment? See what I did for unwrap
 function moveChildNodes(fromElement, toElement) {
+  // If the target is a void element then this is a no-op. This assumes the source element is
+  // detached, otherwise it would be misleading
+  if(isVoidElement(toElement)) {
+    return;
+  }
+
   let node = fromElement.firstChild;
   while(node) {
     toElement.appendChild(node);
@@ -89,11 +93,36 @@ function moveChildNodes(fromElement, toElement) {
   }
 }
 
+// See https://html.spec.whatwg.org/multipage/syntax.html#void-elements
+// This is a set, but given the small size, it is better to use a simple array.
+const kVoidElements = [
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr'
+];
+
+function isVoidElement(element) {
+  // This assumes element.ownerDocument is implicitly flagged as html so that localName yields
+  // the normalized name which is in lowercase.
+  return kVoidElements.includes(element.localName);
+}
+
 // Returns true if the given name is a valid name for an element. This only does minimal validation
-// and may yield false positives.
+// and may yield false positives. This function is defensive so it can easily be asserted against.
 // TODO: research what characters are allowed in an element's name
-function isValidElementName(name) {
-  return typeof name === 'string' && name.length && !name.includes(' ');
+function isValidElementName(value) {
+  return typeof value === 'string' && value.length && !value.includes(' ');
 }
 
 // Copies the attributes of an element to another element. Overwrites any existing attributes in the
