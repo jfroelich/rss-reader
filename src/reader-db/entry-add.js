@@ -88,18 +88,7 @@ function entrySanitize(inputEntry, authorMaxLength, titleMaxLength, contextMaxLe
 
   if(outputEntry.content) {
     let content = outputEntry.content;
-
-    // TEMP: monitoring new filter call for issue #378
-    const beforeFilterLength = content.length;// TEMP
-
     content = filterUnprintableCharacters(content);
-
-    const afterFilterLength = content.length;// TEMP
-
-    // TEMP
-    console.debug('filterUnprintableCharacters entry content before length %d after length %d',
-      beforeFilterLength, afterFilterLength);
-
     content = htmlTruncate(content, contextMaxLength);
     outputEntry.content = content;
   }
