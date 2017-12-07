@@ -1,5 +1,11 @@
+// This module exports a single function that accepts a value as input. If the input is a string
+// then the function returns a new string that is approximately a copy of the input less certain
+// 'unprintable' characters. The function is tolerate of bad types of input and will not throw
+// in the case of null/undefined/etc. In the case of bad input the input itself is returned.
 
-// TODO: eventually move to utils
+// The function does not expose an immediate way to test if it had any effect. To test, check if
+// the output string length is less than the input string length.
+
 // TODO: look into how much this overlaps with filterControls
 // TODO: would + qualifer improve speed, decrease speed, or have no effect, or no material effect
 // on performance?
