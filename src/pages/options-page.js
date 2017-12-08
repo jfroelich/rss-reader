@@ -476,7 +476,7 @@ function importOPMLButtonOnclick(event) {
   const uploaderInput = document.createElement('input');
   uploaderInput.setAttribute('type', 'file');
   uploaderInput.setAttribute('accept', MimeUtils.MIME_TYPE_XML);
-  uploaderInput.addEventListener('change', importOPMLInputOnchange);
+  uploaderInput.onchange = importOPMLInputOnchange;
   uploaderInput.click();
 }
 
@@ -524,37 +524,6 @@ function menuItemOnclick(event) {
   const sectionElement = event.currentTarget;
   showSection(sectionElement);
 }
-
-// TODO: provide visual feedback, like progress bar, popup modal panel, something
-async function checkForUpdatesButtonOnclick(event) {
-  console.debug('clicked check for updates button');
-
-  const button = event.target;
-
-  // Disable the button to prevent a check from happening again while another check is in
-  // progress.
-  button.disabled = true;
-
-  const pc = new PollContext();
-  pc.initFaviconCache();
-  pc.allowMeteredConnections = true;
-  pc.ignoreRecencyCheck = true;
-  pc.ignoreModifiedCheck = true;
-
-  try {
-    await pc.open();
-    await pollFeeds.call(pc);
-  } catch(error) {
-    console.warn(error);
-  } finally {
-    pc.close();
-
-    // Renable the button at the end, regardless of how the process completed, either due to an
-    // error occurring or because it completed naturally.
-    button.disabled = false;
-  }
-}
-
 
 function enableNotificationsCheckboxOnclick(event) {
   if(event.target.checked) {
@@ -714,12 +683,6 @@ const menuItems = document.querySelectorAll('#navigation-menu li');
 for(const menuItem of menuItems) {
   menuItem.onclick = menuItemOnclick;
 }
-
-{
-  const checkForUpdatesButton = document.getElementById('check-for-updates');
-  checkForUpdatesButton.onclick = checkForUpdatesButtonOnclick;
-}
-
 
 // Init Enable notifications checkbox
 const enableNotificationsCheckbox = document.getElementById('enable-notifications');
