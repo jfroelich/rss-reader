@@ -33,11 +33,21 @@ export default async function fetchImageHead(url, timeoutMs) {
   const response = await fetchWithTimeout(url, options, timeoutMs);
   assert(response);
 
+  // TODO: this could probably be expressed in a clearer way, for now I am hackishly adding
+  // support for application/octet-stream to stop favicon lookup from failing on certain websites
   const contentType = response.headers.get('Content-Type');
-  check(MimeUtils.isImage(contentType), FetchError, 'Unacceptable mime type', contentType, url);
+  check(MimeUtils.isImage(contentType) || isOtherAcceptableMimeType(contentType), FetchError,
+    'Unacceptable mime type', contentType, url);
 
   const wrappedResponse = {};
   wrappedResponse.size = FetchUtils.getContentLength(response);
   wrappedResponse.responseURL = response.url;
   return wrappedResponse;
+}
+
+function isOtherAcceptableMimeType(contentType) {
+  // To support twitch.tv, support 'application/octet-stream'
+  const mimeType = MimeUtils.fromContentType(contentType);
+  const otherTypes = ['application/octet-stream'];
+  return otherTypes.includes(mimeType);
 }

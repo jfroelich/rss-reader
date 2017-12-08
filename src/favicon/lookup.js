@@ -62,7 +62,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
   // If a pre-fetched document was specified, search it and possibly return.
   if(document) {
-    const iconURL = this.search(document, url);
+    const iconURL = await this.search(document, url);
     if(iconURL) {
       if(this.hasOpenCache()) {
         // This affects both the input entry and the redirect entry. However, since we have not yet
@@ -137,7 +137,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   // If we successfully parsed the fetched document, search it
   if(document) {
     const baseURL = responseURL ? responseURL : url;
-    const iconURL = this.search(document, baseURL);
+    const iconURL = await this.search(document, baseURL);
     if(iconURL) {
       if(this.hasOpenCache()) {
         // This does not modify the origin entry if it exists because a per-page icon does not apply
@@ -233,6 +233,7 @@ FaviconLookup.prototype.fetchImage = async function(url) {
       throw error;
     } else {
       // Ignore
+      console.debug('Failed to fetch', url.href, error);
     }
   }
 };
@@ -294,21 +295,89 @@ FaviconLookup.prototype.LINK_SELECTOR = [
 // Searches the document for favicon urls
 // @param document {Document}
 // @param baseURL {URL} the base url of the document for resolution purposes
-// @returns {String} a favicon url, if found
-FaviconLookup.prototype.search = function(document, baseURL) {
+// @returns {String} a favicon url, if found, canonical, and exists (successful HEAD http request)
+FaviconLookup.prototype.search = async function(document, baseURL) {
   assert(document instanceof Document);
-  if(document.head) {
-    const elements = document.head.querySelectorAll(this.LINK_SELECTOR);
-    for(const element of elements) {
-      const href = element.getAttribute('href');
-      // hrefs may be relative or undefined or empty or whitespace only
-      const iconURL = resolveURLString(href, baseURL);
-      if(iconURL) {
-        return iconURL.href;
-      }
+
+  const candidateURLStrings = this.findCandidateURLStrings(document);
+  if(!candidateURLStrings.length) {
+
+    // TEMP
+    console.debug('No candidates found in document response for base url', baseURL.href);
+
+    return;
+  }
+
+  // Convert the list of candidate url strings into canonical URL objects
+  let canonicalURLs = [];
+  for(const candidateURLString of candidateURLStrings) {
+    const canonicalURL = resolveURLString(candidateURLString, baseURL);
+    // resolveURLString returns undefined on error, only append if defined
+    if(canonicalURL) {
+      canonicalURLs.push(canonicalURL);
     }
   }
+  if(!canonicalURLs.length) {
+
+    // TEMP:
+    console.debug('Found candidates but none canonicalizable', baseURL.href, candidateURLStrings);
+
+    return;
+  }
+
+  // TEMP:
+  console.debug('candidates', canonicalURLs.map(u => u.href).join(','));
+
+  // Remove duplicate urls
+  const distinctURLStrings = [];
+  const distinctURLs = [];
+  for(const url of canonicalURLs) {
+    if(!distinctURLStrings.includes(url.href)) {
+      distinctURLStrings.push(url.href);
+      distinctURLs.push(url);
+    }
+  }
+  canonicalURLs = distinctURLs;
+
+  // Find the first url that exists. Requests are executed serially for now.
+
+  for(const url of canonicalURLs) {
+    console.debug('Fetching image', url.href);
+    const response = await this.fetchImage(url);
+
+    if(this.isAcceptableImageResponse(response)) {
+      console.debug('Fetch successful', url.href, response.responseURL);
+      return response.responseURL;
+    } else {
+      console.debug('Failed failed (response not acceptable)', url.href);
+    }
+
+  }
 };
+
+
+// Searches the document for favicon urls
+// @param document {Document}
+// @return {Array} an array of candidate url strings, canonicalized
+FaviconLookup.prototype.findCandidateURLStrings = function(document) {
+  assert(document instanceof Document);
+  const candidates = [];
+
+  if(!document.head) {
+    return candidates;
+  }
+
+  const elements = document.head.querySelectorAll(this.LINK_SELECTOR);
+  for(const element of elements) {
+    const href = element.getAttribute('href');
+    if(href) {
+      candidates.push(href);
+    }
+  }
+
+  return candidates;
+};
+
 
 // Returns a promise
 // @param originURL {URL}
