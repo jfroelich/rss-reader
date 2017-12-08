@@ -79,6 +79,15 @@ function entrySanitize(inputEntry, authorMaxLength, titleMaxLength, contextMaxLe
 
   if(outputEntry.author) {
     let author = outputEntry.author;
+
+    // TODO: now that filterUnprintableCharacters is a thing, I want to also filter such
+    // characters from input strings like author/title/etc. However it overlaps with the
+    // call to filterControls here. There is some redundant work going on. Also, in a sense,
+    // filterControls is now inaccurate. What I want is one function that strips binary
+    // characters except important ones, and then a second function that replaces or removes
+    // certain important binary characters (e.g. remove line breaks from author string).
+    // Something like 'replaceFormattingCharacters'.
+
     author = filterControls(author);
     author = replaceTags(author, '');
     author = condenseWhitespace(author);
