@@ -47,7 +47,21 @@ header {
   font-size: 40px;
 }
 
-
+#error-message-container {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 60%;
+  right: auto;
+  bottom: auto;
+  background-color: #ffffff;
+  color: #000000;
+  font-size: 24px;
+  padding: 20px;
+  margin: auto;
+  transform: translate(-50%, -50%);
+}
 
 h1, h2, h3, h4, h5, h6 {
   font-weight: normal;
