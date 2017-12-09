@@ -27,29 +27,46 @@ export function getTypeForExtension(extension) {
 // @param contentType {String} an http response header value, optional
 // @returns {String} a mime type, or undefined if error
 export function fromContentType(contentType) {
-  if(contentType === null) {
+
+  // This is not an assert to allow for caller to pass whatever response.headers.get('Content-Type')
+  // yields. Which could be null.
+  if(typeof contentType !== 'string') {
+    console.debug(
+      'Unable to parse mime type from content type because content type is not a defined string');
     return;
   }
 
-  const contentTypeVarType = typeof contentType;
-  if(contentTypeVarType === 'undefined') {
+  // Sometimes a header comes in with extra whitespace
+  contentType = contentType.trim();
+
+  // Sometimes header value is empty
+  if(!contentType) {
+    console.debug('Unable to parse mime type from content type because content type is empty');
     return;
   }
 
-  assert(contentTypeVarType === 'string', 'invalid variable type %s of contentType',
-    contentTypeVarType, contentType);
+  // Content type can include encoding in addition to mime type, in the form of
+  // mimetype;encoding. Get the characters leading up to the semicolon, or the full value.
+  const scpos = contentType.indexOf(';');
+  // NOTE: -1 means not found, but if semicolon is first char that is also bad, so use 0
+  // TODO: technically semicolon would have to come after shortest possible mime type value
+  let mimeType = scpos > 0 ? contentType.substring(0, scpos) : contentType;
 
-  let mimeType = contentType;
-
-  // Strip the character encoding, if present. The substring gets all characters up to but excluding
-  // the semicolon. The coding is optional, so leave the type as is if no semicolon is present.
-  const fromIndex = 0;
-  const semicolonPosition = contentType.indexOf(';');
-  if(semicolonPosition !== -1) {
-    mimeType = contentType.substring(fromIndex, semicolonPosition);
+  // The mime type may be invalid because it comes from a response header and there is little to
+  // no guarantee over what a server responds with
+  // For example: 404 response from Varnish web server yields garbage 'content-type: text' header
+  if(!isMimeType(mimeType)) {
+    console.debug(
+      'Unable to parse mime type from content type because the value appears to be invalid',
+      mimeType, contentType);
+    return;
   }
 
-  return normalize(mimeType);
+
+
+  const normalMimeType = filterWhitespace(mimeType).toLowerCase();
+  console.debug('Successfully parsed mime type', normalMimeType);
+  return normalMimeType;
 }
 
 // A basic trivial test of whether the parameter represents a mime type. Inaccurate. Few false
@@ -86,10 +103,6 @@ export function isBinary(mimeType) {
   }
 }
 
-function normalize(mimeType) {
-  assert(isMimeType(mimeType));
-  return filterWhitespace(mimeType).toLowerCase();
-}
 
 export function isHTML(contentType) {
   return /^\s*text\/html/i.test(contentType);
