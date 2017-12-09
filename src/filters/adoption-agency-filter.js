@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import unwrapElement from "/src/dom/unwrap-element";
+import unwrapElement from "/src/dom/unwrap-element.js";
 
 // Removes, moves, or otherwise changes certain out-of-place elements in document content
 export default function filterDocument(doc) {
