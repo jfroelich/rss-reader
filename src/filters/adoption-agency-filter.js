@@ -1,7 +1,5 @@
 import assert from "/src/assert/assert.js";
-
-// TODO: find all source not in picture/audio/video and remove
-// TODO: find all figcaption not in figure and remove
+import unwrapElement from "/src/dom/unwrap-element";
 
 // Removes, moves, or otherwise changes certain out-of-place elements in document content
 export default function filterDocument(doc) {
@@ -15,6 +13,29 @@ export default function filterDocument(doc) {
   const nestedHRs = doc.body.querySelectorAll('ul > hr, ol > hr, dl > hr');
   for(const hr of nestedHRs) {
     hr.remove();
+  }
+
+  // Disallow nested anchors. If any anchor has an ancestor anchor, then unwrap the descendant
+  // anchor and keep the ancestor.
+  const descendantAnchorsOfAnchors = doc.body.querySelectorAll('a a');
+  for(const descendantAnchor of descendantAnchorsOfAnchors) {
+    unwrapElement(descendantAnchor);
+  }
+
+  // Remove figcaption elements not tied to an ancestor figure
+  const captions = doc.body.querySelectorAll('figcaption');
+  for(const caption of captions) {
+    if(!caption.closest('figure')) {
+      caption.remove();
+    }
+  }
+
+  // Remove source elements not meaningfully tied to an ancestor
+  const sources = doc.body.querySelectorAll('source');
+  for(const source of sources) {
+    if(!source.closest('audio, picture, video')) {
+      source.remove();
+    }
   }
 
   // Relocate some basic occurrences of invalid ancestor
