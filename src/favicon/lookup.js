@@ -346,10 +346,10 @@ FaviconLookup.prototype.search = async function(document, baseURL) {
     const response = await this.fetchImage(url);
 
     if(this.isAcceptableImageResponse(response)) {
-      console.debug('Fetch successful', url.href, response.responseURL);
+      // console.debug('Fetch successful', url.href, response.responseURL);
       return response.responseURL;
     } else {
-      console.debug('Failed failed (response not acceptable)', url.href);
+      // console.debug('Failed failed (response not acceptable)', url.href);
     }
 
   }
