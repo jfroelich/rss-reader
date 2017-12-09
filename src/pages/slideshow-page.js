@@ -137,25 +137,23 @@ function removeSlide(slideElement) {
 
 async function markSlideRead(conn, slideElement) {
 
+  const slideEntryAttributeValue = slideElement.getAttribute('entry');
+  const entryId = parseInt10(slideEntryAttributeValue);
+
   // Immediately check if the slide should be ignored. One reason is that it was externally
   // made unviewable by some other background process like unsubscribe or archive after the slide
   // was loaded into view, but at the time it was made unviewable it was not unloadable from the
   // view.
   if(slideElement.hasAttribute('removed-after-load')) {
-    console.debug('canceling mark as read given that slide removed after load',
-      slideElement.getAttribute('entry'));
+    console.debug('canceling mark as read given that slide removed after load', entryId);
     return;
   }
 
   // This is a routine situation such as when navigating backward and therefore not an error.
   if(slideElement.hasAttribute('read')) {
-    console.debug('canceling mark as read as slide already marked',
-      slideElement.getAttribute('entry'));
+    console.debug('canceling mark as read as slide already marked', entryId);
     return;
   }
-
-  const slideEntryAttributeValue = slideElement.getAttribute('entry');
-  const entryId = parseInt10(slideEntryAttributeValue);
 
   assert(IndexedDbUtils.isOpen(conn));
   assert(Entry.isValidId(entryId));
@@ -164,7 +162,10 @@ async function markSlideRead(conn, slideElement) {
     await entryMarkRead(conn, entryId);
   } catch(error) {
     console.warn(error);
-    return;
+    // Fall through and mark the element as read anyway, to prevent the error that appears later
+    // when trying to mark as red.
+    console.debug('slide may not be updated as read in db but designating as read in UI',
+      slideElement);
   }
 
   slideElement.setAttribute('read', '');
