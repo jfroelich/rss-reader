@@ -501,10 +501,6 @@ async function showNextSlide() {
     return;
   }
 
-  // BUG: check if after polling new slides become available. My suspicion is that now it works
-  // because of the load on demand done below. But I would prefer the append happened at time
-  // of poll, not here.
-
   const oldSlideElement = currentSlide;
   let slideAppendCount = 0;
   let conn;
@@ -600,6 +596,9 @@ function showPreviousSlide() {
 
   // TODO: refactor this function to account for removed-after-load characteristic. I am going to
   // wait to do this until I update showNextSlide
+  // Question is whether i want to allow navigation back to a slide that was removed after load
+  // while it happens to still be loaded. Otherwise user clicks back and slide is mysteriously
+  // missing. but how different is that from the way slides eventually do get unloaded?
 
   const prevSlideElement = currentSlide.previousSibling;
   if(!prevSlideElement) {
