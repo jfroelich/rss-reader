@@ -1,4 +1,5 @@
 import fetchFeed from "/src/fetch/fetch-feed.js";
+import decodeEntities from "/src/html/decode-entities.js";
 import {parseFeed} from "/src/parse-feed/parse-feed.js";
 
 // Test parseFeed module. At the moment this just exposes a helper function to console
@@ -13,7 +14,6 @@ async function test(url) {
 
   const requestURL = new URL(url);
   const response = await fetchFeed(requestURL, timeoutMs, extendedTypes);
-  console.dir(response);
 
   const feedXML = await response.text();
   const result = parseFeed(feedXML);
@@ -22,3 +22,7 @@ async function test(url) {
 
 // Expose to console
 window.test = test;
+
+
+
+window.decodeEntities = decodeEntities;
