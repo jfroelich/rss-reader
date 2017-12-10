@@ -1,6 +1,7 @@
 import assert from "/src/assert/assert.js";
-import check from "/src/utils/check.js";
+import decodeEntities from "/src/html/decode-entities.js";
 import {ParseError} from "/src/operations/parse-operation.js";
+import check from "/src/utils/check.js";
 import parseXML from "/src/xml/parse.js";
 import {getElementName} from "/src/xml/utils.js";
 
@@ -15,8 +16,8 @@ import {getElementName} from "/src/xml/utils.js";
 // fidelity to the input. In fact I probably should not even be trying to change strings into
 // date objects and such.
 
-// NOTE: I would prefer to export a default function, but ran into a problem when trying to rename the
-// default import in a module that imports this module that happens to use the same name as this
+// NOTE: I would prefer to export a default function, but ran into a problem when trying to rename
+// the default import in a module that imports this module that happens to use the same name as this
 // function. So, for now, I am not exporting a default. This may change. Note I tested this again
 // and still got an error, I must be misunderstanding something about renaming defaults
 
@@ -271,11 +272,30 @@ function findEntryContent(entryElement) {
   let result;
   if(documentElementName === 'feed') {
     const content = findChildElementByName(entryElement, 'content');
-    const nodes = content ? content.childNodes : [];
+
+    if(!content) {
+      return;
+    }
+
+    // NOTE: so I think I handle cdata content correctly, but note the issue with title
+    // still having raw entities. Or, rather, should content be not encoded in any situation?
+
+    const nodes = content.childNodes;
     const texts = [];
     for(let node of nodes) {
-      const nodeText = getAtomNodeText(node);
-      texts.push(nodeText);
+      if(node.nodeType === Node.CDATA_SECTION_NODE) {
+        let nodeValue = node.nodeValue;
+        nodeValue = decodeEntities(nodeValue);
+        //console.debug('nodeValue (encoded)', nodeValue);
+        texts.push(nodeValue);
+      } else if(node.nodeType === Node.TEXT_NODE) {
+        const nodeText = node.textContent;
+        //console.debug('textContent', nodeText);
+        texts.push(nodeText);
+      } else {
+        console.warn('Unknown node type, next message is dir inspection');
+        console.dir(node);
+      }
     }
 
     result = texts.join('').trim();
@@ -285,10 +305,6 @@ function findEntryContent(entryElement) {
     result = result || findChildElementText(entryElement, 'summary');
   }
   return result;
-}
-
-function getAtomNodeText(node) {
-  return node.nodeType === Node.ELEMENT_NODE ? node.innerHTML : node.textContent;
 }
 
 function findChildElement(parentElement, predicate) {
