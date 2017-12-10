@@ -52,6 +52,10 @@ export function fromContentType(contentType) {
   // TODO: technically semicolon would have to come after shortest possible mime type value
   let mimeType = scpos > 0 ? contentType.substring(0, scpos) : contentType;
 
+  // Normalize
+  mimeType = filterWhitespace(mimeType);
+  mimeType = mimeType.toLowerCase();
+
   // The mime type may be invalid because it comes from a response header and there is little to
   // no guarantee over what a server responds with
   // For example: 404 response from Varnish web server yields garbage 'content-type: text' header
@@ -62,11 +66,7 @@ export function fromContentType(contentType) {
     return;
   }
 
-
-
-  const normalMimeType = filterWhitespace(mimeType).toLowerCase();
-  console.debug('Successfully parsed mime type', normalMimeType);
-  return normalMimeType;
+  return mimeType;
 }
 
 // A basic trivial test of whether the parameter represents a mime type. Inaccurate. Few false
