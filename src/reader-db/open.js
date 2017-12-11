@@ -5,7 +5,7 @@ import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 
 // TODO: this should come from config?
 const NAME = 'reader';
-const VERSION = 23;
+const VERSION = 24;
 
 // TODO: this should come from config?
 const OPEN_TIMEOUT_MS = 500;
@@ -31,8 +31,6 @@ function onUpgradeNeeded(event) {
     feedStore = conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
     entryStore = conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
     feedStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
-
-    //feedStore.createIndex('title', 'title');
 
     entryStore.createIndex('readState', 'readState');
     entryStore.createIndex('feed', 'feed');
@@ -65,6 +63,13 @@ function onUpgradeNeeded(event) {
     } else {
       console.debug('no title index found to delete during upgrade past version 22');
     }
+  }
+
+  if(event.oldVersion < 24) {
+    // Version 24 adds an 'active' field to feeds. All existing feeds do not have an active
+    // field. So all existing feeds must be modified to have an active property that is default
+    // to true. It defaults to true because prior to this change, all feeds were presumed active.
+    addActiveFieldToFeeds(feedStore);
   }
 }
 
@@ -105,4 +110,22 @@ function addFeedMagic(tx) {
       store.put(feed);
     }
   }
+}
+
+function addActiveFieldToFeeds(feedStore) {
+  console.debug('Adding active property to feeds');
+  const feedsRequest = feedStore.getAll();
+  feedsRequest.onerror = function(event) {
+    console.warn('Database error getting all feeds', feedsRequest.error);
+  };
+
+  feedsRequest.onsuccess = function(event) {
+    const feeds = event.target.result;
+    for(const feed of feeds) {
+      console.debug('Marking feed %d as active as part of upgrade', feed.id);
+      feed.active = true;
+      feed.dateUpdated = new Date();
+      feedStore.put(feed);
+    }
+  };
 }
