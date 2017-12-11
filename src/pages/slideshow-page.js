@@ -326,7 +326,10 @@ function createFeedSourceElement(entry) {
   sourceElement.setAttribute('class', 'entry-source');
 
   if(entry.faviconURLString) {
-    assert(isCanonicalURLString(entry.faviconURLString));
+
+    // Commented out. Shouldn't be doing asserts in the UI...
+    // assert(isCanonicalURLString(entry.faviconURLString));
+
     const faviconElement = document.createElement('img');
     faviconElement.setAttribute('src', entry.faviconURLString);
     faviconElement.setAttribute('width', '16');
@@ -453,6 +456,8 @@ async function onSlideClick(event) {
 // TODO: sharing the connection between mark as read and appendSlides made sense at first but I
 // do not like the large try/catch block. Also I think the two can be unlinked because they do not
 // have to co-occur. Also I don't like how it has to wait for read to complete.
+// Similarly, i think entry-mark-read shares the connection with update-badge, but that should
+// also be changed so that it is non-blocking?
 
 // TODO: visual feedback on error
 async function showNextSlide() {
@@ -580,17 +585,15 @@ function showPreviousSlide() {
   currentSlide.focus();
 }
 
+// Returns the number of slides that are loaded and not read. If a slide is marked as stale,
+// then it is not counted, regardless of its read state. It is important to note that the total
+// number of slides loaded is not warranted as equal to the number of unread + the number of read,
+// because of this special case of stale slides.
 function countUnreadSlides() {
 
-  // TODO: change this to also exclude removed-after-load slides from the count?
-  // Yes, because it is causing a bug. If I unsubscribe from a feed and some entries from that
-  // feed were loaded in the UI, those entries are still present in the UI. And they still
-  // contribute to the unread count.
-
-  // I may have done the above but have not fully tested.
-
-  //const slides = document.body.querySelectorAll('article[entry]:not([read])');
-  //return slides.length;
+  // TODO: eventually, once the removed-after-load stuff settles, this will not be undergoing
+  // as much change. At that point, consider simplifying the code here. I would prefer to use
+  // a selector that wraps up all of the logic instead of both a selector and a for loop.
 
   const slides = document.body.querySelectorAll('article[entry]');
   let count = 0;
