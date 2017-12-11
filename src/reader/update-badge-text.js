@@ -12,7 +12,7 @@ export default async function updateBadgeText(conn) {
   const text = count > 999 ? '1k+' : '' + count;
 
   if(DEBUG) {
-    console.debug('setting badge text to', text);
+    console.debug('Setting badge text to', text);
   }
 
   setBadgeText(text);

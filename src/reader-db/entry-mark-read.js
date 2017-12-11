@@ -16,6 +16,9 @@ export default async function main(conn, id) {
 
   const entry = await findEntryByIdInDb(conn, id);
 
+  // The entry should ALWAYS have a url
+  assert(Entry.hasURL(entry));
+
   // TODO: possibly change check to assert to represent that the error is unexpected instead of
   // expected.
   // I have mixed feelings about whether these should be checks or asserts. On the one hand, the
@@ -33,13 +36,10 @@ export default async function main(conn, id) {
   // TODO: I am not sure this check is strict enough. Technically the entry should always be
   // in the UNREAD state at this point.
   check(entry.readState !== Entry.STATE_READ, InvalidStateError,
-    'entry %d already in read state', id);
-
-  // The entry should ALWAYS have a url
-  assert(Entry.hasURL(entry));
+    'Entry %d already in read state', id);
 
   const url = Entry.peekURL(entry);
-  console.debug('found entry to mark with url', url);
+  console.debug('Found entry to mark as read', id, url);
 
   // We have full control over the entry object from read to write, so there is no need to sanitize
   // or filter empty properties.
@@ -47,6 +47,6 @@ export default async function main(conn, id) {
   entry.dateUpdated = new Date();
   entry.dateRead = entry.dateUpdated;
   await putEntryInDb(conn, entry);
-  console.debug('marked entry as read with url', url);
+  console.debug('Marked entry as read', id, url);
   await updateBadgeText(conn);
 }
