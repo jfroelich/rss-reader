@@ -11,8 +11,6 @@ import {isCanonicalURLString} from "/src/url/url-string.js";
 // like activeState or activeFlag. That removes the ambiguity between presence/absence style
 // boolean, and true/false boolean.
 
-
-
 // TODO: I would prefer not to export but certain functionality needs it at the moment
 export const FEED_MAGIC = 0xfeedfeed;
 

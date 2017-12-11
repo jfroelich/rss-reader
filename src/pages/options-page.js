@@ -23,6 +23,7 @@ import {
 import openReaderDb from "/src/reader-db/open.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
+import activateFeedInDb from "/src/reader-db/activate-feed.js";
 import * as Feed from "/src/reader-db/feed.js";
 import findFeedByIdInDb from "/src/reader-db/find-feed-by-id.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
@@ -285,6 +286,12 @@ async function feedListItemOnclick(event) {
   const unsubscribeButton = document.getElementById('details-unsubscribe');
   unsubscribeButton.value = '' + feed.id;
 
+  const activateButton = document.getElementById('details-activate');
+  activateButton.value = '' + feed.id;
+  // While active is obviously a primative boolean and this could be expressed more succinctly, I
+  // prefer to be explicit given the issues with unexpected types.
+  activateButton.disabled = feed.active === true ? true : false;
+
   // TODO: show num entries, num unread/red, etc
   // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 
@@ -471,6 +478,27 @@ async function unsubscribeButtonOnclick(event) {
   feedListRemoveFeed(feedId);
   showSectionById('subs-list-section');
 }
+
+async function activateButtonOnclick(event) {
+  const feedId = parseInt10(event.target.value);
+  assert(Feed.isValidId(feedId));
+  let conn;
+  try {
+    conn = await openReaderDb();
+    await activateFeedInDb(conn, feedId);
+  } catch(error) {
+    console.warn(error);
+    return;
+  } finally {
+    IndexedDbUtils.close(conn);
+  }
+
+  console.debug('Activated feed, returning to feed list');
+
+  showSectionById('subs-list-section');
+}
+
+
 
 function importOPMLButtonOnclick(event) {
   const uploaderInput = document.createElement('input');
@@ -705,6 +733,9 @@ feedListInit();
 // Init feed details section unsubscribe button click handler
 const unsubscribeButton = document.getElementById('details-unsubscribe');
 unsubscribeButton.onclick = unsubscribeButtonOnclick;
+
+const activateButton = document.getElementById('details-activate');
+activateButton.onclick = activateButtonOnclick;
 
 // Init the subscription form section
 const subscriptionForm = document.getElementById('subscription-form');
