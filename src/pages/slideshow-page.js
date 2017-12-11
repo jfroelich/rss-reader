@@ -279,7 +279,6 @@ function appendSlide(entry) {
 
 function createArticleTitleElement(entry) {
   const titleElement = document.createElement('a');
-  titleElement.onclick = slideTitleElementOnclick;
   titleElement.setAttribute('href', Entry.peekURL(entry));
   titleElement.setAttribute('class', 'entry-title');
 
@@ -351,44 +350,6 @@ function createFeedSourceElement(entry) {
   titleElement.textContent = buffer.join('');
   sourceElement.appendChild(titleElement);
   return sourceElement;
-}
-
-async function slideTitleElementOnclick(event) {
-  const CODE_LEFT_MOUSE_BUTTON = 1;
-  if(event.which !== CODE_LEFT_MOUSE_BUTTON) {
-    return true;
-  }
-
-  // TODO: a ton of this is very redundant with onSlideClick
-
-  const anchor = event.target;
-  assert(anchor instanceof Element);
-  assert(anchor.localName && anchor.localName === 'a');
-
-  event.preventDefault();
-
-  const href = anchor.getAttribute('href');
-  assert(isCanonicalURLString(href));
-  openTab(href);
-
-  const clickedSlide = anchor.parentNode.closest('article');
-  assert(clickedSlide === currentSlide);
-
-  if(clickedSlide.hasAttribute('removed-after-load')) {
-    console.debug('Exiting title click handler early due to stale state', clickedSlide);
-    return;
-  }
-
-  // Mark the current slide as read
-  let conn;
-  try {
-    conn = await openReaderDb();
-    await markSlideRead(conn, clickedSlide);
-  } catch(error) {
-    console.warn(error);
-  } finally {
-    IndexedDbUtils.close(conn);
-  }
 }
 
 async function onSlideClick(event) {
@@ -511,8 +472,13 @@ async function showNextSlide() {
 
     // Conditionally append more slides
     const unreadSlideElementCount = countUnreadSlides();
+    console.debug('Detected %d unread slides when deciding whether to append on navigate',
+      unreadSlideElementCount);
     if(unreadSlideElementCount < 2) {
+      console.debug('Appending additional slides prior to navigation');
       slideAppendCount = await appendSlides(conn);
+    } else {
+      console.debug('Not appending additional slides prior to navigation');
     }
 
     // Search for the next slide to show. The next slide is not necessarily adjacent.
@@ -533,11 +499,10 @@ async function showNextSlide() {
           break;
         }
       } else {
-        // TODO: this is being hit for the bug, which doesn't seem right
-        // NOTE: it could be related to navigation, like this is not updating next slide in the
-        // way I expect.
+        // BUG: some portions of the bug have been fixed, but there is still a bug where this
+        // gets hit after unsubscribe. The current slide is indeed the final slide, no additional
+        // slides were loaded. It means that something is wrong with the appending.
         console.debug(currentSlide);
-        console.dir(document.getElementById('slideshow-container'));
         console.debug('Ending search for next slide, no next sibling');
         // If we advanced and there was no next sibling, leave nextSlide undefined and end search
         break;
@@ -618,9 +583,32 @@ function showPreviousSlide() {
 function countUnreadSlides() {
 
   // TODO: change this to also exclude removed-after-load slides from the count?
+  // Yes, because it is causing a bug. If I unsubscribe from a feed and some entries from that
+  // feed were loaded in the UI, those entries are still present in the UI. And they still
+  // contribute to the unread count.
 
-  const slides = document.body.querySelectorAll('article[entry]:not([read])');
-  return slides.length;
+  // I may have done the above but have not fully tested.
+
+  //const slides = document.body.querySelectorAll('article[entry]:not([read])');
+  //return slides.length;
+
+  const slides = document.body.querySelectorAll('article[entry]');
+  let count = 0;
+  for(const slide of slides) {
+    if(slide.hasAttribute('read')) {
+      continue;
+    }
+
+    // Only increment count if slide not tagged as removed after load
+    if(slide.hasAttribute('removed-after-load')) {
+      console.debug('Ignoring slide removed after load when counting unread',
+        slide.getAttribute('entry'));
+      continue;
+    }
+
+    count++;
+  }
+  return count;
 }
 
 let keydownTimerId = null;
