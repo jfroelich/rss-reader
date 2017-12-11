@@ -12,6 +12,8 @@ const CHANNEL_NAME = 'reader';
 // @param limit {Number}
 export default async function removeOrphanedEntries(conn, limit) {
   assert(isOpen(conn));
+
+  // For orphan determination we want all feeds, we don't care whether feeds are inactive
   const feedIds = await getFeedIdsInDb(conn);
 
   function isOrphan(entry) {

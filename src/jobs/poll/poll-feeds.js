@@ -3,20 +3,8 @@ import {showNotification} from "/src/platform/platform.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeed from "/src/jobs/poll/poll-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import getFeedsFromDb from "/src/reader-db/get-feeds.js";
+import getActiveFeedsFromDb from "/src/reader-db/get-active-feeds.js";
 import promiseEvery from "/src/promise/every.js";
-
-// TODO: pollFeeds is a job, but pollFeed no longer is a job, it is now a shared module that is
-// also used by subscribe to get a feed's entries.
-
-// TODO: sending a BroadcastChannel message when polling completes is pointless. The event is not
-// significant because it represents too many things that may have just happened. This should
-// only be broadcasting interesting, granular events. For example, when an entry is added, or
-// when a feed's details change in the database or something. Furthermore, the responsibility for
-// broadcasting that message no longer feels like it is a concern of polling, but rather a concern
-// for whatever lower level function is doing something. E.g. putEntry or whatever in the database
-// can broadcast a message when an entry is added, and that means polling does not need to do.
-// In the interim, I removed the poll broadcast channel
 
 export default async function pollFeeds() {
   assert(this instanceof PollContext);
@@ -31,11 +19,11 @@ export default async function pollFeeds() {
   // simplifies calling pollFeeds as the caller does not need to be concerned with setting it.
   this.batchMode = true;
 
-  // Get all feeds from the database
-  const feeds = await getFeedsFromDb(this.readerConn);
+  // Get all active feeds from the database
+  const feeds = await getActiveFeedsFromDb(this.readerConn);
   // Concurrently poll each feed
   const promises = feeds.map(pollFeed, this);
-  // Wait for all feed poll operations to complete
+  // Wait for all feed poll operations to settle
   const pollFeedResolutions = await promiseEvery(promises);
 
   // Get the total entries added. pollFeed returns the number of entries added, or throws an error.

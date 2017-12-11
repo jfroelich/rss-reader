@@ -13,11 +13,7 @@ const CHANNEL_NAME = 'reader';
 export default async function removeLostEntries(conn, limit) {
   assert(IndexedDbUtils.isOpen(conn));
 
-  function isLost(entry) {
-    return !Entry.hasURL(entry);
-  }
-
-  const entries = await findEntriesInDb(conn, isLost, limit);
+  const entries = await findEntriesInDb(conn, isLostEntry, limit);
   console.debug('found %s lost entries', entries.length);
   if(entries.length === 0) {
     return;
@@ -36,4 +32,8 @@ export default async function removeLostEntries(conn, limit) {
     channel.postMessage(message);
   }
   channel.close();
+}
+
+function isLostEntry(entry) {
+  return !Entry.hasURL(entry);
 }

@@ -3,11 +3,10 @@ import * as Entry from "/src/reader-db/entry.js";
 import * as Feed from "/src/reader-db/feed.js";
 import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 
-// TODO: this should come from config?
+// TODO: should certain values here come from config.js?
+
 const NAME = 'reader';
 const VERSION = 24;
-
-// TODO: this should come from config?
 const OPEN_TIMEOUT_MS = 500;
 
 // Opens a connection to the reader database

@@ -7,6 +7,9 @@ import {isCanonicalURLString} from "/src/url/url-string.js";
 // This is a wrapper around the generic parse-feed.js that translates the generic parsed feed format
 // into the app's specific storable feed format.
 
+// TODO: just ran into the same impression again as the following todo, I hate the processEntries
+// parameter. It should be two function calls or something.
+
 // TODO: I do not love the processEntries parameter. While processing entries is surely related to
 // post-fetch processing that needs to be done, I do not think it fits here. Rather than pass a
 // flag, the caller should merely decide whether to call a separate function. Not calling the

@@ -2,7 +2,7 @@ import assert from "/src/assert/assert.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import * as Feed from "/src/reader-db/feed.js";
 import putFeed from "/src/reader-db/put-feed.js";
-import getFeedsFromDb from "/src/reader-db/get-feeds.js";
+import getActiveFeedsFromDb from "/src/reader-db/get-active-feeds.js";
 import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import promiseEvery from "/src/promise/every.js";
@@ -10,7 +10,13 @@ import promiseEvery from "/src/promise/every.js";
 export default async function main(readerConn, iconCache) {
   assert(IndexedDbUtils.isOpen(readerConn));
   assert(iconCache.isOpen());
-  const feeds = await getFeedsFromDb(readerConn);
+
+  // This only looks at active feeds, not all feeds.
+  // We only care about refreshing active feeds. Presumably if a feed is inactive either
+  // it will not have a favicon (e.g. it is an unreachable network resource), or has not been
+  // updated in some time which indicates its favicon probably hasn't changed, and finally we just
+  // don't care about inactive feeds because they are generally no longer viewable.
+  const feeds = await getActiveFeedsFromDb(readerConn);
   const context = {readerConn: readerConn, iconCache: iconCache};
   await promiseEvery(feeds.map(updateFeedIcon, context));
 }
