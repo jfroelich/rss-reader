@@ -10,6 +10,7 @@ import condenseTagnamesFilter from "/src/filters/condense-tagnames-filter.js";
 import containerFilter from "/src/filters/container-filter.js";
 import elementBlacklistFilter from "/src/filters/element-blacklist-filter.js";
 import emphasisFilter from "/src/filters/emphasis-filter.js";
+import emptyAttributeFilter from "/src/filters/empty-attribute-filter.js";
 import ensureBodyFilter from "/src/filters/ensure-body-filter.js";
 import figureFilter from "/src/filters/figure-filter.js";
 import formattingAnchorFilter from "/src/filters/formatting-anchor-filter.js";
@@ -140,4 +141,6 @@ export default async function applyAllFilters(doc, documentURL, fetchImageTimeou
   };
 
   attributeFilter(doc, attributeWhitelist);
+
+  emptyAttributeFilter(doc);
 }
