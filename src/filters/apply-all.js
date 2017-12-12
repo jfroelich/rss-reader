@@ -136,7 +136,7 @@ export default async function applyAllFilters(doc, documentURL, fetchImageTimeou
     a: ['href', 'name', 'title', 'rel'],
     iframe: ['src'],
     source: ['media', 'sizes', 'srcset', 'src', 'type'],
-    img: ['src', 'alt', 'title', 'srcset']
+    img: ['src', 'alt', 'title', 'srcset', 'width', 'height']
   };
 
   attributeFilter(doc, attributeWhitelist);

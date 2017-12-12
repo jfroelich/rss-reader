@@ -4,8 +4,14 @@ import parseInt10 from "/src/utils/parse-int-10.js";
 import promiseEvery from "/src/promise/every.js";
 import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url/url.js";
 
-
 // Module related to image size attributes
+
+const DEBUG = false;
+function log(...args) {
+  if(DEBUG) {
+    console.log(...args);
+  }
+}
 
 
 const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];
@@ -35,6 +41,9 @@ export default async function filterDocument(doc, allowedProtocols, timeoutMs) {
 
   // Get all images
   const images = doc.body.getElementsByTagName('img');
+  if(!images.length) {
+    return;
+  }
 
   // Concurrently process each image
   const promises = [];
@@ -47,6 +56,7 @@ export default async function filterDocument(doc, allowedProtocols, timeoutMs) {
     if(result) {
       result.image.setAttribute('width', '' + result.width);
       result.image.setAttribute('height', '' + result.height);
+      log(result.image.outerHTML);
     }
   }
 }
@@ -108,6 +118,7 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     return;
   }
 
+  // TODO: only exit early if not only is variable defined but has both dimensions
   const urlDimensions = sniffDimensionsFromURL(sourceURL);
   if(urlDimensions) {
     result.width = urlDimensions.width;
@@ -118,6 +129,10 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
 
   const response = await fetchImageElement(sourceURL.href, timeoutMs);
 
+  log('Found dimensions from fetch', image.outerHTML, response.width, response.height);
+
+  // TODO: do not trust that dimension are set?
+
   // Access by property, attributes are not set
   result.width = response.width;
   result.height = response.height;
@@ -125,8 +140,10 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
   return result;
 }
 
+// This only returns a useful object if both dimensions are set
 function sniffDimensionsFromURL(sourceURL) {
-  // data urls will not contain useful information so ignore them
+  // data urls will not contain useful information so ignore them. The information could be
+  // parsed but that functionality is already built into native fetch
   if(sourceURL.protocol === 'data:') {
     return;
   }
@@ -180,7 +197,7 @@ function sniffDimensionsFromURL(sourceURL) {
   }
 }
 
-
+// This only returns if both dimensions are set
 // Only looks at inline style.
 // Returns {'width': int, 'height': int} or undefined
 function getInlineStyleDimensions(element) {
