@@ -177,6 +177,10 @@ ul#navigation-menu li.navigation-item-selected {
   -webkit-user-select: none;
 }
 
+#feedlist li[inactive] {
+  color: #888888;
+}
+
 #feedlist li:hover {
   background-color: rgb(50, 80, 184);
   color:#efefef;

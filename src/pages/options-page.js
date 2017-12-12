@@ -24,6 +24,7 @@ import openReaderDb from "/src/reader-db/open.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
 import activateFeedInDb from "/src/reader-db/activate-feed.js";
+import deactivateFeedInDb from "/src/reader-db/deactivate-feed.js";
 import * as Feed from "/src/reader-db/feed.js";
 import findFeedByIdInDb from "/src/reader-db/find-feed-by-id.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
@@ -193,6 +194,10 @@ function feedListAppendFeed(feed) {
     itemElement.setAttribute('title', feed.description);
   }
 
+  if(feed.active !== true) {
+    itemElement.setAttribute('inactive', 'true');
+  }
+
   itemElement.onclick = feedListItemOnclick;
 
   if(feed.faviconURLString) {
@@ -288,9 +293,11 @@ async function feedListItemOnclick(event) {
 
   const activateButton = document.getElementById('details-activate');
   activateButton.value = '' + feed.id;
-  // While active is obviously a primative boolean and this could be expressed more succinctly, I
-  // prefer to be explicit given the issues with unexpected types.
   activateButton.disabled = feed.active === true ? true : false;
+
+  const deactivateButton = document.getElementById('details-deactivate');
+  deactivateButton.value = '' + feed.id;
+  deactivateButton.disabled = feed.active === false ? true : false;
 
   // TODO: show num entries, num unread/red, etc
   // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
@@ -493,11 +500,39 @@ async function activateButtonOnclick(event) {
     IndexedDbUtils.close(conn);
   }
 
-  console.debug('Activated feed, returning to feed list');
+  console.debug('Activated feed %d, returning to feed list', feedId);
+
+  const itemElement = document.querySelector('li[feed="' + feedId + '"]');
+  if(itemElement) {
+    itemElement.removeAttribute('inactive');
+  }
 
   showSectionById('subs-list-section');
 }
 
+async function deactivateButtonOnclick(event) {
+  const feedId = parseInt10(event.target.value);
+  assert(Feed.isValidId(feedId));
+  let conn;
+  try {
+    conn = await openReaderDb();
+    await deactivateFeedInDb(conn, feedId);
+  } catch(error) {
+    console.warn(error);
+    return;
+  } finally {
+    IndexedDbUtils.close(conn);
+  }
+
+  console.debug('Deactivated feed %d, returning to feed list', feedId);
+
+  const itemElement = document.querySelector('li[feed="' + feedId + '"]');
+  if(itemElement) {
+    itemElement.setAttribute('inactive', 'true');
+  }
+
+  showSectionById('subs-list-section');
+}
 
 
 function importOPMLButtonOnclick(event) {
@@ -736,6 +771,9 @@ unsubscribeButton.onclick = unsubscribeButtonOnclick;
 
 const activateButton = document.getElementById('details-activate');
 activateButton.onclick = activateButtonOnclick;
+
+const deactivateButton = document.getElementById('details-deactivate');
+deactivateButton.onclick = deactivateButtonOnclick;
 
 // Init the subscription form section
 const subscriptionForm = document.getElementById('subscription-form');
