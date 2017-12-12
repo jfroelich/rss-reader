@@ -1,4 +1,5 @@
 import assert from "/src/assert/assert.js";
+import voidElements from "/src/dom/void-elements.js";
 
 // This module exports a single function, coerceElement, that changes the type of an element. An
 // element's type is indicated by its name. This is essentially a renaming of the element.
@@ -93,29 +94,12 @@ function moveChildNodes(fromElement, toElement) {
   }
 }
 
-// See https://html.spec.whatwg.org/multipage/syntax.html#void-elements
-// This is a set, but given the small size, it is better to use a simple array.
-const kVoidElements = [
-  'area',
-  'base',
-  'br',
-  'col',
-  'embed',
-  'hr',
-  'img',
-  'input',
-  'link',
-  'meta',
-  'param',
-  'source',
-  'track',
-  'wbr'
-];
+
 
 function isVoidElement(element) {
   // This assumes element.ownerDocument is implicitly flagged as html so that localName yields
   // the normalized name which is in lowercase.
-  return kVoidElements.includes(element.localName);
+  return voidElements.includes(element.localName);
 }
 
 // Returns true if the given name is a valid name for an element. This only does minimal validation
