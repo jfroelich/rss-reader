@@ -18,7 +18,7 @@ function filterElement(element) {
   for(const name of names) {
     if(!isBooleanAttribute(element, name)) {
       const value = element.getAttribute(name);
-      if(!value.trim()) {
+      if(typeof value !== 'string' || !value.trim()) {
         // console.debug('Removing attribute "%s"', name, element.outerHTML);
         element.removeAttribute(name);
       }
