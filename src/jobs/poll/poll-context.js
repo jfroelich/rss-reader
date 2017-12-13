@@ -1,7 +1,6 @@
 import assert from "/src/assert/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
-import openReaderDb from "/src/reader-db/open.js";
-import {close as closeDb, isOpen as isOpenDb} from "/src/indexeddb/utils.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 
 // TODO: this should probably be defined externally, because multiple modules are concerned with
 // either sending or receiving messages from and to this channel
@@ -13,8 +12,7 @@ const CHANNEL_NAME = 'reader';
 // pollFeeds. It helps simplify the number of arguments that each function needs. It is a function
 // instead of a simple object to allow for simple allocation (use of "new").
 export default function PollContext() {
-  // {IDBDatabase} a connection to the reader database
-  this.readerConn = undefined;
+  /* FeedStore */ this.feedStore;
 
   // {FaviconCache} cache for favicon lookups, it should be in the open state
   this.iconCache = undefined;
@@ -55,6 +53,10 @@ export default function PollContext() {
 
 // Open database connections
 PollContext.prototype.open = async function() {
+  // The caller is responsible for wiring up an instance of FeedStore prior to opening the
+  // context.
+  assert(this.feedStore instanceof FeedStore);
+
   // The caller is responsible for wiring up an instance of FaviconCache prior to opening the
   // context.
   assert(this.iconCache instanceof FaviconCache);
@@ -73,7 +75,7 @@ PollContext.prototype.open = async function() {
   // of a cache? etc.
 
   // Ensure that the connections are not already open
-  assert(!isOpenDb(this.readerConn));
+  assert(!this.feedStore.isOpen());
   assert(!this.iconCache.isOpen());
 
   // This function creates and assigns a new channel. If channel is already defined, that would
@@ -89,13 +91,9 @@ PollContext.prototype.open = async function() {
   // event listener (or until their page or worker is closed).
   assert(!this.channel);
 
-  // Open both connections concurrently
-  const promises = [openReaderDb(), this.iconCache.open()];
-  // Wait for both connections to finish opening.
-  // Allow any errors to bubble up.
-  // Use partial destructuring. Grab the reader connection from the resolutions array but ignore
-  // the iconCache result.
-  [this.readerConn] = await Promise.all(promises);
+  // Open both connections concurrently. Allow any errors to bubble up.
+  const promises = [this.feedStore.open(), this.iconCache.open()];
+  await Promise.all(promises);
 
   // Create a channel that will be used to broadcast messages such as when a new entry is added to
   // the database.
@@ -105,23 +103,28 @@ PollContext.prototype.open = async function() {
 // Close database connections
 PollContext.prototype.close = function() {
   // The if checks are for caller convenience given that close is often called from finally block
+  // where I want to be confident no additional exceptions are thrown
   if(this.channel) {
     this.channel.close();
+  }
+
+  if(this.feedStore) {
+    this.feedStore.close();
   }
 
   if(this.iconCache) {
     this.iconCache.close();
   }
-
-  closeDb(this.readerConn);
 };
 
-// This is a simple helper function that in some cases helps the caller avoid the need to explicitly
-// create and link a FaviconCache, which in turn basically allows the caller to avoid even importing
-// the FaviconCache (assuming it is of course not in use in the module for other reasons).
-// I currently have mixed feelings about initializing this in the constructor, because of things
-// like inversion of control, dependency injection, etc, so I've added this for now but I may
-// decide to just deprecate it eventually.
-PollContext.prototype.initFaviconCache = function() {
+PollContext.prototype.init = function() {
+  if(this.feedStore) {
+    console.warn('feedStore already initialized, re-initializing anyway');
+  }
+  this.feedStore = new FeedStore();
+
+  if(this.iconCache) {
+    console.warn('iconCache already initialized, re-initializing anyway');
+  }
   this.iconCache = new FaviconCache();
 };

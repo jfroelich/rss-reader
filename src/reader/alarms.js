@@ -120,6 +120,7 @@ async function handlePollFeedsAlarmWakeup(alarm) {
   }
 
   const pc = new PollContext();
+  pc.feedStore = new FeedStore();
   pc.iconCache = new FaviconCache();
   try {
     await pc.open();

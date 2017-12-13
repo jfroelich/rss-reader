@@ -1,4 +1,5 @@
 import assert from "/src/assert/assert.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeeds from "/src/jobs/poll/poll-feeds.js";
 import * as Entry from "/src/reader-db/entry.js";
@@ -683,7 +684,7 @@ async function refreshAnchorOnclick(event) {
   refreshInProgress = true;
 
   const pc = new PollContext();
-  pc.initFaviconCache();
+  pc.init();
   pc.allowMeteredConnections = true;
   pc.ignoreRecencyCheck = true;
   pc.ignoreModifiedCheck = true;

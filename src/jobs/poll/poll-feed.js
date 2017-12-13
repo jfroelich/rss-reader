@@ -1,14 +1,15 @@
 import assert from "/src/assert/assert.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import {OfflineError} from "/src/fetch/errors.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
 import {showNotification} from "/src/platform/platform.js";
+import promiseEvery from "/src/promise/every.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import putFeedInDb from "/src/reader-db/put-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as Feed from "/src/reader-db/feed.js";
-import promiseEvery from "/src/promise/every.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 
 // TODO: to enforce that the feed parameter is a feed object loaded from the database, it is
@@ -28,6 +29,10 @@ const FEED_ERROR_COUNT_DEACTIVATION_THRESHOLD = 10;
 // Check for updated content for the given feed
 export default async function pollFeed(feed) {
   assert(this instanceof PollContext);
+
+  assert(this.feedStore instanceof FeedStore);
+  assert(this.feedStore.isOpen());
+
   assert(Feed.isFeed(feed));
   assert(Feed.hasURL(feed));
 
@@ -35,7 +40,6 @@ export default async function pollFeed(feed) {
   console.log('Polling feed', url);
 
   if(didPollFeedRecently.call(this, feed)) {
-    // Return 0 to indicate no entries added
     return 0;
   }
 
@@ -45,9 +49,10 @@ export default async function pollFeed(feed) {
   try {
     response = await fetchFeed(requestURL, this.fetchFeedTimeoutMs, this.extendedFeedTypes);
   } catch(error) {
-    await handlePollFeedError(error, this.readerConn, feed, 'fetch-feed');
+    await handlePollFeedError(error, this.feedStore, feed, 'fetch-feed');
   }
 
+  // TODO: use a stricter assert that checks type not just definedness
   assert(typeof response !== 'undefined');
 
   // TODO: in the process of implementing I realized I also want to treat parse errors as errors
@@ -69,7 +74,7 @@ export default async function pollFeed(feed) {
     if(errorCountChanged) {
       console.debug('Feed unmodified, error count changed, storing and exiting early');
       const skipPrep = true;
-      await putFeedInDb(feed, this.readerConn, skipPrep);
+      await putFeedInDb(feed, this.feedStore.conn, skipPrep);
     }
 
     // Because the feed has not changed, there is no need to do any additional processing.
@@ -83,11 +88,11 @@ export default async function pollFeed(feed) {
   try {
     feedXML = await response.text();
   } catch(error) {
-    await handlePollFeedError(error, this.readerConn, feed, 'read-response-body');
+    await handlePollFeedError(error, this.feedStore, feed, 'read-response-body');
   }
 
   // Either (1) the above call threw as expected and this is never reached or (2) feedXML was
-  // assigned a string value.
+  // assigned a string value (that is defined).
   assert(typeof feedXML === 'string');
 
   let parseResult;
@@ -96,12 +101,12 @@ export default async function pollFeed(feed) {
     parseResult = parseFeed(feedXML, url, response.responseURL, response.lastModifiedDate,
       PROCESS_ENTRIES);
   } catch(error) {
-    await handlePollFeedError(error, this.readerConn, feed, 'parse-feed');
+    await handlePollFeedError(error, this.feedStore, feed, 'parse-feed');
   }
 
   const mergedFeed = Feed.merge(feed, parseResult.feed);
   const skipPrep = false;
-  const storedFeed = await putFeedInDb(mergedFeed, this.readerConn, skipPrep);
+  const storedFeed = await putFeedInDb(mergedFeed, this.feedStore.conn, skipPrep);
 
   // Now process the entries
   const entries = parseResult.entries;
@@ -111,7 +116,7 @@ export default async function pollFeed(feed) {
 
   // If not in batch mode and some entries were added, update the badge.
   if(!this.batchMode && numEntriesAdded > 0) {
-    await updateBadgeText(this.readerConn);
+    await updateBadgeText(this.feedStore.conn);
   }
 
   // If not in batch mode and some entries were added, then show a notification
@@ -212,11 +217,11 @@ function handleFetchFeedSuccess(feed) {
 // the body content of the http response failed, or parsing the body failed. This
 // ALWAYS throws an error (if not then there is a programming error somewhere).
 // @param error {Error}
-// @param conn {IDBDatabase}
+// @param store {FeedStore}
 // @param feed {Object}
 // @param callCategory {String} optional, a machine-readable string description of the context in
 // which the call was made
-async function handlePollFeedError(error, conn, feed, callCategory) {
+async function handlePollFeedError(error, store, feed, callCategory) {
   // Unchecked errors indicate programming errors. This happens regardless of the category.
   if(isUncheckedError(error)) {
     throw error;
@@ -267,7 +272,7 @@ async function handlePollFeedError(error, conn, feed, callCategory) {
   // non-blocking seems a bit complex at the moment, so just getting it working for now.
   // NOTE: this can also throw, and thereby mask the error, but I suppose that is ok, because
   // both are errors, and in this case I suppose the db error trumps the fetch error
-  await putFeedInDb(feed, conn, skipPrep);
+  await putFeedInDb(feed, store.conn, skipPrep);
 
   // We've partially handled the error in the sense that we attached side effects to it, but we
   // do not affect how the error affects the code evaluation path. That is up to caller. So this
@@ -336,7 +341,7 @@ async function pollEntries(feed, entries) {
   assert(this instanceof PollContext);
 
   const pec = new PollEntryModule.Context();
-  pec.readerConn = this.readerConn;
+  pec.feedStore = this.feedStore;
   pec.iconCache = this.iconCache;
   pec.channel = this.channel;
 
@@ -344,15 +349,14 @@ async function pollEntries(feed, entries) {
   pec.fetchHTMLTimeoutMs = this.fetchHTMLTimeoutMs;
   pec.fetchImageTimeoutMs = this.fetchImageTimeoutMs;
 
-
   // Concurrently process entries
   const pollEntryPromises = entries.map(PollEntryModule.pollEntry, pec);
   const pollEntryResolutions = await promiseEvery(pollEntryPromises);
 
   // pollEntry returns the entry that was added, otherwise it returns undefined if the entry was
   // not added. If it throws, then promiseEvery yields undefined in place of the rejection in
-  // the resolutions array. Therefore, to get the number of entries added we simply iterate over
-  // the resolutions array for defined things.
+  // the resolutions array. Therefore, to get the number of entries added we simply count the
+  // number of defined resolution elements.
 
   let numEntriesAdded = 0;
   for(const resolution of pollEntryResolutions) {

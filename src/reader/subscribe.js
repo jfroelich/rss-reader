@@ -2,6 +2,7 @@ import assert from "/src/assert/assert.js";
 import {showNotification} from "/src/platform/platform.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import {OfflineError} from "/src/fetch/errors.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
@@ -188,6 +189,7 @@ async function deferredPollFeed(feed) {
   await sleep(500);
 
   const pc = new PollContext();
+  pc.feedStore = new FeedStore();
   pc.iconCache = new FaviconCache();
 
   // We just fetched the feed. We definitely want to be able to process its entries, so disable

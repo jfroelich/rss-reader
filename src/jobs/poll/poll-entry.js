@@ -1,29 +1,30 @@
 import assert from "/src/assert/assert.js";
 import {INACCESSIBLE_CONTENT_DESCRIPTORS} from "/src/config.js";
-import * as Entry from "/src/reader-db/entry.js";
+import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
 import parseHTML from "/src/html/parse.js";
+import rewriteURL from "/src/jobs/poll/rewrite-url.js";
+import * as Entry from "/src/reader-db/entry.js";
 import entryAdd from "/src/reader-db/entry-add.js";
 import findEntryIdByURLInDb from "/src/reader-db/find-entry-id-by-url.js";
-import rewriteURL from "/src/jobs/poll/rewrite-url.js";
 import sniffIsBinaryURL from "/src/url/sniff.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
 import check from "/src/utils/check.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 
 export class Context {
   constructor() {
-    this.readerConn = null;
-    this.iconCache = null;
-    this.channel = null;
+    /* FeedStore */ this.feedStore;
+    /* FaviconCache */ this.iconCache;
+    /* BroadcastChannel */ this.channel;
 
     // TODO: this doesn't need to be called feedFaviconURL, it just represents the fallback url,
     // so it would be better named as something like defaultFaviconURL
-    this.feedFaviconURL = null;
+    this.feedFaviconURL;
     this.fetchHTMLTimeoutMs = undefined;
     this.fetchImageTimeoutMs = undefined;
   }
@@ -34,7 +35,12 @@ export class Context {
 // @param this {Context}
 export async function pollEntry(entry) {
   assert(this instanceof Context);
-  assert(IndexedDbUtils.isOpen(this.readerConn));
+
+  assert(this.feedStore instanceof FeedStore);
+  assert(this.feedStore.isOpen());
+  assert(this.iconCache instanceof FaviconCache);
+  assert(this.iconCache.isOpen());
+
   assert(Entry.isEntry(entry));
 
   // Cannot assume entry has url (not an error)
@@ -53,7 +59,7 @@ export async function pollEntry(entry) {
     return;
   }
 
-  if(await findEntryIdByURLInDb(this.readerConn, url.href)) {
+  if(await findEntryIdByURLInDb(this.feedStore.conn, url.href)) {
     return;
   }
 
@@ -67,7 +73,7 @@ export async function pollEntry(entry) {
         return;
       }
 
-      if(await findEntryIdByURLInDb(this.readerConn, responseURL.href)) {
+      if(await findEntryIdByURLInDb(this.feedStore.conn, responseURL.href)) {
         return;
       }
 
@@ -122,7 +128,7 @@ export async function pollEntry(entry) {
     entry.content = 'Empty or malformed content';
   }
 
-  const newEntryId = await entryAdd(entry, this.readerConn, this.channel);
+  const newEntryId = await entryAdd(entry, this.feedStore.conn, this.channel);
   return newEntryId;
 }
 
@@ -146,8 +152,8 @@ async function fetchHTMLHelper(url) {
 
 // Return true if url contains inaccessible content
 function isInaccessibleContentURL(url) {
-  for(const des of INACCESSIBLE_CONTENT_DESCRIPTORS) {
-    if(des.pattern && des.pattern.test(url.hostname)) {
+  for(const desc of INACCESSIBLE_CONTENT_DESCRIPTORS) {
+    if(desc.pattern && desc.pattern.test(url.hostname)) {
       return true;
     }
   }

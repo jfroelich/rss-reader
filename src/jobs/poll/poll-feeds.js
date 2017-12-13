@@ -1,4 +1,6 @@
 import assert from "/src/assert/assert.js";
+import FaviconCache from "/src/favicon/cache.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import {showNotification} from "/src/platform/platform.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeed from "/src/jobs/poll/poll-feed.js";
@@ -8,8 +10,11 @@ import promiseEvery from "/src/promise/every.js";
 
 export default async function pollFeeds() {
   assert(this instanceof PollContext);
-
-  // The caller is responsible for wiring up a valid channel. If the channel is defined it is open
+  assert(this.feedStore instanceof FeedStore);
+  assert(this.feedStore.isOpen());
+  assert(this.iconCache instanceof FaviconCache);
+  assert(this.iconCache.isOpen());
+  // If a channel is defined it is implicitly open
   assert(this.channel instanceof BroadcastChannel);
 
   // Ensure that batch mode is on. This overrides whatever custom setting was used. The default
@@ -20,7 +25,7 @@ export default async function pollFeeds() {
   this.batchMode = true;
 
   // Get all active feeds from the database
-  const feeds = await getActiveFeedsFromDb(this.readerConn);
+  const feeds = await getActiveFeedsFromDb(this.feedStore.conn);
   // Concurrently poll each feed
   const promises = feeds.map(pollFeed, this);
   // Wait for all feed poll operations to settle
@@ -39,7 +44,7 @@ export default async function pollFeeds() {
 
   // Regardless of batch mode, refresh the unread count of the extension's badge
   if(totalNumEntriesAdded > 0) {
-    await updateBadgeText(this.readerConn);
+    await updateBadgeText(this.feedStore.conn);
   }
 
   // Regardless of batch mode, show a notification if entries were addded

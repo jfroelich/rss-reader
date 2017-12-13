@@ -43,6 +43,7 @@ cli.archiveEntries = async function(limit) {
 
 cli.pollFeeds = async function() {
   const pc = new PollContext();
+  pc.feedStore = new FeedStore();
   pc.iconCache = new FaviconCache();
   pc.allowMeteredConnections = true;
   pc.ignoreRecencyCheck = true;

@@ -9,9 +9,8 @@ import FeedStore from "/src/feed-store/feed-store.js";
 import {BG_IMAGES, FONTS} from "/src/config.js";
 import fadeElement from "/src/dom/fade-element.js";
 import FaviconCache from "/src/favicon/cache.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import htmlTruncate from "/src/html/truncate.js";
-import PollContext from "/src/jobs/poll/poll-context.js";
-import pollFeeds from "/src/jobs/poll/poll-feeds.js";
 import {
   pageStyleSettingsOnload,
   pageStyleSettingsOnchange
