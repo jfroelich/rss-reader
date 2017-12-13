@@ -39,7 +39,7 @@ export const isValidId = isPosInt;
 // Returns true if the entry has at least one url
 export function hasURL(entry) {
   assert(isEntry(entry));
-  return entry.urls && entry.urls.length;
+  return entry.urls && (entry.urls.length > 0);
 }
 
 // Returns the last url, as a string, in the entry's url list. This should never be called on an

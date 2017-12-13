@@ -25,18 +25,12 @@ import parseInt10 from "/src/utils/parse-int-10.js";
 export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) {
   assert(url instanceof URL);
 
-  // Before fetching, check whether the url is fetchable according to this app's fetch policy.
   // TODO: PermissionsError feels like a misnomer? Maybe stop trying to be so abstract and call it
   // precisely what it is, a FetchPolicyRejectionError or something.
 
   check(isAllowedURL(url), PermissionsError, 'Refused to fetch url', url);
-
   const response = await fetchWithTimeout(url, options, timeoutMs);
-
-  // Throw an unchecked error if response is undefined as this represents a violation of a
-  // contractual invariant. This should never happen and is unexpected.
-  assert(response);
-
+  assert(response instanceof Response);
   check(response.ok, FetchError, 'Response not ok for url "%s", status is', url, response.status);
 
   // This is a caveat of not passing options along. But I want to programmatically specify that

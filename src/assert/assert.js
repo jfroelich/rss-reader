@@ -1,26 +1,37 @@
 import sprintf from "/src/string/sprintf.js";
 
 // If true, any assertion errors are immediately logged. This helps avoid issues with promise
-// swallowed exceptions. This is tested against every time the assert function is called.
-// Currently this is true in development to really emphasize unexpected errors and make an earnest
-// attempt at avoiding any hidden errors.
+// swallowed exceptions. While the browser generally logs an error message for uncaught exceptions
+// in promise executors, it doesn't help when the error is captured but not handled correctly
+// somewhere higher up in the call stack. This is tested against every time the assert function is
+// called. Currently this is true in development to really emphasize unexpected errors and make an
+// earnest attempt at avoiding any hidden errors.
 const LOG_ERRORS = true;
 
-// Throws an assertion error when the condition value is false-like
-// @param condition {Any} any value, usually the result of some expression
+// Throws an assertion error when the condition value is false or false-like
+// @param booleanValue {Any} any value, usually the result of some expression, preferably boolean
 // @rest any number of any type of additional arguments that are forwarded to a call to
 // sprintf that formats the arguments into a string that becomes the message value of the
 // assertion error that is thrown. If no additional arguments are given then a default error
 // message is used.
-export default function assert(condition, ...varargs) {
-  if(!condition) {
-    const formattedMessage = sprintf(...varargs);
-    const error = new AssertionError(formattedMessage);
-    if(LOG_ERRORS) {
-      console.error(error);
-    }
-    throw error;
+export default function assert(booleanValue, ...varargs) {
+
+  // Weakly check the parameter type. I prefer callers use a proper boolean. Warn using
+  // console.error so that the stack trace is captured.
+  if(typeof booleanValue !== 'boolean') {
+    console.error('not boolean', booleanValue);
   }
+
+  if(booleanValue) {
+    return;
+  }
+
+  const errorMessage = sprintf(...varargs) || 'Assertion failed';
+  const error = new AssertionError(errorMessage);
+  if(LOG_ERRORS) {
+    console.error(errorMessage);
+  }
+  throw error;
 }
 
 // An assertion error indicates something went really wrong in an unexpected way. For example,

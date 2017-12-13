@@ -11,7 +11,7 @@ export default function boilerplateFilter(doc, options) {
   options = options || {};
 
   const bestElement = findHighScoreElement(doc, options);
-  assert(bestElement);
+  assert(bestElement instanceof Element);
 
   const annotate = 'annotate' in options;
   if(!annotate) {

@@ -16,7 +16,10 @@ export function pageStyleSettingsOnchange(event) {
 // default style sheet.
 export function pageStyleSettingsOnload() {
   const sheet = CSSUtils.getDefaultStylesheet();
-  assert(sheet);
+
+  // TODO: use instanceof here with the proper type, which I forgot at the moment
+  assert(typeof sheet !== 'undefined');
+
   sheet.addRule('article.entry', entryCSSCreateEntryRuleText());
 
   // TODO: convert these two to be like above pattern where I get the text and then add the rule

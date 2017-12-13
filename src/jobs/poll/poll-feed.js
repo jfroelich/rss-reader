@@ -316,7 +316,7 @@ function isUnmodifiedFeed(feed, response) {
 }
 
 function cascadeFeedPropertiesToEntries(feed, entries) {
-  assert(feed.id);
+  assert(Feed.isValidId(feed.id));
 
   for(const entry of entries) {
     entry.feed = feed.id;

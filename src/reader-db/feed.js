@@ -31,7 +31,7 @@ export const isValidId = isPosInt;
 
 export function hasURL(feed) {
   assert(isFeed(feed));
-  return feed.urls && feed.urls.length;
+  return feed.urls && (feed.urls.length > 0);
 }
 
 // Returns the last url in the feed's url list as a string

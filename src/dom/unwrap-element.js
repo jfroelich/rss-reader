@@ -4,7 +4,8 @@ import assert from "/src/assert/assert.js";
 // result in adjacent text nodes.
 export default function unwrap(element) {
   assert(element instanceof Element);
-  assert(element.parentNode, 'tried to unwrap orphaned element', element.outerHTML);
+  assert(element.parentNode instanceof Element, 'Tried to unwrap orphaned element',
+    element.outerHTML);
 
   const parentElement = element.parentNode;
   const previousSibling = element.previousSibling;

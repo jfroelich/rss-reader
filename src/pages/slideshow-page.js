@@ -149,13 +149,13 @@ async function onEntryExpiredMessage(message) {
 
 function showLoadingInformation() {
   const loadingElement = document.getElementById('initial-loading-panel');
-  assert(loadingElement);
+  assert(loadingElement instanceof Element);
   loadingElement.style.display = 'block';
 }
 
 function hideLoadingInformation() {
   const loadingElement = document.getElementById('initial-loading-panel');
-  assert(loadingElement);
+  assert(loadingElement instanceof Element);
   loadingElement.style.display = 'none';
 }
 

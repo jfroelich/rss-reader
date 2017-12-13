@@ -139,7 +139,7 @@ export function errorMessageHide() {
 }
 
 function showSection(menuItemElement) {
-  assert(menuItemElement);
+  assert(menuItemElement instanceof Element);
 
   if(currentMenuItem === menuItemElement) {
     return;
@@ -158,7 +158,10 @@ function showSection(menuItemElement) {
   // Show the new section
   const sectionId = menuItemElement.getAttribute('section');
   const sectionElement = document.getElementById(sectionId);
-  assert(sectionElement, 'No matching section ' + sectionId);
+
+  // TODO: while this is certainly indicative of a serious error, serious errors shouldn't happen
+  // at UI level, so something else should happen here?
+  assert(sectionElement instanceof Element, 'No matching section ' + sectionId);
 
   sectionElement.style.display = 'block';
 
@@ -606,7 +609,7 @@ function enableBgProcessingCheckboxOnclick(event) {
 
 async function bgProcessingCheckboxInit() {
   const checkbox = document.getElementById('enable-background');
-  assert(checkbox);
+  assert(checkbox instanceof Element);
 
   // TODO: this should be using a local storage variable and instead the permission should be
   // permanently defined.

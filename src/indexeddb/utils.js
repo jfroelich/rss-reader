@@ -8,7 +8,7 @@ const DEBUG = false;
 // Returns true if the conn is open. This should only be used with indexedDB databases opened by
 // this library.
 export function isOpen(conn) {
-  return conn instanceof IDBDatabase && conn.onabort;
+  return conn instanceof IDBDatabase && typeof conn.onabort === 'function';
 }
 
 // Wraps a call to indexedDB.open that imposes a time limit and translates blocked events into
