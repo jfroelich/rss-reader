@@ -1,5 +1,5 @@
 import FaviconCache from "/src/favicon/cache.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import {
   addBadgeClickListener,
   addInstallListener,
@@ -8,7 +8,6 @@ import {
 import "/src/reader/alarms.js";
 import "/src/reader/cli.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import openReaderDb from "/src/reader-db/open.js";
 import setupReaderDb from "/src/reader-db/setup.js";
 
 // This module should be loaded exclusively in the background page. Does various startup work.
@@ -17,14 +16,14 @@ import setupReaderDb from "/src/reader-db/setup.js";
 // to allow for the await, and to allow for finally to work given that some functions throw
 // assertion errors outside of returned promises.
 async function initBadgeText() {
-  let conn;
+  const fs = new FeedStore();
   try {
-    conn = await openReaderDb();
-    await updateBadgeText(conn);
+    await fs.open();
+    await updateBadgeText(fs.conn);
   } catch(error) {
     console.warn(error);
   } finally {
-    IndexedDbUtils.close(conn);
+    fs.close();
   }
 }
 
