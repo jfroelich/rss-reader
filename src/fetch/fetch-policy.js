@@ -46,6 +46,14 @@ export default function isAllowedURL(url) {
     return false;
   }
 
+  if(protocol === 'chrome:') {
+    return false;
+  }
+
+  if(protocol === 'chrome-extension:') {
+    return false;
+  }
+
   // Prevent fetches of urls containing credentials
   if(url.username || url.password) {
     return false;
