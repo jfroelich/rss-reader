@@ -10,13 +10,11 @@ import {
 import {openTab} from "/src/platform/platform.js";
 import escapeHTML from "/src/html/escape.js";
 import htmlTruncate from "/src/html/truncate.js";
-import openReaderDb from "/src/reader-db/open.js";
 import entryMarkRead from "/src/reader-db/entry-mark-read.js";
 import findViewableEntriesInDb from "/src/reader-db/find-viewable-entries.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 const DEBUG = false;
@@ -91,14 +89,14 @@ async function onEntryAddedMessage(message) {
   dprintf('Calling appendSlides as a result of entry-added message');
 
   // Load new articles
-  let conn;
+  const feedStore = new FeedStore();
   try {
-    conn = await openReaderDb();
-    await appendSlides(conn);
+    await feedStore.open();
+    await appendSlides(feedStore);
   } catch(error) {
     console.warn(error);
   } finally {
-    IndexedDbUtils.close(conn);
+    feedStore.close();
   }
 }
 
@@ -166,8 +164,10 @@ function removeSlide(slideElement) {
   slideElement.remove();
 }
 
-async function markSlideRead(conn, slideElement) {
-  assert(IndexedDbUtils.isOpen(conn));
+async function markSlideRead(feedStore, slideElement) {
+  assert(feedStore instanceof FeedStore);
+  assert(feedStore.isOpen());
+  assert(slideElement instanceof Element);
 
   // Get the entry id for the slide
   const slideEntryAttributeValue = slideElement.getAttribute('entry');
@@ -193,7 +193,7 @@ async function markSlideRead(conn, slideElement) {
 
   // Update storage. Handle any error in an opaque manner.
   try {
-    await entryMarkRead(conn, entryId);
+    await entryMarkRead(feedStore.conn, entryId);
   } catch(error) {
     console.warn(error);
     // Fall through and mark the element as read anyway, to prevent the error that appears later
@@ -206,20 +206,20 @@ async function markSlideRead(conn, slideElement) {
   slideElement.setAttribute('read', '');
 }
 
-async function appendSlides(conn) {
-
-  dprintf('Appending up to 3 new slides');
+async function appendSlides(feedStore) {
+  dprintf('Possibly appending new slides');
 
   const limit = 3;
   let entries = [];
   const offset = countUnreadSlides();
 
   try {
-    entries = await findViewableEntriesInDb(conn, offset, limit);
+    entries = await findViewableEntriesInDb(feedStore.conn, offset, limit);
   } catch(error) {
     console.warn(error);
     showErrorMessage(
-      'There was a problem loading articles from storage, try refreshing or reinstalling');
+      'Unable to show new articles, there was a problem loading articles from storage, ' +
+      'try refreshing or reinstalling');
     return 0;
   }
 
@@ -426,14 +426,15 @@ async function onSlideClick(event) {
   }
 
   // Mark the current slide as read
-  let conn;
+  const feedStore = new FeedStore();
   try {
-    conn = await openReaderDb();
-    await markSlideRead(conn, clickedSlide);
+    await feedStore.open();
+    await markSlideRead(feedStore, clickedSlide);
   } catch(error) {
+    // TODO: visually show error
     console.warn(error);
   } finally {
-    IndexedDbUtils.close(conn);
+    feedStore.close();
   }
 
   // Still signal the click should not default to normal click behavior, the browser should not
@@ -470,9 +471,9 @@ async function showNextSlide() {
 
   const oldSlideElement = currentSlide;
   let slideAppendCount = 0;
-  let conn;
+  const feedStore = new FeedStore();
   try {
-    conn = await openReaderDb();
+    await feedStore.open();
 
     // NOTE: this must occur before searching for next slide, otherwise it will not load on demand
 
@@ -482,7 +483,7 @@ async function showNextSlide() {
       unreadSlideElementCount);
     if(unreadSlideElementCount < 2) {
       dprintf('Appending additional slides prior to navigation');
-      slideAppendCount = await appendSlides(conn);
+      slideAppendCount = await appendSlides(feedStore);
     } else {
       dprintf('Not appending additional slides prior to navigation');
     }
@@ -529,12 +530,12 @@ async function showNextSlide() {
 
       // Only mark the slide as read if navigation occurs, which only occurs if there was a next
       // slide
-      await markSlideRead(conn, oldSlideElement);
+      await markSlideRead(feedStore, oldSlideElement);
     }
   } catch(error) {
     console.warn(error);
   } finally {
-    IndexedDbUtils.close(conn);
+    feedStore.close();
   }
 
   // If more slides were appended, then reduce the number of slides loaded. This works from left
@@ -673,14 +674,12 @@ function onSlideScroll(event) {
 let refreshInProgress = false;
 async function refreshAnchorOnclick(event) {
   event.preventDefault();
-
   dprintf('Clicked refresh button');
 
   if(refreshInProgress) {
-    dprintf('Ignoring refresh button click');
+    dprintf('Ignoring refresh button click while refresh in progress');
     return;
   }
-
   refreshInProgress = true;
 
   const pc = new PollContext();
@@ -696,10 +695,8 @@ async function refreshAnchorOnclick(event) {
     console.warn(error);
   } finally {
     pc.close();
-
     dprintf('Re-enabling refresh button');
-    // Always renable
-    refreshInProgress = false;
+    refreshInProgress = false;// Always renable
   }
 }
 
@@ -718,10 +715,7 @@ async function init() {
   const container = document.getElementById('error-message-container');
   container.onclick = errorMessageContainerOnclick;
 
-
-  // Initialize the menu
-
-  // Initialize the refresh icon
+  // Initialize the refresh icon in the header
   const refreshAnchor = document.getElementById('refresh');
   refreshAnchor.onclick = refreshAnchorOnclick;
 
@@ -729,14 +723,18 @@ async function init() {
   pageStyleSettingsOnload();
 
   // Load and append slides
-  let conn;
+  const feedStore = new FeedStore();
   try {
-    conn = await openReaderDb();
-    await appendSlides(conn);
+    await feedStore.open();
+    await appendSlides(feedStore);
+  } catch(error) {
+    // TODO: visually show error
+    console.warn(error);
   } finally {
+    feedStore.close();
     hideLoadingInformation();
-    IndexedDbUtils.close(conn);
   }
 }
 
+// TODO: visually show error
 init().catch(console.warn);
