@@ -7,6 +7,10 @@ import putEntryInDb from "/src/reader-db/put-entry.js";
 import {isOpen} from "/src/indexeddb/utils.js";
 import check from "/src/utils/check.js";
 
+const DEBUG = false;
+const dprintf = DEBUG ? console.log : function noop() {};
+
+
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection
 // @param id {Number} an entry id
@@ -39,7 +43,7 @@ export default async function main(conn, id) {
     'Entry %d already in read state', id);
 
   const url = Entry.peekURL(entry);
-  console.debug('Found entry to mark as read', id, url);
+  dprintf('Found entry to mark as read', id, url);
 
   // We have full control over the entry object from read to write, so there is no need to sanitize
   // or filter empty properties.
@@ -47,6 +51,6 @@ export default async function main(conn, id) {
   entry.dateUpdated = new Date();
   entry.dateRead = entry.dateUpdated;
   await putEntryInDb(conn, entry);
-  console.debug('Marked entry as read', id, url);
+  dprintf('Marked entry as read', id, url);
   await updateBadgeText(conn);
 }

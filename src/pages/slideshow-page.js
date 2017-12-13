@@ -18,6 +18,9 @@ import filterPublisher from "/src/utils/filter-publisher.js";
 import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
+const DEBUG = false;
+const dprintf = DEBUG ? console.log : noop;
+
 // TODO: set magic on message objects, write a helper somewhere named something like
 // isReaderMessage(message) that checks against the magic property. This should wait until I
 // define some helper kind of module like 'channel-coordinator.js' that organizes all of this.
@@ -37,7 +40,7 @@ readerChannel.onmessage = function(event) {
   }
 
   if(!event.isTrusted) {
-    console.debug('Untrusted message event', event);
+    dprintf('Untrusted message event', event);
     return;
   }
 
@@ -80,11 +83,11 @@ async function onEntryAddedMessage(message) {
   const unreadSlideCount = countUnreadSlides();
 
   if(unreadSlideCount > 3) {
-    console.debug('Got an entry added message but not appending because too many slides');
+    dprintf('Got an entry added message but not appending because too many slides');
     return;
   }
 
-  console.debug('Calling appendSlides as a result of entry-added message');
+  dprintf('Calling appendSlides as a result of entry-added message');
 
   // Load new articles
   let conn;
@@ -132,7 +135,7 @@ async function onEntryExpiredMessage(message) {
   // away. Instead, flag the slide as stale, so that other view functionality can react
   // appropriately at a later time in an unobtrusive manner.
   if(slide === currentSlide) {
-    // console.debug('Cannot expire current slide', message);
+    // dprintf('Cannot expire current slide', message);
     slide.setAttribute('removed-after-load', '');
     return;
   }
@@ -176,14 +179,14 @@ async function markSlideRead(conn, slideElement) {
   // was loaded into view, but at the time it was made unviewable it was not unloadable from the
   // view.
   if(slideElement.hasAttribute('removed-after-load')) {
-    console.debug('canceling mark as read given that slide removed after load', entryId);
+    dprintf('canceling mark as read given that slide removed after load', entryId);
     return;
   }
 
   // Exit early if the slide has already been read. This is routine such as when navigating backward
   // and should not be considered an error.
   if(slideElement.hasAttribute('read')) {
-    console.debug('canceling mark as read as slide already marked', entryId);
+    dprintf('canceling mark as read as slide already marked', entryId);
     return;
   }
 
@@ -194,8 +197,7 @@ async function markSlideRead(conn, slideElement) {
     console.warn(error);
     // Fall through and mark the element as read anyway, to prevent the error that appears later
     // when trying to mark as red.
-    console.debug('slide may not be updated as read in db but designating as read in UI',
-      slideElement);
+    dprintf('slide may not be updated as read in db but designating as read in UI', slideElement);
   }
 
   // Signal to the UI that the slide is read, so that unread counting works, and so that later
@@ -205,7 +207,7 @@ async function markSlideRead(conn, slideElement) {
 
 async function appendSlides(conn) {
 
-  console.debug('Appending up to 3 new slides');
+  dprintf('Appending up to 3 new slides');
 
   const limit = 3;
   let entries = [];
@@ -230,9 +232,7 @@ async function appendSlides(conn) {
 // Given an entry, create a new slide element and append it to the view
 function appendSlide(entry) {
   assert(Entry.isEntry(entry));
-
-  console.debug('Creating and appending slide for entry', entry.id);
-
+  dprintf('Creating and appending slide for entry', entry.id);
   const containerElement = document.getElementById('slideshow-container');
   const slideElement = document.createElement('article');
 
@@ -414,13 +414,13 @@ async function onSlideClick(event) {
   // Weak sanity check that the element is a slide, mostly just to monitor the recent changes to
   // this function.
   if(clickedSlide !== currentSlide) {
-    console.debug('Clicked slide is different than current slide', clickedSlide, currentSlide);
+    dprintf('Clicked slide is different than current slide', clickedSlide, currentSlide);
   }
 
   // Although this condition is primarily a concern of markSlideRead, and is redundant with
   // the check that occurs within markSlideRead, checking it here avoids the call.
   if(clickedSlide.hasAttribute('removed-after-load')) {
-    console.debug('Exiting click handler early due to stale state', clickedSlide);
+    dprintf('Exiting click handler early due to stale state', clickedSlide);
     return false;
   }
 
@@ -477,13 +477,13 @@ async function showNextSlide() {
 
     // Conditionally append more slides
     const unreadSlideElementCount = countUnreadSlides();
-    console.debug('Detected %d unread slides when deciding whether to append on navigate',
+    dprintf('Detected %d unread slides when deciding whether to append on navigate',
       unreadSlideElementCount);
     if(unreadSlideElementCount < 2) {
-      console.debug('Appending additional slides prior to navigation');
+      dprintf('Appending additional slides prior to navigation');
       slideAppendCount = await appendSlides(conn);
     } else {
-      console.debug('Not appending additional slides prior to navigation');
+      dprintf('Not appending additional slides prior to navigation');
     }
 
     // Search for the next slide to show. The next slide is not necessarily adjacent.
@@ -495,10 +495,10 @@ async function showNextSlide() {
       if(slideCursor) {
         if(slideCursor.hasAttribute('removed-after-load')) {
           // Skip past the slide
-          console.debug('Skipping slide removed after load when searching for next slide');
+          dprintf('Skipping slide removed after load when searching for next slide');
           continue;
         } else {
-          console.debug('Found next slide');
+          dprintf('Found next slide');
           // Found next sibling, end search
           nextSlide = slideCursor;
           break;
@@ -507,8 +507,8 @@ async function showNextSlide() {
         // BUG: some portions of the bug have been fixed, but there is still a bug where this
         // gets hit after unsubscribe. The current slide is indeed the final slide, no additional
         // slides were loaded. It means that something is wrong with the appending.
-        console.debug(currentSlide);
-        console.debug('Ending search for next slide, no next sibling');
+        dprintf(currentSlide);
+        dprintf('Ending search for next slide, no next sibling');
         // If we advanced and there was no next sibling, leave nextSlide undefined and end search
         break;
       }
@@ -548,7 +548,7 @@ async function showNextSlide() {
     const containerElement = document.getElementById('slideshow-container');
     while(containerElement.childElementCount > maxSlideCount &&
       containerElement.firstElementChild !== currentSlide) {
-      console.debug('Removing slide with with entry id',
+      dprintf('Removing slide with with entry id',
         containerElement.firstElementChild.getAttribute('entry'));
       removeSlide(containerElement.firstElementChild);
     }
@@ -604,7 +604,7 @@ function countUnreadSlides() {
 
     // Only increment count if slide not tagged as removed after load
     if(slide.hasAttribute('removed-after-load')) {
-      console.debug('Ignoring slide removed after load when counting unread',
+      dprintf('Ignoring slide removed after load when counting unread',
         slide.getAttribute('entry'));
       continue;
     }
@@ -673,10 +673,10 @@ let refreshInProgress = false;
 async function refreshAnchorOnclick(event) {
   event.preventDefault();
 
-  console.log('Clicked refresh button');
+  dprintf('Clicked refresh button');
 
   if(refreshInProgress) {
-    console.debug('Ignoring refresh button click');
+    dprintf('Ignoring refresh button click');
     return;
   }
 
@@ -696,7 +696,7 @@ async function refreshAnchorOnclick(event) {
   } finally {
     pc.close();
 
-    console.debug('Re-enabling refresh button');
+    dprintf('Re-enabling refresh button');
     // Always renable
     refreshInProgress = false;
   }
@@ -706,6 +706,8 @@ function errorMessageContainerOnclick(event) {
   const container = document.getElementById('error-message-container');
   container.style.display = 'none';
 }
+
+function noop() {}
 
 // Initialization
 async function init() {
