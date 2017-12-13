@@ -9,11 +9,13 @@ import * as Subscriber from "/src/reader/subscribe.js";
 import * as Feed from "/src/reader-db/feed.js";
 import promiseEvery from "/src/promise/every.js";
 
+// TODO: in hindsight i think context is silly, this should just be
+// 'OPMLImporter' module with import method, no context
+
 export function Context() {
   this.feedStore = null;
-  //this.readerConn;
-  this.iconCache;
-  this.fetchFeedTimeoutMs;
+  this.iconCache = null;
+  this.fetchFeedTimeoutMs = void 0;
 }
 
 Context.prototype.init = function() {
@@ -45,9 +47,18 @@ Context.prototype.close = function() {
 // of files imported, and for each file the number of feeds subscribed, or undefined if there was
 // an error for that file.
 export default function main(files) {
+  // Ensure called correctly
   assert(this instanceof Context);
+
+  // Ensure initialized
+  assert(this.feedStore instanceof FeedStore);
+  assert(this.iconCache instanceof FaviconCache);
+
+  // Ensure proper parameter
   assert(files instanceof FileList);
+
   console.debug('Importing %d files', files.length);
+  // Clone to array due to issues with FileList map call
   const filesArray = [...files];
   const promises = filesArray.map(importFile, this);
   return promiseEvery(promises);
