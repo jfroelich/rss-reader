@@ -45,15 +45,15 @@ async function onWakeup(alarm) {
     handlePollFeedsAlarmWakeup(alarm).catch(console.warn);
     break;
   case 'remove-entries-missing-urls': {
+    const fs = new FeedStore();
     const limit = 100;
-    let conn;
     try {
-      conn = await openReaderDb();
-      await removeLostEntries(conn, limit);
+      await fs.open();
+      await removeLostEntries(fs, limit);
     } catch(error) {
       console.warn(error);
     } finally {
-      IndexedDbUtils.close(conn);
+      fs.close();
     }
     break;
   }

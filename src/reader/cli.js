@@ -56,13 +56,14 @@ cli.pollFeeds = async function() {
   }
 };
 
-cli.removeListEntries = async function() {
-  let conn;
+cli.removeLostEntries = async function() {
+  const fs = new FeedStore();
+  let limit;
   try {
-    conn = await openReaderDb();
-    await removeLostEntries(conn, args);
+    await fs.open();
+    await removeLostEntries(fs, limit);
   } finally {
-    IndexedDbUtils.close(conn);
+    fs.close();
   }
 };
 
