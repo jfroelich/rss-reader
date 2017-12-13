@@ -478,7 +478,7 @@ async function unsubscribeButtonOnclick(event) {
   const feedStore = new FeedStore();
   try {
     await feedStore.open();
-    await unsubscribe(feedId, feedStore.conn, readerChannel);
+    await unsubscribe(feedId, feedStore, readerChannel);
   } catch(error) {
     console.warn(error);
     return;

@@ -1,18 +1,25 @@
 import assert from "/src/assert/assert.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as Feed from "/src/reader-db/feed.js";
 import findEntryIdsByFeedIdInDb from "/src/reader-db/find-entry-ids-by-feed-id.js";
 import removeFeedFromDb from "/src/reader-db/remove-feed.js";
 
+// Remove a feed and its entries from the database and notify the UI
+// @param feedId {Number} id of feed to unsubscribe
+// @param store {FeedStore} an open FeedStore instance
 // @param channel {BroadcastChannel} optional, if specified then this dispatches feed deleted and
-// entry deleted type messages to the channel
-export default async function unsubscribe(feedId, conn, channel) {
-  assert(IndexedDbUtils.isOpen(conn));
+// entry deleted type messages to the reader channel
+export default async function unsubscribe(feedId, store, channel) {
   assert(Feed.isValidId(feedId));
+  assert(store instanceof FeedStore);
+  assert(store.isOpen());
+  if(channel) {
+    assert(channel instanceof BroadcastChannel);
+  }
 
-  const entryIds = await findEntryIdsByFeedIdInDb(conn, feedId);
-  await removeFeedFromDb(conn, feedId, entryIds);
+  const entryIds = await findEntryIdsByFeedIdInDb(store.conn, feedId);
+  await removeFeedFromDb(store.conn, feedId, entryIds);
 
   if(channel) {
     channel.postMessage({type: 'feed-deleted', id: feedId, reason: 'unsubscribe'});
@@ -21,5 +28,5 @@ export default async function unsubscribe(feedId, conn, channel) {
     }
   }
 
-  await updateBadgeText(conn);
+  await updateBadgeText(store.conn);
 }
