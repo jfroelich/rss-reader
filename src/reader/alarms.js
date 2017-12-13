@@ -1,6 +1,7 @@
 import {queryIdleState} from "/src/platform/platform.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeeds from "/src/jobs/poll/poll-feeds.js";
@@ -70,16 +71,17 @@ async function onWakeup(alarm) {
     break;
   }
   case 'refresh-feed-icons': {
-    const fic = new FaviconCache();
-    let readerConn;
+    const fs = new FeedStore();
+    const fc = new FaviconCache();
+    const openPromises = [fs.open(), fc.open()];
     try {
-      [readerConn] = await Promise.all([openReaderDb(), fic.open()]);
-      await refreshFeedIcons(readerConn, fic);
+      await Promise.all(openPromises);
+      await refreshFeedIcons(fs, fc);
     } catch(error) {
       console.warn(error);
     } finally {
-      fic.close();
-      IndexedDbUtils.close(readerConn);
+      fs.close();
+      fc.close();
     }
     break;
   }

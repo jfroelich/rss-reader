@@ -17,14 +17,16 @@ import parseInt10 from "/src/utils/parse-int-10.js";
 const cli = {};
 
 cli.refreshIcons = async function() {
+  const fs = new FeedStore();
   const fc = new FaviconCache();
-  let rConn;
+  const promises = [fs.open(), fc.open()];
+
   try {
-    [rConn] = await Promise.all([openReaderDb(), fc.open()]);
-    await refreshFeedIcons(rConn, fc);
+    await Promise.all(promises);
+    await refreshFeedIcons(fs, fc);
   } finally {
+    fs.close();
     fc.close();
-    IndexedDbUtils.close(rConn);
   }
 };
 
