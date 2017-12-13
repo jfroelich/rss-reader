@@ -52,5 +52,10 @@ export default async function main(conn, id) {
   entry.dateRead = entry.dateUpdated;
   await putEntryInDb(conn, entry);
   dprintf('Marked entry as read', id, url);
-  await updateBadgeText(conn);
+
+  // TODO: clean this up, hackish, change this to accept store as input or something
+
+  const store = new FeedStore();
+  store.conn = conn;
+  await updateBadgeText(store);
 }

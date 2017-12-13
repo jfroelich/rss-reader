@@ -19,7 +19,7 @@ async function initBadgeText() {
   const fs = new FeedStore();
   try {
     await fs.open();
-    await updateBadgeText(fs.conn);
+    await updateBadgeText(fs);
   } catch(error) {
     console.warn(error);
   } finally {

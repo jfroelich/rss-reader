@@ -44,7 +44,7 @@ export default async function pollFeeds() {
 
   // Regardless of batch mode, refresh the unread count of the extension's badge
   if(totalNumEntriesAdded > 0) {
-    await updateBadgeText(this.feedStore.conn);
+    await updateBadgeText(this.feedStore);
   }
 
   // Regardless of batch mode, show a notification if entries were addded

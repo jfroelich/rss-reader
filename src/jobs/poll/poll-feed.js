@@ -116,7 +116,7 @@ export default async function pollFeed(feed) {
 
   // If not in batch mode and some entries were added, update the badge.
   if(!this.batchMode && numEntriesAdded > 0) {
-    await updateBadgeText(this.feedStore.conn);
+    await updateBadgeText(this.feedStore);
   }
 
   // If not in batch mode and some entries were added, then show a notification

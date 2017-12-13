@@ -28,5 +28,5 @@ export default async function unsubscribe(feedId, store, channel) {
     }
   }
 
-  await updateBadgeText(store.conn);
+  await updateBadgeText(store);
 }
