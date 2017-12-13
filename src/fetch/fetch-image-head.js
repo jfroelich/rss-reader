@@ -10,22 +10,22 @@ import check from "/src/utils/check.js";
 // TODO: this should be refactored to use fetchInternal. But I need to calculate content length.
 // So fetchInternal first needs to be refactored to also calculate content length because response
 // is not exposed, just wrapped response.
-// TODO: if not using fetchInternal, sanity check timeoutMs
 
-// Sends a HEAD request for the given image.
-// This currently does not do any byte inspection, only mime type acceptance check, which causes
-// this to respond differently than the browser sometimes
-// @param url {URL}
+// Sends a HEAD request for the given image. When checking whether the response content type is
+// an acceptable content type, this only checks the header value and does not perform any byte
+// inspection. This means that this may occassionally incorrectly accept or reject certain requests
+// for images.
+// @param url {URL} request url
 // @returns a simple object with props size and responseURL
 export default async function fetchImageHead(url, timeoutMs) {
   assert(url instanceof URL);
+  // timeout parameter is implicitly validated within fetchWithTimeout
 
   // Because this function does not go through fetchInternal currently, it skips the policy check
   // that applies to most other fetch functionality. So explicitly perform the check here to comply
   // with the general warranty that all fetch functionality meets policy constraints. If and when
   // this correctly uses fetchInternal then this check becomes implicit and is no longer needs here
   check(isAllowedURL(url), PermissionsError, 'Refused to fetch url', url);
-
 
   const headers = {accept: 'image/*'};
   const options = {
@@ -41,21 +41,17 @@ export default async function fetchImageHead(url, timeoutMs) {
   const response = await fetchWithTimeout(url, options, timeoutMs);
   assert(typeof response !== 'undefined');
 
-  // TODO: this could probably be expressed in a clearer way, for now I am hackishly adding
-  // support for application/octet-stream to stop favicon lookup from failing on certain websites
+  // Check whether the response content type is acceptable
   const contentType = response.headers.get('Content-Type');
-  check(MimeUtils.isImage(contentType) || isOtherAcceptableMimeType(contentType), FetchError,
+  const mimeType = MimeUtils.fromContentType(contentType);
+  const types = ['application/octet-stream'];
+  check(MimeUtils.isImage(mimeType) || types.includes(mimeType), FetchError,
     'Unacceptable mime type', contentType, url);
 
+  // Rather than use expando properties on the builtin Response object, this creates a very basic
+  // object that only exposes the two properties I think callers care about.
   const wrappedResponse = {};
   wrappedResponse.size = FetchUtils.getContentLength(response);
   wrappedResponse.responseURL = response.url;
   return wrappedResponse;
-}
-
-function isOtherAcceptableMimeType(contentType) {
-  // To support twitch.tv, support 'application/octet-stream'
-  const mimeType = MimeUtils.fromContentType(contentType);
-  const types = ['application/octet-stream'];
-  return types.includes(mimeType);
 }
