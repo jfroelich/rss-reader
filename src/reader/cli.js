@@ -7,13 +7,14 @@ import pollFeeds from "/src/jobs/poll/poll-feeds.js";
 import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
-import openReaderDb from "/src/reader-db/open.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // Command line interface module. This module does not export anything. Instead, it defines a
 // variable in global scope (window). The definition occurs as an implicit side effect of importing
 // the module.
+// TODO: I suppose this could export cli anyway, even though it is not used?
+
+
 const cli = {};
 
 cli.refreshIcons = async function() {
@@ -43,8 +44,7 @@ cli.archiveEntries = async function(limit) {
 
 cli.pollFeeds = async function() {
   const pc = new PollContext();
-  pc.feedStore = new FeedStore();
-  pc.iconCache = new FaviconCache();
+  pc.init();
   pc.allowMeteredConnections = true;
   pc.ignoreRecencyCheck = true;
   pc.ignoreModifiedCheck = true;
@@ -57,9 +57,8 @@ cli.pollFeeds = async function() {
   }
 };
 
-cli.removeLostEntries = async function() {
+cli.removeLostEntries = async function(limit) {
   const fs = new FeedStore();
-  let limit;
   try {
     await fs.open();
     await removeLostEntries(fs, limit);
