@@ -107,7 +107,7 @@ async function importFile(file) {
   uniqueOutlines.forEach(OPMLOutline.normalizeHTMLURL);
 
   const subscribeContext = new Subscriber.Context();
-  subscribeContext.readerConn = this.feedStore.conn;
+  subscribeContext.feedStore = this.feedStore;
   subscribeContext.iconCache = this.iconCache;
   subscribeContext.fetchFeedTimeoutMs = this.fetchFeedTimeoutMs;
   subscribeContext.notify = false;

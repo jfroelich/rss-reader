@@ -7,17 +7,15 @@ import {OfflineError} from "/src/fetch/errors.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeed from "/src/jobs/poll/poll-feed.js";
+import setTimeoutPromise from "/src/promise/set-timeout.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import * as Feed from "/src/reader-db/feed.js";
 import {ConstraintError} from "/src/reader-db/errors.js";
 import putFeed from "/src/reader-db/put-feed.js";
 import findFeedIdByURLInDb from "/src/reader-db/find-feed-id-by-url.js";
-import openReaderDb from "/src/reader-db/open.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import check from "/src/utils/check.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
-import setTimeoutPromise from "/src/promise/set-timeout.js";
 
 
 // TODO: both subscribe and pollFeed have extremely similar functionality. Consider that I should
@@ -28,8 +26,9 @@ import setTimeoutPromise from "/src/promise/set-timeout.js";
 // Module for subscribing to a new feed
 
 export function Context() {
-  this.iconCache = undefined;
-  this.readerConn = undefined;
+  /* FeedStore */ this.feedStore;
+  /* FaviconCache */ this.iconCache;
+
   this.fetchFeedTimeoutMs = 2000;
   this.concurrent = false;
   this.notify = true;
@@ -43,18 +42,24 @@ export function Context() {
 
 // Opens database connections
 Context.prototype.connect = async function() {
+
+  // TODO: these belong in an init helper
+  this.feedStore = new FeedStore();
   this.iconCache = new FaviconCache();
-  const promises = [openReaderDb(), this.iconCache.open()];
-  [this.readerConn] = await Promise.all(promises);
+
+  const promises = [this.feedStore.open(), this.iconCache.open()];
+  await Promise.all(promises);
 };
 
 // Closes database connections
 Context.prototype.close = function() {
+  if(this.feedStore) {
+    this.feedStore.close();
+  }
+
   if(this.iconCache) {
     this.iconCache.close();
   }
-
-  IndexedDbUtils.close(this.readerConn);
 };
 
 // @param this {Context}
@@ -62,7 +67,8 @@ Context.prototype.close = function() {
 // @returns {Object} the subscribed feed
 export async function subscribe(feed) {
   assert(this instanceof Context);
-  assert(IndexedDbUtils.isOpen(this.readerConn));
+  assert(this.feedStore instanceof FeedStore);
+  assert(this.feedStore.isOpen());
   assert(this.iconCache instanceof FaviconCache);
   assert(this.iconCache.isOpen());
   assert(Feed.isFeed(feed));
@@ -77,7 +83,7 @@ export async function subscribe(feed) {
   const urlObject = new URL(feedURLString);
 
   // Check that user is not already subscribed
-  let priorFeedId = await findFeedIdByURLInDb(this.readerConn, feedURLString);
+  let priorFeedId = await findFeedIdByURLInDb(this.feedStore.conn, feedURLString);
   check(!Feed.isValidId(priorFeedId), ConstraintError, 'Already subscribed to feed with url',
     feedURLString);
 
@@ -89,7 +95,7 @@ export async function subscribe(feed) {
     if(isUncheckedError(error)) {
       // Fetch failed because of a programmer error, rethrow
       throw error;
-    }else if(error instanceof OfflineError) {
+    } else if(error instanceof OfflineError) {
       // Fetch failed because it appears we are offline
       // Fall through, proceed with offline subscription
     } else {
@@ -115,8 +121,7 @@ export async function subscribe(feed) {
       // isAllowedURL here explicitly?
 
       // Check that user is not already subscribed now that we know redirect
-      priorFeedId = await findFeedIdByURLInDb(this.readerConn, response.responseURL);
-
+      priorFeedId = await findFeedIdByURLInDb(this.feedStore.conn, response.responseURL);
       check(!Feed.isValidId(priorFeedId), ConstraintError, 'already subscribed');
     }
 
@@ -155,7 +160,7 @@ export async function subscribe(feed) {
 
   // Store the feed in the database
   const kSkipPrep = false;
-  const storedFeed = await putFeed(feed, this.readerConn, kSkipPrep);
+  const storedFeed = await putFeed(feed, this.feedStore.conn, kSkipPrep);
 
   // Show a notification for the successful subscription. If calling concurrently the caller
   // should separately set notify to false to disable this.
@@ -173,6 +178,8 @@ export async function subscribe(feed) {
   // settle prior to this completing, and callers can freely close connection used by subscribe
   // once it settles.
   if(!this.concurrent) {
+    // Because we are returning before this completes, this cannot throw an error, or rather,
+    // there is nothing we can do about the error
     deferredPollFeed(storedFeed).catch(console.warn);
   }
 
@@ -189,8 +196,7 @@ async function deferredPollFeed(feed) {
   await sleep(500);
 
   const pc = new PollContext();
-  pc.feedStore = new FeedStore();
-  pc.iconCache = new FaviconCache();
+  pc.init();
 
   // We just fetched the feed. We definitely want to be able to process its entries, so disable
   // these checks because they most likely fail.
@@ -200,6 +206,9 @@ async function deferredPollFeed(feed) {
   // NOTE: this relies on the default extended accepted feed mime types rather than explicitly
   // configuring them here. Keep in mind this may be different than the explicitly specified types
   // in the subscribe function. Generally the two should be the same but this isn't guaranteed.
+
+  // TODO: should this actually throw instead of trapping error? But it is forked and caller
+  // already returned, so what happens?
 
   try {
     await pc.open();
