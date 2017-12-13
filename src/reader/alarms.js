@@ -26,15 +26,16 @@ async function onWakeup(alarm) {
 
   switch(alarm.name) {
   case 'archive': {
-    let conn, maxAgeMs;
+    const store = new FeedStore();
+    let maxAgeMs;
     const limit = 500;
     try {
-      conn = await openReaderDb();
-      await archiveEntries(conn, maxAgeMs, limit);
+      await store.open();
+      await archiveEntries(store, maxAgeMs, limit);
     } catch(error) {
       console.warn(error);
     } finally {
-      IndexedDbUtils.close(conn);
+      store.close();
     }
     break;
   }

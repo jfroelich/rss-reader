@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import * as Entry from "/src/reader-db/entry.js";
 import findArchivableEntriesInDb from "/src/reader-db/find-archivable-entries.js";
 import putEntryInDb from "/src/reader-db/put-entry.js";
@@ -11,10 +11,12 @@ const CHANNEL_NAME = 'reader';
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 // Archives certain entries in the database
+// @param store {FeedStore} storage database
 // @param maxAgeMs {Number} how long before an entry is considered archivable (using date entry
 // created), in milliseconds
-export default async function archiveEntries(conn, maxAgeMs, limit) {
-  assert(IndexedDbUtils.isOpen(conn));
+export default async function archiveEntries(store, maxAgeMs, limit) {
+  assert(store instanceof FeedStore);
+  assert(store.isOpen());
 
   if(typeof maxAgeMs === 'undefined') {
     maxAgeMs = TWO_DAYS_MS;
@@ -28,7 +30,7 @@ export default async function archiveEntries(conn, maxAgeMs, limit) {
     return entryAgeMs > maxAgeMs;
   }
 
-  const entries = await findArchivableEntriesInDb(conn, isArchivable, limit);
+  const entries = await findArchivableEntriesInDb(store.conn, isArchivable, limit);
   if(!entries.length) {
     console.debug('no archivable entries found');
     return;
@@ -45,7 +47,7 @@ export default async function archiveEntries(conn, maxAgeMs, limit) {
   const channel = new BroadcastChannel(CHANNEL_NAME);
   const promises = [];
   for(const entry of entries) {
-    promises.push(archiveEntry(entry, conn, channel));
+    promises.push(archiveEntry(entry, store.conn, channel));
   }
 
   try {

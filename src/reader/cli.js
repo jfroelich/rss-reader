@@ -1,5 +1,6 @@
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeeds from "/src/jobs/poll/poll-feeds.js";
@@ -28,12 +29,13 @@ cli.refreshIcons = async function() {
 };
 
 cli.archiveEntries = async function(limit) {
-  let maxAgeMs, conn;
+  const store = new FeedStore();
+  let maxAgeMs;
   try {
-    conn = await openReaderDb();
-    await archiveEntries(conn, maxAgeMs, limit);
+    await store.open();
+    await archiveEntries(store, maxAgeMs, limit);
   } finally {
-    IndexedDbUtils.close(conn);
+    store.close();
   }
 };
 

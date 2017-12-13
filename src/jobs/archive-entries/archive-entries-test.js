@@ -1,24 +1,25 @@
+import FeedStore from "/src/feed-store/feed-store.js";
+import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
-import openReaderDb from "/src/reader-db/open.js";
-import {close as closeDb, remove as removeDb} from "/src/indexeddb/utils.js";
+
+// NOTE: this is pretty out of date, might not even work
+// TODO: this should operate on a test database, not the live database
 
 async function test() {
-  console.log('test start');
-
-  const name = 'test-archive-entries';
-  const version = 20;
-  let closeRequested = false;
-  let conn, timeoutMs = 1000, maxAgeMs;
+  const store = new FeedStore();
   const limit = 5;
+  let maxAgeMs;
+  let closeRequested = false;
+
   try {
-    conn = await openReaderDb(name, version, undefined, timeoutMs);
-    await archiveEntries(conn, maxAgeMs, limit);
-    closeDb(conn);
+    await store.open();
+    await archiveEntries(store, maxAgeMs, limit);
+    store.close();
     closeRequested = true;
-    await removeDb(conn.name);
+    await IndexedDbUtils.remove(store.conn.name);
   } finally {
     if(!closeRequested) {
-      closeDb(conn);
+      store.close();
     }
   }
 }

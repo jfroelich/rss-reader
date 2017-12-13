@@ -33,8 +33,6 @@ Note, phases overlap. I am going function call by function call. Storing with op
 import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import openDb from "/src/reader-db/open.js";
 
-
-
 export default function FeedStore() {
   /* IDBDatabase */ this.conn = null;
 }
