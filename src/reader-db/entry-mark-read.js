@@ -1,4 +1,5 @@
 import assert from "/src/assert/assert.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as Entry from "/src/reader-db/entry.js";
 import {InvalidStateError, NotFoundError} from "/src/reader-db/errors.js";

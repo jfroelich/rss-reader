@@ -102,7 +102,7 @@ async function onEntryAddedMessage(message) {
 
 function showErrorMessage(messageText) {
   const container = document.getElementById('error-message-container');
-  assert(container, 'Cannot find error message container element to show error', messageText);
+  assert(container instanceof Element, 'Cannot find error message container element to show error', messageText);
   container.textContent = messageText;
   container.style.display = 'block';
 }
@@ -110,7 +110,8 @@ function showErrorMessage(messageText) {
 // React to a message indicating that an entry expired (e.g. it was deleted, or archived)
 async function onEntryExpiredMessage(message) {
   // Caller is responsible for providing valid message. This should never happen.
-  assert(message);
+  // TODO: use a stronger assertion of type
+  assert(typeof message !== 'undefined');
   // Messages are a form of user-data, and can come from external sources outside of the app, and
   // therefore merit being distrusted. There could also be an error in how the message was created
   // or transfered (serialized, copied, and deserialized) by a channel. This should never happen
@@ -545,7 +546,7 @@ async function showNextSlide() {
   // regardless of whether slides were appended?
 
   if(slideAppendCount > 0) {
-    assert(currentSlide);
+    assert(currentSlide instanceof Element);
     const maxSlideCount = 6;
     const containerElement = document.getElementById('slideshow-container');
     while(containerElement.childElementCount > maxSlideCount &&
