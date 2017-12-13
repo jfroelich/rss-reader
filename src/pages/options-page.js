@@ -1,16 +1,17 @@
 import assert from "/src/assert/assert.js";
 import exportFeeds from "/src/backup/export-feeds.js";
-import importFiles, {
-  Context as ImportFilesContext
-} from "/src/backup/import-opml-files.js";
-import FeedStore from "/src/feed-store/feed-store.js";
-
 // TODO: use * as Config or something like that
 import {BG_IMAGES, FONTS} from "/src/config.js";
 import fadeElement from "/src/dom/fade-element.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import htmlTruncate from "/src/html/truncate.js";
+import importFiles, {
+  Context as ImportFilesContext
+} from "/src/backup/import-opml-files.js";
+import * as MimeUtils from "/src/mime/utils.js";
+
+// TODO: use * as PageStyle or something similar
 import {
   pageStyleSettingsOnload,
   pageStyleSettingsOnchange
@@ -20,7 +21,6 @@ import {
   requestBrowserPermission,
   removeBrowserPermission
 } from "/src/platform/platform.js";
-import openReaderDb from "/src/reader-db/open.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
 import activateFeedInDb from "/src/reader-db/activate-feed.js";
@@ -28,8 +28,6 @@ import deactivateFeedInDb from "/src/reader-db/deactivate-feed.js";
 import * as Feed from "/src/reader-db/feed.js";
 import findFeedByIdInDb from "/src/reader-db/find-feed-by-id.js";
 import getFeedsFromDb from "/src/reader-db/get-feeds.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
-import * as MimeUtils from "/src/mime/utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // View state
@@ -258,16 +256,18 @@ async function feedListItemOnclick(event) {
   assert(!isNaN(feedIdNumber));
 
   // Load feed details from the database
-  let conn, feed;
+  const feedStore = new FeedStore();
+
+  let feed;
   try {
-    conn = await openReaderDb();
-    feed = await findFeedByIdInDb(conn, feedIdNumber);
+    await feedStore.open();
+    feed = await findFeedByIdInDb(feedStore.conn, feedIdNumber);
   } catch(error) {
     console.warn(error);
     // TODO: visual feedback?
     return;
   } finally {
-    IndexedDbUtils.close(conn);
+    feedStore.close();
   }
 
   const titleElement = document.getElementById('details-title');
@@ -396,15 +396,17 @@ async function subscribeFormOnsubmit(event) {
 async function feedListInit() {
   const noFeedsElement = document.getElementById('nosubs');
   const feedListElement = document.getElementById('feedlist');
-  let conn, feeds;
+
+  const feedStore = new FeedStore();
+  let feeds;
   try {
-    conn = await openReaderDb();
-    feeds = await getFeedsFromDb(conn);
+    await feedStore.open();
+    feeds = await getFeedsFromDb(feedStore.conn);
   } catch(error) {
     // TODO: react to error
     console.warn(error);
   } finally {
-    IndexedDbUtils.close(conn);
+    feedStore.close();
   }
 
   if(!feeds) {
@@ -473,16 +475,15 @@ async function unsubscribeButtonOnclick(event) {
   const feedId = parseInt10(event.target.value);
   assert(Feed.isValidId(feedId));
 
-
-  let conn;
+  const feedStore = new FeedStore();
   try {
-    conn = await openReaderDb();
-    await unsubscribe(feedId, conn, readerChannel);
+    await feedStore.open();
+    await unsubscribe(feedId, feedStore.conn, readerChannel);
   } catch(error) {
     console.warn(error);
     return;
   } finally {
-    IndexedDbUtils.close(conn);
+    feedStore.close();
   }
 
   feedListRemoveFeed(feedId);
@@ -492,39 +493,41 @@ async function unsubscribeButtonOnclick(event) {
 async function activateButtonOnclick(event) {
   const feedId = parseInt10(event.target.value);
   assert(Feed.isValidId(feedId));
-  let conn;
+
+  const feedStore = new FeedStore();
   try {
-    conn = await openReaderDb();
-    await activateFeedInDb(conn, feedId);
+    await feedStore.open();
+    await activateFeedInDb(feedStore.conn, feedId);
   } catch(error) {
     console.warn(error);
     return;
   } finally {
-    IndexedDbUtils.close(conn);
+    feedStore.close();
   }
 
-  console.debug('Activated feed %d, returning to feed list', feedId);
-
+  // The feed is loaded in the feed list in the UI and must also be updated there
   const itemElement = document.querySelector('li[feed="' + feedId + '"]');
   if(itemElement) {
     itemElement.removeAttribute('inactive');
   }
 
+  console.debug('Activated feed %d, returning to feed list', feedId);
   showSectionById('subs-list-section');
 }
 
 async function deactivateButtonOnclick(event) {
   const feedId = parseInt10(event.target.value);
   assert(Feed.isValidId(feedId));
-  let conn;
+  const feedStore = new FeedStore();
+
   try {
-    conn = await openReaderDb();
-    await deactivateFeedInDb(conn, feedId);
+    await feedStore.open();
+    await deactivateFeedInDb(feedStore.conn, feedId);
   } catch(error) {
     console.warn(error);
     return;
   } finally {
-    IndexedDbUtils.close(conn);
+    feedStore.close();
   }
 
   console.debug('Deactivated feed %d, returning to feed list', feedId);
@@ -536,7 +539,6 @@ async function deactivateButtonOnclick(event) {
 
   showSectionById('subs-list-section');
 }
-
 
 function importOPMLButtonOnclick(event) {
   const uploaderInput = document.createElement('input');
@@ -574,16 +576,17 @@ async function importOPMLInputOnchange(event) {
 
 async function exportOPMLButtonOnclick(event) {
   const title = 'Subscriptions', fileName = 'subscriptions.xml';
-  let conn;
+  const feedStore = new FeedStore();
+
   try {
-    conn = await openReaderDb();
-    const feeds = await getFeedsFromDb(conn);
+    await feedStore.open();
+    const feeds = await getFeedsFromDb(feedStore.conn);
     exportFeeds(feeds, title, fileName);
   } catch(error) {
     // TODO: handle error visually
     console.warn(error);
   } finally {
-    IndexedDbUtils.close(conn);
+    feedStore.close();
   }
 }
 
