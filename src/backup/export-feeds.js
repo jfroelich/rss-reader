@@ -3,6 +3,22 @@ import * as Feed from "/src/reader-db/feed.js";
 import * as OPMLDocument from "/src/opml/document.js";
 import {xmlToBlob} from "/src/xml/utils.js";
 
+// TODO: rename to something like exportOPMLBlob or exportOPMLFile so that it is more consistent
+// in representing the inverse of importOPMLFiles
+// TODO: Change to return a blob object. Move downloadBlob to calling context. Export shouldn't
+// care how the blob is used.
+// TODO: the idea to require feeds as a parameter and move all the database functionality out of
+// here was a mistake. Instead, this should connect and load feeds on its own, and feeds shouldn't
+// be a parameter. Part of the reason is that this isn't generic. It only applies to exporting
+// feeds. It is not like the array of feeds is ever going to come from somewhere else, or mean
+// something different. Another part of the reason is that it is perfectly ok to marry this to
+// the database. That marriage is basically obvious and intended and what this functionality
+// essentially represents. Another reason is that import-opml-files is privy to model access, so
+// it does not make sense to deny access here or stay model-agnostic, and it would be more
+// consistent if both import and export has the same style of storage interaction.
+// TODO: possibly move this to entire module to within the storage folder. What this functionality
+// really represents is a way to serialize or deserialize the storage model as a whole externally.
+
 // TODO: for both backup and opml modules, drop support for opml outline objects. Instead,
 // work exclusively with elements. However, maintain a separation between generic opml
 // functionality, and functionality specific to this app. It is ok for backup to have
