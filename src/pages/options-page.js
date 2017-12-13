@@ -3,6 +3,7 @@ import exportFeeds from "/src/backup/export-feeds.js";
 import importFiles, {
   Context as ImportFilesContext
 } from "/src/backup/import-opml-files.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 
 // TODO: use * as Config or something like that
 import {BG_IMAGES, FONTS} from "/src/config.js";
@@ -552,7 +553,9 @@ async function importOPMLInputOnchange(event) {
   const uploaderInput = event.target;
 
   const context = new ImportFilesContext();
-  context.iconCache = new FaviconCache();
+  context.init();
+
+  // TODO: this should really be defined elsewhere
   context.fetchFeedTimeoutMs = 10 * 1000;
 
   try {

@@ -1,25 +1,31 @@
 import assert from "/src/assert/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import * as MimeUtils from "/src/mime/utils.js";
 import * as OPMLDocument from "/src/opml/document.js";
 import * as OPMLOutline from "/src/opml/outline.js";
 import parseOPML from "/src/opml/parse.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import * as Feed from "/src/reader-db/feed.js";
-import openReaderDb from "/src/reader-db/open.js";
 import promiseEvery from "/src/promise/every.js";
 
 export function Context() {
-  this.readerConn;
+  this.feedStore = null;
+  //this.readerConn;
   this.iconCache;
   this.fetchFeedTimeoutMs;
 }
 
+Context.prototype.init = function() {
+  this.feedStore = new FeedStore();
+  this.iconCache = new FaviconCache();
+};
+
 Context.prototype.open = async function() {
+  assert(this.feedStore instanceof FeedStore);
   assert(this.iconCache instanceof FaviconCache);
-  const promises = [openReaderDb(), this.iconCache.open()];
-  [this.readerConn] = await Promise.all(promises);
+  const promises = [this.feedStore.open(), this.iconCache.open()];
+  await Promise.all(promises);
 };
 
 Context.prototype.close = function() {
@@ -27,7 +33,9 @@ Context.prototype.close = function() {
     this.iconCache.close();
   }
 
-  IndexedDbUtils.close(this.readerConn);
+  if(this.feedStore) {
+    this.feedStore.close();
+  }
 };
 
 // Import opml files
@@ -48,7 +56,8 @@ export default function main(files) {
 async function importFile(file) {
   assert(this instanceof Context);
   assert(file instanceof File);
-  assert(IndexedDbUtils.isOpen(this.readerConn));
+
+  assert(this.feedStore.isOpen())
   assert(this.iconCache.isOpen());
 
   console.log('Importing file', file.name);
@@ -87,7 +96,7 @@ async function importFile(file) {
   uniqueOutlines.forEach(OPMLOutline.normalizeHTMLURL);
 
   const subscribeContext = new Subscriber.Context();
-  subscribeContext.readerConn = this.readerConn;
+  subscribeContext.readerConn = this.feedStore.conn;
   subscribeContext.iconCache = this.iconCache;
   subscribeContext.fetchFeedTimeoutMs = this.fetchFeedTimeoutMs;
   subscribeContext.notify = false;
