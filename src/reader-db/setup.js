@@ -1,12 +1,11 @@
-import open from "/src/reader-db/open.js";
-import {close as closeDb} from "/src/indexeddb/utils.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 
 // Create the reader-db database
 export default async function main() {
-  let conn;
+  const fs = new FeedStore();
   try {
-    conn = await open();
+    await fs.open();
   } finally {
-    closeDb(conn);
+    fs.close();
   }
 }
