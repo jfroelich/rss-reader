@@ -1,28 +1,28 @@
 import assert from "/src/assert/assert.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import * as Feed from "/src/reader-db/feed.js";
 import findEntriesInDb from "/src/reader-db/find-entries.js";
 import getFeedIdsInDb from "/src/reader-db/get-feed-ids.js";
 import removeEntriesFromDb from "/src/reader-db/remove-entries.js";
-import {isOpen} from "/src/indexeddb/utils.js";
 
 const CHANNEL_NAME = 'reader';
 
 // Removes entries not linked to a feed from the database
-// @param conn {IDBDatabase} an open database connection
+// @param store {FeedStore} an open FeedStore instance
 // @param limit {Number}
-export default async function removeOrphanedEntries(conn, limit) {
-  assert(isOpen(conn));
+export default async function removeOrphanedEntries(store, limit) {
+  assert(store.isOpen());
 
   // For orphan determination we want all feeds, we don't care whether feeds are inactive
-  const feedIds = await getFeedIdsInDb(conn);
+  const feedIds = await getFeedIdsInDb(store.conn);
 
   function isOrphan(entry) {
     const id = entry.feed;
-    return !id || !Feed.isValidId(id) || !feedIds.includes(id);
+    return !Feed.isValidId(id) || !feedIds.includes(id);
   }
 
-  const entries = await findEntriesInDb(conn, isOrphan, limit);
-  console.debug('found %s orphans', entries.length);
+  const entries = await findEntriesInDb(store.conn, isOrphan, limit);
+  console.debug('Found %s orphans', entries.length);
   if(entries.length === 0) {
     return;
   }
@@ -37,7 +37,7 @@ export default async function removeOrphanedEntries(conn, limit) {
     return;
   }
 
-  await removeEntriesFromDb(conn, orphanIds);
+  await removeEntriesFromDb(store.conn, orphanIds);
 
   const channel = new BroadcastChannel(CHANNEL_NAME);
   const message = {type: 'entry-deleted', id: undefined, reason: 'orphan'};

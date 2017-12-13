@@ -67,13 +67,13 @@ cli.removeLostEntries = async function() {
   }
 };
 
-cli.removeOrphanedEntries = async function() {
-  let conn;
+cli.removeOrphanedEntries = async function(limit) {
+  const fs = new FeedStore();
   try {
-    conn = await openReaderDb();
-    await removeOrphanedEntries(conn, args);
+    await fs.open();
+    await removeOrphanedEntries(fs, limit);
   } finally {
-    IndexedDbUtils.close(conn);
+    fs.close();
   }
 };
 
