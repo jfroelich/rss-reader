@@ -1,11 +1,15 @@
 import assert from "/src/assert/assert.js";
 import {FetchError} from "/src/fetch/errors.js";
+import isAllowedURL from "/src/fetch/fetch-policy.js";
+import {PermissionsError} from "/src/operations/restricted-operation.js";
 import {TimeoutError} from "/src/operations/timed-operation.js";
-import isPosInt from "/src/utils/is-pos-int.js";
 import setTimeoutPromise from "/src/promise/set-timeout.js";
+import check from "/src/utils/check.js";
+import isPosInt from "/src/utils/is-pos-int.js";
 
-// TODO: use the fetch API to avoid cookies?
-
+// TODO: use the fetch API to avoid cookies
+// TODO: for consistency with other fetch calls, and to avoid the need to do it here, this should
+// expect a URL object as the parameter type, instead of a string
 
 // Fetches an image element. Returns a promise that resolves to a fetched image element. Note that
 // data uris are accepted.
@@ -13,8 +17,17 @@ import setTimeoutPromise from "/src/promise/set-timeout.js";
 // @param timeoutMs {Number}
 // @returns {Promise}
 export default async function fetchImageElement(url, timeoutMs) {
-  assert(url);
+  assert(typeof url === 'string');
   assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
+
+  // Issue #420. All requests should undergo policy check. Because this does not use fetchInternal
+  // like other requests, which would implicitly check policy, do an explicit policy check.
+  // Due to the heavy cost of parsing urls with the data protocol, and because all data uris are
+  // permitted, only check if not a data uri.
+  if(!isDataURI(url)) {
+    const urlObject = new URL(url);
+    check(isAllowedURL(urlObject), PermissionsError, 'Refused to fetch url', url);
+  }
 
   // Note that even though the timerId is used after it would be defined later, it still must be
   // defined now. I am not 100% sure why. For simplicity with destructuring call later I also
@@ -55,4 +68,8 @@ export default async function fetchImageElement(url, timeoutMs) {
     throw new TimeoutError(errorMessage);
   }
   return fetchPromise;
+}
+
+function isDataURI(urlString) {
+  return /\s*data:/i.test(urlString);
 }
