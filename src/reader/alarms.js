@@ -8,8 +8,6 @@ import pollFeeds from "/src/jobs/poll/poll-feeds.js";
 import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
-import openReaderDb from "/src/reader-db/open.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 
 // Registers alarms in the extension that run various background jobs. Analogous to cron.
 
@@ -42,7 +40,7 @@ async function onWakeup(alarm) {
   }
   case 'poll':
     // Non-awaited call to async promise-returning function
-    handlePollFeedsAlarmWakeup(alarm).catch(console.warn);
+    handlePollFeedsAlarm(alarm).catch(console.warn);
     break;
   case 'remove-entries-missing-urls': {
     const fs = new FeedStore();
@@ -108,7 +106,7 @@ async function onWakeup(alarm) {
   }
 }
 
-async function handlePollFeedsAlarmWakeup(alarm) {
+async function handlePollFeedsAlarm(alarm) {
   // If the non-idle restriction is in place, and the computer is not idle, then avoid polling.
   if('ONLY_POLL_IF_IDLE' in localStorage) {
     const idlePeriodSecs = 30;
@@ -120,8 +118,7 @@ async function handlePollFeedsAlarmWakeup(alarm) {
   }
 
   const pc = new PollContext();
-  pc.feedStore = new FeedStore();
-  pc.iconCache = new FaviconCache();
+  pc.init();
   try {
     await pc.open();
     await pollFeeds.call(pc);
