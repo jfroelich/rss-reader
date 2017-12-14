@@ -1,9 +1,6 @@
 import assert from "/src/assert/assert.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as Feed from "/src/reader-db/feed.js";
-import findEntriesInDb from "/src/reader-db/find-entries.js";
-import getFeedIdsInDb from "/src/reader-db/get-feed-ids.js";
-import removeEntriesFromDb from "/src/reader-db/remove-entries.js";
 
 const CHANNEL_NAME = 'reader';
 
@@ -14,14 +11,14 @@ export default async function removeOrphanedEntries(store, limit) {
   assert(store.isOpen());
 
   // For orphan determination we want all feeds, we don't care whether feeds are inactive
-  const feedIds = await getFeedIdsInDb(store.conn);
+  const feedIds = await store.getAllFeedIds();
 
   function isOrphan(entry) {
     const id = entry.feed;
     return !Feed.isValidId(id) || !feedIds.includes(id);
   }
 
-  const entries = await findEntriesInDb(store.conn, isOrphan, limit);
+  const entries = await store.findEntries(isOrphan, limit);
   console.debug('Found %s orphans', entries.length);
   if(entries.length === 0) {
     return;
@@ -37,7 +34,7 @@ export default async function removeOrphanedEntries(store, limit) {
     return;
   }
 
-  await removeEntriesFromDb(store.conn, orphanIds);
+  await store.removeEntries(orphanIds);
 
   const channel = new BroadcastChannel(CHANNEL_NAME);
   const message = {type: 'entry-deleted', id: undefined, reason: 'orphan'};

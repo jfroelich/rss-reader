@@ -10,8 +10,6 @@ import {
 import {openTab} from "/src/platform/platform.js";
 import escapeHTML from "/src/html/escape.js";
 import htmlTruncate from "/src/html/truncate.js";
-import entryMarkRead from "/src/reader-db/entry-mark-read.js";
-import findViewableEntriesInDb from "/src/reader-db/find-viewable-entries.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";
@@ -194,7 +192,7 @@ async function markSlideRead(feedStore, slideElement) {
 
   // Update storage. Handle any error in an opaque manner.
   try {
-    await entryMarkRead(feedStore.conn, entryId);
+    await feedStore.markEntryAsRead(entryId);
   } catch(error) {
     console.warn(error);
     // Fall through and mark the element as read anyway, to prevent the error that appears later
@@ -215,7 +213,7 @@ async function appendSlides(feedStore) {
   const offset = countUnreadSlides();
 
   try {
-    entries = await findViewableEntriesInDb(feedStore.conn, offset, limit);
+    entries = await feedStore.findViewableEntries(offset, limit);
   } catch(error) {
     console.warn(error);
     showErrorMessage(

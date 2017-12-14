@@ -1,15 +1,19 @@
 import assert from "/src/assert/assert.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import * as Feed from "/src/reader-db/feed.js";
-import findFeedByIdInDb from "/src/reader-db/find-feed-by-id.js";
-import putFeedInDb from "/src/reader-db/put-feed.js";
 
 export default async function deactivateFeed(conn, feedId, reason) {
   assert(IndexedDbUtils.isOpen(conn));
   assert(Feed.isValidId(feedId));
 
   console.debug('Deactivating feed', feedId);
-  const feed = await findFeedByIdInDb(conn, feedId);
+
+  // TEMP: hack
+  const store = new FeedStore();
+  store.conn = conn;
+
+  const feed = await store.findFeedById(feedId);
   assert(Feed.isFeed(feed));
 
   console.debug('Successfully loaded feed object for deactivation', feed);
@@ -23,7 +27,7 @@ export default async function deactivateFeed(conn, feedId, reason) {
 
   // We have full control
   const skipPrep = true;
-  await putFeedInDb(feed, conn, skipPrep);
+  await store.putFeed(feed, skipPrep);
   console.debug('Deactivated feed', feedId);
   return true;
 }

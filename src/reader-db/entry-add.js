@@ -1,10 +1,10 @@
 import assert from "/src/assert/assert.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import * as Entry from "/src/reader-db/entry.js";
 import replaceTags from "/src/html/replace-tags.js";
 import htmlTruncate from "/src/html/truncate.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
-import putEntryInDb from "/src/reader-db/put-entry.js";
 import condenseWhitespace from "/src/string/condense-whitespace.js";
 import filterUnprintableCharacters from "/src/string/filter-unprintable-characters.js";
 import {isOpen as isOpenDb} from "/src/indexeddb/utils.js";
@@ -29,7 +29,12 @@ export default async function entryAdd(entry, conn, channel) {
   storable.readState = Entry.STATE_UNREAD;
   storable.archiveState = Entry.STATE_UNARCHIVED;
   storable.dateCreated = new Date();
-  const newEntryId = await putEntryInDb(conn, storable);
+
+  // TEMP: hack
+  const store = new FeedStore();
+  store.conn = conn;
+
+  const newEntryId = await store.putEntry(storable);
 
   // If the above call to putEntryInDb did not throw an exception, then the entry storage operation
   // committed, so it is safe to notify listeners of the model change. If a channel was provided,

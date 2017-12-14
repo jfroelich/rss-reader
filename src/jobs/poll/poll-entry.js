@@ -8,8 +8,6 @@ import applyAllDocumentFilters from "/src/filters/apply-all.js";
 import parseHTML from "/src/html/parse.js";
 import rewriteURL from "/src/jobs/poll/rewrite-url.js";
 import * as Entry from "/src/reader-db/entry.js";
-import entryAdd from "/src/reader-db/entry-add.js";
-import findEntryIdByURLInDb from "/src/reader-db/find-entry-id-by-url.js";
 import sniffIsBinaryURL from "/src/url/sniff.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
@@ -35,12 +33,10 @@ export class Context {
 // @param this {Context}
 export async function pollEntry(entry) {
   assert(this instanceof Context);
-
   assert(this.feedStore instanceof FeedStore);
   assert(this.feedStore.isOpen());
   assert(this.iconCache instanceof FaviconCache);
   assert(this.iconCache.isOpen());
-
   assert(Entry.isEntry(entry));
 
   // Cannot assume entry has url (not an error)
@@ -59,7 +55,7 @@ export async function pollEntry(entry) {
     return;
   }
 
-  if(await findEntryIdByURLInDb(this.feedStore.conn, url.href)) {
+  if(await this.feedStore.findEntryIdByURL(url.href)) {
     return;
   }
 
@@ -73,7 +69,7 @@ export async function pollEntry(entry) {
         return;
       }
 
-      if(await findEntryIdByURLInDb(this.feedStore.conn, responseURL.href)) {
+      if(await this.feedStore.findEntryIdByURL(responseURL.href)) {
         return;
       }
 
@@ -128,7 +124,7 @@ export async function pollEntry(entry) {
     entry.content = 'Empty or malformed content';
   }
 
-  const newEntryId = await entryAdd(entry, this.feedStore.conn, this.channel);
+  const newEntryId = await this.feedStore.addEntry(entry, this.channel);
   return newEntryId;
 }
 

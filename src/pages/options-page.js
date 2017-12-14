@@ -23,11 +23,7 @@ import {
 } from "/src/platform/platform.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
-import activateFeedInDb from "/src/reader-db/activate-feed.js";
-import deactivateFeedInDb from "/src/reader-db/deactivate-feed.js";
 import * as Feed from "/src/reader-db/feed.js";
-import findFeedByIdInDb from "/src/reader-db/find-feed-by-id.js";
-import getFeedsFromDb from "/src/reader-db/get-feeds.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // View state
@@ -261,7 +257,7 @@ async function feedListItemOnclick(event) {
   let feed;
   try {
     await feedStore.open();
-    feed = await findFeedByIdInDb(feedStore.conn, feedIdNumber);
+    feed = await feedStore.findFeedById(feedIdNumber);
   } catch(error) {
     console.warn(error);
     // TODO: visual feedback?
@@ -401,7 +397,7 @@ async function feedListInit() {
   let feeds;
   try {
     await feedStore.open();
-    feeds = await getFeedsFromDb(feedStore.conn);
+    feeds = await feedStore.getAllFeeds();
   } catch(error) {
     // TODO: react to error
     console.warn(error);
@@ -497,7 +493,7 @@ async function activateButtonOnclick(event) {
   const feedStore = new FeedStore();
   try {
     await feedStore.open();
-    await activateFeedInDb(feedStore.conn, feedId);
+    await feedStore.activateFeed(feedId);
   } catch(error) {
     console.warn(error);
     return;
@@ -522,7 +518,7 @@ async function deactivateButtonOnclick(event) {
 
   try {
     await feedStore.open();
-    await deactivateFeedInDb(feedStore.conn, feedId);
+    await feedStore.deactivateFeed(feedId, 'manual-click');
   } catch(error) {
     console.warn(error);
     return;
@@ -580,7 +576,7 @@ async function exportOPMLButtonOnclick(event) {
 
   try {
     await feedStore.open();
-    const feeds = await getFeedsFromDb(feedStore.conn);
+    const feeds = await feedStore.getAllFeeds();
     exportFeeds(feeds, title, fileName);
   } catch(error) {
     // TODO: handle error visually

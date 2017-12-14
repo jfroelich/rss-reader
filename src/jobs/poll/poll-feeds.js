@@ -5,7 +5,6 @@ import {showNotification} from "/src/platform/platform.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeed from "/src/jobs/poll/poll-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import getActiveFeedsFromDb from "/src/reader-db/get-active-feeds.js";
 import promiseEvery from "/src/promise/every.js";
 
 export default async function pollFeeds() {
@@ -24,11 +23,8 @@ export default async function pollFeeds() {
   // simplifies calling pollFeeds as the caller does not need to be concerned with setting it.
   this.batchMode = true;
 
-  // Get all active feeds from the database
-  const feeds = await getActiveFeedsFromDb(this.feedStore.conn);
-  // Concurrently poll each feed
+  const feeds = await this.feedStore.findActiveFeeds();
   const promises = feeds.map(pollFeed, this);
-  // Wait for all feed poll operations to settle
   const pollFeedResolutions = await promiseEvery(promises);
 
   // Get the total entries added. pollFeed returns the number of entries added, or throws an error.

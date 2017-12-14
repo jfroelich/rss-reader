@@ -1,8 +1,6 @@
 import assert from "/src/assert/assert.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as Entry from "/src/reader-db/entry.js";
-import findEntriesInDb from "/src/reader-db/find-entries.js";
-import removeEntriesFromDb from "/src/reader-db/remove-entries.js";
 
 const CHANNEL_NAME = 'reader';
 
@@ -14,7 +12,7 @@ export default async function removeLostEntries(store, limit) {
   assert(store instanceof FeedStore);
   assert(store.isOpen());
 
-  const entries = await findEntriesInDb(store.conn, isLostEntry, limit);
+  const entries = await store.findEntries(isLostEntry, limit);
   console.debug('Found %s lost entries', entries.length);
   if(entries.length === 0) {
     return;
@@ -25,7 +23,7 @@ export default async function removeLostEntries(store, limit) {
     ids.push(entry.id);
   }
 
-  await removeEntriesFromDb(store.conn, ids);
+  await store.removeEntries(ids);
   const channel = new BroadcastChannel(CHANNEL_NAME);
   const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
   for(const id of ids) {

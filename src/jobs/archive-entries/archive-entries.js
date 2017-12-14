@@ -1,8 +1,6 @@
 import assert from "/src/assert/assert.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as Entry from "/src/reader-db/entry.js";
-import findArchivableEntriesInDb from "/src/reader-db/find-archivable-entries.js";
-import putEntryInDb from "/src/reader-db/put-entry.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import sizeof from "/src/utils/sizeof.js";
 
@@ -30,7 +28,7 @@ export default async function archiveEntries(store, maxAgeMs, limit) {
     return entryAgeMs > maxAgeMs;
   }
 
-  const entries = await findArchivableEntriesInDb(store.conn, isArchivable, limit);
+  const entries = await store.findArchivableEntries(isArchivable, limit);
   if(!entries.length) {
     console.debug('no archivable entries found');
     return;
@@ -65,7 +63,13 @@ async function archiveEntry(entry, conn, channel) {
   compacted.dateUpdated = new Date();
   const afterSize = sizeof(compacted);
   console.debug('before %d after %d', beforeSize, afterSize);
-  await putEntryInDb(conn, compacted);
+
+  // TEMP: hack
+  // TODO: pass store, do not create here
+  const store = new FeedStore();
+  store.conn = conn;
+  await store.putEntry(compacted);
+
   const message = {type: 'entry-archived', id: compacted.id};
   channel.postMessage(message);
   return compacted;

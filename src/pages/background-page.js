@@ -8,7 +8,6 @@ import {
 import "/src/reader/alarms.js";
 import "/src/reader/cli.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import setupReaderDb from "/src/reader-db/setup.js";
 
 // This module should be loaded exclusively in the background page. Does various startup work.
 
@@ -32,8 +31,9 @@ async function onInstalled(event) {
 
   // TODO: these two tasks are independent, why make the second wait on the first to resolve?
 
+  const store = new FeedStore();
   try {
-    await setupReaderDb();
+    await store.setup();
   } catch(error) {
     console.warn(error);
   }

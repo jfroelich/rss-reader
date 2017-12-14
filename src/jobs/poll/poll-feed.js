@@ -7,7 +7,6 @@ import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
 import {showNotification} from "/src/platform/platform.js";
 import promiseEvery from "/src/promise/every.js";
 import parseFeed from "/src/reader/parse-feed.js";
-import putFeedInDb from "/src/reader-db/put-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as Feed from "/src/reader-db/feed.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
@@ -74,7 +73,7 @@ export default async function pollFeed(feed) {
     if(errorCountChanged) {
       console.debug('Feed unmodified, error count changed, storing and exiting early');
       const skipPrep = true;
-      await putFeedInDb(feed, this.feedStore.conn, skipPrep);
+      await this.feedStore.putFeed(feed, skipPrep);
     }
 
     // Because the feed has not changed, there is no need to do any additional processing.
@@ -106,7 +105,7 @@ export default async function pollFeed(feed) {
 
   const mergedFeed = Feed.merge(feed, parseResult.feed);
   const skipPrep = false;
-  const storedFeed = await putFeedInDb(mergedFeed, this.feedStore.conn, skipPrep);
+  const storedFeed = await this.feedStore.putFeed(mergedFeed, skipPrep);
 
   // Now process the entries
   const entries = parseResult.entries;
@@ -272,7 +271,7 @@ async function handlePollFeedError(error, store, feed, callCategory) {
   // non-blocking seems a bit complex at the moment, so just getting it working for now.
   // NOTE: this can also throw, and thereby mask the error, but I suppose that is ok, because
   // both are errors, and in this case I suppose the db error trumps the fetch error
-  await putFeedInDb(feed, store.conn, skipPrep);
+  await store.putFeed(feed, skipPrep);
 
   // We've partially handled the error in the sense that we attached side effects to it, but we
   // do not affect how the error affects the code evaluation path. That is up to caller. So this

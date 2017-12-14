@@ -3,14 +3,13 @@ import FeedStore from "/src/feed-store/feed-store.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as Entry from "/src/reader-db/entry.js";
 import {InvalidStateError, NotFoundError} from "/src/reader-db/errors.js";
-import findEntryByIdInDb from "/src/reader-db/find-entry-by-id.js";
-import putEntryInDb from "/src/reader-db/put-entry.js";
 import {isOpen} from "/src/indexeddb/utils.js";
 import check from "/src/utils/check.js";
 
 const DEBUG = false;
 const dprintf = DEBUG ? console.log : function noop() {};
 
+// TODO: change to accept store as input instead of conn
 
 // Mark the entry with the given id as read in the database
 // @param conn {IDBDatabase} an open database connection
@@ -19,24 +18,19 @@ export default async function main(conn, id) {
   assert(isOpen(conn));
   assert(Entry.isValidId(id));
 
-  const entry = await findEntryByIdInDb(conn, id);
+  // TEMP: hacky solution to requiring store
+  // TODO: clean this up, hackish, change this to accept store as input or something
+  const store = new FeedStore();
+  store.conn = conn;
+
+  const entry = await store.findEntryById(id);
+
+  // The entry should always be found
+  // TODO: use stricter type check (implicit magic)
+  assert(typeof entry !== 'undefined');
 
   // The entry should ALWAYS have a url
   assert(Entry.hasURL(entry));
-
-  // TODO: possibly change check to assert to represent that the error is unexpected instead of
-  // expected.
-  // I have mixed feelings about whether these should be checks or asserts. On the one hand, the
-  // database should never enter into an invalid state, so these should be assertions. On the other
-  // hand, the database is external and difficult to reason about statically, and in some sense
-  // entries are user data as opposed to system data, so bad data is expected.
-  //
-  // The slideshow page, which calls this function, currently is kind of sloppy and does not do
-  // a great job reasoning about database state. There are a few situations where an entry may be
-  // deleted, such as by a background task, and the slideshow never the less calls this
-  // function unaware. Until the time the slideshow can properly reflect the state of the model
-  // consistently, this is better done as a check than an assert.
-  check(entry, NotFoundError, id);
 
   // TODO: I am not sure this check is strict enough. Technically the entry should always be
   // in the UNREAD state at this point.
@@ -51,12 +45,8 @@ export default async function main(conn, id) {
   entry.readState = Entry.STATE_READ;
   entry.dateUpdated = new Date();
   entry.dateRead = entry.dateUpdated;
-  await putEntryInDb(conn, entry);
+
+  await store.putEntry(entry);
   dprintf('Marked entry as read', id, url);
-
-  // TODO: clean this up, hackish, change this to accept store as input or something
-
-  const store = new FeedStore();
-  store.conn = conn;
   await updateBadgeText(store);
 }

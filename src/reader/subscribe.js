@@ -11,19 +11,14 @@ import setTimeoutPromise from "/src/promise/set-timeout.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import * as Feed from "/src/reader-db/feed.js";
 import {ConstraintError} from "/src/reader-db/errors.js";
-import putFeed from "/src/reader-db/put-feed.js";
-import findFeedIdByURLInDb from "/src/reader-db/find-feed-id-by-url.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import check from "/src/utils/check.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 
-
+// Module for subscribing to a new feed
 // TODO: both subscribe and pollFeed have extremely similar functionality. Consider that I should
 // be using a better abstraction here. Perhaps a single function with the right arguments can
 // satisfy both cases and therefore simplify usage and reduce code.
-
-
-// Module for subscribing to a new feed
 
 export function Context() {
   /* FeedStore */ this.feedStore;
@@ -83,7 +78,7 @@ export async function subscribe(feed) {
   const urlObject = new URL(feedURLString);
 
   // Check that user is not already subscribed
-  let priorFeedId = await findFeedIdByURLInDb(this.feedStore.conn, feedURLString);
+  let priorFeedId = await this.feedStore.findFeedIdByURL(feedURLString);
   check(!Feed.isValidId(priorFeedId), ConstraintError, 'Already subscribed to feed with url',
     feedURLString);
 
@@ -121,7 +116,7 @@ export async function subscribe(feed) {
       // isAllowedURL here explicitly?
 
       // Check that user is not already subscribed now that we know redirect
-      priorFeedId = await findFeedIdByURLInDb(this.feedStore.conn, response.responseURL);
+      priorFeedId = await this.feedStore.findFeedIdByURL(response.responseURL);
       check(!Feed.isValidId(priorFeedId), ConstraintError, 'already subscribed');
     }
 
@@ -160,7 +155,7 @@ export async function subscribe(feed) {
 
   // Store the feed in the database
   const kSkipPrep = false;
-  const storedFeed = await putFeed(feed, this.feedStore.conn, kSkipPrep);
+  const storedFeed = await this.feedStore.putFeed(feed, kSkipPrep);
 
   // Show a notification for the successful subscription. If calling concurrently the caller
   // should separately set notify to false to disable this.
