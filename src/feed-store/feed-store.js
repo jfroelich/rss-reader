@@ -3,15 +3,9 @@ import replaceTags from "/src/html/replace-tags.js";
 import htmlTruncate from "/src/html/truncate.js";
 import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import * as Entry from "/src/reader-db/entry.js";
-import {InvalidStateError, NotFoundError} from "/src/reader-db/errors.js";
-import * as Feed from "/src/reader-db/feed.js";
-import openDb from "/src/reader-db/open.js";
-import putEntry from "/src/reader-db/put-entry.js";
-import putFeed from "/src/reader-db/put-feed.js";
-import removeEntries from "/src/reader-db/remove-entries.js";
-import removeFeed from "/src/reader-db/remove-feed.js";
-import setup from "/src/reader-db/setup.js";
+import * as Entry from "/src/feed-store/entry.js";
+import {InvalidStateError, NotFoundError} from "/src/feed-store/errors.js";
+import * as Feed from "/src/feed-store/feed.js";
 import condenseWhitespace from "/src/string/condense-whitespace.js";
 import filterUnprintableCharacters from "/src/string/filter-unprintable-characters.js";
 import filterControls from "/src/string/filter-controls.js";
@@ -20,21 +14,137 @@ import check from "/src/utils/check.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
-// TODO: inline reader-db modules here
-
-// TODO: only some of the merged modules used this technique, change all inlined code to
-// call dprintf instead of calling console directly
 const DEBUG = false;
 const dprintf = DEBUG ? console.log : function(){};
 
+// TODO: should these values come from config.js?
+const NAME = 'reader';
+const VERSION = 24;
+const OPEN_TIMEOUT_MS = 500;
 
 export default function FeedStore() {
-  /* IDBDatabase */ this.conn;
+  // @type {IDBDatabase} database connection handle
+  this.conn;
 }
 
+// Opens a connection to the reader database
 FeedStore.prototype.open = async function() {
-  this.conn = await openDb();
+  this.conn = await IndexedDbUtils.open(NAME, VERSION, onUpgradeNeeded, OPEN_TIMEOUT_MS);
 };
+
+// Helper for open. Does the database upgrade. This should never be
+// called directly. To do an upgrade, call open with a higher version number.
+function onUpgradeNeeded(event) {
+  const conn = event.target.result;
+  const tx = event.target.transaction;
+  let feedStore, entryStore;
+  const stores = conn.objectStoreNames;
+
+  console.log('upgrading database %s to version %s from version', conn.name, conn.version,
+    event.oldVersion);
+
+  if(event.oldVersion < 20) {
+    feedStore = conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
+    entryStore = conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
+    feedStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+
+    entryStore.createIndex('readState', 'readState');
+    entryStore.createIndex('feed', 'feed');
+    entryStore.createIndex('archiveState-readState', ['archiveState', 'readState']);
+    entryStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+  } else {
+    feedStore = tx.objectStore('feed');
+    entryStore = tx.objectStore('entry');
+  }
+
+  if(event.oldVersion < 21) {
+    // Add magic to all older entries
+    addEntryMagic(tx);
+  }
+
+  if(event.oldVersion < 22) {
+    addFeedMagic(tx);
+  }
+
+  if(event.oldVersion < 23) {
+    // Delete the title index in feed store. It is no longer in use. Because it is no longer
+    // created, and the db could be at any prior version, ensure that it exists before calling
+    // deleteIndex to avoid the NotFoundError deleteIndex throws when deleting a non-existent index.
+
+    // @type {DOMStringList}
+    const indices = feedStore.indexNames;
+    if(indices.contains('title')) {
+      console.debug('deleting title index of feed store as part of upgrade');
+      feedStore.deleteIndex('title');
+    } else {
+      console.debug('no title index found to delete during upgrade past version 22');
+    }
+  }
+
+  if(event.oldVersion < 24) {
+    // Version 24 adds an 'active' field to feeds. All existing feeds do not have an active
+    // field. So all existing feeds must be modified to have an active property that is default
+    // to true. It defaults to true because prior to this change, all feeds were presumed active.
+    addActiveFieldToFeeds(feedStore);
+  }
+}
+
+// Expects the transaction to be writable (either readwrite or versionchange)
+function addEntryMagic(tx) {
+  console.debug('Adding entry magic');
+  const store = tx.objectStore('entry');
+  const getAllEntriesRequest = store.getAll();
+  getAllEntriesRequest.onerror = function(event) {
+    console.warn('Error adding entry magic', getAllEntriesRequest.error);
+  };
+  getAllEntriesRequest.onsuccess = function(event) {
+    const entries = event.target.result;
+    writeEntriesWithMagic(store, entries);
+  };
+}
+
+function writeEntriesWithMagic(entryStore, entries) {
+  for(const entry of entries) {
+    entry.magic = Entry.ENTRY_MAGIC;
+    entry.dateUpdated = new Date();
+    entryStore.put(entry);
+  }
+}
+
+function addFeedMagic(tx) {
+  console.debug('Adding feed magic');
+  const store = tx.objectStore('feed');
+  const getAllFeedsRequest = store.getAll();
+  getAllFeedsRequest.onerror = function(event) {
+    console.warn('Error adding feed magic', getAllFeedsRequest.error);
+  };
+  getAllFeedsRequest.onsuccess = function(event) {
+    const feeds = event.target.result;
+    for(const feed of feeds) {
+      feed.magic = Feed.FEED_MAGIC;
+      feed.dateUpdated = new Date();
+      store.put(feed);
+    }
+  }
+}
+
+function addActiveFieldToFeeds(feedStore) {
+  console.debug('Adding active property to feeds');
+  const feedsRequest = feedStore.getAll();
+  feedsRequest.onerror = function(event) {
+    console.warn('Database error getting all feeds', feedsRequest.error);
+  };
+
+  feedsRequest.onsuccess = function(event) {
+    const feeds = event.target.result;
+    for(const feed of feeds) {
+      console.debug('Marking feed %d as active as part of upgrade', feed.id);
+      feed.active = true;
+      feed.dateUpdated = new Date();
+      feedStore.put(feed);
+    }
+  };
+}
 
 FeedStore.prototype.isOpen = function() {
   return IndexedDbUtils.isOpen(this.conn);
@@ -45,15 +155,15 @@ FeedStore.prototype.close = function() {
 };
 
 FeedStore.prototype.activateFeed = async function(feedId) {
-  console.debug('activateFeed start', feedId);
+  dprintf('activateFeed start', feedId);
   assert(this.isOpen());
   assert(Feed.isValidId(feedId));
 
   const feed = await this.findFeedById(feedId);
   assert(Feed.isFeed(feed));
-  console.debug('Successfully loaded feed object', feed);
+  dprintf('Successfully loaded feed object', feed);
   if(feed.active === true) {
-    console.debug('Feed with id %d is already active', feed.id);
+    dprintf('Feed with id %d is already active', feed.id);
     return false;
   }
 
@@ -62,7 +172,7 @@ FeedStore.prototype.activateFeed = async function(feedId) {
   // We have full control for lifetime so skip prep
   const skipPrep = true;
   await this.putFeed(feed, skipPrep);
-  console.debug('Activated feed', feedId);
+  dprintf('Activated feed', feedId);
   return true;
 };
 
@@ -172,13 +282,13 @@ FeedStore.prototype.countUnreadEntries = function() {
 FeedStore.prototype.deactivateFeed = async function(feedId, reason) {
   assert(this.isOpen());
   assert(Feed.isValidId(feedId));
-  console.debug('Deactivating feed', feedId);
+  dprintf('Deactivating feed', feedId);
   const feed = await this.findFeedById(feedId);
   assert(Feed.isFeed(feed));
-  console.debug('Successfully loaded feed object for deactivation', feed);
+  dprintf('Successfully loaded feed object for deactivation', feed);
 
   if(feed.active === false) {
-    console.warn('Feed %d is inactive', feed.id);
+    dprintf('Tried to deactivate inactive feed', feed.id);
     return false;
   }
 
@@ -187,7 +297,7 @@ FeedStore.prototype.deactivateFeed = async function(feedId, reason) {
   // We have full control over lifetime of feed object so skip prep
   const skipPrep = true;
   await store.putFeed(feed, skipPrep);
-  console.debug('Deactivated feed', feedId);
+  dprintf('Deactivated feed', feedId);
   return true;
 };
 
@@ -465,45 +575,194 @@ FeedStore.prototype.markEntryAsRead = async function(entryId) {
   const entry = await this.findEntryById(entryId);
   // TODO: use stricter type check (implicit magic)
   assert(typeof entry !== 'undefined');
-
-  // The entry should ALWAYS have a url
   assert(Entry.hasURL(entry));
-
   // TODO: I am not sure this check is strict enough. Technically the entry should always be
   // in the UNREAD state at this point.
   check(entry.readState !== Entry.STATE_READ, InvalidStateError,
     'Entry %d already in read state', entryId);
-
   const url = Entry.peekURL(entry);
   dprintf('Found entry to mark as read', entryId, url);
-
-  // We have full control over the entry object from read to write, so there is no need to sanitize
-  // or filter empty properties.
   entry.readState = Entry.STATE_READ;
-  entry.dateUpdated = new Date();
   entry.dateRead = entry.dateUpdated;
-
+  entry.dateUpdated = new Date();
   await this.putEntry(entry);
   dprintf('Marked entry as read', entryId, url);
   await updateBadgeText(this);
 };
 
 FeedStore.prototype.putEntry = function(entry) {
-  return putEntry(this.conn, entry);
+  return new Promise((resolve, reject) => {
+    assert(this.isOpen());
+    assert(Entry.isEntry(entry));
+    const tx = this.conn.transaction('entry', 'readwrite');
+    const store = tx.objectStore('entry');
+    const request = store.put(entry);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
 };
 
 // TODO: to remove the skipPrep param, create addFeed. If prep needed use addFeed to add. If
 // prep not needed call put feed directly.
-FeedStore.prototype.putFeed = function(feed, skipPrep) {
-  return putFeed(feed, this.conn, skipPrep);
+// TODO: I do not like the skipPrep parameter. Essentially there should be two functions. A
+// function that preps the feed, and a function that stores the feed as is. If the caller wants to
+// prep the feed, call both functions. If the caller wants to just store the feed, only call the
+// second function. That would be better than this.
+// Furthermore, the prep function should be a simple sync helper function. It shouldn't even be
+// in this module, it should be in a separate module. Second, it should return the prepped feed.
+// Third, because it returns the prepped feed, the caller then has the modified feed data right
+// there available to the caller, which removes the need to return or modify the input feed
+// object when storing the feed. That means that this should be changed to just return the new id
+// if set, and not the modified feed data.
+// TODO: maybe this should be refactored as a non-async, promise-returning function. There is no
+// need to use async-await when this is basically a wrapped call to another promise-returning
+// function. But note the above todo that I added later, the prep feed function would take care
+// of this concern by becoming a separate function, and basically this concern would not longer be
+// a concern.
+FeedStore.prototype.putFeed = async function(feed, skipPrep) {
+  assert(Feed.isFeed(feed));
+  assert(this.isOpen());
+
+  let storable;
+  if(skipPrep) {
+    storable = feed;
+  } else {
+    storable = sanitizeFeed(feed);
+    storable = filterEmptyProps(storable);
+  }
+
+  // If not specified then initialize the feed as active
+  if(!('active' in storable) || typeof storable.active === 'undefined') {
+    storable.active = true;
+    console.assert(!('deactivationReasonText' in storable));
+    console.assert(!('deactivationDate' in storable));
+  }
+
+  const currentDate = new Date();
+  if(!('dateCreated' in storable)) {
+    storable.dateCreated = currentDate;
+  }
+  storable.dateUpdated = currentDate;
+
+  const newId = await putFeedRaw(this.conn, storable);
+  storable.id = newId;
+  return storable;
 };
 
+
+const DEFAULT_TITLE_MAX_LEN = 1024;
+const DEFAULT_DESC_MAX_LEN = 1024 * 10;
+
+// Returns a shallow copy of the input feed with sanitized properties
+function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
+  assert(Feed.isFeed(feed));
+
+  if(typeof titleMaxLength === 'undefined') {
+    titleMaxLength = DEFAULT_TITLE_MAX_LEN;
+  } else {
+    assert(isPosInt(titleMaxLength));
+  }
+
+  if(typeof descMaxLength === 'undefined') {
+    descMaxLength = DEFAULT_DESC_MAX_LEN;
+  } else {
+    assert(isPosInt(descMaxLength));
+  }
+
+  const outputFeed = Object.assign({}, feed);
+  const tagReplacement = '';
+  const suffix = '';
+
+  if(outputFeed.title) {
+    let title = outputFeed.title;
+    title = filterControls(title);
+    title = replaceTags(title, tagReplacement);
+    title = condenseWhitespace(title);
+    title = htmlTruncate(title, titleMaxLength, suffix);
+    outputFeed.title = title;
+  }
+
+  if(outputFeed.description) {
+    let desc = outputFeed.description;
+    desc = filterControls(desc);
+    desc = replaceTags(desc, tagReplacement);
+    desc = condenseWhitespace(desc);
+    desc = htmlTruncate(desc, descMaxLength, suffix);
+    outputFeed.description = desc;
+  }
+
+  return outputFeed;
+}
+
+// Adds or overwrites a feed in storage. Resolves with the new feed id if add.
+// There are no side effects other than the database modification.
+// @param conn {IDBDatabase} an open database connection
+// @param feed {Object} the feed object to add
+// @return {Promise} a promise that resolves to the id of the stored feed
+function putFeedRaw(conn, feed) {
+  return new Promise(function executor(resolve, reject) {
+    const tx = conn.transaction('feed', 'readwrite');
+    const store = tx.objectStore('feed');
+    const request = store.put(feed);
+    request.onsuccess = () => {
+      const feedId = request.result;
+      resolve(feedId);
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// @param entryIds {Array} an array of entry ids
 FeedStore.prototype.removeEntries = function(entryIds) {
-  return removeEntries(this.conn, entryIds);
+  return new Promise((resolve, reject) => {
+    assert(this.isOpen());
+    assert(Array.isArray(entryIds));
+
+    for(const id of entryIds) {
+      assert(Entry.isValidId(id));
+    }
+
+    const tx = this.conn.transaction('entry', 'readwrite');
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+    const store = tx.objectStore('entry');
+    for(const id of entryIds) {
+      store.delete(id);
+    }
+  });
 };
 
+// TODO: this should not accept entryIds as parameter, it should find the entries as part of the
+// transaction implicitly. Once that it done there is no need to assert against entryIds as
+// valid entry ids.
 FeedStore.prototype.removeFeed = function(feedId, entryIds) {
-  return removeFeed(this.conn, feedId, entryIds);
+  return new Promise((resolve, reject) => {
+    assert(this.isOpen());
+    assert(Feed.isValidId(feedId));
+    assert(Array.isArray(entryIds));
+
+    for(const id of entryIds) {
+      assert(Entry.isValidId(id));
+    }
+
+    const tx = this.conn.transaction(['feed', 'entry'], 'readwrite');
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+
+    const feedStore = tx.objectStore('feed');
+    feedStore.delete(feedId);
+
+    const entryStore = tx.objectStore('entry');
+    for(const id of entryIds) {
+      entryStore.delete(id);
+    }
+  });
 };
 
-FeedStore.prototype.setup = setup;
+FeedStore.prototype.setup = async function() {
+  try {
+    await this.open();
+  } finally {
+    this.close();
+  }
+};

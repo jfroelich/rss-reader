@@ -23,7 +23,7 @@ import {
 } from "/src/platform/platform.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
-import * as Feed from "/src/reader-db/feed.js";
+import * as Feed from "/src/feed-store/feed.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // View state

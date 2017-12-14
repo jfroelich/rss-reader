@@ -2,6 +2,7 @@ import assert from "/src/assert/assert.js";
 import {showNotification} from "/src/platform/platform.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
+import {ConstraintError} from "/src/feed-store/errors.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import {OfflineError} from "/src/fetch/errors.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
@@ -9,8 +10,8 @@ import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeed from "/src/jobs/poll/poll-feed.js";
 import setTimeoutPromise from "/src/promise/set-timeout.js";
 import parseFeed from "/src/reader/parse-feed.js";
-import * as Feed from "/src/reader-db/feed.js";
-import {ConstraintError} from "/src/reader-db/errors.js";
+import * as Feed from "/src/feed-store/feed.js";
+
 import {setURLHrefProperty} from "/src/url/url.js";
 import check from "/src/utils/check.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";

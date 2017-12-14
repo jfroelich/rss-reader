@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import * as Feed from "/src/reader-db/feed.js";
+import * as Feed from "/src/feed-store/feed.js";
 
 const CHANNEL_NAME = 'reader';
 

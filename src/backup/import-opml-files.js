@@ -6,7 +6,7 @@ import * as OPMLDocument from "/src/opml/document.js";
 import * as OPMLOutline from "/src/opml/outline.js";
 import parseOPML from "/src/opml/parse.js";
 import * as Subscriber from "/src/reader/subscribe.js";
-import * as Feed from "/src/reader-db/feed.js";
+import * as Feed from "/src/feed-store/feed.js";
 import promiseEvery from "/src/promise/every.js";
 
 // TODO: in hindsight i think context is silly, this should just be

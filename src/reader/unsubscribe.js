@@ -1,7 +1,7 @@
 import assert from "/src/assert/assert.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import * as Feed from "/src/reader-db/feed.js";
+import * as Feed from "/src/feed-store/feed.js";
 
 // Remove a feed and its entries from the database and notify the UI
 // @param feedId {Number} id of feed to unsubscribe

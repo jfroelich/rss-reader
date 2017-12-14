@@ -7,7 +7,7 @@ import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
 import parseHTML from "/src/html/parse.js";
 import rewriteURL from "/src/jobs/poll/rewrite-url.js";
-import * as Entry from "/src/reader-db/entry.js";
+import * as Entry from "/src/feed-store/entry.js";
 import sniffIsBinaryURL from "/src/url/sniff.js";
 import {setURLHrefProperty} from "/src/url/url.js";
 import {isValidURLString} from "/src/url/url-string.js";
