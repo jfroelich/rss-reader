@@ -154,9 +154,12 @@ export async function subscribe(feed) {
     }
   }
 
-  // Store the feed in the database
-  const kSkipPrep = false;
-  const storedFeed = await this.feedStore.putFeed(feed, kSkipPrep);
+  const storableFeed = this.feedStore.prepareFeed(feed);
+  storableFeed.active = true;// active by default
+  storableFeed.dateCreated = new Date();
+  const newFeedId = await this.feedStore.putFeed(feed);
+  storableFeed.id = newFeedId;
+  const storedFeed = storableFeed;
 
   // Show a notification for the successful subscription. If calling concurrently the caller
   // should separately set notify to false to disable this.

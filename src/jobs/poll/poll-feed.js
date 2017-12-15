@@ -28,10 +28,8 @@ const FEED_ERROR_COUNT_DEACTIVATION_THRESHOLD = 10;
 // Check for updated content for the given feed
 export default async function pollFeed(feed) {
   assert(this instanceof PollContext);
-
   assert(this.feedStore instanceof FeedStore);
   assert(this.feedStore.isOpen());
-
   assert(Feed.isFeed(feed));
   assert(Feed.hasURL(feed));
 
@@ -66,18 +64,15 @@ export default async function pollFeed(feed) {
   const errorCountChanged = handleFetchFeedSuccess(feed);
 
   if(isUnmodifiedFeed.call(this, feed, response)) {
-
     // Even if the feed file has not changed since it was last fetched, we still possibly need to
     // update the feed in the database to reflect that the last fetch was successful, to prevent
     // fetch error counts from sticking around forever.
     if(errorCountChanged) {
-      console.debug('Feed unmodified, error count changed, storing and exiting early');
-      const skipPrep = true;
-      await this.feedStore.putFeed(feed, skipPrep);
+      // console.debug('Feed unmodified, error count changed, storing and exiting early');
+      feed.dateUpdated = new Date();
+      await this.feedStore.putFeed(feed);
     }
 
-    // Because the feed has not changed, there is no need to do any additional processing.
-    // Return 0 to indicate no entries added
     return 0;
   }
 
@@ -103,15 +98,19 @@ export default async function pollFeed(feed) {
     await handlePollFeedError(error, this.feedStore, feed, 'parse-feed');
   }
 
+  // Merge the new feed data together with the prior feed data
   const mergedFeed = Feed.merge(feed, parseResult.feed);
-  const skipPrep = false;
-  const storedFeed = await this.feedStore.putFeed(mergedFeed, skipPrep);
+  // The new data is untrusted and must pass through preparation
+  // TODO: this could happen prior to merge? should it?
+  const storableFeed = this.feedStore.prepareFeed(mergedFeed);
+  // putFeed stores the object as is, we must set dateUpdated manually
+  storableFeed.dateUpdated = new Date();
+  await this.feedStore.putFeed(storableFeed);
 
-  // Now process the entries
+  // Done processing feed. Now process the entries
   const entries = parseResult.entries;
-  cascadeFeedPropertiesToEntries(storedFeed, entries);
-
-  const numEntriesAdded = await pollEntries.call(this, storedFeed, entries);
+  cascadeFeedPropertiesToEntries(storableFeed, entries);
+  const numEntriesAdded = await pollEntries.call(this, storableFeed, entries);
 
   // If not in batch mode and some entries were added, update the badge.
   if(!this.batchMode && numEntriesAdded > 0) {
@@ -226,19 +225,15 @@ async function handlePollFeedError(error, store, feed, callCategory) {
     throw error;
   }
 
-  // If this handler was called in catch block of fetch, then need to consider special case of
-  // offline errors. Offline errors are not indicative of a feed becoming permanently unreachable
-  // or that a fetch failed because it is unreachable.
+  // Offline errors are not indicative of a feed becoming permanently unreachable or that a fetch
+  // failed because it is unreachable.
   if(callCategory === 'fetch-feed' && error instanceof OfflineError) {
     throw error;
   }
 
-  // Some kind of network or fetch error occurred, such as the feed being unreachable. Or there
-  // was a problem reading the response body, or a problem parsing. Before throwing the error,
-  // record that the error occurred. If enough errors accumulate then this should deactivate the
-  // feed.
-
-  const priorErrorCount = feed.errorCount; // may be undef
+  // We know it is some kind of checked error other than an OfflineError, such as a fetch error,
+  // or an xml parsing error.
+  const priorErrorCount = feed.errorCount;
   if(Number.isInteger(feed.errorCount)) {
     feed.errorCount++;
   } else {
@@ -246,7 +241,7 @@ async function handlePollFeedError(error, store, feed, callCategory) {
   }
 
   console.debug('Changing error count for feed %s from %d to %d', Feed.peekURL(feed),
-    priorErrorCount, feed.errorCount);
+    priorErrorCount || 0, feed.errorCount);
 
   if(feed.errorCount > FEED_ERROR_COUNT_DEACTIVATION_THRESHOLD) {
     console.debug('Error count exceeded threshold, deactivating feed', feed.id, Feed.peekURL(feed));
@@ -254,16 +249,15 @@ async function handlePollFeedError(error, store, feed, callCategory) {
     feed.active = false;
 
     // Despite the mixture of errors, whatever error was the last error that caused the threshold
-    // to be exceeded is what indicates the reason for deactivation.
+    // to be exceeded is what indicates the reason for deactivation. The reasons could be mixed
+    // but I think it is rare. I assume that generally a feed error occurs because the feed is
+    // either (1) permanently unreachable or (1) is permanently reachable but has a permanent parse
+    // error.
     if(typeof callCategory !== 'undefined') {
       feed.deactivationReasonText = callCategory;
     }
     feed.deactivationDate = new Date();
   }
-
-  // In this context we are dealing with a feed loaded from the database, and are not changing
-  // any user properties, only system properties.
-  const skipPrep = true;
 
   // TODO: maybe this should be independent (concurrent)? Right now this benefits from using the
   // same shared connection. It isn't too bad in the sense that the success path also has a
@@ -271,7 +265,8 @@ async function handlePollFeedError(error, store, feed, callCategory) {
   // non-blocking seems a bit complex at the moment, so just getting it working for now.
   // NOTE: this can also throw, and thereby mask the error, but I suppose that is ok, because
   // both are errors, and in this case I suppose the db error trumps the fetch error
-  await store.putFeed(feed, skipPrep);
+  feed.dateUpdated = new Date();
+  await store.putFeed(feed);
 
   // We've partially handled the error in the sense that we attached side effects to it, but we
   // do not affect how the error affects the code evaluation path. That is up to caller. So this

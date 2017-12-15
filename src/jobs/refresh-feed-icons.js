@@ -30,6 +30,8 @@ async function updateFeedIcon(feed) {
   const query = new FaviconLookup();
   query.cache = this.iconCache;
   const url = Feed.createIconLookupURL(feed);
+
+  // @type {String}
   let iconURL;
   try {
     iconURL = await query.lookup(url);
@@ -43,42 +45,39 @@ async function updateFeedIcon(feed) {
 
   const prevIconURL = feed.faviconURLString;
 
-  // For some reason, this section of code always feels confusing, so I've made it extremely
-  // explicit. Yes, there are redundant if conditions.
-
-  // This module controls each feed object for its lifetime locally so there is no need
-  // to prepare each feed before storing it back in the database because there is no sanitization
-  // concern.
-  const skipPrep = true;
+  // This section is very explicit and redundant because the condensed version is confusing to read
 
   // The feed had a favicon, and it changed to a different favicon
   if(prevIconURL && iconURL && prevIconURL !== iconURL) {
-    feed.faviconURLString = iconURL;
-    await this.store.putFeed(feed, skipPrep);
+    await putFeedHelper(this.store, iconURL, feed);
     return;
   }
 
-  // The feed had a favicon, and it did not change
+  // The feed had a favicon, and a favicon was found, and it did not change
   if(prevIconURL && iconURL && prevIconURL === iconURL) {
     return;
   }
 
-  // The feed had a favicon, but no new favicon found
+  // The feed had a favicon, and no new favicon was found
   if(prevIconURL && !iconURL) {
-    feed.faviconURLString = undefined;
-    await this.store.putFeed(feed, skipPrep);
+    await putFeedHelper(this.store, void iconURL, feed);
     return;
   }
 
-  // The feed did not have a favicon, and no new favicon found
+  // The feed did not have a favicon, and no new favicon was found
   if(!prevIconURL && !iconURL) {
     return;
   }
 
-  // The feed did not have a favicon, but a new favicon was found
+  // The feed did not have a favicon, and a new favicon was found
   if(!prevIconURL && iconURL) {
-    feed.faviconURLString = iconURL;
-    await this.store.putFeed(feed, skipPrep);
-    return;// just for consistency
+    await putFeedHelper(this.store, iconURL, feed);
+    return;
   }
+}
+
+function putFeedHelper(store, urlString, feed) {
+  feed.faviconURLString = urlString;
+  feed.dateUpdated = new Date();
+  return store.putFeed(feed);
 }

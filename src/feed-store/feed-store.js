@@ -29,6 +29,10 @@ export default function FeedStore() {
 
 // Opens a connection to the reader database
 FeedStore.prototype.open = async function() {
+  if(this.conn) {
+    console.warn('Overriding possibly open connection (mem leak)');
+  }
+
   this.conn = await IndexedDbUtils.open(NAME, VERSION, onUpgradeNeeded, OPEN_TIMEOUT_MS);
 };
 
@@ -152,6 +156,9 @@ FeedStore.prototype.isOpen = function() {
 
 FeedStore.prototype.close = function() {
   IndexedDbUtils.close(this.conn);
+
+  // Undefine rather than delete to maintain v8 hidden shape.
+  this.conn = void this.conn;
 };
 
 FeedStore.prototype.activateFeed = async function(feedId) {
@@ -167,22 +174,15 @@ FeedStore.prototype.activateFeed = async function(feedId) {
     return false;
   }
 
-  changeFeedPropsToActive(feed);
-
-  // We have full control for lifetime so skip prep
-  const skipPrep = true;
-  await this.putFeed(feed, skipPrep);
-  dprintf('Activated feed', feedId);
-  return true;
-};
-
-function changeFeedPropsToActive(feed) {
   feed.active = true;
   // I guess just permanently erase?
   delete feed.deactivationReasonText;
   delete feed.deactivationDate;
   feed.dateUpdated = new Date();
-}
+  await this.putFeed(feed);
+  dprintf('Activated feed', feedId);
+  return true;
+};
 
 // @param channel {BroadcastChannel} optional, notify observers of new entries
 // @return {Number} the id of the added entry
@@ -292,16 +292,6 @@ FeedStore.prototype.deactivateFeed = async function(feedId, reason) {
     return false;
   }
 
-  changeFeedPropsToInactive(feed, reason);
-
-  // We have full control over lifetime of feed object so skip prep
-  const skipPrep = true;
-  await store.putFeed(feed, skipPrep);
-  dprintf('Deactivated feed', feedId);
-  return true;
-};
-
-function changeFeedPropsToInactive(feed, reason) {
   feed.active = false;
   if(typeof reason === 'string') {
     feed.deactivationReasonText = reason;
@@ -309,7 +299,10 @@ function changeFeedPropsToInactive(feed, reason) {
   const currentDate = new Date();
   feed.deactivationDate = currentDate;
   feed.dateUpdated = currentDate;
-}
+  await store.putFeed(feed);
+  dprintf('Deactivated feed', feedId);
+  return true;
+};
 
 // TODO: if performance eventually becomes a material concern this should probably interact
 // directly with the database. For now, because the filtering is done after deserialization there
@@ -602,53 +595,31 @@ FeedStore.prototype.putEntry = function(entry) {
   });
 };
 
-// TODO: to remove the skipPrep param, create addFeed. If prep needed use addFeed to add. If
-// prep not needed call put feed directly.
-// TODO: I do not like the skipPrep parameter. Essentially there should be two functions. A
-// function that preps the feed, and a function that stores the feed as is. If the caller wants to
-// prep the feed, call both functions. If the caller wants to just store the feed, only call the
-// second function. That would be better than this.
-// Furthermore, the prep function should be a simple sync helper function. It shouldn't even be
-// in this module, it should be in a separate module. Second, it should return the prepped feed.
-// Third, because it returns the prepped feed, the caller then has the modified feed data right
-// there available to the caller, which removes the need to return or modify the input feed
-// object when storing the feed. That means that this should be changed to just return the new id
-// if set, and not the modified feed data.
-// TODO: maybe this should be refactored as a non-async, promise-returning function. There is no
-// need to use async-await when this is basically a wrapped call to another promise-returning
-// function. But note the above todo that I added later, the prep feed function would take care
-// of this concern by becoming a separate function, and basically this concern would not longer be
-// a concern.
-FeedStore.prototype.putFeed = async function(feed, skipPrep) {
+// Returns a feed object suitable for use with putFeed
+FeedStore.prototype.prepareFeed = function(feed) {
   assert(Feed.isFeed(feed));
-  assert(this.isOpen());
-
-  let storable;
-  if(skipPrep) {
-    storable = feed;
-  } else {
-    storable = sanitizeFeed(feed);
-    storable = filterEmptyProps(storable);
-  }
-
-  // If not specified then initialize the feed as active
-  if(!('active' in storable) || typeof storable.active === 'undefined') {
-    storable.active = true;
-    console.assert(!('deactivationReasonText' in storable));
-    console.assert(!('deactivationDate' in storable));
-  }
-
-  const currentDate = new Date();
-  if(!('dateCreated' in storable)) {
-    storable.dateCreated = currentDate;
-  }
-  storable.dateUpdated = currentDate;
-
-  const newId = await putFeedRaw(this.conn, storable);
-  storable.id = newId;
-  return storable;
+  let prepped = sanitizeFeed(feed);
+  prepped = filterEmptyProps(prepped);
+  return prepped;
 };
 
+// Resolves with request.result. If put is an add this resolves with the auto-incremented id.
+// This stores the object as is. The caller is responsible for properties like feed magic,
+// feed id, feed active status, date updated, etc.
+FeedStore.prototype.putFeed = function(feed) {
+  return new Promise((resolve, reject) => {
+    assert(this.isOpen());
+    assert(Feed.isFeed(feed));
+    const tx = this.conn.transaction('feed', 'readwrite');
+    const store = tx.objectStore('feed');
+    const request = store.put(feed);
+    request.onsuccess = () => {
+      const feedId = request.result;
+      resolve(feedId);
+    };
+    request.onerror = () => reject(request.error);
+  });
+};
 
 const DEFAULT_TITLE_MAX_LEN = 1024;
 const DEFAULT_DESC_MAX_LEN = 1024 * 10;
@@ -692,24 +663,6 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
   }
 
   return outputFeed;
-}
-
-// Adds or overwrites a feed in storage. Resolves with the new feed id if add.
-// There are no side effects other than the database modification.
-// @param conn {IDBDatabase} an open database connection
-// @param feed {Object} the feed object to add
-// @return {Promise} a promise that resolves to the id of the stored feed
-function putFeedRaw(conn, feed) {
-  return new Promise(function executor(resolve, reject) {
-    const tx = conn.transaction('feed', 'readwrite');
-    const store = tx.objectStore('feed');
-    const request = store.put(feed);
-    request.onsuccess = () => {
-      const feedId = request.result;
-      resolve(feedId);
-    };
-    request.onerror = () => reject(request.error);
-  });
 }
 
 // @param entryIds {Array} an array of entry ids
