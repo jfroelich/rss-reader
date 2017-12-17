@@ -100,7 +100,8 @@ async function onEntryAddedMessage(message) {
 
 function showErrorMessage(messageText) {
   const container = document.getElementById('error-message-container');
-  assert(container instanceof Element, 'Cannot find error message container element to show error', messageText);
+  assert(container instanceof Element, 'Cannot find error message container element to show error',
+    messageText);
   container.textContent = messageText;
   container.style.display = 'block';
 }
@@ -205,10 +206,11 @@ async function markSlideRead(feedStore, slideElement) {
   slideElement.setAttribute('read', '');
 }
 
-async function appendSlides(feedStore) {
-  dprintf('Possibly appending new slides');
+async function appendSlides(feedStore, limit) {
+  dprintf('appendSlides start', limit);
 
-  const limit = 3;
+  limit = typeof limit === 'undefined' ? 3 : limit;
+
   let entries = [];
   const offset = countUnreadSlides();
 
@@ -718,20 +720,34 @@ async function init() {
   const refreshAnchor = document.getElementById('refresh');
   refreshAnchor.onclick = refreshAnchorOnclick;
 
+  // TODO: is it possible to defer this until after loading without slowing things down?
   // Initialize entry display settings
   pageStyleSettingsOnload();
 
   // Load and append slides
   const feedStore = new FeedStore();
+  const initialLimit = 1;
+  let didHideLoading = false;
+
   try {
     await feedStore.open();
-    await appendSlides(feedStore);
+
+    // First load only 1, to load quickly
+    await appendSlides(feedStore, initialLimit);
+    dprintf('Initial slide loaded');
+    hideLoadingInformation();
+    didHideLoading = true;
+
+    // Now preload a couple more
+    await appendSlides(feedStore, 2);
   } catch(error) {
     // TODO: visually show error
     console.warn(error);
   } finally {
     feedStore.close();
-    hideLoadingInformation();
+    if(!didHideLoading) {
+      hideLoadingInformation();
+    }
   }
 }
 
