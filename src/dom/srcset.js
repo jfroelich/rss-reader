@@ -47,6 +47,7 @@ export function parseSrcsetWrapper(srcset) {
     return fallbackOutput;
   }
 
+  // parseSrcset doesn't throw in the ordinary case, but avoid surprises
   let descriptors;
   try {
     descriptors = parseSrcset(srcset);

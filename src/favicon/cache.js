@@ -2,14 +2,6 @@ import assert from "/src/assert/assert.js";
 import * as IndexedDbUtils from "/src/indexeddb/utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
-// TODO: not entirely sure, but maybe if conn is the only shared state, there is no need for the
-// class. I have mixed feelings.
-// TODO: now that this is in a module context maybe name and version and such should all be module
-// scope constants? These properties are not shared across the instance. The only shared property
-// is the connection. On the other hand, it makes testing easier?
-// TODO: should the default max age constant probably be exported separately?
-
-
 export default class FaviconCache {
   constructor() {
     this.conn = undefined;

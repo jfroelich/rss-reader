@@ -20,10 +20,8 @@
 const pattern = /[\u0000-\u0008\u000b\u000e-\u001F]+/g;
 
 export default function main(value) {
-
   // The length check is done because given that replace will be a no-op when the length is 0 it is
   // faster to perform the length check than it is to call replace. I do not know the distribution
   // of inputs but I expect that empty strings are not rare.
-
   return typeof value === 'string' && value.length ? value.replace(pattern, '') : value;
 }

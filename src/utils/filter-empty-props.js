@@ -5,7 +5,6 @@ export default function filterEmptyProps(object) {
   const hasOwnProp = Object.prototype.hasOwnProperty;
   const output = {};
   let undef;
-
   if(typeof object === 'object' && object !== null) {
     for(const key in object) {
       if(hasOwnProp.call(object, key)) {

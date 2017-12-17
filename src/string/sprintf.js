@@ -5,7 +5,6 @@
 // %o - object
 // %% - literal '%'
 
-
 const syntaxPattern = /%[sdo%]/g;
 
 // Use the spread operator to avoid touching arguments:

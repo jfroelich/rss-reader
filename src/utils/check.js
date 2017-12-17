@@ -6,23 +6,14 @@ import sprintf from "/src/string/sprintf.js";
 // very faulty assumptions. Checked errors represent errors that happen in expected, typical
 // situations, such as receiving bad input, or something temporarily not being available.
 
-const LOG_ERRORS = false;
-
-
 export default function check(condition, errorConstructor, ...varargs) {
   if(condition) {
     return;
   }
 
   errorConstructor = errorConstructor || Error;
-
   const message = sprintf(...varargs) || 'Unknown error';
-
   const error = new errorConstructor(message);
-
-  if(LOG_ERRORS) {
-    console.error(error);
-  }
-
+  //console.error(error);
   throw error;
 }

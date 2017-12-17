@@ -2,8 +2,7 @@
 // @param value {Any} should generally be a string, but this tolerates bad input
 // @returns {Array} an array of token strings
 export default function tokenize(value) {
-  // Rather than make any assertions about the input, tolerate bad input for the sake of caller
-  // convenience.
+  // Tolerate bad input for convenience
   if(typeof value !== 'string') {
     return [];
   }

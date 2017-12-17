@@ -62,7 +62,6 @@ export function removeImage(image) {
   image.remove();
 }
 
-
 function elementHasNonEmptyAttributeValueAfterTrim(element, attributeName) {
   const value = element.getAttribute(attributeName);
   return value && value.trim();

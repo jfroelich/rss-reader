@@ -1,4 +1,3 @@
-
 // Wraps a call to parseInt with a base 10 parameter. General guidance is that parseInt should
 // always be called with its radix parameter to avoid surprising results. For example, if no radix
 // is specified, then '010' is parsed as octal instead of decimal. Rather than remember this

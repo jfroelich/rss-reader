@@ -94,8 +94,6 @@ function moveChildNodes(fromElement, toElement) {
   }
 }
 
-
-
 function isVoidElement(element) {
   // This assumes element.ownerDocument is implicitly flagged as html so that localName yields
   // the normalized name which is in lowercase.
