@@ -1,4 +1,5 @@
 header {
+  user-select: none;
   position: fixed;
   z-index: 5;
   width: 100%;
@@ -14,19 +15,65 @@ header {
   color: #ffffff;
   text-shadow: 1px 1px 1px #222222;
   font-size: 24px;
+  pointer-events: none;
 }
 
-#menu {
+#main-menu-button {
+  pointer-events: initial;
   cursor: pointer;
   margin: auto;
 }
 
-#menu:hover {
+#main-menu-button:hover {
   color: #000000;
   text-shadow: 1px 1px 1px #ffffff;
 }
 
+#menu-options {
+  position: fixed;
+  left: -320px;
+  right: auto;
+  top: 53px;
+  bottom: 0;
+  overflow-x: hidden;
+  min-height: 100%;
+  margin: 0;
+  min-width: 0;
+  list-style-type: none;
+  width: 300px;
+  max-width: 300px;
+  padding: 6px 0;
+
+  background-color: #ffffff;
+
+  /*transition: width 0.4s ease 0s;*/
+  transition: all 0.3s ease;
+
+  /* TODO: shadow shows up when hidden */
+  box-shadow: 2px 0px 10px 2px #8e8e8e;
+
+  /* Turn off whatever the hell Chrome is doing to UL */
+  -webkit-margin-before: 0;
+  -webkit-margin-after: 0;
+  -webkit-padding-start: 0;
+}
+
+#menu-options li {
+  /*padding: 0;*/
+  padding-left: 12px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  margin: 0;
+  font-size: 14px;
+}
+
+#menu-options li:hover {
+  background-color: #efefef;
+  cursor: pointer;
+}
+
 #refresh {
+  pointer-events: initial;
   cursor: pointer;
   margin: auto;
 }

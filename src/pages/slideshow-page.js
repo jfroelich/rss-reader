@@ -701,6 +701,26 @@ async function refreshAnchorOnclick(event) {
   }
 }
 
+function showMenuOptions() {
+  const menuOptions = document.getElementById('menu-options');
+  menuOptions.style.left = '0px';
+}
+
+function hideMenuOptions() {
+  const menuOptions = document.getElementById('menu-options');
+  menuOptions.style.left = '-320px';
+}
+
+function mainMenuButtonOnclick(event) {
+  const menuOptions = document.getElementById('menu-options');
+  if(menuOptions.style.left === '0px') {
+    hideMenuOptions();
+  } else {
+    showMenuOptions();
+  }
+}
+
+
 function errorMessageContainerOnclick(event) {
   const container = document.getElementById('error-message-container');
   container.style.display = 'none';
@@ -708,17 +728,32 @@ function errorMessageContainerOnclick(event) {
 
 function noop() {}
 
+function windowOnclick(event) {
+  // If the click occurred outside of the menu options panel, hide the menu options panel
+  const avoidedZoneIds = ['main-menu-button', 'menu-options'];
+  if(!avoidedZoneIds.includes(event.target.id) && !event.target.closest('[id="menu-options"]')) {
+    hideMenuOptions();
+  }
+
+  return true;
+}
+
 // Initialization
 async function init() {
   showLoadingInformation();
+
+  window.addEventListener('click', windowOnclick);
 
   // Initialize error message container
   const container = document.getElementById('error-message-container');
   container.onclick = errorMessageContainerOnclick;
 
+  const mainMenuButton = document.getElementById('main-menu-button');
+  mainMenuButton.onclick = mainMenuButtonOnclick;
+
   // Initialize the refresh icon in the header
-  const refreshAnchor = document.getElementById('refresh');
-  refreshAnchor.onclick = refreshAnchorOnclick;
+  const refreshButton = document.getElementById('refresh');
+  refreshButton.onclick = refreshAnchorOnclick;
 
   // TODO: is it possible to defer this until after loading without slowing things down?
   // Initialize entry display settings
