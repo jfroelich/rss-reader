@@ -1,8 +1,13 @@
 import assert from "/src/assert/assert.js";
+import exportFeeds from "/src/backup/export-feeds.js";
+import importFiles, {
+  Context as ImportFilesContext
+} from "/src/backup/import-opml-files.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeeds from "/src/jobs/poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
+import * as MimeUtils from "/src/mime/utils.js";
 import {
   pageStyleSettingsOnload,
   pageStyleSettingsOnchange
@@ -714,6 +719,84 @@ function mainMenuButtonOnclick(event) {
   }
 }
 
+function menuOptionsOnclick(event) {
+  // event.target points to either a clicked <li> or the <ul>
+  const option = event.target;
+  if(option.localName !== 'li') {
+    console.debug('Ignoring click on menu options that is not on menu item');
+    return;
+  }
+
+  switch(option.id) {
+  case 'menu-option-subscribe':
+    break;
+  case 'menu-option-import':
+    menuOptionImportOnclick();
+    break;
+  case 'menu-option-export':
+    menuOptionExportOnclick();
+    break;
+  default:
+    console.debug('Unhandled menu option click', option.id);
+    break;
+  }
+}
+
+function menuOptionImportOnclick() {
+  const uploaderInput = document.createElement('input');
+  uploaderInput.setAttribute('type', 'file');
+  uploaderInput.setAttribute('accept', MimeUtils.MIME_TYPE_XML);
+  uploaderInput.onchange = importInputOnchange;
+  uploaderInput.click();
+}
+
+async function importInputOnchange(event) {
+  // TODO: show operation started
+
+  const uploaderInput = event.target;
+
+  const context = new ImportFilesContext();
+  context.init();
+
+  // TODO: this should really be defined elsewhere
+  context.fetchFeedTimeoutMs = 10 * 1000;
+
+  try {
+    await context.open();
+    await importFiles.call(context, uploaderInput.files);
+  } catch(error) {
+    // TODO: visual feedback in event an error
+    console.warn(error);
+  } finally {
+    context.close();
+  }
+
+  console.debug('Import completed');
+
+  // TODO: show operation completed successfully
+  // TODO: refresh feed list
+  // TODO: check for new articles?
+  // TODO: switch to feed list section or something?
+}
+
+async function menuOptionExportOnclick() {
+  const title = 'Subscriptions', fileName = 'subscriptions.xml';
+  const feedStore = new FeedStore();
+  try {
+    await feedStore.open();
+    const feeds = await feedStore.getAllFeeds();
+    exportFeeds(feeds, title, fileName);
+  } catch(error) {
+    // TODO: handle error visually
+    console.warn(error);
+  } finally {
+    feedStore.close();
+  }
+
+  // TODO: visual feedback on completion
+  console.log('Completed export');
+}
+
 
 function errorMessageContainerOnclick(event) {
   const container = document.getElementById('error-message-container');
@@ -744,6 +827,9 @@ async function init() {
 
   const mainMenuButton = document.getElementById('main-menu-button');
   mainMenuButton.onclick = mainMenuButtonOnclick;
+
+  const menuOptions = document.getElementById('menu-options');
+  menuOptions.onclick = menuOptionsOnclick;
 
   // Initialize the refresh icon in the header
   const refreshButton = document.getElementById('refresh');

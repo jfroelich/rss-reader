@@ -1,15 +1,10 @@
 import assert from "/src/assert/assert.js";
-import exportFeeds from "/src/backup/export-feeds.js";
 // TODO: use * as Config or something like that
 import {BG_IMAGES, FONTS} from "/src/config.js";
 import fadeElement from "/src/dom/fade-element.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import htmlTruncate from "/src/html/truncate.js";
-import importFiles, {
-  Context as ImportFilesContext
-} from "/src/backup/import-opml-files.js";
-import * as MimeUtils from "/src/mime/utils.js";
 
 // TODO: use * as PageStyle or something similar
 import {
@@ -536,56 +531,6 @@ async function deactivateButtonOnclick(event) {
   showSectionById('subs-list-section');
 }
 
-function importOPMLButtonOnclick(event) {
-  const uploaderInput = document.createElement('input');
-  uploaderInput.setAttribute('type', 'file');
-  uploaderInput.setAttribute('accept', MimeUtils.MIME_TYPE_XML);
-  uploaderInput.onchange = importOPMLInputOnchange;
-  uploaderInput.click();
-}
-
-async function importOPMLInputOnchange(event) {
-  // TODO: show operation started
-
-  const uploaderInput = event.target;
-
-  const context = new ImportFilesContext();
-  context.init();
-
-  // TODO: this should really be defined elsewhere
-  context.fetchFeedTimeoutMs = 10 * 1000;
-
-  try {
-    await context.open();
-    await importFiles.call(context, uploaderInput.files);
-  } catch(error) {
-    // TODO: visual feedback in event an error
-    console.warn(error);
-  } finally {
-    context.close();
-  }
-
-  // TODO: show operation completed successfully
-  // TODO: refresh feed list
-  // TODO: switch to feed list section?
-}
-
-async function exportOPMLButtonOnclick(event) {
-  const title = 'Subscriptions', fileName = 'subscriptions.xml';
-  const feedStore = new FeedStore();
-
-  try {
-    await feedStore.open();
-    const feeds = await feedStore.getAllFeeds();
-    exportFeeds(feeds, title, fileName);
-  } catch(error) {
-    // TODO: handle error visually
-    console.warn(error);
-  } finally {
-    feedStore.close();
-  }
-}
-
 function menuItemOnclick(event) {
   const clickedElement = event.target;
   const sectionElement = event.currentTarget;
@@ -761,11 +706,6 @@ bgProcessingCheckboxInit();
 const enableRestrictIdlePollingCheckbox = document.getElementById('enable-idle-check');
 enableRestrictIdlePollingCheckbox.checked = 'ONLY_POLL_IF_IDLE' in localStorage;
 enableRestrictIdlePollingCheckbox.onclick = restrictIdlePollingCheckboxOnclick;
-
-const exportOPMLButton = document.getElementById('button-export-opml');
-exportOPMLButton.onclick = exportOPMLButtonOnclick;
-const importOPMLButton = document.getElementById('button-import-opml');
-importOPMLButton.onclick = importOPMLButtonOnclick;
 
 feedListInit();
 
