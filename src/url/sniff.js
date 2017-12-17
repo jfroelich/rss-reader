@@ -22,14 +22,8 @@ export default function isBinaryURL(url) {
   }
 
   const extension = getExtensionFromURL(url);
-  if(extension) {
-    const mimeType = MimeUtils.getTypeForExtension(extension);
-    if(mimeType) {
-      return MimeUtils.isBinary(mimeType);
-    }
-  }
-
-  return false;
+  const mimeType = MimeUtils.getTypeForExtension(extension);
+  return mimeType ? MimeUtils.isBinary(mimeType) : false;
 }
 
 // Extracts the mime type of a data uri as string. Returns undefined if not found or invalid.
