@@ -15,25 +15,27 @@ import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
 const DEBUG = false;
-const dprintf = DEBUG ? console.log : function(){};
-
-// TODO: should these values come from config.js?
-const NAME = 'reader';
-const VERSION = 24;
-const OPEN_TIMEOUT_MS = 500;
+const dprintf = DEBUG ? console.debug : function(){};
 
 export default function FeedStore() {
+  // Default open parameters. Caller can optionally override prior to calling open
+  this.name = 'reader';
+  this.version = 24;
+  this.openTimeoutMs = 500;
+
+  // @private - use open to set, close to unset, rather than setting directly
   // @type {IDBDatabase} database connection handle
   this.conn;
 }
 
 // Opens a connection to the reader database
 FeedStore.prototype.open = async function() {
-  if(this.conn) {
-    console.warn('Overriding possibly open connection (mem leak)');
-  }
+  // Prohibit calling open unless conn is unset, implying it is closed, so that the prior
+  // connection is not left hanging around
+  assert(typeof this.conn === 'undefined' || this.conn === null);
 
-  this.conn = await IndexedDbUtils.open(NAME, VERSION, onUpgradeNeeded, OPEN_TIMEOUT_MS);
+  this.conn = await IndexedDbUtils.open(this.name, this.version, onUpgradeNeeded,
+    this.openTimeoutMs);
 };
 
 // Helper for open. Does the database upgrade. This should never be
@@ -157,7 +159,8 @@ FeedStore.prototype.isOpen = function() {
 FeedStore.prototype.close = function() {
   IndexedDbUtils.close(this.conn);
 
-  // Undefine rather than delete to maintain v8 hidden shape.
+  // Undefine rather than delete to maintain v8 hidden shape, and to avoid triggering the assert
+  // in FeedStore.prototype.open if re-opening
   this.conn = void this.conn;
 };
 
@@ -175,9 +178,12 @@ FeedStore.prototype.activateFeed = async function(feedId) {
   }
 
   feed.active = true;
-  // I guess just permanently erase?
+
+  // Here we do not care about maintaining object shape, and furthermore, want to reduce object
+  // size, so delete is preferred over setting to undefined.
   delete feed.deactivationReasonText;
   delete feed.deactivationDate;
+
   feed.dateUpdated = new Date();
   await this.putFeed(feed);
   dprintf('Activated feed', feedId);
