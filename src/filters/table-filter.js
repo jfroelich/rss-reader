@@ -1,7 +1,6 @@
-import unwrapElements from "/src/dom/unwrap-elements.js";
-import {leafFilterIsLeaf} from "/src/filters/leaf-filter.js";
 import assert from "/src/assert/assert.js";
-
+import unwrapElement from "/src/dom/unwrap-element.js";
+import {leafFilterIsLeaf} from "/src/filters/leaf-filter.js";
 
 // Filters certain table elements from document content
 
@@ -11,7 +10,10 @@ export default function filterDocument(doc, scanLimit) {
     return;
   }
 
-  unwrapElements(doc.body, 'colgroup, hgroup, multicol, tbody, tfoot, thead');
+  const elements = doc.body.querySelectorAll('colgroup, hgroup, multicol, tbody, tfoot, thead');
+  for(const element of elements) {
+    unwrapElement(element);
+  }
 
   const tables = doc.body.querySelectorAll('table');
   for(const table of tables) {
