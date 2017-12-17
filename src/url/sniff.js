@@ -1,5 +1,4 @@
 import assert from "/src/assert/assert.js";
-import isAlphanumeric from "/src/string/is-alphanumeric.js";
 import * as MimeUtils from "/src/mime/utils.js";
 
 // Return true if url probably represents a binary resource. This is shallow in the sense that it
@@ -7,21 +6,30 @@ import * as MimeUtils from "/src/mime/utils.js";
 // sniffer looks purely at the url itself.
 export default function isBinaryURL(url) {
   assert(url instanceof URL);
+
+  // Check if the url's protocol indicates it cannot be binary. This is the fastest and simplest
+  // check so do it first.
+  // TODO: make exhaustive
+  const textProtocols = ['tel:', 'mailto:', 'javascript:'];
+  if(textProtocols.includes(url.protocol)) {
+    return false;
+  }
+
+  // Special handling for data uris
   if(url.protocol === 'data:') {
-    return isBinaryDataURL(url);
-  }
-  return !hasTextProtocol(url) && hasBinaryExtension(url);
-}
-
-// Returns whether the data uri represents a binary resource
-function isBinaryDataURL(url) {
-  const mimeType = findMimeTypeInDataURL(url);
-  if(mimeType) {
-    return MimeUtils.isBinary(mimeType);
+    const mimeType = findMimeTypeInDataURL(url);
+    return mimeType ? MimeUtils.isBinary(mimeType) : true;
   }
 
-  // Assume data url objects with unclear mime type are probably binary
-  return true;
+  const extension = getExtensionFromURL(url);
+  if(extension) {
+    const mimeType = MimeUtils.getTypeForExtension(extension);
+    if(mimeType) {
+      return MimeUtils.isBinary(mimeType);
+    }
+  }
+
+  return false;
 }
 
 // Extracts the mime type of a data uri as string. Returns undefined if not found or invalid.
@@ -49,49 +57,34 @@ function findMimeTypeInDataURL(url) {
   }
 }
 
-// Protocols which are known to be text
-// TODO: make exhaustive
-// TODO: do not repeat the ':', caller should strip it
-const TEXT_PROTOCOLS = [
-  'tel:', 'mailto:', 'javascript:'
-];
-
-function hasTextProtocol(url) {
-  return TEXT_PROTOCOLS.includes(url.protocol);
-}
-
-function hasBinaryExtension(url) {
-  const extension = getExtensionFromURL(url);
-  if(extension) {
-    const mimeType = MimeUtils.getTypeForExtension(extension);
-    if(mimeType) {
-      return MimeUtils.isBinary(mimeType);
-    }
-  }
-
-  return false;
-}
-
-const PATH_WITH_EXTENSION_MIN_LENGTH = 3; // '/.b'
-const EXTENSION_MAX_LENGTH = 255; // excluding '.'
-
 // Given a url, return the extension of the filename component of the path component. Return
 // undefined if no extension found. The returned string excludes the leading '.'.
 // @returns {String}
 function getExtensionFromURL(url) {
+  // Approximate path min length '/.b'
+  const minlen = 3;
+  // Approximate extension max length excluding '.'
+  const maxlen = 255;
+  const path = url.pathname;
+  const pathlen = path.length;
 
-  // There is no need to first get the file name then get the extension. If there is a dot in a
-  // directory part of the path, there is still a trailing slash before the file name, which is not
-  // alphanumeric. If there is both a dot in a directory and a dot in the file name, the dot in the
-  // directory is not the last dot.
-
-  if(url.pathname.length >= PATH_WITH_EXTENSION_MIN_LENGTH) {
-    const lastDotPos = url.pathname.lastIndexOf('.');
-    if((lastDotPos >= 0) && (lastDotPos + 1 < url.pathname.length)) {
-      const ext = url.pathname.substring(lastDotPos + 1); // exclude '.'
-      if(ext.length <= EXTENSION_MAX_LENGTH && isAlphanumeric(ext)) {
+  if(pathlen >= minlen) {
+    const lastDotPos = path.lastIndexOf('.');
+    if((lastDotPos >= 0) && (lastDotPos + 1 < pathlen)) {
+      const ext = path.substring(lastDotPos + 1);
+      if(ext.length <= maxlen && isAlphanumeric(ext)) {
         return ext;
       }
     }
   }
+}
+
+// From the start of the string to its end, if one or more of the characters is not in the class of
+// alphanumeric characters, then the string is not alphanumeric.
+// See https://stackoverflow.com/questions/4434076
+// See https://stackoverflow.com/questions/336210
+// The empty string is true, null/undefined are true
+// Does NOT support languages other than English
+function isAlphanumeric(string) {
+  return /^[a-zA-Z0-9]*$/.test(string);
 }
