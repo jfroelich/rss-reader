@@ -142,8 +142,6 @@ async function onEntryExpiredMessage(message) {
   // The slide is not the current slide and is either already read and offscreen, or preloaded and
   // unread. In either case, remove the slide.
   removeSlide(slide);
-
-  // TODO: if we are removing a slide, should this then also refill?
 }
 
 function showLoadingInformation() {
@@ -283,10 +281,6 @@ function createArticleTitleElement(entry) {
   const titleElement = document.createElement('a');
   titleElement.setAttribute('href', Entry.peekURL(entry));
   titleElement.setAttribute('class', 'entry-title');
-
-  // TODO: use of _blank is discouraged. Need to use custom listener that opens new tab instead
-  // titleElement.setAttribute('target','_blank');
-
   titleElement.setAttribute('rel', 'noreferrer');
 
   if(entry.title) {

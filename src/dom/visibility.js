@@ -1,3 +1,6 @@
+import assert from "/src/assert/assert.js";
+import parseInt10 from "/src/utils/parse-int-10.js";
+
 // These functions assume a document is "inert", such as one created by DOMParser, or from
 // XMLHttpRequest.
 //
@@ -9,12 +12,8 @@
 // In an inert document, offsetWidth and offsetHeight are not available. Therefore, this cannot use
 // jQuery approach of testing if the offsets are 0. Which is unfortunate, because it is quite fast.
 
-
 // TODO: consider a test that compares whether foreground color is too close to background color.
 // This kind of applies only to text nodes.
-
-import assert from "/src/assert/assert.js";
-import parseInt10 from "/src/utils/parse-int-10.js";
 
 // Checks whether an element is hidden because the element itself is hidden, or any of its
 // ancestors are hidden.
@@ -76,6 +75,8 @@ export function isHiddenInlineElement(element) {
   }
 
   const style = element.style;
+
+  // TODO: I think <svg> is also missing style? Look into it and maybe special case like math
 
   // Some elements do not have a style prop. Generally these are math elements or math descendants,
   // but there is a special case for that above. This is a catch all for other cases. I am logging

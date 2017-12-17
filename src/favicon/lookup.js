@@ -32,7 +32,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   assert(url instanceof URL);
   assert(typeof document === 'undefined' || document instanceof Document);
 
-  console.debug('lookup', url.href);
+  console.debug('Lookup favicon for url', url.href);
 
   // Store a distinct set of request urls involved in the lookup so that various conditions are
   // simpler to implement and read

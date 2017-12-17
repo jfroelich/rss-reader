@@ -5,13 +5,11 @@ import {isCanonicalURLString} from "/src/url/url-string.js";
 // TODO: regarding feed schema, should the group of properties pertaining to a feed's active state
 // by grouped together into a sub object? Like:
 // {active-props: {active: true, deactivationReasonText: undefined, deactivationDate: undefined}};
-
 // TODO: the active property is poorly named. Something that is named as
 // active typically means active. So it would be more appropriate to name this as something
 // like activeState or activeFlag. That removes the ambiguity between presence/absence style
 // boolean, and true/false boolean.
 
-// TODO: I would prefer not to export but certain functionality needs it at the moment
 export const FEED_MAGIC = 0xfeedfeed;
 
 // Create a feed

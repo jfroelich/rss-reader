@@ -2,12 +2,13 @@ import assert from "/src/assert/assert.js";
 
 // Returns the first matching css rule within the given sheet, or undefined if no rules match.
 //
-// @param sheet css style sheet
+// @param sheet {CSSStyleSheet}
 // @param selectorText {String}
-// @returns rule {???}
+// @returns rule {CSSStyleRule}
 export function findRule(sheet, selectorText) {
-  assert(sheet);
-  for(const rule of sheet.cssRules) {
+  assert(sheet instanceof CSSStyleSheet);
+  const rules = sheet.rules || sheet.cssRules || [];
+  for(const rule of rules) {
     if(rule.selectorText === selectorText) {
       return rule;
     }

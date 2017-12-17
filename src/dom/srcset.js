@@ -1,5 +1,4 @@
 import assert from "/src/assert/assert.js";
-// This defines parseSrcset in global scope
 import "/src/third-party/parse-srcset.js";
 
 // @param descriptors {Array} an array of descriptors such as those produced by parseSrcset

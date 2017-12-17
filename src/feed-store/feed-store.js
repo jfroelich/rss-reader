@@ -165,28 +165,24 @@ FeedStore.prototype.close = function() {
 };
 
 FeedStore.prototype.activateFeed = async function(feedId) {
-  dprintf('activateFeed start', feedId);
   assert(this.isOpen());
   assert(Feed.isValidId(feedId));
 
   const feed = await this.findFeedById(feedId);
   assert(Feed.isFeed(feed));
-  dprintf('Successfully loaded feed object', feed);
+  dprintf('Found feed to activate', feed.id);
   if(feed.active === true) {
     dprintf('Feed with id %d is already active', feed.id);
     return false;
   }
 
   feed.active = true;
-
   // Here we do not care about maintaining object shape, and furthermore, want to reduce object
   // size, so delete is preferred over setting to undefined.
   delete feed.deactivationReasonText;
   delete feed.deactivationDate;
-
   feed.dateUpdated = new Date();
   await this.putFeed(feed);
-  dprintf('Activated feed', feedId);
   return true;
 };
 
@@ -200,7 +196,6 @@ FeedStore.prototype.addEntry = async function(entry, channel) {
   storable.readState = Entry.STATE_UNREAD;
   storable.archiveState = Entry.STATE_UNARCHIVED;
   storable.dateCreated = new Date();
-
   const newEntryId = await this.putEntry(storable);
   if(channel) {
     // TODO: the message format should be defined externally
@@ -288,10 +283,8 @@ FeedStore.prototype.countUnreadEntries = function() {
 FeedStore.prototype.deactivateFeed = async function(feedId, reason) {
   assert(this.isOpen());
   assert(Feed.isValidId(feedId));
-  dprintf('Deactivating feed', feedId);
   const feed = await this.findFeedById(feedId);
   assert(Feed.isFeed(feed));
-  dprintf('Successfully loaded feed object for deactivation', feed);
 
   if(feed.active === false) {
     dprintf('Tried to deactivate inactive feed', feed.id);
@@ -306,26 +299,23 @@ FeedStore.prototype.deactivateFeed = async function(feedId, reason) {
   feed.deactivationDate = currentDate;
   feed.dateUpdated = currentDate;
   await store.putFeed(feed);
-  dprintf('Deactivated feed', feedId);
   return true;
 };
 
 // TODO: if performance eventually becomes a material concern this should probably interact
-// directly with the database. For now, because the filtering is done after deserialization there
-// is not much benefit to direct interaction and instead it makes more sense to leverage existing
-// functionality.
+// directly with the database
 FeedStore.prototype.findActiveFeeds = async function() {
   assert(this.isOpen());
   const feeds = await this.getAllFeeds();
   return feeds.filter(isActiveFeed);
 };
 
-// Explicitly test whether the active property is defined and of boolean type. This is just
-// an extra sanity check in case the property gets clobbered somewhere. But rather than a full
-// on assert I do not handle the error explicitly and consider the feed as inactive. What this
-// means is that if I ever see no feeds being loaded but I know they exist, this is probably
-// the reason.
 function isActiveFeed(feed) {
+  // Explicitly test whether the active property is defined and of boolean type. This is just
+  // an extra sanity check in case the property gets clobbered somewhere. But rather than a full
+  // on assert I do not handle the error explicitly and consider the feed as inactive. What this
+  // means is that if I ever see no feeds being loaded but I know they exist, this is probably
+  // the reason.
   return feed.active === true;
 }
 
@@ -432,7 +422,6 @@ FeedStore.prototype.findEntryById = function(entryId) {
   });
 };
 
-
 // Returns an entry id matching url
 // TODO: change to accept URL object, change assertion to check instanceof URL
 // @param urlString {String}
@@ -465,7 +454,6 @@ FeedStore.prototype.findEntryIdsByFeedId = function(feedId) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-
 };
 
 // Searches the feed store in the database for a feed corresponding to the given id. Returns a

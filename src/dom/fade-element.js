@@ -1,13 +1,10 @@
 import assert from "/src/assert/assert.js";
 
-// TODO: this could use some cleanup or at least some clarifying comments
 export default function fadeElement(element, durationSecs, delaySecs) {
   return new Promise(function executor(resolve, reject) {
     assert(element instanceof Element);
-
     const style = element.style;
-
-    // Not all elements have style. This should only be called on elements that can.
+    // This should only be called on elements that have a style
     assert(style);
 
     if(style.display === 'none') {
