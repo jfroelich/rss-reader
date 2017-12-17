@@ -39,11 +39,12 @@ export async function pollEntry(entry) {
   assert(this.iconCache.isOpen());
   assert(Entry.isEntry(entry));
 
-  // Cannot assume entry has url (not an error)
+  // Cannot assume the entry has a url (not an error)
   if(!Entry.hasURL(entry)) {
     return;
   }
 
+  // If the entry has a url, then assume it is absolute.
   const url = new URL(Entry.peekURL(entry));
   const rewrittenURL = rewriteURL(url.href);
   if(rewrittenURL && url.href !== rewrittenURL) {
@@ -51,7 +52,7 @@ export async function pollEntry(entry) {
     setURLHrefProperty(url, rewrittenURL);
   }
 
-  if(isInaccessibleContentURL(url) || sniffIsBinaryURL(url)) {
+  if(isNonContentURL(url) || isInaccessibleContentURL(url) || sniffIsBinaryURL(url)) {
     return;
   }
 
@@ -65,7 +66,8 @@ export async function pollEntry(entry) {
   if(response) {
     if(response.redirected) {
       const responseURL = new URL(response.responseURL);
-      if(isInaccessibleContentURL(responseURL) || sniffIsBinaryURL(responseURL)) {
+      if(isNonContentURL(responseURL) || isInaccessibleContentURL(responseURL) ||
+        sniffIsBinaryURL(responseURL)) {
         return;
       }
 
@@ -154,4 +156,9 @@ function isInaccessibleContentURL(url) {
     }
   }
   return false;
+}
+
+function isNonContentURL(url) {
+  const protocols = ['tel:', 'mailto:', 'data:'];
+  return protocols.includes(url.protocol);
 }
