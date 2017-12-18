@@ -2,6 +2,7 @@ import assert from "/src/assert/assert.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import {OfflineError} from "/src/fetch/errors.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
+import {TimeoutError} from "/src/operations/timed-operation.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
 import {showNotification} from "/src/platform/platform.js";
@@ -228,6 +229,13 @@ async function handlePollFeedError(error, store, feed, callCategory) {
   // Offline errors are not indicative of a feed becoming permanently unreachable or that a fetch
   // failed because it is unreachable.
   if(callCategory === 'fetch-feed' && error instanceof OfflineError) {
+    throw error;
+  }
+
+  // Shitty wifi shouldn't indicate a permanent error. Caveat is servers that are always slow, but
+  // I am not sure how to differentiate between slow connection and server with poor responsiveness
+  if(callCategory === 'fetch-feed' && error instanceof TimeoutError) {
+    console.debug('Ignoring timeout error in slow network environment');
     throw error;
   }
 
