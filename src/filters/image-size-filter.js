@@ -83,6 +83,10 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
 
   // NOTE: I've disabled because it is leading to funny looking images. Not sure if that
   // is because I no longer filter width/height from attributes later or because of this
+  // NOTE: images still appear funny. I think it is because I hardcode height attribute but
+  // set max-width in view, and full-width image still honors height. What really needs to happen
+  // is scaling, proportionally. For now I think what I will do is filter height later, or
+  // change the css.
   /*if(image.hasAttribute('width')) {
     // Keep width as width. We know image.width will be set because the parser set the property
     // given the presence of the attribute
@@ -145,7 +149,7 @@ const namedAttributePairs = [
   {width: 'width', height: 'height'}
 ];
 
-// This only returns a useful object if both dimensions are set
+// Try and find image dimensions from the characters of its url
 function sniffDimensionsFromURL(sourceURL) {
   // Ignore data urls (will be handled later by fetching)
   if(sourceURL.protocol === 'data:') {
@@ -156,7 +160,7 @@ function sniffDimensionsFromURL(sourceURL) {
   const params = sourceURL.searchParams;
   for(const pair of namedAttributePairs) {
     const widthString = params.get(pair.width);
-    if(width) {
+    if(widthString) {
       const widthInt = parseInt10(widthString);
       if(!isNaN(widthInt)) {
         const heightString = params.get(pair.height);
@@ -173,7 +177,7 @@ function sniffDimensionsFromURL(sourceURL) {
     }
   }
 
-  // TODO: make a helper function?
+  // TODO: implement
   // Grab from file name (e.g. 100x100.jpg => [100,100])
   const fileName = getFileNameFromURL(sourceURL);
   if(fileName) {
@@ -184,7 +188,9 @@ function sniffDimensionsFromURL(sourceURL) {
   }
 }
 
-// TODO: support all value formats
+// Try and find dimensions from the style attribute of an image element. This does not compute
+// style. This only considers the style attribute itself and not inherited styles.
+// TODO: this is currently incorrect when width/height are percentage based
 function getInlineStyleDimensions(element) {
   if(element.hasAttribute('style') && element.style) {
     const width = parseInt10(element.style.width);

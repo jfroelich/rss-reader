@@ -141,10 +141,8 @@ pre {
 }
 
 .entry img {
-  /* I don't want the border, it looks bad. I just want the shadow */
-  /*border: 1px solid #777777;*/
-
   max-width: 100%;
+  max-height: 100%;
 }
 
 .entry span.entry-content img {
