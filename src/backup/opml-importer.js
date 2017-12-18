@@ -12,31 +12,31 @@ import promiseEvery from "/src/promise/every.js";
 // TODO: in hindsight i think context is silly, this should just be
 // 'OPMLImporter' module with import method, no context
 
-export function Context() {
+export default function OPMLImporter() {
   this.feedStore = null;
   this.iconCache = null;
   this.fetchFeedTimeoutMs = void 0;
 }
 
-Context.prototype.init = function() {
+OPMLImporter.prototype.init = function() {
   this.feedStore = new FeedStore();
   this.iconCache = new FaviconCache();
 };
 
-Context.prototype.open = async function() {
+OPMLImporter.prototype.open = async function() {
   assert(this.feedStore instanceof FeedStore);
   assert(this.iconCache instanceof FaviconCache);
   const promises = [this.feedStore.open(), this.iconCache.open()];
   await Promise.all(promises);
 };
 
-Context.prototype.close = function() {
-  if(this.iconCache) {
-    this.iconCache.close();
-  }
-
+OPMLImporter.prototype.close = function() {
   if(this.feedStore) {
     this.feedStore.close();
+  }
+
+  if(this.iconCache) {
+    this.iconCache.close();
   }
 };
 
@@ -46,31 +46,23 @@ Context.prototype.close = function() {
 // @return {Promise} a promise that resolves to an array with length corresponding to the number
 // of files imported, and for each file the number of feeds subscribed, or undefined if there was
 // an error for that file.
-export default function main(files) {
-  // Ensure called correctly
-  assert(this instanceof Context);
-
-  // Ensure initialized
+OPMLImporter.prototype.import = function(files) {
   assert(this.feedStore instanceof FeedStore);
   assert(this.iconCache instanceof FaviconCache);
-
-  // Ensure proper parameter
-  assert(files instanceof FileList);
-
-  console.debug('Importing %d files', files.length);
-  // Clone to array due to issues with FileList map call
-  const filesArray = [...files];
-  const promises = filesArray.map(importFile, this);
-  return promiseEvery(promises);
-}
-
-async function importFile(file) {
-  assert(this instanceof Context);
-  assert(file instanceof File);
-
   assert(this.feedStore.isOpen())
   assert(this.iconCache.isOpen());
 
+  assert(files instanceof FileList);
+  console.debug('Importing %d files', files.length);
+
+  // Clone to array due to issues with map on FileList
+  const filesArray = [...files];
+  const promises = filesArray.map(this.importFile, this);
+  return promiseEvery(promises);
+};
+
+OPMLImporter.prototype.importFile = async function(file) {
+  assert(file instanceof File);
   console.log('Importing file', file.name);
 
   if(file.size < 1) {
@@ -83,15 +75,8 @@ async function importFile(file) {
     return 0;
   }
 
-  let fileContent;
-  try {
-    fileContent = await readFileAsText(file);
-  } catch(error) {
-    console.warn(error);
-    return 0;
-  }
-
-  const document = parseOPML(fileContent);
+  const fileText = await readFileAsText(file);
+  const document = parseOPML(fileText);
   removeOutlinesWithInvalidTypes(document);
   normalizeOutlineXMLURLs(document);
   removeOutlinesMissingXMLURLs(document);
@@ -128,7 +113,7 @@ async function importFile(file) {
 
   console.log('Subscribed to %d new feeds in file', subCount, file.name);
   return subCount;
-}
+};
 
 function removeOutlinesWithInvalidTypes(doc) {
   assert(doc instanceof Document);

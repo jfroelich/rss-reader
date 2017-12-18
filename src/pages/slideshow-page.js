@@ -1,8 +1,6 @@
 import assert from "/src/assert/assert.js";
 import exportFeeds from "/src/backup/export-feeds.js";
-import importFiles, {
-  Context as ImportFilesContext
-} from "/src/backup/import-opml-files.js";
+import OPMLImporter from "/src/backup/opml-importer.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeeds from "/src/jobs/poll/poll-feeds.js";
@@ -746,29 +744,27 @@ function menuOptionImportOnclick() {
   const uploaderInput = document.createElement('input');
   uploaderInput.setAttribute('type', 'file');
   uploaderInput.setAttribute('accept', MimeUtils.MIME_TYPE_XML);
-  uploaderInput.onchange = importInputOnchange;
+  uploaderInput.onchange = function importInputOnchange(event) {
+    importFiles(uploaderInput.files).catch(console.warn);
+  };
   uploaderInput.click();
 }
 
-async function importInputOnchange(event) {
+async function importFiles(files) {
   // TODO: show operation started
-
-  const uploaderInput = event.target;
-
-  const context = new ImportFilesContext();
-  context.init();
-
+  const importer = new OPMLImporter();
+  importer.init();
   // TODO: this should really be defined elsewhere
-  context.fetchFeedTimeoutMs = 10 * 1000;
+  importer.fetchFeedTimeoutMs = 10 * 1000;
 
   try {
-    await context.open();
-    await importFiles.call(context, uploaderInput.files);
+    await importer.open();
+    await importer.import(files);
   } catch(error) {
     // TODO: visual feedback in event an error
     console.warn(error);
   } finally {
-    context.close();
+    importer.close();
   }
 
   console.debug('Import completed');
