@@ -76,10 +76,14 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     return;
   }
 
+
   // Square inference
   // If the image has width, then we know it does not have height due to the above condition.
   // To improve performance, infer that the image is a square
-  if(image.hasAttribute('width')) {
+
+  // NOTE: I've disabled because it is leading to funny looking images. Not sure if that
+  // is because I no longer filter width/height from attributes later or because of this
+  /*if(image.hasAttribute('width')) {
     // Keep width as width. We know image.width will be set because the parser set the property
     // given the presence of the attribute
     result.width = image.width;
@@ -87,18 +91,20 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     result.height = image.width;
     result.reason = 'height-inferred-from-width';
     return result;
-  }
+  }*/
+
 
   // Square inference
   // Do the same thing for an image that just has height. We still have to check, because the image
   // could have neither.
-  if(image.hasAttribute('height')) {
+  // NOTE: temporarily disabled, see above note
+  /*if(image.hasAttribute('height')) {
     // Infer width from height
     result.width = image.height;
     result.height = image.height;
     result.reason = 'width-inferred-from-height';
     return result;
-  }
+  }*/
 
   const styleDimensions = getInlineStyleDimensions(image);
   if(styleDimensions) {
