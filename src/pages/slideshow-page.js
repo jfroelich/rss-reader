@@ -5,7 +5,6 @@ import FeedStore from "/src/feed-store/feed-store.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeeds from "/src/jobs/poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
-import * as MimeUtils from "/src/mime/utils.js";
 import {
   pageStyleSettingsOnload,
   pageStyleSettingsOnchange
@@ -727,6 +726,7 @@ function menuOptionsOnclick(event) {
 
   switch(option.id) {
   case 'menu-option-subscribe':
+    console.warn('Not yet implemented');
     break;
   case 'menu-option-import':
     menuOptionImportOnclick();
@@ -743,7 +743,7 @@ function menuOptionsOnclick(event) {
 function menuOptionImportOnclick() {
   const uploaderInput = document.createElement('input');
   uploaderInput.setAttribute('type', 'file');
-  uploaderInput.setAttribute('accept', MimeUtils.MIME_TYPE_XML);
+  uploaderInput.setAttribute('accept', 'text/xml');
   uploaderInput.onchange = function importInputOnchange(event) {
     importFiles(uploaderInput.files).catch(console.warn);
   };
@@ -792,7 +792,6 @@ async function menuOptionExportOnclick() {
   // TODO: visual feedback on completion
   console.log('Completed export');
 }
-
 
 function errorMessageContainerOnclick(event) {
   const container = document.getElementById('error-message-container');
