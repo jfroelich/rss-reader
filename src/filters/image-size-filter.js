@@ -124,7 +124,6 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     return;
   }
 
-  // TODO: only exit early if not only is variable defined but has both dimensions
   const urlDimensions = sniffDimensionsFromURL(sourceURL);
   if(urlDimensions) {
     result.width = urlDimensions.width;
@@ -134,65 +133,47 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
   }
 
   const response = await fetchImageElement(sourceURL.href, timeoutMs);
-
   log('Found dimensions from fetch', image.outerHTML, response.width, response.height);
-
-  // TODO: do not trust that dimension are set?
-
-  // Access by property, attributes are not set
   result.width = response.width;
   result.height = response.height;
   result.reason = 'fetch';
   return result;
 }
 
+const namedAttributePairs = [
+  {width: 'w', height: 'h'},
+  {width: 'width', height: 'height'}
+];
+
 // This only returns a useful object if both dimensions are set
 function sniffDimensionsFromURL(sourceURL) {
-  // data urls will not contain useful information so ignore them. The information could be
-  // parsed but that functionality is already built into native fetch
+  // Ignore data urls (will be handled later by fetching)
   if(sourceURL.protocol === 'data:') {
     return;
   }
 
-  // TODO: make the w/h and width/height search params check into a helper
-  // function?
-
-  // Try and grab from parameters
-  // TODO: defer height has check and parseInt10 height until width processed,
-  // can avoid processing in some cases
-
+  // Infer from url parameters
   const params = sourceURL.searchParams;
-  const dimensions = {};
-  if(params.has('w') && params.has('h')) {
-
-    dimensions.width = parseInt10(params.get('w'));
-    dimensions.height = parseInt10(params.get('h'));
-
-    if(!isNaN(dimensions.width) && !isNaN(dimensions.height)) {
-      return dimensions;
+  for(const pair of namedAttributePairs) {
+    const widthString = params.get(pair.width);
+    if(width) {
+      const widthInt = parseInt10(widthString);
+      if(!isNaN(widthInt)) {
+        const heightString = params.get(pair.height);
+        if(heightString) {
+          const heightInt = parseInt10(heightString);
+          if(!isNaN(heightInt)) {
+            const dimensions = {};
+            dimensions.width = widthInt;
+            dimensions.height = heightInt;
+            return dimensions;
+          }
+        }
+      }
     }
   }
 
-  // Check 'has' because the cost is less than the cost of calling parseInt10
-  // (untested assumption)
-
-  // TODO: defer height has check and parseInt10 height until width processed,
-  // can avoid processing in some cases
-
-  if(params.has('width') && params.has('height')) {
-    dimensions.width = parseInt10(params.get('width'));
-    dimensions.height = parseInt10(params.get('height'));
-
-    if(!isNaN(dimensions.width) && !isNaN(dimensions.height)) {
-      return dimensions;
-    }
-  }
-
-  // TODO: support the following url, s1200 is the feature, s being short for
-  // size, and here size meaning width, this is a 1200px width image
-  // https://media.npr.org/...9fb33b1-s1200.jpg
-
-  // TODO: make a helper function
+  // TODO: make a helper function?
   // Grab from file name (e.g. 100x100.jpg => [100,100])
   const fileName = getFileNameFromURL(sourceURL);
   if(fileName) {
@@ -203,28 +184,15 @@ function sniffDimensionsFromURL(sourceURL) {
   }
 }
 
-// This only returns if both dimensions are set
-// Only looks at inline style.
-// Returns {'width': int, 'height': int} or undefined
+// TODO: support all value formats
 function getInlineStyleDimensions(element) {
-  // Accessing element.style is a performance heavy operation sometimes, so try and avoid access.
-  if(!element.hasAttribute('style')) {
-    return;
-  }
-
-  // Some elements do not have a defined style property.
-  if(!element.style) {
-    return;
-  }
-
-  // TODO: support all value formats
-  const dims = {};
-  dims.width = parseInt10(element.style.width);
-  dims.height = parseInt10(element.style.height);
-
-  if(isNaN(dims.width) || isNaN(dims.height)) {
-    return;
-  } else {
-    return dims;
+  if(element.hasAttribute('style') && element.style) {
+    const width = parseInt10(element.style.width);
+    if(!isNaN(width)) {
+      const height = parseInt10(element.style.height);
+      if(!isNaN(height)) {
+        return {width: width, height: height};
+      }
+    }
   }
 }
