@@ -35,6 +35,7 @@ import responsiveImageFilter from "/src/filters/responsive-image-filter.js";
 import scriptFilter from "/src/filters/script-filter.js";
 import scriptAnchorFilter from "/src/filters/script-anchor-filter.js";
 import semanticFilter from "/src/filters/semantic-filter.js";
+import smallImageFilter from "/src/filters/small-image-filter.js";
 import sourcelessImageFilter from "/src/filters/sourceless-image-filter.js";
 import tableFilter from "/src/filters/table-filter.js";
 import trimDocumentFilter from "/src/filters/trim-document-filter.js";
@@ -98,6 +99,8 @@ export default async function applyAllFilters(doc, documentURL, fetchImageTimeou
 
   // Allow exceptions to bubble
   await imageSizeFilter(doc, allowedProtocols, fetchImageTimeoutMs);
+
+  smallImageFilter(doc);
 
   invalidAnchorFilter(doc);
   formattingAnchorFilter(doc);
