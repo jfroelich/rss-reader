@@ -39,19 +39,29 @@ export function isHiddenElement(element) {
     return true;
   }
 
-  // Test the element itself with the hope of avoiding ancestors analysis
+  // Test the element itself with the hope of avoiding ancestors path analysis
   if(isHiddenInlineElement(element)) {
     return true;
   }
 
-  // Walk bottom-up from after element to before body, recording the path
+  // Walk bottom-up from after element to before body, recording the path. Exclude the element
+  // itself from the path so it is not checked again.
   const path = [];
   for(let e = element.parentNode; e && e !== doc.body; e = e.parentNode) {
     path.push(e);
   }
 
-  // Step backward along the path and stop upon finding the first hidden node
-  for(let i = path.length - 1; i > -1; i--) {
+  // The path is empty when the element is immediately under the body. Since we already checked
+  // the element, and do not plan to check the body, we're done. This empty check avoids going
+  // below the lower bound index of the path in the next loop.
+  if(!path.length) {
+    return false;
+  }
+
+  // Step backward along the path and stop upon finding the first hidden node. This does not
+  // re-test the element because it is not in the path. We know the path is not empty because of
+  // the above check, so it is safe to start from the last element in the path.
+  for(let i = path.length - 1; i >=0; i--) {
     if(isHiddenInlineElement(path[i])) {
       return true;
     }
@@ -63,6 +73,7 @@ export function isHiddenElement(element) {
 // Returns true if an element is hidden according to its inline style. Makes mostly conservative
 // guesses because false positives carry a greater penalty than false negatives.
 export function isHiddenInlineElement(element) {
+  // This is a public function so do not trust input
   assert(element instanceof Element);
 
   // Special handling for MathML. This absence of this case was previously the source of a bug.
@@ -76,7 +87,7 @@ export function isHiddenInlineElement(element) {
 
   const style = element.style;
 
-  // TODO: I think <svg> is also missing style? Look into it and maybe special case like math
+  // NOTE: svg does have a style property.
 
   // Some elements do not have a style prop. Generally these are math elements or math descendants,
   // but there is a special case for that above. This is a catch all for other cases. I am logging
@@ -96,14 +107,16 @@ export function isHiddenInlineElement(element) {
   }
 
   return style.display === 'none' || style.visibility === 'hidden' ||
-    isNearTransparent(element) || isOffscreen(element);
+    isNearTransparent(style) || isOffscreen(element);
 }
 
 // Returns true if the element's opacity is too close to 0
 // TODO: support other formats of the opacity property
-function isNearTransparent(element) {
-  const opacity = parseFloat(element.style.opacity);
-  return !isNaN(opacity) && opacity >= 0 && opacity <= 0.3;
+function isNearTransparent(style) {
+  if(style.opacity) {
+    const opacityFloat = parseFloat(style.opacity);
+    return !isNaN(opacityFloat) && opacityFloat <= 0.3;
+  }
 }
 
 // Returns true if the element is positioned off screen. Heuristic guess. Probably several false

@@ -11,7 +11,6 @@ import pollFeed from "/src/jobs/poll/poll-feed.js";
 import setTimeoutPromise from "/src/promise/set-timeout.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import * as Feed from "/src/feed-store/feed.js";
-
 import {setURLHrefProperty} from "/src/url/url.js";
 import check from "/src/utils/check.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
@@ -20,6 +19,8 @@ import isUncheckedError from "/src/utils/is-unchecked-error.js";
 // TODO: both subscribe and pollFeed have extremely similar functionality. Consider that I should
 // be using a better abstraction here. Perhaps a single function with the right arguments can
 // satisfy both cases and therefore simplify usage and reduce code.
+// TODO: Context is silly, just use an object
+
 
 export function Context() {
   /* FeedStore */ this.feedStore;

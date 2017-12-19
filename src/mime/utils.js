@@ -103,7 +103,6 @@ export function isBinary(mimeType) {
   }
 }
 
-
 export function isHTML(contentType) {
   return /^\s*text\/html/i.test(contentType);
 }

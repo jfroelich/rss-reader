@@ -5,13 +5,10 @@ import FeedStore from "/src/feed-store/feed-store.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeeds from "/src/jobs/poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
-import {
-  pageStyleSettingsOnload,
-  pageStyleSettingsOnchange
-} from "/src/page-style/page-style-settings.js";
-import {openTab} from "/src/platform/platform.js";
 import escapeHTML from "/src/html/escape.js";
 import htmlTruncate from "/src/html/truncate.js";
+import * as PageStyle from "/src/page-style/page-style-settings.js";
+import {openTab} from "/src/platform/platform.js";
 import {isCanonicalURLString} from "/src/url/url-string.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";
@@ -51,7 +48,7 @@ readerChannel.onmessage = function(event) {
 
   switch(message.type) {
   case 'display-settings-changed':
-    pageStyleSettingsOnchange(message);
+    PageStyle.pageStyleSettingsOnchange(message);
     break;
   case 'entry-added':
     onEntryAddedMessage(message).catch(console.warn);
@@ -195,10 +192,10 @@ async function markSlideRead(feedStore, slideElement) {
   try {
     await feedStore.markEntryAsRead(entryId);
   } catch(error) {
-    console.warn(error);
-    // Fall through and mark the element as read anyway, to prevent the error that appears later
-    // when trying to mark as red.
-    dprintf('slide may not be updated as read in db but designating as read in UI', slideElement);
+    // TODO: this should never happen
+    // TODO: this error also happens when marking an entry as read that is already read
+    console.error(error);
+    return;
   }
 
   // Signal to the UI that the slide is read, so that unread counting works, and so that later
@@ -832,7 +829,7 @@ async function init() {
 
   // TODO: is it possible to defer this until after loading without slowing things down?
   // Initialize entry display settings
-  pageStyleSettingsOnload();
+  PageStyle.pageStyleSettingsOnload();
 
   // Load and append slides
   const feedStore = new FeedStore();

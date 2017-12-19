@@ -24,8 +24,6 @@ import isPosInt from "/src/utils/is-pos-int.js";
 // the minimum deadline in the special case of 0, in that case this resolves immediately, where
 // immediately means on next-tick not synchronously.
 export default function setTimeoutPromise(timeoutMs) {
-
-  // Calling this with an invalid timeout is indicative of a programmer error.
   assert(isPosInt(timeoutMs));
 
   // Note this is special behavior and different than calling setTimeout with a value of 0, because

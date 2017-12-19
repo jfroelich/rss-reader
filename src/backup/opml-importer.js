@@ -9,9 +9,6 @@ import * as Subscriber from "/src/reader/subscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
 import promiseEvery from "/src/promise/every.js";
 
-// TODO: in hindsight i think context is silly, this should just be
-// 'OPMLImporter' module with import method, no context
-
 export default function OPMLImporter() {
   this.feedStore = null;
   this.iconCache = null;

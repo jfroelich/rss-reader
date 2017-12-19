@@ -2,16 +2,16 @@ import assert from "/src/assert/assert.js";
 
 // Returns true if a string represents a canonical url. The string may contain leading or trailing
 // whitespace.
-// Returns true for javascript: and mailto: and data:.
+// Returns true for javascript: and mailto: and data: and tel:
 // Returns true for https:// and http://.
 // Returns false for '//' (protocol-relative).
 // Returns false for local host.
-// Returns false for ip addresses.
+// Returns false for ipv4/6 addresses.
 export function isCanonicalURLString(urlString) {
   assert(typeof urlString === 'string');
-
-  // TODO: the test should require one or more characters after the colon
-  return /^\s*[a-z]+:/i.test(urlString);
+  // The string must have at least one character after the colon
+  // The string may have intermediate spaces (e.g. `javascript: void(0);`)
+  return /^\s*[a-zA-Z\-]+:.+/.test(urlString);
 }
 
 // Returns the absolute form the input url

@@ -20,7 +20,6 @@
     "declarativeWebRequest",
     "http://*/*",
     "https://*/*",
-    "idle",
     "notifications",
     "tabs",
     "unlimitedStorage"

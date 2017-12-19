@@ -1,21 +1,10 @@
 import assert from "/src/assert/assert.js";
-// TODO: use * as Config or something like that
-import {BG_IMAGES, FONTS} from "/src/config.js";
+import * as Config from "/src/config.js";
 import fadeElement from "/src/dom/fade-element.js";
-import FaviconCache from "/src/favicon/cache.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import htmlTruncate from "/src/html/truncate.js";
-
-// TODO: use * as PageStyle or something similar
-import {
-  pageStyleSettingsOnload,
-  pageStyleSettingsOnchange
-} from "/src/page-style/page-style-settings.js";
-import {
-  hasBrowserPermission,
-  requestBrowserPermission,
-  removeBrowserPermission
-} from "/src/platform/platform.js";
+import * as PageStyle from "/src/page-style/page-style-settings.js";
+import * as Platform from "/src/platform/platform.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
@@ -43,7 +32,7 @@ readerChannel.onmessage = function(event) {
 
   switch(message.type) {
   case 'display-settings-changed':
-    pageStyleSettingsOnchange(event);
+    PageStyle.pageStyleSettingsOnchange(event);
     break;
   default:
     // Ignore all other message types
@@ -547,9 +536,9 @@ function enableNotificationsCheckboxOnclick(event) {
 
 function enableBgProcessingCheckboxOnclick(event) {
   if(event.target.checked) {
-    requestBrowserPermission('background');
+    Platform.requestBrowserPermission('background');
   } else {
-    removeBrowserPermission('background');
+    Platform.removeBrowserPermission('background');
   }
 }
 
@@ -561,7 +550,7 @@ async function bgProcessingCheckboxInit() {
   // permanently defined.
 
   checkbox.onclick = enableBgProcessingCheckboxOnclick;
-  checkbox.checked = await hasBrowserPermission('background');
+  checkbox.checked = await Platform.hasBrowserPermission('background');
 }
 
 function restrictIdlePollingCheckboxOnclick(event) {
@@ -687,7 +676,7 @@ function bodyHeightInputOninput(event) {
 
 // Initialization
 
-pageStyleSettingsOnload();
+PageStyle.pageStyleSettingsOnload();
 
 // Attach click handlers to menu items
 // TODO: use single event listener on list itself instead
@@ -735,7 +724,7 @@ subscriptionForm.onsubmit = subscribeFormOnsubmit;
 
   const currentBgImagePath = localStorage.BG_IMAGE;
   const bgImagePathOffset = '/images/'.length;
-  for(const path of BG_IMAGES) {
+  for(const path of Config.BG_IMAGES) {
     let option = document.createElement('option');
     option.value = path;
     option.textContent = path.substring(bgImagePathOffset);
@@ -751,7 +740,7 @@ subscriptionForm.onsubmit = subscribeFormOnsubmit;
   option.textContent = 'Use Chrome font settings';
   headerFontMenu.appendChild(option);
   const currentHeaderFont = localStorage.HEADER_FONT_FAMILY;
-  for(const font of FONTS) {
+  for(const font of Config.FONTS) {
     let option = document.createElement('option');
     option.value = font;
     option.selected = font === currentHeaderFont;
@@ -768,7 +757,7 @@ subscriptionForm.onsubmit = subscribeFormOnsubmit;
   bodyFontMenu.appendChild(option);
 
   const currentBodyFont = localStorage.BODY_FONT_FAMILY;
-  for(const font of FONTS) {
+  for(const font of Config.FONTS) {
     option = document.createElement('option');
     option.value = font;
     option.selected = font === currentBodyFont;

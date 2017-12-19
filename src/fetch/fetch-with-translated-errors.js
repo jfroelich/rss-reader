@@ -1,6 +1,5 @@
 import assert from "/src/assert/assert.js";
 import {NetworkError, OfflineError} from "/src/fetch/errors.js";
-import {isOnline} from "/src/platform/platform.js";
 import check from "/src/utils/check.js";
 
 // Wraps a call to fetch and changes the types of certain errors thrown. The primary problem
@@ -26,7 +25,7 @@ export default async function fetchWithTranslatedErrors(url, options) {
   // fetch fails with a TypeError when offline. This would ordinarily later be translated to a
   // NetworkError, but I want to the caller to be able to distinguish between a site being
   // unreachable while online, and a site being unreachable while offline.
-  check(isOnline(), OfflineError, 'Unable to fetch url "%s" while offline', url);
+  check(navigator.onLine, OfflineError, 'Unable to fetch url "%s" while offline', url);
 
   let response;
   try {

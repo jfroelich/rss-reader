@@ -1,22 +1,14 @@
 import sprintf from "/src/string/sprintf.js";
 
-// If true, any assertion errors are immediately logged. This helps avoid issues with promise
-// swallowed exceptions. While the browser generally logs an error message for uncaught exceptions
-// in promise executors, it doesn't help when the error is captured but not handled correctly
-// somewhere higher up in the call stack. This is tested against every time the assert function is
-// called. Currently this is true in development to really emphasize unexpected errors and make an
-// earnest attempt at avoiding any hidden errors.
-const LOG_ERRORS = true;
-
 // Throws an assertion error when the condition value is false or false-like
 // @param booleanValue {Any} any value, usually the result of some expression, preferably boolean
-// @rest any number of any type of additional arguments that are forwarded to a call to
+// @varargs any number of any type of additional arguments that are forwarded to a call to
 // sprintf that formats the arguments into a string that becomes the message value of the
 // assertion error that is thrown. If no additional arguments are given then a default error
 // message is used.
 export default function assert(booleanValue, ...varargs) {
 
-  // Weakly check the parameter type. I prefer callers use a proper boolean. Warn using
+  // TEMP: Weakly check the parameter type. I prefer callers use a proper boolean. Warn using
   // console.error so that the stack trace is captured.
   if(typeof booleanValue !== 'boolean') {
     console.error('not boolean', booleanValue);
@@ -28,9 +20,14 @@ export default function assert(booleanValue, ...varargs) {
 
   const errorMessage = sprintf(...varargs) || 'Assertion failed';
   const error = new AssertionError(errorMessage);
-  if(LOG_ERRORS) {
-    console.error(errorMessage);
-  }
+
+  // If not commented out, any assertion errors are immediately logged. Enabling this option helps
+  // avoid issues with promise swallowed exceptions. While the browser generally logs an error
+  // message for uncaught exceptions in promise executors, it doesn't help when the error is caught
+  // in a catch block but not logged or rethrown. I'd rather not require every use of a catch block
+  // be concerned with handling unchecked errors.
+  console.error(errorMessage);
+
   throw error;
 }
 
@@ -42,7 +39,7 @@ export default function assert(booleanValue, ...varargs) {
 
 // Generally no other module should import or explicitly throw an AssertionError. Instead, that
 // module should call assert with a value that then throws an assertion error as a side effect
-// when the value is falsy. Ideally this error would not be exported. However, a few other
+// when the value is false. Ideally this error would not be exported. However, a few other
 // modules need to directly access the class itself such as when testing whether an error is a type
 // of an assertion error.
 

@@ -21,7 +21,7 @@ function filterElementAttributes(element, whitelist) {
   // Use getAttributeNames over element.attributes because:
   // 1) Avoid complexity with changing attributes while iterating over element.attributes
   // 2) Simpler use of for..of
-  // 3) Appears, for the moment, to be faster than iterating element.attributes
+  // 3) For the moment, appears to be faster than iterating element.attributes
 
   const atributeNames = element.getAttributeNames();
   if(!atributeNames.length) {

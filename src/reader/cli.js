@@ -12,9 +12,6 @@ import parseInt10 from "/src/utils/parse-int-10.js";
 // Command line interface module. This module does not export anything. Instead, it defines a
 // variable in global scope (window). The definition occurs as an implicit side effect of importing
 // the module.
-// TODO: I suppose this could export cli anyway, even though it is not used?
-
-
 const cli = {};
 
 cli.refreshIcons = async function() {

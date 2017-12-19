@@ -90,7 +90,6 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
     return result;
   }
 
-
   // Whereever entries came from earlier, it should be defined at this point.
   assert(Array.isArray(entries));
 
@@ -113,8 +112,7 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
 
 // Coerce a parsed entry object into a reader storage entry object.
 function coerceEntry(feedLinkURL, parsedEntry) {
-
-  // Create a blank storable entry, and copy over all properties from the parsed entry
+  // Create a blank entry, and copy over all properties from the parsed entry
   const storableEntry = Object.assign(Entry.createEntry(), parsedEntry);
 
   // Mutate the storable entry

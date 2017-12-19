@@ -3,20 +3,7 @@
 // TODO: rename to platform-chrome.js or something similar, and then change the nature of this
 // module to serve only as a proxy for interacting with Chrome
 
-// Returns true if online
-// TODO: eventually decide if this is silly and should just assume supported by all platforms,
-// do some research into how widely supported it is
-export function isOnline() {
-  if(navigator && 'onLine' in navigator) {
-    return navigator.onLine;
-  }
-
-  // Assume true when do not know.
-  return true;
-}
-
 export function addInstallListener(listener) {
-  console.debug('binding install listener');
   chrome.runtime.onInstalled.addListener(listener);
 }
 
@@ -35,9 +22,10 @@ export function queryIdleState(idlePeriodSecs) {
 }
 
 export function setBadgeText(text) {
-  chrome.browserAction.setBadgeText({'text': text});
+  chrome.browserAction.setBadgeText({text: text});
 }
 
+// TODO: this doesn't belong in platform
 export async function showSlideshowTab() {
   const slideshowURL = chrome.extension.getURL('slideshow.html');
   const newtabURL = 'chrome://newtab/';
@@ -57,12 +45,13 @@ export async function showSlideshowTab() {
   chrome.tabs.create({url: slideshowURL});
 }
 
-function findTabsByURL(urlString) {
+export function findTabsByURL(urlString) {
   return new Promise(function executor(resolve, reject) {
     return chrome.tabs.query({url: urlString}, resolve);
   });
 }
 
+// TODO: this doesn't belong in platform
 export function showNotification(title, message, iconURL) {
   if(typeof Notification === 'undefined') {
     return;

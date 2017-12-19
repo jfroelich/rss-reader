@@ -46,7 +46,7 @@ async function onInstalled(event) {
   }
 }
 
-async function onClicked(event) {
+function onClicked(event) {
   showSlideshowTab();
 }
 
