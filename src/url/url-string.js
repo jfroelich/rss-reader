@@ -11,7 +11,14 @@ export function isCanonicalURLString(urlString) {
   assert(typeof urlString === 'string');
   // The string must have at least one character after the colon
   // The string may have intermediate spaces (e.g. `javascript: void(0);`)
-  return /^\s*[a-zA-Z\-]+:.+/.test(urlString);
+  //return /^\s*[a-zA-Z\-]+:.+/.test(urlString);
+
+  try {
+    new URL(urlString);
+    return true;
+  } catch(error) {
+    return false;
+  }
 }
 
 // Returns the absolute form the input url
