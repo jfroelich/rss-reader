@@ -23,6 +23,7 @@ import hrFilter from "/src/filters/hr-filter.js";
 import iframeFilter from "/src/filters/iframe-filter.js";
 import imageSizeFilter from "/src/filters/image-size-filter.js";
 import invalidAnchorFilter from "/src/filters/invalid-anchor-filter.js";
+import largeImageAttributeFilter from "/src/filters/large-image-attribute-filter.js";
 import lazyImageFilter from "/src/filters/lazy-image-filter.js";
 import {leafFilter} from "/src/filters/leaf-filter.js";
 import listFilter from "/src/filters/list-filter.js";
@@ -140,8 +141,11 @@ export default async function applyAllFilters(doc, documentURL, fetchImageTimeou
     a: ['href', 'name', 'title', 'rel'],
     iframe: ['src'],
     source: ['media', 'sizes', 'srcset', 'src', 'type'],
+    // Setting width and height explicitly lead to skewed large images in view, so forbid
     img: ['src', 'alt', 'title', 'srcset', 'width', 'height']
   };
+
+  largeImageAttributeFilter(doc);
 
   attributeFilter(doc, attributeWhitelist);
 
