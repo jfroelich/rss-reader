@@ -1,13 +1,13 @@
 import assert from "/src/assert/assert.js";
-import tokenize from "/src/string/tokenize.js";
+import {tokenize} from "/src/utils/string-utils.js";
+
+// TODO: support alternate whitespace expressions around delimiters
 
 // Filter publisher information from an article title
-// TODO: support alternate whitespace expressions around delimiters
 // @param title {String} the title of an web page
 // @returns {String} the title without publisher information
 export default function filterPublisher(title) {
   assert(typeof title === 'string');
-
   // Look for a delimiter
   let delimiterPosition = title.lastIndexOf(' - ');
   if(delimiterPosition < 0) {
@@ -49,4 +49,15 @@ export default function filterPublisher(title) {
   // Return the modified title
   let outputTitle = title.substring(0, delimiterPosition);
   return outputTitle.trim();
+}
+
+function tokenize(value) {
+  if(typeof value === 'string') {
+    // Avoid empty tokens by trimming and checking length
+    const trimmedInput = value.trim();
+    if(trimmedInput.length > 0) {
+      return trimmedInput.split(/\s+/g);
+    }
+  }
+  return [];
 }

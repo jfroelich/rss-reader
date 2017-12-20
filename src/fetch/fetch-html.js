@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {fetchInternal} from "/src/fetch/utils.js";
-import * as MimeUtils from "/src/mime/utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
 
 // Fetches the html content of the given url
 // @param url {URL} request url

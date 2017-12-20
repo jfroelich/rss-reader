@@ -1,4 +1,4 @@
-import filterUnprintableCharacters from "/src/string/filter-unprintable-characters.js";
+import {filterUnprintableCharacters} from "/src/utils/string-utils.js";
 
 const d = console.debug;
 const f = filterUnprintableCharacters;

@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import {removeImage} from "/src/dom/image.js";
+import {removeImage} from "/src/utils/dom/image.js";
 
 // Filters 'small' images from content. For example, social sharing icons.
 

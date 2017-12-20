@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import unwrapElement from "/src/dom/unwrap-element.js";
+import unwrapElement from "/src/utils/dom/unwrap-element.js";
 
 // Filter semantic web elements from document content
 export default function filter(document) {

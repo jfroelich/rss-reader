@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {fetchInternal} from "/src/fetch/utils.js";
-import * as MimeUtils from "/src/mime/utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
 
 // TODO: i think this is the wrong abstraction. See the following article
 // https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction

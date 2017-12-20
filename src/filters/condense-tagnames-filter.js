@@ -1,4 +1,4 @@
-import coerceElement from "/src/dom/coerce-element.js";
+import coerceElement from "/src/utils/dom/coerce-element.js";
 import assert from "/src/assert/assert.js";
 
 // Changes the names of certain elements in document content

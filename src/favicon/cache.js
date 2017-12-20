@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
 export default class FaviconCache {

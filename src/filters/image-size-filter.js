@@ -1,8 +1,8 @@
 import assert from "/src/assert/assert.js";
 import fetchImageElement from "/src/fetch/fetch-image-element.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
-import promiseEvery from "/src/promise/every.js";
-import {filterExtensionFromFileName, getFileNameFromURL} from "/src/url/url.js";
+import {promiseEvery} from "/src/utils/promise-utils.js";
+import {filterExtensionFromFileName, getFileNameFromURL} from "/src/utils/url-utils.js";
 
 // Module related to image size attributes
 

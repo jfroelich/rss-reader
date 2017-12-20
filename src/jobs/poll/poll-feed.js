@@ -6,11 +6,12 @@ import {TimeoutError} from "/src/operations/timed-operation.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import * as PollEntryModule from "/src/jobs/poll/poll-entry.js";
 import {showNotification} from "/src/platform/platform.js";
-import promiseEvery from "/src/promise/every.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as Feed from "/src/feed-store/feed.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
+import {promiseEvery} from "/src/utils/promise-utils.js";
+
 
 // TODO: to enforce that the feed parameter is a feed object loaded from the database, it is
 // possible that pollFeed would be better implemented if it instead accepted a feedId as a

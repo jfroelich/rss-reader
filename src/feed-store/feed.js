@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import {isCanonicalURLString} from "/src/url/url-string.js";
+import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 // TODO: regarding feed schema, should the group of properties pertaining to a feed's active state
 // by grouped together into a sub object? Like:

@@ -1,7 +1,7 @@
-import * as MimeUtils from "/src/mime/utils.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
 
 // TODO: use fetchHTML instead of raw fetch. This was created before fetch-html.js was settled
-// TODO: use /src/html/parse.js
+// TODO: use /src/utils/html/parse.js
 
 async function test(url) {
 

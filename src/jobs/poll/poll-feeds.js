@@ -5,7 +5,7 @@ import {showNotification} from "/src/platform/platform.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeed from "/src/jobs/poll/poll-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import promiseEvery from "/src/promise/every.js";
+import {promiseEvery} from "/src/utils/promise-utils.js";
 
 export default async function pollFeeds() {
   assert(this instanceof PollContext);

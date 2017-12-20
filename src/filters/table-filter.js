@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import unwrapElement from "/src/dom/unwrap-element.js";
+import unwrapElement from "/src/utils/dom/unwrap-element.js";
 import {leafFilterIsLeaf} from "/src/filters/leaf-filter.js";
 
 // Filters certain table elements from document content

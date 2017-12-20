@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
-import {parseSrcsetWrapper, serializeSrcset} from "/src/dom/srcset.js";
-import {resolveURLString} from "/src/url/url-string.js";
+import {parseSrcsetWrapper, serializeSrcset} from "/src/utils/dom/srcset.js";
+import {resolveURLString} from "/src/utils/url-string-utils.js";
 
 const ELEMENT_ATTRIBUTE_MAP = {
   a: 'href',

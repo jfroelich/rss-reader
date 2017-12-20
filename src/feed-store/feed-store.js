@@ -1,17 +1,15 @@
 import assert from "/src/assert/assert.js";
-import replaceTags from "/src/html/replace-tags.js";
-import htmlTruncate from "/src/html/truncate.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
+import replaceTags from "/src/utils/html/replace-tags.js";
+import htmlTruncate from "/src/utils/html/truncate.js";
+import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as Entry from "/src/feed-store/entry.js";
 import {InvalidStateError, NotFoundError} from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
-import condenseWhitespace from "/src/string/condense-whitespace.js";
-import filterUnprintableCharacters from "/src/string/filter-unprintable-characters.js";
-import filterControls from "/src/string/filter-controls.js";
-import {isValidURLString} from "/src/url/url-string.js";
+import {isValidURLString} from "/src/utils/url-string-utils.js";
 import check from "/src/utils/check.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
+import * as StringUtils from "/src/utils/string-utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
 const DEBUG = false;
@@ -210,8 +208,8 @@ FeedStore.prototype.addEntry = async function(entry, channel) {
 // Returns a new entry object where fields have been sanitized. Impure
 // TODO: now that filterUnprintableCharacters is a thing, I want to also filter such
 // characters from input strings like author/title/etc. However it overlaps with the
-// call to filterControls here. There is some redundant work going on. Also, in a sense,
-// filterControls is now inaccurate. What I want is one function that strips binary
+// call to StringUtils.filterControls here. There is some redundant work going on. Also, in a sense,
+// StringUtils.filterControls is now inaccurate. What I want is one function that strips binary
 // characters except important ones, and then a second function that replaces or removes
 // certain important binary characters (e.g. remove line breaks from author string).
 // Something like 'replaceFormattingCharacters'.
@@ -239,25 +237,25 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contextMaxLe
 
   if(outputEntry.author) {
     let author = outputEntry.author;
-    author = filterControls(author);
+    author = StringUtils.filterControls(author);
     author = replaceTags(author, '');
-    author = condenseWhitespace(author);
+    author = StringUtils.condenseWhitespace(author);
     author = htmlTruncate(author, authorMaxLength);
     outputEntry.author = author;
   }
 
   if(outputEntry.content) {
     let content = outputEntry.content;
-    content = filterUnprintableCharacters(content);
+    content = StringUtils.filterUnprintableCharacters(content);
     content = htmlTruncate(content, contextMaxLength);
     outputEntry.content = content;
   }
 
   if(outputEntry.title) {
     let title = outputEntry.title;
-    title = filterControls(title);
+    title = StringUtils.filterControls(title);
     title = replaceTags(title, '');
-    title = condenseWhitespace(title);
+    title = StringUtils.condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength);
     outputEntry.title = title;
   }
@@ -640,18 +638,18 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
 
   if(outputFeed.title) {
     let title = outputFeed.title;
-    title = filterControls(title);
+    title = StringUtils.filterControls(title);
     title = replaceTags(title, tagReplacement);
-    title = condenseWhitespace(title);
+    title = StringUtils.condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength, suffix);
     outputFeed.title = title;
   }
 
   if(outputFeed.description) {
     let desc = outputFeed.description;
-    desc = filterControls(desc);
+    desc = StringUtils.filterControls(desc);
     desc = replaceTags(desc, tagReplacement);
-    desc = condenseWhitespace(desc);
+    desc = StringUtils.condenseWhitespace(desc);
     desc = htmlTruncate(desc, descMaxLength, suffix);
     outputFeed.description = desc;
   }

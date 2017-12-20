@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import sniffIsBinaryURL from "/src/url/sniff.js";
+import sniffIsBinaryURL from "/src/jobs/poll/sniff.js";
 
 // TODO: get the test working again, it fell behind when refactoring to modules
 // TODO: add data uri test

@@ -3,12 +3,12 @@ import {FetchError, NetworkError, OfflineError} from "/src/fetch/errors.js";
 import isAllowedURL from "/src/fetch/fetch-policy.js";
 import fetchWithTimeout from "/src/fetch/fetch-with-timeout.js";
 import {PermissionsError} from "/src/operations/restricted-operation.js";
-import {compareURLsWithoutHash} from "/src/url/url.js";
-import {isValidURLString} from "/src/url/url-string.js";
+import {compareURLsWithoutHash} from "/src/utils/url-utils.js";
+import {isValidURLString} from "/src/utils/url-string-utils.js";
 import check from "/src/utils/check.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import * as MimeUtils from "/src/mime/utils.js";
-import setTimeoutPromise from "/src/promise/set-timeout.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
+import {setTimeoutPromise} from "/src/utils/promise-utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // TODO: rename to something like fetch-base.js or fetch-wrapper.js

@@ -8,12 +8,12 @@ import {OfflineError} from "/src/fetch/errors.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import PollContext from "/src/jobs/poll/poll-context.js";
 import pollFeed from "/src/jobs/poll/poll-feed.js";
-import setTimeoutPromise from "/src/promise/set-timeout.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import * as Feed from "/src/feed-store/feed.js";
-import {setURLHrefProperty} from "/src/url/url.js";
 import check from "/src/utils/check.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
+import {setTimeoutPromise} from "/src/utils/promise-utils.js";
+import {setURLHrefProperty} from "/src/utils/url-utils.js";
 
 // Module for subscribing to a new feed
 // TODO: both subscribe and pollFeed have extremely similar functionality. Consider that I should

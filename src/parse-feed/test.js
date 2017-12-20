@@ -1,5 +1,5 @@
 import fetchFeed from "/src/fetch/fetch-feed.js";
-import decodeEntities from "/src/html/decode-entities.js";
+import decodeEntities from "/src/utils/html/decode-entities.js";
 import {parseFeed} from "/src/parse-feed/parse-feed.js";
 
 // Test parseFeed module. At the moment this just exposes a helper function to console

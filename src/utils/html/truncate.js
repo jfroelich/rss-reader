@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import parseHTML from "/src/html/parse.js";
+import parseHTML from "/src/utils/html/parse.js";
 
 const ELLIPSIS = '\u2026';
 

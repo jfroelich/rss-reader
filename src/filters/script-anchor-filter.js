@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import unwrap from "/src/dom/unwrap-element.js";
+import unwrap from "/src/utils/dom/unwrap-element.js";
 
 
 // Unwraps anchor elements containing href attribute values that are javascript

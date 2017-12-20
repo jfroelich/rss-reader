@@ -1,5 +1,5 @@
-import coerceElement from "/src/dom/coerce-element.js";
-import parseHTML from "/src/html/parse.js";
+import coerceElement from "/src/utils/dom/coerce-element.js";
+import parseHTML from "/src/utils/html/parse.js";
 
 let input = '<html><head></head><body><a></a></body></html>';
 let doc = parseHTML(input);

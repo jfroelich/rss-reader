@@ -1,8 +1,8 @@
 import assert from "/src/assert/assert.js";
 import * as Config from "/src/config.js";
-import fadeElement from "/src/dom/fade-element.js";
+import fadeElement from "/src/utils/dom/fade-element.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import htmlTruncate from "/src/html/truncate.js";
+import htmlTruncate from "/src/utils/html/truncate.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
 import * as Platform from "/src/platform/platform.js";
 import * as Subscriber from "/src/reader/subscribe.js";

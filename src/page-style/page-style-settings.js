@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import * as CSSUtils from "/src/dom/css-utils.js";
+import * as CSSUtils from "/src/utils/dom/css-utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // Get the current settings from local storage and then modify the css rules in the default style

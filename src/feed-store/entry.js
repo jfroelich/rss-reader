@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import {isCanonicalURLString} from "/src/url/url-string.js";
+import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 // entry.js provides utility functions for working with model objects. Because the extension works
 // with indexedDB, it can only store structured clonable objects. Function objects (e.g. new Entry)

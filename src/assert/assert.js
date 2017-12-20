@@ -1,4 +1,4 @@
-import sprintf from "/src/string/sprintf.js";
+import sprintf from "/src/utils/sprintf.js";
 
 // Throws an assertion error when the condition value is false or false-like
 // @param booleanValue {Any} any value, usually the result of some expression, preferably boolean

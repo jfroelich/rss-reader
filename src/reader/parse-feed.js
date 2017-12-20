@@ -2,7 +2,7 @@ import assert from "/src/assert/assert.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {parseFeed as parseFeedImpl} from "/src/parse-feed/parse-feed.js";
-import {isCanonicalURLString} from "/src/url/url-string.js";
+import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 // This is a wrapper around the generic parse-feed.js that translates the generic parsed feed format
 // into the app's specific storable feed format.

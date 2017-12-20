@@ -1,5 +1,5 @@
 import findLCA from "/src/experimental/lca.js";
-import {isHiddenElement} from "/src/dom/visibility.js";
+import {isHiddenElement} from "/src/utils/dom/visibility.js";
 import assert from "/src/assert/assert.js";
 
 // Returns an array

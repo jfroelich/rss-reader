@@ -3,7 +3,7 @@ import {FetchError} from "/src/fetch/errors.js";
 import isAllowedURL from "/src/fetch/fetch-policy.js";
 import {PermissionsError} from "/src/operations/restricted-operation.js";
 import {TimeoutError} from "/src/operations/timed-operation.js";
-import setTimeoutPromise from "/src/promise/set-timeout.js";
+import {setTimeoutPromise} from "/src/utils/promise-utils.js";
 import check from "/src/utils/check.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 

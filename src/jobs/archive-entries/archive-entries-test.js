@@ -1,5 +1,5 @@
 import FeedStore from "/src/feed-store/feed-store.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 
 // NOTE: this is pretty out of date, might not even work

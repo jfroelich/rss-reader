@@ -1,13 +1,13 @@
 import assert from "/src/assert/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import * as MimeUtils from "/src/mime/utils.js";
 import * as OPMLDocument from "/src/opml/document.js";
 import * as OPMLOutline from "/src/opml/outline.js";
 import parseOPML from "/src/opml/parse.js";
 import * as Subscriber from "/src/reader/subscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
-import promiseEvery from "/src/promise/every.js";
+import * as MimeUtils from "/src/utils/mime-utils.js";
+import {promiseEvery} from "/src/utils/promise-utils.js";
 
 export default function OPMLImporter() {
   this.feedStore = null;

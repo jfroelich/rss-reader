@@ -5,12 +5,12 @@ import FaviconLookup from "/src/favicon/lookup.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
-import parseHTML from "/src/html/parse.js";
+import parseHTML from "/src/utils/html/parse.js";
 import rewriteURL from "/src/jobs/poll/rewrite-url.js";
 import * as Entry from "/src/feed-store/entry.js";
-import sniffIsBinaryURL from "/src/url/sniff.js";
-import {setURLHrefProperty} from "/src/url/url.js";
-import {isValidURLString} from "/src/url/url-string.js";
+import sniffIsBinaryURL from "/src/jobs/poll/sniff.js";
+import {setURLHrefProperty} from "/src/utils/url-utils.js";
+import {isValidURLString} from "/src/utils/url-string-utils.js";
 import check from "/src/utils/check.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 

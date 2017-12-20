@@ -1,5 +1,5 @@
 import assert from "/src/assert/assert.js";
-import unwrap from "/src/dom/unwrap-element.js";
+import unwrap from "/src/utils/dom/unwrap-element.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 
 // Filters certain occurrences of emphasized content from document content

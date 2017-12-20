@@ -2,9 +2,9 @@ import assert from "/src/assert/assert.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as Feed from "/src/feed-store/feed.js";
-import * as IndexedDbUtils from "/src/indexeddb/utils.js";
+import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
-import promiseEvery from "/src/promise/every.js";
+import {promiseEvery} from "/src/utils/promise-utils.js";
 
 export default async function main(store, iconCache) {
   assert(store instanceof FeedStore);
