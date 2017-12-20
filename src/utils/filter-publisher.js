@@ -1,5 +1,4 @@
 import assert from "/src/assert/assert.js";
-import {tokenize} from "/src/utils/string-utils.js";
 
 // TODO: support alternate whitespace expressions around delimiters
 
