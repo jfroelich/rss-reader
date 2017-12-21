@@ -1,8 +1,6 @@
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
-import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 
-// NOTE: this is pretty out of date, might not even work
 // TODO: this should operate on a test database, not the live database
 
 async function test() {
@@ -13,7 +11,7 @@ async function test() {
 
   try {
     await store.open();
-    await archiveEntries(store, maxAgeMs, limit);
+    await store.archiveEntries(maxAgeMs, limit);
     store.close();
     closeRequested = true;
     await IndexedDbUtils.remove(store.conn.name);

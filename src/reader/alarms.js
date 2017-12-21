@@ -2,7 +2,6 @@ import {queryIdleState} from "/src/platform/platform.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
 import PollFeeds from "/src/jobs/poll/poll-feeds.js";
 import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
@@ -29,7 +28,7 @@ async function onWakeup(alarm) {
     const limit = 500;
     try {
       await store.open();
-      await archiveEntries(store, maxAgeMs, limit);
+      await store.archiveEntries(maxAgeMs, limit);
     } catch(error) {
       console.warn(error);
     } finally {

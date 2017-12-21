@@ -1,16 +1,17 @@
 import assert from "/src/assert/assert.js";
-import replaceTags from "/src/utils/html/replace-tags.js";
-import htmlTruncate from "/src/utils/html/truncate.js";
-import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
-import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as Entry from "/src/feed-store/entry.js";
 import {InvalidStateError, NotFoundError} from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
-import {isValidURLString} from "/src/utils/url-string-utils.js";
+import updateBadgeText from "/src/reader/update-badge-text.js";
 import check from "/src/utils/check.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import * as StringUtils from "/src/utils/string-utils.js";
+import replaceTags from "/src/utils/html/replace-tags.js";
+import htmlTruncate from "/src/utils/html/truncate.js";
+import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
+import sizeof from "/src/utils/sizeof.js";
+import {isValidURLString} from "/src/utils/url-string-utils.js";
 
 const DEBUG = false;
 const dprintf = DEBUG ? console.debug : function(){};
@@ -317,55 +318,6 @@ function isActiveFeed(feed) {
   return feed.active === true;
 }
 
-// Loads archivable entries from the database. An entry is archivable if it has not already been
-// archived, and has been read, and matches the custom predicate function.
-// This does two layers of filtering. It would preferably be one layer but a three property index
-// involving a date gets complicated. Given the perf is not top priority this is acceptable for
-// now. The first filter layer is at the indexedDB level, and the second is the in memory
-// predicate. The first layer reduces the number of entries loaded by a large amount.
-// TODO: rather than assert failure when limit is 0, resolve immediately with an empty array.
-// Limit is optional
-// TODO: I feel like there is not a need for the predicate function. This is pushing too much
-// burden/responsibility to the caller. This should handle the expiration check that the caller
-// is basically using the predicate for.
-FeedStore.prototype.findArchivableEntries = function(predicate, limit) {
-  return new Promise((resolve, reject) => {
-    assert(this.isOpen());
-    assert(typeof predicate === 'function');
-
-    const limited = typeof limit !== 'undefined';
-    if(limited) {
-      assert(isPosInt(limit));
-      assert(limit > 0);
-    }
-
-    const entries = [];
-    const tx = this.conn.transaction('entry');
-    tx.onerror = () => reject(tx.error);
-    tx.oncomplete = () => resolve(entries);
-
-    const store = tx.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const keyPath = [Entry.STATE_UNARCHIVED, Entry.STATE_READ];
-    const request = index.openCursor(keyPath);
-    request.onsuccess = function(event) {
-      const cursor = event.target.result;
-      if(!cursor) {
-        return;
-      }
-
-      const entry = cursor.value;
-      if(predicate(entry)) {
-        entries.push(entry);
-        if(limited && (entries.length >= limit)) {
-          return;
-        }
-      }
-
-      cursor.continue();
-    };
-  });
-};
 
 FeedStore.prototype.findEntries = function(predicate, limit) {
   return new Promise((resolve, reject) => {
@@ -711,3 +663,123 @@ FeedStore.prototype.setup = async function() {
     this.close();
   }
 };
+
+
+// Loads archivable entries from the database. An entry is archivable if it has not already been
+// archived, and has been read, and matches the custom predicate function.
+// This does two layers of filtering. It would preferably be one layer but a three property index
+// involving a date gets complicated. Given the perf is not top priority this is acceptable for
+// now. The first filter layer is at the indexedDB level, and the second is the in memory
+// predicate. The first layer reduces the number of entries loaded by a large amount.
+// TODO: rather than assert failure when limit is 0, resolve immediately with an empty array.
+// Limit is optional
+// TODO: I feel like there is not a need for the predicate function. This is pushing too much
+// burden/responsibility to the caller. This should handle the expiration check that the caller
+// is basically using the predicate for. Basically the caller should just pass in a date instead
+// of a function
+FeedStore.prototype.findArchivableEntries = function(predicate, limit) {
+  return new Promise((resolve, reject) => {
+    assert(this.isOpen());
+    assert(typeof predicate === 'function');
+
+    const limited = typeof limit !== 'undefined';
+    if(limited) {
+      assert(isPosInt(limit));
+      assert(limit > 0);
+    }
+
+    const entries = [];
+    const tx = this.conn.transaction('entry');
+    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = () => resolve(entries);
+
+    const store = tx.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const keyPath = [Entry.STATE_UNARCHIVED, Entry.STATE_READ];
+    const request = index.openCursor(keyPath);
+    request.onsuccess = function(event) {
+      const cursor = event.target.result;
+      if(!cursor) {
+        return;
+      }
+
+      const entry = cursor.value;
+      if(predicate(entry)) {
+        entries.push(entry);
+        if(limited && (entries.length >= limit)) {
+          return;
+        }
+      }
+
+      cursor.continue();
+    };
+  });
+};
+
+// Archives certain entries in the database
+// @param store {FeedStore} storage database
+// @param maxAgeMs {Number} how long before an entry is considered archivable (using date entry
+// created), in milliseconds
+FeedStore.prototype.archiveEntries = async function(maxAgeMs, limit) {
+  assert(this.isOpen());
+
+  const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
+
+  if(typeof maxAgeMs === 'undefined') {
+    maxAgeMs = TWO_DAYS_MS;
+  }
+
+  assert(isPosInt(maxAgeMs));
+
+  const currentDate = new Date();
+  function isArchivable(entry) {
+    const entryAgeMs = currentDate - entry.dateCreated;
+    return entryAgeMs > maxAgeMs;
+  }
+
+  const entries = await this.findArchivableEntries(isArchivable, limit);
+  if(!entries.length) {
+    console.debug('no archivable entries found');
+    return;
+  }
+
+  const CHANNEL_NAME = 'reader';
+  const channel = new BroadcastChannel(CHANNEL_NAME);
+  const promises = [];
+  for(const entry of entries) {
+    promises.push(archiveEntry(entry, channel));
+  }
+
+  try {
+    await Promise.all(promises);
+  } finally {
+    channel.close();
+  }
+
+  console.log('Compacted %s entries', entries.length);
+};
+
+async function archiveEntry(entry, channel) {
+  const beforeSize = sizeof(entry);
+  const compacted = compactEntry(entry);
+  compacted.dateUpdated = new Date();
+  const afterSize = sizeof(compacted);
+  console.debug('Compact entry changed approx size from %d to %d', beforeSize, afterSize);
+  await this.putEntry(compacted);
+  const message = {type: 'entry-archived', id: compacted.id};
+  channel.postMessage(message);
+  return compacted;
+}
+
+function compactEntry(entry) {
+  const ce = Entry.createEntry();
+  ce.dateCreated = entry.dateCreated;
+  ce.dateRead = entry.dateRead;
+  ce.feed = entry.feed;
+  ce.id = entry.id;
+  ce.readState = entry.readState;
+  ce.urls = entry.urls;
+  ce.archiveState = Entry.STATE_ARCHIVED;
+  ce.dateArchived = new Date();
+  return ce;
+}
