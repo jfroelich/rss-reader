@@ -2,7 +2,7 @@ import assert from "/src/assert/assert.js";
 import decodeEntities from "/src/utils/html/decode-entities.js";
 import {ParseError} from "/src/operations/parse-operation.js";
 import check from "/src/utils/check.js";
-import parseXML from "/src/xml/parse.js";
+import parseXML from "/src/utils/parse-xml.js";
 
 
 // TODO: create a FeedDescriptor-like object and return it instead of a basic object?
