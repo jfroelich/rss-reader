@@ -2,6 +2,8 @@ import assert from "/src/assert/assert.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as Feed from "/src/feed-store/feed.js";
 
+// TODO: move into feed-store
+
 const CHANNEL_NAME = 'reader';
 
 // Removes entries not linked to a feed from the database

@@ -3,8 +3,7 @@ import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import archiveEntries from "/src/jobs/archive-entries/archive-entries.js";
-import PollContext from "/src/jobs/poll/poll-context.js";
-import pollFeeds from "/src/jobs/poll/poll-feeds.js";
+import PollFeeds from "/src/jobs/poll/poll-feeds.js";
 import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
@@ -117,12 +116,13 @@ async function handlePollFeedsAlarm(alarm) {
     }
   }
 
-  const pc = new PollContext();
-  pc.init();
+  const poll = new PollFeeds();
+
+  poll.init();
   try {
-    await pc.open();
-    await pollFeeds.call(pc);
+    await poll.open();
+    await poll.pollFeeds();
   } finally {
-    pc.close();
+    poll.close();
   }
 }

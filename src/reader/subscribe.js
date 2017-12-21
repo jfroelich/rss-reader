@@ -6,8 +6,7 @@ import {ConstraintError} from "/src/feed-store/errors.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import {OfflineError} from "/src/fetch/errors.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
-import PollContext from "/src/jobs/poll/poll-context.js";
-import pollFeed from "/src/jobs/poll/poll-feed.js";
+import PollFeeds from "/src/jobs/poll/poll-feeds.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import * as Feed from "/src/feed-store/feed.js";
 import check from "/src/utils/check.js";
@@ -195,13 +194,13 @@ function sleep(ms) {
 async function deferredPollFeed(feed) {
   await sleep(500);
 
-  const pc = new PollContext();
-  pc.init();
+  const poll = new PollFeeds();
+  poll.init();
 
   // We just fetched the feed. We definitely want to be able to process its entries, so disable
   // these checks because they most likely fail.
-  pc.ignoreRecencyCheck = true;
-  pc.ignoreModifiedCheck = true;
+  poll.ignoreRecencyCheck = true;
+  poll.ignoreModifiedCheck = true;
 
   // NOTE: this relies on the default extended accepted feed mime types rather than explicitly
   // configuring them here. Keep in mind this may be different than the explicitly specified types
@@ -211,11 +210,11 @@ async function deferredPollFeed(feed) {
   // already returned, so what happens?
 
   try {
-    await pc.open();
-    await pollFeed.call(pc, feed);
+    await poll.open();
+    await poll.pollFeed(feed);
   } catch(error) {
     console.warn(error);
   } finally {
-    pc.close();
+    poll.close();
   }
 }

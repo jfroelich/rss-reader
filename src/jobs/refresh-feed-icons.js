@@ -6,6 +6,8 @@ import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import {promiseEvery} from "/src/utils/promise-utils.js";
 
+// TODO: move into feed-store
+
 export default async function main(store, iconCache) {
   assert(store instanceof FeedStore);
   assert(iconCache instanceof FaviconCache);

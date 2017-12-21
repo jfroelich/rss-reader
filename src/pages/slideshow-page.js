@@ -2,8 +2,7 @@ import assert from "/src/assert/assert.js";
 import exportFeeds from "/src/backup/export-feeds.js";
 import OPMLImporter from "/src/backup/opml-importer.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import PollContext from "/src/jobs/poll/poll-context.js";
-import pollFeeds from "/src/jobs/poll/poll-feeds.js";
+import PollFeeds from "/src/jobs/poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
 import escapeHTML from "/src/utils/html/escape.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
@@ -664,7 +663,6 @@ function onSlideScroll(event) {
   scrollCallbackHandle = requestIdleCallback(onIdleCallback);
 }
 
-
 let refreshInProgress = false;
 async function refreshAnchorOnclick(event) {
   event.preventDefault();
@@ -676,19 +674,18 @@ async function refreshAnchorOnclick(event) {
   }
   refreshInProgress = true;
 
-  const pc = new PollContext();
-  pc.init();
-  pc.allowMeteredConnections = true;
-  pc.ignoreRecencyCheck = true;
-  pc.ignoreModifiedCheck = true;
+  const poll = new PollFeeds();
+  poll.init();
+  poll.ignoreRecencyCheck = true;
+  poll.ignoreModifiedCheck = true;
 
   try {
-    await pc.open();
-    await pollFeeds.call(pc);
+    await poll.open();
+    await poll.pollFeeds();
   } catch(error) {
     console.warn(error);
   } finally {
-    pc.close();
+    poll.close();
     dprintf('Re-enabling refresh button');
     refreshInProgress = false;// Always renable
   }

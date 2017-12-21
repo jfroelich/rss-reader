@@ -48,7 +48,7 @@ function isSmallImage(image) {
   }
 
   if(widthInt < 33 && heightInt < 33) {
-    console.debug('Small image detected', image.outerHTML);
+    // console.debug('Small image detected', image.outerHTML);
     return true;
   }
 
