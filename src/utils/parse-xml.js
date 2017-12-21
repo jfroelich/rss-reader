@@ -1,5 +1,4 @@
 import assert from "/src/assert/assert.js";
-import {ParseError} from "/src/operations/parse-operation.js";
 import {condenseWhitespace} from "/src/utils/string-utils.js";
 
 // TODO: profiling shows this is one of the slowest functions in the entire app. Maybe a tokenizer
@@ -22,7 +21,13 @@ export default function parseXML(xmlString) {
   if(errorElement) {
     const prettify = condenseWhitespace;
     const errorMessage = prettify(errorElement.textContent);
-    throw new ParseError(errorMessage);
+    throw new XMLParseError(errorMessage);
   }
   return document;
+}
+
+export class XMLParseError extends Error {
+  constructor(message) {
+    super(message || 'XML parse error');
+  }
 }

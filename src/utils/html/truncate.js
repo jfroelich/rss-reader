@@ -8,7 +8,7 @@ const ELLIPSIS = '\u2026';
 // @param htmlString {String}
 // @param position {Number} position after which to truncate
 // @param suffix {String} optional, appended after truncation, defaults to an ellipsis
-// @throws ParseError
+// @throws HTMLParseError
 export default function truncate(htmlString, position, suffix) {
   assert(isPosInt(position));
 

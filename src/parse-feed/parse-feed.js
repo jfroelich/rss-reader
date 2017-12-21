@@ -1,8 +1,14 @@
 import assert from "/src/assert/assert.js";
 import decodeEntities from "/src/utils/html/decode-entities.js";
-import {ParseError} from "/src/operations/parse-operation.js";
 import check from "/src/utils/check.js";
-import parseXML from "/src/utils/parse-xml.js";
+import parseXML, {XMLParseError} from "/src/utils/parse-xml.js";
+
+
+export class FeedParseError extends XMLParseError {
+  constructor(message) {
+    super(message || 'OPML parse error');
+  }
+}
 
 
 // TODO: create a FeedDescriptor-like object and return it instead of a basic object?
@@ -16,6 +22,9 @@ import parseXML from "/src/utils/parse-xml.js";
 // Parses the input string into a feed object. The feed object will always have a defined entries
 // array, although it may be zero length. Throws both checked and unchecked errors if the feed
 // is not well formed or something unexpected happened.
+// Throws XMLParseError if error parsing xml
+// Throws FeedParseError if xml is not a valid feed
+
 export function parseFeed(feedXMLString) {
   const xmlDocument = parseXML(feedXMLString);
   return unmarshallXML(xmlDocument);
@@ -27,10 +36,10 @@ function unmarshallXML(document) {
   const documentElement = document.documentElement;
   const documentElementName = getElementName(documentElement);
   const supportedNames = ['feed', 'rdf', 'rss'];
-  check(supportedNames.includes(documentElementName), ParseError,
+  check(supportedNames.includes(documentElementName), FeedParseError,
     'unsupported document element', documentElementName);
   const channelElement = findChannelElement(documentElement);
-  check(channelElement, ParseError, 'missing channel element');
+  check(channelElement, FeedParseError, 'missing channel element');
 
   const feed = {};
   feed.type = findFeedType(documentElement);
