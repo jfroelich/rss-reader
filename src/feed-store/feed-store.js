@@ -858,3 +858,37 @@ FeedStore.prototype.removeLostEntries = async function(limit) {
 function isLostEntry(entry) {
   return !Entry.hasURL(entry);
 }
+
+// Removes entries not linked to a feed from the database
+// @param store {FeedStore} an open FeedStore instance
+// @param limit {Number}
+FeedStore.prototype.removeOrphanedEntries = async function(limit) {
+  const feedIds = await this.getAllFeedIds();
+
+  function isOrphan(entry) {
+    const id = entry.feed;
+    return !Feed.isValidId(id) || !feedIds.includes(id);
+  }
+
+  const entries = await this.findEntries(isOrphan, limit);
+  console.debug('Found %s orphans', entries.length);
+  if(entries.length === 0) {
+    return;
+  }
+
+  const orphanIds = entries.map(entry => entry.id);
+  if(orphanIds.length < 1) {
+    return;
+  }
+
+  await this.removeEntries(orphanIds);
+
+  const CHANNEL_NAME = 'reader';
+  const channel = new BroadcastChannel(CHANNEL_NAME);
+  const message = {type: 'entry-deleted', id: undefined, reason: 'orphan'};
+  for(const id of orphanIds) {
+    message.id = id;
+    channel.postMessage(message);
+  }
+  channel.close();
+};

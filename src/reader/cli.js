@@ -2,7 +2,6 @@ import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import PollFeeds from "/src/jobs/poll/poll-feeds.js";
-import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // Command line interface module. This module does not export anything. Instead, it defines a
@@ -63,7 +62,7 @@ cli.removeOrphanedEntries = async function(limit) {
   const fs = new FeedStore();
   try {
     await fs.open();
-    await removeOrphanedEntries(fs, limit);
+    await fs.removeOrphanedEntries(limit);
   } finally {
     fs.close();
   }
