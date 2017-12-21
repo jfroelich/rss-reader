@@ -301,10 +301,6 @@ FaviconLookup.prototype.search = async function(document, baseURL) {
 
   const candidateURLStrings = this.findCandidateURLStrings(document);
   if(!candidateURLStrings.length) {
-
-    // TEMP
-    console.debug('No candidates found in document response for base url', baseURL.href);
-
     return;
   }
 
@@ -325,9 +321,6 @@ FaviconLookup.prototype.search = async function(document, baseURL) {
     return;
   }
 
-  // TEMP:
-  console.debug('candidates', canonicalURLs.map(u => u.href).join(','));
-
   // Remove duplicate urls
   const distinctURLStrings = [];
   const distinctURLs = [];
@@ -340,18 +333,11 @@ FaviconLookup.prototype.search = async function(document, baseURL) {
   canonicalURLs = distinctURLs;
 
   // Find the first url that exists. Requests are executed serially for now.
-
   for(const url of canonicalURLs) {
-    console.debug('Fetching image', url.href);
     const response = await this.fetchImage(url);
-
     if(this.isAcceptableImageResponse(response)) {
-      // console.debug('Fetch successful', url.href, response.responseURL);
       return response.responseURL;
-    } else {
-      // console.debug('Failed failed (response not acceptable)', url.href);
     }
-
   }
 };
 
