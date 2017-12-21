@@ -831,3 +831,30 @@ FeedStore.prototype.refreshFeedIcon = async function(feed, query) {
     console.warn('Unexpected state in refresh feed icons');
   }
 };
+
+// Removes lost entries from the database. An entry is lost if it is missing a url.
+// @param limit {Number} optional, if specified should be positive integer > 0, maximum number
+// of entries to lost entries to load from database
+FeedStore.prototype.removeLostEntries = async function(limit) {
+  const entries = await this.findEntries(isLostEntry, limit);
+  console.debug('Found %s lost entries', entries.length);
+  if(entries.length === 0) {
+    return;
+  }
+
+  const ids = entries.map(entry => entry.id);
+  await this.removeEntries(ids);
+
+  const CHANNEL_NAME = 'reader';
+  const channel = new BroadcastChannel(CHANNEL_NAME);
+  const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
+  for(const id of ids) {
+    message.id = id;
+    channel.postMessage(message);
+  }
+  channel.close();
+};
+
+function isLostEntry(entry) {
+  return !Entry.hasURL(entry);
+}

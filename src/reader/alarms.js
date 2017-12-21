@@ -3,7 +3,6 @@ import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import PollFeeds from "/src/jobs/poll/poll-feeds.js";
-import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 
 // Registers alarms in the extension that run various background jobs. Analogous to cron.
@@ -44,7 +43,7 @@ async function onWakeup(alarm) {
     const limit = 100;
     try {
       await fs.open();
-      await removeLostEntries(fs, limit);
+      await fs.removeLostEntries(limit);
     } catch(error) {
       console.warn(error);
     } finally {

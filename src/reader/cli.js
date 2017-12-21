@@ -2,7 +2,6 @@ import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import PollFeeds from "/src/jobs/poll/poll-feeds.js";
-import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
@@ -54,7 +53,7 @@ cli.removeLostEntries = async function(limit) {
   const fs = new FeedStore();
   try {
     await fs.open();
-    await removeLostEntries(fs, limit);
+    await fs.removeLostEntries(limit);
   } finally {
     fs.close();
   }
