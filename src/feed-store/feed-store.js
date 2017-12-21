@@ -789,63 +789,45 @@ FeedStore.prototype.refreshFeedIcons = async function(iconCache) {
   assert(this.isOpen());
   assert(iconCache.isOpen());
   const feeds = await this.findActiveFeeds();
-
   const query = new FaviconLookup();
-  query.cache = this.iconCache;
-
-  const context = {store: this, iconCache: iconCache, query: query};
-  const promises = feeds.map(updateFeedIcon, context);
+  query.cache = iconCache;
+  const promises = [];
+  for(const feed of feeds) {
+    promises.push(this.refreshFeedIcon(feed, query));
+  }
   await promiseEvery(promises);
 };
 
-async function updateFeedIcon(feed) {
+FeedStore.prototype.refreshFeedIcon = async function(feed, query) {
   assert(Feed.isFeed(feed));
   assert(Feed.hasURL(feed));
 
-  const prevIconURL = feed.faviconURLString;
   const url = Feed.createIconLookupURL(feed);
   let iconURL;
   try {
-    iconURL = await this.query.lookup(url);
+    iconURL = await query.lookup(url);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;
     }
   }
 
-  // This section is very explicit and redundant because the condensed version is confusing to read
-
-  // The feed had a favicon, and it changed to a different favicon
-  if(prevIconURL && iconURL && prevIconURL !== iconURL) {
-    await refreshIconPutFeed(this.store, iconURL, feed);
-    return;
-  }
-
-  // The feed had a favicon, and a favicon was found, and it did not change
-  if(prevIconURL && iconURL && prevIconURL === iconURL) {
-    return;
-  }
-
-  // The feed had a favicon, and no new favicon was found
-  if(prevIconURL && !iconURL) {
-    await refreshIconPutFeed(this.store, void prevIconURL, feed);
-    return;
-  }
-
-  // The feed did not have a favicon, and no new favicon was found
-  if(!prevIconURL && !iconURL) {
-    return;
-  }
-
-  // The feed did not have a favicon, and a new favicon was found
-  if(!prevIconURL && iconURL) {
-    await refreshIconPutFeed(this.store, iconURL, feed);
-    return;
-  }
-}
-
-function refreshIconPutFeed(store, urlString, feed) {
-  feed.faviconURLString = urlString;
+  const prevIconURL = feed.faviconURLString;
   feed.dateUpdated = new Date();
-  return store.putFeed(feed);
-}
+  if(prevIconURL && iconURL && prevIconURL !== iconURL) {
+    feed.faviconURLString = iconURL;
+    await this.putFeed(feed);
+  } else if(prevIconURL && iconURL && prevIconURL === iconURL) {
+    // noop
+  } else if(prevIconURL && !iconURL) {
+    feed.faviconURLString = void prevIconURL;
+    await this.putFeed(feed);
+  } else if(!prevIconURL && !iconURL) {
+    // noop
+  } else if(!prevIconURL && iconURL) {
+    feed.faviconURLString = iconURL;
+    await this.putFeed(feed);
+  } else {
+    console.warn('Unexpected state in refresh feed icons');
+  }
+};
