@@ -2,7 +2,6 @@ import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import PollFeeds from "/src/jobs/poll/poll-feeds.js";
-import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
@@ -19,7 +18,7 @@ cli.refreshIcons = async function() {
 
   try {
     await Promise.all(promises);
-    await refreshFeedIcons(fs, fc);
+    await fs.refreshFeedIcons(fc);
   } finally {
     fs.close();
     fc.close();

@@ -1,16 +1,19 @@
 import assert from "/src/assert/assert.js";
+import FaviconLookup from "/src/favicon/lookup.js";
 import * as Entry from "/src/feed-store/entry.js";
-import {InvalidStateError, NotFoundError} from "/src/feed-store/errors.js";
+import * as FeedStoreErrors from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import check from "/src/utils/check.js";
+import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
-import * as StringUtils from "/src/utils/string-utils.js";
 import replaceTags from "/src/utils/html/replace-tags.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
 import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
+import {promiseEvery} from "/src/utils/promise-utils.js";
 import sizeof from "/src/utils/sizeof.js";
+import * as StringUtils from "/src/utils/string-utils.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
 
 const DEBUG = false;
@@ -74,7 +77,7 @@ function onUpgradeNeeded(event) {
   if(event.oldVersion < 23) {
     // Delete the title index in feed store. It is no longer in use. Because it is no longer
     // created, and the db could be at any prior version, ensure that it exists before calling
-    // deleteIndex to avoid the NotFoundError deleteIndex throws when deleting a non-existent index.
+    // deleteIndex to avoid the FeedStoreErrors.NotFoundError deleteIndex throws when deleting a non-existent index.
 
     // @type {DOMStringList}
     const indices = feedStore.indexNames;
@@ -515,7 +518,7 @@ FeedStore.prototype.markEntryAsRead = async function(entryId) {
   assert(Entry.hasURL(entry));
   // TODO: I am not sure this check is strict enough. Technically the entry should always be
   // in the UNREAD state at this point.
-  check(entry.readState !== Entry.STATE_READ, InvalidStateError,
+  check(entry.readState !== Entry.STATE_READ, FeedStoreErrors.InvalidStateError,
     'Entry %d already in read state', entryId);
   const url = Entry.peekURL(entry);
   dprintf('Found entry to mark as read', entryId, url);
@@ -722,16 +725,14 @@ FeedStore.prototype.findArchivableEntries = function(predicate, limit) {
 // created), in milliseconds
 FeedStore.prototype.archiveEntries = async function(maxAgeMs, limit) {
   assert(this.isOpen());
-
-  const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
-
   if(typeof maxAgeMs === 'undefined') {
+    const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
     maxAgeMs = TWO_DAYS_MS;
   }
 
   assert(isPosInt(maxAgeMs));
-
   const currentDate = new Date();
+
   function isArchivable(entry) {
     const entryAgeMs = currentDate - entry.dateCreated;
     return entryAgeMs > maxAgeMs;
@@ -747,7 +748,7 @@ FeedStore.prototype.archiveEntries = async function(maxAgeMs, limit) {
   const channel = new BroadcastChannel(CHANNEL_NAME);
   const promises = [];
   for(const entry of entries) {
-    promises.push(archiveEntry(entry, channel));
+    promises.push(this.archiveEntry(entry, channel));
   }
 
   try {
@@ -759,7 +760,7 @@ FeedStore.prototype.archiveEntries = async function(maxAgeMs, limit) {
   console.log('Compacted %s entries', entries.length);
 };
 
-async function archiveEntry(entry, channel) {
+FeedStore.prototype.archiveEntry = async function(entry, channel) {
   const beforeSize = sizeof(entry);
   const compacted = compactEntry(entry);
   compacted.dateUpdated = new Date();
@@ -769,17 +770,82 @@ async function archiveEntry(entry, channel) {
   const message = {type: 'entry-archived', id: compacted.id};
   channel.postMessage(message);
   return compacted;
-}
+};
 
 function compactEntry(entry) {
-  const ce = Entry.createEntry();
-  ce.dateCreated = entry.dateCreated;
-  ce.dateRead = entry.dateRead;
-  ce.feed = entry.feed;
-  ce.id = entry.id;
-  ce.readState = entry.readState;
-  ce.urls = entry.urls;
-  ce.archiveState = Entry.STATE_ARCHIVED;
-  ce.dateArchived = new Date();
-  return ce;
+  const compactedEntry = Entry.createEntry();
+  compactedEntry.dateCreated = entry.dateCreated;
+  compactedEntry.dateRead = entry.dateRead;
+  compactedEntry.feed = entry.feed;
+  compactedEntry.id = entry.id;
+  compactedEntry.readState = entry.readState;
+  compactedEntry.urls = entry.urls;
+  compactedEntry.archiveState = Entry.STATE_ARCHIVED;
+  compactedEntry.dateArchived = new Date();
+  return compactedEntry;
+}
+
+FeedStore.prototype.refreshFeedIcons = async function(iconCache) {
+  assert(this.isOpen());
+  assert(iconCache.isOpen());
+  const feeds = await this.findActiveFeeds();
+
+  const query = new FaviconLookup();
+  query.cache = this.iconCache;
+
+  const context = {store: this, iconCache: iconCache, query: query};
+  const promises = feeds.map(updateFeedIcon, context);
+  await promiseEvery(promises);
+};
+
+async function updateFeedIcon(feed) {
+  assert(Feed.isFeed(feed));
+  assert(Feed.hasURL(feed));
+
+  const prevIconURL = feed.faviconURLString;
+  const url = Feed.createIconLookupURL(feed);
+  let iconURL;
+  try {
+    iconURL = await this.query.lookup(url);
+  } catch(error) {
+    if(isUncheckedError(error)) {
+      throw error;
+    }
+  }
+
+  // This section is very explicit and redundant because the condensed version is confusing to read
+
+  // The feed had a favicon, and it changed to a different favicon
+  if(prevIconURL && iconURL && prevIconURL !== iconURL) {
+    await refreshIconPutFeed(this.store, iconURL, feed);
+    return;
+  }
+
+  // The feed had a favicon, and a favicon was found, and it did not change
+  if(prevIconURL && iconURL && prevIconURL === iconURL) {
+    return;
+  }
+
+  // The feed had a favicon, and no new favicon was found
+  if(prevIconURL && !iconURL) {
+    await refreshIconPutFeed(this.store, void prevIconURL, feed);
+    return;
+  }
+
+  // The feed did not have a favicon, and no new favicon was found
+  if(!prevIconURL && !iconURL) {
+    return;
+  }
+
+  // The feed did not have a favicon, and a new favicon was found
+  if(!prevIconURL && iconURL) {
+    await refreshIconPutFeed(this.store, iconURL, feed);
+    return;
+  }
+}
+
+function refreshIconPutFeed(store, urlString, feed) {
+  feed.faviconURLString = urlString;
+  feed.dateUpdated = new Date();
+  return store.putFeed(feed);
 }

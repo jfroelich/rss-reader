@@ -3,7 +3,6 @@ import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import PollFeeds from "/src/jobs/poll/poll-feeds.js";
-import refreshFeedIcons from "/src/jobs/refresh-feed-icons.js";
 import removeLostEntries from "/src/jobs/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/jobs/remove-orphaned-entries.js";
 
@@ -72,7 +71,7 @@ async function onWakeup(alarm) {
     const openPromises = [fs.open(), fc.open()];
     try {
       await Promise.all(openPromises);
-      await refreshFeedIcons(fs, fc);
+      await fs.refreshFeedIcons(fc);
     } catch(error) {
       console.warn(error);
     } finally {
