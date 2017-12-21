@@ -1,13 +1,13 @@
 import assert from "/src/assert/assert.js";
 import exportFeeds from "/src/backup/export-feeds.js";
 import OPMLImporter from "/src/backup/opml-importer.js";
-import FeedStore from "/src/feed-store/feed-store.js";
-import PollFeeds from "/src/jobs/poll/poll-feeds.js";
+import PollFeeds from "/src/feed-poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
-import escapeHTML from "/src/utils/html/escape.js";
-import htmlTruncate from "/src/utils/html/truncate.js";
+import FeedStore from "/src/feed-store/feed-store.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
 import {openTab} from "/src/platform/platform.js";
+import escapeHTML from "/src/utils/html/escape.js";
+import htmlTruncate from "/src/utils/html/truncate.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";

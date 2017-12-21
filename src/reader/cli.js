@@ -1,7 +1,7 @@
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import PollFeeds from "/src/jobs/poll/poll-feeds.js";
+import PollFeeds from "/src/feed-poll/poll-feeds.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // Command line interface module. This module does not export anything. Instead, it defines a

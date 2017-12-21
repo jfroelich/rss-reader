@@ -1,8 +1,8 @@
 import {queryIdleState} from "/src/platform/platform.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
+import PollFeeds from "/src/feed-poll/poll-feeds.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import PollFeeds from "/src/jobs/poll/poll-feeds.js";
 
 // Registers alarms in the extension that run various background jobs. Analogous to cron.
 
