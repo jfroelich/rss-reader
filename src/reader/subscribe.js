@@ -209,9 +209,10 @@ async function deferredPollFeed(feed) {
   // TODO: should this actually throw instead of trapping error? But it is forked and caller
   // already returned, so what happens?
 
+  const batched = false;
   try {
     await poll.open();
-    await poll.pollFeed(feed);
+    await poll.pollFeed(feed, batched);
   } catch(error) {
     console.warn(error);
   } finally {

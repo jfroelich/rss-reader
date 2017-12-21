@@ -9,18 +9,17 @@ import {OfflineError} from "/src/fetch/errors.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
-import sniffIsBinaryURL from "/src/jobs/poll/sniff.js";
+import isBinaryURL from "/src/jobs/poll/sniff.js";
 import rewriteURL from "/src/jobs/poll/rewrite-url.js";
 import {TimeoutError} from "/src/operations/timed-operation.js";
-import {showNotification} from "/src/platform/platform.js";
+import * as Platform from "/src/platform/platform.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import check from "/src/utils/check.js";
 import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
-import {promiseEvery} from "/src/utils/promise-utils.js";
-import {setURLHrefProperty} from "/src/utils/url-utils.js";
-import {isValidURLString} from "/src/utils/url-string-utils.js";
+import * as PromiseUtils from "/src/utils/promise-utils.js";
+import * as URLUtils from "/src/utils/url-utils.js";
 
 // TODO: think of a better name for the class
 
@@ -33,11 +32,11 @@ export default function PollFeeds() {
   this.fetchFeedTimeoutMs = 5000;
   this.fetchHTMLTimeoutMs = 5000;
   this.fetchImageTimeoutMs = 3000;
+  this.deactivationThreshold = 10;
   this.extendedFeedTypes = [
     'application/octet-stream',
     'text/html'
   ];
-  this.batchMode = false;
   this.channel = null;
 }
 
@@ -75,20 +74,14 @@ PollFeeds.prototype.pollFeeds = async function() {
   assert(this.channel instanceof BroadcastChannel);
 
   const feeds = await this.feedStore.findActiveFeeds();
-
-  // TODO: this should be param to pollFeed not a property
-  // TODO: rename to batched
-  this.batchMode = true;
-
-  const promises = feeds.map(this.pollFeed, this);
-  const pollFeedResolutions = await promiseEvery(promises);
-
-  let totalNumEntriesAdded = 0;
-  for(const res of pollFeedResolutions) {
-    if(res) {
-      totalNumEntriesAdded += res;
-    }
+  const batched = true;
+  const promises = [];
+  for(const feed of feeds) {
+    promises.push(this.pollFeed(feed, batched));
   }
+  const resolutions = await PromiseUtils.promiseEvery(promises);
+  const truthyResolutions = resolutions.filter(r => r);
+  const totalNumEntriesAdded = truthyResolutions.length;
 
   if(totalNumEntriesAdded > 0) {
     await updateBadgeText(this.feedStore);
@@ -97,7 +90,7 @@ PollFeeds.prototype.pollFeeds = async function() {
   if(totalNumEntriesAdded > 0) {
     const title = 'Added articles';
     const message = 'Added articles';
-    showNotification(title, message);
+    Platform.showNotification(title, message);
   }
 };
 
@@ -106,16 +99,19 @@ PollFeeds.prototype.pollFeeds = async function() {
 // parameter, and loaded the feed here. That would guarantee the feed it works with is more trusted
 // regarding the locally loaded issue.
 
-// TODO: make this an instance property
-const FEED_ERROR_COUNT_DEACTIVATION_THRESHOLD = 10;
-
-PollFeeds.prototype.pollFeed = async function(feed) {
+// @param batched {Boolean} optional, if true then this does not send notifications or update
+// the badge unread count
+PollFeeds.prototype.pollFeed = async function(feed, batched) {
   assert(this.feedStore.isOpen());
   assert(Feed.isFeed(feed));
   assert(Feed.hasURL(feed));
 
   const url = Feed.peekURL(feed);
   console.log('Polling feed', url);
+
+  if(!feed.active) {
+    return 0;
+  }
 
   if(this.didPollFeedRecently(feed)) {
     return 0;
@@ -130,16 +126,18 @@ PollFeeds.prototype.pollFeed = async function(feed) {
   }
 
   assert(typeof response === 'object');
-
   const errorCountChanged = handleFetchFeedSuccess(feed);
 
-  if(this.isUnmodifiedFeed(feed, response)) {
+  if(this.isUnmodifiedFeed(feed.dateLastModified, response.lastModifiedDate)) {
     if(errorCountChanged) {
       feed.dateUpdated = new Date();
       await this.feedStore.putFeed(feed);
     }
     return 0;
   }
+
+  // TODO: if fetch is successful, error count is decremented. But error handlers below all assume
+  // it isn't. Therefore, when an error occurs, this decrements then increments, which is dumb.
 
   let feedXML;
   try {
@@ -166,17 +164,18 @@ PollFeeds.prototype.pollFeed = async function(feed) {
 
   const entries = parseResult.entries;
   cascadeFeedPropertiesToEntries(storableFeed, entries);
-  const numEntriesAdded = await this.pollEntries(storableFeed, entries);
 
-  if(!this.batchMode && numEntriesAdded > 0) {
+  const promises = entries.map(this.pollEntry, this);
+  const entryIds = await PromiseUtils.promiseEvery(promises);
+  const numEntriesAdded = entryIds.filter(id => id > 0).length;
+
+  if(!batched && numEntriesAdded > 0) {
     await updateBadgeText(this.feedStore);
-  }
 
-  if(!this.batchMode && numEntriesAdded > 0) {
     // TODO: use more specific title and message given that this is about a feed
     const title = 'Added articles for feed';
     const message = 'Added articles for feed';
-    showNotification(title, message);
+    Platform.showNotification(title, message);
   }
 
   return numEntriesAdded;
@@ -237,14 +236,14 @@ async function handlePollFeedError(error, store, feed, callCategory) {
     throw error;
   }
 
-  const priorErrorCount = feed.errorCount;
   if(Number.isInteger(feed.errorCount)) {
     feed.errorCount++;
   } else {
     feed.errorCount = 1;
   }
 
-  if(feed.errorCount > FEED_ERROR_COUNT_DEACTIVATION_THRESHOLD) {
+  assert(Number.isInteger(this.deactivationThreshold));
+  if(feed.errorCount > this.deactivationThreshold) {
     console.debug('Error count exceeded threshold, deactivating feed', feed.id, Feed.peekURL(feed));
     feed.active = false;
     if(typeof callCategory !== 'undefined') {
@@ -264,70 +263,26 @@ async function handlePollFeedError(error, store, feed, callCategory) {
   throw error;
 }
 
-PollFeeds.prototype.isUnmodifiedFeed = function(feed, response) {
-  if(this.ignoreModifiedCheck) {
+PollFeeds.prototype.isUnmodifiedFeed = function(feedDate, responseDate) {
+  if(this.ignoreModifiedCheck || !feed.dateUpdated) {
     return false;
   }
-
-  // Pretend the feed is modified
-  if(!feed.dateUpdated) {
-    return false;
-  }
-
-  if(!feed.dateLastModified) {
-    return false;
-  }
-
-  if(!response.lastModifiedDate) {
-    return false;
-  }
-
-  // Otherwise, if the two dates match then the feed was not modified.
-  if(feed.dateLastModified.getTime() === response.lastModifiedDate.getTime()) {
-    //console.debug('Feed not modified', Feed.peekURL(feed), feed.dateLastModified,
-    //  response.lastModifiedDate);
-    return true;
-  }
-
-  return false;
+  return feedDate && responseDate && feedDate.getTime() === responseDate.getTime();
 };
 
 function cascadeFeedPropertiesToEntries(feed, entries) {
-  assert(Feed.isValidId(feed.id));
-
   for(const entry of entries) {
     entry.feed = feed.id;
     entry.feedTitle = feed.title;
-  }
+    entry.faviconURLString = feed.faviconURLString;
 
-  if(feed.datePublished) {
-    for(const entry of entries) {
-      if(!entry.datePublished) {
-        entry.datePublished = feed.datePublished;
-      }
+    if(feed.datePublished && !entry.datePublished) {
+      entry.datePublished = feed.datePublished;
     }
   }
 }
 
-PollFeeds.prototype.pollEntries = async function(feed, entries) {
-  const promises = [];
-  for(const entry of entries) {
-    promises.push(this.pollEntry(entry, feed.faviconURLString));
-  }
-
-  const resolutions = await promiseEvery(promises);
-
-  let numEntriesAdded = 0;
-  for(const resolution of resolutions) {
-    if(resolution) {
-      numEntriesAdded++;
-    }
-  }
-
-  return numEntriesAdded;
-};
-
-PollFeeds.prototype.pollEntry = async function(entry, fallbackFaviconURLString) {
+PollFeeds.prototype.pollEntry = async function(entry) {
   assert(this.feedStore.isOpen());
   assert(this.iconCache.isOpen());
   assert(Entry.isEntry(entry));
@@ -341,10 +296,10 @@ PollFeeds.prototype.pollEntry = async function(entry, fallbackFaviconURLString) 
   const rewrittenURL = rewriteURL(url.href);
   if(rewrittenURL && url.href !== rewrittenURL) {
     Entry.appendURL(entry, rewrittenURL);
-    setURLHrefProperty(url, rewrittenURL);
+    URLUtils.setURLHrefProperty(url, rewrittenURL);
   }
 
-  if(!isHTTPURL(url) || isInaccessibleContentURL(url) || sniffIsBinaryURL(url)) {
+  if(!isHTTPURL(url) || isInaccessibleContentURL(url) || isBinaryURL(url)) {
     return;
   }
 
@@ -353,23 +308,13 @@ PollFeeds.prototype.pollEntry = async function(entry, fallbackFaviconURLString) 
   }
 
   let entryContent = entry.content;
-
-  let response;
-  try {
-    response = await fetchHTML(url, this.fetchHTMLTimeoutMs);
-  } catch(error) {
-    if(isUncheckedError(error)) {
-      throw error;
-    } else {
-      // Ignore, not fatal, will fallback to local content
-    }
-  }
+  const response = await this.fetchEntryHTML(url);
 
   if(response) {
     if(response.redirected) {
       const responseURL = new URL(response.responseURL);
       if(!isHTTPURL(responseURL) || isInaccessibleContentURL(responseURL) ||
-        sniffIsBinaryURL(responseURL)) {
+        isBinaryURL(responseURL)) {
         return;
       }
 
@@ -380,41 +325,15 @@ PollFeeds.prototype.pollEntry = async function(entry, fallbackFaviconURLString) 
       Entry.appendURL(entry, response.responseURL);
 
       // TODO: attempt to rewrite the redirected url as well?
-      setURLHrefProperty(url, response.responseURL);
+      URLUtils.setURLHrefProperty(url, response.responseURL);
     }
 
     // Use the full text of the response in place of the in-feed content
     entryContent = await response.text();
   }
 
-  let entryDocument;
-  try {
-    entryDocument = parseHTML(entryContent);
-  } catch(error) {
-    if(isUncheckedError(error)) {
-      throw error;
-    } else {
-      // Ignore, not fatal
-    }
-  }
-
-  // Lookup and set the entry's favicon
-  let iconURLString;
-  const query = new FaviconLookup();
-  query.cache = this.iconCache;
-  query.skipURLFetch = true;
-  // Only use the document for lookup if it was fetched
-  const lookupDocument = response ? entryDocument : undefined;
-  try {
-    iconURLString = await query.lookup(url, lookupDocument);
-  } catch(error) {
-    if(isUncheckedError(error)) {
-      throw error;
-    } else {
-      // Ignore, not fatal
-    }
-  }
-  entry.faviconURLString = iconURLString || fallbackFaviconURLString;
+  const entryDocument = parseEntryHTML(entryContent);
+  await this.setEntryFavicon(entry, url, response ? entryDocument : undefined);
 
   // TODO: if entry.title is undefined, try and extract it from entryDocument title element
   // For that matter, the whole 'set-entry-title' component should be abstracted into its own
@@ -428,9 +347,49 @@ PollFeeds.prototype.pollEntry = async function(entry, fallbackFaviconURLString) 
     entry.content = 'Empty or malformed content';
   }
 
-  const newEntryId = await this.feedStore.addEntry(entry, this.channel);
-  return newEntryId;
+  // Return the result of addEntry, which is the new entry's id
+  return await this.feedStore.addEntry(entry, this.channel);
+};
+
+// Attempts to fetch the entry's html. May return undefined.
+PollFeeds.prototype.fetchEntryHTML = async function(url) {
+  let response;
+  try {
+    response = await fetchHTML(url, this.fetchHTMLTimeoutMs);
+  } catch(error) {
+    if(isUncheckedError(error)) {
+      throw error;
+    }
+  }
+  return response;
+};
+
+// Attempts to parse the fetched html. May return undefined
+function parseEntryHTML(html) {
+  try {
+    return parseHTML(html);
+  } catch(error) {
+    if(isUncheckedError(error)) {
+      throw error;
+    }
+  }
 }
+
+PollFeeds.prototype.setEntryFavicon = async function(entry, url, document) {
+  const query = new FaviconLookup();
+  query.cache = this.iconCache;
+  query.skipURLFetch = true;
+  try {
+    const iconURLString = await query.lookup(url, document);
+    if(iconURLString) {
+      entry.faviconURLString = iconURLString;
+    }
+  } catch(error) {
+    if(isUncheckedError(error)) {
+      throw error;
+    }
+  }
+};
 
 function isInaccessibleContentURL(url) {
   for(const desc of Config.INACCESSIBLE_CONTENT_DESCRIPTORS) {
