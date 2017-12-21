@@ -7,7 +7,7 @@ import {isValidURLString} from "/src/utils/url-string-utils.js";
 // TODO: try and determine if an image with a src attribute is using a placeholder image in the
 // src attribute and a full image from another attribute
 
-const DEBUG = true;
+const DEBUG = false;
 
 const kLazyAttributeNames = [
   'load-src',
