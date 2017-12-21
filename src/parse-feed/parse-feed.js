@@ -3,7 +3,7 @@ import decodeEntities from "/src/utils/html/decode-entities.js";
 import {ParseError} from "/src/operations/parse-operation.js";
 import check from "/src/utils/check.js";
 import parseXML from "/src/xml/parse.js";
-import {getElementName} from "/src/xml/utils.js";
+
 
 // TODO: create a FeedDescriptor-like object and return it instead of a basic object?
 // TODO: findChildElementText should not normalize, this should return values as is, and move
@@ -328,4 +328,8 @@ function findChildElementText(parentElement, elementName) {
       return text.trim();
     }
   }
+}
+
+function getElementName(element) {
+  return element.localName.toLowerCase();
 }

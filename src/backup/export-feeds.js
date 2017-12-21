@@ -1,8 +1,6 @@
 import assert from "/src/assert/assert.js";
 import * as Feed from "/src/feed-store/feed.js";
 import * as OPMLDocument from "/src/opml/document.js";
-import * as MimeUtils from "/src/utils/mime-utils.js";
-
 
 // TODO: rename to something like exportOPMLBlob or exportOPMLFile so that it is more consistent
 // in representing the inverse of importOPMLFiles
@@ -74,9 +72,7 @@ function outlineFromFeed(feed) {
 function xmlToBlob(doc) {
   assert(doc instanceof Document);
   const xmlString = xmlToString(doc);
-  const parts = [xmlString];
-  const options = {type: MimeUtils.MIME_TYPE_XML};
-  return new Blob(parts, options);
+  return new Blob([xmlString], {type: 'application/xml'});
 }
 
 function xmlToString(doc) {
