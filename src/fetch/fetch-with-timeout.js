@@ -1,8 +1,9 @@
 import assert from "/src/assert/assert.js";
 import fetchWithTranslatedErrors from "/src/fetch/fetch-with-translated-errors.js";
-import {TimeoutError} from "/src/operations/timed-operation.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import {setTimeoutPromise} from "/src/utils/promise-utils.js";
+import * PromiseUtils from "/src/utils/promise-utils.js";
+import TimeoutError from "/src/utils/timeout-error.js";
+
 
 // Call fetchWithTranslatedErrors, and race the fetch against a timeout. Throws an error if a
 // timeout occurs, or if a fetchWithTranslatedErrors error occurs.
@@ -19,7 +20,7 @@ export default async function fetchWithTimeout(url, options, timeoutMs) {
     return fetchPromise;
   }
 
-  const [timeoutId, timeoutPromise] = setTimeoutPromise(timeoutMs);
+  const [timeoutId, timeoutPromise] = PromiseUtils.setTimeoutPromise(timeoutMs);
   const contestants = [fetchPromise, timeoutPromise];
   const response = await Promise.race(contestants);
   if(response) {

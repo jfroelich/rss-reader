@@ -1,10 +1,9 @@
 import assert from "/src/assert/assert.js";
 import {FetchError} from "/src/fetch/errors.js";
 import fetchWithTimeout from "/src/fetch/fetch-with-timeout.js";
-import isAllowedURL from "/src/fetch/fetch-policy.js";
+import isAllowedURL, {PermissionsError} from "/src/fetch/fetch-policy.js";
 import * as FetchUtils from "/src/fetch/utils.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
-import {PermissionsError} from "/src/operations/restricted-operation.js";
 import check from "/src/utils/check.js";
 
 // TODO: this should be refactored to use fetchInternal. But I need to calculate content length.

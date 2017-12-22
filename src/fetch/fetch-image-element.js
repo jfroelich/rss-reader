@@ -1,11 +1,10 @@
 import assert from "/src/assert/assert.js";
 import {FetchError} from "/src/fetch/errors.js";
-import isAllowedURL from "/src/fetch/fetch-policy.js";
-import {PermissionsError} from "/src/operations/restricted-operation.js";
-import {TimeoutError} from "/src/operations/timed-operation.js";
-import {setTimeoutPromise} from "/src/utils/promise-utils.js";
+import isAllowedURL, {PermissionsError} from "/src/fetch/fetch-policy.js";
 import check from "/src/utils/check.js";
 import isPosInt from "/src/utils/is-pos-int.js";
+import * as PromiseUtils from "/src/utils/promise-utils.js";
+import TimeoutError from "/src/utils/timeout-error.js";
 
 // TODO: use the fetch API to avoid cookies
 // TODO: for consistency with other fetch calls, and to avoid the need to do it here, this should
@@ -58,7 +57,7 @@ export default async function fetchImageElement(url, timeoutMs) {
     return fetchPromise;
   }
 
-  [timerId, timeoutPromise] = setTimeoutPromise(timeoutMs);
+  [timerId, timeoutPromise] = PromiseUtils.setTimeoutPromise(timeoutMs);
   const contestants = [fetchPromise, timeoutPromise];
   const image = await Promise.race(contestants);
   if(image) {

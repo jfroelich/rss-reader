@@ -11,7 +11,7 @@ import {OfflineError} from "/src/fetch/errors.js";
 import fetchFeed from "/src/fetch/fetch-feed.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
-import {TimeoutError} from "/src/operations/timed-operation.js";
+import TimeoutError from "/src/utils/timeout-error.js";
 import * as Platform from "/src/platform/platform.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";

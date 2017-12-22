@@ -61,3 +61,11 @@ export default function isAllowedURL(url) {
 
   return true;
 }
+
+// TODO: choose a better name, like PolicyError or something
+
+export class PermissionsError extends Error {
+  constructor(message) {
+    super(message || 'Not permitted');
+  }
+}

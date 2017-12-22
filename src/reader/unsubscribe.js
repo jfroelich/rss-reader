@@ -3,6 +3,8 @@ import FeedStore from "/src/feed-store/feed-store.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as Feed from "/src/feed-store/feed.js";
 
+// TODO: channel should not be optional
+
 // Remove a feed and its entries from the database and notify the UI
 // @param feedId {Number} id of feed to unsubscribe
 // @param store {FeedStore} an open FeedStore instance

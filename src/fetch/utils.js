@@ -1,8 +1,7 @@
 import assert from "/src/assert/assert.js";
 import {FetchError, NetworkError, OfflineError} from "/src/fetch/errors.js";
-import isAllowedURL from "/src/fetch/fetch-policy.js";
+import isAllowedURL, {PermissionsError} from "/src/fetch/fetch-policy.js";
 import fetchWithTimeout from "/src/fetch/fetch-with-timeout.js";
-import {PermissionsError} from "/src/operations/restricted-operation.js";
 import {compareURLsWithoutHash} from "/src/utils/url-utils.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
 import check from "/src/utils/check.js";
