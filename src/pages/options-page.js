@@ -5,7 +5,7 @@ import FeedStore from "/src/feed-store/feed-store.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
 import * as Platform from "/src/platform/platform.js";
-import * as Subscriber from "/src/reader/subscribe.js";
+import Subscribe from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
@@ -314,7 +314,7 @@ async function subscribeFormOnsubmit(event) {
     return false;
   }
 
-  let url = null;
+  let url;
   try {
     url = new URL(queryString);
   } catch(exception) {
@@ -323,45 +323,30 @@ async function subscribeFormOnsubmit(event) {
     return false;
   }
 
-  // Reset the input
   queryElement.value = '';
-
   subscriptionMonitorShow();
-
-  // This is safe because it is coming from the parsed url and not directly from user input, and
-  // would have failed earlier.
   subscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
 
-  // Note this uses create to create the feed object, and does not try to create a simple
-  // object, to allow magic to happen
-  const feed = Feed.create();
-
-  Feed.appendURL(feed, url.href);
-
-  let subscribedFeed;
-
-  // TODO: show a visual error message in event of an error
-  const subContext = new Subscriber.Context();
-  subContext.fetchFeedTimeoutMs = 2000;
-
-  // This is false by default but I want to clearly communicate intent. When false, subscribe will
-  // poll the feed's entries as well.
-  subContext.concurrent = false;
-
+  const subscribe = new Subscribe();
+  subscribe.init();
+  subscribe.fetchFeedTimeoutMs = 2000;
+  subscribe.concurrent = false;
+  let feed;
   try {
-    await subContext.connect();
-    subscribedFeed = await Subscriber.subscribe.call(subContext, feed);
+    await subscribe.connect();
+    feed = await subscribe.subscribe(url);
   } catch(error) {
+    // TODO: show a visual error message in event of an error
     console.warn(error);
     subscriptionMonitorHide();
     return;
   } finally {
-    subContext.close();
+    subscribe.close();
   }
 
-  assert(subscribedFeed);
-  feedListAppendFeed(subscribedFeed);
-  const feedURL = Feed.peekURL(subscribedFeed);
+  assert(feed);
+  feedListAppendFeed(feed);
+  const feedURL = Feed.peekURL(feed);
 
   // This is safe. feedURL comes from a string that has undergone deserialization into a URL object
   // and back to a string. Unsafe user input would have triggered a parsing error.

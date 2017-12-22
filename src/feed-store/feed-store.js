@@ -321,7 +321,6 @@ function isActiveFeed(feed) {
   return feed.active === true;
 }
 
-
 FeedStore.prototype.findEntries = function(predicate, limit) {
   return new Promise((resolve, reject) => {
     assert(this.isOpen());
@@ -442,6 +441,12 @@ FeedStore.prototype.findFeedIdByURL = function(urlString) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+};
+
+FeedStore.prototype.containsFeedWithURL = async function(url) {
+  assert(url instanceof URL);
+  const id = this.findFeedIdByURL(url.href);
+  return Feed.isValidId(id);
 };
 
 // Loads entries from the database that are for viewing

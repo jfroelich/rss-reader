@@ -5,7 +5,7 @@ import FeedStore from "/src/feed-store/feed-store.js";
 import * as OPMLDocument from "/src/opml/document.js";
 import * as OPMLOutline from "/src/opml/outline.js";
 import parseOPML from "/src/opml/parse.js";
-import * as Subscriber from "/src/reader/subscribe.js";
+import Subscribe from "/src/reader/subscribe.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 
@@ -88,17 +88,19 @@ OPMLImporter.prototype.importFile = async function(file) {
   console.debug('Found %d distinct outlines in file', uniqueOutlines.length, file.name);
   uniqueOutlines.forEach(OPMLOutline.normalizeHTMLURL);
 
-  const subscribeContext = new Subscriber.Context();
-  subscribeContext.feedStore = this.feedStore;
-  subscribeContext.iconCache = this.iconCache;
-  subscribeContext.fetchFeedTimeoutMs = this.fetchFeedTimeoutMs;
-  subscribeContext.notify = false;
-
+  const subscribe = new Subscribe();
+  subscribe.fetchFeedTimeoutMs = this.fetchFeedTimeoutMs;
+  subscribe.notify = false;
   // Signal to subscribe that it should not attempt to poll the feed's entries
-  subscribeContext.concurrent = true;
+  subscribe.concurrent = true;
+
+  // Bypass Subscribe.prototype.init, hard wire the connections
+  subscribe.feedStore = this.feedStore;
+  subscribe.iconCache = this.iconCache;
 
   const feeds = uniqueOutlines.map(outlineToFeed);
-  const subscribePromises = feeds.map(Subscriber.subscribe, subscribeContext);
+  const feedURLs = feeds.map(feed => new URL(Feed.peekURL(feed)));
+  const subscribePromises = feedURLs.map(subscribe.subscribe, subscribe);
   const subscribeResults = await PromiseUtils.promiseEvery(subscribePromises);
 
   let subCount = 0;
