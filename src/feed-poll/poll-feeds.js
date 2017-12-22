@@ -84,7 +84,7 @@ PollFeeds.prototype.pollFeeds = async function() {
   const totalNumEntriesAdded = truthyResolutions.length;
 
   if(totalNumEntriesAdded > 0) {
-    await updateBadgeText(this.feedStore);
+    updateBadgeText();
   }
 
   if(totalNumEntriesAdded > 0) {
@@ -170,7 +170,7 @@ PollFeeds.prototype.pollFeed = async function(feed, batched) {
   const numEntriesAdded = entryIds.filter(id => id > 0).length;
 
   if(!batched && numEntriesAdded > 0) {
-    await updateBadgeText(this.feedStore);
+    updateBadgeText();
 
     // TODO: use more specific title and message given that this is about a feed
     const title = 'Added articles for feed';

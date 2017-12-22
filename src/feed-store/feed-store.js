@@ -532,7 +532,9 @@ FeedStore.prototype.markEntryAsRead = async function(entryId) {
   entry.dateUpdated = new Date();
   await this.putEntry(entry);
   dprintf('Marked entry as read', entryId, url);
-  await updateBadgeText(this);
+
+  // TODO: This is bad, a circular dependency
+  updateBadgeText();
 };
 
 FeedStore.prototype.putEntry = function(entry) {

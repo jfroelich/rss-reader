@@ -14,16 +14,8 @@ import updateBadgeText from "/src/reader/update-badge-text.js";
 // Top level async is not allowed in modules, at least not right now. This helper function exists
 // to allow for the await, and to allow for finally to work given that some functions throw
 // assertion errors outside of returned promises.
-async function initBadgeText() {
-  const fs = new FeedStore();
-  try {
-    await fs.open();
-    await updateBadgeText(fs);
-  } catch(error) {
-    console.warn(error);
-  } finally {
-    fs.close();
-  }
+function initBadgeText() {
+  return updateBadgeText().catch(console.warn);
 }
 
 async function onInstalled(event) {
