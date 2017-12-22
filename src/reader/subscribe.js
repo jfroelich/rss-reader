@@ -15,9 +15,6 @@ import {setTimeoutPromise} from "/src/utils/promise-utils.js";
 import {setURLHrefProperty} from "/src/utils/url-utils.js";
 
 // Module for subscribing to a new feed
-// TODO: both subscribe and pollFeed have extremely similar functionality. Consider that I should
-// be using a better abstraction here. Perhaps a single function with the right arguments can
-// satisfy both cases and therefore simplify usage and reduce code.
 // TODO: Context is silly, just use an object
 
 

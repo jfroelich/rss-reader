@@ -1,13 +1,13 @@
 import assert from "/src/assert/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
+import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as OPMLDocument from "/src/opml/document.js";
 import * as OPMLOutline from "/src/opml/outline.js";
 import parseOPML from "/src/opml/parse.js";
 import * as Subscriber from "/src/reader/subscribe.js";
-import * as Feed from "/src/feed-store/feed.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
-import {promiseEvery} from "/src/utils/promise-utils.js";
+import * as PromiseUtils from "/src/utils/promise-utils.js";
 
 export default function OPMLImporter() {
   this.feedStore = null;
@@ -55,7 +55,7 @@ OPMLImporter.prototype.import = function(files) {
   // Clone to array due to issues with map on FileList
   const filesArray = [...files];
   const promises = filesArray.map(this.importFile, this);
-  return promiseEvery(promises);
+  return PromiseUtils.promiseEvery(promises);
 };
 
 OPMLImporter.prototype.importFile = async function(file) {
@@ -99,7 +99,7 @@ OPMLImporter.prototype.importFile = async function(file) {
 
   const feeds = uniqueOutlines.map(outlineToFeed);
   const subscribePromises = feeds.map(Subscriber.subscribe, subscribeContext);
-  const subscribeResults = await promiseEvery(subscribePromises);
+  const subscribeResults = await PromiseUtils.promiseEvery(subscribePromises);
 
   let subCount = 0;
   for(const result of subscribeResults) {

@@ -11,6 +11,7 @@ export default class FaviconCache {
   }
 }
 
+// TODO: this should be defined on prototype?
 // 30 days in ms, used by both lookup and compact to determine whether a cache entry expired
 FaviconCache.MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
