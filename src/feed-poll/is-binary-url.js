@@ -8,8 +8,13 @@ export default function isBinaryURL(url) {
   assert(url instanceof URL);
 
   // Check if the url's protocol indicates it cannot be binary. This is the fastest and simplest
-  // check so do it first.
-  // TODO: make exhaustive
+  // check so do it first. This is not an exhaustive list of protocols that are typically
+  // textual, it is just some low-hanging fruit.
+
+  // See https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
+  // This makes me think that trying to be exhaustive is pointless and actually kind of stupid
+  // What should really be happening is a whitelist in calling context that only allows for
+  // http and https
   const textProtocols = ['tel:', 'mailto:', 'javascript:'];
   if(textProtocols.includes(url.protocol)) {
     return false;
@@ -23,8 +28,16 @@ export default function isBinaryURL(url) {
   }
 
   const extension = getExtensionFromURL(url);
+  if(!extension) {
+    return false;
+  }
+
   const mimeType = MimeUtils.getTypeForExtension(extension);
-  return mimeType ? MimeUtils.isBinary(mimeType) : false;
+  if(!mimeType) {
+    return false;
+  }
+
+  return MimeUtils.isBinary(mimeType);
 }
 
 // Extracts the mime type of a data uri as string. Returns undefined if not found or invalid.

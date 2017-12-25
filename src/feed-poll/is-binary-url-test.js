@@ -1,5 +1,5 @@
 import assert from "/src/utils/assert.js";
-import isBinaryURL from "/src/feed-poll/sniff.js";
+import isBinaryURL from "/src/feed-poll/is-binary-url.js";
 
 let input = new URL('http://www.example.com/example.pdf');
 let result = isBinaryURL(input);

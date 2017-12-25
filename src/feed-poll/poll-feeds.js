@@ -3,7 +3,7 @@ import * as Config from "/src/config.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
-import isBinaryURL from "/src/feed-poll/sniff.js";
+import isBinaryURL from "/src/feed-poll/is-binary-url.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
@@ -305,7 +305,7 @@ PollFeeds.prototype.pollEntry = async function(entry) {
     URLUtils.setURLHrefProperty(url, rewrittenURL);
   }
 
-  if(!isHTTPURL(url) || isInaccessibleContentURL(url) || isBinaryURL(url)) {
+  if(!isPollableURL(url)) {
     return;
   }
 
@@ -319,8 +319,7 @@ PollFeeds.prototype.pollEntry = async function(entry) {
   if(response) {
     if(response.redirected) {
       const responseURL = new URL(response.responseURL);
-      if(!isHTTPURL(responseURL) || isInaccessibleContentURL(responseURL) ||
-        isBinaryURL(responseURL)) {
+      if(!isPollableURL(responseURL)) {
         return;
       }
 
@@ -356,6 +355,10 @@ PollFeeds.prototype.pollEntry = async function(entry) {
   // Return the result of addEntry, which is the new entry's id
   return await this.feedStore.addEntry(entry, this.channel);
 };
+
+function isPollableURL(url) {
+  return isHTTPURL(url) && !isBinaryURL(url) && !isInaccessibleContentURL(url);
+}
 
 // Attempts to fetch the entry's html. May return undefined.
 PollFeeds.prototype.fetchEntryHTML = async function(url) {
