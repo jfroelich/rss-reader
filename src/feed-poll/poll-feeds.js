@@ -15,6 +15,7 @@ import TimeoutError from "/src/utils/timeout-error.js";
 import * as Platform from "/src/platform/platform.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
+import formatString from "/src/utils/format-string.js";
 import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
@@ -190,6 +191,7 @@ PollFeeds.prototype.didPollFeedRecently = function(feed) {
     return false;
   }
 
+  // Cannot assume a feed has ever been fetched, and therefore cannot assume dateFetched is set
   // If a feed has never been fetched, then it cannot have been polled recently.
   if(!(feed.dateFetched instanceof Date)) {
     return false;
@@ -198,14 +200,14 @@ PollFeeds.prototype.didPollFeedRecently = function(feed) {
   const currentDate = new Date();
   const elapsedSinceLastPollMs = currentDate - feed.dateFetched;
 
-  // TODO: data integrity errors are expected?
-  assert(elapsedSinceLastPollMs >= 0);
-
-  if(elapsedSinceLastPollMs < this.recencyPeriodMs) {
-    return true;
+  // Be wary of a fetchDate in the future. This indicates the data has been corrupted or something
+  // is wrong somewhere.
+  if(elapsedSinceLastPollMs < 0) {
+    const message = formatString('Cannot poll feed fetched in the future', feed);
+    throw new Error(message);
   }
 
-  return false;
+  return elapsedSinceLastPollMs < this.recencyPeriodMs;
 };
 
 // Decrement error count if set and not 0
