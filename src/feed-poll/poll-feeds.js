@@ -125,18 +125,17 @@ PollFeeds.prototype.pollFeed = async function(feed, batched) {
   }
 
   assert(typeof response === 'object');
-  const errorCountChanged = handleFetchFeedSuccess(feed);
 
   if(this.isUnmodifiedFeed(feed.dateUpdated, feed.dateLastModified, response.lastModifiedDate)) {
-    if(errorCountChanged) {
+    // Check if error count decremented as a result of successful fetch, in which case we still
+    // need to update the feed object in the database despite exiting early.
+    const decremented = handleFetchFeedSuccess(feed);
+    if(decremented) {
       feed.dateUpdated = new Date();
       await this.feedStore.putFeed(feed);
     }
     return 0;
   }
-
-  // TODO: if fetch is successful, error count is decremented. But error handlers below all assume
-  // it isn't. Therefore, when an error occurs, this decrements then increments, which is dumb.
 
   let feedXML;
   try {
@@ -156,6 +155,12 @@ PollFeeds.prototype.pollFeed = async function(feed, batched) {
   }
 
   const mergedFeed = Feed.merge(feed, parseResult.feed);
+
+  // If we did not exit earlier as a result of some kind of error, then we want to possibly
+  // decrement the error count and save the updated error count, so that errors do not persist
+  // indefinitely.
+  handleFetchFeedSuccess(mergedFeed);
+
   // TODO: this could happen prior to merge? should it?
   const storableFeed = this.feedStore.prepareFeed(mergedFeed);
   storableFeed.dateUpdated = new Date();
