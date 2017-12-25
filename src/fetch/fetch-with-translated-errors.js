@@ -31,7 +31,7 @@ export default async function fetchWithTranslatedErrors(url, options) {
   try {
     response = await fetch(url.href, options);
   } catch(error) {
-    throw translateError(error);
+    throw translateError(url, error);
   }
 
   // fetchWithTranslatedErrors warrants that the output object is defined
@@ -40,7 +40,7 @@ export default async function fetchWithTranslatedErrors(url, options) {
 }
 
 // Returns a translated error if the input error is translated, otherwise returns the input error
-function translateError(error) {
+function translateError(url, error) {
   // Per MDN, a fetch() promise will reject with a TypeError when a network error is encountered,
   // or when the url contains credentials. Translate such errors into network errors.
 
@@ -50,6 +50,6 @@ function translateError(error) {
 
   // Right now I believe this never happens? fetch pretty much throws only TypeErrors when an
   // error occurs, right? I am logging for the time being to see if this ever happens
-  console.warn('unknown error type thrown by fetch', error);
+  console.warn('Unknown error type thrown by fetch', error);
   return error;
 }
