@@ -6,9 +6,7 @@
 // would be to load information from localStorage.
 
 // An array of descriptors. Each descriptor represents a test against a url hostname, that if
-// matched, indicates the content is not accessible. The reason indicates why.
-// TODO: should not have to enumerable subdomains, compare top domains, use the function
-// getUpperDomain from url.js (currently not exported). Or use regexs
+// matched, indicates the content is not accessible.
 export const INACCESSIBLE_CONTENT_DESCRIPTORS = [
   {pattern: /forbes\.com$/i, reason: 'interstitial-advert'},
   {pattern: /productforums\.google\.com/i, reason: 'script-generated'},

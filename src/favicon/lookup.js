@@ -155,7 +155,6 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     // should be refactored to not use a block-local "entry" variable and instead just reuse the
     // originEntry variable.
 
-
     // Origin url may have changed, so search for its entry again
     const entry = await this.cache.findEntry(originURL);
 

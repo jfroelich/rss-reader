@@ -4,6 +4,10 @@ import FaviconLookup from "/src/favicon/lookup.js";
 /*
 TODO:
 
+In order to use a test db, I should create helpers for each test, like a helper to
+create and connect to test db
+
+
 * Use a test db instead of the real db, and make sure to
 delete the test db at the end of the test.
 * to use a test db, set cache.name to a non-default name
