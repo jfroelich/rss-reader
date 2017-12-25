@@ -136,7 +136,7 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     return result;
   }
 
-  const response = await fetchImageElement(sourceURL.href, timeoutMs);
+  const response = await fetchImageElement(sourceURL, timeoutMs);
   log('Found dimensions from fetch', image.outerHTML, response.width, response.height);
   result.width = response.width;
   result.height = response.height;
