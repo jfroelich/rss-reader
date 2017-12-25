@@ -387,6 +387,13 @@ FeedStore.prototype.findEntryIdByURL = function(url) {
   });
 };
 
+// Returns true if the feed store contains an entry with the given url
+FeedStore.prototype.containsEntryWithURL = async function(url) {
+  assert(url instanceof URL);
+  const id = await this.findEntryIdByURL(url);
+  return Entry.isValidId(id);
+};
+
 // Returns a promise that resolves to an array of entry ids that are associated with the given
 // feed id. Throws an unchecked error if the connection is invalid or not open, or if the feed id
 // is invalid. Throws a checked error if a database error occurs.
