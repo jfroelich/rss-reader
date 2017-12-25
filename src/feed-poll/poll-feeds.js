@@ -128,7 +128,7 @@ PollFeeds.prototype.pollFeed = async function(feed, batched) {
   assert(typeof response === 'object');
   const errorCountChanged = handleFetchFeedSuccess(feed);
 
-  if(this.isUnmodifiedFeed(feed.dateLastModified, response.lastModifiedDate)) {
+  if(this.isUnmodifiedFeed(feed.dateUpdated, feed.dateLastModified, response.lastModifiedDate)) {
     if(errorCountChanged) {
       feed.dateUpdated = new Date();
       await this.feedStore.putFeed(feed);
@@ -263,8 +263,8 @@ async function handlePollFeedError(error, store, feed, callCategory) {
   throw error;
 }
 
-PollFeeds.prototype.isUnmodifiedFeed = function(feedDate, responseDate) {
-  if(this.ignoreModifiedCheck || !feed.dateUpdated) {
+PollFeeds.prototype.isUnmodifiedFeed = function(feedUpdated, feedDate, responseDate) {
+  if(this.ignoreModifiedCheck || !feedUpdated) {
     return false;
   }
   return feedDate && responseDate && feedDate.getTime() === responseDate.getTime();
