@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import unwrap from "/src/utils/dom/unwrap-element.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 

@@ -2,7 +2,7 @@ import {removeImage} from "/src/utils/dom/image.js";
 import {isHiddenInlineElement} from "/src/utils/dom/visibility.js";
 import {isExternalURL} from "/src/utils/url-utils.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 
 // Filters various telemetry-inducing content from document content
 

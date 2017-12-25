@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 
 // TODO: support alternate whitespace expressions around delimiters
 

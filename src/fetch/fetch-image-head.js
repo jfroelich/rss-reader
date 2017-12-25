@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import {FetchError} from "/src/fetch/errors.js";
 import fetchWithTimeout from "/src/fetch/fetch-with-timeout.js";
 import isAllowedURL, {PermissionsError} from "/src/fetch/fetch-policy.js";

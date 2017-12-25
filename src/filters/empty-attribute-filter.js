@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 
 export default function filterDocument(document) {
   assert(document instanceof Document);

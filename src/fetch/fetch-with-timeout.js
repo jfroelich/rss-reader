@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import fetchWithTranslatedErrors from "/src/fetch/fetch-with-translated-errors.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";

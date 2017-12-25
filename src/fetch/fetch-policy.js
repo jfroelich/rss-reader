@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 
 // This module is a simple abstraction for determining whether or not a url is permitted to be
 // fetched. It should be used for example to avoid trying to fetch various urls, such as file://

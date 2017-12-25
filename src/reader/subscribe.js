@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import PollFeeds from "/src/feed-poll/poll-feeds.js";

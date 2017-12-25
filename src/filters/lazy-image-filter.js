@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import {hasSource} from "/src/utils/dom/image.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
 

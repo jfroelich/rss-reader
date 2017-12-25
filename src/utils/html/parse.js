@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import * as StringUtils from "/src/utils/string-utils.js";
 
 // When html is a fragment, it will be inserted into a new document using a default template

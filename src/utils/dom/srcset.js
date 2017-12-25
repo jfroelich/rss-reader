@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import "/src/third-party/parse-srcset.js";
 
 // @param descriptors {Array} an array of descriptors such as those produced by parseSrcset

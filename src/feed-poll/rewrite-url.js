@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 // Applies a set of rules to a url object and returns a modified url object. Returns undefined if

@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {parseFeed as parseFeedImpl} from "/src/parse-feed/parse-feed.js";

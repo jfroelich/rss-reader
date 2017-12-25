@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 

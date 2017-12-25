@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 
 // Filters width and height of large images to avoid skewing in view
 // An image is large if it is more than 1000px in width or height

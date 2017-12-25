@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as FeedStoreErrors from "/src/feed-store/errors.js";

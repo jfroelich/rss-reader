@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import {fetchInternal} from "/src/fetch/utils.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
 

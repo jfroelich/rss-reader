@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 
 // Replace an element with its children. Special care is taken to add spaces if the operation would
 // result in adjacent text nodes.

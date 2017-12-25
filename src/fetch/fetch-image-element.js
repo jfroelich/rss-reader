@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import {FetchError} from "/src/fetch/errors.js";
 import isAllowedURL, {PermissionsError} from "/src/fetch/fetch-policy.js";
 import isPosInt from "/src/utils/is-pos-int.js";

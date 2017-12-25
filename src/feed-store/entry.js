@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 

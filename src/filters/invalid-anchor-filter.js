@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 
 // Filters certain anchors from document content
 // This is a largely a hack for a particular feed I subscribe to uses something along the lines of

@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import * as Config from "/src/config.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";

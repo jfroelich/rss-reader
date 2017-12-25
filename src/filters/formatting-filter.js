@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import unwrapElement from "/src/utils/dom/unwrap-element.js";
 
 const SELECTOR = [

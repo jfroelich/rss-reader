@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 
 // Tokenizes an arbitrary string of html. Makes some effort to comply with
 // standards but does not fully comply.

@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import * as Config from "/src/config.js";
 import fadeElement from "/src/utils/dom/fade-element.js";
 import FeedStore from "/src/feed-store/feed-store.js";

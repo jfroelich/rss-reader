@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 
 // Ensures the input document has a <body> element
 export default function ensureBodyFilter(doc) {

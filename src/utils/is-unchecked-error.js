@@ -1,4 +1,4 @@
-import {AssertionError} from "/src/assert/assert.js";
+import {AssertionError} from "/src/utils/assert.js";
 
 // TODO: what if I create an error subclass, CheckedError. Change all errors to extend from
 // CheckedError except for AssertionError. Then change isUncheckedError's logic. Instead of checking

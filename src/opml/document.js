@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import * as OPMLOutline from "/src/opml/outline.js";
 
 // Create a new OPML document

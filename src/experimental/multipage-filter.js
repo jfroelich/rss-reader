@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import {paginationFindAnchors} from "/src/pagination.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";

@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import {NetworkError, OfflineError} from "/src/fetch/errors.js";
 import sprintf from "/src/utils/sprintf.js";
 

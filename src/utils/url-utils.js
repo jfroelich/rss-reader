@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // Utilities for working with URL objects. All functions that accept a url parameter expect the

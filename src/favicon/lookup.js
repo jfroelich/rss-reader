@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import fetchImageHead from "/src/fetch/fetch-image-head.js";

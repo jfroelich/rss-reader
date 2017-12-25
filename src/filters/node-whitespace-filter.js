@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import {condenseWhitespace} from "/src/utils/string-utils.js";
 
 export default function nodeWhitespaceFilter(doc) {

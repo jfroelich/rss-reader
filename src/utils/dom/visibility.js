@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // These functions assume a document is "inert", such as one created by DOMParser, or from

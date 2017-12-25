@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import * as CSSUtils from "/src/utils/dom/css-utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 

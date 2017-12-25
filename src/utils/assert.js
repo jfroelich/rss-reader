@@ -7,11 +7,10 @@ import sprintf from "/src/utils/sprintf.js";
 // assertion error that is thrown. If no additional arguments are given then a default error
 // message is used.
 export default function assert(booleanValue, ...varargs) {
-
   // TEMP: Weakly check the parameter type. I prefer callers use a proper boolean. Warn using
   // console.error so that the stack trace is captured.
   if(typeof booleanValue !== 'boolean') {
-    console.error('not boolean', booleanValue);
+    console.error('Asserted value is not boolean', booleanValue);
   }
 
   if(booleanValue) {
@@ -21,13 +20,12 @@ export default function assert(booleanValue, ...varargs) {
   const errorMessage = sprintf(...varargs) || 'Assertion failed';
   const error = new AssertionError(errorMessage);
 
-  // If not commented out, any assertion errors are immediately logged. Enabling this option helps
-  // avoid issues with promise swallowed exceptions. While the browser generally logs an error
-  // message for uncaught exceptions in promise executors, it doesn't help when the error is caught
-  // in a catch block but not logged or rethrown. I'd rather not require every use of a catch block
-  // be concerned with handling unchecked errors.
+  // If not commented out, any assertion errors are immediately logged. Enabling this helps avoid
+  // issues with promise-swallowed exceptions. While the browser generally logs an error message for
+  // uncaught exceptions in promise executors, it doesn't help when the error is caught in a catch
+  // block but not logged or rethrown. I'd rather not require every use of a catch block be
+  // concerned with handling unchecked errors.
   console.error(errorMessage);
-
   throw error;
 }
 

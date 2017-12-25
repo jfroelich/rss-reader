@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 
 // Filters empty leaf-like nodes from document content
 // This module has multiple exports and no default export

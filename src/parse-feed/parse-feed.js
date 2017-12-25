@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import decodeEntities from "/src/utils/html/decode-entities.js";
 import parseXML, {XMLParseError} from "/src/utils/parse-xml.js";
 import sprintf from "/src/utils/sprintf.js";

@@ -1,4 +1,4 @@
-import assert from "/src/assert/assert.js";
+import assert from "/src/utils/assert.js";
 import sniffIsBinaryURL from "/src/feed-poll/sniff.js";
 
 // TODO: get the test working again, it fell behind when refactoring to modules
