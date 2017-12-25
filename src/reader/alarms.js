@@ -107,13 +107,12 @@ async function handlePollFeedsAlarm(alarm) {
     const idlePeriodSecs = 30;
     const state = await queryIdleState(idlePeriodSecs);
     if(state !== 'locked' || state !== 'idle') {
-      console.debug('not idle, avoiding polling');
+      console.debug('Not idle, dismissing poll feeds wakeup alarm');
       return;
     }
   }
 
   const poll = new PollFeeds();
-
   poll.init();
   try {
     await poll.open();
@@ -122,3 +121,5 @@ async function handlePollFeedsAlarm(alarm) {
     poll.close();
   }
 }
+
+window.testPollFeeds = handlePollFeedsAlarm;

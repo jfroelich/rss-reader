@@ -35,7 +35,6 @@ FeedStore.prototype.open = async function() {
   // Prohibit calling open unless conn is unset, implying it is closed, so that the prior
   // connection is not left hanging around
   assert(typeof this.conn === 'undefined' || this.conn === null);
-
   this.conn = await IndexedDbUtils.open(this.name, this.version, onUpgradeNeeded,
     this.openTimeoutMs);
 };
@@ -160,9 +159,8 @@ FeedStore.prototype.isOpen = function() {
 
 FeedStore.prototype.close = function() {
   IndexedDbUtils.close(this.conn);
-
-  // Undefine rather than delete to maintain v8 hidden shape, and to avoid triggering the assert
-  // in FeedStore.prototype.open if re-opening
+  // The conn property must be unset to allow for calling open again without triggering an assert
+  // Undefine rather than delete to maintain v8 hidden shape
   this.conn = void this.conn;
 };
 
