@@ -17,8 +17,9 @@ export default function isBinaryURL(url) {
 
   // Special handling for data uris
   if(url.protocol === 'data:') {
-    const mimeType = findMimeTypeInDataURL(url);
-    return mimeType ? MimeUtils.isBinary(mimeType) : true;
+    // If mime type not found then assume text/plain, which is the default according to MDN
+    const mimeType = findMimeTypeInDataURL(url) || 'text/plain';
+    return MimeUtils.isBinary(mimeType);
   }
 
   const extension = getExtensionFromURL(url);
@@ -28,9 +29,11 @@ export default function isBinaryURL(url) {
 
 // Extracts the mime type of a data uri as string. Returns undefined if not found or invalid.
 function findMimeTypeInDataURL(url) {
+  assert(url.protocol === 'data:');
+
   const href = url.href;
 
-  // If the url is too short to even contain the mime type, fail.
+  // If the url is too short to contain a mime type, fail.
   if(href.length < MimeUtils.MIME_TYPE_MIN_LENGTH) {
     return;
   }
@@ -47,6 +50,7 @@ function findMimeTypeInDataURL(url) {
 
   const mimeType = haystack.substring(0, semicolonPosition);
   if(MimeUtils.isMimeType(mimeType)) {
+    //console.debug('Extracted mime type from data uri: ', mimeType);
     return mimeType;
   }
 }
