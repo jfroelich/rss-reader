@@ -48,7 +48,7 @@ export default async function fetchImageHead(url, timeoutMs) {
   const mimeType = MimeUtils.fromContentType(contentType);
   const types = ['application/octet-stream'];
 
-  if(!MimeUtils.isImage(mimeType) && !types.include(mimeType)) {
+  if(!MimeUtils.isImage(mimeType) && !types.includes(mimeType)) {
     const message = formatString('Unacceptable mime type', mimeType, url);
     throw new FetchError(message);
   }
