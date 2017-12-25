@@ -15,7 +15,6 @@ import TimeoutError from "/src/utils/timeout-error.js";
 import * as Platform from "/src/platform/platform.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import check from "/src/utils/check.js";
 import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";

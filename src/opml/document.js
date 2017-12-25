@@ -1,5 +1,4 @@
 import assert from "/src/assert/assert.js";
-import check from "/src/utils/check.js";
 import * as OPMLOutline from "/src/opml/outline.js";
 
 // Create a new OPML document
@@ -50,7 +49,10 @@ export function setTitle(doc, title) {
 
       // TODO: if the head element is missing, then instead of throwing an error, create and append
       // the head element
-      check(headElement, undefined, 'opml document missing head element');
+      if(!headElement) {
+        throw new Error('Missing head element');
+      }
+
       headElement.appendChild(titleElement);
     }
 

@@ -1,5 +1,4 @@
 import assert from "/src/assert/assert.js";
-import check from "/src/utils/check.js";
 import * as Feed from "/src/feed-store/feed.js";
 
 // TODO: include this in places where sanitize is called
@@ -10,15 +9,15 @@ import * as Feed from "/src/feed-store/feed.js";
 
 
 export default function validateFeed(feed) {
-  // Unlike the other error handling, passing a non-feed value to this function is indicative of a
-  // programming error.
   assert(Feed.isFeed(feed));
 
-  // id must either be not set, or a valid feed id
-  check(!('id' in feed) || isValidId(feed.id));
+  // If the feed has an id then the id must be valid
+  if('id' in feed && !isValidId(feed.id)) {
+    throw new Error('Invalid feed id ' + feed.id);
+  }
 
-  if('type' in feed) {
-    const types = ['feed', 'rss', 'rdf'];
-    check(types.includes(feed.type));
+  const types = ['feed', 'rss', 'rdf'];
+  if('type' in feed && !types.includes(feed.type)) {
+    throw new Error('Invalid feed type ' + feed.type);
   }
 }

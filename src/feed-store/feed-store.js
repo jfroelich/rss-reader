@@ -4,7 +4,6 @@ import * as Entry from "/src/feed-store/entry.js";
 import * as FeedStoreErrors from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import check from "/src/utils/check.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import replaceTags from "/src/utils/html/replace-tags.js";
@@ -13,6 +12,7 @@ import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import {promiseEvery} from "/src/utils/promise-utils.js";
 import sizeof from "/src/utils/sizeof.js";
+import sprintf from "/src/utils/sprintf.js";
 import * as StringUtils from "/src/utils/string-utils.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
 
@@ -515,14 +515,16 @@ FeedStore.prototype.getAllFeeds = function() {
 FeedStore.prototype.markEntryAsRead = async function(entryId) {
   assert(this.isOpen());
   assert(Entry.isValidId(entryId));
+
   const entry = await this.findEntryById(entryId);
-  // TODO: use stricter type check (implicit magic)
-  assert(typeof entry !== 'undefined');
+  assert(Entry.isEntry(entry));
+
+  if(entry.readState === Entry.STATE_READ) {
+    const message = sprintf('Entry %d already in read state', entryId);
+    throw new FeedStoreErrors.InvalidStateError(message);
+  }
+
   assert(Entry.hasURL(entry));
-  // TODO: I am not sure this check is strict enough. Technically the entry should always be
-  // in the UNREAD state at this point.
-  check(entry.readState !== Entry.STATE_READ, FeedStoreErrors.InvalidStateError,
-    'Entry %d already in read state', entryId);
   const url = Entry.peekURL(entry);
   dprintf('Found entry to mark as read', entryId, url);
   entry.readState = Entry.STATE_READ;

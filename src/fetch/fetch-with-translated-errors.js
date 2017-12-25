@@ -1,6 +1,6 @@
 import assert from "/src/assert/assert.js";
 import {NetworkError, OfflineError} from "/src/fetch/errors.js";
-import check from "/src/utils/check.js";
+import sprintf from "/src/utils/sprintf.js";
 
 // Wraps a call to fetch and changes the types of certain errors thrown. The primary problem
 // solved is that my app considers a TypeError as indicative of a critical, permanent, unexpected,
@@ -20,12 +20,17 @@ export default async function fetchWithTranslatedErrors(url, options) {
   // code that calls fetch and catches exceptions from translating this kind of TypeError into a
   // network error. This kind of type error becomes an assertion error, which is equivalent to a
   // TypeError in that both are unchecked.
-  assert(typeof options === 'undefined' || typeof options === 'object' || options === null);
+  // NOTE: typeof null === 'object', options may be null, this is ok
+  assert(typeof options === 'undefined' || typeof options === 'object');
 
   // fetch fails with a TypeError when offline. This would ordinarily later be translated to a
   // NetworkError, but I want to the caller to be able to distinguish between a site being
-  // unreachable while online, and a site being unreachable while offline.
-  check(navigator.onLine, OfflineError, 'Unable to fetch url "%s" while offline', url);
+  // unreachable while online, and a site being unreachable while offline, and I want this to not
+  // be an unexpected/unchecked type of error.
+  if(!navigator.onLine) {
+    const message = sprintf('Unable to fetch url "%s" while offline', url);
+    throw new OfflineError(message);
+  }
 
   let response;
   try {
@@ -43,7 +48,6 @@ export default async function fetchWithTranslatedErrors(url, options) {
 function translateError(url, error) {
   // Per MDN, a fetch() promise will reject with a TypeError when a network error is encountered,
   // or when the url contains credentials. Translate such errors into network errors.
-
   if(error instanceof TypeError) {
     return new NetworkError('Failed to fetch', url, 'because of a checked error', error);
   }

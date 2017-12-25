@@ -1,14 +1,16 @@
 import assert from "/src/assert/assert.js";
 import {FetchError} from "/src/fetch/errors.js";
 import isAllowedURL, {PermissionsError} from "/src/fetch/fetch-policy.js";
-import check from "/src/utils/check.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
+import sprintf from "/src/utils/sprintf.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 
-// TODO: use the fetch API to avoid cookies
 // TODO: for consistency with other fetch calls, and to avoid the need to do it here, this should
 // expect a URL object as the parameter type, instead of a string
+
+
+// TODO: use the fetch API to avoid cookies
 
 // Fetches an image element. Returns a promise that resolves to a fetched image element. Note that
 // data uris are accepted.
@@ -25,7 +27,11 @@ export default async function fetchImageElement(url, timeoutMs) {
   // permitted, only check if not a data uri.
   if(!isDataURI(url)) {
     const urlObject = new URL(url);
-    check(isAllowedURL(urlObject), PermissionsError, 'Refused to fetch url', url);
+
+    if(!isAllowedURL(urlObject)) {
+      const message = sprintf('Refused to fetch url', url);
+      throw new PermissionsError(message);
+    }
   }
 
   // Note that even though the timerId is used after it would be defined later, it still must be
