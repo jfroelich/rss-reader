@@ -24,8 +24,14 @@ import assert from "/src/utils/assert.js";
 // Return true if the app's policy permits fetching the url
 export default function isAllowedURL(url) {
   assert(url instanceof URL);
-
+  const protocol = url.protocol;
   const hostname = url.hostname;
+
+  // Quickly check for data urls and allow them before any other tests. Data URI fetches do not
+  // involve the network so there is no policy concern
+  if(protocol === 'data:') {
+    return true;
+  }
 
   // Of course things like hosts file can be manipulated to whatever. This is just one of the
   // low-hanging fruits. Prevent fetches to local host urls.
@@ -38,8 +44,6 @@ export default function isAllowedURL(url) {
   if(hostname === '127.0.0.1') {
     return false;
   }
-
-  const protocol = url.protocol;
 
   // Disallow fetches of file urls
   if(protocol === 'file:') {
