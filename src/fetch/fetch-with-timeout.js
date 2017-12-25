@@ -27,7 +27,7 @@ export default async function fetchWithTimeout(url, options, timeoutMs) {
     clearTimeout(timeoutId);
   } else {
     // TODO: cancel/abort the fetch, if that is possible
-    // TODO: use sprintf
+    // TODO: use formatString
     const errorMessage = 'Fetch timed out for url ' + url.href;
     throw new TimeoutError(errorMessage);
   }

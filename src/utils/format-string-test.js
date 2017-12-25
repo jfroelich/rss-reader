@@ -1,11 +1,11 @@
-import sprintf from "/src/utils/sprintf.js";
+import formatString from "/src/utils/format-string.js";
 
 // Enable direct calling in console
-window.sprintf = sprintf;
+window.formatString = formatString;
 
 // Aliases for convenience
 const a = console.assert;
-const s = sprintf;
+const s = formatString;
 
 // No format tests
 a(s() === '');
@@ -14,7 +14,7 @@ a(s(null) === 'null');
 a(s('a') === 'a');
 a(s(1) === '1');
 a(s(1, 2) === '1 2');
-// NOTE: sprintf api departs from console.log, as expected
+// NOTE: formatString api departs from console.log, as expected
 a(s(new URL('http://a.b.c')) === 'http://a.b.c/');
 a(s({}) === '{}');
 a(s({}, {}) === '{} {}');

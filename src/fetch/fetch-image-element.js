@@ -3,7 +3,7 @@ import isAllowedURL, {PermissionsError} from "/src/fetch/fetch-policy.js";
 import assert from "/src/utils/assert.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
-import sprintf from "/src/utils/sprintf.js";
+import formatString from "/src/utils/format-string.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 
 // TODO: use the fetch API to avoid cookies
@@ -18,7 +18,7 @@ export default async function fetchImageElement(url, timeoutMs) {
   assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
 
   if(!isAllowedURL(url)) {
-    const message = sprintf('Refused to fetch url', url);
+    const message = formatString('Refused to fetch url', url);
     throw new PermissionsError(message);
   }
 

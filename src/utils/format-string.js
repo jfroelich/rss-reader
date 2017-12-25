@@ -1,5 +1,5 @@
-// Basic string formatting. sprintf returns a formatted string.
-// Case sensitive
+// Basic string formatting. formatString returns a formatted string.
+// Flags are case sensitive
 // %s - string
 // %d - number
 // %o - object
@@ -7,10 +7,7 @@
 
 const syntaxPattern = /%[sdo%]/g;
 
-// Use the spread operator to avoid touching arguments:
-// https://github.com/petkaantonov/bluebird/wiki/Optimization-killers
-
-export default function sprintf(...args) {
+export default function formatString(...args) {
   // args is defined even when there are no arguments
   const argCount = args.length;
   if(argCount === 0) {
@@ -123,16 +120,17 @@ function anyTypeToObjectString(value) {
   if(nativeHasOwn.call(value, 'toString')) {
     // The anyTypeToStringString call is rather superfluous but it protects against custom objects
     // or manipulations of builtin objects that return the improper type.
-    // TODO: I'd rather this not be recursive-like, functions should not call each other
-    return anyTypeToStringString(value.toString());
+    return value.toString();
   }
 
-  // NOTE: url.hasOwnProperty('toString') === false
-  // NOTE: href is canonicalized, e.g. "p://a.b" becomes "p://a.b/" (trailing slash)
+  // NOTE: url.hasOwnProperty('toString') === false, so it is ok to perform this after
+  // checking hasOwn above
+  // Url is not serializable by stringify
   if(value instanceof URL) {
     return value.href;
   }
 
+  // functions are not serializable by stringify
   if(typeof value === 'function') {
     return value.toString();
   }
@@ -144,10 +142,6 @@ function anyTypeToObjectString(value) {
   }
 }
 
-function functionToString(f) {
-  return f.toString();
-}
-
 // Convert a value of an unknown type into a string
 function anyTypeToStringString(value) {
   if(value === null) {
@@ -157,7 +151,7 @@ function anyTypeToStringString(value) {
   const type = typeof value;
   switch(type) {
   case 'undefined': return 'undefined';
-  case 'function':  return functionToString(value);
+  case 'function':  return value.toString();
   case 'number':    return anyTypeToNumberString(value);
   case 'string':    return value;
   case 'object':    return anyTypeToObjectString(value);

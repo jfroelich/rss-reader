@@ -1,6 +1,6 @@
 import assert from "/src/utils/assert.js";
 import {NetworkError, OfflineError} from "/src/fetch/errors.js";
-import sprintf from "/src/utils/sprintf.js";
+import formatString from "/src/utils/format-string.js";
 
 // Wraps a call to fetch and changes the types of certain errors thrown. The primary problem
 // solved is that my app considers a TypeError as indicative of a critical, permanent, unexpected,
@@ -28,7 +28,7 @@ export default async function fetchWithTranslatedErrors(url, options) {
   // unreachable while online, and a site being unreachable while offline, and I want this to not
   // be an unexpected/unchecked type of error.
   if(!navigator.onLine) {
-    const message = sprintf('Unable to fetch url "%s" while offline', url);
+    const message = formatString('Unable to fetch url "%s" while offline', url);
     throw new OfflineError(message);
   }
 

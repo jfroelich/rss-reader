@@ -1,9 +1,9 @@
-import sprintf from "/src/utils/sprintf.js";
+import formatString from "/src/utils/format-string.js";
 
 // Throws an assertion error when the condition value is false or false-like
 // @param booleanValue {Any} any value, usually the result of some expression, preferably boolean
 // @varargs any number of any type of additional arguments that are forwarded to a call to
-// sprintf that formats the arguments into a string that becomes the message value of the
+// formatString that formats the arguments into a string that becomes the message value of the
 // assertion error that is thrown. If no additional arguments are given then a default error
 // message is used.
 export default function assert(booleanValue, ...varargs) {
@@ -17,7 +17,7 @@ export default function assert(booleanValue, ...varargs) {
     return;
   }
 
-  const errorMessage = sprintf(...varargs) || 'Assertion failed';
+  const errorMessage = formatString(...varargs) || 'Assertion failed';
   const error = new AssertionError(errorMessage);
 
   // If not commented out, any assertion errors are immediately logged. Enabling this helps avoid

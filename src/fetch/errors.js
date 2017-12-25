@@ -1,10 +1,10 @@
-import sprintf from "/src/utils/sprintf.js";
+import formatString from "/src/utils/format-string.js";
 
 // Represents a general class of networking errors, such as unavailability or unreachability of a
 // resource located on a different machine
 export class NetworkError extends Error {
   constructor(...args) {
-    super(sprintf(...args) || 'Network error');
+    super(formatString(...args) || 'Network error');
   }
 }
 

@@ -8,7 +8,7 @@ import isPosInt from "/src/utils/is-pos-int.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
 import {setTimeoutPromise} from "/src/utils/promise-utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
-import sprintf from "/src/utils/sprintf.js";
+import formatString from "/src/utils/format-string.js";
 
 // TODO: rename to something like fetch-base.js or fetch-wrapper.js
 // TODO: create a CustomResponse class and use that instead of returning a simple object?
@@ -26,7 +26,7 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
   // TODO: PermissionsError feels like a misnomer? Maybe stop trying to be so abstract and call it
   // precisely what it is, a FetchPolicyError or something.
   if(!isAllowedURL(url)) {
-    const message = sprintf('Refused to fetch url', url);
+    const message = formatString('Refused to fetch url', url);
     throw new PermissionsError(message);
   }
 
@@ -34,7 +34,7 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
   assert(response instanceof Response);
 
   if(!response.ok) {
-    const message = sprintf('Response not ok for url "%s", status is', url, response.status);
+    const message = formatString('Response not ok for url "%s", status is', url, response.status);
     throw new FetchError(message);
   }
 
@@ -44,7 +44,7 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
   if(method === 'GET' || method === 'POST') {
     const HTTP_STATUS_NO_CONTENT = 204;
     if(response.status === HTTP_STATUS_NO_CONTENT) {
-      const message = sprintf('No content for GET/POST', url);
+      const message = formatString('No content for GET/POST', url);
       throw new FetchError(message);
     }
   }
@@ -55,7 +55,7 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
     const contentType = response.headers.get('Content-Type');
     const mimeType = MimeUtils.fromContentType(contentType);
     if(!acceptedMimeTypes.includes(mimeType)) {
-      const message = sprintf('Unacceptable mime type', mimeType, url);
+      const message = formatString('Unacceptable mime type', mimeType, url);
       throw new FetchError(message);
     }
   }

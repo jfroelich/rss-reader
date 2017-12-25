@@ -11,7 +11,7 @@ import parseFeed from "/src/reader/parse-feed.js";
 import {showNotification} from "/src/platform/platform.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import {setTimeoutPromise} from "/src/utils/promise-utils.js";
-import sprintf from "/src/utils/sprintf.js";
+import formatString from "/src/utils/format-string.js";
 
 // TODO: think of a better name
 
@@ -102,7 +102,7 @@ Subscribe.prototype.subscribe = async function(url) {
 Subscribe.prototype.checkFeedURLConstraint = async function(url) {
   let feedExists = await this.feedStore.containsFeedWithURL(url);
   if(feedExists) {
-    const message = sprintf('Already subscribed to feed with url', url.href);
+    const message = formatString('Already subscribed to feed with url', url.href);
     throw new ConstraintError(message);
   }
 };

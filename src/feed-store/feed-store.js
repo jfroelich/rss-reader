@@ -1,20 +1,20 @@
-import assert from "/src/utils/assert.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as FeedStoreErrors from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
+import assert from "/src/utils/assert.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import replaceTags from "/src/utils/html/replace-tags.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
 import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import {promiseEvery} from "/src/utils/promise-utils.js";
+import * as PromiseUtils from "/src/utils/promise-utils.js";
 import sizeof from "/src/utils/sizeof.js";
-import sprintf from "/src/utils/sprintf.js";
+import formatString from "/src/utils/format-string.js";
 import * as StringUtils from "/src/utils/string-utils.js";
-import {isValidURLString} from "/src/utils/url-string-utils.js";
+import * as URLStringUtils from "/src/utils/url-string-utils.js";
 
 const DEBUG = false;
 const dprintf = DEBUG ? console.debug : function(){};
@@ -378,7 +378,7 @@ FeedStore.prototype.findEntryById = function(entryId) {
 FeedStore.prototype.findEntryIdByURL = function(urlString) {
   return new Promise((resolve, reject) => {
     assert(this.isOpen());
-    assert(isValidURLString(urlString));
+    assert(URLStringUtils.isValidURLString(urlString));
     const tx = this.conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('urls');
@@ -431,7 +431,7 @@ FeedStore.prototype.findFeedById = function(feedId) {
 FeedStore.prototype.findFeedIdByURL = function(urlString) {
   return new Promise((resolve, reject) => {
     assert(this.isOpen());
-    assert(isValidURLString(urlString));
+    assert(URLStringUtils.isValidURLString(urlString));
     const tx = this.conn.transaction('feed');
     const store = tx.objectStore('feed');
     const index = store.index('urls');
@@ -486,7 +486,6 @@ FeedStore.prototype.findViewableEntries = function(offset, limit) {
   });
 };
 
-
 // Returns a promise that resolves to an array of feed ids, or rejects with a database error
 FeedStore.prototype.getAllFeedIds = function() {
   return new Promise((resolve, reject) => {
@@ -520,7 +519,7 @@ FeedStore.prototype.markEntryAsRead = async function(entryId) {
   assert(Entry.isEntry(entry));
 
   if(entry.readState === Entry.STATE_READ) {
-    const message = sprintf('Entry %d already in read state', entryId);
+    const message = formatString('Entry %d already in read state', entryId);
     throw new FeedStoreErrors.InvalidStateError(message);
   }
 
@@ -802,7 +801,7 @@ FeedStore.prototype.refreshFeedIcons = async function(iconCache) {
   for(const feed of feeds) {
     promises.push(this.refreshFeedIcon(feed, query));
   }
-  await promiseEvery(promises);
+  await PromiseUtils.promiseEvery(promises);
 };
 
 FeedStore.prototype.refreshFeedIcon = async function(feed, query) {

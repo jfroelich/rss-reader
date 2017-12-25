@@ -1,7 +1,7 @@
 import assert from "/src/utils/assert.js";
 import decodeEntities from "/src/utils/html/decode-entities.js";
 import parseXML, {XMLParseError} from "/src/utils/parse-xml.js";
-import sprintf from "/src/utils/sprintf.js";
+import formatString from "/src/utils/format-string.js";
 
 export class FeedParseError extends XMLParseError {
   constructor(message) {
@@ -37,7 +37,7 @@ function unmarshallXML(document) {
 
   const supportedNames = ['feed', 'rdf', 'rss'];
   if(!supportedNames.includes(documentElementName)) {
-    const message = sprintf('Unsupported document element', documentElementName);
+    const message = formatString('Unsupported document element', documentElementName);
     throw new FeedParseError(message);
   }
 
