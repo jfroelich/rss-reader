@@ -373,16 +373,15 @@ FeedStore.prototype.findEntryById = function(entryId) {
 };
 
 // Returns an entry id matching url
-// TODO: change to accept URL object, change assertion to check instanceof URL
-// @param urlString {String}
-FeedStore.prototype.findEntryIdByURL = function(urlString) {
+// @param url {URL}
+FeedStore.prototype.findEntryIdByURL = function(url) {
   return new Promise((resolve, reject) => {
     assert(this.isOpen());
-    assert(URLStringUtils.isValidURLString(urlString));
+    assert(url instanceof URL);
     const tx = this.conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('urls');
-    const request = index.getKey(urlString);
+    const request = index.getKey(url.href);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });

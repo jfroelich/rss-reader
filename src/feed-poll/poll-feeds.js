@@ -302,7 +302,9 @@ PollFeeds.prototype.pollEntry = async function(entry) {
     return;
   }
 
-  if(await this.feedStore.findEntryIdByURL(url.href)) {
+  // TODO: create and use use containsEntryWithURL
+
+  if(await this.feedStore.findEntryIdByURL(url)) {
     return;
   }
 
@@ -317,7 +319,7 @@ PollFeeds.prototype.pollEntry = async function(entry) {
         return;
       }
 
-      if(await this.feedStore.findEntryIdByURL(responseURL.href)) {
+      if(await this.feedStore.findEntryIdByURL(responseURL)) {
         return;
       }
 
