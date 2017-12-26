@@ -9,6 +9,8 @@ import * as MimeUtils from "/src/utils/mime-utils.js";
 export default function fetchHTML(url, timeoutMs) {
   assert(url instanceof URL);
 
+  // TODO: because I have to accept */*, specifying an Accept header is dumb
+
   // NOTE: accept */* to fix issue #271 and avoid 406 response code
   const acceptHeaderValue = [
     MimeUtils.MIME_TYPE_HTML,
