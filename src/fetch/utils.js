@@ -10,15 +10,19 @@ import TimeoutError from "/src/utils/timeout-error.js";
 import {compareURLsWithoutHash} from "/src/utils/url-utils.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
 
+// TODO: drop support for acceptedMimeTypes as function feature
 // TODO: create a CustomResponse class and use that instead of returning a simple object?
 
 // Does a fetch with a timeout and a content type predicate
 // @param url {URL} request url
-// @param options {Object} optional, fetch options parameter
+// @param options {Object} optional, fetch options parameter. This extends the basic
+// fetch api with a non-standard option, 'timeout', that if specified should be a positive integer,
+// that causes fetches to fail if they take longer than the given number of milliseconds
 // @param acceptedMimeTypes {Array or Function} optional, if specified then this checks if the
 // response mime type is in the list of accepted types and throws a fetch error if not, or if it
 // is a function then if calling the function on the mime type returns true (otherwise throws).
-// @returns {Object} a Response-like object
+// @returns {Object} a Response-like object. This extends (in the general sense) the basic
+// Response object with properties that have already be converted to preferred data type
 export async function fetchInternal(url, options, acceptedMimeTypes) {
   // Accepting a url ensures the url is canonical and thereby avoid allowing fetch to implicitly
   // resolve a relative url
@@ -27,8 +31,7 @@ export async function fetchInternal(url, options, acceptedMimeTypes) {
   // Avoid the TypeError fetch throws for invalid options, treat it as an assertion error
   assert(typeof options === 'undefined' || typeof options === 'object');
 
-  // TODO: get timeoutMs from options. I am going to call it timeout.
-
+  // Grab timeout from options
   let timeoutMs;
   if(typeof options === 'object') {
     if('timeout' in options) {
@@ -143,14 +146,6 @@ export async function fetchInternal(url, options, acceptedMimeTypes) {
       throw new FetchError(message);
     }
   } else if(typeof acceptedMimeTypes === 'function') {
-
-    // The function handler is a quick hacky addition to allow for fetchImageHead to call
-    // fetchInternal. The issue is that fetchImageHead doesn't use an enumerated list of
-    // mime types. Instead it uses a partially enumerated list and a function call that
-    // tests if mime type starts with 'image/'.
-    // TODO: think how to avoid this hack eventually. Maybe enumerate the types.
-    // Or maybe allow for wild card matching. Or maybe live with it.
-
     const contentType = response.headers.get('Content-Type');
     const mimeType = MimeUtils.fromContentType(contentType);
     if(!acceptedMimeTypes(mimeType)) {
