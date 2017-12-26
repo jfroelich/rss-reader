@@ -30,7 +30,7 @@ export default function isAllowedURL(url) {
   }
 
   const protocolBlacklist = [
-    'about:'
+    'about:',
     'chrome:',
     'chrome-extension:',
     'file:'
