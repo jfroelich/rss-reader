@@ -56,6 +56,7 @@ export function appendURL(feed, urlString) {
 }
 
 // Returns the url used to lookup a feed's favicon
+// Note this expects an actual feed object, not any object. The magic property must be set
 // @returns {URL}
 export function createIconLookupURL(feed) {
   assert(isFeed(feed));

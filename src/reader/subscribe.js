@@ -85,10 +85,13 @@ Subscribe.prototype.subscribe = async function(url) {
       response.lastModifiedDate, kProcEntries);
     feed = parseResult.feed;
   } else {
+    // We take care to create the feed using the factory method instead of creating a simple
+    // object, because the factory method sets some hidden properties.
     feed = Feed.create();
     feed.appendURL(url.href);
   }
 
+  assert(Feed.isFeed(feed));
   await this.setFeedFavicon(feed);
   const storableFeed = await this.saveFeed(feed);
   this.showNotification(storableFeed);
@@ -125,6 +128,8 @@ Subscribe.prototype.fetchFeed = async function(url) {
 };
 
 Subscribe.prototype.setFeedFavicon = async function(feed) {
+  assert(Feed.isFeed(feed));
+
   const query = new FaviconLookup();
   query.cache = this.iconCache;
   query.skipURLFetch = true;

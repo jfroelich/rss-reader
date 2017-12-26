@@ -84,6 +84,9 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   // TODO: setting the date the feed xml file was last modified is something else's concern
   feed.dateLastModified = lastModDate;
 
+  // Setup feed magic manually
+  feed.magic = Feed.FEED_MAGIC;
+
   result.feed = feed;
 
   if(!processEntries) {
