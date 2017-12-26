@@ -30,9 +30,10 @@ export default function fetchFeed(url, timeoutMs, extendedTypes) {
 
   const headers = {accept: DEFAULT_ACCEPT_HEADER_VALUE};
   const options = {
-    headers: headers
+    headers: headers,
+    timeout: timeoutMs
   };
 
   const acceptedMimeTypes = extendedTypes ? XML_MIME_TYPES.concat(extendedTypes) : XML_MIME_TYPES;
-  return fetchInternal(url, options, timeoutMs, acceptedMimeTypes);
+  return fetchInternal(url, options, acceptedMimeTypes);
 }

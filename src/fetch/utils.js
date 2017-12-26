@@ -10,20 +10,16 @@ import TimeoutError from "/src/utils/timeout-error.js";
 import {compareURLsWithoutHash} from "/src/utils/url-utils.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
 
-// TODO: rather than have timeout as a separate parameter, fold it into options object. Then
-// extract it from options object internally.
-
-// TODO: rename to something like fetch-base.js or fetch-wrapper.js
 // TODO: create a CustomResponse class and use that instead of returning a simple object?
 
 // Does a fetch with a timeout and a content type predicate
 // @param url {URL} request url
 // @param options {Object} optional, fetch options parameter
-// @param timeoutMs {Number} optional, timeout in milliseconds
-// @param acceptedMimeTypes {Array} optional, if specified then this checks if the response mime
-// type is in the list of accepted types and throws a fetch error if not.
+// @param acceptedMimeTypes {Array or Function} optional, if specified then this checks if the
+// response mime type is in the list of accepted types and throws a fetch error if not, or if it
+// is a function then if calling the function on the mime type returns true (otherwise throws).
 // @returns {Object} a Response-like object
-export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) {
+export async function fetchInternal(url, options, acceptedMimeTypes) {
   // Accepting a url ensures the url is canonical and thereby avoids allowing fetch to implicitly
   // resolve a relative url string
   assert(url instanceof URL);
@@ -31,10 +27,40 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
   // Avoid the TypeError fetch throws for invalid options, treat it as an assertion error
   assert(typeof options === 'undefined' || typeof options === 'object');
 
+  // TODO: get timeoutMs from options. I am going to call it timeout.
+
+  let timeoutMs;
+  if(typeof options === 'object') {
+    if('timeout' in options) {
+      timeoutMs = options.timeout;
+      // Leave the timeout property in the options object so as to avoid side effect
+      // The fetch call seems to tolerate irrelevant properties
+      // This gets removed later anyway
+    }
+  }
+
   const untimed = typeof timeoutMs === 'undefined';
   assert(untimed || isPosInt(timeoutMs));
 
-  // First check if the url is allowed to be fetched according to this app's policy
+  // Create a custom set of options where explicitly set options override the default options
+  const defaultOptions = {
+    credentials: 'omit',
+    method: 'get',
+    mode: 'cors',
+    cache: 'default',
+    redirect: 'follow',
+    referrer: 'no-referrer',
+    referrerPolicy: 'no-referrer'
+  };
+  const mergedOptions = options ? Object.assign(defaultOptions, options) : defaultOptions;
+
+  // Now that merged options is a copy of options, remove any non-standard options
+  // This may not be necessary but I'd prefer to avoid unknown behavior
+  if('timeout' in mergedOptions) {
+    delete mergedOptions.timeout;
+  }
+
+  // Check if the url is allowed to be fetched according to this app's policy
   // TODO: PermissionsError feels like a misnomer? Maybe stop trying to be so abstract and call it
   // precisely what it is, a FetchPolicyError or something.
   if(!isAllowedURL(url)) {
@@ -51,24 +77,12 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
     throw new OfflineError(message);
   }
 
-  // Create a custom set of options where explicitly set options override the default options
-  const defaultOptions = {
-    credentials: 'omit',
-    method: 'get',
-    mode: 'cors',
-    cache: 'default',
-    redirect: 'follow',
-    referrer: 'no-referrer',
-    referrerPolicy: 'no-referrer'
-  };
-  const mergedOptions = options ? Object.assign(defaultOptions, options) : defaultOptions;
-
   const fetchPromise = fetch(url.href, mergedOptions);
-  let timeoutId;
 
   // If a timeout was specified, initialize a derived promise to the result of racing fetch
   // against timeout. Otherwise, initialize a derived promise to the result of fetch.
   let aggregatePromise;
+  let timeoutId;
   if(untimed) {
     aggregatePromise = fetchPromise;
   } else {

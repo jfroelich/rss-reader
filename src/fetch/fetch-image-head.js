@@ -9,7 +9,8 @@ export default function fetchImageHead(url, timeoutMs) {
   const headers = {accept: 'image/*'};
   const options = {
     method: 'head',
-    headers: headers
+    headers: headers,
+    timeout: timeoutMs
   };
 
   // TODO: fully enumerate the list of acceptable types of images
@@ -31,5 +32,5 @@ export default function fetchImageHead(url, timeoutMs) {
     return MimeUtils.isImage(mimeType) || types.includes(mimeType);
   }
 
-  return FetchUtils.fetchInternal(url, options, timeoutMs, isAcceptableMimeType);
+  return FetchUtils.fetchInternal(url, options, isAcceptableMimeType);
 }

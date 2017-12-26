@@ -18,9 +18,10 @@ export default function fetchHTML(url, timeoutMs) {
   ].join(',');
 
   const options = {
-    headers: {accept: acceptHeaderValue}
+    headers: {accept: acceptHeaderValue},
+    timeout: timeoutMs
   };
 
   const acceptedMimeTypes = [MimeUtils.MIME_TYPE_HTML];
-  return fetchInternal(url, options, timeoutMs, acceptedMimeTypes);
+  return fetchInternal(url, options, acceptedMimeTypes);
 }
