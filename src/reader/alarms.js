@@ -121,5 +121,3 @@ async function handlePollFeedsAlarm(alarm) {
     poll.close();
   }
 }
-
-window.testPollFeeds = handlePollFeedsAlarm;

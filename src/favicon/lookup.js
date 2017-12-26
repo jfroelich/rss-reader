@@ -9,6 +9,10 @@ import {setURLHrefProperty} from "/src/utils/url-utils.js";
 import {resolveURLString} from "/src/utils/url-string-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 
+// Comment and uncomment to enable debugging
+const dprintf = function(){};
+//const dprintf = console.debug;
+
 // Class that provides favicon lookup
 export default class FaviconLookup {
   constructor() {
@@ -32,7 +36,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   assert(url instanceof URL);
   assert(typeof document === 'undefined' || document instanceof Document);
 
-  console.debug('Lookup favicon for url', url.href);
+  dprintf('Lookup favicon for url', url.href);
 
   // Store a distinct set of request urls involved in the lookup so that various conditions are
   // simpler to implement and read
@@ -232,7 +236,7 @@ FaviconLookup.prototype.fetchImage = async function(url) {
       throw error;
     } else {
       // Ignore
-      console.debug('Failed to fetch', url.href, error);
+      dprintf('Failed to fetch', url.href, error);
     }
   }
 };
@@ -315,7 +319,7 @@ FaviconLookup.prototype.search = async function(document, baseURL) {
   if(!canonicalURLs.length) {
 
     // TEMP:
-    console.debug('Found candidates but none canonicalizable', baseURL.href, candidateURLStrings);
+    dprintf('Found candidates but none canonicalizable', baseURL.href, candidateURLStrings);
 
     return;
   }

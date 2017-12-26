@@ -90,6 +90,8 @@ FeedPoll.prototype.pollFeeds = async function() {
     const message = 'Added articles';
     Platform.showNotification(title, message);
   }
+
+  console.log('Poll feeds completed normally, %d new entries', totalNumEntriesAdded);
 };
 
 // TODO: to enforce that the feed parameter is a feed object loaded from the database, it is

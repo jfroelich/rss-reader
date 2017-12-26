@@ -29,7 +29,12 @@ export default function fetchImageHead(url, timeoutMs) {
 
 
   function isAcceptableMimeType(mimeType) {
-    console.debug('Testing if %s is allowed mime type', mimeType);
+
+    // Just observational for now
+    if(!imageMimeTypes.includes(mimeType)) {
+      console.info('New image mime type encountered:', mimeType);
+    }
+
     const types = ['application/octet-stream'];
     return MimeUtils.isImage(mimeType) || types.includes(mimeType);
   }

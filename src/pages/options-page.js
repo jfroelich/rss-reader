@@ -344,7 +344,8 @@ async function subscribeFormOnsubmit(event) {
     subscribe.close();
   }
 
-  assert(feed);
+  // TODO: UI level functions generally shouldn't assert
+  assert(Feed.isFeed(feed));
   feedListAppendFeed(feed);
   const feedURL = Feed.peekURL(feed);
 
