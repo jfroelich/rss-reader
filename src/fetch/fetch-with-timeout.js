@@ -15,58 +15,63 @@ export default async function fetchWithTimeout(url, options, timeoutMs) {
   assert(url instanceof URL);
   // Avoid the TypeError fetch throws for invalid options, treat it as an assertion error
   assert(typeof options === 'undefined' || typeof options === 'object');
-  assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
+  const untimed = typeof timeoutMs === 'undefined';
+  assert(untimed || isPosInt(timeoutMs));
 
   // Avoid the TypeError fetch throws when offline, and distinguish this type of network error from
-  // other network errors.
+  // other network errors. TypeErrors are unexpected and represent permanent programming errors.
+  // Being offline is an expected and temporary error.
   if(!navigator.onLine) {
-    const message = formatString('Unable to fetch url "%s" while offline', url);
+    const message = formatString('Offline when fetching', url);
     throw new OfflineError(message);
   }
 
   const fetchPromise = fetch(url.href, options);
-  if(typeof timeoutMs === 'undefined') {
-    return fetchPromise;
-  }
+  let timeoutId;
 
-  const [timeoutId, timeoutPromise] = PromiseUtils.setTimeoutPromise(timeoutMs);
-  const contestants = [fetchPromise, timeoutPromise];
+  // If a timeout was specified, initialize a derived promise to the result of racing fetch
+  // against timeout. Otherwise, initialize a derived promise to the result of fetch.
+  let aggregatePromise;
+  if(untimed) {
+    aggregatePromise = fetchPromise;
+  } else {
+    let timeoutPromise;
+    [timeoutId, timeoutPromise] = PromiseUtils.setTimeoutPromise(timeoutMs);
+    const contestants = [fetchPromise, timeoutPromise];
+    aggregatePromise = Promise.race(contestants);
+  }
 
   let response;
   try {
-    response = await Promise.race(contestants);
+    response = await aggregatePromise;
   } catch(error) {
-    clearTimeout(timeoutId);
-    // fetch rejects with a TypeError when a network error is encountered, or when the url contains
-    // credentials.
-    if(error instanceof TypeError) {
-      const message = formatString('Failed to fetch %s because of a network error', url, error);
-      throw new NetworkError(message);
-    } else {
-      // TODO: when does this ever happen?
-      console.warn('Unknown error type thrown by fetch', error);
-      throw error;
-    }
+    throwTranslated(url, error);
   }
 
-  // If timeout wins then response is undefined. If fetch wins then response is defined.
+  // If fetch wins then response is defined.
+  // If timeout wins then response is undefined.
+  // If fetch errors, that was trapped above
+  // Timeout never errors.
 
   if(response) {
     clearTimeout(timeoutId);
   } else {
     // TODO: cancel/abort the fetch, if that is possible
-    const errorMessage = formatString('Fetch timed out for url', url.href);
+    const errorMessage = formatString('Fetch timed out for url', url);
     throw new TimeoutError(errorMessage);
   }
-  return fetchPromise;
+  return response;
 }
 
-async function fetchWithTranslatedErrors(url, options) {
-  let response;
-  try {
-    response = await fetch(url.href, options);
-  } catch(error) {
-
+function throwTranslated(url, error) {
+  // fetch rejects with a TypeError when a network error is encountered, or when the url contains
+  // credentials. It could also be a timeout, but that is a native timeout.
+  if(error instanceof TypeError) {
+    const message = formatString('Failed to fetch %s because of a network error', url, error);
+    throw new NetworkError(message);
+  } else {
+    // TODO: when does this ever happen?
+    console.warn('Unknown error type thrown by fetch', error);
+    throw error;
   }
-  return response;
 }
