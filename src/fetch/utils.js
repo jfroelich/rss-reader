@@ -10,6 +10,9 @@ import {setTimeoutPromise} from "/src/utils/promise-utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 import formatString from "/src/utils/format-string.js";
 
+// TODO: given that most fetches use the same options, I should use default options, and then
+// override only explicit options. Then all the callers don't need to specify the other defaults
+
 // TODO: rename to something like fetch-base.js or fetch-wrapper.js
 // TODO: create a CustomResponse class and use that instead of returning a simple object?
 
@@ -23,12 +26,17 @@ import formatString from "/src/utils/format-string.js";
 export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) {
   assert(url instanceof URL);
 
+  // First check if the url is allowed to be fetched according to this app's policy
   // TODO: PermissionsError feels like a misnomer? Maybe stop trying to be so abstract and call it
   // precisely what it is, a FetchPolicyError or something.
   if(!isAllowedURL(url)) {
     const message = formatString('Refused to fetch url', url);
     throw new PermissionsError(message);
   }
+
+  // TODO: rather than pass along options, create a default options object here, and then
+  // copy over only options specified by the caller
+
 
   const response = await fetchWithTimeout(url, options, timeoutMs);
   assert(response instanceof Response);
@@ -58,6 +66,21 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
       const message = formatString('Unacceptable mime type', mimeType, url);
       throw new FetchError(message);
     }
+  } else if(typeof acceptedMimeTypes === 'function') {
+
+    // The function handler is a quick hacky addition to allow for fetchImageHead to call
+    // fetchInternal. The issue is that fetchImageHead doesn't use an enumerated list of
+    // mime types. Instead it uses a partially enumerated list and a function call that
+    // tests if mime type starts with 'image/'.
+    // TODO: think how to avoid this hack eventually. Maybe enumerate the types.
+    // Or maybe allow for wild card matching. Or maybe live with it.
+
+    const contentType = response.headers.get('Content-Type');
+    const mimeType = MimeUtils.fromContentType(contentType);
+    if(!acceptedMimeTypes(mimeType)) {
+      const message = formatString('Unacceptable mime type', mimeType, url);
+      throw new FetchError(message);
+    }
   }
 
   const responseWrapper = {};
@@ -68,9 +91,15 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
   responseWrapper.responseURL = response.url;
   responseWrapper.lastModifiedDate = getLastModified(response);
 
+  // TODO: I think I would prefer this is called contentLength
+  responseWrapper.size = getContentLength(response);
+
   // This should never throw as the browser never generates a bad property value
   const responseURLObject = new URL(response.url);
   responseWrapper.redirected = detectURLChanged(url, responseURLObject);
+
+
+
   return responseWrapper;
 }
 
