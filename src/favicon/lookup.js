@@ -2,7 +2,6 @@ import assert from "/src/utils/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import fetchImageHead from "/src/fetch/fetch-image-head.js";
-import {FETCH_UNKNOWN_CONTENT_LENGTH} from "/src/fetch/utils.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import parseHTML from "/src/utils/html/parse.js";
 import {setURLHrefProperty} from "/src/utils/url-utils.js";
@@ -222,7 +221,7 @@ FaviconLookup.prototype.hasOpenCache = function() {
 
 // Returns true if response byte size in bounds. Tolerates undefined response.
 FaviconLookup.prototype.isAcceptableImageResponse = function(response) {
-  return response && (response.size === FETCH_UNKNOWN_CONTENT_LENGTH ||
+  return response && (isNaN(response.size) ||
     (response.size >= this.minImageSize && response.size <= this.maxImageSize));
 };
 

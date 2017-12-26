@@ -196,20 +196,6 @@ function getLastModified(response) {
   }
 }
 
-// TODO: actually this is only ever called by fetch-image-head, move it back to there so that
-// utils becomes a file of just fetchInternal, at which point I can rename utils.js to something
-// more specific, and change it to export a default function.
-
-export const FETCH_UNKNOWN_CONTENT_LENGTH = -1;
-
-// TODO: just return NaN if NaN? NaN is suitable unknown type.
 export function getContentLength(response) {
-  const contentLengthString = response.headers.get('Content-Length');
-
-  if(typeof contentLengthString !== 'string' || contentLengthString.length < 1) {
-    return FETCH_UNKNOWN_CONTENT_LENGTH;
-  }
-
-  const contentLength = parseInt10(contentLengthString);
-  return isNaN(contentLength) ? FETCH_UNKNOWN_CONTENT_LENGTH : contentLength;
+  return parseInt10(response.headers.get('Content-Length'));
 }
