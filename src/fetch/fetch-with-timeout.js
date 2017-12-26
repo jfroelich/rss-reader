@@ -24,14 +24,33 @@ export default async function fetchWithTimeout(url, options, timeoutMs) {
     throw new OfflineError(message);
   }
 
-  const fetchPromise = fetchWithTranslatedErrors(url, options);
+  const fetchPromise = fetch(url.href, options);
   if(typeof timeoutMs === 'undefined') {
     return fetchPromise;
   }
 
   const [timeoutId, timeoutPromise] = PromiseUtils.setTimeoutPromise(timeoutMs);
   const contestants = [fetchPromise, timeoutPromise];
-  const response = await Promise.race(contestants);
+
+  let response;
+  try {
+    response = await Promise.race(contestants);
+  } catch(error) {
+    clearTimeout(timeoutId);
+    // fetch rejects with a TypeError when a network error is encountered, or when the url contains
+    // credentials.
+    if(error instanceof TypeError) {
+      const message = formatString('Failed to fetch %s because of a network error', url, error);
+      throw new NetworkError(message);
+    } else {
+      // TODO: when does this ever happen?
+      console.warn('Unknown error type thrown by fetch', error);
+      throw error;
+    }
+  }
+
+  // If timeout wins then response is undefined. If fetch wins then response is defined.
+
   if(response) {
     clearTimeout(timeoutId);
   } else {
@@ -42,26 +61,12 @@ export default async function fetchWithTimeout(url, options, timeoutMs) {
   return fetchPromise;
 }
 
-// Wraps a call to fetch and changes the types of certain errors thrown. The primary problem
-// solved is that my app considers a TypeError as indicative of a critical, permanent, unexpected,
-// unchecked, programmer syntax error, but fetch throws TypeError errors for other reasons that
-// are ephemeral, such as when a network error occurs, or when a url happens to contain credentials.
-// @param url {URL} request url
-// @param options {Object} optional, options variable passed directly to the fetch call
 async function fetchWithTranslatedErrors(url, options) {
   let response;
   try {
     response = await fetch(url.href, options);
   } catch(error) {
-    // fetch rejects with a TypeError when a network error is encountered, or when the url contains
-    // credentials.
-    if(error instanceof TypeError) {
-      throw new NetworkError('Failed to fetch', url, 'because of a checked error', error);
-    }
 
-    // TODO: when does this ever happen?
-    console.warn('Unknown error type thrown by fetch', error);
-    throw error;
   }
   return response;
 }
