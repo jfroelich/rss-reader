@@ -24,26 +24,12 @@ import {isValidURLString} from "/src/utils/url-string-utils.js";
 // @returns {Object} a Response-like object. This extends (in the general sense) the basic
 // Response object with properties that have already be converted to preferred data type
 export async function fetchInternal(url, options, acceptedMimeTypes) {
-  // Accepting a url ensures the url is canonical and thereby avoid allowing fetch to implicitly
+  // Accepting a url ensures the url is canonical and thereby avoids allowing fetch to implicitly
   // resolve a relative url
   assert(url instanceof URL);
 
   // Avoid the TypeError fetch throws for invalid options, treat it as an assertion error
   assert(typeof options === 'undefined' || typeof options === 'object');
-
-  // Grab timeout from options
-  let timeoutMs;
-  if(typeof options === 'object') {
-    if('timeout' in options) {
-      timeoutMs = options.timeout;
-      // Leave the timeout property in the options object so as to avoid side effect
-      // The fetch call seems to tolerate irrelevant properties
-      // This gets removed later anyway
-    }
-  }
-
-  const untimed = typeof timeoutMs === 'undefined';
-  assert(untimed || isPosInt(timeoutMs));
 
   // Create a custom set of options where explicitly set options override the default options
   const defaultOptions = {
@@ -55,13 +41,17 @@ export async function fetchInternal(url, options, acceptedMimeTypes) {
     referrer: 'no-referrer',
     referrerPolicy: 'no-referrer'
   };
-  const mergedOptions = options ? Object.assign(defaultOptions, options) : defaultOptions;
+  const mergedOptions = Object.assign(defaultOptions, options);
 
-  // Now that merged options is a copy of options, remove any non-standard options
-  // This may not be necessary but I'd prefer to avoid unknown behavior
+  // Grab timeout from options
+  let timeoutMs;
   if('timeout' in mergedOptions) {
-    delete mergedOptions.timeout;
+    timeoutMs = mergedOptions.timeout;
+    delete mergedOptions.timeout;// superfluous, but avoid any unclear behavior
   }
+
+  const untimed = typeof timeoutMs === 'undefined';
+  assert(untimed || isPosInt(timeoutMs));
 
   // Check if the url is allowed to be fetched according to this app's policy
   // TODO: PermissionsError feels like a misnomer? Maybe stop trying to be so abstract and call it
