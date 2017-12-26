@@ -28,7 +28,7 @@ FaviconCache.prototype.close = function() {
 };
 
 FaviconCache.prototype.setup = async function() {
-  assert(typeof this.name === 'string' && this.name.length);
+  assert(typeof this.name === 'string' && this.name.length > 0);
   assert(typeof this.version === 'number' && this.version >= 0);
   console.log('Setting up favicon database', this.name, this.version);
   try {
