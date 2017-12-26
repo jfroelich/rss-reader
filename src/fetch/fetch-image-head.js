@@ -8,14 +8,8 @@ import * as MimeUtils from "/src/utils/mime-utils.js";
 export default function fetchImageHead(url, timeoutMs) {
   const headers = {accept: 'image/*'};
   const options = {
-    credentials: 'omit',
     method: 'head',
-    headers: headers,
-    mode: 'cors',
-    cache: 'default',
-    redirect: 'follow',
-    referrer: 'no-referrer',
-    referrerPolicy: 'no-referrer'
+    headers: headers
   };
 
   // TODO: fully enumerate the list of acceptable types of images
@@ -27,9 +21,7 @@ export default function fetchImageHead(url, timeoutMs) {
     'image/x-icon'
   ];
 
-
   function isAcceptableMimeType(mimeType) {
-
     // Just observational for now
     if(!imageMimeTypes.includes(mimeType)) {
       console.info('New image mime type encountered:', mimeType);

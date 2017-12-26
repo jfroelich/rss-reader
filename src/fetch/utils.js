@@ -10,8 +10,8 @@ import TimeoutError from "/src/utils/timeout-error.js";
 import {compareURLsWithoutHash} from "/src/utils/url-utils.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
 
-// TODO: given that most fetches use the same options, I should use default options, and then
-// override only explicit options. Then all the callers don't need to specify the other defaults
+// TODO: rather than have timeout as a separate parameter, fold it into options object. Then
+// extract it from options object internally.
 
 // TODO: rename to something like fetch-base.js or fetch-wrapper.js
 // TODO: create a CustomResponse class and use that instead of returning a simple object?
@@ -51,11 +51,19 @@ export async function fetchInternal(url, options, timeoutMs, acceptedMimeTypes) 
     throw new OfflineError(message);
   }
 
+  // Create a custom set of options where explicitly set options override the default options
+  const defaultOptions = {
+    credentials: 'omit',
+    method: 'get',
+    mode: 'cors',
+    cache: 'default',
+    redirect: 'follow',
+    referrer: 'no-referrer',
+    referrerPolicy: 'no-referrer'
+  };
+  const mergedOptions = options ? Object.assign(defaultOptions, options) : defaultOptions;
 
-  // TODO: rather than pass along options, create a default options object here, and then
-  // copy over only options specified by the caller
-
-  const fetchPromise = fetch(url.href, options);
+  const fetchPromise = fetch(url.href, mergedOptions);
   let timeoutId;
 
   // If a timeout was specified, initialize a derived promise to the result of racing fetch

@@ -18,14 +18,7 @@ export default function fetchHTML(url, timeoutMs) {
   ].join(',');
 
   const options = {
-    credentials: 'omit',
-    method: 'get',
-    headers: {accept: acceptHeaderValue},
-    mode: 'cors',
-    cache: 'default',
-    redirect: 'follow',
-    referrer: 'no-referrer',
-    referrerPolicy: 'no-referrer'
+    headers: {accept: acceptHeaderValue}
   };
 
   const acceptedMimeTypes = [MimeUtils.MIME_TYPE_HTML];

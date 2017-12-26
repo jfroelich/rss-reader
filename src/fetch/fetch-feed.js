@@ -2,12 +2,11 @@ import assert from "/src/utils/assert.js";
 import {fetchInternal} from "/src/fetch/utils.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
 
+// TODO: remove the extendedTypes parameter, just hardcode the other types
+
 // TODO: i think this is the wrong abstraction. See the following article
 // https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction
 // * I do not like how fetch options are hardcoded. This is too opinionated.
-// * I do not love the extendedTypes parameter although this does what I want at the moment. This is
-// an example of one those parameters that changes default behavior mentioned in above article
-// * I do not love how timeoutMs is separate from options, if options were to become a parameter
 
 const XML_MIME_TYPES = [
   'application/rss+xml',
@@ -31,14 +30,7 @@ export default function fetchFeed(url, timeoutMs, extendedTypes) {
 
   const headers = {accept: DEFAULT_ACCEPT_HEADER_VALUE};
   const options = {
-    credentials: 'omit',
-    method: 'get',
-    headers: headers,
-    mode: 'cors',
-    cache: 'default',
-    redirect: 'follow',
-    referrer: 'no-referrer',
-    referrerPolicy: 'no-referrer'
+    headers: headers
   };
 
   const acceptedMimeTypes = extendedTypes ? XML_MIME_TYPES.concat(extendedTypes) : XML_MIME_TYPES;
