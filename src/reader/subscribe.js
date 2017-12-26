@@ -21,12 +21,6 @@ export default function Subscribe() {
   this.fetchFeedTimeoutMs = 2000;
   this.concurrent = false;
   this.notify = true;
-
-  // Accept these additional mime types when fetching a feed by default
-  this.extendedFeedTypes = [
-    'text/html',
-    'application/octet-stream'
-  ];
 }
 
 Subscribe.prototype.init = function() {
@@ -115,7 +109,7 @@ Subscribe.prototype.checkFeedURLConstraint = async function(url) {
 Subscribe.prototype.fetchFeed = async function(url) {
   let response;
   try {
-    response = await fetchFeed(url, this.fetchFeedTimeoutMs, this.extendedFeedTypes);
+    response = await fetchFeed(url, this.fetchFeedTimeoutMs);
   } catch(error) {
     if(error instanceof OfflineError) {
       // fall through
@@ -182,10 +176,6 @@ async function deferredPollFeed(feed) {
   // these checks because they most likely fail.
   poll.ignoreRecencyCheck = true;
   poll.ignoreModifiedCheck = true;
-
-  // NOTE: this relies on the default extended accepted feed mime types rather than explicitly
-  // configuring them here. Keep in mind this may be different than the explicitly specified types
-  // in the subscribe function. Generally the two should be the same but this isn't guaranteed.
 
   // TODO: should this actually throw instead of trapping error? But it is forked and caller
   // already returned, so what happens?

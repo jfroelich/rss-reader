@@ -20,8 +20,8 @@ import {isValidURLString} from "/src/utils/url-string-utils.js";
 // is a function then if calling the function on the mime type returns true (otherwise throws).
 // @returns {Object} a Response-like object
 export async function fetchInternal(url, options, acceptedMimeTypes) {
-  // Accepting a url ensures the url is canonical and thereby avoids allowing fetch to implicitly
-  // resolve a relative url string
+  // Accepting a url ensures the url is canonical and thereby avoid allowing fetch to implicitly
+  // resolve a relative url
   assert(url instanceof URL);
 
   // Avoid the TypeError fetch throws for invalid options, treat it as an assertion error

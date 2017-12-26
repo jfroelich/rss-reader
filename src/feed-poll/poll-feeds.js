@@ -31,10 +31,6 @@ export default function FeedPoll() {
   this.fetchHTMLTimeoutMs = 5000;
   this.fetchImageTimeoutMs = 3000;
   this.deactivationThreshold = 10;
-  this.extendedFeedTypes = [
-    'application/octet-stream',
-    'text/html'
-  ];
   this.channel = null;
 }
 
@@ -120,7 +116,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   const requestURL = new URL(url);
   let response;
   try {
-    response = await fetchFeed(requestURL, this.fetchFeedTimeoutMs, this.extendedFeedTypes);
+    response = await fetchFeed(requestURL, this.fetchFeedTimeoutMs);
   } catch(error) {
     await handlePollFeedError(error, this.feedStore, feed, 'fetch-feed');
   }

@@ -7,14 +7,8 @@ import {parseFeed} from "/src/parse-feed/parse-feed.js";
 
 async function test(url) {
   let timeoutMs;
-  let extendedTypes = [
-    'text/html',
-    'application/octet-stream'
-  ];
-
   const requestURL = new URL(url);
-  const response = await fetchFeed(requestURL, timeoutMs, extendedTypes);
-
+  const response = await fetchFeed(requestURL, timeoutMs);
   const feedXML = await response.text();
   const result = parseFeed(feedXML);
   console.dir(result);
@@ -22,7 +16,4 @@ async function test(url) {
 
 // Expose to console
 window.test = test;
-
-
-
 window.decodeEntities = decodeEntities;
