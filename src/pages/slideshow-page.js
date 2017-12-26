@@ -191,6 +191,7 @@ async function markSlideRead(feedStore, slideElement) {
   try {
     await feedStore.markEntryAsRead(entryId);
   } catch(error) {
+    // BUG
     // TODO: this should never happen
     // TODO: this error also happens when marking an entry as read that is already read
     console.error(error);
