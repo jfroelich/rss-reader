@@ -1,7 +1,7 @@
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import PollFeeds from "/src/feed-poll/poll-feeds.js";
+import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 
 // Command line interface module. This module does not export anything. Instead, it defines a
@@ -35,7 +35,7 @@ cli.archiveEntries = async function(limit) {
 };
 
 cli.pollFeeds = async function() {
-  const poll = new PollFeeds();
+  const poll = new FeedPoll();
   poll.init();
   poll.ignoreRecencyCheck = true;
   poll.ignoreModifiedCheck = true;
@@ -49,43 +49,43 @@ cli.pollFeeds = async function() {
 };
 
 cli.removeLostEntries = async function(limit) {
-  const fs = new FeedStore();
+  const store = new FeedStore();
   try {
-    await fs.open();
-    await fs.removeLostEntries(limit);
+    await store.open();
+    await store.removeLostEntries(limit);
   } finally {
-    fs.close();
+    store.close();
   }
 };
 
 cli.removeOrphanedEntries = async function(limit) {
-  const fs = new FeedStore();
+  const store = new FeedStore();
   try {
-    await fs.open();
-    await fs.removeOrphanedEntries(limit);
+    await store.open();
+    await store.removeOrphanedEntries(limit);
   } finally {
-    fs.close();
+    store.close();
   }
 };
 
 cli.clearFavicons = async function() {
-  const fc = new FaviconCache();
+  const cache = new FaviconCache();
   try {
-    await fc.open();
-    await fc.clear();
+    await cache.open();
+    await cache.clear();
   } finally {
-    fc.close();
+    cache.close();
   }
 };
 
 cli.compactFavicons = async function(limit) {
-  const fc = new FaviconCache();
+  const cache = new FaviconCache();
   let maxAgeMs;
   try {
-    await fc.open();
-    await fc.compact(maxAgeMs, limit);
+    await cache.open();
+    await cache.compact(maxAgeMs, limit);
   } finally {
-    fc.close();
+    cache.close();
   }
 };
 
@@ -107,13 +107,4 @@ cli.lookupFavicon = async function(url, timeout, cacheless = true) {
   }
 };
 
-// Modules are basically wrapped in a promise. To enable variables to be accessible from the
-// console, which can only see global variables, and not "exported" variables from modules, the
-// values must be defined "really" globally. Right now using window seems to work. This is not a
-// recommended practice, but I think this is an exception because calling this from the console is
-// the entire point of this module.
-if(window) {
-  window.cli = cli;
-} else {
-  console.warn('cli unavailable (no window)');
-}
+window.cli = cli;

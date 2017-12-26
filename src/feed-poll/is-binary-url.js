@@ -7,14 +7,7 @@ import * as MimeUtils from "/src/utils/mime-utils.js";
 export default function isBinaryURL(url) {
   assert(url instanceof URL);
 
-  // Check if the url's protocol indicates it cannot be binary. This is the fastest and simplest
-  // check so do it first. This is not an exhaustive list of protocols that are typically
-  // textual, it is just some low-hanging fruit.
-
-  // See https://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
-  // This makes me think that trying to be exhaustive is pointless and actually kind of stupid
-  // What should really be happening is a whitelist in calling context that only allows for
-  // http and https
+  // Handle a few obvious cases
   const textProtocols = ['tel:', 'mailto:', 'javascript:'];
   if(textProtocols.includes(url.protocol)) {
     return false;
@@ -22,7 +15,7 @@ export default function isBinaryURL(url) {
 
   // Special handling for data uris
   if(url.protocol === 'data:') {
-    // If mime type not found then assume text/plain, which is the default according to MDN
+    // text/plain is the default according to MDN
     const mimeType = findMimeTypeInDataURL(url) || 'text/plain';
     return MimeUtils.isBinary(mimeType);
   }

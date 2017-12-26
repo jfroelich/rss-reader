@@ -1,9 +1,4 @@
-// global configuration module
-
-// NOTE: I am not entirely in love with this approach. What I am trying to do however is separate
-// configuration from code, so that I do not have to modify the code to change the configuration.
-// One thing to look into is whether I can define such things in manifest.json. Another idea
-// would be to load information from localStorage.
+// Global configuration module
 
 // An array of descriptors. Each descriptor represents a test against a url hostname, that if
 // matched, indicates the content is not accessible.

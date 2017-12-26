@@ -1,7 +1,7 @@
 import {queryIdleState} from "/src/platform/platform.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
-import PollFeeds from "/src/feed-poll/poll-feeds.js";
+import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 
 // Registers alarms in the extension that run various background jobs. Analogous to cron.
@@ -112,7 +112,7 @@ async function handlePollFeedsAlarm(alarm) {
     }
   }
 
-  const poll = new PollFeeds();
+  const poll = new FeedPoll();
   poll.init();
   try {
     await poll.open();

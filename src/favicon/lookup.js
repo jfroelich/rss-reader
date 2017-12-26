@@ -13,7 +13,7 @@ import isUncheckedError from "/src/utils/is-unchecked-error.js";
 export default class FaviconLookup {
   constructor() {
     this.cache = undefined;
-    this.kMaxFailureCount = 2;// (comparison is <=), 'const'
+    this.kMaxFailureCount = 2;
     this.skipURLFetch = false;
     this.maxAgeMs = FaviconCache.MAX_AGE_MS;
     this.fetchHTMLTimeoutMs = 4000;

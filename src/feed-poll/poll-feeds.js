@@ -21,9 +21,7 @@ import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import * as URLUtils from "/src/utils/url-utils.js";
 
-// TODO: think of a better name for the class
-
-export default function PollFeeds() {
+export default function FeedPoll() {
   this.feedStore;
   this.iconCache;
   this.ignoreRecencyCheck = false;
@@ -40,14 +38,14 @@ export default function PollFeeds() {
   this.channel = null;
 }
 
-PollFeeds.prototype.init = function() {
+FeedPoll.prototype.init = function() {
   assert(typeof this.feedStore === 'undefined' || this.feedStore === null);
   assert(typeof this.iconCache === 'undefined' || this.iconCache === null);
   this.feedStore = new FeedStore();
   this.iconCache = new FaviconCache();
 };
 
-PollFeeds.prototype.open = async function() {
+FeedPoll.prototype.open = async function() {
   assert(this.feedStore instanceof FeedStore);
   assert(this.iconCache instanceof FaviconCache);
   assert(!this.feedStore.isOpen());
@@ -60,13 +58,13 @@ PollFeeds.prototype.open = async function() {
   this.channel = new BroadcastChannel(CHANNEL_NAME);
 };
 
-PollFeeds.prototype.close = function() {
+FeedPoll.prototype.close = function() {
   if(this.channel)    this.channel.close();
   if(this.feedStore)  this.feedStore.close();
   if(this.iconCache)  this.iconCache.close();
 };
 
-PollFeeds.prototype.pollFeeds = async function() {
+FeedPoll.prototype.pollFeeds = async function() {
   assert(this.feedStore instanceof FeedStore);
   assert(this.feedStore.isOpen());
   assert(this.iconCache instanceof FaviconCache);
@@ -101,7 +99,7 @@ PollFeeds.prototype.pollFeeds = async function() {
 
 // @param batched {Boolean} optional, if true then this does not send notifications or update
 // the badge unread count
-PollFeeds.prototype.pollFeed = async function(feed, batched) {
+FeedPoll.prototype.pollFeed = async function(feed, batched) {
   assert(this.feedStore.isOpen());
   assert(Feed.isFeed(feed));
   assert(Feed.hasURL(feed));
@@ -186,7 +184,7 @@ PollFeeds.prototype.pollFeed = async function(feed, batched) {
   return numEntriesAdded;
 };
 
-PollFeeds.prototype.didPollFeedRecently = function(feed) {
+FeedPoll.prototype.didPollFeedRecently = function(feed) {
   if(this.ignoreRecencyCheck) {
     return false;
   }
@@ -269,7 +267,7 @@ async function handlePollFeedError(error, store, feed, callCategory) {
   throw error;
 }
 
-PollFeeds.prototype.isUnmodifiedFeed = function(feedUpdated, feedDate, responseDate) {
+FeedPoll.prototype.isUnmodifiedFeed = function(feedUpdated, feedDate, responseDate) {
   if(this.ignoreModifiedCheck || !feedUpdated) {
     return false;
   }
@@ -288,7 +286,7 @@ function cascadeFeedPropertiesToEntries(feed, entries) {
   }
 }
 
-PollFeeds.prototype.pollEntry = async function(entry) {
+FeedPoll.prototype.pollEntry = async function(entry) {
   assert(this.feedStore.isOpen());
   assert(this.iconCache.isOpen());
   assert(Entry.isEntry(entry));
@@ -361,7 +359,7 @@ function isPollableURL(url) {
 }
 
 // Attempts to fetch the entry's html. May return undefined.
-PollFeeds.prototype.fetchEntryHTML = async function(url) {
+FeedPoll.prototype.fetchEntryHTML = async function(url) {
   let response;
   try {
     response = await fetchHTML(url, this.fetchHTMLTimeoutMs);
@@ -384,7 +382,7 @@ function parseEntryHTML(html) {
   }
 }
 
-PollFeeds.prototype.setEntryFavicon = async function(entry, url, document) {
+FeedPoll.prototype.setEntryFavicon = async function(entry, url, document) {
   const query = new FaviconLookup();
   query.cache = this.iconCache;
   query.skipURLFetch = true;

@@ -1,7 +1,7 @@
 import assert from "/src/utils/assert.js";
 import exportFeeds from "/src/backup/export-feeds.js";
 import OPMLImporter from "/src/backup/opml-importer.js";
-import PollFeeds from "/src/feed-poll/poll-feeds.js";
+import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
@@ -674,7 +674,7 @@ async function refreshAnchorOnclick(event) {
   }
   refreshInProgress = true;
 
-  const poll = new PollFeeds();
+  const poll = new FeedPoll();
   poll.init();
   poll.ignoreRecencyCheck = true;
   poll.ignoreModifiedCheck = true;

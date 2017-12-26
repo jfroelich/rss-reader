@@ -11,17 +11,12 @@ export default class FaviconCache {
   }
 }
 
-// TODO: this should be defined on prototype?
 // 30 days in ms, used by both lookup and compact to determine whether a cache entry expired
 FaviconCache.MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 FaviconCache.prototype.open = async function() {
   this.conn = await IndexedDbUtils.open(this.name, this.version, this.onUpgradeNeeded,
     this.openTimeoutMs);
-
-  // TODO: I would prefer this would be void, first need to ensure callers do not expect return
-  // value. Note I believe this is now the case, but I have not reviewed since.
-  return this;
 };
 
 FaviconCache.prototype.isOpen = function() {
@@ -33,7 +28,9 @@ FaviconCache.prototype.close = function() {
 };
 
 FaviconCache.prototype.setup = async function() {
-  console.log('setting up favicon database', this.name, this.version);
+  assert(typeof this.name === 'string' && this.name.length);
+  assert(typeof this.version === 'number' && this.version >= 0);
+  console.log('Setting up favicon database', this.name, this.version);
   try {
     await this.open();
   } finally {
@@ -79,7 +76,6 @@ FaviconCache.prototype.clear = function() {
 };
 
 FaviconCache.prototype.findEntry = function(urlObject) {
-
   return new Promise((resolve, reject) => {
     assert(IndexedDbUtils.isOpen(this.conn));
     const tx = this.conn.transaction('favicon-cache');
@@ -94,13 +90,8 @@ FaviconCache.prototype.findEntry = function(urlObject) {
 // then this should be using getAllKeys instead of getAll?
 // Returns a promise that resolves to an array of expired entries
 FaviconCache.prototype.findExpired = function(maxAgeMs, limit) {
-
-  // NOTE: using the fat arrow function here is not just use of a more succinct syntax. The promise
-  // executor function here relies on the fact that 'this' is implicitly bound.
-
   return new Promise((resolve, reject) => {
     assert(IndexedDbUtils.isOpen(this.conn));
-
     if(typeof maxAgeMs === 'undefined') {
       maxAgeMs = FaviconCache.MAX_AGE_MS;
     }
@@ -135,9 +126,6 @@ FaviconCache.prototype.findExpired = function(maxAgeMs, limit) {
 // @param pageURLs {Array} an array of url strings
 // @return {Promise}
 FaviconCache.prototype.removeByURL = function(pageURLs) {
-
-  // NOTE: uses fat arrow syntax to enable 'this' binding implicitly
-
   return new Promise((resolve, reject) => {
     assert(IndexedDbUtils.isOpen(this.conn));
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
@@ -189,7 +177,6 @@ FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
 // records will be compacted. Specifying a limit of 0 is equivalent to specifying undefined.
 FaviconCache.prototype.compact = async function(maxAgeMs, limit) {
   console.debug('Compacting favicon entries using maxAgeMs %d and limit', maxAgeMs, limit);
-
   assert(IndexedDbUtils.isOpen(this.conn));
   const entries = await this.findExpired(maxAgeMs, limit);
   console.debug('Found %d expired entries suitable for compaction', entries.length);
