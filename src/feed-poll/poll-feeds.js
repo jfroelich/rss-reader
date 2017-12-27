@@ -7,18 +7,16 @@ import isBinaryURL from "/src/feed-poll/is-binary-url.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import {OfflineError} from "/src/fetch/errors.js";
-import fetchFeed from "/src/fetch/fetch-feed.js";
-import fetchHTML from "/src/fetch/fetch-html.js";
 import applyAllDocumentFilters from "/src/filters/apply-all.js";
-import TimeoutError from "/src/utils/timeout-error.js";
 import * as Platform from "/src/platform/platform.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
+import * as FetchUtils from "/src/utils/fetch-utils.js";
 import formatString from "/src/utils/format-string.js";
 import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
+import TimeoutError from "/src/utils/timeout-error.js";
 import * as URLUtils from "/src/utils/url-utils.js";
 
 export default function FeedPoll() {
@@ -116,9 +114,9 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   const requestURL = new URL(url);
   let response;
   try {
-    response = await fetchFeed(requestURL, this.fetchFeedTimeoutMs);
+    response = await FetchUtils.fetchFeed(requestURL, this.fetchFeedTimeoutMs);
   } catch(error) {
-    await handlePollFeedError(error, this.feedStore, feed, 'fetch-feed');
+    await handlePollFeedError(error, this.feedStore, feed, 'fetch-feed', this.deactivationThreshold);
   }
 
   assert(typeof response === 'object');
@@ -138,7 +136,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   try {
     feedXML = await response.text();
   } catch(error) {
-    await handlePollFeedError(error, this.feedStore, feed, 'read-response-body');
+    await handlePollFeedError(error, this.feedStore, feed, 'read-response-body', this.deactivationThreshold);
   }
 
   assert(typeof feedXML === 'string');
@@ -148,7 +146,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     parseResult = parseFeed(feedXML, url, response.responseURL, response.lastModifiedDate,
       PROCESS_ENTRIES);
   } catch(error) {
-    await handlePollFeedError(error, this.feedStore, feed, 'parse-feed');
+    await handlePollFeedError(error, this.feedStore, feed, 'parse-feed', this.deactivationThreshold);
   }
 
   const mergedFeed = Feed.merge(feed, parseResult.feed);
@@ -224,12 +222,21 @@ function handleFetchFeedSuccess(feed) {
   return false;
 }
 
-async function handlePollFeedError(error, store, feed, callCategory) {
+// TODO: new kind of problem, in hindsight, is merging of count of errors for parsing and fetching.
+// suppose a feed file which is periodically updated becomes not-well-formed, causing parsing
+// error. This is going to on the poll period update the error count. THis means that after a
+// couple polls, the feed quickly becomes inactive. That would be desired for the fetch error
+// count, maybe, but not for the parse error count. Because eventually the feed file will get
+// updated again and probably become well formed again. I've actually witnessed this. So the issue
+// is this prematurely deactivates feeds that happen to have a parsing error that is actually
+// ephemeral (temporary) and not permanent.
+
+async function handlePollFeedError(error, store, feed, callCategory, threshold) {
   if(isUncheckedError(error)) {
     throw error;
   }
 
-  if(callCategory === 'fetch-feed' && error instanceof OfflineError) {
+  if(callCategory === 'fetch-feed' && error instanceof FetchUtils.OfflineError) {
     throw error;
   }
 
@@ -244,8 +251,8 @@ async function handlePollFeedError(error, store, feed, callCategory) {
     feed.errorCount = 1;
   }
 
-  assert(Number.isInteger(this.deactivationThreshold));
-  if(feed.errorCount > this.deactivationThreshold) {
+  assert(Number.isInteger(threshold));
+  if(feed.errorCount > threshold) {
     console.debug('Error count exceeded threshold, deactivating feed', feed.id, Feed.peekURL(feed));
     feed.active = false;
     if(typeof callCategory !== 'undefined') {
@@ -360,7 +367,7 @@ function isPollableURL(url) {
 FeedPoll.prototype.fetchEntryHTML = async function(url) {
   let response;
   try {
-    response = await fetchHTML(url, this.fetchHTMLTimeoutMs);
+    response = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;

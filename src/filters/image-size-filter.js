@@ -1,10 +1,11 @@
 import assert from "/src/utils/assert.js";
-import fetchImageElement from "/src/fetch/fetch-image-element.js";
+import * as FetchUtils from "/src/utils/fetch-utils.js";
+import formatString from "/src/utils/format-string.js";
+import isPosInt from "/src/utils/is-pos-int.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
-import {promiseEvery} from "/src/utils/promise-utils.js";
-import {filterExtensionFromFileName, getFileNameFromURL} from "/src/utils/url-utils.js";
-
-// Module related to image size attributes
+import * as PromiseUtils from "/src/utils/promise-utils.js";
+import TimeoutError from "/src/utils/timeout-error.js";
+import * as URLUtils from "/src/utils/url-utils.js";
 
 const DEBUG = false;
 function log(...args) {
@@ -12,7 +13,6 @@ function log(...args) {
     console.log(...args);
   }
 }
-
 
 const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];
 
@@ -50,7 +50,7 @@ export default async function filterDocument(doc, allowedProtocols, timeoutMs) {
   for(const image of images) {
     promises.push(getImageDimensions(image, allowedProtocols, timeoutMs));
   }
-  const results = await promiseEvery(promises);
+  const results = await PromiseUtils.promiseEvery(promises);
 
   for(const result of results) {
     if(result) {
@@ -179,9 +179,9 @@ function sniffDimensionsFromURL(sourceURL) {
 
   // TODO: implement
   // Grab from file name (e.g. 100x100.jpg => [100,100])
-  const fileName = getFileNameFromURL(sourceURL);
+  const fileName = URLUtils.getFileNameFromURL(sourceURL);
   if(fileName) {
-    const partialFileName = filterExtensionFromFileName(fileName);
+    const partialFileName = URLUtils.filterExtensionFromFileName(fileName);
     if(partialFileName) {
       // not implemented
     }
@@ -201,4 +201,61 @@ function getInlineStyleDimensions(element) {
       }
     }
   }
+}
+
+
+// TODO: use the fetch API to avoid cookies. First determine if this actually transmits cookies.
+// I think this should be simple to detect, just monitor the network tab in devtools
+
+// Fetches an image element. Returns a promise that resolves to a fetched image element. Note that
+// data uris are accepted.
+// @param url {URL}
+// @param timeoutMs {Number}
+// @returns {Promise}
+async function fetchImageElement(url, timeoutMs) {
+  assert(url instanceof URL);
+  assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
+
+  if(!FetchUtils.isAllowedURL(url)) {
+    const message = formatString('Refused to fetch url', url);
+    throw new FetchUtils.PolicyError(message);
+  }
+
+  let timerId, timeoutPromise;
+
+  const fetchPromise = new Promise(function fetchExec(resolve, reject) {
+    const proxy = new Image();
+    proxy.src = url.href;// triggers the fetch
+    if(proxy.complete) {
+      clearTimeout(timerId);
+      resolve(proxy);
+      return;
+    }
+
+    proxy.onload = function proxyOnload(event) {
+      clearTimeout(timerId);
+      resolve(proxy);
+    };
+    proxy.onerror = function proxyOnerror(event) {
+      clearTimeout(timerId);
+      const message = formatString('Error fetching image with url', url);
+      const error = new FetchUtils.FetchError(message);
+      reject(error);
+    };
+  });
+
+  if(!timeoutMs) {
+    return fetchPromise;
+  }
+
+  [timerId, timeoutPromise] = PromiseUtils.setTimeoutPromise(timeoutMs);
+  const contestants = [fetchPromise, timeoutPromise];
+  const image = await Promise.race(contestants);
+  if(image) {
+    clearTimeout(timerId);
+  } else {
+    const message = 'Timed out fetching image with url ' + url.href;
+    throw new TimeoutError(message);
+  }
+  return fetchPromise;
 }

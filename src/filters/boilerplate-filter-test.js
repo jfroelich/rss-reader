@@ -5,12 +5,12 @@ import filterFrames from "/src/filters/frame-filter.js";
 import filterIFrames from "/src/filters/iframe-filter.js";
 import setImageSizes from "/src/filters/image-size-filter.js";
 import filterScript from "/src/filters/script-filter.js";
-import fetchHTML from "/src/fetch/fetch-html.js";
+import * as FetchUtils from "/src/utils/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 
 async function test(urlString) {
   const urlObject = new URL(urlString);
-  const response = await fetchHTML(urlObject);
+  const response = await FetchUtils.fetchHTML(urlObject);
   const responseText = await response.text();
   const document = parseHTML(responseText);
 

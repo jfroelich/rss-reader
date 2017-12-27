@@ -1,27 +1,11 @@
-import * as MimeUtils from "/src/utils/mime-utils.js";
-
-// TODO: use fetchHTML instead of raw fetch. This was created before fetch-html.js was settled
-// TODO: use /src/utils/html/parse.js
+import * as FetchUtils from "/src/utils/fetch-utils.js";
+import parseHTML from "/src/utils/html/parse.js";
 
 async function test(url) {
-
-  const options = {
-    credentials: 'omit',
-    method: 'get',
-    headers: {'accept': MimeUtils.MIME_TYPE_HTML},
-    mode: 'cors',
-    cache: 'default',
-    redirect: 'follow',
-    referrer: 'no-referrer',
-    referrerPolicy: 'no-referrer'
-  };
-
-  const response = await fetch(url, options);
+  const responseWrapper = await FetchUtils.fetchHTML(url);
+  const response = responseWrapper.response;
   const text = await response.text();
-
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(text, MimeUtils.MIME_TYPE_HTML);
+  const doc = parseHTML(text);
   filter_hidden_elements_using_style(doc);
 }
 

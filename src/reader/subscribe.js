@@ -5,10 +5,9 @@ import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import {ConstraintError} from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import {OfflineError} from "/src/fetch/errors.js";
-import fetchFeed from "/src/fetch/fetch-feed.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import {showNotification} from "/src/platform/platform.js";
+import * as FetchUtils from "/src/utils/fetch-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import {setTimeoutPromise} from "/src/utils/promise-utils.js";
 import formatString from "/src/utils/format-string.js";
@@ -109,12 +108,12 @@ Subscribe.prototype.checkFeedURLConstraint = async function(url) {
 Subscribe.prototype.fetchFeed = async function(url) {
   let response;
   try {
-    response = await fetchFeed(url, this.fetchFeedTimeoutMs);
+    response = await FetchUtils.fetchFeed(url, this.fetchFeedTimeoutMs);
   } catch(error) {
-    if(error instanceof OfflineError) {
-      // fall through
+    if(error instanceof FetchUtils.OfflineError) {
+      // Fall through, leaving response undefined, resulting in returning undefined response
     } else {
-      // either assertion failure or fetch error
+      // Either assertion failure or fetch error
       throw error;
     }
   }

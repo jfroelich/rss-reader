@@ -25,7 +25,8 @@ export default function assert(booleanValue, ...varargs) {
   // uncaught exceptions in promise executors, it doesn't help when the error is caught in a catch
   // block but not logged or rethrown. I'd rather not require every use of a catch block be
   // concerned with handling unchecked errors.
-  console.error(errorMessage);
+  // console.error(errorMessage);
+
   throw error;
 }
 

@@ -1,12 +1,19 @@
 import assert from "/src/utils/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
-import fetchHTML from "/src/fetch/fetch-html.js";
-import fetchImageHead from "/src/fetch/fetch-image-head.js";
-import isPosInt from "/src/utils/is-pos-int.js";
+import * as FetchUtils from "/src/utils/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
+import isPosInt from "/src/utils/is-pos-int.js";
 import {setURLHrefProperty} from "/src/utils/url-utils.js";
 import {resolveURLString} from "/src/utils/url-string-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
+
+// TODO: reconsider idea that this should be a separate micro-service. In fact it should
+// possibly be within a separate extension, use chrome's cross-extension loading. It is good that
+// this uses its own database, that is one key component of microservices. But a separate
+// thing is maybe I should create a single API, like FaviconService, that encapsulates both
+// lookup and cache together. This will also make it easier to move to a separate extension.
+// The second thing, however, is that this shouldn't share any code with any other module in
+// the main extension. So I kind of need to rethink how it depends on other things.
 
 // Comment and uncomment to enable debugging
 const dprintf = function(){};
@@ -229,7 +236,7 @@ FaviconLookup.prototype.isAcceptableImageResponse = function(response) {
 FaviconLookup.prototype.fetchImage = async function(url) {
   assert(url instanceof URL);
   try {
-    return await fetchImageHead(url, this.fetchImageTimeoutMs);
+    return await FetchUtils.fetchImageHead(url, this.fetchImageTimeoutMs);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;
@@ -244,7 +251,7 @@ FaviconLookup.prototype.fetchImage = async function(url) {
 FaviconLookup.prototype.fetchHTML = async function(url) {
   assert(url instanceof URL);
   try {
-    return await fetchHTML(url, this.fetchHTMLTimeoutMs);
+    return await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;

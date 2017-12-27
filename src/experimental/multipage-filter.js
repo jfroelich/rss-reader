@@ -1,6 +1,6 @@
+import {paginationFindAnchors} from "/src/experimental/pagination.js";
 import assert from "/src/utils/assert.js";
-import fetchHTML from "/src/fetch/fetch-html.js";
-import {paginationFindAnchors} from "/src/pagination.js";
+import * as FetchUtils from "/src/utils/fetch-utils.js";
 
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a
@@ -27,7 +27,7 @@ export async function multipageFilter(doc, location, timeoutMs) {
   async function fetchAndParseHTML(url, timeoutMs) {
     const parser = new DOMParser();
     const requestURLObject = new URL(url);
-    const response = await fetchHTML(requestURLObject, timeoutMs);
+    const response = await FetchUtils.fetchHTML(requestURLObject, timeoutMs);
     const text = await response.text();
     return parser.parseFromString(text, 'text/html');
   }
