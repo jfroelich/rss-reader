@@ -1,7 +1,6 @@
 import assert from "/src/utils/assert.js";
 import fetchHTML from "/src/fetch/fetch-html.js";
 import {paginationFindAnchors} from "/src/pagination.js";
-import * as MimeUtils from "/src/utils/mime-utils.js";
 
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a
@@ -30,7 +29,7 @@ export async function multipageFilter(doc, location, timeoutMs) {
     const requestURLObject = new URL(url);
     const response = await fetchHTML(requestURLObject, timeoutMs);
     const text = await response.text();
-    return parser.parseFromString(text, MimeUtils.MIME_TYPE_HTML);
+    return parser.parseFromString(text, 'text/html');
   }
 
   // Concurrently fetch the array of urls. If any fetch fails then this fails.

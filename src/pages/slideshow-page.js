@@ -3,6 +3,7 @@ import exportFeeds from "/src/backup/export-feeds.js";
 import OPMLImporter from "/src/backup/opml-importer.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
+import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
 import {openTab} from "/src/platform/platform.js";
@@ -805,25 +806,188 @@ function windowOnclick(event) {
   return true;
 }
 
+function feedsContainerOnclick(event) {
+  if(event.target.localName !== 'div') {
+    return true;
+  }
+
+  if(!event.target.id) {
+    return true;
+  }
+
+  toggleFeedContainerDetails(event.target);
+}
+
+function toggleFeedContainerDetails(feedElement) {
+
+  const table = feedElement.querySelector('table');
+
+  if(feedElement.hasAttribute('expanded')) {
+    // Collapse
+    feedElement.removeAttribute('expanded');
+    feedElement.style.width = '200px';
+    feedElement.style.height = '200px';
+    feedElement.style.cursor = 'zoom-in';
+    table.style.display = 'none';
+  } else {
+    // Expand
+    feedElement.setAttribute('expanded', 'true');
+    feedElement.style.width = '100%';
+    feedElement.style.height = 'auto';
+    feedElement.style.cursor = 'zoom-out';
+    table.style.display = 'block';
+  }
+}
+
+
+function feedsButtonOnclick(event) {
+  const feedsButton = document.getElementById('feeds-button');
+  feedsButton.disabled = true;
+  const readerButton = document.getElementById('reader-button');
+  readerButton.disabled = false;
+  const slidesContainer = document.getElementById('slideshow-container');
+  slidesContainer.style.display = 'none';
+  const feedsContainer = document.getElementById('feeds-container');
+  feedsContainer.style.display = 'block';
+}
+
+function readerButtonOnclick(event) {
+  const feedsButton = document.getElementById('feeds-button');
+  feedsButton.disabled = false;
+  const readerButton = document.getElementById('reader-button');
+  readerButton.disabled = true;
+  const slidesContainer = document.getElementById('slideshow-container');
+  slidesContainer.style.display = 'block';
+  const feedsContainer = document.getElementById('feeds-container');
+  feedsContainer.style.display = 'none';
+}
+
+function initFeedsContainer(feeds) {
+  for(const feed of feeds) {
+    appendFeed(feed);
+  }
+}
+
+function unsubscribeButtonOnclick(event) {
+  console.debug('Unsubscribe', event.target);
+}
+
+function appendFeed(feed) {
+  const feedsContainer = document.getElementById('feeds-container');
+
+  const feedElement = document.createElement('div');
+  feedElement.id = feed.id;
+
+  if(feed.active !== true) {
+    feedElement.setAttribute('inactive', 'true');
+  }
+
+  let titleElement = document.createElement('span');
+  titleElement.textContent = feed.title;
+  feedElement.appendChild(titleElement);
+
+  const feedInfoElement = document.createElement('table');
+
+  let row = document.createElement('tr');
+  let col = document.createElement('td');
+  col.textContent = 'Description';
+  row.appendChild(col);
+  col = document.createElement('td');
+  col.textContent = feed.description || 'No description';
+  row.appendChild(col);
+  feedInfoElement.appendChild(row);
+
+  row = document.createElement('tr');
+  col = document.createElement('td');
+  col.textContent = 'Webpage';
+  row.appendChild(col);
+  col = document.createElement('td');
+  col.textContent = feed.link || 'Not specified';
+  row.appendChild(col);
+  feedInfoElement.appendChild(row);
+
+  row = document.createElement('tr');
+  col = document.createElement('td');
+  col.textContent = 'Favicon';
+  row.appendChild(col);
+  col = document.createElement('td');
+  col.textContent = feed.faviconURLString || 'Unknown';
+  row.appendChild(col);
+  feedInfoElement.appendChild(row);
+
+  row = document.createElement('tr');
+  col = document.createElement('td');
+  col.textContent = 'URL';
+  row.appendChild(col);
+  col = document.createElement('td');
+  col.textContent = Feed.peekURL(feed);
+  row.appendChild(col);
+  feedInfoElement.appendChild(row);
+
+  row = document.createElement('tr');
+  col = document.createElement('td');
+  col.setAttribute('colspan', '2');
+
+  let button = document.createElement('button');
+  button.value = '' + feed.id;
+  button.onclick = unsubscribeButtonOnclick;
+  button.textContent = 'Unsubscribe';
+  col.appendChild(button);
+
+  button = document.createElement('button');
+  button.value = '' + feed.id;
+  button.onclick = unsubscribeButtonOnclick;
+  button.textContent = 'Activate';
+  if(feed.active) {
+    button.disabled = 'true';
+  }
+  col.appendChild(button);
+
+  button = document.createElement('button');
+  button.value = '' + feed.id;
+  button.onclick = unsubscribeButtonOnclick;
+  button.textContent = 'Deactivate';
+  if(!feed.active) {
+    button.disabled = 'true';
+  }
+  col.appendChild(button);
+
+
+  row.appendChild(col);
+  feedInfoElement.appendChild(row);
+
+  feedElement.appendChild(feedInfoElement);
+  feedsContainer.appendChild(feedElement);
+}
+
 // Initialization
 async function init() {
   showLoadingInformation();
-
   window.addEventListener('click', windowOnclick);
+
+
+  const mainMenuButton = document.getElementById('main-menu-button');
+  mainMenuButton.onclick = mainMenuButtonOnclick;
+
+  // Initialize the refresh icon in the header
+  const refreshButton = document.getElementById('refresh');
+  refreshButton.onclick = refreshAnchorOnclick;
+
+  const feedsButton = document.getElementById('feeds-button');
+  feedsButton.onclick = feedsButtonOnclick;
+
+  const readerButton = document.getElementById('reader-button');
+  readerButton.onclick = readerButtonOnclick;
 
   // Initialize error message container
   const container = document.getElementById('error-message-container');
   container.onclick = errorMessageContainerOnclick;
 
-  const mainMenuButton = document.getElementById('main-menu-button');
-  mainMenuButton.onclick = mainMenuButtonOnclick;
+  const feedsContainer = document.getElementById('feeds-container');
+  feedsContainer.onclick = feedsContainerOnclick;
 
   const menuOptions = document.getElementById('menu-options');
   menuOptions.onclick = menuOptionsOnclick;
-
-  // Initialize the refresh icon in the header
-  const refreshButton = document.getElementById('refresh');
-  refreshButton.onclick = refreshAnchorOnclick;
 
   // TODO: is it possible to defer this until after loading without slowing things down?
   // Initialize entry display settings
@@ -833,7 +997,7 @@ async function init() {
   const feedStore = new FeedStore();
   const initialLimit = 1;
   let didHideLoading = false;
-
+  let feeds;
   try {
     await feedStore.open();
 
@@ -842,6 +1006,13 @@ async function init() {
     dprintf('Initial slide loaded');
     hideLoadingInformation();
     didHideLoading = true;
+
+    feeds = await feedStore.getAllFeeds();
+    feeds.sort(function compareFeedTitle(a, b) {
+      const atitle = a.title ? a.title.toLowerCase() : '';
+      const btitle = b.title ? b.title.toLowerCase() : '';
+      return indexedDB.cmp(atitle, btitle);
+    });
 
     // Now preload a couple more
     await appendSlides(feedStore, 2);
@@ -854,6 +1025,9 @@ async function init() {
       hideLoadingInformation();
     }
   }
+
+  initFeedsContainer(feeds);
+
 }
 
 // TODO: visually show error

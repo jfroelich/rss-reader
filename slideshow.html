@@ -5,16 +5,17 @@
 <link rel="stylesheet" href="/css/slideshow.css"/>
 <script src="/src/pages/slideshow-page.js" type="module"></script>
 </head>
-<body><header>
-  <a id="main-menu-button">&#9776;</a>
-  <a id="refresh">&#x21bb;</a>
-</header><div id="slideshow-container"></div><section id="initial-loading-panel">
+<body><div id="slideshow-container"></div><section id="initial-loading-panel">
 <p>Loading ... please wait.</p>
 <progress></progress>
-</section><section id="error-message-container"></section>
-<ul id="menu-options">
+</section><section id="feeds-container"></section><section
+id="error-message-container"></section><section id="menu">
+  <a id="main-menu-button">&#9776;</a>
+  <a id="refresh">&#x21bb;</a>
+  <a id="feeds-button">Feeds</a>
+  <a id="reader-button">Reader</a>
+</section><ul id="menu-options">
   <li id="menu-option-subscribe">Subscribe</li>
   <li id="menu-option-import">Import OPML files</li>
   <li id="menu-option-export">Export OPML file</li>
-</ul>
-</body></html>
+</ul></body></html>

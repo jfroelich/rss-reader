@@ -1,8 +1,9 @@
-header {
+#menu {
   user-select: none;
   position: fixed;
-  z-index: 5;
-  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
   height: auto;
   padding-top: 10px;
   padding-bottom: 10px;
@@ -11,11 +12,15 @@ header {
   box-shadow: 0 3px 4px 0 rgba(0,0,0,.14),
     0 3px 3px -2px rgba(0,0,0,.2),
     0 1px 8px 0 rgba(0,0,0,.12);
-  opacity: 0.9;
+  opacity: 0;
+  transition: opacity 0.5s ease;
   color: #ffffff;
   text-shadow: 1px 1px 1px #222222;
   font-size: 24px;
-  pointer-events: none;
+}
+
+#menu:hover {
+  opacity: 1;
 }
 
 #main-menu-button {
@@ -30,26 +35,23 @@ header {
 }
 
 #menu-options {
-  position: fixed;
+  position: absolute;
   left: -320px;
   right: auto;
   top: 53px;
+  top: 0;
   bottom: 0;
-  overflow-x: hidden;
+  /*overflow-x: hidden;*/
+  overflow: none;
   min-height: 100%;
   margin: 0;
-  min-width: 0;
   list-style-type: none;
   width: 300px;
   max-width: 300px;
   padding: 6px 0;
 
   background-color: #ffffff;
-
-  /*transition: width 0.4s ease 0s;*/
   transition: all 0.3s ease;
-
-  /* TODO: shadow shows up when hidden */
   box-shadow: 2px 0px 10px 2px #8e8e8e;
 
   /* Turn off whatever the hell Chrome is doing to UL */
@@ -126,18 +128,80 @@ pre {
   word-break: break-all;
 }
 
+#feeds-container {
+  user-select: none;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  margin: 0;
+  padding-top: 6%;
+  padding-left: 6%;
+  padding-right: 6%;
+  padding-bottom: 12%;
+  display: none;
+}
+
+#feeds-container div {
+  float: left;
+  margin: 6px;
+  min-width: 200px;
+  width: 200px;
+  min-height: 200px;
+  height: 200px;
+  padding: 20px;
+  font-size: 32px;
+  background-color: green;
+  color: #ffffff;
+  overflow-wrap: break-word;
+  cursor: zoom-in;
+  transition: all 0.3s ease;
+  box-shadow: 3px 3px 3px #404340;
+}
+
+#feeds-container div[inactive="true"] {
+  background-color: #222222;
+}
+
+#feeds-container div:hover {
+  background-color: #19c719;
+}
+
+#feeds-container div[inactive="true"]:hover {
+  background-color: #666666;
+}
+
+#feeds-container table {
+  display: none;
+  vertical-align: top;
+  width: 90%;
+  margin-top: 50px;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 50px;
+  cursor: pointer;
+}
+
+#feeds-container td {
+  padding: 10px;
+  color: #ffffff;
+  font-size: 18px;
+  user-select: initial;
+
+}
+
+
+
 #slideshow-container {
   overflow: none;
   position: fixed;
   left: 0;
   right: 0;
-  top: 53px;
+  top: 0;
   bottom: 0;
   margin: 0;
-  padding-top: 0;
-  padding-left: 0;
-  padding-bottom: 0;
-  padding-right: 0;
+  padding: 0;
 }
 
 .entry img {
