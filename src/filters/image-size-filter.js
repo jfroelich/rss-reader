@@ -5,7 +5,6 @@ import isPosInt from "/src/utils/is-pos-int.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
-import * as URLUtils from "/src/utils/url-utils.js";
 
 const DEBUG = false;
 function log(...args) {
@@ -179,9 +178,9 @@ function sniffDimensionsFromURL(sourceURL) {
 
   // TODO: implement
   // Grab from file name (e.g. 100x100.jpg => [100,100])
-  const fileName = URLUtils.getFileNameFromURL(sourceURL);
+  const fileName = getFileNameFromURL(sourceURL);
   if(fileName) {
-    const partialFileName = URLUtils.filterExtensionFromFileName(fileName);
+    const partialFileName = filterExtensionFromFileName(fileName);
     if(partialFileName) {
       // not implemented
     }
@@ -258,4 +257,20 @@ async function fetchImageElement(url, timeoutMs) {
     throw new TimeoutError(message);
   }
   return fetchPromise;
+}
+
+
+// Returns a file name without its extension (and without the '.')
+function filterExtensionFromFileName(fileName) {
+  assert(typeof fileName === 'string');
+  const index = fileName.lastIndexOf('.');
+  return index < 0 ? fileName : fileName.substring(0, index);
+}
+
+function getFileNameFromURL(url) {
+  assert(url instanceof URL);
+  const index = url.pathname.lastIndexOf('/');
+  if((index > -1) && (index + 1 < url.pathname.length)) {
+    return url.pathname.substring(index + 1);
+  }
 }

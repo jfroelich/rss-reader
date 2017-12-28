@@ -17,7 +17,6 @@ import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
-import * as URLUtils from "/src/utils/url-utils.js";
 
 export default function FeedPoll() {
   this.feedStore;
@@ -310,7 +309,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   const rewrittenURL = rewriteURL(url.href);
   if(rewrittenURL && url.href !== rewrittenURL) {
     Entry.appendURL(entry, rewrittenURL);
-    URLUtils.setURLHrefProperty(url, rewrittenURL);
+    setURLHrefProperty(url, rewrittenURL);
   }
 
   if(!isPollableURL(url)) {
@@ -339,7 +338,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
       Entry.appendURL(entry, response.url);
 
       // TODO: attempt to rewrite the redirected url as well?
-      URLUtils.setURLHrefProperty(url, response.url);
+      setURLHrefProperty(url, response.url);
     }
 
     // Use the full text of the response in place of the in-feed content
@@ -420,4 +419,10 @@ function isInaccessibleContentURL(url) {
 
 function isHTTPURL(url) {
   return url.protocol === 'http:' || url.protocol === 'https:';
+}
+
+// TODO: deprecate
+function setURLHrefProperty(url, newHrefString) {
+  const guardURL = new URL(newHrefString);
+  url.href = guardURL.href;
 }

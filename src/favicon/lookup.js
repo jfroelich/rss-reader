@@ -3,7 +3,7 @@ import FaviconCache from "/src/favicon/cache.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import {setURLHrefProperty} from "/src/utils/url-utils.js";
+
 import {resolveURLString} from "/src/utils/url-string-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 
@@ -415,3 +415,9 @@ FaviconLookup.prototype.onLookupFailure = function(originURL, entry) {
   // Default to returning a no-op resolved promise
   return Promise.resolve();
 };
+
+// TODO: deprecate
+function setURLHrefProperty(url, newHrefString) {
+  const guardURL = new URL(newHrefString);
+  url.href = guardURL.href;
+}

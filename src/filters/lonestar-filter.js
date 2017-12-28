@@ -1,10 +1,38 @@
+import assert from "/src/utils/assert.js";
 import {removeImage} from "/src/utils/dom/image.js";
 import {isHiddenInlineElement} from "/src/utils/dom/visibility.js";
-import {isExternalURL} from "/src/utils/url-utils.js";
+import parseInt10 from "/src/utils/parse-int-10.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
-import assert from "/src/utils/assert.js";
 
-// Filters various telemetry-inducing content from document content
+// TODO: move to config.js?
+const PATTERNS = [
+  /\/\/.*2o7\.net\//i,
+  /\/\/ad\.doubleclick\.net\//i,
+  /\/\/ad\.linksynergy\.com\//i,
+  /\/\/analytics\.twitter\.com\//i,
+  /\/\/anon-stats\.eff\.org\//i,
+  /\/\/bat\.bing\.com\//i,
+  /\/\/b\.scorecardresearch\.com\//i,
+  /\/\/beacon\.gu-web\.net\//i,
+  /\/\/.*cloudfront\.net\//,
+  /\/\/googleads\.g\.doubleclick\.net\//i,
+  /\/\/in\.getclicky\.com\//i,
+  /\/\/insight\.adsrvr\.org\//i,
+  /\/\/me\.effectivemeasure\.net\//i,
+  /\/\/metrics\.foxnews\.com\//i,
+  /\/\/.*moatads\.com\//i,
+  /\/\/pagead2\.googlesyndication\.com\//i,
+  /\/\/pixel\.quantserve\.com\//i,
+  /\/\/pixel\.wp\.com\//i,
+  /\/\/pubads\.g\.doubleclick\.net\//i,
+  /\/\/sb\.scorecardresearch\.com\//i,
+  /\/\/stats\.bbc\.co\.uk\//i,
+  /\/\/statse\.webtrendslive\.com\//i,
+  /\/\/pixel\.wp\.com\//i,
+  /\/\/t\.co\//i,
+  /\/\/www\.facebook\.com\/tr/i
+];
+
 
 // TODO: switch to accepting url object instead of url string
 
@@ -54,7 +82,11 @@ function hasTelemetrySource(image, documentURL) {
     return false;
   }
 
-  // TODO: probably some part of these conditions should be delegated to url.js
+  // TODO: does HTMLImageElement provide URL-like properties, similar to HTMLAnchorElement?
+
+  // TODO: all these attempts to avoid parsing are probably silly when it isn't even clear
+  // this is slow. Just parse the url. It is simpler. This was premature optimization
+
   // Prior to parsing the url, try and exclude some of the url strings to avoid the parsing cost.
 
   // Very short urls are probably not telemetry
@@ -102,33 +134,77 @@ function hasTelemetrySource(image, documentURL) {
   return false;
 }
 
+// Returns true if otherURL is 'external' to the documentURL. Inaccurate and insecure.
+function isExternalURL(documentURL, otherURL) {
+  // Certain protocols are never external in the sense that a network request is not performed
+  const localProtocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
+  if(localProtocols.includes(otherURL.protocol)) {
+    return false;
+  }
 
+  const docDomain = getUpperDomain(documentURL);
+  const otherDomain = getUpperDomain(otherURL);
+  return docDomain !== otherDomain;
+}
 
-// TODO: move to config.js?
-const PATTERNS = [
-  /\/\/.*2o7\.net\//i,
-  /\/\/ad\.doubleclick\.net\//i,
-  /\/\/ad\.linksynergy\.com\//i,
-  /\/\/analytics\.twitter\.com\//i,
-  /\/\/anon-stats\.eff\.org\//i,
-  /\/\/bat\.bing\.com\//i,
-  /\/\/b\.scorecardresearch\.com\//i,
-  /\/\/beacon\.gu-web\.net\//i,
-  /\/\/.*cloudfront\.net\//,
-  /\/\/googleads\.g\.doubleclick\.net\//i,
-  /\/\/in\.getclicky\.com\//i,
-  /\/\/insight\.adsrvr\.org\//i,
-  /\/\/me\.effectivemeasure\.net\//i,
-  /\/\/metrics\.foxnews\.com\//i,
-  /\/\/.*moatads\.com\//i,
-  /\/\/pagead2\.googlesyndication\.com\//i,
-  /\/\/pixel\.quantserve\.com\//i,
-  /\/\/pixel\.wp\.com\//i,
-  /\/\/pubads\.g\.doubleclick\.net\//i,
-  /\/\/sb\.scorecardresearch\.com\//i,
-  /\/\/stats\.bbc\.co\.uk\//i,
-  /\/\/statse\.webtrendslive\.com\//i,
-  /\/\/pixel\.wp\.com\//i,
-  /\/\/t\.co\//i,
-  /\/\/www\.facebook\.com\/tr/i
-];
+// Returns the 1st and 2nd level domains as a string. Basically hostname without subdomains. This
+// only does minimal symbolic validation of values, and is also inaccurate and insecure.
+function getUpperDomain(url) {
+  assert(url instanceof URL);
+
+  // Treat IP as whole
+  if(isIPv4Address(url.hostname) || isIPv6Address(url.hostname)) {
+    return url.hostname;
+  }
+
+  const levels = url.hostname.split('.');
+
+  // Handle the simple case of 'localhost'
+  if(levels.length === 1) {
+    return url.hostname;
+  }
+
+  // Handle the simple case of 'example.com'
+  if(levels.length === 2) {
+    return url.hostname;
+  }
+
+  // This isn't meant to be super accurate or professional. Using the full list from
+  // https://publicsuffix.org/list/public_suffix_list.dat is overkill. As a compromise, just look
+  // at tld character count.
+  const level1 = levels[levels.length - 1];
+  if(level1.length === 2) {
+    // Infer it is ccTLD, return levels 3 + 2 + 1
+    const usedLevels = levels.slice(-3);
+    return usedLevels.join('.');
+  } else {
+    // Infer it is gTLD, returns levels 2 + 1
+    const usedLevels = levels.slice(-2);
+    return usedLevels.join('.');
+  }
+}
+
+function isIPv4Address(string) {
+  if(typeof string !== 'string') {
+    return false;
+  }
+
+  const parts = string.split('.');
+  if(parts.length !== 4) {
+    return false;
+  }
+
+  for(const part of parts) {
+    const digit = parseInt10(part);
+    if(isNaN(digit) || digit < 0 || digit > 255) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// Expects a hostname string property value from a URL object.
+function isIPv6Address(hostname) {
+  return typeof hostname === 'string' && hostname.includes(':');
+}

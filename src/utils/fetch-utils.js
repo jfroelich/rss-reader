@@ -5,7 +5,6 @@ import * as MimeUtils from "/src/utils/mime-utils.js";
 import parseInt10 from "/src/utils/parse-int-10.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
-import {compareURLsWithoutHash} from "/src/utils/url-utils.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
 
 // Sends a HEAD request for the given url. Throws if the response is not an image
@@ -20,7 +19,6 @@ export async function fetchImageHead(url, timeoutMs) {
   return response;
 }
 
-// TODO: return raw response
 // Fetches the html content of the given url
 // @param url {URL} request url
 // @param timeoutMs {Number} optional, in milliseconds, how long to wait before considering the
@@ -66,12 +64,17 @@ export async function fetchFeed(url, timeoutMs) {
 // @returns {Object} a Response-like object. This extends (in the general sense) the basic
 // Response object with properties that have already be converted to preferred data type
 async function fetchHelper(url, options) {
-  // Accepting a url ensures the url is canonical and thereby avoids allowing fetch to implicitly
-  // resolve a relative url. This also avoids passing undefined or something unexpected to fetch,
-  // which would potentially result in some kind of TypeError
+  // fetch implicitly canonicalizes its input url, which in this case would mean providing
+  // chrome-extension:// to relative urls. To avoid this, this function demands a URL as input,
+  // and because URLs must be canonical, this avoids the implicit resolution. In addition, fetch
+  // throws a type error when given an invalid url parameter. This later translates all fetch
+  // type errors into network errors, so avoid that by translating such type errors into assertion
+  // errors before the call.
   assert(url instanceof URL);
 
-  // Avoid the TypeError fetch throws for invalid options, treat it as an assertion error
+  // fetch throws a TypeError when its options parameter is invalid. While normally desired, this
+  // function is translating all type errors into network errors when calling fetch. Sidestep this
+  // by translating this kind of error into an explicit assertion error.
   assert(typeof options === 'undefined' || typeof options === 'object');
 
   // Create a custom set of options where explicitly set options override the default options
@@ -86,21 +89,31 @@ async function fetchHelper(url, options) {
   };
   const mergedOptions = Object.assign(defaultOptions, options);
 
-  // Grab timeout from options
+  // Extract timeout from options
   let timeoutMs;
   if('timeout' in mergedOptions) {
     timeoutMs = mergedOptions.timeout;
-    delete mergedOptions.timeout;// superfluous, but avoid any unclear behavior
+    // Admittedly superfluous, but avoid any unclear behavior with passing non-standard options
+    // to fetch
+    delete mergedOptions.timeout;
   }
 
   const untimed = typeof timeoutMs === 'undefined';
   assert(untimed || isPosInt(timeoutMs));
 
   // Check if the url is allowed to be fetched according to this app's policy
-
   if(!isAllowedURL(url)) {
     const message = formatString('Cannot fetch url %s as it violates application policy', url);
     throw new PolicyError(message);
+  }
+
+  // Restrict methods
+  const method = mergedOptions.method.toUpperCase();
+  const allowedMethods = ['GET', 'HEAD'];
+  if(!allowedMethods.includes(method)) {
+    const message = 'Cannot fetch url %s as method %s violates application policy';
+    const formattedMessage = formatString(message, url, method);
+    throw new PolicyError(formattedMessage);
   }
 
   // Avoid the TypeError fetch throws when offline, and distinguish this type of network error from
@@ -157,10 +170,10 @@ async function fetchHelper(url, options) {
     throw new FetchError(message);
   }
 
-  const method = mergedOptions.method.toUpperCase();
-  const responseBodyExpected = method === 'GET' || method === 'POST';
+  // response.ok is true for all status codes in the 200 range, but 204 No content is not expected
+  // when using GET.
   const HTTP_STATUS_NO_CONTENT = 204;
-  if(responseBodyExpected && response.status === HTTP_STATUS_NO_CONTENT) {
+  if(method === 'GET' && response.status === HTTP_STATUS_NO_CONTENT) {
     const message = formatString('No content for GET/POST for url', url);
     throw new FetchError(message);
   }
@@ -174,6 +187,19 @@ async function fetchHelper(url, options) {
 export function detectURLChanged(requestURL, responseURL) {
   return !compareURLsWithoutHash(requestURL, responseURL);
 }
+
+// Compares two urls for equality without considering hash values
+function compareURLsWithoutHash(url1, url2) {
+  assert(url1 instanceof URL);
+  assert(url2 instanceof URL);
+  // Mutate only clones to preserve purity
+  const modURL1 = new URL(url1.href);
+  const modURL2 = new URL(url2.href);
+  modURL1.hash = '';
+  modURL2.hash = '';
+  return modURL1.href === modURL2.href;
+}
+
 
 // Returns the value of the Last-Modified header as a Date object
 // @param response {Response}
