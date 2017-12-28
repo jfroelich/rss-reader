@@ -17,7 +17,7 @@ export default function isBinaryURL(url) {
   if(url.protocol === 'data:') {
     // text/plain is the default according to MDN
     const mimeType = findMimeTypeInDataURL(url) || 'text/plain';
-    return MimeUtils.isBinary(mimeType);
+    return isBinaryMimeType(mimeType);
   }
 
   const extension = getExtensionFromURL(url);
@@ -30,7 +30,7 @@ export default function isBinaryURL(url) {
     return false;
   }
 
-  return MimeUtils.isBinary(mimeType);
+  return isBinaryMimeType(mimeType);
 }
 
 // Extracts the mime type of a data uri as string. Returns undefined if not found or invalid.
@@ -91,4 +91,43 @@ function getExtensionFromURL(url) {
 // Does NOT support languages other than English
 function isAlphanumeric(string) {
   return /^[a-zA-Z0-9]*$/.test(string);
+}
+
+
+function isBinaryMimeType(mimeType) {
+  assert(MimeUtils.isMimeType(mimeType));
+
+  // Mime types that have the application super type but are not binary
+  const appTextTypes = [
+    'application/atom+xml',
+    'application/javascript',
+    'application/json',
+    'application/rdf+xml',
+    'application/rss+xml',
+    'application/vnd.mozilla.xul+xml',
+    'application/xhtml+xml',
+    'application/xml'
+  ];
+
+  const slashPosition = mimeType.indexOf('/');
+  const superType = mimeType.substring(0, slashPosition);
+
+  switch(superType) {
+  case 'application': {
+    return !appTextTypes.includes(mimeType);
+  }
+  case 'text':
+    return false;
+  case 'audio':
+    return true;
+  case 'image':
+    return true;
+  case 'video':
+    return true;
+  case 'multipart':
+    return true;
+  default:
+    console.debug('unhandled mime type:', mimeType);
+    return false;
+  }
 }

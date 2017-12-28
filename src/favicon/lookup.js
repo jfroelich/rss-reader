@@ -2,8 +2,8 @@ import assert from "/src/utils/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
-import {resolveURLString} from "/src/utils/url-string-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
+import {resolveURLString} from "/src/utils/url-string-utils.js";
 
 // TODO: reconsider idea that this should be a separate micro-service. In fact it should
 // possibly be within a separate extension, use chrome's cross-extension loading. It is good that
@@ -241,16 +241,24 @@ FaviconLookup.prototype.isAcceptableImageResponse = function(response) {
 // Helper that traps non-assertion errors because errors not fatal to lookup
 FaviconLookup.prototype.fetchImage = async function(url) {
   assert(url instanceof URL);
+  const options = {method: 'head', timeout: this.fetchImageTimeoutMs};
+  let response;
   try {
-    const response = await FetchUtils.fetchImageHead(url, this.fetchImageTimeoutMs);
-    return response;
+    response = await FetchUtils.fetchHelper(url, options);
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;
     } else {
-      // Ignore
-      dprintf('Failed to fetch', url.href, error);
+      // Return undefined
+      dprintf(error);
+      return;
     }
+  }
+
+  assert(response instanceof Response);
+  const type = FetchUtils.getMimeType(response);
+  if(type && (type.startsWith('image/') || type === 'application/octet-stream')) {
+    return response;
   }
 };
 
@@ -413,6 +421,7 @@ FaviconLookup.prototype.onLookupFailure = function(originURL, entry) {
   // Default to returning a no-op resolved promise
   return Promise.resolve();
 };
+
 
 // TODO: deprecate
 function setURLHrefProperty(url, newHrefString) {

@@ -67,7 +67,7 @@ OPMLImporter.prototype.importFile = async function(file) {
     return 0;
   }
 
-  if(!MimeUtils.isXML(file.type)) {
+  if(!isXMLContentType(file.type)) {
     console.log('File %s is not mime type xml', file.type);
     return 0;
   }
@@ -195,4 +195,18 @@ function readFileAsText(file) {
     reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(reader.error);
   });
+}
+
+function isXMLContentType(contentType) {
+  const types = [
+    'application/atom+xml',
+    'application/rdf+xml',
+    'application/rss+xml',
+    'application/vnd.mozilla.xul+xml',
+    'application/xml',
+    'application/xhtml+xml',
+    'text/xml'
+  ];
+
+  return types.includes(MimeUtils.fromContentType(contentType));
 }

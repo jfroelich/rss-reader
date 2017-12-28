@@ -5,17 +5,6 @@ import * as PromiseUtils from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
 
-// Sends a HEAD request for the given url. Throws if the response is not an image
-export async function fetchImageHead(url, timeoutMs) {
-  const response = await fetchHelper(url, {method: 'head', timeout: timeoutMs});
-  const contentType = response.headers.get('Content-Type');
-  const mimeType = MimeUtils.fromContentType(contentType);
-  if(!MimeUtils.isImage(mimeType) && mimeType !== 'application/octet-stream') {
-    const message = formatString('Unacceptable response mime type %s for url', mimeType, url);
-    throw new FetchError(message);
-  }
-  return response;
-}
 
 // Fetches the html content of the given url
 // @param url {URL} request url
@@ -26,8 +15,7 @@ export async function fetchHTML(url, timeoutMs) {
     timeout: timeoutMs
   });
 
-  const contentType = response.headers.get('Content-Type');
-  const mimeType = MimeUtils.fromContentType(contentType);
+  const mimeType = getMimeType(response);
   if(mimeType !== 'text/html') {
     const message = formatString('Unacceptable response mime type %s for url', mimeType, url);
     throw new FetchError(message);
@@ -43,8 +31,7 @@ export async function fetchHTML(url, timeoutMs) {
 // @returns {Promise} a promise that resolves to a response
 export async function fetchFeed(url, timeoutMs) {
   const response = await fetchHelper(url, {timeout: timeoutMs});
-  const contentType = response.headers.get('Content-Type');
-  const mimeType = MimeUtils.fromContentType(contentType);
+  const mimeType = getMimeType(response);
   const types = ['application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
     'application/atom+xml', 'application/xml', 'text/html', 'text/xml'];
   if(!types.includes(mimeType)) {
@@ -61,7 +48,7 @@ export async function fetchFeed(url, timeoutMs) {
 // that causes fetches to fail if they take longer than the given number of milliseconds
 // @returns {Object} a Response-like object. This extends (in the general sense) the basic
 // Response object with properties that have already be converted to preferred data type
-async function fetchHelper(url, options) {
+export async function fetchHelper(url, options) {
   // fetch implicitly canonicalizes its input url, which in this case would mean providing
   // chrome-extension:// to relative urls. To avoid this, this function demands a URL as input,
   // and because URLs must be canonical, this avoids the implicit resolution. In addition, fetch
@@ -216,7 +203,16 @@ export function getLastModified(response) {
 }
 
 export function getContentLength(response) {
+  assert(response instanceof Response);
   return parseInt(response.headers.get('Content-Length'), 10);
+}
+
+export function getMimeType(response) {
+  assert(response instanceof Response);
+  const contentType = response.headers.get('Content-Type');
+  if(contentType) {
+    return MimeUtils.fromContentType(contentType);
+  }
 }
 
 // Return true if the app's policy permits fetching the url

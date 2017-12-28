@@ -5,7 +5,7 @@ async function registerDWLinkFilterRule() {
     return;
   const linkMatcher = new chrome.declarativeWebRequest.RequestMatcher({
     resourceType: ['xmlhttprequest'],
-    contentType: [MimeUtils.MIME_TYPE_HTML]
+    contentType: ['text/html']
   });
   const linkAction = new chrome.declarativeWebRequest.RemoveResponseHeader(
     {name: 'link'});
