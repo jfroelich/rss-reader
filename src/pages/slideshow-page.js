@@ -12,7 +12,6 @@ import htmlTruncate from "/src/utils/html/truncate.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 import formatDate from "/src/utils/format-date.js";
 import filterPublisher from "/src/utils/filter-publisher.js";
-import parseInt10 from "/src/utils/parse-int-10.js";
 
 const DEBUG = false;
 const dprintf = DEBUG ? console.log : noop;
@@ -168,7 +167,7 @@ async function markSlideRead(feedStore, slideElement) {
 
   // Get the entry id for the slide
   const slideEntryAttributeValue = slideElement.getAttribute('entry');
-  const entryId = parseInt10(slideEntryAttributeValue);
+  const entryId = parseInt(slideEntryAttributeValue, 10);
   // The entry id should always be valid or something is very wrong
   assert(Entry.isValidId(entryId));
 

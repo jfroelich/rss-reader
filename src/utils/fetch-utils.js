@@ -2,7 +2,6 @@ import assert from "/src/utils/assert.js";
 import formatString from "/src/utils/format-string.js";
 import isPosInt from "/src/utils/is-pos-int.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
-import parseInt10 from "/src/utils/parse-int-10.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
@@ -218,7 +217,7 @@ export function getLastModified(response) {
 }
 
 export function getContentLength(response) {
-  return parseInt10(response.headers.get('Content-Length'));
+  return parseInt(response.headers.get('Content-Length'), 10);
 }
 
 // Return true if the app's policy permits fetching the url

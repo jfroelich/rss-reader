@@ -2,7 +2,6 @@ import assert from "/src/utils/assert.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import formatString from "/src/utils/format-string.js";
 import isPosInt from "/src/utils/is-pos-int.js";
-import parseInt10 from "/src/utils/parse-int-10.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 
@@ -160,11 +159,11 @@ function sniffDimensionsFromURL(sourceURL) {
   for(const pair of namedAttributePairs) {
     const widthString = params.get(pair.width);
     if(widthString) {
-      const widthInt = parseInt10(widthString);
+      const widthInt = parseInt(widthString, 10);
       if(!isNaN(widthInt)) {
         const heightString = params.get(pair.height);
         if(heightString) {
-          const heightInt = parseInt10(heightString);
+          const heightInt = parseInt(heightString, 10);
           if(!isNaN(heightInt)) {
             const dimensions = {};
             dimensions.width = widthInt;
@@ -192,9 +191,9 @@ function sniffDimensionsFromURL(sourceURL) {
 // TODO: this is currently incorrect when width/height are percentage based
 function getInlineStyleDimensions(element) {
   if(element.hasAttribute('style') && element.style) {
-    const width = parseInt10(element.style.width);
+    const width = parseInt(element.style.width, 10);
     if(!isNaN(width)) {
-      const height = parseInt10(element.style.height);
+      const height = parseInt(element.style.height, 10);
       if(!isNaN(height)) {
         return {width: width, height: height};
       }

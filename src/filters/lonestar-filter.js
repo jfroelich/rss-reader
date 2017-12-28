@@ -1,7 +1,6 @@
 import assert from "/src/utils/assert.js";
 import {removeImage} from "/src/utils/dom/image.js";
 import {isHiddenInlineElement} from "/src/utils/dom/visibility.js";
-import parseInt10 from "/src/utils/parse-int-10.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 // TODO: move to config.js?
@@ -195,7 +194,7 @@ function isIPv4Address(string) {
   }
 
   for(const part of parts) {
-    const digit = parseInt10(part);
+    const digit = parseInt(part, 10);
     if(isNaN(digit) || digit < 0 || digit > 255) {
       return false;
     }

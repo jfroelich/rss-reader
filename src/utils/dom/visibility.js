@@ -1,5 +1,4 @@
 import assert from "/src/utils/assert.js";
-import parseInt10 from "/src/utils/parse-int-10.js";
 
 // These functions assume a document is "inert", such as one created by DOMParser, or from
 // XMLHttpRequest.
@@ -124,7 +123,7 @@ function isNearTransparent(style) {
 // inaccurate. Mostly just a prototype of the idea of the test to use.
 function isOffscreen(element) {
   if(element.style.position === 'absolute') {
-    const left = parseInt10(element.style.left);
+    const left = parseInt(element.style.left, 10);
     if(!isNaN(left) && left < 0) {
       return true;
     }

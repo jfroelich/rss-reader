@@ -1,6 +1,5 @@
 import assert from "/src/utils/assert.js";
 import * as CSSUtils from "/src/utils/dom/css-utils.js";
-import parseInt10 from "/src/utils/parse-int-10.js";
 
 // Get the current settings from local storage and then modify the css rules in the default style
 // sheet
@@ -51,7 +50,7 @@ function entryCSSCreateEntryRuleText() {
 
 function entryCSSAddTitleRule(sheet) {
   let buffer = [];
-  const headerFontSize = parseInt10(localStorage.HEADER_FONT_SIZE || '0');
+  const headerFontSize = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10);
   if(headerFontSize) {
     buffer.push(`font-size: ${(headerFontSize / 10).toFixed(2)}em;`);
   }
@@ -66,7 +65,7 @@ function entryCSSAddTitleRule(sheet) {
 
 function entryCSSAddContentRule(sheet) {
   let buffer = [];
-  const bodyFontSize = parseInt10(localStorage.BODY_FONT_SIZE || '0');
+  const bodyFontSize = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
   if(bodyFontSize) {
     buffer.push(`font-size: ${(bodyFontSize / 10).toFixed(2)}em;`);
   }
@@ -83,7 +82,7 @@ function entryCSSAddContentRule(sheet) {
 
   let bodyLineHeightString = localStorage.BODY_LINE_HEIGHT;
   if(bodyLineHeightString) {
-    const bodyLineHeight = parseInt10(bodyLineHeightString);
+    const bodyLineHeight = parseInt(bodyLineHeightString, 10);
 
     // TODO: units?
     if(bodyLineHeight) {
@@ -143,7 +142,7 @@ function entryCSSUpdateTitleRule(sheet) {
   style.background = '';
   style.fontFamily = localStorage.HEADER_FONT_FAMILY;
 
-  const size = parseInt10(localStorage.HEADER_FONT_SIZE);
+  const size = parseInt(localStorage.HEADER_FONT_SIZE, 10);
   if(!isNaN(size)) {
     style.fontSize = (size / 10).toFixed(2) + 'em';
   }
@@ -165,7 +164,7 @@ function entryCSSUpdateContentRule(sheet) {
 
   const bodyFontSizeString = localStorage.BODY_FONT_SIZE;
   if(bodyFontSizeString) {
-    const bodyFontSizeNumber = parseInt10(bodyFontSizeString);
+    const bodyFontSizeNumber = parseInt(bodyFontSizeString, 10);
 
     // TODO:
     // Why am I dividing by 10 here??
@@ -178,7 +177,7 @@ function entryCSSUpdateContentRule(sheet) {
 
   rule.style.textAlign = (localStorage.JUSTIFY_TEXT === '1') ? 'justify' : 'left';
 
-  const bodyLineHeight = parseInt10(localStorage.BODY_LINE_HEIGHT) || 10;
+  const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
   rule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
   let columnCountString = localStorage.COLUMN_COUNT;
   const validColumnCounts = { '1': 1, '2': 1, '3': 1 };

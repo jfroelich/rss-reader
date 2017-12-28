@@ -1,3 +1,6 @@
+
+// TODO: this is way to simple, deprecate
+
 // Returns true if the input value is a positive integer
 // Returns false for NaN
 // Returns false for Number.POSITIVE_INFINITY

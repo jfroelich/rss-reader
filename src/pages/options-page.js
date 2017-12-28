@@ -8,7 +8,6 @@ import * as Platform from "/src/platform/platform.js";
 import Subscribe from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
-import parseInt10 from "/src/utils/parse-int-10.js";
 
 // View state
 let currentMenuItem;
@@ -230,7 +229,7 @@ async function feedListItemOnclick(event) {
   // Use current target to capture the element with the feed attribute
   const feedListItem = event.currentTarget;
   const feedIdString = feedListItem.getAttribute('feed');
-  const feedIdNumber = parseInt10(feedIdString);
+  const feedIdNumber = parseInt(feedIdString, 10);
 
   // TODO: assert using Feed.isValidId
   assert(!isNaN(feedIdNumber));
@@ -438,7 +437,7 @@ function feedListRemoveFeed(feedId) {
 
 // TODO: visually react to unsubscribe error
 async function unsubscribeButtonOnclick(event) {
-  const feedId = parseInt10(event.target.value);
+  const feedId = parseInt(event.target.value, 10);
   assert(Feed.isValidId(feedId));
 
   const feedStore = new FeedStore();
@@ -457,7 +456,7 @@ async function unsubscribeButtonOnclick(event) {
 }
 
 async function activateButtonOnclick(event) {
-  const feedId = parseInt10(event.target.value);
+  const feedId = parseInt(event.target.value, 10);
   assert(Feed.isValidId(feedId));
 
   const feedStore = new FeedStore();
@@ -482,7 +481,7 @@ async function activateButtonOnclick(event) {
 }
 
 async function deactivateButtonOnclick(event) {
-  const feedId = parseInt10(event.target.value);
+  const feedId = parseInt(event.target.value, 10);
   assert(Feed.isValidId(feedId));
   const feedStore = new FeedStore();
 
@@ -792,7 +791,7 @@ justifyTextCheckbox.onchange = justifyTextCheckboxOnchange;
 
 const bodyLineHeightInput = document.getElementById('body-line-height');
 bodyLineHeightInput.oninput = bodyHeightInputOninput;
-const bodyLineHeightNumber = parseInt10(localStorage.BODY_LINE_HEIGHT) || 10;
+const bodyLineHeightNumber = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
 if(!isNaN(bodyLineHeightNumber)) {
   bodyLineHeightInput.value = (bodyLineHeightNumber / 10).toFixed(2);
 }
