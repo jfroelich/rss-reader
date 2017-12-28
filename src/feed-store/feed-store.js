@@ -9,7 +9,6 @@ import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import replaceTags from "/src/utils/html/replace-tags.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
 import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
-import isPosInt from "/src/utils/is-pos-int.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import sizeof from "/src/utils/sizeof.js";
 import formatString from "/src/utils/format-string.js";
@@ -230,9 +229,9 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contextMaxLe
     contextMaxLength = 50000;
   }
 
-  assert(isPosInt(authorMaxLength));
-  assert(isPosInt(titleMaxLength));
-  assert(isPosInt(contextMaxLength));
+  assert(Number.isInteger(authorMaxLength) && authorMaxLength >= 0);
+  assert(Number.isInteger(titleMaxLength) && titleMaxLength >= 0);
+  assert(Number.isInteger(contextMaxLength) && contentMaxLength >= 0);
 
   const blankEntry = Entry.createEntry();
   const outputEntry = Object.assign(blankEntry, inputEntry);
@@ -325,7 +324,7 @@ FeedStore.prototype.findEntries = function(predicate, limit) {
     assert(typeof predicate === 'function');
     const limited = typeof limit !== 'undefined';
     if(limited) {
-      assert(isPosInt(limit));
+      assert(Number.isInteger(limit) && limit >= 0);
       assert(limit > 0);
     }
 
@@ -590,13 +589,13 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
   if(typeof titleMaxLength === 'undefined') {
     titleMaxLength = DEFAULT_TITLE_MAX_LEN;
   } else {
-    assert(isPosInt(titleMaxLength));
+    assert(Number.isInteger(titleMaxLength) && titleMaxLength >= 0);
   }
 
   if(typeof descMaxLength === 'undefined') {
     descMaxLength = DEFAULT_DESC_MAX_LEN;
   } else {
-    assert(isPosInt(descMaxLength));
+    assert(Number.isInteger(descMaxLength) && descMaxLength >= 0);
   }
 
   const outputFeed = Object.assign({}, feed);
@@ -699,7 +698,7 @@ FeedStore.prototype.findArchivableEntries = function(predicate, limit) {
 
     const limited = typeof limit !== 'undefined';
     if(limited) {
-      assert(isPosInt(limit));
+      assert(Number.isInteger(limit) && limit >= 0);
       assert(limit > 0);
     }
 
@@ -742,7 +741,7 @@ FeedStore.prototype.archiveEntries = async function(maxAgeMs, limit) {
     maxAgeMs = TWO_DAYS_MS;
   }
 
-  assert(isPosInt(maxAgeMs));
+  assert(Number.isInteger(maxAgeMs) && maxAgeMs >= 0);
   const currentDate = new Date();
 
   function isArchivable(entry) {

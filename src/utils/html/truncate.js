@@ -1,5 +1,4 @@
 import assert from "/src/utils/assert.js";
-import isPosInt from "/src/utils/is-pos-int.js";
 import parseHTML from "/src/utils/html/parse.js";
 
 const ELLIPSIS = '\u2026';
@@ -10,7 +9,7 @@ const ELLIPSIS = '\u2026';
 // @param suffix {String} optional, appended after truncation, defaults to an ellipsis
 // @throws HTMLParseError
 export default function truncate(htmlString, position, suffix) {
-  assert(isPosInt(position));
+  assert(Number.isInteger(position) && position >= 0);
 
   // Tolerate some bad input for convenience
   if(typeof htmlString !== 'string') {

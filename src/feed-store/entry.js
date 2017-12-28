@@ -1,5 +1,4 @@
 import assert from "/src/utils/assert.js";
-import isPosInt from "/src/utils/is-pos-int.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 export const ENTRY_MAGIC = 0xdeadbeef;
@@ -23,7 +22,10 @@ export function isEntry(value) {
 
 // Returns true if the id is a valid entry id, structurally. This does not check if the id actually
 // corresponds to an entry.
-export const isValidId = isPosInt;
+export const isValidId = function(id) {
+  // TODO: is 0 actually valid? what is first value of indexedDB auto-increment?
+  return Number.isInteger(id) && id >= 0;
+};
 
 // Returns true if the entry has at least one url
 export function hasURL(entry) {

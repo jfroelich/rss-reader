@@ -1,5 +1,4 @@
 import assert from "/src/utils/assert.js";
-import isPosInt from "/src/utils/is-pos-int.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 
 // A variant of Promise.all that does not shortcircuit. If any promise rejects, undefined is placed
@@ -52,7 +51,7 @@ export async function promiseEvery(promises) {
 // the minimum deadline in the special case of 0, in that case this resolves immediately, where
 // immediately means on next-tick not synchronously.
 export function setTimeoutPromise(timeoutMs) {
-  assert(isPosInt(timeoutMs));
+  assert(Number.isInteger(timeoutMs) && timeoutMs >= 0);
 
   // Depart from browser minimum deadline in this one case
   if(timeoutMs === 0) {

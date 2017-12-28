@@ -1,6 +1,5 @@
 import assert from "/src/utils/assert.js";
 import formatString from "/src/utils/format-string.js";
-import isPosInt from "/src/utils/is-pos-int.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
@@ -98,7 +97,7 @@ async function fetchHelper(url, options) {
   }
 
   const untimed = typeof timeoutMs === 'undefined';
-  assert(untimed || isPosInt(timeoutMs));
+  assert(untimed || (Number.isInteger(timeoutMs) && timeoutMs >= 0));
 
   // Check if the url is allowed to be fetched according to this app's policy
   if(!isAllowedURL(url)) {

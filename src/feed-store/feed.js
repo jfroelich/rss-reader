@@ -1,5 +1,4 @@
 import assert from "/src/utils/assert.js";
-import isPosInt from "/src/utils/is-pos-int.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 // TODO: regarding feed schema, should the group of properties pertaining to a feed's active state
@@ -25,7 +24,10 @@ export function isFeed(value) {
   return value !== null && typeof value === 'object' && value.magic === FEED_MAGIC;
 }
 
-export const isValidId = isPosInt;
+export const isValidId = function(id) {
+  // TODO: is 0 valid?
+  return Number.isInteger(id) && id >= 0;
+};
 
 export function hasURL(feed) {
   assert(isFeed(feed));

@@ -1,6 +1,5 @@
 import assert from "/src/utils/assert.js";
 import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
-import isPosInt from "/src/utils/is-pos-int.js";
 
 export default class FaviconCache {
   constructor() {
@@ -96,8 +95,8 @@ FaviconCache.prototype.findExpired = function(maxAgeMs, limit) {
       maxAgeMs = FaviconCache.MAX_AGE_MS;
     }
 
-    assert(isPosInt(maxAgeMs));
-    assert(typeof limit === 'undefined' || isPosInt(limit));
+    assert(Number.isInteger(maxAgeMs) && maxAgeMs >= 0);
+    assert(typeof limit === 'undefined' || (Number.isInteger(limit) && limit >= 0));
 
     let cutoffTimeMs = Date.now() - maxAgeMs;
     cutoffTimeMs = cutoffTimeMs < 0 ? 0 : cutoffTimeMs;

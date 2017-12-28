@@ -1,6 +1,5 @@
 import assert from "/src/utils/assert.js";
 import unwrap from "/src/utils/dom/unwrap-element.js";
-import isPosInt from "/src/utils/is-pos-int.js";
 
 // Filters certain occurrences of emphasized content from document content
 // @param maxTextLength {Number} optional, if number of non-tag characters
@@ -11,7 +10,7 @@ export default function emphasisFilter(doc, maxTextLength) {
   if(typeof maxTextLength === 'undefined') {
     maxTextLength = 0;
   }
-  assert(isPosInt(maxTextLength));
+  assert(Number.isInteger(maxTextLength) && maxTextLength >= 0);
   if(!doc.body) {
     return;
   }

@@ -2,8 +2,6 @@ import assert from "/src/utils/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
-import isPosInt from "/src/utils/is-pos-int.js";
-
 import {resolveURLString} from "/src/utils/url-string-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 
@@ -293,7 +291,7 @@ FaviconLookup.prototype.isExpired = function(entry) {
   // Expect entries to always have a date set
   assert(entry.dateUpdated instanceof Date);
   // Expect this instance to always have a max age set
-  assert(isPosInt(this.maxAgeMs));
+  assert(Number.isInteger(this.maxAgeMs) && this.maxAgeMs >= 0);
 
   // An entry is expired if the difference between the current date and the date the
   // entry was last updated is greater than max age.

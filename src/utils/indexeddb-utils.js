@@ -1,5 +1,4 @@
 import assert from "/src/utils/assert.js";
-import isPosInt from "/src/utils/is-pos-int.js";
 import {setTimeoutPromise} from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 
@@ -26,7 +25,7 @@ export async function open(name, version, upgradeListener, timeoutMs) {
   if(isNaN(timeoutMs)) {
     timeoutMs = 0;
   }
-  assert(isPosInt(timeoutMs));
+  assert(Number.isInteger(timeoutMs) && timeoutMs >= 0);
 
   let timedout = false;
   let timer;

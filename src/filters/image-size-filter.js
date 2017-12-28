@@ -1,7 +1,6 @@
 import assert from "/src/utils/assert.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import formatString from "/src/utils/format-string.js";
-import isPosInt from "/src/utils/is-pos-int.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 
@@ -212,7 +211,7 @@ function getInlineStyleDimensions(element) {
 // @returns {Promise}
 async function fetchImageElement(url, timeoutMs) {
   assert(url instanceof URL);
-  assert(typeof timeoutMs === 'undefined' || isPosInt(timeoutMs));
+  assert(typeof timeoutMs === 'undefined' || (Number.isInteger(timeoutMs) && timeoutMs >= 0));
 
   if(!FetchUtils.isAllowedURL(url)) {
     const message = formatString('Refused to fetch url', url);
