@@ -13,6 +13,8 @@ import {resolveURLString} from "/src/utils/url-string-utils.js";
 // The second thing, however, is that this shouldn't share any code with any other module in
 // the main extension. So I kind of need to rethink how it depends on other things.
 
+// TODO: to refactor as an independent service I need to start decoupling dependencies
+
 // Comment and uncomment to enable debugging
 const dprintf = function(){};
 //const dprintf = console.debug;

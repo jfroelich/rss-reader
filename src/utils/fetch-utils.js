@@ -5,6 +5,18 @@ import * as PromiseUtils from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
 
+// TODO: brainstorming, basically this is a partial implementation of a NetworkService
+// of some kind. I could consider developing a standalone 'micro-service' that is fully
+// independent of everything.  The service provides access to remote resources. So while it
+// was probably smart to deprecate the fetch folder and move this back into utils, now I am
+// changing this from a library of fetch utilities into the concept of a network service, which
+// is basically responsible for serving files that are located elsewhere. Then I can build a
+// service hierarchy. For example, the favicon service would depend on this network service.
+// On the other hand, service boundaries are really more for distributed computing. This is all
+// within a single app and the abstraction may create more problems than it solves. Perhaps
+// just components is better, or modules, like what I have now. Or both. Services are comprised
+// of functionality and an assembly of shared components.
+
 
 // Fetches the html content of the given url
 // @param url {URL} request url
@@ -184,7 +196,6 @@ function compareURLsWithoutHash(url1, url2) {
   modURL2.hash = '';
   return modURL1.href === modURL2.href;
 }
-
 
 // Returns the value of the Last-Modified header as a Date object
 // @param response {Response}
