@@ -16,7 +16,7 @@ async function test(urlString) {
   const response = await FetchUtils.fetchHTML(urlObject);
   const html = await response.text();
   const document = parseHTML(html);
-  canonicalizeURLs(document, new URL(response.responseURL));
+  canonicalizeURLs(document, new URL(response.url));
   await setImageSizes(document);
 }
 

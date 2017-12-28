@@ -10,8 +10,8 @@ async function test(url) {
   const requestURL = new URL(url);
   const response = await FetchUtils.fetchFeed(requestURL, timeoutMs);
   const feedXML = await response.text();
-  const result = parseFeed(feedXML);
-  console.dir(result);
+  const parseResult = parseFeed(feedXML);
+  console.dir(parseResult);
 }
 
 // Expose to console

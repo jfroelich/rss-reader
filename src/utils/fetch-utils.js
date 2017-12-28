@@ -8,66 +8,30 @@ import TimeoutError from "/src/utils/timeout-error.js";
 import {compareURLsWithoutHash} from "/src/utils/url-utils.js";
 import {isValidURLString} from "/src/utils/url-string-utils.js";
 
-// TODO: change fetch functions to return raw response instead of wrapped response
-
 // Sends a HEAD request for the given url. Throws if the response is not an image
-// @param url {URL} request url
-// @returns {Promise} a promise that resolves to a wrapped response object
 export async function fetchImageHead(url, timeoutMs) {
-  const response = await fetchInternal(url, {
-    method: 'head',
-    timeout: timeoutMs
-  });
-
-  // Get the actual response that was wrapped
-  const internalResponse = response.response;
-
-  const contentType = internalResponse.headers.get('Content-Type');
+  const response = await fetchHelper(url, {method: 'head', timeout: timeoutMs});
+  const contentType = response.headers.get('Content-Type');
   const mimeType = MimeUtils.fromContentType(contentType);
-
-  // Because this only does shallow type sniffing, this has to tolerate
-  // octet streams to more accurately mimic browser acceptance, particularly
-  // for favicons.
-  // TODO: make up my mind. Do I want to use image/* or an explicit list or
-  // the current hybrid approach?
-  // TODO: fully enumerate the list of acceptable types of images
-  // This list is in development and not used
-  {
-    const knownTypes = [
-      'application/octet-stream',
-      'image/png',
-      'image/vnd.microsoft.icon',
-      'image/x-icon'
-    ];
-    if(!knownTypes.includes(mimeType)) {
-      console.info('New image type:', mimeType);
-    }
-  }
-
-  const types = ['application/octet-stream'];
-
-  if(MimeUtils.isImage(mimeType) || types.includes(mimeType)) {
-    return response;
-  } else {
+  if(!MimeUtils.isImage(mimeType) && mimeType !== 'application/octet-stream') {
     const message = formatString('Unacceptable response mime type %s for url', mimeType, url);
     throw new FetchError(message);
   }
+  return response;
 }
 
+// TODO: return raw response
 // Fetches the html content of the given url
 // @param url {URL} request url
 // @param timeoutMs {Number} optional, in milliseconds, how long to wait before considering the
 // fetch to be a failure.
 export async function fetchHTML(url, timeoutMs) {
-  const response = await fetchInternal(url, {
+  const response = await fetchHelper(url, {
     timeout: timeoutMs
   });
 
-  // Get the actual response that was wrapped
-  const internalResponse = response.response;
-  const contentType = internalResponse.headers.get('Content-Type');
+  const contentType = response.headers.get('Content-Type');
   const mimeType = MimeUtils.fromContentType(contentType);
-
   if(mimeType !== 'text/html') {
     const message = formatString('Unacceptable response mime type %s for url', mimeType, url);
     throw new FetchError(message);
@@ -80,40 +44,17 @@ export async function fetchHTML(url, timeoutMs) {
 // @param url {URL} request url
 // @param timeoutMs {Number} optional, timeout in milliseconds, before considering the fetch a
 // failure
-// @returns {Promise} a promise that resolves to a Response-like object
+// @returns {Promise} a promise that resolves to a response
 export async function fetchFeed(url, timeoutMs) {
-  const response = await fetchInternal(url, {
-    timeout: timeoutMs
-  });
-
-  // Get the actual response that was wrapped
-  const internalResponse = response.response;
-
-  const contentType = internalResponse.headers.get('Content-Type');
+  const response = await fetchHelper(url, {timeout: timeoutMs});
+  const contentType = response.headers.get('Content-Type');
   const mimeType = MimeUtils.fromContentType(contentType);
-
-  // This includes octet-stream because apparently some servers
-  // respond with that type but it is nevertheless a valid feed
-  // when viewed in the browswer.
-  // This includes html because some browsers transfer feed xml as
-  // html. It will still later be parsed as xml.
-
-  // Validate response mime type
-  const types = [
-    'application/octet-stream', // support binary text
-    'application/rss+xml',
-    'application/rdf+xml',
-    'application/atom+xml',
-    'application/xml',
-    'text/html',
-    'text/xml'
-  ];
-
+  const types = ['application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
+    'application/atom+xml', 'application/xml', 'text/html', 'text/xml'];
   if(!types.includes(mimeType)) {
     const message = formatString('Unacceptable response mime type %s for url', mimeType, url);
     throw new FetchError(message);
   }
-
   return response;
 }
 
@@ -124,7 +65,7 @@ export async function fetchFeed(url, timeoutMs) {
 // that causes fetches to fail if they take longer than the given number of milliseconds
 // @returns {Object} a Response-like object. This extends (in the general sense) the basic
 // Response object with properties that have already be converted to preferred data type
-async function fetchInternal(url, options) {
+async function fetchHelper(url, options) {
   // Accepting a url ensures the url is canonical and thereby avoids allowing fetch to implicitly
   // resolve a relative url. This also avoids passing undefined or something unexpected to fetch,
   // which would potentially result in some kind of TypeError
@@ -216,45 +157,21 @@ async function fetchInternal(url, options) {
     throw new FetchError(message);
   }
 
-  // This is a caveat of not passing options along. But I want to programmatically specify that
-  // 204 is only an error for certain methods
-  const method = 'GET';
-  if(method === 'GET' || method === 'POST') {
-    const HTTP_STATUS_NO_CONTENT = 204;
-    if(response.status === HTTP_STATUS_NO_CONTENT) {
-      const message = formatString('No content for GET/POST', url);
-      throw new FetchError(message);
-    }
+  const method = mergedOptions.method.toUpperCase();
+  const responseBodyExpected = method === 'GET' || method === 'POST';
+  const HTTP_STATUS_NO_CONTENT = 204;
+  if(responseBodyExpected && response.status === HTTP_STATUS_NO_CONTENT) {
+    const message = formatString('No content for GET/POST for url', url);
+    throw new FetchError(message);
   }
 
-  // TODO: in order to deprecate response wrapper I need to update every single call site that
-  // uses response properties directly
-
-  const responseWrapper = {};
-
-  responseWrapper.response = response;
-
-  responseWrapper.text = function getBodyText() {
-    return response.text();
-  };
-  responseWrapper.requestURL = url.href;
-  responseWrapper.responseURL = response.url;
-  responseWrapper.lastModifiedDate = getLastModified(response);
-
-  // TODO: I think I would prefer this is called contentLength
-  responseWrapper.size = getContentLength(response);
-
-  // This should never throw as the browser never generates a bad property value
-  const responseURLObject = new URL(response.url);
-  responseWrapper.redirected = detectURLChanged(url, responseURLObject);
-
-  return responseWrapper;
+  return response;
 }
 
 // Return true if the response url is 'different' than the request url
 // @param requestURL {URL}
 // @param responseURL {URL}
-function detectURLChanged(requestURL, responseURL) {
+export function detectURLChanged(requestURL, responseURL) {
   return !compareURLsWithoutHash(requestURL, responseURL);
 }
 
@@ -262,7 +179,7 @@ function detectURLChanged(requestURL, responseURL) {
 // @param response {Response}
 // @returns {Date} the value of Last-Modified, or undefined if error such as no header present or
 // bad date
-function getLastModified(response) {
+export function getLastModified(response) {
   assert(response instanceof Response);
   const lastModifiedString = response.headers.get('Last-Modified');
   if(lastModifiedString) {

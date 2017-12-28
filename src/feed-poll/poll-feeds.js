@@ -116,12 +116,16 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   try {
     response = await FetchUtils.fetchFeed(requestURL, this.fetchFeedTimeoutMs);
   } catch(error) {
-    await handlePollFeedError(error, this.feedStore, feed, 'fetch-feed', this.deactivationThreshold);
+    await handlePollFeedError(error, this.feedStore, feed, 'fetch-feed',
+      this.deactivationThreshold);
   }
 
-  assert(typeof response === 'object');
+  // TODO: kind of superfluous but leaving in place for a bit due to heavy changes to FetchUtils
+  assert(response instanceof Response);
 
-  if(this.isUnmodifiedFeed(feed.dateUpdated, feed.dateLastModified, response.lastModifiedDate)) {
+  const responseLastModifiedDate = FetchUtils.getLastModified(response);
+
+  if(this.isUnmodifiedFeed(feed.dateUpdated, feed.dateLastModified, responseLastModifiedDate)) {
     // Check if error count decremented as a result of successful fetch, in which case we still
     // need to update the feed object in the database despite exiting early.
     const decremented = handleFetchFeedSuccess(feed);
@@ -136,17 +140,18 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   try {
     feedXML = await response.text();
   } catch(error) {
-    await handlePollFeedError(error, this.feedStore, feed, 'read-response-body', this.deactivationThreshold);
+    await handlePollFeedError(error, this.feedStore, feed, 'read-response-body',
+      this.deactivationThreshold);
   }
 
   assert(typeof feedXML === 'string');
   let parseResult;
   const PROCESS_ENTRIES = true;
   try {
-    parseResult = parseFeed(feedXML, url, response.responseURL, response.lastModifiedDate,
-      PROCESS_ENTRIES);
+    parseResult = parseFeed(feedXML, url, response.url, responseLastModifiedDate, PROCESS_ENTRIES);
   } catch(error) {
-    await handlePollFeedError(error, this.feedStore, feed, 'parse-feed', this.deactivationThreshold);
+    await handlePollFeedError(error, this.feedStore, feed, 'parse-feed',
+      this.deactivationThreshold);
   }
 
   const mergedFeed = Feed.merge(feed, parseResult.feed);
@@ -320,8 +325,9 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   const response = await this.fetchEntryHTML(url);
 
   if(response) {
-    if(response.redirected) {
-      const responseURL = new URL(response.responseURL);
+    const responseURL = new URL(response.url);
+    if(FetchUtils.detectURLChanged(url, responseURL)) {
+
       if(!isPollableURL(responseURL)) {
         return;
       }
@@ -330,10 +336,10 @@ FeedPoll.prototype.pollEntry = async function(entry) {
         return;
       }
 
-      Entry.appendURL(entry, response.responseURL);
+      Entry.appendURL(entry, response.url);
 
       // TODO: attempt to rewrite the redirected url as well?
-      URLUtils.setURLHrefProperty(url, response.responseURL);
+      URLUtils.setURLHrefProperty(url, response.url);
     }
 
     // Use the full text of the response in place of the in-feed content

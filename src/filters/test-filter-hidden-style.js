@@ -2,8 +2,7 @@ import * as FetchUtils from "/src/utils/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 
 async function test(url) {
-  const responseWrapper = await FetchUtils.fetchHTML(url);
-  const response = responseWrapper.response;
+  const response = await FetchUtils.fetchHTML(url);
   const text = await response.text();
   const doc = parseHTML(text);
   filter_hidden_elements_using_style(doc);

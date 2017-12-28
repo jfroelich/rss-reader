@@ -27,8 +27,7 @@ async function test(urlString) {
 
   // Get rid of some annoying console errors, and ensure images canonical to allow for
   // setting image size.
-  const responseURLString = response.responseURL;
-  canonicalizeURLs(document, new URL(responseURLString));
+  canonicalizeURLs(document, new URL(response.url));
 
   // Set image sizes to more accurately test image bias
   await setImageSizes(document);

@@ -107,8 +107,9 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   // Check if the response redirected and is in the cache
   let responseURL;
   if(response) {
-    if(response.redirected) {
-      responseURL = new URL(response.responseURL);
+    responseURL = new URL(response.url);
+
+    if(FetchUtils.detectURLChanged(url, responseURL)) {
 
       // If we redirected, and the origin of the response url is different than the origin of the
       // request url, then change the origin to the origin of the response url
@@ -209,9 +210,9 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
   if(this.isAcceptableImageResponse(response)) {
     if(this.hasOpenCache()) {
-      await this.cache.putAll(urls, response.responseURL);
+      await this.cache.putAll(urls, response.url);
     }
-    return response.responseURL;
+    return response.url;
   }
 
   if(this.hasOpenCache()) {
@@ -228,15 +229,23 @@ FaviconLookup.prototype.hasOpenCache = function() {
 
 // Returns true if response byte size in bounds. Tolerates undefined response.
 FaviconLookup.prototype.isAcceptableImageResponse = function(response) {
-  return response && (isNaN(response.size) ||
-    (response.size >= this.minImageSize && response.size <= this.maxImageSize));
+  if(response) {
+    const contentLength = FetchUtils.getContentLength(response);
+    if(isNaN(contentLength)) {
+      return true;
+    }
+
+    return response.size >= this.minImageSize && response.size <= this.maxImageSize;
+  }
+  return false;
 };
 
 // Helper that traps non-assertion errors because errors not fatal to lookup
 FaviconLookup.prototype.fetchImage = async function(url) {
   assert(url instanceof URL);
   try {
-    return await FetchUtils.fetchImageHead(url, this.fetchImageTimeoutMs);
+    const response = await FetchUtils.fetchImageHead(url, this.fetchImageTimeoutMs);
+    return response;
   } catch(error) {
     if(isUncheckedError(error)) {
       throw error;
@@ -345,7 +354,7 @@ FaviconLookup.prototype.search = async function(document, baseURL) {
   for(const url of canonicalURLs) {
     const response = await this.fetchImage(url);
     if(this.isAcceptableImageResponse(response)) {
-      return response.responseURL;
+      return response.url;
     }
   }
 };

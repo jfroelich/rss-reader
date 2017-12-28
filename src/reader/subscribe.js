@@ -67,15 +67,16 @@ Subscribe.prototype.subscribe = async function(url) {
   const response = await this.fetchFeed(url);
   let feed;
   if(response) {
-    if(response.redirected) {
-      url = new URL(response.responseURL);
+    const responseURLObject = new URL(response.url);
+    if(FetchUtils.detectURLChanged(url, responseURLObject)) {
+      url = responseURLObject;
       await this.checkFeedURLConstraint(url);
     }
 
     const xml = await response.text();
     const kProcEntries = false;
-    const parseResult = parseFeed(xml, url.href, response.responseURL,
-      response.lastModifiedDate, kProcEntries);
+    const parseResult = parseFeed(xml, url.href, response.url,
+      FetchUtils.getLastModified(response), kProcEntries);
     feed = parseResult.feed;
   } else {
     // We take care to create the feed using the factory method instead of creating a simple
