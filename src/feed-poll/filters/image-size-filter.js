@@ -120,7 +120,38 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     return;
   }
 
-  const sourceURL = new URL(imageSource);
+  // BUG: possible. The bug isn't here, but this is where it surfaces.
+  // Earlier in the log I see:
+  // Invalid srcset descriptor found in '//www.kansas.com/latest-news/tdv4vh-122917shooting-finch.
+  // jpg/alternates/LANDSCAPE_ 960/122917shooting%20finch.jpg' at '960/122917
+  // shooting%20finch.jpg'.
+  // Which then causes this to appear:
+  // Failed to parse image source //www.kansas.com/latest-news/tdv4vh-122917shooting-
+  // finch.jpg/alternates/LANDSCAPE_200/122917shooting%20finch.jpg
+
+  // It looks like the canonical url pass somehow did not canonicalize the srcset
+
+  // Actually, a parse failure is a TypeError. A TypeError is a type of unchecked
+  // error. It causes the entire filter to fail, which bubbles the exception all
+  // the way up. So parse errors should be trapped here and not thrown, because I don't
+  // want to treat those as unchecked errors.
+
+  // Ok so I return now instead of throw in case of url parsing error. BUT, I still need to look
+  // into why the above urls were not caught.
+
+
+
+  let sourceURL;
+  try {
+    sourceURL = new URL(imageSource);
+  } catch(error) {
+    console.debug('Failed to parse image source', imageSource);
+
+    // URL parse errors materialize as TypeErrors, which are unchecked, which if thrown would be
+    // treated like an assertion failure. Therefore, just return.
+    return;
+  }
+
   if(!allowedProtocols.includes(sourceURL.protocol)) {
     return;
   }
