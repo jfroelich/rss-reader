@@ -35,22 +35,20 @@ import {parseFeed as parseFeedImpl} from "/src/common/parse-feed.js";
 // TODO: I think it would make sense to clearly enumerate the use cases, then revisit how well the
 // abstraction responds to each case.
 
+// TODO: change to accept urls instead of strings
 
 // Parses an xml input string representing a feed. Returns a result with a feed object and an array
 // of entries. Throws both checked and unchecked errors.
-export default function parseFeed(xmlString, requestURL, responseURL, lastModDate, processEntries) {
+export default function parseFeed(xmlString, requestURLString, responseURLString, lastModDate,
+  processEntries) {
+
   const result = {feed: undefined, entries: []};
 
-  // Any errors produced by this call are not caught here and are passed upward
+  // Rethrow any parsing errors
   const feed = parseFeedImpl(xmlString);
 
-  // Pull the entries property out of the parsed feed. The interal parser includes the entries
-  // array as a part of the parsed feed, but the app's storage format does not store entries per
-  // feed, it stores feeds and entries separately, and the feeds it stores do not have an entries
-  // property. We have to do this now, even if entries are not processed later, because entries
-  // cannot be defined as a feed property.
-  const entries = feed.entries;
-  delete feed.entries;
+  const requestURL = new URL(requestURLString);
+  const responseURL = new URL(responseURLString);
 
   // Compose fetch urls as the initial feed urls
   Feed.appendURL(feed, requestURL);
@@ -89,6 +87,14 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   feed.magic = Feed.FEED_MAGIC;
 
   result.feed = feed;
+
+  // Pull the entries property out of the parsed feed. The interal parser includes the entries
+  // array as a part of the parsed feed, but the app's storage format does not store entries per
+  // feed, it stores feeds and entries separately, and the feeds it stores do not have an entries
+  // property. We have to do this now, even if entries are not processed later, because entries
+  // cannot be defined as a feed property.
+  const entries = feed.entries;
+  delete feed.entries;
 
   if(!processEntries) {
     return result;
@@ -144,11 +150,12 @@ function resolveEntryLink(entry, baseURL) {
 // into the app's storage format that uses a urls array. this tolerates entries that do not have
 // links
 function convertEntryLinkToURL(entry) {
-  if(entry.link) {
+  if('link' in entry) {
     try {
-      Entry.appendURL(entry, entry.link);
+      const url = new URL(entry.link);
+      Entry.appendURL(entry, url);
     } catch(error) {
-      console.warn('failed to coerce entry link to url', entry.link);
+      console.warn('Failed to coerce entry link to url', entry.link);
     }
 
     // Regardless of above success, unset

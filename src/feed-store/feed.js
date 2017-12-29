@@ -43,16 +43,14 @@ export function peekURL(feed) {
 
 // Appends a url to the feed's internal list. Lazily creates the list if needed
 // @param feed {Object} a feed object
-// @param urlString {String}
-export function appendURL(feed, urlString) {
+// @param url {URL}
+export function appendURL(feed, url) {
   feed.urls = feed.urls || [];
-  const urlObject = new URL(urlString);
-  const normalURLString = urlObject.href;
-  if(feed.urls.includes(normalURLString)) {
+  const href = url.href;
+  if(feed.urls.includes(href)) {
     return false;
   }
-
-  feed.urls.push(normalURLString);
+  feed.urls.push(href);
   return true;
 }
 

@@ -319,7 +319,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   const url = new URL(Entry.peekURL(entry));
   const rewrittenURL = rewriteURL(url.href);
   if(rewrittenURL && url.href !== rewrittenURL) {
-    Entry.appendURL(entry, rewrittenURL);
+    Entry.appendURL(entry, new URL(rewrittenURL));
     setURLHrefProperty(url, rewrittenURL);
   }
 
@@ -346,7 +346,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
         return;
       }
 
-      Entry.appendURL(entry, response.url);
+      Entry.appendURL(entry, responseURL);
 
       // TODO: attempt to rewrite the redirected url as well?
       setURLHrefProperty(url, response.url);

@@ -39,20 +39,15 @@ export function peekURL(entry) {
   return entry.urls[entry.urls.length - 1];
 }
 
-// TODO: change to accept a URL as input instead of a string
-
 // Append a url to an entry's url list. Lazily creates the urls property if needed. Normalizes the
 // url. The normalized url is compared against existing urls to ensure the new url is unique.
-// @returns {Boolean} true if entry was added, or false if the url already exists and was therefore
+// Returns true if entry was added, or false if the url already exists and was therefore
 // not added
-export function appendURL(entry, urlString) {
+export function appendURL(entry, url) {
   assert(isEntry(entry));
+  assert(url instanceof URL);
 
-  assert(typeof urlString === 'string' && urlString.length > 0);
-
-  // This throws a TypeError if url is invalid or relative
-  const urlObject = new URL(urlString);
-  const normalUrlString = urlObject.href;
+  const normalUrlString = url.href;
   if(entry.urls) {
     if(entry.urls.includes(normalUrlString)) {
       return false;
