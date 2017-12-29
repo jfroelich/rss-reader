@@ -1,5 +1,5 @@
-import "/src/background/alarms.js";
-import "/src/background/cli.js";
+import "/src/background-page/alarms.js";
+import "/src/background-page/cli.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
