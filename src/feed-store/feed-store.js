@@ -5,7 +5,6 @@ import * as Feed from "/src/feed-store/feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import assert from "/src/common/assert.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
-import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import replaceTags from "/src/utils/html/replace-tags.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
 import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
@@ -941,3 +940,26 @@ FeedStore.prototype.removeOrphanedEntries = async function(limit) {
   }
   channel.close();
 };
+
+
+// Returns a new object that is a copy of the input less empty properties. A property is empty if it
+// is null, undefined, or an empty string. Ignores prototype, deep objects, getters, etc. Shallow
+// copy by reference.
+// TODO: maybe rename to something like copyNonEmptyProps? Less suggestive of mutation.
+function filterEmptyProps(object) {
+  const hasOwnProp = Object.prototype.hasOwnProperty;
+  const output = {};
+  let undef;
+  if(typeof object === 'object' && object !== null) {
+    for(const key in object) {
+      if(hasOwnProp.call(object, key)) {
+        const value = object[key];
+        if(value !== undef && value !== null && value !== '') {
+          output[key] = value;
+        }
+      }
+    }
+  }
+
+  return output;
+}
