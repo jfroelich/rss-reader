@@ -17,7 +17,7 @@ import formattingAnchorFilter from "/src/filters/formatting-anchor-filter.js";
 import formattingFilter from "/src/filters/formatting-filter.js";
 import formFilter from "/src/filters/form-filter.js";
 import frameFilter from "/src/filters/frame-filter.js";
-import hiddenFilter from "/src/filters/hidden-filter.js";
+import hiddenElementFilter from "/src/filters/hidden-element-filter.js";
 import hostTemplateFilter from "/src/filters/host-template-filter.js";
 import hrFilter from "/src/filters/hr-filter.js";
 import iframeFilter from "/src/filters/iframe-filter.js";
@@ -58,7 +58,7 @@ export default async function applyAllFilters(doc, documentURL, fetchImageTimeou
   commentFilter(doc);
   baseFilter(doc);
 
-  hiddenFilter(doc);
+  hiddenElementFilter(doc);
   noscriptFilter(doc);
   elementBlacklistFilter(doc);
   scriptAnchorFilter(doc);
