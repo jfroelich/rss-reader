@@ -16,23 +16,3 @@ export function condenseWhitespace(string) {
 export function filterControls(string) {
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }
-
-// If the input is a string then the function returns a new string that is approximately a copy of
-// the input less certain 'unprintable' characters. In the case of bad input the input itself is
-// returned. To test if characters were replaced, check if the output string length is less than the
-// input string length.
-// Basically this removes those characters in the range of [0..31] except for the following four
-// characters:
-// \t is \u0009 which is base10 9
-// \n is \u000a which is base10 10
-// \f is \u000c which is base10 12
-// \r is \u000d which is base10 13
-// TODO: look into how much this overlaps with filterControls
-
-const unPrintablePattern = /[\u0000-\u0008\u000b\u000e-\u001F]+/g;
-export function filterUnprintableCharacters(value) {
-  // The length check is done because given that replace will be a no-op when the length is 0 it is
-  // faster to perform the length check than it is to call replace. I do not know the distribution
-  // of inputs but I expect that empty strings are not rare.
-  return typeof value === 'string' && value.length ? value.replace(unPrintablePattern, '') : value;
-}
