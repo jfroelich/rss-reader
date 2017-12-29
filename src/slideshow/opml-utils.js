@@ -1,6 +1,6 @@
 import assert from "/src/common/assert.js";
 import formatString from "/src/common/format-string.js";
-import parseXML, {XMLParseError} from "/src/utils/parse-xml.js";
+import parseXML, {XMLParseError} from "/src/common/parse-xml.js";
 
 // Returns the parsed document or throws an XMLParseError or an unchecked error or an
 // OPMLParseError
