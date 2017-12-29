@@ -10,7 +10,7 @@ import {showNotification} from "/src/platform/platform.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import {setTimeoutPromise} from "/src/utils/promise-utils.js";
-import formatString from "/src/utils/format-string.js";
+import formatString from "/src/common/format-string.js";
 
 // TODO: think of a better name
 

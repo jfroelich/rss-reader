@@ -1,5 +1,5 @@
 import parseXML, {XMLParseError} from "/src/utils/parse-xml.js";
-import formatString from "/src/utils/format-string.js";
+import formatString from "/src/common/format-string.js";
 
 // Returns the parsed document or throws an XMLParseError or an unchecked error or an
 // OPMLParseError

@@ -12,7 +12,7 @@ import * as Platform from "/src/platform/platform.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
-import formatString from "/src/utils/format-string.js";
+import formatString from "/src/common/format-string.js";
 import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";

@@ -1,4 +1,4 @@
-import formatString from "/src/utils/format-string.js";
+import formatString from "/src/common/format-string.js";
 
 // Enable direct calling in console
 window.formatString = formatString;

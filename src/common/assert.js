@@ -1,4 +1,4 @@
-import formatString from "/src/utils/format-string.js";
+import formatString from "/src/common/format-string.js";
 
 // Throws an assertion error when the condition value is false or false-like
 // @param booleanValue {Any} any value, usually the result of some expression, preferably boolean

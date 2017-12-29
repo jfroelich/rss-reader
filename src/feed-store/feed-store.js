@@ -9,8 +9,8 @@ import replaceTags from "/src/utils/html/replace-tags.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
 import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
-import sizeof from "/src/utils/sizeof.js";
-import formatString from "/src/utils/format-string.js";
+import sizeof from "/src/feed-store/sizeof.js";
+import formatString from "/src/common/format-string.js";
 import * as StringUtils from "/src/utils/string-utils.js";
 
 const DEBUG = false;
