@@ -1,6 +1,6 @@
-import {parseFeed} from "/src/common/parse-feed.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
-import decodeEntities from "/src/utils/html/decode-entities.js";
+import {parseFeed} from "/src/common/parse-feed.js";
+import {decodeEntities} from "/src/common/html-utils.js";
 
 // Test parseFeed module. At the moment this just exposes a helper function to console
 // TODO: write specific tests that test various assertions, e.g. preconditions, postconditions

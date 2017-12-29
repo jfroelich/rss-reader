@@ -1,7 +1,7 @@
 import canonicalizeURLs from "/src/feed-poll/filters/canonical-url-filter.js";
 import setImageSizes from "/src/feed-poll/filters/image-size-filter.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
-import parseHTML from "/src/utils/html/parse.js";
+import {parseHTML} from "/src/common/html-utils.js";
 
 // TODO: research http://exercism.io/ svg loading issue
 // Actually there is now a separate issue. It's not finding any urls. Something is up

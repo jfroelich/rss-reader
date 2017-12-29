@@ -1,5 +1,5 @@
 import filter, {coerceElement} from "/src/feed-poll/filters/condense-tagnames-filter.js";
-import parseHTML from "/src/utils/html/parse.js";
+import {parseHTML} from "/src/common/html-utils.js";
 
 let input = '<html><head></head><body><a></a></body></html>';
 let doc = parseHTML(input);

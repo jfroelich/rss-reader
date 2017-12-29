@@ -1,20 +1,15 @@
 import assert from "/src/common/assert.js";
+import {isUncheckedError} from "/src/common/error-utils.js";
 import formatString from "/src/common/format-string.js";
 import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
-
+import * as PromiseUtils from "/src/common/promise-utils.js";
 import FaviconLookup from "/src/favicon/lookup.js";
-
 import * as Entry from "/src/feed-store/entry.js";
 import * as FeedStoreErrors from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import sizeof from "/src/feed-store/sizeof.js";
-
 import updateBadgeText from "/src/reader/update-badge-text.js";
-
-import {isUncheckedError} from "/src/common/error-utils.js";
-import replaceTags from "/src/utils/html/replace-tags.js";
-import htmlTruncate from "/src/utils/html/truncate.js";
-import * as PromiseUtils from "/src/common/promise-utils.js";
+import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
 
 
 const DEBUG = false;
@@ -243,14 +238,14 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLe
     author = filterControls(author);
     author = replaceTags(author, '');
     author = condenseWhitespace(author);
-    author = htmlTruncate(author, authorMaxLength);
+    author = truncateHTML(author, authorMaxLength);
     outputEntry.author = author;
   }
 
   if(outputEntry.content) {
     let content = outputEntry.content;
     content = filterUnprintableCharacters(content);
-    content = htmlTruncate(content, contentMaxLength);
+    content = truncateHTML(content, contentMaxLength);
     outputEntry.content = content;
   }
 
@@ -259,7 +254,7 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLe
     title = filterControls(title);
     title = replaceTags(title, '');
     title = condenseWhitespace(title);
-    title = htmlTruncate(title, titleMaxLength);
+    title = truncateHTML(title, titleMaxLength);
     outputEntry.title = title;
   }
 
@@ -652,7 +647,7 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
     title = filterControls(title);
     title = replaceTags(title, tagReplacement);
     title = condenseWhitespace(title);
-    title = htmlTruncate(title, titleMaxLength, suffix);
+    title = truncateHTML(title, titleMaxLength, suffix);
     outputFeed.title = title;
   }
 
@@ -661,7 +656,7 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
     desc = filterControls(desc);
     desc = replaceTags(desc, tagReplacement);
     desc = condenseWhitespace(desc);
-    desc = htmlTruncate(desc, descMaxLength, suffix);
+    desc = truncateHTML(desc, descMaxLength, suffix);
     outputFeed.description = desc;
   }
 

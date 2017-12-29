@@ -1,7 +1,8 @@
 import assert from "/src/common/assert.js";
-import decodeEntities from "/src/utils/html/decode-entities.js";
 import parseXML, {XMLParseError} from "/src/common/parse-xml.js";
 import formatString from "/src/common/format-string.js";
+import {decodeEntities} from "/src/common/html-utils.js";
+
 
 export class FeedParseError extends XMLParseError {
   constructor(message) {

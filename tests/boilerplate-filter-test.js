@@ -6,7 +6,7 @@ import filterIFrames from "/src/feed-poll/filters/iframe-filter.js";
 import setImageSizes from "/src/feed-poll/filters/image-size-filter.js";
 import filterScript from "/src/feed-poll/filters/script-filter.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
-import parseHTML from "/src/utils/html/parse.js";
+import {parseHTML} from "/src/common/html-utils.js";
 
 async function test(urlString) {
   const urlObject = new URL(urlString);

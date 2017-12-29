@@ -1,11 +1,11 @@
 import assert from "/src/common/assert.js";
 import * as Config from "/src/common/config.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import htmlTruncate from "/src/utils/html/truncate.js";
+import * as Feed from "/src/feed-store/feed.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
 import Subscribe from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
-import * as Feed from "/src/feed-store/feed.js";
+import {truncateHTML} from "/src/common/html-utils.js";
 
 // View state
 let currentMenuItem;
@@ -194,7 +194,7 @@ function feedListAppendFeed(feed) {
   let feedTitle = feed.title || 'Untitled';
 
   // TODO: handle the parse error, this is near root scope
-  feedTitle = htmlTruncate(feedTitle, 300);
+  feedTitle = truncateHTML(feedTitle, 300);
   titleElement.textContent = feedTitle;
   itemElement.appendChild(titleElement);
   const feedListElement = document.getElementById('feedlist');

@@ -1,5 +1,5 @@
 import filterEmptyAttributes from "/src/feed-poll/filters/empty-attribute-filter.js";
-import parseHTML from "/src/utils/html/parse.js";
+import {parseHTML} from "/src/common/html-utils.js";
 
 // Simple empty non-boolean attribute in body
 let input = '<html><head></head><body><a name="">test</a></body></html>';

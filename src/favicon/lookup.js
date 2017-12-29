@@ -1,8 +1,8 @@
 import assert from "/src/common/assert.js";
+import {isUncheckedError} from "/src/common/error-utils.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import FaviconCache from "/src/favicon/cache.js";
-import parseHTML from "/src/utils/html/parse.js";
-import {isUncheckedError} from "/src/common/error-utils.js";
+import {parseHTML} from "/src/common/html-utils.js";
 
 
 const dprintf = function(){}; // console.debug;

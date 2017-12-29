@@ -6,8 +6,7 @@ import FeedStore from "/src/feed-store/feed-store.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
 import exportFeeds from "/src/slideshow-page/export-feeds.js";
 import OPMLImporter from "/src/slideshow-page/opml-importer.js";
-import escapeHTML from "/src/utils/html/escape.js";
-import htmlTruncate from "/src/utils/html/truncate.js";
+import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
 
 const DEBUG = false;
 const dprintf = DEBUG ? console.log : noop;
@@ -288,7 +287,7 @@ function createArticleTitleElement(entry) {
 
     let filteredSafeTitle = filterPublisher(safeTitle);
     try {
-      filteredSafeTitle = htmlTruncate(filteredSafeTitle, 300);
+      filteredSafeTitle = truncateHTML(filteredSafeTitle, 300);
     } catch(error) {
       console.warn(error);
     }
