@@ -1,6 +1,5 @@
 
-// TODO: this doesn't belong in platform
-export async function showSlideshowTab() {
+export default async function showSlideshowTab() {
   const slideshowURL = chrome.extension.getURL('slideshow.html');
   const newtabURL = 'chrome://newtab/';
 
