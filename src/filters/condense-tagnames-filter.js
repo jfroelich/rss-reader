@@ -1,5 +1,24 @@
 import assert from "/src/common/assert.js";
-import voidElements from "/src/utils/dom/void-elements.js";
+
+// See https://html.spec.whatwg.org/multipage/syntax.html#void-elements
+// This is a set, but given the small size, it is better to use a simple array.
+const voidElements = [
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr'
+];
+
 
 // Changes the names of certain elements in document content
 
