@@ -17,7 +17,7 @@ import updateBadgeText from "/src/reader/update-badge-text.js";
 
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
-import isUncheckedError from "/src/utils/is-unchecked-error.js";
+import {isUncheckedError} from "/src/utils/error-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 

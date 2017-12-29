@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import isUncheckedError from "/src/utils/is-unchecked-error.js";
+import {isUncheckedError} from "/src/utils/error-utils.js";
 
 // A variant of Promise.all that does not shortcircuit. If any promise rejects, undefined is placed
 // in the output array in place of the promise's return value. However, if any project rejects

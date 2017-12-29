@@ -1,8 +1,5 @@
 import {AssertionError} from "/src/common/assert.js";
 
-// TODO: this module is too simple. What I should have is a utilities module like 'error-utils.js',
-// and this should just be one method of that module.
-
 // TODO: i should possibly separate this from assertion error and just have a function like
 // isNativeError that returns true if an error is an instance of one of the known native errors.
 // The tradeoff would be the caller who cares about the class of checked vs unchecked then
@@ -21,7 +18,7 @@ import {AssertionError} from "/src/common/assert.js";
 
 // A helper for use in catch blocks that want to re-throw unexpected errors that should not be
 // caught.
-export default function isUncheckedError(error) {
+export function isUncheckedError(error) {
   return error instanceof AssertionError ||
     error instanceof TypeError ||
     error instanceof ReferenceError ||
