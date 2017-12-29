@@ -18,7 +18,7 @@ import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
-import * as PromiseUtils from "/src/utils/promise-utils.js";
+import * as PromiseUtils from "/src/common/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 
 export default function FeedPoll() {

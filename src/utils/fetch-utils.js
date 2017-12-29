@@ -1,7 +1,7 @@
 import assert from "/src/common/assert.js";
 import formatString from "/src/common/format-string.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
-import * as PromiseUtils from "/src/utils/promise-utils.js";
+import * as PromiseUtils from "/src/common/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 
 // TODO: brainstorming, basically this is a partial implementation of a NetworkService

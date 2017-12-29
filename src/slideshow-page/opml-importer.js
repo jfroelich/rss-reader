@@ -5,7 +5,7 @@ import FeedStore from "/src/feed-store/feed-store.js";
 import * as OPMLUtils from "/src/slideshow-page/opml-utils.js";
 import Subscribe from "/src/reader/subscribe.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
-import * as PromiseUtils from "/src/utils/promise-utils.js";
+import * as PromiseUtils from "/src/common/promise-utils.js";
 
 export default function OPMLImporter() {
   this.feedStore = null;

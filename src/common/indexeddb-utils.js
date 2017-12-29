@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import {setTimeoutPromise} from "/src/utils/promise-utils.js";
+import {setTimeoutPromise} from "/src/common/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 
 

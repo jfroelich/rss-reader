@@ -14,7 +14,7 @@ import updateBadgeText from "/src/reader/update-badge-text.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import replaceTags from "/src/utils/html/replace-tags.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
-import * as PromiseUtils from "/src/utils/promise-utils.js";
+import * as PromiseUtils from "/src/common/promise-utils.js";
 
 
 const DEBUG = false;
