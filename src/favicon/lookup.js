@@ -5,19 +5,7 @@ import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import {resolveURLString} from "/src/utils/url-string-utils.js";
 
-// TODO: reconsider idea that this should be a separate micro-service. In fact it should
-// possibly be within a separate extension, use chrome's cross-extension loading. It is good that
-// this uses its own database, that is one key component of microservices. But a separate
-// thing is maybe I should create a single API, like FaviconService, that encapsulates both
-// lookup and cache together. This will also make it easier to move to a separate extension.
-// The second thing, however, is that this shouldn't share any code with any other module in
-// the main extension. So I kind of need to rethink how it depends on other things.
-
-// TODO: to refactor as an independent service I need to start decoupling dependencies
-
-// Comment and uncomment to enable debugging
-const dprintf = function(){};
-//const dprintf = console.debug;
+const dprintf = function(){}; // console.debug;
 
 // Class that provides favicon lookup
 export default class FaviconLookup {
@@ -32,6 +20,12 @@ export default class FaviconLookup {
     this.maxImageSize = 10240;
   }
 }
+
+// TODO: this function is kind of large. I think the issue is cyclomatic complexity? Basically
+// it is somewhat hard to read through and follow the flow. I think the difficulty comes primarily
+// from insufficient abstraction around the different steps that are taken? Also I think I focused
+// too much on trying to re-use variables throughout the function when there really isn't a
+// performance benefit (once again ... premature optimization habit).
 
 // Looks up the favicon url for a given web page url
 // @param url {URL} the lookup url

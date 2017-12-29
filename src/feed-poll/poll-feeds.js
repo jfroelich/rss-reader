@@ -1,5 +1,5 @@
 import assert from "/src/utils/assert.js";
-import * as Config from "/src/config.js";
+import * as Config from "/src/common/config.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";

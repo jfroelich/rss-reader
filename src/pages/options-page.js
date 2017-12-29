@@ -1,5 +1,5 @@
 import assert from "/src/utils/assert.js";
-import * as Config from "/src/config.js";
+import * as Config from "/src/common/config.js";
 import fadeElement from "/src/utils/dom/fade-element.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import htmlTruncate from "/src/utils/html/truncate.js";

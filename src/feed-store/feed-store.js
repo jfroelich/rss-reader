@@ -13,7 +13,6 @@ import * as PromiseUtils from "/src/utils/promise-utils.js";
 import sizeof from "/src/utils/sizeof.js";
 import formatString from "/src/utils/format-string.js";
 import * as StringUtils from "/src/utils/string-utils.js";
-import * as URLStringUtils from "/src/utils/url-string-utils.js";
 
 const DEBUG = false;
 const dprintf = DEBUG ? console.debug : function(){};
@@ -214,7 +213,7 @@ FeedStore.prototype.addEntry = async function(entry, channel) {
 // characters except important ones, and then a second function that replaces or removes
 // certain important binary characters (e.g. remove line breaks from author string).
 // Something like 'replaceFormattingCharacters'.
-function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contextMaxLength) {
+function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLength) {
   assert(Entry.isEntry(inputEntry));
 
   if(typeof authorMaxLength === 'undefined') {
@@ -225,13 +224,13 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contextMaxLe
     titleMaxLength = 1000;
   }
 
-  if(typeof contextMaxLength === 'undefined') {
-    contextMaxLength = 50000;
+  if(typeof contentMaxLength === 'undefined') {
+    contentMaxLength = 50000;
   }
 
   assert(Number.isInteger(authorMaxLength) && authorMaxLength >= 0);
   assert(Number.isInteger(titleMaxLength) && titleMaxLength >= 0);
-  assert(Number.isInteger(contextMaxLength) && contentMaxLength >= 0);
+  assert(Number.isInteger(contentMaxLength) && contentMaxLength >= 0);
 
   const blankEntry = Entry.createEntry();
   const outputEntry = Object.assign(blankEntry, inputEntry);
@@ -248,7 +247,7 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contextMaxLe
   if(outputEntry.content) {
     let content = outputEntry.content;
     content = StringUtils.filterUnprintableCharacters(content);
-    content = htmlTruncate(content, contextMaxLength);
+    content = htmlTruncate(content, contentMaxLength);
     outputEntry.content = content;
   }
 
@@ -430,17 +429,16 @@ FeedStore.prototype.findFeedById = function(feedId) {
 };
 
 // Returns feed id if a feed with the given url exists in the database
-// TODO: accept URL instead of string, change assert to instanceof URL
-// @param urlString {String}
+// @param url {URL}
 // @return {Promise}
-FeedStore.prototype.findFeedIdByURL = function(urlString) {
+FeedStore.prototype.findFeedIdByURL = function(url) {
   return new Promise((resolve, reject) => {
     assert(this.isOpen());
-    assert(URLStringUtils.isValidURLString(urlString));
+    assert(url instanceof URL);
     const tx = this.conn.transaction('feed');
     const store = tx.objectStore('feed');
     const index = store.index('urls');
-    const request = index.getKey(urlString);
+    const request = index.getKey(url.href);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -448,7 +446,7 @@ FeedStore.prototype.findFeedIdByURL = function(urlString) {
 
 FeedStore.prototype.containsFeedWithURL = async function(url) {
   assert(url instanceof URL);
-  const id = this.findFeedIdByURL(url.href);
+  const id = this.findFeedIdByURL(url);
   return Feed.isValidId(id);
 };
 
@@ -537,7 +535,47 @@ FeedStore.prototype.markEntryAsRead = async function(entryId) {
   await this.putEntry(entry);
   dprintf('Marked entry as read', entryId, url);
 
-  // TODO: This is bad, a circular dependency
+  // TODO: This is bad, a circular dependency. This is a symptom of a more severe lack of
+  // forward planning and organization. The basic gist is that I need to decide if markEntryAsRead
+  // and similar storage functions should be able to interact with the extension. In this case
+  // trigger a side effect that is extension wide. The problem is basically that I think this
+  // belongs here. Marking an entry as read in storage should update the number of unread entries
+  // displayed in the badge as an obvious side effect. Or should it? I never really decided.
+  // It would be kind of easy to not do this here, and shift the burden to the caller. But then
+  // this invites the mistake of not performing this expected subsequent action. The two changes
+  // are intricately linked and decoupling here is a mistake. In some sense this should have no
+  // knowledge of the extension. Maybe what should be happening is that this should be sending
+  // out a message to the 'reader' channel that an entry was marked as read. Then, some external
+  // listener is responsible. I dunno though, that feels like I am just dumping an extra layer
+  // of complexity on what should otherwise be a straightforward operation. This just really is
+  // not well thought out.
+
+  // Previously this made sense. markEntryAsRead operated in a layer above storage as an app
+  // action, like a controller that mediated between the view and the model. That higher level
+  // operation depended on both storage and the extension. It was the
+  // sole caller of the storage function that marks the entry as read. And by acting as the sole
+  // caller, the sole channel through which to instruct, it coupled the effects and guaranteed
+  // both. So maybe I should revert to that.
+
+  // On the other hand, I dunno. I go back to the question of whether changes to the database
+  // should have an obvious and immediate side effect on other parts of the extension. Because
+  // they kind of should? But maybe what I should do instead is clarify an state confidently that
+  // storage is not concerned with the rest of the extension at all. it is only concerned with
+  // storing things. if i separate the concerns that way it kind of makes sense? but this is kind
+  // of what I don't like. This concern of modifying the badge text is directly linked to the
+  // state change. I am separating a concern by basically spreading the concern over two layers.
+  // Ewww. Right?
+
+  // http://www.micheltriana.com/blog/2012/04/09/library-oriented-architecture
+  // Basically I think the database module should just care about storing data. Some higher level
+  // api is concerned with mixing together database storage with everything else.
+  // So this is an example of improper mixing of concerns. It pretty clearly explains the
+  // cause of the circulary dependency too.
+  // So while it was convenient to store this function (and similar ones that work with channels)
+  // here, that should have been done somewhere else. The database should not have anything to
+  // do with channels. So I need a new intermediate layer above the database that performs
+  // several of theses actions PLUS the rest, instead of trying to do it all in this storage layer.
+
   updateBadgeText();
 };
 
