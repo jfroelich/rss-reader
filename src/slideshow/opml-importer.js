@@ -2,9 +2,7 @@ import assert from "/src/common/assert.js";
 import FaviconCache from "/src/favicon/cache.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import * as OPMLDocument from "/src/opml/document.js";
-import * as OPMLOutline from "/src/opml/outline.js";
-import parseOPML from "/src/opml/parse.js";
+import * as OPMLUtils from "/src/slideshow/opml-utils.js";
 import Subscribe from "/src/reader/subscribe.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
@@ -73,12 +71,12 @@ OPMLImporter.prototype.importFile = async function(file) {
   }
 
   const fileText = await readFileAsText(file);
-  const document = parseOPML(fileText);
+  const document = OPMLUtils.parseOPML(fileText);
   removeOutlinesWithInvalidTypes(document);
   normalizeOutlineXMLURLs(document);
   removeOutlinesMissingXMLURLs(document);
 
-  const outlines = OPMLDocument.getOutlineObjects(document);
+  const outlines = OPMLUtils.getOutlineObjects(document);
   console.debug('Found %d outlines in file', outlines.length, file.name);
   if(!outlines.length) {
     return 0;
@@ -86,7 +84,7 @@ OPMLImporter.prototype.importFile = async function(file) {
 
   const uniqueOutlines = groupOutlines(outlines);
   console.debug('Found %d distinct outlines in file', uniqueOutlines.length, file.name);
-  uniqueOutlines.forEach(OPMLOutline.normalizeHTMLURL);
+  uniqueOutlines.forEach(normalizeHTMLURL);
 
   const subscribe = new Subscribe();
   subscribe.fetchFeedTimeoutMs = this.fetchFeedTimeoutMs;
@@ -114,32 +112,83 @@ OPMLImporter.prototype.importFile = async function(file) {
   return subCount;
 };
 
+
+function normalizeHTMLURL(outline) {
+  assert(OPMLUtils.isOutline(outline));
+
+  if(outline.htmlUrl === undefined) {
+    return;
+  }
+
+  // Setting to undefined is preferred over deleting in order to maintain v8 object shape
+  if(outline.htmlUrl === null) {
+    outline.htmlUrl = undefined;
+    return;
+  }
+
+  if(outline.htmlUrl === '') {
+    outline.htmlUrl = undefined;
+    return;
+  }
+
+  try {
+    const urlObject = new URL(outline.htmlUrl);
+    outline.htmlUrl = urlObject.href;
+  } catch(error) {
+    outline.htmlUrl = undefined;
+  }
+}
+
+
+
 function removeOutlinesWithInvalidTypes(doc) {
   assert(doc instanceof Document);
-  const elements = OPMLDocument.getOutlineElements(doc);
+  const elements = OPMLUtils.getOutlineElements(doc);
   for(const element of elements) {
-    if(!OPMLOutline.elementHasValidType(element)) {
+    if(!elementHasValidType(element)) {
       element.remove();
     }
   }
 }
 
+const TYPE_PATTERN = /\s*(rss|rdf|feed)\s*/i;
+function elementHasValidType(element) {
+  return TYPE_PATTERN.test(element.getAttribute('type'));
+}
+
 function normalizeOutlineXMLURLs(doc) {
   assert(doc instanceof Document);
-  const outlines = OPMLDocument.getOutlineElements(doc);
+  const outlines = OPMLUtils.getOutlineElements(doc);
   for(const outline of outlines) {
-    OPMLOutline.elementNormalizeXMLURL(outline);
+    elementNormalizeXMLURL(outline);
+  }
+}
+
+function elementNormalizeXMLURL(element) {
+  let url = element.getAttribute('xmlUrl');
+  if(url) {
+    try {
+      const urlObject = new URL(url);
+      element.setAttribute('xmlUrl', urlObject.href);
+    } catch(error) {
+      element.removeAttribute('xmlUrl');
+    }
   }
 }
 
 function removeOutlinesMissingXMLURLs(doc) {
   assert(doc instanceof Document);
-  const outlines = OPMLDocument.getOutlineElements(doc);
+  const outlines = OPMLUtils.getOutlineElements(doc);
   for(const outline of outlines) {
-    if(!OPMLOutline.elementHasXMLURL(outline)) {
+    if(!elementHasXMLURL(outline)) {
       outline.remove();
     }
   }
+}
+
+function elementHasXMLURL(element) {
+  const xmlUrl = element.getAttribute('xmlUrl');
+  return xmlUrl && xmlUrl.trim();
 }
 
 // Filter duplicates, favoring earlier in array order
@@ -157,7 +206,7 @@ function groupOutlines(outlines) {
 
 // Convert an outline object into a feed
 function outlineToFeed(outline) {
-  assert(OPMLOutline.isOutline(outline));
+  assert(OPMLUtils.isOutline(outline));
 
   // Note that this uses create, not a simple object, to allow magic to happen
   const feed = Feed.create();

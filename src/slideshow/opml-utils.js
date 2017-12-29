@@ -1,16 +1,31 @@
 import assert from "/src/common/assert.js";
-import * as OPMLOutline from "/src/opml/outline.js";
+import formatString from "/src/common/format-string.js";
+import parseXML, {XMLParseError} from "/src/utils/parse-xml.js";
+
+// Returns the parsed document or throws an XMLParseError or an unchecked error or an
+// OPMLParseError
+export function parseOPML(xmlString) {
+  const doc = parseXML(xmlString);
+  // NOTE: element names in xml documents are case-sensitive
+  const name = doc.documentElement.localName.toLowerCase();
+  if(name !== 'opml') {
+    const message = formatString('Document element "%s" is not opml', name);
+    throw new OPMLParseError(message);
+  }
+  return doc;
+}
 
 // Create a new OPML document
 // @param title {String} optional document title
-// @return {Document}
-export function create(title) {
+// @return {Document} an xml-flagged document
+export function createDocument(title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
   const headElement = doc.createElement('head');
   doc.documentElement.appendChild(headElement);
 
+  // TODO: setTitle isn't called anywhere, just create a title element here?
   if(title) {
     setTitle(doc, title);
   }
@@ -36,7 +51,7 @@ export function create(title) {
   return doc;
 }
 
-export function setTitle(doc, title) {
+function setTitle(doc, title) {
   assert(doc instanceof Document);
   const titleVarType = typeof title;
   assert(titleVarType === 'undefined' || titleVarType === 'string');
@@ -68,7 +83,7 @@ export function getOutlineObjects(doc) {
   const elements = getOutlineElements(doc);
   const objects = [];
   for(const element of elements) {
-    objects.push(OPMLOutline.fromElement(element));
+    objects.push(outlineElementToObject(element));
   }
   return objects;
 }
@@ -79,7 +94,7 @@ export function getOutlineElements(doc) {
 }
 
 export function appendOutlineObject(doc, outline) {
-  appendOutlineElement(doc, OPMLOutline.toElement(doc, outline));
+  appendOutlineElement(doc, outlineObjectToElement(doc, outline));
 }
 
 function appendOutlineElement(doc, element) {
@@ -90,4 +105,57 @@ function appendOutlineElement(doc, element) {
     doc.documentElement.appendChild(bodyElement);
   }
   bodyElement.appendChild(element);
+}
+
+export class OPMLParseError extends XMLParseError {
+  constructor(message) {
+    super(message || 'OPML parse error');
+  }
+}
+
+export function isOutline(outline) {
+  return typeof outline === 'object' && outline !== null;
+}
+
+function outlineObjectToElement(doc, outline) {
+  assert(doc instanceof Document);
+  assert(isOutline(outline));
+
+  const element = doc.createElement('outline');
+  if(outline.type) {
+    element.setAttribute('type', outline.type);
+  }
+
+  if(outline.xmlUrl) {
+    element.setAttribute('xmlUrl', outline.xmlUrl);
+  }
+
+  if(outline.text) {
+    element.setAttribute('text', outline.text);
+  }
+
+  if(outline.title) {
+    element.setAttribute('title', outline.title);
+  }
+
+  if(outline.description) {
+    element.setAttribute('description', outline.description);
+  }
+
+  if(outline.htmlUrl) {
+    element.setAttribute('htmlUrl', outline.htmlUrl);
+  }
+
+  return element;
+}
+
+function outlineElementToObject(element) {
+  const object = {};
+  object.description = element.getAttribute('description');
+  object.htmlUrl = element.getAttribute('htmlUrl');
+  object.text = element.getAttribute('text');
+  object.title = element.getAttribute('title');
+  object.type = element.getAttribute('type');
+  object.xmlUrl = element.getAttribute('xmlUrl');
+  return object;
 }

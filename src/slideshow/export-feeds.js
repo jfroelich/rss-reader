@@ -1,6 +1,6 @@
 import assert from "/src/common/assert.js";
 import * as Feed from "/src/feed-store/feed.js";
-import * as OPMLDocument from "/src/opml/document.js";
+import * as OPMLUtils from "/src/slideshow/opml-utils.js";
 
 // TODO: rename to something like exportOPMLBlob or exportOPMLFile so that it is more consistent
 // in representing the inverse of importOPMLFiles
@@ -23,7 +23,7 @@ import * as OPMLDocument from "/src/opml/document.js";
 // functionality, and functionality specific to this app. It is ok for backup to have
 // knowledge of the feed model, but not for opml. So, in order for this to, for example,
 // append a feed to an opml document, it has to be able to create the outline element here,
-// and call OPMLDocument.appendOutlineElement instead of appendOutlineObject.
+// and call OPMLUtils.appendOutlineElement instead of appendOutlineObject.
 // The current behavior is to create an outline object representing the feed, then call
 // append, which converts the outline object to an outline element, and then appends the
 // outline element.  Instead, directly create the element.
@@ -41,9 +41,9 @@ export default function exportFeeds(feeds, title, fileName) {
 }
 
 function createOPMLDocumentFromFeeds(feeds, title) {
-  const doc = OPMLDocument.create(title);
+  const doc = OPMLUtils.createDocument(title);
   for(const feed of feeds) {
-    OPMLDocument.appendOutlineObject(doc, outlineFromFeed(feed));
+    OPMLUtils.appendOutlineObject(doc, outlineFromFeed(feed));
   }
   return doc;
 }
