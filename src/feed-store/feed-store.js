@@ -11,7 +11,7 @@ import sizeof from "/src/feed-store/sizeof.js";
 
 import updateBadgeText from "/src/reader/update-badge-text.js";
 
-import {isUncheckedError} from "/src/utils/error-utils.js";
+import {isUncheckedError} from "/src/common/error-utils.js";
 import replaceTags from "/src/utils/html/replace-tags.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";

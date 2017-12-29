@@ -18,7 +18,7 @@ import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 
 import parseHTML from "/src/utils/html/parse.js";
-import {isUncheckedError, TimeoutError} from "/src/utils/error-utils.js";
+import {isUncheckedError, TimeoutError} from "/src/common/error-utils.js";
 
 export default function FeedPoll() {
   this.feedStore;
