@@ -6,7 +6,7 @@ import * as OPMLDocument from "/src/opml/document.js";
 import * as OPMLOutline from "/src/opml/outline.js";
 import parseOPML from "/src/opml/parse.js";
 import Subscribe from "/src/reader/subscribe.js";
-import * as MimeUtils from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/common/mime-utils.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 
 export default function OPMLImporter() {

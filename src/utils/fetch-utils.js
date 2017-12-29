@@ -1,6 +1,6 @@
 import assert from "/src/common/assert.js";
 import formatString from "/src/common/format-string.js";
-import * as MimeUtils from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/common/mime-utils.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 

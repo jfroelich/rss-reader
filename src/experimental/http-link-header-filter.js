@@ -1,4 +1,4 @@
-import * as MimeUtils from "/src/utils/mime-utils.js";
+import * as MimeUtils from "/src/common/mime-utils.js";
 
 async function registerDWLinkFilterRule() {
   if(localStorage.DW_LINK_RULE_ID)
