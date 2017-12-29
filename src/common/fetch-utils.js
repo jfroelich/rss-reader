@@ -2,7 +2,7 @@ import assert from "/src/common/assert.js";
 import formatString from "/src/common/format-string.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
-import TimeoutError from "/src/utils/timeout-error.js";
+import {TimeoutError} from "/src/utils/error-utils.js";
 
 // Fetches the html content of the given url
 // @param url {URL} request url

@@ -2,7 +2,7 @@ import assert from "/src/common/assert.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
-import TimeoutError from "/src/utils/timeout-error.js";
+import {TimeoutError} from "/src/utils/error-utils.js";
 
 const DEBUG = false;
 function log(...args) {

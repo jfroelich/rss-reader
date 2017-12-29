@@ -2,7 +2,9 @@ import showDesktopNotification from "/src/show-desktop-notification.js";
 
 import assert from "/src/common/assert.js";
 import * as Config from "/src/common/config.js";
+import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
+import * as PromiseUtils from "/src/common/promise-utils.js";
 
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
@@ -15,11 +17,8 @@ import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 
-import * as FetchUtils from "/src/common/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
-import {isUncheckedError} from "/src/utils/error-utils.js";
-import * as PromiseUtils from "/src/common/promise-utils.js";
-import TimeoutError from "/src/utils/timeout-error.js";
+import {isUncheckedError, TimeoutError} from "/src/utils/error-utils.js";
 
 export default function FeedPoll() {
   this.feedStore;
