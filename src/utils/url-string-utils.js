@@ -1,34 +1,6 @@
 import assert from "/src/common/assert.js";
 
-// TODO: both these functions are too simple now. This whole module should be deprecated
-
-
-
-// TODO: this is just a wrapped call to new URL. Inline and deprecate.
-
-// Returns true if a string represents a canonical url. The string may contain leading or trailing
-// whitespace.
-// Returns true for javascript: and mailto: and data: and tel:
-// Returns true for https:// and http://.
-// Returns false for '//' (protocol-relative).
-// Returns false for local host.
-// Returns false for ipv4/6 addresses.
-export function isCanonicalURLString(urlString) {
-  assert(typeof urlString === 'string');
-  // The string must have at least one character after the colon
-  // The string may have intermediate spaces (e.g. `javascript: void(0);`)
-  //return /^\s*[a-zA-Z\-]+:.+/.test(urlString);
-
-  try {
-    new URL(urlString);
-    return true;
-  } catch(error) {
-    return false;
-  }
-}
-
-
-// TODO: this is now just a wrapped call to new URL. Inline this code and deprecate?
+// TODO: inline this function and then deprecate this module
 
 // Returns the absolute form the input url
 // @param urlString {String}

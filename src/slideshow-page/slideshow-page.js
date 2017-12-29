@@ -1,16 +1,13 @@
 import assert from "/src/common/assert.js";
-
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
-
 import exportFeeds from "/src/slideshow-page/export-feeds.js";
 import OPMLImporter from "/src/slideshow-page/opml-importer.js";
 import escapeHTML from "/src/utils/html/escape.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
-import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 const DEBUG = false;
 const dprintf = DEBUG ? console.log : noop;
@@ -319,10 +316,12 @@ function createFeedSourceElement(entry) {
   const sourceElement = document.createElement('span');
   sourceElement.setAttribute('class', 'entry-source');
 
-  if(entry.faviconURLString) {
+  // At this point, assume that if faviconURLString is set, that it is
+  // valid (defined, a string, a well-formed canonical url string). If it is not valid by this
+  // point then something is really wrong elsewhere in the app, but that is not our concern here.
+  // If the url is bad then show a broken image.
 
-    // Commented out. Shouldn't be doing asserts in the UI...
-    // assert(isCanonicalURLString(entry.faviconURLString));
+  if(entry.faviconURLString) {
 
     const faviconElement = document.createElement('img');
     faviconElement.setAttribute('src', entry.faviconURLString);
@@ -453,9 +452,13 @@ async function onSlideClick(event) {
 
   // Get the url and open the url in a new tab.
   const urlString = anchor.getAttribute('href');
-  // If this assertion fails something has gone really wrong
-  // Also protect against opening of relative url where chrome-extension:// gets substituted in
-  assert(isCanonicalURLString(urlString));
+  if(!urlString) {
+    console.error(
+      'An invalid url somehow got through data processing to the ui, should never happen',
+      anchor.outerHTML);
+    return;
+  }
+
   openTab(urlString);
 
   // After opening the link in a new tab, then continue processing. Next, find the slide that was

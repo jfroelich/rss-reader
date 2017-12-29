@@ -2,7 +2,6 @@ import assert from "/src/common/assert.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {parseFeed as parseFeedImpl} from "/src/common/parse-feed.js";
-import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 // TODO: https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction
 
@@ -60,14 +59,14 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   // Normalize feed link if set and valid, otherwise set to undefined. Save a reference to the
   // url so that it can be used to resolve entry links later.
   let feedLinkURL;
-  if(feed.link && isCanonicalURLString(feed.link)) {
+  if(feed.link) {
     try {
       feedLinkURL = new URL(feed.link);
 
       // Overwrite with the normalized version of the string
       feed.link = feedLinkURL.href;
     } catch(error) {
-      // Unset if invalid
+      // Unset if invalid, then fall through
       feed.link = undefined;
     }
   } else {

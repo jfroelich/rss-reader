@@ -1,8 +1,6 @@
 import assert from "/src/common/assert.js";
-import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 export const ENTRY_MAGIC = 0xdeadbeef;
-
 export const STATE_UNREAD = 0;
 export const STATE_READ = 1;
 export const STATE_UNARCHIVED = 0;
@@ -41,13 +39,18 @@ export function peekURL(entry) {
   return entry.urls[entry.urls.length - 1];
 }
 
+// TODO: change to accept a URL as input instead of a string
+
 // Append a url to an entry's url list. Lazily creates the urls property if needed. Normalizes the
 // url. The normalized url is compared against existing urls to ensure the new url is unique.
 // @returns {Boolean} true if entry was added, or false if the url already exists and was therefore
 // not added
 export function appendURL(entry, urlString) {
   assert(isEntry(entry));
-  assert(isCanonicalURLString(urlString));
+
+  assert(typeof urlString === 'string' && urlString.length > 0);
+
+  // This throws a TypeError if url is invalid or relative
   const urlObject = new URL(urlString);
   const normalUrlString = urlObject.href;
   if(entry.urls) {

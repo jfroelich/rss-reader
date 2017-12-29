@@ -1,5 +1,4 @@
 import assert from "/src/common/assert.js";
-import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 // TODO: regarding feed schema, should the group of properties pertaining to a feed's active state
 // by grouped together into a sub object? Like:
@@ -66,12 +65,14 @@ export function createIconLookupURL(feed) {
   // First, prefer the link, as this is the url of the webpage that is associated with the feed.
   // Cannot assume the link is set or valid. But if set, can assume it is valid.
   if(feed.link) {
-    assert(isCanonicalURLString(feed.link));
+
     try {
       return new URL(feed.link);
     } catch(error) {
       // If feed.link is set it should always be a valid URL
       console.warn(error);
+
+      // If the url is invalid, just fall through
     }
   }
 

@@ -1,9 +1,7 @@
 import assert from "/src/common/assert.js";
 import {removeImage} from "/src/utils/dom/image.js";
 import {isHiddenInlineElement} from "/src/utils/dom/visibility.js";
-import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
-// TODO: move to config.js?
 const PATTERNS = [
   /\/\/.*2o7\.net\//i,
   /\/\/ad\.doubleclick\.net\//i,
@@ -38,16 +36,23 @@ const PATTERNS = [
 // Removes some telemetry data from a document.
 // @param doc {Document}
 // @param url {String} canonical document url
-export default function lonestarFilter(doc, url) {
+export default function lonestarFilter(doc, documentURLString) {
   assert(doc instanceof Document);
-  assert(isCanonicalURLString(url));
 
   // Analysis is limited to descendants of body
   if(!doc.body) {
     return;
   }
 
-  const documentURL = new URL(url);
+
+  // Build document url. Implicitly this also validates that the url is canonical.
+  // If this fails this throws a type error, which is a kind of assertion error but it is expected
+  // here, but it should never happen. Anyway this is a mess and eventually I should just
+  // accept a URL as input instead of a string
+  assert(typeof documentURLString === 'string' && documentURLString.length > 0);
+  const documentURL = new URL(documentURLString);
+
+
 
   // TODO: when checking image visibility, should I be checking ancestry? Or just the image
   // itself?
@@ -103,9 +108,14 @@ function hasTelemetrySource(image, documentURL) {
     return false;
   }
 
+  // For protocol-relative urls, allow them and continue.
+  // TODO: but that just fails in the URL parser ....? Need to revisit this. Basically I want to
+  // be able to match and reject protocol relative urls. But I want to work with a URL object.
+  // Perhaps I should substitute in http automatically? Or require base url here when constructing
+  // the url?
+
   // Relative urls are generally not telemetry urls.
-  // Protocol-agnostic urls are considered canonical (not relative), which is notably different
-  // behavior than isCanonicalURLString. Urls using the 'data:' protocol are generally not telemetry
+  // Urls using the 'data:' protocol are generally not telemetry
   // urls because no networking is involved. Basically only look at http and https
   // TODO: make non-capturing regex
   const URL_START_PATTERN = /^(http:\/\/|https:\/\/|\/\/)/i;
