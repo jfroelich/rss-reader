@@ -1,6 +1,10 @@
 import assert from "/src/common/assert.js";
 import * as CSSUtils from "/src/utils/dom/css-utils.js";
 
+// TODO: after moving display setting change ability from options page to slideshow page,
+// this this module will be used exclusively by slideshow page, and should merged into it, or
+// made as a helper module to it exclusively.
+
 // Get the current settings from local storage and then modify the css rules in the default style
 // sheet
 export function pageStyleSettingsOnchange(event) {
