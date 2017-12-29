@@ -1,4 +1,6 @@
 import assert from "/src/common/assert.js";
+import formatString from "/src/common/format-string.js";
+
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
@@ -7,11 +9,11 @@ import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import parseFeed from "/src/reader/parse-feed.js";
 
-import {showDesktopNotification} from "/src/utils/desktop-notifications.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import {setTimeoutPromise} from "/src/utils/promise-utils.js";
-import formatString from "/src/common/format-string.js";
+import {showDesktopNotification} from "/src/utils/show-desktop-notification.js";
+
 
 // TODO: think of a better name
 
