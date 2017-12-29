@@ -12,7 +12,7 @@ import parseFeed from "/src/reader/parse-feed.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import {setTimeoutPromise} from "/src/utils/promise-utils.js";
-import {showDesktopNotification} from "/src/utils/show-desktop-notification.js";
+import showDesktopNotification from "/src/utils/show-desktop-notification.js";
 
 
 // TODO: think of a better name

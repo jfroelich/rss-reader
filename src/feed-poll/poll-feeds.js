@@ -17,7 +17,7 @@ import * as FetchUtils from "/src/utils/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
-import {showDesktopNotification} from "/src/utils/show-desktop-notification.js";
+import showDesktopNotification from "/src/utils/show-desktop-notification.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 
 export default function FeedPoll() {
