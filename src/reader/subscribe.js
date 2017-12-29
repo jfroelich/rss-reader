@@ -11,7 +11,7 @@ import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import parseFeed from "/src/reader/parse-feed.js";
 
-import * as FetchUtils from "/src/utils/fetch-utils.js";
+import * as FetchUtils from "/src/common/fetch-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import {setTimeoutPromise} from "/src/common/promise-utils.js";
 

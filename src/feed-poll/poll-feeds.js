@@ -15,7 +15,7 @@ import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 
-import * as FetchUtils from "/src/utils/fetch-utils.js";
+import * as FetchUtils from "/src/common/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";

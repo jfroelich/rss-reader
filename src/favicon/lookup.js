@@ -1,6 +1,6 @@
 import assert from "/src/common/assert.js";
+import * as FetchUtils from "/src/common/fetch-utils.js";
 import FaviconCache from "/src/favicon/cache.js";
-import * as FetchUtils from "/src/utils/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import {resolveURLString} from "/src/utils/url-string-utils.js";

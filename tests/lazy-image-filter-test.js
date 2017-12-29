@@ -1,6 +1,6 @@
 import filterLazyImages from "/src/feed-poll/filters/lazy-image-filter.js";
 import filterSourcelessImages from "/src/feed-poll/filters/sourceless-image-filter.js";
-import * as FetchUtils from "/src/utils/fetch-utils.js";
+import * as FetchUtils from "/src/common/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 
 async function test(urlString) {

@@ -1,4 +1,4 @@
-import * as FetchUtils from "/src/utils/fetch-utils.js";
+import * as FetchUtils from "/src/common/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 
 async function test(url) {

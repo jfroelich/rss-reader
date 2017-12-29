@@ -4,19 +4,6 @@ import * as MimeUtils from "/src/common/mime-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
 
-// TODO: brainstorming, basically this is a partial implementation of a NetworkService
-// of some kind. I could consider developing a standalone 'micro-service' that is fully
-// independent of everything.  The service provides access to remote resources. So while it
-// was probably smart to deprecate the fetch folder and move this back into utils, now I am
-// changing this from a library of fetch utilities into the concept of a network service, which
-// is basically responsible for serving files that are located elsewhere. Then I can build a
-// service hierarchy. For example, the favicon service would depend on this network service.
-// On the other hand, service boundaries are really more for distributed computing. This is all
-// within a single app and the abstraction may create more problems than it solves. Perhaps
-// just components is better, or modules, like what I have now. Or both. Services are comprised
-// of functionality and an assembly of shared components.
-
-
 // Fetches the html content of the given url
 // @param url {URL} request url
 // @param timeoutMs {Number} optional, in milliseconds, how long to wait before considering the
@@ -166,6 +153,12 @@ export async function fetchHelper(url, options) {
     throw new FetchError(message);
   }
 
+  // TODO: in hindsight I think this is no longer a fetch concern. Remove the check and return
+  // empty content. It will materialize later as a parse error. I cannot recall what other benefit
+  // there is of detecting empty content early. It isn't really an error either, because this is
+  // a fetch function concerned with just fetching, not a function that guarantees the content is
+  // not empty.
+
   // response.ok is true for all status codes in the 200 range, but 204 No content is not expected
   // when using GET.
   const HTTP_STATUS_NO_CONTENT = 204;
@@ -270,6 +263,12 @@ export function isAllowedURL(url) {
 
   return true;
 }
+
+// TODO: I think I only care about two types of errors: fetch errors and offline errors. These
+// are the only two the caller differentiates between. So right now I have created seemingly
+// arbitrary distictions between network and fetch and policy. Those 3 should all be just
+// fetcherror, and offlineerror should just be a subclass of fetch error.
+
 
 // Represents a general class of networking errors, such as unavailability or unreachability of a
 // resource located on a different machine

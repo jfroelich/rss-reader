@@ -1,4 +1,4 @@
-import * as FetchUtils from "/src/utils/fetch-utils.js";
+import * as FetchUtils from "/src/common/fetch-utils.js";
 
 async function fetchHTML(urlString, timeout) {
   const urlObject = new URL(urlString);

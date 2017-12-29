@@ -5,7 +5,7 @@ import filterFrames from "/src/feed-poll/filters/frame-filter.js";
 import filterIFrames from "/src/feed-poll/filters/iframe-filter.js";
 import setImageSizes from "/src/feed-poll/filters/image-size-filter.js";
 import filterScript from "/src/feed-poll/filters/script-filter.js";
-import * as FetchUtils from "/src/utils/fetch-utils.js";
+import * as FetchUtils from "/src/common/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 
 async function test(urlString) {

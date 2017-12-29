@@ -1,4 +1,4 @@
-import * as FetchUtils from "/src/utils/fetch-utils.js";
+import * as FetchUtils from "/src/common/fetch-utils.js";
 
 async function fetchFeed(url) {
   let timeoutMs;
