@@ -1,5 +1,4 @@
 import assert from "/src/common/assert.js";
-import * as CSSUtils from "/src/utils/dom/css-utils.js";
 
 // TODO: after moving display setting change ability from options page to slideshow page,
 // this this module will be used exclusively by slideshow page, and should merged into it, or
@@ -8,8 +7,8 @@ import * as CSSUtils from "/src/utils/dom/css-utils.js";
 // Get the current settings from local storage and then modify the css rules in the default style
 // sheet
 export function pageStyleSettingsOnchange(event) {
-  const sheet = CSSUtils.getDefaultStylesheet();
-  assert(sheet);
+  const sheet = getDefaultStylesheet();
+  assert(sheet instanceof CSSStyleSheet);
   entryCSSUpdateRule(sheet);
   entryCSSUpdateTitleRule(sheet);
   entryCSSUpdateContentRule(sheet);
@@ -18,11 +17,8 @@ export function pageStyleSettingsOnchange(event) {
 // Get the current settings from local storage and then create css rules and append them to the
 // default style sheet.
 export function pageStyleSettingsOnload() {
-  const sheet = CSSUtils.getDefaultStylesheet();
-
-  // TODO: use instanceof here with the proper type, which I forgot at the moment
-  assert(typeof sheet !== 'undefined');
-
+  const sheet = getDefaultStylesheet();
+  assert(sheet instanceof CSSStyleSheet);
   sheet.addRule('article.entry', entryCSSCreateEntryRuleText());
 
   // TODO: convert these two to be like above pattern where I get the text and then add the rule
@@ -32,12 +28,9 @@ export function pageStyleSettingsOnload() {
 
 function entryCSSCreateEntryRuleText() {
   const buffer = [];
-
   buffer.push('margin: 0px;');
-
   const path = localStorage.BG_IMAGE;
   const color = localStorage.BG_COLOR;
-
   if(path) {
     buffer.push(`background: url("${path}");`);
   } else if(color) {
@@ -114,9 +107,9 @@ function entryCSSAddContentRule(sheet) {
 }
 
 function entryCSSUpdateRule(sheet) {
-  assert(sheet);
-  const rule = CSSUtils.findRule(sheet, 'article.entry');
-  assert(rule);
+  assert(sheet instanceof CSSStyleSheet);
+  const rule = findRule(sheet, 'article.entry');
+  assert(rule instanceof CSSStyleRule);
   const style = rule.style;
 
   const path = localStorage.BG_IMAGE;
@@ -138,9 +131,9 @@ function entryCSSUpdateRule(sheet) {
 }
 
 function entryCSSUpdateTitleRule(sheet) {
-  assert(sheet);
-  const rule = CSSUtils.findRule(sheet, 'article.entry a.entry-title');
-  assert(rule);
+  assert(sheet instanceof CSSStyleSheet);
+  const rule = findRule(sheet, 'article.entry a.entry-title');
+  assert(rule instanceof CSSStyleRule);
   const style = rule.style;
 
   style.background = '';
@@ -153,9 +146,9 @@ function entryCSSUpdateTitleRule(sheet) {
 }
 
 function entryCSSUpdateContentRule(sheet) {
-  assert(sheet);
-  const rule = CSSUtils.findRule(sheet, 'article.entry span.entry-content');
-  assert(rule);
+  assert(sheet instanceof CSSStyleSheet);
+  const rule = findRule(sheet, 'article.entry span.entry-content');
+  assert(rule instanceof CSSStyleRule);
 
   rule.style.background = '';
 
@@ -190,4 +183,29 @@ function entryCSSUpdateContentRule(sheet) {
   }
 
   rule.style.webkitColumnCount = columnCountString;
+}
+
+
+// Use the first sheet
+function getDefaultStylesheet() {
+  const sheets = document.styleSheets;
+  if(sheets.length) {
+    return sheets[0];
+  }
+}
+
+
+// Returns the first matching css rule within the given sheet, or undefined if no rules match.
+//
+// @param sheet {CSSStyleSheet}
+// @param selectorText {String}
+// @returns rule {CSSStyleRule}
+function findRule(sheet, selectorText) {
+  assert(sheet instanceof CSSStyleSheet);
+  const rules = sheet.rules || sheet.cssRules || [];
+  for(const rule of rules) {
+    if(rule.selectorText === selectorText) {
+      return rule;
+    }
+  }
 }
