@@ -10,8 +10,6 @@ import {openTab} from "/src/platform/platform.js";
 import escapeHTML from "/src/utils/html/escape.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
-import formatDate from "/src/utils/format-date.js";
-
 
 const DEBUG = false;
 const dprintf = DEBUG ? console.log : noop;
@@ -1096,3 +1094,19 @@ async function init() {
 
 // TODO: visually show error
 init().catch(console.warn);
+
+
+function formatDate(date, delimiter) {
+  // Tolerate some forms bad input
+  if(!date) {
+    return '';
+  }
+
+  assert(date instanceof Date);
+  const parts = [];
+  // Add 1 because getMonth is a zero based index
+  parts.push(date.getMonth() + 1);
+  parts.push(date.getDate());
+  parts.push(date.getFullYear());
+  return parts.join(delimiter || '/');
+}
