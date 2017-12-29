@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import {parseSrcsetWrapper, serializeSrcset} from "/src/utils/dom/srcset.js";
+import {parseSrcsetWrapper} from "/src/utils/dom/parse-srcset.js";
 import {resolveURLString} from "/src/utils/url-string-utils.js";
 
 const ELEMENT_ATTRIBUTE_MAP = {
@@ -150,4 +150,35 @@ function resolveSrcset(element, baseURL) {
       element.setAttribute('srcset', newValue);
     }
   }
+}
+
+
+
+// @param descriptors {Array} an array of descriptors such as those produced by parseSrcset
+// @returns {String} a string suitable for storing as srcset attribute value
+function serializeSrcset(descriptors) {
+  assert(Array.isArray(descriptors));
+
+  const descriptorStrings = [];
+  for(const descriptor of descriptors) {
+    const strings = [descriptor.url];
+    if(descriptor.d) {
+      strings.push(' ');
+      strings.push(descriptor.d);
+      strings.push('x');
+    } else if(descriptor.w) {
+      strings.push(' ');
+      strings.push(descriptor.w);
+      strings.push('w');
+    } else if(descriptor.h) {
+      strings.push(' ');
+      strings.push(descriptor.h);
+      strings.push('h');
+    }
+
+    const descriptorString = strings.join('');
+    descriptorStrings.push(descriptorString);
+  }
+
+  return descriptorStrings.join(', ');
 }
