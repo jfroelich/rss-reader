@@ -3,7 +3,7 @@ import FaviconCache from "/src/favicon/cache.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as OPMLUtils from "/src/slideshow-page/opml-utils.js";
-import Subscribe from "/src/reader/subscribe.js";
+import Subscribe from "/src/subscribe.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
 

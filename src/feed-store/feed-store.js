@@ -8,7 +8,7 @@ import * as Entry from "/src/feed-store/entry.js";
 import * as FeedStoreErrors from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import sizeof from "/src/feed-store/sizeof.js";
-import updateBadgeText from "/src/reader/update-badge-text.js";
+import updateBadgeText from "/src/update-badge-text.js";
 import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
 
 

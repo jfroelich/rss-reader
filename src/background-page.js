@@ -3,7 +3,7 @@ import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import updateBadgeText from "/src/reader/update-badge-text.js";
+import updateBadgeText from "/src/update-badge-text.js";
 
 
 

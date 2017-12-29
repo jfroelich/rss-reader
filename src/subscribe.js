@@ -9,7 +9,7 @@ import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import {ConstraintError} from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import parseFeed from "/src/reader/parse-feed.js";
+import parseFeed from "/src/parse-feed.js";
 
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import {isUncheckedError} from "/src/common/error-utils.js";
