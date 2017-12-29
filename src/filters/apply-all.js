@@ -40,7 +40,6 @@ import smallImageFilter from "/src/filters/small-image-filter.js";
 import sourcelessImageFilter from "/src/filters/sourceless-image-filter.js";
 import tableFilter from "/src/filters/table-filter.js";
 import trimDocumentFilter from "/src/filters/trim-document-filter.js";
-import {isValidURLString} from "/src/utils/url-string-utils.js";
 
 // Transforms a document's content by removing or changing nodes for various reasons.
 // @param doc {Document} the document to transform

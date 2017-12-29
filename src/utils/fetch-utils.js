@@ -3,7 +3,6 @@ import formatString from "/src/common/format-string.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import TimeoutError from "/src/utils/timeout-error.js";
-import {isValidURLString} from "/src/utils/url-string-utils.js";
 
 // TODO: brainstorming, basically this is a partial implementation of a NetworkService
 // of some kind. I could consider developing a standalone 'micro-service' that is fully

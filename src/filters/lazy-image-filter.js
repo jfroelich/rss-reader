@@ -1,6 +1,7 @@
 import assert from "/src/common/assert.js";
 import {hasSource} from "/src/utils/dom/image.js";
-import {isValidURLString} from "/src/utils/url-string-utils.js";
+
+
 
 // Transforms lazily-loaded images found in document content
 
@@ -71,4 +72,16 @@ function transform(image, lazyAttributeName, lazyAttributeValue) {
     const after = image.outerHTML;
     console.debug('transform', before, after);
   }
+}
+
+// Only minor validation for speed. Tolerates bad input. This isn't intended to be the most
+// accurate classification. Instead, it is intended to easily find bad urls and rule them out as
+// invalid, even though some slip through, and not unintentionally rule out good urls.
+// @param value {Any} should be a string but this tolerates bad input
+// @returns {Boolean}
+function isValidURLString(value) {
+  // The upper bound on len is an estimate, kind of a safeguard, hopefully never causes a problem
+  return typeof value === 'string' &&
+    value.length > 1 && value.length <= 3000 &&
+    !value.trim().includes(' ');
 }

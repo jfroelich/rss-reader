@@ -57,26 +57,3 @@ export function resolveURLString(urlString, baseURL) {
   }
   return canonicalURL;
 }
-
-// I am not sure these are accurate, but I want to enforce the idea, so these are like placeholder
-// constraints until if and when I ever get around to looking into it more.
-const URL_MIN_LENGTH_INCLUSIVE = 1;
-const URL_MAX_LENGTH_EXCLUSIVE = 3000;
-
-// Return true if the url string is between the shortest and longest url lengths that are allowed
-// for what this app considers to be a valid url
-function isInRange(urlString) {
-  return urlString.length < URL_MAX_LENGTH_EXCLUSIVE &&
-    urlString.length >= URL_MIN_LENGTH_INCLUSIVE;
-}
-
-// Only minor validation for speed. Tolerates bad input. This isn't intended to be the most
-// accurate classification. Instead, it is intended to easily find bad urls and rule them out as
-// invalid, even though some slip through, and not unintentionally rule out good urls.
-// @param value {String}
-// @returns {Boolean}
-export function isValidURLString(value) {
-  return typeof value === 'string' &&
-    isInRange(value) &&
-    !value.trim().includes(' ');
-}
