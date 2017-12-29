@@ -1,6 +1,6 @@
-import findLCA from "/src/experimental/lca.js";
-import {isHiddenElement} from "/src/utils/dom/visibility.js";
 import assert from "/src/common/assert.js";
+import findLCA from "/src/experimental/lca.js";
+import {isHiddenInlineElement} from "/src/utils/dom/visibility.js";
 
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other
@@ -209,4 +209,62 @@ function paginationFindAnchorSequences(anchors, lcaMaxDistance) {
   }
 
   return seqs;
+}
+
+// TODO: consider a test that compares whether foreground color is too close to background color.
+// This kind of applies only to text nodes.
+
+// Checks whether an element is hidden because the element itself is hidden, or any of its
+// ancestors are hidden.
+// @param element {Element}
+// @returns {Boolean} true if hidden
+export function isHiddenElement(element) {
+  assert(element instanceof Element);
+  const doc = element.ownerDocument;
+
+  // If a document does not have a body element, then assume it contains no visible content, and
+  // therefore consider the element as hidden.
+  if(!doc.body) {
+    return true;
+  }
+
+  // If the element is the body, then assume visible
+  if(element === doc.body) {
+    return false;
+  }
+
+  // Assume all elements outside the body are not part of visible content
+  if(!doc.body.contains(element)) {
+    return true;
+  }
+
+  // Test the element itself with the hope of avoiding ancestors path analysis
+  if(isHiddenInlineElement(element)) {
+    return true;
+  }
+
+  // Walk bottom-up from after element to before body, recording the path. Exclude the element
+  // itself from the path so it is not checked again.
+  const path = [];
+  for(let e = element.parentNode; e && e !== doc.body; e = e.parentNode) {
+    path.push(e);
+  }
+
+  // The path is empty when the element is immediately under the body. Since we already checked
+  // the element, and do not plan to check the body, we're done. This empty check avoids going
+  // below the lower bound index of the path in the next loop.
+  if(!path.length) {
+    return false;
+  }
+
+  // Step backward along the path and stop upon finding the first hidden node. This does not
+  // re-test the element because it is not in the path. We know the path is not empty because of
+  // the above check, so it is safe to start from the last element in the path.
+  for(let i = path.length - 1; i >=0; i--) {
+    if(isHiddenInlineElement(path[i])) {
+      return true;
+    }
+  }
+
+  return false;
 }

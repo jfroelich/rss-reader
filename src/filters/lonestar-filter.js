@@ -49,6 +49,9 @@ export default function lonestarFilter(doc, url) {
 
   const documentURL = new URL(url);
 
+  // TODO: when checking image visibility, should I be checking ancestry? Or just the image
+  // itself?
+
   // Telemetry images are usually hidden, so treat visibility as an indicator. False positives are
   // probably not too harmful. Removing images based on visibility overlaps with sanitization, but
   // this is intentionally naive regarding what other filters are applied to the document.
