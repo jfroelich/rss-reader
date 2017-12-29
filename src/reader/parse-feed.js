@@ -1,7 +1,7 @@
 import assert from "/src/common/assert.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
-import {parseFeed as parseFeedImpl} from "/src/parse-feed/parse-feed.js";
+import {parseFeed as parseFeedImpl} from "/src/common/parse-feed.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 // TODO: https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction

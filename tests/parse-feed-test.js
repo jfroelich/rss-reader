@@ -1,4 +1,4 @@
-import {parseFeed} from "/src/parse-feed/parse-feed.js";
+import {parseFeed} from "/src/common/parse-feed.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import decodeEntities from "/src/utils/html/decode-entities.js";
 
