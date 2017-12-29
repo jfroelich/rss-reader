@@ -1,4 +1,4 @@
-import {paginationFindAnchorSequences} from "/src/experimental/pagination.js";
+import {paginationFindAnchorSequences} from "/experimental/pagination.js";
 
 function test() {
 

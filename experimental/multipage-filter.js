@@ -1,4 +1,4 @@
-import {paginationFindAnchors} from "/src/experimental/pagination.js";
+import {paginationFindAnchors} from "/experimental/pagination.js";
 import assert from "/src/common/assert.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 
