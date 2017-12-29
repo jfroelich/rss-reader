@@ -1,4 +1,4 @@
-import "/src/third-party/parse-srcset.js";
+import "/third-party/parse-srcset.js";
 
 // Returns an array of descriptor objects. If the input is bad, or an error occurs, returns an
 // empty array.
