@@ -45,6 +45,9 @@ export function peekURL(feed) {
 // @param feed {Object} a feed object
 // @param url {URL}
 export function appendURL(feed, url) {
+  assert(isFeed(feed));
+  assert(url instanceof URL);
+
   feed.urls = feed.urls || [];
   const href = url.href;
   if(feed.urls.includes(href)) {

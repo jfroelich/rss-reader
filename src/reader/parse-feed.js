@@ -35,20 +35,18 @@ import {parseFeed as parseFeedImpl} from "/src/common/parse-feed.js";
 // TODO: I think it would make sense to clearly enumerate the use cases, then revisit how well the
 // abstraction responds to each case.
 
-// TODO: change to accept urls instead of strings
-
 // Parses an xml input string representing a feed. Returns a result with a feed object and an array
 // of entries. Throws both checked and unchecked errors.
-export default function parseFeed(xmlString, requestURLString, responseURLString, lastModDate,
+export default function parseFeed(xmlString, requestURL, responseURL, lastModDate,
   processEntries) {
+
+  assert(requestURL instanceof URL);
+  assert(responseURL instanceof URL);
 
   const result = {feed: undefined, entries: []};
 
   // Rethrow any parsing errors
   const feed = parseFeedImpl(xmlString);
-
-  const requestURL = new URL(requestURLString);
-  const responseURL = new URL(responseURLString);
 
   // Compose fetch urls as the initial feed urls
   Feed.appendURL(feed, requestURL);

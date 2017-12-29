@@ -156,9 +156,10 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
 
   assert(typeof feedXML === 'string');
   let parseResult;
-  const PROCESS_ENTRIES = true;
   try {
-    parseResult = parseFeed(feedXML, url, response.url, responseLastModifiedDate, PROCESS_ENTRIES);
+    const processEntries = true;
+    parseResult = parseFeed(feedXML, requestURL, new URL(response.url),
+      responseLastModifiedDate, processEntries);
   } catch(error) {
     await handlePollFeedError(error, this.feedStore, feed, 'parse-feed',
       this.deactivationThreshold);

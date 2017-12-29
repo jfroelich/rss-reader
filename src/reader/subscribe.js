@@ -79,7 +79,7 @@ Subscribe.prototype.subscribe = async function(url) {
 
     const xml = await response.text();
     const kProcEntries = false;
-    const parseResult = parseFeed(xml, url.href, response.url,
+    const parseResult = parseFeed(xml, url, responseURLObject,
       FetchUtils.getLastModified(response), kProcEntries);
     feed = parseResult.feed;
   } else {
