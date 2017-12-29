@@ -1,4 +1,4 @@
-import {filterUnprintableCharacters} from "/src/utils/string-utils.js";
+import {filterUnprintableCharacters} from "/src/feed-store/feed-store.js";
 
 const d = console.debug;
 const f = filterUnprintableCharacters;
