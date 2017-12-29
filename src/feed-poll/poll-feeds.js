@@ -1,7 +1,5 @@
 import showDesktopNotification from "/src/show-desktop-notification.js";
-
 import assert from "/src/common/assert.js";
-import * as Config from "/src/common/config.js";
 import {isUncheckedError, TimeoutError} from "/src/common/error-utils.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
@@ -17,6 +15,19 @@ import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import {parseHTML} from "/src/common/html-utils.js";
+
+// An array of descriptors. Each descriptor represents a test against a url hostname, that if
+// matched, indicates the content is not accessible.
+const INACCESSIBLE_CONTENT_DESCRIPTORS = [
+  {pattern: /forbes\.com$/i, reason: 'interstitial-advert'},
+  {pattern: /productforums\.google\.com/i, reason: 'script-generated'},
+  {pattern: /groups\.google\.com/i, reason: 'script-generated'},
+  {pattern: /nytimes\.com$/i, reason: 'paywall'},
+  {pattern: /heraldsun\.com\.au$/i, reason: 'requires-cookies'},
+  {pattern: /ripe\.net$/i, reason: 'requires-cookies'}
+];
+
+
 
 export default function FeedPoll() {
   this.feedStore;
@@ -409,7 +420,7 @@ FeedPoll.prototype.setEntryFavicon = async function(entry, url, document) {
 };
 
 function isInaccessibleContentURL(url) {
-  for(const desc of Config.INACCESSIBLE_CONTENT_DESCRIPTORS) {
+  for(const desc of INACCESSIBLE_CONTENT_DESCRIPTORS) {
     if(desc.pattern && desc.pattern.test(url.hostname)) {
       return true;
     }

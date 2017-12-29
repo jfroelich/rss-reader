@@ -1,11 +1,48 @@
 import assert from "/src/common/assert.js";
-import * as Config from "/src/common/config.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as Feed from "/src/feed-store/feed.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
 import Subscribe from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
 import {truncateHTML} from "/src/common/html-utils.js";
+
+const FONTS = [
+  'ArchivoNarrow-Regular',
+  'Arial, sans-serif',
+  'Calibri',
+  'Cambria',
+  'CartoGothicStd',
+  'Georgia',
+  'Montserrat',
+  'Noto Sans',
+  'Open Sans Regular',
+  'PathwayGothicOne',
+  'PlayfairDisplaySC',
+  'Roboto Regular'
+];
+
+const BG_IMAGES = [
+  '/images/bgfons-paper_texture318.jpg',
+  '/images/CCXXXXXXI_by_aqueous.jpg',
+  '/images/paper-backgrounds-vintage-white.jpg',
+  '/images/pickering-texturetastic-gray.png',
+  '/images/reusage-recycled-paper-white-first.png',
+  '/images/subtle-patterns-beige-paper.png',
+  '/images/subtle-patterns-cream-paper.png',
+  '/images/subtle-patterns-exclusive-paper.png',
+  '/images/subtle-patterns-groove-paper.png',
+  '/images/subtle-patterns-handmade-paper.png',
+  '/images/subtle-patterns-paper-1.png',
+  '/images/subtle-patterns-paper-2.png',
+  '/images/subtle-patterns-paper.png',
+  '/images/subtle-patterns-rice-paper-2.png',
+  '/images/subtle-patterns-rice-paper-3.png',
+  '/images/subtle-patterns-soft-wallpaper.png',
+  '/images/subtle-patterns-white-wall.png',
+  '/images/subtle-patterns-witewall-3.png',
+  '/images/thomas-zucx-noise-lines.png'
+];
+
 
 // View state
 let currentMenuItem;
@@ -707,7 +744,7 @@ subscriptionForm.onsubmit = subscribeFormOnsubmit;
 
   const currentBgImagePath = localStorage.BG_IMAGE;
   const bgImagePathOffset = '/images/'.length;
-  for(const path of Config.BG_IMAGES) {
+  for(const path of BG_IMAGES) {
     let option = document.createElement('option');
     option.value = path;
     option.textContent = path.substring(bgImagePathOffset);
@@ -723,7 +760,7 @@ subscriptionForm.onsubmit = subscribeFormOnsubmit;
   option.textContent = 'Use Chrome font settings';
   headerFontMenu.appendChild(option);
   const currentHeaderFont = localStorage.HEADER_FONT_FAMILY;
-  for(const font of Config.FONTS) {
+  for(const font of FONTS) {
     let option = document.createElement('option');
     option.value = font;
     option.selected = font === currentHeaderFont;
@@ -740,7 +777,7 @@ subscriptionForm.onsubmit = subscribeFormOnsubmit;
   bodyFontMenu.appendChild(option);
 
   const currentBodyFont = localStorage.BODY_FONT_FAMILY;
-  for(const font of Config.FONTS) {
+  for(const font of FONTS) {
     option = document.createElement('option');
     option.value = font;
     option.selected = font === currentBodyFont;
