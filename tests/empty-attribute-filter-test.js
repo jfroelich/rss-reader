@@ -1,4 +1,4 @@
-import filterEmptyAttributes from "/src/filters/empty-attribute-filter.js";
+import filterEmptyAttributes from "/src/feed-poll/filters/empty-attribute-filter.js";
 import parseHTML from "/src/utils/html/parse.js";
 
 // Simple empty non-boolean attribute in body

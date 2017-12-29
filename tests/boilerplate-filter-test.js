@@ -1,10 +1,10 @@
-import filterBoilerplate from "/src/filters/boilerplate-filter.js";
-import canonicalizeURLs from "/src/filters/canonical-url-filter.js";
-import filterBlacklistedElements from "/src/filters/element-blacklist-filter.js";
-import filterFrames from "/src/filters/frame-filter.js";
-import filterIFrames from "/src/filters/iframe-filter.js";
-import setImageSizes from "/src/filters/image-size-filter.js";
-import filterScript from "/src/filters/script-filter.js";
+import filterBoilerplate from "/src/feed-poll/filters/boilerplate-filter.js";
+import canonicalizeURLs from "/src/feed-poll/filters/canonical-url-filter.js";
+import filterBlacklistedElements from "/src/feed-poll/filters/element-blacklist-filter.js";
+import filterFrames from "/src/feed-poll/filters/frame-filter.js";
+import filterIFrames from "/src/feed-poll/filters/iframe-filter.js";
+import setImageSizes from "/src/feed-poll/filters/image-size-filter.js";
+import filterScript from "/src/feed-poll/filters/script-filter.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 

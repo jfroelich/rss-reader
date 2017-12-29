@@ -1,5 +1,5 @@
-import canonicalizeURLs from "/src/filters/canonical-url-filter.js";
-import setImageSizes from "/src/filters/image-size-filter.js";
+import canonicalizeURLs from "/src/feed-poll/filters/canonical-url-filter.js";
+import setImageSizes from "/src/feed-poll/filters/image-size-filter.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import parseHTML from "/src/utils/html/parse.js";
 

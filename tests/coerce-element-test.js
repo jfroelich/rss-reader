@@ -1,4 +1,4 @@
-import filter, {coerceElement} from "/src/filters/condense-tagnames-filter.js";
+import filter, {coerceElement} from "/src/feed-poll/filters/condense-tagnames-filter.js";
 import parseHTML from "/src/utils/html/parse.js";
 
 let input = '<html><head></head><body><a></a></body></html>';

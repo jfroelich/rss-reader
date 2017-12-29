@@ -7,7 +7,7 @@ import isBinaryURL from "/src/feed-poll/is-binary-url.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import applyAllDocumentFilters from "/src/filters/apply-all.js";
+import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import * as Platform from "/src/platform/platform.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
