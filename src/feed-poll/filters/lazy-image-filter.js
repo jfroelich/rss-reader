@@ -1,7 +1,5 @@
 import assert from "/src/common/assert.js";
-import {hasSource} from "/src/utils/dom/image.js";
-
-
+import {imageHasSource} from "/src/common/dom-utils.js";
 
 // Transforms lazily-loaded images found in document content
 
@@ -37,7 +35,7 @@ export default function filter(doc) {
   const images = doc.body.getElementsByTagName('img');
 
   for(const image of images) {
-    if(hasSource(image)) {
+    if(imageHasSource(image)) {
       continue;
     }
 

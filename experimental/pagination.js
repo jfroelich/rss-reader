@@ -1,6 +1,6 @@
 import assert from "/src/common/assert.js";
 import findLCA from "/experimental/lca.js";
-import {isHiddenInlineElement} from "/src/utils/dom/visibility.js";
+import {isHiddenInlineElement} from "/src/common/dom-utils.js";
 
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other

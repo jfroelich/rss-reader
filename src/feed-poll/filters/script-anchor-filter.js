@@ -1,9 +1,7 @@
 import assert from "/src/common/assert.js";
-import unwrap from "/src/utils/dom/unwrap-element.js";
-
+import {unwrapElement} from "/src/common/dom-utils.js";
 
 // Unwraps anchor elements containing href attribute values that are javascript
-
 export default function filterDocument(document) {
   assert(document instanceof Document);
   if(!document.body) {
@@ -13,7 +11,7 @@ export default function filterDocument(document) {
   const anchors = document.body.querySelectorAll('a[href]');
   for(const anchor of anchors) {
     if(hasScriptProtocol(anchor.getAttribute('href'))) {
-      unwrap(anchor);
+      unwrapElement(anchor);
     }
   }
 }

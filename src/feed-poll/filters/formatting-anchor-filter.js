@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import unwrap from "/src/utils/dom/unwrap-element.js";
+import {unwrapElement} from "/src/common/dom-utils.js";
 
 // Filters certain anchor elements from document content
 
@@ -14,7 +14,7 @@ export default function filter(doc) {
   const anchors = doc.body.querySelectorAll('a');
   for(const anchor of anchors) {
     if(!anchor.hasAttribute('href')) {
-      unwrap(anchor);
+      unwrapElement(anchor);
     }
   }
 }

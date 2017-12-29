@@ -1,6 +1,5 @@
 import assert from "/src/common/assert.js";
-import {removeImage} from "/src/utils/dom/image.js";
-import {isHiddenInlineElement} from "/src/utils/dom/visibility.js";
+import {isHiddenInlineElement, removeImage} from "/src/common/dom-utils.js";
 
 const PATTERNS = [
   /\/\/.*2o7\.net\//i,

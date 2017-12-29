@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import unwrap from "/src/utils/dom/unwrap-element.js";
+import {unwrapElement} from "/src/common/dom-utils.js";
 
 // Filters certain figure elements from document content
 export default function figureFilter(doc) {
@@ -13,7 +13,7 @@ export default function figureFilter(doc) {
   const figures = doc.body.querySelectorAll('figure');
   for(const figure of figures) {
     if(figure.childElementCount === 1) {
-      unwrap(figure);
+      unwrapElement(figure);
     }
   }
 }

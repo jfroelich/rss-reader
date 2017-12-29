@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import unwrap from "/src/utils/dom/unwrap-element.js";
+import {unwrapElement} from "/src/common/dom-utils.js";
 
 // Filters or transforms certain form elements and form-related elements from document content
 
@@ -14,13 +14,13 @@ export default function formFilter(doc) {
   // Unwrap forms
   const forms = ancestor.querySelectorAll('form');
   for(const form of forms) {
-    unwrap(form);
+    unwrapElement(form);
   }
 
   // Unwrap labels
   const labels = ancestor.querySelectorAll('label');
   for(const label of labels) {
-    unwrap(label);
+    unwrapElement(label);
   }
 
   // TODO: add contains check to reduce operations like removing option nested in select removed in

@@ -1,6 +1,5 @@
 import assert from "/src/common/assert.js";
-import unwrap from "/src/utils/dom/unwrap-element.js";
-import {isHiddenInlineElement} from "/src/utils/dom/visibility.js";
+import {isHiddenInlineElement, unwrapElement} from "/src/common/dom-utils.js";
 
 // TODO: make a github issue about optimizing recursive unwrap. I previously did several attempts
 // at this. Unfortunately much of the code is lost. There may still be something in the filter
@@ -31,7 +30,7 @@ export default function filterDocument(doc) {
   const elements = body.querySelectorAll('*');
   for(const element of elements) {
     if(body.contains(element) && isHiddenInlineElement(element)) {
-      unwrap(element);
+      unwrapElement(element);
     }
   }
 }

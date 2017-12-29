@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import unwrapElement from "/src/utils/dom/unwrap-element.js";
+import {unwrapElement} from "/src/common/dom-utils.js";
 
 const SELECTOR = [
   'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend', 'mark', 'marquee',

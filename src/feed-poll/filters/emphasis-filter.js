@@ -1,5 +1,7 @@
 import assert from "/src/common/assert.js";
-import unwrap from "/src/utils/dom/unwrap-element.js";
+import {unwrapElement} from "/src/common/dom-utils.js";
+
+// TODO: use non-whitespace character count instead of full character count?
 
 // Filters certain occurrences of emphasized content from document content
 // @param maxTextLength {Number} optional, if number of non-tag characters
@@ -15,12 +17,11 @@ export default function emphasisFilter(doc, maxTextLength) {
     return;
   }
 
-  // TODO: use non-whitespace character count instead of full character count?
 
   const elements = doc.body.querySelectorAll('b, big, em, i, strong');
   for(const element of elements) {
     if(element.textContent.length > maxTextLength) {
-      unwrap(element);
+      unwrapElement(element);
     }
   }
 }

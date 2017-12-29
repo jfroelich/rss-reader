@@ -1,8 +1,8 @@
 import assert from "/src/common/assert.js";
-import unwrapElement from "/src/utils/dom/unwrap-element.js";
+import {unwrapElement} from "/src/common/dom-utils.js";
 
 // Filter semantic web elements from document content
-export default function filter(document) {
+export default function filterDocument(document) {
   assert(document instanceof Document);
   if(document.body) {
     const selector = 'article, aside, footer, header, main, section';
