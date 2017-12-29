@@ -3,7 +3,6 @@ import * as Config from "/src/common/config.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
-import * as Platform from "/src/platform/platform.js";
 import Subscribe from "/src/reader/subscribe.js";
 import unsubscribe from "/src/reader/unsubscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
@@ -520,9 +519,9 @@ function enableNotificationsCheckboxOnclick(event) {
 
 function enableBgProcessingCheckboxOnclick(event) {
   if(event.target.checked) {
-    Platform.requestBrowserPermission('background');
+    requestBrowserPermission('background');
   } else {
-    Platform.removeBrowserPermission('background');
+    removeBrowserPermission('background');
   }
 }
 
@@ -534,7 +533,7 @@ async function bgProcessingCheckboxInit() {
   // permanently defined.
 
   checkbox.onclick = enableBgProcessingCheckboxOnclick;
-  checkbox.checked = await Platform.hasBrowserPermission('background');
+  checkbox.checked = await hasBrowserPermission('background');
 }
 
 function restrictIdlePollingCheckboxOnclick(event) {
@@ -839,5 +838,28 @@ function fadeElement(element, durationSecs, delaySecs) {
     // property duration function delay
     style.transition = `opacity ${durationSecs}s ease ${delaySecs}s`;
     style.opacity = style.opacity === '1' ? '0' : '1';
+  });
+}
+
+
+
+function hasBrowserPermission(permission) {
+  return new Promise(function executor(resolve, reject) {
+    const descriptor = {permissions: [permission]};
+    chrome.permissions.contains(descriptor, resolve);
+  });
+}
+
+function requestBrowserPermission(permission) {
+  return new Promise(function executor(resolve, reject) {
+    const descriptor = {permissions: [permission]};
+    chrome.permissions.request(descriptor, resolve);
+  });
+}
+
+function removeBrowserPermission(permission) {
+  return new Promise(function executor(resolve, reject) {
+    const descriptor = {permissions: [permission]};
+    chrome.permissions.remove(descriptor, resolve);
   });
 }

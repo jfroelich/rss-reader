@@ -1,10 +1,15 @@
-import {queryIdleState} from "/src/platform/platform.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 
 // Registers alarms in the extension that run various background jobs. Analogous to cron.
+
+function queryIdleState(idlePeriodSecs) {
+  return new Promise(function executor(resolve, reject) {
+    chrome.idle.queryState(idlePeriodSecs, resolve);
+  });
+}
 
 chrome.alarms.onAlarm.addListener(onWakeup);
 chrome.alarms.create('archive', {periodInMinutes: 60 * 12});

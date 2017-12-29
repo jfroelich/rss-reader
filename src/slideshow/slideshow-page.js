@@ -5,7 +5,7 @@ import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
-import {openTab} from "/src/platform/platform.js";
+
 import exportFeeds from "/src/slideshow/export-feeds.js";
 import OPMLImporter from "/src/slideshow/opml-importer.js";
 import escapeHTML from "/src/utils/html/escape.js";
@@ -1023,11 +1023,29 @@ function appendFeed(feed) {
   feedsContainer.appendChild(feedElement);
 }
 
-// Initialization
-async function init() {
+
+function formatDate(date, delimiter) {
+  // Tolerate some forms bad input
+  if(!date) {
+    return '';
+  }
+
+  assert(date instanceof Date);
+  const parts = [];
+  // Add 1 because getMonth is a zero based index
+  parts.push(date.getMonth() + 1);
+  parts.push(date.getDate());
+  parts.push(date.getFullYear());
+  return parts.join(delimiter || '/');
+}
+
+function openTab(url) {
+  chrome.tabs.create({active: true, url: url});
+}
+
+async function initSlideshowPage() {
   showLoadingInformation();
   window.addEventListener('click', windowOnclick);
-
 
   const mainMenuButton = document.getElementById('main-menu-button');
   mainMenuButton.onclick = mainMenuButtonOnclick;
@@ -1094,20 +1112,4 @@ async function init() {
 }
 
 // TODO: visually show error
-init().catch(console.warn);
-
-
-function formatDate(date, delimiter) {
-  // Tolerate some forms bad input
-  if(!date) {
-    return '';
-  }
-
-  assert(date instanceof Date);
-  const parts = [];
-  // Add 1 because getMonth is a zero based index
-  parts.push(date.getMonth() + 1);
-  parts.push(date.getDate());
-  parts.push(date.getFullYear());
-  return parts.join(delimiter || '/');
-}
+initSlideshowPage().catch(console.warn);

@@ -1,11 +1,9 @@
 import assert from "/src/common/assert.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import {setBadgeText} from "/src/platform/platform.js";
 
 // TODO: think of how to reduce connection usage, maybe maintain a persistent connection? Then
 // again now that this is non-blocking, maybe the slowness of it does not matter?
 
-// TODO: test
 let isRequestPending = false;
 
 // Updates the text of the application's badge. Non-blocking.
@@ -28,4 +26,8 @@ export default async function updateBadgeText() {
   }
   const text = count > 999 ? '1k+' : '' + count;
   setBadgeText(text);
+}
+
+function setBadgeText(text) {
+  chrome.browserAction.setBadgeText({text: text});
 }

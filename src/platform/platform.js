@@ -1,29 +1,3 @@
-// extension utilities module that provides an abstraction around platform specific functionality
-
-// TODO: rename to platform-chrome.js or something similar, and then change the nature of this
-// module to serve only as a proxy for interacting with Chrome
-
-export function addInstallListener(listener) {
-  chrome.runtime.onInstalled.addListener(listener);
-}
-
-export function addBadgeClickListener(listener) {
-  chrome.browserAction.onClicked.addListener(listener);
-}
-
-export function openTab(url) {
-  chrome.tabs.create({active: true, url: url});
-}
-
-export function queryIdleState(idlePeriodSecs) {
-  return new Promise(function executor(resolve, reject) {
-    chrome.idle.queryState(idlePeriodSecs, resolve);
-  });
-}
-
-export function setBadgeText(text) {
-  chrome.browserAction.setBadgeText({text: text});
-}
 
 // TODO: this doesn't belong in platform
 export async function showSlideshowTab() {
@@ -45,7 +19,7 @@ export async function showSlideshowTab() {
   chrome.tabs.create({url: slideshowURL});
 }
 
-export function findTabsByURL(urlString) {
+function findTabsByURL(urlString) {
   return new Promise(function executor(resolve, reject) {
     return chrome.tabs.query({url: urlString}, resolve);
   });
@@ -86,25 +60,4 @@ async function notificationOnClick(event) {
   } catch(error) {
     console.warn(error);
   }
-}
-
-export function hasBrowserPermission(permission) {
-  return new Promise(function executor(resolve, reject) {
-    const descriptor = {permissions: [permission]};
-    chrome.permissions.contains(descriptor, resolve);
-  });
-}
-
-export function requestBrowserPermission(permission) {
-  return new Promise(function executor(resolve, reject) {
-    const descriptor = {permissions: [permission]};
-    chrome.permissions.request(descriptor, resolve);
-  });
-}
-
-export function removeBrowserPermission(permission) {
-  return new Promise(function executor(resolve, reject) {
-    const descriptor = {permissions: [permission]};
-    chrome.permissions.remove(descriptor, resolve);
-  });
 }

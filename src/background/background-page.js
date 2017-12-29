@@ -3,11 +3,17 @@ import "/src/background/cli.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import {
-  addBadgeClickListener,
-  addInstallListener,
   showSlideshowTab
 } from "/src/platform/platform.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
+
+function addInstallListener(listener) {
+  chrome.runtime.onInstalled.addListener(listener);
+}
+
+function addBadgeClickListener(listener) {
+  chrome.browserAction.onClicked.addListener(listener);
+}
 
 console.debug('Initializing background page');
 
