@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 export default function commentFilter(doc) {
   assert(doc instanceof Document);

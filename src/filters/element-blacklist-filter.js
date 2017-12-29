@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 const BLACKLIST = [
   'applet', 'audio', 'basefont', 'bgsound', 'command', 'datalist', 'dialog', 'embed', 'head',

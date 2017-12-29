@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import {condenseWhitespace} from "/src/utils/string-utils.js";
 
 // Boilerplate filtering module

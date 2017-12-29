@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 // Remove all base elements from a document
 export default function filterDocument(doc) {

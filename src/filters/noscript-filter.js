@@ -1,5 +1,5 @@
 import unwrap from "/src/utils/dom/unwrap-element.js";
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 // Transforms noscript content in document content
 

@@ -3,7 +3,7 @@ import * as Entry from "/src/feed-store/entry.js";
 import * as FeedStoreErrors from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import filterEmptyProps from "/src/utils/filter-empty-props.js";
 import replaceTags from "/src/utils/html/replace-tags.js";

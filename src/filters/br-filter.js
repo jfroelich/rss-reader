@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 // Filters certain breakrule elements from document content
 export default function filter(doc) {

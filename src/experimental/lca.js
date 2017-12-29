@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 // NOTE: this functionality is working, but it is only in use by an experimental module, so I have
 // decided to leave it out of the dom folder.

@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 // These constraints are rather arbitrary, but just as a general bound
 // TODO: increase and test accuracy

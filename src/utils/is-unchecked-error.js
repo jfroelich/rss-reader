@@ -1,4 +1,4 @@
-import {AssertionError} from "/src/utils/assert.js";
+import {AssertionError} from "/src/common/assert.js";
 
 // TODO: this module is too simple. What I should have is a utilities module like 'error-utils.js',
 // and this should just be one method of that module.

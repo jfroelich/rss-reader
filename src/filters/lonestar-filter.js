@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import {removeImage} from "/src/utils/dom/image.js";
 import {isHiddenInlineElement} from "/src/utils/dom/visibility.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";

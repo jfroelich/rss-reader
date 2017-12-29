@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import formatString from "/src/utils/format-string.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";

@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import * as Feed from "/src/feed-store/feed.js";
 import * as OPMLDocument from "/src/opml/document.js";
 

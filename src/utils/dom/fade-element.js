@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 // Duration and delay can be integer or floats and are required.
 export default function fadeElement(element, durationSecs, delaySecs) {

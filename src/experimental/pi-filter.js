@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 export function procInstFilter(doc) {
   assert(doc instanceof Document);

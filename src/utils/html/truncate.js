@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import parseHTML from "/src/utils/html/parse.js";
 
 const ELLIPSIS = '\u2026';

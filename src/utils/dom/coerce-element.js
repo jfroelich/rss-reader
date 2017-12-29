@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import voidElements from "/src/utils/dom/void-elements.js";
 
 // This module exports a single function, coerceElement, that changes the type of an element. An

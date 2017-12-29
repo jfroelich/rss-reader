@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import {parseSrcsetWrapper, serializeSrcset} from "/src/utils/dom/srcset.js";
 import {resolveURLString} from "/src/utils/url-string-utils.js";
 

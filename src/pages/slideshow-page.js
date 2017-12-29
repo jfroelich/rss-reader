@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import exportFeeds from "/src/backup/export-feeds.js";
 import OPMLImporter from "/src/backup/opml-importer.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";

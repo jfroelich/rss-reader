@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import {setBadgeText} from "/src/platform/platform.js";
 

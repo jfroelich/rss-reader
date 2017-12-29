@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
 
 // TODO: regarding feed schema, should the group of properties pertaining to a feed's active state

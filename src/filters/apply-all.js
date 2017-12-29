@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import adoptionAgencyFilter from "/src/filters/adoption-agency-filter.js";
 import attributeFilter from "/src/filters/attribute-whitelist-filter.js";
 import baseFilter from "/src/filters/base-filter.js";

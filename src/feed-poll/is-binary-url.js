@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import * as MimeUtils from "/src/utils/mime-utils.js";
 
 // Return true if url probably represents a binary resource. This is shallow in the sense that it

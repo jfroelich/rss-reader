@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 
 function fakeOnUpgradeNeeded() {}

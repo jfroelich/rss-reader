@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 // Returns true if a string represents a canonical url. The string may contain leading or trailing
 // whitespace.

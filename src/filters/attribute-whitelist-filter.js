@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 // @param doc {Document}
 // @param whitelist {Object} each property is element name, each value is array

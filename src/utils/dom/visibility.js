@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 // These functions assume a document is "inert", such as one created by DOMParser, or from
 // XMLHttpRequest.

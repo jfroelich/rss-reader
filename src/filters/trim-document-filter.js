@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 // Remove whitespace and whitespace-like content from the start and end of a document's body.
 export default function filterDocument(doc) {

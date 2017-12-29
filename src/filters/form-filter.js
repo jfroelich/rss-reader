@@ -1,4 +1,4 @@
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 import unwrap from "/src/utils/dom/unwrap-element.js";
 
 // Filters or transforms certain form elements and form-related elements from document content

@@ -1,5 +1,5 @@
 import {parseSrcsetWrapper} from "/src/utils/dom/srcset.js";
-import assert from "/src/utils/assert.js";
+import assert from "/src/common/assert.js";
 
 // Transforms responsive images in document content
 
