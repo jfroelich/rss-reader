@@ -3,7 +3,7 @@ import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import * as PageStyle from "/src/page-style/page-style-settings.js";
+import * as PageStyle from "/src/page-style-settings.js";
 import exportFeeds from "/src/slideshow-page/export-feeds.js";
 import OPMLImporter from "/src/slideshow-page/opml-importer.js";
 import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
