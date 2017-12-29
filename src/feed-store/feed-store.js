@@ -207,8 +207,8 @@ FeedStore.prototype.addEntry = async function(entry, channel) {
 // Returns a new entry object where fields have been sanitized. Impure
 // TODO: now that filterUnprintableCharacters is a thing, I want to also filter such
 // characters from input strings like author/title/etc. However it overlaps with the
-// call to StringUtils.filterControls here. There is some redundant work going on. Also, in a sense,
-// StringUtils.filterControls is now inaccurate. What I want is one function that strips binary
+// call to filterControls here. There is some redundant work going on. Also, in a sense,
+// filterControls is now inaccurate. What I want is one function that strips binary
 // characters except important ones, and then a second function that replaces or removes
 // certain important binary characters (e.g. remove line breaks from author string).
 // Something like 'replaceFormattingCharacters'.
@@ -236,7 +236,7 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLe
 
   if(outputEntry.author) {
     let author = outputEntry.author;
-    author = StringUtils.filterControls(author);
+    author = filterControls(author);
     author = replaceTags(author, '');
     author = StringUtils.condenseWhitespace(author);
     author = htmlTruncate(author, authorMaxLength);
@@ -252,7 +252,7 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLe
 
   if(outputEntry.title) {
     let title = outputEntry.title;
-    title = StringUtils.filterControls(title);
+    title = filterControls(title);
     title = replaceTags(title, '');
     title = StringUtils.condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength);
@@ -641,7 +641,7 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
 
   if(outputFeed.title) {
     let title = outputFeed.title;
-    title = StringUtils.filterControls(title);
+    title = filterControls(title);
     title = replaceTags(title, tagReplacement);
     title = StringUtils.condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength, suffix);
@@ -650,7 +650,7 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
 
   if(outputFeed.description) {
     let desc = outputFeed.description;
-    desc = StringUtils.filterControls(desc);
+    desc = filterControls(desc);
     desc = replaceTags(desc, tagReplacement);
     desc = StringUtils.condenseWhitespace(desc);
     desc = htmlTruncate(desc, descMaxLength, suffix);
@@ -983,4 +983,13 @@ export function filterUnprintableCharacters(value) {
   // faster to perform the length check than it is to call replace. I do not know the distribution
   // of inputs but I expect that empty strings are not rare.
   return typeof value === 'string' && value.length ? value.replace(unPrintablePattern, '') : value;
+}
+
+// Returns a new string where Unicode Cc-class characters have been removed. Throws an error if
+// string is not a defined string. Adapted from these stack overflow questions:
+// http://stackoverflow.com/questions/4324790
+// http://stackoverflow.com/questions/21284228
+// http://stackoverflow.com/questions/24229262
+export function filterControls(string) {
+  return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }
