@@ -1,5 +1,7 @@
 import assert from "/src/common/assert.js";
 import * as Config from "/src/common/config.js";
+import formatString from "/src/common/format-string.js";
+
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
@@ -8,11 +10,11 @@ import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
-import {showDesktopNotification} from "/src/platform/desktop-notifications.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
+
 import * as FetchUtils from "/src/utils/fetch-utils.js";
-import formatString from "/src/common/format-string.js";
+import {showDesktopNotification} from "/src/utils/desktop-notifications.js";
 import parseHTML from "/src/utils/html/parse.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";

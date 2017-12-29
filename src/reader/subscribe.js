@@ -7,8 +7,7 @@ import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import parseFeed from "/src/reader/parse-feed.js";
 
-import {showDesktopNotification} from "/src/platform/desktop-notifications.js";
-
+import {showDesktopNotification} from "/src/utils/desktop-notifications.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import {setTimeoutPromise} from "/src/utils/promise-utils.js";
