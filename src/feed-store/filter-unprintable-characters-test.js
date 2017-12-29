@@ -2,6 +2,9 @@ import {filterUnprintableCharacters} from "/src/feed-store/feed-store.js";
 
 const d = console.debug;
 const f = filterUnprintableCharacters;
+
+// Given string, filter it, then assert whether the filtered string length is equal to the given
+// length, and print the result to the console.
 const a = function(s, len) {
   const result = filterUnprintableCharacters(s);
   const passed = result.length === len;
@@ -16,18 +19,19 @@ function run() {
     a(String.fromCharCode(i), 0);
   }
 
-  a('\t', 1);
-  a('\n', 1);
+  a('\t', 1); // 9
+  a('\n', 1); // 10
   a(String.fromCharCode(11), 0);
-  a('\f', 1);
-  a('\r', 1);
+  a('\f', 1); // 12
+  a('\r', 1); // 13
 
-  for(let i = 14; i < ' '.charCodeAt(0); i++) {
+  const spaceCode = ' '.charCodeAt(0);
+
+  for(let i = 14; i < spaceCode; i++) {
     a(String.fromCharCode(i), 0);
   }
 
   console.groupEnd();
-
 
   console.group('Testing [32 .. n)');
   a(' ', 1);
