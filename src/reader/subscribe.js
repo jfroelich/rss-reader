@@ -6,7 +6,9 @@ import {ConstraintError} from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import parseFeed from "/src/reader/parse-feed.js";
-import {showNotification} from "/src/platform/platform.js";
+
+import {showDesktopNotification} from "/src/platform/desktop-notifications.js";
+
 import * as FetchUtils from "/src/utils/fetch-utils.js";
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import {setTimeoutPromise} from "/src/utils/promise-utils.js";
@@ -155,10 +157,9 @@ Subscribe.prototype.showNotification = function(feed) {
     const title = 'Subscribed!';
     const feedName = feed.title || Feed.peekURL(feed);
     const message = 'Subscribed to ' + feedName;
-    showNotification(title, message, feed.faviconURLString);
+    showDesktopNotification(title, message, feed.faviconURLString);
   }
 };
-
 
 // Returns a promise that resolves after the given number of milliseconds
 function sleep(ms) {

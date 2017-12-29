@@ -8,7 +8,7 @@ import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
-import * as Platform from "/src/platform/platform.js";
+import {showDesktopNotification} from "/src/platform/desktop-notifications.js";
 import parseFeed from "/src/reader/parse-feed.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 import * as FetchUtils from "/src/utils/fetch-utils.js";
@@ -81,7 +81,7 @@ FeedPoll.prototype.pollFeeds = async function() {
   if(totalNumEntriesAdded > 0) {
     const title = 'Added articles';
     const message = 'Added articles';
-    Platform.showNotification(title, message);
+    showDesktopNotification(title, message);
   }
 
   console.log('Poll feeds completed normally, %d new entries', totalNumEntriesAdded);
@@ -178,7 +178,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     // TODO: use more specific title and message given that this is about a feed
     const title = 'Added articles for feed';
     const message = 'Added articles for feed';
-    Platform.showNotification(title, message);
+    showDesktopNotification(title, message);
   }
 
   return numEntriesAdded;
