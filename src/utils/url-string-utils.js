@@ -1,5 +1,11 @@
 import assert from "/src/common/assert.js";
 
+// TODO: both these functions are too simple now. This whole module should be deprecated
+
+
+
+// TODO: this is just a wrapped call to new URL. Inline and deprecate.
+
 // Returns true if a string represents a canonical url. The string may contain leading or trailing
 // whitespace.
 // Returns true for javascript: and mailto: and data: and tel:
@@ -20,6 +26,9 @@ export function isCanonicalURLString(urlString) {
     return false;
   }
 }
+
+
+// TODO: this is now just a wrapped call to new URL. Inline this code and deprecate?
 
 // Returns the absolute form the input url
 // @param urlString {String}
