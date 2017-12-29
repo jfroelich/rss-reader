@@ -1,6 +1,6 @@
 import assert from "/src/common/assert.js";
 import * as Feed from "/src/feed-store/feed.js";
-import * as OPMLUtils from "/src/slideshow/opml-utils.js";
+import * as OPMLUtils from "/src/slideshow-page/opml-utils.js";
 
 // TODO: rename to something like exportOPMLBlob or exportOPMLFile so that it is more consistent
 // in representing the inverse of importOPMLFiles

@@ -6,8 +6,8 @@ import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as PageStyle from "/src/page-style/page-style-settings.js";
 
-import exportFeeds from "/src/slideshow/export-feeds.js";
-import OPMLImporter from "/src/slideshow/opml-importer.js";
+import exportFeeds from "/src/slideshow-page/export-feeds.js";
+import OPMLImporter from "/src/slideshow-page/opml-importer.js";
 import escapeHTML from "/src/utils/html/escape.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
 import {isCanonicalURLString} from "/src/utils/url-string-utils.js";
