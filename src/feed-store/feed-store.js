@@ -11,7 +11,6 @@ import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
 import sizeof from "/src/feed-store/sizeof.js";
 import formatString from "/src/common/format-string.js";
-import * as StringUtils from "/src/utils/string-utils.js";
 
 const DEBUG = false;
 const dprintf = DEBUG ? console.debug : function(){};
@@ -238,7 +237,7 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLe
     let author = outputEntry.author;
     author = filterControls(author);
     author = replaceTags(author, '');
-    author = StringUtils.condenseWhitespace(author);
+    author = condenseWhitespace(author);
     author = htmlTruncate(author, authorMaxLength);
     outputEntry.author = author;
   }
@@ -254,12 +253,16 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLe
     let title = outputEntry.title;
     title = filterControls(title);
     title = replaceTags(title, '');
-    title = StringUtils.condenseWhitespace(title);
+    title = condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength);
     outputEntry.title = title;
   }
 
   return outputEntry;
+}
+
+function condenseWhitespace(string) {
+  return string.replace(/\s{2,}/g, ' ');
 }
 
 // Returns a promise that resolves to a count of unread entries in the database
@@ -643,7 +646,7 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
     let title = outputFeed.title;
     title = filterControls(title);
     title = replaceTags(title, tagReplacement);
-    title = StringUtils.condenseWhitespace(title);
+    title = condenseWhitespace(title);
     title = htmlTruncate(title, titleMaxLength, suffix);
     outputFeed.title = title;
   }
@@ -652,7 +655,7 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
     let desc = outputFeed.description;
     desc = filterControls(desc);
     desc = replaceTags(desc, tagReplacement);
-    desc = StringUtils.condenseWhitespace(desc);
+    desc = condenseWhitespace(desc);
     desc = htmlTruncate(desc, descMaxLength, suffix);
     outputFeed.description = desc;
   }

@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import {condenseWhitespace} from "/src/utils/string-utils.js";
+
 
 // Boilerplate filtering module
 export default function boilerplateFilter(doc, options) {
@@ -316,4 +316,8 @@ function prune(doc, bestElement) {
 
     element.remove();
   }
+}
+
+function condenseWhitespace(string) {
+  return string.replace(/\s{2,}/g, ' ');
 }

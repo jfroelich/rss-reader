@@ -1,5 +1,7 @@
 import assert from "/src/common/assert.js";
-import {condenseWhitespace} from "/src/utils/string-utils.js";
+
+// Filters certain whitespace from a document. This scans the text nodes of a document and
+// modifies certain text nodes.
 
 export default function nodeWhitespaceFilter(doc) {
   assert(doc instanceof Document);
@@ -7,7 +9,7 @@ export default function nodeWhitespaceFilter(doc) {
     return;
   }
 
-  // Ignore node values less than this (exclusive)
+  // Ignore node values shorter than this length
   const minNodeValueLength = 3;
 
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
@@ -16,7 +18,6 @@ export default function nodeWhitespaceFilter(doc) {
     if(value.length > minNodeValueLength && !isSensitive(node)) {
       const newValue = condenseWhitespace(value);
 
-      // Only set if value length changed
       if(newValue.length !== value.length) {
         node.nodeValue = newValue;
       }
@@ -24,7 +25,10 @@ export default function nodeWhitespaceFilter(doc) {
   }
 }
 
-function isSensitive(node) {
-  const selector = 'code, pre, ruby, script, style, textarea, xmp';
-  return node.parentNode.closest(selector);
+function isSensitive(textNode) {
+  return textNode.parentNode.closest('code, pre, ruby, script, style, textarea, xmp');
+}
+
+function condenseWhitespace(string) {
+  return string.replace(/\s{2,}/g, ' ');
 }

@@ -1,5 +1,4 @@
 import assert from "/src/common/assert.js";
-import {condenseWhitespace} from "/src/utils/string-utils.js";
 
 // TODO: profiling shows this is one of the slowest functions in the entire app. Maybe a tokenizer
 // in js would be faster?
@@ -30,4 +29,8 @@ export class XMLParseError extends Error {
   constructor(message) {
     super(message || 'XML parse error');
   }
+}
+
+function condenseWhitespace(string) {
+  return string.replace(/\s{2,}/g, ' ');
 }
