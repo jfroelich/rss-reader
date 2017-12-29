@@ -5,7 +5,7 @@ import {
   addInstallListener,
   showSlideshowTab
 } from "/src/platform/platform.js";
-import "/src/reader/alarms.js";
+import "/src/background/alarms.js";
 import "/src/reader/cli.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 
