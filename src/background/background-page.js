@@ -4,7 +4,7 @@ import FaviconCache from "/src/favicon/cache.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import {
   showSlideshowTab
-} from "/src/platform/platform.js";
+} from "/src/platform/show-slideshow-tab.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 
 function addInstallListener(listener) {
