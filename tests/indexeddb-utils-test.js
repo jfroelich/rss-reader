@@ -1,15 +1,15 @@
 import assert from "/src/common/assert.js";
-import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
+import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
 
-function fakeOnUpgradeNeeded() {}
+function upgradeHandler() {}
 
 window.test = async function() {
   const name = 'test', version = 1;
   let closeRequested = false;
   let conn;
   try {
-    // TODO: use timeout
-    conn = await IndexedDbUtils.open(name, version, fakeOnUpgradeNeeded);
+    // TODO: use, or at least specify undefined, timeout parameter
+    conn = await IndexedDbUtils.open(name, version, upgradeHandler);
     assert(IndexedDbUtils.isOpen(conn));
     IndexedDbUtils.close(conn);
 

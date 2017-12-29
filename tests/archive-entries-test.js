@@ -1,5 +1,5 @@
+import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 
 // TODO: this should operate on a test database, not the live database
 

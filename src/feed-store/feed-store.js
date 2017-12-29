@@ -1,16 +1,21 @@
+import assert from "/src/common/assert.js";
+import formatString from "/src/common/format-string.js";
+import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
+
 import FaviconLookup from "/src/favicon/lookup.js";
+
 import * as Entry from "/src/feed-store/entry.js";
 import * as FeedStoreErrors from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
+import sizeof from "/src/feed-store/sizeof.js";
+
 import updateBadgeText from "/src/reader/update-badge-text.js";
-import assert from "/src/common/assert.js";
+
 import isUncheckedError from "/src/utils/is-unchecked-error.js";
 import replaceTags from "/src/utils/html/replace-tags.js";
 import htmlTruncate from "/src/utils/html/truncate.js";
-import * as IndexedDbUtils from "/src/utils/indexeddb-utils.js";
 import * as PromiseUtils from "/src/utils/promise-utils.js";
-import sizeof from "/src/feed-store/sizeof.js";
-import formatString from "/src/common/format-string.js";
+
 
 const DEBUG = false;
 const dprintf = DEBUG ? console.debug : function(){};
