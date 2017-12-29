@@ -218,6 +218,26 @@ pre {
   padding: 0;
   -webkit-margin: 0;
 
-  /* Messing around with giving images a 3d effect */
-  box-shadow: 0 8px 6px -6px #222222;
+  /*
+  Init the opacity to ensure the transition works when softening on hover,
+  and also slightly soften so that image better blends with the article background
+  */
+  opacity: 0.90;
+
+  /* Messing around with softening image corners
+  Idea from http://www.elopezr.com/the-rendering-of-middle-earth-shadow-of-mordor/
+  The 'parabola' effect
+  */
+  border-radius: 8px;
+  border: 0 solid #333;
+  box-shadow: 0 0 4px #111;
+
+
+  /* For opacity and border change on hover */
+  transition: all .3s ease-in-out;
+}
+
+.entry .entry-content img:hover {
+  opacity: 0.8;
+  box-shadow: none;
 }
