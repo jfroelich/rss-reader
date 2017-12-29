@@ -1,3 +1,5 @@
+import "/src/background/alarms.js";
+import "/src/background/cli.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import {
@@ -5,20 +7,11 @@ import {
   addInstallListener,
   showSlideshowTab
 } from "/src/platform/platform.js";
-import "/src/background/alarms.js";
-import "/src/reader/cli.js";
 import updateBadgeText from "/src/reader/update-badge-text.js";
 
-// This module should be loaded exclusively in the background page. Does various startup work.
+console.debug('Initializing background page');
 
-// Top level async is not allowed in modules, at least not right now. This helper function exists
-// to allow for the await, and to allow for finally to work given that some functions throw
-// assertion errors outside of returned promises.
-function initBadgeText() {
-  return updateBadgeText().catch(console.warn);
-}
-
-async function onInstalled(event) {
+addInstallListener(async function(event) {
   console.debug('onInstalled', event);
 
   // TODO: these two tasks are independent, why make the second wait on the first to resolve?
@@ -36,13 +29,10 @@ async function onInstalled(event) {
   } catch(error) {
     console.warn(error);
   }
-}
+});
 
-function onClicked(event) {
+addBadgeClickListener(function(event) {
   showSlideshowTab();
-}
+});
 
-console.debug('Initializing background page');
-addInstallListener(onInstalled);
-addBadgeClickListener(onClicked);
-initBadgeText();
+updateBadgeText();
