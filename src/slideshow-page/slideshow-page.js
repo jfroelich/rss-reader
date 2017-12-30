@@ -11,20 +11,16 @@ import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
 const DEBUG = false;
 const dprintf = DEBUG ? console.log : noop;
 
-// TODO: set magic on message objects, write a helper somewhere named something like
-// isReaderMessage(message) that checks against the magic property. This should wait until I
-// define some helper kind of module like 'channel-coordinator.js' that organizes all of this.
-// TODO: this should come from somewhere else
-const CHANNEL_NAME = 'reader';
-
 // Track the currently visible slide
 let currentSlide;
 
 // Define a channel that remains open for the lifetime of the slideshow page. It will listen to
 // events coming in from other pages, or the page itself, and react to them. Ordinarily a channel
 // should not remain open indefinitely but here it makes sense.
-const readerChannel = new BroadcastChannel(CHANNEL_NAME);
+const readerChannel = new BroadcastChannel('reader');
 readerChannel.onmessage = function(event) {
+  console.debug('Message event', event);
+
   if(!(event instanceof MessageEvent)) {
     return;
   }
@@ -795,6 +791,12 @@ function menuOptionsOnclick(event) {
   case 'menu-option-export':
     menuOptionExportOnclick();
     break;
+  case 'menu-option-header-font':
+    // Ignore, this has its own handler
+    break;
+  case 'menu-option-body-font':
+    // Ignore
+    break;
   default:
     console.debug('Unhandled menu option click', option.id);
     break;
@@ -1045,6 +1047,86 @@ function openTab(url) {
   chrome.tabs.create({active: true, url: url});
 }
 
+function headerFontMenuOnchange(event) {
+  console.debug('Header font menu change event', event);
+  const fontName = event.target.value;
+  if(fontName) {
+    localStorage.HEADER_FONT_FAMILY = fontName;
+  } else {
+    delete localStorage.HEADER_FONT_FAMILY;
+  }
+
+  PageStyle.pageStyleSettingsOnchange();
+}
+
+function bodyFontMenuOnchange(event) {
+  console.debug('Body font menu change event', event);
+  const fontName = event.target.value;
+  if(fontName) {
+    localStorage.BODY_FONT_FAMILY = fontName;
+  } else {
+    delete localStorage.BODY_FONT_FAMILY;
+  }
+
+  PageStyle.pageStyleSettingsOnchange();
+}
+
+const fonts = [
+  'ArchivoNarrow-Regular',
+  'Arial, sans-serif',
+  'Calibri',
+  'Cambria',
+  'CartoGothicStd',
+  'Fanwood',
+  'Georgia',
+  'League Mono Regular',
+  'League Spartan',
+  'Montserrat',
+  'Noto Sans',
+  'Open Sans Regular',
+  'PathwayGothicOne',
+  'PlayfairDisplaySC',
+  'Roboto Regular'
+];
+
+function initHeaderFontMenu() {
+  const menu = document.getElementById('header-font-menu');
+  menu.onchange = headerFontMenuOnchange;
+  const currentHeaderFont = localStorage.HEADER_FONT_FAMILY;
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Header Font';
+  menu.appendChild(defaultOption);
+  for(const fontName of fonts) {
+    const option = document.createElement('option');
+    option.value = fontName;
+    option.textContent = fontName;
+    if(fontName === currentHeaderFont) {
+      option.selected = true;
+    }
+    menu.appendChild(option);
+  }
+}
+
+function initBodyFontMenu() {
+  const menu = document.getElementById('body-font-menu');
+  menu.onchange = bodyFontMenuOnchange;
+  const currentBodyFont = localStorage.BODY_FONT_FAMILY;
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Body Font';
+  menu.appendChild(defaultOption);
+  for(const fontName of fonts) {
+    const option = document.createElement('option');
+    option.value = fontName;
+    option.textContent = fontName;
+    if(fontName === currentBodyFont) {
+      option.selected = true;
+    }
+    menu.appendChild(option);
+  }
+}
+
 async function initSlideshowPage() {
   showLoadingInformation();
   window.addEventListener('click', windowOnclick);
@@ -1071,6 +1153,10 @@ async function initSlideshowPage() {
 
   const menuOptions = document.getElementById('menu-options');
   menuOptions.onclick = menuOptionsOnclick;
+
+  initHeaderFontMenu();
+  initBodyFontMenu();
+
 
   // TODO: is it possible to defer this until after loading without slowing things down?
   // Initialize entry display settings
