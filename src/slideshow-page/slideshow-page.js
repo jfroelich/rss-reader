@@ -257,26 +257,34 @@ function appendSlide(entry) {
   const containerElement = document.getElementById('slideshow-container');
   const slideElement = document.createElement('article');
 
-  // tabindex must be explicitly defined for the element to receive focus
-  slideElement.setAttribute('tabindex', '-1');
+
   slideElement.setAttribute('entry', entry.id);
   slideElement.setAttribute('feed', entry.feed);
   slideElement.setAttribute('class','entry');
   slideElement.addEventListener('click', onSlideClick);
-  // Bind to slide, not window, because only slide scrolls
+
+
+  // Setup slide scroll handling. The listener is bound to the slide itself, because it is the
+  // slide itself that scrolls, and not window. Also, in order for scrolling to react to keyboard
+  // shortcuts, the element must be focused, and in order to focus an element, it must have the
+  // tabindex attribute.
   // TODO: look into the new 'passive' flag for scroll listeners
+  slideElement.setAttribute('tabindex', '-1');
   slideElement.addEventListener('scroll', onSlideScroll);
 
-  // TEMP: disabled while trying to solve flex layout issues
-/*
+
+
+  // TEMP: disabled while researching scrolling and layout issues
+
   if(containerElement.childElementCount) {
+    // This is not the first slide, position it off screen to the right
     slideElement.style.left = '100%';
     slideElement.style.right = '-100%';
   } else {
-    slideElement.style.left = '0%';
-    slideElement.style.right = '0%';
+    // This is the first slide
+    slideElement.style.left = '0';
+    slideElement.style.right = '0';
   }
-*/
 
 
   const titleElement = createArticleTitleElement(entry);
@@ -288,9 +296,8 @@ function appendSlide(entry) {
 
   containerElement.appendChild(slideElement);
 
-  // If this was the only slide appended, or the first slide appended in a series of append calls,
-  // ensure that currentSlide is set, and focus the slide.
-  if(containerElement.childElementCount === 1) {
+  // If this is the initial slide, set it as the current slide and focus it
+  if(!currentSlide) {
     currentSlide = slideElement;
     currentSlide.focus();
   }
@@ -604,29 +611,13 @@ async function showNextSlide() {
 
     if(nextSlide) {
 
-      /*
-      // Move the previous slide order to the end of all other slides
-      const previousSlide = currentSlide.previousElementSibling;
-      if(previousSlide) {
-        // 4 is for 'off to the right after the next slides'. We do not loop around.
-        // I could use 3 here, it doesn't really matter so long as it is more than 2. I am
-        // using 4 to emphasize it is after the rest I guess.
-        previousSlide.style.order = '4';
-      }
+      // Move the current slide to the left, out of view
+      currentSlide.style.left = '-100%';
+      currentSlide.style.right = '100%';
 
-      // Move the current slide to the previous slide position
-      currentSlide.style.order = '1';
-
-      // Move the next slide to the current slide position
-      nextSlide.style.order = '2';
-      */
-
-      nextSlide.style.order = '1';
-
-      // Not entirely sure why this fixed the jank
-      setTimeout(function() {
-        currentSlide.style.order = '2';
-      }, 0);
+      // Move the next slide to the left, into view
+      nextSlide.style.left = '0';
+      nextSlide.style.right = '0';
 
 
       currentSlide.scrollTop = 0;
@@ -675,33 +666,26 @@ function showPreviousSlide() {
     return;
   }
 
+  // Find the previous slide. If there is no previous slide then exit.
   // TODO: refactor this function to account for removed-after-load characteristic. I am going to
   // wait to do this until I update showNextSlide
   // Question is whether i want to allow navigation back to a slide that was removed after load
   // while it happens to still be loaded. Otherwise user clicks back and slide is mysteriously
   // missing. but how different is that from the way slides eventually do get unloaded?
-
-  const prevSlideElement = currentSlide.previousSibling;
-  if(!prevSlideElement) {
+  const previousSlide = currentSlide.previousSibling;
+  if(!previousSlide) {
     return;
   }
 
-  // Move the previous slide into the current slide position
-  prevSlideElement.style.order = '1';
-
-  // Move the current slide back to rest of slides
-  currentSlide.style.order = '2';
-
-
-  // If the previous slide has a previous slide, move that into the previous slide position
-  //const previousPreviousSlide = prevSlideElement.previousElementSibling;
-  //if(previousPreviousSlide) {
-  //  previousPreviousSlide.style.order = '2';
-  //}
+  // Move the current slide to the right, out of view
+  currentSlide.style.left = '100%';
+  currentSlide.style.right = '-100%';
+  // Move previous slide to the right, into view
+  previousSlide.style.left = '0';
+  previousSlide.style.right = '0';
 
 
-
-  currentSlide = prevSlideElement;
+  currentSlide = previousSlide;
   // Change the active element to the new current slide, so that scrolling using keyboard keys still
   // works
   currentSlide.focus();

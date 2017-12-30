@@ -1,10 +1,63 @@
 html, body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  overflow-y: hidden;
 
   /* For some reason Chrome sets 75%?*/
   font-size: 100%;
 }
+
+#main-container {
+  display: flex;
+}
+
+#left-panel {
+  /* Needed to get shadow to appear when element earlier in document order than adjacent */
+  z-index: 2;
+  height: auto;
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 320px;
+  background-color: #ffffff;
+  opacity: 1;
+  /* Initialize off screen */
+  margin-left: -320px;
+  padding-top: 56px;
+  transition: all 0.1s linear 0s;
+}
+
+#right-panel {
+  flex-grow: 1;
+}
+
+#slideshow-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+article {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: auto;
+  height:auto;
+
+  overflow-x: hidden;
+  overflow-y: scroll;
+  margin: 0 !important;
+  padding: 0 !important;
+  transition: left 1s ease-in 0s;
+}
+
+
+
+
 
 #menu {
   z-index: 10;
@@ -42,80 +95,6 @@ html, body {
   color: #000000;
   text-shadow: 1px 1px 1px #ffffff;
 }
-
-#main-container {
-  display: flex;
-  overflow: hidden;
-  max-width: 100%;
-}
-
-#left-panel {
-  /* Needed to get shadow to appear when element earlier in document order than adjacent */
-  z-index: 2;
-
-  height: auto;
-  flex-grow: 0;
-  flex-shrink: 0;
-  width: 320px;
-  background-color: #ffffff;
-  opacity: 1;
-
-  /* Initialize off screen */
-  margin-left: -320px;
-
-  padding-top: 56px;
-  transition: all 0.4s linear 0s;
-}
-
-#right-panel {
-  flex-grow: 1;
-  margin: 0;
-  padding: 0;
-  position: relative;
-  max-height: 100%;
-  max-width: 100%;
-}
-
-#slideshow-container {
-  margin: 0;
-  padding: 0;
-  display: flex;
-  position: relative;
-  max-height: 100%;
-  max-width: 100%;
-
-}
-
-article {
-
-  /* The bug is something to do with scrollbar width. It's like flex-basis is not counting
-  it in its calculation. The width is 15 pixels off. Doesn't matter if I use width or
-  flex-basis. When it is as 100%, scrollbar throws off calculation. */
-
-  width: auto;
-
-  /* TEMP: fixing scrollbar issue */
-  padding: 0 !important;
-  margin: 0;
-
-  /* 2 is for all other slides, and 1 is for current slide */
-  order: 2;
-
-  flex-grow: 1;
-  flex-shrink: 0;
-  flex-basis: 100%;
-
-
-  overflow-x: hidden;
-  overflow-y: auto;
-
-  /* This is needed to avoid causing container to extend and start scrolling */
-  max-height: 100%;
-
-  transition: all 0.5s ease-in;
-}
-
-
 
 #left-panel ul {
   list-style-type: none;
