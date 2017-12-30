@@ -21,10 +21,10 @@ export default function showDesktopNotification(title, message, iconURL) {
 
   // Instantiation implicitly shows the notification
   const notification = new Notification(title, details);
-  notification.addEventListener('click', notificationOnClick);
+  notification.addEventListener('click', notificationOnclick);
 }
 
-async function notificationOnClick(event) {
+function notificationOnclick(event) {
 
   // TODO: test if the absence of this approach still causes a crash in latest Chrome
 
@@ -37,5 +37,5 @@ async function notificationOnClick(event) {
     return;
   }
 
-  await showSlideshowTab();
+  showSlideshowTab().catch(console.warn);
 }
