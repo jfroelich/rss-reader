@@ -1,24 +1,23 @@
 import assert from "/src/common/assert.js";
 
-// TODO: accept a URL as input instead of a string. This will avoid the need to parse it here,
-// and avoid the ickiness with the assertion and exception throwing
-
 // Applies a set of rules to a url object and returns a modified url object. Returns undefined if
-// no rewriting occurred.
-// @param url {String}
-// @returns {String}
+// no rewriting occurred or unable to rewrite successfully.
+// @param url {URL}
+// @returns {URL}
 export default function rewriteURL(url) {
-
-  assert(typeof url === 'string' && url.length > 0);
-
-  // This fails and throws a TypeError if the url is invalid or relative
-  const urlObject = new URL(url);
-
-
-  if(urlObject.hostname === 'news.google.com' && urlObject.pathname === '/news/url') {
-    return urlObject.searchParams.get('url');
-  } else if(urlObject.hostname === 'techcrunch.com' && urlObject.searchParams.has('ncid')) {
-    urlObject.searchParams.delete('ncid');
-    return urlObject.href;
+  assert(url instanceof URL);
+  if(url.hostname === 'news.google.com' && url.pathname === '/news/url') {
+    const param = url.searchParams.get('url');
+    try {
+      return new URL(param);
+    } catch(error) {
+      console.debug('Invalid url param', param);
+    }
+    return;
+  } else if(url.hostname === 'techcrunch.com' && url.searchParams.has('ncid')) {
+    // Only modify the clone for purity
+    const output = new URL(url.href);
+    output.searchParams.delete('ncid');
+    return output;
   }
 }

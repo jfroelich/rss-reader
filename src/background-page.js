@@ -5,8 +5,6 @@ import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import updateBadgeText from "/src/update-badge-text.js";
 
-
-
 async function onWakeup(alarm) {
   console.debug('onWakeup', alarm.name);
   localStorage.LAST_ALARM = alarm.name;

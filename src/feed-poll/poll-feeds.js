@@ -318,10 +318,10 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   }
 
   const url = new URL(Entry.peekURL(entry));
-  const rewrittenURL = rewriteURL(url.href);
-  if(rewrittenURL && url.href !== rewrittenURL) {
-    Entry.appendURL(entry, new URL(rewrittenURL));
-    setURLHrefProperty(url, rewrittenURL);
+  const rewrittenURL = rewriteURL(url);
+  if(rewrittenURL && url.href !== rewrittenURL.href) {
+    Entry.appendURL(entry, rewrittenURL);
+    setURLHrefProperty(url, rewrittenURL.href);
   }
 
   if(!isPollableURL(url)) {

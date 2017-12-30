@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import unwrapElement from "/src/common/dom-utils.js";
+import {unwrapElement} from "/src/common/dom-utils.js";
 
 // Transforms noscript content in document content
 export default function filterDocument(doc) {
