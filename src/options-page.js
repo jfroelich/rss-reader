@@ -6,24 +6,6 @@ import Subscribe from "/src/subscribe.js";
 import unsubscribe from "/src/unsubscribe.js";
 import {truncateHTML} from "/src/common/html-utils.js";
 
-const FONTS = [
-  'ArchivoNarrow-Regular',
-  'Arial, sans-serif',
-  'Calibri',
-  'Cambria',
-  'CartoGothicStd',
-  'Fanwood',
-  'Georgia',
-  'League Mono Regular',
-  'League Spartan',
-  'Montserrat',
-  'Noto Sans',
-  'Open Sans Regular',
-  'PathwayGothicOne',
-  'PlayfairDisplaySC',
-  'Roboto Regular'
-];
-
 const BG_IMAGES = [
   '/images/bgfons-paper_texture318.jpg',
   '/images/CCXXXXXXI_by_aqueous.jpg',
@@ -594,28 +576,6 @@ function bgImageMenuOnchange(event) {
   readerChannel.postMessage({type: 'display-settings-changed'});
 }
 
-function headerFontMenuOnchange(event){
-  const font = event.target.value;
-  if(font) {
-    localStorage.HEADER_FONT_FAMILY = font;
-  } else {
-    delete localStorage.HEADER_FONT_FAMILY;
-  }
-
-  readerChannel.postMessage({type: 'display-settings-changed'});
-}
-
-function bodyFontMenuOnchange(event) {
-  const font = event.target.value;
-  if(font) {
-    localStorage.BODY_FONT_FAMILY = font;
-  } else {
-    delete localStorage.BODY_FONT_FAMILY;
-  }
-
-  readerChannel.postMessage({type: 'display-settings-changed'});
-}
-
 function columnCountMenuOnchange(event) {
   const count = event.target.value;
   if(count) {
@@ -756,39 +716,6 @@ subscriptionForm.onsubmit = subscribeFormOnsubmit;
 }
 
 {
-  const headerFontMenu = document.getElementById('select-header-font');
-  headerFontMenu.onchange = headerFontMenuOnchange;
-  let option = document.createElement('option');
-  option.textContent = 'Use Chrome font settings';
-  headerFontMenu.appendChild(option);
-  const currentHeaderFont = localStorage.HEADER_FONT_FAMILY;
-  for(const font of FONTS) {
-    let option = document.createElement('option');
-    option.value = font;
-    option.selected = font === currentHeaderFont;
-    option.textContent = font;
-    headerFontMenu.appendChild(option);
-  }
-}
-
-{
-  const bodyFontMenu = document.getElementById('select-body-font');
-  bodyFontMenu.onchange = bodyFontMenuOnchange;
-  let option = document.createElement('option');
-  option.textContent = 'Use Chrome font settings';
-  bodyFontMenu.appendChild(option);
-
-  const currentBodyFont = localStorage.BODY_FONT_FAMILY;
-  for(const font of FONTS) {
-    option = document.createElement('option');
-    option.value = font;
-    option.selected = font === currentBodyFont;
-    option.textContent = font;
-    bodyFontMenu.appendChild(option);
-  }
-}
-
-{
   const columnCountMenu = document.getElementById('column-count');
   columnCountMenu.onchange = columnCountMenuOnchange;
   const columnCounts = ['1', '2', '3'];
@@ -813,14 +740,6 @@ bgColorInput.oninput = entryBgColorInputOninput;
 const marginInput = document.getElementById('entry-margin');
 marginInput.value = localStorage.PADDING || '10';
 marginInput.onchange = entryMarginSliderOnchange;
-
-const headerFontSizeInput = document.getElementById('header-font-size');
-headerFontSizeInput.value = localStorage.HEADER_FONT_SIZE || '1';
-headerFontSizeInput.onchange = headerFontSizeSliderOnchange;
-
-const bodyFontSizeInput = document.getElementById('body-font-size');
-bodyFontSizeInput.value = localStorage.BODY_FONT_SIZE || '1';
-bodyFontSizeInput.onchange = bodyFontSizeSliderOnchange;
 
 const justifyTextCheckbox = document.getElementById('justify-text');
 justifyTextCheckbox.checked = 'JUSTIFY_TEXT' in localStorage;

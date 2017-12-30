@@ -11,6 +11,26 @@ import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
 const DEBUG = false;
 const dprintf = DEBUG ? console.log : noop;
 
+
+const fonts = [
+  'ArchivoNarrow-Regular',
+  'Arial, sans-serif',
+  'Calibri',
+  'Cambria',
+  'CartoGothicStd',
+  'Fanwood',
+  'Georgia',
+  'League Mono Regular',
+  'League Spartan',
+  'Montserrat',
+  'Noto Sans',
+  'Open Sans Regular',
+  'PathwayGothicOne',
+  'PlayfairDisplaySC',
+  'Roboto Regular'
+];
+
+
 // Track the currently visible slide
 let currentSlide;
 
@@ -1070,24 +1090,6 @@ function bodyFontMenuOnchange(event) {
 
   PageStyle.pageStyleSettingsOnchange();
 }
-
-const fonts = [
-  'ArchivoNarrow-Regular',
-  'Arial, sans-serif',
-  'Calibri',
-  'Cambria',
-  'CartoGothicStd',
-  'Fanwood',
-  'Georgia',
-  'League Mono Regular',
-  'League Spartan',
-  'Montserrat',
-  'Noto Sans',
-  'Open Sans Regular',
-  'PathwayGothicOne',
-  'PlayfairDisplaySC',
-  'Roboto Regular'
-];
 
 function initHeaderFontMenu() {
   const menu = document.getElementById('header-font-menu');
