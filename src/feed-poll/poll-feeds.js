@@ -110,8 +110,8 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   assert(Feed.isFeed(feed));
   assert(Feed.hasURL(feed));
 
-  const url = Feed.peekURL(feed);
-  console.log('Polling feed', url);
+  const feedURLString = Feed.peekURL(feed);
+  console.log('Polling feed', feedURLString);
 
   if(!feed.active) {
     return 0;
@@ -121,7 +121,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     return 0;
   }
 
-  const requestURL = new URL(url);
+  const requestURL = new URL(feedURLString);
   let response;
   try {
     response = await FetchUtils.fetchFeed(requestURL, this.fetchFeedTimeoutMs);
@@ -158,6 +158,11 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   let parseResult;
   try {
     const processEntries = true;
+
+    // TEMP: researching bug
+    assert(requestURL instanceof URL);
+    assert((new URL(response.url)) instanceof URL);
+
     parseResult = parseFeed(feedXML, requestURL, new URL(response.url),
       responseLastModifiedDate, processEntries);
   } catch(error) {

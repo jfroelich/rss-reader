@@ -83,7 +83,7 @@ Subscribe.prototype.subscribe = async function(url) {
     // We take care to create the feed using the factory method instead of creating a simple
     // object, because the factory method sets some hidden properties.
     feed = Feed.create();
-    feed.appendURL(url.href);
+    Feed.appendURL(feed, url);
   }
 
   assert(Feed.isFeed(feed));

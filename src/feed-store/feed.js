@@ -97,7 +97,7 @@ export function merge(oldFeed, newFeed) {
 
   if(newFeed.urls) {
     for(const urlString of newFeed.urls) {
-      appendURL(mergedFeed, urlString);
+      appendURL(mergedFeed, new URL(urlString));
     }
   }
 

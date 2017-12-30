@@ -231,7 +231,7 @@ function outlineToFeed(outline) {
     feed.link = outline.htmlUrl;
   }
 
-  Feed.appendURL(feed, outline.xmlUrl);
+  Feed.appendURL(feed, new URL(outline.xmlUrl));
   return feed;
 }
 

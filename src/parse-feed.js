@@ -48,6 +48,15 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   // Rethrow any parsing errors
   const feed = parseFeedImpl(xmlString);
 
+  // FIX: appendURL fails because feed, at this point, is not yet the proper type
+  // Convert it into the proper type. This is kind of hackish but not sure what else to do
+  // quickly. Previously, appendURL didn't test the type of feed object, but now it does, so I
+  // have to pass it a valid feed. Alternatively I could manually add the url, but then this
+  // involves knowledge into feed structure outside of the intended scope. But, this is a pretty
+  // closely related piece so maybe it is ok to have such knowledge? Or maybe a new helper
+  // like 'appendInitialURL' that doesn't assert feed type would be ok?
+  feed.magic = Feed.FEED_MAGIC;
+
   // Compose fetch urls as the initial feed urls
   Feed.appendURL(feed, requestURL);
   Feed.appendURL(feed, responseURL);
