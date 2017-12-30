@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import {isUncheckedError} from "/src/common/error-utils.js";
+import {CheckedError} from "/src/common/errors.js";
 
 // Given an input value, if it is a string, then creates and returns a new string where html
 // entities have been decoded into corresponding values. For example, '&lt;' becomes '<'.
@@ -117,7 +117,7 @@ export function replaceTags(htmlString, replacement) {
   try {
     doc = parseHTML(htmlString);
   } catch(error) {
-    if(isUncheckedError(error)) {
+    if(!(error instanceof CheckedError)) {
       throw error;
     } else {
       return 'Unsafe HTML redacted';
@@ -156,7 +156,7 @@ export function parseHTML(htmlString) {
   return doc;
 }
 
-export class HTMLParseError extends Error {
+export class HTMLParseError extends CheckedError {
   constructor(message) {
     super(message || 'HTML parse error');
   }

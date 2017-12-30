@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import {isUncheckedError} from "/src/common/error-utils.js";
+import {CheckedError} from "/src/common/errors.js";
 import formatString from "/src/common/format-string.js";
 import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
@@ -858,7 +858,9 @@ FeedStore.prototype.refreshFeedIcon = async function(feed, query) {
   try {
     iconURL = await query.lookup(url);
   } catch(error) {
-    if(isUncheckedError(error)) {
+    if(error instanceof CheckedError) {
+      // Ignore
+    } else {
       throw error;
     }
   }

@@ -1,6 +1,6 @@
 import assert from "/src/common/assert.js";
 import {setTimeoutPromise} from "/src/common/promise-utils.js";
-import {TimeoutError} from "/src/common/error-utils.js";
+import {TimeoutError} from "/src/common/errors.js";
 
 
 const DEBUG = false;

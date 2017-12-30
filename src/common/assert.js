@@ -35,14 +35,8 @@ export default function assert(booleanValue, ...varargs) {
 // indicate that something that should never happen ... happened. It primarily indicates that
 // the reasoning used somewhere in the collective program is incorrect, that a faulty assumption
 // was made somewhere about the state of things.
-
-// Generally no other module should import or explicitly throw an AssertionError. Instead, that
-// module should call assert with a value that then throws an assertion error as a side effect
-// when the value is false. Ideally this error would not be exported. However, a few other
-// modules need to directly access the class itself such as when testing whether an error is a type
-// of an assertion error.
-
-export class AssertionError extends Error {
+// Unlike practically every other custom error this does not extend CheckedError
+class AssertionError extends Error {
   constructor(message) {
     super(message || 'Assertion failed');
   }

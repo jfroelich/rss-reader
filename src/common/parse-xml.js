@@ -1,4 +1,5 @@
 import assert from "/src/common/assert.js";
+import {CheckedError} from "/src/common/errors.js";
 
 // TODO: profiling shows this is one of the slowest functions in the entire app. Maybe a tokenizer
 // in js would be faster?
@@ -25,7 +26,7 @@ export default function parseXML(xmlString) {
   return document;
 }
 
-export class XMLParseError extends Error {
+export class XMLParseError extends CheckedError {
   constructor(message) {
     super(message || 'XML parse error');
   }

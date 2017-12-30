@@ -9,7 +9,7 @@ import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import parseFeed from "/src/parse-feed.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
-import {isUncheckedError} from "/src/common/error-utils.js";
+import {CheckedError} from "/src/common/errors.js";
 import {setTimeoutPromise} from "/src/common/promise-utils.js";
 
 
@@ -135,7 +135,9 @@ Subscribe.prototype.setFeedFavicon = async function(feed) {
       feed.faviconURLString = iconURLString;
     }
   } catch(error) {
-    if(isUncheckedError(error)) {
+    if(error instanceof CheckedError) {
+      // Ignore
+    } else {
       throw error;
     }
   }

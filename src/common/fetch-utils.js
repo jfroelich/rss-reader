@@ -2,7 +2,7 @@ import assert from "/src/common/assert.js";
 import formatString from "/src/common/format-string.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
-import {TimeoutError} from "/src/common/error-utils.js";
+import {CheckedError, TimeoutError} from "/src/common/errors.js";
 
 // Fetches the html content of the given url
 // @param url {URL} request url
@@ -269,10 +269,9 @@ export function isAllowedURL(url) {
 // arbitrary distictions between network and fetch and policy. Those 3 should all be just
 // fetcherror, and offlineerror should just be a subclass of fetch error.
 
-
 // Represents a general class of networking errors, such as unavailability or unreachability of a
 // resource located on a different machine
-export class NetworkError extends Error {
+export class NetworkError extends CheckedError {
   constructor(message) {
     super(message || 'Network error');
   }
@@ -287,14 +286,14 @@ export class OfflineError extends NetworkError {
 }
 
 // A general type of error thrown when attempting to fetch
-export class FetchError extends Error {
+export class FetchError extends CheckedError {
   constructor(message) {
     super(message || 'Fetch error');
   }
 }
 
 // Thrown when attempting to fetch a url that is not allowed by fetch policy
-export class PolicyError extends Error {
+export class PolicyError extends CheckedError {
   constructor(message) {
     super(message || 'Attempted to fetch url that violates application fetch policy');
   }

@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import {isUncheckedError} from "/src/common/error-utils.js";
+import {CheckedError} from "/src/common/errors.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import FaviconCache from "/src/favicon/cache.js";
 import {parseHTML} from "/src/common/html-utils.js";
@@ -242,12 +242,11 @@ FaviconLookup.prototype.fetchImage = async function(url) {
   try {
     response = await FetchUtils.fetchHelper(url, options);
   } catch(error) {
-    if(isUncheckedError(error)) {
-      throw error;
-    } else {
-      // Return undefined
+    if(error instanceof CheckedError) {
       dprintf(error);
       return;
+    } else {
+      throw error;
     }
   }
 
@@ -258,16 +257,16 @@ FaviconLookup.prototype.fetchImage = async function(url) {
   }
 };
 
-// Helper that traps non-assertion errors as those are non-fatal to lookup
+// Helper that traps checked errors as those are non-fatal to lookup
 FaviconLookup.prototype.fetchHTML = async function(url) {
   assert(url instanceof URL);
   try {
     return await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
   } catch(error) {
-    if(isUncheckedError(error)) {
-      throw error;
-    } else {
+    if(error instanceof CheckedError) {
       // Ignore
+    } else {
+      throw error;
     }
   }
 };
@@ -276,16 +275,15 @@ FaviconLookup.prototype.fetchHTML = async function(url) {
 // @param response {Response or response wrapper}
 // @returns {Document}
 FaviconLookup.prototype.parseHTMLResponse = async function(response) {
-  // Definedness is sufficient
-  assert(response);
+  assert(response instanceof Response);
   try {
     const text = await response.text();
     return parseHTML(text);
   } catch(error) {
-    if(isUncheckedError(error)) {
-      throw error;
-    } else {
+    if(error instanceof CheckedError) {
       // Ignore
+    } else {
+      throw error;
     }
   }
 };

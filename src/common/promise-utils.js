@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import {isUncheckedError} from "/src/common/error-utils.js";
+import {CheckedError} from "/src/common/errors.js";
 
 // A variant of Promise.all that does not shortcircuit. If any promise rejects, undefined is placed
 // in the output array in place of the promise's return value. However, if any project rejects
@@ -24,12 +24,11 @@ export async function promiseEvery(promises) {
     try {
       result = await promise;
     } catch(error) {
-      if(isUncheckedError(error)) {
-        throw error;
+      if(error instanceof CheckedError) {
+        // Swallow the error
+        // console.debug('Iteration swallowed checked error', error);
       } else {
-        // Prevent the error from bubbling by ignoring it.
-        // Comment or uncomment the following statement for debugging
-        // console.debug('Iteration skipped error', error);
+        throw error;
       }
     }
 

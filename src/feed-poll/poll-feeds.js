@@ -1,6 +1,6 @@
 import showDesktopNotification from "/src/show-desktop-notification.js";
 import assert from "/src/common/assert.js";
-import {isUncheckedError, TimeoutError} from "/src/common/error-utils.js";
+import {CheckedError, TimeoutError} from "/src/common/errors.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
@@ -248,7 +248,7 @@ function handleFetchFeedSuccess(feed) {
 // ephemeral (temporary) and not permanent.
 
 async function handlePollFeedError(error, store, feed, callCategory, threshold) {
-  if(isUncheckedError(error)) {
+  if(!(error instanceof CheckedError)) {
     throw error;
   }
 
@@ -386,7 +386,9 @@ FeedPoll.prototype.fetchEntryHTML = async function(url) {
   try {
     response = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
   } catch(error) {
-    if(isUncheckedError(error)) {
+    if(error instanceof CheckedError) {
+      // Ignore
+    } else {
       throw error;
     }
   }
@@ -398,7 +400,9 @@ function parseEntryHTML(html) {
   try {
     return parseHTML(html);
   } catch(error) {
-    if(isUncheckedError(error)) {
+    if(error instanceof CheckedError) {
+      // Ignore
+    } else {
       throw error;
     }
   }
@@ -414,7 +418,9 @@ FeedPoll.prototype.setEntryFavicon = async function(entry, url, document) {
       entry.faviconURLString = iconURLString;
     }
   } catch(error) {
-    if(isUncheckedError(error)) {
+    if(error instanceof CheckedError) {
+      // Ignore
+    } else {
       throw error;
     }
   }
