@@ -63,6 +63,21 @@ article.entry span.entry-content td {
 }
 
 @font-face {
+  font-family: Fanwood;
+  src: url('/fonts/fanwood-webfont.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: League Mono Regular;
+  src: url('/fonts/LeagueMono-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: League Spartan;
+  src: url('/fonts/leaguespartan-bold.ttf') format('truetype');
+}
+
+@font-face {
   font-family: ArchivoNarrow-Regular;
   src: url('/fonts/ArchivoNarrow-Regular.ttf') format('truetype');
 }

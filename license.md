@@ -25,6 +25,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Font license information
 
-* Clearly Different is released under the SIL Open Font License (OFL) 1.1.
-* Essays1743 is released under the OFL.
-* Felt Tip is a free font from fontpalace.com
+* Fanwood https://www.theleagueofmoveabletype.com/
+* League Mono Regular https://www.theleagueofmoveabletype.com/
+* League Spartan https://www.theleagueofmoveabletype.com/
