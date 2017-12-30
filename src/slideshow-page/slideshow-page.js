@@ -278,12 +278,10 @@ function appendSlide(entry) {
 
   if(containerElement.childElementCount) {
     // This is not the first slide, position it off screen to the right
-    slideElement.style.left = '100%';
-    slideElement.style.right = '-100%';
+    slideElement.style.marginLeft = '100%';
   } else {
     // This is the first slide
-    slideElement.style.left = '0';
-    slideElement.style.right = '0';
+    slideElement.style.marginLeft = '0';
   }
 
 
@@ -611,13 +609,9 @@ async function showNextSlide() {
 
     if(nextSlide) {
 
-      // Move the current slide to the left, out of view
-      currentSlide.style.left = '-100%';
-      currentSlide.style.right = '100%';
 
-      // Move the next slide to the left, into view
-      nextSlide.style.left = '0';
-      nextSlide.style.right = '0';
+      //nextSlide.style.marginLeft = '0';
+      currentSlide.style.marginLeft = '-100%';
 
 
       currentSlide.scrollTop = 0;
@@ -678,11 +672,11 @@ function showPreviousSlide() {
   }
 
   // Move the current slide to the right, out of view
-  currentSlide.style.left = '100%';
-  currentSlide.style.right = '-100%';
+  currentSlide.style.marginLeft = '100%';
+
   // Move previous slide to the right, into view
-  previousSlide.style.left = '0';
-  previousSlide.style.right = '0';
+  previousSlide.style.marginLeft = '0';
+
 
 
   currentSlide = previousSlide;
