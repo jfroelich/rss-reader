@@ -1,0 +1,56 @@
+<html>
+<script type="module" src="side-by-side-divs.js"></script>
+<style type="text/css">
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+#menu {
+  background-color: blue;
+  padding: 20px;
+}
+
+#container {
+  display: flex;
+  margin: 0;
+  padding: 0;
+}
+
+#left {
+  flex-grow: 0;
+  flex-shrink: 0;
+  width: 200px;
+
+  background-color: red;
+  height: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  transition: all 0.4s ease-in-out;
+}
+
+#right {
+  flex-grow: 1;
+  background-color: green;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+</style>
+<body>
+  <section id="menu"><button id="toggle">toggle</toggle></section>
+<section id="container">
+
+  <section id="left">left left left left left left left left left
+   left left left left left left left left left
+  left left left left left left</section>
+  <section id="right">right rightright rightright rightright rightright rightright right
+  right rightright rightright rightright rightright right</section>
+
+</section>
+
+</body>
+</html>
