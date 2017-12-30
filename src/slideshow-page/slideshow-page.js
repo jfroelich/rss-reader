@@ -257,8 +257,6 @@ function appendSlide(entry) {
   const containerElement = document.getElementById('slideshow-container');
   const slideElement = document.createElement('article');
 
-
-
   // tabindex must be explicitly defined for the element to receive focus
   slideElement.setAttribute('tabindex', '-1');
   slideElement.setAttribute('entry', entry.id);
@@ -269,9 +267,8 @@ function appendSlide(entry) {
   // TODO: look into the new 'passive' flag for scroll listeners
   slideElement.addEventListener('scroll', onSlideScroll);
 
-  // TODO: several of these settings should be set in css or not set at all
-  //slideElement.style.position = 'absolute';
-
+  // TEMP: disabled while trying to solve flex layout issues
+/*
   if(containerElement.childElementCount) {
     slideElement.style.left = '100%';
     slideElement.style.right = '-100%';
@@ -279,11 +276,8 @@ function appendSlide(entry) {
     slideElement.style.left = '0%';
     slideElement.style.right = '0%';
   }
+*/
 
-  slideElement.style.overflowX = 'hidden';
-  //slideElement.style.top = '0';
-  //slideElement.style.bottom = '0';
-  slideElement.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
   const titleElement = createArticleTitleElement(entry);
   slideElement.appendChild(titleElement);
@@ -609,10 +603,32 @@ async function showNextSlide() {
 
 
     if(nextSlide) {
-      currentSlide.style.left = '-100%';
-      currentSlide.style.right = '100%';
-      nextSlide.style.left = '0px';
-      nextSlide.style.right = '0px';
+
+      /*
+      // Move the previous slide order to the end of all other slides
+      const previousSlide = currentSlide.previousElementSibling;
+      if(previousSlide) {
+        // 4 is for 'off to the right after the next slides'. We do not loop around.
+        // I could use 3 here, it doesn't really matter so long as it is more than 2. I am
+        // using 4 to emphasize it is after the rest I guess.
+        previousSlide.style.order = '4';
+      }
+
+      // Move the current slide to the previous slide position
+      currentSlide.style.order = '1';
+
+      // Move the next slide to the current slide position
+      nextSlide.style.order = '2';
+      */
+
+      nextSlide.style.order = '1';
+
+      // Not entirely sure why this fixed the jank
+      setTimeout(function() {
+        currentSlide.style.order = '2';
+      }, 0);
+
+
       currentSlide.scrollTop = 0;
       currentSlide = nextSlide;
 
@@ -621,7 +637,9 @@ async function showNextSlide() {
 
       // Only mark the slide as read if navigation occurs, which only occurs if there was a next
       // slide
-      await markSlideRead(feedStore, oldSlideElement);
+
+      // TEMP: disabled while fixing scrollbar width issue
+      //await markSlideRead(feedStore, oldSlideElement);
     }
   } catch(error) {
     console.warn(error);
@@ -668,10 +686,21 @@ function showPreviousSlide() {
     return;
   }
 
-  currentSlide.style.left = '100%';
-  currentSlide.style.right = '-100%';
-  prevSlideElement.style.left = '0';
-  prevSlideElement.style.right = '0';
+  // Move the previous slide into the current slide position
+  prevSlideElement.style.order = '1';
+
+  // Move the current slide back to rest of slides
+  currentSlide.style.order = '2';
+
+
+  // If the previous slide has a previous slide, move that into the previous slide position
+  //const previousPreviousSlide = prevSlideElement.previousElementSibling;
+  //if(previousPreviousSlide) {
+  //  previousPreviousSlide.style.order = '2';
+  //}
+
+
+
   currentSlide = prevSlideElement;
   // Change the active element to the new current slide, so that scrolling using keyboard keys still
   // works
@@ -908,10 +937,16 @@ function errorMessageContainerOnclick(event) {
 function noop() {}
 
 function windowOnclick(event) {
+
   // If the click occurred outside of the menu options panel, hide the menu options panel
   const avoidedZoneIds = ['main-menu-button', 'left-panel'];
   if(!avoidedZoneIds.includes(event.target.id) && !event.target.closest('[id="left-panel"]')) {
-    hideMenuOptions();
+    // Hide only if not hidden. marginLeft is only 0px is visible state. If marginLeft is
+    // empty string or -320px then menu already hidden
+    const aside = document.getElementById('left-panel');
+    if(aside.style.marginLeft === '0px') {
+      hideMenuOptions();
+    }
   }
 
   return true;
