@@ -19,8 +19,7 @@ export default function parseXML(xmlString) {
   // Treat bad input as exception worthy
   const errorElement = document.querySelector('parsererror');
   if(errorElement) {
-    const prettify = condenseWhitespace;
-    const errorMessage = prettify(errorElement.textContent);
+    const errorMessage = condenseWhitespace(errorElement.textContent);
     throw new XMLParseError(errorMessage);
   }
   return document;
