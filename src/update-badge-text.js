@@ -25,9 +25,6 @@ export default async function updateBadgeText() {
     store.close();
   }
   const text = count > 999 ? '1k+' : '' + count;
-  setBadgeText(text);
-}
 
-function setBadgeText(text) {
   chrome.browserAction.setBadgeText({text: text});
 }
