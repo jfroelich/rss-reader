@@ -18,7 +18,7 @@ export default async function unsubscribe(feedId, store, channel) {
     assert(channel instanceof BroadcastChannel);
   }
 
-  const entryIds = store.findEntryIdsByFeedId(feedId);
+  const entryIds = await store.findEntryIdsByFeedId(feedId);
   await store.removeFeed(feedId, entryIds);
 
   if(channel) {

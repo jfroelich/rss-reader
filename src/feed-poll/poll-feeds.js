@@ -158,11 +158,6 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   let parseResult;
   try {
     const processEntries = true;
-
-    // TEMP: researching bug
-    assert(requestURL instanceof URL);
-    assert((new URL(response.url)) instanceof URL);
-
     parseResult = parseFeed(feedXML, requestURL, new URL(response.url),
       responseLastModifiedDate, processEntries);
   } catch(error) {

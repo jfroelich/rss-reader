@@ -450,7 +450,7 @@ function feedListRemoveFeed(feedId) {
   const feedElement = document.querySelector(
     `#feedlist li[feed="${feedId}"]`);
 
-  assert(feedElement);
+  assert(feedElement instanceof Element);
 
   feedElement.removeEventListener('click', feedListItemOnclick);
   feedElement.remove();
