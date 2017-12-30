@@ -8,6 +8,13 @@ import exportFeeds from "/src/slideshow-page/export-feeds.js";
 import OPMLImporter from "/src/slideshow-page/opml-importer.js";
 import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
 
+// NOTE: LEFT OFF HERE
+// TODO: ok i got left panel working. i had to make <article> non-absolute. so now i need to
+// re-think how to position articles 'off screen' and then move them on screen. perhaps by
+// moving articles around in a separate element. requires total rewrite of several things, like
+// unread  count, article iteration, etc
+
+
 const DEBUG = false;
 const dprintf = DEBUG ? console.log : noop;
 
@@ -155,14 +162,18 @@ async function onEntryExpiredMessage(message) {
 
 function showLoadingInformation() {
   const loadingElement = document.getElementById('initial-loading-panel');
-  assert(loadingElement instanceof Element);
-  loadingElement.style.display = 'block';
+  if(loadingElement) {
+    loadingElement.style.display = 'block';
+  }
+
 }
 
 function hideLoadingInformation() {
   const loadingElement = document.getElementById('initial-loading-panel');
-  assert(loadingElement instanceof Element);
-  loadingElement.style.display = 'none';
+  if(loadingElement) {
+    loadingElement.style.display = 'none';
+  }
+
 }
 
 function removeSlide(slideElement) {
@@ -246,6 +257,8 @@ function appendSlide(entry) {
   const containerElement = document.getElementById('slideshow-container');
   const slideElement = document.createElement('article');
 
+
+
   // tabindex must be explicitly defined for the element to receive focus
   slideElement.setAttribute('tabindex', '-1');
   slideElement.setAttribute('entry', entry.id);
@@ -255,7 +268,9 @@ function appendSlide(entry) {
   // Bind to slide, not window, because only slide scrolls
   // TODO: look into the new 'passive' flag for scroll listeners
   slideElement.addEventListener('scroll', onSlideScroll);
-  slideElement.style.position = 'absolute';
+
+  // TODO: several of these settings should be set in css or not set at all
+  //slideElement.style.position = 'absolute';
 
   if(containerElement.childElementCount) {
     slideElement.style.left = '100%';
@@ -266,8 +281,8 @@ function appendSlide(entry) {
   }
 
   slideElement.style.overflowX = 'hidden';
-  slideElement.style.top = '0';
-  slideElement.style.bottom = '0';
+  //slideElement.style.top = '0';
+  //slideElement.style.bottom = '0';
   slideElement.style.transition = 'left 0.5s ease-in 0s, right 0.5s ease-in';
 
   const titleElement = createArticleTitleElement(entry);
@@ -775,20 +790,29 @@ async function refreshAnchorOnclick(event) {
 }
 
 function showMenuOptions() {
-  const menuOptions = document.getElementById('menu-options');
-  menuOptions.style.left = '0px';
+  const menuOptions = document.getElementById('left-panel');
+  menuOptions.style.marginLeft = '0px';
+  menuOptions.style.boxShadow = '2px 0px 10px 2px #8e8e8e';
 }
 
 function hideMenuOptions() {
-  const menuOptions = document.getElementById('menu-options');
-  menuOptions.style.left = '-320px';
+  const menuOptions = document.getElementById('left-panel');
+  menuOptions.style.marginLeft = '-320px';
+
+  // HACK for shadow
+  menuOptions.style.boxShadow = '';
 }
 
 function mainMenuButtonOnclick(event) {
-  const menuOptions = document.getElementById('menu-options');
-  if(menuOptions.style.left === '0px') {
+  const menuOptions = document.getElementById('left-panel');
+  if(menuOptions.style.marginLeft === '0px') {
+    console.debug('Hiding (was at 0)');
     hideMenuOptions();
+  } else if(menuOptions.style.marginLeft === '') {
+    console.debug('Showing (not set)');
+    showMenuOptions();
   } else {
+    console.debug('Showing (was at -320)');
     showMenuOptions();
   }
 }
@@ -885,8 +909,8 @@ function noop() {}
 
 function windowOnclick(event) {
   // If the click occurred outside of the menu options panel, hide the menu options panel
-  const avoidedZoneIds = ['main-menu-button', 'menu-options'];
-  if(!avoidedZoneIds.includes(event.target.id) && !event.target.closest('[id="menu-options"]')) {
+  const avoidedZoneIds = ['main-menu-button', 'left-panel'];
+  if(!avoidedZoneIds.includes(event.target.id) && !event.target.closest('[id="left-panel"]')) {
     hideMenuOptions();
   }
 
@@ -1044,7 +1068,11 @@ function appendFeed(feed) {
   feedInfoElement.appendChild(row);
 
   feedElement.appendChild(feedInfoElement);
-  feedsContainer.appendChild(feedElement);
+
+  if(feedsContainer) {
+    feedsContainer.appendChild(feedElement);
+  }
+
 }
 
 
@@ -1147,18 +1175,22 @@ async function initSlideshowPage() {
   readerButton.onclick = readerButtonOnclick;
 
   // Initialize error message container
-  const container = document.getElementById('error-message-container');
-  container.onclick = errorMessageContainerOnclick;
+  const errorContainer = document.getElementById('error-message-container');
+  if(errorContainer) {
+    errorContainer.onclick = errorMessageContainerOnclick;
+  }
 
   const feedsContainer = document.getElementById('feeds-container');
-  feedsContainer.onclick = feedsContainerOnclick;
+  if(feedsContainer) {
+    feedsContainer.onclick = feedsContainerOnclick;
+  }
 
-  const menuOptions = document.getElementById('menu-options');
+
+  const menuOptions = document.getElementById('left-panel');
   menuOptions.onclick = menuOptionsOnclick;
 
   initHeaderFontMenu();
   initBodyFontMenu();
-
 
   // TODO: is it possible to defer this until after loading without slowing things down?
   // Initialize entry display settings

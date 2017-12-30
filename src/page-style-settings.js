@@ -74,7 +74,7 @@ function entryCSSAddContentRule(sheet) {
 
   const bodyFontFamily = localStorage.BODY_FONT_FAMILY;
   if(bodyFontFamily) {
-    buffer.push(`font-family:${bodyFontFamily};`);
+    buffer.push(`font-family: ${bodyFontFamily};`);
   }
 
   let bodyLineHeightString = localStorage.BODY_LINE_HEIGHT;

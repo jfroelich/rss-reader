@@ -1,23 +1,41 @@
 <html><head>
 <title>Josh's RSS Reader</title>
 <link rel="shortcut icon" href="/images/rss_icon_trans.gif" />
-<link rel="stylesheet" href="/css/common.css"/>
 <link rel="stylesheet" href="/css/slideshow.css"/>
 <script src="/src/slideshow-page/slideshow-page.js" type="module"></script>
 </head>
-<body><div id="slideshow-container"></div><section id="initial-loading-panel">
-<p>Loading ... please wait.</p>
-<progress></progress>
-</section><section id="feeds-container"></section><section
-id="error-message-container"></section><section id="menu">
+<body>
+
+<section id="menu">
   <a id="main-menu-button">&#9776;</a>
   <a id="refresh">&#x21bb;</a>
   <a id="feeds-button">Feeds</a>
   <a id="reader-button">Reader</a>
-</section><ul id="menu-options">
-  <li id="menu-option-subscribe">Subscribe</li>
-  <li id="menu-option-import">Import OPML files</li>
-  <li id="menu-option-export">Export OPML file</li>
-  <li id="menu-option-header-font" title="Set header font"><select id="header-font-menu"></select></li>
-  <li id="menu-option-body-font" title="Set body font"><select id="body-font-menu"></select></li>
-</ul></body></html>
+</section>
+
+<section id="main-container">
+  <section id="left-panel">
+    <ul>
+    <li id="menu-option-subscribe">Subscribe</li>
+    <li id="menu-option-import">Import OPML files</li>
+    <li id="menu-option-export">Export OPML file</li>
+    <li id="menu-option-header-font" title="Set header font"><select id="header-font-menu"></select></li>
+    <li id="menu-option-body-font" title="Set body font"><select id="body-font-menu"></select></li>
+    </ul>
+  </section>
+  <section id="right-panel">
+    <section id="slideshow-container"></section>
+    <section id="initial-loading-panel">
+      <p>Loading ... please wait.</p>
+      <progress></progress>
+    </section>
+
+    <section id="feeds-container"></section>
+
+    <section id="error-message-container"></section>
+
+  </section>
+</section>
+
+</body>
+</html>
