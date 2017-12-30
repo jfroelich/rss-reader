@@ -48,8 +48,7 @@ const BG_IMAGES = [
 let currentMenuItem;
 let currentSection;
 
-const CHANNEL_NAME = 'reader';
-const readerChannel = new BroadcastChannel(CHANNEL_NAME);
+const readerChannel = new BroadcastChannel('reader');
 readerChannel.onmessage = function(event) {
   if(!event) {
     return;
