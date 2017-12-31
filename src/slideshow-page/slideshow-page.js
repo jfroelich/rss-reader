@@ -40,6 +40,9 @@ const fonts = [
 
 // Track the currently visible slide
 let currentSlide;
+// Track a count of slides in transition
+let activeTransitionCount = 0;
+
 
 // Define a channel that remains open for the lifetime of the slideshow page. It will listen to
 // events coming in from other pages, or the page itself, and react to them. Ordinarily a channel
@@ -264,23 +267,42 @@ function appendSlide(entry) {
   slideElement.addEventListener('click', onSlideClick);
 
 
+
+
   // Setup slide scroll handling. The listener is bound to the slide itself, because it is the
   // slide itself that scrolls, and not window. Also, in order for scrolling to react to keyboard
   // shortcuts, the element must be focused, and in order to focus an element, it must have the
   // tabindex attribute.
-  // TODO: look into the new 'passive' flag for scroll listeners
   slideElement.setAttribute('tabindex', '-1');
-  slideElement.addEventListener('scroll', onSlideScroll);
 
-  // TEMP: disabled while researching scrolling and layout issues
+  // TEMP: disabled while i focus on getting layout working. All this really did was
+  // customize the scroll amount anyway.
+  // TODO: look into the new 'passive' flag for scroll listeners
+  //slideElement.addEventListener('scroll', onSlideScroll);
 
-  if(containerElement.childElementCount) {
-    // This is not the first slide, position it off screen to the right
-    slideElement.style.marginLeft = '100%';
-  } else {
-    // This is the first slide
-    slideElement.style.marginLeft = '0';
-  }
+
+  // Set the position of the slide. Slides are positioned absolutely. Setting left to 100% places
+  // the slide off the right side of the view. Setting left to 0 places the slide in the view.
+  // The initial value must be defined here and not via css, before adding the slide to the page.
+  // Otherwise, changing the style for the first slide causes an unwanted transition, and I have
+  // to change the style for the first slide because it is not set in css.
+  const isNotFirstSlide = containerElement.childElementCount > 0;
+  slideElement.style.left = isNotFirstSlide ? '100%' : '0';
+
+  // In order for scrolling a slide element with keyboard keys to work, the slide must be focused.
+  // But calling element.focus() while a transition is active, such as what happens when a slide is
+  // moved, interrupts the transition. Therefore, schedule a call to focus the slide for when the
+  // transition completes.
+  slideElement.addEventListener('webkitTransitionEnd', onSlideMoveTransitionEnd);
+
+  // TODO: is this still true??
+  // Define the animation effect that will occur when moving the slide. Slides are moved by changing
+  // a slide's css left property, which is basically its offset from the left side of window.
+  // This will also trigger a transition event. The transition property must be defined here in
+  // code, and not via css, in order to have the transition only apply to a slide when it is in
+  // a certain state. If set in css then this causes an immediate transition on the first slide,
+  // which I want to avoid.
+  slideElement.style.transition = 'left 0.35s ease-in-out';
 
 
   const titleElement = createArticleTitleElement(entry);
@@ -298,6 +320,24 @@ function appendSlide(entry) {
     currentSlide.focus();
   }
 }
+
+function onSlideMoveTransitionEnd(event) {
+
+  // The slide that the transition occured upon (event.target) is not guaranteed to be equal to the
+  // current slide.
+
+  // We fire off two transitions per animation, one for the slide being moved out of view, and one
+  // for the slide being moved into view. Both transitions result in call to this listener, but
+  // we only want to call focus on one of the two elements. We want to be in the state where after
+  // both transitions complete, the new slide (which is the current slide at this point) is now
+  // focused. Therefore we ignore event.target and directly affect the current slide only.
+  currentSlide.focus();
+
+  // There may be more than one transition effect occurring at the moment. Point out that this
+  // transition completed. This provides a method for checking if any transitions are outstanding.
+  activeTransitionCount--;
+}
+
 
 function createArticleTitleElement(entry) {
   const titleElement = document.createElement('a');
@@ -607,21 +647,25 @@ async function showNextSlide() {
 
     if(nextSlide) {
 
+      // TODO: maybe move this to the keydown listener instead
+      // Ignore repeated key presses while slides are moving.
+      if(activeTransitionCount > 0) {
+        return;
+      }
 
-      //nextSlide.style.marginLeft = '0';
-      currentSlide.style.marginLeft = '-100%';
+      // Move the current slide out of view to the left
+      currentSlide.style.left = '-100%';
+      // Indicate that a new transition is about to become pending
+      activeTransitionCount++;
 
-
-      currentSlide.scrollTop = 0;
+      // Move the next slide into view from the right
+      nextSlide.style.left = '0';
+      // Set the next slide as the new current slide
       currentSlide = nextSlide;
-
-      // Change the active element to the new current slide, so that scrolling with keys works
-      currentSlide.focus();
 
       // Only mark the slide as read if navigation occurs, which only occurs if there was a next
       // slide
-
-      // TEMP: disabled while fixing scrollbar width issue
+      // TEMP: disabled while fixing other issues
       //await markSlideRead(feedStore, oldSlideElement);
     }
   } catch(error) {
@@ -669,18 +713,21 @@ function showPreviousSlide() {
     return;
   }
 
-  // Move the current slide to the right, out of view
-  currentSlide.style.marginLeft = '100%';
+  // If there is a transition pending then cancel the navigation
+  // TODO: maybe move this to keypress
+  if(activeTransitionCount > 0) {
+    return;
+  }
 
-  // Move previous slide to the right, into view
-  previousSlide.style.marginLeft = '0';
+  // Move the current slide out of view to the right
+  currentSlide.style.left = '100%';
+  // Indicate that a new transition is becoming pending
+  activeTransitionCount++;
 
-
+  // Move previous slide into view from the left
+  previousSlide.style.left = '0';
 
   currentSlide = previousSlide;
-  // Change the active element to the new current slide, so that scrolling using keyboard keys still
-  // works
-  currentSlide.focus();
 }
 
 // Returns the number of slides that are loaded and not read. If a slide is marked as stale,
@@ -744,6 +791,7 @@ function onKeyDown(event) {
 
 window.addEventListener('keydown', onKeyDown);
 
+/*
 // Override built in keyboard scrolling
 let scrollCallbackHandle;
 function onSlideScroll(event) {
@@ -764,7 +812,7 @@ function onSlideScroll(event) {
   event.preventDefault();
   cancelIdleCallback(scrollCallbackHandle);
   scrollCallbackHandle = requestIdleCallback(onIdleCallback);
-}
+}*/
 
 let refreshInProgress = false;
 async function refreshAnchorOnclick(event) {
