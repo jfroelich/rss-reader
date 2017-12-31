@@ -37,10 +37,6 @@ function entryCSSCreateEntryRuleText() {
     buffer.push(`background: ${color};`);
   }
 
-  const padding = localStorage.PADDING;
-  if(padding) {
-    buffer.push(`padding: ${padding}px;`);
-  }
 
   return buffer.join('');
 }
@@ -57,11 +53,24 @@ function entryCSSAddTitleRule(sheet) {
     buffer.push(`font-family:${headerFontFamily};`);
   }
 
+
+  const padding = localStorage.PADDING;
+  if(padding) {
+    buffer.push(`padding: ${padding}px;`);
+  }
+
   sheet.addRule('article.entry a.entry-title', buffer.join(''));
 }
 
 function entryCSSAddContentRule(sheet) {
   let buffer = [];
+
+
+  const padding = localStorage.PADDING;
+  if(padding) {
+    buffer.push(`padding: ${padding}px;`);
+  }
+
   const bodyFontSize = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
   if(bodyFontSize) {
     buffer.push(`font-size: ${(bodyFontSize / 10).toFixed(2)}em;`);
@@ -90,11 +99,7 @@ function entryCSSAddContentRule(sheet) {
   buffer.push('vertical-align: text-top;');
   buffer.push('display: block;');
   buffer.push('word-wrap: break-word;');
-  buffer.push('padding-top: 20px;');
-  buffer.push('padding-right: 0px;');
-  buffer.push('padding-left: 0px;');
-  buffer.push('padding-bottom: 20px;');
-  buffer.push('margin: 0px;');
+  buffer.push('margin: 0;');
 
   const columnCountString = localStorage.COLUMN_COUNT;
   if(columnCountString === '2' || columnCountString === '3') {
@@ -126,8 +131,7 @@ function entryCSSUpdateRule(sheet) {
     style.backgroundImage = '';
   }
 
-  const padding = localStorage.PADDING || '0';
-  style.padding = `${padding}px`;
+
 }
 
 function entryCSSUpdateTitleRule(sheet) {
@@ -135,6 +139,9 @@ function entryCSSUpdateTitleRule(sheet) {
   const rule = findRule(sheet, 'article.entry a.entry-title');
   assert(rule instanceof CSSStyleRule);
   const style = rule.style;
+
+  const padding = localStorage.PADDING || '0';
+  style.padding = `${padding}px`;
 
   style.background = '';
   style.fontFamily = localStorage.HEADER_FONT_FAMILY;
@@ -151,6 +158,9 @@ function entryCSSUpdateContentRule(sheet) {
   assert(rule instanceof CSSStyleRule);
 
   rule.style.background = '';
+
+  const padding = localStorage.PADDING || '0';
+  rule.style.padding = `${padding}px`;
 
   const bodyFontFamily = localStorage.BODY_FONT_FAMILY;
   if(bodyFontFamily) {
@@ -176,6 +186,7 @@ function entryCSSUpdateContentRule(sheet) {
 
   const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
   rule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
+
   let columnCountString = localStorage.COLUMN_COUNT;
   const validColumnCounts = { '1': 1, '2': 1, '3': 1 };
   if(!(columnCountString in validColumnCounts)) {

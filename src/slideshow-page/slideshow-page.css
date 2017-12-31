@@ -318,10 +318,14 @@ article .entry-content td {
 
 .entry-source {
   display: block;
-  font-size: 10pt;
-  color: #cccccc;
-  margin-top: 6px;
-  margin-bottom: 3px;
+  font-size: 20px;
+  color: #222222;
+  padding: 20px;
+  margin-bottom: 30px;
+}
+
+.entry-source img {
+  margin-right: 10px;
 }
 
 .entrysourcelink {
