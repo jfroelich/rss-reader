@@ -260,26 +260,16 @@ function appendSlide(entry) {
   const containerElement = document.getElementById('slideshow-container');
   const slideElement = document.createElement('article');
 
-
   slideElement.setAttribute('entry', entry.id);
   slideElement.setAttribute('feed', entry.feed);
   slideElement.setAttribute('class','entry');
   slideElement.addEventListener('click', onSlideClick);
-
-
-
 
   // Setup slide scroll handling. The listener is bound to the slide itself, because it is the
   // slide itself that scrolls, and not window. Also, in order for scrolling to react to keyboard
   // shortcuts, the element must be focused, and in order to focus an element, it must have the
   // tabindex attribute.
   slideElement.setAttribute('tabindex', '-1');
-
-  // TEMP: disabled while i focus on getting layout working. All this really did was
-  // customize the scroll amount anyway.
-  // TODO: look into the new 'passive' flag for scroll listeners
-  //slideElement.addEventListener('scroll', onSlideScroll);
-
 
   // Set the position of the slide. Slides are positioned absolutely. Setting left to 100% places
   // the slide off the right side of the view. Setting left to 0 places the slide in the view.
@@ -304,7 +294,6 @@ function appendSlide(entry) {
   // which I want to avoid.
   slideElement.style.transition = 'left 0.35s ease-in-out';
 
-
   const titleElement = createArticleTitleElement(entry);
   slideElement.appendChild(titleElement);
   const contentElement = createArticleContentElement(entry);
@@ -322,22 +311,18 @@ function appendSlide(entry) {
 }
 
 function onSlideMoveTransitionEnd(event) {
-
   // The slide that the transition occured upon (event.target) is not guaranteed to be equal to the
   // current slide.
-
   // We fire off two transitions per animation, one for the slide being moved out of view, and one
   // for the slide being moved into view. Both transitions result in call to this listener, but
   // we only want to call focus on one of the two elements. We want to be in the state where after
   // both transitions complete, the new slide (which is the current slide at this point) is now
   // focused. Therefore we ignore event.target and directly affect the current slide only.
   currentSlide.focus();
-
   // There may be more than one transition effect occurring at the moment. Point out that this
   // transition completed. This provides a method for checking if any transitions are outstanding.
   activeTransitionCount--;
 }
-
 
 function createArticleTitleElement(entry) {
   const titleElement = document.createElement('a');
@@ -389,13 +374,13 @@ function createFeedSourceElement(entry) {
   // If the url is bad then show a broken image.
 
   if(entry.faviconURLString) {
-
     const faviconElement = document.createElement('img');
     faviconElement.setAttribute('src', entry.faviconURLString);
     faviconElement.setAttribute('width', '16');
     faviconElement.setAttribute('height', '16');
     sourceElement.appendChild(faviconElement);
   }
+
   // TODO: why is this called title? This should be renamed to something like attributionElement
   const titleElement = document.createElement('span');
   if(entry.feedLink) {
@@ -414,8 +399,6 @@ function createFeedSourceElement(entry) {
   sourceElement.appendChild(titleElement);
   return sourceElement;
 }
-
-
 
 // TODO: support alternate whitespace expressions around delimiters
 // Filter publisher information from an article title
@@ -478,10 +461,7 @@ function tokenize(value) {
   return [];
 }
 
-
-
 async function onSlideClick(event) {
-
   // We only care about responding to left click. Ignore all other buttons like right click and
   // mouse wheel.
   const CODE_LEFT_MOUSE_BUTTON = 1;
@@ -756,7 +736,6 @@ function countUnreadSlides() {
 }
 
 let keydownTimerId = null;
-
 function onKeyDown(event) {
   // Translate space from page down to show next slide
   const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
@@ -1107,7 +1086,6 @@ function appendFeed(feed) {
 
 }
 
-
 function formatDate(date, delimiter) {
   // Tolerate some forms bad input
   if(!date) {
@@ -1262,7 +1240,6 @@ async function initSlideshowPage() {
   }
 
   initFeedsContainer(feeds);
-
 }
 
 // TODO: visually show error
