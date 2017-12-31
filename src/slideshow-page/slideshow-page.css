@@ -42,7 +42,6 @@ article {
 
   overflow-x: hidden;
   overflow-y: auto;
-  font-size: 100px;
 
   /* For some reason non-0 padding makes width larger than page */
   padding: 0 !important;
