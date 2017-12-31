@@ -646,7 +646,6 @@ async function showNextSlide() {
 
 
     if(nextSlide) {
-
       // TODO: maybe move this to the keydown listener instead
       // Ignore repeated key presses while slides are moving.
       if(activeTransitionCount > 0) {
@@ -663,10 +662,7 @@ async function showNextSlide() {
       // Set the next slide as the new current slide
       currentSlide = nextSlide;
 
-      // Only mark the slide as read if navigation occurs, which only occurs if there was a next
-      // slide
-      // TEMP: disabled while fixing other issues
-      //await markSlideRead(feedStore, oldSlideElement);
+      await markSlideRead(feedStore, oldSlideElement);
     }
   } catch(error) {
     console.warn(error);
@@ -790,29 +786,6 @@ function onKeyDown(event) {
 }
 
 window.addEventListener('keydown', onKeyDown);
-
-/*
-// Override built in keyboard scrolling
-let scrollCallbackHandle;
-function onSlideScroll(event) {
-  const DOWN = 40, UP = 38;
-  function onIdleCallback() {
-    const delta = event.keyCode === UP ? -200 : 200;
-    document.activeElement.scrollTop += delta;
-  }
-
-  if(event.keyCode !== DOWN && event.keyCode !== UP) {
-    return;
-  }
-
-  if(!document.activeElement) {
-    return;
-  }
-
-  event.preventDefault();
-  cancelIdleCallback(scrollCallbackHandle);
-  scrollCallbackHandle = requestIdleCallback(onIdleCallback);
-}*/
 
 let refreshInProgress = false;
 async function refreshAnchorOnclick(event) {
