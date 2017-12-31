@@ -39,17 +39,44 @@
 // and only on the current slide.
 // Ok, first try not even waiting for both to complete bcause that is simpler, and just
 // call focus on current slide instead of event.target.
+// ok that worked. also, whatever i did, not sure why, but now the double keypress thing
+// works again.
+
+// One issue with incorrect decrement of activeTransitionCount. I think it is because I call
+// currentSlide.style.left = '0'. It sets first slide left property and causes transition, and
+// that decrements activeTransitionCount.
+// ok i fixed that. Also, not sure why but double key press thing no longer works again. :(
+
+// One another issue. This will not be present later in real slideshow because slides are
+// dynamically added with the proper initial left property. But right now, on page load, sometimes,
+// sporadically, the first slide slides into view. That's wrong. The slide should be immediately
+// in view.
+// ok, fixed by not defining it in css.
+
+// Only remaining issue isn't a bug, just a preference. I wish I could double key press while
+// in transition.
+// Ok i fixed it by letting activeTransitionCount go negative. So it works!
+// But, last problem. Why.
 
 
 const container = document.getElementById('container');
 const slides = container.querySelectorAll('section');
 
-let inTransition = false;
+let activeTransitionCount = 0;
 
 let currentSlide = slides[0];
 currentSlide.style.left = '0';
 
 for(const slide of slides) {
+
+  // Do not define in css, define here only, otherwise it causes initial slide transition
+  //left: 100%;
+
+  if(slide === currentSlide) {
+    slide.style.left = '0';
+  } else {
+    slide.style.left = '100%';
+  }
 
   // Tab index is required in order for calling slide.focus() to not be a no-op
   slide.setAttribute('tabindex', '-1');
@@ -58,8 +85,7 @@ for(const slide of slides) {
   // transition, so add a listener that lets us know when it completes.
   slide.addEventListener('webkitTransitionEnd', onTransitionEnd);
 
-  // TEMP: define transition on all to see if it avoids white flash
-  slide.style.transition = 'left 0.5s ease-in';
+  slide.style.transition = 'left 0.35s ease-in-out';
 }
 
 function onTransitionEnd(event) {
@@ -67,52 +93,46 @@ function onTransitionEnd(event) {
   // The listener is bound to each slide
   const slide = event.target;
 
-  // The transition property is dynamically added each time the slideshow slides instead of
-  // statically from css. This is done in order to avoid having two transitions fire when
-  // sliding (the current element being slid out of view and the element sliding into view),
-  // because I modify the same transition property for both (the 'left' css property), but only
-  // want one of the two property changes to have an associated transition.
-  // I decided to not eagerly remove the transition property after the transition starts for fear
-  // of canceling it. So that css property is still sitting there on the element, and now must be
-  // removed, so that later changes to the property of the slide do not unintentionally re-trigger
-  // the transition effect. This happens specifically when the slide becomes the other slide in
-  // the pair of slides being moved (the two slides for whom this sets the css left prop at the
-  // same time).
-  // An alternative method would be to attach and detach the listener. But I am currently assuming
-  // that is a more expensive operation than modifying a css property.
-
-  // TEMP: disable this to see if i can avoid white flash
-  //slide.style.transition = '';
-
-  // TEMP: disable this to see if i can avoid white flash
-  // Now that the transition completed, set the focus.
-  //slide.focus();
-
-  // TEMP: testing, see if setting current slide avoids issue
+  // slide is not guaranteed to be equal to currentSlide. We fire off two transitions per
+  // animation.
   currentSlide.focus();
 
-
   // Reset inTransition so that navigation keys work again
-  inTransition = false;
+  // Do not let it go negative. It can go negative because of first slide issue.
+
+  // TEMP: see if letting it go negative allows double key press
+  //if(activeTransitionCount) {
+    activeTransitionCount--;
+  //}
 }
 
 window.addEventListener('keydown', function(event) {
 
   const left = 37, right = 39;
 
-  if(inTransition) {
-    console.debug('Ignored key press %d while in transition', event.keyCode);
-    return;
-  }
+  // NOTE: there is a premature decrement right now, so need to compare against 0, not just
+  // if truthy number, because -1 also means not-in-transition.
+  // Ok, that bug is fixed, BUT, I am going to leave this here anyway.
+  // Notably it never reaches 2. It is always either 0 or 1 now.
+
+  // SIDE NOTE: this early exit applies to all key presses right now. It triggers for things
+  // like down arrow and up arrow as well. Keep that in mind.
+
 
   if(event.keyCode === left) {
-    if(currentSlide && currentSlide.previousElementSibling) {
 
+    // DRY because only return early if it is one of the key codes of interest
+    if(activeTransitionCount > 0) {
+      console.debug('canceling', activeTransitionCount);
+      return;
+    }
+
+    if(currentSlide && currentSlide.previousElementSibling) {
 
       // Move the current slide out of view to the right
       currentSlide.style.left = '100%';
 
-      inTransition = true;
+      activeTransitionCount++;
 
       // Move the previous slide into view from the left
       const previousSlide = currentSlide.previousElementSibling;
@@ -123,19 +143,23 @@ window.addEventListener('keydown', function(event) {
 
     }
   } else if(event.keyCode === right) {
+
+    // DRY because only return early if it is one of the key codes of interest
+    if(activeTransitionCount > 0) {
+      console.debug('canceling', activeTransitionCount);
+      return;
+    }
+
     if(currentSlide && currentSlide.nextElementSibling) {
 
       // Move the current slide out of view to the left
       currentSlide.style.left = '-100%';
 
-      inTransition = true;
+      activeTransitionCount++;
 
       // Move the next slide into view from the right
       const nextSlide = currentSlide.nextElementSibling;
-      //nextSlide.style.transition = 'left 0.5s ease-in';
       nextSlide.style.left = '0';
-
-
       currentSlide = nextSlide;
 
     }
