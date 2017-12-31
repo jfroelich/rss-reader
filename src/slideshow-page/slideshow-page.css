@@ -43,15 +43,12 @@ html, body {
 
 article {
   position: absolute;
-  left: auto;
-  top: 0;
-  bottom: 0;
+  left: 100%;
   right: auto;
-  width: 100% !important;
-  margin-right: auto;
-  margin-top: 0;
-  margin-bottom: 0;
-  margin-left: 100%;
+  width: 100%;
+
+  margin: 0;
+
 
   overflow-x: hidden;
   overflow-y: scroll;

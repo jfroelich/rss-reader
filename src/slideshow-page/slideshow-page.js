@@ -272,8 +272,6 @@ function appendSlide(entry) {
   slideElement.setAttribute('tabindex', '-1');
   slideElement.addEventListener('scroll', onSlideScroll);
 
-
-
   // TEMP: disabled while researching scrolling and layout issues
 
   if(containerElement.childElementCount) {
