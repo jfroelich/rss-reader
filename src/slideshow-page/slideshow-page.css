@@ -29,29 +29,6 @@ html, body {
   flex-grow: 1;
 }
 
-#slideshow-container {
-
-}
-
-article {
-  position: absolute;
-  min-height: 100%;
-  max-height: 100%;
-  max-width: 100%;
-  width: 100%;
-
-  overflow-x: hidden;
-  overflow-y: auto;
-
-  /* For some reason non-0 padding makes width larger than page */
-  padding: 0 !important;
-
-  /* This is needed to avoid ugly border on focus */
-  outline: hidden;
-}
-
-
-
 #menu {
   z-index: 10;
   user-select: none;
@@ -230,10 +207,6 @@ pre {
 
 }
 
-
-
-
-
 .entry img {
   max-width: 100%;
   max-height: 100%;
@@ -284,38 +257,6 @@ pre {
   text-shadow: 1px 1px 2px #efefef;
 }
 
-article a {
-  text-decoration: none;
-  color: rgba(0, 84, 129, 0.84);
-}
-
-
-/* Each article has a tabindex so that it is focusable. Each time an article is displayed it
-is focused. The focusing is done so that keyboard based scrolling works.  However, focusing then
-causes an ugly border to appear around the element. This turns off that border. */
-article:focus {
-  outline: none;
-}
-
-/*
-This is required to get long words without spaces to break when
-within a table cell
-http://stackoverflow.com/questions/1258416
-http://stackoverflow.com/questions/1057574
-*/
-article .entry-content td {
-  vertical-align: top;
-  white-space: normal;
-  /* We have to change from break-word to break-all to get
-  it to work here */
-  word-break: break-all;
-
-  /*
-  TODO: the secondary problem is that the width of the cells
-  is a bit awkward
-  */
-}
-
 .entry-source {
   display: block;
   font-size: 20px;
@@ -330,59 +271,4 @@ article .entry-content td {
 
 .entrysourcelink {
   text-decoration: underline;
-}
-
-@font-face {
-  font-family: Fanwood;
-  src: url('/fonts/fanwood-webfont.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: League Mono Regular;
-  src: url('/fonts/LeagueMono-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: League Spartan;
-  src: url('/fonts/leaguespartan-bold.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: ArchivoNarrow-Regular;
-  src: url('/fonts/ArchivoNarrow-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  /* Free from http://www.fontex.org/download/carto-gothic-std.otf */
-  font-family: CartoGothicStd;
-  src: url('/fonts/CartoGothicStd-Book.otf') format('opentype');
-}
-
-@font-face {
-  font-family: Montserrat;
-  src: url('/fonts/Montserrat-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: Noto Sans;
-  src: url('/fonts/NotoSans-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: Open Sans Regular;
-  src: url('/fonts/OpenSans-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: PathwayGothicOne;
-  src: url('/fonts/PathwayGothicOne-Regular.ttf') format('truetype');
-}
-@font-face {
-  font-family: PlayfairDisplaySC;
-  src: url('/fonts/PlayfairDisplaySC-Regular.ttf');
-}
-
-@font-face {
-  font-family: Roboto Regular;
-  src: url('/fonts/Roboto-Regular.ttf');
 }

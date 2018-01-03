@@ -19,7 +19,7 @@ export function pageStyleSettingsOnchange(event) {
 export function pageStyleSettingsOnload() {
   const sheet = getDefaultStylesheet();
   assert(sheet instanceof CSSStyleSheet);
-  sheet.addRule('article.entry', entryCSSCreateEntryRuleText());
+  sheet.addRule('slide.entry', entryCSSCreateEntryRuleText());
 
   // TODO: convert these two to be like above pattern where I get the text and then add the rule
   entryCSSAddTitleRule(sheet);
@@ -59,7 +59,7 @@ function entryCSSAddTitleRule(sheet) {
     buffer.push(`padding: ${padding}px;`);
   }
 
-  sheet.addRule('article.entry a.entry-title', buffer.join(''));
+  sheet.addRule('.entry a.entry-title', buffer.join(''));
 }
 
 function entryCSSAddContentRule(sheet) {
@@ -108,12 +108,12 @@ function entryCSSAddContentRule(sheet) {
     buffer.push('-webkit-column-rule: 1px outset #AAAAAA;');
   }
 
-  sheet.addRule('article.entry span.entry-content', buffer.join(''));
+  sheet.addRule('.entry .entry-content', buffer.join(''));
 }
 
 function entryCSSUpdateRule(sheet) {
   assert(sheet instanceof CSSStyleSheet);
-  const rule = findRule(sheet, 'article.entry');
+  const rule = findRule(sheet, '.entry');
   assert(rule instanceof CSSStyleRule);
   const style = rule.style;
 
@@ -136,7 +136,7 @@ function entryCSSUpdateRule(sheet) {
 
 function entryCSSUpdateTitleRule(sheet) {
   assert(sheet instanceof CSSStyleSheet);
-  const rule = findRule(sheet, 'article.entry a.entry-title');
+  const rule = findRule(sheet, '.entry a.entry-title');
   assert(rule instanceof CSSStyleRule);
   const style = rule.style;
 
@@ -154,7 +154,7 @@ function entryCSSUpdateTitleRule(sheet) {
 
 function entryCSSUpdateContentRule(sheet) {
   assert(sheet instanceof CSSStyleSheet);
-  const rule = findRule(sheet, 'article.entry span.entry-content');
+  const rule = findRule(sheet, '.entry span.entry-content');
   assert(rule instanceof CSSStyleRule);
 
   rule.style.background = '';

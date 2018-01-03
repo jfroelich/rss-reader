@@ -1,0 +1,46 @@
+
+slide {
+  position: absolute;
+  min-height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  width: 100%;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  /* For some reason non-0 padding makes width larger than page */
+  padding: 0 !important;
+
+  /* This is needed to avoid ugly border on focus */
+  outline: hidden;
+}
+
+/* TODO: the secondary problem is that the width of the cells is a bit awkward*/
+
+/*
+This is required to get long words without spaces to break when
+within a table cell
+http://stackoverflow.com/questions/1258416
+http://stackoverflow.com/questions/1057574
+*/
+slide .entry-content td {
+  vertical-align: top;
+  white-space: normal;
+  /* We have to change from break-word to break-all to get
+  it to work here */
+  word-break: break-all;
+}
+
+slide a {
+  text-decoration: none;
+  color: rgba(0, 84, 129, 0.84);
+}
+
+
+/* Each article has a tabindex so that it is focusable. Each time an article is displayed it
+is focused. The focusing is done so that keyboard based scrolling works.  However, focusing then
+causes an ugly border to appear around the element. This turns off that border. */
+slide:focus {
+  outline: none;
+}

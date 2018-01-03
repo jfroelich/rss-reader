@@ -1,7 +1,7 @@
 import assert from "/src/common/assert.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as Feed from "/src/feed-store/feed.js";
-import * as PageStyle from "/src/page-style-settings.js";
+import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
 import Subscribe from "/src/subscribe.js";
 import unsubscribe from "/src/unsubscribe.js";
 import {truncateHTML} from "/src/common/html-utils.js";

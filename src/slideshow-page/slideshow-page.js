@@ -1,23 +1,16 @@
 import assert from "/src/common/assert.js";
+import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import * as PageStyle from "/src/page-style-settings.js";
 import exportFeeds from "/src/slideshow-page/export-feeds.js";
 import OPMLImporter from "/src/slideshow-page/opml-importer.js";
-import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
+import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
+import * as Slideshow from "/src/slideshow-page/slideshow.js";
 
-// NOTE: LEFT OFF HERE
-// TODO: ok i got left panel working. i had to make <article> non-absolute. so now i need to
-// re-think how to position articles 'off screen' and then move them on screen. perhaps by
-// moving articles around in a separate element. requires total rewrite of several things, like
-// unread  count, article iteration, etc
-
-
-const DEBUG = false;
-const dprintf = DEBUG ? console.log : noop;
-
+// TODO: need to handle on slide next now, it needs to be able to append slides, and it
+// needs to be called so it can mark slide read and cleanup
 
 const fonts = [
   'ArchivoNarrow-Regular',
@@ -37,13 +30,6 @@ const fonts = [
   'Roboto Regular'
 ];
 
-
-// Track the currently visible slide
-let currentSlide;
-// Track a count of slides in transition
-let activeTransitionCount = 0;
-
-
 // Define a channel that remains open for the lifetime of the slideshow page. It will listen to
 // events coming in from other pages, or the page itself, and react to them. Ordinarily a channel
 // should not remain open indefinitely but here it makes sense.
@@ -56,7 +42,7 @@ readerChannel.onmessage = function(event) {
   }
 
   if(!event.isTrusted) {
-    dprintf('Untrusted message event', event);
+    console.log('Untrusted message event', event);
     return;
   }
 
@@ -99,11 +85,11 @@ async function onEntryAddedMessage(message) {
   const unreadSlideCount = countUnreadSlides();
 
   if(unreadSlideCount > 3) {
-    dprintf('Got an entry added message but not appending because too many slides');
+    console.log('Got an entry added message but not appending because too many slides');
     return;
   }
 
-  dprintf('Calling appendSlides as a result of entry-added message');
+  console.log('Calling appendSlides as a result of entry-added message');
 
   // Load new articles
   const feedStore = new FeedStore();
@@ -139,7 +125,8 @@ async function onEntryExpiredMessage(message) {
 
   // Search for a slide corresponding to the entry id. Assume the search never yields more than
   // one match.
-  const slide = document.querySelector('article[entry="' + message.id + '"]');
+  const slideElementName = Slideshow.getElementName();
+  const slide = document.querySelector(slideElementName + '[entry="' + message.id + '"]');
 
   // There is no guarantee the entry id corresponds to a loaded slide. It is normal and frequent
   // for the slideshow to receive messages with entry ids that do not correspond to loaded slides.
@@ -152,15 +139,19 @@ async function onEntryExpiredMessage(message) {
   // viewed which would lead to surprise as the article the user is reading is magically whisked
   // away. Instead, flag the slide as stale, so that other view functionality can react
   // appropriately at a later time in an unobtrusive manner.
-  if(slide === currentSlide) {
-    // dprintf('Cannot expire current slide', message);
+  if(Slideshow.isCurrentSlide(slide)) {
+    // console.log('Cannot expire current slide', message);
     slide.setAttribute('removed-after-load', '');
     return;
   }
 
   // The slide is not the current slide and is either already read and offscreen, or preloaded and
   // unread. In either case, remove the slide.
-  removeSlide(slide);
+
+  Slideshow.remove(slide);
+  // TODO: remove currently does not remove click listener, need to manually remove it here,
+  // but i'd like to think of a better way
+  slide.removeEventListener('click', onSlideClick);
 }
 
 function showLoadingInformation() {
@@ -179,11 +170,6 @@ function hideLoadingInformation() {
 
 }
 
-function removeSlide(slideElement) {
-  assert(slideElement instanceof Element);
-  slideElement.removeEventListener('click', onSlideClick);
-  slideElement.remove();
-}
 
 async function markSlideRead(feedStore, slideElement) {
   assert(feedStore instanceof FeedStore);
@@ -196,19 +182,13 @@ async function markSlideRead(feedStore, slideElement) {
   // The entry id should always be valid or something is very wrong
   assert(Entry.isValidId(entryId));
 
-  // Immediately check if the slide should be ignored. One reason is that it was externally
-  // made unviewable by some other background process like unsubscribe or archive after the slide
-  // was loaded into view, but at the time it was made unviewable it was not unloadable from the
-  // view.
-  if(slideElement.hasAttribute('removed-after-load')) {
-    dprintf('canceling mark as read given that slide removed after load', entryId);
-    return;
-  }
+  console.log('Marking slide for entry %d as read', entryId);
+
 
   // Exit early if the slide has already been read. This is routine such as when navigating backward
   // and should not be considered an error.
   if(slideElement.hasAttribute('read')) {
-    dprintf('canceling mark as read as slide already marked', entryId);
+    console.log('canceling mark as read as slide already marked', entryId);
     return;
   }
 
@@ -229,7 +209,7 @@ async function markSlideRead(feedStore, slideElement) {
 }
 
 async function appendSlides(feedStore, limit) {
-  dprintf('appendSlides start', limit);
+  console.log('appendSlides start', limit);
 
   limit = typeof limit === 'undefined' ? 3 : limit;
 
@@ -256,72 +236,16 @@ async function appendSlides(feedStore, limit) {
 // Given an entry, create a new slide element and append it to the view
 function appendSlide(entry) {
   assert(Entry.isEntry(entry));
-  dprintf('Creating and appending slide for entry', entry.id);
-  const containerElement = document.getElementById('slideshow-container');
-  const slideElement = document.createElement('article');
-
-  slideElement.setAttribute('entry', entry.id);
-  slideElement.setAttribute('feed', entry.feed);
-  slideElement.setAttribute('class','entry');
-  slideElement.addEventListener('click', onSlideClick);
-
-  // Setup slide scroll handling. The listener is bound to the slide itself, because it is the
-  // slide itself that scrolls, and not window. Also, in order for scrolling to react to keyboard
-  // shortcuts, the element must be focused, and in order to focus an element, it must have the
-  // tabindex attribute.
-  slideElement.setAttribute('tabindex', '-1');
-
-  // Set the position of the slide. Slides are positioned absolutely. Setting left to 100% places
-  // the slide off the right side of the view. Setting left to 0 places the slide in the view.
-  // The initial value must be defined here and not via css, before adding the slide to the page.
-  // Otherwise, changing the style for the first slide causes an unwanted transition, and I have
-  // to change the style for the first slide because it is not set in css.
-  const isNotFirstSlide = containerElement.childElementCount > 0;
-  slideElement.style.left = isNotFirstSlide ? '100%' : '0';
-
-  // In order for scrolling a slide element with keyboard keys to work, the slide must be focused.
-  // But calling element.focus() while a transition is active, such as what happens when a slide is
-  // moved, interrupts the transition. Therefore, schedule a call to focus the slide for when the
-  // transition completes.
-  slideElement.addEventListener('webkitTransitionEnd', onSlideMoveTransitionEnd);
-
-  // TODO: is this still true??
-  // Define the animation effect that will occur when moving the slide. Slides are moved by changing
-  // a slide's css left property, which is basically its offset from the left side of window.
-  // This will also trigger a transition event. The transition property must be defined here in
-  // code, and not via css, in order to have the transition only apply to a slide when it is in
-  // a certain state. If set in css then this causes an immediate transition on the first slide,
-  // which I want to avoid.
-  slideElement.style.transition = 'left 0.35s ease-in-out';
-
-  const titleElement = createArticleTitleElement(entry);
-  slideElement.appendChild(titleElement);
-  const contentElement = createArticleContentElement(entry);
-  slideElement.appendChild(contentElement);
-  const sourceElement = createFeedSourceElement(entry);
-  slideElement.appendChild(sourceElement);
-
-  containerElement.appendChild(slideElement);
-
-  // If this is the initial slide, set it as the current slide and focus it
-  if(!currentSlide) {
-    currentSlide = slideElement;
-    currentSlide.focus();
-  }
-}
-
-function onSlideMoveTransitionEnd(event) {
-  // The slide that the transition occured upon (event.target) is not guaranteed to be equal to the
-  // current slide.
-  // We fire off two transitions per animation, one for the slide being moved out of view, and one
-  // for the slide being moved into view. Both transitions result in call to this listener, but
-  // we only want to call focus on one of the two elements. We want to be in the state where after
-  // both transitions complete, the new slide (which is the current slide at this point) is now
-  // focused. Therefore we ignore event.target and directly affect the current slide only.
-  currentSlide.focus();
-  // There may be more than one transition effect occurring at the moment. Point out that this
-  // transition completed. This provides a method for checking if any transitions are outstanding.
-  activeTransitionCount--;
+  console.log('Creating and appending slide for entry', entry.id);
+  const slide = Slideshow.create();
+  slide.setAttribute('entry', entry.id);
+  slide.setAttribute('feed', entry.feed);
+  slide.setAttribute('class','entry');
+  slide.addEventListener('click', onSlideClick);
+  slide.appendChild(createArticleTitleElement(entry));
+  slide.appendChild(createArticleContentElement(entry));
+  slide.appendChild(createFeedSourceElement(entry));
+  Slideshow.append(slide);
 }
 
 function createArticleTitleElement(entry) {
@@ -372,7 +296,6 @@ function createFeedSourceElement(entry) {
   // valid (defined, a string, a well-formed canonical url string). If it is not valid by this
   // point then something is really wrong elsewhere in the app, but that is not our concern here.
   // If the url is bad then show a broken image.
-
   if(entry.faviconURLString) {
     const faviconElement = document.createElement('img');
     faviconElement.setAttribute('src', entry.faviconURLString);
@@ -381,10 +304,9 @@ function createFeedSourceElement(entry) {
     sourceElement.appendChild(faviconElement);
   }
 
-  // TODO: why is this called title? This should be renamed to something like attributionElement
-  const titleElement = document.createElement('span');
+  const details = document.createElement('span');
   if(entry.feedLink) {
-    titleElement.setAttribute('title', entry.feedLink);
+    details.setAttribute('title', entry.feedLink);
   }
 
   const buffer = [];
@@ -395,8 +317,8 @@ function createFeedSourceElement(entry) {
     buffer.push(' on ');
     buffer.push(formatDate(entry.datePublished));
   }
-  titleElement.textContent = buffer.join('');
-  sourceElement.appendChild(titleElement);
+  details.textContent = buffer.join('');
+  sourceElement.appendChild(details);
   return sourceElement;
 }
 
@@ -523,13 +445,13 @@ async function onSlideClick(event) {
   // Weak sanity check that the element is a slide, mostly just to monitor the recent changes to
   // this function.
   if(clickedSlide !== currentSlide) {
-    dprintf('Clicked slide is different than current slide', clickedSlide, currentSlide);
+    console.log('Clicked slide is different than current slide', clickedSlide, currentSlide);
   }
 
   // Although this condition is primarily a concern of markSlideRead, and is redundant with
   // the check that occurs within markSlideRead, checking it here avoids the call.
   if(clickedSlide.hasAttribute('removed-after-load')) {
-    dprintf('Exiting click handler early due to stale state', clickedSlide);
+    console.log('Exiting click handler early due to stale state', clickedSlide);
     return false;
   }
 
@@ -553,6 +475,101 @@ async function onSlideClick(event) {
   return false;
 }
 
+
+
+// TODO: is the debouncing stuff with idle callback approach needed??
+// TODO: do not handle key press if target is input/textarea
+let keydownTimerId = null;
+function onKeyDown(event) {
+  const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
+  const code = event.keyCode;
+
+  switch(code) {
+  case RIGHT:
+  case N:
+  case SPACE: {
+    event.preventDefault();
+    cancelIdleCallback(keydownTimerId);
+    keydownTimerId = requestIdleCallback(nextSlide);
+    break;
+  }
+
+  case LEFT:
+  case P: {
+    event.preventDefault();
+    cancelIdleCallback(keydownTimerId);
+    keydownTimerId = requestIdleCallback(Slideshow.prev);
+    break;
+  }
+  }
+}
+
+window.addEventListener('keydown', onKeyDown);
+
+async function nextSlide() {
+
+  const currentSlide = Slideshow.getCurrentSlide();
+  const feedStore = new FeedStore();
+
+  // If there are still unread articles return. Do not mark the current article, if it exists,
+  // as read.
+  const unreadSlideCount = countUnreadSlides();
+  // We still append if there is just one unread slide
+  if(unreadSlideCount > 1) {
+    console.debug(
+      'Not dynamically appending or marking current as read because %d unread slides remain',
+      unreadSlideCount);
+
+    // Mark the current slide as read
+
+    try {
+      await feedStore.open();
+      await markSlideRead(feedStore, currentSlide);
+    } catch(error) {
+      console.warn(error);
+    } finally {
+      feedStore.close();
+    }
+
+
+    Slideshow.next();
+    return;
+  }
+
+  let appendCount = 0;
+  try {
+    await feedStore.open();
+
+    if(unreadSlideCount < 2) {
+      console.log('Appending additional slides prior to navigation');
+      appendCount = await appendSlides(feedStore);
+    } else {
+      console.log('Not appending additional slides prior to navigation');
+    }
+
+    Slideshow.next();
+    await markSlideRead(feedStore, currentSlide);
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    feedStore.close();
+  }
+
+  if(appendCount < 1) {
+    return;
+  }
+
+  const maxLoadCount = 6;
+  let firstSlide = Slideshow.getFirstSlide();
+  while(Slideshow.count() > maxLoadCount && firstSlide !== currentSlide) {
+    Slideshow.remove(firstSlide);
+    firstSlide.removeEventListener('click', onSlideClick);
+    firstSlide = Slideshow.getFirstSlide();
+  }
+}
+
+
+
 // TODO: I should probably unlink loading on demand and navigation, because this causes
 // lag.
 // navigation would be smoother if I appended even earlier, like before even reaching the
@@ -569,210 +586,39 @@ async function onSlideClick(event) {
 // Similarly, i think entry-mark-read shares the connection with update-badge, but that should
 // also be changed so that it is non-blocking?
 
+// Oh. I just realized, this never even gets called!!
+
 // TODO: visual feedback on error
 async function showNextSlide() {
 
-  // currentSlide may be undefined when no entries are loaded. This isn't an error.
-  if(!currentSlide) {
+
+  if(slideAppendCount < 1) {
     return;
   }
 
-  const oldSlideElement = currentSlide;
-  let slideAppendCount = 0;
-  const feedStore = new FeedStore();
-  try {
-    await feedStore.open();
 
-    // NOTE: this must occur before searching for next slide, otherwise it will not load on demand
-
-    // Conditionally append more slides
-    const unreadSlideElementCount = countUnreadSlides();
-    dprintf('Detected %d unread slides when deciding whether to append on navigate',
-      unreadSlideElementCount);
-    if(unreadSlideElementCount < 2) {
-      dprintf('Appending additional slides prior to navigation');
-      slideAppendCount = await appendSlides(feedStore);
-    } else {
-      dprintf('Not appending additional slides prior to navigation');
-    }
-
-    // Search for the next slide to show. The next slide is not necessarily adjacent.
-    // TODO: cleanup the iteration logic once it becomes clearer to me.
-    let nextSlide;
-    let slideCursor = currentSlide;
-    while(true) {
-      slideCursor = slideCursor.nextElementSibling;
-      if(slideCursor) {
-        if(slideCursor.hasAttribute('removed-after-load')) {
-          // Skip past the slide
-          dprintf('Skipping slide removed after load when searching for next slide');
-          continue;
-        } else {
-          dprintf('Found next slide');
-          // Found next sibling, end search
-          nextSlide = slideCursor;
-          break;
-        }
-      } else {
-        // BUG: some portions of the bug have been fixed, but there is still a bug where this
-        // gets hit after unsubscribe. The current slide is indeed the final slide, no additional
-        // slides were loaded. It means that something is wrong with the appending.
-        dprintf(currentSlide);
-        dprintf('Ending search for next slide, no next sibling');
-        // If we advanced and there was no next sibling, leave nextSlide undefined and end search
-        break;
-      }
-    }
-
-
-    if(nextSlide) {
-      // TODO: maybe move this to the keydown listener instead
-      // Ignore repeated key presses while slides are moving.
-      if(activeTransitionCount > 0) {
-        return;
-      }
-
-      // Move the current slide out of view to the left
-      currentSlide.style.left = '-100%';
-      // Indicate that a new transition is about to become pending
-      activeTransitionCount++;
-
-      // Move the next slide into view from the right
-      nextSlide.style.left = '0';
-      // Set the next slide as the new current slide
-      currentSlide = nextSlide;
-
-      await markSlideRead(feedStore, oldSlideElement);
-    }
-  } catch(error) {
-    console.warn(error);
-  } finally {
-    feedStore.close();
-  }
-
-  // If more slides were appended, then reduce the number of slides loaded. This works from left
-  // to right, or in document order basically, because earlier slides were appended earlier.
-  // TODO: should this do a scan of slides that are marked 'removed-after-load' at this time and
-  // try and remove any of them, regardless of max slide count or min slide count or whatever? And
-  // regardless of whether slides were appended?
-
-  if(slideAppendCount > 0) {
-    assert(currentSlide instanceof Element);
-    const maxSlideCount = 6;
-    const containerElement = document.getElementById('slideshow-container');
-    while(containerElement.childElementCount > maxSlideCount &&
-      containerElement.firstElementChild !== currentSlide) {
-      dprintf('Removing slide with with entry id',
-        containerElement.firstElementChild.getAttribute('entry'));
-      removeSlide(containerElement.firstElementChild);
-    }
-  }
 }
 
-// Move the current slide out of view to the right, and move the previous slide into view, and then
-// update the current slide.
-function showPreviousSlide() {
-
-  // There may not be a current slide when no slides are loaded
-  if(!currentSlide) {
-    return;
-  }
-
-  // Find the previous slide. If there is no previous slide then exit.
-  // TODO: refactor this function to account for removed-after-load characteristic. I am going to
-  // wait to do this until I update showNextSlide
-  // Question is whether i want to allow navigation back to a slide that was removed after load
-  // while it happens to still be loaded. Otherwise user clicks back and slide is mysteriously
-  // missing. but how different is that from the way slides eventually do get unloaded?
-  const previousSlide = currentSlide.previousSibling;
-  if(!previousSlide) {
-    return;
-  }
-
-  // If there is a transition pending then cancel the navigation
-  // TODO: maybe move this to keypress
-  if(activeTransitionCount > 0) {
-    return;
-  }
-
-  // Move the current slide out of view to the right
-  currentSlide.style.left = '100%';
-  // Indicate that a new transition is becoming pending
-  activeTransitionCount++;
-
-  // Move previous slide into view from the left
-  previousSlide.style.left = '0';
-
-  currentSlide = previousSlide;
-}
-
-// Returns the number of slides that are loaded and not read. If a slide is marked as stale,
-// then it is not counted, regardless of its read state. It is important to note that the total
-// number of slides loaded is not warranted as equal to the number of unread + the number of read,
-// because of this special case of stale slides.
 function countUnreadSlides() {
-
-  // TODO: eventually, once the removed-after-load stuff settles, this will not be undergoing
-  // as much change. At that point, consider simplifying the code here. I would prefer to use
-  // a selector that wraps up all of the logic instead of both a selector and a for loop.
-
-  const slides = document.body.querySelectorAll('article[entry]');
+  const slides = Slideshow.getSlides();
   let count = 0;
   for(const slide of slides) {
     if(slide.hasAttribute('read')) {
       continue;
     }
-
-    // Only increment count if slide not tagged as removed after load
-    if(slide.hasAttribute('removed-after-load')) {
-      dprintf('Ignoring slide removed after load when counting unread',
-        slide.getAttribute('entry'));
-      continue;
-    }
-
     count++;
   }
   return count;
 }
 
-let keydownTimerId = null;
-function onKeyDown(event) {
-  // Translate space from page down to show next slide
-  const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
-  const code = event.keyCode;
-
-  switch(code) {
-  case RIGHT:
-  case N:
-  case SPACE: {
-    event.preventDefault();
-    cancelIdleCallback(keydownTimerId);
-    keydownTimerId = requestIdleCallback(showNextSlide);
-
-    break;
-  }
-
-  case LEFT:
-  case P: {
-    event.preventDefault();
-    cancelIdleCallback(keydownTimerId);
-    keydownTimerId = requestIdleCallback(showPreviousSlide);
-    break;
-  }
-  default:
-    break;
-  }
-}
-
-window.addEventListener('keydown', onKeyDown);
 
 let refreshInProgress = false;
 async function refreshAnchorOnclick(event) {
   event.preventDefault();
-  dprintf('Clicked refresh button');
+  console.log('Clicked refresh button');
 
   if(refreshInProgress) {
-    dprintf('Ignoring refresh button click while refresh in progress');
+    console.log('Ignoring refresh button click while refresh in progress');
     return;
   }
   refreshInProgress = true;
@@ -789,7 +635,7 @@ async function refreshAnchorOnclick(event) {
     console.warn(error);
   } finally {
     poll.close();
-    dprintf('Re-enabling refresh button');
+    console.log('Re-enabling refresh button');
     refreshInProgress = false;// Always renable
   }
 }
@@ -803,21 +649,16 @@ function showMenuOptions() {
 function hideMenuOptions() {
   const menuOptions = document.getElementById('left-panel');
   menuOptions.style.marginLeft = '-320px';
-
-  // HACK for shadow
-  menuOptions.style.boxShadow = '';
+  menuOptions.style.boxShadow = '';// HACK
 }
 
 function mainMenuButtonOnclick(event) {
   const menuOptions = document.getElementById('left-panel');
   if(menuOptions.style.marginLeft === '0px') {
-    console.debug('Hiding (was at 0)');
     hideMenuOptions();
   } else if(menuOptions.style.marginLeft === '') {
-    console.debug('Showing (not set)');
     showMenuOptions();
   } else {
-    console.debug('Showing (was at -320)');
     showMenuOptions();
   }
 }
@@ -961,7 +802,6 @@ function toggleFeedContainerDetails(feedElement) {
   }
 }
 
-
 function feedsButtonOnclick(event) {
   const feedsButton = document.getElementById('feeds-button');
   feedsButton.disabled = true;
@@ -995,6 +835,9 @@ function unsubscribeButtonOnclick(event) {
 }
 
 function appendFeed(feed) {
+
+
+
   const feedsContainer = document.getElementById('feeds-container');
 
   const feedElement = document.createElement('div');
@@ -1168,7 +1011,11 @@ function initBodyFontMenu() {
 }
 
 async function initSlideshowPage() {
+
   showLoadingInformation();
+
+  Slideshow.init();
+
   window.addEventListener('click', windowOnclick);
 
   const mainMenuButton = document.getElementById('main-menu-button');
@@ -1195,7 +1042,6 @@ async function initSlideshowPage() {
     feedsContainer.onclick = feedsContainerOnclick;
   }
 
-
   const menuOptions = document.getElementById('left-panel');
   menuOptions.onclick = menuOptionsOnclick;
 
@@ -1216,7 +1062,7 @@ async function initSlideshowPage() {
 
     // First load only 1, to load quickly
     await appendSlides(feedStore, initialLimit);
-    dprintf('Initial slide loaded');
+    console.log('Initial slide loaded');
     hideLoadingInformation();
     didHideLoading = true;
 

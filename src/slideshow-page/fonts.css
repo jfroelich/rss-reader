@@ -1,0 +1,55 @@
+
+@font-face {
+  font-family: Fanwood;
+  src: url('/fonts/fanwood-webfont.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: League Mono Regular;
+  src: url('/fonts/LeagueMono-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: League Spartan;
+  src: url('/fonts/leaguespartan-bold.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: ArchivoNarrow-Regular;
+  src: url('/fonts/ArchivoNarrow-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  /* Free from http://www.fontex.org/download/carto-gothic-std.otf */
+  font-family: CartoGothicStd;
+  src: url('/fonts/CartoGothicStd-Book.otf') format('opentype');
+}
+
+@font-face {
+  font-family: Montserrat;
+  src: url('/fonts/Montserrat-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: Noto Sans;
+  src: url('/fonts/NotoSans-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: Open Sans Regular;
+  src: url('/fonts/OpenSans-Regular.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: PathwayGothicOne;
+  src: url('/fonts/PathwayGothicOne-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: PlayfairDisplaySC;
+  src: url('/fonts/PlayfairDisplaySC-Regular.ttf');
+}
+
+@font-face {
+  font-family: Roboto Regular;
+  src: url('/fonts/Roboto-Regular.ttf');
+}
