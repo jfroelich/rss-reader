@@ -506,6 +506,27 @@ function onKeyDown(event) {
 
 window.addEventListener('keydown', onKeyDown);
 
+
+
+
+// TODO: I should probably unlink loading on demand and navigation, because this causes
+// lag.
+// navigation would be smoother if I appended even earlier, like before even reaching the
+// situation of its the last slide and there are no more so append. It would be better if I did
+// something like check the number of remaining unread slides, and if that is less than some
+// number, append more. And it would be better if I did that before even navigating. However that
+// would cause lag. So it would be even better if I started in a separate microtask an append
+// operation and then continued in the current task. Or, the check should happen not on append,
+// but after doing the navigation. Or after marking the slide as read.
+
+// TODO: sharing the connection between mark as read and appendSlides made sense at first but I
+// do not like the large try/catch block. Also I think the two can be unlinked because they do not
+// have to co-occur. Also I don't like how it has to wait for read to complete.
+// Similarly, i think entry-mark-read shares the connection with update-badge, but that should
+// also be changed so that it is non-blocking?
+
+
+
 async function nextSlide() {
 
   const currentSlide = Slideshow.getCurrentSlide();
@@ -521,7 +542,6 @@ async function nextSlide() {
       unreadSlideCount);
 
     // Mark the current slide as read
-
     try {
       await feedStore.open();
       await markSlideRead(feedStore, currentSlide);
@@ -530,7 +550,6 @@ async function nextSlide() {
     } finally {
       feedStore.close();
     }
-
 
     Slideshow.next();
     return;
@@ -568,36 +587,6 @@ async function nextSlide() {
   }
 }
 
-
-
-// TODO: I should probably unlink loading on demand and navigation, because this causes
-// lag.
-// navigation would be smoother if I appended even earlier, like before even reaching the
-// situation of its the last slide and there are no more so append. It would be better if I did
-// something like check the number of remaining unread slides, and if that is less than some
-// number, append more. And it would be better if I did that before even navigating. However that
-// would cause lag. So it would be even better if I started in a separate microtask an append
-// operation and then continued in the current task. Or, the check should happen not on append,
-// but after doing the navigation. Or after marking the slide as read.
-
-// TODO: sharing the connection between mark as read and appendSlides made sense at first but I
-// do not like the large try/catch block. Also I think the two can be unlinked because they do not
-// have to co-occur. Also I don't like how it has to wait for read to complete.
-// Similarly, i think entry-mark-read shares the connection with update-badge, but that should
-// also be changed so that it is non-blocking?
-
-// Oh. I just realized, this never even gets called!!
-
-// TODO: visual feedback on error
-async function showNextSlide() {
-
-
-  if(slideAppendCount < 1) {
-    return;
-  }
-
-
-}
 
 function countUnreadSlides() {
   const slides = Slideshow.getSlides();
@@ -1013,8 +1002,6 @@ function initBodyFontMenu() {
 async function initSlideshowPage() {
 
   showLoadingInformation();
-
-  Slideshow.init();
 
   window.addEventListener('click', windowOnclick);
 

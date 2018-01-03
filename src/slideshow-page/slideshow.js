@@ -1,32 +1,14 @@
 import assert from "/src/common/assert.js";
 
-// UNDER HEAVY DEVELOPMENT
-// Brainstorming. slideshow-page grew large and unwieldy. I'd like to abstract away some of the
-// functionality. One is a container that stores slides and controls some aspects of interacting
-// with them.
-
-// TODO: make this a static module. By that I mean that there is no object. This stores state
-// variables in module scope, and the module itself is the class, kind of like a singleton.
-// Then, this also means that including the module IS initilization.
-// I want to do it this way because I expect the caller will never have more than one slideshow
-// in a page. This is not a general purpose carousel component library. Lifetime is page lifetime.
-
-
 // The type of the HTML element used for each slide
 export const SLIDE_ELEMENT_NAME = 'slide';
 
 // Handle for the element that contains the slideshow
-let container;
+const container = document.getElementById('slideshow-container');
 // Handle for the element that is the current slide
 let cursor;
-
+// Number of slides in movement
 let activeTransitionCount = 0;
-
-
-// Initialize variables
-export function init() {
-  container = document.getElementById('slideshow-container');
-}
 
 export function getElementName() {
   return SLIDE_ELEMENT_NAME;
@@ -152,7 +134,6 @@ export function append(slide) {
   // to change the style for the first slide because it is not set in css.
   slide.style.left = container.childElementCount === 0 ? '0' : '100%';
 
-
   // In order for scrolling a slide element with keyboard keys to work, the slide must be focused.
   // But calling element.focus() while a transition is active, such as what happens when a slide is
   // moved, interrupts the transition. Therefore, schedule a call to focus the slide for when the
@@ -166,8 +147,6 @@ export function append(slide) {
   // a certain state. If set in css then this causes an immediate transition on the first slide,
   // which I want to avoid.
   slide.style.transition = `left ${duration}s ease-in-out`;
-
-
 
   // Initialize the cursor if needed
   if(!cursor) {
@@ -192,7 +171,6 @@ export function remove(slide) {
 }
 
 function onTransitionEnd(event) {
-
   // The slide that the transition occured upon (event.target) is not guaranteed to be equal to the
   // current slide.
   // We fire off two transitions per animation, one for the slide being moved out of view, and one
