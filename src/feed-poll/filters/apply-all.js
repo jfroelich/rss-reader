@@ -1,18 +1,12 @@
 import assert from "/src/common/assert.js";
 import adoptionAgencyFilter from "/src/feed-poll/filters/adoption-agency-filter.js";
 import attributeFilter from "/src/feed-poll/filters/attribute-whitelist-filter.js";
-import baseFilter from "/src/feed-poll/filters/base-filter.js";
+import * as BasicFilters from "/src/feed-poll/filters/basic-filters.js";
 import boilerplateFilter from "/src/feed-poll/filters/boilerplate-filter.js";
-import brFilter from "/src/feed-poll/filters/br-filter.js";
 import canonicalURLFilter from "/src/feed-poll/filters/canonical-url-filter.js";
-import commentFilter from "/src/feed-poll/filters/comment-filter.js";
 import condenseTagnamesFilter from "/src/feed-poll/filters/condense-tagnames-filter.js";
-import containerFilter from "/src/feed-poll/filters/container-filter.js";
 import elementBlacklistFilter from "/src/feed-poll/filters/element-blacklist-filter.js";
-import emphasisFilter from "/src/feed-poll/filters/emphasis-filter.js";
 import emptyAttributeFilter from "/src/feed-poll/filters/empty-attribute-filter.js";
-import ensureBodyFilter from "/src/feed-poll/filters/ensure-body-filter.js";
-import figureFilter from "/src/feed-poll/filters/figure-filter.js";
 import formattingAnchorFilter from "/src/feed-poll/filters/formatting-anchor-filter.js";
 import formattingFilter from "/src/feed-poll/filters/formatting-filter.js";
 import formFilter from "/src/feed-poll/filters/form-filter.js";
@@ -42,98 +36,100 @@ import tableFilter from "/src/feed-poll/filters/table-filter.js";
 import trimDocumentFilter from "/src/feed-poll/filters/trim-document-filter.js";
 
 // Transforms a document's content by removing or changing nodes for various reasons.
-// @param doc {Document} the document to transform
+// @param document {Document} the document to transform
 // @param documentURL {URL} the url of the document
 // @param fetchImageTimeoutMs {Number} optional, the number of milliseconds to wait before timing
 // out when fetching an image
-export default async function applyAllFilters(doc, documentURL, fetchImageTimeoutMs) {
-  assert(doc instanceof Document);
+export default async function applyAllFilters(document, documentURL, fetchImageTimeoutMs) {
+  assert(document instanceof Document);
   assert(documentURL instanceof URL);
 
-  frameFilter(doc);
-  ensureBodyFilter(doc);
+  frameFilter(document);
 
-  scriptFilter(doc);
-  iframeFilter(doc);
-  commentFilter(doc);
-  baseFilter(doc);
+  BasicFilters.ensureDocumentHasBodyElement(document);
 
-  hiddenElementFilter(doc);
-  noscriptFilter(doc);
-  elementBlacklistFilter(doc);
-  scriptAnchorFilter(doc);
+  scriptFilter(document);
+  iframeFilter(document);
+  BasicFilters.filterCommentNodes(document);
+  BasicFilters.filterBaseElements(document);
+
+  hiddenElementFilter(document);
+  noscriptFilter(document);
+  elementBlacklistFilter(document);
+  scriptAnchorFilter(document);
 
   // This should occur prior to boilerplateFilter because it has express knowledge of content
   // organization
-  hostTemplateFilter(doc, documentURL);
+  hostTemplateFilter(document, documentURL);
 
   // This should occur before filtering attributes because it makes decisions based on attribute
   // values.
   // This should occur after filtering hidden elements
-  boilerplateFilter(doc);
+  boilerplateFilter(document);
 
   const copyAttributesOnCondense = false;
-  condenseTagnamesFilter(doc, copyAttributesOnCondense);
+  condenseTagnamesFilter(document, copyAttributesOnCondense);
 
-  const MAX_EMPHASIS_LENGTH = 300;
-  emphasisFilter(doc, MAX_EMPHASIS_LENGTH);
+  const maxEmphasisTextLength = 300;
+  BasicFilters.filterEmphasis(document, maxEmphasisTextLength);
 
-  canonicalURLFilter(doc, documentURL);
+  canonicalURLFilter(document, documentURL);
 
   // This should occur prior to lazyImageFilter
   // This should occur prior to imageSizeFilter
   // Does not matter if before or after canonicalURLFilter
-  responsiveImageFilter(doc);
+  responsiveImageFilter(document);
 
   // This should occur before sourcelessImageFilter
-  lazyImageFilter(doc);
+  lazyImageFilter(document);
 
   // This should occur before imageSizeFilter
-  lonestarFilter(doc, documentURL.href);
+  lonestarFilter(document, documentURL.href);
 
-  sourcelessImageFilter(doc);
+  sourcelessImageFilter(document);
 
-  // This should occur after canonicalURLFilter
-  // This should occur after lonestarFilter
-  let allowedProtocols; // defer to defaults
-
+  // This should occur after resolving urls
+  // This should occur after removing telemetry
   // Allow exceptions to bubble
-  await imageSizeFilter(doc, allowedProtocols, fetchImageTimeoutMs);
+  let allowedProtocols; // defer to defaults
+  await imageSizeFilter(document, allowedProtocols, fetchImageTimeoutMs);
 
-  smallImageFilter(doc);
+  smallImageFilter(document);
 
-  invalidAnchorFilter(doc);
-  formattingAnchorFilter(doc);
-  formFilter(doc);
-  brFilter(doc);
-  hrFilter(doc);
-  formattingFilter(doc);
-  adoptionAgencyFilter(doc);
-  semanticFilter(doc);
-  figureFilter(doc);
-  containerFilter(doc);
+  invalidAnchorFilter(document);
+  formattingAnchorFilter(document);
+  formFilter(document);
 
-  listFilter(doc);
+  BasicFilters.filterBRElements(document);
 
-  const ROW_SCAN_LIMIT = 20;
-  tableFilter(doc, ROW_SCAN_LIMIT);
+  hrFilter(document);
+  formattingFilter(document);
+  adoptionAgencyFilter(document);
+  semanticFilter(document);
+  BasicFilters.filterFigureElements(document);
+  BasicFilters.filterContainerElements(document);
+
+  listFilter(document);
+
+  const rowScanLimit = 20;
+  tableFilter(document, rowScanLimit);
 
   // Better to call later than earlier to reduce number of text nodes visited
-  nodeWhitespaceFilter(doc);
+  nodeWhitespaceFilter(document);
 
   // This should be called near the end. Most of the other filters are naive in how they leave
   // ancestor elements meaningless or empty, and simply remove. So this is like an additional pass
   // now that several holes have been made.
-  leafFilter(doc);
+  leafFilter(document);
 
   // Should be called near end because its behavior changes based on what content remains, and is
   // faster with fewer elements
-  trimDocumentFilter(doc);
+  trimDocumentFilter(document);
 
   // Primarily an attribute filter, so it should be caller as late as possible to reduce the number
   // of elements visited
-  noreferrerFilter(doc);
-  pingFilter(doc);
+  noreferrerFilter(document);
+  pingFilter(document);
 
   // Filter attributes last because it is so slow and is sped up by processing fewer elements.
   const attributeWhitelist = {
@@ -144,9 +140,9 @@ export default async function applyAllFilters(doc, documentURL, fetchImageTimeou
     img: ['src', 'alt', 'title', 'srcset', 'width', 'height']
   };
 
-  largeImageAttributeFilter(doc);
+  largeImageAttributeFilter(document);
 
-  attributeFilter(doc, attributeWhitelist);
+  attributeFilter(document, attributeWhitelist);
 
-  emptyAttributeFilter(doc);
+  emptyAttributeFilter(document);
 }
