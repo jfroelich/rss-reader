@@ -78,7 +78,7 @@ export function filterEmphasis(document, maxTextLength) {
 
 // Unwrap captionless figures. Any figure with only 1 child has either only
 // a caption or only an image or something else, rendering it meaningless
-export function figureFilterElements(document) {
+export function filterFigureElements(document) {
   assert(document instanceof Document);
   if(document.body) {
     const figures = document.body.querySelectorAll('figure');
