@@ -1,4 +1,6 @@
 import assert from "/src/common/assert.js";
+import {CheckedError} from "/src/common/errors.js";
+import * as Status from "/src/common/status.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {parseFeed as parseFeedImpl} from "/src/common/parse-feed.js";
@@ -46,7 +48,10 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   const result = {feed: undefined, entries: []};
 
   // Rethrow any parsing errors
-  const feed = parseFeedImpl(xmlString);
+  const [status, feed, errorMessage] = parseFeedImpl(xmlString);
+  if(status !== Status.OK) {
+    throw new CheckedError(errorMessage);
+  }
 
   // FIX: appendURL fails because feed, at this point, is not yet the proper type
   // Convert it into the proper type. This is kind of hackish but not sure what else to do

@@ -1,6 +1,12 @@
 import assert from "/src/common/assert.js";
 import * as DOMUtils from "/src/common/dom-utils.js";
 
+// TODO: not sure where it happens, but whatever removes BRs or certain whitespace, should
+// not be removing BRs or line breaks that are descendants of <pre>. Or, if it does, it
+// should be leaving behind a single space. Right now text nodes separated by BRs in
+// a pre get merged.
+
+
 // There are several content filters. I do not like the number of files. Therefore, I've
 // created this module to aggregate together several of the filters that do not involve
 // a large amount of code.

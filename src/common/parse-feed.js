@@ -1,15 +1,7 @@
-import assert from "/src/common/assert.js";
-import parseXML, {XMLParseError} from "/src/common/parse-xml.js";
 import formatString from "/src/common/format-string.js";
 import {decodeEntities} from "/src/common/html-utils.js";
-
-
-export class FeedParseError extends XMLParseError {
-  constructor(message) {
-    super(message || 'OPML parse error');
-  }
-}
-
+import parseXML from "/src/common/parse-xml.js";
+import * as Status from "/src/common/status.js";
 
 // TODO: create a FeedDescriptor-like object and return it instead of a basic object?
 // TODO: findChildElementText should not normalize, this should return values as is, and move
@@ -20,14 +12,14 @@ export class FeedParseError extends XMLParseError {
 // date objects and such.
 
 // Parses the input string into a feed object. The feed object will always have a defined entries
-// array, although it may be zero length. Throws both checked and unchecked errors if the feed
-// is not well formed or something unexpected happened.
-// Throws XMLParseError if error parsing xml
-// Throws FeedParseError if xml is not a valid feed
+// array, although it may be zero length. Returns an array of status, feed, and error message.
+export function parseFeed(xmlString) {
+  if(typeof xmlString !== 'string') {
+    throw new TypeError('Expected string, got ' + typeof xmlString);
+  }
 
-export function parseFeed(feedXMLString) {
-  const xmlDocument = parseXML(feedXMLString);
-  return unmarshallXML(xmlDocument);
+  const [status, document, message] = parseXML(xmlString);
+  return status === Status.OK ? unmarshallXML(xmlDocument) : [status, null, message];
 }
 
 // @param document {Document} an XML document representing a feed
@@ -39,12 +31,13 @@ function unmarshallXML(document) {
   const supportedNames = ['feed', 'rdf', 'rss'];
   if(!supportedNames.includes(documentElementName)) {
     const message = formatString('Unsupported document element', documentElementName);
-    throw new FeedParseError(message);
+    return [Status.ERR_PARSE_FEED, null, message];
   }
 
   const channelElement = findChannelElement(documentElement);
   if(!channelElement) {
-    throw new FeedParseError('Missing channel element');
+    const message = 'Missing channel element';
+    return [Status.ERR_PARSE_FEED, null, message];
   }
 
   const feed = {};
@@ -94,7 +87,7 @@ function findEntryElements(channelElement) {
     parentNode = channelElement;
     entryElementName = 'item';
   } else {
-    assert(false);
+    throw new Error('Should not have reached here');
   }
 
   const entries = [];
@@ -323,8 +316,14 @@ function findChildElement(parentElement, predicate) {
 }
 
 function findChildElementByName(parent, name) {
-  assert(parent instanceof Element);
-  assert(typeof name === 'string');
+  if(!(parent instanceof Element)) {
+    throw new TypeError('Expected element, got ' + typeof Element);
+  }
+
+  if(typeof name !== 'string') {
+    throw new TypeError('Expected string, got ' + typeof name);
+  }
+
 
   const normalName = name.toLowerCase();
   for(let c = parent.firstElementChild; c; c = c.nextElementSibling) {

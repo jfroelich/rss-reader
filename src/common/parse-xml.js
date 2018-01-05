@@ -1,36 +1,16 @@
-import assert from "/src/common/assert.js";
-import {CheckedError} from "/src/common/errors.js";
+import * as Status from "/src/common/status.js";
 
-// TODO: profiling shows this is one of the slowest functions in the entire app. Maybe a tokenizer
-// in js would be faster?
-
-// parseXML either produces an XMLDocument {child of Document} or throws an error.
-// If the input xml string is not a string, then an unchecked assertion error is thrown.
-// If there is a syntax error in the input xml string, then a checked parse error is thrown.
-// Partial xml is converted into a full xml document.
+// Parses an xml string into an xml-flagged document. Returns an array of status, document object,
+// and error message. Partial xml is implicitly converted into a full document.
 export default function parseXML(xmlString) {
-  // Unlike DOMParser, treat bad type as exception worthy.
-  assert(typeof xmlString === 'string');
+  if(typeof xmlString !== 'string') {
+    throw new TypeError('Expected string, got ' + typeof xmlString);
+  }
+
   const parser = new DOMParser();
-  // Use an explicit content type to indicate and force xml
   const document = parser.parseFromString(xmlString, 'application/xml');
-  // TODO: perhaps this is too paranoid
-  assert(document instanceof Document);
-  // Treat bad input as exception worthy
-  const errorElement = document.querySelector('parsererror');
-  if(errorElement) {
-    const errorMessage = condenseWhitespace(errorElement.textContent);
-    throw new XMLParseError(errorMessage);
-  }
-  return document;
-}
+  const error = document.querySelector('parsererror');
 
-export class XMLParseError extends CheckedError {
-  constructor(message) {
-    super(message || 'XML parse error');
-  }
-}
-
-function condenseWhitespace(string) {
-  return string.replace(/\s{2,}/g, ' ');
+  return error ? [Status.XML_PARSE_ERROR, null, error.textContent.replace(/\s{2,}/g, ' ')] :
+    [Status.OK, document];
 }

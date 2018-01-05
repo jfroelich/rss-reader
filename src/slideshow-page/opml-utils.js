@@ -1,18 +1,28 @@
 import assert from "/src/common/assert.js";
+import {CheckedError} from "/src/common/errors.js";
 import formatString from "/src/common/format-string.js";
-import parseXML, {XMLParseError} from "/src/common/parse-xml.js";
+import parseXML from "/src/common/parse-xml.js";
+import * as Status from "/src/common/status.js";
 
-// Returns the parsed document or throws an XMLParseError or an unchecked error or an
-// OPMLParseError
+// Returns the parsed document or throws an error
 export function parseOPML(xmlString) {
-  const doc = parseXML(xmlString);
-  // NOTE: element names in xml documents are case-sensitive
-  const name = doc.documentElement.localName.toLowerCase();
+
+  if(typeof xmlString !== 'string') {
+    throw new TypeError('Bad type for xmlString: ' + typeof xmlString);
+  }
+
+  const [status, document, message] = parseXML(xmlString);
+  if(status !== Status.OK) {
+    // TODO: return status
+    throw new CheckedError(message);
+  }
+
+  const name = document.documentElement.localName.toLowerCase();
   if(name !== 'opml') {
     const message = formatString('Document element "%s" is not opml', name);
     throw new OPMLParseError(message);
   }
-  return doc;
+  return document;
 }
 
 // Create a new OPML document
@@ -107,7 +117,7 @@ function appendOutlineElement(doc, element) {
   bodyElement.appendChild(element);
 }
 
-export class OPMLParseError extends XMLParseError {
+export class OPMLParseError extends CheckedError {
   constructor(message) {
     super(message || 'OPML parse error');
   }

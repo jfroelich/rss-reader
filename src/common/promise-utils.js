@@ -1,6 +1,10 @@
 import assert from "/src/common/assert.js";
 import {CheckedError} from "/src/common/errors.js";
 
+// TODO: deprecate promiseEvery and switch to Promise.all once I switch back to status codes. With
+// status codes, only unchecked errors are thrown, in which case both Promise.all and promiseEvery
+// share the same behavior.
+
 // A variant of Promise.all that does not shortcircuit. If any promise rejects, undefined is placed
 // in the output array in place of the promise's return value. However, if any project rejects
 // with an unchecked error, such as an AssertionError, that causes short-circuiting and the error
