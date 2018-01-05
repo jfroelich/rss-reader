@@ -50,7 +50,7 @@ function unmarshallXML(document) {
   const entryElements = findEntryElements(channelElement);
   feed.entries = entryElements.map(createEntryObject);
 
-  return feed;
+  return [Status.OK, feed];
 }
 
 function findFeedTitle(channelElement) {
