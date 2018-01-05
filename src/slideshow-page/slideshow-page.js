@@ -35,7 +35,7 @@ const fonts = [
 // should not remain open indefinitely but here it makes sense.
 const readerChannel = new BroadcastChannel('reader');
 readerChannel.onmessage = function(event) {
-  console.debug('Message event', event);
+  // console.debug('Message event', event);
 
   if(!(event instanceof MessageEvent)) {
     return;
