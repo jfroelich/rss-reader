@@ -85,11 +85,8 @@ async function onEntryAddedMessage(message) {
   const unreadSlideCount = countUnreadSlides();
 
   if(unreadSlideCount > 3) {
-    console.log('Got an entry added message but not appending because too many slides');
     return;
   }
-
-  console.log('Calling appendSlides as a result of entry-added message');
 
   // Load new articles
   const feedStore = new FeedStore();

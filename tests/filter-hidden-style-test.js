@@ -1,10 +1,23 @@
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import {parseHTML} from "/src/common/html-utils.js";
+import * as Status from "/src/common/status.js";
 
 async function test(url) {
-  const response = await FetchUtils.fetchHTML(url);
+  let status, response, doc, message;
+
+  [status, response] = await FetchUtils.fetchHTML(url);
+  if(status !== Status.OK) {
+    console.warn('Fetch error', status);
+    return;
+  }
+
   const text = await response.text();
-  const doc = parseHTML(text);
+  [status, doc, message] = parseHTML(text);
+  if(status !== Status.OK) {
+    console.warn('Parse error', message);
+    return;
+  }
+
   filter_hidden_elements_using_style(doc);
 }
 

@@ -4,6 +4,7 @@ import {CheckedError, TimeoutError} from "/src/common/errors.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
+import * as Status from "/src/common/status.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
@@ -122,16 +123,14 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   }
 
   const requestURL = new URL(feedURLString);
-  let response;
-  try {
-    response = await FetchUtils.fetchFeed(requestURL, this.fetchFeedTimeoutMs);
-  } catch(error) {
+  let status, response;
+  [status, response] = await FetchUtils.fetchFeed(requestURL, this.fetchFeedTimeoutMs);
+  if(status !== Status.OK) {
+
+    // TODO: this throws so there is no explicit return. I'd rather just return.
     await handlePollFeedError(error, this.feedStore, feed, 'fetch-feed',
       this.deactivationThreshold);
   }
-
-  // TODO: kind of superfluous but leaving in place for a bit due to heavy changes to FetchUtils
-  assert(response instanceof Response);
 
   const responseLastModifiedDate = FetchUtils.getLastModified(response);
 
@@ -380,31 +379,21 @@ function isPollableURL(url) {
   return isHTTPURL(url) && !isBinaryURL(url) && !isInaccessibleContentURL(url);
 }
 
+// TODO: with status, this is now pretty simple, just inline
 // Attempts to fetch the entry's html. May return undefined.
 FeedPoll.prototype.fetchEntryHTML = async function(url) {
-  let response;
-  try {
-    response = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
-  } catch(error) {
-    if(error instanceof CheckedError) {
-      // Ignore
-    } else {
-      throw error;
-    }
-  }
-  return response;
+  const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
+  return status === Status.OK ? response : null;
 };
 
 // Attempts to parse the fetched html. May return undefined
 function parseEntryHTML(html) {
-  try {
-    return parseHTML(html);
-  } catch(error) {
-    if(error instanceof CheckedError) {
-      // Ignore
-    } else {
-      throw error;
-    }
+  const [status, document, message] = parseHTML(html);
+  if(status !== Status.OK) {
+    // Return undefined on parse error
+    return;
+  } else {
+    return document;
   }
 }
 

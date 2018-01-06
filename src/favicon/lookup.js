@@ -1,8 +1,10 @@
 import assert from "/src/common/assert.js";
 import {CheckedError} from "/src/common/errors.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
-import FaviconCache from "/src/favicon/cache.js";
 import {parseHTML} from "/src/common/html-utils.js";
+import * as Status from "/src/common/status.js";
+import FaviconCache from "/src/favicon/cache.js";
+
 
 
 const dprintf = function(){}; // console.debug;
@@ -238,54 +240,43 @@ FaviconLookup.prototype.isAcceptableImageResponse = function(response) {
 FaviconLookup.prototype.fetchImage = async function(url) {
   assert(url instanceof URL);
   const options = {method: 'head', timeout: this.fetchImageTimeoutMs};
-  let response;
-  try {
-    response = await FetchUtils.fetchHelper(url, options);
-  } catch(error) {
-    if(error instanceof CheckedError) {
-      dprintf(error);
-      return;
-    } else {
-      throw error;
-    }
+  const [status, response] = await FetchUtils.fetchHelper(url, options);
+  if(status !== Status.OK) {
+    return;
   }
 
-  assert(response instanceof Response);
   const type = FetchUtils.getMimeType(response);
   if(type && (type.startsWith('image/') || type === 'application/octet-stream')) {
     return response;
+  } else {
+    return null;
   }
 };
 
 // Helper that traps checked errors as those are non-fatal to lookup
 FaviconLookup.prototype.fetchHTML = async function(url) {
   assert(url instanceof URL);
-  try {
-    return await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
-  } catch(error) {
-    if(error instanceof CheckedError) {
-      // Ignore
-    } else {
-      throw error;
-    }
-  }
+
+  const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
+  return status === Status.OK ? response : null;
 };
 
+// TODO: I don't like this function, feels like wrong coupling, inline it again
 // Helper that traps non-assertion errors
 // @param response {Response or response wrapper}
 // @returns {Document}
 FaviconLookup.prototype.parseHTMLResponse = async function(response) {
   assert(response instanceof Response);
+
+  let text;
   try {
-    const text = await response.text();
-    return parseHTML(text);
+    text = await response.text();
   } catch(error) {
-    if(error instanceof CheckedError) {
-      // Ignore
-    } else {
-      throw error;
-    }
+    return;
   }
+
+  const [status, document, message] = parseHTML(text);
+  return status === Status.OK ? document : undefined;
 };
 
 // Returns whether a cache entry is expired

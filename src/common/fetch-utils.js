@@ -3,23 +3,33 @@ import formatString from "/src/common/format-string.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
 import {CheckedError, TimeoutError} from "/src/common/errors.js";
+import {
+  EFETCH, ENET, ENOACCEPT, EOFFLINE, EPOLICY, OK, ETIMEOUT
+} from "/src/common/status.js";
+
+// TODO: maybe return response, which has response.status built in, and just lose out on
+// returning a custom message ... ? Can I create stub responses for errors?
+// Yes, see https://developer.mozilla.org/en-US/docs/Web/API/Response/Response
 
 // Fetches the html content of the given url
 // @param url {URL} request url
 // @param timeoutMs {Number} optional, in milliseconds, how long to wait before considering the
 // fetch to be a failure.
 export async function fetchHTML(url, timeoutMs) {
-  const response = await fetchHelper(url, {
+  const [status, response, message] = await fetchHelper(url, {
     timeout: timeoutMs
   });
 
-  const mimeType = getMimeType(response);
-  if(mimeType !== 'text/html') {
-    const message = formatString('Unacceptable response mime type %s for url', mimeType, url);
-    throw new FetchError(message);
+  if(status !== OK) {
+    return [status, response, message];
   }
 
-  return response;
+  const mimeType = getMimeType(response);
+  if(mimeType !== 'text/html') {
+    return [ENOACCEPT, null, url, mimeType];
+  }
+
+  return [status, response];
 }
 
 // Fetches a feed. Returns a basic object, similar to Response, with custom properties.
@@ -28,16 +38,17 @@ export async function fetchHTML(url, timeoutMs) {
 // failure
 // @returns {Promise} a promise that resolves to a response
 export async function fetchFeed(url, timeoutMs) {
-  const response = await fetchHelper(url, {timeout: timeoutMs});
+  const [status, response] = await fetchHelper(url, {timeout: timeoutMs});
   const mimeType = getMimeType(response);
   const types = ['application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
     'application/atom+xml', 'application/xml', 'text/html', 'text/xml'];
   if(!types.includes(mimeType)) {
-    const message = formatString('Unacceptable response mime type %s for url', mimeType, url);
-    throw new FetchError(message);
+    return [ENOACCEPT, null, url, mimeType];
   }
-  return response;
+  return [status, response];
 }
+
+// TODO: return the HTTP status codes instead?
 
 // Does a fetch with a timeout
 // @param url {URL} request url
@@ -53,14 +64,18 @@ export async function fetchHelper(url, options) {
   // throws a type error when given an invalid url parameter. This later translates all fetch
   // type errors into network errors, so avoid that by translating such type errors into assertion
   // errors before the call.
-  assert(url instanceof URL);
+  if(!(url instanceof URL)) {
+    throw new TypeError('Expected URL, got ' + url);
+  }
 
   // fetch throws a TypeError when its options parameter is invalid. While normally desired, this
   // function is translating all type errors into network errors when calling fetch. Sidestep this
   // by translating this kind of error into an explicit assertion error.
-  assert(typeof options === 'undefined' || typeof options === 'object');
+  if(typeof options !== 'undefined' && typeof options !== 'object') {
+    throw new TypeError('Expected object, got ' + options);
+  }
 
-  // Create a custom set of options where explicitly set options override the default options
+  // Parameter options => these defaults => fetch defaults
   const defaultOptions = {
     credentials: 'omit',
     method: 'get',
@@ -82,21 +97,21 @@ export async function fetchHelper(url, options) {
   }
 
   const untimed = typeof timeoutMs === 'undefined';
-  assert(untimed || (Number.isInteger(timeoutMs) && timeoutMs >= 0));
+  if(!untimed && !(Number.isInteger(timeoutMs) || timeoutMs < 0)) {
+    throw new TypeError('Expected positive integer, got ' + timeoutMs);
+  }
 
   // Check if the url is allowed to be fetched according to this app's policy
   if(!isAllowedURL(url)) {
-    const message = formatString('Cannot fetch url %s as it violates application policy', url);
-    throw new PolicyError(message);
+    return [EPOLICY, null, url];
+    // throw new PolicyError(message);
   }
 
   // Restrict methods
   const method = mergedOptions.method.toUpperCase();
   const allowedMethods = ['GET', 'HEAD'];
   if(!allowedMethods.includes(method)) {
-    const message = 'Cannot fetch url %s as method %s violates application policy';
-    const formattedMessage = formatString(message, url, method);
-    throw new PolicyError(formattedMessage);
+    return [EPOLICY, null, url, method];
   }
 
   // Avoid the TypeError fetch throws when offline, and distinguish this type of network error from
@@ -104,8 +119,8 @@ export async function fetchHelper(url, options) {
   // Being offline is an expected and temporary error.
   assert(navigator && 'onLine' in navigator);
   if(!navigator.onLine) {
-    const message = formatString('Offline when fetching', url);
-    throw new OfflineError(message);
+    return [EOFFLINE, null, url];
+
   }
 
   const fetchPromise = fetch(url.href, mergedOptions);
@@ -123,19 +138,17 @@ export async function fetchHelper(url, options) {
     aggregatePromise = Promise.race(contestants);
   }
 
+  // aggregatePromise points to the fetch promise. Once awaited, if fetch rejected, it throws.
+  // fetch rejects with a TypeError when a network error is encountered, or when the url contains
+  // credentials. It could also be a timeout, but that is a native timeout.
   let response;
   try {
     response = await aggregatePromise;
   } catch(error) {
-    // fetch rejects with a TypeError when a network error is encountered, or when the url contains
-    // credentials. It could also be a timeout, but that is a native timeout.
     if(error instanceof TypeError) {
-      const message = formatString('Failed to fetch %s because of a network error', url, error);
-      throw new NetworkError(message);
+      return [ENET, null, url, '' + error];
     } else {
-      // TODO: when does this ever happen?
-      console.warn('Unknown error type thrown by fetch', error);
-      throw error;
+      return [EFETCH, null, url, '' + error];
     }
   }
 
@@ -143,31 +156,14 @@ export async function fetchHelper(url, options) {
   if(response) {
     clearTimeout(timeoutId);
   } else {
-    // TODO: before exiting by throw, cancel the fetch, if that is possible
-    const errorMessage = formatString('Fetch timed out for url', url);
-    throw new TimeoutError(errorMessage);
+    return [ETIMEOUT, null, url];
   }
 
   if(!response.ok) {
-    const message = formatString('Response not ok for url "%s", status is', url, response.status);
-    throw new FetchError(message);
+    return [EFETCH, null, url, response.status];
   }
 
-  // TODO: in hindsight I think this is no longer a fetch concern. Remove the check and return
-  // empty content. It will materialize later as a parse error. I cannot recall what other benefit
-  // there is of detecting empty content early. It isn't really an error either, because this is
-  // a fetch function concerned with just fetching, not a function that guarantees the content is
-  // not empty.
-
-  // response.ok is true for all status codes in the 200 range, but 204 No content is not expected
-  // when using GET.
-  const HTTP_STATUS_NO_CONTENT = 204;
-  if(method === 'GET' && response.status === HTTP_STATUS_NO_CONTENT) {
-    const message = formatString('No content for GET/POST for url', url);
-    throw new FetchError(message);
-  }
-
-  return response;
+  return [OK, response];
 }
 
 // Return true if the response url is 'different' than the request url

@@ -1,8 +1,16 @@
 import filter, {coerceElement} from "/src/feed-poll/filters/condense-tagnames-filter.js";
 import {parseHTML} from "/src/common/html-utils.js";
+import * as Status from "/src/common/status.js";
 
 let input = '<html><head></head><body><a></a></body></html>';
-let doc = parseHTML(input);
+
+
+const [status, doc, message] = parseHTML(input);
+if(status !== Status.OK) {
+  throw new Error(message);
+}
+
+
 let anchors = doc.querySelectorAll('a');
 for(let a of anchors) {
   coerceElement(a, 'b', true);

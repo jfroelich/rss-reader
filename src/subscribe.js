@@ -1,6 +1,10 @@
 import showDesktopNotification from "/src/show-desktop-notification.js";
 import assert from "/src/common/assert.js";
+import {CheckedError} from "/src/common/errors.js";
+import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
+import {setTimeoutPromise} from "/src/common/promise-utils.js";
+import * as Status from "/src/common/status.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
@@ -8,9 +12,7 @@ import {ConstraintError} from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import parseFeed from "/src/parse-feed.js";
-import * as FetchUtils from "/src/common/fetch-utils.js";
-import {CheckedError} from "/src/common/errors.js";
-import {setTimeoutPromise} from "/src/common/promise-utils.js";
+
 
 
 // TODO: think of a better name
@@ -108,18 +110,14 @@ Subscribe.prototype.checkFeedURLConstraint = async function(url) {
 // Returns a defined response when successful, an undefined response when offline, or an error if
 // there was a problem with fetching while online or a programming error.
 Subscribe.prototype.fetchFeed = async function(url) {
-  let response;
-  try {
-    response = await FetchUtils.fetchFeed(url, this.fetchFeedTimeoutMs);
-  } catch(error) {
-    if(error instanceof FetchUtils.OfflineError) {
-      // Fall through, leaving response undefined, resulting in returning undefined response
-    } else {
-      // Either assertion failure or fetch error
-      throw error;
-    }
+  const [status, response] =  await FetchUtils.fetchFeed(url, this.fetchFeedTimeoutMs);
+  if(status === Status.EOFFLINE) {
+    return;
+  } else if(status !== Status.OK) {
+    throw new Error('Fetch error: ' + status);
+  } else {
+    return response;
   }
-  return response;
 };
 
 Subscribe.prototype.setFeedFavicon = async function(feed) {

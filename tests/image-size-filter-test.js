@@ -2,6 +2,7 @@ import canonicalizeURLs from "/src/feed-poll/filters/canonical-url-filter.js";
 import setImageSizes from "/src/feed-poll/filters/image-size-filter.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import {parseHTML} from "/src/common/html-utils.js";
+import * as Status from "/src/common/status.js";
 
 // TODO: research http://exercism.io/ svg loading issue
 // Actually there is now a separate issue. It's not finding any urls. Something is up
@@ -12,17 +13,29 @@ import {parseHTML} from "/src/common/html-utils.js";
 // ok the size was getting loaded, attribute filter didn't whitelist image sizes
 
 async function test(urlString) {
+  let status, response, document;
+
   const urlObject = new URL(urlString);
-  const response = await FetchUtils.fetchHTML(urlObject);
+  [status, response] = await FetchUtils.fetchHTML(urlObject);
+  if(status !== Status.OK) {
+    console.warn('Fetch error', status);
+    return;
+  }
+
   const html = await response.text();
-  const document = parseHTML(html);
+  [status, document] = parseHTML(html);
+  if(status !== Status.OK) {
+    console.warn('Parse error', status);
+    return;
+  }
+
   canonicalizeURLs(document, new URL(response.url));
   await setImageSizes(document);
 }
 
 async function test2() {
   const html = '<html><body><img src="http://exercism.io/icons/brand-logo.svg"></body></html>';
-  const document = parseHTML(html);
+  const [status, document] = parseHTML(html);
   await setImageSizes(document);
 }
 

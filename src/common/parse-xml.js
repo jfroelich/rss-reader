@@ -11,6 +11,6 @@ export default function parseXML(xmlString) {
   const document = parser.parseFromString(xmlString, 'application/xml');
   const error = document.querySelector('parsererror');
 
-  return error ? [Status.XML_PARSE_ERROR, null, error.textContent.replace(/\s{2,}/g, ' ')] :
+  return error ? [Status.EPARSEXML, null, error.textContent.replace(/\s{2,}/g, ' ')] :
     [Status.OK, document];
 }

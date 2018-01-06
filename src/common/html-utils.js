@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import {CheckedError} from "/src/common/errors.js";
+import * as Status from "/src/common/status.js";
 
 // Given an input value, if it is a string, then creates and returns a new string where html
 // entities have been decoded into corresponding values. For example, '&lt;' becomes '<'.
@@ -50,7 +50,6 @@ function encodeFirst(string) {
 // @param htmlString {String}
 // @param position {Number} position after which to truncate
 // @param suffix {String} optional, appended after truncation, defaults to an ellipsis
-// @throws HTMLParseError
 export function truncateHTML(htmlString, position, suffix) {
   assert(Number.isInteger(position) && position >= 0);
 
@@ -64,7 +63,10 @@ export function truncateHTML(htmlString, position, suffix) {
     suffix = ELLIPSIS;
   }
 
-  const doc = parseHTML(htmlString);
+  const [status, doc] = parseHTML(htmlString);
+  if(status !== Status.OK) {
+    return 'Unsafe html';
+  }
 
   // Search for the text node in which truncation should occur and truncate it
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
@@ -112,16 +114,9 @@ export function replaceTags(htmlString, replacement) {
     assert(typeof replacement === 'string');
   }
 
-  let doc;
-
-  try {
-    doc = parseHTML(htmlString);
-  } catch(error) {
-    if(!(error instanceof CheckedError)) {
-      throw error;
-    } else {
-      return 'Unsafe HTML redacted';
-    }
+  const [status, doc, message] = parseHTML(htmlString);
+  if(status !== Status.OK) {
+    return 'Unsafe HTML redacted';
   }
 
   if(!replacement) {
@@ -138,31 +133,17 @@ export function replaceTags(htmlString, replacement) {
   return nodeValues.join(replacement);
 }
 
-
-
 // When html is a fragment, it will be inserted into a new document using a default template
 // provided by the browser, that includes a document element and usually a body. If not a fragment,
 // then it is merged into a document with a default template.
 export function parseHTML(htmlString) {
-  assert(typeof htmlString === 'string');
+  if(typeof htmlString !== 'string') {
+    throw new TypeError('Expected string, got ' + typeof htmlString);
+  }
+
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlString, 'text/html');
-  assert(doc instanceof Document);
-  const errorElement = doc.querySelector('parsererror');
-  if(errorElement) {
-    const message = condenseWhitespace(errorElement.textContent);
-    throw new HTMLParseError(message);
-  }
-  return doc;
-}
-
-export class HTMLParseError extends CheckedError {
-  constructor(message) {
-    super(message || 'HTML parse error');
-  }
-}
-
-
-function condenseWhitespace(string) {
-  return string.replace(/\s{2,}/g, ' ');
+  const error = doc.querySelector('parsererror');
+  return error ? [Status.EPARSEHTML, null, error.textContent.replace(/\s{2,}/g, ' ')] :
+    [Status.OK, doc];
 }

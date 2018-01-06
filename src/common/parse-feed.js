@@ -3,14 +3,6 @@ import {decodeEntities} from "/src/common/html-utils.js";
 import parseXML from "/src/common/parse-xml.js";
 import * as Status from "/src/common/status.js";
 
-// TODO: create a FeedDescriptor-like object and return it instead of a basic object?
-// TODO: findChildElementText should not normalize, this should return values as is, and move
-// normalization responsibility to caller. In fact nothing in this parser should do any
-// normalization. All of that validation and sanitization and coercion should be the caller's
-// responsibility. This function should not be concerned with those things. The goal is to maintain
-// fidelity to the input. In fact I probably should not even be trying to change strings into
-// date objects and such.
-
 // Parses the input string into a feed object. The feed object will always have a defined entries
 // array, although it may be zero length. Returns an array of status, feed, and error message.
 export function parseFeed(xmlString) {
@@ -31,13 +23,12 @@ function unmarshallXML(document) {
   const supportedNames = ['feed', 'rdf', 'rss'];
   if(!supportedNames.includes(documentElementName)) {
     const message = formatString('Unsupported document element', documentElementName);
-    return [Status.ERR_PARSE_FEED, null, message];
+    return [Status.EPARSEFEED, null, message];
   }
 
   const channelElement = findChannelElement(documentElement);
   if(!channelElement) {
-    const message = 'Missing channel element';
-    return [Status.ERR_PARSE_FEED, null, message];
+    return [Status.EPARSEFEED, null, 'Missing channel element'];
   }
 
   const feed = {};
@@ -286,11 +277,9 @@ function findEntryContent(entryElement) {
       if(node.nodeType === Node.CDATA_SECTION_NODE) {
         let nodeValue = node.nodeValue;
         nodeValue = decodeEntities(nodeValue);
-        //console.debug('nodeValue (encoded)', nodeValue);
         texts.push(nodeValue);
       } else if(node.nodeType === Node.TEXT_NODE) {
         const nodeText = node.textContent;
-        //console.debug('textContent', nodeText);
         texts.push(nodeText);
       } else {
         console.warn('Unknown node type, next message is dir inspection');
