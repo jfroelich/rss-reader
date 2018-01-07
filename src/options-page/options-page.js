@@ -349,10 +349,10 @@ async function subscribeFormOnsubmit(event) {
   subscribe.init();
   subscribe.fetchFeedTimeoutMs = 2000;
   subscribe.concurrent = false;
-  let feed;
+  let feed, status;
   try {
     await subscribe.connect();
-    feed = await subscribe.subscribe(url);
+    [status, feed] = await subscribe.subscribe(url);
   } catch(error) {
     // TODO: show a visual error message in event of an error
     console.warn(error);
@@ -367,13 +367,9 @@ async function subscribeFormOnsubmit(event) {
   feedListAppendFeed(feed);
   const feedURL = Feed.peekURL(feed);
 
-  // This is safe. feedURL comes from a string that has undergone deserialization into a URL object
-  // and back to a string. Unsafe user input would have triggered a parsing error.
   subscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
   subscriptionMonitorHide();
   showSectionById('subs-list-section');
-
-  // Signal form should not be submitted
   return false;
 }
 

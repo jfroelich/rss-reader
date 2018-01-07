@@ -1,5 +1,4 @@
 import assert from "/src/common/assert.js";
-import {CheckedError} from "/src/common/errors.js";
 import formatString from "/src/common/format-string.js";
 import parseXML from "/src/common/parse-xml.js";
 import * as Status from "/src/common/status.js";
@@ -11,18 +10,20 @@ export function parseOPML(xmlString) {
     throw new TypeError('Bad type for xmlString: ' + typeof xmlString);
   }
 
-  const [status, document, message] = parseXML(xmlString);
+  let status, document, message;
+
+
+  [status, document, message] = parseXML(xmlString);
   if(status !== Status.OK) {
-    // TODO: return status
-    throw new CheckedError(message);
+    return [status, null, message];
   }
 
   const name = document.documentElement.localName.toLowerCase();
   if(name !== 'opml') {
-    const message = formatString('Document element "%s" is not opml', name);
-    throw new OPMLParseError(message);
+    message = formatString('Document element "%s" is not opml', name);
+    return [Status.EPARSEOPML, null, message];
   }
-  return document;
+  return [Status.OK, document];
 }
 
 // Create a new OPML document
@@ -115,12 +116,6 @@ function appendOutlineElement(doc, element) {
     doc.documentElement.appendChild(bodyElement);
   }
   bodyElement.appendChild(element);
-}
-
-export class OPMLParseError extends CheckedError {
-  constructor(message) {
-    super(message || 'OPML parse error');
-  }
 }
 
 export function isOutline(outline) {

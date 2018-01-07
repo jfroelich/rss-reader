@@ -1,6 +1,6 @@
 import showDesktopNotification from "/src/show-desktop-notification.js";
 import assert from "/src/common/assert.js";
-import {CheckedError, TimeoutError} from "/src/common/errors.js";
+import {CheckedError} from "/src/common/errors.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
@@ -128,15 +128,13 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   if(status !== Status.OK) {
 
     // TODO: this throws so there is no explicit return. I'd rather just return.
-    await handlePollFeedError(error, this.feedStore, feed, 'fetch-feed',
+    await handlePollFeedError(status, this.feedStore, feed, 'fetch-feed',
       this.deactivationThreshold);
   }
 
   const responseLastModifiedDate = FetchUtils.getLastModified(response);
 
   if(this.isUnmodifiedFeed(feed.dateUpdated, feed.dateLastModified, responseLastModifiedDate)) {
-    // Check if error count decremented as a result of successful fetch, in which case we still
-    // need to update the feed object in the database despite exiting early.
     const decremented = handleFetchFeedSuccess(feed);
     if(decremented) {
       feed.dateUpdated = new Date();
@@ -149,7 +147,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   try {
     feedXML = await response.text();
   } catch(error) {
-    await handlePollFeedError(error, this.feedStore, feed, 'read-response-body',
+    await handlePollFeedError(Status.EFETCH, this.feedStore, feed, 'read-response-body',
       this.deactivationThreshold);
   }
 
@@ -160,7 +158,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     parseResult = parseFeed(feedXML, requestURL, new URL(response.url),
       responseLastModifiedDate, processEntries);
   } catch(error) {
-    await handlePollFeedError(error, this.feedStore, feed, 'parse-feed',
+    await handlePollFeedError(Status.EPARSEFEED, this.feedStore, feed, 'parse-feed',
       this.deactivationThreshold);
   }
 
@@ -246,18 +244,15 @@ function handleFetchFeedSuccess(feed) {
 // is this prematurely deactivates feeds that happen to have a parsing error that is actually
 // ephemeral (temporary) and not permanent.
 
-async function handlePollFeedError(error, store, feed, callCategory, threshold) {
-  if(!(error instanceof CheckedError)) {
-    throw error;
+async function handlePollFeedError(errorCode, store, feed, callCategory, threshold) {
+
+  if(callCategory === 'fetch-feed' && errorCode === Status.EOFFLINE) {
+    throw new Error('Offline');
   }
 
-  if(callCategory === 'fetch-feed' && error instanceof FetchUtils.OfflineError) {
-    throw error;
-  }
-
-  if(callCategory === 'fetch-feed' && error instanceof TimeoutError) {
+  if(callCategory === 'fetch-feed' && errorCode === Status.ETIMEOUT) {
     console.debug('Ignoring timeout error in slow network environment');
-    throw error;
+    throw new Error('Fetch timed out');
   }
 
   if(Number.isInteger(feed.errorCount)) {
@@ -284,7 +279,7 @@ async function handlePollFeedError(error, store, feed, callCategory, threshold) 
   // both are errors, and in this case I suppose the db error trumps the fetch error
   feed.dateUpdated = new Date();
   await store.putFeed(feed);
-  throw error;
+  throw new Error('Poll error: ' + errorCode);
 }
 
 FeedPoll.prototype.isUnmodifiedFeed = function(feedUpdated, feedDate, responseDate) {

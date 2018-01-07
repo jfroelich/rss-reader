@@ -1,7 +1,6 @@
 import assert from "/src/common/assert.js";
+import {CheckedError} from "/src/common/errors.js";
 import {setTimeoutPromise} from "/src/common/promise-utils.js";
-import {TimeoutError} from "/src/common/errors.js";
-
 
 const DEBUG = false;
 
@@ -40,6 +39,10 @@ export async function open(name, version, upgradeListener, timeoutMs) {
     const request = indexedDB.open(name, version);
     request.onsuccess = function(event) {
       const conn = event.target.result;
+
+      // There is no need to reject on block/timeout here, because the promise already
+      // settled
+
       if(blocked) {
         console.log('Closing connection %s that eventually unblocked after settling', conn.name);
         conn.close();
@@ -87,7 +90,8 @@ export async function open(name, version, upgradeListener, timeoutMs) {
     // Ordinarily it would make sense to just return the promise. However, the await pulls out a
     // promise rejection and translates it into an uncaught exception. I'd rather throw an
     // uncaught exception that rely on an implict rejection to be interpreted as an exception by
-    // the caller.
+    // the caller. Also, I want to consistently return the same type, an IDBDatabase instance,
+    // not a promise here but a connection later.
     return await openPromise;
   }
 
@@ -108,26 +112,30 @@ export async function open(name, version, upgradeListener, timeoutMs) {
   return conn;
 }
 
+// A TimeoutError means something did not complete in time.
+// For example, opening a database connection, or fetching a remote resource.
+class TimeoutError extends CheckedError {
+  constructor(message) {
+    super(message || 'Operation timed out');
+  }
+}
+
 // Requests to close 0 or more indexedDB connections
 // @param {...IDBDatabase}
 export function close(...conns) {
-  // NOTE: for rest params, conns is still defined when there are no args, it is an empty array
   for(const conn of conns) {
-    // This is routinely called in a finally block, so try never to throw
     if(conn && conn instanceof IDBDatabase) {
       if(DEBUG) {
         console.debug('Closing connection to database', conn.name);
       }
 
-      // Signal to isOpen that the connection is closed (even if it is just 'closing' and not yet
-      // closed)
+      // Signal to isOpen that the connection is closed/closing
       conn.onabort = null;
       conn.close();
     }
   }
 }
 
-// A promise wrapper around deleteDatabase
 export function remove(name) {
   return new Promise(function executor(resolve, reject) {
     if(DEBUG) {

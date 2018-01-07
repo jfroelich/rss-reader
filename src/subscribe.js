@@ -64,31 +64,46 @@ Subscribe.prototype.subscribe = async function(url) {
   assert(this.iconCache instanceof FaviconCache);
   assert(this.iconCache.isOpen());
   assert(url instanceof URL);
-  console.debug('subscribe start', url.href);
 
-  await this.checkFeedURLConstraint(url);
-  const response = await this.fetchFeed(url);
+  console.log('Subscribing to', url.href);
+
+  if(await this.feedStore.containsFeedWithURL(url)) {
+    return [Status.EDBCONSTRAINT];
+  }
+
+  let [status, response] = await FetchUtils.fetchFeed(url, this.fetchFeedTimeoutMs);
+  if(status === Status.EOFFLINE) {
+    // Continue with offline subscription and undefined response
+  } else if(status !== Status.OK) {
+    return [status];
+  }
+
   let feed;
   if(response) {
     const responseURLObject = new URL(response.url);
     if(FetchUtils.detectURLChanged(url, responseURLObject)) {
       url = responseURLObject;
-      await this.checkFeedURLConstraint(url);
+      if(await this.feedStore.containsFeedWithURL(url)) {
+        return [Status.EDBCONSTRAINT];
+      }
     }
 
-    const xml = await response.text();
+    let responseText;
+    try {
+      responseText = await response.text();
+    } catch(error) {
+      return [Status.EFETCH];
+    }
+
     const kProcEntries = false;
-    const parseResult = parseFeed(xml, url, responseURLObject,
+    const parseResult = parseFeed(responseText, url, responseURLObject,
       FetchUtils.getLastModified(response), kProcEntries);
     feed = parseResult.feed;
   } else {
-    // We take care to create the feed using the factory method instead of creating a simple
-    // object, because the factory method sets some hidden properties.
     feed = Feed.create();
     Feed.appendURL(feed, url);
   }
 
-  assert(Feed.isFeed(feed));
   await this.setFeedFavicon(feed);
   const storableFeed = await this.saveFeed(feed);
   this.showNotification(storableFeed);
@@ -96,29 +111,10 @@ Subscribe.prototype.subscribe = async function(url) {
   if(!this.concurrent) {
     deferredPollFeed(storableFeed).catch(console.warn);
   }
-  return storableFeed;
+  return [Status.OK, storableFeed];
 };
 
-Subscribe.prototype.checkFeedURLConstraint = async function(url) {
-  let feedExists = await this.feedStore.containsFeedWithURL(url);
-  if(feedExists) {
-    const message = formatString('Already subscribed to feed with url', url.href);
-    throw new ConstraintError(message);
-  }
-};
 
-// Returns a defined response when successful, an undefined response when offline, or an error if
-// there was a problem with fetching while online or a programming error.
-Subscribe.prototype.fetchFeed = async function(url) {
-  const [status, response] =  await FetchUtils.fetchFeed(url, this.fetchFeedTimeoutMs);
-  if(status === Status.EOFFLINE) {
-    return;
-  } else if(status !== Status.OK) {
-    throw new Error('Fetch error: ' + status);
-  } else {
-    return response;
-  }
-};
 
 Subscribe.prototype.setFeedFavicon = async function(feed) {
   assert(Feed.isFeed(feed));

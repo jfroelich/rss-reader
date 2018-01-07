@@ -35,7 +35,7 @@ export default function assert(booleanValue, ...varargs) {
 // indicate that something that should never happen ... happened. It primarily indicates that
 // the reasoning used somewhere in the collective program is incorrect, that a faulty assumption
 // was made somewhere about the state of things.
-// Unlike practically every other custom error this does not extend CheckedError
+
 class AssertionError extends Error {
   constructor(message) {
     super(message || 'Assertion failed');

@@ -2,7 +2,6 @@ import assert from "/src/common/assert.js";
 import formatString from "/src/common/format-string.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
-import {CheckedError, TimeoutError} from "/src/common/errors.js";
 import {
   EFETCH, ENET, ENOACCEPT, EOFFLINE, EPOLICY, OK, ETIMEOUT
 } from "/src/common/status.js";
@@ -10,18 +9,21 @@ import {
 // TODO: maybe return response, which has response.status built in, and just lose out on
 // returning a custom message ... ? Can I create stub responses for errors?
 // Yes, see https://developer.mozilla.org/en-US/docs/Web/API/Response/Response
+// For that matter I can also just check response.ok instead of checking the various statuses.
+// Then I don't even need to check response.ok at end of fetchHelper.
+// But are there client side http status codes?
 
 // Fetches the html content of the given url
 // @param url {URL} request url
 // @param timeoutMs {Number} optional, in milliseconds, how long to wait before considering the
 // fetch to be a failure.
 export async function fetchHTML(url, timeoutMs) {
-  const [status, response, message] = await fetchHelper(url, {
+  const [status, response] = await fetchHelper(url, {
     timeout: timeoutMs
   });
 
   if(status !== OK) {
-    return [status, response, message];
+    return [status, response, url];
   }
 
   const mimeType = getMimeType(response);
@@ -29,8 +31,18 @@ export async function fetchHTML(url, timeoutMs) {
     return [ENOACCEPT, null, url, mimeType];
   }
 
-  return [status, response];
+  return [status, response, url];
 }
+
+const feedTypes = [
+  'application/octet-stream',
+  'application/rss+xml',
+  'application/rdf+xml',
+  'application/atom+xml',
+  'application/xml',
+  'text/html',
+  'text/xml'
+];
 
 // Fetches a feed. Returns a basic object, similar to Response, with custom properties.
 // @param url {URL} request url
@@ -39,16 +51,16 @@ export async function fetchHTML(url, timeoutMs) {
 // @returns {Promise} a promise that resolves to a response
 export async function fetchFeed(url, timeoutMs) {
   const [status, response] = await fetchHelper(url, {timeout: timeoutMs});
+  if(status !== Status.OK) {
+    return [status];
+  }
+
   const mimeType = getMimeType(response);
-  const types = ['application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
-    'application/atom+xml', 'application/xml', 'text/html', 'text/xml'];
-  if(!types.includes(mimeType)) {
+  if(!feedTypes.includes(mimeType)) {
     return [ENOACCEPT, null, url, mimeType];
   }
   return [status, response];
 }
-
-// TODO: return the HTTP status codes instead?
 
 // Does a fetch with a timeout
 // @param url {URL} request url
@@ -104,7 +116,6 @@ export async function fetchHelper(url, options) {
   // Check if the url is allowed to be fetched according to this app's policy
   if(!isAllowedURL(url)) {
     return [EPOLICY, null, url];
-    // throw new PolicyError(message);
   }
 
   // Restrict methods
@@ -120,7 +131,6 @@ export async function fetchHelper(url, options) {
   assert(navigator && 'onLine' in navigator);
   if(!navigator.onLine) {
     return [EOFFLINE, null, url];
-
   }
 
   const fetchPromise = fetch(url.href, mergedOptions);
@@ -185,10 +195,7 @@ function compareURLsWithoutHash(url1, url2) {
   return modURL1.href === modURL2.href;
 }
 
-// Returns the value of the Last-Modified header as a Date object
-// @param response {Response}
-// @returns {Date} the value of Last-Modified, or undefined if error such as no header present or
-// bad date
+// Returns the value of the response's Last-Modified header as a date, or undefined on error
 export function getLastModified(response) {
   assert(response instanceof Response);
   const lastModifiedString = response.headers.get('Last-Modified');
@@ -196,7 +203,6 @@ export function getLastModified(response) {
     try {
       return new Date(lastModifiedString);
     } catch(error) {
-      // Ignore
     }
   }
 }
@@ -258,39 +264,4 @@ export function isAllowedURL(url) {
   }
 
   return true;
-}
-
-// TODO: I think I only care about two types of errors: fetch errors and offline errors. These
-// are the only two the caller differentiates between. So right now I have created seemingly
-// arbitrary distictions between network and fetch and policy. Those 3 should all be just
-// fetcherror, and offlineerror should just be a subclass of fetch error.
-
-// Represents a general class of networking errors, such as unavailability or unreachability of a
-// resource located on a different machine
-export class NetworkError extends CheckedError {
-  constructor(message) {
-    super(message || 'Network error');
-  }
-}
-
-// Represents a specific type of networking error where the current computer cannot access any
-// resources on other machines
-export class OfflineError extends NetworkError {
-  constructor(message) {
-    super(message || 'Offline error');
-  }
-}
-
-// A general type of error thrown when attempting to fetch
-export class FetchError extends CheckedError {
-  constructor(message) {
-    super(message || 'Fetch error');
-  }
-}
-
-// Thrown when attempting to fetch a url that is not allowed by fetch policy
-export class PolicyError extends CheckedError {
-  constructor(message) {
-    super(message || 'Attempted to fetch url that violates application fetch policy');
-  }
 }

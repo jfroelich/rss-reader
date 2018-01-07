@@ -2,7 +2,7 @@ import assert from "/src/common/assert.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
-import {TimeoutError} from "/src/common/errors.js";
+import * as Status from "/src/common/status.js";
 
 const DEBUG = false;
 function log(...args) {
@@ -120,35 +120,11 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     return;
   }
 
-  // BUG: possible. The bug isn't here, but this is where it surfaces.
-  // Earlier in the log I see:
-  // Invalid srcset descriptor found in '//www.kansas.com/latest-news/tdv4vh-122917shooting-finch.
-  // jpg/alternates/LANDSCAPE_ 960/122917shooting%20finch.jpg' at '960/122917
-  // shooting%20finch.jpg'.
-  // Which then causes this to appear:
-  // Failed to parse image source //www.kansas.com/latest-news/tdv4vh-122917shooting-
-  // finch.jpg/alternates/LANDSCAPE_200/122917shooting%20finch.jpg
-
-  // It looks like the canonical url pass somehow did not canonicalize the srcset
-
-  // Actually, a parse failure is a TypeError. A TypeError is a type of unchecked
-  // error. It causes the entire filter to fail, which bubbles the exception all
-  // the way up. So parse errors should be trapped here and not thrown, because I don't
-  // want to treat those as unchecked errors.
-
-  // Ok so I return now instead of throw in case of url parsing error. BUT, I still need to look
-  // into why the above urls were not caught.
-
-
-
   let sourceURL;
   try {
     sourceURL = new URL(imageSource);
   } catch(error) {
-    console.debug('Failed to parse image source', imageSource);
-
-    // URL parse errors materialize as TypeErrors, which are unchecked, which if thrown would be
-    // treated like an assertion failure. Therefore, just return.
+    console.debug('Failed to parse image element src attribute', imageSource);
     return;
   }
 
@@ -164,7 +140,11 @@ async function getImageDimensions(image, allowedProtocols, timeoutMs) {
     return result;
   }
 
-  const response = await fetchImageElement(sourceURL, timeoutMs);
+  const [status, response] = await fetchImageElement(sourceURL, timeoutMs);
+  if(status !== Status.OK) {
+    return;
+  }
+
   log('Found dimensions from fetch', image.outerHTML, response.width, response.height);
   result.width = response.width;
   result.height = response.height;
@@ -246,7 +226,7 @@ async function fetchImageElement(url, timeoutMs) {
 
   if(!FetchUtils.isAllowedURL(url)) {
     const message = formatString('Refused to fetch url', url);
-    throw new FetchUtils.PolicyError(message);
+    return [Status.EPOLICY];
   }
 
   let timerId, timeoutPromise;
@@ -267,25 +247,39 @@ async function fetchImageElement(url, timeoutMs) {
     proxy.onerror = function proxyOnerror(event) {
       clearTimeout(timerId);
       const message = formatString('Error fetching image with url', url);
-      const error = new FetchUtils.FetchError(message);
+      const error = new Error(message);
       reject(error);
     };
   });
 
   if(!timeoutMs) {
-    return fetchPromise;
+    let image;
+    try {
+      image = await fetchPromise;
+    } catch(error) {
+      return [Status.EFETCH];
+    }
+
+    return [Status.OK, image];
   }
 
   [timerId, timeoutPromise] = PromiseUtils.setTimeoutPromise(timeoutMs);
   const contestants = [fetchPromise, timeoutPromise];
-  const image = await Promise.race(contestants);
-  if(image) {
-    clearTimeout(timerId);
-  } else {
-    const message = 'Timed out fetching image with url ' + url.href;
-    throw new TimeoutError(message);
+
+  let image;
+  try {
+    image = await Promise.race(contestants);
+  } catch(error) {
+    return [Status.EFETCH];
   }
-  return fetchPromise;
+
+  // If image is not defined that means timeout won
+  if(!image) {
+    return [Status.ETIMEOUT, null, url];
+  }
+
+  clearTimeout(timerId);
+  return [Status.OK, image];
 }
 
 
