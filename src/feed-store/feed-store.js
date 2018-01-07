@@ -3,36 +3,36 @@ import {CheckedError} from "/src/common/errors.js";
 import formatString from "/src/common/format-string.js";
 import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
+import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
+import * as Status from "/src/common/status.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as FeedStoreErrors from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import sizeof from "/src/feed-store/sizeof.js";
 import updateBadgeText from "/src/update-badge-text.js";
-import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
-
 
 const DEBUG = false;
 const dprintf = DEBUG ? console.debug : function(){};
 
 export default function FeedStore() {
-  // Default open parameters. Caller can optionally override prior to calling open
   this.name = 'reader';
   this.version = 24;
-  this.openTimeoutMs = 500;
+  this.timeout = 500;
 
-  // @private - use open to set, close to unset, rather than setting directly
-  // @type {IDBDatabase} database connection handle
-  this.conn;
+  // private IDBDatabase handle
+  this.conn = null;
 }
 
-// Opens a connection to the reader database
 FeedStore.prototype.open = async function() {
-  // Prohibit calling open unless conn is unset, implying it is closed, so that the prior
-  // connection is not left hanging around
-  assert(typeof this.conn === 'undefined' || this.conn === null);
-  this.conn = await IndexedDbUtils.open(this.name, this.version, onUpgradeNeeded,
-    this.openTimeoutMs);
+  if(this.isOpen()) {
+    return Status.EINVALIDSTATE;
+  }
+
+  const [status, conn] = await IndexedDbUtils.open(this.name, this.version, onUpgradeNeeded,
+    this.timeout);
+  this.conn = conn;
+  return status;
 };
 
 // Helper for open. Does the database upgrade. This should never be

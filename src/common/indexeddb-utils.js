@@ -1,6 +1,7 @@
 import assert from "/src/common/assert.js";
 import {CheckedError} from "/src/common/errors.js";
 import {setTimeoutPromise} from "/src/common/promise-utils.js";
+import * as Status from "/src/common/status.js";
 
 const DEBUG = false;
 
@@ -87,38 +88,49 @@ export async function open(name, version, upgradeListener, timeoutMs) {
   });
 
   if(!timeoutMs) {
-    // Ordinarily it would make sense to just return the promise. However, the await pulls out a
-    // promise rejection and translates it into an uncaught exception. I'd rather throw an
-    // uncaught exception that rely on an implict rejection to be interpreted as an exception by
-    // the caller. Also, I want to consistently return the same type, an IDBDatabase instance,
-    // not a promise here but a connection later.
-    return await openPromise;
+    let conn;
+    try {
+      conn = await openPromise;
+    } catch(error) {
+      return [Status.EDBOPEN];
+    }
+
+    return [Status.OK, conn];
   }
 
   [timer, timeoutPromise] = setTimeoutPromise(timeoutMs);
 
-  const conn = await Promise.race([openPromise, timeoutPromise]);
+  let conn;
+
+  try {
+    conn = await Promise.race([openPromise, timeoutPromise]);
+  } catch(error) {
+    return [Status.EDBOPEN];
+  }
+
+  // conn is undefined when timeout promise wins
+
   if(conn) {
     // Pseudo-cancel the timeout promise
     clearTimeout(timer);
+
+    return [Status.OK, conn];
   } else {
     // I want to cancel the open, but this operation isn't supported. Instead, it will eventually
     // resolve and see that timedout is true and immediately close.
     timedout = true;
     const errorMessage = 'Connecting to database ' + name + ' timed out';
-    throw new TimeoutError(errorMessage);
-  }
+    //throw new TimeoutError(errorMessage);
 
-  return conn;
-}
-
-// A TimeoutError means something did not complete in time.
-// For example, opening a database connection, or fetching a remote resource.
-class TimeoutError extends CheckedError {
-  constructor(message) {
-    super(message || 'Operation timed out');
+    return [Status.ETIMEOUT];
   }
 }
+
+//class TimeoutError extends CheckedError {
+//  constructor(message) {
+//    super(message || 'Operation timed out');
+//  }
+//}
 
 // Requests to close 0 or more indexedDB connections
 // @param {...IDBDatabase}

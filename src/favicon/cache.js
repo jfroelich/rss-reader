@@ -1,12 +1,13 @@
 import assert from "/src/common/assert.js";
 import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
+import * as Status from "/src/common/status.js";
 
 export default class FaviconCache {
   constructor() {
-    this.conn = undefined;
+    this.conn = null;
     this.name = 'favicon-cache';
     this.version = 3;
-    this.openTimeoutMs = 500;
+    this.timeout = 500;
   }
 }
 
@@ -14,8 +15,17 @@ export default class FaviconCache {
 FaviconCache.MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 FaviconCache.prototype.open = async function() {
-  this.conn = await IndexedDbUtils.open(this.name, this.version, this.onUpgradeNeeded,
-    this.openTimeoutMs);
+  if(this.isOpen()) {
+    return Status.EINVALIDSTATE;
+  }
+
+  const [status, conn] = await IndexedDbUtils.open(this.name, this.version, onUpgradeNeeded,
+    this.timeout);
+  if(status === Status.OK) {
+    this.conn = conn;
+  }
+
+  return status;
 };
 
 FaviconCache.prototype.isOpen = function() {
@@ -24,6 +34,7 @@ FaviconCache.prototype.isOpen = function() {
 
 FaviconCache.prototype.close = function() {
   IndexedDbUtils.close(this.conn);
+  this.conn = void this.conn;
 };
 
 FaviconCache.prototype.setup = async function() {
@@ -37,9 +48,9 @@ FaviconCache.prototype.setup = async function() {
   }
 };
 
-FaviconCache.prototype.onUpgradeNeeded = function(event) {
+function onUpgradeNeeded(event) {
   const conn = event.target.result;
-  console.log('creating or upgrading database', conn.name);
+  console.log('Creating or upgrading database', conn.name);
 
   let store;
   if(!event.oldVersion || event.oldVersion < 1) {
@@ -60,7 +71,7 @@ FaviconCache.prototype.onUpgradeNeeded = function(event) {
     console.debug('oldVersion < 3');
     // In the transition from 2 to 3, there are no changes. I am adding a non-indexed property.
   }
-};
+}
 
 FaviconCache.prototype.clear = function() {
   return new Promise((resolve, reject) => {

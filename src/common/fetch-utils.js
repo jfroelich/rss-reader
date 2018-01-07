@@ -51,7 +51,7 @@ const feedTypes = [
 // @returns {Promise} a promise that resolves to a response
 export async function fetchFeed(url, timeoutMs) {
   const [status, response] = await fetchHelper(url, {timeout: timeoutMs});
-  if(status !== Status.OK) {
+  if(status !== OK) {
     return [status];
   }
 

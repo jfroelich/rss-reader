@@ -15,3 +15,5 @@ export const EPARSEOPML = 8;
 export const EPOLICY = 9;
 export const ETIMEOUT = 10;
 export const EDBCONSTRAINT = 11;
+export const EDBOPEN = 12;
+export const EINVALIDSTATE = 13;
