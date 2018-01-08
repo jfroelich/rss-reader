@@ -1,7 +1,7 @@
 import assert from "/src/common/assert.js";
 
 // These constraints are rather arbitrary, but just as a general bound
-// TODO: increase and test accuracy
+// TODO: increase accuracy
 export const MIME_TYPE_MIN_LENGTH = 7;
 export const MIME_TYPE_MAX_LENGTH = 100;
 

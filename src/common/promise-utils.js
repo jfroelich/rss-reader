@@ -17,9 +17,6 @@ import {CheckedError} from "/src/common/errors.js";
 // doing when awaiting, is waiting for all promises to settle. Yes, the loop can block early while
 // waiting on a promise near the start of the array, but that doesn't matter, because the function
 // as a whole cannot resolve until all promises resolve.
-// Also keep in mind the behavior when throwing an unchecked exception. Promises are evaluated
-// eagerly, when instantiated. That this throws early in event of an unchecked error does not mean
-// later promises in the array are not evaluated. It only means they are not awaited.
 export async function promiseEvery(promises) {
   assert(Array.isArray(promises));
   const results = [];
@@ -29,7 +26,6 @@ export async function promiseEvery(promises) {
       result = await promise;
     } catch(error) {
       if(error instanceof CheckedError) {
-        // Swallow the error
         // console.debug('Iteration swallowed checked error', error);
       } else {
         throw error;

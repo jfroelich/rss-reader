@@ -7,7 +7,8 @@ import * as Status from "/src/common/status.js";
 // array, although it may be zero length. Returns an array of status, feed, and error message.
 export function parseFeed(xmlString) {
   if(typeof xmlString !== 'string') {
-    throw new TypeError('Expected string, got ' + typeof xmlString);
+    const message = 'Expected string, got ' + typeof xmlString;
+    return [Status.EINVAL, null, message];
   }
 
   const [status, document, message] = parseXML(xmlString);

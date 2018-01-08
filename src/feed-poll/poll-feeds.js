@@ -76,7 +76,12 @@ FeedPoll.prototype.pollFeeds = async function() {
   assert(this.iconCache.isOpen());
   assert(this.channel instanceof BroadcastChannel);
 
-  const feeds = await this.feedStore.findActiveFeeds();
+  const [status, feeds] = await this.feedStore.findActiveFeeds();
+  if(status !== Status.OK) {
+    console.error('Failed to load active feeds, status was', status);
+    return status;
+  }
+
   const batched = true;
   const promises = [];
   for(const feed of feeds) {
@@ -97,6 +102,8 @@ FeedPoll.prototype.pollFeeds = async function() {
   }
 
   console.log('Poll feeds completed normally, %d new entries', totalNumEntriesAdded);
+
+  return Status.OK;
 };
 
 // TODO: to enforce that the feed parameter is a feed object loaded from the database, it is
@@ -322,7 +329,15 @@ FeedPoll.prototype.pollEntry = async function(entry) {
     return;
   }
 
-  if(await this.feedStore.containsEntryWithURL(url)) {
+  let status;
+  let containsEntry;
+  [status, containsEntry] = await this.feedStore.containsEntryWithURL(url);
+  if(status !== Status.OK) {
+    console.error('Error checking contains entry with url', status);
+    return;
+  }
+
+  if(containsEntry) {
     return;
   }
 
@@ -337,9 +352,16 @@ FeedPoll.prototype.pollEntry = async function(entry) {
         return;
       }
 
-      if(await this.feedStore.containsEntryWithURL(responseURL)) {
+      [status, containsEntry] = await this.feedStore.containsEntryWithURL(responseURL);
+      if(status !== Status.OK) {
+        console.error('Error checking contains entry with url', status);
         return;
       }
+
+      if(containsEntry) {
+        return;
+      }
+
 
       Entry.appendURL(entry, responseURL);
 
@@ -366,8 +388,13 @@ FeedPoll.prototype.pollEntry = async function(entry) {
     entry.content = 'Empty or malformed content';
   }
 
-  // Return the result of addEntry, which is the new entry's id
-  return await this.feedStore.addEntry(entry, this.channel);
+  let entryId;
+  [status, entryId] = await this.feedStore.addEntry(entry, this.channel);
+  if(status !== Status.OK) {
+    throw new Error('Failed to add entry, status is ' + status);
+  }
+
+  return entryId;
 };
 
 function isPollableURL(url) {

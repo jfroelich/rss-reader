@@ -1,3 +1,4 @@
+import {OK} from "/src/common/status.js";
 import showSlideshowTab from "/src/show-slideshow-tab.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
@@ -55,18 +56,7 @@ async function onWakeup(alarm) {
     break;
   }
   case 'refresh-feed-icons': {
-    const fs = new FeedStore();
-    const fc = new FaviconCache();
-    const openPromises = [fs.open(), fc.open()];
-    try {
-      await Promise.all(openPromises);
-      await fs.refreshFeedIcons(fc);
-    } catch(error) {
-      console.warn(error);
-    } finally {
-      fs.close();
-      fc.close();
-    }
+    handleRefreshFeedIconsAlarm().catch(console.error);
     break;
   }
   case 'compact-favicon-db': {
@@ -90,6 +80,38 @@ async function onWakeup(alarm) {
     console.warn('unhandled alarm', alarm.name);
     break;
   }
+}
+
+async function handleRefreshFeedIconsAlarm(alarm) {
+  const fs = new FeedStore();
+  const fc = new FaviconCache();
+  const promises = [fs.open(), fc.open()];
+  const conns = await Promise.all(promises);
+
+  let status = conns[0][0];
+  if(status !== OK) {
+    console.error('Failed to open feed store');
+    return;
+  }
+
+  status = conns[1][0];
+  if(status !== OK) {
+    console.error('Failed to open favicon cache');
+    return;
+  }
+
+  try {
+    status = await fs.refreshFeedIcons(fc);
+  } catch(error) {
+    console.error(error);
+  }
+
+  if(status !== OK) {
+    console.error('Refresh feed icons error', status);
+  }
+
+  fs.close();
+  fc.close();
 }
 
 async function handlePollFeedsAlarm(alarm) {

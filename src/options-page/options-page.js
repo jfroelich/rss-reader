@@ -1,4 +1,5 @@
 import assert from "/src/common/assert.js";
+import * as Status from "/src/common/status.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as Feed from "/src/feed-store/feed.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
@@ -250,24 +251,31 @@ async function feedListItemOnclick(event) {
   const feedIdString = feedListItem.getAttribute('feed');
   const feedIdNumber = parseInt(feedIdString, 10);
 
-  // TODO: assert using Feed.isValidId
-  assert(!isNaN(feedIdNumber));
-
-  // Load feed details from the database
-  const feedStore = new FeedStore();
-
-  let feed;
-  try {
-    await feedStore.open();
-    feed = await feedStore.findFeedById(feedIdNumber);
-  } catch(error) {
-    console.warn(error);
-    // TODO: visual feedback?
+  if(!Feed.isValidId(feedIdNumber)) {
+    // TODO: visual error message
+    console.error('Invalid feed id', feedIdNumber);
     return;
-  } finally {
-    feedStore.close();
   }
 
+  // Load feed details from the database
+  const store = new FeedStore();
+  let status = await store.open();
+  if(status !== Status.OK) {
+    // TODO: visual error message
+    console.error('Failed to open feed store database', status);
+    return;
+  }
+  let feed;
+  [status, feed] = await store.findFeedById(feedIdNumber);
+  if(status !== Status.OK) {
+    // TODO: visual error message
+    console.error('Failed to find feed by id %d, status was', feedIdNumber, status);
+    store.close();
+    return;
+  }
+  store.close();
+
+  // Update the UI with the loaded feed data
   const titleElement = document.getElementById('details-title');
   titleElement.textContent = feed.title || feed.link || 'Untitled';
 
@@ -289,6 +297,7 @@ async function feedListItemOnclick(event) {
   feedURLElement.textContent = Feed.peekURL(feed);
   const feedLinkElement = document.getElementById('details-feed-link');
   feedLinkElement.textContent = feed.link || '';
+
   const unsubscribeButton = document.getElementById('details-unsubscribe');
   unsubscribeButton.value = '' + feed.id;
 
@@ -305,7 +314,8 @@ async function feedListItemOnclick(event) {
 
   showSectionById('mi-feed-details');
 
-  // Ensure the details are visible
+  // Ensure the details are visible when the feed list is taller than window height and
+  // user has scrolled down
   window.scrollTo(0,0);
 }
 
@@ -472,43 +482,65 @@ async function unsubscribeButtonOnclick(event) {
 
 async function activateButtonOnclick(event) {
   const feedId = parseInt(event.target.value, 10);
-  assert(Feed.isValidId(feedId));
-
-  const feedStore = new FeedStore();
-  try {
-    await feedStore.open();
-    await feedStore.activateFeed(feedId);
-  } catch(error) {
-    console.warn(error);
+  if(!Feed.isValidId(feedId)) {
+    // TODO: show a visual error message
+    console.error('Invalid feed id in event', feedId);
     return;
-  } finally {
-    feedStore.close();
   }
 
-  // The feed is loaded in the feed list in the UI and must also be updated there
+  const feedStore = new FeedStore();
+  let status = await feedStore.open();
+  if(status !== Status.OK) {
+    // TODO: show a visual error message
+    console.error('Failed to open feed store', status);
+    return;
+  }
+
+  status = await feedStore.activateFeed(feedId);
+  if(status !== Status.OK) {
+    // NOTE: if this fails, feedStore is left in open state
+    // TODO: show a visual error message
+    console.error('Failed to activate feed', status);
+    return;
+  }
+
+  feedStore.close();
+
+  // Update the feed loaded in the UI
   const itemElement = document.querySelector('li[feed="' + feedId + '"]');
   if(itemElement) {
     itemElement.removeAttribute('inactive');
   }
 
-  console.debug('Activated feed %d, returning to feed list', feedId);
+  console.debug('Activated feed', feedId);
   showSectionById('subs-list-section');
 }
 
 async function deactivateButtonOnclick(event) {
   const feedId = parseInt(event.target.value, 10);
-  assert(Feed.isValidId(feedId));
-  const feedStore = new FeedStore();
 
-  try {
-    await feedStore.open();
-    await feedStore.deactivateFeed(feedId, 'manual-click');
-  } catch(error) {
-    console.warn(error);
+  if(!Feed.isValidId(feedId)) {
+    console.error('Invalid feed id', event.target.value);
     return;
-  } finally {
-    feedStore.close();
   }
+
+  const store = new FeedStore();
+  let status = await store.open();
+  if(status !== Status.OK) {
+    // TODO: show visual error
+    console.error('Failed to open database');
+    return;
+  }
+
+  status = await store.deactivateFeed(feedId, 'manual-click');
+  if(status !== Status.OK) {
+    // TODO: show visual error
+    console.error('Failed to deactivate feed');
+    store.close();
+    return;
+  }
+
+  store.close();
 
   console.debug('Deactivated feed %d, returning to feed list', feedId);
 

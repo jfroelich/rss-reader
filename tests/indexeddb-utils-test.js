@@ -1,35 +1,34 @@
-import assert from "/src/common/assert.js";
 import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
 import * as Status from "/src/common/status.js";
 
-function upgradeHandler() {}
+async function test() {
+  const name = 'indexeddb-utils-test', version = 1;
+  let conn, status, timeout, onUpgradeNeeded;
 
-window.test = async function() {
-  const name = 'test', version = 1;
-  let closeRequested = false;
-  let conn, status;
-  try {
-    // TODO: use, or at least specify undefined, timeout parameter
-    [status, conn] = await IndexedDbUtils.open(name, version, upgradeHandler);
-    if(status !== Status.OK) {
-      throw new Error('Failed to open database ' + name);
-    }
-
-    assert(IndexedDbUtils.isOpen(conn));
-    IndexedDbUtils.close(conn);
-
-    if(IndexedDbUtils.isOpen(conn)) {
-      console.debug('NOT DESIRED: IndexedDbUtils.isOpen says open after conn closed');
-    } else {
-      console.debug('DESIRED: IndexedDbUtils.isOpen says conn closed');
-    }
-
-    closeRequested = true;
-    await IndexedDbUtils.remove(name);
-  } finally {
-    if(!closeRequested) {
-      IndexedDbUtils.close(conn);
-      assert(!IndexedDbUtils.isOpen(conn));
-    }
+  [status, conn] = await IndexedDbUtils.open(name, version, onUpgradeNeeded, timeout);
+  if(status !== Status.OK) {
+    console.error('Failed to open database ' + conn.name);
+    return;
   }
+
+  if(!IndexedDbUtils.isOpen(conn)) {
+    console.error('Opened database, but isOpen says not open');
+    return;
+  }
+
+  IndexedDbUtils.close(conn);
+
+  if(IndexedDbUtils.isOpen(conn)) {
+    console.error('isOpen says open after conn closed');
+  }
+
+  try {
+    await IndexedDbUtils.remove(name);
+  } catch(error) {
+    console.error(error);
+  }
+
+  console.debug('Test completed');
 }
+
+window.test = test;

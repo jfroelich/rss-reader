@@ -1,78 +1,63 @@
-import assert from "/src/common/assert.js";
-import {CheckedError} from "/src/common/errors.js";
+import formatString from "/src/common/format-string.js";
 import {setTimeoutPromise} from "/src/common/promise-utils.js";
 import * as Status from "/src/common/status.js";
 
-const DEBUG = false;
+// The primary benefits of this module include:
+// * The ability to quickly check if the IDBDatabase is open based on whether onabort is set,
+// because there is no native ergonomic alternative.
+// * The ability to fail when opening a connection if it takes too long
+// * Promises
+// * Use of status codes instead of exceptions
+// * Light guarding against indexedDB API changes
+// * Logging for debugging
 
-// Returns true if the conn is open. This should only be used with databases opened by this library.
-export function isOpen(conn) {
-  return conn instanceof IDBDatabase && typeof conn.onabort === 'function';
-}
 
-// Wraps a call to indexedDB.open that imposes a time limit and translates blocked events into
-// errors.
-//
-// @param name {String}
-// @param version {Number} optional
-// @param upgradeListener {Function} optional, react to upgradeneeded events
-// @param timeoutMs {Number} optional, positive integer, how long to wait in milliseconds before
-// giving up on connecting
-// @throws {Error} if connection error or timeout occurs
-export async function open(name, version, upgradeListener, timeoutMs) {
-  assert(typeof name === 'string');
-
-  if(isNaN(timeoutMs)) {
-    timeoutMs = 0;
+export async function open(name, version, upgradeListener, timeout) {
+  if(typeof name !== 'string') {
+    return [Status.EINVAL, null, stringFormat('Expected string name, got', typeof name)];
   }
-  assert(Number.isInteger(timeoutMs) && timeoutMs >= 0);
+
+  if(isNaN(timeout)) {
+    timeout = 0;
+  }
+
+  if(!Number.isInteger(timeout) || timeout < 0) {
+    return [Status.EINVAL, null,
+      stringFormat('Expected timeout positive integer, got', typeof name)];
+  }
 
   let timedout = false;
   let timer;
   let timeoutPromise;
+  let conn;
 
   const openPromise = new Promise(function openExecutor(resolve, reject) {
-    if(DEBUG) {
-      console.debug('Connecting to database', name, version);
-    }
-
+    console.debug('Connecting to database', name, version);
     let blocked = false;
     const request = indexedDB.open(name, version);
     request.onsuccess = function(event) {
       const conn = event.target.result;
-
-      // There is no need to reject on block/timeout here, because the promise already
-      // settled
-
+      // There is no need to reject on block/timeout because the promise already settled
       if(blocked) {
-        console.log('Closing connection %s that eventually unblocked after settling', conn.name);
+        console.log('Closing connection %s that eventually unblocked', conn.name);
         conn.close();
       } else if(timedout) {
-        console.log('Closing connection %s that eventually opened after settling', conn.name);
+        console.log('Closing connection %s that eventually opened after timeout', conn.name);
         conn.close();
       } else {
-        if(DEBUG) {
-          console.debug('Connected to database', name, version);
-        }
-
-        // Use the onabort listener property as a flag to indicate to isOpen that the connection is
-        // open
-        conn.onabort = function noop() {};
-
-        // NOTE: this is only invoked if force closed by error
+        console.debug('Connected to database', name, version);
+        conn.onabort = noop;
         conn.onclose = function() {
-          // Indicate to isOpen that the connection is closed
           conn.onabort = undefined;
-          console.log('connection was forced closed', conn.name);
+          console.log('Connection was forced closed', conn.name);
         };
-
         resolve(conn);
       }
     };
 
     request.onblocked = function(event) {
       blocked = true;
-      const errorMessage = 'Connection to database ' + name + ' blocked';
+      const errorMessage = formatString('Connection to database %s blocked', name);
       const error = new Error(errorMessage);
       reject(error);
     };
@@ -87,61 +72,43 @@ export async function open(name, version, upgradeListener, timeoutMs) {
     request.onupgradeneeded = upgradeListener;
   });
 
-  if(!timeoutMs) {
+  if(timeout < 1) {
     let conn;
     try {
       conn = await openPromise;
     } catch(error) {
       return [Status.EDBOPEN];
     }
-
     return [Status.OK, conn];
   }
 
-  [timer, timeoutPromise] = setTimeoutPromise(timeoutMs);
-
-  let conn;
-
+  [timer, timeoutPromise] = setTimeoutPromise(timeout);
   try {
     conn = await Promise.race([openPromise, timeoutPromise]);
   } catch(error) {
     return [Status.EDBOPEN];
   }
 
-  // conn is undefined when timeout promise wins
-
   if(conn) {
-    // Pseudo-cancel the timeout promise
     clearTimeout(timer);
-
     return [Status.OK, conn];
   } else {
-    // I want to cancel the open, but this operation isn't supported. Instead, it will eventually
-    // resolve and see that timedout is true and immediately close.
     timedout = true;
-    const errorMessage = 'Connecting to database ' + name + ' timed out';
-    //throw new TimeoutError(errorMessage);
-
-    return [Status.ETIMEOUT];
+    const message = formatString('Connecting to database %s timed out', name);
+    return [Status.ETIMEOUT, null, message];
   }
 }
 
-//class TimeoutError extends CheckedError {
-//  constructor(message) {
-//    super(message || 'Operation timed out');
-//  }
-//}
+export function isOpen(conn) {
+  return conn instanceof IDBDatabase && typeof conn.onabort === 'function';
+}
 
 // Requests to close 0 or more indexedDB connections
 // @param {...IDBDatabase}
 export function close(...conns) {
   for(const conn of conns) {
     if(conn && conn instanceof IDBDatabase) {
-      if(DEBUG) {
-        console.debug('Closing connection to database', conn.name);
-      }
-
-      // Signal to isOpen that the connection is closed/closing
+      console.debug('Closing connection to database', conn.name);
       conn.onabort = null;
       conn.close();
     }
@@ -150,12 +117,11 @@ export function close(...conns) {
 
 export function remove(name) {
   return new Promise(function executor(resolve, reject) {
-    if(DEBUG) {
-      console.debug('Deleting database', name);
-    }
-
+    console.debug('Deleting database', name);
     const request = indexedDB.deleteDatabase(name);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
+
+function noop() {}
