@@ -160,7 +160,11 @@ Subscribe.prototype.saveFeed = async function(feed) {
   const storableFeed = this.feedStore.prepareFeed(feed);
   storableFeed.active = true;
   storableFeed.dateCreated = new Date();
-  const newFeedId = await this.feedStore.putFeed(feed);
+  const [status, newFeedId] = await this.feedStore.putFeed(feed);
+  if(status !== Status.OK) {
+    throw new Error('Failed to put feed with status ' + status);
+  }
+
   storableFeed.id = newFeedId;
   return storableFeed;
 };

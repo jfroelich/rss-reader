@@ -145,7 +145,11 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     const decremented = handleFetchFeedSuccess(feed);
     if(decremented) {
       feed.dateUpdated = new Date();
-      await this.feedStore.putFeed(feed);
+      [status] = await this.feedStore.putFeed(feed);
+      if(status !== Status.OK) {
+        throw new Error('Failed to put feed with status ' + status);
+      }
+
     }
     return 0;
   }
@@ -179,7 +183,10 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   // TODO: this could happen prior to merge? should it?
   const storableFeed = this.feedStore.prepareFeed(mergedFeed);
   storableFeed.dateUpdated = new Date();
-  await this.feedStore.putFeed(storableFeed);
+  [status] = await this.feedStore.putFeed(storableFeed);
+  if(status !== Status.OK) {
+    throw new Error('Failed to put feed with status ' + status);
+  }
 
   const entries = parseResult.entries;
   cascadeFeedPropertiesToEntries(storableFeed, entries);
@@ -285,7 +292,11 @@ async function handlePollFeedError(errorCode, store, feed, callCategory, thresho
   // NOTE: this can also throw, and thereby mask the error, but I suppose that is ok, because
   // both are errors, and in this case I suppose the db error trumps the fetch error
   feed.dateUpdated = new Date();
-  await store.putFeed(feed);
+  const [status] = await store.putFeed(feed);
+  if(status !== Status.OK) {
+    throw new Error('Failed to put feed with status ' + status);
+  }
+
   throw new Error('Poll error: ' + errorCode);
 }
 

@@ -196,11 +196,10 @@ FeedStore.prototype.activateFeed = async function(feedId) {
   delete feed.deactivationDate;
   feed.dateUpdated = new Date();
 
-  // TODO: switch to status
-  try {
-    await this.putFeed(feed);
-  } catch(error) {
-    return Status.EDB;
+  [status] = await this.putFeed(feed);
+  if(status !== Status.OK) {
+    console.error('Failed to put feed with status', status);
+    return status;
   }
 
   return Status.OK;
@@ -226,15 +225,14 @@ FeedStore.prototype.addEntry = async function(entry, channel) {
   storable.archiveState = Entry.STATE_UNARCHIVED;
   storable.dateCreated = new Date();
 
-  let newEntryId;
-  try {
-    newEntryId = await this.putEntry(storable);
-  } catch(error) {
-    return [Status.EDB];
+  let [status, newEntryId] = await this.putEntry(storable);
+  if(status !== Status.OK) {
+    console.error('Failed to put entry with status', status);
+    return status;
   }
 
   if(channel) {
-    // TODO: the message format should be defined externally
+    // TODO: the message format should be defined externally?
     const message = {type: 'entry-added', id: newEntryId};
     channel.postMessage(message);
   }
@@ -343,7 +341,7 @@ FeedStore.prototype.deactivateFeed = async function(feedId, reason) {
     return Status.EINVAL;
   }
 
-  const [status, feed] = await this.findFeedById(feedId);
+  let [status, feed] = await this.findFeedById(feedId);
   if(status !== Status.OK) {
     console.error('Could not find feed by id', feedId);
     return status;
@@ -362,11 +360,10 @@ FeedStore.prototype.deactivateFeed = async function(feedId, reason) {
   feed.deactivationDate = currentDate;
   feed.dateUpdated = currentDate;
 
-  // TODO: use status once putFeed uses status
-  try {
-    await store.putFeed(feed);
-  } catch(error) {
-    return Status.EDB;
+  [status] = await store.putFeed(feed);
+  if(status !== Status.OK) {
+    console.error('Failed to put feed with status', status);
+    return status;
   }
 
   return Status.OK;
@@ -745,6 +742,7 @@ function getAllFeedIdsPromise(conn) {
 }
 
 
+// TODO: rename, 'All' is implied
 // Load all feeds from the database
 // Returns a promise that resolves to an array of feed objects
 FeedStore.prototype.getAllFeeds = async function() {
@@ -772,30 +770,49 @@ FeedStore.prototype.getAllFeeds = async function() {
   return [Status.OK, feeds];
 };
 
-// TODO: left off here refactoring status
-
 FeedStore.prototype.markEntryAsRead = async function(entryId) {
-  assert(this.isOpen());
-  assert(Entry.isValidId(entryId));
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return Status.EINVALIDSTATE;
+  }
 
-  const [status, entry] = await this.findEntryById(entryId);
+  if(!Entry.isValidId(entryId)) {
+    console.error('Invalid entry id', entryId);
+    return Status.EINVAL;
+  }
+
+  let [status, entry] = await this.findEntryById(entryId);
   if(status !== Status.OK) {
-    throw new Error('Failed to find entry by id with status ' + status);
+    console.error('Failed to find entry by id with status', status);
+    return status;
   }
 
   if(entry.readState === Entry.STATE_READ) {
-    const message = formatString('Entry %d already in read state', entryId);
-    throw new FeedStoreErrors.InvalidStateError(message);
+    console.error('Entry %d already in read state', entryId);
+    return Status.EINVALIDSTATE;
   }
 
-  assert(Entry.hasURL(entry));
+  if(!Entry.hasURL(entry)) {
+    console.error('Entry is missing url', entry);
+    return Status.EINVALIDSTATE;
+  }
+
   const url = Entry.peekURL(entry);
-  dprintf('Found entry to mark as read', entryId, url);
+  console.debug('Found entry to mark as read', entryId, url);
+
   entry.readState = Entry.STATE_READ;
   entry.dateRead = entry.dateUpdated;
   entry.dateUpdated = new Date();
-  await this.putEntry(entry);
-  dprintf('Marked entry as read', entryId, url);
+
+  [status] = await this.putEntry(entry);
+  if(status !== Status.OK) {
+    console.error('Failed to put entry with status', status);
+    return status;
+  }
+
+  console.debug('Marked entry as read', entryId, url);
+
+  // TODO: move these notes to a github issue
 
   // TODO: This is bad, a circular dependency. This is a symptom of a more severe lack of
   // forward planning and organization. The basic gist is that I need to decide if markEntryAsRead
@@ -839,18 +856,39 @@ FeedStore.prototype.markEntryAsRead = async function(entryId) {
   // several of theses actions PLUS the rest, instead of trying to do it all in this storage layer.
 
   updateBadgeText();
+
+  return Status.OK;
 };
 
-FeedStore.prototype.putEntry = function(entry) {
-  return new Promise((resolve, reject) => {
-    assert(this.isOpen());
-    assert(Entry.isEntry(entry));
+
+FeedStore.prototype.putEntry = async function(entry) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(!Entry.isEntry(entry)) {
+    console.error('Invalid entry', entry);
+    return [Status.EINVAL];
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
     const request = store.put(entry);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+
+  let entryId;
+  try {
+    entryId = await promise;
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+
+  return [Status.OK, entryId];
 };
 
 // Returns a feed object suitable for use with putFeed
@@ -864,10 +902,18 @@ FeedStore.prototype.prepareFeed = function(feed) {
 // Resolves with request.result. If put is an add this resolves with the auto-incremented id.
 // This stores the object as is. The caller is responsible for properties like feed magic,
 // feed id, feed active status, date updated, etc.
-FeedStore.prototype.putFeed = function(feed) {
-  return new Promise((resolve, reject) => {
-    assert(this.isOpen());
-    assert(Feed.isFeed(feed));
+FeedStore.prototype.putFeed = async function(feed) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(!Feed.isFeed(feed)) {
+    console.error('Invalid feed', feed);
+    return [Status.EINVAL];
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
     const request = store.put(feed);
@@ -877,6 +923,16 @@ FeedStore.prototype.putFeed = function(feed) {
     };
     request.onerror = () => reject(request.error);
   });
+
+  let feedId;
+  try {
+    feedId = await promise;
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+
+  return [Status.OK, feedId];
 };
 
 const DEFAULT_TITLE_MAX_LEN = 1024;
@@ -1077,7 +1133,11 @@ FeedStore.prototype.archiveEntry = async function(entry, channel) {
   compacted.dateUpdated = new Date();
   const afterSize = sizeof(compacted);
   console.debug('Compact entry changed approx size from %d to %d', beforeSize, afterSize);
-  await this.putEntry(compacted);
+  const status = await this.putEntry(compacted);
+  if(status !== Status.OK) {
+    throw new Error('Failed to put entry with status ' + status);
+  }
+
   const message = {type: 'entry-archived', id: compacted.id};
   channel.postMessage(message);
   return compacted;
@@ -1145,21 +1205,34 @@ FeedStore.prototype.refreshFeedIcon = async function(feed, query) {
     }
   }
 
+  let status;
+
   const prevIconURL = feed.faviconURLString;
   feed.dateUpdated = new Date();
+
   if(prevIconURL && iconURL && prevIconURL !== iconURL) {
     feed.faviconURLString = iconURL;
-    await this.putFeed(feed);
+    [status] = await this.putFeed(feed);
+    if(status !== Status.OK) {
+      throw new Error('Failed to put feed with status ' + status);
+    }
+
   } else if(prevIconURL && iconURL && prevIconURL === iconURL) {
     // noop
   } else if(prevIconURL && !iconURL) {
     feed.faviconURLString = void prevIconURL;
-    await this.putFeed(feed);
+    [status] = await this.putFeed(feed);
+    if(status !== Status.OK) {
+      throw new Error('Failed to put feed with status ' + status);
+    }
   } else if(!prevIconURL && !iconURL) {
     // noop
   } else if(!prevIconURL && iconURL) {
     feed.faviconURLString = iconURL;
-    await this.putFeed(feed);
+    [status] = await this.putFeed(feed);
+    if(status !== Status.OK) {
+      throw new Error('Failed to put feed with status ' + status);
+    }
   } else {
     console.warn('Unexpected state in refresh feed icons');
   }

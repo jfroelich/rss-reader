@@ -169,9 +169,9 @@ function hideLoadingInformation() {
 }
 
 
-async function markSlideRead(feedStore, slideElement) {
-  assert(feedStore instanceof FeedStore);
-  assert(feedStore.isOpen());
+async function markSlideRead(store, slideElement) {
+  assert(store instanceof FeedStore);
+  assert(store.isOpen());
   assert(slideElement instanceof Element);
 
   // Get the entry id for the slide
@@ -182,7 +182,6 @@ async function markSlideRead(feedStore, slideElement) {
 
   console.log('Marking slide for entry %d as read', entryId);
 
-
   // Exit early if the slide has already been read. This is routine such as when navigating backward
   // and should not be considered an error.
   if(slideElement.hasAttribute('read')) {
@@ -190,14 +189,10 @@ async function markSlideRead(feedStore, slideElement) {
     return;
   }
 
-  // Update storage. Handle any error in an opaque manner.
-  try {
-    await feedStore.markEntryAsRead(entryId);
-  } catch(error) {
-    // BUG
-    // TODO: this should never happen
-    // TODO: this error also happens when marking an entry as read that is already read
-    console.error(error);
+  const status = await store.markEntryAsRead(entryId);
+  if(status !== Status.OK) {
+    // TODO: display an error
+    console.error('Failed to mark entry %d as read with status', entryId, status);
     return;
   }
 
