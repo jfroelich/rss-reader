@@ -207,12 +207,12 @@ async function markSlideRead(feedStore, slideElement) {
 }
 
 async function appendSlides(feedStore, limit) {
-  console.log('appendSlides start', limit);
+  console.log('Appending slides (limit: %d)', limit);
 
   limit = typeof limit === 'undefined' ? 3 : limit;
   const offset = countUnreadSlides();
 
-  const [status, entries] = entries = await feedStore.findViewableEntries(offset, limit);
+  const [status, entries] = await feedStore.findViewableEntries(offset, limit);
   if(status !== Status.OK) {
     console.error('Failed to find viewable entries with status ' + status);
     showErrorMessage('There was a problem loading articles from storage');
@@ -428,7 +428,7 @@ async function onSlideClick(event) {
   // filtered from document content, so the only time an ancestor of the anchor is an article is
   // when it is the slide that contains the anchor.
   // Start from parent node to skip the closest test against the anchor itself.
-  const clickedSlide = anchor.parentNode.closest('article');
+  const clickedSlide = anchor.parentNode.closest('slide');
 
   // Throw an assertion error if we didn't find the containing slide.
   // TODO: don't assert at the UI level. Do something like show a human-friendly error message and
@@ -437,6 +437,7 @@ async function onSlideClick(event) {
 
   // Weak sanity check that the element is a slide, mostly just to monitor the recent changes to
   // this function.
+  const currentSlide = Slideshow.getCurrentSlide();
   if(clickedSlide !== currentSlide) {
     console.log('Clicked slide is different than current slide', clickedSlide, currentSlide);
   }
@@ -531,7 +532,7 @@ async function nextSlide() {
   // We still append if there is just one unread slide
   if(unreadSlideCount > 1) {
     console.debug(
-      'Not dynamically appending or marking current as read because %d unread slides remain',
+      'Not dynamically appending because %d unread slides remain',
       unreadSlideCount);
 
     // Mark the current slide as read
@@ -1049,6 +1050,9 @@ async function initSlideshowPage() {
   // TODO: is it possible to defer this until after loading without slowing things down?
   // Initialize entry display settings
   PageStyle.pageStyleSettingsOnload();
+
+  // TODO: closing should happen before append actually takes place, there is no need to keep
+  // the database open longer.
 
   // Load and append slides
   const feedStore = new FeedStore();
