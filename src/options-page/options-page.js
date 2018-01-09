@@ -387,17 +387,25 @@ async function feedListInit() {
   const noFeedsElement = document.getElementById('nosubs');
   const feedListElement = document.getElementById('feedlist');
 
-  const feedStore = new FeedStore();
-  let feeds;
-  try {
-    await feedStore.open();
-    feeds = await feedStore.getAllFeeds();
-  } catch(error) {
+  const store = new FeedStore();
+  let status = await store.open();
+  if(status !== Status.OK) {
     // TODO: react to error
-    console.warn(error);
-  } finally {
-    feedStore.close();
+    console.warn('Failed to open feed store');
+    return;
   }
+
+  // Get all feeds in natural order
+  let feeds;
+  [status, feeds] = await store.getAllFeeds();
+  if(status !== Status.OK) {
+    // TODO: react to error
+    console.warn('Failed to get all feeds');
+    store.close();
+    return;
+  }
+
+  store.close();
 
   if(!feeds) {
     // TODO: react to error
@@ -410,13 +418,14 @@ async function feedListInit() {
     feed.title = feed.title || feed.link || 'Untitled';
   }
 
-  // Sorting in does in memory as opposed to leveraging the lexicographic order of an index on
-  // the title property. The lexicographic order is not the desired order necessarily. Also, the
-  // title index excludes feeds missing a title, which would be bad. The index on title that was
-  // previously used was deprecated in switching to version 23 of the reader database.
 
-  // Sort the feeds by title using indexedDB.cmp
-  feeds.sort(function(a, b) {
+  // TODO: what if I stored a 'sort-key' field in feeds, indexed it, and then loaded by
+  // that? I could normalize titles, and guarantee at least an empty string is set for feeds
+  // missing titles? I kind of like that idea. I should make a github issue first.
+
+  // Sort feeds by title
+  // Cannot use an title index at load-time because that excludes feeds missing titles
+  feeds.sort((a, b) => {
     const atitle = a.title ? a.title.toLowerCase() : '';
     const btitle = b.title ? b.title.toLowerCase() : '';
     return indexedDB.cmp(atitle, btitle);
@@ -426,12 +435,12 @@ async function feedListInit() {
     feedListAppendFeed(feed);
   }
 
-  if(!feeds.length) {
-    noFeedsElement.style.display = 'block';
-    feedListElement.style.display = 'none';
-  } else {
+  if(feeds.length) {
     noFeedsElement.style.display = 'none';
     feedListElement.style.display = 'block';
+  } else {
+    noFeedsElement.style.display = 'block';
+    feedListElement.style.display = 'none';
   }
 }
 

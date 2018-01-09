@@ -67,11 +67,22 @@ Subscribe.prototype.subscribe = async function(url) {
 
   console.log('Subscribing to', url.href);
 
-  if(await this.feedStore.containsFeedWithURL(url)) {
+  let status;
+  let containsFeed;
+
+  [status, containsFeed] = await this.feedStore.containsFeedWithURL(url);
+  if(status !== Status.OK) {
+    console.error('Failed to check if feed with url exists, status is', status);
+    return [status];
+  }
+
+  if(containsFeed) {
+    console.debug('Already subscribed to feed with url', url);
     return [Status.EDBCONSTRAINT];
   }
 
-  let [status, response] = await FetchUtils.fetchFeed(url, this.fetchFeedTimeoutMs);
+  let response;
+  [status, response] = await FetchUtils.fetchFeed(url, this.fetchFeedTimeoutMs);
   if(status === Status.EOFFLINE) {
     // Continue with offline subscription and undefined response
   } else if(status !== Status.OK) {
@@ -83,7 +94,14 @@ Subscribe.prototype.subscribe = async function(url) {
     const responseURLObject = new URL(response.url);
     if(FetchUtils.detectURLChanged(url, responseURLObject)) {
       url = responseURLObject;
-      if(await this.feedStore.containsFeedWithURL(url)) {
+      [status, containsFeed] = await this.feedStore.containsFeedWithURL(url);
+      if(status !== Status.OK) {
+        console.error('Failed to check if feed with url exists, status is', status);
+        return [status];
+      }
+
+      if(containsFeed) {
+        console.debug('Already subscribed to redirect url', url);
         return [Status.EDBCONSTRAINT];
       }
     }
@@ -92,6 +110,7 @@ Subscribe.prototype.subscribe = async function(url) {
     try {
       responseText = await response.text();
     } catch(error) {
+      console.warn(error);
       return [Status.EFETCH];
     }
 

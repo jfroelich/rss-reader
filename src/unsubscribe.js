@@ -1,4 +1,5 @@
 import assert from "/src/common/assert.js";
+import * as Status from "/src/common/status.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import updateBadgeText from "/src/update-badge-text.js";
 import * as Feed from "/src/feed-store/feed.js";
@@ -14,7 +15,12 @@ export default async function unsubscribe(feedId, store, channel) {
   assert(store.isOpen());
   assert(channel instanceof BroadcastChannel);
 
-  const entryIds = await store.findEntryIdsByFeedId(feedId);
+  const [status, entryIds] = await store.findEntryIdsByFeedId(feedId);
+  if(status !== Status.OK) {
+    throw new Error('Failed to find entry ids with status ' + status);
+  }
+
+
   await store.removeFeed(feedId, entryIds);
 
   channel.postMessage({type: 'feed-deleted', id: feedId, reason: 'unsubscribe'});

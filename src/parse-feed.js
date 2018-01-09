@@ -5,6 +5,12 @@ import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {parseFeed as parseFeedImpl} from "/src/common/parse-feed.js";
 
+// One of the key points to think about is how this logic is basically a shared library that
+// involves knowledge of the implementation details of several different services. For example
+// it is used by both polling and subscribing. That's the problem. It should be broken down so that
+// those two functions have no coupling. Those two have different concerns. For example,
+// subscribing doesn't care about entries.
+
 // TODO: https://www.sandimetz.com/blog/2016/1/20/the-wrong-abstraction
 
 // This is a wrapper around the generic parse-feed.js that translates the generic parsed feed format

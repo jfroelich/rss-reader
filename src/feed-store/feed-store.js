@@ -380,13 +380,10 @@ FeedStore.prototype.findActiveFeeds = async function() {
 
   // TODO: if performance eventually becomes a material concern this should probably interact
   // directly with the database and query by index
-  // TODO: use status once getAllFeeds is changed to return status
-
-  let feeds;
-  try {
-    feeds = await this.getAllFeeds();
-  } catch(error) {
-    return [Status.EDB];
+  let [status, feeds] = await this.getAllFeeds();
+  if(status !== Status.OK) {
+    console.error('Failed to get all feeds with status', status);
+    return status;
   }
 
   const activeFeeds = feeds.filter((feed) => feed.active);
@@ -544,10 +541,19 @@ FeedStore.prototype.containsEntryWithURL = async function(url) {
 // is invalid. Throws a checked error if a database error occurs.
 // @param feedId {Number} the id of a feed in the database
 // @return {Promise}
-FeedStore.prototype.findEntryIdsByFeedId = function(feedId) {
-  return new Promise((resolve, reject) => {
-    assert(this.isOpen());
-    assert(Feed.isValidId(feedId));
+FeedStore.prototype.findEntryIdsByFeedId = async function(feedId) {
+
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(!Feed.isValidId(feedId)) {
+    console.error('Invalid feed id', feedId);
+    return [Status.EINVAL];
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('feed');
@@ -555,6 +561,16 @@ FeedStore.prototype.findEntryIdsByFeedId = function(feedId) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+
+  let entryIds;
+  try {
+    entryIds = await promise;
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+
+  return [Status.OK, entryIds];
 };
 
 // Searches the feed store in the database for a feed corresponding to the given id. Returns a
@@ -565,10 +581,12 @@ FeedStore.prototype.findEntryIdsByFeedId = function(feedId) {
 // @return {Promise}
 FeedStore.prototype.findFeedById = async function(feedId) {
   if(!this.isOpen()) {
+    console.error('Database is not open');
     return [Status.EINVALIDSTATE];
   }
 
   if(!Feed.isValidId(feedId)) {
+    console.error('Invalid feed id', feedId);
     return [Status.EINVAL];
   }
 
@@ -598,10 +616,18 @@ FeedStore.prototype.findFeedById = async function(feedId) {
 // Returns feed id if a feed with the given url exists in the database
 // @param url {URL}
 // @return {Promise}
-FeedStore.prototype.findFeedIdByURL = function(url) {
-  return new Promise((resolve, reject) => {
-    assert(this.isOpen());
-    assert(url instanceof URL);
+FeedStore.prototype.findFeedIdByURL = async function(url) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(!(url instanceof URL)) {
+    console.error('Invalid url type', url);
+    return [Status.EINVAL];
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('feed');
     const store = tx.objectStore('feed');
     const index = store.index('urls');
@@ -609,20 +635,46 @@ FeedStore.prototype.findFeedIdByURL = function(url) {
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+
+  let feedId;
+  try {
+    feedId = await promise;
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+
+  return [Status.OK, feedId];
 };
 
 FeedStore.prototype.containsFeedWithURL = async function(url) {
-  assert(url instanceof URL);
-  const id = this.findFeedIdByURL(url);
-  return Feed.isValidId(id);
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(!(url instanceof URL)) {
+    return [Status.EINVAL];
+  }
+
+  const [status, id] = this.findFeedIdByURL(url);
+  if(status !== Status.OK) {
+    return [status];
+  }
+
+  return [Status.OK, Feed.isValidId(id)];
 };
 
 // Loads entries from the database that are for viewing
 // Specifically these are entries that are unread, and not archived
 // TODO: look into using getAll again
-FeedStore.prototype.findViewableEntries = function(offset, limit) {
-  return new Promise((resolve, reject) => {
-    assert(this.isOpen());
+FeedStore.prototype.findViewableEntries = async function(offset, limit) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const entries = [];
     let counter = 0;
     let advanced = false;
@@ -654,32 +706,73 @@ FeedStore.prototype.findViewableEntries = function(offset, limit) {
       }
     };
   });
+
+  let entries;
+  try {
+    entries = await promise;
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+
+  return [Status.OK, entries];
 };
 
 // Returns a promise that resolves to an array of feed ids, or rejects with a database error
-FeedStore.prototype.getAllFeedIds = function() {
+FeedStore.prototype.getAllFeedIds = async function() {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  try {
+    const feedIds = await getAllFeedIdsPromise(this.conn);
+    return [Status.OK, feedIds];
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+};
+
+function getAllFeedIdsPromise(conn) {
   return new Promise((resolve, reject) => {
-    assert(this.isOpen());
-    const tx = this.conn.transaction('feed');
+    const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.getAllKeys();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
-};
+}
+
 
 // Load all feeds from the database
 // Returns a promise that resolves to an array of feed objects
-FeedStore.prototype.getAllFeeds = function() {
-  return new Promise((resolve, reject) => {
-    assert(this.isOpen());
+FeedStore.prototype.getAllFeeds = async function() {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.getAll();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+
+  let feeds;
+  try {
+    feeds = await promise;
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+
+  return [Status.OK, feeds];
 };
+
+// TODO: left off here refactoring status
 
 FeedStore.prototype.markEntryAsRead = async function(entryId) {
   assert(this.isOpen());
@@ -689,8 +782,6 @@ FeedStore.prototype.markEntryAsRead = async function(entryId) {
   if(status !== Status.OK) {
     throw new Error('Failed to find entry by id with status ' + status);
   }
-
-
 
   if(entry.readState === Entry.STATE_READ) {
     const message = formatString('Entry %d already in read state', entryId);
@@ -1111,14 +1202,22 @@ function isLostEntry(entry) {
 // @param store {FeedStore} an open FeedStore instance
 // @param limit {Number}
 FeedStore.prototype.removeOrphanedEntries = async function(limit) {
-  const feedIds = await this.getAllFeedIds();
+  let status;
+  let feedIds;
+  let entries;
+
+  [status, feedIds] = await this.getAllFeedIds();
+  if(status !== Status.OK) {
+    console.error('Failed to get feed ids with status ', status);
+    return status;
+  }
 
   function isOrphan(entry) {
     const id = entry.feed;
     return !Feed.isValidId(id) || !feedIds.includes(id);
   }
 
-  const [status, entries] = await this.findEntries(isOrphan, limit);
+  [status, entries] = await this.findEntries(isOrphan, limit);
   if(status !== Status.OK) {
     throw new Error('Failed to find entries with status ' + status);
   }

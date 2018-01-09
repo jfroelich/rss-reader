@@ -1,6 +1,10 @@
 import assert from "/src/common/assert.js";
 import "/third-party/parse-srcset.js";
 
+// TODO: this library is almost exclusively used by filters, and should probably be moved there.
+// The one exception I found at the moment was a call in an experimental library that will also
+// be used by filters. So really this should just be filter-utils
+
 // Returns true if the image element has at least one source, which could be a src attribute, a
 // srcset attribute, or an associate picture element with one or more source elements that has a
 // src or srcset attribute.

@@ -1,5 +1,6 @@
 import assert from "/src/common/assert.js";
 import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
+import * as Status from "/src/common/status.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
@@ -209,17 +210,12 @@ async function appendSlides(feedStore, limit) {
   console.log('appendSlides start', limit);
 
   limit = typeof limit === 'undefined' ? 3 : limit;
-
-  let entries = [];
   const offset = countUnreadSlides();
 
-  try {
-    entries = await feedStore.findViewableEntries(offset, limit);
-  } catch(error) {
-    console.warn(error);
-    showErrorMessage(
-      'Unable to show new articles, there was a problem loading articles from storage, ' +
-      'try refreshing or reinstalling');
+  const [status, entries] = entries = await feedStore.findViewableEntries(offset, limit);
+  if(status !== Status.OK) {
+    console.error('Failed to find viewable entries with status ' + status);
+    showErrorMessage('There was a problem loading articles from storage');
     return 0;
   }
 
@@ -715,18 +711,36 @@ async function importFiles(files) {
 }
 
 async function menuOptionExportOnclick() {
-  const title = 'Subscriptions', fileName = 'subscriptions.xml';
-  const feedStore = new FeedStore();
+  const title = 'Subscriptions';
+  const fileName = 'subscriptions.xml';
+  const store = new FeedStore();
+
+  let status = await store.open();
+  if(status !== Status.OK) {
+    // TODO: handle error visually
+    console.error('Failed to open database with status', status);
+    return;
+  }
+
+  let feeds;
+  [status, feeds] = await store.getAllFeeds();
+  if(status !== Status.OK) {
+    // TODO: handle error visually
+    console.error('Failed to get all feeds with status', status);
+    store.close();
+    return;
+  }
+
   try {
-    await feedStore.open();
-    const feeds = await feedStore.getAllFeeds();
     exportFeeds(feeds, title, fileName);
   } catch(error) {
     // TODO: handle error visually
-    console.warn(error);
-  } finally {
-    feedStore.close();
+    console.error(error);
+    store.close();
+    return;
   }
+
+  store.close();
 
   // TODO: visual feedback on completion
   console.log('Completed export');
@@ -1050,7 +1064,12 @@ async function initSlideshowPage() {
     hideLoadingInformation();
     didHideLoading = true;
 
-    feeds = await feedStore.getAllFeeds();
+    let status;
+    [status, feeds] = await feedStore.getAllFeeds();
+    if(status !== Status.OK) {
+      throw new Error('Failed to get all feeds to append slides on init');
+    }
+
     feeds.sort(function compareFeedTitle(a, b) {
       const atitle = a.title ? a.title.toLowerCase() : '';
       const btitle = b.title ? b.title.toLowerCase() : '';
