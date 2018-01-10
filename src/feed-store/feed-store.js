@@ -1,8 +1,12 @@
+
+// TODO: remove reliance on assert
 import assert from "/src/common/assert.js";
+
+// TODO: remove reliance on CheckedError
 import {CheckedError} from "/src/common/errors.js";
+
 import formatString from "/src/common/format-string.js";
 import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
-import * as PromiseUtils from "/src/common/promise-utils.js";
 import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 import FaviconCache from "/src/favicon/cache.js";
@@ -11,10 +15,16 @@ import * as Entry from "/src/feed-store/entry.js";
 import * as FeedStoreErrors from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import sizeof from "/src/feed-store/sizeof.js";
+import {onUpgradeNeeded} from "/src/feed-store/upgrade.js";
+import {
+  filterControls,
+  filterEmptyProps,
+  filterUnprintableCharacters
+} from "/src/feed-store/utils.js";
+
+// TODO: remove circular dependency
 import updateBadgeText from "/src/update-badge-text.js";
 
-const DEBUG = false;
-const dprintf = DEBUG ? console.debug : function(){};
 
 export default function FeedStore() {
   this.name = 'reader';
@@ -36,120 +46,6 @@ FeedStore.prototype.open = async function() {
   return status;
 };
 
-// Helper for open. Does the database upgrade. This should never be
-// called directly. To do an upgrade, call open with a higher version number.
-function onUpgradeNeeded(event) {
-  const conn = event.target.result;
-  const tx = event.target.transaction;
-  let feedStore, entryStore;
-  const stores = conn.objectStoreNames;
-
-  console.log('upgrading database %s to version %s from version', conn.name, conn.version,
-    event.oldVersion);
-
-  if(event.oldVersion < 20) {
-    feedStore = conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
-    entryStore = conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
-    feedStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
-
-    entryStore.createIndex('readState', 'readState');
-    entryStore.createIndex('feed', 'feed');
-    entryStore.createIndex('archiveState-readState', ['archiveState', 'readState']);
-    entryStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
-  } else {
-    feedStore = tx.objectStore('feed');
-    entryStore = tx.objectStore('entry');
-  }
-
-  if(event.oldVersion < 21) {
-    // Add magic to all older entries
-    addEntryMagic(tx);
-  }
-
-  if(event.oldVersion < 22) {
-    addFeedMagic(tx);
-  }
-
-  if(event.oldVersion < 23) {
-    // Delete the title index in feed store. It is no longer in use. Because it is no longer
-    // created, and the db could be at any prior version, ensure that it exists before calling
-    // deleteIndex to avoid the FeedStoreErrors.NotFoundError deleteIndex throws when deleting a
-    // non-existent index.
-
-    // @type {DOMStringList}
-    const indices = feedStore.indexNames;
-    if(indices.contains('title')) {
-      console.debug('deleting title index of feed store as part of upgrade');
-      feedStore.deleteIndex('title');
-    } else {
-      console.debug('no title index found to delete during upgrade past version 22');
-    }
-  }
-
-  if(event.oldVersion < 24) {
-    // Version 24 adds an 'active' field to feeds. All existing feeds do not have an active
-    // field. So all existing feeds must be modified to have an active property that is default
-    // to true. It defaults to true because prior to this change, all feeds were presumed active.
-    addActiveFieldToFeeds(feedStore);
-  }
-}
-
-// Expects the transaction to be writable (either readwrite or versionchange)
-function addEntryMagic(tx) {
-  console.debug('Adding entry magic');
-  const store = tx.objectStore('entry');
-  const getAllEntriesRequest = store.getAll();
-  getAllEntriesRequest.onerror = function(event) {
-    console.warn('Error adding entry magic', getAllEntriesRequest.error);
-  };
-  getAllEntriesRequest.onsuccess = function(event) {
-    const entries = event.target.result;
-    writeEntriesWithMagic(store, entries);
-  };
-}
-
-function writeEntriesWithMagic(entryStore, entries) {
-  for(const entry of entries) {
-    entry.magic = Entry.ENTRY_MAGIC;
-    entry.dateUpdated = new Date();
-    entryStore.put(entry);
-  }
-}
-
-function addFeedMagic(tx) {
-  console.debug('Adding feed magic');
-  const store = tx.objectStore('feed');
-  const getAllFeedsRequest = store.getAll();
-  getAllFeedsRequest.onerror = function(event) {
-    console.warn('Error adding feed magic', getAllFeedsRequest.error);
-  };
-  getAllFeedsRequest.onsuccess = function(event) {
-    const feeds = event.target.result;
-    for(const feed of feeds) {
-      feed.magic = Feed.FEED_MAGIC;
-      feed.dateUpdated = new Date();
-      store.put(feed);
-    }
-  }
-}
-
-function addActiveFieldToFeeds(feedStore) {
-  console.debug('Adding active property to feeds');
-  const feedsRequest = feedStore.getAll();
-  feedsRequest.onerror = function(event) {
-    console.warn('Database error getting all feeds', feedsRequest.error);
-  };
-
-  feedsRequest.onsuccess = function(event) {
-    const feeds = event.target.result;
-    for(const feed of feeds) {
-      console.debug('Marking feed %d as active as part of upgrade', feed.id);
-      feed.active = true;
-      feed.dateUpdated = new Date();
-      feedStore.put(feed);
-    }
-  };
-}
 
 FeedStore.prototype.isOpen = function() {
   return IndexedDbUtils.isOpen(this.conn);
@@ -157,7 +53,7 @@ FeedStore.prototype.isOpen = function() {
 
 FeedStore.prototype.close = function() {
   IndexedDbUtils.close(this.conn);
-  // The conn property must be unset to allow for calling open again without triggering an assert
+  // The conn property must be unset to allow for calling open again without error
   // Undefine rather than delete to maintain v8 hidden shape
   this.conn = void this.conn;
 };
@@ -250,7 +146,6 @@ FeedStore.prototype.addEntry = async function(entry, channel) {
 // certain important binary characters (e.g. remove line breaks from author string).
 // Something like 'replaceFormattingCharacters'.
 function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLength) {
-  assert(Entry.isEntry(inputEntry));
 
   if(typeof authorMaxLength === 'undefined') {
     authorMaxLength = 200;
@@ -263,10 +158,6 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLe
   if(typeof contentMaxLength === 'undefined') {
     contentMaxLength = 50000;
   }
-
-  assert(Number.isInteger(authorMaxLength) && authorMaxLength >= 0);
-  assert(Number.isInteger(titleMaxLength) && titleMaxLength >= 0);
-  assert(Number.isInteger(contentMaxLength) && contentMaxLength >= 0);
 
   const blankEntry = Entry.createEntry();
   const outputEntry = Object.assign(blankEntry, inputEntry);
@@ -348,7 +239,7 @@ FeedStore.prototype.deactivateFeed = async function(feedId, reason) {
   }
 
   if(!feed.active) {
-    dprintf('Tried to deactivate inactive feed', feed.id);
+    console.error('Tried to deactivate inactive feed', feed.id);
     return Status.EINVALIDSTATE;
   }
 
@@ -893,7 +784,6 @@ FeedStore.prototype.putEntry = async function(entry) {
 
 // Returns a feed object suitable for use with putFeed
 FeedStore.prototype.prepareFeed = function(feed) {
-  assert(Feed.isFeed(feed));
   let prepped = sanitizeFeed(feed);
   prepped = filterEmptyProps(prepped);
   return prepped;
@@ -940,18 +830,13 @@ const DEFAULT_DESC_MAX_LEN = 1024 * 10;
 
 // Returns a shallow copy of the input feed with sanitized properties
 function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
-  assert(Feed.isFeed(feed));
 
   if(typeof titleMaxLength === 'undefined') {
     titleMaxLength = DEFAULT_TITLE_MAX_LEN;
-  } else {
-    assert(Number.isInteger(titleMaxLength) && titleMaxLength >= 0);
   }
 
   if(typeof descMaxLength === 'undefined') {
     descMaxLength = DEFAULT_DESC_MAX_LEN;
-  } else {
-    assert(Number.isInteger(descMaxLength) && descMaxLength >= 0);
   }
 
   const outputFeed = Object.assign({}, feed);
@@ -980,60 +865,102 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
 }
 
 // @param entryIds {Array} an array of entry ids
-FeedStore.prototype.removeEntries = function(entryIds) {
-  return new Promise((resolve, reject) => {
-    assert(this.isOpen());
-    assert(Array.isArray(entryIds));
+FeedStore.prototype.removeEntries = async function(entryIds) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return Status.EINVALIDSTATE;
+  }
 
-    for(const id of entryIds) {
-      assert(Entry.isValidId(id));
+  if(!Array.isArray(entryIds)) {
+    console.error('entryIds is not an array', entryIds);
+    return Status.EINVAL;
+  }
+
+  for(const id of entryIds) {
+    if(!Entry.isValidId(id)) {
+      console.debug('Invalid entry id', id);
+      return Status.EINVAL;
     }
+  }
 
+  if(!entryIds.length) {
+    console.debug('No entries to remove');
+    return Status.OK;
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('entry', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('entry');
     for(const id of entryIds) {
+      console.debug('Removing entry with id', id);
       store.delete(id);
     }
   });
+
+  try {
+    await promise;
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
+  }
+
+  return Status.OK;
 };
 
 // TODO: this should not accept entryIds as parameter, it should find the entries as part of the
 // transaction implicitly. Once that it done there is no need to assert against entryIds as
 // valid entry ids.
-FeedStore.prototype.removeFeed = function(feedId, entryIds) {
-  return new Promise((resolve, reject) => {
-    assert(this.isOpen());
-    assert(Feed.isValidId(feedId));
-    assert(Array.isArray(entryIds));
+FeedStore.prototype.removeFeed = async function(feedId, entryIds) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return Status.EINVALIDSTATE;
+  }
 
-    for(const id of entryIds) {
-      assert(Entry.isValidId(id));
+  if(!Feed.isValidId(feedId)) {
+    console.error('Invalid feed id', feedId);
+    return Status.EINVAL;
+  }
+
+  if(!Array.isArray(entryIds)) {
+    console.error('Invalid entryIds parameter', entryIds);
+    return Status.EINVAL;
+  }
+
+  // If any id is invalid the whole operation fails
+  for(const id of entryIds) {
+    if(!Entry.isValidId(id)) {
+      console.error('Invalid entry id', id);
+      return Status.EINVAL;
     }
+  }
 
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction(['feed', 'entry'], 'readwrite');
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
 
     const feedStore = tx.objectStore('feed');
+    console.debug('Deleting feed with id', feedId);
     feedStore.delete(feedId);
 
     const entryStore = tx.objectStore('entry');
     for(const id of entryIds) {
+      console.debug('Deleting entry with id', id);
       entryStore.delete(id);
     }
   });
-};
 
-FeedStore.prototype.setup = async function() {
   try {
-    await this.open();
-  } finally {
-    this.close();
+    await promise;
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
   }
-};
 
+  return Status.OK;
+};
 
 // Loads archivable entries from the database. An entry is archivable if it has not already been
 // archived, and has been read, and matches the custom predicate function.
@@ -1047,17 +974,29 @@ FeedStore.prototype.setup = async function() {
 // burden/responsibility to the caller. This should handle the expiration check that the caller
 // is basically using the predicate for. Basically the caller should just pass in a date instead
 // of a function
-FeedStore.prototype.findArchivableEntries = function(predicate, limit) {
-  return new Promise((resolve, reject) => {
-    assert(this.isOpen());
-    assert(typeof predicate === 'function');
+FeedStore.prototype.findArchivableEntries = async function(predicate, limit) {
 
-    const limited = typeof limit !== 'undefined';
-    if(limited) {
-      assert(Number.isInteger(limit) && limit >= 0);
-      assert(limit > 0);
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(typeof predicate !== 'function') {
+    console.error('Invalid predicate argument', predicate);
+    return [Status.EINVAL];
+  }
+
+  const limited = typeof limit !== 'undefined';
+  if(limited) {
+    if(!Number.isInteger(limit) || limit < 0) {
+      console.error('Invalid express limit argument', limit);
+      return [Status.EINVAL];
     }
+  }
 
+  // TODO: if IDBIndex.prototype.getAll supports limit, I should use that
+
+  const promise = new Promise((resolve, reject) => {
     const entries = [];
     const tx = this.conn.transaction('entry');
     tx.onerror = () => reject(tx.error);
@@ -1084,6 +1023,16 @@ FeedStore.prototype.findArchivableEntries = function(predicate, limit) {
       cursor.continue();
     };
   });
+
+  let entries;
+  try {
+    entries = await promise;
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+
+  return [Status.OK, entries];
 };
 
 // Archives certain entries in the database
@@ -1091,13 +1040,21 @@ FeedStore.prototype.findArchivableEntries = function(predicate, limit) {
 // @param maxAgeMs {Number} how long before an entry is considered archivable (using date entry
 // created), in milliseconds
 FeedStore.prototype.archiveEntries = async function(maxAgeMs, limit) {
-  assert(this.isOpen());
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return Status.EINVALIDSTATE;
+  }
+
   if(typeof maxAgeMs === 'undefined') {
     const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
     maxAgeMs = TWO_DAYS_MS;
   }
 
-  assert(Number.isInteger(maxAgeMs) && maxAgeMs >= 0);
+  if(!Number.isInteger(maxAgeMs) || maxAgeMs < 0) {
+    console.error('Invalid maxAgeMs argument', maxAgeMs);
+    return Status.EINVAL;
+  }
+
   const currentDate = new Date();
 
   function isArchivable(entry) {
@@ -1105,10 +1062,15 @@ FeedStore.prototype.archiveEntries = async function(maxAgeMs, limit) {
     return entryAgeMs > maxAgeMs;
   }
 
-  const entries = await this.findArchivableEntries(isArchivable, limit);
+  const [status, entries] = await this.findArchivableEntries(isArchivable, limit);
+  if(status !== Status.OK) {
+    console.error('Failed to find archivable entries with status ' + status);
+    return status;
+  }
+
   if(!entries.length) {
-    console.debug('no archivable entries found');
-    return;
+    console.debug('No archivable entries found');
+    return Status.OK;
   }
 
   const CHANNEL_NAME = 'reader';
@@ -1120,20 +1082,25 @@ FeedStore.prototype.archiveEntries = async function(maxAgeMs, limit) {
 
   try {
     await Promise.all(promises);
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
   } finally {
     channel.close();
   }
 
   console.log('Compacted %s entries', entries.length);
+  return Status.OK;
 };
 
+// TODO: use status
 FeedStore.prototype.archiveEntry = async function(entry, channel) {
   const beforeSize = sizeof(entry);
   const compacted = compactEntry(entry);
   compacted.dateUpdated = new Date();
   const afterSize = sizeof(compacted);
   console.debug('Compact entry changed approx size from %d to %d', beforeSize, afterSize);
-  const status = await this.putEntry(compacted);
+  const [status] = await this.putEntry(compacted);
   if(status !== Status.OK) {
     throw new Error('Failed to put entry with status ' + status);
   }
@@ -1183,7 +1150,14 @@ FeedStore.prototype.refreshFeedIcons = async function(iconCache) {
   for(const feed of feeds) {
     promises.push(this.refreshFeedIcon(feed, query));
   }
-  await Promise.all(promises);
+
+  try {
+    await Promise.all(promises);
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
+  }
+
 
   return Status.OK;
 };
@@ -1242,20 +1216,24 @@ FeedStore.prototype.refreshFeedIcon = async function(feed, query) {
 // @param limit {Number} optional, if specified should be positive integer > 0, maximum number
 // of entries to lost entries to load from database
 FeedStore.prototype.removeLostEntries = async function(limit) {
-
-  const [status, entries] = await this.findEntries(isLostEntry, limit);
+  let [status, entries] = await this.findEntries(isLostEntry, limit);
   if(status !== Status.OK) {
-    throw new Error('Failed to find entries with status ' + status);
+    console.error('Failed to find entries with status ', status);
+    return status;
   }
 
-
-  console.debug('Found %s lost entries', entries.length);
+  console.debug('Found %d lost entries', entries.length);
   if(entries.length === 0) {
-    return;
+    return Status.OK;
   }
 
   const ids = entries.map(entry => entry.id);
-  await this.removeEntries(ids);
+
+  status = await this.removeEntries(ids);
+  if(status !== Status.OK) {
+    console.error('Failed to remove entries with status ', status);
+    return status;
+  }
 
   const CHANNEL_NAME = 'reader';
   const channel = new BroadcastChannel(CHANNEL_NAME);
@@ -1265,6 +1243,8 @@ FeedStore.prototype.removeLostEntries = async function(limit) {
     channel.postMessage(message);
   }
   channel.close();
+
+  return Status.OK;
 };
 
 function isLostEntry(entry) {
@@ -1281,7 +1261,7 @@ FeedStore.prototype.removeOrphanedEntries = async function(limit) {
 
   [status, feedIds] = await this.getAllFeedIds();
   if(status !== Status.OK) {
-    console.error('Failed to get feed ids with status ', status);
+    console.error('Failed to get feed ids with status', status);
     return status;
   }
 
@@ -1292,20 +1272,21 @@ FeedStore.prototype.removeOrphanedEntries = async function(limit) {
 
   [status, entries] = await this.findEntries(isOrphan, limit);
   if(status !== Status.OK) {
-    throw new Error('Failed to find entries with status ' + status);
+    console.error('Failed to find entries with status', status);
+    return status;
   }
 
   console.debug('Found %s orphans', entries.length);
   if(entries.length === 0) {
-    return;
+    return Status.OK;
   }
 
   const orphanIds = entries.map(entry => entry.id);
-  if(orphanIds.length < 1) {
-    return;
+  status = await this.removeEntries(orphanIds);
+  if(status !== Status.OK) {
+    console.error('Failed to remove entries with status', status);
+    return status;
   }
-
-  await this.removeEntries(orphanIds);
 
   const CHANNEL_NAME = 'reader';
   const channel = new BroadcastChannel(CHANNEL_NAME);
@@ -1315,57 +1296,6 @@ FeedStore.prototype.removeOrphanedEntries = async function(limit) {
     channel.postMessage(message);
   }
   channel.close();
+
+  return Status.OK;
 };
-
-
-// Returns a new object that is a copy of the input less empty properties. A property is empty if it
-// is null, undefined, or an empty string. Ignores prototype, deep objects, getters, etc. Shallow
-// copy by reference.
-// TODO: maybe rename to something like copyNonEmptyProps? Less suggestive of mutation.
-function filterEmptyProps(object) {
-  const hasOwnProp = Object.prototype.hasOwnProperty;
-  const output = {};
-  let undef;
-  if(typeof object === 'object' && object !== null) {
-    for(const key in object) {
-      if(hasOwnProp.call(object, key)) {
-        const value = object[key];
-        if(value !== undef && value !== null && value !== '') {
-          output[key] = value;
-        }
-      }
-    }
-  }
-
-  return output;
-}
-
-
-// If the input is a string then the function returns a new string that is approximately a copy of
-// the input less certain 'unprintable' characters. In the case of bad input the input itself is
-// returned. To test if characters were replaced, check if the output string length is less than the
-// input string length.
-// Basically this removes those characters in the range of [0..31] except for the following four
-// characters:
-// \t is \u0009 which is base10 9
-// \n is \u000a which is base10 10
-// \f is \u000c which is base10 12
-// \r is \u000d which is base10 13
-// TODO: look into how much this overlaps with filterControls
-
-const unPrintablePattern = /[\u0000-\u0008\u000b\u000e-\u001F]+/g;
-export function filterUnprintableCharacters(value) {
-  // The length check is done because given that replace will be a no-op when the length is 0 it is
-  // faster to perform the length check than it is to call replace. I do not know the distribution
-  // of inputs but I expect that empty strings are not rare.
-  return typeof value === 'string' && value.length ? value.replace(unPrintablePattern, '') : value;
-}
-
-// Returns a new string where Unicode Cc-class characters have been removed. Throws an error if
-// string is not a defined string. Adapted from these stack overflow questions:
-// http://stackoverflow.com/questions/4324790
-// http://stackoverflow.com/questions/21284228
-// http://stackoverflow.com/questions/24229262
-export function filterControls(string) {
-  return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
-}

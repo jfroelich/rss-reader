@@ -4,6 +4,8 @@ import FeedStore from "/src/feed-store/feed-store.js";
 import updateBadgeText from "/src/update-badge-text.js";
 import * as Feed from "/src/feed-store/feed.js";
 
+// TODO: return status instead of throw
+
 // Remove a feed and its entries from the database and notify the UI
 // @param feedId {Number} id of feed to unsubscribe
 // @param store {FeedStore} an open FeedStore instance
@@ -15,13 +17,16 @@ export default async function unsubscribe(feedId, store, channel) {
   assert(store.isOpen());
   assert(channel instanceof BroadcastChannel);
 
-  const [status, entryIds] = await store.findEntryIdsByFeedId(feedId);
+  let [status, entryIds] = await store.findEntryIdsByFeedId(feedId);
   if(status !== Status.OK) {
     throw new Error('Failed to find entry ids with status ' + status);
   }
 
 
-  await store.removeFeed(feedId, entryIds);
+  status = await store.removeFeed(feedId, entryIds);
+  if(status !== Status.OK) {
+    throw new Error('Failed to remove feed and entries with status ' + status);
+  }
 
   channel.postMessage({type: 'feed-deleted', id: feedId, reason: 'unsubscribe'});
   for(const entryId of entryIds) {

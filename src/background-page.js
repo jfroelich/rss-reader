@@ -17,7 +17,10 @@ async function onWakeup(alarm) {
     const limit = 500;
     try {
       await store.open();
-      await store.archiveEntries(maxAgeMs, limit);
+      const status = await store.archiveEntries(maxAgeMs, limit);
+      if(status !== OK) {
+        throw new Error('Failed to archive entries with status ' + status);
+      }
     } catch(error) {
       console.warn(error);
     } finally {
@@ -34,7 +37,10 @@ async function onWakeup(alarm) {
     const limit = 100;
     try {
       await fs.open();
-      await fs.removeLostEntries(limit);
+      const status = await fs.removeLostEntries(limit);
+      if(status !== OK) {
+        throw new Error('Failed to remove lost entries with status ' + status);
+      }
     } catch(error) {
       console.warn(error);
     } finally {
@@ -47,7 +53,10 @@ async function onWakeup(alarm) {
     const limit = 100;
     try {
       await fs.open();
-      await fs.removeOrphanedEntries(limit);
+      const status = await fs.removeOrphanedEntries(limit);
+      if(status !== OK) {
+        throw new Error('Failed to remove orphaned entries with status ' + status);
+      }
     } catch(error) {
       console.warn(error);
     } finally {
@@ -171,7 +180,10 @@ cli.archiveEntries = async function(limit) {
   let maxAgeMs;
   try {
     await store.open();
-    await store.archiveEntries(maxAgeMs, limit);
+    const status = await store.archiveEntries(maxAgeMs, limit);
+    if(status !== OK) {
+      throw new Error('Failed to archive entries with status ' + status);
+    }
   } finally {
     store.close();
   }
@@ -195,7 +207,10 @@ cli.removeLostEntries = async function(limit) {
   const store = new FeedStore();
   try {
     await store.open();
-    await store.removeLostEntries(limit);
+    const status = await store.removeLostEntries(limit);
+    if(status !== OK) {
+      throw new Error('Failed to remove lost entries with status ' + status);
+    }
   } finally {
     store.close();
   }
@@ -205,7 +220,10 @@ cli.removeOrphanedEntries = async function(limit) {
   const store = new FeedStore();
   try {
     await store.open();
-    await store.removeOrphanedEntries(limit);
+    const status = await store.removeOrphanedEntries(limit);
+    if(status !== OK) {
+      throw new Error('Failed to remove orphaned entries with status ' + status);
+    }
   } finally {
     store.close();
   }
@@ -257,14 +275,17 @@ console.debug('Initializing background page');
 addInstallListener(async function(event) {
   console.debug('onInstalled', event);
 
-  // TODO: these two tasks are independent, why make the second wait on the first to resolve?
+  // TODO: these tasks are independent, why make the second wait on the first to resolve?
 
-  const store = new FeedStore();
+  const fs = new FeedStore();
   try {
-    await store.setup();
+    await fs.open();
   } catch(error) {
-    console.warn(error);
+    console.error(error);
+  } finally {
+    fs.close();
   }
+
 
   const fic = new FaviconCache();
   try {

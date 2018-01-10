@@ -1,4 +1,5 @@
 import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
+import * as Status from "/src/common/status.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 
 // TODO: this should operate on a test database, not the live database
@@ -11,7 +12,10 @@ async function test() {
 
   try {
     await store.open();
-    await store.archiveEntries(maxAgeMs, limit);
+    const status = await store.archiveEntries(maxAgeMs, limit);
+    if(status !== Status.OK) {
+      throw new Error('Failed to archive entries with status ' + status);
+    }
     store.close();
     closeRequested = true;
     await IndexedDbUtils.remove(store.conn.name);
