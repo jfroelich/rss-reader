@@ -19,7 +19,6 @@ export function create() {
 
 // Return true if the input value is a feed
 export function isFeed(value) {
-  // the null check is done to avoid error that occurs due to typeof null being object
   return value !== null && typeof value === 'object' && value.magic === FEED_MAGIC;
 }
 

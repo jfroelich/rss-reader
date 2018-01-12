@@ -14,6 +14,7 @@ import * as Status from "/src/common/status.js";
 
 export async function open(name, version, upgradeListener, timeout) {
   if(typeof name !== 'string') {
+    console.error('Invalid name argument', name);
     return [Status.EINVAL, null, stringFormat('Expected string name, got', typeof name)];
   }
 
@@ -22,6 +23,7 @@ export async function open(name, version, upgradeListener, timeout) {
   }
 
   if(!Number.isInteger(timeout) || timeout < 0) {
+    console.error('Invalid timeout argument', timeout);
     return [Status.EINVAL, null,
       stringFormat('Expected timeout positive integer, got', typeof name)];
   }
@@ -77,6 +79,7 @@ export async function open(name, version, upgradeListener, timeout) {
     try {
       conn = await openPromise;
     } catch(error) {
+      console.error(error);
       return [Status.EDBOPEN];
     }
     return [Status.OK, conn];
@@ -86,6 +89,7 @@ export async function open(name, version, upgradeListener, timeout) {
   try {
     conn = await Promise.race([openPromise, timeoutPromise]);
   } catch(error) {
+    console.error(error);
     return [Status.EDBOPEN];
   }
 
@@ -95,6 +99,7 @@ export async function open(name, version, upgradeListener, timeout) {
   } else {
     timedout = true;
     const message = formatString('Connecting to database %s timed out', name);
+    console.error(message);
     return [Status.ETIMEOUT, null, message];
   }
 }
@@ -109,12 +114,13 @@ export function close(...conns) {
   for(const conn of conns) {
     if(conn && conn instanceof IDBDatabase) {
       console.debug('Closing connection to database', conn.name);
-      conn.onabort = null;
+      conn.onabort = null;// signal closed
       conn.close();
     }
   }
 }
 
+// TODO: move this into calling code exclusively, do not export a shared helper here
 export function remove(name) {
   return new Promise(function executor(resolve, reject) {
     console.debug('Deleting database', name);

@@ -1,6 +1,7 @@
 import assert from "/src/common/assert.js";
 import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
+import markEntryRead from "/src/feed-ops/mark-entry-read.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
@@ -9,6 +10,7 @@ import exportFeeds from "/src/slideshow-page/export-feeds.js";
 import OPMLImporter from "/src/slideshow-page/opml-importer.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
 import * as Slideshow from "/src/slideshow-page/slideshow.js";
+
 
 // TODO: need to handle on slide next now, it needs to be able to append slides, and it
 // needs to be called so it can mark slide read and cleanup
@@ -189,7 +191,7 @@ async function markSlideRead(store, slideElement) {
     return;
   }
 
-  const status = await store.markEntryAsRead(entryId);
+  const status = await markEntryRead(store, entryId);
   if(status !== Status.OK) {
     // TODO: display an error
     console.error('Failed to mark entry %d as read with status', entryId, status);

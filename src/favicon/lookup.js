@@ -4,10 +4,6 @@ import {parseHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 import FaviconCache from "/src/favicon/cache.js";
 
-
-
-const dprintf = function(){}; // console.debug;
-
 // Class that provides favicon lookup
 export default class FaviconLookup {
   constructor() {
@@ -34,10 +30,12 @@ export default class FaviconLookup {
 // @throws {Error} database related
 // @returns {String} the associated favicon url or undefined if not found
 FaviconLookup.prototype.lookup = async function(url, document) {
+  let status;
+
   assert(url instanceof URL);
   assert(typeof document === 'undefined' || document instanceof Document);
 
-  dprintf('Lookup favicon for url', url.href);
+  console.log('Lookup favicon for url', url.href);
 
   // Store a distinct set of request urls involved in the lookup so that various conditions are
   // simpler to implement and read
@@ -51,7 +49,12 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
   // If the cache is available, first check if the input url is cached
   if(this.hasOpenCache()) {
-    const entry = await this.cache.findEntry(url);
+    let entry;
+    [status, entry] = await this.cache.findEntry(url);
+    if(status !== Status.OK) {
+      throw new Error('Error when finding entry with status ' + status);
+    }
+
     if(entry) {
       // If we found a fresh entry then exit early with the icon url
       if(entry.iconURLString && !this.isExpired(entry)) {
@@ -75,7 +78,10 @@ FaviconLookup.prototype.lookup = async function(url, document) {
         // This does not affect the origin entry because per-page icons are not site-wide. That is,
         // they could be, but it is not guaranteed. The only thing that guarantees site wide if is
         // origin is found and page does not specify.
-        await this.cache.putAll(urls, iconURL);
+        status = await this.cache.putAll(urls, iconURL);
+        if(status !== Status.OK) {
+          throw new Error('Failed to put entries with status ' + status);
+        }
       }
       return iconURL;
     }
@@ -87,7 +93,11 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   if(this.hasOpenCache() && originURL.href !== url.href) {
     // Set origin entry for use near the end of the lookup, so that we do not have to set it again
     // later and avoid doing a second call to findEntry.
-    originEntry = await this.cache.findEntry(originURL);
+    [status, originEntry] = await this.cache.findEntry(originURL);
+    if(status !== Status.OK) {
+      throw new Error('Error when finding entry with status ' + status);
+    }
+
     if(originEntry && originEntry.failureCount >= this.kMaxFailureCount) {
       return;
     }
@@ -117,12 +127,21 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
       // If redirected, then check the cache for the redirect.
       if(this.hasOpenCache()) {
-        const entry = await this.cache.findEntry(responseURL);
+        let entry;
+        [status, entry] = await this.cache.findEntry(responseURL);
+        if(status !== Status.OK) {
+          throw new Error('Error when finding entry with status ' + status);
+        }
+
+
         if(entry && entry.iconURLString && !this.isExpired(entry)) {
           // Associate the redirect's icon with the input url.
           // This does not affect the redirect entry because its fine as is
           // This does not affect the origin entry because per-page icons do not apply site wide
-          await this.cache.putAll([url.href], entry.iconURLString);
+          status = await this.cache.putAll([url.href], entry.iconURLString);
+          if(status !== Status.OK) {
+            throw new Error('Failed to put entries with status ' + status);
+          }
           return entry.iconURLString;
         }
       }
@@ -148,7 +167,10 @@ FaviconLookup.prototype.lookup = async function(url, document) {
       if(this.hasOpenCache()) {
         // This does not modify the origin entry if it exists because a per-page icon does not apply
         // site wide. We have not yet added origin to the urls array.
-        await this.cache.putAll(urls, iconURL);
+        status = await this.cache.putAll(urls, iconURL);
+        if(status !== Status.OK) {
+          throw new Error('Failed to put entries with status ' + status);
+        }
       }
 
       return iconURL;
@@ -162,7 +184,11 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     // originEntry variable.
 
     // Origin url may have changed, so search for its entry again
-    const entry = await this.cache.findEntry(originURL);
+    let entry;
+    [status, entry] = await this.cache.findEntry(originURL);
+    if(status !== Status.OK) {
+      throw new Error('Error when finding entry with status ' + status);
+    }
 
     // Set the shared origin entry to the new origin entry, which signals to the lookup failure
     // handler not to perform the lookup again
@@ -177,7 +203,10 @@ FaviconLookup.prototype.lookup = async function(url, document) {
       if(iconURL && !this.isExpired(entry)) {
         // Store the icon for the other urls
         // We did not yet add origin to urls array
-        await this.cache.putAll(urls, iconURL);
+        status = await this.cache.putAll(urls, iconURL);
+        if(status !== Status.OK) {
+          throw new Error('Failed to put entries with status ' + status);
+        }
         return iconURL;
       } else if(entry.failureCount >= this.kMaxFailureCount) {
         return;
@@ -205,13 +234,19 @@ FaviconLookup.prototype.lookup = async function(url, document) {
 
   if(this.isAcceptableImageResponse(response)) {
     if(this.hasOpenCache()) {
-      await this.cache.putAll(urls, response.url);
+      status = await this.cache.putAll(urls, response.url);
+      if(status !== Status.OK) {
+        throw new Error('Failed to put entries with status ' + status);
+      }
     }
     return response.url;
   }
 
   if(this.hasOpenCache()) {
-    await this.onLookupFailure(originURL, originEntry);
+    [status] = await this.onLookupFailure(originURL, originEntry);
+    if(status !== Status.OK) {
+      console.warn('Failed to handle lookup failure property', status);
+    }
   }
 
   // Default to return undefined, which indicates no favicon found.
@@ -324,7 +359,7 @@ FaviconLookup.prototype.search = async function(document, baseURL) {
   if(!canonicalURLs.length) {
 
     // TEMP:
-    dprintf('Found candidates but none canonicalizable', baseURL.href, candidateURLStrings);
+    console.debug('Found candidates but none canonicalizable', baseURL.href, candidateURLStrings);
 
     return;
   }
@@ -387,6 +422,8 @@ FaviconLookup.prototype.onLookupFailure = function(originURL, entry) {
     if('failureCount' in entry) {
       if(entry.failureCount <= this.kMaxFailureCount) {
         newEntry.failureCount = entry.failureCount + 1;
+
+
         return this.cache.put(newEntry);
       }
     } else {

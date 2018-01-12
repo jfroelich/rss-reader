@@ -1,3 +1,12 @@
+
+
+// TODO: cache shold be merged with lookup into service
+// TODO: service should be decoupled from all common libraries and roll its own, to provide a
+// more severe service boundary. So it should return its own error codes and make use of its
+// own db utils library.
+// TODO: it's possible that service should not be a class, but instead just a module that
+// exposes a few functions.
+
 import assert from "/src/common/assert.js";
 import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
 import * as Status from "/src/common/status.js";
@@ -33,8 +42,17 @@ FaviconCache.prototype.isOpen = function() {
 };
 
 FaviconCache.prototype.close = function() {
+  if(!this.conn) {
+    return Status.EINVALIDSTATE;
+  }
+
+  if(!this.isOpen()) {
+    return Status.EINVALIDSTATE;
+  }
+
   IndexedDbUtils.close(this.conn);
   this.conn = void this.conn;
+  return Status.OK;
 };
 
 FaviconCache.prototype.setup = async function() {
@@ -73,42 +91,88 @@ function onUpgradeNeeded(event) {
   }
 }
 
-FaviconCache.prototype.clear = function() {
-  return new Promise((resolve, reject) => {
-    assert(IndexedDbUtils.isOpen(this.conn));
-    console.debug('Clearing favicon cache');
+FaviconCache.prototype.clear = async function() {
+  console.debug('Clearing favicon cache');
+
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return Status.EINVALIDSTATE;
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
     const request = store.clear();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+
+  try {
+    await promise;
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
+  }
+
+  return Status.OK;
 };
 
-FaviconCache.prototype.findEntry = function(urlObject) {
-  return new Promise((resolve, reject) => {
-    assert(IndexedDbUtils.isOpen(this.conn));
+FaviconCache.prototype.findEntry = async function(url) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(!(url instanceof URL)) {
+    console.error('Invalid url parameter', url);
+    return [Status.EINVAL];
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache');
     const store = tx.objectStore('favicon-cache');
-    const request = store.get(urlObject.href);
+    const request = store.get(url.href);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+
+  let entry;
+  try {
+    entry = await promise;
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+
+  return [Status.OK, entry];
 };
 
+// Returns a promise that resolves to an array of expired entries
 // TODO: if I only need entry ids in calling contexts, which currently I think is only compact,
 // then this should be using getAllKeys instead of getAll?
-// Returns a promise that resolves to an array of expired entries
-FaviconCache.prototype.findExpired = function(maxAgeMs, limit) {
-  return new Promise((resolve, reject) => {
-    assert(IndexedDbUtils.isOpen(this.conn));
-    if(typeof maxAgeMs === 'undefined') {
-      maxAgeMs = FaviconCache.MAX_AGE_MS;
+FaviconCache.prototype.findExpired = async function(maxAgeMs, limit) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(typeof maxAgeMs === 'undefined') {
+    maxAgeMs = FaviconCache.MAX_AGE_MS;
+  }
+
+  if(!Number.isInteger(maxAgeMs) || maxAgeMs < 0) {
+    console.error('Invalid max age argument', maxAgeMs);
+    return [Status.EINVAL];
+  }
+
+  if(typeof limit !== 'undefined') {
+    if(!Number.isInteger(limit) || limit < 0) {
+      console.error('Invalid limit argument', limit);
+      return [Status.EINVAL];
     }
+  }
 
-    assert(Number.isInteger(maxAgeMs) && maxAgeMs >= 0);
-    assert(typeof limit === 'undefined' || (Number.isInteger(limit) && limit >= 0));
-
+  const promise = new Promise((resolve, reject) => {
     let cutoffTimeMs = Date.now() - maxAgeMs;
     cutoffTimeMs = cutoffTimeMs < 0 ? 0 : cutoffTimeMs;
     const tx = this.conn.transaction('favicon-cache');
@@ -116,28 +180,37 @@ FaviconCache.prototype.findExpired = function(maxAgeMs, limit) {
     const index = store.index('dateUpdated');
     const cutoffDate = new Date(cutoffTimeMs);
     const range = IDBKeyRange.upperBound(cutoffDate);
-
-    // Limit the number of items loaded into memory from the database by specifying the count
-    // parameter to getAll.
-    // https://w3c.github.io/IndexedDB/#dom-idbindex-getall
-    // If count is specified and there are more than count records in range, only the first count
-    // will be retrieved.
-    // getAll is supported in Chrome 48, Firefox 44, and Safari 10.1.
-    // In the section on retrieving multiple values: if count is not given or is 0, count is treated
-    // as Infinity.
-    // I assume that if limit is undefined this is the equivalent of "not given".
     const request = index.getAll(range, limit);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => resolve(request.error);
   });
+
+  let entries;
+  try {
+    entries = await promise;
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+
+  return [Status.OK, entries];
 };
 
 // Removes entries corresponding to the given page urls
 // @param pageURLs {Array} an array of url strings
 // @return {Promise}
-FaviconCache.prototype.removeByURL = function(pageURLs) {
-  return new Promise((resolve, reject) => {
-    assert(IndexedDbUtils.isOpen(this.conn));
+FaviconCache.prototype.removeByURL = async function(pageURLs) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return Status.EINVALIDSTATE;
+  }
+
+  if(!Array.isArray(pageURLs)) {
+    console.error('Invalid page urls argument', pageURLs);
+    return Status.EINVAL;
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
@@ -146,24 +219,49 @@ FaviconCache.prototype.removeByURL = function(pageURLs) {
       store.delete(url);
     }
   });
+
+  try {
+    await promise;
+  } catch(error) {
+    return Status.EDB;
+  }
+  return Status.OK;
 };
 
-FaviconCache.prototype.put = function(entry) {
-  return new Promise((resolve, reject) => {
-    assert(IndexedDbUtils.isOpen(this.conn));
+FaviconCache.prototype.put = async function(entry) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     const store = tx.objectStore('favicon-cache');
     const request = store.put(entry);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+
+  let result;
+  try {
+    result = await promise;
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+
+  return [Status.OK, result];
 };
 
 // @param pageURLs {Iterable<String>}
 // @param iconURL {String}
-FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
-  return new Promise((resolve, reject) => {
-    assert(IndexedDbUtils.isOpen(this.conn));
+FaviconCache.prototype.putAll = async function(pageURLs, iconURL) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return Status.EINVALIDSTATE;
+  }
+
+  const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
@@ -178,6 +276,15 @@ FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
       store.put(entry);
     }
   });
+
+  try {
+    await promise;
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
+  }
+
+  return Status.OK;
 };
 
 // Finds expired entries in the database and removes them
@@ -186,13 +293,31 @@ FaviconCache.prototype.putAll = function(pageURLs, iconURL) {
 // there is a risk of memory or performance issues. If not specified then all possible compactable
 // records will be compacted. Specifying a limit of 0 is equivalent to specifying undefined.
 FaviconCache.prototype.compact = async function(maxAgeMs, limit) {
-  console.debug('Compacting favicon entries using maxAgeMs %d and limit', maxAgeMs, limit);
-  assert(IndexedDbUtils.isOpen(this.conn));
-  const entries = await this.findExpired(maxAgeMs, limit);
-  console.debug('Found %d expired entries suitable for compaction', entries.length);
-  const urls = [];
-  for(const entry of entries) {
-    urls.push(entry.pageURLString);
+  console.log('Compacting favicon entries', maxAgeMs, limit);
+
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return Status.EINVALIDSTATE;
   }
-  await this.removeByURL(urls);
+
+  // TODO: if I only use the url property, then I should think about how to only load urls
+  // instead of full entries
+
+  let [status, entries] = await this.findExpired(maxAgeMs, limit);
+  if(status !== Status.OK) {
+    console.error('Failed to find expired entries with status', status);
+    return status;
+  }
+
+  console.debug('Found %d expired entries suitable for compaction', entries.length);
+
+  const urls = entries.map(entry => entry.pageURLString);
+
+  status = await this.removeByURL(urls);
+  if(status !== Status.OK) {
+    console.error('Failed to remove entry by url with status', status);
+    return status;
+  }
+
+  return Status.OK;
 };

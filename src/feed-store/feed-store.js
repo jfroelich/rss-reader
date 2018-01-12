@@ -1,7 +1,4 @@
 
-// TODO: remove reliance on assert
-import assert from "/src/common/assert.js";
-
 // TODO: remove reliance on CheckedError
 import {CheckedError} from "/src/common/errors.js";
 
@@ -14,16 +11,12 @@ import FaviconLookup from "/src/favicon/lookup.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as FeedStoreErrors from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
-import sizeof from "/src/feed-store/sizeof.js";
 import {onUpgradeNeeded} from "/src/feed-store/upgrade.js";
 import {
   filterControls,
   filterEmptyProps,
   filterUnprintableCharacters
 } from "/src/feed-store/utils.js";
-
-// TODO: remove circular dependency
-import updateBadgeText from "/src/update-badge-text.js";
 
 
 export default function FeedStore() {
@@ -37,6 +30,7 @@ export default function FeedStore() {
 
 FeedStore.prototype.open = async function() {
   if(this.isOpen()) {
+    console.error('Database already open');
     return Status.EINVALIDSTATE;
   }
 
@@ -104,14 +98,13 @@ FeedStore.prototype.activateFeed = async function(feedId) {
 // @param channel {BroadcastChannel} optional, notify observers of new entries
 // @return {Number} the id of the added entry
 FeedStore.prototype.addEntry = async function(entry, channel) {
-
   if(!this.isOpen()) {
-    console.error('Database is not open to add entry');
+    console.error('Database is not open');
     return [Status.EINVALIDSTATE];
   }
 
   if(!Entry.isEntry(entry)) {
-    console.error('Cannot add invalid entry', entry);
+    console.error('Invalid entry', entry);
     return [Status.EINVAL];
   }
 
@@ -219,6 +212,44 @@ FeedStore.prototype.countUnreadEntries = async function() {
   }
 
   return [Status.OK, count];
+};
+
+FeedStore.prototype.markEntryRead = async function(entryId) {
+  if(!this.isOpen()) {
+    console.error('Database is not open');
+    return Status.EINVALIDSTATE;
+  }
+
+  if(!Entry.isValidId(entryId)) {
+    console.error('Invalid entry id', entryId);
+    return Status.EINVAL;
+  }
+
+  let [status, entry] = await this.findEntryById(entryId);
+  if(status !== Status.OK) {
+    console.error('Failed to find entry by id with status', status);
+    return status;
+  }
+
+  console.debug('Loaded entry to mark as read', entryId, entry.urls);
+
+  if(entry.readState === Entry.STATE_READ) {
+    console.error('Entry %d already in read state', entryId);
+    return Status.EINVALIDSTATE;
+  }
+
+  entry.readState = Entry.STATE_READ;
+  entry.dateRead = entry.dateUpdated;
+  entry.dateUpdated = new Date();
+
+  [status] = await this.putEntry(entry);
+  if(status !== Status.OK) {
+    console.error('Failed to put entry with status', status);
+    return status;
+  }
+
+  console.debug('Successfully put read entry in database', entryId);
+  return Status.OK;
 };
 
 FeedStore.prototype.deactivateFeed = async function(feedId, reason) {
@@ -661,97 +692,6 @@ FeedStore.prototype.getAllFeeds = async function() {
   return [Status.OK, feeds];
 };
 
-FeedStore.prototype.markEntryAsRead = async function(entryId) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return Status.EINVALIDSTATE;
-  }
-
-  if(!Entry.isValidId(entryId)) {
-    console.error('Invalid entry id', entryId);
-    return Status.EINVAL;
-  }
-
-  let [status, entry] = await this.findEntryById(entryId);
-  if(status !== Status.OK) {
-    console.error('Failed to find entry by id with status', status);
-    return status;
-  }
-
-  if(entry.readState === Entry.STATE_READ) {
-    console.error('Entry %d already in read state', entryId);
-    return Status.EINVALIDSTATE;
-  }
-
-  if(!Entry.hasURL(entry)) {
-    console.error('Entry is missing url', entry);
-    return Status.EINVALIDSTATE;
-  }
-
-  const url = Entry.peekURL(entry);
-  console.debug('Found entry to mark as read', entryId, url);
-
-  entry.readState = Entry.STATE_READ;
-  entry.dateRead = entry.dateUpdated;
-  entry.dateUpdated = new Date();
-
-  [status] = await this.putEntry(entry);
-  if(status !== Status.OK) {
-    console.error('Failed to put entry with status', status);
-    return status;
-  }
-
-  console.debug('Marked entry as read', entryId, url);
-
-  // TODO: move these notes to a github issue
-
-  // TODO: This is bad, a circular dependency. This is a symptom of a more severe lack of
-  // forward planning and organization. The basic gist is that I need to decide if markEntryAsRead
-  // and similar storage functions should be able to interact with the extension. In this case
-  // trigger a side effect that is extension wide. The problem is basically that I think this
-  // belongs here. Marking an entry as read in storage should update the number of unread entries
-  // displayed in the badge as an obvious side effect. Or should it? I never really decided.
-  // It would be kind of easy to not do this here, and shift the burden to the caller. But then
-  // this invites the mistake of not performing this expected subsequent action. The two changes
-  // are intricately linked and decoupling here is a mistake. In some sense this should have no
-  // knowledge of the extension. Maybe what should be happening is that this should be sending
-  // out a message to the 'reader' channel that an entry was marked as read. Then, some external
-  // listener is responsible. I dunno though, that feels like I am just dumping an extra layer
-  // of complexity on what should otherwise be a straightforward operation. This just really is
-  // not well thought out.
-
-  // Previously this made sense. markEntryAsRead operated in a layer above storage as an app
-  // action, like a controller that mediated between the view and the model. That higher level
-  // operation depended on both storage and the extension. It was the
-  // sole caller of the storage function that marks the entry as read. And by acting as the sole
-  // caller, the sole channel through which to instruct, it coupled the effects and guaranteed
-  // both. So maybe I should revert to that.
-
-  // On the other hand, I dunno. I go back to the question of whether changes to the database
-  // should have an obvious and immediate side effect on other parts of the extension. Because
-  // they kind of should? But maybe what I should do instead is clarify an state confidently that
-  // storage is not concerned with the rest of the extension at all. it is only concerned with
-  // storing things. if i separate the concerns that way it kind of makes sense? but this is kind
-  // of what I don't like. This concern of modifying the badge text is directly linked to the
-  // state change. I am separating a concern by basically spreading the concern over two layers.
-  // Ewww. Right?
-
-  // http://www.micheltriana.com/blog/2012/04/09/library-oriented-architecture
-  // Basically I think the database module should just care about storing data. Some higher level
-  // api is concerned with mixing together database storage with everything else.
-  // So this is an example of improper mixing of concerns. It pretty clearly explains the
-  // cause of the circulary dependency too.
-  // So while it was convenient to store this function (and similar ones that work with channels)
-  // here, that should have been done somewhere else. The database should not have anything to
-  // do with channels. So I need a new intermediate layer above the database that performs
-  // several of theses actions PLUS the rest, instead of trying to do it all in this storage layer.
-
-  updateBadgeText();
-
-  return Status.OK;
-};
-
-
 FeedStore.prototype.putEntry = async function(entry) {
   if(!this.isOpen()) {
     console.error('Database is not open');
@@ -1035,113 +975,29 @@ FeedStore.prototype.findArchivableEntries = async function(predicate, limit) {
   return [Status.OK, entries];
 };
 
-// Archives certain entries in the database
-// @param store {FeedStore} storage database
-// @param maxAgeMs {Number} how long before an entry is considered archivable (using date entry
-// created), in milliseconds
-FeedStore.prototype.archiveEntries = async function(maxAgeMs, limit) {
+
+FeedStore.prototype.refreshFeedIcons = async function(iconCache) {
   if(!this.isOpen()) {
     console.error('Database is not open');
     return Status.EINVALIDSTATE;
   }
 
-  if(typeof maxAgeMs === 'undefined') {
-    const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
-    maxAgeMs = TWO_DAYS_MS;
-  }
-
-  if(!Number.isInteger(maxAgeMs) || maxAgeMs < 0) {
-    console.error('Invalid maxAgeMs argument', maxAgeMs);
-    return Status.EINVAL;
-  }
-
-  const currentDate = new Date();
-
-  function isArchivable(entry) {
-    const entryAgeMs = currentDate - entry.dateCreated;
-    return entryAgeMs > maxAgeMs;
-  }
-
-  const [status, entries] = await this.findArchivableEntries(isArchivable, limit);
-  if(status !== Status.OK) {
-    console.error('Failed to find archivable entries with status ' + status);
-    return status;
-  }
-
-  if(!entries.length) {
-    console.debug('No archivable entries found');
-    return Status.OK;
-  }
-
-  const CHANNEL_NAME = 'reader';
-  const channel = new BroadcastChannel(CHANNEL_NAME);
-  const promises = [];
-  for(const entry of entries) {
-    promises.push(this.archiveEntry(entry, channel));
-  }
-
-  try {
-    await Promise.all(promises);
-  } catch(error) {
-    console.error(error);
-    return Status.EDB;
-  } finally {
-    channel.close();
-  }
-
-  console.log('Compacted %s entries', entries.length);
-  return Status.OK;
-};
-
-// TODO: use status
-FeedStore.prototype.archiveEntry = async function(entry, channel) {
-  const beforeSize = sizeof(entry);
-  const compacted = compactEntry(entry);
-  compacted.dateUpdated = new Date();
-  const afterSize = sizeof(compacted);
-  console.debug('Compact entry changed approx size from %d to %d', beforeSize, afterSize);
-  const [status] = await this.putEntry(compacted);
-  if(status !== Status.OK) {
-    throw new Error('Failed to put entry with status ' + status);
-  }
-
-  const message = {type: 'entry-archived', id: compacted.id};
-  channel.postMessage(message);
-  return compacted;
-};
-
-function compactEntry(entry) {
-  const compactedEntry = Entry.createEntry();
-  compactedEntry.dateCreated = entry.dateCreated;
-  compactedEntry.dateRead = entry.dateRead;
-  compactedEntry.feed = entry.feed;
-  compactedEntry.id = entry.id;
-  compactedEntry.readState = entry.readState;
-  compactedEntry.urls = entry.urls;
-  compactedEntry.archiveState = Entry.STATE_ARCHIVED;
-  compactedEntry.dateArchived = new Date();
-  return compactedEntry;
-}
-
-FeedStore.prototype.refreshFeedIcons = async function(iconCache) {
-  if(!this.isOpen()) {
-    return Status.EINVALIDSTATE;
-  }
-
   if(!(iconCache instanceof FaviconCache)) {
+    console.error('Invalid iconCache argument', iconCache);
     return Status.EINVAL;
   }
 
   if(!iconCache.isOpen()) {
+    console.error('Favicon cache is not open');
     return Status.EINVALIDSTATE;
   }
 
-  let feeds;
-  try {
-    feeds = await this.findActiveFeeds();
-  } catch(error) {
-    return Status.EDB;
+  let [status, feeds] = await this.findActiveFeeds();
+  if(status !== Status.OK) {
+    console.error('Failed to find active feeds with status', status);
+    return status;
   }
+
 
   const query = new FaviconLookup();
   query.cache = iconCache;
@@ -1151,22 +1007,31 @@ FeedStore.prototype.refreshFeedIcons = async function(iconCache) {
     promises.push(this.refreshFeedIcon(feed, query));
   }
 
-  try {
-    await Promise.all(promises);
-  } catch(error) {
-    console.error(error);
-    return Status.EDB;
+  const results = await Promise.all(promises);
+  for(const result of results) {
+    if(result !== Status.OK) {
+      console.error('refreshFeedIcon status not ok', result);
+      return status;
+    }
   }
-
 
   return Status.OK;
 };
 
 // TODO: switch to status. do not throw
 FeedStore.prototype.refreshFeedIcon = async function(feed, query) {
-  assert(Feed.isFeed(feed));
-  assert(Feed.hasURL(feed));
+  if(!Feed.isFeed(feed)) {
+    console.error('Invalid feed argument', feed);
+    return Status.EINVAL;
+  }
 
+  if(!Feed.hasURL(feed)) {
+    console.error('Feed missing url', feed);
+    return Status.EINVAL;
+  }
+
+  // TODO: switch to using status
+  // TODO: remove reliance on CheckedError
   const url = Feed.createIconLookupURL(feed);
   let iconURL;
   try {
@@ -1175,7 +1040,8 @@ FeedStore.prototype.refreshFeedIcon = async function(feed, query) {
     if(error instanceof CheckedError) {
       // Ignore
     } else {
-      throw error;
+      console.error(error);
+      return Status.EFAVICON;
     }
   }
 
@@ -1188,7 +1054,8 @@ FeedStore.prototype.refreshFeedIcon = async function(feed, query) {
     feed.faviconURLString = iconURL;
     [status] = await this.putFeed(feed);
     if(status !== Status.OK) {
-      throw new Error('Failed to put feed with status ' + status);
+      console.error('Failed to put feed with status ' + status);
+      return status;
     }
 
   } else if(prevIconURL && iconURL && prevIconURL === iconURL) {
@@ -1197,7 +1064,8 @@ FeedStore.prototype.refreshFeedIcon = async function(feed, query) {
     feed.faviconURLString = void prevIconURL;
     [status] = await this.putFeed(feed);
     if(status !== Status.OK) {
-      throw new Error('Failed to put feed with status ' + status);
+      console.error('Failed to put feed with status ' + status);
+      return status;
     }
   } else if(!prevIconURL && !iconURL) {
     // noop
@@ -1205,11 +1073,14 @@ FeedStore.prototype.refreshFeedIcon = async function(feed, query) {
     feed.faviconURLString = iconURL;
     [status] = await this.putFeed(feed);
     if(status !== Status.OK) {
-      throw new Error('Failed to put feed with status ' + status);
+      console.error('Failed to put feed with status ' + status);
+      return status;
     }
   } else {
     console.warn('Unexpected state in refresh feed icons');
   }
+
+  return Status.OK;
 };
 
 // Removes lost entries from the database. An entry is lost if it is missing a url.

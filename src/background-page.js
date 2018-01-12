@@ -5,90 +5,116 @@ import FaviconLookup from "/src/favicon/lookup.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import updateBadgeText from "/src/update-badge-text.js";
+import archiveEntries from "/src/feed-ops/archive-entries.js";
 
 async function onWakeup(alarm) {
   console.debug('onWakeup', alarm.name);
   localStorage.LAST_ALARM = alarm.name;
 
   switch(alarm.name) {
-  case 'archive': {
-    const store = new FeedStore();
-    let maxAgeMs;
-    const limit = 500;
-    try {
-      await store.open();
-      const status = await store.archiveEntries(maxAgeMs, limit);
-      if(status !== OK) {
-        throw new Error('Failed to archive entries with status ' + status);
-      }
-    } catch(error) {
-      console.warn(error);
-    } finally {
-      store.close();
-    }
+  case 'archive':
+    handleArchiveAlarmWakeup(alarm).catch(console.error);
     break;
-  }
   case 'poll':
-    // Non-awaited call to async promise-returning function
-    handlePollFeedsAlarm(alarm).catch(console.warn);
+    handlePollFeedsAlarm(alarm).catch(console.error);
     break;
-  case 'remove-entries-missing-urls': {
-    const fs = new FeedStore();
-    const limit = 100;
-    try {
-      await fs.open();
-      const status = await fs.removeLostEntries(limit);
-      if(status !== OK) {
-        throw new Error('Failed to remove lost entries with status ' + status);
-      }
-    } catch(error) {
-      console.warn(error);
-    } finally {
-      fs.close();
-    }
+  case 'remove-entries-missing-urls':
+    handleLostEntriesAlarm(alarm).catch(console.error);
     break;
-  }
-  case 'remove-orphaned-entries': {
-    const fs = new FeedStore();
-    const limit = 100;
-    try {
-      await fs.open();
-      const status = await fs.removeOrphanedEntries(limit);
-      if(status !== OK) {
-        throw new Error('Failed to remove orphaned entries with status ' + status);
-      }
-    } catch(error) {
-      console.warn(error);
-    } finally {
-      fs.close();
-    }
+  case 'remove-orphaned-entries':
+    handleOrphanEntriesAlarm(alarm).catch(console.error);
     break;
-  }
-  case 'refresh-feed-icons': {
-    handleRefreshFeedIconsAlarm().catch(console.error);
+  case 'refresh-feed-icons':
+    handleRefreshFeedIconsAlarm(alarm).catch(console.error);
     break;
-  }
-  case 'compact-favicon-db': {
-    const cache = new FaviconCache();
-    let maxAgeMs;
-
-    // Hard code a sensible limit on the number of entries processed per alarm wakeup
-    // TODO: perhaps this should come from config.js
-    const limit = 300;
-    try {
-      await cache.open();
-      await cache.compact(maxAgeMs, limit);
-    } catch(error) {
-      console.warn(error);
-    } finally {
-      cache.close();
-    }
+  case 'compact-favicon-db':
+    handleCompactFaviconsAlarm(alarm).catch(console.error);
     break;
-  }
   default:
     console.warn('unhandled alarm', alarm.name);
     break;
   }
+}
+
+async function handleCompactFaviconsAlarm(alarm) {
+  const cache = new FaviconCache();
+  let maxAgeMs;
+
+  // Hard code a sensible limit on the number of entries processed per alarm wakeup
+  // TODO: perhaps this should come from config.js
+  const limit = 300;
+  try {
+    await cache.open();
+    const status = await cache.compact(maxAgeMs, limit);
+    if(status !== Status.OK) {
+      throw new Error('Failed with compact with status ' + status);
+    }
+  } catch(error) {
+    console.warn(error);
+  } finally {
+    cache.close();
+  }
+}
+
+async function handleArchiveAlarmWakeup(alarm) {
+  const store = new FeedStore();
+  let status = await store.open();
+  if(status !== OK) {
+    console.error('Failed to open database with status', status);
+    return status;
+  }
+
+  let maxAgeMs;
+  const limit = 500;
+  status = await archiveEntries(store, maxAgeMs, limit);
+  if(status !== OK) {
+    console.error('Failed to archive entries with status', status);
+    store.close();
+    return status;
+  }
+
+  store.close();
+  return OK;
+}
+
+async function handleLostEntriesAlarm(alarm) {
+  const fs = new FeedStore();
+  let status = await fs.open();
+  if(status !== OK) {
+    console.error('Failed to open database with status', status);
+    return status;
+  }
+
+  const limit = 100;
+  status = await fs.removeLostEntries(limit);
+  if(status !== OK) {
+    console.error('Failed to remove lost entries with status', status);
+    fs.close();
+    return status;
+  }
+
+  fs.close();
+  return OK;
+}
+
+async function handleOrphanEntriesAlarm(alarm) {
+  const fs = new FeedStore();
+  let status = await fs.open();
+  if(status !== OK) {
+    console.error('Failed to open database with status', status);
+    return status;
+  }
+
+  const limit = 100;
+  status = await fs.removeOrphanedEntries(limit);
+  if(status !== OK) {
+    console.error('Failed to remove orphaned entries with status', status);
+    fs.close();
+    return status;
+  }
+
+  fs.close();
+  return OK;
 }
 
 async function handleRefreshFeedIconsAlarm(alarm) {
@@ -109,12 +135,7 @@ async function handleRefreshFeedIconsAlarm(alarm) {
     return;
   }
 
-  try {
-    status = await fs.refreshFeedIcons(fc);
-  } catch(error) {
-    console.error(error);
-  }
-
+  status = await fs.refreshFeedIcons(fc);
   if(status !== OK) {
     console.error('Refresh feed icons error', status);
   }
@@ -164,29 +185,55 @@ const cli = {};
 cli.refreshIcons = async function() {
   const fs = new FeedStore();
   const fc = new FaviconCache();
-  const promises = [fs.open(), fc.open()];
 
-  try {
-    await Promise.all(promises);
-    await fs.refreshFeedIcons(fc);
-  } finally {
+  const promises = [fs.open(), fc.open()];
+  let statuses = await Promise.all(promises);
+
+  let status = statuses[0]
+  if(status !== OK) {
+    console.error('Failed to open feed store database with status', status);
+    fc.close();
+    return status;
+  }
+
+  status = statuses[1];
+  if(status !== OK) {
+    console.error('Failed to open favicon database with status', status);
+    fs.close();
+    return status;
+  }
+
+  status = await fs.refreshFeedIcons(fc);
+  if(status !== OK) {
+    console.error('Failed to refresh feed icons with status', status);
     fs.close();
     fc.close();
+    return status;
   }
+
+  fs.close();
+  fc.close();
+  return OK;
 };
 
 cli.archiveEntries = async function(limit) {
   const store = new FeedStore();
-  let maxAgeMs;
-  try {
-    await store.open();
-    const status = await store.archiveEntries(maxAgeMs, limit);
-    if(status !== OK) {
-      throw new Error('Failed to archive entries with status ' + status);
-    }
-  } finally {
-    store.close();
+  let status = await store.open();
+  if(status !== OK) {
+    console.error('Failed to open database with status', status);
+    return status;
   }
+
+  let maxAgeMs;
+  status = await archiveEntries(store, maxAgeMs, limit);
+  if(status !== OK) {
+    console.error('Failed to archive entries with status', status);
+    store.close();
+    return status;
+  }
+
+  store.close();
+  return OK;
 };
 
 cli.pollFeeds = async function() {
@@ -205,49 +252,78 @@ cli.pollFeeds = async function() {
 
 cli.removeLostEntries = async function(limit) {
   const store = new FeedStore();
-  try {
-    await store.open();
-    const status = await store.removeLostEntries(limit);
-    if(status !== OK) {
-      throw new Error('Failed to remove lost entries with status ' + status);
-    }
-  } finally {
-    store.close();
+  let status = await store.open();
+  if(status !== OK) {
+    console.error('Failed to open database with status', status);
+    return status;
   }
+
+  status = await store.removeLostEntries(limit);
+  if(status !== OK) {
+    console.error('Failed to remove lost entries with status ' + status);
+    store.close();
+    return status;
+  }
+
+  store.close();
+  return OK;
 };
 
 cli.removeOrphanedEntries = async function(limit) {
   const store = new FeedStore();
-  try {
-    await store.open();
-    const status = await store.removeOrphanedEntries(limit);
-    if(status !== OK) {
-      throw new Error('Failed to remove orphaned entries with status ' + status);
-    }
-  } finally {
-    store.close();
+  let status = await store.open();
+  if(status !== OK) {
+    console.error('Failed to open database with status', status);
+    return status;
   }
+
+  status = await store.removeOrphanedEntries(limit);
+  if(status !== OK) {
+    console.error('Failed to remove orphaned entries with status', status);
+    store.close();
+    return status;
+  }
+
+  store.close();
+  return OK;
 };
 
 cli.clearFavicons = async function() {
   const cache = new FaviconCache();
-  try {
-    await cache.open();
-    await cache.clear();
-  } finally {
-    cache.close();
+  let status = await cache.open();
+  if(status !== OK) {
+    console.error('Failed to open favicon cache with status', status);
+    return status;
   }
+
+  status = await cache.clear();
+  if(status !== OK) {
+    console.error('Failed to clear favicon cache with status', status);
+    cache.close();// ignore failure here
+    return status;
+  }
+
+  return cache.close();
 };
 
 cli.compactFavicons = async function(limit) {
   const cache = new FaviconCache();
-  let maxAgeMs;
-  try {
-    await cache.open();
-    await cache.compact(maxAgeMs, limit);
-  } finally {
-    cache.close();
+  let status = await cache.open();
+  if(status !== OK) {
+    console.error('Failed to open database with status', status);
+    return status;
   }
+
+  let maxAgeMs;
+  status = await cache.compact(maxAgeMs, limit);
+  if(status !== OK) {
+    console.error('Failed to compact with status', status);
+    cache.close();
+    return status;
+  }
+
+  cache.close();
+  return OK;
 };
 
 cli.lookupFavicon = async function(url, timeout, cacheless = true) {
@@ -301,7 +377,7 @@ addBadgeClickListener(function(event) {
 
 updateBadgeText();
 
-// Expose to console
+// Expose cli to console
 window.cli = cli;
 
 chrome.alarms.onAlarm.addListener(onWakeup);

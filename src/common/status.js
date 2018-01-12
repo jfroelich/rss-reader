@@ -17,3 +17,4 @@ export const EDBOPEN = 12;
 export const EINVALIDSTATE = 13;
 export const EINVAL = 14;
 export const EDB = 15;
+export const EFAVICON = 16;

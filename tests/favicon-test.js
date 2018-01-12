@@ -51,12 +51,20 @@ window.testLookup = testLookup;
 
 async function test_clear_icon_db() {
   const cache = new FaviconCache();
-  try {
-    await cache.open();
-    await cache.clear();
-  } finally {
-    cache.close();
+  let status = await cache.open();
+  if(status !== Status.OK) {
+    console.error('Failed to open favicon cache with status', status);
+    return;
   }
+
+  status = await cache.clear();
+  if(status !== Status.OK) {
+    console.error('Failed to clear favicon cache with status', status);
+    cache.close();
+    return;
+  }
+
+  return cache.close();
 }
 
 async function test_compact_icon_db(limit) {
@@ -66,7 +74,10 @@ async function test_compact_icon_db(limit) {
   const cache = new FaviconCache();
   try {
     await cache.open();
-    await cache.compact(customMaxAge, limit);
+    const status = await cache.compact(customMaxAge, limit);
+    if(status !== Status.OK) {
+      throw new Error('Failed to compact with status ' + status);
+    }
   } finally {
     cache.close();
   }
