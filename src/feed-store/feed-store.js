@@ -1,15 +1,7 @@
-
-// TODO: remove reliance on CheckedError
-import {CheckedError} from "/src/common/errors.js";
-
-import formatString from "/src/common/format-string.js";
 import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
 import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
-import FaviconCache from "/src/favicon/cache.js";
-import FaviconLookup from "/src/favicon/lookup.js";
 import * as Entry from "/src/feed-store/entry.js";
-import * as FeedStoreErrors from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {onUpgradeNeeded} from "/src/feed-store/upgrade.js";
 import {
@@ -975,113 +967,6 @@ FeedStore.prototype.findArchivableEntries = async function(predicate, limit) {
   return [Status.OK, entries];
 };
 
-
-FeedStore.prototype.refreshFeedIcons = async function(iconCache) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return Status.EINVALIDSTATE;
-  }
-
-  if(!(iconCache instanceof FaviconCache)) {
-    console.error('Invalid iconCache argument', iconCache);
-    return Status.EINVAL;
-  }
-
-  if(!iconCache.isOpen()) {
-    console.error('Favicon cache is not open');
-    return Status.EINVALIDSTATE;
-  }
-
-  let [status, feeds] = await this.findActiveFeeds();
-  if(status !== Status.OK) {
-    console.error('Failed to find active feeds with status', status);
-    return status;
-  }
-
-
-  const query = new FaviconLookup();
-  query.cache = iconCache;
-
-  const promises = [];
-  for(const feed of feeds) {
-    promises.push(this.refreshFeedIcon(feed, query));
-  }
-
-  const results = await Promise.all(promises);
-  for(const result of results) {
-    if(result !== Status.OK) {
-      console.error('refreshFeedIcon status not ok', result);
-      return status;
-    }
-  }
-
-  return Status.OK;
-};
-
-// TODO: switch to status. do not throw
-FeedStore.prototype.refreshFeedIcon = async function(feed, query) {
-  if(!Feed.isFeed(feed)) {
-    console.error('Invalid feed argument', feed);
-    return Status.EINVAL;
-  }
-
-  if(!Feed.hasURL(feed)) {
-    console.error('Feed missing url', feed);
-    return Status.EINVAL;
-  }
-
-  // TODO: switch to using status
-  // TODO: remove reliance on CheckedError
-  const url = Feed.createIconLookupURL(feed);
-  let iconURL;
-  try {
-    iconURL = await query.lookup(url);
-  } catch(error) {
-    if(error instanceof CheckedError) {
-      // Ignore
-    } else {
-      console.error(error);
-      return Status.EFAVICON;
-    }
-  }
-
-  let status;
-
-  const prevIconURL = feed.faviconURLString;
-  feed.dateUpdated = new Date();
-
-  if(prevIconURL && iconURL && prevIconURL !== iconURL) {
-    feed.faviconURLString = iconURL;
-    [status] = await this.putFeed(feed);
-    if(status !== Status.OK) {
-      console.error('Failed to put feed with status ' + status);
-      return status;
-    }
-
-  } else if(prevIconURL && iconURL && prevIconURL === iconURL) {
-    // noop
-  } else if(prevIconURL && !iconURL) {
-    feed.faviconURLString = void prevIconURL;
-    [status] = await this.putFeed(feed);
-    if(status !== Status.OK) {
-      console.error('Failed to put feed with status ' + status);
-      return status;
-    }
-  } else if(!prevIconURL && !iconURL) {
-    // noop
-  } else if(!prevIconURL && iconURL) {
-    feed.faviconURLString = iconURL;
-    [status] = await this.putFeed(feed);
-    if(status !== Status.OK) {
-      console.error('Failed to put feed with status ' + status);
-      return status;
-    }
-  } else {
-    console.warn('Unexpected state in refresh feed icons');
-  }
-
-  return Status.OK;
-};
 
 // Removes lost entries from the database. An entry is lost if it is missing a url.
 // @param limit {Number} optional, if specified should be positive integer > 0, maximum number

@@ -2,10 +2,11 @@ import {OK} from "/src/common/status.js";
 import showSlideshowTab from "/src/show-slideshow-tab.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
+import archiveEntries from "/src/feed-ops/archive-entries.js";
+import refreshFeedIcons from "/src/feed-ops/refresh-feed-icons.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import updateBadgeText from "/src/update-badge-text.js";
-import archiveEntries from "/src/feed-ops/archive-entries.js";
 
 async function onWakeup(alarm) {
   console.debug('onWakeup', alarm.name);
@@ -135,7 +136,7 @@ async function handleRefreshFeedIconsAlarm(alarm) {
     return;
   }
 
-  status = await fs.refreshFeedIcons(fc);
+  status = await refreshFeedIcons(fs, fc);
   if(status !== OK) {
     console.error('Refresh feed icons error', status);
   }
@@ -189,7 +190,7 @@ cli.refreshIcons = async function() {
   const promises = [fs.open(), fc.open()];
   let statuses = await Promise.all(promises);
 
-  let status = statuses[0]
+  let status = statuses[0];
   if(status !== OK) {
     console.error('Failed to open feed store database with status', status);
     fc.close();
@@ -203,17 +204,14 @@ cli.refreshIcons = async function() {
     return status;
   }
 
-  status = await fs.refreshFeedIcons(fc);
+  status = await refreshFeedIcons(fs, fc);
   if(status !== OK) {
     console.error('Failed to refresh feed icons with status', status);
-    fs.close();
-    fc.close();
-    return status;
   }
 
   fs.close();
   fc.close();
-  return OK;
+  return status;
 };
 
 cli.archiveEntries = async function(limit) {
@@ -344,6 +342,9 @@ cli.lookupFavicon = async function(url, timeout, cacheless = true) {
   }
 };
 
+// Expose cli to console
+window.cli = cli;
+
 
 
 console.debug('Initializing background page');
@@ -371,14 +372,13 @@ addInstallListener(async function(event) {
   }
 });
 
+
+
 addBadgeClickListener(function(event) {
   showSlideshowTab();
 });
 
 updateBadgeText();
-
-// Expose cli to console
-window.cli = cli;
 
 chrome.alarms.onAlarm.addListener(onWakeup);
 chrome.alarms.create('archive', {periodInMinutes: 60 * 12});

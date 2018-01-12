@@ -3,8 +3,8 @@ import * as Status from "/src/common/status.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as Feed from "/src/feed-store/feed.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
-import Subscribe from "/src/subscribe.js";
-import unsubscribe from "/src/unsubscribe.js";
+import Subscribe from "/src/feed-ops/subscribe.js";
+import unsubscribe from "/src/feed-ops/unsubscribe.js";
 import {truncateHTML} from "/src/common/html-utils.js";
 
 const BG_IMAGES = [
