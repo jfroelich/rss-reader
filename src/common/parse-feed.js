@@ -3,6 +3,8 @@ import {decodeEntities} from "/src/common/html-utils.js";
 import parseXML from "/src/common/parse-xml.js";
 import * as Status from "/src/common/status.js";
 
+// TODO: remove all exceptions and fully convert to status
+
 // Parses the input string into a feed object. The feed object will always have a defined entries
 // array, although it may be zero length. Returns an array of status, feed, and error message.
 export function parseFeed(xmlString) {
@@ -79,7 +81,8 @@ function findEntryElements(channelElement) {
     parentNode = channelElement;
     entryElementName = 'item';
   } else {
-    throw new Error('Should not have reached here');
+    console.error('Should not have reached here');
+    return [];
   }
 
   const entries = [];

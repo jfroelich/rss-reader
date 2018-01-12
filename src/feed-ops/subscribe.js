@@ -1,6 +1,5 @@
 import showDesktopNotification from "/src/notifications.js";
 import assert from "/src/common/assert.js";
-import {CheckedError} from "/src/common/errors.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
 import {setTimeoutPromise} from "/src/common/promise-utils.js";
@@ -112,8 +111,15 @@ Subscribe.prototype.subscribe = async function(url) {
     }
 
     const kProcEntries = false;
-    const parseResult = parseFeed(responseText, url, responseURLObject,
+
+    let parseResult;
+    [status, parseResult] = parseFeed(responseText, url, responseURLObject,
       FetchUtils.getLastModified(response), kProcEntries);
+    if(status !== Status.OK) {
+      console.error('Parse feed error:', Status.toString(status));
+      return [status];
+    }
+
     feed = parseResult.feed;
   } else {
     feed = Feed.create();
@@ -133,27 +139,24 @@ Subscribe.prototype.subscribe = async function(url) {
 
 
 Subscribe.prototype.setFeedFavicon = async function(feed) {
-  assert(Feed.isFeed(feed));
+  if(!Feed.isFeed(feed)) {
+    console.error('Invalid feed argument', feed);
+    return Status.EINVAL;
+  }
 
   const query = new FaviconService();
   query.cache = this.iconCache;
   query.skipURLFetch = true;
   const lookupURL = Feed.createIconLookupURL(feed);
-  try {
-    const [status, iconURLString] = await query.lookup(lookupURL);
-    if(status !== Status.OK) {
-      throw new Error('Favicon lookup error ' + Status.toString(status));
-    }
 
-    if(iconURLString) {
-      feed.faviconURLString = iconURLString;
-    }
-  } catch(error) {
-    if(error instanceof CheckedError) {
-      // Ignore
-    } else {
-      throw error;
-    }
+  const [status, iconURLString] = await query.lookup(lookupURL);
+  if(status !== Status.OK) {
+    console.error('Favicon lookup error:', Status.toString(status));
+    return status;
+  }
+
+  if(iconURLString) {
+    feed.faviconURLString = iconURLString;
   }
 };
 

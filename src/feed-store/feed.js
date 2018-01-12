@@ -44,8 +44,16 @@ export function peekURL(feed) {
 // @param feed {Object} a feed object
 // @param url {URL}
 export function appendURL(feed, url) {
-  assert(isFeed(feed));
-  assert(url instanceof URL);
+
+  if(!isFeed(feed)) {
+    console.error('Invalid feed argument:', feed);
+    return false;
+  }
+
+  if(!(url instanceof URL)) {
+    console.error('Invalid url argument:', url);
+    return false;
+  }
 
   feed.urls = feed.urls || [];
   const href = url.href;

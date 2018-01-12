@@ -55,8 +55,7 @@ FaviconService.prototype.lookup = async function(url, document) {
   const urls = [];
   urls.push(url.href);
 
-  // Initialize the origin url to the origin of the input url. Non-const because it may change
-  // on redirect.
+  // Initialize the origin url to the origin of the input url
   const originURL = new URL(url.origin);
   let originEntry;
 

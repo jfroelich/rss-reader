@@ -1,5 +1,3 @@
-import assert from "/src/common/assert.js";
-import {CheckedError} from "/src/common/errors.js";
 import * as Status from "/src/common/status.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
@@ -45,18 +43,33 @@ import {parseFeed as parseFeedImpl} from "/src/common/parse-feed.js";
 
 // Parses an xml input string representing a feed. Returns a result with a feed object and an array
 // of entries. Throws both checked and unchecked errors.
-export default function parseFeed(xmlString, requestURL, responseURL, lastModDate,
-  processEntries) {
+export default function parseFeed(xmlString, requestURL, responseURL, lastModDate, processEntries) {
 
-  assert(requestURL instanceof URL);
-  assert(responseURL instanceof URL);
+  if(!(requestURL instanceof URL)) {
+    console.error('Invalid requestURL argument', requestURL);
+    return [Status.EINVAL];
+  }
+
+  if(!(responseURL instanceof URL)) {
+    console.error('Invalid responseURL argument', responseURL);
+    return [Status.EINVAL];
+  }
+
 
   const result = {feed: undefined, entries: []};
 
-  // Rethrow any parsing errors
-  const [status, feed, errorMessage] = parseFeedImpl(xmlString);
+  // TODO: remove try/catch once exceptions fully removed from parseFeedImpl
+  let status, feed, errorMessage;
+  try {
+    [status, feed, errorMessage] = parseFeedImpl(xmlString);
+  } catch(error) {
+    console.error(error);
+    return [Status.EPARSEFEED];
+  }
+
   if(status !== Status.OK) {
-    throw new CheckedError(errorMessage);
+    console.error('Parse feed error:', Status.toString(status), errorMessage);
+    return [status];
   }
 
   // FIX: appendURL fails because feed, at this point, is not yet the proper type
@@ -115,11 +128,14 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   delete feed.entries;
 
   if(!processEntries) {
-    return result;
+    return [Status.OK, result];
   }
 
   // Whereever entries came from earlier, it should be defined at this point.
-  assert(Array.isArray(entries));
+  if(!Array.isArray(entries)) {
+    console.error('entries is not an array:', entries);
+    return [Status.EINVALIDSTATE];
+  }
 
   // parseFeed warrants that if entries are parsed, that the entries property of the output
   // object is a defined array; albeit possibly empty. Using map implicitly warrants this.
@@ -135,7 +151,7 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   // stage of the pipeline. All I would be doing is placing more burden on the caller by making
   // more pipeline steps explicit?
   result.entries = dedupEntries(result.entries);
-  return result;
+  return [Status.OK, result];
 }
 
 // Coerce a parsed entry object into a reader storage entry object.
@@ -152,13 +168,18 @@ function coerceEntry(feedLinkURL, parsedEntry) {
 // If the entry has a link property, canonicalize and normalize it, baseURL is optional, generally
 // should be feed.link
 function resolveEntryLink(entry, baseURL) {
-  assert(Entry.isEntry(entry));
+
+  if(!Entry.isEntry(entry)) {
+    console.error('Invalid entry argument:', entry);
+    return;
+  }
+
   if(entry.link) {
     try {
       const url = new URL(entry.link, baseURL);
       entry.link = url.href;
     } catch(error) {
-      console.debug(entry.link, error);
+      console.debug(error);
       entry.link = undefined;
     }
   }
@@ -173,7 +194,7 @@ function convertEntryLinkToURL(entry) {
       const url = new URL(entry.link);
       Entry.appendURL(entry, url);
     } catch(error) {
-      console.warn('Failed to coerce entry link to url', entry.link);
+      console.debug('Failed to coerce entry link to url', entry.link);
     }
 
     // Regardless of above success, unset

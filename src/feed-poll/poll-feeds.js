@@ -1,6 +1,5 @@
 import showDesktopNotification from "/src/notifications.js";
 import assert from "/src/common/assert.js";
-import {CheckedError} from "/src/common/errors.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
 import {parseHTML} from "/src/common/html-utils.js";
@@ -163,13 +162,14 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
 
   assert(typeof feedXML === 'string');
   let parseResult;
-  try {
-    const processEntries = true;
-    parseResult = parseFeed(feedXML, requestURL, new URL(response.url),
-      responseLastModifiedDate, processEntries);
-  } catch(error) {
+  const processEntries = true;
+  [status, parseResult] = parseFeed(feedXML, requestURL, new URL(response.url),
+    responseLastModifiedDate, processEntries);
+  if(status !== Status.OK) {
+    console.error('Parse feed error:', Status.toString(status));
     await handlePollFeedError(Status.EPARSEFEED, this.feedStore, feed, 'parse-feed',
       this.deactivationThreshold);
+    return;
   }
 
   const mergedFeed = Feed.merge(feed, parseResult.feed);
@@ -433,22 +433,18 @@ FeedPoll.prototype.setEntryFavicon = async function(entry, url, document) {
   const query = new FaviconService();
   query.cache = this.iconCache;
   query.skipURLFetch = true;
-  try {
-    const [status, iconURLString] = await query.lookup(url, document);
-    if(status !== Status.OK) {
-      throw new Error('Favicon lookup error', Status.toString(status));
-    }
 
-    if(iconURLString) {
-      entry.faviconURLString = iconURLString;
-    }
-  } catch(error) {
-    if(error instanceof CheckedError) {
-      // Ignore
-    } else {
-      throw error;
-    }
+  const [status, iconURLString] = await query.lookup(url, document);
+  if(status !== Status.OK) {
+    console.error('Favicon lookup error:', Status.toString(status));
+    return status;
   }
+
+  if(iconURLString) {
+    entry.faviconURLString = iconURLString;
+  }
+
+  return Status.OK;
 };
 
 function isInaccessibleContentURL(url) {
