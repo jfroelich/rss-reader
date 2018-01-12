@@ -1,7 +1,7 @@
 import assert from "/src/common/assert.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
 import * as Status from "/src/common/status.js";
-import FaviconCache from "/src/favicon/cache.js";
+import {FaviconCache} from "/src/favicon-service/favicon-service.js";
 import Subscribe from "/src/feed-ops/subscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";

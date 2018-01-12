@@ -1,7 +1,6 @@
 import {OK, toString as statusToString} from "/src/common/status.js";
 import showSlideshowTab from "/src/show-slideshow-tab.js";
-import FaviconCache from "/src/favicon/cache.js";
-import FaviconLookup from "/src/favicon/lookup.js";
+import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
 import archiveEntries from "/src/feed-ops/archive-entries.js";
 import refreshFeedIcons from "/src/feed-ops/refresh-feed-icons.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
@@ -298,7 +297,7 @@ cli.compactFavicons = async function(limit) {
 };
 
 cli.lookupFavicon = async function(url, timeout, cacheless = true) {
-  const query = new FaviconLookup();
+  const query = new FaviconService();
   query.cache = new FaviconCache();
   query.fetchHTMLTimeoutMs = timeout;
 
@@ -337,27 +336,28 @@ window.cli = cli;
 
 console.debug('Initializing background page');
 
-chrome.runtime.onInstalled.addListener(async function(event) {
+chrome.runtime.onInstalled.addListener(function(event) {
   console.debug('Received install event:', event);
 
-  // TODO: these tasks are independent, why make the second wait on the first to resolve?
-  // This function may not even need to be async
-
+  console.log('Setting up feed store database');
   const fs = new FeedStore();
-  try {
-    await fs.open();
-  } catch(error) {
-    console.error(error);
-  } finally {
-    fs.close();
-  }
+  fs.open().then(function(status) {
+    if(status !== OK) {
+      console.error('Failed to open feed store database', status);
+      return;
+    }
+    return fs.close();
+  }).catch(console.error);
 
-  const fic = new FaviconCache();
-  try {
-    await fic.setup();
-  } catch(error) {
-    console.warn(error);
-  }
+  console.log('Setting up favicon database');
+  const fc = new FaviconCache();
+  fc.open().then(function(status) {
+    if(status !== OK) {
+      console.error('Failed to open favicon database', status);
+      return;
+    }
+    return fc.close();
+  }).catch(console.error);
 });
 
 

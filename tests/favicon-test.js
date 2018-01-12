@@ -1,6 +1,5 @@
 import * as Status from "/src/common/status.js";
-import FaviconCache from "/src/favicon/cache.js";
-import FaviconLookup from "/src/favicon/lookup.js";
+import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
 
 /*
 TODO:
@@ -28,7 +27,7 @@ delete the test db at the end of the test.
 
 window.testLookup = async function(url, cacheless) {
   const cache = new FaviconCache();
-  const query = new FaviconLookup();
+  const query = new FaviconService();
   query.cache = cache;
 
   const lookupURL = new URL(url);

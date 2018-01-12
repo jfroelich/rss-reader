@@ -1,9 +1,5 @@
-// TODO: remove reliance on CheckedError
-import {CheckedError} from "/src/common/errors.js";
-
 import * as Status from "/src/common/status.js";
-import FaviconCache from "/src/favicon/cache.js";
-import FaviconLookup from "/src/favicon/lookup.js";
+import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 
@@ -35,7 +31,7 @@ export default async function refreshFeedIcons(feedStore, iconCache) {
     return status;
   }
 
-  const query = new FaviconLookup();
+  const query = new FaviconService();
   query.cache = iconCache;
 
   const promises = [];

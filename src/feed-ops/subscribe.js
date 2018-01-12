@@ -5,8 +5,7 @@ import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
 import {setTimeoutPromise} from "/src/common/promise-utils.js";
 import * as Status from "/src/common/status.js";
-import FaviconCache from "/src/favicon/cache.js";
-import FaviconLookup from "/src/favicon/lookup.js";
+import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import {ConstraintError} from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
@@ -136,7 +135,7 @@ Subscribe.prototype.subscribe = async function(url) {
 Subscribe.prototype.setFeedFavicon = async function(feed) {
   assert(Feed.isFeed(feed));
 
-  const query = new FaviconLookup();
+  const query = new FaviconService();
   query.cache = this.iconCache;
   query.skipURLFetch = true;
   const lookupURL = Feed.createIconLookupURL(feed);

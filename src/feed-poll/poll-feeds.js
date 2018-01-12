@@ -6,8 +6,7 @@ import formatString from "/src/common/format-string.js";
 import {parseHTML} from "/src/common/html-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
 import * as Status from "/src/common/status.js";
-import FaviconCache from "/src/favicon/cache.js";
-import FaviconLookup from "/src/favicon/lookup.js";
+import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
@@ -431,7 +430,7 @@ function parseEntryHTML(html) {
 }
 
 FeedPoll.prototype.setEntryFavicon = async function(entry, url, document) {
-  const query = new FaviconLookup();
+  const query = new FaviconService();
   query.cache = this.iconCache;
   query.skipURLFetch = true;
   try {
