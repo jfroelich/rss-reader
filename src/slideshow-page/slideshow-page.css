@@ -12,8 +12,13 @@ html, body {
 
 #left-panel {
   /* Needed to get shadow to appear when element earlier in document order than adjacent */
+  position: absolute;
   z-index: 2;
-  height: auto;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: auto;
+
   flex-grow: 0;
   flex-shrink: 0;
   width: 320px;
@@ -157,6 +162,7 @@ pre {
   padding-left: 6%;
   padding-right: 6%;
   padding-bottom: 12%;
+  overflow-y: auto;
 }
 
 #feeds-container div {
