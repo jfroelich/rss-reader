@@ -39,7 +39,7 @@ export default async function archiveEntries(store, maxAgeMs, limit) {
 
   const [status, entries] = await store.findArchivableEntries(isArchivable, limit);
   if(status !== Status.OK) {
-    console.error('Failed to find archivable entries with status ' + status);
+    console.error('Failed to find archivable entries:', Status.toString(status));
     return status;
   }
 
@@ -58,7 +58,7 @@ export default async function archiveEntries(store, maxAgeMs, limit) {
   const resolutions = await Promise.all(promises);
   for(const resolution of resolutions) {
     if(resolution !== Status.OK) {
-      console.error('Failed to put at least one entry with status', resolution);
+      console.error('Failed to put at least one entry:', Status.toString(resolution));
       channel.close();
       return resolution;
     }
@@ -88,7 +88,7 @@ async function archiveEntry(store, channel, entry) {
   compactedEntry.dateUpdated = new Date();
   const [status] = await store.putEntry(compactedEntry);
   if(status !== Status.OK) {
-    console.error('Failed to put entry with status', status);
+    console.error('Failed to put entry:', Status.toString(status));
     return status;
   }
 

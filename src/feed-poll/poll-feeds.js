@@ -1,21 +1,21 @@
-import showDesktopNotification from "/src/show-desktop-notification.js";
+import showDesktopNotification from "/src/notifications.js";
 import assert from "/src/common/assert.js";
 import {CheckedError} from "/src/common/errors.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
+import {parseHTML} from "/src/common/html-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
 import * as Status from "/src/common/status.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
+import updateBadgeText from "/src/feed-ops/update-badge-text.js";
+import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
 import isBinaryURL from "/src/feed-poll/is-binary-url.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import parseFeed from "/src/parse-feed.js";
-import updateBadgeText from "/src/update-badge-text.js";
-import {parseHTML} from "/src/common/html-utils.js";
 
 // An array of descriptors. Each descriptor represents a test against a url hostname, that if
 // matched, indicates the content is not accessible.
@@ -435,7 +435,11 @@ FeedPoll.prototype.setEntryFavicon = async function(entry, url, document) {
   query.cache = this.iconCache;
   query.skipURLFetch = true;
   try {
-    const iconURLString = await query.lookup(url, document);
+    const [status, iconURLString] = await query.lookup(url, document);
+    if(status !== Status.OK) {
+      throw new Error('Favicon lookup error', Status.toString(status));
+    }
+
     if(iconURLString) {
       entry.faviconURLString = iconURLString;
     }

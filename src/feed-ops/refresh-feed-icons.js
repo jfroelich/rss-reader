@@ -67,22 +67,17 @@ async function refreshFeedIcon(feedStore, query, feed) {
 
   const lookupURL = Feed.createIconLookupURL(feed);
 
-  // TODO: switch to using status
-  // TODO: remove reliance on CheckedError
-  let iconURL;
-  try {
-    iconURL = await query.lookup(lookupURL);
-  } catch(error) {
-    if(error instanceof CheckedError) {
-      // Ignore
-      console.debug(error);
-    } else {
-      console.error(error);
-      return Status.EFAVICON;
-    }
-  }
+  // 3 things can happen:
+  // 1) iconURL is defined and lookup is success
+  // 2) iconURL is undefined and lookup is still a success (no programming error)
+  // 3) a programming error occured
 
-  let status;
+  let status, iconURL;
+  [status, iconURL] = await query.lookup(lookupURL);
+  if(status !== Status.OK) {
+    console.debug('Error looking up favicon', Status.toString(status));
+    return status;
+  }
 
   const prevIconURL = feed.faviconURLString;
   feed.dateUpdated = new Date();

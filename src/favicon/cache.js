@@ -319,5 +319,6 @@ FaviconCache.prototype.compact = async function(maxAgeMs, limit) {
     return status;
   }
 
+  console.debug('Removed %d favicon cache entries', urls.length);
   return Status.OK;
 };

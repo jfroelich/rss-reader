@@ -32,8 +32,15 @@ export default class FaviconLookup {
 FaviconLookup.prototype.lookup = async function(url, document) {
   let status;
 
-  assert(url instanceof URL);
-  assert(typeof document === 'undefined' || document instanceof Document);
+  if(!(url instanceof URL)) {
+    console.error('Invalid url argument', url);
+    return [Status.EINVAL];
+  }
+
+  if(typeof document !== 'undefined' && !(document instanceof Document)) {
+    console.error('Invalid document argument', document);
+    return [Status.EINVAL];
+  }
 
   console.log('Lookup favicon for url', url.href);
 
@@ -52,25 +59,33 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     let entry;
     [status, entry] = await this.cache.findEntry(url);
     if(status !== Status.OK) {
-      throw new Error('Error when finding entry with status ' + status);
+      console.error('Error finding entry:', Status.toString(status));
+      return [status];
     }
 
     if(entry) {
       // If we found a fresh entry then exit early with the icon url
       if(entry.iconURLString && !this.isExpired(entry)) {
-        return entry.iconURLString;
+        return [Status.OK, entry.iconURLString];
       }
 
       // Otherwise, if the input url is an origin url itself, then check failure count
       if(originURL.href === url.href && entry.failureCount >= this.kMaxFailureCount) {
-        return;
+        console.debug('Max lookup failures exceeded for url', url.href);
+        return [Status.OK];
       }
     }
   }
 
   // If a pre-fetched document was specified, search it and possibly return.
   if(document) {
-    const iconURL = await this.search(document, url);
+    let iconURL;
+    [status, iconURL] = await this.search(document, url);
+    if(status !== Status.OK) {
+      console.debug('Failed to search document', url.href);
+      // Continue
+    }
+
     if(iconURL) {
       if(this.hasOpenCache()) {
         // This affects both the input entry and the redirect entry. However, since we have not yet
@@ -80,10 +95,11 @@ FaviconLookup.prototype.lookup = async function(url, document) {
         // origin is found and page does not specify.
         status = await this.cache.putAll(urls, iconURL);
         if(status !== Status.OK) {
-          throw new Error('Failed to put entries with status ' + status);
+          console.error('Failed to put entries:', Status.toString(status));
+          return [status];
         }
       }
-      return iconURL;
+      return [Status.OK, iconURL];
     }
   }
 
@@ -95,18 +111,24 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     // later and avoid doing a second call to findEntry.
     [status, originEntry] = await this.cache.findEntry(originURL);
     if(status !== Status.OK) {
-      throw new Error('Error when finding entry with status ' + status);
+      console.error('Error finding entry:', Status.toString(status));
+      return [status];
     }
 
     if(originEntry && originEntry.failureCount >= this.kMaxFailureCount) {
-      return;
+      console.debug('Max lookup failures exceeded for origin url', originURL.href);
+      return [Status.OK];
     }
   }
 
   // Fetch the url's response, failure is not fatal
   let response;
   if(!document && !this.skipURLFetch) {
-    response = await this.fetchHTML(url);
+    [status, response] = await this.fetchHTML(url);
+    if(status !== Status.OK) {
+      console.debug('Error %s fetching html for url', Status.toString(status), url.href);
+      // Continue
+    }
   }
 
   // Check if the response redirected and is in the cache
@@ -130,9 +152,9 @@ FaviconLookup.prototype.lookup = async function(url, document) {
         let entry;
         [status, entry] = await this.cache.findEntry(responseURL);
         if(status !== Status.OK) {
-          throw new Error('Error when finding entry with status ' + status);
+          console.error('Error finding entry:', Status.toString(status));
+          return [status];
         }
-
 
         if(entry && entry.iconURLString && !this.isExpired(entry)) {
           // Associate the redirect's icon with the input url.
@@ -140,9 +162,11 @@ FaviconLookup.prototype.lookup = async function(url, document) {
           // This does not affect the origin entry because per-page icons do not apply site wide
           status = await this.cache.putAll([url.href], entry.iconURLString);
           if(status !== Status.OK) {
-            throw new Error('Failed to put entries with status ' + status);
+            console.error('Failed to put entries:', Status.toString(status));
+            return [status];
           }
-          return entry.iconURLString;
+
+          return [Status.OK, entry.iconURLString];
         }
       }
     }
@@ -156,24 +180,35 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   // searching the document. This is not delegated to search because search is sync should not
   // involve networking.
   if(response) {
-    document = await this.parseHTMLResponse(response);
+    [status, document] = await this.parseHTMLResponse(response);
+    if(status !== Status.OK) {
+      console.error('Failed to parse html response', response.url, Status.toString(status));
+      // Continue, parsing error is non-fatal
+    }
   }
 
   // If we successfully parsed the fetched document, search it
   if(document) {
     const baseURL = responseURL ? responseURL : url;
-    const iconURL = await this.search(document, baseURL);
+    let iconURL;
+    [status, iconURL] = await this.search(document, baseURL);
+    if(status !== Status.OK) {
+      console.debug('Failed to search document', baseURL.href, Status.toString(status));
+      // Fall through
+    }
+
     if(iconURL) {
       if(this.hasOpenCache()) {
         // This does not modify the origin entry if it exists because a per-page icon does not apply
         // site wide. We have not yet added origin to the urls array.
         status = await this.cache.putAll(urls, iconURL);
         if(status !== Status.OK) {
-          throw new Error('Failed to put entries with status ' + status);
+          console.error('Failed to put entries with status ' + status);
+          return [status];
         }
       }
 
-      return iconURL;
+      return [Status.OK, iconURL];
     }
   }
 
@@ -187,7 +222,8 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     let entry;
     [status, entry] = await this.cache.findEntry(originURL);
     if(status !== Status.OK) {
-      throw new Error('Error when finding entry with status ' + status);
+      console.error('Error finding entry:', Status.toString(status));
+      return [status];
     }
 
     // Set the shared origin entry to the new origin entry, which signals to the lookup failure
@@ -205,11 +241,13 @@ FaviconLookup.prototype.lookup = async function(url, document) {
         // We did not yet add origin to urls array
         status = await this.cache.putAll(urls, iconURL);
         if(status !== Status.OK) {
-          throw new Error('Failed to put entries with status ' + status);
+          console.error('Failed to put entries:', status);
+          return [status];
         }
-        return iconURL;
+        return [Status.OK, iconURL];
       } else if(entry.failureCount >= this.kMaxFailureCount) {
-        return;
+        console.error('Max errors exceeded for origin url', originURL.href);
+        return [Status.OK];
       }
     }
   }
@@ -230,16 +268,21 @@ FaviconLookup.prototype.lookup = async function(url, document) {
   // because whereas origin excludes the slash so it must be added, href includes the slash.
   const imageURLString = url.origin + '/favicon.ico';
   const imageURLObject = new URL(imageURLString);
-  response = await this.fetchImage(imageURLObject);
+  [status, response] = await this.fetchImage(imageURLObject);
+  if(status !== Status.OK) {
+    console.warn('Failed to fetch image', imageURLObject.href);
+    // Continue
+  }
 
   if(this.isAcceptableImageResponse(response)) {
     if(this.hasOpenCache()) {
       status = await this.cache.putAll(urls, response.url);
       if(status !== Status.OK) {
-        throw new Error('Failed to put entries with status ' + status);
+        console.error('Failed to put entries with status ' + status);
+        return [status];
       }
     }
-    return response.url;
+    return [Status.OK, response.url];
   }
 
   if(this.hasOpenCache()) {
@@ -249,7 +292,7 @@ FaviconLookup.prototype.lookup = async function(url, document) {
     }
   }
 
-  // Default to return undefined, which indicates no favicon found.
+  return [Status.OK];
 };
 
 // Return true if there is both a connected cache and that cache is in the open state
@@ -265,34 +308,47 @@ FaviconLookup.prototype.isAcceptableImageResponse = function(response) {
       return true;
     }
 
-    return response.size >= this.minImageSize && response.size <= this.maxImageSize;
+    return contentLength >= this.minImageSize && contentLength <= this.maxImageSize;
   }
   return false;
 };
 
 // Helper that traps non-assertion errors because errors not fatal to lookup
 FaviconLookup.prototype.fetchImage = async function(url) {
-  assert(url instanceof URL);
+  if(!(url instanceof URL)) {
+    return [Status.EINVAL];
+  }
+
   const options = {method: 'head', timeout: this.fetchImageTimeoutMs};
   const [status, response] = await FetchUtils.fetchHelper(url, options);
   if(status !== Status.OK) {
-    return;
+    console.error('Failed to fetch image', url.href);
+    return [status];
   }
 
   const type = FetchUtils.getMimeType(response);
   if(type && (type.startsWith('image/') || type === 'application/octet-stream')) {
-    return response;
+    return [Status.OK, response];
   } else {
-    return null;
+    return [Status.OK];
   }
 };
 
 // Helper that traps checked errors as those are non-fatal to lookup
 FaviconLookup.prototype.fetchHTML = async function(url) {
-  assert(url instanceof URL);
+
+  if(!(url instanceof URL)) {
+    console.error('Invalid url argument', url);
+    return [Status.EINVAL];
+  }
 
   const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
-  return status === Status.OK ? response : null;
+  if(status !== Status.OK) {
+    console.error('Failed to fetch html:', url.href, Status.toString(status));
+    return [status];
+  }
+
+  return [Status.OK, response];
 };
 
 // TODO: I don't like this function, feels like wrong coupling, inline it again
@@ -300,25 +356,41 @@ FaviconLookup.prototype.fetchHTML = async function(url) {
 // @param response {Response or response wrapper}
 // @returns {Document}
 FaviconLookup.prototype.parseHTMLResponse = async function(response) {
-  assert(response instanceof Response);
+  //assert(response instanceof Response);
+  if(!(response instanceof Response)) {
+    console.error('Invalid response argument', response);
+    return [Status.EINVAL];
+  }
 
   let text;
   try {
     text = await response.text();
   } catch(error) {
-    return;
+    console.error(error);
+    return [Status.EFETCH];
   }
 
   const [status, document, message] = parseHTML(text);
-  return status === Status.OK ? document : undefined;
+  if(status !== Status.OK) {
+    console.error('Failed to parse html response', Status.toString(status));
+    return [status];
+  }
+
+  return [Status.OK, document];
 };
 
 // Returns whether a cache entry is expired
 FaviconLookup.prototype.isExpired = function(entry) {
   // Expect entries to always have a date set
-  assert(entry.dateUpdated instanceof Date);
-  // Expect this instance to always have a max age set
-  assert(Number.isInteger(this.maxAgeMs) && this.maxAgeMs >= 0);
+  if(!(entry.dateUpdated instanceof Date)) {
+    console.error('Entry has invalid dateUpdated value', entry);
+    return false;
+  }
+
+  if(!Number.isInteger(this.maxAgeMs) || this.maxAgeMs < 0) {
+    console.error('Invalid maxAgeMs value', this.maxAgeMs);
+    return false;
+  }
 
   // An entry is expired if the difference between the current date and the date the
   // entry was last updated is greater than max age.
@@ -340,11 +412,15 @@ FaviconLookup.prototype.LINK_SELECTOR = [
 // @param baseURL {URL} the base url of the document for resolution purposes
 // @returns {String} a favicon url, if found, canonical, and exists (successful HEAD http request)
 FaviconLookup.prototype.search = async function(document, baseURL) {
-  assert(document instanceof Document);
+  if(!(document instanceof Document)) {
+    console.error('Invalid document argument', document);
+    return [Status.EINVAL];
+  }
 
   const candidateURLStrings = this.findCandidateURLStrings(document);
   if(!candidateURLStrings.length) {
-    return;
+    console.debug('No candidates found in document', baseURL.href);
+    return [Status.OK];
   }
 
   // Convert the list of candidate url strings into canonical URL objects
@@ -356,12 +432,13 @@ FaviconLookup.prototype.search = async function(document, baseURL) {
       canonicalURLs.push(canonicalURL);
     }
   }
+
   if(!canonicalURLs.length) {
 
     // TEMP:
     console.debug('Found candidates but none canonicalizable', baseURL.href, candidateURLStrings);
 
-    return;
+    return [Status.OK];
   }
 
   // Remove duplicate urls
@@ -376,15 +453,25 @@ FaviconLookup.prototype.search = async function(document, baseURL) {
   canonicalURLs = distinctURLs;
 
   // Find the first url that exists. Requests are executed serially for now.
+  // TODO: concurrent requests
+  // TODO: rather than do the requests here, search should return an array of candidates, and
+  // search should be a simpler sync function. Validating and picking from amongst the candidates
+  // shouldn't be search's concern.
+
   for(const url of canonicalURLs) {
-    const response = await this.fetchImage(url);
-    if(this.isAcceptableImageResponse(response)) {
-      return response.url;
+    let response;
+    [status, response] = await this.fetchImage(url);
+
+    if(status === Status.OK && this.isAcceptableImageResponse(response)) {
+      return [status, response.url];
     }
   }
+
+  return [Status.OK];
 };
 
 
+// TODO: inline this, this is too simple and only called from one place
 // Searches the document for favicon urls
 // @param document {Document}
 // @return {Array} an array of candidate url strings, canonicalized

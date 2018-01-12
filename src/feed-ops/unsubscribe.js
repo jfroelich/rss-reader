@@ -1,7 +1,7 @@
 import assert from "/src/common/assert.js";
 import * as Status from "/src/common/status.js";
+import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import updateBadgeText from "/src/update-badge-text.js";
 import * as Feed from "/src/feed-store/feed.js";
 
 // TODO: return status instead of throw

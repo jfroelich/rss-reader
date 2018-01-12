@@ -1,3 +1,4 @@
+import * as Status from "/src/common/status.js";
 import FaviconCache from "/src/favicon/cache.js";
 import FaviconLookup from "/src/favicon/lookup.js";
 
@@ -25,60 +26,66 @@ delete the test db at the end of the test.
 * test compact
 */
 
-async function testLookup(url, cacheless) {
+window.testLookup = async function(url, cacheless) {
   const cache = new FaviconCache();
   const query = new FaviconLookup();
   query.cache = cache;
 
   const lookupURL = new URL(url);
 
-  try {
-    if(!cacheless) {
-      await cache.open();
-    }
-
-    return await query.lookup(lookupURL);
-  } finally {
-    if(!cacheless) {
-      cache.close();
+  let status;
+  if(!cacheless) {
+    status = await cache.open();
+    if(status !== Status.OK) {
+      console.error('Failed to open favicon cache:', Status.toString(status));
+      return [status];
     }
   }
+
+  let iconURLString;
+  [status, iconURLString] = await query.lookup(lookupURL);
+  if(status !== Status.OK) {
+    console.error('Failed to lookup favicon for url', lookupURL.href, Status.toString(status));
+  }
+
+  if(!cacheless) {
+    cache.close();
+  }
+
+  return [status, iconURLString];
 }
 
-// Expose to console
-window.testLookup = testLookup;
-
-
-async function test_clear_icon_db() {
+window.testClearIconDB = async function() {
   const cache = new FaviconCache();
   let status = await cache.open();
   if(status !== Status.OK) {
-    console.error('Failed to open favicon cache with status', status);
-    return;
+    console.error('Failed to open favicon cache:', Status.toString(status));
+    return status;
   }
 
   status = await cache.clear();
   if(status !== Status.OK) {
-    console.error('Failed to clear favicon cache with status', status);
-    cache.close();
-    return;
+    console.error('Failed to clear favicon cache:', Status.toString(status));
   }
 
-  return cache.close();
+  cache.close();
+  return status;
 }
 
-async function test_compact_icon_db(limit) {
+window.testCompactIconDB = async function(limit) {
+  const cache = new FaviconCache();
+  let status = await cache.open();
+  if(status !== Status.OK) {
+    console.error('Failed to open favicon cache:', Status.toString(status));
+    return status;
+  }
 
   let customMaxAge;
-
-  const cache = new FaviconCache();
-  try {
-    await cache.open();
-    const status = await cache.compact(customMaxAge, limit);
-    if(status !== Status.OK) {
-      throw new Error('Failed to compact with status ' + status);
-    }
-  } finally {
-    cache.close();
+  status = await cache.compact(customMaxAge, limit);
+  if(status !== Status.OK) {
+    console.error('Failed to compact favicon cache:', Status.toString(status));
   }
+
+  cache.close();
+  return status;
 }

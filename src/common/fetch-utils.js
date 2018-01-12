@@ -3,7 +3,7 @@ import formatString from "/src/common/format-string.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
 import {
-  EFETCH, ENET, ENOACCEPT, EOFFLINE, EPOLICY, OK, ETIMEOUT
+  EFETCH, ENET, ENOACCEPT, EOFFLINE, EPOLICY, OK, ETIMEOUT, EINVAL, toString as statusToString
 } from "/src/common/status.js";
 
 // TODO: maybe return response, which has response.status built in, and just lose out on
@@ -28,6 +28,7 @@ export async function fetchHTML(url, timeoutMs) {
 
   const mimeType = getMimeType(response);
   if(mimeType !== 'text/html') {
+    console.error('Unacceptable mime type fetching html', url.href, mimeType);
     return [ENOACCEPT, null, url, mimeType];
   }
 
@@ -52,13 +53,16 @@ const feedTypes = [
 export async function fetchFeed(url, timeoutMs) {
   const [status, response] = await fetchHelper(url, {timeout: timeoutMs});
   if(status !== OK) {
+    console.error('Failed to fetch url', url.href, statusToString(status));
     return [status];
   }
 
   const mimeType = getMimeType(response);
   if(!feedTypes.includes(mimeType)) {
+    console.error('Unacceptable mime type fetching feed', url.href, mimeType);
     return [ENOACCEPT, null, url, mimeType];
   }
+
   return [status, response];
 }
 
@@ -77,14 +81,16 @@ export async function fetchHelper(url, options) {
   // type errors into network errors, so avoid that by translating such type errors into assertion
   // errors before the call.
   if(!(url instanceof URL)) {
-    throw new TypeError('Expected URL, got ' + url);
+    console.error('Expected URL, got ' + url);
+    return [EINVAL];
   }
 
   // fetch throws a TypeError when its options parameter is invalid. While normally desired, this
   // function is translating all type errors into network errors when calling fetch. Sidestep this
   // by translating this kind of error into an explicit assertion error.
   if(typeof options !== 'undefined' && typeof options !== 'object') {
-    throw new TypeError('Expected object, got ' + options);
+    console.error('Expected object, got ' + options);
+    return [EINVAL];
   }
 
   // Parameter options => these defaults => fetch defaults
@@ -110,11 +116,13 @@ export async function fetchHelper(url, options) {
 
   const untimed = typeof timeoutMs === 'undefined';
   if(!untimed && !(Number.isInteger(timeoutMs) || timeoutMs < 0)) {
-    throw new TypeError('Expected positive integer, got ' + timeoutMs);
+    console.error('Expected positive integer, got ' + timeoutMs);
+    return [EINVAL];
   }
 
   // Check if the url is allowed to be fetched according to this app's policy
   if(!isAllowedURL(url)) {
+    console.error('URL violates fetch policy', url.href);
     return [EPOLICY, null, url];
   }
 
@@ -122,6 +130,7 @@ export async function fetchHelper(url, options) {
   const method = mergedOptions.method.toUpperCase();
   const allowedMethods = ['GET', 'HEAD'];
   if(!allowedMethods.includes(method)) {
+    console.error('HTTP method violates fetch policy', method, url.href);
     return [EPOLICY, null, url, method];
   }
 
@@ -130,6 +139,7 @@ export async function fetchHelper(url, options) {
   // Being offline is an expected and temporary error.
   assert(navigator && 'onLine' in navigator);
   if(!navigator.onLine) {
+    console.error('Cannot fetch while offline');
     return [EOFFLINE, null, url];
   }
 
@@ -155,6 +165,7 @@ export async function fetchHelper(url, options) {
   try {
     response = await aggregatePromise;
   } catch(error) {
+    console.error(error);
     if(error instanceof TypeError) {
       return [ENET, null, url, '' + error];
     } else {
@@ -170,6 +181,7 @@ export async function fetchHelper(url, options) {
   }
 
   if(!response.ok) {
+    console.error('Response not ok', url.href, response.status, response.statusText);
     return [EFETCH, null, url, response.status];
   }
 
@@ -185,8 +197,6 @@ export function detectURLChanged(requestURL, responseURL) {
 
 // Compares two urls for equality without considering hash values
 function compareURLsWithoutHash(url1, url2) {
-  assert(url1 instanceof URL);
-  assert(url2 instanceof URL);
   // Mutate only clones to preserve purity
   const modURL1 = new URL(url1.href);
   const modURL2 = new URL(url2.href);
@@ -197,33 +207,55 @@ function compareURLsWithoutHash(url1, url2) {
 
 // Returns the value of the response's Last-Modified header as a date, or undefined on error
 export function getLastModified(response) {
-  assert(response instanceof Response);
+  if(!(response instanceof Response)) {
+    console.error('Invalid response argument', response);
+    return;
+  }
+
   const lastModifiedString = response.headers.get('Last-Modified');
   if(lastModifiedString) {
     try {
       return new Date(lastModifiedString);
     } catch(error) {
+      console.debug(error);
     }
   }
 }
 
 export function getContentLength(response) {
-  assert(response instanceof Response);
+  if(!(response instanceof Response)) {
+    console.error('Invalid response argument', response);
+    return NaN;
+  }
+
   return parseInt(response.headers.get('Content-Length'), 10);
 }
 
 export function getMimeType(response) {
-  assert(response instanceof Response);
-  const contentType = response.headers.get('Content-Type');
-  if(contentType) {
-    return MimeUtils.fromContentType(contentType);
+  if(!(response instanceof Response)) {
+    console.error('Invalid response argument', response);
+    return;
   }
+
+  const contentType = response.headers.get('Content-Type');
+  if(!contentType) {
+    console.debug('Response missing content type header', response);
+    return;
+  }
+
+
+  return MimeUtils.fromContentType(contentType);
 }
 
 // Return true if the app's policy permits fetching the url
 // TODO: allow various overrides through localStorage setting or some config setting?
 export function isAllowedURL(url) {
-  assert(url instanceof URL);
+
+  if(!(url instanceof URL)) {
+    console.error('Invalid url argument', url);
+    return false;
+  }
+
   const protocol = url.protocol;
   const hostname = url.hostname;
 

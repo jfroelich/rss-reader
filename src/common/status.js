@@ -18,3 +18,26 @@ export const EINVALIDSTATE = 13;
 export const EINVAL = 14;
 export const EDB = 15;
 export const EFAVICON = 16;
+
+export function toString(status) {
+  switch(status) {
+  case OK: return 'Success';
+  case EFETCH: return 'Fetch error';
+  case ENET: return 'Network error';
+  case ENOACCEPT: return 'Request not acceptable';
+  case EOFFLINE: return 'Offline error';
+  case EPARSEXML: return 'XML parsing error';
+  case EPARSEFEED: return 'Feed parsing error';
+  case EPARSEHTML: return 'HTML parsing error';
+  case EPARSEOPML: return 'OPML parsing error';
+  case EPOLICY: return 'Policy violation error';
+  case ETIMEOUT: return 'Timeout error';
+  case EDBCONSTRAINT: return 'Database constraint error';
+  case EDBOPEN: return 'Database opening error';
+  case EINVALIDSTATE: return 'Invalid state';
+  case EINVAL: return 'Invalid input value';
+  case EDB: return 'Database error';
+  case EFAVICON: return 'Favicon lookup error';
+  default: return 'Unknown status ' + status;
+  }
+}

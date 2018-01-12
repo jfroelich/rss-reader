@@ -1,4 +1,4 @@
-import showDesktopNotification from "/src/show-desktop-notification.js";
+import showDesktopNotification from "/src/notifications.js";
 import assert from "/src/common/assert.js";
 import {CheckedError} from "/src/common/errors.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
@@ -12,8 +12,6 @@ import {ConstraintError} from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import parseFeed from "/src/parse-feed.js";
-
-
 
 // TODO: think of a better name
 
@@ -143,7 +141,11 @@ Subscribe.prototype.setFeedFavicon = async function(feed) {
   query.skipURLFetch = true;
   const lookupURL = Feed.createIconLookupURL(feed);
   try {
-    const iconURLString = await query.lookup(lookupURL);
+    const [status, iconURLString] = await query.lookup(lookupURL);
+    if(status !== Status.OK) {
+      throw new Error('Favicon lookup error ' + Status.toString(status));
+    }
+
     if(iconURLString) {
       feed.faviconURLString = iconURLString;
     }
