@@ -13,7 +13,7 @@ import isBinaryURL from "/src/feed-poll/is-binary-url.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import parseFeed from "/src/parse-feed.js";
+import coerceFeed from "/src/coerce-feed.js";
 
 // An array of descriptors. Each descriptor represents a test against a url hostname, that if
 // matched, indicates the content is not accessible.
@@ -163,10 +163,10 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   assert(typeof feedXML === 'string');
   let parseResult;
   const processEntries = true;
-  [status, parseResult] = parseFeed(feedXML, requestURL, new URL(response.url),
+  [status, parseResult] = coerceFeed(feedXML, requestURL, new URL(response.url),
     responseLastModifiedDate, processEntries);
   if(status !== Status.OK) {
-    console.error('Parse feed error:', Status.toString(status));
+    console.error('Coerce feed error:', Status.toString(status));
     await handlePollFeedError(Status.EPARSEFEED, this.feedStore, feed, 'parse-feed',
       this.deactivationThreshold);
     return;

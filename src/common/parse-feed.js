@@ -3,11 +3,9 @@ import {decodeEntities} from "/src/common/html-utils.js";
 import parseXML from "/src/common/parse-xml.js";
 import * as Status from "/src/common/status.js";
 
-// TODO: remove all exceptions and fully convert to status
-
 // Parses the input string into a feed object. The feed object will always have a defined entries
 // array, although it may be zero length. Returns an array of status, feed, and error message.
-export function parseFeed(xmlString) {
+export default function parseFeed(xmlString) {
   if(typeof xmlString !== 'string') {
     const message = 'Expected string, got ' + typeof xmlString;
     return [Status.EINVAL, null, message];
@@ -256,7 +254,8 @@ function findEntryDate(entryElement) {
   let entryDate;
   try {
     entryDate = new Date(dateString);
-  } catch(exception) {
+  } catch(error) {
+    console.debug(error);
   }
   return entryDate;
 }
@@ -310,13 +309,14 @@ function findChildElement(parentElement, predicate) {
 
 function findChildElementByName(parent, name) {
   if(!(parent instanceof Element)) {
-    throw new TypeError('Expected element, got ' + typeof Element);
+    console.error('Expected element, got ' + typeof Element);
+    return;
   }
 
   if(typeof name !== 'string') {
-    throw new TypeError('Expected string, got ' + typeof name);
+    console.error('Expected string, got ' + typeof name);
+    return;
   }
-
 
   const normalName = name.toLowerCase();
   for(let c = parent.firstElementChild; c; c = c.nextElementSibling) {

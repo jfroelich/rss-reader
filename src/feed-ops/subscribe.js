@@ -9,7 +9,7 @@ import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import {ConstraintError} from "/src/feed-store/errors.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import parseFeed from "/src/parse-feed.js";
+import coerceFeed from "/src/coerce-feed.js";
 
 // TODO: think of a better name
 
@@ -113,7 +113,7 @@ Subscribe.prototype.subscribe = async function(url) {
     const kProcEntries = false;
 
     let parseResult;
-    [status, parseResult] = parseFeed(responseText, url, responseURLObject,
+    [status, parseResult] = coerceFeed(responseText, url, responseURLObject,
       FetchUtils.getLastModified(response), kProcEntries);
     if(status !== Status.OK) {
       console.error('Parse feed error:', Status.toString(status));

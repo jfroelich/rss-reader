@@ -1,7 +1,7 @@
 import * as Status from "/src/common/status.js";
+import parseFeed from "/src/common/parse-feed.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
-import {parseFeed as parseFeedImpl} from "/src/common/parse-feed.js";
 
 // One of the key points to think about is how this logic is basically a shared library that
 // involves knowledge of the implementation details of several different services. For example
@@ -38,12 +38,13 @@ import {parseFeed as parseFeedImpl} from "/src/common/parse-feed.js";
 // abstraction is wrong. It is marrying the wrong things together. There are different stages to
 // the pipeline of feed processing, and it feels like this is taking bits from stage 2 and 3 and 4
 // and calling it step 1.5.
-// TODO: I think it would make sense to clearly enumerate the use cases, then revisit how well the
+// I think it would make sense to clearly enumerate the use cases, then revisit how well the
 // abstraction responds to each case.
 
 // Parses an xml input string representing a feed. Returns a result with a feed object and an array
 // of entries. Throws both checked and unchecked errors.
-export default function parseFeed(xmlString, requestURL, responseURL, lastModDate, processEntries) {
+export default function coerceFeed(xmlString, requestURL, responseURL, lastModDate,
+  processEntries) {
 
   if(!(requestURL instanceof URL)) {
     console.error('Invalid requestURL argument', requestURL);
@@ -55,30 +56,14 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
     return [Status.EINVAL];
   }
 
-
-  const result = {feed: undefined, entries: []};
-
-  // TODO: remove try/catch once exceptions fully removed from parseFeedImpl
   let status, feed, errorMessage;
-  try {
-    [status, feed, errorMessage] = parseFeedImpl(xmlString);
-  } catch(error) {
-    console.error(error);
-    return [Status.EPARSEFEED];
-  }
-
+  [status, feed, errorMessage] = parseFeed(xmlString);
   if(status !== Status.OK) {
     console.error('Parse feed error:', Status.toString(status), errorMessage);
     return [status];
   }
 
-  // FIX: appendURL fails because feed, at this point, is not yet the proper type
-  // Convert it into the proper type. This is kind of hackish but not sure what else to do
-  // quickly. Previously, appendURL didn't test the type of feed object, but now it does, so I
-  // have to pass it a valid feed. Alternatively I could manually add the url, but then this
-  // involves knowledge into feed structure outside of the intended scope. But, this is a pretty
-  // closely related piece so maybe it is ok to have such knowledge? Or maybe a new helper
-  // like 'appendInitialURL' that doesn't assert feed type would be ok?
+  // Coerce the parsed feed object into a storage feed object
   feed.magic = Feed.FEED_MAGIC;
 
   // Compose fetch urls as the initial feed urls
@@ -91,15 +76,12 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   if(feed.link) {
     try {
       feedLinkURL = new URL(feed.link);
-
       // Overwrite with the normalized version of the string
       feed.link = feedLinkURL.href;
     } catch(error) {
-      // Unset if invalid, then fall through
       feed.link = undefined;
     }
   } else {
-    // Unset if not canonical
     feed.link = undefined;
   }
 
@@ -117,6 +99,7 @@ export default function parseFeed(xmlString, requestURL, responseURL, lastModDat
   // Setup feed magic manually
   feed.magic = Feed.FEED_MAGIC;
 
+  const result = {feed: undefined, entries: []};
   result.feed = feed;
 
   // Pull the entries property out of the parsed feed. The interal parser includes the entries
