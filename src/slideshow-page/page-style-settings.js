@@ -1,5 +1,8 @@
 import assert from "/src/common/assert.js";
 
+// TODO: it's not finding rules because I am using multiple style sheets.
+// Change rule finder to search all style sheets.
+
 // TODO: after moving display setting change ability from options page to slideshow page,
 // this this module will be used exclusively by slideshow page, and should merged into it, or
 // made as a helper module to it exclusively.
@@ -7,23 +10,36 @@ import assert from "/src/common/assert.js";
 // Get the current settings from local storage and then modify the css rules in the default style
 // sheet
 export function pageStyleSettingsOnchange(event) {
-  const sheet = getDefaultStylesheet();
-  assert(sheet instanceof CSSStyleSheet);
-  entryCSSUpdateRule(sheet);
-  entryCSSUpdateTitleRule(sheet);
-  entryCSSUpdateContentRule(sheet);
+  const sheet = document.styleSheets[0];
+
+  entryCSSUpdateRule();
+  entryCSSUpdateTitleRule();
+  entryCSSUpdateContentRule();
+
+  // Padding wrapper change
+  const rule = findRule('.slide-padding-wrapper');
+  if(rule) {
+    const padding = localStorage.PADDING || '0';
+    rule.style.padding = padding;
+  }
 }
 
 // Get the current settings from local storage and then create css rules and append them to the
 // default style sheet.
 export function pageStyleSettingsOnload() {
-  const sheet = getDefaultStylesheet();
+  const sheet = document.styleSheets[0];
   assert(sheet instanceof CSSStyleSheet);
   sheet.addRule('slide.entry', entryCSSCreateEntryRuleText());
 
   // TODO: convert these two to be like above pattern where I get the text and then add the rule
   entryCSSAddTitleRule(sheet);
   entryCSSAddContentRule(sheet);
+
+  // Padding wrapper init
+  const padding = localStorage.PADDING;
+  if(padding) {
+    sheet.addRule('.slide-padding-wrapper', 'padding:' + padding);
+  }
 }
 
 function entryCSSCreateEntryRuleText() {
@@ -36,7 +52,6 @@ function entryCSSCreateEntryRuleText() {
   } else if(color) {
     buffer.push(`background: ${color};`);
   }
-
 
   return buffer.join('');
 }
@@ -53,23 +68,11 @@ function entryCSSAddTitleRule(sheet) {
     buffer.push(`font-family:${headerFontFamily};`);
   }
 
-
-  const padding = localStorage.PADDING;
-  if(padding) {
-    buffer.push(`padding: ${padding}px;`);
-  }
-
-  sheet.addRule('.entry a.entry-title', buffer.join(''));
+  sheet.addRule('.entry .entry-title', buffer.join(''));
 }
 
 function entryCSSAddContentRule(sheet) {
   let buffer = [];
-
-
-  const padding = localStorage.PADDING;
-  if(padding) {
-    buffer.push(`padding: ${padding}px;`);
-  }
 
   const bodyFontSize = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
   if(bodyFontSize) {
@@ -111,9 +114,15 @@ function entryCSSAddContentRule(sheet) {
   sheet.addRule('.entry .entry-content', buffer.join(''));
 }
 
-function entryCSSUpdateRule(sheet) {
-  assert(sheet instanceof CSSStyleSheet);
-  const rule = findRule(sheet, '.entry');
+function entryCSSUpdateRule() {
+
+  const rule = findRule('.entry');
+
+  if(!rule) {
+    console.error('Could not find rule ".entry"');
+    return;
+  }
+
   assert(rule instanceof CSSStyleRule);
   const style = rule.style;
 
@@ -134,15 +143,17 @@ function entryCSSUpdateRule(sheet) {
 
 }
 
-function entryCSSUpdateTitleRule(sheet) {
-  assert(sheet instanceof CSSStyleSheet);
-  const rule = findRule(sheet, '.entry a.entry-title');
-  assert(rule instanceof CSSStyleRule);
+function entryCSSUpdateTitleRule() {
+
+  const rule = findRule('.entry .entry-title');
+  if(!rule) {
+    console.error('Could not find rule ".entry a.entry-title"');
+    return;
+  }
+
+  console.debug('Found rule:', rule, rule instanceof CSSStyleRule);
+
   const style = rule.style;
-
-  const padding = localStorage.PADDING || '0';
-  style.padding = `${padding}px`;
-
   style.background = '';
   style.fontFamily = localStorage.HEADER_FONT_FAMILY;
 
@@ -152,15 +163,23 @@ function entryCSSUpdateTitleRule(sheet) {
   }
 }
 
-function entryCSSUpdateContentRule(sheet) {
-  assert(sheet instanceof CSSStyleSheet);
-  const rule = findRule(sheet, '.entry span.entry-content');
-  assert(rule instanceof CSSStyleRule);
+function entryCSSUpdateContentRule() {
+
+  const rule = findRule('.entry .entry-content');
+
+  if(!rule) {
+    console.error('Could not find rule ".entry span.entry-content"');
+    return;
+  }
+
+  console.debug('Found rule:', rule, rule instanceof CSSStyleRule);
+
+  if(!(rule instanceof CSSStyleRule)) {
+    console.error('Rule is not a css style rule');
+    return;
+  }
 
   rule.style.background = '';
-
-  const padding = localStorage.PADDING || '0';
-  rule.style.padding = `${padding}px`;
 
   const bodyFontFamily = localStorage.BODY_FONT_FAMILY;
   if(bodyFontFamily) {
@@ -197,26 +216,18 @@ function entryCSSUpdateContentRule(sheet) {
 }
 
 
-// Use the first sheet
-function getDefaultStylesheet() {
-  const sheets = document.styleSheets;
-  if(sheets.length) {
-    return sheets[0];
-  }
-}
-
-
-// Returns the first matching css rule within the given sheet, or undefined if no rules match.
+// Returns the first matching css rule or undefined.
 //
-// @param sheet {CSSStyleSheet}
 // @param selectorText {String}
 // @returns rule {CSSStyleRule}
-function findRule(sheet, selectorText) {
-  assert(sheet instanceof CSSStyleSheet);
-  const rules = sheet.rules || sheet.cssRules || [];
-  for(const rule of rules) {
-    if(rule.selectorText === selectorText) {
-      return rule;
+function findRule(selectorText) {
+  const sheets = document.styleSheets;
+  for(const sheet of sheets) {
+    const rules = sheet.rules;
+    for(const rule of rules) {
+      if(rule.selectorText === selectorText) {
+        return rule;
+      }
     }
   }
 }

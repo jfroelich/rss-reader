@@ -167,7 +167,6 @@ function hideLoadingInformation() {
   if(loadingElement) {
     loadingElement.style.display = 'none';
   }
-
 }
 
 
@@ -232,9 +231,16 @@ function appendSlide(entry) {
   slide.setAttribute('feed', entry.feed);
   slide.setAttribute('class','entry');
   slide.addEventListener('click', onSlideClick);
-  slide.appendChild(createArticleTitleElement(entry));
-  slide.appendChild(createArticleContentElement(entry));
-  slide.appendChild(createFeedSourceElement(entry));
+
+
+  const slidePaddingWrapper = document.createElement('div');
+  slidePaddingWrapper.className = 'slide-padding-wrapper';
+
+  slidePaddingWrapper.appendChild(createArticleTitleElement(entry));
+  slidePaddingWrapper.appendChild(createArticleContentElement(entry));
+  slidePaddingWrapper.appendChild(createFeedSourceElement(entry));
+  slide.appendChild(slidePaddingWrapper);
+
   Slideshow.append(slide);
 }
 
