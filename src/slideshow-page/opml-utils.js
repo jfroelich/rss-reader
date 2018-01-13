@@ -154,7 +154,7 @@ function outlineObjectToElement(doc, outline) {
   return element;
 }
 
-function outlineElementToObject(element) {
+export function outlineElementToObject(element) {
   const object = {};
   object.description = element.getAttribute('description');
   object.htmlUrl = element.getAttribute('htmlUrl');

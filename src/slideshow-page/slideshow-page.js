@@ -7,7 +7,7 @@ import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import exportFeeds from "/src/slideshow-page/export-feeds.js";
-import OPMLImporter from "/src/slideshow-page/opml-importer.js";
+import importOPMLFiles from "/src/slideshow-page/import-opml-files.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
 import * as Slideshow from "/src/slideshow-page/slideshow.js";
 
@@ -685,22 +685,15 @@ function menuOptionImportOnclick() {
 
 async function importFiles(files) {
   // TODO: show operation started
-  const importer = new OPMLImporter();
-  importer.init();
-  // TODO: this should really be defined elsewhere
-  importer.fetchFeedTimeoutMs = 10 * 1000;
-
-  try {
-    await importer.open();
-    await importer.import(files);
-  } catch(error) {
+  const fetchFeedTimeoutMs = 10 * 1000;
+  let status = await importOPMLFiles(files, fetchFeedTimeoutMs);
+  if(status !== Status.OK) {
     // TODO: visual feedback in event an error
-    console.warn(error);
-  } finally {
-    importer.close();
+    console.error('Failed to import opml files', Status.toString(status));
+    return;
   }
 
-  console.debug('Import completed');
+  console.log('Import completed');
 
   // TODO: show operation completed successfully
   // TODO: refresh feed list

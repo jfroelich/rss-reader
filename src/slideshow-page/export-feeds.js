@@ -2,8 +2,7 @@ import assert from "/src/common/assert.js";
 import * as Feed from "/src/feed-store/feed.js";
 import * as OPMLUtils from "/src/slideshow-page/opml-utils.js";
 
-// TODO: rename to something like exportOPMLBlob or exportOPMLFile so that it is more consistent
-// in representing the inverse of importOPMLFiles
+// TODO: rename to opml-exporter.js
 // TODO: Change to return a blob object. Move downloadBlob to calling context. Export shouldn't
 // care how the blob is used.
 // TODO: the idea to require feeds as a parameter and move all the database functionality out of
@@ -17,6 +16,8 @@ import * as OPMLUtils from "/src/slideshow-page/opml-utils.js";
 // consistent if both import and export has the same style of storage interaction.
 // TODO: possibly move this to entire module to within the storage folder. What this functionality
 // really represents is a way to serialize or deserialize the storage model as a whole externally.
+// Or, move certain parts to the feed-store folder, delegate storage-related functionality to
+// feed-store.
 
 // TODO: for both backup and opml modules, drop support for opml outline objects. Instead,
 // work exclusively with elements. However, maintain a separation between generic opml
