@@ -55,11 +55,31 @@ Subscribe.prototype.close = function() {
 // @param url {URL} the url of the feed to subscribe to
 // @returns {Object} the subscribed feed
 Subscribe.prototype.subscribe = async function(url) {
-  assert(this.feedStore instanceof FeedStore);
-  assert(this.feedStore.isOpen());
-  assert(this.iconCache instanceof FaviconCache);
-  assert(this.iconCache.isOpen());
-  assert(url instanceof URL);
+
+  if(!(this.feedStore instanceof FeedStore)) {
+    console.error('Invalid feed store context value');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(!this.feedStore.isOpen()) {
+    console.error('Feed store is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(!(this.iconCache instanceof FaviconCache)) {
+    console.error('Invalid favicon cache context value');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(!this.iconCache.isOpen()) {
+    console.error('Favicon cache is not open');
+    return [Status.EINVALIDSTATE];
+  }
+
+  if(!(url instanceof URL)) {
+    console.error('Invalid url argument:', url);
+    return [Status.EINVAL];
+  }
 
   console.log('Subscribing to', url.href);
 
@@ -73,7 +93,7 @@ Subscribe.prototype.subscribe = async function(url) {
   }
 
   if(containsFeed) {
-    console.debug('Already subscribed to feed with url', url);
+    console.debug('Already subscribed to', url.href);
     return [Status.EDBCONSTRAINT];
   }
 

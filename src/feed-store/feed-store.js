@@ -568,7 +568,7 @@ FeedStore.prototype.containsFeedWithURL = async function(url) {
     return [Status.EINVAL];
   }
 
-  const [status, id] = this.findFeedIdByURL(url);
+  const [status, id] = await this.findFeedIdByURL(url);
   if(status !== Status.OK) {
     return [status];
   }

@@ -1,30 +1,5 @@
 import assert from "/src/common/assert.js";
-import formatString from "/src/common/format-string.js";
-import parseXML from "/src/common/parse-xml.js";
 import * as Status from "/src/common/status.js";
-
-// Returns the parsed document or throws an error
-export function parseOPML(xmlString) {
-
-  if(typeof xmlString !== 'string') {
-    throw new TypeError('Bad type for xmlString: ' + typeof xmlString);
-  }
-
-  let status, document, message;
-
-
-  [status, document, message] = parseXML(xmlString);
-  if(status !== Status.OK) {
-    return [status, null, message];
-  }
-
-  const name = document.documentElement.localName.toLowerCase();
-  if(name !== 'opml') {
-    message = formatString('Document element "%s" is not opml', name);
-    return [Status.EPARSEOPML, null, message];
-  }
-  return [Status.OK, document];
-}
 
 // Create a new OPML document
 // @param title {String} optional document title

@@ -1,24 +1,31 @@
-import assert from "/src/common/assert.js";
-import * as MimeUtils from "/src/common/mime-utils.js";
+import parseXML from "/src/common/parse-xml.js";
 import * as Status from "/src/common/status.js";
 import {FaviconCache} from "/src/favicon-service/favicon-service.js";
 import Subscribe from "/src/feed-ops/subscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
-import * as OPMLUtils from "/src/slideshow-page/opml-utils.js";
 
-export default function importOPMLFiles(files, fetchFeedTimeoutMs) {
+export default async function importOPMLFiles(files, timeout) {
   if(!(files instanceof FileList)) {
     console.error('Invalid files argument', files);
     return Status.EINVAL;
   }
 
-  console.log('Importing %d opml files', files.length);
+  console.log('Importing %d opml file(s)', files.length);
 
-  const feedStore = new FeedStore();
-  const iconCache = new FaviconCache();
+  // Avoid database overhead if possible
+  if(!files.length) {
+    console.debug('Empty files list');
+    return Status.OK;
+  }
 
-  let status = await openDatabases(feedStore, iconCache);
+  const context = {
+    feedStore: new FeedStore(),
+    iconCache: new FaviconCache(),
+    timeout: timeout
+  };
+
+  let status = await openDatabases(context);
   if(status !== Status.OK) {
     console.error('Error opening databases:', Status.toString(status));
     return status;
@@ -27,7 +34,7 @@ export default function importOPMLFiles(files, fetchFeedTimeoutMs) {
   // Concurrently import files
   const promises = [];
   for(const file of files) {
-    const promise = importOPMLFile(feedStore, iconCache, file, fetchFeedTimeoutMs);
+    const promise = importOPMLFile(context, file);
     promises.push(promise);
   }
   const results = await Promise.all(promises);
@@ -39,38 +46,39 @@ export default function importOPMLFiles(files, fetchFeedTimeoutMs) {
     }
   }
 
-  feedStore.close();
-  iconCache.close();
+  context.feedStore.close();
+  context.iconCache.close();
 
   return Status.OK;
 }
 
-async function openDatabases(feedStore, iconCache) {
-  const promises = [feedStore.open(), iconCache.open()];
-  const statuses = await Promise.all(promises);
+async function openDatabases(context) {
+  const promise1 = context.feedStore.open();
+  const promise2 = context.iconCache.open();
+  const statuses = await Promise.all([promise1, promise2]);
   let status = statuses[0];
   if(status !== Status.OK) {
-    iconCache.close();
+    context.iconCache.close();
     return status;
   }
   status = statuses[1];
   if(status !== Status.OK) {
-    feedStore.close();
+    context.feedStore.close();
     return status;
   }
   return Status.OK;
 }
 
-async function importOPMLFile(feedStore, iconCache, file, fetchFeedTimeoutMs) {
+async function importOPMLFile(context, file) {
   if(!(file instanceof File)) {
     console.error('Invalid file argument', file);
     return Status.EINVAL;
   }
 
-  console.log('Importing file', file.name);
+  console.log('Importing file', file.name, file.type, file.size);
 
   if(file.size < 1) {
-    console.error('Empty file', file.name);
+    console.error('File %s is empty', file.name);
     return Status.EINVAL;
   }
 
@@ -83,9 +91,8 @@ async function importOPMLFile(feedStore, iconCache, file, fetchFeedTimeoutMs) {
     'application/xhtml+xml',
     'text/xml'
   ];
-  const mimeType = MimeUtils.fromContentType(file.type);
-  if(!xmlMimeTypes.includes(mimeType)) {
-    console.error('File mime type is not xml', file.name, mimeType);
+  if(!xmlMimeTypes.includes(file.type)) {
+    console.error('File %s is not xml, it is', file.name, file.type);
     return Status.EINVAL;
   }
 
@@ -93,33 +100,35 @@ async function importOPMLFile(feedStore, iconCache, file, fetchFeedTimeoutMs) {
   try {
     fileText = await readFileAsText(file);
   } catch(error) {
-    console.error(error);
+    console.error(file.name, error);
     return Status.EINVAL;
   }
 
-  // TODO: if this is the only module that parses opml, parseOPML should be a local helper
-  let status, document, message;
-  [status, document, message] = OPMLUtils.parseOPML(fileText);
+  let [status, document] = parseOPML(fileText);
   if(status !== Status.OK) {
-    console.debug(message);
+    console.error('OPML parsing error:', Status.toString(status));
     return status;
   }
 
   const feedURLs = getFeedURLs(document);
+
+  // Avoid subscribe overhead if possible
   if(!feedURLs.length) {
     console.debug('No valid feed urls found in file', file.name);
     return Status.OK;
   }
 
+  console.debug('Importing feed urls:', feedURLs);
+
   const subscribe = new Subscribe();
-  subscribe.fetchFeedTimeoutMs = fetchFeedTimeoutMs;
+  subscribe.fetchFeedTimeoutMs = context.timeout;
   subscribe.notify = false;
   // Signal to subscribe that it should not poll
   subscribe.concurrent = true;
 
   // Bypass init
-  subscribe.feedStore = feedStore;
-  subscribe.iconCache = iconCache;
+  subscribe.feedStore = context.feedStore;
+  subscribe.iconCache = context.iconCache;
 
   const subscribePromises = feedURLs.map(subscribe.subscribe, subscribe);
   const subscribeResults = await Promise.all(subscribePromises);
@@ -170,4 +179,25 @@ function readFileAsText(file) {
     reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(reader.error);
   });
+}
+
+function parseOPML(xmlString) {
+  if(typeof xmlString !== 'string') {
+    console.error('Invalid xmlString argument:', xmlString);
+    return [Status.EINVAL];
+  }
+
+  let [status, document, message] = parseXML(xmlString);
+  if(status !== Status.OK) {
+    console.error('XML parsing error:', message);
+    return [status];
+  }
+
+  const name = document.documentElement.localName.toLowerCase();
+  if(name !== 'opml') {
+    console.error('Document element is not opml:', name);
+    return [Status.EPARSEOPML];
+  }
+
+  return [Status.OK, document];
 }
