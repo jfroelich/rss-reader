@@ -70,7 +70,7 @@ export default async function applyAllFilters(document, documentURL, fetchImageT
   const copyAttributesOnCondense = false;
   condenseTagnamesFilter(document, copyAttributesOnCondense);
 
-  const maxEmphasisTextLength = 300;
+  const maxEmphasisTextLength = 200;
   BasicFilters.filterEmphasis(document, maxEmphasisTextLength);
 
   canonicalURLFilter(document, documentURL);
