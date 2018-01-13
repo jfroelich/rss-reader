@@ -10,8 +10,6 @@ import assert from "/src/common/assert.js";
 // Get the current settings from local storage and then modify the css rules in the default style
 // sheet
 export function pageStyleSettingsOnchange(event) {
-  const sheet = document.styleSheets[0];
-
   entryCSSUpdateRule();
   entryCSSUpdateTitleRule();
   entryCSSUpdateContentRule();
@@ -29,7 +27,7 @@ export function pageStyleSettingsOnchange(event) {
 export function pageStyleSettingsOnload() {
   const sheet = document.styleSheets[0];
   assert(sheet instanceof CSSStyleSheet);
-  sheet.addRule('slide.entry', entryCSSCreateEntryRuleText());
+  sheet.addRule('.entry', entryCSSCreateEntryRuleText());
 
   // TODO: convert these two to be like above pattern where I get the text and then add the rule
   entryCSSAddTitleRule(sheet);
@@ -44,7 +42,6 @@ export function pageStyleSettingsOnload() {
 
 function entryCSSCreateEntryRuleText() {
   const buffer = [];
-  buffer.push('margin: 0px;');
   const path = localStorage.BG_IMAGE;
   const color = localStorage.BG_COLOR;
   if(path) {
@@ -74,6 +71,7 @@ function entryCSSAddTitleRule(sheet) {
 function entryCSSAddContentRule(sheet) {
   let buffer = [];
 
+  // TODO: use px not em
   const bodyFontSize = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
   if(bodyFontSize) {
     buffer.push(`font-size: ${(bodyFontSize / 10).toFixed(2)}em;`);
@@ -98,11 +96,6 @@ function entryCSSAddContentRule(sheet) {
       buffer.push(`line-height: ${(bodyLineHeight / 10).toFixed(2)};`);
     }
   }
-
-  buffer.push('vertical-align: text-top;');
-  buffer.push('display: block;');
-  buffer.push('word-wrap: break-word;');
-  buffer.push('margin: 0;');
 
   const columnCountString = localStorage.COLUMN_COUNT;
   if(columnCountString === '2' || columnCountString === '3') {

@@ -39,7 +39,7 @@ slide a {
 
 /* So that a rule is found */
 .entry {
-
+  margin: 0;
 }
 
 .entry img {
@@ -48,14 +48,25 @@ slide a {
 }
 
 .entry .entry-content {
+  vertical-align: text-top;
+  display: block;
   text-shadow: 1px 1px 2px #efefef;
+  margin: 0;
+  word-wrap: break-word;
 }
 
 .entry .entry-content img {
   display: block;
-  margin: auto;
+
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 6px;
+  margin-bottom: 6px;
+
   padding: 0;
-  -webkit-margin: 0;
+
+
+
 
   /*
   Init the opacity to ensure the transition works when softening on hover,
