@@ -1,28 +1,27 @@
 import parseXML from "/src/common/parse-xml.js";
 import * as Status from "/src/common/status.js";
 import {FaviconCache} from "/src/favicon-service/favicon-service.js";
-import Subscribe from "/src/feed-ops/subscribe.js";
+import subscribe from "/src/feed-ops/subscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 
 export default async function importOPMLFiles(files, timeout) {
   if(!(files instanceof FileList)) {
-    console.error('Invalid files argument', files);
     return Status.EINVAL;
   }
 
   console.log('Importing %d opml file(s)', files.length);
 
-  // Avoid database overhead if possible
   if(!files.length) {
-    console.debug('Empty files list');
     return Status.OK;
   }
 
   const context = {
     feedStore: new FeedStore(),
     iconCache: new FaviconCache(),
-    timeout: timeout
+    fetchFeedTimeoutMs: timeout,
+    notify: false,
+    concurrent: true
   };
 
   let status = await openDatabases(context);
@@ -34,8 +33,7 @@ export default async function importOPMLFiles(files, timeout) {
   // Concurrently import files
   const promises = [];
   for(const file of files) {
-    const promise = importOPMLFile(context, file);
-    promises.push(promise);
+    promises.push(importOPMLFile(context, file));
   }
   const results = await Promise.all(promises);
 
@@ -118,29 +116,20 @@ async function importOPMLFile(context, file) {
     return Status.OK;
   }
 
-  console.debug('Importing feed urls:', feedURLs);
+  const promises = [];
+  for(const url of feedURLs) {
+    promises.push(subscribe(context, url));
+  }
 
-  const subscribe = new Subscribe();
-  subscribe.fetchFeedTimeoutMs = context.timeout;
-  subscribe.notify = false;
-  // Signal to subscribe that it should not poll
-  subscribe.concurrent = true;
+  const subscribeResults = await Promise.all(promises);
 
-  // Bypass init
-  subscribe.feedStore = context.feedStore;
-  subscribe.iconCache = context.iconCache;
-
-  const subscribePromises = feedURLs.map(subscribe.subscribe, subscribe);
-  const subscribeResults = await Promise.all(subscribePromises);
-
+  // Just log individual sub failures and do not consider the import a failure
   let subCount = 0;
-  for(const result of subscribeResults) {
-    // TODO: isn't result always defined?
-    if(result && result.status === Status.OK) {
+  for(const [subStatus, subFeed] of subscribeResults) {
+    if(subStatus === Status.OK) {
       subCount++;
     } else {
-      // Just log individual sub failures
-      console.debug('Subscription error');
+      console.debug('Subscription failed:', Status.toString(subStatus));
     }
   }
 

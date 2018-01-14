@@ -1,9 +1,10 @@
 import assert from "/src/common/assert.js";
 import * as Status from "/src/common/status.js";
+import {FaviconCache} from "/src/favicon-service/favicon-service.js";
 import FeedStore from "/src/feed-store/feed-store.js";
 import * as Feed from "/src/feed-store/feed.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
-import Subscribe from "/src/feed-ops/subscribe.js";
+import subscribe from "/src/feed-ops/subscribe.js";
 import unsubscribe from "/src/feed-ops/unsubscribe.js";
 import {truncateHTML} from "/src/common/html-utils.js";
 
@@ -355,22 +356,28 @@ async function subscribeFormOnsubmit(event) {
   subscriptionMonitorShow();
   subscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
 
-  const subscribe = new Subscribe();
-  subscribe.init();
-  subscribe.fetchFeedTimeoutMs = 2000;
-  subscribe.concurrent = false;
-  let feed, status;
-  try {
-    await subscribe.connect();
-    [status, feed] = await subscribe.subscribe(url);
-  } catch(error) {
-    // TODO: show a visual error message in event of an error
-    console.warn(error);
+  const context = {};
+  context.feedStore = new FeedStore();
+  context.iconCache = new FaviconCache();
+  context.concurrent = false;
+  context.notify = true;
+  context.fetchFeedTimeoutMs = 2000;
+
+  // TODO: concurrent and check status
+  await context.feedStore.open();
+  await context.iconCache.open();
+
+  let [status, feed] = await subscribe(context, url);
+  if(status !== Status.OK) {
+    console.error('Failed to subscribe:', Status.toString(status));
     subscriptionMonitorHide();
+    context.feedStore.close();
+    context.iconCache.close();
     return;
-  } finally {
-    subscribe.close();
   }
+
+  context.feedStore.close();
+  context.iconCache.close();
 
   // TODO: UI level functions generally shouldn't assert
   assert(Feed.isFeed(feed));
