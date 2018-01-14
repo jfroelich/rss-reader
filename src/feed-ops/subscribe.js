@@ -15,6 +15,7 @@ import coerceFeed from "/src/coerce-feed.js";
 // TODO: reconsider how notify overlaps with concurrent. For that matter, concurrent is a bit
 // to abstract and should probably be renamed to something more granular and specific to
 // what it does, like enqueuePoll
+// TODO: notify a channel of feed created
 
 // context properties:
 // feedStore, database conn
@@ -25,7 +26,6 @@ import coerceFeed from "/src/coerce-feed.js";
 
 
 export default async function subscribe(context, url) {
-
   if(typeof context !== 'object') {
     return [Status.EINVAL];
   }

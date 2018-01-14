@@ -476,21 +476,31 @@ function feedListRemoveFeed(feedId) {
 }
 
 
-// TODO: visually react to unsubscribe error
 async function unsubscribeButtonOnclick(event) {
   const feedId = parseInt(event.target.value, 10);
-  assert(Feed.isValidId(feedId));
-
-  const feedStore = new FeedStore();
-  try {
-    await feedStore.open();
-    await unsubscribe(feedId, feedStore, readerChannel);
-  } catch(error) {
-    console.warn(error);
+  if(!Feed.isValidId(feedId)) {
+    // TODO: visually react to error
+    console.error('Invalid feed id', feedId);
     return;
-  } finally {
-    feedStore.close();
   }
+
+  const store = new FeedStore();
+  let status = await store.open();
+  if(status !== Status.OK) {
+    // TODO: visually react to error
+    console.error('Failed to open database:', Status.toString(status));
+    return;
+  }
+
+  status = await unsubscribe(store, readerChannel, feedId);
+  if(status !== Status.OK) {
+    // TODO: visually react to error
+    console.error('Failed to unsubscribe:', Status.toString(status));
+    store.close();
+    return;
+  }
+
+  store.close();
 
   feedListRemoveFeed(feedId);
   showSectionById('subs-list-section');

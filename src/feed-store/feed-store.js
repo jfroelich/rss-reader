@@ -10,6 +10,13 @@ import {
   filterUnprintableCharacters
 } from "/src/feed-store/utils.js";
 
+// TODO: in hindsight, there is little need for an object. This could just export a bunch
+// of basic promise-returning functions and be much simpler. The open function could simply
+// accept an options argument that overrides defaults for testing purposes. The rest of the
+// app can call open without the options argument. Then there is no longer a need to
+// export everything in a big object. Callers do not need to allocate and can instead directly
+// call functions.
+
 
 export default function FeedStore() {
   this.name = 'reader';
@@ -445,45 +452,6 @@ FeedStore.prototype.containsEntryWithURL = async function(url) {
   return [Status.OK, valid];
 };
 
-// TODO: left off factoring status here
-
-// Returns a promise that resolves to an array of entry ids that are associated with the given
-// feed id. Throws an unchecked error if the connection is invalid or not open, or if the feed id
-// is invalid. Throws a checked error if a database error occurs.
-// @param feedId {Number} the id of a feed in the database
-// @return {Promise}
-FeedStore.prototype.findEntryIdsByFeedId = async function(feedId) {
-
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
-
-  if(!Feed.isValidId(feedId)) {
-    console.error('Invalid feed id', feedId);
-    return [Status.EINVAL];
-  }
-
-  const promise = new Promise((resolve, reject) => {
-    const tx = this.conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const index = store.index('feed');
-    const request = index.getAllKeys(feedId);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-
-  let entryIds;
-  try {
-    entryIds = await promise;
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
-  }
-
-  return [Status.OK, entryIds];
-};
-
 // Searches the feed store in the database for a feed corresponding to the given id. Returns a
 // promise that resolves to the matching feed. Returns a promise that resolves to undefined if
 // no matching feed is found. Throws an unchecked error if the database is closed or the id is
@@ -841,51 +809,9 @@ FeedStore.prototype.removeEntries = async function(entryIds) {
   return Status.OK;
 };
 
-// TODO: this should not accept entryIds as parameter, it should find the entries as part of the
-// transaction implicitly. Once that it done there is no need to assert against entryIds as
-// valid entry ids.
-FeedStore.prototype.removeFeed = async function(feedId, entryIds) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return Status.EINVALIDSTATE;
-  }
-
-  if(!Feed.isValidId(feedId)) {
-    console.error('Invalid feed id', feedId);
-    return Status.EINVAL;
-  }
-
-  if(!Array.isArray(entryIds)) {
-    console.error('Invalid entryIds parameter', entryIds);
-    return Status.EINVAL;
-  }
-
-  // If any id is invalid the whole operation fails
-  for(const id of entryIds) {
-    if(!Entry.isValidId(id)) {
-      console.error('Invalid entry id', id);
-      return Status.EINVAL;
-    }
-  }
-
-  const promise = new Promise((resolve, reject) => {
-    const tx = this.conn.transaction(['feed', 'entry'], 'readwrite');
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-
-    const feedStore = tx.objectStore('feed');
-    console.debug('Deleting feed with id', feedId);
-    feedStore.delete(feedId);
-
-    const entryStore = tx.objectStore('entry');
-    for(const id of entryIds) {
-      console.debug('Deleting entry with id', id);
-      entryStore.delete(id);
-    }
-  });
-
+FeedStore.prototype.removeFeed = async function(feedId, channel, reasonText) {
   try {
-    await promise;
+    await removeFeed(this.conn, feedId, channel, reasonText);
   } catch(error) {
     console.error(error);
     return Status.EDB;
@@ -893,6 +819,59 @@ FeedStore.prototype.removeFeed = async function(feedId, entryIds) {
 
   return Status.OK;
 };
+
+function removeFeed(conn, feedId, channel, reasonText) {
+  return new Promise(function executor(resolve, reject) {
+
+    if(!IndexedDbUtils.isOpen(conn)) {
+      const error = new TypeError('Connection is not open ' + conn);
+      reject(error);
+      return;
+    }
+
+    if(!Feed.isValidId(feedId)) {
+      const error = new TypeError('Invalid feed id ' + feedId);
+      reject(error);
+      return;
+    }
+
+    let entryIds;
+    const tx = conn.transaction(['feed', 'entry'], 'readwrite');
+
+    tx.oncomplete = function(event) {
+      // Now that the transaction committed, notify observers
+      if(channel && channel.postMessage) {
+        channel.postMessage({type: 'feed-deleted', id: feedId, reason: reasonText});
+
+        for(const id of entryIds) {
+          channel.postMessage({type: 'entry-deleted', id: id, reason: reasonText});
+        }
+      }
+
+      resolve();
+    };
+
+    tx.onerror = () => reject(tx.error);
+
+    const feedStore = tx.objectStore('feed');
+    console.debug('Deleting feed with id', feedId);
+    feedStore.delete(feedId);
+
+    // Get all entry ids for the feed and then delete them
+    const entryStore = tx.objectStore('entry');
+    const feedIndex = entryStore.index('feed');
+    const getEntryIdsRequest = feedIndex.getAllKeys(feedId);
+    getEntryIdsRequest.onsuccess = function(event) {
+      entryIds = getEntryIdsRequest.result;
+      for(const id of entryIds) {
+        console.debug('Deleting entry with id', id);
+        entryStore.delete(id);
+      }
+    };
+  });
+}
+
+
 
 // Loads archivable entries from the database. An entry is archivable if it has not already been
 // archived, and has been read, and matches the custom predicate function.
