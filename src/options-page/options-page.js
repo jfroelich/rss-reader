@@ -574,7 +574,7 @@ async function deactivateButtonOnclick(event) {
     return;
   }
 
-  status = await deactivateFeed(conn, feedId, 'manual-click');
+  status = await deactivateFeed(conn, channel, feedId, 'manual-click');
   if(status !== Status.OK) {
     // TODO: show visual error
     console.error('Failed to deactivate feed');

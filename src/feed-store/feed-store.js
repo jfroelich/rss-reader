@@ -28,8 +28,6 @@ import {
 // all post channel messages
 // TODO: create an addFeed function that forwards to putFeed in the style of addEntry/putEntry
 
-
-
 export function open(name = 'reader', version = 24, timeout = 500) {
   return openHelper(name, version, onUpgradeNeeded, timeout);
 }
@@ -110,41 +108,66 @@ function activateFeedPromise(conn, channel, feedId) {
 
 
 
-export async function deactivateFeed(conn, feedId, reason) {
-  // TODO: use a single transaction to ensure consistency
-
-  if(!Feed.isValidId(feedId)) {
-    console.error('Invalid feed id', feedId);
-    return Status.EINVAL;
+export async function deactivateFeed(conn, channel, feedId, reasonText) {
+  try {
+    await deactivateFeedPromise(conn, channel, feedId, reasonText);
+    return Status.OK;
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
   }
-
-  let [status, feed] = await findFeedById(conn, feedId);
-  if(status !== Status.OK) {
-    console.error('Could not find feed by id', feedId);
-    return status;
-  }
-
-  if(!feed.active) {
-    console.error('Tried to deactivate inactive feed', feed.id);
-    return Status.EINVALIDSTATE;
-  }
-
-  feed.active = false;
-  if(typeof reason === 'string') {
-    feed.deactivationReasonText = reason;
-  }
-
-  const currentDate = new Date();
-  feed.deactivationDate = currentDate;
-  feed.dateUpdated = currentDate;
-
-  [status] = await putFeed(conn, feed);
-  if(status !== Status.OK) {
-    console.error('Failed to put feed', Status.toString(status));
-  }
-
-  return status;
 }
+
+function deactivateFeedPromise(conn, channel, feedId, reasonText) {
+  return new Promise((resolve, reject) => {
+    console.debug('Deactivating feed %d', feedId);
+
+    if(!Feed.isValidId(feedId)) {
+      const error = new TypeError('Invalid feed id ' + feedId);
+      reject(error);
+      return;
+    }
+
+    const tx = conn.transaction('feed', 'readwrite');
+    tx.oncomplete = () => {
+      console.debug('Deactivated feed %d', feedId);
+
+      if(channel && channel.postMessage) {
+        channel.postMessage({type: 'feed-deactivated', id: feedId});
+      }
+
+      resolve();
+    };
+    tx.onerror = () => reject(tx.error);
+
+    const store = tx.objectStore('feed');
+    const getFeedRequest = store.get(feedId);
+    getFeedRequest.onsuccess = () => {
+      const feed = getFeedRequest.result;
+      if(!feed) {
+        const error = new Error('Could not find feed for id ' + feedId);
+        reject(error);
+        return;
+      }
+
+      if(!feed.active) {
+        const error = new Error('Feed is not active ' + feedId);
+        reject(error);
+        return;
+      }
+
+      // Transition properties from active/unknown to inactive
+      feed.active = false;
+      feed.deactivationDate = new Date();
+      feed.deactivationReasonText = reasonText;
+      feed.dateUpdated = new Date();
+
+      store.put(feed);
+    };
+  });
+}
+
+
 
 export async function addEntry(conn, channel, entry) {
 
