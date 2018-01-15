@@ -537,7 +537,9 @@ async function activateButtonOnclick(event) {
     return;
   }
 
-  status = await activateFeed(conn, feedId);
+  // channel is defined at the scope of the options page, it is always present
+
+  status = await activateFeed(conn, channel, feedId);
   if(status !== Status.OK) {
     // NOTE: if this fails, feedStore is left in open state
     // TODO: show a visual error message

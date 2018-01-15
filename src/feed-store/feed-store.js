@@ -10,21 +10,8 @@ import {
   filterUnprintableCharacters
 } from "/src/feed-store/utils.js";
 
-// NOTE: the following TODO is actively being done
-// TODO: in hindsight, there is little need for an object. This could just export a bunch
-// of basic promise-returning functions and be much simpler. The open function could simply
-// accept an options argument that overrides defaults for testing purposes. The rest of the
-// app can call open without the options argument. Then there is no longer a need to
-// export everything in a big object. Callers do not need to allocate and can instead directly
-// call functions. I can still export functions like isOpen and close to shield direct
-// interaction with IndexedDbUtils. I am allowing the module to become the context rather
-// than shoehorning an object into a module. There is practically no state involved other
-// than the conn property so that is about the only benefit of an object.
-// TODO: after refactoring review which functions are used only locally and ensure they are
-// not exported
-
+// TODO: review which functions are used only locally and ensure they are not exported
 // TODO: it is possible that feed.js and entry.js should be merged into this file
-
 // TODO: if the file is so large, what I could do is present a unifying module that simply
 // imports from a bunch of helper files and then exports from here, and expect users to
 // import from here instead of directly from helpers. I've noticed this is an extremely
@@ -32,17 +19,13 @@ import {
 // single point of entry pattern? If I do this I think first I should do the other changes
 // and then examine the size of the module afterward. This will increase file coherency
 // without increasing coupling.
-
 // TODO: I should be more consistent in field names. A have a semi-hungarian notation, where
 // the type is the suffix, but sometimes I use it as the prefix (e.g. dateUpdated should be
 // renamed to updatedDate)
-
 // TODO: be consistent in precondition assertions. Do them as promise rejections, not before
 // starting the promise.
-
 // TODO: which reminds me, addFeed, putFeed, addEntry, and putEntry in feed-store should
 // all post channel messages
-
 // TODO: create an addFeed function that forwards to putFeed in the style of addEntry/putEntry
 
 
@@ -51,45 +34,81 @@ export function open(name = 'reader', version = 24, timeout = 500) {
   return openHelper(name, version, onUpgradeNeeded, timeout);
 }
 
-export async function activateFeed(conn, feedId) {
-  if(!Feed.isValidId(feedId)) {
-    console.error('Invalid feed id', feedId);
-    return Status.EINVAL;
+export async function activateFeed(conn, channel, feedId) {
+  try {
+    await activateFeedPromise(conn, channel, feedId);
+    return Status.OK;
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
   }
-
-  // TODO: this should be using a single read-write transaction instead of two transactions in
-  // order to ensure consistency.
-
-  console.debug('Activating feed', feedId);
-  let [status, feed] = await findFeedById(conn, feedId);
-  if(status !== Status.OK) {
-    console.error('Error finding feed by id', feedId, Status.toString(status));
-    return status;
-  }
-
-  console.debug('Found feed to activate', feedId, feed.title);
-
-  if(feed.active) {
-    console.debug('Feed %d is already active', feedId);
-    return Status.EINVALIDSTATE;
-  }
-
-  // Transition feed properties from active to inactive state. Minizing storage size is preferred
-  // over maintaining v8 object shape.
-  feed.active = true;
-  delete feed.deactivationReasonText;
-  delete feed.deactivationDate;
-  feed.dateUpdated = new Date();
-
-  [status] = await putFeed(conn, feed);
-  if(status !== Status.OK) {
-    console.error('Failed to put feed:', Status.toString(status));
-    return status;
-  }
-
-  console.debug('Activated feed', feedId);
-  return Status.OK;
 }
+
+function activateFeedPromise(conn, channel, feedId) {
+  return new Promise((resolve, reject) => {
+
+    if(!Feed.isValidId(feedId)) {
+      const error = new TypeError('Invalid feed id ' + feedId);
+      reject(error);
+      return;
+    }
+
+    console.debug('Activating feed %d', feedId);
+    const tx = conn.transaction('feed', 'readwrite');
+
+    // When not settling earlier
+    tx.oncomplete = () => {
+
+      console.debug('Activated feed', feedId);
+
+      // The pending requests have settled successfully (resolved),
+      // so they are now committed. Now it is safe to notify observers
+      if(channel && channel.postMessage) {
+        channel.postMessage({type: 'feed-activated', id: feedId});
+      }
+
+      // Finally, resolve the promise
+      resolve();
+    };
+
+    tx.onerror = () => reject(tx.error);
+
+    const store = tx.objectStore('feed');
+    const findFeedRequest = store.get(feedId);
+    findFeedRequest.onsuccess = () => {
+      const feed = findFeedRequest.result;
+
+      // It is entirely possible the user specified an id that does not correspond to
+      // a feed in the feed store. IDBObjectStore.prototype.get resolves successfully even
+      // when there is no match.
+      if(!feed) {
+        const error = new Error('Could not find feed with id ' + feedId);
+        reject(error);
+        return;
+      }
+
+      console.debug('Found feed to activate', feed.id, feed.title);
+
+      if(feed.active) {
+        const error = new Error('Feed with id ' + feedId + ' is already active');
+        reject(error);
+        return;
+      }
+
+      // Transition properties from inactive/unset to active
+      feed.active = true;
+      delete feed.deactivationReasonText;
+      delete feed.deactivateDate;
+      feed.dateUpdated = new Date();
+
+      // On put success goto tx oncomplete
+      // On put error goto to tx onerror
+      store.put(feed);
+    };
+  });
+}
+
+
 
 export async function deactivateFeed(conn, feedId, reason) {
   // TODO: use a single transaction to ensure consistency
