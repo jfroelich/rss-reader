@@ -120,7 +120,7 @@ export async function deactivateFeed(conn, channel, feedId, reasonText) {
 
 function deactivateFeedPromise(conn, channel, feedId, reasonText) {
   return new Promise((resolve, reject) => {
-    console.debug('Deactivating feed %d', feedId);
+    console.debug('Deactivating feed %d ...', feedId);
 
     if(!Feed.isValidId(feedId)) {
       const error = new TypeError('Invalid feed id ' + feedId);

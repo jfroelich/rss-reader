@@ -1,16 +1,19 @@
 import assert from "/src/common/assert.js";
 import * as Status from "/src/common/status.js";
 import {FaviconCache} from "/src/favicon-service/favicon-service.js";
+
 import {
   activateFeed,
   deactivateFeed,
+  findFeedById,
   getAllFeeds,
-  open as openFeedStore
-} from "/src/feed-store/feed-store.js";
+  unsubscribe
+} from "/src/feed-ops/auto-connected.js";
+
+import {open as openFeedStore} from "/src/feed-store/feed-store.js";
 import * as Feed from "/src/feed-store/feed.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
 import subscribe from "/src/feed-ops/subscribe.js";
-import unsubscribe from "/src/feed-ops/unsubscribe.js";
 import {truncateHTML} from "/src/common/html-utils.js";
 
 const BG_IMAGES = [
@@ -255,32 +258,15 @@ async function feedListItemOnclick(event) {
   // Use current target to capture the element with the feed attribute
   const feedListItem = event.currentTarget;
   const feedIdString = feedListItem.getAttribute('feed');
-  const feedIdNumber = parseInt(feedIdString, 10);
-
-  if(!Feed.isValidId(feedIdNumber)) {
-    // TODO: visual error message
-    console.error('Invalid feed id', feedIdNumber);
-    return;
-  }
+  const feedId = parseInt(feedIdString, 10);
 
   // Load feed details from the database
-
-  // TODO: move to a helper function to encapsulate the opening and closing of the database
-  let [status, conn] = await openFeedStore();
+  let [status, feed] = await findFeedById(feedId);
   if(status !== Status.OK) {
     // TODO: visual error message
-    console.error('Failed to open feed store database', status);
+    console.error('Failed to find feed by id', Status.toString(status));
     return;
   }
-  let feed;
-  [status, feed] = await findFeedById(conn, feedIdNumber);
-  if(status !== Status.OK) {
-    // TODO: visual error message
-    console.error('Failed to find feed by id %d, status was', feedIdNumber, status);
-    conn.close();
-    return;
-  }
-  conn.close();
 
   // Update the UI with the loaded feed data
   const titleElement = document.getElementById('details-title');
@@ -369,6 +355,7 @@ async function subscribeFormOnsubmit(event) {
   context.fetchFeedTimeoutMs = 2000;
 
   // TODO: open both databases concurrently
+  // TODO: create a helper, maybe?
 
   let status;
   [status, conn] = await openFeedStore();
@@ -409,27 +396,12 @@ async function feedListInit() {
   const noFeedsElement = document.getElementById('nosubs');
   const feedListElement = document.getElementById('feedlist');
 
-  // TODO: create a helper function that encapsulates opening and closing the database
-  // and just returns status and array.
-
-  let [status, conn] = await openFeedStore();
+  let [status, feeds] = await getAllFeeds();
   if(status !== Status.OK) {
-    // TODO: react to error
-    console.warn('Failed to open feed store:', Status.toString(status));
+    // TODO: show visual error
+    console.error('Failed to get all feeds', Status.toString(status));
     return;
   }
-
-  // Get all feeds in natural order
-  let feeds;
-  [status, feeds] = await getAllFeeds(conn);
-  if(status !== Status.OK) {
-    // TODO: react to error
-    console.warn('Failed to get all feeds:', Status.toString(status));
-    conn.close();
-    return;
-  }
-
-  conn.close();
 
   // Ensure feeds have titles
   for(const feed of feeds) {
@@ -490,28 +462,13 @@ function feedListRemoveFeed(feedId) {
 
 async function unsubscribeButtonOnclick(event) {
   const feedId = parseInt(event.target.value, 10);
-  if(!Feed.isValidId(feedId)) {
-    // TODO: visually react to error
-    console.error('Invalid feed id', feedId);
-    return;
-  }
 
-  let [status, conn] = await openFeedStore();
+  let status = unsubscribe(channel, feedId);
   if(status !== Status.OK) {
     // TODO: visually react to error
-    console.error('Failed to open database:', Status.toString(status));
+    console.error('Failed to unsubscribe', Status.toString(status));
     return;
   }
-
-  status = await unsubscribe(conn, channel, feedId);
-  if(status !== Status.OK) {
-    // TODO: visually react to error
-    console.error('Failed to unsubscribe:', Status.toString(status));
-    conn.close();
-    return;
-  }
-
-  conn.close();
 
   feedListRemoveFeed(feedId);
   showSectionById('subs-list-section');
@@ -528,27 +485,12 @@ async function activateButtonOnclick(event) {
     return;
   }
 
-  // TODO: create a helper function that encapsulates opening and closing the database
-
-  let [status, conn] = await openFeedStore();
+  let status = await activateFeed(channel, feedId);
   if(status !== Status.OK) {
     // TODO: show a visual error message
-    console.error('Failed to open feed store', status);
+    console.error('Failed to activate feed', Status.toString(status));
     return;
   }
-
-  // channel is defined at the scope of the options page, it is always present
-
-  status = await activateFeed(conn, channel, feedId);
-  if(status !== Status.OK) {
-    // NOTE: if this fails, feedStore is left in open state
-    // TODO: show a visual error message
-    console.error('Failed to activate feed', status);
-    conn.close();
-    return;
-  }
-
-  conn.close();
 
   // Update the feed loaded in the UI
   const itemElement = document.querySelector('li[feed="' + feedId + '"]');
@@ -559,38 +501,21 @@ async function activateButtonOnclick(event) {
   showSectionById('subs-list-section');
 }
 
+
+
 async function deactivateButtonOnclick(event) {
   const feedId = parseInt(event.target.value, 10);
 
-  if(!Feed.isValidId(feedId)) {
-    console.error('Invalid feed id', event.target.value);
-    return;
-  }
-
-  let [status, conn] = await openFeedStore();
+  const status = await deactivateFeed(channel, feedId, 'manual-click');
   if(status !== Status.OK) {
-    // TODO: show visual error
-    console.error('Failed to open database');
+      // TODO: show visual error
+    console.error('Failed to deactivate feed:', Status.toString(status));
     return;
   }
-
-  status = await deactivateFeed(conn, channel, feedId, 'manual-click');
-  if(status !== Status.OK) {
-    // TODO: show visual error
-    console.error('Failed to deactivate feed');
-    conn.close();
-    return;
-  }
-
-  conn.close();
 
   // Mark the corresponding element as inactive
   const itemElement = document.querySelector('li[feed="' + feedId + '"]');
-  if(itemElement) {
-    itemElement.setAttribute('inactive', 'true');
-  } else {
-    console.error('Could not find feed element corresponding to de-activated feed');
-  }
+  itemElement.setAttribute('inactive', 'true');
 
   showSectionById('subs-list-section');
 }

@@ -81,7 +81,9 @@ channel.onmessage = function(event) {
     console.warn('Unhandled entry-marked-read message', message);
     break;
   case 'feed-added':
-    console.warn('Unhandled feed-added message', message);
+  case 'feed-activated':
+  case 'feed-deactivated':
+    console.debug('Ignoring message', message);
     break;
   default:
     console.warn('Unknown message type', message);
