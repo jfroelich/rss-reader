@@ -2,7 +2,6 @@ import assert from "/src/common/assert.js";
 import * as Feed from "/src/feed-store/feed.js";
 import * as OPMLUtils from "/src/slideshow-page/opml-utils.js";
 
-// TODO: rename to opml-exporter.js
 // TODO: Change to return a blob object. Move downloadBlob to calling context. Export shouldn't
 // care how the blob is used.
 // TODO: the idea to require feeds as a parameter and move all the database functionality out of

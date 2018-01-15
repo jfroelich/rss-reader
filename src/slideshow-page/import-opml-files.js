@@ -3,7 +3,7 @@ import * as Status from "/src/common/status.js";
 import {FaviconCache} from "/src/favicon-service/favicon-service.js";
 import subscribe from "/src/feed-ops/subscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
-import FeedStore from "/src/feed-store/feed-store.js";
+import {open as openFeedStore} from "/src/feed-store/feed-store.js";
 
 export default async function importOPMLFiles(files, timeout) {
   if(!(files instanceof FileList)) {
@@ -17,18 +17,21 @@ export default async function importOPMLFiles(files, timeout) {
   }
 
   const context = {
-    feedStore: new FeedStore(),
+    conn: null,
     iconCache: new FaviconCache(),
     fetchFeedTimeoutMs: timeout,
     notify: false,
     concurrent: true
   };
 
-  let status = await openDatabases(context);
+  let [status, conn] = await openDatabases(context);
   if(status !== Status.OK) {
     console.error('Error opening databases:', Status.toString(status));
     return status;
   }
+
+  context.conn = conn;
+
 
   // Concurrently import files
   const promises = [];
@@ -44,27 +47,40 @@ export default async function importOPMLFiles(files, timeout) {
     }
   }
 
-  context.feedStore.close();
+  context.conn.close();
   context.iconCache.close();
 
   return Status.OK;
 }
 
 async function openDatabases(context) {
-  const promise1 = context.feedStore.open();
+  const promise1 = openFeedStore();
   const promise2 = context.iconCache.open();
-  const statuses = await Promise.all([promise1, promise2]);
-  let status = statuses[0];
-  if(status !== Status.OK) {
+  const resolutions = await Promise.all([promise1, promise2]);
+
+  let [openFeedStoreStatus, conn] = resolutions[0];
+  if(openFeedStoreStatus !== Status.OK) {
     context.iconCache.close();
-    return status;
+    return [openFeedStoreStatus];
   }
-  status = statuses[1];
-  if(status !== Status.OK) {
-    context.feedStore.close();
-    return status;
+
+  let openFaviconCacheStatus = resolutions[1];
+  if(openFaviconCacheStatus !== Status.OK) {
+
+    if(conn instanceof IDBDatabase) {
+      conn.close();
+    }
+
+    return [status];
   }
-  return Status.OK;
+
+  // TEMP: sanity check above, confused myself
+  if(!(conn instanceof IDBDatabase)) {
+    console.error('conn is not a database object', conn);
+    return [Status.EINVALIDSTATE];
+  }
+
+  return [Status.OK, conn];
 }
 
 async function importOPMLFile(context, file) {

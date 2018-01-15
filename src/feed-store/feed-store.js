@@ -1,4 +1,4 @@
-import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
+import {open as openHelper} from "/src/common/indexeddb-utils.js";
 import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 import * as Entry from "/src/feed-store/entry.js";
@@ -10,71 +10,67 @@ import {
   filterUnprintableCharacters
 } from "/src/feed-store/utils.js";
 
+// NOTE: the following TODO is actively being done
 // TODO: in hindsight, there is little need for an object. This could just export a bunch
 // of basic promise-returning functions and be much simpler. The open function could simply
 // accept an options argument that overrides defaults for testing purposes. The rest of the
 // app can call open without the options argument. Then there is no longer a need to
 // export everything in a big object. Callers do not need to allocate and can instead directly
-// call functions.
+// call functions. I can still export functions like isOpen and close to shield direct
+// interaction with IndexedDbUtils. I am allowing the module to become the context rather
+// than shoehorning an object into a module. There is practically no state involved other
+// than the conn property so that is about the only benefit of an object.
+// TODO: after refactoring review which functions are used only locally and ensure they are
+// not exported
+
+// TODO: it is possible that feed.js and entry.js should be merged into this file
+
+// TODO: if the file is so large, what I could do is present a unifying module that simply
+// imports from a bunch of helper files and then exports from here, and expect users to
+// import from here instead of directly from helpers. I've noticed this is an extremely
+// common practice in other open-source projects. I guess it is some kind of
+// single point of entry pattern? If I do this I think first I should do the other changes
+// and then examine the size of the module afterward. This will increase file coherency
+// without increasing coupling.
+
+// TODO: I should be more consistent in field names. A have a semi-hungarian notation, where
+// the type is the suffix, but sometimes I use it as the prefix (e.g. dateUpdated should be
+// renamed to updatedDate)
+
+// TODO: be consistent in precondition assertions. Do them as promise rejections, not before
+// starting the promise.
+
+// TODO: which reminds me, addFeed, putFeed, addEntry, and putEntry in feed-store should
+// all post channel messages
+
+// TODO: create an addFeed function that forwards to putFeed in the style of addEntry/putEntry
 
 
-export default function FeedStore() {
-  this.name = 'reader';
-  this.version = 24;
-  this.timeout = 500;
 
-  // private IDBDatabase handle
-  this.conn = null;
+export function open(name = 'reader', version = 24, timeout = 500) {
+  return openHelper(name, version, onUpgradeNeeded, timeout);
 }
 
-FeedStore.prototype.open = async function() {
-  if(this.isOpen()) {
-    console.error('Database already open');
-    return Status.EINVALIDSTATE;
-  }
-
-  const [status, conn] = await IndexedDbUtils.open(this.name, this.version, onUpgradeNeeded,
-    this.timeout);
-  this.conn = conn;
-  return status;
-};
-
-
-FeedStore.prototype.isOpen = function() {
-  return IndexedDbUtils.isOpen(this.conn);
-};
-
-FeedStore.prototype.close = function() {
-  IndexedDbUtils.close(this.conn);
-  // The conn property must be unset to allow for calling open again without error
-  // Undefine rather than delete to maintain v8 hidden shape
-  this.conn = void this.conn;
-};
-
-FeedStore.prototype.activateFeed = async function(feedId) {
-  console.debug('Activating feed', feedId);
-
-  if(!this.isOpen()) {
-    console.error('FeedStore is not in open state to activate feed');
-    return Status.EINVALIDSTATE;
-  }
-
+export async function activateFeed(conn, feedId) {
   if(!Feed.isValidId(feedId)) {
     console.error('Invalid feed id', feedId);
     return Status.EINVAL;
   }
 
-  let [status, feed] = await this.findFeedById(feedId);
+  // TODO: this should be using a single read-write transaction instead of two transactions in
+  // order to ensure consistency.
+
+  console.debug('Activating feed', feedId);
+  let [status, feed] = await findFeedById(conn, feedId);
   if(status !== Status.OK) {
-    console.error('Could not find feed to activate', feedId);
+    console.error('Error finding feed by id', feedId, Status.toString(status));
     return status;
   }
 
-  // TODO: reduce message size
-  console.debug('Found feed to activate', feed);
+  console.debug('Found feed to activate', feedId, feed.title);
 
   if(feed.active) {
-    console.debug('Cannot activate feed %d that is already active', feed.id);
+    console.debug('Feed %d is already active', feedId);
     return Status.EINVALIDSTATE;
   }
 
@@ -85,27 +81,64 @@ FeedStore.prototype.activateFeed = async function(feedId) {
   delete feed.deactivationDate;
   feed.dateUpdated = new Date();
 
-  [status] = await this.putFeed(feed);
+  [status] = await putFeed(conn, feed);
   if(status !== Status.OK) {
-    console.error('Failed to put feed with status', status);
+    console.error('Failed to put feed:', Status.toString(status));
     return status;
   }
 
+  console.debug('Activated feed', feedId);
   return Status.OK;
-};
+}
 
-// @param channel {BroadcastChannel} optional, notify observers of new entries
-// @return {Number} the id of the added entry
-FeedStore.prototype.addEntry = async function(entry, channel) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
+export async function deactivateFeed(conn, feedId, reason) {
+  // TODO: use a single transaction to ensure consistency
+
+  if(!Feed.isValidId(feedId)) {
+    console.error('Invalid feed id', feedId);
+    return Status.EINVAL;
   }
+
+  let [status, feed] = await findFeedById(conn, feedId);
+  if(status !== Status.OK) {
+    console.error('Could not find feed by id', feedId);
+    return status;
+  }
+
+  if(!feed.active) {
+    console.error('Tried to deactivate inactive feed', feed.id);
+    return Status.EINVALIDSTATE;
+  }
+
+  feed.active = false;
+  if(typeof reason === 'string') {
+    feed.deactivationReasonText = reason;
+  }
+
+  const currentDate = new Date();
+  feed.deactivationDate = currentDate;
+  feed.dateUpdated = currentDate;
+
+  [status] = await putFeed(conn, feed);
+  if(status !== Status.OK) {
+    console.error('Failed to put feed', Status.toString(status));
+  }
+
+  return status;
+}
+
+export async function addEntry(conn, channel, entry) {
 
   if(!Entry.isEntry(entry)) {
-    console.error('Invalid entry', entry);
+    console.error('Invalid entry argument', entry);
     return [Status.EINVAL];
   }
+
+  // TODO: instead of returning the new id, return the stored object. And set the id of the
+  // stored object before returning it. This way the caller can see the sanitized version of the
+  // entry.
+
+  // TODO: why not set dateUpdated?
 
   const sanitized = sanitizeEntry(entry);
   const storable = filterEmptyProps(sanitized);
@@ -113,22 +146,23 @@ FeedStore.prototype.addEntry = async function(entry, channel) {
   storable.archiveState = Entry.STATE_UNARCHIVED;
   storable.dateCreated = new Date();
 
-  let [status, newEntryId] = await this.putEntry(storable);
+  let [status, entryId] = await putEntry(conn, storable);
   if(status !== Status.OK) {
-    console.error('Failed to put entry with status', status);
-    return status;
+    console.error('Failed to put entry:', Status.toString(status));
+    return [status];
   }
 
-  if(channel) {
-    // TODO: the message format should be defined externally?
-    const message = {type: 'entry-added', id: newEntryId};
+  // Notify observers of the new entry
+  if(channel && channel.postMessage) {
+    const message = {type: 'entry-added', id: entryId};
     channel.postMessage(message);
   }
 
-  return [Status.OK, newEntryId];
-};
+  return [Status.OK, entryId];
+}
 
 
+// TODO: move this to utils?
 // Returns a new entry object where fields have been sanitized. Impure
 // TODO: now that filterUnprintableCharacters is a thing, I want to also filter such
 // characters from input strings like author/title/etc. However it overlaps with the
@@ -186,51 +220,46 @@ function condenseWhitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
 }
 
-// Returns a promise that resolves to a count of unread entries in the database
-// Throws an unchecked error if the database is closed or invalid.
-// Throws a checked error if a database error occurs.
-FeedStore.prototype.countUnreadEntries = async function() {
-  if(!this.isOpen()) {
-    return [Status.EINVALIDSTATE];
+// TODO: maybe just return a promise and expect the caller to use try/catch semantics
+// It seems kind of silly to have a function that just translates the result into a status
+// pattern. How much benefit is there to abstracting away the exception?
+export async function countUnreadEntries(conn) {
+  try {
+    const count = await countUnreadEntriesPromise(conn);
+    return [Status.OK, count];
+  } catch(error) {
+    return [Status.EDB];
   }
+}
 
-  const promise = new Promise((resolve, reject) => {
-    const tx = this.conn.transaction('entry');
+function countUnreadEntriesPromise(conn) {
+  return new Promise((resolve, reject) => {
+    const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('readState');
     const request = index.count(Entry.STATE_UNREAD);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
 
-  let count;
-  try {
-    count = await promise;
-  } catch(error) {
-    return [Status.EDB];
-  }
+export async function markEntryRead(conn, channel, entryId) {
 
-  return [Status.OK, count];
-};
-
-FeedStore.prototype.markEntryRead = async function(entryId) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return Status.EINVALIDSTATE;
-  }
+  // TODO: this needs to be refactored to use a single transaction. Right now it uses two,
+  // which opens the door to inconsistency.
 
   if(!Entry.isValidId(entryId)) {
     console.error('Invalid entry id', entryId);
     return Status.EINVAL;
   }
 
-  let [status, entry] = await this.findEntryById(entryId);
+  let [status, entry] = await findEntryById(conn, entryId);
   if(status !== Status.OK) {
-    console.error('Failed to find entry by id with status', status);
+    console.error('Failed to find entry by id:', Status.toString(status));
     return status;
   }
 
-  console.debug('Loaded entry to mark as read', entryId, entry.urls);
+  console.debug('Loaded entry to mark as read %d "%s"', entryId, entry.title);
 
   if(entry.readState === Entry.STATE_READ) {
     console.error('Entry %d already in read state', entryId);
@@ -238,98 +267,64 @@ FeedStore.prototype.markEntryRead = async function(entryId) {
   }
 
   entry.readState = Entry.STATE_READ;
-  entry.dateRead = entry.dateUpdated;
   entry.dateUpdated = new Date();
+  entry.dateRead = entry.dateUpdated;
 
-  [status] = await this.putEntry(entry);
+  [status] = await putEntry(conn, entry);
   if(status !== Status.OK) {
-    console.error('Failed to put entry with status', status);
+    console.error('Failed to put entry:', Status.toString(status));
+  }
+
+  // Notify obververs of the state change
+  if(channel && channel.postMessage) {
+    channel.postMessage({type: 'entry-marked-read', id: entryId});
+  }
+
+  return status;
+}
+
+export async function findActiveFeeds(conn) {
+
+  // TODO: if performance eventually becomes a material concern this should probably
+  // query by index
+  let [status, feeds] = await getAllFeeds(conn);
+  if(status !== Status.OK) {
+    console.error('Failed to get all feeds:', Status.toString(status));
     return status;
   }
 
-  console.debug('Successfully put read entry in database', entryId);
-  return Status.OK;
-};
-
-FeedStore.prototype.deactivateFeed = async function(feedId, reason) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return Status.EINVALIDSTATE;
-  }
-
-  if(!Feed.isValidId(feedId)) {
-    console.error('Invalid feed id', feedId);
-    return Status.EINVAL;
-  }
-
-  let [status, feed] = await this.findFeedById(feedId);
-  if(status !== Status.OK) {
-    console.error('Could not find feed by id', feedId);
-    return status;
-  }
-
-  if(!feed.active) {
-    console.error('Tried to deactivate inactive feed', feed.id);
-    return Status.EINVALIDSTATE;
-  }
-
-  feed.active = false;
-  if(typeof reason === 'string') {
-    feed.deactivationReasonText = reason;
-  }
-  const currentDate = new Date();
-  feed.deactivationDate = currentDate;
-  feed.dateUpdated = currentDate;
-
-  [status] = await store.putFeed(feed);
-  if(status !== Status.OK) {
-    console.error('Failed to put feed with status', status);
-    return status;
-  }
-
-  return Status.OK;
-};
-
-
-FeedStore.prototype.findActiveFeeds = async function() {
-  if(!this.isOpen()) {
-    return [Status.EINVALIDSTATE];
-  }
-
-  // TODO: if performance eventually becomes a material concern this should probably interact
-  // directly with the database and query by index
-  let [status, feeds] = await this.getAllFeeds();
-  if(status !== Status.OK) {
-    console.error('Failed to get all feeds with status', status);
-    return status;
-  }
-
-  const activeFeeds = feeds.filter((feed) => feed.active);
+  const activeFeeds = feeds.filter(feed => feed.active);
   return [Status.OK, activeFeeds];
-};
+}
 
-FeedStore.prototype.findEntries = async function(predicate, limit) {
-  if(!this.isOpen()) {
-    console.error('Database not open');
-    return [Status.EINVALIDSTATE];
-  }
-
+export async function findEntries(conn, predicate, limit) {
   if(typeof predicate !== 'function') {
-    console.error('Argument predicate not a function');
+    console.error('predicate is not a function');
     return [Status.EINVAL];
   }
 
   const limited = typeof limit !== 'undefined';
   if(limited) {
-    if(!Number.isInteger(limit) || limit < 0) {
-      console.error('Express limit not a positive integer');
+    if(!Number.isInteger(limit) || limit < 1) {
+      console.error('limit not a positive integer greater than 0');
       return [Status.EINVAL];
     }
   }
 
-  const promise = new Promise((resolve, reject) => {
+  try {
+    const entries = await findEntriesPromise(conn, predicate, limit);
+    return [Status.OK, entries];
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+}
+
+function findEntriesPromise(conn, predicate, limit) {
+  return new Promise((resolve, reject) => {
+    const limited = typeof limit !== 'undefined';
     const entries = [];
-    const tx = this.conn.transaction('entry');
+    const tx = conn.transaction('entry');
     tx.onerror = function(event) {
       reject(tx.error);
     };
@@ -345,7 +340,7 @@ FeedStore.prototype.findEntries = async function(predicate, limit) {
         const entry = cursor.value;
         if(predicate(entry)) {
           entries.push(entry);
-          if(limited && entries.length === limit) {
+          if(limited && entries.length >= limit) {
             return;
           }
         }
@@ -353,218 +348,150 @@ FeedStore.prototype.findEntries = async function(predicate, limit) {
       }
     };
   });
+}
 
-  let entries;
-  try {
-    entries = await promise;
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
-  }
-
-  return [Status.OK, entries];
-};
-
-// Searches for and returns an entry object matching the id
-// @param entryId {Number} id of entry to find
-// @returns {Promise} a promise that resolves to an entry object, or undefined if no matching entry
-// was found
-FeedStore.prototype.findEntryById = async function(entryId) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
+async function findEntryById(conn, entryId) {
 
   if(!Entry.isValidId(entryId)) {
     console.error('Invalid entry id', entryId);
     return [Status.EINVAL];
   }
 
-  const promise = new Promise((resolve, reject) => {
-    const tx = this.conn.transaction('entry');
+  try {
+    const entry = await findEntryByIdPromise(conn, entryId);
+    return [Status.OK, entry];
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+}
+
+function findEntryByIdPromise(conn, entryId) {
+  return new Promise((resolve, reject) => {
+    const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const request = store.get(entryId);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
 
-  let entry;
+async function findEntryIdByURL(conn, url) {
+  if(!(url instanceof URL)) {
+    console.error('Invalid url argument', url);
+    return [Status.EINVAL];
+  }
+
   try {
-    entry = await promise;
+    const entryId = await findEntryIdByURLPromise(conn, url);
+    return [Status.OK, entryId];
   } catch(error) {
     console.error(error);
     return [Status.EDB];
   }
+}
 
-  // TODO: use a clearer error code?
-  if(!Entry.isEntry(entry)) {
-    console.error('Malformed entry object loaded from database', entry);
-    return [Status.EDB];
-  }
-
-  return [Status.OK, entry];
-};
-
-// Returns an entry id matching url
-// @param url {URL}
-FeedStore.prototype.findEntryIdByURL = async function(url) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
-
-  if(!(url instanceof URL)) {
-    console.error('url parameter not a URL', url);
-    return [Status.EINVAL];
-  }
-
-  const promise = new Promise((resolve, reject) => {
-    const tx = this.conn.transaction('entry');
+function findEntryIdByURLPromise(conn, url) {
+  return new Promise((resolve, reject) => {
+    const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('urls');
     const request = index.getKey(url.href);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
 
-  let entryId;
+export async function containsEntryWithURL(conn, url) {
+  const [status, id] = await findEntryIdByURL(conn, url);
+  if(status !== Status.OK) {
+    return [status];
+  }
+  return [Status.OK, Entry.isValidId(id)];
+}
+
+export async function findFeedById(conn, feedId) {
   try {
-    entryId = await promise;
+    const feed = await findFeedByIdPromise(conn, feedId);
+    return [Status.OK, feed];
   } catch(error) {
     console.error(error);
     return [Status.EDB];
   }
+}
 
-  return [Status.OK, entryId];
-};
+function findFeedByIdPromise(conn, feedId) {
+  return new Promise((resolve, reject) => {
+    if(!Feed.isValidId(feedId)) {
+      const error = new TypeError('Invalid feed id ' + feedId);
+      reject(error);
+      return;
+    }
 
-FeedStore.prototype.containsEntryWithURL = async function(url) {
-  if(!(url instanceof URL)) {
-    return [Status.EINVAL];
-  }
-
-  const [status, id] = await this.findEntryIdByURL(url);
-  if(status !== Status.OK) {
-    return [status];
-  }
-
-  const valid = Entry.isValidId(id);
-  return [Status.OK, valid];
-};
-
-// Searches the feed store in the database for a feed corresponding to the given id. Returns a
-// promise that resolves to the matching feed. Returns a promise that resolves to undefined if
-// no matching feed is found. Throws an unchecked error if the database is closed or the id is
-// not a valid feed id. Throws a checked error if there is a problem running the query.
-// @param id {Number} a feed id
-// @return {Promise}
-FeedStore.prototype.findFeedById = async function(feedId) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
-
-  if(!Feed.isValidId(feedId)) {
-    console.error('Invalid feed id', feedId);
-    return [Status.EINVAL];
-  }
-
-  const promise = new Promise((resolve, reject) => {
-    const tx = this.conn.transaction('feed');
+    const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.get(feedId);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
 
-  let feed;
+async function findFeedIdByURL(conn, url) {
   try {
-    feed = await promise;
+    const feedId = await findFeedIdByURLPromise(conn, url);
+    return [Status.OK, feedId];
   } catch(error) {
+    console.error(error);
     return [Status.EDB];
   }
+}
 
-  // TODO: use a more accurate and narrow error?
-  if(!Feed.isFeed(feed)) {
-    return [Status.EDB];
-  }
+function findFeedIdByURLPromise(conn, url) {
+  return new Promise((resolve, reject) => {
 
-  return [Status.OK, feed];
-};
+    if(!(url instanceof URL)) {
+      const error = new TypeError('Invalid url ' + url);
+      reject(error);
+      return;
+    }
 
-// Returns feed id if a feed with the given url exists in the database
-// @param url {URL}
-// @return {Promise}
-FeedStore.prototype.findFeedIdByURL = async function(url) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
-
-  if(!(url instanceof URL)) {
-    console.error('Invalid url type', url);
-    return [Status.EINVAL];
-  }
-
-  const promise = new Promise((resolve, reject) => {
-    const tx = this.conn.transaction('feed');
+    const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const index = store.index('urls');
     const request = index.getKey(url.href);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
 
-  let feedId;
+export async function containsFeedWithURL(conn, url) {
+  const [status, id] = await findFeedIdByURL(conn, url);
+  if(status !== Status.OK) {
+    return [status];
+  }
+  return [Status.OK, Feed.isValidId(id)];
+}
+
+export async function findViewableEntries(conn, offset, limit) {
   try {
-    feedId = await promise;
+    const entries = await findViewableEntriesPromise(conn, offset, limit);
+    return [Status.OK, entries];
   } catch(error) {
     console.error(error);
     return [Status.EDB];
   }
+}
 
-  return [Status.OK, feedId];
-};
-
-FeedStore.prototype.containsFeedWithURL = async function(url) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
-
-  if(!(url instanceof URL)) {
-    return [Status.EINVAL];
-  }
-
-  const [status, id] = await this.findFeedIdByURL(url);
-  if(status !== Status.OK) {
-    return [status];
-  }
-
-  return [Status.OK, Feed.isValidId(id)];
-};
-
-// Loads entries from the database that are for viewing
-// Specifically these are entries that are unread, and not archived
 // TODO: look into using getAll again
-FeedStore.prototype.findViewableEntries = async function(offset, limit) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
-
-  const promise = new Promise((resolve, reject) => {
+function findViewableEntriesPromise(conn, offset, limit) {
+  return new Promise((resolve, reject) => {
     const entries = [];
     let counter = 0;
     let advanced = false;
     const limited = limit > 0;
-    const tx = this.conn.transaction('entry');
-    tx.oncomplete = function txOnComplete(event) {
-      resolve(entries);
-    };
-    tx.onerror = function txOnError(event) {
-      reject(tx.error);
-    };
+    const tx = conn.transaction('entry');
+    tx.oncomplete = () => resolve(entries);
+    tx.onerror = () => reject(tx.error);
 
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
@@ -585,33 +512,17 @@ FeedStore.prototype.findViewableEntries = async function(offset, limit) {
       }
     };
   });
+}
 
-  let entries;
+async function getAllFeedIds(conn) {
   try {
-    entries = await promise;
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
-  }
-
-  return [Status.OK, entries];
-};
-
-// Returns a promise that resolves to an array of feed ids, or rejects with a database error
-FeedStore.prototype.getAllFeedIds = async function() {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
-
-  try {
-    const feedIds = await getAllFeedIdsPromise(this.conn);
+    const feedIds = await getAllFeedIdsPromise(conn);
     return [Status.OK, feedIds];
   } catch(error) {
     console.error(error);
     return [Status.EDB];
   }
-};
+}
 
 function getAllFeedIdsPromise(conn) {
   return new Promise((resolve, reject) => {
@@ -623,88 +534,79 @@ function getAllFeedIdsPromise(conn) {
   });
 }
 
-
-// TODO: rename, 'All' is implied
-// Load all feeds from the database
-// Returns a promise that resolves to an array of feed objects
-FeedStore.prototype.getAllFeeds = async function() {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
+// TODO: rename? 'All' is implied
+export async function getAllFeeds(conn) {
+  try {
+    const feeds = await getAllFeedsPromise(conn);
+    return [Status.OK, feeds];
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
   }
+}
 
-  const promise = new Promise((resolve, reject) => {
-    const tx = this.conn.transaction('feed');
+function getAllFeedsPromise(conn) {
+  return new Promise((resolve, reject) => {
+    const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.getAll();
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
 
-  let feeds;
+export async function putEntry(conn, entry) {
+  if(!Entry.isEntry(entry)) {
+    console.error('Invalid entry argument', entry);
+    return [Status.EINVAL];
+  }
+
   try {
-    feeds = await promise;
+    const entryId = await putEntryPromise(conn, entry);
+    return [Status.OK, entryId];
   } catch(error) {
     console.error(error);
     return [Status.EDB];
   }
+}
 
-  return [Status.OK, feeds];
-};
-
-FeedStore.prototype.putEntry = async function(entry) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
-
-  if(!Entry.isEntry(entry)) {
-    console.error('Invalid entry', entry);
-    return [Status.EINVAL];
-  }
-
-  const promise = new Promise((resolve, reject) => {
-    const tx = this.conn.transaction('entry', 'readwrite');
+function putEntryPromise(conn, entry) {
+  return new Promise((resolve, reject) => {
+    const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
     const request = store.put(entry);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
+}
 
-  let entryId;
+// TODO: maybe move to utils, or move to some new module responsible for sanitization
+export function prepareFeed(feed) {
+  let prepped = sanitizeFeed(feed);
+  prepped = filterEmptyProps(prepped);
+  return prepped;
+}
+
+export async function putFeed(conn, feed) {
   try {
-    entryId = await promise;
+    const feedId = await putFeedPromise(conn, feed);
+    return [Status.OK, feedId];
   } catch(error) {
     console.error(error);
     return [Status.EDB];
   }
+}
 
-  return [Status.OK, entryId];
-};
+function putFeedPromise(conn, feed) {
+  return new Promise((resolve, reject) => {
 
-// Returns a feed object suitable for use with putFeed
-FeedStore.prototype.prepareFeed = function(feed) {
-  let prepped = sanitizeFeed(feed);
-  prepped = filterEmptyProps(prepped);
-  return prepped;
-};
+    if(!Feed.isFeed(feed)) {
+      const error = new TypeError('Invalid feed argument: ' + feed);
+      reject(error);
+      return;
+    }
 
-// Resolves with request.result. If put is an add this resolves with the auto-incremented id.
-// This stores the object as is. The caller is responsible for properties like feed magic,
-// feed id, feed active status, date updated, etc.
-FeedStore.prototype.putFeed = async function(feed) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
-
-  if(!Feed.isFeed(feed)) {
-    console.error('Invalid feed', feed);
-    return [Status.EINVAL];
-  }
-
-  const promise = new Promise((resolve, reject) => {
-    const tx = this.conn.transaction('feed', 'readwrite');
+    const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
     const request = store.put(feed);
     request.onsuccess = () => {
@@ -713,17 +615,7 @@ FeedStore.prototype.putFeed = async function(feed) {
     };
     request.onerror = () => reject(request.error);
   });
-
-  let feedId;
-  try {
-    feedId = await promise;
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
-  }
-
-  return [Status.OK, feedId];
-};
+}
 
 const DEFAULT_TITLE_MAX_LEN = 1024;
 const DEFAULT_DESC_MAX_LEN = 1024 * 10;
@@ -764,32 +656,29 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
   return outputFeed;
 }
 
-// @param entryIds {Array} an array of entry ids
-FeedStore.prototype.removeEntries = async function(entryIds) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return Status.EINVALIDSTATE;
-  }
-
-  if(!Array.isArray(entryIds)) {
-    console.error('entryIds is not an array', entryIds);
-    return Status.EINVAL;
-  }
-
-  for(const id of entryIds) {
-    if(!Entry.isValidId(id)) {
-      console.debug('Invalid entry id', id);
-      return Status.EINVAL;
-    }
-  }
-
-  if(!entryIds.length) {
-    console.debug('No entries to remove');
+async function removeEntries(conn, entryIds) {
+  try {
+    await removeEntriesPromise(conn, entryIds);
     return Status.OK;
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
   }
 
-  const promise = new Promise((resolve, reject) => {
-    const tx = this.conn.transaction('entry', 'readwrite');
+  // TODO: this should be posting entry-deleted messages to a channel?
+
+}
+
+function removeEntriesPromise(conn, entryIds) {
+  return new Promise((resolve, reject) => {
+
+    // Avoid creating a transaction when possible
+    if(!entryIds.length) {
+      resolve();
+      return;
+    }
+
+    const tx = conn.transaction('entry', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('entry');
@@ -798,39 +687,23 @@ FeedStore.prototype.removeEntries = async function(entryIds) {
       store.delete(id);
     }
   });
+}
 
+export async function removeFeed(conn, feedId, channel, reasonText) {
   try {
-    await promise;
+    await removeFeedPromise(conn, feedId, channel, reasonText);
+    return Status.OK;
   } catch(error) {
     console.error(error);
     return Status.EDB;
   }
+}
 
-  return Status.OK;
-};
-
-FeedStore.prototype.removeFeed = async function(feedId, channel, reasonText) {
-  try {
-    await removeFeed(this.conn, feedId, channel, reasonText);
-  } catch(error) {
-    console.error(error);
-    return Status.EDB;
-  }
-
-  return Status.OK;
-};
-
-function removeFeed(conn, feedId, channel, reasonText) {
+function removeFeedPromise(conn, feedId, channel, reasonText) {
   return new Promise(function executor(resolve, reject) {
 
-    if(!IndexedDbUtils.isOpen(conn)) {
-      const error = new TypeError('Connection is not open ' + conn);
-      reject(error);
-      return;
-    }
-
     if(!Feed.isValidId(feedId)) {
-      const error = new TypeError('Invalid feed id ' + feedId);
+      const error = new TypeError('Invalid feed id: ' + feedId);
       reject(error);
       return;
     }
@@ -871,32 +744,22 @@ function removeFeed(conn, feedId, channel, reasonText) {
   });
 }
 
-
-
-// Loads archivable entries from the database. An entry is archivable if it has not already been
-// archived, and has been read, and matches the custom predicate function.
-// This does two layers of filtering. It would preferably be one layer but a three property index
-// involving a date gets complicated. Given the perf is not top priority this is acceptable for
-// now. The first filter layer is at the indexedDB level, and the second is the in memory
-// predicate. The first layer reduces the number of entries loaded by a large amount.
 // TODO: rather than assert failure when limit is 0, resolve immediately with an empty array.
 // Limit is optional
 // TODO: I feel like there is not a need for the predicate function. This is pushing too much
 // burden/responsibility to the caller. This should handle the expiration check that the caller
 // is basically using the predicate for. Basically the caller should just pass in a date instead
 // of a function
-FeedStore.prototype.findArchivableEntries = async function(predicate, limit) {
+export async function findArchivableEntries(conn, predicate, limit) {
 
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
-
+  // TODO: move check to promise helper, in which case promise will reject in which case
+  // that is identical to an exception in which case I shouldn't even do this check
   if(typeof predicate !== 'function') {
     console.error('Invalid predicate argument', predicate);
     return [Status.EINVAL];
   }
 
+  // TODO: move check to promise helper
   const limited = typeof limit !== 'undefined';
   if(limited) {
     if(!Number.isInteger(limit) || limit < 0) {
@@ -905,11 +768,22 @@ FeedStore.prototype.findArchivableEntries = async function(predicate, limit) {
     }
   }
 
-  // TODO: if IDBIndex.prototype.getAll supports limit, I should use that
+  try {
+    const entries = await findArchivableEntriesPromise(conn, predicate, limit);
+    return [Status.OK, entries];
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
+  }
+}
 
-  const promise = new Promise((resolve, reject) => {
+// TODO: if IDBIndex.prototype.getAll supports limit, I should use that
+
+function findArchivableEntriesPromise(conn, predicate, limit) {
+  return new Promise((resolve, reject) => {
+    const limited = typeof limit !== 'undefined';
     const entries = [];
-    const tx = this.conn.transaction('entry');
+    const tx = conn.transaction('entry');
     tx.onerror = () => reject(tx.error);
     tx.oncomplete = () => resolve(entries);
 
@@ -934,44 +808,35 @@ FeedStore.prototype.findArchivableEntries = async function(predicate, limit) {
       cursor.continue();
     };
   });
+}
 
-  let entries;
-  try {
-    entries = await promise;
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
-  }
+// TODO: this should accept a channel as input? or channelName
+// TODO: move to feed-ops
+export async function removeLostEntries(conn, limit) {
 
-  return [Status.OK, entries];
-};
+  // TODO: this should all be taking place using a single transaction to ensure
+  // consistency between reads and deletes
 
-
-// Removes lost entries from the database. An entry is lost if it is missing a url.
-// @param limit {Number} optional, if specified should be positive integer > 0, maximum number
-// of entries to lost entries to load from database
-FeedStore.prototype.removeLostEntries = async function(limit) {
-  let [status, entries] = await this.findEntries(isLostEntry, limit);
+  let [status, entries] = await findEntries(conn, isLostEntry, limit);
   if(status !== Status.OK) {
-    console.error('Failed to find entries with status ', status);
+    console.error('Failed to find entries: ', Status.toString(status));
     return status;
   }
 
   console.debug('Found %d lost entries', entries.length);
-  if(entries.length === 0) {
+  if(!entries.length) {
     return Status.OK;
   }
 
   const ids = entries.map(entry => entry.id);
 
-  status = await this.removeEntries(ids);
+  status = await removeEntries(conn, ids);
   if(status !== Status.OK) {
-    console.error('Failed to remove entries with status ', status);
+    console.error('Failed to remove entries:', Status.toString(status));
     return status;
   }
 
-  const CHANNEL_NAME = 'reader';
-  const channel = new BroadcastChannel(CHANNEL_NAME);
+  const channel = new BroadcastChannel('reader');
   const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
   for(const id of ids) {
     message.id = id;
@@ -980,23 +845,23 @@ FeedStore.prototype.removeLostEntries = async function(limit) {
   channel.close();
 
   return Status.OK;
-};
+}
 
 function isLostEntry(entry) {
   return !Entry.hasURL(entry);
 }
 
-// Removes entries not linked to a feed from the database
-// @param store {FeedStore} an open FeedStore instance
-// @param limit {Number}
-FeedStore.prototype.removeOrphanedEntries = async function(limit) {
-  let status;
-  let feedIds;
-  let entries;
+// TODO: move to feed-ops
+export async function removeOrphanedEntries(conn, limit) {
 
-  [status, feedIds] = await this.getAllFeedIds();
+  // TODO: this should probably be taking place using a single transaction to ensure
+  // database consistency between reads and deletes
+
+  let status, feedIds, entries;
+
+  [status, feedIds] = await getAllFeedIds(conn);
   if(status !== Status.OK) {
-    console.error('Failed to get feed ids with status', status);
+    console.error('Failed to get feed ids:', Status.toString(status));
     return status;
   }
 
@@ -1005,26 +870,25 @@ FeedStore.prototype.removeOrphanedEntries = async function(limit) {
     return !Feed.isValidId(id) || !feedIds.includes(id);
   }
 
-  [status, entries] = await this.findEntries(isOrphan, limit);
+  [status, entries] = await findEntries(conn, isOrphan, limit);
   if(status !== Status.OK) {
     console.error('Failed to find entries with status', status);
     return status;
   }
 
   console.debug('Found %s orphans', entries.length);
-  if(entries.length === 0) {
+  if(!entries.length) {
     return Status.OK;
   }
 
   const orphanIds = entries.map(entry => entry.id);
-  status = await this.removeEntries(orphanIds);
+  status = await removeEntries(conn, orphanIds);
   if(status !== Status.OK) {
     console.error('Failed to remove entries with status', status);
     return status;
   }
 
-  const CHANNEL_NAME = 'reader';
-  const channel = new BroadcastChannel(CHANNEL_NAME);
+  const channel = new BroadcastChannel('reader');
   const message = {type: 'entry-deleted', id: undefined, reason: 'orphan'};
   for(const id of orphanIds) {
     message.id = id;
@@ -1033,4 +897,4 @@ FeedStore.prototype.removeOrphanedEntries = async function(limit) {
   channel.close();
 
   return Status.OK;
-};
+}

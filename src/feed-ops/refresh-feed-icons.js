@@ -1,33 +1,13 @@
 import * as Status from "/src/common/status.js";
 import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
 import * as Feed from "/src/feed-store/feed.js";
-import FeedStore from "/src/feed-store/feed-store.js";
+import {findActiveFeeds, putFeed} from "/src/feed-store/feed-store.js";
 
 
-export default async function refreshFeedIcons(feedStore, iconCache) {
-  if(!(feedStore instanceof FeedStore)) {
-    console.error('Invalid feedStore argument', feedStore);
-    return Status.EINVAL;
-  }
-
-  if(!feedStore.isOpen()) {
-    console.error('feed store is not open');
-    return Status.EINVALIDSTATE;
-  }
-
-  if(!(iconCache instanceof FaviconCache)) {
-    console.error('Invalid iconCache argument', iconCache);
-    return Status.EINVAL;
-  }
-
-  if(!iconCache.isOpen()) {
-    console.error('Favicon cache is not open');
-    return Status.EINVALIDSTATE;
-  }
-
-  let [status, feeds] = await feedStore.findActiveFeeds();
+export default async function refreshFeedIcons(conn, iconCache) {
+  let [status, feeds] = await findActiveFeeds(conn);
   if(status !== Status.OK) {
-    console.error('Failed to find active feeds with status', status);
+    console.error('Failed to find active feeds: ', Status.toString(status));
     return status;
   }
 
@@ -36,26 +16,21 @@ export default async function refreshFeedIcons(feedStore, iconCache) {
 
   const promises = [];
   for(const feed of feeds) {
-    promises.push(refreshFeedIcon(feedStore, query, feed));
+    promises.push(refreshFeedIcon(conn, query, feed));
   }
 
   const results = await Promise.all(promises);
   for(const result of results) {
     if(result !== Status.OK) {
-      console.error('refreshFeedIcon status not ok', result);
-      return status;
+      console.error('refreshFeedIcon status not ok', Status.toString(result));
+      return result;
     }
   }
 
   return Status.OK;
 }
 
-async function refreshFeedIcon(feedStore, query, feed) {
-  if(!Feed.isFeed(feed)) {
-    console.error('Invalid feed argument', feed);
-    return Status.EINVAL;
-  }
-
+async function refreshFeedIcon(conn, query, feed) {
   if(!Feed.hasURL(feed)) {
     console.error('Feed missing url', feed);
     return Status.EINVAL;
@@ -80,9 +55,9 @@ async function refreshFeedIcon(feedStore, query, feed) {
 
   if(prevIconURL && iconURL && prevIconURL !== iconURL) {
     feed.faviconURLString = iconURL;
-    [status] = await feedStore.putFeed(feed);
+    [status] = await putFeed(conn, feed);
     if(status !== Status.OK) {
-      console.error('Failed to put feed with status', status);
+      console.error('Failed to put feed: ', Status.toString(status));
       return status;
     }
 
@@ -90,22 +65,22 @@ async function refreshFeedIcon(feedStore, query, feed) {
     // noop
   } else if(prevIconURL && !iconURL) {
     feed.faviconURLString = void prevIconURL;
-    [status] = await feedStore.putFeed(feed);
+    [status] = await putFeed(conn, feed);
     if(status !== Status.OK) {
-      console.error('Failed to put feed with status', status);
+      console.error('Failed to put feed:', Status.toString(status));
       return status;
     }
   } else if(!prevIconURL && !iconURL) {
     // noop
   } else if(!prevIconURL && iconURL) {
     feed.faviconURLString = iconURL;
-    [status] = await feedStore.putFeed(feed);
+    [status] = await putFeed(conn, feed);
     if(status !== Status.OK) {
-      console.error('Failed to put feed with status', status);
+      console.error('Failed to put feed:', Status.toString(status));
       return status;
     }
   } else {
-    console.error('Unexpected state in refresh feed icons');
+    console.error('Unexpected state');
     return Status.EINVALIDSTATE;
   }
 

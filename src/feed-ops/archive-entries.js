@@ -1,23 +1,18 @@
 import * as Status from "/src/common/status.js";
 import sizeof from "/src/feed-ops/sizeof.js";
 import * as Entry from "/src/feed-store/entry.js";
-import FeedStore from "/src/feed-store/feed-store.js";
+import {findArchivableEntries, putEntry} from "/src/feed-store/feed-store.js";
 
-// TODO: create store locally? I want to be able to run on test, but there is no need to
+// TODO: connect locally? I want to be able to run on test, but there is no need to
 // share the connection, and conn boilerplate. Maybe accept dbinfo parameter instead?
-
+// TODO: channelName parameter rather than define locally
 
 // Archives certain entries in the database
 // - store {FeedStore} storage database
 // - maxAgeMs {Number} how long before an entry is considered archivable (using date entry
 // created), in milliseconds
 // - limit {Number} maximum number of entries to archive
-export default async function archiveEntries(store, maxAgeMs, limit) {
-  if(!store.isOpen()) {
-    console.error('store is not open');
-    return Status.EINVALIDSTATE;
-  }
-
+export default async function archiveEntries(conn, maxAgeMs, limit) {
   if(typeof maxAgeMs === 'undefined') {
     const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
     maxAgeMs = TWO_DAYS_MS;
@@ -37,21 +32,20 @@ export default async function archiveEntries(store, maxAgeMs, limit) {
     return entryAgeMs > maxAgeMs;
   }
 
-  const [status, entries] = await store.findArchivableEntries(isArchivable, limit);
+  const [status, entries] = await findArchivableEntries(conn, isArchivable, limit);
   if(status !== Status.OK) {
     console.error('Failed to find archivable entries:', Status.toString(status));
     return status;
   }
 
   if(!entries.length) {
-    console.debug('No archivable entries found');
     return Status.OK;
   }
 
   const channel = new BroadcastChannel('reader');
   const promises = [];
   for(const entry of entries) {
-    promises.push(archiveEntry(store, channel, entry));
+    promises.push(archiveEntry(conn, channel, entry));
   }
 
   // If any fail, return an error, even though some may have committed.
@@ -71,30 +65,23 @@ export default async function archiveEntries(store, maxAgeMs, limit) {
 }
 
 // Given an entry, compact it, store it, notify observers
-async function archiveEntry(store, channel, entry) {
-  if(!Entry.isEntry(entry)) {
-    console.error('Invalid entry argument', entry);
-    return Status.EINVAL;
-  }
-
+async function archiveEntry(conn, channel, entry) {
   const beforeSize = sizeof(entry);
   const compactedEntry = compactEntry(entry);
   const afterSize = sizeof(compactedEntry);
-  console.debug('Compact entry changed approx size from %d to %d', beforeSize, afterSize);
+  console.debug('Changed approx entry size from %d to %d', beforeSize, afterSize);
 
   compactedEntry.archiveState = Entry.STATE_ARCHIVED;
   compactedEntry.dateArchived = new Date();
-
   compactedEntry.dateUpdated = new Date();
-  const [status] = await store.putEntry(compactedEntry);
+
+  const [status] = await putEntry(conn, compactedEntry);
   if(status !== Status.OK) {
     console.error('Failed to put entry:', Status.toString(status));
     return status;
   }
 
-  const message = {type: 'entry-archived', id: compactedEntry.id};
-  channel.postMessage(message);
-
+  channel.postMessage({type: 'entry-archived', id: compactedEntry.id});
   return Status.OK;
 }
 

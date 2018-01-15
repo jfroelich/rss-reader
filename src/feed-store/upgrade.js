@@ -9,7 +9,7 @@ export function onUpgradeNeeded(event) {
   let feedStore, entryStore;
   const stores = conn.objectStoreNames;
 
-  console.log('upgrading database %s to version %s from version', conn.name, conn.version,
+  console.log('Upgrading database %s to version %s from version', conn.name, conn.version,
     event.oldVersion);
 
   if(event.oldVersion < 20) {
@@ -38,16 +38,15 @@ export function onUpgradeNeeded(event) {
   if(event.oldVersion < 23) {
     // Delete the title index in feed store. It is no longer in use. Because it is no longer
     // created, and the db could be at any prior version, ensure that it exists before calling
-    // deleteIndex to avoid the FeedStoreErrors.NotFoundError deleteIndex throws when deleting a
-    // non-existent index.
+    // deleteIndex to avoid the not-found error
 
     // @type {DOMStringList}
     const indices = feedStore.indexNames;
     if(indices.contains('title')) {
-      console.debug('deleting title index of feed store as part of upgrade');
+      console.debug('Deleting title index of feed store as part of upgrade');
       feedStore.deleteIndex('title');
     } else {
-      console.debug('no title index found to delete during upgrade past version 22');
+      console.debug('No title index found to delete during upgrade past version 22');
     }
   }
 

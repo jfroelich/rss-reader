@@ -1,21 +1,27 @@
 import * as Status from "/src/common/status.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
+import {removeFeed} from "/src/feed-store/feed-store.js";
 
-// Remove a feed and its entries from the database and notify observers
-// @param store {FeedStore} an open FeedStore instance
+// TODO: see notes in update-badge-text.js. There is a chance there is no need to call it here.
+// In which case, unsubscribe devolves into merely an alias of removeFeed, and for that
+// matter, the caller can just call removeFeed directly, and I could also consider
+// renaming removeFeed to unsubscribe.
+
+// Remove a feed and its entries from the database
+// @param conn {IDBDatabase} an open feed store instance
 // @param channel {BroadcastChannel} optional, this dispatches feed deleted and
-// entry deleted type messages to the given channel
+// entry deleted messages to the given channel
 // @param feedId {Number} id of feed to unsubscribe
 
-export default async function unsubscribe(store, channel, feedId) {
+export default async function unsubscribe(conn, channel, feedId) {
   const reasonText = 'unsubscribe';
-  const status = await store.removeFeed(feedId, channel, reasonText);
+  const status = await removeFeed(conn, feedId, channel, reasonText);
   if(status !== Status.OK) {
     console.error(Status.toString(status));
     return status;
   }
 
   // Removing entries may impact the unread count
-  updateBadgeText().catch(console.error);
+  updateBadgeText();// non-blocking
   return Status.OK;
 }

@@ -4,42 +4,41 @@ import * as Status from "/src/common/status.js";
 import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Feed from "/src/feed-store/feed.js";
-import FeedStore from "/src/feed-store/feed-store.js";
+import {containsFeedWithURL, prepareFeed, putFeed} from "/src/feed-store/feed-store.js";
 import coerceFeed from "/src/coerce-feed.js";
 
 // TODO: currently the redirect url is not validated as to whether it is a fetchable
 // url according to the app's fetch policy. It is just assumed. I am not quite sure what to
 // do about it at the moment. Maybe I could create a second policy that controls what urls
 // are allowed by the app to be stored in the database? Or maybe I should just call
-// isAllowedURL here explicitly?
-// TODO: reconsider how notify overlaps with concurrent. For that matter, concurrent is a bit
-// to abstract and should probably be renamed to something more granular and specific to
-// what it does, like enqueuePoll
-// TODO: notify a channel of feed created
+// isAllowedURL here explicitly? This is partly a caveat of attempting to abstract it away behind
+// the call to the fetch helper, which checks the policy internally. The issue is that it cannot
+// be abstracted away if I need to use it again for non-fetch purposes. So really it is just the
+// wrong abstraction.
+// TODO: reconsider how notify overlaps with concurrent. For that matter, the term concurrent is
+// overly abstract and instead should be named more specifically to what it does, such as
+// enqueuePoll
+// TODO: notify a channel of feed created. Perhaps provide an optional channel argument so that
+// the caller is responsible for channel maintenance and reference.
+// TODO: the polling of entries after subscribing is still kind of wonky and should eventually
+// be more well thought out.
 
-// context properties:
-// feedStore, database conn
+
+// Properties for the context argument:
+// conn, database conn to feed store
 // iconCache, database conn
 // fetchFeedTimeoutMs, integer, optional
 // concurrent, boolean, optional, whether called concurrently
 // notify, boolean, optional, whether to notify
-
+// NOTE: the caller should not expect context is immutable
 
 export default async function subscribe(context, url) {
   if(typeof context !== 'object') {
     return [Status.EINVAL];
   }
 
-  if(!(context.feedStore instanceof FeedStore)) {
-    return [Status.EINVAL];
-  }
-
   if(!(context.iconCache instanceof FaviconCache)) {
     return [Status.EINVAL];
-  }
-
-  if(!context.feedStore.isOpen()) {
-    return [Status.EINVALIDSTATE];
   }
 
   if(!context.iconCache.isOpen()) {
@@ -64,7 +63,7 @@ export default async function subscribe(context, url) {
 
   console.log('Subscribing to', url.href);
 
-  let [status, containsFeed] = await context.feedStore.containsFeedWithURL(url);
+  let [status, containsFeed] = await containsFeedWithURL(context.conn, url);
   if(status !== Status.OK) {
     console.error('Database error:', Status.toString(status));
     return [status];
@@ -110,7 +109,7 @@ export default async function subscribe(context, url) {
 
   // Store the feed
   let storableFeed;
-  [status, storableFeed] = await saveFeed(context.feedStore, feed);
+  [status, storableFeed] = await saveFeed(context.conn, feed);
   if(status !== Status.OK) {
     console.error('Database error:', url.href, Status.toString(status));
     return [status];
@@ -136,7 +135,7 @@ async function createFeedFromResponse(context, response, url) {
   const responseURL = new URL(response.url);
   if(FetchUtils.detectURLChanged(url, responseURL)) {
     url = responseURL;
-    [status, containsFeed] = await context.feedStore.containsFeedWithURL(url);
+    [status, containsFeed] = await containsFeedWithURL(context.conn, url);
     if(status !== Status.OK) {
       console.error('Database error:', url.href, Status.toString(status));
       return [status];
@@ -187,12 +186,17 @@ async function setFeedFavicon(faviconService, feed) {
   return Status.OK;
 }
 
-async function saveFeed(feedStore, feed) {
-  const storableFeed = feedStore.prepareFeed(feed);
+async function saveFeed(conn, feed) {
+
+  // TODO: this should delegate to an 'addFeed' function in feed-store.js that
+  // does the sanitization work implicitly and forwards to putFeed, and also sets
+  // the id of the input feed object
+
+  const storableFeed = prepareFeed(feed);
   storableFeed.active = true;
   storableFeed.dateCreated = new Date();
 
-  const [status, feedId] = await feedStore.putFeed(feed);
+  const [status, feedId] = await putFeed(conn, feed);
   if(status !== Status.OK) {
     console.error('Failed to put feed:', Status.toString(status));
     return status;
@@ -209,14 +213,21 @@ function showNotification(feed) {
   showDesktopNotification(title, message, feed.faviconURLString);
 }
 
+// TODO: perhaps instead of calling this, there should be an observer somewhere listening
+// for 'feed-added' events that automatically triggers the poll. addFeed in feed-store would
+// post a message to a channel, and that observer would automatically pick it up. Then there is
+// need to call this explicitly, at all.
+
 async function deferredPollFeed(feed) {
+
+  // TODO: why sleep at all? If caller forked us, why artificially delay?
   await sleep(50);
 
   const poll = new FeedPoll();
   poll.init();
 
-  // We just fetched the feed. We definitely want to be able to process its entries, so disable
-  // these checks because they most likely otherwise cancel the poll.
+  // We just fetched and added the feed. We definitely want to be able to process its entries,
+  // so disable these checks because they most likely otherwise cancel the operation
   poll.ignoreRecencyCheck = true;
   poll.ignoreModifiedCheck = true;
 

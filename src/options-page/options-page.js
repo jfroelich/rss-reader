@@ -1,7 +1,12 @@
 import assert from "/src/common/assert.js";
 import * as Status from "/src/common/status.js";
 import {FaviconCache} from "/src/favicon-service/favicon-service.js";
-import FeedStore from "/src/feed-store/feed-store.js";
+import {
+  activateFeed,
+  deactivateFeed,
+  getAllFeeds,
+  open as openFeedStore
+} from "/src/feed-store/feed-store.js";
 import * as Feed from "/src/feed-store/feed.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
 import subscribe from "/src/feed-ops/subscribe.js";
@@ -35,8 +40,8 @@ const BG_IMAGES = [
 let currentMenuItem;
 let currentSection;
 
-const readerChannel = new BroadcastChannel('reader');
-readerChannel.onmessage = function(event) {
+const channel = new BroadcastChannel('reader');
+channel.onmessage = function(event) {
   if(!event) {
     return;
   }
@@ -60,7 +65,7 @@ readerChannel.onmessage = function(event) {
   }
 };
 
-readerChannel.onmessageerror = function(event) {
+channel.onmessageerror = function(event) {
   console.warn('Error deserializing message', event);
 };
 
@@ -259,22 +264,23 @@ async function feedListItemOnclick(event) {
   }
 
   // Load feed details from the database
-  const store = new FeedStore();
-  let status = await store.open();
+
+  // TODO: move to a helper function to encapsulate the opening and closing of the database
+  let [status, conn] = await openFeedStore();
   if(status !== Status.OK) {
     // TODO: visual error message
     console.error('Failed to open feed store database', status);
     return;
   }
   let feed;
-  [status, feed] = await store.findFeedById(feedIdNumber);
+  [status, feed] = await findFeedById(conn, feedIdNumber);
   if(status !== Status.OK) {
     // TODO: visual error message
     console.error('Failed to find feed by id %d, status was', feedIdNumber, status);
-    store.close();
+    conn.close();
     return;
   }
-  store.close();
+  conn.close();
 
   // Update the UI with the loaded feed data
   const titleElement = document.getElementById('details-title');
@@ -357,29 +363,38 @@ async function subscribeFormOnsubmit(event) {
   subscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
 
   const context = {};
-  context.feedStore = new FeedStore();
   context.iconCache = new FaviconCache();
   context.concurrent = false;
   context.notify = true;
   context.fetchFeedTimeoutMs = 2000;
 
-  // TODO: concurrent and check status
-  await context.feedStore.open();
+  // TODO: open both databases concurrently
+
+  let status;
+  [status, conn] = await openFeedStore();
+  if(status !== Status.OK) {
+    console.error('Error opening feed store:', Status.toString(status));
+    subscriptionMonitorHide();
+    return;
+  }
+  context.conn = conn;
+
   await context.iconCache.open();
 
-  let [status, feed] = await subscribe(context, url);
+  let feed;
+  [status, feed] = await subscribe(context, url);
   if(status !== Status.OK) {
     console.error('Failed to subscribe:', Status.toString(status));
     subscriptionMonitorHide();
-    context.feedStore.close();
+    context.conn.close();
     context.iconCache.close();
     return;
   }
 
-  context.feedStore.close();
+  context.conn.close();
   context.iconCache.close();
 
-  // TODO: UI level functions generally shouldn't assert
+  // TODO: UI level functions shouldn't assert
   assert(Feed.isFeed(feed));
   feedListAppendFeed(feed);
   const feedURL = Feed.peekURL(feed);
@@ -394,37 +409,35 @@ async function feedListInit() {
   const noFeedsElement = document.getElementById('nosubs');
   const feedListElement = document.getElementById('feedlist');
 
-  const store = new FeedStore();
-  let status = await store.open();
+  // TODO: create a helper function that encapsulates opening and closing the database
+  // and just returns status and array.
+
+  let [status, conn] = await openFeedStore();
   if(status !== Status.OK) {
     // TODO: react to error
-    console.warn('Failed to open feed store');
+    console.warn('Failed to open feed store:', Status.toString(status));
     return;
   }
 
   // Get all feeds in natural order
   let feeds;
-  [status, feeds] = await store.getAllFeeds();
+  [status, feeds] = await getAllFeeds(conn);
   if(status !== Status.OK) {
     // TODO: react to error
-    console.warn('Failed to get all feeds');
-    store.close();
+    console.warn('Failed to get all feeds:', Status.toString(status));
+    conn.close();
     return;
   }
 
-  store.close();
-
-  if(!feeds) {
-    // TODO: react to error
-    console.warn('feeds undefined');
-    return;
-  }
+  conn.close();
 
   // Ensure feeds have titles
   for(const feed of feeds) {
     feed.title = feed.title || feed.link || 'Untitled';
   }
 
+  // TODO: create a helper function that encapsulates sorting the feeds. Possibly move it into
+  // the helper function that loads the feeds array from the database.
 
   // TODO: what if I stored a 'sort-key' field in feeds, indexed it, and then loaded by
   // that? I could normalize titles, and guarantee at least an empty string is set for feeds
@@ -453,9 +466,9 @@ async function feedListInit() {
 
 // @param feedId {Number}
 function feedListRemoveFeed(feedId) {
-  const feedElement = document.querySelector(
-    `#feedlist li[feed="${feedId}"]`);
+  const feedElement = document.querySelector(`#feedlist li[feed="${feedId}"]`);
 
+  // TODO: don't assert in UI
   assert(feedElement instanceof Element);
 
   feedElement.removeEventListener('click', feedListItemOnclick);
@@ -467,10 +480,9 @@ function feedListRemoveFeed(feedId) {
   // Upon removing the feed, update the state of the feed list. If the feed list has no items,
   // hide it and show a message instead.
   const feedListElement = document.getElementById('feedlist');
+  const noFeedsElement = document.getElementById('nosubs');
   if(!feedListElement.childElementCount) {
     feedListElement.style.display = 'none';
-
-    const noFeedsElement = document.getElementById('nosubs');
     noFeedsElement.style.display = 'block';
   }
 }
@@ -484,23 +496,22 @@ async function unsubscribeButtonOnclick(event) {
     return;
   }
 
-  const store = new FeedStore();
-  let status = await store.open();
+  let [status, conn] = await openFeedStore();
   if(status !== Status.OK) {
     // TODO: visually react to error
     console.error('Failed to open database:', Status.toString(status));
     return;
   }
 
-  status = await unsubscribe(store, readerChannel, feedId);
+  status = await unsubscribe(conn, channel, feedId);
   if(status !== Status.OK) {
     // TODO: visually react to error
     console.error('Failed to unsubscribe:', Status.toString(status));
-    store.close();
+    conn.close();
     return;
   }
 
-  store.close();
+  conn.close();
 
   feedListRemoveFeed(feedId);
   showSectionById('subs-list-section');
@@ -508,29 +519,34 @@ async function unsubscribeButtonOnclick(event) {
 
 async function activateButtonOnclick(event) {
   const feedId = parseInt(event.target.value, 10);
+
+  // TODO: if activateFeed sanity checks its input, then I don't think there is a need to
+  // do this explicitly here. This is redundant.
   if(!Feed.isValidId(feedId)) {
     // TODO: show a visual error message
     console.error('Invalid feed id in event', feedId);
     return;
   }
 
-  const feedStore = new FeedStore();
-  let status = await feedStore.open();
+  // TODO: create a helper function that encapsulates opening and closing the database
+
+  let [status, conn] = await openFeedStore();
   if(status !== Status.OK) {
     // TODO: show a visual error message
     console.error('Failed to open feed store', status);
     return;
   }
 
-  status = await feedStore.activateFeed(feedId);
+  status = await activateFeed(conn, feedId);
   if(status !== Status.OK) {
     // NOTE: if this fails, feedStore is left in open state
     // TODO: show a visual error message
     console.error('Failed to activate feed', status);
+    conn.close();
     return;
   }
 
-  feedStore.close();
+  conn.close();
 
   // Update the feed loaded in the UI
   const itemElement = document.querySelector('li[feed="' + feedId + '"]');
@@ -538,7 +554,6 @@ async function activateButtonOnclick(event) {
     itemElement.removeAttribute('inactive');
   }
 
-  console.debug('Activated feed', feedId);
   showSectionById('subs-list-section');
 }
 
@@ -550,29 +565,29 @@ async function deactivateButtonOnclick(event) {
     return;
   }
 
-  const store = new FeedStore();
-  let status = await store.open();
+  let [status, conn] = await openFeedStore();
   if(status !== Status.OK) {
     // TODO: show visual error
     console.error('Failed to open database');
     return;
   }
 
-  status = await store.deactivateFeed(feedId, 'manual-click');
+  status = await deactivateFeed(conn, feedId, 'manual-click');
   if(status !== Status.OK) {
     // TODO: show visual error
     console.error('Failed to deactivate feed');
-    store.close();
+    conn.close();
     return;
   }
 
-  store.close();
+  conn.close();
 
-  console.debug('Deactivated feed %d, returning to feed list', feedId);
-
+  // Mark the corresponding element as inactive
   const itemElement = document.querySelector('li[feed="' + feedId + '"]');
   if(itemElement) {
     itemElement.setAttribute('inactive', 'true');
+  } else {
+    console.error('Could not find feed element corresponding to de-activated feed');
   }
 
   showSectionById('subs-list-section');
@@ -602,6 +617,8 @@ function enableBgProcessingCheckboxOnclick(event) {
 
 async function bgProcessingCheckboxInit() {
   const checkbox = document.getElementById('enable-background');
+
+  // TODO: do not assert in the UI
   assert(checkbox instanceof Element);
 
   // TODO: this should be using a local storage variable and instead the permission should be
@@ -627,7 +644,7 @@ function bgImageMenuOnchange(event) {
     delete localStorage.BG_IMAGE;
   }
 
-  readerChannel.postMessage({type: 'display-settings-changed'});
+  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function columnCountMenuOnchange(event) {
@@ -638,7 +655,7 @@ function columnCountMenuOnchange(event) {
     delete localStorage.COLUMN_COUNT;
   }
 
-  readerChannel.postMessage({type: 'display-settings-changed'});
+  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function entryBgColorInputOninput(event) {
@@ -649,7 +666,7 @@ function entryBgColorInputOninput(event) {
     delete localStorage.BG_COLOR;
   }
 
-  readerChannel.postMessage({type: 'display-settings-changed'});
+  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function entryMarginSliderOnchange(event) {
@@ -662,7 +679,7 @@ function entryMarginSliderOnchange(event) {
     delete localStorage.PADDING;
   }
 
-  readerChannel.postMessage({type: 'display-settings-changed'});
+  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function headerFontSizeSliderOnchange(event) {
@@ -673,7 +690,7 @@ function headerFontSizeSliderOnchange(event) {
     delete localStorage.HEADER_FONT_SIZE;
   }
 
-  readerChannel.postMessage({type: 'display-settings-changed'});
+  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function bodyFontSizeSliderOnchange(event) {
@@ -684,7 +701,7 @@ function bodyFontSizeSliderOnchange(event) {
     delete localStorage.BODY_FONT_SIZE;
   }
 
-  readerChannel.postMessage({type: 'display-settings-changed'});
+  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function justifyTextCheckboxOnchange(event) {
@@ -694,7 +711,7 @@ function justifyTextCheckboxOnchange(event) {
     delete localStorage.JUSTIFY_TEXT;
   }
 
-  readerChannel.postMessage({type: 'display-settings-changed'});
+  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function bodyHeightInputOninput(event) {
@@ -705,7 +722,7 @@ function bodyHeightInputOninput(event) {
     delete localStorage.BODY_LINE_HEIGHT;
   }
 
-  readerChannel.postMessage({type: 'display-settings-changed'});
+  channel.postMessage({type: 'display-settings-changed'});
 }
 
 

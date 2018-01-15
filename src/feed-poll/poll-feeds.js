@@ -5,6 +5,7 @@ import formatString from "/src/common/format-string.js";
 import {parseHTML} from "/src/common/html-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
 import * as Status from "/src/common/status.js";
+
 import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
@@ -12,7 +13,16 @@ import rewriteURL from "/src/feed-poll/rewrite-url.js";
 import isBinaryURL from "/src/feed-poll/is-binary-url.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
-import FeedStore from "/src/feed-store/feed-store.js";
+
+import {
+  addEntry,
+  containsEntryWithURL,
+  findActiveFeeds,
+  open as openFeedStore,
+  prepareFeed,
+  putFeed
+} from "/src/feed-store/feed-store.js";
+
 import coerceFeed from "/src/coerce-feed.js";
 
 // An array of descriptors. Each descriptor represents a test against a url hostname, that if
@@ -26,10 +36,8 @@ const INACCESSIBLE_CONTENT_DESCRIPTORS = [
   {pattern: /ripe\.net$/i, reason: 'requires-cookies'}
 ];
 
-
-
 export default function FeedPoll() {
-  this.feedStore;
+  this.conn;
   this.iconCache;
   this.ignoreRecencyCheck = false;
   this.ignoreModifiedCheck = false;
@@ -42,39 +50,56 @@ export default function FeedPoll() {
 }
 
 FeedPoll.prototype.init = function() {
-  assert(typeof this.feedStore === 'undefined' || this.feedStore === null);
+  assert(!this.conn);
   assert(typeof this.iconCache === 'undefined' || this.iconCache === null);
-  this.feedStore = new FeedStore();
+
+  this.conn = void this.conn;
   this.iconCache = new FaviconCache();
 };
 
 FeedPoll.prototype.open = async function() {
-  assert(this.feedStore instanceof FeedStore);
   assert(this.iconCache instanceof FaviconCache);
-  assert(!this.feedStore.isOpen());
+
+  assert(!(this.conn instanceof IDBDatabase));
+
   assert(!this.iconCache.isOpen());
   assert(!this.channel);
 
-  const promises = [this.feedStore.open(), this.iconCache.open()];
-  await Promise.all(promises);
-  const CHANNEL_NAME = 'reader';
-  this.channel = new BroadcastChannel(CHANNEL_NAME);
+  const promises = [openFeedStore(), this.iconCache.open()];
+  const resolutions = await Promise.all(promises);
+
+  let [status, conn] = resolutions[0];
+  if(status !== Status.OK) {
+    console.error('Failed to open feed store', Status.toString(status));
+    this.iconCache.close();
+    return;
+  }
+
+  this.conn = conn;
+
+  // TODO: channel name should be defined externally, as an instance prop or parameter
+  this.channel = new BroadcastChannel('reader');
 };
 
 FeedPoll.prototype.close = function() {
-  if(this.channel)    this.channel.close();
-  if(this.feedStore)  this.feedStore.close();
-  if(this.iconCache)  this.iconCache.close();
+  if(this.channel) this.channel.close();
+
+  if(this.conn instanceof IDBDatabase) {
+    this.conn.close();
+  } else {
+    console.warn('Attempted to call close on this.conn but it is not a database', this.conn);
+  }
+
+  if(this.iconCache) this.iconCache.close();
 };
 
 FeedPoll.prototype.pollFeeds = async function() {
-  assert(this.feedStore instanceof FeedStore);
-  assert(this.feedStore.isOpen());
+  assert(this.conn instanceof IDBDatabase);
   assert(this.iconCache instanceof FaviconCache);
   assert(this.iconCache.isOpen());
   assert(this.channel instanceof BroadcastChannel);
 
-  const [status, feeds] = await this.feedStore.findActiveFeeds();
+  const [status, feeds] = await findActiveFeeds(this.conn);
   if(status !== Status.OK) {
     console.error('Failed to load active feeds, status was', status);
     return status;
@@ -90,7 +115,7 @@ FeedPoll.prototype.pollFeeds = async function() {
   const totalNumEntriesAdded = truthyResolutions.length;
 
   if(totalNumEntriesAdded > 0) {
-    updateBadgeText();
+    updateBadgeText(); // non-blocking
   }
 
   if(totalNumEntriesAdded > 0) {
@@ -112,7 +137,7 @@ FeedPoll.prototype.pollFeeds = async function() {
 // @param batched {Boolean} optional, if true then this does not send notifications or update
 // the badge unread count
 FeedPoll.prototype.pollFeed = async function(feed, batched) {
-  assert(this.feedStore.isOpen());
+  assert(this.conn instanceof IDBDatabase);
   assert(Feed.isFeed(feed));
   assert(Feed.hasURL(feed));
 
@@ -133,7 +158,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   if(status !== Status.OK) {
 
     // TODO: this throws so there is no explicit return. I'd rather just return.
-    await handlePollFeedError(status, this.feedStore, feed, 'fetch-feed',
+    await handlePollFeedError(status, this.conn, feed, 'fetch-feed',
       this.deactivationThreshold);
   }
 
@@ -143,7 +168,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     const decremented = handleFetchFeedSuccess(feed);
     if(decremented) {
       feed.dateUpdated = new Date();
-      [status] = await this.feedStore.putFeed(feed);
+      [status] = await putFeed(this.conn, feed);
       if(status !== Status.OK) {
         throw new Error('Failed to put feed with status ' + status);
       }
@@ -156,7 +181,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   try {
     feedXML = await response.text();
   } catch(error) {
-    await handlePollFeedError(Status.EFETCH, this.feedStore, feed, 'read-response-body',
+    await handlePollFeedError(Status.EFETCH, this.conn, feed, 'read-response-body',
       this.deactivationThreshold);
   }
 
@@ -167,7 +192,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     responseLastModifiedDate, processEntries);
   if(status !== Status.OK) {
     console.error('Coerce feed error:', Status.toString(status));
-    await handlePollFeedError(Status.EPARSEFEED, this.feedStore, feed, 'parse-feed',
+    await handlePollFeedError(Status.EPARSEFEED, this.conn, feed, 'parse-feed',
       this.deactivationThreshold);
     return;
   }
@@ -180,9 +205,9 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   handleFetchFeedSuccess(mergedFeed);
 
   // TODO: this could happen prior to merge? should it?
-  const storableFeed = this.feedStore.prepareFeed(mergedFeed);
+  const storableFeed = prepareFeed(mergedFeed);
   storableFeed.dateUpdated = new Date();
-  [status] = await this.feedStore.putFeed(storableFeed);
+  [status] = await putFeed(this.conn, storableFeed);
   if(status !== Status.OK) {
     throw new Error('Failed to put feed with status ' + status);
   }
@@ -257,7 +282,7 @@ function handleFetchFeedSuccess(feed) {
 // is this prematurely deactivates feeds that happen to have a parsing error that is actually
 // ephemeral (temporary) and not permanent.
 
-async function handlePollFeedError(errorCode, store, feed, callCategory, threshold) {
+async function handlePollFeedError(errorCode, conn, feed, callCategory, threshold) {
 
   if(callCategory === 'fetch-feed' && errorCode === Status.EOFFLINE) {
     throw new Error('Offline');
@@ -291,7 +316,7 @@ async function handlePollFeedError(errorCode, store, feed, callCategory, thresho
   // NOTE: this can also throw, and thereby mask the error, but I suppose that is ok, because
   // both are errors, and in this case I suppose the db error trumps the fetch error
   feed.dateUpdated = new Date();
-  const [status] = await store.putFeed(feed);
+  const [status] = await putFeed(conn, feed);
   if(status !== Status.OK) {
     throw new Error('Failed to put feed with status ' + status);
   }
@@ -319,7 +344,7 @@ function cascadeFeedPropertiesToEntries(feed, entries) {
 }
 
 FeedPoll.prototype.pollEntry = async function(entry) {
-  assert(this.feedStore.isOpen());
+  assert(this.conn instanceof IDBDatabase);
   assert(this.iconCache.isOpen());
   assert(Entry.isEntry(entry));
 
@@ -341,7 +366,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
 
   let status;
   let containsEntry;
-  [status, containsEntry] = await this.feedStore.containsEntryWithURL(url);
+  [status, containsEntry] = await containsEntryWithURL(this.conn, url);
   if(status !== Status.OK) {
     console.error('Error checking contains entry with url', status);
     return;
@@ -362,7 +387,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
         return;
       }
 
-      [status, containsEntry] = await this.feedStore.containsEntryWithURL(responseURL);
+      [status, containsEntry] = await containsEntryWithURL(this.conn, responseURL);
       if(status !== Status.OK) {
         console.error('Error checking contains entry with url', status);
         return;
@@ -399,7 +424,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   }
 
   let entryId;
-  [status, entryId] = await this.feedStore.addEntry(entry, this.channel);
+  [status, entryId] = await addEntry(this.conn, this.channel, entry);
   if(status !== Status.OK) {
     throw new Error('Failed to add entry, status is ' + status);
   }
@@ -418,10 +443,12 @@ FeedPoll.prototype.fetchEntryHTML = async function(url) {
   return status === Status.OK ? response : null;
 };
 
+// TODO: this is now pretty simple without exceptions. Consider inlining.
 // Attempts to parse the fetched html. May return undefined
 function parseEntryHTML(html) {
   const [status, document, message] = parseHTML(html);
   if(status !== Status.OK) {
+    console.debug(message);
     // Return undefined on parse error
     return;
   } else {

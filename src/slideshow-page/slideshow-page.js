@@ -5,7 +5,13 @@ import markEntryRead from "/src/feed-ops/mark-entry-read.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
-import FeedStore from "/src/feed-store/feed-store.js";
+
+import {
+  findViewableEntries,
+  getAllFeeds,
+  open as openFeedStore
+} from "/src/feed-store/feed-store.js";
+
 import exportFeeds from "/src/slideshow-page/export-feeds.js";
 import importOPMLFiles from "/src/slideshow-page/import-opml-files.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
@@ -36,8 +42,8 @@ const fonts = [
 // Define a channel that remains open for the lifetime of the slideshow page. It will listen to
 // events coming in from other pages, or the page itself, and react to them. Ordinarily a channel
 // should not remain open indefinitely but here it makes sense.
-const readerChannel = new BroadcastChannel('reader');
-readerChannel.onmessage = function(event) {
+const channel = new BroadcastChannel('reader');
+channel.onmessage = function(event) {
   // console.debug('Message event', event);
 
   if(!(event instanceof MessageEvent)) {
@@ -71,13 +77,19 @@ readerChannel.onmessage = function(event) {
   case 'feed-deleted':
     console.warn('Unhandled feed-deleted message', message);
     break;
+  case 'entry-marked-read':
+    console.warn('Unhandled entry-marked-read message', message);
+    break;
+  case 'feed-added':
+    console.warn('Unhandled feed-added message', message);
+    break;
   default:
     console.warn('Unknown message type', message);
     break;
   }
 };
 
-readerChannel.onmessageerror = function(event) {
+channel.onmessageerror = function(event) {
   console.warn('Could not deserialize message from channel', event);
 };
 
@@ -91,20 +103,25 @@ async function onEntryAddedMessage(message) {
     return;
   }
 
-  // Load new articles
-  const feedStore = new FeedStore();
+  let [status, conn] = await openFeedStore();
+  if(status !== Status.OK) {
+    console.error('Failed to open feed store', Status.toString(status));
+    return;
+  }
+
   try {
-    await feedStore.open();
-    await appendSlides(feedStore);
+    await appendSlides(conn);
   } catch(error) {
     console.warn(error);
-  } finally {
-    feedStore.close();
   }
+
+  conn.close();
 }
 
 function showErrorMessage(messageText) {
   const container = document.getElementById('error-message-container');
+
+  // TODO: do not assert in UI
   assert(container instanceof Element, 'Cannot find error message container element to show error',
     messageText);
   container.textContent = messageText;
@@ -113,6 +130,9 @@ function showErrorMessage(messageText) {
 
 // React to a message indicating that an entry expired (e.g. it was deleted, or archived)
 async function onEntryExpiredMessage(message) {
+
+  // TODO: do not assert in UI
+
   // Caller is responsible for providing valid message. This should never happen.
   // TODO: use a stronger assertion of type
   assert(typeof message !== 'undefined');
@@ -131,6 +151,7 @@ async function onEntryExpiredMessage(message) {
   // There is no guarantee the entry id corresponds to a loaded slide. It is normal and frequent
   // for the slideshow to receive messages with entry ids that do not correspond to loaded slides.
   if(!slide) {
+    console.debug('Corresponding slide for entry not loaded, ignoring message', message);
     return;
   }
 
@@ -140,15 +161,15 @@ async function onEntryExpiredMessage(message) {
   // away. Instead, flag the slide as stale, so that other view functionality can react
   // appropriately at a later time in an unobtrusive manner.
   if(Slideshow.isCurrentSlide(slide)) {
-    // console.log('Cannot expire current slide', message);
-    slide.setAttribute('removed-after-load', '');
+    console.log('Cannot make current slide stale', message);
+    slide.setAttribute('removed-after-load', 'true');
     return;
   }
 
   // The slide is not the current slide and is either already read and offscreen, or preloaded and
   // unread. In either case, remove the slide.
-
   Slideshow.remove(slide);
+
   // TODO: remove currently does not remove click listener, need to manually remove it here,
   // but i'd like to think of a better way
   slide.removeEventListener('click', onSlideClick);
@@ -158,21 +179,30 @@ function showLoadingInformation() {
   const loadingElement = document.getElementById('initial-loading-panel');
   if(loadingElement) {
     loadingElement.style.display = 'block';
+  } else {
+    console.error('Could not find initial loading panel');
   }
-
 }
 
 function hideLoadingInformation() {
   const loadingElement = document.getElementById('initial-loading-panel');
   if(loadingElement) {
     loadingElement.style.display = 'none';
+  } else {
+    console.error('Could not find initial loading panel');
   }
 }
 
 
-async function markSlideRead(store, slideElement) {
-  assert(store instanceof FeedStore);
-  assert(store.isOpen());
+// TODO: as a result of introducing status I lost the non-blocking nature I was going for, so
+// I need to rethink this.
+
+async function markSlideRead(conn, slideElement) {
+
+  // TODO: do not assert in the UI
+
+  assert(conn instanceof IDBDatabase);
+
   assert(slideElement instanceof Element);
 
   // Get the entry id for the slide
@@ -186,29 +216,34 @@ async function markSlideRead(store, slideElement) {
   // Exit early if the slide has already been read. This is routine such as when navigating backward
   // and should not be considered an error.
   if(slideElement.hasAttribute('read')) {
-    console.log('canceling mark as read as slide already marked', entryId);
-    return;
+    console.debug('Slide already marked as read', entryId);
+    return Status.OK;
   }
 
-  const status = await markEntryRead(store, entryId);
+  // TODO: if markEntryRead accepted a channel, or a channel name, it would be much
+  // simpler to pass along the slideshow's persistent channel
+
+  const status = await markEntryRead(conn, entryId);
   if(status !== Status.OK) {
     // TODO: display an error
-    console.error('Failed to mark entry %d as read with status', entryId, status);
-    return;
+    console.error('Failed to mark entry %d as read:', entryId, Status.toString(status));
+    return status;
   }
 
   // Signal to the UI that the slide is read, so that unread counting works, and so that later
   // calls to this function exit prior to interacting with storage.
   slideElement.setAttribute('read', '');
+
+  return Status.OK;
 }
 
-async function appendSlides(feedStore, limit) {
+async function appendSlides(conn, limit) {
   console.log('Appending slides (limit: %d)', limit);
 
   limit = typeof limit === 'undefined' ? 3 : limit;
   const offset = countUnreadSlides();
 
-  const [status, entries] = await feedStore.findViewableEntries(offset, limit);
+  const [status, entries] = await findViewableEntries(conn, offset, limit);
   if(status !== Status.OK) {
     console.error('Failed to find viewable entries with status ' + status);
     showErrorMessage('There was a problem loading articles from storage');
@@ -222,9 +257,16 @@ async function appendSlides(feedStore, limit) {
   return entries.length;
 }
 
+// TODO: the creation of a slide element, and the appending of a slide element,
+// should be two separate tasks. This will increase flexibility and maybe
+// clarity. appendSlide should accept a slide element, not an entry.
+
 // Given an entry, create a new slide element and append it to the view
 function appendSlide(entry) {
+
+  // TODO: do not assert in the UI
   assert(Entry.isEntry(entry));
+
   console.log('Creating and appending slide for entry', entry.id);
   const slide = Slideshow.create();
   slide.setAttribute('entry', entry.id);
@@ -232,10 +274,9 @@ function appendSlide(entry) {
   slide.setAttribute('class','entry');
   slide.addEventListener('click', onSlideClick);
 
-
+  // An after-the-fact change to fix padding
   const slidePaddingWrapper = document.createElement('div');
   slidePaddingWrapper.className = 'slide-padding-wrapper';
-
   slidePaddingWrapper.appendChild(createArticleTitleElement(entry));
   slidePaddingWrapper.appendChild(createArticleContentElement(entry));
   slidePaddingWrapper.appendChild(createFeedSourceElement(entry));
@@ -317,6 +358,8 @@ function createFeedSourceElement(entry) {
   sourceElement.appendChild(details);
   return sourceElement;
 }
+
+// TODO: create a utils.js file for slideshow-page and move this to that file
 
 // TODO: support alternate whitespace expressions around delimiters
 // Filter publisher information from an article title
@@ -453,16 +496,22 @@ async function onSlideClick(event) {
   }
 
   // Mark the current slide as read
-  const feedStore = new FeedStore();
-  try {
-    await feedStore.open();
-    await markSlideRead(feedStore, clickedSlide);
-  } catch(error) {
+  let [status, conn] = await openFeedStore();
+  if(status !== Status.OK) {
     // TODO: visually show error
-    console.warn(error);
-  } finally {
-    feedStore.close();
+    console.error('Failed to open feed store', Status.toString(status));
+    return false;
   }
+
+  status = await markSlideRead(conn, clickedSlide);
+  if(status !== Status.OK) {
+    // TODO: visually show error
+    console.error('Failed to mark slide as read', Status.toString(status));
+    conn.close();
+    return;
+  }
+
+  conn.close();
 
   // Still signal the click should not default to normal click behavior, the browser should not
   // react to the click on its own. Even though I already called preventDefault.
@@ -519,57 +568,71 @@ window.addEventListener('keydown', onKeyDown);
 // TODO: sharing the connection between mark as read and appendSlides made sense at first but I
 // do not like the large try/catch block. Also I think the two can be unlinked because they do not
 // have to co-occur. Also I don't like how it has to wait for read to complete.
-// Similarly, i think entry-mark-read shares the connection with update-badge, but that should
-// also be changed so that it is non-blocking?
 
 
 
 async function nextSlide() {
 
   const currentSlide = Slideshow.getCurrentSlide();
-  const feedStore = new FeedStore();
 
   // If there are still unread articles return. Do not mark the current article, if it exists,
   // as read.
   const unreadSlideCount = countUnreadSlides();
   // We still append if there is just one unread slide
   if(unreadSlideCount > 1) {
-    console.debug(
-      'Not dynamically appending because %d unread slides remain',
-      unreadSlideCount);
+    console.debug('Not dynamically appending because %d unread slides remain', unreadSlideCount);
+
 
     // Mark the current slide as read
-    try {
-      await feedStore.open();
-      await markSlideRead(feedStore, currentSlide);
-    } catch(error) {
-      console.warn(error);
-    } finally {
-      feedStore.close();
+    let [status, conn] = await openFeedStore();
+    if(status !== Status.OK) {
+      // TODO: show an error message
+      console.error('Failed to open feed store', Status.toString(status));
+      return;
     }
+
+    status = await markSlideRead(conn, currentSlide);
+    if(status !== Status.OK) {
+      // TODO: show an error message
+      console.error('Failed to mark slide as read', Status.toString(status));
+      conn.close();
+      return;
+    }
+
+    conn.close();
 
     Slideshow.next();
     return;
   }
 
   let appendCount = 0;
-  try {
-    await feedStore.open();
-
-    if(unreadSlideCount < 2) {
-      console.log('Appending additional slides prior to navigation');
-      appendCount = await appendSlides(feedStore);
-    } else {
-      console.log('Not appending additional slides prior to navigation');
-    }
-
-    Slideshow.next();
-    await markSlideRead(feedStore, currentSlide);
-  } catch(error) {
-    console.warn(error);
-  } finally {
-    feedStore.close();
+  let [status, conn] = await openFeedStore();
+  if(status !== Status.OK) {
+    // TODO: show an error message
+    console.error('Failed to open feed store', Status.toString(status));
+    return;
   }
+
+  // TODO: change appendSlides to return status
+
+  if(unreadSlideCount < 2) {
+    console.log('Appending additional slides prior to navigation');
+    appendCount = await appendSlides(conn);
+  } else {
+    console.log('Not appending additional slides prior to navigation');
+  }
+
+  Slideshow.next();
+
+  status = await markSlideRead(conn, currentSlide);
+  if(status !== Status.OK) {
+    // TODO: show an error message
+    console.error('Failed to mark slide as read', Status.toString(status));
+    conn.close();
+    return;
+  }
+
+  conn.close();
 
   if(appendCount < 1) {
     return;
@@ -701,43 +764,45 @@ async function importFiles(files) {
 
   console.log('Import completed');
 
-  // TODO: show operation completed successfully
+  // TODO: visually inform the user that the operation completed successfully
   // TODO: refresh feed list
   // TODO: check for new articles?
-  // TODO: switch to feed list section or something?
+  // TODO: switch to feed list section?
 }
 
 async function menuOptionExportOnclick() {
   const title = 'Subscriptions';
   const fileName = 'subscriptions.xml';
-  const store = new FeedStore();
 
-  let status = await store.open();
+  // TODO: create a helper function that encapsulates opening and closing the database
+
+  let [status, conn] = await openFeedStore();
   if(status !== Status.OK) {
     // TODO: handle error visually
-    console.error('Failed to open database with status', status);
+    console.error('Failed to open database with status', Status.toString(status));
     return;
   }
 
   let feeds;
-  [status, feeds] = await store.getAllFeeds();
+  [status, feeds] = await getAllFeeds(conn);
   if(status !== Status.OK) {
     // TODO: handle error visually
-    console.error('Failed to get all feeds with status', status);
-    store.close();
+    console.error('Failed to get all feeds:', Status.toString(status));
+    conn.close();
     return;
   }
 
+  conn.close();
+
+  // TODO: use status pattern
   try {
     exportFeeds(feeds, title, fileName);
   } catch(error) {
     // TODO: handle error visually
     console.error(error);
-    store.close();
     return;
   }
 
-  store.close();
 
   // TODO: visual feedback on completion
   console.log('Completed export');
@@ -752,10 +817,12 @@ function noop() {}
 
 function windowOnclick(event) {
 
+  // TODO: am I still using marginLeft? I thought I switched to left?
+
   // If the click occurred outside of the menu options panel, hide the menu options panel
   const avoidedZoneIds = ['main-menu-button', 'left-panel'];
   if(!avoidedZoneIds.includes(event.target.id) && !event.target.closest('[id="left-panel"]')) {
-    // Hide only if not hidden. marginLeft is only 0px is visible state. If marginLeft is
+    // Hide only if not hidden. marginLeft is only 0px in visible state. If marginLeft is
     // empty string or -320px then menu already hidden
     const aside = document.getElementById('left-panel');
     if(aside.style.marginLeft === '0px') {
@@ -831,12 +898,11 @@ function unsubscribeButtonOnclick(event) {
   console.debug('Unsubscribe', event.target);
 }
 
+// TODO: create helper function createFeedElement that then is passed to this, rename this to
+// appendFeedElement and change its parameter
 function appendFeed(feed) {
 
-
-
   const feedsContainer = document.getElementById('feeds-container');
-
   const feedElement = document.createElement('div');
   feedElement.id = feed.id;
 
@@ -923,16 +989,19 @@ function appendFeed(feed) {
   if(feedsContainer) {
     feedsContainer.appendChild(feedElement);
   }
-
 }
 
+
+// TODO: create a utils file and move this there
 function formatDate(date, delimiter) {
   // Tolerate some forms bad input
   if(!date) {
     return '';
   }
 
+  // TODO: do not assert in the UI
   assert(date instanceof Date);
+
   const parts = [];
   // Add 1 because getMonth is a zero based index
   parts.push(date.getMonth() + 1);
@@ -1049,44 +1118,49 @@ async function initSlideshowPage() {
 
   // TODO: closing should happen before append actually takes place, there is no need to keep
   // the database open longer.
+  // TODO: create a helper function that encapsulates this
 
   // Load and append slides
-  const feedStore = new FeedStore();
+
+
   const initialLimit = 1;
   let didHideLoading = false;
   let feeds;
-  try {
-    await feedStore.open();
 
-    // First load only 1, to load quickly
-    await appendSlides(feedStore, initialLimit);
-    console.log('Initial slide loaded');
+  let [status, conn] = await openFeedStore();
+  if(status !== Status.OK) {
+    // TODO: visually show error message
+    console.error('Failed to open feed store', Status.toString(status));
     hideLoadingInformation();
-    didHideLoading = true;
-
-    let status;
-    [status, feeds] = await feedStore.getAllFeeds();
-    if(status !== Status.OK) {
-      throw new Error('Failed to get all feeds to append slides on init');
-    }
-
-    feeds.sort(function compareFeedTitle(a, b) {
-      const atitle = a.title ? a.title.toLowerCase() : '';
-      const btitle = b.title ? b.title.toLowerCase() : '';
-      return indexedDB.cmp(atitle, btitle);
-    });
-
-    // Now preload a couple more
-    await appendSlides(feedStore, 2);
-  } catch(error) {
-    // TODO: visually show error
-    console.warn(error);
-  } finally {
-    feedStore.close();
-    if(!didHideLoading) {
-      hideLoadingInformation();
-    }
+    return;
   }
+
+  // TODO: change appendSlides to return status and check it here
+  // First load only 1, to load quickly
+  await appendSlides(conn, initialLimit);
+  console.log('Initial slide loaded');
+
+  hideLoadingInformation();
+
+  // TODO: change appendSlides to return status and check it here
+  // Now preload a couple more
+  await appendSlides(conn, 2);
+
+  [status, feeds] = await getAllFeeds(conn);
+  if(status !== Status.OK) {
+    // TODO: visually show error message
+    console.error('Failed to load feeds from database', Status.toString(status));
+    conn.close();
+    return;
+  }
+
+  conn.close();
+
+  feeds.sort(function compareFeedTitle(a, b) {
+    const atitle = a.title ? a.title.toLowerCase() : '';
+    const btitle = b.title ? b.title.toLowerCase() : '';
+    return indexedDB.cmp(atitle, btitle);
+  });
 
   initFeedsContainer(feeds);
 }
