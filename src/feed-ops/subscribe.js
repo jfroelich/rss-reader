@@ -41,10 +41,6 @@ export default async function subscribe(context, url) {
     return [Status.EINVAL];
   }
 
-  if(!context.iconCache.isOpen()) {
-    return [Status.EINVALIDSTATE];
-  }
-
   if(!(url instanceof URL)) {
     return [Status.EINVAL];
   }

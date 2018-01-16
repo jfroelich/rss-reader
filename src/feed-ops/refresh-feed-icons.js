@@ -5,10 +5,13 @@ import {findActiveFeeds, putFeed} from "/src/feed-store/feed-store.js";
 
 
 export default async function refreshFeedIcons(conn, iconCache) {
-  let [status, feeds] = await findActiveFeeds(conn);
-  if(status !== Status.OK) {
-    console.error('Failed to find active feeds: ', Status.toString(status));
-    return status;
+
+  let feeds;
+  try {
+    feeds = await findActiveFeeds(conn);
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
   }
 
   const query = new FaviconService();

@@ -56,28 +56,21 @@ export default async function importOPMLFiles(files, timeout) {
 async function openDatabases(context) {
   const promise1 = openFeedStore();
   const promise2 = context.iconCache.open();
-  const resolutions = await Promise.all([promise1, promise2]);
 
-  let [openFeedStoreStatus, conn] = resolutions[0];
-  if(openFeedStoreStatus !== Status.OK) {
-    context.iconCache.close();
-    return [openFeedStoreStatus];
+  let resolutions;
+  try {
+    resolutions = await Promise.all([promise1, promise2]);
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
   }
 
-  let openFaviconCacheStatus = resolutions[1];
+  const conn = resolutions[0];
+
+  const openFaviconCacheStatus = resolutions[1];
   if(openFaviconCacheStatus !== Status.OK) {
-
-    if(conn instanceof IDBDatabase) {
-      conn.close();
-    }
-
+    conn.close();
     return [status];
-  }
-
-  // TEMP: sanity check above, confused myself
-  if(!(conn instanceof IDBDatabase)) {
-    console.error('conn is not a database object', conn);
-    return [Status.EINVALIDSTATE];
   }
 
   return [Status.OK, conn];

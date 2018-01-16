@@ -59,23 +59,21 @@ FeedPoll.prototype.init = function() {
 
 FeedPoll.prototype.open = async function() {
   assert(this.iconCache instanceof FaviconCache);
-
   assert(!(this.conn instanceof IDBDatabase));
-
-  assert(!this.iconCache.isOpen());
   assert(!this.channel);
 
   const promises = [openFeedStore(), this.iconCache.open()];
-  const resolutions = await Promise.all(promises);
+  //const resolutions = await Promise.all(promises);
 
-  let [status, conn] = resolutions[0];
-  if(status !== Status.OK) {
-    console.error('Failed to open feed store', Status.toString(status));
-    this.iconCache.close();
+  let resolutions;
+  try {
+    resolutions = await Promise.all(promises);
+  } catch(error) {
+    console.error(error);
     return;
   }
 
-  this.conn = conn;
+  this.conn = resolutions[0];
 
   // TODO: channel name should be defined externally, as an instance prop or parameter
   this.channel = new BroadcastChannel('reader');
@@ -96,13 +94,14 @@ FeedPoll.prototype.close = function() {
 FeedPoll.prototype.pollFeeds = async function() {
   assert(this.conn instanceof IDBDatabase);
   assert(this.iconCache instanceof FaviconCache);
-  assert(this.iconCache.isOpen());
   assert(this.channel instanceof BroadcastChannel);
 
-  const [status, feeds] = await findActiveFeeds(this.conn);
-  if(status !== Status.OK) {
-    console.error('Failed to load active feeds, status was', status);
-    return status;
+  let feeds;
+  try {
+    feeds = await findActiveFeeds(this.conn);
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
   }
 
   const batched = true;
@@ -345,7 +344,6 @@ function cascadeFeedPropertiesToEntries(feed, entries) {
 
 FeedPoll.prototype.pollEntry = async function(entry) {
   assert(this.conn instanceof IDBDatabase);
-  assert(this.iconCache.isOpen());
   assert(Entry.isEntry(entry));
 
   // Cannot assume the entry has a url (not an error). A url is required
@@ -365,13 +363,9 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   }
 
   let status;
-  let containsEntry;
-  [status, containsEntry] = await containsEntryWithURL(this.conn, url);
-  if(status !== Status.OK) {
-    console.error('Error checking contains entry with url', status);
-    return;
-  }
 
+  // This should never fail except in case of serious database error, so no try/catch
+  let containsEntry = await containsEntryWithURL(this.conn, url);
   if(containsEntry) {
     return;
   }
@@ -387,16 +381,10 @@ FeedPoll.prototype.pollEntry = async function(entry) {
         return;
       }
 
-      [status, containsEntry] = await containsEntryWithURL(this.conn, responseURL);
-      if(status !== Status.OK) {
-        console.error('Error checking contains entry with url', status);
-        return;
-      }
-
+      containsEntry = await containsEntryWithURL(this.conn, responseURL);
       if(containsEntry) {
         return;
       }
-
 
       Entry.appendURL(entry, responseURL);
 
@@ -423,13 +411,19 @@ FeedPoll.prototype.pollEntry = async function(entry) {
     entry.content = 'Empty or malformed content';
   }
 
-  let entryId;
-  [status, entryId] = await addEntry(this.conn, this.channel, entry);
-  if(status !== Status.OK) {
-    throw new Error('Failed to add entry, status is ' + status);
+
+  // TODO: if addEntry does not throw in the normal case, then the try catch here
+  // isn't necessary. Unsure at the moment.
+
+  let storedEntry;
+  try {
+    storedEntry = await addEntry(this.conn, this.channel, entry);
+  } catch(error) {
+    console.error(error);
+    return;
   }
 
-  return entryId;
+  return storedEntry.id;
 };
 
 function isPollableURL(url) {

@@ -26,25 +26,16 @@ export default async function updateBadgeText() {
 
   pending = true;
 
-  let [status, conn] = await open();
-  if(status !== Status.OK) {
-    console.error('Failed to open database:', Status.toString(status));
+  let count, conn;
+  try {
+    count = await countUnreadEntries(conn);
+  } catch(error) {
+    console.error(error);
     pending = false;
-    return status;
+    return Status.EDB;
   }
-
-  let count;
-  [status, count] = await countUnreadEntries(conn);
-  if(status !== Status.OK) {
-    console.error('Failed to count unread entries:', Status.toString(status));
-    pending = false;
-    conn.close();
-    return status;
-  }
-  conn.close();
 
   pending = false;
-
   const text = count > 999 ? '1k+' : '' + count;
   console.debug('Setting badge text to', text);
   chrome.browserAction.setBadgeText({text: text});

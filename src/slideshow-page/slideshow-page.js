@@ -39,26 +39,16 @@ const fonts = [
   'Roboto Regular'
 ];
 
-// Define a channel that remains open for the lifetime of the slideshow page. It will listen to
-// events coming in from other pages, or the page itself, and react to them. Ordinarily a channel
-// should not remain open indefinitely but here it makes sense.
 const channel = new BroadcastChannel('reader');
 channel.onmessage = function(event) {
-  // console.debug('Message event', event);
-
-  if(!(event instanceof MessageEvent)) {
-    return;
-  }
-
   if(!event.isTrusted) {
-    console.log('Untrusted message event', event);
     return;
   }
 
   const message = event.data;
   if(typeof message !== 'object' || message === null) {
     console.warn('Message event has missing or invalid message', event);
-    return false;
+    return;
   }
 
   switch(message.type) {
@@ -78,6 +68,7 @@ channel.onmessage = function(event) {
     console.warn('Unhandled feed-deleted message', message);
     break;
   case 'entry-marked-read':
+    // TODO: call a mark read handler here that sets the slide element as read
     console.warn('Unhandled entry-marked-read message', message);
     break;
   case 'feed-added':
@@ -105,19 +96,15 @@ async function onEntryAddedMessage(message) {
     return;
   }
 
-  let [status, conn] = await openFeedStore();
-  if(status !== Status.OK) {
-    console.error('Failed to open feed store', Status.toString(status));
-    return;
-  }
-
+  let conn;
   try {
+    conn = await openFeedStore();
     await appendSlides(conn);
-  } catch(error) {
-    console.warn(error);
+  } finally {
+    if(conn) {
+      conn.close();
+    }
   }
-
-  conn.close();
 }
 
 function showErrorMessage(messageText) {
@@ -198,12 +185,11 @@ function hideLoadingInformation() {
 
 // TODO: as a result of introducing status I lost the non-blocking nature I was going for, so
 // I need to rethink this.
+// TODO: I don't think this needs the conn parameter?
 
 async function markSlideRead(conn, slideElement) {
 
   // TODO: do not assert in the UI
-
-  assert(conn instanceof IDBDatabase);
 
   assert(slideElement instanceof Element);
 
@@ -222,14 +208,16 @@ async function markSlideRead(conn, slideElement) {
     return Status.OK;
   }
 
-  // TODO: if markEntryRead accepted a channel, or a channel name, it would be much
-  // simpler to pass along the slideshow's persistent channel
+  // TODO: rather than await, this should listen for entry-marked-read events roundtrip and
+  // handle the event when it later occurs to mark the corresponding slide.
+  // Then this can be called non-awaited.
 
-  const status = await markEntryRead(conn, entryId);
-  if(status !== Status.OK) {
+  try {
+    await markEntryRead(conn, channel, entryId);
+  } catch(error) {
     // TODO: display an error
-    console.error('Failed to mark entry %d as read:', entryId, Status.toString(status));
-    return status;
+    console.error(error);
+    return Status.EDB;
   }
 
   // Signal to the UI that the slide is read, so that unread counting works, and so that later
@@ -498,14 +486,16 @@ async function onSlideClick(event) {
   }
 
   // Mark the current slide as read
-  let [status, conn] = await openFeedStore();
-  if(status !== Status.OK) {
+  let conn;
+  try {
+    conn = await openFeedStore();
+  } catch(error) {
     // TODO: visually show error
-    console.error('Failed to open feed store', Status.toString(status));
+    console.error(error);
     return false;
   }
 
-  status = await markSlideRead(conn, clickedSlide);
+  let status = await markSlideRead(conn, clickedSlide);
   if(status !== Status.OK) {
     // TODO: visually show error
     console.error('Failed to mark slide as read', Status.toString(status));
@@ -586,14 +576,15 @@ async function nextSlide() {
 
 
     // Mark the current slide as read
-    let [status, conn] = await openFeedStore();
-    if(status !== Status.OK) {
-      // TODO: show an error message
-      console.error('Failed to open feed store', Status.toString(status));
+    let conn;
+    try {
+      conn = await openFeedStore();
+    } catch(error) {
+      console.error(error);
       return;
     }
 
-    status = await markSlideRead(conn, currentSlide);
+    let status = await markSlideRead(conn, currentSlide);
     if(status !== Status.OK) {
       // TODO: show an error message
       console.error('Failed to mark slide as read', Status.toString(status));
@@ -608,14 +599,14 @@ async function nextSlide() {
   }
 
   let appendCount = 0;
-  let [status, conn] = await openFeedStore();
-  if(status !== Status.OK) {
-    // TODO: show an error message
-    console.error('Failed to open feed store', Status.toString(status));
+  let conn;
+  try {
+    conn = await openFeedStore();
+  } catch(error) {
+    console.error(error);
     return;
   }
 
-  // TODO: change appendSlides to return status
 
   if(unreadSlideCount < 2) {
     console.log('Appending additional slides prior to navigation');
@@ -626,7 +617,7 @@ async function nextSlide() {
 
   Slideshow.next();
 
-  status = await markSlideRead(conn, currentSlide);
+  let status = await markSlideRead(conn, currentSlide);
   if(status !== Status.OK) {
     // TODO: show an error message
     console.error('Failed to mark slide as read', Status.toString(status));
@@ -778,15 +769,15 @@ async function menuOptionExportOnclick() {
 
   // TODO: create a helper function that encapsulates opening and closing the database
 
-  let [status, conn] = await openFeedStore();
-  if(status !== Status.OK) {
-    // TODO: handle error visually
-    console.error('Failed to open database with status', Status.toString(status));
+  let conn;
+  try {
+    conn = await openFeedStore();
+  } catch(error) {
+    console.error(error);
     return;
   }
 
-  let feeds;
-  [status, feeds] = await getAllFeeds(conn);
+  let [status, feeds] = await getAllFeeds(conn);
   if(status !== Status.OK) {
     // TODO: handle error visually
     console.error('Failed to get all feeds:', Status.toString(status));
@@ -1127,12 +1118,13 @@ async function initSlideshowPage() {
 
   const initialLimit = 1;
   let didHideLoading = false;
-  let feeds;
 
-  let [status, conn] = await openFeedStore();
-  if(status !== Status.OK) {
+  let conn;
+  try {
+    conn = await openFeedStore();
+  } catch(error) {
     // TODO: visually show error message
-    console.error('Failed to open feed store', Status.toString(status));
+    console.error(error);
     hideLoadingInformation();
     return;
   }
@@ -1148,7 +1140,7 @@ async function initSlideshowPage() {
   // Now preload a couple more
   await appendSlides(conn, 2);
 
-  [status, feeds] = await getAllFeeds(conn);
+  let [status, feeds] = await getAllFeeds(conn);
   if(status !== Status.OK) {
     // TODO: visually show error message
     console.error('Failed to load feeds from database', Status.toString(status));

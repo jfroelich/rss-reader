@@ -3,15 +3,14 @@ import showSlideshowTab from "/src/show-slideshow-tab.js";
 import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
 import archiveEntries from "/src/feed-ops/archive-entries.js";
 import refreshFeedIcons from "/src/feed-ops/refresh-feed-icons.js";
+import removeOrphanedEntries from "/src/feed-ops/remove-orphaned-entries.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import {
   open as openFeedStore,
   removeLostEntries,
-  removeOrphanedEntries
+
 } from "/src/feed-store/feed-store.js";
-
-
 
 async function handleCompactFaviconsAlarm(alarm) {
   console.log('Compacting feed favicon cache...');
@@ -37,11 +36,7 @@ async function handleCompactFaviconsAlarm(alarm) {
 async function handleArchiveAlarmWakeup(alarm) {
   console.log('Archiving entries...');
 
-  let [status, conn] = await openFeedStore();
-  if(status !== OK) {
-    console.error('Failed to open database:', statusToString(status));
-    return status;
-  }
+  const conn = await openFeedStore();
 
   let maxAgeMs;
   const limit = 300;
@@ -57,12 +52,7 @@ async function handleArchiveAlarmWakeup(alarm) {
 async function handleLostEntriesAlarm(alarm) {
   console.log('Removing lost entries...');
 
-  let [status, conn] = await openFeedStore();
-  if(status !== OK) {
-    console.error('Failed to open database:', statusToString(status));
-    return status;
-  }
-
+  const conn = await openFeedStore();
   const limit = 100;
   status = await removeLostEntries(conn, limit);
   if(status !== OK) {
@@ -74,22 +64,13 @@ async function handleLostEntriesAlarm(alarm) {
 }
 
 async function handleOrphanEntriesAlarm(alarm) {
-  console.log('Removing orphaned entries...');
-
-  let [status, conn] = await openFeedStore();
-  if(status !== OK) {
-    console.error('Failed to open database:', statusToString(status));
-    return status;
+  let conn;// leave undefined for auto-connect
+  const channel = new BroadcastChannel('reader');
+  try {
+    await removeOrphanedEntries(conn, channel);
+  } finally {
+    channel.close();
   }
-
-  const limit = 100;
-  status = await removeOrphanedEntries(conn, limit);
-  if(status !== OK) {
-    console.error('Failed to remove orphaned entries:', statusToString(status));
-  }
-
-  conn.close();
-  return status;
 }
 
 async function handleRefreshFeedIconsAlarm(alarm) {
@@ -98,12 +79,7 @@ async function handleRefreshFeedIconsAlarm(alarm) {
   const fc = new FaviconCache();
   const promises = [openFeedStore(), fc.open()];
   const resolutions = await Promise.all(promises);
-
-  let [status, conn] = resolutions[0];
-  if(status !== OK) {
-    console.error('Failed to open feed store:', statusToString(status));
-    return;
-  }
+  conn = resolutions[0];
 
   [status] = resolutions[1];
   if(status !== OK) {
@@ -157,14 +133,9 @@ cli.refreshIcons = async function() {
 
   const fc = new FaviconCache();
   const promises = [openFeedStore(), fc.open()];
-  const resolutions = await Promise.all(promises);
 
-  let [status, conn] = resolutions[0];
-  if(status !== OK) {
-    console.error('Failed to open feed store:', statusToString(status));
-    fc.close();
-    return status;
-  }
+  const resolutions = await Promise.all(promises);
+  conn = resolutions[0];
 
   status = resolutions[1];
   if(status !== OK) {
@@ -186,14 +157,10 @@ cli.refreshIcons = async function() {
 cli.archiveEntries = async function(limit) {
   console.log('Archiving entries...');
 
-  let [status, conn] = await openFeedStore();
-  if(status !== OK) {
-    console.error('Failed to open database:', statusToString(status));
-    return status;
-  }
+  const conn = await openFeedStore();
 
   let maxAgeMs;
-  status = await archiveEntries(conn, maxAgeMs, limit);
+  let status = await archiveEntries(conn, maxAgeMs, limit);
   if(status !== OK) {
     console.error('Failed to archive entries:', statusToString(status));
   }
@@ -220,11 +187,7 @@ cli.pollFeeds = async function() {
 cli.removeLostEntries = async function(limit) {
   console.log('Removing lost entries...');
 
-  let [status, conn] = await openFeedStore();
-  if(status !== OK) {
-    console.error('Failed to open database:', statusToString(status));
-    return status;
-  }
+  const conn = await openFeedStore();
 
   status = await removeLostEntries(conn, limit);
   if(status !== OK) {
@@ -235,22 +198,16 @@ cli.removeLostEntries = async function(limit) {
   return status;
 };
 
-cli.removeOrphanedEntries = async function(limit) {
+cli.removeOrphanedEntries = async function() {
   console.log('Removing orphaned entries...');
 
-  let [status, conn] = await store.open();
-  if(status !== OK) {
-    console.error('Failed to open database:', statusToString(status));
-    return status;
+  let conn;
+  const channel = new BroadcastChannel('reader');
+  try {
+    await removeOrphanedEntries(conn, channel);
+  } finally {
+    channel.close();
   }
-
-  status = await removeOrphanedEntries(conn, limit);
-  if(status !== OK) {
-    console.error('Failed to remove orphaned entries:', statusToString(status));
-  }
-
-  store.close();
-  return status;
 };
 
 cli.clearFavicons = async function() {
@@ -332,12 +289,7 @@ chrome.runtime.onInstalled.addListener(function(event) {
   console.debug('Received install event:', event);
 
   console.log('Setting up feed store database');
-  openFeedStore().then(function(result) {
-    const [status, conn] = result;
-    if(status !== OK) {
-      console.error('Failed to open feed store database', status);
-      return;
-    }
+  openFeedStore().then(function(conn) {
     return conn.close();
   }).catch(console.error);
 

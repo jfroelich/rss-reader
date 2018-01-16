@@ -1,4 +1,5 @@
-import {open as openHelper} from "/src/common/indexeddb-utils.js";
+import assert from "/src/common/assert.js";
+import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
 import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 import * as Entry from "/src/feed-store/entry.js";
@@ -7,11 +8,33 @@ import {onUpgradeNeeded} from "/src/feed-store/upgrade.js";
 import {
   filterControls,
   filterEmptyProps,
-  filterUnprintableCharacters
+  filterUnprintableCharacters,
+  sanitizeEntry,
+  validateEntry
 } from "/src/feed-store/utils.js";
 
+// TODO: after experimenting with status again, I've noticed it creates basically about
+// the same amount of boilerplate. Revert to using exceptions. At least for this module,
+// given the plethora of promises.
+// In making this change, change all status codes error returns into errors. Change returning
+// Status.OK into returning undefined.
+// Do not forget to remove status.js import later.
+
+// TODO: for dynamic connections there is no need for finally statement. Leak the connection
+// on error. Operations are not speculative. There is no need to try and recover the database
+// in case of a serious error, because the error should not happen.
+
+// TODO: for remaining functions
+// * add auto-connect
+// * remove status
+// * remove from auto-connected.js if in auto-connected.js
+// * revert to asserts
+// * ensure message posted properly
+// * deprecate auto-connected.js
+
+
+
 // TODO: review which functions are used only locally and ensure they are not exported
-// TODO: it is possible that feed.js and entry.js should be merged into this file
 // TODO: if the file is so large, what I could do is present a unifying module that simply
 // imports from a bunch of helper files and then exports from here, and expect users to
 // import from here instead of directly from helpers. I've noticed this is an extremely
@@ -22,256 +45,120 @@ import {
 // TODO: I should be more consistent in field names. A have a semi-hungarian notation, where
 // the type is the suffix, but sometimes I use it as the prefix (e.g. dateUpdated should be
 // renamed to updatedDate)
-// TODO: be consistent in precondition assertions. Do them as promise rejections, not before
-// starting the promise.
-// TODO: which reminds me, addFeed, putFeed, addEntry, and putEntry in feed-store should
-// all post channel messages
 // TODO: create an addFeed function that forwards to putFeed in the style of addEntry/putEntry
+// I still need to export prepareFeed, because in the poll-feeds use case it needs to overwrite
+// the feed's properties with new unsanitized data.
+// TODO: addFeed, putFeed, addEntry, and putEntry in feed-store should
+// all post channel messages. Review all state changes and ensure they post messages.
 
 export function open(name = 'reader', version = 24, timeout = 500) {
-  return openHelper(name, version, onUpgradeNeeded, timeout);
+  return utilsOpen(name, version, onUpgradeNeeded, timeout);
 }
 
 export async function activateFeed(conn, channel, feedId) {
-  try {
-    await activateFeedPromise(conn, channel, feedId);
-    return Status.OK;
-  } catch(error) {
-    console.error(error);
-    return Status.EDB;
+  assert(Feed.isValidId(feedId), 'Invalid feed id', feedId);
+  const dconn = conn ? conn : await open();
+  await activateFeedPromise(dconn, feedId);
+  if(!conn) {
+    dconn.close();
+  }
+  if(channel) {
+    channel.postMessage({type: 'feed-activated', id: feedId});
   }
 }
 
-function activateFeedPromise(conn, channel, feedId) {
+function activateFeedPromise(conn, feedId) {
   return new Promise((resolve, reject) => {
-
-    if(!Feed.isValidId(feedId)) {
-      const error = new TypeError('Invalid feed id ' + feedId);
-      reject(error);
-      return;
-    }
-
-    console.debug('Activating feed %d', feedId);
     const tx = conn.transaction('feed', 'readwrite');
-
-    // When not settling earlier
-    tx.oncomplete = () => {
-
-      console.debug('Activated feed', feedId);
-
-      // The pending requests have settled successfully (resolved),
-      // so they are now committed. Now it is safe to notify observers
-      if(channel && channel.postMessage) {
-        channel.postMessage({type: 'feed-activated', id: feedId});
-      }
-
-      // Finally, resolve the promise
-      resolve();
-    };
-
+    tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
-
     const store = tx.objectStore('feed');
-    const findFeedRequest = store.get(feedId);
-    findFeedRequest.onsuccess = () => {
-      const feed = findFeedRequest.result;
-
-      // It is entirely possible the user specified an id that does not correspond to
-      // a feed in the feed store. IDBObjectStore.prototype.get resolves successfully even
-      // when there is no match.
-      if(!feed) {
-        const error = new Error('Could not find feed with id ' + feedId);
-        reject(error);
-        return;
-      }
-
-      console.debug('Found feed to activate', feed.id, feed.title);
-
-      if(feed.active) {
-        const error = new Error('Feed with id ' + feedId + ' is already active');
-        reject(error);
-        return;
-      }
-
-      // Transition properties from inactive/unset to active
+    const request = store.get(feedId);
+    request.onsuccess = () => {
+      const feed = request.result;
+      assert(feed, 'Could not find feed', feedId);
+      assert(feed.active, 'Feed %d is already active', feedId);
       feed.active = true;
       delete feed.deactivationReasonText;
       delete feed.deactivateDate;
       feed.dateUpdated = new Date();
-
-      // On put success goto tx oncomplete
-      // On put error goto to tx onerror
       store.put(feed);
     };
   });
 }
 
-
-
 export async function deactivateFeed(conn, channel, feedId, reasonText) {
-  try {
-    await deactivateFeedPromise(conn, channel, feedId, reasonText);
-    return Status.OK;
-  } catch(error) {
-    console.error(error);
-    return Status.EDB;
+  assert(Feed.isValidId(feedId), 'Invalid feed id', feedId);
+  const dconn = conn ? conn : await open();
+  await deactivateFeedPromise(dconn, feedId, reasonText);
+  if(!conn) {
+    dconn.close();
+  }
+  if(channel) {
+    channel.postMessage({type: 'feed-deactivated', id: feedId});
   }
 }
 
-function deactivateFeedPromise(conn, channel, feedId, reasonText) {
+function deactivateFeedPromise(conn, feedId, reasonText) {
   return new Promise((resolve, reject) => {
-    console.debug('Deactivating feed %d ...', feedId);
-
-    if(!Feed.isValidId(feedId)) {
-      const error = new TypeError('Invalid feed id ' + feedId);
-      reject(error);
-      return;
-    }
-
     const tx = conn.transaction('feed', 'readwrite');
-    tx.oncomplete = () => {
-      console.debug('Deactivated feed %d', feedId);
-
-      if(channel && channel.postMessage) {
-        channel.postMessage({type: 'feed-deactivated', id: feedId});
-      }
-
-      resolve();
-    };
+    tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
-
     const store = tx.objectStore('feed');
-    const getFeedRequest = store.get(feedId);
-    getFeedRequest.onsuccess = () => {
-      const feed = getFeedRequest.result;
-      if(!feed) {
-        const error = new Error('Could not find feed for id ' + feedId);
-        reject(error);
-        return;
-      }
-
-      if(!feed.active) {
-        const error = new Error('Feed is not active ' + feedId);
-        reject(error);
-        return;
-      }
-
-      // Transition properties from active/unknown to inactive
+    const request = store.get(feedId);
+    request.onsuccess = () => {
+      const feed = request.result;
+      assert(feed, 'Could not find feed', feedId);
+      assert(feed.active, 'Feed is inactive', feedId);
       feed.active = false;
       feed.deactivationDate = new Date();
       feed.deactivationReasonText = reasonText;
       feed.dateUpdated = new Date();
-
       store.put(feed);
     };
   });
 }
 
-
-
 export async function addEntry(conn, channel, entry) {
+  assert(Entry.isEntry(entry), 'Invalid entry', entry);
+  assert(!entry.id);
 
-  if(!Entry.isEntry(entry)) {
-    console.error('Invalid entry argument', entry);
-    return [Status.EINVAL];
-  }
-
-  // TODO: instead of returning the new id, return the stored object. And set the id of the
-  // stored object before returning it. This way the caller can see the sanitized version of the
-  // entry.
-
-  // TODO: why not set dateUpdated?
+  // TODO: I am not sure if I call this here, or in putEntry, or not at all
+  validateEntry(entry);
 
   const sanitized = sanitizeEntry(entry);
   const storable = filterEmptyProps(sanitized);
   storable.readState = Entry.STATE_UNREAD;
   storable.archiveState = Entry.STATE_UNARCHIVED;
   storable.dateCreated = new Date();
+  delete storable.dateUpdated;
+
+  // NOTE: if putEntry ever posts a message I have to somehow signal it should be
+  // suppressed here because this does its own posting. Perhaps if putEntry later
+  // accepts a channel, the channel is optional, and this simply forwards a null channel.
 
   let [status, entryId] = await putEntry(conn, storable);
-  if(status !== Status.OK) {
-    console.error('Failed to put entry:', Status.toString(status));
-    return [status];
+  assert(status === Status.OK);
+
+  if(channel) {
+    channel.postMessage({type: 'entry-added', id: entryId});
   }
 
-  // Notify observers of the new entry
-  if(channel && channel.postMessage) {
-    const message = {type: 'entry-added', id: entryId};
-    channel.postMessage(message);
-  }
-
-  return [Status.OK, entryId];
-}
-
-
-// TODO: move this to utils?
-// Returns a new entry object where fields have been sanitized. Impure
-// TODO: now that filterUnprintableCharacters is a thing, I want to also filter such
-// characters from input strings like author/title/etc. However it overlaps with the
-// call to filterControls here. There is some redundant work going on. Also, in a sense,
-// filterControls is now inaccurate. What I want is one function that strips binary
-// characters except important ones, and then a second function that replaces or removes
-// certain important binary characters (e.g. remove line breaks from author string).
-// Something like 'replaceFormattingCharacters'.
-function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLength) {
-
-  if(typeof authorMaxLength === 'undefined') {
-    authorMaxLength = 200;
-  }
-
-  if(typeof titleMaxLength === 'undefined') {
-    titleMaxLength = 1000;
-  }
-
-  if(typeof contentMaxLength === 'undefined') {
-    contentMaxLength = 50000;
-  }
-
-  const blankEntry = Entry.createEntry();
-  const outputEntry = Object.assign(blankEntry, inputEntry);
-
-  if(outputEntry.author) {
-    let author = outputEntry.author;
-    author = filterControls(author);
-    author = replaceTags(author, '');
-    author = condenseWhitespace(author);
-    author = truncateHTML(author, authorMaxLength);
-    outputEntry.author = author;
-  }
-
-  if(outputEntry.content) {
-    let content = outputEntry.content;
-    content = filterUnprintableCharacters(content);
-    content = truncateHTML(content, contentMaxLength);
-    outputEntry.content = content;
-  }
-
-  if(outputEntry.title) {
-    let title = outputEntry.title;
-    title = filterControls(title);
-    title = replaceTags(title, '');
-    title = condenseWhitespace(title);
-    title = truncateHTML(title, titleMaxLength);
-    outputEntry.title = title;
-  }
-
-  return outputEntry;
+  storable.id = entryId;
+  return storable;
 }
 
 function condenseWhitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
 }
 
-// TODO: maybe just return a promise and expect the caller to use try/catch semantics
-// It seems kind of silly to have a function that just translates the result into a status
-// pattern. How much benefit is there to abstracting away the exception?
 export async function countUnreadEntries(conn) {
-  try {
-    const count = await countUnreadEntriesPromise(conn);
-    return [Status.OK, count];
-  } catch(error) {
-    return [Status.EDB];
+  const dconn = conn ? conn : await open();
+  const count = await countUnreadEntriesPromise(dconn);
+  if(!conn) {
+    dconn.close();
   }
+  return count;
 }
 
 function countUnreadEntriesPromise(conn) {
@@ -286,93 +173,65 @@ function countUnreadEntriesPromise(conn) {
 }
 
 export async function markEntryRead(conn, channel, entryId) {
+  assert(Entry.isValidId(entryId), 'Invalid entry id', entryId);
 
-  // TODO: this needs to be refactored to use a single transaction. Right now it uses two,
-  // which opens the door to inconsistency.
-
-  if(!Entry.isValidId(entryId)) {
-    console.error('Invalid entry id', entryId);
-    return Status.EINVAL;
+  const dconn = conn ? conn : await open();
+  await markEntryReadPromise(dconn, entryId);
+  if(!conn) {
+    dconn.close();
   }
 
-  let [status, entry] = await findEntryById(conn, entryId);
-  if(status !== Status.OK) {
-    console.error('Failed to find entry by id:', Status.toString(status));
-    return status;
-  }
-
-  console.debug('Loaded entry to mark as read %d "%s"', entryId, entry.title);
-
-  if(entry.readState === Entry.STATE_READ) {
-    console.error('Entry %d already in read state', entryId);
-    return Status.EINVALIDSTATE;
-  }
-
-  entry.readState = Entry.STATE_READ;
-  entry.dateUpdated = new Date();
-  entry.dateRead = entry.dateUpdated;
-
-  [status] = await putEntry(conn, entry);
-  if(status !== Status.OK) {
-    console.error('Failed to put entry:', Status.toString(status));
-  }
-
-  // Notify obververs of the state change
-  if(channel && channel.postMessage) {
+  if(channel) {
     channel.postMessage({type: 'entry-marked-read', id: entryId});
   }
+}
 
-  return status;
+function markEntryReadPromise(conn, entryId) {
+  return new Promise((resolve, reject) => {
+    const tx = conn.transaction('entry', 'readwrite');
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+    const store = tx.objectStore('entry');
+    const request = store.get(entryId);
+    request.onsuccess = () => {
+      const entry = request.result;
+      assert(entry);
+      assert(entry.readState !== Entry.STATE_READ);
+      entry.readState = Entry.STATE_READ;
+      const currentDate = new Date();
+      entry.dateUpdated = currentDate;
+      entry.dateRead = currentDate;
+      store.put(entry);
+    };
+  });
 }
 
 export async function findActiveFeeds(conn) {
-
-  // TODO: if performance eventually becomes a material concern this should probably
-  // query by index
-  let [status, feeds] = await getAllFeeds(conn);
-  if(status !== Status.OK) {
-    console.error('Failed to get all feeds:', Status.toString(status));
-    return status;
-  }
-
-  const activeFeeds = feeds.filter(feed => feed.active);
-  return [Status.OK, activeFeeds];
+  const [status, feeds] = await getAllFeeds(conn);
+  assert(status == Status.OK);
+  return feeds.filter(feed => feed.active);
 }
 
-export async function findEntries(conn, predicate, limit) {
-  if(typeof predicate !== 'function') {
-    console.error('predicate is not a function');
-    return [Status.EINVAL];
+async function findEntries(conn, predicate, limit) {
+  const dconn = conn ? conn : await open();
+  const entries = await findEntriesPromise(conn, predicate, limit);
+  if(!conn) {
+    dconn.close();
   }
-
-  const limited = typeof limit !== 'undefined';
-  if(limited) {
-    if(!Number.isInteger(limit) || limit < 1) {
-      console.error('limit not a positive integer greater than 0');
-      return [Status.EINVAL];
-    }
-  }
-
-  try {
-    const entries = await findEntriesPromise(conn, predicate, limit);
-    return [Status.OK, entries];
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
-  }
+  return entries;
 }
 
 function findEntriesPromise(conn, predicate, limit) {
   return new Promise((resolve, reject) => {
+    assert(typeof predicate === 'function');
     const limited = typeof limit !== 'undefined';
+    if(limited) {
+      assert(Number.isInteger(limit) && limit > 0);
+    }
     const entries = [];
     const tx = conn.transaction('entry');
-    tx.onerror = function(event) {
-      reject(tx.error);
-    };
-    tx.oncomplete = function(event) {
-      resolve(entries);
-    };
+    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = () => resolve(entries);
 
     const store = tx.objectStore('entry');
     const request = store.openCursor();
@@ -392,49 +251,21 @@ function findEntriesPromise(conn, predicate, limit) {
   });
 }
 
-async function findEntryById(conn, entryId) {
-
-  if(!Entry.isValidId(entryId)) {
-    console.error('Invalid entry id', entryId);
-    return [Status.EINVAL];
-  }
-
-  try {
-    const entry = await findEntryByIdPromise(conn, entryId);
-    return [Status.OK, entry];
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
-  }
-}
-
-function findEntryByIdPromise(conn, entryId) {
-  return new Promise((resolve, reject) => {
-    const tx = conn.transaction('entry');
-    const store = tx.objectStore('entry');
-    const request = store.get(entryId);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
+// TODO: if this is only called by one place then it should be inlined there.
+// I am overly abstracting and attempting to provide flexiblity when there is no alternate
+// use case at the moment.
 async function findEntryIdByURL(conn, url) {
-  if(!(url instanceof URL)) {
-    console.error('Invalid url argument', url);
-    return [Status.EINVAL];
+  const dconn = conn ? conn : await open();
+  const entryId = await findEntryIdByURLPromise(conn, url);
+  if(!conn) {
+    dconn.close();
   }
-
-  try {
-    const entryId = await findEntryIdByURLPromise(conn, url);
-    return [Status.OK, entryId];
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
-  }
+  return entryId;
 }
 
 function findEntryIdByURLPromise(conn, url) {
   return new Promise((resolve, reject) => {
+    assert(url instanceof URL);
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('urls');
@@ -445,12 +276,13 @@ function findEntryIdByURLPromise(conn, url) {
 }
 
 export async function containsEntryWithURL(conn, url) {
-  const [status, id] = await findEntryIdByURL(conn, url);
-  if(status !== Status.OK) {
-    return [status];
-  }
-  return [Status.OK, Entry.isValidId(id)];
+  const entryId = await findEntryIdByURL(conn, url);
+  return Entry.isValidId(entryId);
 }
+
+
+// BELOW IS NOT YET REFACTORED
+
 
 export async function findFeedById(conn, feedId) {
   try {
@@ -556,25 +388,6 @@ function findViewableEntriesPromise(conn, offset, limit) {
   });
 }
 
-async function getAllFeedIds(conn) {
-  try {
-    const feedIds = await getAllFeedIdsPromise(conn);
-    return [Status.OK, feedIds];
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
-  }
-}
-
-function getAllFeedIdsPromise(conn) {
-  return new Promise((resolve, reject) => {
-    const tx = conn.transaction('feed');
-    const store = tx.objectStore('feed');
-    const request = store.getAllKeys();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
 
 // TODO: rename? 'All' is implied
 export async function getAllFeeds(conn) {
@@ -859,10 +672,12 @@ export async function removeLostEntries(conn, limit) {
   // TODO: this should all be taking place using a single transaction to ensure
   // consistency between reads and deletes
 
-  let [status, entries] = await findEntries(conn, isLostEntry, limit);
-  if(status !== Status.OK) {
-    console.error('Failed to find entries: ', Status.toString(status));
-    return status;
+  let entries;
+  try {
+    entries = await findEntries(conn, isLostEntry, limit);
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
   }
 
   console.debug('Found %d lost entries', entries.length);
@@ -872,7 +687,7 @@ export async function removeLostEntries(conn, limit) {
 
   const ids = entries.map(entry => entry.id);
 
-  status = await removeEntries(conn, ids);
+  let status = await removeEntries(conn, ids);
   if(status !== Status.OK) {
     console.error('Failed to remove entries:', Status.toString(status));
     return status;
@@ -891,52 +706,4 @@ export async function removeLostEntries(conn, limit) {
 
 function isLostEntry(entry) {
   return !Entry.hasURL(entry);
-}
-
-// TODO: move to feed-ops
-export async function removeOrphanedEntries(conn, limit) {
-
-  // TODO: this should probably be taking place using a single transaction to ensure
-  // database consistency between reads and deletes
-
-  let status, feedIds, entries;
-
-  [status, feedIds] = await getAllFeedIds(conn);
-  if(status !== Status.OK) {
-    console.error('Failed to get feed ids:', Status.toString(status));
-    return status;
-  }
-
-  function isOrphan(entry) {
-    const id = entry.feed;
-    return !Feed.isValidId(id) || !feedIds.includes(id);
-  }
-
-  [status, entries] = await findEntries(conn, isOrphan, limit);
-  if(status !== Status.OK) {
-    console.error('Failed to find entries with status', status);
-    return status;
-  }
-
-  console.debug('Found %s orphans', entries.length);
-  if(!entries.length) {
-    return Status.OK;
-  }
-
-  const orphanIds = entries.map(entry => entry.id);
-  status = await removeEntries(conn, orphanIds);
-  if(status !== Status.OK) {
-    console.error('Failed to remove entries with status', status);
-    return status;
-  }
-
-  const channel = new BroadcastChannel('reader');
-  const message = {type: 'entry-deleted', id: undefined, reason: 'orphan'};
-  for(const id of orphanIds) {
-    message.id = id;
-    channel.postMessage(message);
-  }
-  channel.close();
-
-  return Status.OK;
 }

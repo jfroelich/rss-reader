@@ -1,15 +1,20 @@
 
-// TODO: cache should be merged into service
-// TODO: service should be decoupled from all common libraries and roll its own, to provide a
-// more severe service boundary. So it should return its own error codes and make use of its
-// own db utils library.
-// TODO: it's possible that service should not be a class, but instead just a module that
-// exposes a few functions.
 
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import {parseHTML} from "/src/common/html-utils.js";
 import * as IndexedDbUtils from "/src/common/indexeddb-utils.js";
 import * as Status from "/src/common/status.js";
+
+// TODO: completely overhaul. Stop using a class. Just export a few public functions,
+// for compact, open, and lookup. Do not try and abstract away indexedDB. Decouple from status
+// and revert to using exceptions
+
+
+// TODO: service should be decoupled from all common libraries and roll its own, to provide a
+// more severe service boundary. So it should return its own error codes and make use of its
+// own db utils library.
+
+
 
 export class FaviconService {
   constructor() {
@@ -304,7 +309,7 @@ FaviconService.prototype.lookup = async function(url, document) {
 
 // Return true if there is both a connected cache and that cache is in the open state
 FaviconService.prototype.hasOpenCache = function() {
-  return this.cache && this.cache.isOpen();
+  return this.cache && this.cache.conn;
 };
 
 // Returns true if response byte size in bounds. Tolerates undefined response.
@@ -588,35 +593,29 @@ export class FaviconCache {
 FaviconCache.MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
 
 FaviconCache.prototype.open = async function() {
-  if(this.isOpen()) {
+  if(this.conn) {
     return Status.EINVALIDSTATE;
   }
 
-  const [status, conn] = await IndexedDbUtils.open(this.name, this.version, onUpgradeNeeded,
-    this.timeout);
-  if(status === Status.OK) {
-    this.conn = conn;
+  let conn;
+  try {
+    conn = await IndexedDbUtils.open(this.name, this.version, onUpgradeNeeded, this.timeout);
+  } catch(error) {
+    return Status.EDB;
   }
 
-  return status;
+  this.conn = conn;
+
+  return Status.OK;
 };
 
-FaviconCache.prototype.isOpen = function() {
-  return IndexedDbUtils.isOpen(this.conn);
-};
+
 
 FaviconCache.prototype.close = function() {
-  if(!this.conn) {
-    return Status.EINVALIDSTATE;
+  if(this.conn) {
+    this.conn.close();
+    this.conn = void this.conn;
   }
-
-  if(!this.isOpen()) {
-    return Status.EINVALIDSTATE;
-  }
-
-  IndexedDbUtils.close(this.conn);
-  this.conn = void this.conn;
-  return Status.OK;
 };
 
 function onUpgradeNeeded(event) {
@@ -647,10 +646,6 @@ function onUpgradeNeeded(event) {
 FaviconCache.prototype.clear = async function() {
   console.debug('Clearing favicon cache');
 
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return Status.EINVALIDSTATE;
-  }
 
   const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
@@ -671,10 +666,7 @@ FaviconCache.prototype.clear = async function() {
 };
 
 FaviconCache.prototype.findEntry = async function(url) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
+
 
   if(!(url instanceof URL)) {
     console.error('Invalid url parameter', url);
@@ -704,10 +696,7 @@ FaviconCache.prototype.findEntry = async function(url) {
 // TODO: if I only need entry ids in calling contexts, which currently I think is only compact,
 // then this should be using getAllKeys instead of getAll?
 FaviconCache.prototype.findExpired = async function(maxAgeMs, limit) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
+
 
   if(typeof maxAgeMs === 'undefined') {
     maxAgeMs = FaviconCache.MAX_AGE_MS;
@@ -753,10 +742,6 @@ FaviconCache.prototype.findExpired = async function(maxAgeMs, limit) {
 // @param pageURLs {Array} an array of url strings
 // @return {Promise}
 FaviconCache.prototype.removeByURL = async function(pageURLs) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return Status.EINVALIDSTATE;
-  }
 
   if(!Array.isArray(pageURLs)) {
     console.error('Invalid page urls argument', pageURLs);
@@ -782,10 +767,7 @@ FaviconCache.prototype.removeByURL = async function(pageURLs) {
 };
 
 FaviconCache.prototype.put = async function(entry) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return [Status.EINVALIDSTATE];
-  }
+
 
   const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
@@ -809,10 +791,7 @@ FaviconCache.prototype.put = async function(entry) {
 // @param pageURLs {Iterable<String>}
 // @param iconURL {String}
 FaviconCache.prototype.putAll = async function(pageURLs, iconURL) {
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return Status.EINVALIDSTATE;
-  }
+
 
   const promise = new Promise((resolve, reject) => {
     const tx = this.conn.transaction('favicon-cache', 'readwrite');
@@ -848,10 +827,7 @@ FaviconCache.prototype.putAll = async function(pageURLs, iconURL) {
 FaviconCache.prototype.compact = async function(maxAgeMs, limit) {
   console.log('Compacting favicon entries', maxAgeMs, limit);
 
-  if(!this.isOpen()) {
-    console.error('Database is not open');
-    return Status.EINVALIDSTATE;
-  }
+
 
   // TODO: if I only use the url property, then I should think about how to only load urls
   // instead of full entries

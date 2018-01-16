@@ -67,8 +67,8 @@ function coerceElements(ancestorElement, oldName, newName, copyAttributesFlag) {
 // @param newName {String} the name of the element's new type
 // @param copyAttributesFlag {Boolean} optional, if true then attributes are maintained, defaults to
 // true.
-// @throws {AssertionError} if the element is not a type of Element, such as when it is undefined
-// @throws {AssertionError} if the new name is not valid, the validity check is very minimal and
+// Throws if the element is not a type of Element, such as when it is undefined
+// Throws if the new name is not valid, the validity check is very minimal and
 // not spec compliant.
 // @return {Element} the new element that replaced the old one
 export function coerceElement(element, newName, copyAttributesFlag) {

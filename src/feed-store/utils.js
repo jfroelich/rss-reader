@@ -1,3 +1,69 @@
+import * as Entry from "/src/feed-store/entry.js";
+import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
+
+// Inspect the entry object and throw an error if any value is invalid
+// or any required properties are missing
+export function validateEntry(entry) {
+  // TODO: implement
+  // By not throwing an error, this indicates the entry is valid
+}
+
+// Returns a new entry object where fields have been sanitized. Impure
+// TODO: now that filterUnprintableCharacters is a thing, I want to also filter such
+// characters from input strings like author/title/etc. However it overlaps with the
+// call to filterControls here. There is some redundant work going on. Also, in a sense,
+// filterControls is now inaccurate. What I want is one function that strips binary
+// characters except important ones, and then a second function that replaces or removes
+// certain important binary characters (e.g. remove line breaks from author string).
+// Something like 'replaceFormattingCharacters'.
+export function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLength) {
+
+  if(typeof authorMaxLength === 'undefined') {
+    authorMaxLength = 200;
+  }
+
+  if(typeof titleMaxLength === 'undefined') {
+    titleMaxLength = 1000;
+  }
+
+  if(typeof contentMaxLength === 'undefined') {
+    contentMaxLength = 50000;
+  }
+
+  const blankEntry = Entry.createEntry();
+  const outputEntry = Object.assign(blankEntry, inputEntry);
+
+  if(outputEntry.author) {
+    let author = outputEntry.author;
+    author = filterControls(author);
+    author = replaceTags(author, '');
+    author = condenseWhitespace(author);
+    author = truncateHTML(author, authorMaxLength);
+    outputEntry.author = author;
+  }
+
+  if(outputEntry.content) {
+    let content = outputEntry.content;
+    content = filterUnprintableCharacters(content);
+    content = truncateHTML(content, contentMaxLength);
+    outputEntry.content = content;
+  }
+
+  if(outputEntry.title) {
+    let title = outputEntry.title;
+    title = filterControls(title);
+    title = replaceTags(title, '');
+    title = condenseWhitespace(title);
+    title = truncateHTML(title, titleMaxLength);
+    outputEntry.title = title;
+  }
+
+  return outputEntry;
+}
+
+function condenseWhitespace(string) {
+  return string.replace(/\s{2,}/g, ' ');
+}
 
 // Returns a new object that is a copy of the input less empty properties. A property is empty if it
 // is null, undefined, or an empty string. Ignores prototype, deep objects, getters, etc. Shallow

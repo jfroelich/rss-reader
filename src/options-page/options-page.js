@@ -3,14 +3,17 @@ import * as Status from "/src/common/status.js";
 import {FaviconCache} from "/src/favicon-service/favicon-service.js";
 
 import {
-  activateFeed,
-  deactivateFeed,
   findFeedById,
   getAllFeeds,
   unsubscribe
 } from "/src/feed-ops/auto-connected.js";
 
-import {open as openFeedStore} from "/src/feed-store/feed-store.js";
+import {
+  activateFeed,
+  deactivateFeed,
+  open as openFeedStore
+} from "/src/feed-store/feed-store.js";
+
 import * as Feed from "/src/feed-store/feed.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
 import subscribe from "/src/feed-ops/subscribe.js";
@@ -355,15 +358,18 @@ async function subscribeFormOnsubmit(event) {
   context.fetchFeedTimeoutMs = 2000;
 
   // TODO: open both databases concurrently
-  // TODO: create a helper, maybe?
+  // TODO: create a helper
 
-  let status;
-  [status, conn] = await openFeedStore();
-  if(status !== Status.OK) {
-    console.error('Error opening feed store:', Status.toString(status));
+  let status, conn;
+
+  try {
+    conn = await openFeedStore();
+  } catch(error) {
+    console.error(error);
     subscriptionMonitorHide();
     return;
   }
+
   context.conn = conn;
 
   await context.iconCache.open();
@@ -477,18 +483,11 @@ async function unsubscribeButtonOnclick(event) {
 async function activateButtonOnclick(event) {
   const feedId = parseInt(event.target.value, 10);
 
-  // TODO: if activateFeed sanity checks its input, then I don't think there is a need to
-  // do this explicitly here. This is redundant.
-  if(!Feed.isValidId(feedId)) {
-    // TODO: show a visual error message
-    console.error('Invalid feed id in event', feedId);
-    return;
-  }
-
-  let status = await activateFeed(channel, feedId);
-  if(status !== Status.OK) {
-    // TODO: show a visual error message
-    console.error('Failed to activate feed', Status.toString(status));
+  try {
+    await activateFeed(null, channel, feedId);
+  } catch(error) {
+    // TODO: show visual error
+    console.error(error);
     return;
   }
 
@@ -501,22 +500,19 @@ async function activateButtonOnclick(event) {
   showSectionById('subs-list-section');
 }
 
-
-
 async function deactivateButtonOnclick(event) {
   const feedId = parseInt(event.target.value, 10);
 
-  const status = await deactivateFeed(channel, feedId, 'manual-click');
-  if(status !== Status.OK) {
-      // TODO: show visual error
-    console.error('Failed to deactivate feed:', Status.toString(status));
+  try {
+    await deactivateFeed(null, channel, feedId, 'manual-click');
+  } catch(error) {
+    // TODO: show visual error
+    console.error(error);
     return;
   }
 
-  // Mark the corresponding element as inactive
   const itemElement = document.querySelector('li[feed="' + feedId + '"]');
   itemElement.setAttribute('inactive', 'true');
-
   showSectionById('subs-list-section');
 }
 

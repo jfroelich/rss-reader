@@ -7,7 +7,7 @@ import {CheckedError} from "/src/common/errors.js";
 
 // A variant of Promise.all that does not shortcircuit. If any promise rejects, undefined is placed
 // in the output array in place of the promise's return value. However, if any project rejects
-// with an unchecked error, such as an AssertionError, that causes short-circuiting and the error
+// with an unchecked error, such as an assertion error, that causes short-circuiting and the error
 // is immediately thrown.
 // This was adapted from a twitter post by Jake Archibald
 // https://twitter.com/jaffathecake/status/833668073475416064
