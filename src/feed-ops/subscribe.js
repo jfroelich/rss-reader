@@ -59,10 +59,14 @@ export default async function subscribe(context, url) {
 
   console.log('Subscribing to', url.href);
 
-  let [status, containsFeed] = await containsFeedWithURL(context.conn, url);
-  if(status !== Status.OK) {
-    console.error('Database error:', Status.toString(status));
-    return [status];
+  let status;
+
+  let containsFeed;
+  try {
+    containsFeed = await containsFeedWithURL(context.conn, url);
+  } catch(error) {
+    console.error(error);
+    return [Status.EDB];
   }
 
   if(containsFeed) {
@@ -131,10 +135,12 @@ async function createFeedFromResponse(context, response, url) {
   const responseURL = new URL(response.url);
   if(FetchUtils.detectURLChanged(url, responseURL)) {
     url = responseURL;
-    [status, containsFeed] = await containsFeedWithURL(context.conn, url);
-    if(status !== Status.OK) {
-      console.error('Database error:', url.href, Status.toString(status));
-      return [status];
+
+    try {
+      containsFeed = await containsFeedWithURL(context.conn, url);
+    } catch(error) {
+      console.error(error);
+      return [Status.EDB];
     }
 
     if(containsFeed) {
@@ -192,10 +198,13 @@ async function saveFeed(conn, feed) {
   storableFeed.active = true;
   storableFeed.dateCreated = new Date();
 
-  const [status, feedId] = await putFeed(conn, feed);
-  if(status !== Status.OK) {
-    console.error('Failed to put feed:', Status.toString(status));
-    return status;
+  // TODO: use a channel
+  let nullChannel = null;
+  try {
+    await putFeed(conn, nullChannel, feed);
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
   }
 
   storableFeed.id = feedId;

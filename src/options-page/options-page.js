@@ -1,16 +1,13 @@
 import assert from "/src/common/assert.js";
 import * as Status from "/src/common/status.js";
 import {FaviconCache} from "/src/favicon-service/favicon-service.js";
-
-import {
-  findFeedById,
-  getAllFeeds,
-  unsubscribe
-} from "/src/feed-ops/auto-connected.js";
+import {unsubscribe} from "/src/feed-ops/auto-connected.js";
 
 import {
   activateFeed,
   deactivateFeed,
+  findFeedById,
+  getFeeds,
   open as openFeedStore
 } from "/src/feed-store/feed-store.js";
 
@@ -263,11 +260,12 @@ async function feedListItemOnclick(event) {
   const feedIdString = feedListItem.getAttribute('feed');
   const feedId = parseInt(feedIdString, 10);
 
-  // Load feed details from the database
-  let [status, feed] = await findFeedById(feedId);
-  if(status !== Status.OK) {
-    // TODO: visual error message
-    console.error('Failed to find feed by id', Status.toString(status));
+  let feed, conn;
+  try {
+    feed = await findFeedById(conn, feedId);
+  } catch(error) {
+    // TODO: show an error message
+    console.error(error);
     return;
   }
 
@@ -402,10 +400,12 @@ async function feedListInit() {
   const noFeedsElement = document.getElementById('nosubs');
   const feedListElement = document.getElementById('feedlist');
 
-  let [status, feeds] = await getAllFeeds();
-  if(status !== Status.OK) {
-    // TODO: show visual error
-    console.error('Failed to get all feeds', Status.toString(status));
+  let feeds, conn;
+  try {
+    feeds = await getFeeds(conn);
+  } catch(error) {
+    // TODO: show an error message
+    console.error(error);
     return;
   }
 

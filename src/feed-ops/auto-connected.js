@@ -3,17 +3,8 @@ import * as Status from "/src/common/status.js";
 import unsubscribe as unsubscribeWithConn from "/src/feed-ops/unsubscribe.js";
 
 import {
-  findFeedById as findFeedByIdWithConn,
   open as openFeedStore
 } from "/src/feed-store/feed-store.js";
-
-// This module exports a variety of functions from feed-store and feed-ops
-// where the connection parameter is implied. Operations are generally designed
-// so that multiple operations can share the same connection. However, in
-// several cases an operation never uses a shared connection, it always has
-// to create its own connection, perform its work, and then close its connection.
-// That leads to a lot of boilerplate, and it is annoying enough to me that I've
-// created this module.
 
 // TODO: rather than this library, change all feed-store functions to treat conn as optional.
 // If not specified then auto-open, auto-close, using the default database.
@@ -24,47 +15,6 @@ import {
 // connection
 // Furthermore, I can consider changing arguments into a 'query' object with conn as parameter,
 // this will facilitate simpler arguments
-
-
-
-
-export async function findFeedById(feedId) {
-
-  let conn;
-  try {
-    conn = await openFeedStore();
-  } catch(error) {
-    console.error(error);
-    return Status.EDB;
-  }
-
-  let [status, feed] = await findFeedByIdWithConn(conn, feedId);
-  if(status !== Status.OK) {
-    console.error('Failed to find feed by id %d', feedId, Status.toString(status));
-  }
-  conn.close();
-  return [status, feed];
-}
-
-export async function getAllFeeds() {
-  let conn;
-  try {
-    conn = await openFeedStore();
-  } catch(error) {
-    console.error(error);
-    return Status.EDB;
-  }
-
-  let status, feeds;
-  [status, feeds] = await getAllFeeds(conn);
-  if(status !== Status.OK) {
-    console.error('Failed to get all feeds:', Status.toString(status));
-  }
-
-  conn.close();
-  return [status, feeds];
-}
-
 
 export async function unsubscribe(channel, feedId) {
   let conn;

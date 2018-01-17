@@ -75,10 +75,21 @@ async function archiveEntry(conn, channel, entry) {
   compactedEntry.dateArchived = new Date();
   compactedEntry.dateUpdated = new Date();
 
-  const [status] = await putEntry(conn, compactedEntry);
-  if(status !== Status.OK) {
-    console.error('Failed to put entry:', Status.toString(status));
-    return status;
+  // TODO: is the try/catch necessary? It may not be. Revisit later when reverting status.
+
+  // TODO: maybe differentiating between the message type 'entry-updated' and
+  // 'entry-archived' is pendantic. Maybe this should be deferring to the putEntry
+  // call to post a message. Or, perhaps I should introduce a reason code to the
+  // message.
+
+  // Suppress the message posted by putEntry by using a null channel, so that we
+  // can post a different mention that implies it
+  let nullChannel;
+  try {
+    await putEntry(conn, nullChannel, compactedEntry);
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
   }
 
   channel.postMessage({type: 'entry-archived', id: compactedEntry.id});

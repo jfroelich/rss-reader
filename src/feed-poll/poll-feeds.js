@@ -167,9 +167,14 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     const decremented = handleFetchFeedSuccess(feed);
     if(decremented) {
       feed.dateUpdated = new Date();
-      [status] = await putFeed(this.conn, feed);
-      if(status !== Status.OK) {
-        throw new Error('Failed to put feed with status ' + status);
+
+      // TODO: use a channel
+      // TODO: is try/catch needed?
+      try {
+        await putFeed(this.conn, null, feed);
+      } catch(error) {
+        console.error(error);
+        return Status.EDB;
       }
 
     }
@@ -206,10 +211,9 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   // TODO: this could happen prior to merge? should it?
   const storableFeed = prepareFeed(mergedFeed);
   storableFeed.dateUpdated = new Date();
-  [status] = await putFeed(this.conn, storableFeed);
-  if(status !== Status.OK) {
-    throw new Error('Failed to put feed with status ' + status);
-  }
+
+  // TODO: use a channel
+  await putFeed(this.conn, null, storableFeed);
 
   const entries = parseResult.entries;
   cascadeFeedPropertiesToEntries(storableFeed, entries);
@@ -315,10 +319,9 @@ async function handlePollFeedError(errorCode, conn, feed, callCategory, threshol
   // NOTE: this can also throw, and thereby mask the error, but I suppose that is ok, because
   // both are errors, and in this case I suppose the db error trumps the fetch error
   feed.dateUpdated = new Date();
-  const [status] = await putFeed(conn, feed);
-  if(status !== Status.OK) {
-    throw new Error('Failed to put feed with status ' + status);
-  }
+
+  let nullChannel;
+  await putFeed(conn, nullChannel, feed);
 
   throw new Error('Poll error: ' + errorCode);
 }

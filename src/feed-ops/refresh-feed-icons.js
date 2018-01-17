@@ -56,32 +56,44 @@ async function refreshFeedIcon(conn, query, feed) {
   const prevIconURL = feed.faviconURLString;
   feed.dateUpdated = new Date();
 
+  // TODO: use a channel for putFeed instead of null
+
   if(prevIconURL && iconURL && prevIconURL !== iconURL) {
     feed.faviconURLString = iconURL;
-    [status] = await putFeed(conn, feed);
-    if(status !== Status.OK) {
-      console.error('Failed to put feed: ', Status.toString(status));
-      return status;
+
+    try {
+      await putFeed(conn, null, feed);
+    } catch(error) {
+      console.error(error);
+      return Status.EDB;
     }
+
+
 
   } else if(prevIconURL && iconURL && prevIconURL === iconURL) {
     // noop
   } else if(prevIconURL && !iconURL) {
-    feed.faviconURLString = void prevIconURL;
-    [status] = await putFeed(conn, feed);
-    if(status !== Status.OK) {
-      console.error('Failed to put feed:', Status.toString(status));
-      return status;
+    delete feed.faviconURLString;
+
+    try {
+      await putFeed(conn, null, feed);
+    } catch(error) {
+      console.error(error);
+      return Status.EDB;
     }
+
   } else if(!prevIconURL && !iconURL) {
     // noop
   } else if(!prevIconURL && iconURL) {
     feed.faviconURLString = iconURL;
-    [status] = await putFeed(conn, feed);
-    if(status !== Status.OK) {
-      console.error('Failed to put feed:', Status.toString(status));
-      return status;
+
+    try {
+      await putFeed(conn, null, feed);
+    } catch(error) {
+      console.error(error);
+      return Status.EDB;
     }
+
   } else {
     console.error('Unexpected state');
     return Status.EINVALIDSTATE;

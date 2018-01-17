@@ -8,7 +8,7 @@ import * as Feed from "/src/feed-store/feed.js";
 
 import {
   findViewableEntries,
-  getAllFeeds,
+  getFeeds,
   open as openFeedStore
 } from "/src/feed-store/feed-store.js";
 
@@ -227,15 +227,19 @@ async function markSlideRead(conn, slideElement) {
   return Status.OK;
 }
 
+// TODO: append slides shouldn't be responsible for loading. This should accept an array
+// of slides as input. Something else should be doing loading.
 async function appendSlides(conn, limit) {
   console.log('Appending slides (limit: %d)', limit);
 
   limit = typeof limit === 'undefined' ? 3 : limit;
   const offset = countUnreadSlides();
 
-  const [status, entries] = await findViewableEntries(conn, offset, limit);
-  if(status !== Status.OK) {
-    console.error('Failed to find viewable entries with status ' + status);
+  let entries;
+  try {
+    entries = await findViewableEntries(conn, offset, limit);
+  } catch(error) {
+    console.error(error);
     showErrorMessage('There was a problem loading articles from storage');
     return 0;
   }
@@ -766,36 +770,15 @@ async function importFiles(files) {
 async function menuOptionExportOnclick() {
   const title = 'Subscriptions';
   const fileName = 'subscriptions.xml';
-
-  // TODO: create a helper function that encapsulates opening and closing the database
-
-  let conn;
+  let conn, feeds;
   try {
-    conn = await openFeedStore();
-  } catch(error) {
-    console.error(error);
-    return;
-  }
-
-  let [status, feeds] = await getAllFeeds(conn);
-  if(status !== Status.OK) {
-    // TODO: handle error visually
-    console.error('Failed to get all feeds:', Status.toString(status));
-    conn.close();
-    return;
-  }
-
-  conn.close();
-
-  // TODO: use status pattern
-  try {
+    feeds = await getFeeds(conn);
     exportFeeds(feeds, title, fileName);
   } catch(error) {
-    // TODO: handle error visually
+    // TODO: show an error message
     console.error(error);
     return;
   }
-
 
   // TODO: visual feedback on completion
   console.log('Completed export');
@@ -1140,10 +1123,12 @@ async function initSlideshowPage() {
   // Now preload a couple more
   await appendSlides(conn, 2);
 
-  let [status, feeds] = await getAllFeeds(conn);
-  if(status !== Status.OK) {
-    // TODO: visually show error message
-    console.error('Failed to load feeds from database', Status.toString(status));
+  let feeds;
+  try {
+    feeds = await getFeeds(conn);
+  } catch(error) {
+    // TODO: show an error message
+    console.error(error);
     conn.close();
     return;
   }

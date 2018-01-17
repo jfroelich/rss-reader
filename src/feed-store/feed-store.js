@@ -18,21 +18,17 @@ import {
 // given the plethora of promises.
 // In making this change, change all status codes error returns into errors. Change returning
 // Status.OK into returning undefined.
-// Do not forget to remove status.js import later.
+// Do not forget to remove status.js import later (I habitually forget this!).
 
 // TODO: for dynamic connections there is no need for finally statement. Leak the connection
-// on error. Operations are not speculative. There is no need to try and recover the database
-// in case of a serious error, because the error should not happen.
+// on error. Database operations are not speculative. There is no need to try and recover the
+// leaked resource in case of a serious error.
 
 // TODO: for remaining functions
-// * add auto-connect
 // * remove status
-// * remove from auto-connected.js if in auto-connected.js
 // * revert to asserts
 // * ensure message posted properly
 // * deprecate auto-connected.js
-
-
 
 // TODO: review which functions are used only locally and ensure they are not exported
 // TODO: if the file is so large, what I could do is present a unifying module that simply
@@ -48,8 +44,7 @@ import {
 // TODO: create an addFeed function that forwards to putFeed in the style of addEntry/putEntry
 // I still need to export prepareFeed, because in the poll-feeds use case it needs to overwrite
 // the feed's properties with new unsanitized data.
-// TODO: addFeed, putFeed, addEntry, and putEntry in feed-store should
-// all post channel messages. Review all state changes and ensure they post messages.
+// TODO: addFeed in feed-store should post channel messages.
 
 export function open(name = 'reader', version = 24, timeout = 500) {
   return utilsOpen(name, version, onUpgradeNeeded, timeout);
@@ -119,6 +114,8 @@ function deactivateFeedPromise(conn, feedId, reasonText) {
   });
 }
 
+// TODO: make conn optional
+
 export async function addEntry(conn, channel, entry) {
   assert(Entry.isEntry(entry), 'Invalid entry', entry);
   assert(!entry.id);
@@ -133,12 +130,10 @@ export async function addEntry(conn, channel, entry) {
   storable.dateCreated = new Date();
   delete storable.dateUpdated;
 
-  // NOTE: if putEntry ever posts a message I have to somehow signal it should be
-  // suppressed here because this does its own posting. Perhaps if putEntry later
-  // accepts a channel, the channel is optional, and this simply forwards a null channel.
-
-  let [status, entryId] = await putEntry(conn, storable);
-  assert(status === Status.OK);
+  // Pass a null channel to putEntry to suppress its message given that we
+  // plan to post an entry-added message in its place
+  let nullChannel = null;
+  const entryId = await putEntry(conn, nullChannel, storable);
 
   if(channel) {
     channel.postMessage({type: 'entry-added', id: entryId});
@@ -207,14 +202,13 @@ function markEntryReadPromise(conn, entryId) {
 }
 
 export async function findActiveFeeds(conn) {
-  const [status, feeds] = await getAllFeeds(conn);
-  assert(status == Status.OK);
+  const feeds = await getFeeds(conn);
   return feeds.filter(feed => feed.active);
 }
 
 async function findEntries(conn, predicate, limit) {
   const dconn = conn ? conn : await open();
-  const entries = await findEntriesPromise(conn, predicate, limit);
+  const entries = await findEntriesPromise(dconn, predicate, limit);
   if(!conn) {
     dconn.close();
   }
@@ -256,7 +250,7 @@ function findEntriesPromise(conn, predicate, limit) {
 // use case at the moment.
 async function findEntryIdByURL(conn, url) {
   const dconn = conn ? conn : await open();
-  const entryId = await findEntryIdByURLPromise(conn, url);
+  const entryId = await findEntryIdByURLPromise(dconn, url);
   if(!conn) {
     dconn.close();
   }
@@ -280,28 +274,18 @@ export async function containsEntryWithURL(conn, url) {
   return Entry.isValidId(entryId);
 }
 
-
-// BELOW IS NOT YET REFACTORED
-
-
 export async function findFeedById(conn, feedId) {
-  try {
-    const feed = await findFeedByIdPromise(conn, feedId);
-    return [Status.OK, feed];
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
+  const dconn = conn ? conn : await open();
+  const feed = await findFeedByIdPromise(dconn, feedId);
+  if(!conn) {
+    dconn.close();
   }
+  return feed;
 }
 
 function findFeedByIdPromise(conn, feedId) {
   return new Promise((resolve, reject) => {
-    if(!Feed.isValidId(feedId)) {
-      const error = new TypeError('Invalid feed id ' + feedId);
-      reject(error);
-      return;
-    }
-
+    assert(Feed.isValidId(feedId));
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.get(feedId);
@@ -310,25 +294,19 @@ function findFeedByIdPromise(conn, feedId) {
   });
 }
 
+// TODO: inline, this is only used by one function
 async function findFeedIdByURL(conn, url) {
-  try {
-    const feedId = await findFeedIdByURLPromise(conn, url);
-    return [Status.OK, feedId];
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
+  const dconn = conn ? conn : await open();
+  const feedId = await findFeedIdByURLPromise(dconn, url);
+  if(!conn) {
+    dconn.close();
   }
+  return feedId;
 }
 
 function findFeedIdByURLPromise(conn, url) {
   return new Promise((resolve, reject) => {
-
-    if(!(url instanceof URL)) {
-      const error = new TypeError('Invalid url ' + url);
-      reject(error);
-      return;
-    }
-
+    assert(url instanceof URL);
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const index = store.index('urls');
@@ -339,24 +317,20 @@ function findFeedIdByURLPromise(conn, url) {
 }
 
 export async function containsFeedWithURL(conn, url) {
-  const [status, id] = await findFeedIdByURL(conn, url);
-  if(status !== Status.OK) {
-    return [status];
-  }
-  return [Status.OK, Feed.isValidId(id)];
+  const feedId = await findFeedIdByURL(conn, url);
+  return Feed.isValidId(id);
 }
 
 export async function findViewableEntries(conn, offset, limit) {
-  try {
-    const entries = await findViewableEntriesPromise(conn, offset, limit);
-    return [Status.OK, entries];
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
+  const dconn = conn ? conn : await open();
+  const entries = await findViewableEntriesPromise(dconn, offset, limit);
+  if(!conn) {
+    dconn.close();
   }
+  return entries;
 }
 
-// TODO: look into using getAll again
+// TODO: reconsider getAll
 function findViewableEntriesPromise(conn, offset, limit) {
   return new Promise((resolve, reject) => {
     const entries = [];
@@ -388,19 +362,16 @@ function findViewableEntriesPromise(conn, offset, limit) {
   });
 }
 
-
-// TODO: rename? 'All' is implied
-export async function getAllFeeds(conn) {
-  try {
-    const feeds = await getAllFeedsPromise(conn);
-    return [Status.OK, feeds];
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
+export async function getFeeds(conn) {
+  const dconn = conn ? conn : await open();
+  const feeds = await getFeedsPromise(dconn);
+  if(!conn) {
+    dconn.close();
   }
+  return feeds;
 }
 
-function getAllFeedsPromise(conn) {
+function getFeedsPromise(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -410,23 +381,23 @@ function getAllFeedsPromise(conn) {
   });
 }
 
-export async function putEntry(conn, entry) {
-  if(!Entry.isEntry(entry)) {
-    console.error('Invalid entry argument', entry);
-    return [Status.EINVAL];
+export async function putEntry(conn, channel, entry) {
+  const dconn = conn ? conn : await open();
+  const entryId = await putEntryPromise(dconn, entry);
+  if(!conn) {
+    dconn.close();
   }
 
-  try {
-    const entryId = await putEntryPromise(conn, entry);
-    return [Status.OK, entryId];
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
+  if(channel) {
+    channel.postMessage({type: 'entry-updated', id: entryId});
   }
+
+  return entryId;
 }
 
 function putEntryPromise(conn, entry) {
   return new Promise((resolve, reject) => {
+    assert(Entry.isEntry(entry));
     const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
     const request = store.put(entry);
@@ -435,42 +406,48 @@ function putEntryPromise(conn, entry) {
   });
 }
 
-// TODO: maybe move to utils, or move to some new module responsible for sanitization
 export function prepareFeed(feed) {
   let prepped = sanitizeFeed(feed);
   prepped = filterEmptyProps(prepped);
   return prepped;
 }
 
-export async function putFeed(conn, feed) {
-  try {
-    const feedId = await putFeedPromise(conn, feed);
-    return [Status.OK, feedId];
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
+export async function putFeed(conn, channel, feed) {
+  const dconn = conn ? conn : await open();
+  const feedId = await putFeedPromise(dconn, feed);
+  if(!conn) {
+    dconn.close();
   }
+
+  // TODO: when updating, is store.put result still the feed id? I know
+  // that result is feed id when adding, but what about updating?
+
+  if(channel) {
+    channel.postMessage({type: 'feed-updated', id: feed.id ? feed.id : feedId});
+  }
+
+  return feedId;
 }
 
 function putFeedPromise(conn, feed) {
   return new Promise((resolve, reject) => {
-
-    if(!Feed.isFeed(feed)) {
-      const error = new TypeError('Invalid feed argument: ' + feed);
-      reject(error);
-      return;
-    }
-
+    assert(Feed.isFeed(feed));
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
     const request = store.put(feed);
-    request.onsuccess = () => {
-      const feedId = request.result;
-      resolve(feedId);
-    };
+    request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
+
+
+
+
+// BELOW IS NOT YET REFACTORED
+
+
+
+// TODO: move to utils
 
 const DEFAULT_TITLE_MAX_LEN = 1024;
 const DEFAULT_DESC_MAX_LEN = 1024 * 10;
