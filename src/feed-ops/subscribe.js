@@ -7,6 +7,11 @@ import * as Feed from "/src/feed-store/feed.js";
 import {containsFeedWithURL, prepareFeed, putFeed} from "/src/feed-store/feed-store.js";
 import coerceFeed from "/src/coerce-feed.js";
 
+// TODO: reconsider the transaction lifetime. Right now it is protected by the error that
+// occurs due to violation of uniqueness constraint. But it would be better if both reads and
+// writes occurred on same transaction. Also because I have mixed feelings about treating
+// already-subscribed as an error. It isn't a programming error.
+
 // TODO: currently the redirect url is not validated as to whether it is a fetchable
 // url according to the app's fetch policy. It is just assumed. I am not quite sure what to
 // do about it at the moment. Maybe I could create a second policy that controls what urls

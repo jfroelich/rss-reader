@@ -1,99 +1,98 @@
-import * as Status from "/src/common/status.js";
+import assert from "/src/common/assert.js";
 import sizeof from "/src/feed-ops/sizeof.js";
 import * as Entry from "/src/feed-store/entry.js";
-import {findArchivableEntries, putEntry} from "/src/feed-store/feed-store.js";
+import {open as openFeedStore} from "/src/feed-store/feed-store.js";
 
-// TODO: connect locally? I want to be able to run on test, but there is no need to
-// share the connection, and conn boilerplate. Maybe accept dbinfo parameter instead?
-// TODO: channelName parameter rather than define locally
+// TODO: eventually reconsider how an entry is determined as archivable. Each entry should
+// specify its own lifetime as a property, at the time of creation of update. This should then
+// just be scanning for entries that whose lifetimes have expired. This pattern is more in line
+// with how traditional cached object lifetimes are calculated. Using this alternate approach
+// allows each entry to manage its own lifetime. For example, I could say that for all entries
+// coming from a certain feed, those entries should have a half-life.
+// TODO: maybe differentiating between the message type 'entry-updated' and
+// 'entry-archived' is pendantic. Maybe this should be deferring to the putEntry
+// call to post a message. Or, perhaps I should introduce a reason code to the
+// message.
+
+// TODO: this now no longer layers anything on top of the feed store. It basically is part
+// of the model. So why do I have it in feed ops?
+
 
 // Archives certain entries in the database
-// - store {FeedStore} storage database
-// - maxAgeMs {Number} how long before an entry is considered archivable (using date entry
+// - conn {IDBDatabase} optional, storage database, if not specified then default database will
+// be opened, used, and closed
+// - maxAge {Number} how long before an entry is considered archivable (using date entry
 // created), in milliseconds
 // - limit {Number} maximum number of entries to archive
-export default async function archiveEntries(conn, maxAgeMs, limit) {
-  if(typeof maxAgeMs === 'undefined') {
+export default async function archiveEntries(conn, channel, maxAge) {
+  console.log('Archiving entries...');
+
+  if(typeof maxAge === 'undefined') {
     const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
-    maxAgeMs = TWO_DAYS_MS;
+    maxAge = TWO_DAYS_MS;
   }
 
-  if(!Number.isInteger(maxAgeMs) || maxAgeMs < 0) {
-    console.error('Invalid maxAgeMs argument', maxAgeMs);
-    return Status.EINVAL;
+  if(typeof maxAge !== 'undefined') {
+    assert(Number.isInteger(maxAge) && maxAge > 0);
   }
 
-
-  // TODO: rather than pass a predicate, just pass params to findArchivableEntries
-  // and let it compose the function if needed
-  const currentDate = new Date();
-  function isArchivable(entry) {
-    const entryAgeMs = currentDate - entry.dateCreated;
-    return entryAgeMs > maxAgeMs;
+  const dconn = conn ? conn : await openFeedStore();
+  const entryIds = await archiveEntriesPromise(dconn, maxAge);
+  if(!conn) {
+    dconn.close();
   }
 
-  const [status, entries] = await findArchivableEntries(conn, isArchivable, limit);
-  if(status !== Status.OK) {
-    console.error('Failed to find archivable entries:', Status.toString(status));
-    return status;
-  }
-
-  if(!entries.length) {
-    return Status.OK;
-  }
-
-  const channel = new BroadcastChannel('reader');
-  const promises = [];
-  for(const entry of entries) {
-    promises.push(archiveEntry(conn, channel, entry));
-  }
-
-  // If any fail, return an error, even though some may have committed.
-  const resolutions = await Promise.all(promises);
-  for(const resolution of resolutions) {
-    if(resolution !== Status.OK) {
-      console.error('Failed to put at least one entry:', Status.toString(resolution));
-      channel.close();
-      return resolution;
+  if(channel) {
+    for(const id of entryIds) {
+      channel.postMessage({type: 'entry-archived', id: id});
     }
   }
 
-  channel.close();
-
-  console.log('Compacted %s entries', entries.length);
-  return Status.OK;
+  console.debug('Archived %d entries', entryIds.length);
 }
 
-// Given an entry, compact it, store it, notify observers
-async function archiveEntry(conn, channel, entry) {
+function archiveEntriesPromise(conn, maxAge) {
+  return new Promise((resolve, reject) => {
+    const entryIds = [];
+    const tx = conn.transaction('entry', 'readwrite');
+    tx.onerror = () => reject(tx.error);
+    tx.oncomplete = () => resolve(entryIds);
+    const store = tx.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const keyPath = [Entry.STATE_UNARCHIVED, Entry.STATE_READ];
+    const request = index.openCursor(keyPath);
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if(!cursor) {
+        return;
+      }
+
+      const entry = cursor.value;
+      if(entry.dateCreated) {
+        const currentDate = new Date();
+        const age = currentDate - entry.dateCreated;
+        if(age > maxAge) {
+          const archivedEntry = archiveEntry(entry);
+          store.put(archivedEntry);
+          entryIds.push(archivedEntry.id);
+        }
+      }
+
+      cursor.continue();
+    };
+  });
+}
+
+function archiveEntry(entry) {
   const beforeSize = sizeof(entry);
   const compactedEntry = compactEntry(entry);
   const afterSize = sizeof(compactedEntry);
-  console.debug('Changed approx entry size from %d to %d', beforeSize, afterSize);
+  console.debug('Changing entry %d size from ~%d to ~%d', entry.id, beforeSize, afterSize);
 
   compactedEntry.archiveState = Entry.STATE_ARCHIVED;
   compactedEntry.dateArchived = new Date();
   compactedEntry.dateUpdated = new Date();
-
-  // TODO: is the try/catch necessary? It may not be. Revisit later when reverting status.
-
-  // TODO: maybe differentiating between the message type 'entry-updated' and
-  // 'entry-archived' is pendantic. Maybe this should be deferring to the putEntry
-  // call to post a message. Or, perhaps I should introduce a reason code to the
-  // message.
-
-  // Suppress the message posted by putEntry by using a null channel, so that we
-  // can post a different mention that implies it
-  let nullChannel;
-  try {
-    await putEntry(conn, nullChannel, compactedEntry);
-  } catch(error) {
-    console.error(error);
-    return Status.EDB;
-  }
-
-  channel.postMessage({type: 'entry-archived', id: compactedEntry.id});
-  return Status.OK;
+  return compactedEntry;
 }
 
 // Create a new entry and copy over certain fields

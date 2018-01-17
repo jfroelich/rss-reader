@@ -1,7 +1,7 @@
 import assert from "/src/common/assert.js";
 import * as Status from "/src/common/status.js";
 import {FaviconCache} from "/src/favicon-service/favicon-service.js";
-import {unsubscribe} from "/src/feed-ops/auto-connected.js";
+import unsubscribe from "/src/feed-ops/unsubscribe.js";
 
 import {
   activateFeed,
@@ -469,10 +469,12 @@ function feedListRemoveFeed(feedId) {
 async function unsubscribeButtonOnclick(event) {
   const feedId = parseInt(event.target.value, 10);
 
-  let status = unsubscribe(channel, feedId);
-  if(status !== Status.OK) {
-    // TODO: visually react to error
-    console.error('Failed to unsubscribe', Status.toString(status));
+  let conn;
+  try {
+    unsubscribe(conn, channel, feedId);
+  } catch(error) {
+    // TODO: show an error message
+    console.error(error);
     return;
   }
 

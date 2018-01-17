@@ -1,4 +1,3 @@
-import * as Status from "/src/common/status.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import {removeFeed} from "/src/feed-store/feed-store.js";
 
@@ -8,20 +7,16 @@ import {removeFeed} from "/src/feed-store/feed-store.js";
 // renaming removeFeed to unsubscribe.
 
 // Remove a feed and its entries from the database
-// @param conn {IDBDatabase} an open feed store instance
+// @param conn {IDBDatabase} an open feed store instance. Optional. If not defined then a
+// connection is automatically opened and closed.
 // @param channel {BroadcastChannel} optional, this dispatches feed deleted and
 // entry deleted messages to the given channel
 // @param feedId {Number} id of feed to unsubscribe
 
 export default async function unsubscribe(conn, channel, feedId) {
   const reasonText = 'unsubscribe';
-  const status = await removeFeed(conn, feedId, channel, reasonText);
-  if(status !== Status.OK) {
-    console.error(Status.toString(status));
-    return status;
-  }
+  await removeFeed(conn, channel, feedId, reasonText);
 
   // Removing entries may impact the unread count
   updateBadgeText();// non-blocking
-  return Status.OK;
 }

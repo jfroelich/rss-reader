@@ -3,7 +3,6 @@ import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service
 import * as Feed from "/src/feed-store/feed.js";
 import {findActiveFeeds, putFeed} from "/src/feed-store/feed-store.js";
 
-
 export default async function refreshFeedIcons(conn, iconCache) {
 
   let feeds;
@@ -67,8 +66,6 @@ async function refreshFeedIcon(conn, query, feed) {
       console.error(error);
       return Status.EDB;
     }
-
-
 
   } else if(prevIconURL && iconURL && prevIconURL === iconURL) {
     // noop

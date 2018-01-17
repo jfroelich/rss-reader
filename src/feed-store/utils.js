@@ -1,5 +1,44 @@
 import * as Entry from "/src/feed-store/entry.js";
+import * as Feed from "/src/feed-store/feed.js";
 import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
+
+// Returns a shallow copy of the input feed with sanitized properties
+export function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
+  if(typeof titleMaxLength === 'undefined') {
+    titleMaxLength = 1024;
+  }
+
+  if(typeof descMaxLength === 'undefined') {
+    descMaxLength = 1024 * 10;
+  }
+
+  const blankFeed = Feed.create();
+  const outputFeed = Object.assign(blankFeed, feed);
+  const tagReplacement = '';
+  const suffix = '';
+
+  if(outputFeed.title) {
+    let title = outputFeed.title;
+    title = filterControls(title);
+    title = replaceTags(title, tagReplacement);
+    title = condenseWhitespace(title);
+    title = truncateHTML(title, titleMaxLength, suffix);
+    outputFeed.title = title;
+  }
+
+  if(outputFeed.description) {
+    let desc = outputFeed.description;
+    desc = filterControls(desc);
+    desc = replaceTags(desc, tagReplacement);
+    desc = condenseWhitespace(desc);
+    desc = truncateHTML(desc, descMaxLength, suffix);
+    outputFeed.description = desc;
+  }
+
+  return outputFeed;
+}
+
+
 
 // Inspect the entry object and throw an error if any value is invalid
 // or any required properties are missing

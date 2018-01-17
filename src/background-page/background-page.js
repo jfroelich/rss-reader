@@ -3,14 +3,11 @@ import showSlideshowTab from "/src/show-slideshow-tab.js";
 import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
 import archiveEntries from "/src/feed-ops/archive-entries.js";
 import refreshFeedIcons from "/src/feed-ops/refresh-feed-icons.js";
+import removeLostEntries from "/src/feed-ops/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/feed-ops/remove-orphaned-entries.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
-import {
-  open as openFeedStore,
-  removeLostEntries,
-
-} from "/src/feed-store/feed-store.js";
+import {open as openFeedStore} from "/src/feed-store/feed-store.js";
 
 async function handleCompactFaviconsAlarm(alarm) {
   console.log('Compacting feed favicon cache...');
@@ -33,34 +30,23 @@ async function handleCompactFaviconsAlarm(alarm) {
   return status;
 }
 
-async function handleArchiveAlarmWakeup(alarm) {
+function handleArchiveAlarmWakeup(alarm) {
   console.log('Archiving entries...');
 
-  const conn = await openFeedStore();
-
-  let maxAgeMs;
-  const limit = 300;
-  status = await archiveEntries(conn, maxAgeMs, limit);
-  if(status !== OK) {
-    console.error('Failed to archive entries:', statusToString(status));
-  }
-
-  conn.close();
-  return status;
+  let conn, channel, maxAge;
+  archiveEntries(conn, channel, maxAge).catch(console.error);
 }
 
 async function handleLostEntriesAlarm(alarm) {
   console.log('Removing lost entries...');
 
-  const conn = await openFeedStore();
-  const limit = 100;
-  status = await removeLostEntries(conn, limit);
-  if(status !== OK) {
-    console.error('Failed to remove lost entries:', statusToString(status));
+  let conn;
+  const channel = new BroadcastChannel('reader');
+  try {
+    await removeLostEntries(conn, channel);
+  } finally {
+    channel.close();
   }
-
-  conn.close();
-  return status;
 }
 
 async function handleOrphanEntriesAlarm(alarm) {
@@ -154,19 +140,12 @@ cli.refreshIcons = async function() {
   return status;
 };
 
-cli.archiveEntries = async function(limit) {
+cli.archiveEntries = function(limit) {
   console.log('Archiving entries...');
 
-  const conn = await openFeedStore();
-
-  let maxAgeMs;
-  let status = await archiveEntries(conn, maxAgeMs, limit);
-  if(status !== OK) {
-    console.error('Failed to archive entries:', statusToString(status));
-  }
-
-  conn.close();
-  return status;
+  // TODO: use a real channel (in which case this should be async fn again)
+  let conn, channel, maxAge;
+  archiveEntries(conn, channel, maxAge).catch(console.error);
 };
 
 cli.pollFeeds = async function() {
@@ -187,15 +166,13 @@ cli.pollFeeds = async function() {
 cli.removeLostEntries = async function(limit) {
   console.log('Removing lost entries...');
 
-  const conn = await openFeedStore();
-
-  status = await removeLostEntries(conn, limit);
-  if(status !== OK) {
-    console.error('Failed to remove lost entries:', statusToString(status));
+  const channel = new BroadcastChannel('reader');
+  let conn;
+  try {
+    await removeLostEntries(conn, channel);
+  } finally {
+    channel.close();
   }
-
-  conn.close();
-  return status;
 };
 
 cli.removeOrphanedEntries = async function() {
