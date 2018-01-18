@@ -222,15 +222,6 @@ export function getLastModified(response) {
   }
 }
 
-export function getContentLength(response) {
-  if(!(response instanceof Response)) {
-    console.error('Invalid response argument', response);
-    return NaN;
-  }
-
-  return parseInt(response.headers.get('Content-Length'), 10);
-}
-
 export function getMimeType(response) {
   if(!(response instanceof Response)) {
     console.error('Invalid response argument', response);

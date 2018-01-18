@@ -1,59 +1,33 @@
-import assert from "/src/common/assert.js";
-// TODO: be explicit we do not need all the functions here
-import * as FetchUtils from "/src/common/fetch-utils.js";
-import {parseHTML} from "/src/common/html-utils.js";
-import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
+import {detectURLChanged, fetchHTML} from "/src/common/fetch-utils.js";
+import {fromContentType as mimeFromContentType} from "/src/common/mime-utils.js";
+import {clear, compact, findEntry, open, putAll, putEntry} from "/src/favicon-service/db.js";
+import fetchImage from "/src/favicon-service/fetch-image.js";
+import {assert, parseHTML, resolveURLString} from "/src/favicon-service/utils.js";
+import {MAX_AGE} from "/src/favicon-service/defaults.js";
 
-// TODO: service should be decoupled from all common libraries and roll its own, to provide a
-// more severe service boundary. So it should return its own error codes and make use of its
-// own db utils library.
+// TODO: decouple from all common libraries to provide a severe service boundary
 // TODO: breakup the lookup function into smaller functions so it easier to read
+// TODO: do tests after recent changes
 
+export open;
+export clear;
+export compact;
 
-export async function open(name = 'favicon-cache', version = 3, timeout = 500) {
-  return utilsOpen(name, version, onUpgradeNeeded, timeout);
-}
-
-function onUpgradeNeeded(event) {
-  const conn = event.target.result;
-  console.log('Creating or upgrading database', conn.name);
-
-  let store;
-  if(!event.oldVersion || event.oldVersion < 1) {
-    console.debug('Creating favicon-cache store');
-    store = conn.createObjectStore('favicon-cache', {keyPath: 'pageURLString'});
-  } else {
-    const tx = event.target.transaction;
-    store = tx.objectStore('favicon-cache');
-  }
-
-  if(event.oldVersion < 2) {
-    console.debug('Creating dateUpdated index');
-    store.createIndex('dateUpdated', 'dateUpdated');
-  }
-
-  if(event.oldVersion < 3) {
-    console.debug('oldVersion < 3');
-    // In the transition from 2 to 3, there are no changes. I am adding a non-indexed property.
-    // TODO: this if block should be removed?
-  }
-}
-
-// query props:
+// options props:
 // conn - the idb database conn, optional
 // maxFailureCount, integer
 // skipURLFetch boolean
 // maxAgeMs
-// fetchHTMLTimeoutMs
-// fetchImageTimeoutMs,
+// fetchHTMLTimeout
+// fetchImageTimeout,
 // minImageSize,
 // maxImageSize
 // url, URL, required, the webpage to find a favicon for
 // document, Document, optional, pre-fetched document if available
 
-const defaultQuerySettings = {
+const defaultOptions = {
   maxFailureCount: 2,
-  maxAge: 1000 * 60 * 60 * 24 * 30,
+  maxAge: MAX_AGE,
   skipURLFetch: false,
   fetchHTMLTimeout: 400,
   fetchImageTimeout: 1000,
@@ -63,40 +37,39 @@ const defaultQuerySettings = {
 
 
 // Lookup a favicon
-export async function lookup(inputQuery) {
+export async function lookup(inputOptions) {
 
-  // Merge settings together. This also helps treat inputQuery as immutable, and
-  // supplies defaults.
-  const query = Object.assign({}, defaultQuerySettings, inputQuery);
+  // Merge options together. This treats inputOptions as immutable, and supplies defaults.
+  const options = Object.assign({}, defaultOptions, inputOptions);
 
-  assert(query.url instanceof URL);
-  assert(typeof query.document === 'undefined' || query.document instanceof Document);
-  console.log('Favicon lookup', query.url.href);
+  assert(options.url instanceof URL);
+  assert(typeof options.document === 'undefined' || options.document instanceof Document);
+  console.log('Favicon lookup', options.url.href);
 
   const urls = [];
-  urls.push(query.url.href);
+  urls.push(options.url.href);
 
-  let originURL = new URL(query.url.origin);
+  let originURL = new URL(options.url.origin);
   let originEntry;
 
   // Check the cache for the input url
-  if(query.conn) {
-    const entry = await findEntry(query.conn, query.url);
-    if(entry.iconURLString && !isExpired(query.maxAge, entry)) {
+  if(options.conn) {
+    const entry = await findEntry(options.conn, options.url);
+    if(entry.iconURLString && !isExpired(options.maxAge, entry)) {
       return entry.iconURLString;
     }
-    if(originURL.href === query.url.href && entry.failureCount >= query.maxFailureCount) {
-      console.debug('Too many failures', query.url.href);
+    if(originURL.href === options.url.href && entry.failureCount >= options.maxFailureCount) {
+      console.debug('Too many failures', options.url.href);
       return;
     }
   }
 
   // If specified, examine the pre-fetched document
-  if(query.document) {
-    const iconURL = await searchDocument(query, query.document, query.url);
+  if(options.document) {
+    const iconURL = await searchDocument(options, options.document, options.url);
     if(iconURL) {
-      if(query.conn) {
-        await putAll(query.conn, urls, iconURL);
+      if(options.conn) {
+        await putAll(options.conn, urls, iconURL);
       }
       return iconURL;
     }
@@ -104,9 +77,9 @@ export async function lookup(inputQuery) {
 
   // Check if we reached the max failure count for the input url's origin (if we did not already
   // do the check above because input itself was origin)
-  if(query.conn && originURL.href !== query.url.href) {
-    originEntry = await findEntry(query.conn, originURL);
-    if(originEntry && originEntry.failureCount >= query.maxFailureCount) {
+  if(options.conn && originURL.href !== options.url.href) {
+    originEntry = await findEntry(options.conn, originURL);
+    if(originEntry && originEntry.failureCount >= options.maxFailureCount) {
       console.debug('Exceeded max lookup failures', originURL.href);
       return;
     }
@@ -114,9 +87,9 @@ export async function lookup(inputQuery) {
 
   // Try and fetch the html for the url. Non-fatal.
   let response;
-  if(!document && !query.skipURLFetch) {
+  if(!document && !options.skipURLFetch) {
     try {
-      response = await FetchUtils.fetchHTML(url, query.fetchHTMLTimeout);
+      response = await fetchHTML(url, options.fetchHTMLTimeout);
     } catch(error) {
       console.debug(error);
     }
@@ -127,9 +100,9 @@ export async function lookup(inputQuery) {
   if(response) {
     responseURL = new URL(response.url);
 
-    if(FetchUtils.detectURLChanged(url, responseURL)) {
+    if(detectURLChanged(url, responseURL)) {
 
-      // Update the function scope origin url for later
+      // Update origin url for later
       if(responseURL.origin !== url.origin) {
         originURL = new URL(responseURL.origin);
       }
@@ -138,58 +111,56 @@ export async function lookup(inputQuery) {
       urls.push(responseURL.href);
 
       // Check the cache for the redirected url
-      if(query.conn) {
-        let entry = await findEntry(query.conn, responseURL);
-        if(entry && entry.iconURLString && !isExpired(query.maxAge, entry)) {
-          await putAll(query.conn, [url.href], entry.iconURLString);
+      if(options.conn) {
+        let entry = await findEntry(options.conn, responseURL);
+        if(entry && entry.iconURLString && !isExpired(options.maxAge, entry)) {
+          await putAll(options.conn, [url.href], entry.iconURLString);
           return entry.iconURLString;
         }
       }
     }
   }
 
-  // TODO: this is wrong. query should be treated as immutable. Using a different variable
-  // will also avoid any ambiguity.
-
   // We will be re-using the document, so avoid any ambiguity between a parse failure and
-  // whether query.document was specified
-  query.document = null;
+  // whether options.document was specified
+  options.document = null;
 
   // Deserialize the html response. Error is not fatal.
   if(response) {
     try {
-      query.document = await parseHTMLResponse(response);
+      const text = await response.text();
+      options.document = parseHTML(text);
     } catch(error) {
       console.debug(error);
     }
   }
 
   // Search the document. Errors are not fatal.
-  if(query.document) {
-    const baseURL = responseURL ? responseURL : query.url;
+  if(options.document) {
+    const baseURL = responseURL ? responseURL : options.url;
     let iconURL;
     try {
-      iconURL = await searchDocument(query, query.document, baseURL);
+      iconURL = await searchDocument(options, options.document, baseURL);
     } catch(error) {
       console.debug(error);
     }
 
     if(iconURL) {
-      if(query.conn) {
-        await putAll(query.conn, urls, iconURL);
+      if(options.conn) {
+        await putAll(options.conn, urls, iconURL);
       }
       return iconURL;
     }
   }
 
   // Check if the origin is in the cache if it is distinct
-  if(query.conn && !urls.includes(originURL.href)) {
-    originEntry = await findEntry(query.conn, originURL);
+  if(options.conn && !urls.includes(originURL.href)) {
+    originEntry = await findEntry(options.conn, originURL);
     if(originEntry) {
-      if(originEntry.iconURLString && !isExpired(query.maxAge, originEntry)) {
-        await putAll(query.conn, urls, originEntry.iconURLString);
+      if(originEntry.iconURLString && !isExpired(options.maxAge, originEntry)) {
+        await putAll(options.conn, urls, originEntry.iconURLString);
         return originEntry.iconURLString;
-      } else if(originEntry.failureCount >= query.maxFailureCount) {
+      } else if(originEntry.failureCount >= options.maxFailureCount) {
         console.debug('Exceeded failure count', originURL.href);
         return;
       }
@@ -200,71 +171,35 @@ export async function lookup(inputQuery) {
     urls.push(originURL.href);
   }
 
-  // Check for root directory favicon image
-  const baseURL = responseURL ? responseURL : query.url;
+  // Check root directory
+  const baseURL = responseURL ? responseURL : options.url;
   const imageURL = new URL(baseURL.origin + '/favicon.ico');
   response = null;
   try {
-    response = await fetchImage(query, imageURL);
+    response = await fetchImage(imageURL, options.fetchImageTimeout, options.minImageSize,
+      options.maxImageSize);
   } catch(error) {
     console.debug(error);
   }
 
-  if(response && isAcceptableImageResponse(query, response)) {
-    if(query.conn) {
-      await putAll(query.conn, urls, response.url);
+  if(response) {
+    if(options.conn) {
+      await putAll(options.conn, urls, response.url);
     }
     return response.url;
   }
 
-  // Handle total lookup failure
-  if(query.conn) {
-    onLookupFailure(query, originURL, originEntry);
+  // Conditionally record failed lookup
+  if(options.conn) {
+    onLookupFailure(options.conn, originURL, originEntry);
   }
 }
 
-function isAcceptableImageResponse(query, response) {
-  assert(response instanceof Response);
-  // TODO: inline the call, it is simple and is better decoupling. Wait to do this until
-  // after some other things settled
-  const size = FetchUtils.getContentLength(response);
-
-  // Tolerate NaN as acceptable
-  return isNaN(size) || (size >= query.minImageSize && size <= query.maxImageSize);
-}
-
-async function fetchImage(query, url) {
-  const options = {method: 'head', timeout: query.fetchImageTimeout};
-  const response = await FetchUtils.fetchHelper(url, options);
-
-  // TODO: inline this call
-  const type = FetchUtils.getMimeType(response);
-
-  // TODO: make this a helper
-  if(type && (type.startsWith('image/') || type === 'application/octet-stream')) {
-    return response;
-  }
-}
-
-// TODO: inline
-async function parseHTMLResponse(response) {
-  assert(response instanceof Repsonse);
-  const text = await response.text();
-
-  // TODO: decouple status
-  const [status, document, message] = parseHTML(text);
-  if(status !== Status.OK) {
-    throw new Error('Failed to parse response');
-  }
-
-  return document;
-}
 
 function isExpired(maxAge, entry) {
-
   // Tolerate partially corrupted data
   if(!entry.dateUpdated) {
-    console.warn('Invalid entry dateUpdated property', entry);
+    console.warn('Entry missing date updated', entry);
     return false;
   }
 
@@ -273,15 +208,14 @@ function isExpired(maxAge, entry) {
 
   // Tolerate partially corrupted data
   if(entryAge < 0) {
-    console.warn('Invalid entry dateUpdated property (future)', entry);
+    console.warn('Entry date updated is in the future', entry);
     return false;
   }
 
   return entryAge > maxAge;
-
 }
 
-async function searchDocument(query, document, baseURL) {
+async function searchDocument(options, document, baseURL) {
   assert(document instanceof Document);
 
   const candidates = findCandidateURLs(document);
@@ -313,11 +247,13 @@ async function searchDocument(query, document, baseURL) {
 
   for(const url of urls) {
     try {
-      const response = await fetchImage(query, url);
-    } catch(error) {
-      if(isAcceptableImageResponse(query, response)) {
+      const response = await fetchImage(url, options.fetchImageTimeout, options.minImageSize,
+        options.maxImageSize);
+      if(response) {
         return response.url;
       }
+    } catch(error) {
+      // ignore
     }
   }
 }
@@ -346,7 +282,7 @@ function findCandidateURLs(document) {
   return candidates;
 }
 
-function onLookupFailure(query, originURL, originEntry) {
+function onLookupFailure(conn, originURL, originEntry) {
   if(entry) {
     const newEntry = {};
     newEntry.pageURLString = entry.pageURLString;
@@ -355,11 +291,11 @@ function onLookupFailure(query, originURL, originEntry) {
     if('failureCount' in entry) {
       if(entry.failureCount <= this.kMaxFailureCount) {
         newEntry.failureCount = entry.failureCount + 1;
-        putEntry(query.conn, newEntry);
+        putEntry(conn, newEntry);
       }
     } else {
       newEntry.failureCount = 1;
-      putEntry(query.conn, newEntry);
+      putEntry(conn, newEntry);
     }
   } else {
     const newEntry = {};
@@ -367,123 +303,6 @@ function onLookupFailure(query, originURL, originEntry) {
     newEntry.iconURLString = undefined;
     newEntry.dateUpdated = new Date();
     newEntry.failureCount = 1;
-    putEntry(query.conn, newEntry);
+    putEntry(conn, newEntry);
   }
-}
-
-function resolveURLString(url, baseURL) {
-  assert(baseURL instanceof URL);
-  if(typeof url === 'string' && url.trim()) {
-    try {
-      return new URL(url, baseURL);
-    } catch(error) {
-
-    }
-  }
-}
-
-// Clears the favicon object store.
-// @param conn {IDBDatabase} optional open database connection, a connection is dynamically
-// created, used, and closed, if not specified
-export async function clear(conn) {
-  console.log('Clearing favicon store');
-  const dconn = conn ? conn : await open();
-  await clearPromise(dconn);
-  if(!conn) {
-    dconn.close();
-  }
-  console.log('Cleared favicon store');
-}
-
-function clearPromise(conn) {
-  return new Promise((resolve, reject) => {
-    const txn = conn.transaction('favicon-cache', 'readwrite');
-    const store = txn.objectStore('favicon-cache');
-    const request = store.clear();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// Not public, no direct query access
-function findEntry(conn, url) {
-  return new Promise((resolve, reject) => {
-    assert(url instanceof URL);
-    const txn = conn.transaction('favicon-cache');
-    const store = txn.objectStore('favicon-cache');
-    const request = store.get(url.href);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// @param conn {IDBDatabase} optional, otherwise created dynamically
-export async function compact(conn) {
-  console.log('Compacting favicon store...');
-  let cutoffTime = Date.now() - defaultQuerySettings.maxAge;
-  cutoffTime = cutoffTime < 0 ? 0 : cutoffTime;
-  const cutoffDate = new Date(cutoffTime);
-
-  const dconn = conn ? conn : await open();
-  const count = await compactPromise(dconn, cutoffDate);
-  if(!conn) {
-    dconn.close();
-  }
-
-  console.log('Compacted favicon store, deleted %d entries', count);
-}
-
-// Query for expired entries and delete them
-function compactPromise(conn, cutoffDate) {
-  return new Promise((resolve, reject) => {
-    let count = 0;
-    const txn = conn.transaction('favicon-cache', 'readwrite');
-    txn.oncomplete = () => resolve(count);
-    txn.onerror = () => reject(txn.error);
-    const store = txn.objectStore('favicon-cache');
-    const index = store.index('dateUpdated');
-    const range = IDBKeyRange.upperBound(cutoffDate);
-    const request = index.openCursor(range);
-    request.onsuccess = () => {
-      const cursor = request.result;
-      if(cursor) {
-        console.debug('Deleting expired favicon entry', cursor.value);
-        count++;
-        cursor.delete();
-        cursor.continue();
-      }
-    };
-  });
-}
-
-function putEntry(conn, entry) {
-  return new Promise((resolve, reject) => {
-    const txn = conn.transaction('favicon-cache', 'readwrite');
-    const store = txn.objectStore('favicon-cache');
-    const request = store.put(entry);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-function putAll(conn, urlStrings, iconURLString) {
-  return new Promise((resolve, reject) => {
-    const txn = conn.transaction('favicon-cache', 'readwrite');
-    txn.oncomplete = resolve;
-    txn.onerror = () => reject(txn.error);
-
-    const store = txn.objectStore('favicon-cache');
-    const currentDate = new Date();
-
-    for(const urlString of urlStrings) {
-      const entry = {
-        pageURLString: urlString,
-        iconURLString: iconURLString,
-        dateUpdated: currentDate,
-        failureCount: 0
-      };
-
-      store.put(entry);
-    }
-  });
 }
