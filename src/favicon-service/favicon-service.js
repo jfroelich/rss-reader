@@ -1,5 +1,4 @@
 import {detectURLChanged, fetchHTML} from "/src/common/fetch-utils.js";
-import {fromContentType as mimeFromContentType} from "/src/common/mime-utils.js";
 import {
   clear as clearIconStore,
   compact as compactIconStore,

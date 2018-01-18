@@ -35,6 +35,8 @@ import sourcelessImageFilter from "/src/feed-poll/filters/sourceless-image-filte
 import tableFilter from "/src/feed-poll/filters/table-filter.js";
 import trimDocumentFilter from "/src/feed-poll/filters/trim-document-filter.js";
 
+// TODO: create a new filter that filters out small font text
+
 // Transforms a document's content by removing or changing nodes for various reasons.
 // @param document {Document} the document to transform
 // @param documentURL {URL} the url of the document
