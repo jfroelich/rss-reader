@@ -1,6 +1,13 @@
 import {detectURLChanged, fetchHTML} from "/src/common/fetch-utils.js";
 import {fromContentType as mimeFromContentType} from "/src/common/mime-utils.js";
-import {clear, compact, findEntry, open, putAll, putEntry} from "/src/favicon-service/db.js";
+import {
+  clear as clearIconStore,
+  compact as compactIconStore,
+  findEntry,
+  open as openIconStore,
+  putAll,
+  putEntry
+} from "/src/favicon-service/db.js";
 import fetchImage from "/src/favicon-service/fetch-image.js";
 import {assert, parseHTML, resolveURLString} from "/src/favicon-service/utils.js";
 import {MAX_AGE} from "/src/favicon-service/defaults.js";
@@ -9,9 +16,9 @@ import {MAX_AGE} from "/src/favicon-service/defaults.js";
 // TODO: breakup the lookup function into smaller functions so it easier to read
 // TODO: do tests after recent changes
 
-export open;
-export clear;
-export compact;
+export const open = openIconStore;
+export const clear = clearIconStore;
+export const compact = compactIconStore;
 
 // options props:
 // conn - the idb database conn, optional
