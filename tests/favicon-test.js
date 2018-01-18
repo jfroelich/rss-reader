@@ -1,16 +1,7 @@
-import * as Status from "/src/common/status.js";
-import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
+import {clear, compact, lookup, open} from "/src/favicon-service/favicon-service.js";
 
 /*
 TODO:
-
-In order to use a test db, I should create helpers for each test, like a helper to
-create and connect to test db
-
-
-* Use a test db instead of the real db, and make sure to
-delete the test db at the end of the test.
-* to use a test db, set cache.name to a non-default name
 * actually run tests instead of command line
 * test offline
 * test a non-existent host
@@ -25,66 +16,33 @@ delete the test db at the end of the test.
 * test compact
 */
 
-window.testLookup = async function(url, cacheless) {
-  const cache = new FaviconCache();
-  const query = new FaviconService();
-  query.cache = cache;
+window.testLookup = async function(url, cached) {
+  const testDbName = 'test-favicon-cache';
 
-  const lookupURL = new URL(url);
-
-  let status;
-  if(!cacheless) {
-    status = await cache.open();
-    if(status !== Status.OK) {
-      console.error('Failed to open favicon cache:', Status.toString(status));
-      return [status];
-    }
+  const query = {};
+  query.url = new URL(url);
+  if(cached) {
+    query.conn = await open(testDbName);
   }
 
-  let iconURLString;
-  [status, iconURLString] = await query.lookup(lookupURL);
-  if(status !== Status.OK) {
-    console.error('Failed to lookup favicon for url', lookupURL.href, Status.toString(status));
+  const iconURL = await lookup(query);
+  if(cached) {
+    query.conn.close();
+
+    await remove(query.conn.name);
   }
 
-  if(!cacheless) {
-    cache.close();
-  }
-
-  return [status, iconURLString];
+  return iconURL;
 }
 
-window.testClearIconDB = async function() {
-  const cache = new FaviconCache();
-  let status = await cache.open();
-  if(status !== Status.OK) {
-    console.error('Failed to open favicon cache:', Status.toString(status));
-    return status;
-  }
+window.testClear = clear;
+window.testCompact = compact;
 
-  status = await cache.clear();
-  if(status !== Status.OK) {
-    console.error('Failed to clear favicon cache:', Status.toString(status));
-  }
-
-  cache.close();
-  return status;
-}
-
-window.testCompactIconDB = async function(limit) {
-  const cache = new FaviconCache();
-  let status = await cache.open();
-  if(status !== Status.OK) {
-    console.error('Failed to open favicon cache:', Status.toString(status));
-    return status;
-  }
-
-  let customMaxAge;
-  status = await cache.compact(customMaxAge, limit);
-  if(status !== Status.OK) {
-    console.error('Failed to compact favicon cache:', Status.toString(status));
-  }
-
-  cache.close();
-  return status;
+function remove(name) {
+  return new Promise((resolve, reject) => {
+    console.debug('Deleting database', name);
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = resolve;
+    request.onerror = () => reject(request.error);
+  });
 }

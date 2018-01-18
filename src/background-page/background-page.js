@@ -1,6 +1,11 @@
 import {OK, toString as statusToString} from "/src/common/status.js";
 import showSlideshowTab from "/src/show-slideshow-tab.js";
-import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
+import {
+  clear as clearIconStore,
+  compact as compactIconStore,
+  lookup,
+  open as openIconStore
+} from "/src/favicon-service/favicon-service.js";
 import archiveEntries from "/src/feed-ops/archive-entries.js";
 import refreshFeedIcons from "/src/feed-ops/refresh-feed-icons.js";
 import removeLostEntries from "/src/feed-ops/remove-lost-entries.js";
@@ -9,32 +14,13 @@ import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import {open as openFeedStore} from "/src/feed-store/feed-store.js";
 
-async function handleCompactFaviconsAlarm(alarm) {
-  console.log('Compacting feed favicon cache...');
-
-  const cache = new FaviconCache();
-  let status = await cache.open();
-  if(status !== OK) {
-    console.error('Failed to open icon cache:', statusToString(status));
-    return status;
-  }
-
-  let maxAgeMs;
-  const limit = 100;
-  status = await cache.compact(maxAgeMs, limit);
-  if(status !== OK) {
-    console.error('Failed to compact favicons:', statusToString(status));
-  }
-
-  cache.close();
-  return status;
+function handleCompactFaviconsAlarm(alarm) {
+  return compactIconStore().catch(console.error);
 }
 
 function handleArchiveAlarmWakeup(alarm) {
-  console.log('Archiving entries...');
-
   let conn, channel, maxAge;
-  archiveEntries(conn, channel, maxAge).catch(console.error);
+  return archiveEntries(conn, channel, maxAge).catch(console.error);
 }
 
 async function handleLostEntriesAlarm(alarm) {
@@ -62,24 +48,14 @@ async function handleOrphanEntriesAlarm(alarm) {
 async function handleRefreshFeedIconsAlarm(alarm) {
   console.log('Refreshing feed favicons...');
 
-  const fc = new FaviconCache();
-  const promises = [openFeedStore(), fc.open()];
-  const resolutions = await Promise.all(promises);
-  conn = resolutions[0];
-
-  [status] = resolutions[1];
-  if(status !== OK) {
-    console.error('Failed to open favicon cache:', statusToString(status));
-    return;
-  }
-
-  status = await refreshFeedIcons(conn, fc);
+  const [feedConn, iconConn] = await Promise.all([openFeedStore(), openIconStore()]);
+  status = await refreshFeedIcons(feedConn, iconConn);
   if(status !== OK) {
     console.error('Failed to refresh feed favicons:', statusToString(status));
   }
 
-  conn.close();
-  fc.close();
+  feedConn.close();
+  iconConn.close();
 }
 
 async function handlePollFeedsAlarm(alarm) {
@@ -117,27 +93,14 @@ const cli = {};
 cli.refreshIcons = async function() {
   console.log('Refreshing feed favicons...');
 
-  const fc = new FaviconCache();
-  const promises = [openFeedStore(), fc.open()];
-
-  const resolutions = await Promise.all(promises);
-  conn = resolutions[0];
-
-  status = resolutions[1];
-  if(status !== OK) {
-    console.error('Failed to open favicon database:', statusToString(status));
-    conn.close();
-    return status;
-  }
-
-  status = await refreshFeedIcons(conn, fc);
+  const [feedConn, iconConn] = await Promise.all([openFeedStore(), openIconStore()]);
+  status = await refreshFeedIcons(feedConn, iconConn);
   if(status !== OK) {
     console.error('Failed to refresh feed icons:', statusToString(status));
   }
 
-  conn.close();
-  fc.close();
-  return status;
+  feedConn.close();
+  iconConn.close();
 };
 
 cli.archiveEntries = function(limit) {
@@ -187,72 +150,21 @@ cli.removeOrphanedEntries = async function() {
   }
 };
 
-cli.clearFavicons = async function() {
-  const cache = new FaviconCache();
-  let status = await cache.open();
-  if(status !== OK) {
-    console.error('Failed to open favicon cache:', statusToString(status));
-    return status;
+cli.clearFavicons = clearIconStore;
+cli.compactFavicons = compactIconStore;
+cli.lookupFavicon = async function(url, cached) {
+  const query = {};
+  query.url = new URL(url);
+  if(cached) {
+    query.conn = await openIconStore();
   }
 
-  status = await cache.clear();
-  if(status !== OK) {
-    console.error('Failed to clear favicon cache:', statusToString(status));
+  const iconURLString = await lookup(query);
+  if(cached) {
+    query.conn.close();
   }
 
-  cache.close();
-  return status;
-};
-
-cli.compactFavicons = async function(limit) {
-  const cache = new FaviconCache();
-  let status = await cache.open();
-  if(status !== OK) {
-    console.error('Failed to open database:', statusToString(status));
-    return status;
-  }
-
-  let maxAgeMs;
-  status = await cache.compact(maxAgeMs, limit);
-  if(status !== OK) {
-    console.error('Failed to compact favicons:', statusToString(status));
-  }
-
-  cache.close();
-  return status;
-};
-
-cli.lookupFavicon = async function(url, timeout, cacheless = true) {
-  const query = new FaviconService();
-  query.cache = new FaviconCache();
-  query.fetchHTMLTimeoutMs = timeout;
-
-  let status;
-  if(!cacheless) {
-    status = await query.cache.open();
-    if(status !== OK) {
-      console.error('Failed to open favicon cache', statusToString(status));
-      return [status];
-    }
-  }
-
-  const lookupURL = new URL(url);
-  let iconURLString;
-  [status, iconURLString] = await query.lookup(lookupURL);
-  if(status !== OK) {
-    console.error('Failed to lookup url', statusToString(status));
-    if(!cacheless) {
-      query.cache.close();
-    }
-
-    return [status];
-  }
-
-  if(!cacheless) {
-    query.cache.close();
-  }
-
-  return [OK, iconURLString];
+  return iconURLString;
 };
 
 // Expose cli to console
@@ -271,13 +183,8 @@ chrome.runtime.onInstalled.addListener(function(event) {
   }).catch(console.error);
 
   console.log('Setting up favicon database');
-  const fc = new FaviconCache();
-  fc.open().then(function(status) {
-    if(status !== OK) {
-      console.error('Failed to open favicon database', status);
-      return;
-    }
-    return fc.close();
+  openIconStore().then(function(conn) {
+    return conn.close();
   }).catch(console.error);
 });
 
@@ -307,7 +214,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
     handleRefreshFeedIconsAlarm(alarm).catch(console.error);
     break;
   case 'compact-favicon-db':
-    handleCompactFaviconsAlarm(alarm).catch(console.error);
+    handleCompactFaviconsAlarm(alarm);
     break;
   default:
     console.warn('unhandled alarm', alarm.name);

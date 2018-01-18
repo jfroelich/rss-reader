@@ -1,9 +1,14 @@
 import parseXML from "/src/common/parse-xml.js";
 import * as Status from "/src/common/status.js";
-import {FaviconCache} from "/src/favicon-service/favicon-service.js";
+import {open as openIconStore} from "/src/favicon-service/favicon-service.js";
 import subscribe from "/src/feed-ops/subscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {open as openFeedStore} from "/src/feed-store/feed-store.js";
+
+// TODO: revert to no status
+// TODO: fix call to subscribe (favicon cache is deprecated)
+// TODO: conns should be optional params instead of always created locally so that this can
+// run on test databases
 
 export default async function importOPMLFiles(files, timeout) {
   if(!(files instanceof FileList)) {
@@ -16,22 +21,24 @@ export default async function importOPMLFiles(files, timeout) {
     return Status.OK;
   }
 
+  // Open databases
+  let feedConn, iconConn;
+  try {
+    [feedConn, iconConn] = await Promise.all([openFeedStore(), openIconStore()]);
+  } catch(error) {
+    return Status.EDB;
+  }
+
+  // TODO: this passes the wrong conn properties to subscribe at the moment,
+  // so it will crash
+
   const context = {
-    conn: null,
-    iconCache: new FaviconCache(),
+    feedConn: feedConn,
+    iconConn: iconConn,
     fetchFeedTimeoutMs: timeout,
     notify: false,
     concurrent: true
   };
-
-  let [status, conn] = await openDatabases(context);
-  if(status !== Status.OK) {
-    console.error('Error opening databases:', Status.toString(status));
-    return status;
-  }
-
-  context.conn = conn;
-
 
   // Concurrently import files
   const promises = [];
@@ -47,34 +54,12 @@ export default async function importOPMLFiles(files, timeout) {
     }
   }
 
-  context.conn.close();
-  context.iconCache.close();
+  feedConn.close();
+  iconConn.close();
 
   return Status.OK;
 }
 
-async function openDatabases(context) {
-  const promise1 = openFeedStore();
-  const promise2 = context.iconCache.open();
-
-  let resolutions;
-  try {
-    resolutions = await Promise.all([promise1, promise2]);
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
-  }
-
-  const conn = resolutions[0];
-
-  const openFaviconCacheStatus = resolutions[1];
-  if(openFaviconCacheStatus !== Status.OK) {
-    conn.close();
-    return [status];
-  }
-
-  return [Status.OK, conn];
-}
 
 async function importOPMLFile(context, file) {
   if(!(file instanceof File)) {

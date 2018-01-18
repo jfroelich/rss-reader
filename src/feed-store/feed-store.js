@@ -331,7 +331,7 @@ function getFeedsPromise(conn) {
   });
 }
 
-export async function putEntry(conn, channel, entry) {
+async function putEntry(conn, channel, entry) {
   const dconn = conn ? conn : await open();
   const entryId = await putEntryPromise(dconn, entry);
   if(!conn) {

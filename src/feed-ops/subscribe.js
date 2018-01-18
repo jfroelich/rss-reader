@@ -1,7 +1,7 @@
 import showDesktopNotification from "/src/notifications.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import * as Status from "/src/common/status.js";
-import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
+import {lookup} from "/src/favicon-service/favicon-service.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {containsFeedWithURL, prepareFeed, putFeed} from "/src/feed-store/feed-store.js";
@@ -28,10 +28,14 @@ import coerceFeed from "/src/coerce-feed.js";
 // TODO: the polling of entries after subscribing is still kind of wonky and should eventually
 // be more well thought out.
 
+// TODO: revert to using exceptions and assert
+// TODO: connect on demand
+// TODO: channel should be parameter configured externally
+// TODO: treat context as immutable
 
 // Properties for the context argument:
-// conn, database conn to feed store
-// iconCache, database conn
+// feedConn, database conn to feed store
+// iconConn, database conn to icon store, optional
 // fetchFeedTimeoutMs, integer, optional
 // concurrent, boolean, optional, whether called concurrently
 // notify, boolean, optional, whether to notify
@@ -42,7 +46,7 @@ export default async function subscribe(context, url) {
     return [Status.EINVAL];
   }
 
-  if(!(context.iconCache instanceof FaviconCache)) {
+  if(!(context.iconConn instanceof IDBDatabase)) {
     return [Status.EINVAL];
   }
 
@@ -68,7 +72,7 @@ export default async function subscribe(context, url) {
 
   let containsFeed;
   try {
-    containsFeed = await containsFeedWithURL(context.conn, url);
+    containsFeed = await containsFeedWithURL(context.feedConn, url);
   } catch(error) {
     console.error(error);
     return [Status.EDB];
@@ -103,10 +107,11 @@ export default async function subscribe(context, url) {
   }
 
   // Set the feed's favicon
-  const faviconService = new FaviconService();
-  faviconService.cache = context.iconCache;
-  faviconService.skipURLFetch = true;
-  status = await setFeedFavicon(faviconService, feed);
+  const query = {};
+  query.conn = context.iconConn;
+  query.skipURLFetch = true;
+
+  status = await setFeedFavicon(query, feed);
   if(status !== Status.OK) {
     console.error('Set feed favicon error:', url.href, Status.toString(status));
     return [status];
@@ -114,7 +119,7 @@ export default async function subscribe(context, url) {
 
   // Store the feed
   let storableFeed;
-  [status, storableFeed] = await saveFeed(context.conn, feed);
+  [status, storableFeed] = await saveFeed(context.feedConn, feed);
   if(status !== Status.OK) {
     console.error('Database error:', url.href, Status.toString(status));
     return [status];
@@ -174,16 +179,19 @@ async function createFeedFromResponse(context, response, url) {
   return [Status.OK, coerceResult.feed];
 }
 
-async function setFeedFavicon(faviconService, feed) {
+async function setFeedFavicon(query, feed) {
   if(!Feed.isFeed(feed)) {
     return Status.EINVAL;
   }
 
   const lookupURL = Feed.createIconLookupURL(feed);
-  const [status, iconURLString] = await faviconService.lookup(lookupURL);
-  if(status !== Status.OK) {
-    console.error('Favicon lookup error:', Status.toString(status));
-    return status;
+
+  let iconURLString;
+  try {
+    iconURLString = await lookup(query);
+  } catch(error) {
+    console.error(error);
+    return Status.EDB;
   }
 
   if(iconURLString) {

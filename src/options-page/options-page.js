@@ -1,8 +1,14 @@
 import assert from "/src/common/assert.js";
+import {truncateHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
-import {FaviconCache} from "/src/favicon-service/favicon-service.js";
-import unsubscribe from "/src/feed-ops/unsubscribe.js";
 
+// Needed by subscribe.
+// TODO: it would be better if subscribe could connect on demand
+import {open as openIconStore} from "/src/favicon-service/favicon-service.js";
+
+import subscribe from "/src/feed-ops/subscribe.js";
+import unsubscribe from "/src/feed-ops/unsubscribe.js";
+import * as Feed from "/src/feed-store/feed.js";
 import {
   activateFeed,
   deactivateFeed,
@@ -11,10 +17,9 @@ import {
   open as openFeedStore
 } from "/src/feed-store/feed-store.js";
 
-import * as Feed from "/src/feed-store/feed.js";
+// TEMP: I plan to remove
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
-import subscribe from "/src/feed-ops/subscribe.js";
-import {truncateHTML} from "/src/common/html-utils.js";
+
 
 const BG_IMAGES = [
   '/images/bgfons-paper_texture318.jpg',
@@ -349,28 +354,23 @@ async function subscribeFormOnsubmit(event) {
   subscriptionMonitorShow();
   subscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
 
-  const context = {};
-  context.iconCache = new FaviconCache();
-  context.concurrent = false;
-  context.notify = true;
-  context.fetchFeedTimeoutMs = 2000;
-
-  // TODO: open both databases concurrently
-  // TODO: create a helper
-
-  let status, conn;
-
+  let feedConn, iconConn;
   try {
-    conn = await openFeedStore();
+    [feedConn, iconConn] = await Promise.all([openFeedStore(), openIconStore()]);
   } catch(error) {
     console.error(error);
     subscriptionMonitorHide();
     return;
   }
 
-  context.conn = conn;
+  // TODO: this is bugged until subscribe uses new props
 
-  await context.iconCache.open();
+  const context = {};
+  context.feedConn = feedConn;
+  context.iconConn = iconConn;
+  context.concurrent = false;
+  context.notify = true;
+  context.fetchFeedTimeoutMs = 2000;
 
   let feed;
   [status, feed] = await subscribe(context, url);
@@ -382,8 +382,8 @@ async function subscribeFormOnsubmit(event) {
     return;
   }
 
-  context.conn.close();
-  context.iconCache.close();
+  feedConn.close();
+  iconConn.close();
 
   // TODO: UI level functions shouldn't assert
   assert(Feed.isFeed(feed));

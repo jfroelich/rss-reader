@@ -1,100 +1,67 @@
+import assert from "/src/common/assert.js";
 import * as Status from "/src/common/status.js";
-import {FaviconCache, FaviconService} from "/src/favicon-service/favicon-service.js";
+import {lookup, open as openIconStore} from "/src/favicon-service/favicon-service.js";
 import * as Feed from "/src/feed-store/feed.js";
-import {findActiveFeeds, putFeed} from "/src/feed-store/feed-store.js";
+import {findActiveFeeds, open as openFeedStore, putFeed} from "/src/feed-store/feed-store.js";
 
-export default async function refreshFeedIcons(conn, iconCache) {
+// TODO: revert to no status
+// TODO: fix bugs after change to iconConn
 
-  let feeds;
-  try {
-    feeds = await findActiveFeeds(conn);
-  } catch(error) {
-    console.error(error);
-    return Status.EDB;
-  }
 
-  const query = new FaviconService();
-  query.cache = iconCache;
+export default async function refreshFeedIcons(feedConn, iconConn, channel) {
+
+  const dconn = conn ? conn : await openFeedStore();
+  const feeds = await findActiveFeeds(dconn);
+
+  const query = {};
+  query.conn = iconConn;
 
   const promises = [];
   for(const feed of feeds) {
-    promises.push(refreshFeedIcon(conn, query, feed));
+    promises.push(refreshFeedIcon(dconn, channel, query, feed));
   }
+  await Promise.all(promises);
 
-  const results = await Promise.all(promises);
-  for(const result of results) {
-    if(result !== Status.OK) {
-      console.error('refreshFeedIcon status not ok', Status.toString(result));
-      return result;
-    }
+  if(!conn) {
+    dconn.close();
   }
-
-  return Status.OK;
 }
 
-async function refreshFeedIcon(conn, query, feed) {
-  if(!Feed.hasURL(feed)) {
-    console.error('Feed missing url', feed);
-    return Status.EINVAL;
-  }
+// TODO: in order to use Promise.all, this should not throw except in really
+// exceptional case. putFeed can fail because this is not transactionally safe. It
+// cannot be transactionally safe because I read, then fetch, then write. Consider
+// ways of making it transactionally safe. For example, I could read once by itself,
+// do lookups, then do a second transaction that re-reads and writes together. For the
+// second transaction I would do a sync lookup to the local in memory data structure.
+// On other hand, why would putFeed actually fail? I am not attempting an add, I am
+// doing a replace. Suppose a feed is unsubscribed. This will recreate? Maybe that
+// is sufficient reason?
+// If I do two trans, and new feed is subscribed in between, then the in-mem lookup
+// will fail. So not a perfect solution
 
+async function refreshFeedIcon(conn, channel, query, feed) {
+  // This should certainly fail uncaught, this should never happen
+  assert(Feed.hasURL(feed));
+
+  // This should certainly fail uncaught, this should never happen
   const lookupURL = Feed.createIconLookupURL(feed);
 
-  // 3 things can happen:
-  // 1) iconURL is defined and lookup is success
-  // 2) iconURL is undefined and lookup is still a success (no programming error)
-  // 3) a programming error occured
+  // TODO: decoupling status blocked until favicon service overhauled
 
   let status, iconURL;
   [status, iconURL] = await query.lookup(lookupURL);
   if(status !== Status.OK) {
     console.debug('Error looking up favicon', Status.toString(status));
-    return status;
+    return;
   }
 
-  const prevIconURL = feed.faviconURLString;
-  feed.dateUpdated = new Date();
-
-  // TODO: use a channel for putFeed instead of null
-
-  if(prevIconURL && iconURL && prevIconURL !== iconURL) {
+  // If state changed then update
+  if(feed.faviconURLString !== iconURL) {
     feed.faviconURLString = iconURL;
-
-    try {
-      await putFeed(conn, null, feed);
-    } catch(error) {
-      console.error(error);
-      return Status.EDB;
+    feed.dateUpdated = new Date();
+    if(!feed.faviconURLString) {
+      delete feed.faviconURLString;
     }
-
-  } else if(prevIconURL && iconURL && prevIconURL === iconURL) {
-    // noop
-  } else if(prevIconURL && !iconURL) {
-    delete feed.faviconURLString;
-
-    try {
-      await putFeed(conn, null, feed);
-    } catch(error) {
-      console.error(error);
-      return Status.EDB;
-    }
-
-  } else if(!prevIconURL && !iconURL) {
-    // noop
-  } else if(!prevIconURL && iconURL) {
-    feed.faviconURLString = iconURL;
-
-    try {
-      await putFeed(conn, null, feed);
-    } catch(error) {
-      console.error(error);
-      return Status.EDB;
-    }
-
-  } else {
-    console.error('Unexpected state');
-    return Status.EINVALIDSTATE;
+    await putFeed(conn, channel, feed);
   }
-
-  return Status.OK;
 }

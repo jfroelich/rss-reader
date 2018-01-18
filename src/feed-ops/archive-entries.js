@@ -10,8 +10,7 @@ import {open as openFeedStore} from "/src/feed-store/feed-store.js";
 // allows each entry to manage its own lifetime. For example, I could say that for all entries
 // coming from a certain feed, those entries should have a half-life.
 // TODO: maybe differentiating between the message type 'entry-updated' and
-// 'entry-archived' is pendantic. Maybe this should be deferring to the putEntry
-// call to post a message. Or, perhaps I should introduce a reason code to the
+// 'entry-archived' is pendantic. Or, perhaps I should introduce a reason code to the
 // message.
 
 // TODO: this now no longer layers anything on top of the feed store. It basically is part
