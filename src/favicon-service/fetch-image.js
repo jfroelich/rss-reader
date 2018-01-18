@@ -1,6 +1,18 @@
 import {fetchHelper} from "/src/common/fetch-utils.js";
+import {fromContentType as mimeFromContentType} from "/src/common/mime-utils.js";
 
 // TODO: decouple from fetch-utils
+// TODO: decouple from mime-utils
+
+// TODO: think of a better name. it isn't obvious that this is a HEAD request. Or that it is
+// restricted to the purpose of icons given that size constraints and mime constraints are
+// built in. Something like sendIconHeadRequest
+// TODO: despite moving in the size constraints and how convenient that is, now I am mixing
+// together a few concerns. There is the pure concern of fetching mixed together with the
+// additional constraint concern. Not sure how I feel about it.
+
+// TODO: instead of returning undefined, return a fake Response object with the
+// appropriate HTTP status error code.
 
 export default async function fetchImage(url, timeout, minImageSize, maxImageSize) {
   const options = {method: 'head', timeout: timeout};
