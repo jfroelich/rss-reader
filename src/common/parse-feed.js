@@ -11,8 +11,15 @@ export default function parseFeed(xmlString) {
     return [Status.EINVAL, null, message];
   }
 
-  const [status, document, message] = parseXML(xmlString);
-  return status === Status.OK ? unmarshallXML(document) : [status, null, message];
+  let document;
+  try {
+    document = parseXML(xmlString);
+  } catch(error) {
+    console.error(error);
+    return Status.EPARSEFEED;
+  }
+
+  return unmarshallXML(document);
 }
 
 // @param document {Document} an XML document representing a feed

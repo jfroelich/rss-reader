@@ -170,10 +170,12 @@ function parseOPML(xmlString) {
     return [Status.EINVAL];
   }
 
-  let [status, document, message] = parseXML(xmlString);
-  if(status !== Status.OK) {
-    console.error('XML parsing error:', message);
-    return [status];
+  let document;
+  try {
+    document = parseXML(xmlString);
+  } catch(error) {
+    console.error(error);
+    return [Status.EPARSEOPML];
   }
 
   const name = document.documentElement.localName.toLowerCase();
