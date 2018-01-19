@@ -76,7 +76,7 @@ export default async function lookupImpl(inputOptions) {
   // Check the cache for the input url
   if(options.conn) {
     const entry = await db.findEntry(options.conn, options.url);
-    if(entry.iconURLString && !isExpired(entry, options)) {
+    if(entry.iconURLString && !entryIsExpired(entry, options)) {
       return entry.iconURLString;
     }
     if(originURL.href === options.url.href && entry.failureCount >= options.maxFailureCount) {
@@ -134,7 +134,7 @@ export default async function lookupImpl(inputOptions) {
       // Check the cache for the redirected url
       if(options.conn) {
         let entry = await db.findEntry(options.conn, responseURL);
-        if(entry && entry.iconURLString && !isExpired(entry, options)) {
+        if(entry && entry.iconURLString && !entryIsExpired(entry, options)) {
           await db.putAll(options.conn, [url.href], entry.iconURLString);
           return entry.iconURLString;
         }
@@ -178,7 +178,7 @@ export default async function lookupImpl(inputOptions) {
   if(options.conn && !urls.includes(originURL.href)) {
     originEntry = await db.findEntry(options.conn, originURL);
     if(originEntry) {
-      if(originEntry.iconURLString && !isExpired(originEntry, options)) {
+      if(originEntry.iconURLString && !entryIsExpired(originEntry, options)) {
         await db.putAll(options.conn, urls, originEntry.iconURLString);
         return originEntry.iconURLString;
       } else if(originEntry.failureCount >= options.maxFailureCount) {
@@ -217,7 +217,7 @@ export default async function lookupImpl(inputOptions) {
 }
 
 
-function isExpired(entry, options) {
+function entryIsExpired(entry, options) {
   // Tolerate partially corrupted data
   if(!entry.dateUpdated) {
     options.console.warn('Entry missing date updated', entry);

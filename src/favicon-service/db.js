@@ -1,10 +1,22 @@
 import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
-import {MAX_AGE} from "/src/favicon-service/defaults.js";
+import * as defaults from "/src/favicon-service/defaults.js";
 import {assert} from "/src/favicon-service/utils.js";
 
 // TODO: decouple from indexeddb-utils.js. maybe drop support for timeout
 
-export async function open(name = 'favicon-cache', version = 3, timeout = 500) {
+export function open(name, version, timeout) {
+  if(typeof name === 'undefined') {
+    name = defaults.NAME;
+  }
+
+  if(typeof version === 'undefined') {
+    version = defaults.VERSION;
+  }
+
+  if(typeof timeout === 'undefined') {
+    timeout = defaults.OPEN_TIMEOUT;
+  }
+
   return utilsOpen(name, version, onUpgradeNeeded, timeout);
 }
 
@@ -29,57 +41,45 @@ function onUpgradeNeeded(event) {
   // In the transition from 2 to 3, there were no changes
 }
 
-// TODO: I am not sure if the promise helper is even needed. close can be called while
-// transactions pending. There may be no need to wait for the operation to complete.
-
-// Clears the favicon object store.
-// @param conn {IDBDatabase} optional open database connection, a connection is dynamically
-// created, used, and closed, if not specified
-export async function clear(conn) {
-  console.log('Clearing favicon store');
-  const dconn = conn ? conn : await open();
-  await clearPromise(dconn);
-  if(!conn) {
-    dconn.close();
-  }
-  console.log('Cleared favicon store');
-}
-
-function clearPromise(conn) {
-  return new Promise((resolve, reject) => {
+// Clears the favicon object store. Optionally specify open params, which are generally only
+// needed for testing. The clear function returns immediately, after starting the operation, but
+// prior to the operation completing. Returns a promise.
+export function clear(options = {}) {
+  return open(options.name, options.version, options.timeout).then(conn => {
     const txn = conn.transaction('favicon-cache', 'readwrite');
+    txn.oncomplete = () => {
+      console.log('Cleared favicon store');
+    };
+    txn.onerror = () => {
+      throw new Error(txn.error);
+    };
+
     const store = txn.objectStore('favicon-cache');
-    const request = store.clear();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    console.log('Clearing favicon store');
+    store.clear();
+    console.debug('Enqueuing close request for database', conn.name);
+    conn.close();
   });
 }
 
-// TODO: do I even need a promise helper? why wait for the operation to complete? conn.close
-// doesn't need to wait.
-// @param conn {IDBDatabase} optional, otherwise created dynamically
-export async function compact(conn) {
+// Remove expired entries from the database. Optionally specify open params for testing, otherwise
+// this connects to the default database. This returns immediately, prior to the operation
+// completing. Returns a promise.
+export async function compact(options = {}) {
   console.log('Compacting favicon store...');
-  const cutoffTime = Date.now() - MAX_AGE;
+  const cutoffTime = Date.now() - (options.maxAge || defaults.MAX_AGE);
   assert(cutoffTime >= 0);
   const cutoffDate = new Date(cutoffTime);
 
-  const dconn = conn ? conn : await open();
-  const count = await compactPromise(dconn, cutoffDate);
-  if(!conn) {
-    dconn.close();
-  }
-
-  console.log('Compacted favicon store, deleted %d entries', count);
-}
-
-// Query for expired entries and delete them
-function compactPromise(conn, cutoffDate) {
-  return new Promise((resolve, reject) => {
-    let count = 0;
+  return open(options.name, options.version, options.timeout).then(conn => {
     const txn = conn.transaction('favicon-cache', 'readwrite');
-    txn.oncomplete = () => resolve(count);
-    txn.onerror = () => reject(txn.error);
+    txn.oncomplete = () => {
+      console.log('Compacted favicon store');
+    };
+    txn.onerror = () => {
+      throw new Error(txn.error);
+    };
+
     const store = txn.objectStore('favicon-cache');
     const index = store.index('dateUpdated');
     const range = IDBKeyRange.upperBound(cutoffDate);
@@ -87,12 +87,12 @@ function compactPromise(conn, cutoffDate) {
     request.onsuccess = () => {
       const cursor = request.result;
       if(cursor) {
-        console.debug('Deleting expired favicon entry', cursor.value);
-        count++;
+        console.debug('Deleting favicon entry', cursor.value);
         cursor.delete();
         cursor.continue();
       }
     };
+    conn.close();
   });
 }
 
@@ -128,15 +128,15 @@ export function putAll(conn, urlStrings, iconURLString) {
 
     const store = txn.objectStore('favicon-cache');
     const currentDate = new Date();
+    const entry = {
+      pageURLString: null,
+      iconURLString: iconURLString,
+      dateUpdated: currentDate,
+      failureCount: 0
+    };
 
     for(const urlString of urlStrings) {
-      const entry = {
-        pageURLString: urlString,
-        iconURLString: iconURLString,
-        dateUpdated: currentDate,
-        failureCount: 0
-      };
-
+      entry.pageURLString = urlString;
       store.put(entry);
     }
   });

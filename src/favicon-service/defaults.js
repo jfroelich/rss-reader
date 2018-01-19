@@ -1,4 +1,8 @@
 
+export const NAME = 'favicon-cache';
+export const VERSION = 3;
+export const OPEN_TIMEOUT = 500;
+
 export const MAX_AGE = 1000 * 60 * 60 * 24 * 30;
 export const MAX_FAILURE_COUNT = 2;
 export const SKIP_FETCH = false;
