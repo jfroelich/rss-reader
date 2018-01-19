@@ -1,5 +1,3 @@
-import assert from "/src/common/assert.js";
-import * as Status from "/src/common/status.js";
 
 // Given an input value, if it is a string, then creates and returns a new string where html
 // entities have been decoded into corresponding values. For example, '&lt;' becomes '<'.
@@ -10,25 +8,20 @@ import * as Status from "/src/common/status.js";
 const workerElement = document.createElement('div');
 export function decodeEntities(value) {
   const entityPattern = /&[#0-9A-Za-z]+;/g;
-
   return typeof value === 'string' ? value.replace(entityPattern,
     function decodeEntitiesReplace(entityString) {
     // Set the value of the shared worker element. By using innerHTML this sets the raw value
     workerElement.innerHTML = entityString;
-
     // Now get the value back out. The accessor will do the decoding dynamically.
     // TODO: why innerText? probably should just use textContent? Wait until I implement a
     // testing lib to change.
     const text = workerElement.innerText;
-
     // Reset it each time to avoid leaving crap hanging around because worker element lifetime
     // is page lifetime not function scope lifetime
     workerElement.innerHTML = '';
-
     return text;
   }) : value;
 }
-
 
 // Returns a new string where certain 'unsafe' characters in the input string have been replaced
 // with html entities. If input is not a string returns undefined.
@@ -63,13 +56,16 @@ export function truncateHTML(htmlString, position, suffix) {
     suffix = ELLIPSIS;
   }
 
-  const [status, doc] = parseHTML(htmlString);
-  if(status !== Status.OK) {
+  let document;
+  try {
+    document = parseHTML(htmlString);
+  } catch(error) {
+    console.debug(error);
     return 'Unsafe html';
   }
 
   // Search for the text node in which truncation should occur and truncate it
-  const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+  const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   let totalLength = 0;
 
   for(let node = it.nextNode(); node; node = it.nextNode()) {
@@ -92,7 +88,7 @@ export function truncateHTML(htmlString, position, suffix) {
   // parseHTML introduces body text for fragments. If full text then return full text, otherwise
   // strip the added elements
 
-  return isNotFragment(htmlString) ? doc.documentElement.outerHTML : doc.body.innerHTML;
+  return isNotFragment(htmlString) ? document.documentElement.outerHTML : document.body.innerHTML;
 }
 
 function isNotFragment(htmlString) {
@@ -114,17 +110,20 @@ export function replaceTags(htmlString, replacement) {
     assert(typeof replacement === 'string');
   }
 
-  const [status, doc, message] = parseHTML(htmlString);
-  if(status !== Status.OK) {
-    return 'Unsafe HTML redacted';
+  let document;
+  try {
+    document = parseHTML(htmlString);
+  } catch(error) {
+    console.debug(error);
+    return 'Unsafe html';
   }
 
   if(!replacement) {
-    return doc.body.textContent;
+    return document.body.textContent;
   }
 
   // Shove the text nodes into an array and then join by replacement
-  const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+  const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   const nodeValues = [];
   for(let node = it.nextNode(); node; node = it.nextNode()) {
     nodeValues.push(node.nodeValue);
@@ -137,13 +136,16 @@ export function replaceTags(htmlString, replacement) {
 // provided by the browser, that includes a document element and usually a body. If not a fragment,
 // then it is merged into a document with a default template.
 export function parseHTML(htmlString) {
-  if(typeof htmlString !== 'string') {
-    throw new TypeError('Expected string, got ' + typeof htmlString);
-  }
-
+  assert(typeof htmlString === 'string');
   const parser = new DOMParser();
-  const doc = parser.parseFromString(htmlString, 'text/html');
-  const error = doc.querySelector('parsererror');
-  return error ? [Status.EPARSEHTML, null, error.textContent.replace(/\s{2,}/g, ' ')] :
-    [Status.OK, doc];
+  const document = parser.parseFromString(htmlString, 'text/html');
+  const error = document.querySelector('parsererror');
+  if(error) {
+    throw new Error(error.textContent.replace(/\s{2,}/g, ' '));
+  }
+  return document;
+}
+
+function assert(value, message) {
+  if(!value) throw new Error(message || 'Assertion error');
 }

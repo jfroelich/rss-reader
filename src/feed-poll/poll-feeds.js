@@ -330,6 +330,11 @@ function cascadeFeedPropertiesToEntries(feed, entries) {
   }
 }
 
+// TODO: I plan to deprecate promise utils, and therefore promiseEvery, and revert to using
+// Promise.all. In order to do that, I need to avoid Promise.all's shortcircuiting behavior in
+// the event of an error. Therefore, I need to review pollEntry and modify it if needed so that
+// it only throws an error in the event of an actual programming error.
+
 FeedPoll.prototype.pollEntry = async function(entry) {
   assert(this.feedConn instanceof IDBDatabase);
   assert(Entry.isEntry(entry));
@@ -339,7 +344,10 @@ FeedPoll.prototype.pollEntry = async function(entry) {
     return;
   }
 
+  // This should never throw, so no try/catch. If it does throw it represents a programming error.
   const url = new URL(Entry.peekURL(entry));
+
+
   const rewrittenURL = rewriteURL(url);
   if(rewrittenURL && url.href !== rewrittenURL.href) {
     Entry.appendURL(entry, rewrittenURL);
@@ -350,8 +358,6 @@ FeedPoll.prototype.pollEntry = async function(entry) {
     return;
   }
 
-  let status;
-
   // This should never fail except in case of serious database error, so no try/catch
   let containsEntry = await containsEntryWithURL(this.feedConn, url);
   if(containsEntry) {
@@ -359,7 +365,23 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   }
 
   let entryContent = entry.content;
-  const response = await this.fetchEntryHTML(url);
+
+  //const response = await this.fetchEntryHTML(url);
+  //const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
+  //return status === Status.OK ? response : null;
+
+  // Try and fetch the entry's full text. Prevent errors from bubbling
+  // TODO: revert fetchHML to throwing errors instead of status
+  let response;
+  try {
+    const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
+    if(status !== Status.OK) {
+      throw new Error('Fetch error');
+    }
+  } catch(error) {
+    console.debug(error);
+    // Ignore, leave response undefined
+  }
 
   if(response) {
     const responseURL = new URL(response.url);
@@ -377,14 +399,33 @@ FeedPoll.prototype.pollEntry = async function(entry) {
       Entry.appendURL(entry, responseURL);
 
       // TODO: attempt to rewrite the redirected url as well?
+
+      // TODO: deprecate calls to setURLHrefProperty
       setURLHrefProperty(url, response.url);
     }
 
     // Use the full text of the response in place of the in-feed content
-    entryContent = await response.text();
+    try {
+      entryContent = await response.text();
+    } catch(error) {
+      console.debug(error);
+      // Ignore
+    }
+
   }
 
-  const entryDocument = parseEntryHTML(entryContent);
+  // Parse the response's full text into an html document. Trap any errors.
+  let entryDocument;
+  try {
+    entryDocument = parseHTML(entryContent);
+  } catch(error) {
+    console.debug(error);
+    // Continue
+  }
+
+  // TODO: does this throw?
+  // NOTE: this is the point of refactoring away promiseEvery that I stopped at
+
   await this.setEntryFavicon(entry, url, response ? entryDocument : undefined);
 
   // TODO: if entry.title is undefined, try and extract it from entryDocument title element
@@ -416,26 +457,6 @@ FeedPoll.prototype.pollEntry = async function(entry) {
 
 function isPollableURL(url) {
   return isHTTPURL(url) && !isBinaryURL(url) && !isInaccessibleContentURL(url);
-}
-
-// TODO: with status, this is now pretty simple, just inline
-// Attempts to fetch the entry's html. May return undefined.
-FeedPoll.prototype.fetchEntryHTML = async function(url) {
-  const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
-  return status === Status.OK ? response : null;
-};
-
-// TODO: this is now pretty simple without exceptions. Consider inlining.
-// Attempts to parse the fetched html. May return undefined
-function parseEntryHTML(html) {
-  const [status, document, message] = parseHTML(html);
-  if(status !== Status.OK) {
-    console.debug(message);
-    // Return undefined on parse error
-    return;
-  } else {
-    return document;
-  }
 }
 
 FeedPoll.prototype.setEntryFavicon = async function(entry, url, document) {

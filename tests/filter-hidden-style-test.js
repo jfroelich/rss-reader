@@ -3,7 +3,7 @@ import {parseHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 
 async function test(url) {
-  let status, response, doc, message;
+  let status, response, message;
 
   [status, response] = await FetchUtils.fetchHTML(url);
   if(status !== Status.OK) {
@@ -12,12 +12,7 @@ async function test(url) {
   }
 
   const text = await response.text();
-  [status, doc, message] = parseHTML(text);
-  if(status !== Status.OK) {
-    console.warn('Parse error', message);
-    return;
-  }
-
+  const doc = parseHTML(text);
   filter_hidden_elements_using_style(doc);
 }
 

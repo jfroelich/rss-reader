@@ -5,7 +5,7 @@ import {parseHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 
 async function test(urlString) {
-  let status, response, document;
+  let status, response;
 
   const urlObject = new URL(urlString);
   [status, response] = await FetchUtils.fetchHTML(urlObject);
@@ -15,12 +15,7 @@ async function test(urlString) {
   }
 
   const responseText = await response.text();
-  [status, document] = parseHTML(responseText);
-  if(status !== Status.OK) {
-    console.warn('Parse error', status);
-    return;
-  }
-
+  const document = parseHTML(responseText);
   filterLazyImages(document);
 
   // Call this subsequently because it prints out missing images

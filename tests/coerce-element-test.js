@@ -3,13 +3,7 @@ import {parseHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 
 let input = '<html><head></head><body><a></a></body></html>';
-
-
-const [status, doc, message] = parseHTML(input);
-if(status !== Status.OK) {
-  throw new Error(message);
-}
-
+const doc = parseHTML(input);
 
 let anchors = doc.querySelectorAll('a');
 for(let a of anchors) {

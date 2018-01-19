@@ -22,19 +22,14 @@ async function test(urlString) {
   }
 
   const html = await response.text();
-  [status, document] = parseHTML(html);
-  if(status !== Status.OK) {
-    console.warn('Parse error', status);
-    return;
-  }
-
+  const document = parseHTML(html);
   const responseURL = new URL(response.url);
   await setImageSizes(document, responseURL);
 }
 
 async function test2() {
   const html = '<html><body><img src="http://exercism.io/icons/brand-logo.svg"></body></html>';
-  const [status, document] = parseHTML(html);
+  const document = parseHTML(html);
   await setImageSizes(document);
 }
 

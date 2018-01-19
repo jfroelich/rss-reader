@@ -12,7 +12,7 @@ import filterScript from "/src/feed-poll/filters/script-filter.js";
 async function test(urlString) {
   const urlObject = new URL(urlString);
 
-  let status, response, document, message;
+  let status, response, message;
 
   [status, response] = await fetchHTML(urlObject);
   if(status !== Status.OK) {
@@ -21,12 +21,7 @@ async function test(urlString) {
   }
 
   const responseText = await response.text();
-
-  [status, document, message] = parseHTML(responseText);
-  if(status !== Status.OK) {
-    console.warn(message);
-    return;
-  }
+  const document = parseHTML(responseText);
 
   // Strip some annoying iframe stuff
   filterFrames(document);
