@@ -1,7 +1,5 @@
 import {detectURLChanged, fetchHTML} from "/src/common/fetch-utils.js";
-
 import * as db from "/src/favicon-service/db.js";
-
 import fetchImage from "/src/favicon-service/fetch-image.js";
 import {assert, parseHTML, resolveURLString} from "/src/favicon-service/utils.js";
 import * as defaults from "/src/favicon-service/defaults.js";
@@ -51,7 +49,6 @@ const defaultOptions = {
   maxImageSize: defaults.MAX_IMAGE_SIZE,
   console: defaults.NULL_CONSOLE
 };
-
 
 // Lookup a favicon
 export default async function lookupImpl(inputOptions) {
@@ -216,6 +213,30 @@ export default async function lookupImpl(inputOptions) {
   }
 }
 
+function onLookupFailure(conn, originURL, originEntry) {
+  if(entry) {
+    const newEntry = {};
+    newEntry.pageURLString = entry.pageURLString;
+    newEntry.dateUpdated = new Date();
+    newEntry.iconURLString = entry.iconURLString;
+    if('failureCount' in entry) {
+      if(entry.failureCount <= this.kMaxFailureCount) {
+        newEntry.failureCount = entry.failureCount + 1;
+        db.putEntry(conn, newEntry);
+      }
+    } else {
+      newEntry.failureCount = 1;
+      db.putEntry(conn, newEntry);
+    }
+  } else {
+    const newEntry = {};
+    newEntry.pageURLString = originURL.href;
+    newEntry.iconURLString = undefined;
+    newEntry.dateUpdated = new Date();
+    newEntry.failureCount = 1;
+    db.putEntry(conn, newEntry);
+  }
+}
 
 function entryIsExpired(entry, options) {
   // Tolerate partially corrupted data
@@ -301,29 +322,4 @@ function findCandidateURLs(document) {
   }
 
   return candidates;
-}
-
-function onLookupFailure(conn, originURL, originEntry) {
-  if(entry) {
-    const newEntry = {};
-    newEntry.pageURLString = entry.pageURLString;
-    newEntry.dateUpdated = new Date();
-    newEntry.iconURLString = entry.iconURLString;
-    if('failureCount' in entry) {
-      if(entry.failureCount <= this.kMaxFailureCount) {
-        newEntry.failureCount = entry.failureCount + 1;
-        db.putEntry(conn, newEntry);
-      }
-    } else {
-      newEntry.failureCount = 1;
-      db.putEntry(conn, newEntry);
-    }
-  } else {
-    const newEntry = {};
-    newEntry.pageURLString = originURL.href;
-    newEntry.iconURLString = undefined;
-    newEntry.dateUpdated = new Date();
-    newEntry.failureCount = 1;
-    db.putEntry(conn, newEntry);
-  }
 }
