@@ -1,4 +1,3 @@
-import canonicalizeURLs from "/src/feed-poll/filters/canonical-url-filter.js";
 import setImageSizes from "/src/feed-poll/filters/image-size-filter.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import {parseHTML} from "/src/common/html-utils.js";
@@ -15,8 +14,8 @@ import * as Status from "/src/common/status.js";
 async function test(urlString) {
   let status, response, document;
 
-  const urlObject = new URL(urlString);
-  [status, response] = await FetchUtils.fetchHTML(urlObject);
+  const requestURL = new URL(urlString);
+  [status, response] = await FetchUtils.fetchHTML(requestURL);
   if(status !== Status.OK) {
     console.warn('Fetch error', status);
     return;
@@ -29,8 +28,8 @@ async function test(urlString) {
     return;
   }
 
-  canonicalizeURLs(document, new URL(response.url));
-  await setImageSizes(document);
+  const responseURL = new URL(response.url);
+  await setImageSizes(document, responseURL);
 }
 
 async function test2() {

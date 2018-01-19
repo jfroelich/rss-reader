@@ -43,8 +43,11 @@ async function test(urlString) {
   // setting image size.
   canonicalizeURLs(document, new URL(response.url));
 
+  // TODO: I don't think I need to canonicalize urls any longer now that setImageSizes
+  // accepts an optional base url
+
   // Set image sizes to more accurately test image bias
-  await setImageSizes(document);
+  await setImageSizes(document, new URL(response.url));
 
   // Finally filter boilerplate, use annotations and do not prune
   const bpfOptions = {

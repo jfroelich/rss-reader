@@ -79,24 +79,31 @@ export default async function applyAllFilters(document, documentURL, fetchImageT
 
   // This should occur prior to lazyImageFilter
   // This should occur prior to imageSizeFilter
-  // Does not matter if before or after canonicalURLFilter
+  // Does not matter if before or after canonicalizing urls
   responsiveImageFilter(document);
 
-  // This should occur before sourcelessImageFilter
+  // This should occur before removing images that are missing a src value, because lazily-loaded
+  // images often are missign a source value but are still useful
   lazyImageFilter(document);
 
-  // This should occur before imageSizeFilter
+  // This should occur before setting image sizes to avoid unwanted network requests
+  // TODO: change to passing url instead of url string
   lonestarFilter(document, documentURL.href);
 
+  // This should occur before trying to set image sizes simply because it potentially reduces
+  // the number of images processed later
   sourcelessImageFilter(document);
 
-  // This should occur after resolving urls
-  // This should occur after removing telemetry
+  // It does not matter if this occurs before or after resolving urls. This now accepts a
+  // base url parameter and dynamically canonicalizes image urls (without writing back to doc)
+  // This should occur after removing telemetry, because this involves network requests that
+  // perhaps the telemetry filter thinks should be avoided.
   // Allow exceptions to bubble
-  let allowedProtocols; // defer to defaults
-  await imageSizeFilter(document, allowedProtocols, fetchImageTimeoutMs);
+  await imageSizeFilter(document, documentURL, fetchImageTimeoutMs);
 
+  // This should occur after setting image sizes because it requires knowledge of image size
   smallImageFilter(document);
+
 
   invalidAnchorFilter(document);
   formattingAnchorFilter(document);

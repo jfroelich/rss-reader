@@ -1,161 +1,93 @@
-import assert from "/src/common/assert.js";
-import * as FetchUtils from "/src/common/fetch-utils.js";
-import formatString from "/src/common/format-string.js";
-import * as PromiseUtils from "/src/common/promise-utils.js";
-import * as Status from "/src/common/status.js";
+import {isAllowedURL} from "/src/common/fetch-utils.js";
 
-const DEBUG = false;
-function log(...args) {
-  if(DEBUG) {
-    console.log(...args);
-  }
-}
-
-const DEFAULT_ALLOWED_PROTOCOLS = ['data:', 'http:', 'https:'];
+// TODO: use console parameter pattern to enable/disable logging
+// TODO: consider somehow using document.baseURI over explicit baseURL
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.
 // Assumes that if an image has a src attribute value that is a url, that the
 // url is absolute.
-// @param doc {Document}
-// @param allowedProtocols
-// @param timeoutMs {Number} optional, if undefined or 0 then no timeout
+// @param document {Document}
+// @param allowedProtocols {Array} optional, if not provided then defaults data/http/https
+// @param timeout {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
-export default async function filterDocument(doc, allowedProtocols, timeoutMs) {
-  assert(doc instanceof Document);
+export default async function applyImageSizeFilter(document, baseURL, timeout) {
+  assert(document instanceof Document);
+  assert(typeof baseURL === 'undefined' || baseURL instanceof URL);
 
-  if(typeof allowedProtocols === 'undefined') {
-    allowedProtocols = DEFAULT_ALLOWED_PROTOCOLS;
-  }
-
-  // Duck typing assertion
-  assert(typeof allowedProtocols.includes === 'function');
-
-  if(!doc.body) {
+  if(!document.body) {
     return;
   }
 
-  // Get all images
-  const images = doc.body.getElementsByTagName('img');
+  const images = document.body.getElementsByTagName('img');
   if(!images.length) {
     return;
   }
 
-  // Concurrently process each image
+  // Concurrently get dimensions for each image
   const promises = [];
   for(const image of images) {
-    promises.push(getImageDimensions(image, allowedProtocols, timeoutMs));
+    promises.push(getImageDimensions(image, baseURL, timeout));
   }
-  const results = await PromiseUtils.promiseEvery(promises);
 
+  // Update the DOM for images that need state change
+  const results = await Promise.all(promises);
   for(const result of results) {
-    if(result) {
+    if('width' in result) {
       result.image.setAttribute('width', '' + result.width);
       result.image.setAttribute('height', '' + result.height);
-      log(result.image.outerHTML);
+      console.debug('Set image size:', result.image.getAttribute('src'),
+        result.image.width, result.image.height, result.reason);
     }
   }
 }
 
-async function getImageDimensions(image, allowedProtocols, timeoutMs) {
-
-  const result = {
-    image: image,
-    width: undefined,
-    height: undefined,
-    reason: undefined
-  };
-
-  // If both attributes are present, then immediately resolve with undefined to indicate no
-  // change should be made to the image.
+async function getImageDimensions(image, baseURL, timeout) {
   if(image.hasAttribute('width') && image.hasAttribute('height')) {
-    return;
+    return {image: image, reason: 'has-attributes'};
   }
 
-
-  // Square inference
-  // If the image has width, then we know it does not have height due to the above condition.
-  // To improve performance, infer that the image is a square
-
-  // NOTE: I've disabled because it is leading to funny looking images. Not sure if that
-  // is because I no longer filter width/height from attributes later or because of this
-  // NOTE: images still appear funny. I think it is because I hardcode height attribute but
-  // set max-width in view, and full-width image still honors height. What really needs to happen
-  // is scaling, proportionally. For now I think what I will do is filter height later, or
-  // change the css.
-  /*if(image.hasAttribute('width')) {
-    // Keep width as width. We know image.width will be set because the parser set the property
-    // given the presence of the attribute
-    result.width = image.width;
-    // Set height to width
-    result.height = image.width;
-    result.reason = 'height-inferred-from-width';
-    return result;
-  }*/
-
-
-  // Square inference
-  // Do the same thing for an image that just has height. We still have to check, because the image
-  // could have neither.
-  // NOTE: temporarily disabled, see above note
-  /*if(image.hasAttribute('height')) {
-    // Infer width from height
-    result.width = image.height;
-    result.height = image.height;
-    result.reason = 'width-inferred-from-height';
-    return result;
-  }*/
-
-  const styleDimensions = getInlineStyleDimensions(image);
-  if(styleDimensions) {
-    result.width = styleDimensions.width;
-    result.height = styleDimensions.height;
-    result.reason = 'style';
-    return result;
+  let dims = getInlineStyleDimensions(image);
+  if(dims) {
+    return {image: image, reason: 'inline-style', width: dims.width, height: dims.height};
   }
 
   const imageSource = image.getAttribute('src');
   if(!imageSource) {
+    return {image: image, reason: 'missing-src'};
     return;
   }
 
+  // NOTE: this assumes image source url is canonical.
+
+  // Parsing the url can throw an error. getImageDimensions should not throw except in the
+  // case of a programming error.
   let sourceURL;
   try {
-    sourceURL = new URL(imageSource);
+    sourceURL = new URL(imageSource, baseURL);
   } catch(error) {
-    console.debug('Failed to parse image element src attribute', imageSource);
+    // If we cannot parse the url, then we cannot reliably inspect
+    // the url for dimensions, nor fetch the image, so we're done.
+    return {image: image, reason: 'invalid-src'};
     return;
   }
 
-  if(!allowedProtocols.includes(sourceURL.protocol)) {
-    return;
+  dims = sniffDimensionsFromURL(sourceURL);
+  if(dims) {
+    return {image: image, reason: 'url-sniff', width: dims.width, height: dims.height};
   }
 
-  const urlDimensions = sniffDimensionsFromURL(sourceURL);
-  if(urlDimensions) {
-    result.width = urlDimensions.width;
-    result.height = urlDimensions.height;
-    result.reason = 'url';
-    return result;
+  // Failure to fetch should be trapped, because getImageDimensions should only throw in case of a
+  // programming error, so that it can be used together with Promise.all
+  try {
+    dims = await fetchImageElement(sourceURL, timeout);
+  } catch(error) {
+    return {image: image, reason: 'fetch-error'};
   }
 
-  const [status, response] = await fetchImageElement(sourceURL, timeoutMs);
-  if(status !== Status.OK) {
-    return;
-  }
-
-  log('Found dimensions from fetch', image.outerHTML, response.width, response.height);
-  result.width = response.width;
-  result.height = response.height;
-  result.reason = 'fetch';
-  return result;
+  return {image: image, reason: 'fetch', width: dims.width, height: dims.height};
 }
-
-const namedAttributePairs = [
-  {width: 'w', height: 'h'},
-  {width: 'width', height: 'height'}
-];
 
 // Try and find image dimensions from the characters of its url
 function sniffDimensionsFromURL(sourceURL) {
@@ -163,6 +95,11 @@ function sniffDimensionsFromURL(sourceURL) {
   if(sourceURL.protocol === 'data:') {
     return;
   }
+
+  const namedAttributePairs = [
+    {width: 'w', height: 'h'},
+    {width: 'width', height: 'height'}
+  ];
 
   // Infer from url parameters
   const params = sourceURL.searchParams;
@@ -211,75 +148,55 @@ function getInlineStyleDimensions(element) {
   }
 }
 
-
 // TODO: use the fetch API to avoid cookies. First determine if this actually transmits cookies.
 // I think this should be simple to detect, just monitor the network tab in devtools
 
 // Fetches an image element. Returns a promise that resolves to a fetched image element. Note that
 // data uris are accepted.
 // @param url {URL}
-// @param timeoutMs {Number}
+// @param timeout {Number}
 // @returns {Promise}
-async function fetchImageElement(url, timeoutMs) {
-  assert(url instanceof URL);
-  assert(typeof timeoutMs === 'undefined' || (Number.isInteger(timeoutMs) && timeoutMs >= 0));
+async function fetchImageElement(url, timeout) {
+  assert(typeof timeout === 'undefined' || (Number.isInteger(timeout) && timeout >= 0));
+  const fetchPromise = fetchImageElementPromise(url);
+  const contestants = timeout ? [fetchPromise, sleep(timeout)] : [fetchPromise];
+  const image = await Promise.race(contestants);
+  assert(image, 'Fetched timed out ' + url.href);
+  return image;
+}
 
-  if(!FetchUtils.isAllowedURL(url)) {
-    const message = formatString('Refused to fetch url', url);
-    return [Status.EPOLICY];
-  }
+function fetchImageElementPromise(url) {
+  return new Promise((resolve, reject) => {
+    assert(url instanceof URL);
+    const allowedProtocols = ['data:', 'http:', 'https:'];
+    assert(allowedProtocols.includes(url.protocol));
+    assert(isAllowedURL(url));
 
-  let timerId, timeoutPromise;
-
-  const fetchPromise = new Promise(function fetchExec(resolve, reject) {
+    // Create a proxy element within this script's document
     const proxy = new Image();
-    proxy.src = url.href;// triggers the fetch
+    // Set the proxy's source to trigger the fetch
+    proxy.src = url.href;
+
+    // If cached then resolve immediately
     if(proxy.complete) {
-      clearTimeout(timerId);
-      resolve(proxy);
-      return;
+      return resolve(proxy);
     }
 
-    proxy.onload = function proxyOnload(event) {
-      clearTimeout(timerId);
-      resolve(proxy);
-    };
-    proxy.onerror = function proxyOnerror(event) {
-      clearTimeout(timerId);
-      const message = formatString('Error fetching image with url', url);
-      const error = new Error(message);
-      reject(error);
+    proxy.onload = () => resolve(proxy);
+    proxy.onerror = (event) => {
+
+      // TODO: examine if there is a discernible error message to use rather than
+      // creating a custom one
+      console.dir(event);
+
+      reject(new Error('Unknown error fetching image ' + url.href));
     };
   });
+}
 
-  if(!timeoutMs) {
-    let image;
-    try {
-      image = await fetchPromise;
-    } catch(error) {
-      return [Status.EFETCH];
-    }
-
-    return [Status.OK, image];
-  }
-
-  [timerId, timeoutPromise] = PromiseUtils.setTimeoutPromise(timeoutMs);
-  const contestants = [fetchPromise, timeoutPromise];
-
-  let image;
-  try {
-    image = await Promise.race(contestants);
-  } catch(error) {
-    return [Status.EFETCH];
-  }
-
-  // If image is not defined that means timeout won
-  if(!image) {
-    return [Status.ETIMEOUT, null, url];
-  }
-
-  clearTimeout(timerId);
-  return [Status.OK, image];
+// Resolves to undefined after the given amount of time (in milliseconds)
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 
@@ -295,5 +212,11 @@ function getFileNameFromURL(url) {
   const index = url.pathname.lastIndexOf('/');
   if((index > -1) && (index + 1 < url.pathname.length)) {
     return url.pathname.substring(index + 1);
+  }
+}
+
+function assert(value, message) {
+  if(!value) {
+    throw new Error(message || 'Assertion error');
   }
 }
