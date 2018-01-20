@@ -1,7 +1,11 @@
-import formatString from "/src/common/format-string.js";
 import {decodeEntities} from "/src/common/html-utils.js";
 import parseXML from "/src/common/parse-xml.js";
 import * as Status from "/src/common/status.js";
+
+// TODO: inline parse-xml.js here, and likewise where-ever else it is used. This will help
+// reduce coupling. It is a simplistic function.
+// TODO: decouple from status, revert to throwing exceptions
+
 
 // Parses the input string into a feed object. The feed object will always have a defined entries
 // array, although it may be zero length. Returns an array of status, feed, and error message.
@@ -30,7 +34,7 @@ function unmarshallXML(document) {
 
   const supportedNames = ['feed', 'rdf', 'rss'];
   if(!supportedNames.includes(documentElementName)) {
-    const message = formatString('Unsupported document element', documentElementName);
+    const message = 'Unsupported document element ' + documentElementName;
     return [Status.EPARSEFEED, null, message];
   }
 

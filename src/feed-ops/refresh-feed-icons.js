@@ -1,6 +1,6 @@
 import assert from "/src/common/assert.js";
 import * as Status from "/src/common/status.js";
-import {lookup, open as openIconStore} from "/src/favicon-service/favicon-service.js";
+import {lookup, open as openIconStore} from "/src/favicon-service.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {findActiveFeeds, open as openFeedStore, putFeed} from "/src/feed-store/feed-store.js";
 

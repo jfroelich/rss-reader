@@ -5,7 +5,7 @@ import {
   compact as compactIconStore,
   lookup,
   open as openIconStore
-} from "/src/favicon-service/favicon-service.js";
+} from "/src/favicon-service.js";
 import archiveEntries from "/src/feed-ops/archive-entries.js";
 import refreshFeedIcons from "/src/feed-ops/refresh-feed-icons.js";
 import removeLostEntries from "/src/feed-ops/remove-lost-entries.js";

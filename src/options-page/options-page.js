@@ -4,7 +4,7 @@ import * as Status from "/src/common/status.js";
 
 // Needed by subscribe.
 // TODO: it would be better if subscribe could connect on demand
-import {open as openIconStore} from "/src/favicon-service/favicon-service.js";
+import {open as openIconStore} from "/src/favicon-service.js";
 
 import subscribe from "/src/feed-ops/subscribe.js";
 import unsubscribe from "/src/feed-ops/unsubscribe.js";

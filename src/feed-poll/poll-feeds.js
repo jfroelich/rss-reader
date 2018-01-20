@@ -6,7 +6,7 @@ import {parseHTML} from "/src/common/html-utils.js";
 import * as PromiseUtils from "/src/common/promise-utils.js";
 import * as Status from "/src/common/status.js";
 
-import {lookup, open as openIconStore} from "/src/favicon-service/favicon-service.js";
+import {lookup, open as openIconStore} from "/src/favicon-service.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
@@ -177,6 +177,11 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   assert(typeof feedXML === 'string');
   let parseResult;
   const processEntries = true;
+
+  // TODO: coerceFeed throws error when parseXML throws error at the moment, this should
+  // be resolved by reverting coerceFeed back to throwing exceptions and using try/catch
+  // here instead of status
+
   [status, parseResult] = coerceFeed(feedXML, requestURL, new URL(response.url),
     responseLastModifiedDate, processEntries);
   if(status !== Status.OK) {

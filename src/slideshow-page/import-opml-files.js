@@ -1,6 +1,6 @@
 import parseXML from "/src/common/parse-xml.js";
 import * as Status from "/src/common/status.js";
-import {open as openIconStore} from "/src/favicon-service/favicon-service.js";
+import {open as openIconStore} from "/src/favicon-service.js";
 import subscribe from "/src/feed-ops/subscribe.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {open as openFeedStore} from "/src/feed-store/feed-store.js";

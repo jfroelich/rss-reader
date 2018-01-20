@@ -1,7 +1,7 @@
 import showDesktopNotification from "/src/notifications.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import * as Status from "/src/common/status.js";
-import {lookup} from "/src/favicon-service/favicon-service.js";
+import {lookup} from "/src/favicon-service.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {containsFeedWithURL, prepareFeed, putFeed} from "/src/feed-store/feed-store.js";
