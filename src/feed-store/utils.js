@@ -137,12 +137,12 @@ export function filterEmptyProps(object) {
 // \r is \u000d which is base10 13
 // TODO: look into how much this overlaps with filterControls
 
-const unPrintablePattern = /[\u0000-\u0008\u000b\u000e-\u001F]+/g;
+const unprintablePattern = /[\u0000-\u0008\u000b\u000e-\u001F]+/g;
 export function filterUnprintableCharacters(value) {
   // The length check is done because given that replace will be a no-op when the length is 0 it is
   // faster to perform the length check than it is to call replace. I do not know the distribution
   // of inputs but I expect that empty strings are not rare.
-  return typeof value === 'string' && value.length ? value.replace(unPrintablePattern, '') : value;
+  return typeof value === 'string' && value.length ? value.replace(unprintablePattern, '') : value;
 }
 
 // Returns a new string where Unicode Cc-class characters have been removed. Throws an error if
