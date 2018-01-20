@@ -1,7 +1,7 @@
 import {decodeEntities} from "/src/common/html-utils.js";
 
 // Parses the input string into a feed object. The feed object will always have a defined entries
-// array, although it may be zero length. Returns an array of status, feed, and error message.
+// array, although it may be zero length. Returns a feed object or throws
 export default function parseFeed(xmlString) {
   // Sanity checking xmlString delegated to parseXML
   // Rethrow parse xml errors
@@ -22,8 +22,6 @@ function parseXML(xmlString) {
   }
   return document;
 }
-
-
 
 // @param document {Document} an XML document representing a feed
 // @returns {Object} a feed object
