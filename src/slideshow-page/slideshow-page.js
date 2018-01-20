@@ -970,20 +970,14 @@ function appendFeed(feed) {
 
 // TODO: create a utils file and move this there
 function formatDate(date, delimiter) {
-  // Tolerate some forms bad input
-  if(!date) {
-    return '';
+  if(!(date instanceof Date)) {
+    return 'Invalid date';
   }
 
-  // TODO: do not assert in the UI
-  assert(date instanceof Date);
-
-  const parts = [];
-  // Add 1 because getMonth is a zero based index
-  parts.push(date.getMonth() + 1);
-  parts.push(date.getDate());
-  parts.push(date.getFullYear());
-  return parts.join(delimiter || '/');
+  // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/
+  // Reference/Global_Objects/DateTimeFormat
+  const formatter = new Intl.DateTimeFormat();
+  return formatter.format(date);
 }
 
 function openTab(url) {
