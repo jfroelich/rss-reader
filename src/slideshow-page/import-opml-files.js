@@ -1,4 +1,3 @@
-import parseXML from "/src/common/parse-xml.js";
 import * as Status from "/src/common/status.js";
 import {open as openIconStore} from "/src/favicon-service.js";
 import subscribe from "/src/feed-ops/subscribe.js";
@@ -162,6 +161,21 @@ function readFileAsText(file) {
     reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(reader.error);
   });
+}
+
+function parseXML(xmlString) {
+  if(typeof xmlString !== 'string') {
+    throw new TypeError('Expected string, got ' + typeof xmlString);
+  }
+
+  const parser = new DOMParser();
+  const document = parser.parseFromString(xmlString, 'application/xml');
+  const error = document.querySelector('parsererror');
+  if(error) {
+    throw new Error(error.textContent.replace(/\s{2,}/g, ' '));
+  }
+
+  return document;
 }
 
 function parseOPML(xmlString) {
