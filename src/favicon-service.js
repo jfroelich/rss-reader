@@ -78,7 +78,7 @@ const defaultOptions = {
 };
 
 // Lookup a favicon
-export default async function lookupImpl(inputOptions) {
+export async function lookup(inputOptions) {
 
   // TODO: review Object.assign. I believe it is shallow but I've forgotten. Right now
   // document is a property and I do not want to be cloning it, just copying the reference
