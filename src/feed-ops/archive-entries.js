@@ -3,12 +3,26 @@ import sizeof from "/src/feed-ops/sizeof.js";
 import * as Entry from "/src/feed-store/entry.js";
 import {open as openFeedStore} from "/src/feed-store/feed-store.js";
 
+
 // TODO: eventually reconsider how an entry is determined as archivable. Each entry should
 // specify its own lifetime as a property, at the time of creation of update. This should then
 // just be scanning for entries that whose lifetimes have expired. This pattern is more in line
 // with how traditional cached object lifetimes are calculated. Using this alternate approach
 // allows each entry to manage its own lifetime. For example, I could say that for all entries
 // coming from a certain feed, those entries should have a half-life.
+
+// I think what I want to be doing is re-imagining entry store as a document store. Then look
+// at how a traditional document store works, and mimic that caching behavior. I believe it is
+// generally done with an expiresDate field of some sort, one that is defined when creating
+// the document, or updating it, and is optional. Then archiving becomes simply a matter of
+// finding all entries with an expireDate older than the current date. This type of change
+// correlates with the goal of removing the feed id foreign key from the entry store and linking
+// feeds and entries by feed url instead.
+
+
+// TODO: this is the sole user of sizeof. Move it in here. This will help decouple the module
+// and reduce the number of files.
+
 // TODO: maybe differentiating between the message type 'entry-updated' and
 // 'entry-archived' is pendantic. Or, perhaps I should introduce a reason code to the
 // message.
