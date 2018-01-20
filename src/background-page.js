@@ -47,13 +47,8 @@ async function handleOrphanEntriesAlarm(alarm) {
 
 async function handleRefreshFeedIconsAlarm(alarm) {
   console.log('Refreshing feed favicons...');
-
   const [feedConn, iconConn] = await Promise.all([openFeedStore(), openIconStore()]);
-  status = await refreshFeedIcons(feedConn, iconConn);
-  if(status !== OK) {
-    console.error('Failed to refresh feed favicons:', statusToString(status));
-  }
-
+  await refreshFeedIcons(feedConn, iconConn);
   feedConn.close();
   iconConn.close();
 }
@@ -92,13 +87,8 @@ const cli = {};
 
 cli.refreshIcons = async function() {
   console.log('Refreshing feed favicons...');
-
   const [feedConn, iconConn] = await Promise.all([openFeedStore(), openIconStore()]);
-  status = await refreshFeedIcons(feedConn, iconConn);
-  if(status !== OK) {
-    console.error('Failed to refresh feed icons:', statusToString(status));
-  }
-
+  await refreshFeedIcons(feedConn, iconConn);
   feedConn.close();
   iconConn.close();
 };

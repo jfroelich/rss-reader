@@ -1,28 +1,19 @@
-import assert from "/src/common/assert.js";
-import * as Status from "/src/common/status.js";
 import {lookup, open as openIconStore} from "/src/favicon-service.js";
 import * as Feed from "/src/feed-store/feed.js";
 import {findActiveFeeds, open as openFeedStore, putFeed} from "/src/feed-store/feed-store.js";
 
-// TODO: revert to no status
-// TODO: fix bugs after change to iconConn
-
-
+// Refreshes the favicon property of feeds in the feed store
 export default async function refreshFeedIcons(feedConn, iconConn, channel) {
-
-  const dconn = conn ? conn : await openFeedStore();
+  const dconn = feedConn ? feedConn : await openFeedStore();
   const feeds = await findActiveFeeds(dconn);
-
-  const query = {};
-  query.conn = iconConn;
 
   const promises = [];
   for(const feed of feeds) {
-    promises.push(refreshFeedIcon(dconn, channel, query, feed));
+    promises.push(refreshFeedIcon(dconn, iconConn, channel, feed));
   }
   await Promise.all(promises);
 
-  if(!conn) {
+  if(!feedConn) {
     dconn.close();
   }
 }
@@ -36,32 +27,64 @@ export default async function refreshFeedIcons(feedConn, iconConn, channel) {
 // On other hand, why would putFeed actually fail? I am not attempting an add, I am
 // doing a replace. Suppose a feed is unsubscribed. This will recreate? Maybe that
 // is sufficient reason?
-// If I do two trans, and new feed is subscribed in between, then the in-mem lookup
+// If I do two passes, and new feed is subscribed in between, then the in-mem lookup
 // will fail. So not a perfect solution
 
-async function refreshFeedIcon(conn, channel, query, feed) {
-  // This should certainly fail uncaught, this should never happen
-  assert(Feed.hasURL(feed));
+async function refreshFeedIcon(conn, iconConn, channel, feed) {
+  if(!Feed.hasURL(feed)) {
+    throw new TypeError('Feed missing url ' + feed.id);
+  }
 
-  // This should certainly fail uncaught, this should never happen
+  // Throw on failure
   const lookupURL = Feed.createIconLookupURL(feed);
 
-  // TODO: decoupling status blocked until favicon service overhauled
+  const query = {};
+  query.conn = iconConn;
+  query.url = lookupURL;
 
-  let status, iconURL;
-  [status, iconURL] = await query.lookup(lookupURL);
-  if(status !== Status.OK) {
-    console.debug('Error looking up favicon', Status.toString(status));
-    return;
+  // lookup can fail for a variety of reasons, not just programming errors
+  let iconURL;
+  try {
+    iconURL = await lookup(query);
+  } catch(error) {
+    console.debug(error);
   }
 
   // If state changed then update
   if(feed.faviconURLString !== iconURL) {
-    feed.faviconURLString = iconURL;
-    feed.dateUpdated = new Date();
-    if(!feed.faviconURLString) {
+    if(iconURL) {
+      feed.faviconURLString = iconURL;
+    } else {
       delete feed.faviconURLString;
     }
-    await putFeed(conn, channel, feed);
+
+    feed.dateUpdated = new Date();
+
+    // This put call generally should not fail, but it sometimes can, because this method is
+    // not transactionally safe, because reading the feeds into memory occurs in a
+    // separate transaction from writing a feed, and in between, the feed may have been
+    // deleted or something to that effect. Just log the error, but suppress it.
+
+    // Example:
+    // 1. load feed in transaction 1.
+    // 2. lookup favicon.
+    // 3. another process deletes the feed. transaction 2.
+    // 4. another process creates a new feed, with different urls. transaction 3.
+    // 5. this attempts to store the feed. transaction 4.
+    // 6. indexedDB faults with a constraint error on the url index of feed store.
+
+    // The problem is basically that transaction 1 and 4 are not the same transaction, but
+    // this acts like it is guaranteed. This is why the try/catch is needed.
+
+    // I'd like to make transaction 1 and 4 the same, but am not sure how to proceed. indexedDB
+    // doesn't support the extra async calls in between the requests, the transaction will
+    // auto-close after timing out when not detecting the second request in time, during the
+    // time in which the extra async call is pending.
+
+    try {
+      await putFeed(conn, channel, feed);
+    } catch(error) {
+      console.error(error);
+    }
   }
 }

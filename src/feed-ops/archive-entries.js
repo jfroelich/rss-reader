@@ -1,4 +1,3 @@
-import assert from "/src/common/assert.js";
 import * as Entry from "/src/feed-store/entry.js";
 import {open as openFeedStore} from "/src/feed-store/feed-store.js";
 
@@ -41,7 +40,9 @@ export default async function archiveEntries(conn, channel, maxAge) {
   }
 
   if(typeof maxAge !== 'undefined') {
-    assert(Number.isInteger(maxAge) && maxAge > 0);
+    if(!Number.isInteger(maxAge) || maxAge < 1) {
+      throw new TypeError('Invalid maxAge argument ' + maxAge);
+    }
   }
 
   const dconn = conn ? conn : await openFeedStore();

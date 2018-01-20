@@ -34,6 +34,8 @@ const NULL_CONSOLE = {
 };
 
 
+// TODO: change lookup so that it only throws an exception in the event of a programming error,
+// and not in other cases such as a fetch error. A database error would be a programming error.
 // TODO: the url parameter should be separate from options
 // TODO: the document parameter should be separate from options
 // TODO: rather than max age approach, cached entries should specify their own lifetimes, and
@@ -100,10 +102,11 @@ export async function lookup(inputOptions) {
   // Check the cache for the input url
   if(options.conn) {
     const entry = await findEntry(options.conn, options.url);
-    if(entry.iconURLString && !entryIsExpired(entry, options)) {
+    if(entry && entry.iconURLString && !entryIsExpired(entry, options)) {
       return entry.iconURLString;
     }
-    if(originURL.href === options.url.href && entry.failureCount >= options.maxFailureCount) {
+    if(originURL.href === options.url.href && entry &&
+      entry.failureCount >= options.maxFailureCount) {
       options.console.debug('Too many failures', options.url.href);
       return;
     }
@@ -241,14 +244,14 @@ export async function lookup(inputOptions) {
 }
 
 function onLookupFailure(conn, originURL, originEntry) {
-  if(entry) {
+  if(originEntry) {
     const newEntry = {};
-    newEntry.pageURLString = entry.pageURLString;
+    newEntry.pageURLString = originEntry.pageURLString;
     newEntry.dateUpdated = new Date();
-    newEntry.iconURLString = entry.iconURLString;
-    if('failureCount' in entry) {
-      if(entry.failureCount <= this.kMaxFailureCount) {
-        newEntry.failureCount = entry.failureCount + 1;
+    newEntry.iconURLString = originEntry.iconURLString;
+    if('failureCount' in originEntry) {
+      if(originEntry.failureCount <= this.kMaxFailureCount) {
+        newEntry.failureCount = originEntry.failureCount + 1;
         putEntry(conn, newEntry);
       }
     } else {
