@@ -1,30 +1,29 @@
 import {decodeEntities} from "/src/common/html-utils.js";
-import parseXML from "/src/common/parse-xml.js";
-import * as Status from "/src/common/status.js";
-
-// TODO: inline parse-xml.js here, and likewise where-ever else it is used. This will help
-// reduce coupling. It is a simplistic function.
-// TODO: decouple from status, revert to throwing exceptions
-
 
 // Parses the input string into a feed object. The feed object will always have a defined entries
 // array, although it may be zero length. Returns an array of status, feed, and error message.
 export default function parseFeed(xmlString) {
-  if(typeof xmlString !== 'string') {
-    const message = 'Expected string, got ' + typeof xmlString;
-    return [Status.EINVAL, null, message];
-  }
-
-  let document;
-  try {
-    document = parseXML(xmlString);
-  } catch(error) {
-    console.error(error);
-    return Status.EPARSEFEED;
-  }
-
+  // Sanity checking xmlString delegated to parseXML
+  // Rethrow parse xml errors
+  const document = parseXML(xmlString);
   return unmarshallXML(document);
 }
+
+function parseXML(xmlString) {
+  if(typeof xmlString !== 'string') {
+    throw new Error('xmlString is not a string');
+  }
+
+  const parser = new DOMParser();
+  const document = parser.parseFromString(xmlString, 'application/xml');
+  const error = document.querySelector('parsererror');
+  if(error) {
+    throw new Error(error.textContent);
+  }
+  return document;
+}
+
+
 
 // @param document {Document} an XML document representing a feed
 // @returns {Object} a feed object
@@ -34,13 +33,12 @@ function unmarshallXML(document) {
 
   const supportedNames = ['feed', 'rdf', 'rss'];
   if(!supportedNames.includes(documentElementName)) {
-    const message = 'Unsupported document element ' + documentElementName;
-    return [Status.EPARSEFEED, null, message];
+    throw new Error('Unsupported document element ' + documentElementName);
   }
 
   const channelElement = findChannelElement(documentElement);
   if(!channelElement) {
-    return [Status.EPARSEFEED, null, 'Missing channel element'];
+    throw new Error('Missing channel element');
   }
 
   const feed = {};
@@ -53,7 +51,7 @@ function unmarshallXML(document) {
   const entryElements = findEntryElements(channelElement);
   feed.entries = entryElements.map(createEntryObject);
 
-  return [Status.OK, feed];
+  return feed;
 }
 
 function findFeedTitle(channelElement) {
@@ -90,8 +88,7 @@ function findEntryElements(channelElement) {
     parentNode = channelElement;
     entryElementName = 'item';
   } else {
-    console.error('Should not have reached here');
-    return [];
+    throw new Error('Reached unreachable');
   }
 
   const entries = [];
@@ -320,13 +317,11 @@ function findChildElement(parentElement, predicate) {
 
 function findChildElementByName(parent, name) {
   if(!(parent instanceof Element)) {
-    console.error('Expected element, got ' + typeof Element);
-    return;
+    throw new Error('Expected element, got ' + typeof Element);
   }
 
   if(typeof name !== 'string') {
-    console.error('Expected string, got ' + typeof name);
-    return;
+    throw new Error('Expected string, got ' + typeof name);
   }
 
   const normalName = name.toLowerCase();
@@ -348,6 +343,7 @@ function findChildElementText(parentElement, elementName) {
   }
 }
 
+// In xml-flagged documents, localName is case-sensitive
 function getElementName(element) {
   return element.localName.toLowerCase();
 }

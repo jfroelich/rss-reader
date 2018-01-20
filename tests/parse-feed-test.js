@@ -16,8 +16,7 @@ async function test(url) {
   }
 
   const feedXML = await response.text();
-  [status, feed, message] = parseFeed(feedXML);
-  console.log(status, message);
+  const feed = parseFeed(feedXML);
   console.dir(feed);
 }
 

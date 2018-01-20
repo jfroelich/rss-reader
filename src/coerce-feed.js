@@ -56,11 +56,12 @@ export default function coerceFeed(xmlString, requestURL, responseURL, lastModDa
     return [Status.EINVAL];
   }
 
-  let status, feed, errorMessage;
-  [status, feed, errorMessage] = parseFeed(xmlString);
-  if(status !== Status.OK) {
-    console.error('Parse feed error:', Status.toString(status), errorMessage);
-    return [status];
+  let feed;
+  try {
+    feed = parseFeed(xmlString);
+  } catch(error) {
+    console.error(error);
+    return [Status.EPARSEFEED];
   }
 
   // Coerce the parsed feed object into a storage feed object
