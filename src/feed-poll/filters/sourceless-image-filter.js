@@ -1,6 +1,8 @@
 import assert from "/src/common/assert.js";
 import {imageHasSource, removeImage} from "/src/common/dom-utils.js";
 
+// TODO: move to basic filters
+
 // Removes images that are missing source information from document content
 export default function filter(doc) {
   assert(doc instanceof Document);

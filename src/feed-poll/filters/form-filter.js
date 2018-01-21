@@ -1,6 +1,8 @@
 import assert from "/src/common/assert.js";
 import {unwrapElement} from "/src/common/dom-utils.js";
 
+// TODO: move to basic filters
+
 // Filters or transforms certain form elements and form-related elements from document content
 
 export default function formFilter(doc) {

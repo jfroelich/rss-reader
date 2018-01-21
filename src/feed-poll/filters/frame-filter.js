@@ -1,5 +1,7 @@
 import assert from "/src/common/assert.js";
 
+// TODO: move to basic filters
+
 // Removes frame content from a document
 // @param doc {Document} the document to inspect and modify
 export default function frameFilter(doc) {

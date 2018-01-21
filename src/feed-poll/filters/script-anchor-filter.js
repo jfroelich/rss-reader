@@ -1,6 +1,8 @@
 import assert from "/src/common/assert.js";
 import {unwrapElement} from "/src/common/dom-utils.js";
 
+// TODO: move to basic filters
+
 // Unwraps anchor elements containing href attribute values that are javascript
 export default function filterDocument(document) {
   assert(document instanceof Document);

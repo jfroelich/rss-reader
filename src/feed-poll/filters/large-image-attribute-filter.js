@@ -1,5 +1,7 @@
 import assert from "/src/common/assert.js";
 
+// TODO: move to basic filters
+
 // Filters width and height of large images to avoid skewing in view
 // An image is large if it is more than 1000px in width or height
 // This allows retaining of width and height in other images, which avoids the issue of removing

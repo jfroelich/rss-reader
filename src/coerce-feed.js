@@ -1,7 +1,8 @@
-import * as Status from "/src/common/status.js";
 import parseFeed from "/src/common/parse-feed.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
+
+// TODO: revert to not using status.js at all
 
 // One of the key points to think about is how this logic is basically a shared library that
 // involves knowledge of the implementation details of several different services. For example
@@ -46,23 +47,12 @@ import * as Feed from "/src/feed-store/feed.js";
 export default function coerceFeed(xmlString, requestURL, responseURL, lastModDate,
   processEntries) {
 
-  if(!(requestURL instanceof URL)) {
-    console.error('Invalid requestURL argument', requestURL);
-    return [Status.EINVAL];
-  }
+  assert(requestURL instanceof URL);
+  assert(responseURL instanceof URL);
 
-  if(!(responseURL instanceof URL)) {
-    console.error('Invalid responseURL argument', responseURL);
-    return [Status.EINVAL];
-  }
+  // Rethrow any parsing errors
+  const feed = parseFeed(xmlString);
 
-  let feed;
-  try {
-    feed = parseFeed(xmlString);
-  } catch(error) {
-    console.error(error);
-    return [Status.EPARSEFEED];
-  }
 
   // Coerce the parsed feed object into a storage feed object
   feed.magic = Feed.FEED_MAGIC;
@@ -75,6 +65,8 @@ export default function coerceFeed(xmlString, requestURL, responseURL, lastModDa
   // url so that it can be used to resolve entry links later.
   let feedLinkURL;
   if(feed.link) {
+    // Try/catch is necessary, there is no guarantee feed.link is valid, and also this should
+    // not cause coerceFeed to throw
     try {
       feedLinkURL = new URL(feed.link);
       // Overwrite with the normalized version of the string
@@ -111,15 +103,13 @@ export default function coerceFeed(xmlString, requestURL, responseURL, lastModDa
   const entries = feed.entries;
   delete feed.entries;
 
+  // Whereever entries came from earlier, it should be defined at this point.
+  assert(Array.isArray(entries));
+
   if(!processEntries) {
-    return [Status.OK, result];
+    return result;
   }
 
-  // Whereever entries came from earlier, it should be defined at this point.
-  if(!Array.isArray(entries)) {
-    console.error('entries is not an array:', entries);
-    return [Status.EINVALIDSTATE];
-  }
 
   // parseFeed warrants that if entries are parsed, that the entries property of the output
   // object is a defined array; albeit possibly empty. Using map implicitly warrants this.
@@ -135,7 +125,7 @@ export default function coerceFeed(xmlString, requestURL, responseURL, lastModDa
   // stage of the pipeline. All I would be doing is placing more burden on the caller by making
   // more pipeline steps explicit?
   result.entries = dedupEntries(result.entries);
-  return [Status.OK, result];
+  return result;
 }
 
 // Coerce a parsed entry object into a reader storage entry object.
@@ -152,12 +142,6 @@ function coerceEntry(feedLinkURL, parsedEntry) {
 // If the entry has a link property, canonicalize and normalize it, baseURL is optional, generally
 // should be feed.link
 function resolveEntryLink(entry, baseURL) {
-
-  if(!Entry.isEntry(entry)) {
-    console.error('Invalid entry argument:', entry);
-    return;
-  }
-
   if(entry.link) {
     try {
       const url = new URL(entry.link, baseURL);
@@ -215,4 +199,8 @@ function dedupEntries(entries) {
   }
 
   return distinctEntries;
+}
+
+function assert(value, message) {
+  if(!value) throw new Error(message || 'Assertion error');
 }

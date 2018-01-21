@@ -1,5 +1,7 @@
 import assert from "/src/common/assert.js";
 
+// TODO: move to basic filters
+
 const BLACKLIST = [
   'applet', 'audio', 'basefont', 'bgsound', 'command', 'datalist', 'dialog', 'embed', 'head',
   'isindex', 'link', 'math', 'meta', 'object', 'output', 'param', 'path', 'progress', 'spacer',

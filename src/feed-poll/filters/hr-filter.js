@@ -1,5 +1,7 @@
 import assert from "/src/common/assert.js";
 
+// TODO: move to basic filters
+
 // Filters certain horizontal rule elements from document content
 
 

@@ -1,6 +1,8 @@
 import assert from "/src/common/assert.js";
 import {removeImage} from "/src/common/dom-utils.js";
 
+// TODO: move to basic filters
+
 // Filters 'small' images from content. For example, social sharing icons.
 
 export default function filterDocument(doc) {

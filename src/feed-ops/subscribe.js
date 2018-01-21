@@ -169,8 +169,18 @@ async function createFeedFromResponse(context, response, url) {
 
   const procEntries = false;
   let coerceResult;
-  [status, coerceResult] = coerceFeed(responseText, url, responseURL,
-    FetchUtils.getLastModified(response), procEntries);
+
+  // TODO: not sure if this should be try/catch. This should probably just rethrow?
+  // Revisit after decoupling status.js
+  try {
+    coerceResult = coerceFeed(responseText, url, responseURL,
+      FetchUtils.getLastModified(response), procEntries);
+  } catch(error) {
+    return [Status.EFETCH];
+  }
+
+
+  [status, coerceResult] =
   if(status !== Status.OK) {
     console.error('Parse feed error:', url.href, Status.toString(status));
     return [status];

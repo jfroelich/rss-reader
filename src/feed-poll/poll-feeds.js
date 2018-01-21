@@ -25,6 +25,16 @@ import {
 
 import coerceFeed from "/src/coerce-feed.js";
 
+
+// TODO: get rid of object pattern, revert to basic function
+// TODO: decouple from PromiseUtils so that it can be deprecated. This means I need to
+// deprecate promiseEvery, and use Promise.all, which means that pollFeed and pollEntries
+// need to be completely revised to only throw in the case of a programming error.
+// TODO: completely decouple from status.js. This depends primarily on decoupling all the
+// helpers that involve status.
+
+
+
 // An array of descriptors. Each descriptor represents a test against a url hostname, that if
 // matched, indicates the content is not accessible.
 const INACCESSIBLE_CONTENT_DESCRIPTORS = [
@@ -178,18 +188,18 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   let parseResult;
   const processEntries = true;
 
-  // TODO: coerceFeed throws error when parseXML throws error at the moment, this should
-  // be resolved by reverting coerceFeed back to throwing exceptions and using try/catch
-  // here instead of status
 
-  [status, parseResult] = coerceFeed(feedXML, requestURL, new URL(response.url),
-    responseLastModifiedDate, processEntries);
-  if(status !== Status.OK) {
-    console.error('Coerce feed error:', Status.toString(status));
+  try {
+    parseResult = coerceFeed(feedXML, requestURL, new URL(response.url),
+      responseLastModifiedDate, processEntries);
+  } catch(error) {
     await handlePollFeedError(Status.EPARSEFEED, this.feedConn, feed, 'parse-feed',
       this.deactivationThreshold);
     return;
   }
+
+
+
 
   const mergedFeed = Feed.merge(feed, parseResult.feed);
 

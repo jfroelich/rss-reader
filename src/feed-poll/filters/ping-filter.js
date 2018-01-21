@@ -1,5 +1,7 @@
 import assert from "/src/common/assert.js";
 
+// TODO: move to basic filters
+
 // Removes ping attributes from anchor elements in document content
 
 export default function filter(doc) {
