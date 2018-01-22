@@ -27,7 +27,7 @@ import {
   open as openFeedStore,
   prepareFeed,
   putFeed
-} from "/src/rdb/rdb.js";
+} from "/src/rdb.js";
 
 import coerceFeed from "/src/coerce-feed.js";
 

@@ -1,5 +1,5 @@
 import archiveEntries from "/src/feed-ops/archive-entries.js";
-import {open as openFeedStore} from "/src/rdb/rdb.js";
+import {open as openFeedStore} from "/src/rdb.js";
 
 async function test() {
   let conn, channel, maxAge;

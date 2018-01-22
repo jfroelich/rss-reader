@@ -4,7 +4,7 @@ import {
   entryAppendURL,
   entryHasURL,
   feedAppendURL
-} from "/src/rdb/rdb.js";
+} from "/src/rdb.js";
 
 // One of the key points to think about is how this logic is basically a shared library that
 // involves knowledge of the implementation details of several different services. For example

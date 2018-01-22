@@ -11,7 +11,7 @@ import {
   feedAppendURL,
   feedPeekURL,
   isFeed
-} from "/src/rdb/rdb.js";
+} from "/src/rdb.js";
 import coerceFeed from "/src/coerce-feed.js";
 
 // TODO: reconsider the transaction lifetime. Right now it is protected by the error that

@@ -1,5 +1,5 @@
 import * as Status from "/src/common/status.js";
-import {countUnreadEntries, open} from "/src/rdb/rdb.js";
+import {countUnreadEntries, open} from "/src/rdb.js";
 
 // TODO: think of how to reduce connection usage, maybe maintain a persistent connection? Then
 // again now that this is non-blocking, maybe the slowness of it does not matter?

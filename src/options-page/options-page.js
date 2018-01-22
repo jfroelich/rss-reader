@@ -15,7 +15,7 @@ import {
   findFeedById,
   getFeeds,
   open as openFeedStore
-} from "/src/rdb/rdb.js";
+} from "/src/rdb.js";
 
 // TEMP: I plan to remove
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";

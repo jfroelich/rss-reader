@@ -1,4 +1,4 @@
-import {filterUnprintableCharacters} from "/src/rdb/rdb.js";
+import {filterUnprintableCharacters} from "/src/rdb.js";
 
 const d = console.debug;
 const f = filterUnprintableCharacters;

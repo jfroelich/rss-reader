@@ -4,7 +4,7 @@ import {
   ENTRY_STATE_UNARCHIVED,
   ENTRY_STATE_READ,
   open as openFeedStore
-} from "/src/rdb/rdb.js";
+} from "/src/rdb.js";
 
 
 // TODO: eventually reconsider how an entry is determined as archivable. Each entry should

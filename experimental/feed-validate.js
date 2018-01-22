@@ -1,7 +1,7 @@
 import assert from "/src/common/assert.js";
 
 // TODO: this creates a circular dependency at the moment
-import {isFeed, isValidFeedId} from "/src/rdb/rdb.js";
+import {isFeed, isValidFeedId} from "/src/rdb.js";
 
 // TODO: include this in places where sanitize is called
 // TODO: assert required properties are present

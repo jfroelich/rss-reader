@@ -11,7 +11,7 @@ import {
   isEntry,
   isValidEntryId,
   open as openFeedStore
-} from "/src/rdb/rdb.js";
+} from "/src/rdb.js";
 import exportFeeds from "/src/slideshow-page/export-feeds.js";
 import importOPMLFiles from "/src/slideshow-page/import-opml-files.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";

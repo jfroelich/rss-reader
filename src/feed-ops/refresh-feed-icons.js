@@ -5,7 +5,7 @@ import {
   findActiveFeeds,
   open as openFeedStore,
   putFeed
-} from "/src/rdb/rdb.js";
+} from "/src/rdb.js";
 
 // Refreshes the favicon property of feeds in the feed store
 export default async function refreshFeedIcons(feedConn, iconConn, channel) {

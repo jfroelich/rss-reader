@@ -1,4 +1,4 @@
-import {isValidFeedId, open} from "/src/rdb/rdb.js";
+import {isValidFeedId, open} from "/src/rdb.js";
 
 // TODO: does this potentially affect unread count? In which case this desync's badge text?
 
