@@ -1,5 +1,5 @@
-import * as Entry from "/src/feed-store/entry.js";
-import {open as openFeedStore} from "/src/feed-store/feed-store.js";
+import * as Entry from "/src/rdb/entry.js";
+import {open as openFeedStore} from "/src/rdb/rdb.js";
 
 
 // TODO: eventually reconsider how an entry is determined as archivable. Each entry should

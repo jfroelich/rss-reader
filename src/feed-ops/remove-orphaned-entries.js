@@ -1,5 +1,5 @@
-import * as Feed from "/src/feed-store/feed.js";
-import {open} from "/src/feed-store/feed-store.js";
+import * as Feed from "/src/rdb/feed.js";
+import {open} from "/src/rdb/rdb.js";
 
 // TODO: does this potentially affect unread count? In which case this desync's badge text?
 

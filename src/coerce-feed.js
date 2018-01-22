@@ -1,6 +1,6 @@
 import parseFeed from "/src/common/parse-feed.js";
-import * as Entry from "/src/feed-store/entry.js";
-import * as Feed from "/src/feed-store/feed.js";
+import * as Entry from "/src/rdb/entry.js";
+import * as Feed from "/src/rdb/feed.js";
 
 // One of the key points to think about is how this logic is basically a shared library that
 // involves knowledge of the implementation details of several different services. For example

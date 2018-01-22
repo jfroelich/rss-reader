@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import * as Feed from "/src/feed-store/feed.js";
+import * as Feed from "/src/rdb/feed.js";
 
 // TODO: include this in places where sanitize is called
 // TODO: assert required properties are present

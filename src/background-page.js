@@ -12,7 +12,7 @@ import removeLostEntries from "/src/feed-ops/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/feed-ops/remove-orphaned-entries.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
-import {open as openFeedStore} from "/src/feed-store/feed-store.js";
+import {open as openFeedStore} from "/src/rdb/rdb.js";
 
 function handleCompactFaviconsAlarm(alarm) {
   return compactIconStore().catch(console.error);

@@ -1,5 +1,5 @@
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
-import {markEntryRead as storeMarkEntryRead} from "/src/feed-store/feed-store.js";
+import {markEntryRead as storeMarkEntryRead} from "/src/rdb/rdb.js";
 
 // TODO: if I refactor badge to listen for events then I could call the database function
 // directly. Right now this intermediate operation exists primarily because badge stuff

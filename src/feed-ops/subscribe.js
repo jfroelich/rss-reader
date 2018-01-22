@@ -3,8 +3,8 @@ import * as FetchUtils from "/src/common/fetch-utils.js";
 import * as Status from "/src/common/status.js";
 import {lookup} from "/src/favicon-service.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
-import * as Feed from "/src/feed-store/feed.js";
-import {addFeed, containsFeedWithURL} from "/src/feed-store/feed-store.js";
+import * as Feed from "/src/rdb/feed.js";
+import {addFeed, containsFeedWithURL} from "/src/rdb/rdb.js";
 import coerceFeed from "/src/coerce-feed.js";
 
 // TODO: reconsider the transaction lifetime. Right now it is protected by the error that

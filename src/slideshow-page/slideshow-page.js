@@ -3,14 +3,14 @@ import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 import markEntryRead from "/src/feed-ops/mark-entry-read.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
-import * as Entry from "/src/feed-store/entry.js";
-import * as Feed from "/src/feed-store/feed.js";
+import * as Entry from "/src/rdb/entry.js";
+import * as Feed from "/src/rdb/feed.js";
 
 import {
   findViewableEntries,
   getFeeds,
   open as openFeedStore
-} from "/src/feed-store/feed-store.js";
+} from "/src/rdb/rdb.js";
 
 import exportFeeds from "/src/slideshow-page/export-feeds.js";
 import importOPMLFiles from "/src/slideshow-page/import-opml-files.js";

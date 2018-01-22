@@ -11,8 +11,8 @@ import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
 import isBinaryURL from "/src/feed-poll/is-binary-url.js";
-import * as Entry from "/src/feed-store/entry.js";
-import * as Feed from "/src/feed-store/feed.js";
+import * as Entry from "/src/rdb/entry.js";
+import * as Feed from "/src/rdb/feed.js";
 
 import {
   addEntry,
@@ -21,7 +21,7 @@ import {
   open as openFeedStore,
   prepareFeed,
   putFeed
-} from "/src/feed-store/feed-store.js";
+} from "/src/rdb/rdb.js";
 
 import coerceFeed from "/src/coerce-feed.js";
 

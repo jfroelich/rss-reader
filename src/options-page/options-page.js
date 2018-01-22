@@ -8,14 +8,14 @@ import {open as openIconStore} from "/src/favicon-service.js";
 
 import subscribe from "/src/feed-ops/subscribe.js";
 import unsubscribe from "/src/feed-ops/unsubscribe.js";
-import * as Feed from "/src/feed-store/feed.js";
+import * as Feed from "/src/rdb/feed.js";
 import {
   activateFeed,
   deactivateFeed,
   findFeedById,
   getFeeds,
   open as openFeedStore
-} from "/src/feed-store/feed-store.js";
+} from "/src/rdb/rdb.js";
 
 // TEMP: I plan to remove
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";

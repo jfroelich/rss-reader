@@ -1,5 +1,5 @@
-import * as Entry from "/src/feed-store/entry.js";
-import * as Feed from "/src/feed-store/feed.js";
+import * as Entry from "/src/rdb/entry.js";
+import * as Feed from "/src/rdb/feed.js";
 
 // Helper for open. Does the database upgrade. This should never be
 // called directly. To do an upgrade, call open with a higher version number.

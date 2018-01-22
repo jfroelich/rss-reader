@@ -1,5 +1,5 @@
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
-import {removeFeed} from "/src/feed-store/feed-store.js";
+import {removeFeed} from "/src/rdb/rdb.js";
 
 // TODO: see notes in update-badge-text.js. There is a chance there is no need to call it here.
 // In which case, unsubscribe devolves into merely an alias of removeFeed, and for that

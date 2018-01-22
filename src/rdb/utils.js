@@ -1,5 +1,5 @@
-import * as Entry from "/src/feed-store/entry.js";
-import * as Feed from "/src/feed-store/feed.js";
+import * as Entry from "/src/rdb/entry.js";
+import * as Feed from "/src/rdb/feed.js";
 import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
 
 // Returns a shallow copy of the input feed with sanitized properties

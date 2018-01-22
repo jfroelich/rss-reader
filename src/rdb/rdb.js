@@ -1,14 +1,14 @@
 import assert from "/src/common/assert.js";
 import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
-import * as Entry from "/src/feed-store/entry.js";
-import * as Feed from "/src/feed-store/feed.js";
-import {onUpgradeNeeded} from "/src/feed-store/upgrade.js";
+import * as Entry from "/src/rdb/entry.js";
+import * as Feed from "/src/rdb/feed.js";
+import {onUpgradeNeeded} from "/src/rdb/upgrade.js";
 import {
   filterEmptyProps,
   sanitizeEntry,
   sanitizeFeed,
   validateEntry
-} from "/src/feed-store/utils.js";
+} from "/src/rdb/utils.js";
 
 // TODO: if the file is so large, what I could do is present a unifying module that simply
 // imports from a bunch of helper files and then exports from here, and expect users to

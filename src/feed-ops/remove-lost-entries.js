@@ -1,4 +1,4 @@
-import {open as openFeedStore} from "/src/feed-store/feed-store.js";
+import {open as openFeedStore} from "/src/rdb/rdb.js";
 
 // TODO: update callers to use new channel argument, and optional conn parameter pattern,
 // and no status
