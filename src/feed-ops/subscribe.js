@@ -34,6 +34,7 @@ import coerceFeed from "/src/coerce-feed.js";
 
 export default async function subscribe(context, url) {
   assert(typeof context === 'object');
+  assert(context.feedConn instanceof IDBDatabase);
   assert(context.iconConn instanceof IDBDatabase);
   assert(url instanceof URL);
   const console = context.console || NULL_CONSOLE;
