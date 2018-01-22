@@ -244,6 +244,7 @@ export async function addEntry(conn, channel, entry) {
 export async function countUnreadEntries(conn) {
   const dconn = conn ? conn : await open();
   const count = await countUnreadEntriesPromise(dconn);
+  console.debug('Counted %d unread entries', count);
   if(!conn) {
     dconn.close();
   }
@@ -291,6 +292,10 @@ function markEntryReadPromise(conn, entryId) {
         return;
       }
 
+      if(entry.readState !== ENTRY_STATE_UNREAD) {
+        console.warn('Entry %d not in unread state, ignoring', entry.id);
+        return;
+      }
 
       entry.readState = ENTRY_STATE_READ;
       const currentDate = new Date();
