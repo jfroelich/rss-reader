@@ -13,7 +13,7 @@ import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
 // TODO: regarding feed schema, should the group of properties pertaining to a feed's active state
 // by grouped together into a sub object? Like:
 // {active-props: {active: true, deactivationReasonText: undefined, deactivationDate: undefined}};
-// TODO: the active property is poorly named. Something that is named as
+// TODO: the feed active property is poorly named. Something that is named as
 // active typically means active. So it would be more appropriate to name this as something
 // like activeState or activeFlag. That removes the ambiguity between presence/absence style
 // boolean, and true/false boolean.
@@ -27,11 +27,9 @@ export const ENTRY_STATE_READ = 1;
 export const ENTRY_STATE_UNARCHIVED = 0;
 export const ENTRY_STATE_ARCHIVED = 1;
 
-
 export function open(name = 'reader', version = 24, timeout = 500) {
   return utilsOpen(name, version, onUpgradeNeeded, timeout);
 }
-
 
 // Helper for open. Does the database upgrade. This should never be
 // called directly. To do an upgrade, call open with a higher version number.
@@ -142,7 +140,6 @@ function addActiveFieldToFeeds(store) {
     }
   };
 }
-
 
 export async function activateFeed(conn, channel, feedId) {
   assert(isValidFeedId(feedId), 'Invalid feed id', feedId);
@@ -307,7 +304,6 @@ export async function findActiveFeeds(conn) {
   const feeds = await getFeeds(conn);
   return feeds.filter(feed => feed.active);
 }
-
 
 // TODO: if this is only called by one place then it should be inlined there.
 // I am overly abstracting and attempting to provide flexiblity when there is no alternate
@@ -477,9 +473,8 @@ export function prepareFeed(feed) {
 }
 
 export async function addFeed(conn, channel, feed) {
-  // TODO: call validateFeed first
-
-
+  // TODO: call validateFeed first. Or actually can delegate it to putFeed since that also
+  // has to call it.
   const preparedFeed = prepareFeed(feed);
 
   // Initialize certain properties
@@ -572,8 +567,6 @@ function removeFeedPromise(conn, feedId) {
   });
 }
 
-
-
 // Returns a shallow copy of the input feed with sanitized properties
 function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
   if(typeof titleMaxLength === 'undefined') {
@@ -610,8 +603,6 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
   return outputFeed;
 }
 
-
-
 // Inspect the entry object and throw an error if any value is invalid
 // or any required properties are missing
 function validateEntry(entry) {
@@ -628,7 +619,6 @@ function validateEntry(entry) {
 // certain important binary characters (e.g. remove line breaks from author string).
 // Something like 'replaceFormattingCharacters'.
 function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLength) {
-
   if(typeof authorMaxLength === 'undefined') {
     authorMaxLength = 200;
   }
@@ -748,7 +738,6 @@ export function feedHasURL(feed) {
   return feed.urls && (feed.urls.length > 0);
 }
 
-
 // Returns the last url in the feed's url list as a string
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
@@ -756,7 +745,6 @@ export function feedPeekURL(feed) {
   assert(feedHasURL(feed));
   return feed.urls[feed.urls.length - 1];
 }
-
 
 // Appends a url to the feed's internal list. Lazily creates the list if needed
 // @param feed {Object} a feed object
@@ -801,7 +789,6 @@ export function mergeFeeds(oldFeed, newFeed) {
 
   return mergedFeed;
 }
-
 
 export function createEntry() {
   return {magic: ENTRY_MAGIC};
@@ -853,8 +840,6 @@ export function entryAppendURL(entry, url) {
 
   return true;
 }
-
-
 
 // Returns the url used to lookup a feed's favicon
 // Note this expects an actual feed object, not any object. The magic property must be set
