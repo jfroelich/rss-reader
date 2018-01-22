@@ -44,13 +44,15 @@ import coerceFeed from "/src/coerce-feed.js";
 // TODO: connect on demand?
 
 // Properties for the context argument:
-// feedConn {IDBDatabase} conn to feed store
-// iconConn {IDBDatabase} conn to icon store
-// channel {BroadcastChannel} optional, state change messages used
-// fetchFeedTimeout {Number} optional, positive integer
-// concurrent, boolean, optional, whether called concurrently
-// notify, boolean, optional, whether to notify
-// console {Object} optional, logging destination
+// feedConn {IDBDatabase} an open conn to feed store
+// iconConn {IDBDatabase} an open conn to icon store
+// channel {BroadcastChannel} optional, an open channel to which to send feed added message
+// fetchFeedTimeout {Number} optional, positive integer, how long to wait in ms before considering
+// feed fetch a failure
+// concurrent {Boolean} optional, whether called concurrently. If not concurrent then entries
+// scheduled to be polled shortly after subscribing
+// notify {Boolean} optional, whether to show a desktop notification
+// console {console object} optional, console-like logging destination
 
 export default async function subscribe(context, url) {
   assert(typeof context === 'object');
@@ -70,8 +72,7 @@ export default async function subscribe(context, url) {
     throw new Error('Already subscribed to ' + url.href);
   }
 
-  let response;
-  let status;
+  let response, status;
   [status, response] = await FetchUtils.fetchFeed(url, context.fetchFeedTimeout || 2000);
   if(status === Status.EOFFLINE) {
     // Continue with offline subscription

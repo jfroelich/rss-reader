@@ -370,7 +370,7 @@ async function subscribeFormOnsubmit(event) {
   context.channel = channel;
   context.concurrent = false;
   context.notify = true;
-  context.fetchFeedTimeoutMs = 2000;
+  context.fetchFeedTimeout = 2000;
 
   // TODO: subscribe no longer returns status
   let feed;
