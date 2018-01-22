@@ -169,9 +169,6 @@ function showNotification(feed) {
 
 async function deferredPollFeed(feed) {
 
-  // TODO: why sleep at all? If caller forked us, why artificially delay?
-  await sleep(50);
-
   const poll = new FeedPoll();
   poll.init();
 
@@ -189,11 +186,6 @@ async function deferredPollFeed(feed) {
   } finally {
     poll.close();
   }
-}
-
-// Returns a promise that resolves after the given number of milliseconds
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function assert(value, message) {
