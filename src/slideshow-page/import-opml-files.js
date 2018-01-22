@@ -103,32 +103,34 @@ async function importOPMLFile(context, file) {
 
   const feedURLs = getFeedURLs(document);
 
-  // Avoid subscribe overhead if possible
-  if(!feedURLs.length) {
-    console.debug('No valid feed urls found in file', file.name);
-    return Status.OK;
-  }
-
-  const promises = [];
-  for(const url of feedURLs) {
-    promises.push(subscribe(context, url));
-  }
-
-  const subscribeResults = await Promise.all(promises);
-
-  // Just log individual sub failures and do not consider the import a failure
   let subCount = 0;
-  for(const [subStatus, subFeed] of subscribeResults) {
-    if(subStatus === Status.OK) {
-      subCount++;
-    } else {
-      console.debug('Subscription failed:', Status.toString(subStatus));
+  if(feedURLs.length) {
+    const promises = [];
+    for(const url of feedURLs) {
+      promises.push(subscribeNoExcept(context, url));
+    }
+
+    const subscribeResults = await Promise.all(promises);
+    for(const subscribedFeed of subscribeResults) {
+      if(subscribedFeed) {
+        subCount++;
+      }
     }
   }
 
-  console.log('Subscribed to %d new feeds in file', subCount, file.name);
+  console.log('Subscribed to %d feeds in file %s', subCount, file.name);
   return Status.OK;
 }
+
+// Call subscribe while suppressing any exceptions. Exceptions are simply logged to debug.
+async function subscribeNoExcept(context, url) {
+  try {
+    return await subscribe(context, url);
+  } catch(error) {
+    console.debug(error);
+  }
+}
+
 
 function getFeedURLs(document) {
   const elements = document.querySelectorAll('opml > body > outline');

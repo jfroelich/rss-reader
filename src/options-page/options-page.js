@@ -363,8 +363,6 @@ async function subscribeFormOnsubmit(event) {
     return;
   }
 
-  // TODO: this is bugged until subscribe uses new props
-
   const context = {};
   context.feedConn = feedConn;
   context.iconConn = iconConn;
@@ -372,24 +370,23 @@ async function subscribeFormOnsubmit(event) {
   context.notify = true;
   context.fetchFeedTimeoutMs = 2000;
 
+  // TODO: subscribe no longer returns status
   let feed;
-  [status, feed] = await subscribe(context, url);
-  if(status !== Status.OK) {
-    console.error('Failed to subscribe:', Status.toString(status));
+  try {
+    feed = await subscribe(context, url);
+  } catch(error) {
+    console.error(error);
     subscriptionMonitorHide();
-    context.conn.close();
-    context.iconCache.close();
+    feedConn.close();
+    iconConn.close();
     return;
   }
 
   feedConn.close();
   iconConn.close();
 
-  // TODO: UI level functions shouldn't assert
-  assert(Feed.isFeed(feed));
   feedListAppendFeed(feed);
   const feedURL = Feed.peekURL(feed);
-
   subscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
   subscriptionMonitorHide();
   showSectionById('subs-list-section');

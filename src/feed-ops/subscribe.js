@@ -9,7 +9,6 @@ import coerceFeed from "/src/coerce-feed.js";
 
 // TODO: revert to using exceptions and assert, decouple status
 
-
 // TODO: reconsider the transaction lifetime. Right now it is protected by the error that
 // occurs due to violation of uniqueness constraint. But it would be better if both reads and
 // writes occurred on same transaction. Also because I have mixed feelings about treating
@@ -38,12 +37,17 @@ import coerceFeed from "/src/coerce-feed.js";
 // means that poll entries needs to be able to work in two contexts, and should be a public
 // member of the poll module. Moreover, there may not even need to be a flag. Entries should
 // always be immediately polled, it is just that it should always be done in a non-blocking way,
-// where subscribe returns prior to polling entries completing.
+// where subscribe returns prior to polling entries completing. Basically the flag is just
+// whether the entry processing should be async or not. But it should always be async, so that
+// is kind of stupid.
 
 
 // TODO: connect on demand
 // TODO: channel should be parameter configured externally
 // TODO: treat context as immutable
+
+// TODO: support console parameter to context, use that for logging, default to a null console
+
 
 // Properties for the context argument:
 // feedConn, database conn to feed store
@@ -54,64 +58,37 @@ import coerceFeed from "/src/coerce-feed.js";
 // NOTE: the caller should not expect context is immutable
 
 export default async function subscribe(context, url) {
-  if(typeof context !== 'object') {
-    return [Status.EINVAL];
-  }
-
-  if(!(context.iconConn instanceof IDBDatabase)) {
-    return [Status.EINVAL];
-  }
-
-  if(!(url instanceof URL)) {
-    return [Status.EINVAL];
-  }
-
-  if(!('concurrent' in context)) {
-    context.concurrent = false;
-  }
-
-  if(!('notify' in context)) {
-    context.notify = true;
-  }
-
-  if(!('fetchFeedTimeoutMs' in context)) {
-    context.fetchFeedTimeoutMs = 2000;
-  }
+  assert(typeof context === 'object');
+  assert(context.iconConn instanceof IDBDatabase);
+  assert(url instanceof URL);
 
   console.log('Subscribing to', url.href);
 
-  let status;
-
-  let containsFeed;
-  try {
-    containsFeed = await containsFeedWithURL(context.feedConn, url);
-  } catch(error) {
-    console.error(error);
-    return [Status.EDB];
-  }
-
+  // Treat any error from containsFeedWithURL as fatal to subscribe and do not catch
+  let containsFeed = await containsFeedWithURL(context.feedConn, url);
+  // If already subscribed, throw an error
+  // TODO: is this really an error? This isn't an error. This just means cannot subscribe,
+  // but it isn't exception worthy. Should I return undefined instead? But then how do I know
+  // about failure? This is not a programmer error. This is just rejected user input, and
+  // users can input whatever they want. Even then, should I use an exception anyway? Ugh.
   if(containsFeed) {
-    console.debug('Already subscribed to', url.href);
-    return [Status.EDBCONSTRAINT];
+    throw new Error('Already subscribed to ' + url.href);
   }
 
   let response;
-  [status, response] = await FetchUtils.fetchFeed(url, context.fetchFeedTimeoutMs);
+  let status;
+  [status, response] = await FetchUtils.fetchFeed(url, context.fetchFeedTimeoutMs || 2000);
   if(status === Status.EOFFLINE) {
     // Continue with offline subscription
     console.debug('Subscribing while offline to', url.href);
   } else if(status !== Status.OK) {
-    console.error('Fetch feed error:', url.href, Status.toString(status));
-    return [status];
+    throw new Error('Error fetching ' + url.href);
   }
 
   let feed;
   if(response) {
-    [status, feed] = await createFeedFromResponse(context, feed, url);
-    if(status !== Status.OK) {
-      console.error('Error creating feed from response:', url.href, Status.toString(status));
-      return [status];
-    }
+    // Allow errors to bubble
+    feed = await createFeedFromResponse(context, feed, url);
   } else {
     // Offline subscription
     feed = Feed.create();
@@ -123,21 +100,15 @@ export default async function subscribe(context, url) {
   query.conn = context.iconConn;
   query.skipURLFetch = true;
 
-  status = await setFeedFavicon(query, feed);
-  if(status !== Status.OK) {
-    console.error('Set feed favicon error:', url.href, Status.toString(status));
-    return [status];
-  }
+  await setFeedFavicon(query, feed);
 
   // Store the feed
-  let storableFeed;
-  [status, storableFeed] = await saveFeed(context.feedConn, feed);
-  if(status !== Status.OK) {
-    console.error('Database error:', url.href, Status.toString(status));
-    return [status];
-  }
+  // TODO: use a real channel
+  let nullChannel = null;
+  // If saveFeed throws then rethrow
+  const storableFeed = await saveFeed(context.feedConn, nullChannel, feed);
 
-  if(context.notify) {
+  if(context.notify || !('notify' in context)) {
     showNotification(storableFeed);
   }
 
@@ -147,76 +118,55 @@ export default async function subscribe(context, url) {
     deferredPollFeed(storableFeed).catch(console.warn);
   }
 
-  return [Status.OK, storableFeed];
+  return storableFeed;
 }
 
 async function createFeedFromResponse(context, response, url) {
-  let status;
-  let containsFeed = false;
-
   const responseURL = new URL(response.url);
+
+  // If there was a redirect, then check if subscribed to the redirect
   if(FetchUtils.detectURLChanged(url, responseURL)) {
-    url = responseURL;
 
-    try {
-      containsFeed = await containsFeedWithURL(context.conn, url);
-    } catch(error) {
-      console.error(error);
-      return [Status.EDB];
-    }
-
+    // Allow database error to bubble uncaught
+    const containsFeed = await containsFeedWithURL(context.conn, responseURL);
     if(containsFeed) {
-      console.debug('Already subscribed to redirect url', url.href);
-      return [Status.EDBCONSTRAINT];
+      throw new Error('Already susbcribed to redirect url ' + responseURL.href);
     }
   }
 
-  let responseText;
-  try {
-    responseText = await response.text();
-  } catch(error) {
-    console.debug(error);
-    return [Status.EFETCH];
-  }
+  // Treat any fetch error here as fatal. We are past the point of trying to subscribe
+  // while offline. This basically should never throw
+  const responseText = await response.text();
 
+  // Take the fetched feed xml and turn it into a storable feed object
+  // Treat any coercion error as fatal and allow the error to bubble
   const procEntries = false;
-  let coerceResult;
+  const result = coerceFeed(responseText, url, responseURL,
+    FetchUtils.getLastModified(response), procEntries);
 
-  // TODO: not sure if this should be try/catch. This should probably just rethrow?
-  // Revisit after decoupling status.js
-  try {
-    coerceResult = coerceFeed(responseText, url, responseURL,
-      FetchUtils.getLastModified(response), procEntries);
-  } catch(error) {
-    return [Status.EFETCH];
-  }
-
-  return [Status.OK, coerceResult.feed];
+  return result.feed;
 }
 
 async function setFeedFavicon(query, feed) {
-  if(!Feed.isFeed(feed)) {
-    return Status.EINVAL;
-  }
+  assert(Feed.isFeed(feed));
 
   const lookupURL = Feed.createIconLookupURL(feed);
 
+  // Lookup errors are not fatal. Simply do nothing on error.
   let iconURLString;
   try {
     iconURLString = await lookup(query);
   } catch(error) {
-    console.error(error);
-    return Status.EDB;
+    console.debug(error);
+    return;
   }
 
   if(iconURLString) {
     feed.faviconURLString = iconURLString;
   }
-
-  return Status.OK;
 }
 
-async function saveFeed(conn, feed) {
+async function saveFeed(conn, channel, feed) {
 
   // TODO: this should delegate to an 'addFeed' function in feed-store.js that
   // does the sanitization work implicitly and forwards to putFeed, and also sets
@@ -226,17 +176,11 @@ async function saveFeed(conn, feed) {
   storableFeed.active = true;
   storableFeed.dateCreated = new Date();
 
-  // TODO: use a channel
-  let nullChannel = null;
-  try {
-    await putFeed(conn, nullChannel, feed);
-  } catch(error) {
-    console.error(error);
-    return Status.EDB;
-  }
+
+  const feedId = await putFeed(conn, nullChannel, feed);
 
   storableFeed.id = feedId;
-  return [Status.OK, storableFeed];
+  return storableFeed;
 }
 
 function showNotification(feed) {
@@ -278,4 +222,8 @@ async function deferredPollFeed(feed) {
 // Returns a promise that resolves after the given number of milliseconds
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function assert(value, message) {
+  if(!value) throw new Error(message || 'Assertion error');
 }
