@@ -7,10 +7,13 @@ import {open as openFeedStore} from "/src/feed-store/feed-store.js";
 // TODO: revert to no status
 
 // TODO: conns should be optional params instead of always created locally so that this can
-// run on test databases. In other words, conns should be dependency injected. Same goes
-// for channel
+// run on test databases. In other words, conns should be dependency injected.
 
-export default async function importOPMLFiles(files, timeout) {
+
+// TODO: now that channel is injected, caller is responsible for lifetime management
+
+
+export default async function importOPMLFiles(importContext, files) {
   if(!(files instanceof FileList)) {
     return Status.EINVAL;
   }
@@ -29,16 +32,11 @@ export default async function importOPMLFiles(files, timeout) {
     return Status.EDB;
   }
 
-  // TODO: I'd rather not do the channel creation here. This should be
-  // an injected dependency. Basically an explicit parameter to importOPMLFiles
-
-  const channel = new BroadcastChannel('reader');
-
-  const context = {
+  const subscribeContext = {
     feedConn: feedConn,
     iconConn: iconConn,
-    channel: channel,
-    fetchFeedTimeoutMs: timeout,
+    channel: importContext.channel,
+    fetchFeedTimeoutMs: importContext.fetchFeedTimeout,
     notify: false,
     concurrent: true
   };
@@ -46,7 +44,7 @@ export default async function importOPMLFiles(files, timeout) {
   // Concurrently import files
   const promises = [];
   for(const file of files) {
-    promises.push(importOPMLFile(context, file));
+    promises.push(importOPMLFile(subscribeContext, file));
   }
   const results = await Promise.all(promises);
 
@@ -59,13 +57,12 @@ export default async function importOPMLFiles(files, timeout) {
 
   feedConn.close();
   iconConn.close();
-  channel.close();
 
   return Status.OK;
 }
 
 
-async function importOPMLFile(context, file) {
+async function importOPMLFile(subscribeContext, file) {
   if(!(file instanceof File)) {
     console.error('Invalid file argument', file);
     return Status.EINVAL;
@@ -112,7 +109,7 @@ async function importOPMLFile(context, file) {
   if(feedURLs.length) {
     const promises = [];
     for(const url of feedURLs) {
-      promises.push(subscribeNoExcept(context, url));
+      promises.push(subscribeNoExcept(subscribeContext, url));
     }
 
     const subscribeResults = await Promise.all(promises);
@@ -128,9 +125,9 @@ async function importOPMLFile(context, file) {
 }
 
 // Call subscribe while suppressing any exceptions. Exceptions are simply logged to debug.
-async function subscribeNoExcept(context, url) {
+async function subscribeNoExcept(subscribeContext, url) {
   try {
-    return await subscribe(context, url);
+    return await subscribe(subscribeContext, url);
   } catch(error) {
     console.debug(error);
   }

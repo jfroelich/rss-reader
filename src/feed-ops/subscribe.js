@@ -23,11 +23,8 @@ import coerceFeed from "/src/coerce-feed.js";
 // TODO: reconsider how notify overlaps with concurrent. For that matter, the term concurrent is
 // overly abstract and instead should be named more specifically to what it does, such as
 // enqueuePoll
-// TODO: notify a channel of feed created. Perhaps provide an optional channel argument so that
-// the caller is responsible for channel maintenance and reference.
 // TODO: the polling of entries after subscribing is still kind of wonky and should eventually
 // be more well thought out.
-
 // TODO: rather than poll later, this should just accept a boolean flag parameter that if true
 // polls entries asynchronously, on the subscribed feed object itself, and without calling
 // pollFeed. It should simply call pollEntries in a way that is non-blocking. Then there is
@@ -39,12 +36,7 @@ import coerceFeed from "/src/coerce-feed.js";
 // whether the entry processing should be async or not. But it should always be async, so that
 // is kind of stupid.
 
-// TODO: connect on demand
-// TODO: channel should be parameter configured externally
-// TODO: treat context as immutable
-
-// TODO: support console parameter to context, use that for logging, default to a null console
-
+// TODO: connect on demand?
 
 // Properties for the context argument:
 // feedConn, database conn to feed store
@@ -53,12 +45,18 @@ import coerceFeed from "/src/coerce-feed.js";
 // fetchFeedTimeoutMs, integer, optional
 // concurrent, boolean, optional, whether called concurrently
 // notify, boolean, optional, whether to notify
-// NOTE: the caller should not expect context is immutable
 
 export default async function subscribe(context, url) {
   assert(typeof context === 'object');
   assert(context.iconConn instanceof IDBDatabase);
   assert(url instanceof URL);
+
+  // TODO: learn more about declaring a variable that shares the same name as a
+  // built-in object. I believe this is entirely possible. However, this is an identifiably
+  // weak area of my knowledge of Javascript. I do this with the host/built-in/whatever
+  // object "document" in several places. But I am not sure how it works with console.
+
+  const console = context.console || NULL_CONSOLE;
 
   console.log('Subscribing to', url.href);
 
@@ -98,7 +96,7 @@ export default async function subscribe(context, url) {
   query.conn = context.iconConn;
   query.skipURLFetch = true;
 
-  await setFeedFavicon(query, feed);
+  await setFeedFavicon(query, feed, console);
 
   // Store the feed. Rethrow any errors as fatal.
   const storableFeed = await saveFeed(context.feedConn, context.channel, feed);
@@ -142,7 +140,7 @@ async function createFeedFromResponse(context, response, url) {
   return result.feed;
 }
 
-async function setFeedFavicon(query, feed) {
+async function setFeedFavicon(query, feed, console) {
   assert(Feed.isFeed(feed));
 
   const lookupURL = Feed.createIconLookupURL(feed);
@@ -218,3 +216,11 @@ function sleep(ms) {
 function assert(value, message) {
   if(!value) throw new Error(message || 'Assertion error');
 }
+
+function noop() {}
+
+const NULL_CONSOLE = {
+  log: noop,
+  warn: noop,
+  debug: noop
+};

@@ -750,9 +750,19 @@ function menuOptionImportOnclick() {
 }
 
 async function importFiles(files) {
+
+  // For the import, use the slideshow page's persistent channel
+  // Given that there could be several feeds being subscribed, use a slightly
+  // higher timeout than average to reduce the chance that some contention delays
+  // result in failure
+  const importContext = {
+    channel: channel,
+    fetchFeedTimeout: 10 * 1000
+  };
+
   // TODO: show operation started
-  const fetchFeedTimeoutMs = 10 * 1000;
-  let status = await importOPMLFiles(files, fetchFeedTimeoutMs);
+
+  let status = await importOPMLFiles(importContext, files);
   if(status !== Status.OK) {
     // TODO: visual feedback in event an error
     console.error('Failed to import opml files', Status.toString(status));
