@@ -1,4 +1,5 @@
 import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
+import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
 
 // TODO: if the file is so large, what I could do is present a unifying module that simply
 // imports from a bunch of helper files and then exports from here, and expect users to
@@ -691,20 +692,20 @@ function filterEmptyProps(object) {
 // the input less certain 'unprintable' characters. In the case of bad input the input itself is
 // returned. To test if characters were replaced, check if the output string length is less than
 // the input string length.
-// Basically this removes those characters in the range of [0..31] except for the following four
-// characters:
-// \t is \u0009 which is base10 9
-// \n is \u000a which is base10 10
-// \f is \u000c which is base10 12
-// \r is \u000d which is base10 13
-// TODO: look into how much this overlaps with filterControls
-
-const unprintablePattern = /[\u0000-\u0008\u000b\u000e-\u001F]+/g;
 function filterUnprintableCharacters(value) {
+
+  // Basically this removes those characters in the range of [0..31] except for:
+  // \t is \u0009 which is base10 9
+  // \n is \u000a which is base10 10
+  // \f is \u000c which is base10 12
+  // \r is \u000d which is base10 13
+  // TODO: look into how much this overlaps with filterControls
+
+  const pattern = /[\u0000-\u0008\u000b\u000e-\u001F]+/g;
   // The length check is done because given that replace will be a no-op when the length is 0 it is
   // faster to perform the length check than it is to call replace. I do not know the distribution
   // of inputs but I expect that empty strings are not rare.
-  return typeof value === 'string' && value.length ? value.replace(unprintablePattern, '') : value;
+  return typeof value === 'string' && value.length ? value.replace(pattern, '') : value;
 }
 
 // Returns a new string where Unicode Cc-class characters have been removed. Throws an error if
@@ -774,7 +775,7 @@ export function feedAppendURL(feed, url) {
 // new feed take precedence, except for urls, which are merged to generate a distinct ordered set of
 // oldest to newest url. Impure because of copying by reference.
 export function mergeFeeds(oldFeed, newFeed) {
-  const mergedFeed = Object.assign(create(), oldFeed, newFeed);
+  const mergedFeed = Object.assign(createFeed(), oldFeed, newFeed);
 
   // After assignment, the merged feed has only the urls from the new feed. So the output feed's url
   // list needs to be fixed. First copy over the old feed's urls, then try and append each new feed
