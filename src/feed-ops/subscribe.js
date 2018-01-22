@@ -4,7 +4,7 @@ import * as Status from "/src/common/status.js";
 import {lookup} from "/src/favicon-service.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import * as Feed from "/src/feed-store/feed.js";
-import {containsFeedWithURL, prepareFeed, putFeed} from "/src/feed-store/feed-store.js";
+import {addFeed, containsFeedWithURL} from "/src/feed-store/feed-store.js";
 import coerceFeed from "/src/coerce-feed.js";
 
 // TODO: reconsider the transaction lifetime. Right now it is protected by the error that
@@ -35,29 +35,28 @@ import coerceFeed from "/src/coerce-feed.js";
 // where subscribe returns prior to polling entries completing. Basically the flag is just
 // whether the entry processing should be async or not. But it should always be async, so that
 // is kind of stupid.
+// TODO: perhaps instead of calling poll feed, there should be an observer somewhere listening
+// for 'feed-added' events that automatically triggers the poll. addFeed in feed-store would
+// post a message to a channel, and that observer would automatically pick it up. Then there is
+// need to call this explicitly, at all.
+
 
 // TODO: connect on demand?
 
 // Properties for the context argument:
-// feedConn, database conn to feed store
-// iconConn, database conn to icon store, optional
+// feedConn {IDBDatabase} conn to feed store
+// iconConn {IDBDatabase} conn to icon store
 // channel {BroadcastChannel} optional, state change messages used
-// fetchFeedTimeoutMs, integer, optional
+// fetchFeedTimeout {Number} optional, positive integer
 // concurrent, boolean, optional, whether called concurrently
 // notify, boolean, optional, whether to notify
+// console {Object} optional, logging destination
 
 export default async function subscribe(context, url) {
   assert(typeof context === 'object');
   assert(context.iconConn instanceof IDBDatabase);
   assert(url instanceof URL);
-
-  // TODO: learn more about declaring a variable that shares the same name as a
-  // built-in object. I believe this is entirely possible. However, this is an identifiably
-  // weak area of my knowledge of Javascript. I do this with the host/built-in/whatever
-  // object "document" in several places. But I am not sure how it works with console.
-
   const console = context.console || NULL_CONSOLE;
-
   console.log('Subscribing to', url.href);
 
   // Treat any error from containsFeedWithURL as fatal to subscribe and do not catch
@@ -73,7 +72,7 @@ export default async function subscribe(context, url) {
 
   let response;
   let status;
-  [status, response] = await FetchUtils.fetchFeed(url, context.fetchFeedTimeoutMs || 2000);
+  [status, response] = await FetchUtils.fetchFeed(url, context.fetchFeedTimeout || 2000);
   if(status === Status.EOFFLINE) {
     // Continue with offline subscription
     console.debug('Subscribing while offline to', url.href);
@@ -98,20 +97,19 @@ export default async function subscribe(context, url) {
 
   await setFeedFavicon(query, feed, console);
 
-  // Store the feed. Rethrow any errors as fatal.
-  const storableFeed = await saveFeed(context.feedConn, context.channel, feed);
+  const storedFeed = await addFeed(context.feedConn, context.channel, feed);
 
   if(context.notify || !('notify' in context)) {
-    showNotification(storableFeed);
+    showNotification(storedFeed);
   }
 
   // If not concurrent with other subscribe calls, schedule a poll
   if(!context.concurrent) {
     // Call non-awaited to allow for subscribe to settle first
-    deferredPollFeed(storableFeed).catch(console.warn);
+    deferredPollFeed(storedFeed).catch(console.warn);
   }
 
-  return storableFeed;
+  return storedFeed;
 }
 
 async function createFeedFromResponse(context, response, url) {
@@ -159,19 +157,6 @@ async function setFeedFavicon(query, feed, console) {
   }
 }
 
-async function saveFeed(conn, channel, feed) {
-
-  // TODO: this should delegate to an 'addFeed' function in feed-store.js that
-  // does the sanitization work implicitly and forwards to putFeed, and also sets
-  // the id of the input feed object
-  const storableFeed = prepareFeed(feed);
-  storableFeed.active = true;
-  storableFeed.dateCreated = new Date();
-  const feedId = await putFeed(conn, channel, feed);
-  storableFeed.id = feedId;
-  return storableFeed;
-}
-
 function showNotification(feed) {
   const title = 'Subscribed!';
   const feedName = feed.title || Feed.peekURL(feed);
@@ -179,10 +164,7 @@ function showNotification(feed) {
   showDesktopNotification(title, message, feed.faviconURLString);
 }
 
-// TODO: perhaps instead of calling this, there should be an observer somewhere listening
-// for 'feed-added' events that automatically triggers the poll. addFeed in feed-store would
-// post a message to a channel, and that observer would automatically pick it up. Then there is
-// need to call this explicitly, at all.
+
 
 async function deferredPollFeed(feed) {
 

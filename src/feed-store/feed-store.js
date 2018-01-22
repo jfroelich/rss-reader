@@ -362,6 +362,28 @@ export function prepareFeed(feed) {
   return prepped;
 }
 
+export async function addFeed(conn, channel, feed) {
+  // TODO: call validateFeed first
+
+
+  const preparedFeed = prepareFeed(feed);
+
+  // Initialize certain properties
+  preparedFeed.active = true;
+  preparedFeed.dateCreated = new Date();
+  delete preparedFeed.dateUpdated;
+
+  let nullChannel = null;
+  const feedId = await putFeed(conn, nullChannel, preparedFeed);
+  preparedFeed.id = feedId;
+
+  if(channel) {
+    channel.postMessage({type: 'feed-added', id: feedId});
+  }
+
+  return preparedFeed;
+}
+
 export async function putFeed(conn, channel, feed) {
   const dconn = conn ? conn : await open();
   const feedId = await putFeedPromise(dconn, feed);
