@@ -20,26 +20,6 @@ import coerceFeed from "/src/coerce-feed.js";
 // the call to the fetch helper, which checks the policy internally. The issue is that it cannot
 // be abstracted away if I need to use it again for non-fetch purposes. So really it is just the
 // wrong abstraction.
-// TODO: reconsider how notify overlaps with concurrent. For that matter, the term concurrent is
-// overly abstract and instead should be named more specifically to what it does, such as
-// enqueuePoll
-// TODO: the polling of entries after subscribing is still kind of wonky and should eventually
-// be more well thought out.
-// TODO: rather than poll later, this should just accept a boolean flag parameter that if true
-// polls entries asynchronously, on the subscribed feed object itself, and without calling
-// pollFeed. It should simply call pollEntries in a way that is non-blocking. Then there is
-// no need to involve poll functionality outside of the poll entries function. This also
-// means that poll entries needs to be able to work in two contexts, and should be a public
-// member of the poll module. Moreover, there may not even need to be a flag. Entries should
-// always be immediately polled, it is just that it should always be done in a non-blocking way,
-// where subscribe returns prior to polling entries completing. Basically the flag is just
-// whether the entry processing should be async or not. But it should always be async, so that
-// is kind of stupid.
-// TODO: perhaps instead of calling poll feed, there should be an observer somewhere listening
-// for 'feed-added' events that automatically triggers the poll. addFeed in feed-store would
-// post a message to a channel, and that observer would automatically pick it up. Then there is
-// need to call this explicitly, at all.
-
 
 // TODO: connect on demand?
 
@@ -49,8 +29,6 @@ import coerceFeed from "/src/coerce-feed.js";
 // channel {BroadcastChannel} optional, an open channel to which to send feed added message
 // fetchFeedTimeout {Number} optional, positive integer, how long to wait in ms before considering
 // feed fetch a failure
-// concurrent {Boolean} optional, whether called concurrently. If not concurrent then entries
-// scheduled to be polled shortly after subscribing
 // notify {Boolean} optional, whether to show a desktop notification
 // console {console object} optional, console-like logging destination
 
@@ -104,11 +82,8 @@ export default async function subscribe(context, url) {
     showNotification(storedFeed);
   }
 
-  // If not concurrent with other subscribe calls, schedule a poll
-  if(!context.concurrent) {
-    // Call non-awaited to allow for subscribe to settle first
-    deferredPollFeed(storedFeed).catch(console.warn);
-  }
+  // Call non-awaited (in a non-blocking manner) to allow for subscribe to settle immediately
+  deferredPollFeed(storedFeed).catch(console.warn);
 
   return storedFeed;
 }
@@ -164,8 +139,6 @@ function showNotification(feed) {
   const message = 'Subscribed to ' + feedName;
   showDesktopNotification(title, message, feed.faviconURLString);
 }
-
-
 
 async function deferredPollFeed(feed) {
 

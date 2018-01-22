@@ -37,8 +37,7 @@ export default async function importOPMLFiles(importContext, files) {
     iconConn: iconConn,
     channel: importContext.channel,
     fetchFeedTimeout: importContext.fetchFeedTimeout,
-    notify: false,
-    concurrent: true
+    notify: false
   };
 
   // Concurrently import files

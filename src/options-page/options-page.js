@@ -368,7 +368,6 @@ async function subscribeFormOnsubmit(event) {
   context.iconConn = iconConn;
   // Use the options page's persistent channel
   context.channel = channel;
-  context.concurrent = false;
   context.notify = true;
   context.fetchFeedTimeout = 2000;
 
