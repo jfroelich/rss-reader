@@ -1,6 +1,10 @@
 import parseFeed from "/src/common/parse-feed.js";
-import * as Feed from "/src/rdb/feed.js";
-import {createEntry, entryAppendURL, entryHasURL} from "/src/rdb/rdb.js";
+import {
+  createEntry,
+  entryAppendURL,
+  entryHasURL,
+  feedAppendURL
+} from "/src/rdb/rdb.js";
 
 // One of the key points to think about is how this logic is basically a shared library that
 // involves knowledge of the implementation details of several different services. For example
@@ -53,11 +57,14 @@ export default function coerceFeed(xmlString, requestURL, responseURL, lastModDa
 
   // Coerce the parsed feed object into a storage feed object. This must occur before
   // attempting to use other functions that operate on storage feed objects.
-  feed.magic = Feed.FEED_MAGIC;
+  // TODO: this needs to be changed, rdb.js does not export feed magic, so I need another
+  // way of doing this safely. Temporary hack just to keep it working for now is to hardcode
+  // the magic. Completely unreliable.
+  feed.magic = 0xfeedfeed;
 
   // Compose fetch urls as the initial feed urls
-  Feed.appendURL(feed, requestURL);
-  Feed.appendURL(feed, responseURL);
+  feedAppendURL(feed, requestURL);
+  feedAppendURL(feed, responseURL);
 
   // Normalize feed link if set and valid, otherwise set to undefined. Save a reference to the
   // url so that it can be used to resolve entry links later.
@@ -86,9 +93,6 @@ export default function coerceFeed(xmlString, requestURL, responseURL, lastModDa
 
   // TODO: setting the date the feed xml file was last modified is something else's concern
   feed.dateLastModified = lastModDate;
-
-  // Setup feed magic manually
-  feed.magic = Feed.FEED_MAGIC;
 
   const result = {feed: undefined, entries: []};
   result.feed = feed;

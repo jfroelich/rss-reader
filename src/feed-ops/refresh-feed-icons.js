@@ -1,6 +1,11 @@
 import {lookup, open as openIconStore} from "/src/favicon-service.js";
-import * as Feed from "/src/rdb/feed.js";
-import {findActiveFeeds, open as openFeedStore, putFeed} from "/src/rdb/rdb.js";
+import {
+  createIconLookupURLForFeed,
+  feedHasURL,
+  findActiveFeeds,
+  open as openFeedStore,
+  putFeed
+} from "/src/rdb/rdb.js";
 
 // Refreshes the favicon property of feeds in the feed store
 export default async function refreshFeedIcons(feedConn, iconConn, channel) {
@@ -31,12 +36,12 @@ export default async function refreshFeedIcons(feedConn, iconConn, channel) {
 // will fail. So not a perfect solution
 
 async function refreshFeedIcon(conn, iconConn, channel, feed) {
-  if(!Feed.hasURL(feed)) {
+  if(!feedHasURL(feed)) {
     throw new TypeError('Feed missing url ' + feed.id);
   }
 
   // Throw on failure
-  const lookupURL = Feed.createIconLookupURL(feed);
+  const lookupURL = createIconLookupURLForFeed(feed);
 
   const query = {};
   query.conn = iconConn;

@@ -1,6 +1,6 @@
 import assert from "/src/common/assert.js";
-import * as Feed from "/src/rdb/feed.js";
 import * as OPMLUtils from "/src/slideshow-page/opml-utils.js";
+import {feedPeekURL, isFeed} from "/src/rdb/rdb.js";
 
 // TODO: Change to return a blob object. Move downloadBlob to calling context. Export shouldn't
 // care how the blob is used.
@@ -59,10 +59,10 @@ function downloadBlob(blob, filename) {
 
 // Create an outline from a feed
 function outlineFromFeed(feed) {
-  assert(Feed.isFeed(feed));
+  assert(isFeed(feed));
   const outline = {};
   outline.type = feed.type;
-  outline.xmlUrl = Feed.peekURL(feed);
+  outline.xmlUrl = feedPeekURL(feed);
   outline.title = feed.title;
   outline.description = feed.description;
   outline.htmlUrl = feed.link;

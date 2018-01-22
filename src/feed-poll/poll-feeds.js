@@ -11,7 +11,6 @@ import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
 import isBinaryURL from "/src/feed-poll/is-binary-url.js";
-import * as Feed from "/src/rdb/feed.js";
 
 import {
   addEntry,
@@ -19,8 +18,12 @@ import {
   entryAppendURL,
   entryHasURL,
   entryPeekURL,
+  feedHasURL,
+  feedPeekURL,
   findActiveFeeds,
   isEntry,
+  isFeed,
+  mergeFeeds,
   open as openFeedStore,
   prepareFeed,
   putFeed
@@ -135,10 +138,10 @@ FeedPoll.prototype.pollFeeds = async function() {
 FeedPoll.prototype.pollFeed = async function(feed, batched) {
   assert(this.feedConn instanceof IDBDatabase);
   assert(this.iconConn instanceof IDBDatabase);
-  assert(Feed.isFeed(feed));
-  assert(Feed.hasURL(feed));
+  assert(isFeed(feed));
+  assert(feedHasURL(feed));
 
-  const feedURLString = Feed.peekURL(feed);
+  const feedURLString = feedPeekURL(feed);
   console.log('Polling feed', feedURLString);
 
   if(!feed.active) {
@@ -200,7 +203,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     return;
   }
 
-  const mergedFeed = Feed.merge(feed, parseResult.feed);
+  const mergedFeed = mergeFeeds(feed, parseResult.feed);
 
   // If we did not exit earlier as a result of some kind of error, then we want to possibly
   // decrement the error count and save the updated error count, so that errors do not persist
@@ -303,7 +306,7 @@ async function handlePollFeedError(errorCode, conn, feed, callCategory, threshol
 
   assert(Number.isInteger(threshold));
   if(feed.errorCount > threshold) {
-    console.debug('Error count exceeded threshold, deactivating feed', feed.id, Feed.peekURL(feed));
+    console.debug('Error count exceeded threshold, deactivating feed', feed.id, feedPeekURL(feed));
     feed.active = false;
     if(typeof callCategory !== 'undefined') {
       feed.deactivationReasonText = callCategory;

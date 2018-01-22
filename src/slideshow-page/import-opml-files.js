@@ -1,7 +1,6 @@
 import * as Status from "/src/common/status.js";
 import {open as openIconStore} from "/src/favicon-service.js";
 import subscribe from "/src/feed-ops/subscribe.js";
-import * as Feed from "/src/rdb/feed.js";
 import {open as openFeedStore} from "/src/rdb/rdb.js";
 
 // TODO: revert to no status

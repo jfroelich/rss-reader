@@ -3,8 +3,15 @@ import * as FetchUtils from "/src/common/fetch-utils.js";
 import * as Status from "/src/common/status.js";
 import {lookup} from "/src/favicon-service.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
-import * as Feed from "/src/rdb/feed.js";
-import {addFeed, containsFeedWithURL} from "/src/rdb/rdb.js";
+import {
+  addFeed,
+  containsFeedWithURL,
+  createFeed,
+  createIconLookupURLForFeed,
+  feedAppendURL,
+  feedPeekURL,
+  isFeed
+} from "/src/rdb/rdb.js";
 import coerceFeed from "/src/coerce-feed.js";
 
 // TODO: reconsider the transaction lifetime. Right now it is protected by the error that
@@ -66,8 +73,8 @@ export default async function subscribe(context, url) {
     feed = await createFeedFromResponse(context, feed, url);
   } else {
     // Offline subscription
-    feed = Feed.create();
-    Feed.appendURL(feed, url);
+    feed = createFeed();
+    feedAppendURL(feed, url);
   }
 
   // Set the feed's favicon
@@ -116,9 +123,9 @@ async function createFeedFromResponse(context, response, url) {
 }
 
 async function setFeedFavicon(query, feed, console) {
-  assert(Feed.isFeed(feed));
+  assert(isFeed(feed));
 
-  const lookupURL = Feed.createIconLookupURL(feed);
+  const lookupURL = createIconLookupURLForFeed(feed);
 
   // Lookup errors are not fatal. Simply do nothing on error.
   let iconURLString;
@@ -136,7 +143,7 @@ async function setFeedFavicon(query, feed, console) {
 
 function showNotification(feed) {
   const title = 'Subscribed!';
-  const feedName = feed.title || Feed.peekURL(feed);
+  const feedName = feed.title || feedPeekURL(feed);
   const message = 'Subscribed to ' + feedName;
   showDesktopNotification(title, message, feed.faviconURLString);
 }

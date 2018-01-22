@@ -3,9 +3,9 @@ import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 import markEntryRead from "/src/feed-ops/mark-entry-read.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
-import * as Feed from "/src/rdb/feed.js";
 import {
   entryPeekURL,
+  feedPeekURL,
   findViewableEntries,
   getFeeds,
   isEntry,
@@ -934,7 +934,7 @@ function appendFeed(feed) {
   col.textContent = 'URL';
   row.appendChild(col);
   col = document.createElement('td');
-  col.textContent = Feed.peekURL(feed);
+  col.textContent = feedPeekURL(feed);
   row.appendChild(col);
   feedInfoElement.appendChild(row);
 

@@ -1,5 +1,7 @@
 import assert from "/src/common/assert.js";
-import * as Feed from "/src/rdb/feed.js";
+
+// TODO: this creates a circular dependency at the moment
+import {isFeed, isValidFeedId} from "/src/rdb/rdb.js";
 
 // TODO: include this in places where sanitize is called
 // TODO: assert required properties are present
@@ -9,10 +11,10 @@ import * as Feed from "/src/rdb/feed.js";
 
 
 export default function validateFeed(feed) {
-  assert(Feed.isFeed(feed));
+  assert(isFeed(feed));
 
   // If the feed has an id then the id must be valid
-  if('id' in feed && !isValidId(feed.id)) {
+  if('id' in feed && !isValidFeedId(feed.id)) {
     throw new Error('Invalid feed id ' + feed.id);
   }
 

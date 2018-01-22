@@ -1,5 +1,4 @@
 import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
-import * as Feed from "/src/rdb/feed.js";
 
 // TODO: if the file is so large, what I could do is present a unifying module that simply
 // imports from a bunch of helper files and then exports from here, and expect users to
@@ -11,8 +10,16 @@ import * as Feed from "/src/rdb/feed.js";
 // TODO: I should be more consistent in field names. A have a semi-hungarian notation, where
 // the type is the suffix, but sometimes I use it as the prefix (e.g. dateUpdated should be
 // renamed to updatedDate)
+// TODO: regarding feed schema, should the group of properties pertaining to a feed's active state
+// by grouped together into a sub object? Like:
+// {active-props: {active: true, deactivationReasonText: undefined, deactivationDate: undefined}};
+// TODO: the active property is poorly named. Something that is named as
+// active typically means active. So it would be more appropriate to name this as something
+// like activeState or activeFlag. That removes the ambiguity between presence/absence style
+// boolean, and true/false boolean.
 
 
+const FEED_MAGIC = 0xfeedfeed;
 const ENTRY_MAGIC = 0xdeadbeef;
 
 export const ENTRY_STATE_UNREAD = 0;
@@ -113,7 +120,7 @@ function addFeedMagic(tx) {
   getAllFeedsRequest.onsuccess = function(event) {
     const feeds = event.target.result;
     for(const feed of feeds) {
-      feed.magic = Feed.FEED_MAGIC;
+      feed.magic = FEED_MAGIC;
       feed.dateUpdated = new Date();
       store.put(feed);
     }
@@ -138,7 +145,7 @@ function addActiveFieldToFeeds(store) {
 
 
 export async function activateFeed(conn, channel, feedId) {
-  assert(Feed.isValidId(feedId), 'Invalid feed id', feedId);
+  assert(isValidFeedId(feedId), 'Invalid feed id', feedId);
   const dconn = conn ? conn : await open();
   await activateFeedPromise(dconn, feedId);
   if(!conn) {
@@ -170,7 +177,7 @@ function activateFeedPromise(conn, feedId) {
 }
 
 export async function deactivateFeed(conn, channel, feedId, reasonText) {
-  assert(Feed.isValidId(feedId), 'Invalid feed id', feedId);
+  assert(isValidFeedId(feedId), 'Invalid feed id ' + feedId);
   const dconn = conn ? conn : await open();
   await deactivateFeedPromise(dconn, feedId, reasonText);
   if(!conn) {
@@ -342,7 +349,7 @@ export async function findFeedById(conn, feedId) {
 
 function findFeedByIdPromise(conn, feedId) {
   return new Promise((resolve, reject) => {
-    assert(Feed.isValidId(feedId));
+    assert(isValidFeedId(feedId));
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.get(feedId);
@@ -375,7 +382,7 @@ function findFeedIdByURLPromise(conn, url) {
 
 export async function containsFeedWithURL(conn, url) {
   const feedId = await findFeedIdByURL(conn, url);
-  return Feed.isValidId(id);
+  return isValidFeedId(id);
 }
 
 export async function findViewableEntries(conn, offset, limit) {
@@ -511,7 +518,7 @@ export async function putFeed(conn, channel, feed) {
 
 function putFeedPromise(conn, feed) {
   return new Promise((resolve, reject) => {
-    assert(Feed.isFeed(feed));
+    assert(isFeed(feed));
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
     const request = store.put(feed);
@@ -537,7 +544,7 @@ export async function removeFeed(conn, channel, feedId, reasonText) {
 
 function removeFeedPromise(conn, feedId) {
   return new Promise(function executor(resolve, reject) {
-    assert(Feed.isValidId(feedId));
+    assert(isValidFeedId(feedId));
     let entryIds;
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');
     tx.oncomplete = () => resolve(entryIds);
@@ -577,7 +584,7 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
     descMaxLength = 1024 * 10;
   }
 
-  const blankFeed = Feed.create();
+  const blankFeed = createFeed();
   const outputFeed = Object.assign(blankFeed, feed);
   const tagReplacement = '';
   const suffix = '';
@@ -723,11 +730,81 @@ function assert(value, message) {
   if(!value) throw new Error(message || 'Assertion error');
 }
 
-// Minimally, an entry is basic object that has the proper magic property value
+export function createFeed() {
+  return {magic: FEED_MAGIC};
+}
+
+// Return true if the value looks like a feed object
+export function isFeed(value) {
+  return value && typeof value === 'object' && value.magic === FEED_MAGIC;
+}
+
+export function isValidFeedId(id) {
+  return Number.isInteger(id) && id > 0;
+}
+
+export function feedHasURL(feed) {
+  assert(isFeed(feed));
+  return feed.urls && (feed.urls.length > 0);
+}
+
+
+// Returns the last url in the feed's url list as a string
+// @param feed {Object} a feed object
+// @returns {String} the last url in the feed's url list
+export function feedPeekURL(feed) {
+  assert(feedHasURL(feed));
+  return feed.urls[feed.urls.length - 1];
+}
+
+
+// Appends a url to the feed's internal list. Lazily creates the list if needed
+// @param feed {Object} a feed object
+// @param url {URL}
+export function feedAppendURL(feed, url) {
+
+  if(!isFeed(feed)) {
+    console.error('Invalid feed argument:', feed);
+    return false;
+  }
+
+  if(!(url instanceof URL)) {
+    console.error('Invalid url argument:', url);
+    return false;
+  }
+
+  feed.urls = feed.urls || [];
+  const href = url.href;
+  if(feed.urls.includes(href)) {
+    return false;
+  }
+  feed.urls.push(href);
+  return true;
+}
+
+// Returns a new object that results from merging the old feed with the new feed. Fields from the
+// new feed take precedence, except for urls, which are merged to generate a distinct ordered set of
+// oldest to newest url. Impure because of copying by reference.
+export function mergeFeeds(oldFeed, newFeed) {
+  const mergedFeed = Object.assign(create(), oldFeed, newFeed);
+
+  // After assignment, the merged feed has only the urls from the new feed. So the output feed's url
+  // list needs to be fixed. First copy over the old feed's urls, then try and append each new feed
+  // url.
+  mergedFeed.urls = [...oldFeed.urls];
+
+  if(newFeed.urls) {
+    for(const urlString of newFeed.urls) {
+      feedAppendURL(mergedFeed, new URL(urlString));
+    }
+  }
+
+  return mergedFeed;
+}
+
+
 export function createEntry() {
-  const entry = {};
-  entry.magic = ENTRY_MAGIC;
-  return entry;
+  return {magic: ENTRY_MAGIC};
 }
 
 // Return true if the first parameter looks like an entry object
@@ -775,4 +852,33 @@ export function entryAppendURL(entry, url) {
   }
 
   return true;
+}
+
+
+
+// Returns the url used to lookup a feed's favicon
+// Note this expects an actual feed object, not any object. The magic property must be set
+// @returns {URL}
+export function createIconLookupURLForFeed(feed) {
+  assert(isFeed(feed));
+
+  // First, prefer the link, as this is the url of the webpage that is associated with the feed.
+  // Cannot assume the link is set or valid. But if set, can assume it is valid.
+  if(feed.link) {
+
+    try {
+      return new URL(feed.link);
+    } catch(error) {
+      // If feed.link is set it should always be a valid URL
+      console.warn(error);
+
+      // If the url is invalid, just fall through
+    }
+  }
+
+  // If the link is missing or invalid then use the origin of the feed's xml url. Assume the feed
+  // always has a url.
+  const urlString = feedPeekURL(feed);
+  const urlObject = new URL(urlString);
+  return new URL(urlObject.origin);
 }

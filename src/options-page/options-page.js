@@ -8,10 +8,10 @@ import {open as openIconStore} from "/src/favicon-service.js";
 
 import subscribe from "/src/feed-ops/subscribe.js";
 import unsubscribe from "/src/feed-ops/unsubscribe.js";
-import * as Feed from "/src/rdb/feed.js";
 import {
   activateFeed,
   deactivateFeed,
+  feedPeekURL
   findFeedById,
   getFeeds,
   open as openFeedStore
@@ -293,7 +293,7 @@ async function feedListItemOnclick(event) {
   }
 
   const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = Feed.peekURL(feed);
+  feedURLElement.textContent = feedPeekURL(feed);
   const feedLinkElement = document.getElementById('details-feed-link');
   feedLinkElement.textContent = feed.link || '';
 
@@ -387,7 +387,7 @@ async function subscribeFormOnsubmit(event) {
   iconConn.close();
 
   feedListAppendFeed(feed);
-  const feedURL = Feed.peekURL(feed);
+  const feedURL = feedPeekURL(feed);
   subscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
   subscriptionMonitorHide();
   showSectionById('subs-list-section');

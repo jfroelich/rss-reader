@@ -1,5 +1,4 @@
-import * as Feed from "/src/rdb/feed.js";
-import {open} from "/src/rdb/rdb.js";
+import {isValidFeedId, open} from "/src/rdb/rdb.js";
 
 // TODO: does this potentially affect unread count? In which case this desync's badge text?
 
@@ -46,7 +45,7 @@ function removeOrphanedEntriesPromise(conn) {
         const cursor = entryRequest.result;
         if(cursor) {
           const entry = cursor.value;
-          if(!Feed.isValidId(entry.feed) || !feedIds.includes(entry.feed)) {
+          if(!isValidFeedId(entry.feed) || !feedIds.includes(entry.feed)) {
             entryIds.push(entry.id);
             console.debug('Deleting orphaned entry', entry.id);
             cursor.delete();
