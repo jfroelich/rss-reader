@@ -1,6 +1,6 @@
 import parseFeed from "/src/common/parse-feed.js";
-import * as Entry from "/src/rdb/entry.js";
 import * as Feed from "/src/rdb/feed.js";
+import {createEntry, entryAppendURL, entryHasURL} from "/src/rdb/rdb.js";
 
 // One of the key points to think about is how this logic is basically a shared library that
 // involves knowledge of the implementation details of several different services. For example
@@ -129,7 +129,7 @@ export default function coerceFeed(xmlString, requestURL, responseURL, lastModDa
 // Coerce a parsed entry object into a reader storage entry object.
 function coerceEntry(feedLinkURL, parsedEntry) {
   // Create a blank entry, and copy over all properties from the parsed entry
-  const storableEntry = Object.assign(Entry.createEntry(), parsedEntry);
+  const storableEntry = Object.assign(createEntry(), parsedEntry);
 
   // Mutate the storable entry
   resolveEntryLink(storableEntry, feedLinkURL);
@@ -158,7 +158,7 @@ function convertEntryLinkToURL(entry) {
   if('link' in entry) {
     try {
       const url = new URL(entry.link);
-      Entry.appendURL(entry, url);
+      entryAppendURL(entry, url);
     } catch(error) {
       console.debug('Failed to coerce entry link to url', entry.link);
     }
@@ -176,7 +176,7 @@ function dedupEntries(entries) {
   for(const entry of entries) {
 
     // Retain entries without urls in the output without comparison
-    if(!Entry.hasURL(entry)) {
+    if(!entryHasURL(entry)) {
       distinctEntries.push(entry);
       continue;
     }

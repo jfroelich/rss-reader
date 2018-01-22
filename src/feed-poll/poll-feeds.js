@@ -11,13 +11,16 @@ import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
 import isBinaryURL from "/src/feed-poll/is-binary-url.js";
-import * as Entry from "/src/rdb/entry.js";
 import * as Feed from "/src/rdb/feed.js";
 
 import {
   addEntry,
   containsEntryWithURL,
+  entryAppendURL,
+  entryHasURL,
+  entryPeekURL,
   findActiveFeeds,
+  isEntry,
   open as openFeedStore,
   prepareFeed,
   putFeed
@@ -348,20 +351,20 @@ function cascadeFeedPropertiesToEntries(feed, entries) {
 
 FeedPoll.prototype.pollEntry = async function(entry) {
   assert(this.feedConn instanceof IDBDatabase);
-  assert(Entry.isEntry(entry));
+  assert(isEntry(entry));
 
   // Cannot assume the entry has a url (not an error). A url is required
-  if(!Entry.hasURL(entry)) {
+  if(!entryHasURL(entry)) {
     return;
   }
 
   // This should never throw, so no try/catch. If it does throw it represents a programming error.
-  const url = new URL(Entry.peekURL(entry));
+  const url = new URL(entryPeekURL(entry));
 
 
   const rewrittenURL = rewriteURL(url);
   if(rewrittenURL && url.href !== rewrittenURL.href) {
-    Entry.appendURL(entry, rewrittenURL);
+    entryAppendURL(entry, rewrittenURL);
     setURLHrefProperty(url, rewrittenURL.href);
   }
 
@@ -407,7 +410,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
         return;
       }
 
-      Entry.appendURL(entry, responseURL);
+      entryAppendURL(entry, responseURL);
 
       // TODO: attempt to rewrite the redirected url as well?
 

@@ -1,4 +1,4 @@
-import {open as openFeedStore} from "/src/rdb/rdb.js";
+import {entryHasURL, open as openFeedStore} from "/src/rdb/rdb.js";
 
 // TODO: update callers to use new channel argument, and optional conn parameter pattern,
 // and no status
@@ -44,7 +44,7 @@ function removeLostEntriesPromise(conn) {
 
       const entry = cursor.value;
 
-      if(!Entry.hasURL(entry)) {
+      if(!entryHasURL(entry)) {
         console.debug('Deleting lost entry', entry.id);
 
         // Calling delete appends a request to the transaction. Remember that nothing

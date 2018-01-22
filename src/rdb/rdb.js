@@ -1,14 +1,5 @@
-import assert from "/src/common/assert.js";
 import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
-import * as Entry from "/src/rdb/entry.js";
 import * as Feed from "/src/rdb/feed.js";
-import {onUpgradeNeeded} from "/src/rdb/upgrade.js";
-import {
-  filterEmptyProps,
-  sanitizeEntry,
-  sanitizeFeed,
-  validateEntry
-} from "/src/rdb/utils.js";
 
 // TODO: if the file is so large, what I could do is present a unifying module that simply
 // imports from a bunch of helper files and then exports from here, and expect users to
@@ -20,14 +11,131 @@ import {
 // TODO: I should be more consistent in field names. A have a semi-hungarian notation, where
 // the type is the suffix, but sometimes I use it as the prefix (e.g. dateUpdated should be
 // renamed to updatedDate)
-// TODO: create an addFeed function that forwards to putFeed in the style of addEntry/putEntry
-// I still need to export prepareFeed, because in the poll-feeds use case it needs to overwrite
-// the feed's properties with new unsanitized data.
-// TODO: addFeed should post channel messages.
+
+
+const ENTRY_MAGIC = 0xdeadbeef;
+
+export const ENTRY_STATE_UNREAD = 0;
+export const ENTRY_STATE_READ = 1;
+export const ENTRY_STATE_UNARCHIVED = 0;
+export const ENTRY_STATE_ARCHIVED = 1;
+
 
 export function open(name = 'reader', version = 24, timeout = 500) {
   return utilsOpen(name, version, onUpgradeNeeded, timeout);
 }
+
+
+// Helper for open. Does the database upgrade. This should never be
+// called directly. To do an upgrade, call open with a higher version number.
+function onUpgradeNeeded(event) {
+  const conn = event.target.result;
+  const tx = event.target.transaction;
+  let feedStore, entryStore;
+  const stores = conn.objectStoreNames;
+
+  console.log('Upgrading database %s to version %s from version', conn.name, conn.version,
+    event.oldVersion);
+
+  if(event.oldVersion < 20) {
+    feedStore = conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
+    entryStore = conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
+    feedStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+
+    entryStore.createIndex('readState', 'readState');
+    entryStore.createIndex('feed', 'feed');
+    entryStore.createIndex('archiveState-readState', ['archiveState', 'readState']);
+    entryStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+  } else {
+    feedStore = tx.objectStore('feed');
+    entryStore = tx.objectStore('entry');
+  }
+
+  if(event.oldVersion < 21) {
+    // Add magic to all older entries
+    addEntryMagic(tx);
+  }
+
+  if(event.oldVersion < 22) {
+    addFeedMagic(tx);
+  }
+
+  if(event.oldVersion < 23) {
+    // Delete the title index in feed store. It is no longer in use. Because it is no longer
+    // created, and the db could be at any prior version, ensure that it exists before calling
+    // deleteIndex to avoid the not-found error
+
+    // @type {DOMStringList}
+    const indices = feedStore.indexNames;
+    if(indices.contains('title')) {
+      console.debug('Deleting title index of feed store as part of upgrade');
+      feedStore.deleteIndex('title');
+    } else {
+      console.debug('No title index found to delete during upgrade past version 22');
+    }
+  }
+
+  if(event.oldVersion < 24) {
+    // Version 24 adds an 'active' field to feeds. All existing feeds do not have an active
+    // field. So all existing feeds must be modified to have an active property that is default
+    // to true. It defaults to true because prior to this change, all feeds were presumed active.
+    addActiveFieldToFeeds(feedStore);
+  }
+}
+
+// Expects the transaction to be writable (either readwrite or versionchange)
+function addEntryMagic(tx) {
+  console.debug('Adding entry magic');
+  const store = tx.objectStore('entry');
+  const getAllEntriesRequest = store.getAll();
+  getAllEntriesRequest.onerror = function(event) {
+    console.error(getAllEntriesRequest.error);
+  };
+  getAllEntriesRequest.onsuccess = function(event) {
+    const entries = event.target.result;
+    writeEntriesWithMagic(store, entries);
+  };
+}
+
+function writeEntriesWithMagic(entryStore, entries) {
+  for(const entry of entries) {
+    entry.magic = ENTRY_MAGIC;
+    entry.dateUpdated = new Date();
+    entryStore.put(entry);
+  }
+}
+
+function addFeedMagic(tx) {
+  console.debug('Adding feed magic');
+  const store = tx.objectStore('feed');
+  const getAllFeedsRequest = store.getAll();
+  getAllFeedsRequest.onerror = console.error;
+  getAllFeedsRequest.onsuccess = function(event) {
+    const feeds = event.target.result;
+    for(const feed of feeds) {
+      feed.magic = Feed.FEED_MAGIC;
+      feed.dateUpdated = new Date();
+      store.put(feed);
+    }
+  }
+}
+
+function addActiveFieldToFeeds(store) {
+  console.debug('Adding active property to feeds');
+  const feedsRequest = store.getAll();
+  feedsRequest.onerror = console.error;
+
+  feedsRequest.onsuccess = function(event) {
+    const feeds = event.target.result;
+    for(const feed of feeds) {
+      console.debug('Marking feed %d as active as part of upgrade', feed.id);
+      feed.active = true;
+      feed.dateUpdated = new Date();
+      store.put(feed);
+    }
+  };
+}
+
 
 export async function activateFeed(conn, channel, feedId) {
   assert(Feed.isValidId(feedId), 'Invalid feed id', feedId);
@@ -94,7 +202,7 @@ function deactivateFeedPromise(conn, feedId, reasonText) {
 }
 
 export async function addEntry(conn, channel, entry) {
-  assert(Entry.isEntry(entry), 'Invalid entry', entry);
+  assert(isEntry(entry), 'Invalid entry ' + entry);
   assert(!entry.id);
 
   // TODO: I am not sure if I call this here, or in putEntry, or not at all
@@ -106,8 +214,8 @@ export async function addEntry(conn, channel, entry) {
 
   const sanitized = sanitizeEntry(entry);
   const storable = filterEmptyProps(sanitized);
-  storable.readState = Entry.STATE_UNREAD;
-  storable.archiveState = Entry.STATE_UNARCHIVED;
+  storable.readState = ENTRY_STATE_UNREAD;
+  storable.archiveState = ENTRY_STATE_UNARCHIVED;
   storable.dateCreated = new Date();
   delete storable.dateUpdated;
 
@@ -142,14 +250,14 @@ function countUnreadEntriesPromise(conn) {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
     const index = store.index('readState');
-    const request = index.count(Entry.STATE_UNREAD);
+    const request = index.count(ENTRY_STATE_UNREAD);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
 export async function markEntryRead(conn, channel, entryId) {
-  assert(Entry.isValidId(entryId), 'Invalid entry id', entryId);
+  assert(isValidEntryId(entryId), 'Invalid entry id ' + entryId);
 
   const dconn = conn ? conn : await open();
   await markEntryReadPromise(dconn, entryId);
@@ -172,15 +280,14 @@ function markEntryReadPromise(conn, entryId) {
     request.onsuccess = () => {
       const entry = request.result;
       assert(entry);
-      //assert(entry.readState !== Entry.STATE_READ);
 
-      if(entry.readState === Entry.STATE_READ) {
+      if(entry.readState === ENTRY_STATE_READ) {
         console.warn('Entry %d already in read state, ignoring', entry.id);
         return;
       }
 
 
-      entry.readState = Entry.STATE_READ;
+      entry.readState = ENTRY_STATE_READ;
       const currentDate = new Date();
       entry.dateUpdated = currentDate;
       entry.dateRead = currentDate;
@@ -221,7 +328,7 @@ function findEntryIdByURLPromise(conn, url) {
 
 export async function containsEntryWithURL(conn, url) {
   const entryId = await findEntryIdByURL(conn, url);
-  return Entry.isValidId(entryId);
+  return isValidEntryId(entryId);
 }
 
 export async function findFeedById(conn, feedId) {
@@ -293,7 +400,7 @@ function findViewableEntriesPromise(conn, offset, limit) {
 
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [Entry.STATE_UNARCHIVED, Entry.STATE_UNREAD];
+    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
     const request = index.openCursor(keyPath);
     request.onsuccess = function requestOnsuccess(event) {
       const cursor = event.target.result;
@@ -347,7 +454,7 @@ async function putEntry(conn, channel, entry) {
 
 function putEntryPromise(conn, entry) {
   return new Promise((resolve, reject) => {
-    assert(Entry.isEntry(entry));
+    assert(isEntry(entry));
     const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
     const request = store.put(entry);
@@ -456,4 +563,216 @@ function removeFeedPromise(conn, feedId) {
       }
     };
   });
+}
+
+
+
+// Returns a shallow copy of the input feed with sanitized properties
+function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
+  if(typeof titleMaxLength === 'undefined') {
+    titleMaxLength = 1024;
+  }
+
+  if(typeof descMaxLength === 'undefined') {
+    descMaxLength = 1024 * 10;
+  }
+
+  const blankFeed = Feed.create();
+  const outputFeed = Object.assign(blankFeed, feed);
+  const tagReplacement = '';
+  const suffix = '';
+
+  if(outputFeed.title) {
+    let title = outputFeed.title;
+    title = filterControls(title);
+    title = replaceTags(title, tagReplacement);
+    title = condenseWhitespace(title);
+    title = truncateHTML(title, titleMaxLength, suffix);
+    outputFeed.title = title;
+  }
+
+  if(outputFeed.description) {
+    let desc = outputFeed.description;
+    desc = filterControls(desc);
+    desc = replaceTags(desc, tagReplacement);
+    desc = condenseWhitespace(desc);
+    desc = truncateHTML(desc, descMaxLength, suffix);
+    outputFeed.description = desc;
+  }
+
+  return outputFeed;
+}
+
+
+
+// Inspect the entry object and throw an error if any value is invalid
+// or any required properties are missing
+function validateEntry(entry) {
+  // TODO: implement
+  // By not throwing an error, this indicates the entry is valid
+}
+
+// Returns a new entry object where fields have been sanitized. Impure
+// TODO: now that filterUnprintableCharacters is a thing, I want to also filter such
+// characters from input strings like author/title/etc. However it overlaps with the
+// call to filterControls here. There is some redundant work going on. Also, in a sense,
+// filterControls is now inaccurate. What I want is one function that strips binary
+// characters except important ones, and then a second function that replaces or removes
+// certain important binary characters (e.g. remove line breaks from author string).
+// Something like 'replaceFormattingCharacters'.
+function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLength) {
+
+  if(typeof authorMaxLength === 'undefined') {
+    authorMaxLength = 200;
+  }
+
+  if(typeof titleMaxLength === 'undefined') {
+    titleMaxLength = 1000;
+  }
+
+  if(typeof contentMaxLength === 'undefined') {
+    contentMaxLength = 50000;
+  }
+
+  const blankEntry = createEntry();
+  const outputEntry = Object.assign(blankEntry, inputEntry);
+
+  if(outputEntry.author) {
+    let author = outputEntry.author;
+    author = filterControls(author);
+    author = replaceTags(author, '');
+    author = condenseWhitespace(author);
+    author = truncateHTML(author, authorMaxLength);
+    outputEntry.author = author;
+  }
+
+  if(outputEntry.content) {
+    let content = outputEntry.content;
+    content = filterUnprintableCharacters(content);
+    content = truncateHTML(content, contentMaxLength);
+    outputEntry.content = content;
+  }
+
+  if(outputEntry.title) {
+    let title = outputEntry.title;
+    title = filterControls(title);
+    title = replaceTags(title, '');
+    title = condenseWhitespace(title);
+    title = truncateHTML(title, titleMaxLength);
+    outputEntry.title = title;
+  }
+
+  return outputEntry;
+}
+
+function condenseWhitespace(string) {
+  return string.replace(/\s{2,}/g, ' ');
+}
+
+// Returns a new object that is a copy of the input less empty properties. A property is empty if
+// it is null, undefined, or an empty string. Ignores prototype, deep objects, getters, etc.
+// Shallow copy by reference.
+function filterEmptyProps(object) {
+  const hasOwnProp = Object.prototype.hasOwnProperty;
+  const output = {};
+  let undef;
+  if(typeof object === 'object' && object !== null) {
+    for(const key in object) {
+      if(hasOwnProp.call(object, key)) {
+        const value = object[key];
+        if(value !== undef && value !== null && value !== '') {
+          output[key] = value;
+        }
+      }
+    }
+  }
+
+  return output;
+}
+
+// If the input is a string then the function returns a new string that is approximately a copy of
+// the input less certain 'unprintable' characters. In the case of bad input the input itself is
+// returned. To test if characters were replaced, check if the output string length is less than
+// the input string length.
+// Basically this removes those characters in the range of [0..31] except for the following four
+// characters:
+// \t is \u0009 which is base10 9
+// \n is \u000a which is base10 10
+// \f is \u000c which is base10 12
+// \r is \u000d which is base10 13
+// TODO: look into how much this overlaps with filterControls
+
+const unprintablePattern = /[\u0000-\u0008\u000b\u000e-\u001F]+/g;
+function filterUnprintableCharacters(value) {
+  // The length check is done because given that replace will be a no-op when the length is 0 it is
+  // faster to perform the length check than it is to call replace. I do not know the distribution
+  // of inputs but I expect that empty strings are not rare.
+  return typeof value === 'string' && value.length ? value.replace(unprintablePattern, '') : value;
+}
+
+// Returns a new string where Unicode Cc-class characters have been removed. Throws an error if
+// string is not a defined string. Adapted from these stack overflow questions:
+// http://stackoverflow.com/questions/4324790
+// http://stackoverflow.com/questions/21284228
+// http://stackoverflow.com/questions/24229262
+function filterControls(string) {
+  return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
+}
+
+function assert(value, message) {
+  if(!value) throw new Error(message || 'Assertion error');
+}
+
+// Minimally, an entry is basic object that has the proper magic property value
+export function createEntry() {
+  const entry = {};
+  entry.magic = ENTRY_MAGIC;
+  return entry;
+}
+
+// Return true if the first parameter looks like an entry object
+export function isEntry(value) {
+  // note: typeof null === 'object', hence the truthy test
+  return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
+}
+
+// Return true if the first parameter looks like an entry id
+export function isValidEntryId(value) {
+  return Number.isInteger(value) && value > 0;
+}
+
+// Returns true if the entry has at least one url
+export function entryHasURL(entry) {
+  assert(isEntry(entry));
+  return entry.urls && (entry.urls.length > 0);
+}
+
+// Returns the last url, as a string, in the entry's url list. This should never be called on an
+// entry without urls.
+export function entryPeekURL(entry) {
+  assert(isEntry(entry));
+  assert(entryHasURL(entry));
+  return entry.urls[entry.urls.length - 1];
+}
+
+// Append a url to an entry's url list. Lazily creates the urls property if needed. Normalizes the
+// url. The normalized url is compared against existing urls to ensure the new url is unique.
+// Returns true if entry was added, or false if the url already exists and was therefore
+// not added
+export function entryAppendURL(entry, url) {
+  assert(isEntry(entry));
+  assert(url instanceof URL);
+
+  const normalUrlString = url.href;
+  if(entry.urls) {
+    if(entry.urls.includes(normalUrlString)) {
+      return false;
+    }
+
+    entry.urls.push(normalUrlString);
+  } else {
+    entry.urls = [normalUrlString];
+  }
+
+  return true;
 }

@@ -3,15 +3,15 @@ import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 import markEntryRead from "/src/feed-ops/mark-entry-read.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
-import * as Entry from "/src/rdb/entry.js";
 import * as Feed from "/src/rdb/feed.js";
-
 import {
+  entryPeekURL,
   findViewableEntries,
   getFeeds,
+  isEntry,
+  isValidEntryId,
   open as openFeedStore
 } from "/src/rdb/rdb.js";
-
 import exportFeeds from "/src/slideshow-page/export-feeds.js";
 import importOPMLFiles from "/src/slideshow-page/import-opml-files.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
@@ -130,7 +130,7 @@ async function onEntryExpiredMessage(message) {
   // or transfered (serialized, copied, and deserialized) by a channel. This should never happen
   // because I assume the dispatcher verified the trustworthiness of the message, and I assume that
   // the message poster formed a proper message.
-  assert(Entry.isValidId(message.id));
+  assert(isValidEntryId(message.id));
 
   // Search for a slide corresponding to the entry id. Assume the search never yields more than
   // one match.
@@ -197,7 +197,7 @@ async function markSlideRead(conn, slideElement) {
   const slideEntryAttributeValue = slideElement.getAttribute('entry');
   const entryId = parseInt(slideEntryAttributeValue, 10);
   // The entry id should always be valid or something is very wrong
-  assert(Entry.isValidId(entryId));
+  assert(isValidEntryId(entryId));
 
   console.log('Marking slide for entry %d as read', entryId);
 
@@ -259,7 +259,7 @@ async function appendSlides(conn, limit) {
 function appendSlide(entry) {
 
   // TODO: do not assert in the UI
-  assert(Entry.isEntry(entry));
+  assert(isEntry(entry));
 
   console.log('Creating and appending slide for entry', entry.id);
   const slide = Slideshow.create();
@@ -281,7 +281,7 @@ function appendSlide(entry) {
 
 function createArticleTitleElement(entry) {
   const titleElement = document.createElement('a');
-  titleElement.setAttribute('href', Entry.peekURL(entry));
+  titleElement.setAttribute('href', entryPeekURL(entry));
   titleElement.setAttribute('class', 'entry-title');
   titleElement.setAttribute('rel', 'noreferrer');
 

@@ -1,5 +1,10 @@
-import * as Entry from "/src/rdb/entry.js";
-import {open as openFeedStore} from "/src/rdb/rdb.js";
+import {
+  createEntry,
+  ENTRY_STATE_ARCHIVED,
+  ENTRY_STATE_UNARCHIVED,
+  ENTRY_STATE_READ,
+  open as openFeedStore
+} from "/src/rdb/rdb.js";
 
 
 // TODO: eventually reconsider how an entry is determined as archivable. Each entry should
@@ -68,7 +73,7 @@ function archiveEntriesPromise(conn, maxAge) {
     tx.oncomplete = () => resolve(entryIds);
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [Entry.STATE_UNARCHIVED, Entry.STATE_READ];
+    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
     const request = index.openCursor(keyPath);
     request.onsuccess = () => {
       const cursor = request.result;
@@ -98,7 +103,7 @@ function archiveEntry(entry) {
   const afterSize = sizeof(compactedEntry);
   console.debug('Changing entry %d size from ~%d to ~%d', entry.id, beforeSize, afterSize);
 
-  compactedEntry.archiveState = Entry.STATE_ARCHIVED;
+  compactedEntry.archiveState = ENTRY_STATE_ARCHIVED;
   compactedEntry.dateArchived = new Date();
   compactedEntry.dateUpdated = new Date();
   return compactedEntry;
@@ -106,7 +111,7 @@ function archiveEntry(entry) {
 
 // Create a new entry and copy over certain fields
 function compactEntry(entry) {
-  const compactedEntry = Entry.createEntry();
+  const compactedEntry = createEntry();
   compactedEntry.dateCreated = entry.dateCreated;
 
   if(entry.dateRead) {
