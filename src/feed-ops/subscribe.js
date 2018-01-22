@@ -7,6 +7,9 @@ import * as Feed from "/src/feed-store/feed.js";
 import {containsFeedWithURL, prepareFeed, putFeed} from "/src/feed-store/feed-store.js";
 import coerceFeed from "/src/coerce-feed.js";
 
+// TODO: revert to using exceptions and assert, decouple status
+
+
 // TODO: reconsider the transaction lifetime. Right now it is protected by the error that
 // occurs due to violation of uniqueness constraint. But it would be better if both reads and
 // writes occurred on same transaction. Also because I have mixed feelings about treating
@@ -28,7 +31,16 @@ import coerceFeed from "/src/coerce-feed.js";
 // TODO: the polling of entries after subscribing is still kind of wonky and should eventually
 // be more well thought out.
 
-// TODO: revert to using exceptions and assert
+// TODO: rather than poll later, this should just accept a boolean flag parameter that if true
+// polls entries asynchronously, on the subscribed feed object itself, and without calling
+// pollFeed. It should simply call pollEntries in a way that is non-blocking. Then there is
+// no need to involve poll functionality outside of the poll entries function. This also
+// means that poll entries needs to be able to work in two contexts, and should be a public
+// member of the poll module. Moreover, there may not even need to be a flag. Entries should
+// always be immediately polled, it is just that it should always be done in a non-blocking way,
+// where subscribe returns prior to polling entries completing.
+
+
 // TODO: connect on demand
 // TODO: channel should be parameter configured externally
 // TODO: treat context as immutable
@@ -177,13 +189,6 @@ async function createFeedFromResponse(context, response, url) {
       FetchUtils.getLastModified(response), procEntries);
   } catch(error) {
     return [Status.EFETCH];
-  }
-
-
-  [status, coerceResult] =
-  if(status !== Status.OK) {
-    console.error('Parse feed error:', url.href, Status.toString(status));
-    return [status];
   }
 
   return [Status.OK, coerceResult.feed];

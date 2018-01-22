@@ -2,8 +2,6 @@ import parseFeed from "/src/common/parse-feed.js";
 import * as Entry from "/src/feed-store/entry.js";
 import * as Feed from "/src/feed-store/feed.js";
 
-// TODO: revert to not using status.js at all
-
 // One of the key points to think about is how this logic is basically a shared library that
 // involves knowledge of the implementation details of several different services. For example
 // it is used by both polling and subscribing. That's the problem. It should be broken down so that
@@ -53,8 +51,8 @@ export default function coerceFeed(xmlString, requestURL, responseURL, lastModDa
   // Rethrow any parsing errors
   const feed = parseFeed(xmlString);
 
-
-  // Coerce the parsed feed object into a storage feed object
+  // Coerce the parsed feed object into a storage feed object. This must occur before
+  // attempting to use other functions that operate on storage feed objects.
   feed.magic = Feed.FEED_MAGIC;
 
   // Compose fetch urls as the initial feed urls

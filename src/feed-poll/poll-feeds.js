@@ -188,7 +188,6 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   let parseResult;
   const processEntries = true;
 
-
   try {
     parseResult = coerceFeed(feedXML, requestURL, new URL(response.url),
       responseLastModifiedDate, processEntries);
@@ -197,9 +196,6 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
       this.deactivationThreshold);
     return;
   }
-
-
-
 
   const mergedFeed = Feed.merge(feed, parseResult.feed);
 
