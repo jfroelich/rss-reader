@@ -7,8 +7,6 @@ import * as Feed from "/src/feed-store/feed.js";
 import {containsFeedWithURL, prepareFeed, putFeed} from "/src/feed-store/feed-store.js";
 import coerceFeed from "/src/coerce-feed.js";
 
-// TODO: revert to using exceptions and assert, decouple status
-
 // TODO: reconsider the transaction lifetime. Right now it is protected by the error that
 // occurs due to violation of uniqueness constraint. But it would be better if both reads and
 // writes occurred on same transaction. Also because I have mixed feelings about treating
@@ -41,7 +39,6 @@ import coerceFeed from "/src/coerce-feed.js";
 // whether the entry processing should be async or not. But it should always be async, so that
 // is kind of stupid.
 
-
 // TODO: connect on demand
 // TODO: channel should be parameter configured externally
 // TODO: treat context as immutable
@@ -52,6 +49,7 @@ import coerceFeed from "/src/coerce-feed.js";
 // Properties for the context argument:
 // feedConn, database conn to feed store
 // iconConn, database conn to icon store, optional
+// channel {BroadcastChannel} optional, state change messages used
 // fetchFeedTimeoutMs, integer, optional
 // concurrent, boolean, optional, whether called concurrently
 // notify, boolean, optional, whether to notify
@@ -102,11 +100,8 @@ export default async function subscribe(context, url) {
 
   await setFeedFavicon(query, feed);
 
-  // Store the feed
-  // TODO: use a real channel
-  let nullChannel = null;
-  // If saveFeed throws then rethrow
-  const storableFeed = await saveFeed(context.feedConn, nullChannel, feed);
+  // Store the feed. Rethrow any errors as fatal.
+  const storableFeed = await saveFeed(context.feedConn, context.channel, feed);
 
   if(context.notify || !('notify' in context)) {
     showNotification(storableFeed);
@@ -171,14 +166,10 @@ async function saveFeed(conn, channel, feed) {
   // TODO: this should delegate to an 'addFeed' function in feed-store.js that
   // does the sanitization work implicitly and forwards to putFeed, and also sets
   // the id of the input feed object
-
   const storableFeed = prepareFeed(feed);
   storableFeed.active = true;
   storableFeed.dateCreated = new Date();
-
-
-  const feedId = await putFeed(conn, nullChannel, feed);
-
+  const feedId = await putFeed(conn, channel, feed);
   storableFeed.id = feedId;
   return storableFeed;
 }

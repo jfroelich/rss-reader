@@ -366,6 +366,8 @@ async function subscribeFormOnsubmit(event) {
   const context = {};
   context.feedConn = feedConn;
   context.iconConn = iconConn;
+  // Use the options page's persistent channel
+  context.channel = channel;
   context.concurrent = false;
   context.notify = true;
   context.fetchFeedTimeoutMs = 2000;

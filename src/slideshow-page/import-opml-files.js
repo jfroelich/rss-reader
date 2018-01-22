@@ -5,9 +5,10 @@ import * as Feed from "/src/feed-store/feed.js";
 import {open as openFeedStore} from "/src/feed-store/feed-store.js";
 
 // TODO: revert to no status
-// TODO: fix call to subscribe (favicon cache is deprecated)
+
 // TODO: conns should be optional params instead of always created locally so that this can
-// run on test databases
+// run on test databases. In other words, conns should be dependency injected. Same goes
+// for channel
 
 export default async function importOPMLFiles(files, timeout) {
   if(!(files instanceof FileList)) {
@@ -28,12 +29,15 @@ export default async function importOPMLFiles(files, timeout) {
     return Status.EDB;
   }
 
-  // TODO: this passes the wrong conn properties to subscribe at the moment,
-  // so it will crash
+  // TODO: I'd rather not do the channel creation here. This should be
+  // an injected dependency. Basically an explicit parameter to importOPMLFiles
+
+  const channel = new BroadcastChannel('reader');
 
   const context = {
     feedConn: feedConn,
     iconConn: iconConn,
+    channel: channel,
     fetchFeedTimeoutMs: timeout,
     notify: false,
     concurrent: true
@@ -55,6 +59,7 @@ export default async function importOPMLFiles(files, timeout) {
 
   feedConn.close();
   iconConn.close();
+  channel.close();
 
   return Status.OK;
 }
