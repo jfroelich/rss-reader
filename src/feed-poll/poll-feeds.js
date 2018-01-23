@@ -232,9 +232,8 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   if(!batched && numEntriesAdded > 0) {
     updateBadgeText();
 
-    // TODO: use more specific title and message given that this is about a feed
-    const title = 'Added articles for feed';
-    const message = 'Added articles for feed';
+    const title = 'Added articles';
+    const message = 'Added articles for feed ' + storableFeed.title;
     showDesktopNotification(title, message);
   }
 
@@ -290,6 +289,12 @@ function handleFetchFeedSuccess(feed) {
 // updated again and probably become well formed again. I've actually witnessed this. So the issue
 // is this prematurely deactivates feeds that happen to have a parsing error that is actually
 // ephemeral (temporary) and not permanent.
+
+// TODO: rather than try and update the database, perhaps it would be better to simply generate
+// an event with feed id and some basic error information, and let some error handler handle
+// the event at a later time. This removes all concern over encountering a closed database
+// or closed channel at the time of the call to putFeed, and maintains the non-blocking
+// characteristic.
 
 function handlePollFeedError(errorContext) {
   assert(typeof errorContext === 'object' && 'conn' in errorContext);
