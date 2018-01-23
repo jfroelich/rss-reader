@@ -11,7 +11,7 @@ import unsubscribe from "/src/feed-ops/unsubscribe.js";
 import {
   activateFeed,
   deactivateFeed,
-  feedPeekURL
+  feedPeekURL,
   findFeedById,
   getFeeds,
   open as openFeedStore
