@@ -75,7 +75,7 @@ channel.onmessage = function(event) {
   case 'feed-updated':
   case 'feed-activated':
   case 'feed-deactivated':
-    console.debug('Ignoring message', message.type);
+    //console.debug('Ignoring message', message.type);
     break;
   default:
     console.warn('Unknown message type', message);
