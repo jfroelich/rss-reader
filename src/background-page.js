@@ -29,7 +29,7 @@ async function handleLostEntriesAlarm(alarm) {
   let conn;
   const channel = new BroadcastChannel('reader');
   try {
-    await removeLostEntries(conn, channel);
+    await removeLostEntries(conn, channel, console);
   } finally {
     channel.close();
   }
@@ -96,9 +96,13 @@ cli.refreshIcons = async function() {
 cli.archiveEntries = function(limit) {
   console.log('Archiving entries...');
 
-  // TODO: use a real channel (in which case this should be async fn again)
-  let conn, channel, maxAge;
-  archiveEntries(conn, channel, maxAge).catch(console.error);
+  let conn, maxAge;
+  const channel = new BroadcastChannel('reader');
+  archiveEntries(conn, channel, maxAge).catch(console.error).finally(() => {
+    if(channel) {
+      channel.close();
+    }
+  });
 };
 
 cli.pollFeeds = async function() {
@@ -117,12 +121,10 @@ cli.pollFeeds = async function() {
 };
 
 cli.removeLostEntries = async function(limit) {
-  console.log('Removing lost entries...');
-
   const channel = new BroadcastChannel('reader');
   let conn;
   try {
-    await removeLostEntries(conn, channel);
+    await removeLostEntries(conn, channel, console);
   } finally {
     channel.close();
   }

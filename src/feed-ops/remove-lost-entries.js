@@ -1,28 +1,47 @@
 import {entryHasURL, open as openReaderDb} from "/src/rdb.js";
 
-// TODO: update callers to use new channel argument, and optional conn parameter pattern,
-// and no status
-
 // Scans the entry store for entry objects that are missing urls and removes them
-export default async function removeLostEntries(conn, channel) {
+export default async function removeLostEntries(conn, channel, console) {
+  console = console || NULL_CONSOLE;
+  console.log('Removing lost entries...');
+
   const dconn = conn ? conn : await openReaderDb();
-  const entryIds = await removeLostEntriesPromise(dconn);
+  const entryIds = await removeLostEntriesPromise(dconn, console);
   if(!conn) {
+    console.debug('Closing dynamic connection to database', dconn.name);
     dconn.close();
   }
 
-  // Now that the transaction has fully committed, notify observers
+  console.debug('Found %d lost entries', entryIds.length);
+
+  // Now that the transaction has fully committed, notify observers. channel is
+  // optional so check if present. Assume if present that it is correct type
+
+  // If removeLostEntries was called in non-blocking fashion, channel may have closed
+  // before promise settled above, which would cause postMessage to throw, but there is no
+  // way to check if channel closed, and we are forked so throwing sends an error to a place
+  // where no one is listening, so just trap and log the error
   if(channel) {
     const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
     for(const id of entryIds) {
       message.id = id;
-      channel.postMessage(message);
+      channelPostMessageNoExcept(channel, message, console);
     }
   }
 }
 
+function channelPostMessageNoExcept(channel, message, console) {
+  try {
+    channel.postMessage(message);
+    console.debug('Posted message to channel', channel.name, message);
+  } catch(error) {
+    console.warn(error);
+  }
+}
+
+
 // Returns a promise that resolves to an array of entry ids that were deleted
-function removeLostEntriesPromise(conn) {
+function removeLostEntriesPromise(conn, console) {
   return new Promise((resolve, reject) => {
     const entryIds = [];
 
@@ -34,7 +53,7 @@ function removeLostEntriesPromise(conn) {
     const store = tx.objectStore('entry');
 
     // Although getAll would be faster, it does not scale. Instead, walk the
-    // store one entry at a time using a cursor.
+    // store one entry at a time.
     const request = store.openCursor();
     request.onsuccess = () => {
       const cursor = request.result;
@@ -65,3 +84,11 @@ function removeLostEntriesPromise(conn) {
     };
   });
 }
+
+function noop() {}
+
+const NULL_CONSOLE = {
+  log: noop,
+  warn: noop,
+  debug: noop
+};
