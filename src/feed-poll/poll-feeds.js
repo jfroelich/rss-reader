@@ -141,7 +141,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   [status, response] = await FetchUtils.fetchFeed(requestURL, this.fetchFeedTimeoutMs);
   if(status !== Status.OK) {
 
-    await handlePollFeedError(status, this.feedConn, feed, 'fetch-feed',
+    await handlePollFeedError(new Error('Fetch feed error'), this.feedConn, feed, 'fetch-feed',
       this.deactivationThreshold);
     // The above does not always throw
     return 0;
@@ -155,13 +155,8 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
       feed.dateUpdated = new Date();
 
       // TODO: use a channel
-      // TODO: is try/catch needed?
-      try {
-        await putFeed(this.feedConn, null, feed);
-      } catch(error) {
-        console.error(error);
-        return Status.EDB;
-      }
+      await putFeed(this.feedConn, null, feed);
+
 
     }
     return 0;
@@ -171,7 +166,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   try {
     feedXML = await response.text();
   } catch(error) {
-    await handlePollFeedError(Status.EFETCH, this.feedConn, feed, 'read-response-body',
+    await handlePollFeedError(error, this.feedConn, feed, 'read-response-body',
       this.deactivationThreshold);
     return 0;
   }
@@ -184,7 +179,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     parseResult = coerceFeed(feedXML, requestURL, new URL(response.url),
       responseLastModifiedDate, processEntries);
   } catch(error) {
-    await handlePollFeedError(Status.EPARSEFEED, this.feedConn, feed, 'parse-feed',
+    await handlePollFeedError(error, this.feedConn, feed, 'parse-feed',
       this.deactivationThreshold);
     return 0;
   }
@@ -273,17 +268,30 @@ function handleFetchFeedSuccess(feed) {
 // is this prematurely deactivates feeds that happen to have a parsing error that is actually
 // ephemeral (temporary) and not permanent.
 
-async function handlePollFeedError(errorCode, conn, feed, callCategory, threshold) {
+// TODO: these belong in fetch, and should be exported and imported, but this is a temporary
+// quick fix to decouple status from poll, while fetch still uses status
+class OfflineError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
 
-  if(callCategory === 'fetch-feed' && errorCode === Status.EOFFLINE) {
-    //throw new Error('Offline');
+class TimeoutError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
+async function handlePollFeedError(error, conn, feed, callCategory, threshold) {
+  assert(Number.isInteger(threshold));
+
+  if(error instanceof OfflineError) {
     console.debug('Ignoring offline error');
     return;
   }
 
-  if(callCategory === 'fetch-feed' && errorCode === Status.ETIMEOUT) {
+  if(error instanceof TimeoutError) {
     console.debug('Ignoring timeout error in slow network environment');
-
     // TODO: this cannot throw or it causes uncaught exception in promise
     return;
   }
@@ -294,15 +302,14 @@ async function handlePollFeedError(errorCode, conn, feed, callCategory, threshol
     feed.errorCount = 1;
   }
 
-  assert(Number.isInteger(threshold));
   if(feed.errorCount > threshold) {
-    console.debug('Error count exceeded threshold, deactivating feed', feed.id, feedPeekURL(feed));
+    console.debug('Error count exceeded threshold, deactivating feed', feed.id);
     feed.active = false;
-    if(typeof callCategory !== 'undefined') {
-      feed.deactivationReasonText = callCategory;
-    }
+    feed.deactivationReasonText = callCategory;
     feed.deactivationDate = new Date();
   }
+
+  feed.dateUpdated = new Date();
 
   // TODO: maybe this should be independent (concurrent)? Right now this benefits from using the
   // same shared connection. It isn't too bad in the sense that the success path also has a
@@ -310,13 +317,10 @@ async function handlePollFeedError(errorCode, conn, feed, callCategory, threshol
   // non-blocking seems a bit complex at the moment, so just getting it working for now.
   // NOTE: this can also throw, and thereby mask the error, but I suppose that is ok, because
   // both are errors, and in this case I suppose the db error trumps the fetch error
-  feed.dateUpdated = new Date();
 
   // TODO: use a real channel
   let nullChannel = null;
   await putFeed(conn, nullChannel, feed);
-
-  throw new Error('Poll error: ' + Status.toString(errorCode));
 }
 
 FeedPoll.prototype.isUnmodifiedFeed = function(feedUpdated, feedDate, responseDate) {
@@ -477,18 +481,18 @@ FeedPoll.prototype.setEntryFavicon = async function(entry, url, document) {
   query.url = url;
   query.document = document;
 
+  // TODO: error suppression is part of control flow. I think control flow is clearer in
+  // calling context. This should just throw on error and expect caller to deal with it.
+
   let iconURLString;
   try {
     iconURLString = await lookup(query);
+    if(iconURLString) {
+      entry.faviconURLString = iconURLString;
+    }
   } catch(error) {
-    console.error(error);
-    return Status.EDB;
+    console.debug(error);
   }
-
-  if(iconURLString) {
-    entry.faviconURLString = iconURLString;
-  }
-  return Status.OK;
 };
 
 function isInaccessibleContentURL(url) {

@@ -678,7 +678,8 @@ async function refreshAnchorOnclick(event) {
     await poll.open();
     await poll.pollFeeds();
   } catch(error) {
-    console.warn(error);
+    // TODO: show an error message
+    console.debug(error);
   } finally {
     poll.close();
     console.log('Re-enabling refresh button');
