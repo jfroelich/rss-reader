@@ -510,8 +510,19 @@ export async function putFeed(conn, channel, feed) {
   // that result is feed id when adding, but what about updating? Review
   // the documentation on IDBObjectStore.prototype.put
 
+  // NOTE: in order to allow for calls to putFeed to be non-blocking, this must be able
+  // to handle the case where the channel is closed before putFeedPromise settles. In
+  // that case, trap the error and simply log it. There is no accessible property to
+  // determine channel state. The channel's 'closed' property is not accessible to script.
+
+  // TODO: in the blocking context, I'd prefer the error to be thrown. How?
+
   if(channel) {
-    channel.postMessage({type: 'feed-updated', id: feed.id ? feed.id : feedId});
+    try {
+      channel.postMessage({type: 'feed-updated', id: feed.id ? feed.id : feedId});
+    } catch(error) {
+      console.warn(error);
+    }
   }
 
   return feedId;

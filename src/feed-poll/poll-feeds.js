@@ -142,7 +142,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   } catch(error) {
     console.debug(error);
 
-    await handlePollFeedError({
+    handlePollFeedError({
       error: error,
       conn: this.feedConn,
       feed: feed,
@@ -175,7 +175,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   } catch(error) {
     console.debug(error);
 
-    await handlePollFeedError({
+    handlePollFeedError({
       error: error,
       conn: this.feedConn,
       feed: feed,
@@ -197,7 +197,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   } catch(error) {
     console.debug(error);
 
-    await handlePollFeedError({
+    handlePollFeedError({
       error: error,
       conn: this.feedConn,
       feed: feed,
@@ -291,9 +291,7 @@ function handleFetchFeedSuccess(feed) {
 // is this prematurely deactivates feeds that happen to have a parsing error that is actually
 // ephemeral (temporary) and not permanent.
 
-// TODO: this should be non-blocking. Caller should not need to await
-
-async function handlePollFeedError(errorContext) {
+function handlePollFeedError(errorContext) {
   assert(typeof errorContext === 'object' && 'conn' in errorContext);
 
   const error = errorContext.error;
@@ -330,7 +328,11 @@ async function handlePollFeedError(errorContext) {
 
   feed.dateUpdated = new Date();
 
-  await putFeed(conn, channel, feed);
+  // Call putFeed in a non-blocking manner. Any errors are simply logged since we return
+  // prior to this call settling. We still use the same database connection, because
+  // the put request is dispatched immediately using the connection, which is preferred
+  // to trying to use a completely separate connection.
+  putFeed(conn, channel, feed).catch(console.error);
 }
 
 FeedPoll.prototype.isUnmodifiedFeed = function(feedUpdated, feedDate, responseDate) {
