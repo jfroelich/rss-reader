@@ -239,18 +239,18 @@ export async function lookup(inputOptions) {
 
   // Conditionally record failed lookup
   if(options.conn) {
-    onLookupFailure(options.conn, originURL, originEntry);
+    onLookupFailure(options.conn, originURL, originEntry, options.maxFailureCount);
   }
 }
 
-function onLookupFailure(conn, originURL, originEntry) {
+function onLookupFailure(conn, originURL, originEntry, maxFailureCount) {
   if(originEntry) {
     const newEntry = {};
     newEntry.pageURLString = originEntry.pageURLString;
     newEntry.dateUpdated = new Date();
     newEntry.iconURLString = originEntry.iconURLString;
     if('failureCount' in originEntry) {
-      if(originEntry.failureCount <= this.kMaxFailureCount) {
+      if(originEntry.failureCount <= maxFailureCount) {
         newEntry.failureCount = originEntry.failureCount + 1;
         putEntry(conn, newEntry);
       }
