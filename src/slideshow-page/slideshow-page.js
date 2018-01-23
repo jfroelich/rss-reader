@@ -72,6 +72,7 @@ channel.onmessage = function(event) {
     console.warn('Unhandled entry-marked-read message', message);
     break;
   case 'feed-added':
+  case 'feed-updated':
   case 'feed-activated':
   case 'feed-deactivated':
     console.debug('Ignoring message', message);
