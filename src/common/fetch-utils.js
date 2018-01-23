@@ -1,7 +1,6 @@
 import assert from "/src/common/assert.js";
 import formatString from "/src/common/format-string.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
-import * as PromiseUtils from "/src/common/promise-utils.js";
 import {
   EFETCH, ENET, ENOACCEPT, EOFFLINE, EPOLICY, OK, ETIMEOUT, EINVAL, toString as statusToString
 } from "/src/common/status.js";
@@ -148,12 +147,11 @@ export async function fetchHelper(url, options) {
   // If a timeout was specified, initialize a derived promise to the result of racing fetch
   // against timeout. Otherwise, initialize a derived promise to the result of fetch.
   let aggregatePromise;
-  let timeoutId;
   if(untimed) {
     aggregatePromise = fetchPromise;
   } else {
     let timeoutPromise;
-    [timeoutId, timeoutPromise] = PromiseUtils.setTimeoutPromise(timeoutMs);
+    timeoutPromise = sleep(timeoutMs);
     const contestants = [fetchPromise, timeoutPromise];
     aggregatePromise = Promise.race(contestants);
   }
@@ -174,9 +172,7 @@ export async function fetchHelper(url, options) {
   }
 
   // If fetch wins then response is defined. If timeout wins then response is undefined.
-  if(response) {
-    clearTimeout(timeoutId);
-  } else {
+  if(!response) {
     return [ETIMEOUT, null, url];
   }
 
@@ -186,6 +182,10 @@ export async function fetchHelper(url, options) {
   }
 
   return [OK, response];
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // Return true if the response url is 'different' than the request url
