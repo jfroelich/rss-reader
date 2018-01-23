@@ -164,7 +164,7 @@ function activateFeedPromise(conn, feedId) {
     request.onsuccess = () => {
       const feed = request.result;
       assert(feed, 'Could not find feed', feedId);
-      assert(feed.active, 'Feed %d is already active', feedId);
+      assert(!feed.active, 'Feed is already active ' + feedId);
       feed.active = true;
       delete feed.deactivationReasonText;
       delete feed.deactivateDate;
