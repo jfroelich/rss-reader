@@ -3,7 +3,6 @@ import assert from "/src/common/assert.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import formatString from "/src/common/format-string.js";
 import {parseHTML} from "/src/common/html-utils.js";
-import * as PromiseUtils from "/src/common/promise-utils.js";
 import * as Status from "/src/common/status.js";
 
 import {lookup, open as openIconStore} from "/src/favicon-service.js";
@@ -31,15 +30,9 @@ import {
 
 import coerceFeed from "/src/coerce-feed.js";
 
-
 // TODO: get rid of object pattern, revert to basic function
-// TODO: decouple from PromiseUtils so that it can be deprecated. This means I need to
-// deprecate promiseEvery, and use Promise.all, which means that pollFeed and pollEntries
-// need to be completely revised to only throw in the case of a programming error.
 // TODO: completely decouple from status.js. This depends primarily on decoupling all the
 // helpers that involve status.
-
-
 
 // An array of descriptors. Each descriptor represents a test against a url hostname, that if
 // matched, indicates the content is not accessible.
@@ -96,20 +89,13 @@ FeedPoll.prototype.pollFeeds = async function() {
   assert(this.iconConn instanceof IDBDatabase);
   assert(this.channel instanceof BroadcastChannel);
 
-  let feeds;
-  try {
-    feeds = await findActiveFeeds(this.feedConn);
-  } catch(error) {
-    console.error(error);
-    return Status.EDB;
-  }
-
+  const feeds = await findActiveFeeds(this.feedConn);
   const batched = true;
   const promises = [];
   for(const feed of feeds) {
     promises.push(this.pollFeed(feed, batched));
   }
-  const resolutions = await PromiseUtils.promiseEvery(promises);
+  const resolutions = await Promise.all(promises);
   const truthyResolutions = resolutions.filter(r => r);
   const totalNumEntriesAdded = truthyResolutions.length;
 
@@ -124,8 +110,6 @@ FeedPoll.prototype.pollFeeds = async function() {
   }
 
   console.log('Poll feeds completed normally, %d new entries', totalNumEntriesAdded);
-
-  return Status.OK;
 };
 
 // TODO: to enforce that the feed parameter is a feed object loaded from the database, it is
@@ -223,7 +207,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   cascadeFeedPropertiesToEntries(storableFeed, entries);
 
   const promises = entries.map(this.pollEntry, this);
-  const entryIds = await PromiseUtils.promiseEvery(promises);
+  const entryIds = await Promise.all(promises);
   const numEntriesAdded = entryIds.filter(id => id > 0).length;
 
   if(!batched && numEntriesAdded > 0) {
@@ -363,7 +347,8 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   assert(this.feedConn instanceof IDBDatabase);
   assert(isEntry(entry));
 
-  // Cannot assume the entry has a url (not an error). A url is required
+  // Only entries with a url can be stored. However, we cannot make any assumptions about the
+  // well-formedness of entries coming from the feed.
   if(!entryHasURL(entry)) {
     console.debug('Entry missing url', entry);
     return;
@@ -378,26 +363,18 @@ FeedPoll.prototype.pollEntry = async function(entry) {
     url = rewrittenURL;
   }
 
-
-  // This should never fail except in case of serious database error, so no try/catch
+  // This should never fail except in case of a database error, so no try/catch
   let containsEntry = await containsEntryWithURL(this.feedConn, url);
   if(containsEntry) {
-    //console.debug('Entry already exists for url', url.href);
     return;
   }
 
   let entryContent = entry.content;
 
-  //const response = await this.fetchEntryHTML(url);
-  //const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
-  //return status === Status.OK ? response : null;
-
   // Try to fetch the entry's full text. Prevent errors from bubbling. Only fetch is the
   // content appears fetchable (e.g. not a pdf, paywalled)
-
   // TODO: revert fetchHML to throwing errors instead of status
   let response;
-
   if(isPollableURL(url)) {
     try {
       const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
@@ -430,9 +407,9 @@ FeedPoll.prototype.pollEntry = async function(entry) {
 
       entryAppendURL(entry, responseURL);
 
-      // TODO: attempt to rewrite the redirected url as well?
-
       url = responseURL;
+
+      // TODO: attempt to rewrite the redirected url as well?
 
       // If we redirected, check if the redirect text is usable. For example, we redirected
       // from pollable html page to pdf. In that case should not consider response body.
