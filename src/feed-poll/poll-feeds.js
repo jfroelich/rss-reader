@@ -370,12 +370,12 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   }
 
   // This should never throw, so no try/catch. If it does throw it represents a programming error.
-  const url = new URL(entryPeekURL(entry));
+  let url = new URL(entryPeekURL(entry));
 
   const rewrittenURL = rewriteURL(url);
   if(rewrittenURL && url.href !== rewrittenURL.href) {
     entryAppendURL(entry, rewrittenURL);
-    setURLHrefProperty(url, rewrittenURL.href);
+    url = rewrittenURL;
   }
 
 
@@ -411,8 +411,11 @@ FeedPoll.prototype.pollEntry = async function(entry) {
     }
   }
 
+  let fetchedContent = false;
+
   if(response) {
     const responseURL = new URL(response.url);
+    let redirectIsPollable = true;
     if(FetchUtils.detectURLChanged(url, responseURL)) {
 
       if(!isPollableURL(responseURL)) {
@@ -429,19 +432,25 @@ FeedPoll.prototype.pollEntry = async function(entry) {
 
       // TODO: attempt to rewrite the redirected url as well?
 
-      // TODO: deprecate calls to setURLHrefProperty
-      setURLHrefProperty(url, response.url);
+      url = responseURL;
+
+      // If we redirected, check if the redirect text is usable. For example, we redirected
+      // from pollable html page to pdf. In that case should not consider response body.
+      redirectIsPollable = isPollableURL(responseURL);
     }
 
-    // Use the full text of the response in place of the in-feed content
-    try {
-      entryContent = await response.text();
-      console.debug('Replaced entry content with fetched content for url', url.href);
-    } catch(error) {
-      console.debug(error);
-      // Ignore
+    if(redirectIsPollable) {
+      // Use the full text of the response in place of the in-feed content
+      try {
+        entryContent = await response.text();
+        fetchedContent = true;
+        console.debug('Replaced entry content with fetched content for url', url.href);
+      } catch(error) {
+        console.debug(error);
+      }
+    } else {
+      console.debug('Redirected url is not pollable', responseURL.href);
     }
-
   } else {
     console.debug('Entry has no fetched response', url.href);
   }
@@ -455,14 +464,17 @@ FeedPoll.prototype.pollEntry = async function(entry) {
     // Continue
   }
 
-  // TODO: does this throw?
-  // NOTE: this is the point of refactoring away promiseEvery that I stopped at
+  // If the entry is untitled, try and use the fetched content to set its title
+  if(!entry.title && fetchedContent && entryDocument) {
+    const titleElement = entryDocument.querySelector('html > head > title');
+    if(titleElement) {
+      const titleText = titleElement.textContent;
+      console.debug('Set missing entry title from fetched content', url.href, titleText);
+      entry.title = titleText;
+    }
+  }
 
   await this.setEntryFavicon(entry, url, response ? entryDocument : undefined);
-
-  // TODO: if entry.title is undefined, try and extract it from entryDocument title element
-  // For that matter, the whole 'set-entry-title' component should be abstracted into its own
-  // module that deals with the concerns of the variety of sources for an entry?
 
   // Filter the entry content
   if(entryDocument) {
@@ -472,18 +484,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
     entry.content = 'Empty or malformed content';
   }
 
-
-  // TODO: if addEntry does not throw in the normal case, then the try catch here
-  // isn't necessary. Unsure at the moment.
-
-  let storedEntry;
-  try {
-    storedEntry = await addEntry(this.feedConn, this.channel, entry);
-  } catch(error) {
-    console.error(error);
-    return;
-  }
-
+  const storedEntry = await addEntry(this.feedConn, this.channel, entry);
   return storedEntry.id;
 };
 
@@ -524,10 +525,4 @@ function isInaccessibleContentURL(url) {
 
 function isHTTPURL(url) {
   return url.protocol === 'http:' || url.protocol === 'https:';
-}
-
-// TODO: deprecate
-function setURLHrefProperty(url, newHrefString) {
-  const guardURL = new URL(newHrefString);
-  url.href = guardURL.href;
 }
