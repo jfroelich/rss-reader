@@ -521,7 +521,7 @@ export async function putFeed(conn, channel, feed) {
     try {
       channel.postMessage({type: 'feed-updated', id: feed.id ? feed.id : feedId});
     } catch(error) {
-      console.warn(error);
+      console.debug('Suppressed postMessage error (channel probably closed)');
     }
   }
 
