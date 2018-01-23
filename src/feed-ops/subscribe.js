@@ -1,6 +1,5 @@
 import showDesktopNotification from "/src/notifications.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
-import * as Status from "/src/common/status.js";
 import {lookup} from "/src/favicon-service.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
 import {
@@ -58,13 +57,16 @@ export default async function subscribe(context, url) {
     throw new Error('Already subscribed to ' + url.href);
   }
 
-  let response, status;
-  [status, response] = await FetchUtils.fetchFeed(url, context.fetchFeedTimeout || 2000);
-  if(status === Status.EOFFLINE) {
-    // Continue with offline subscription
-    console.debug('Subscribing while offline to', url.href);
-  } else if(status !== Status.OK) {
-    throw new Error('Error fetching ' + url.href);
+  let response;
+  try {
+    response = await FetchUtils.fetchFeed(url, context.fetchFeedTimeout || 2000);
+  } catch(error) {
+    if(error instanceof FetchUtils.OfflineError) {
+      // continue
+      console.debug('Subscribing while offline to', url.href);
+    } else {
+      throw error;
+    }
   }
 
   let feed;

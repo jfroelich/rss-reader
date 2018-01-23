@@ -1,17 +1,8 @@
-import * as FetchUtils from "/src/common/fetch-utils.js";
-import * as Status from "/src/common/status.js";
+import {fetchFeed} from "/src/common/fetch-utils.js";
 
-async function fetchFeed(url) {
-  let timeoutMs;
-  const requestURL = new URL(url);
-  const [status, response] = await FetchUtils.fetchFeed(requestURL, timeoutMs);
-  if(status !== Status.OK) {
-    console.warn('Fetch error', status);
-    return;
-  }
+window.test = async function(url, timeout) {
+  const response = await fetchFeed(new URL(url), timeout);
   console.dir(response);
-  const feedXML = await response.text();
-  console.dir(feedXML);
-}
-
-window.fetchFeed = fetchFeed;
+  const responseText = await response.text();
+  console.dir(responseText);
+};

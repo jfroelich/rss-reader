@@ -1,6 +1,5 @@
 import {fetchHTML} from "/src/common/fetch-utils.js";
 import {parseHTML} from "/src/common/html-utils.js";
-import * as Status from "/src/common/status.js";
 import filterBoilerplate from "/src/feed-poll/filters/boilerplate-filter.js";
 import canonicalizeURLs from "/src/feed-poll/filters/canonical-url-filter.js";
 import filterBlacklistedElements from "/src/feed-poll/filters/element-blacklist-filter.js";
@@ -9,17 +8,8 @@ import filterIFrames from "/src/feed-poll/filters/iframe-filter.js";
 import setImageSizes from "/src/feed-poll/filters/image-size-filter.js";
 import filterScript from "/src/feed-poll/filters/script-filter.js";
 
-async function test(urlString) {
-  const urlObject = new URL(urlString);
-
-  let status, response, message;
-
-  [status, response] = await fetchHTML(urlObject);
-  if(status !== Status.OK) {
-    console.warn('Fetch error:', status);
-    return;
-  }
-
+window.test = async function(urlString) {
+  const response = await fetchHTML(new URL(urlString));
   const responseText = await response.text();
   const document = parseHTML(responseText);
 
@@ -44,11 +34,8 @@ async function test(urlString) {
   // Set image sizes to more accurately test image bias
   await setImageSizes(document, new URL(response.url));
 
-  // Finally filter boilerplate, use annotations and do not prune
-  const bpfOptions = {
-    annotate: true
-  };
-  filterBoilerplate(document, bpfOptions);
+  // Finally filter boilerplate
+  filterBoilerplate(document, {annotate: true});
 
   // Find the best element and outline it.
   const bestElement = document.querySelector('[data-bp-max]');
@@ -59,7 +46,4 @@ async function test(urlString) {
   // Update preview
   const preview = window.document.getElementById('preview');
   preview.innerHTML = document.body.innerHTML;
-}
-
-// Expose test helper function to console
-window.test = test;
+};

@@ -2,27 +2,20 @@ import * as FetchUtils from "/src/common/fetch-utils.js";
 import {parseHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 
-async function test(url) {
-  let status, response, message;
-
-  [status, response] = await FetchUtils.fetchHTML(url);
-  if(status !== Status.OK) {
-    console.warn('Fetch error', status);
-    return;
-  }
-
+window.test = async function(url) {
+  const response = await FetchUtils.fetchHTML(url);
   const text = await response.text();
   const doc = parseHTML(text);
-  filter_hidden_elements_using_style(doc);
-}
+  filterUsingStyle(doc);
+};
 
-function filter_hidden_elements_using_style(doc) {
+function filterUsingStyle(doc) {
   if(!doc.body)
     return;
   const elements = doc.body.querySelectorAll('*');
   const doc_element = doc.documentElement;
   for(const element of elements) {
-    if(is_hidden_element_using_style(element) &&
+    if(isHiddenByStyle(element) &&
       doc_element.contains(element)) {
       console.debug('Removing', element.outerHTML);
       element.remove();
@@ -30,17 +23,15 @@ function filter_hidden_elements_using_style(doc) {
   }
 }
 
-function is_hidden_element_using_style_opacity(element) {
+function isHiddenByOpacity(element) {
   try {
     return parseFloat(element.style.opacity) < 0.3;
   } catch(error) {}
 }
 
-function is_hidden_element_using_style(element) {
+function isHiddenByStyle(element) {
   const style = element.style;
   if(style.display === 'none' || style.visibility === 'hidden')
     return true;
-  return is_hidden_element_using_style_opacity(element);
+  return isHiddenByOpacity(element);
 }
-
-window.test = test;

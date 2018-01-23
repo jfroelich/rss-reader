@@ -1,4 +1,4 @@
-import {detectURLChanged, fetchHTML, fetchHelper} from "/src/common/fetch-utils.js";
+import {detectURLChanged, fetchHTML, tfetch} from "/src/common/fetch-utils.js";
 import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
 import {fromContentType as mimeFromContentType} from "/src/common/mime-utils.js";
 
@@ -492,7 +492,6 @@ function putAll(conn, urlStrings, iconURLString) {
   });
 }
 
-
 // TODO: think of a better name. it isn't obvious that this is a HEAD request. Or that it is
 // restricted to the purpose of icons given that size constraints and mime constraints are
 // built in. Something like sendIconHeadRequest
@@ -505,7 +504,7 @@ function putAll(conn, urlStrings, iconURLString) {
 
 async function fetchImage(url, timeout, minImageSize, maxImageSize) {
   const options = {method: 'head', timeout: timeout};
-  const response = await fetchHelper(url, options);
+  const response = await tfetch(url, options);
 
   // Only accept responses with an image-like mime-type
   const contentType = response.headers.get('Content-Type');

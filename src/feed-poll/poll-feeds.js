@@ -3,16 +3,16 @@ import {
   detectURLChanged,
   fetchFeed,
   fetchHTML,
-  getLastModified
+  getLastModified,
+  TimeoutError,
+  OfflineError
 } from "/src/common/fetch-utils.js";
 import {parseHTML} from "/src/common/html-utils.js";
-import * as Status from "/src/common/status.js";
 import {lookup as lookupFavicon, open as openIconStore} from "/src/favicon-service.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
 import isBinaryURL from "/src/feed-poll/is-binary-url.js";
-
 import {
   addEntry,
   containsEntryWithURL,
@@ -29,12 +29,9 @@ import {
   prepareFeed,
   putFeed
 } from "/src/rdb.js";
-
 import coerceFeed from "/src/coerce-feed.js";
 
 // TODO: get rid of object pattern, revert to basic function
-// TODO: completely decouple from status.js. This depends primarily on decoupling all the
-// helpers that involve status.
 
 // An array of descriptors. Each descriptor represents a test against a url hostname, that if
 // matched, indicates the content is not accessible.
@@ -139,13 +136,13 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   }
 
   const requestURL = new URL(feedURLString);
-  let status, response;
-  [status, response] = await fetchFeed(requestURL, this.fetchFeedTimeoutMs);
-  if(status !== Status.OK) {
 
-    await handlePollFeedError(new Error('Fetch feed error'), this.feedConn, feed, 'fetch-feed',
+  let response;
+  try {
+    response = await fetchFeed(requestURL, this.fetchFeedTimeoutMs);
+  } catch(error) {
+    await handlePollFeedError(error, this.feedConn, feed, 'fetch-feed',
       this.deactivationThreshold);
-    // The above does not always throw
     return 0;
   }
 
@@ -269,31 +266,18 @@ function handleFetchFeedSuccess(feed) {
 // is this prematurely deactivates feeds that happen to have a parsing error that is actually
 // ephemeral (temporary) and not permanent.
 
-// TODO: these belong in fetch, and should be exported and imported, but this is a temporary
-// quick fix to decouple status from poll, while fetch still uses status
-class OfflineError extends Error {
-  constructor(message) {
-    super(message);
-  }
-}
-
-class TimeoutError extends Error {
-  constructor(message) {
-    super(message);
-  }
-}
+// TODO: this should be non-blocking. Caller should not need to await
 
 async function handlePollFeedError(error, conn, feed, callCategory, threshold) {
   assert(Number.isInteger(threshold));
 
   if(error instanceof OfflineError) {
-    console.debug('Ignoring offline error');
+    console.debug('Ignoring offline error', error);
     return;
   }
 
   if(error instanceof TimeoutError) {
-    console.debug('Ignoring timeout error in slow network environment');
-    // TODO: this cannot throw or it causes uncaught exception in promise
+    console.debug('Ignoring timeout error', error);
     return;
   }
 
@@ -311,13 +295,6 @@ async function handlePollFeedError(error, conn, feed, callCategory, threshold) {
   }
 
   feed.dateUpdated = new Date();
-
-  // TODO: maybe this should be independent (concurrent)? Right now this benefits from using the
-  // same shared connection. It isn't too bad in the sense that the success path also has a
-  // blocking call when storing the feed. However, it feels like it shouldn't need to block. But
-  // non-blocking seems a bit complex at the moment, so just getting it working for now.
-  // NOTE: this can also throw, and thereby mask the error, but I suppose that is ok, because
-  // both are errors, and in this case I suppose the db error trumps the fetch error
 
   // TODO: use a real channel
   let nullChannel = null;
@@ -377,19 +354,13 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   let response;
   if(isPollableURL(url)) {
     try {
-      const [status, response] = await fetchHTML(url, this.fetchHTMLTimeoutMs);
-      if(status !== Status.OK) {
-        console.debug('Error fetching entry content for url', url.href);
-        throw new Error('Fetch error');
-      }
+      response = await fetchHTML(url, this.fetchHTMLTimeoutMs);
     } catch(error) {
       console.debug(error);
-      // Ignore, leave response undefined
     }
   }
 
-  let fetchedContent = false;
-
+  let didFetchContent = false;
   if(response) {
     const responseURL = new URL(response.url);
     let redirectIsPollable = true;
@@ -420,7 +391,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
       // Use the full text of the response in place of the in-feed content
       try {
         entryContent = await response.text();
-        fetchedContent = true;
+        didFetchContent = true;
         console.debug('Replaced entry content with fetched content for url', url.href);
       } catch(error) {
         console.debug(error);
@@ -442,7 +413,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   }
 
   // If the entry is untitled, try and use the fetched content to set its title
-  if(!entry.title && fetchedContent && entryDocument) {
+  if(!entry.title && didFetchContent && entryDocument) {
     const titleElement = entryDocument.querySelector('html > head > title');
     if(titleElement) {
       const titleText = titleElement.textContent;
