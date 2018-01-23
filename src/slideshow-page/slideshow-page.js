@@ -17,10 +17,6 @@ import importOPMLFiles from "/src/slideshow-page/import-opml-files.js";
 import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
 import * as Slideshow from "/src/slideshow-page/slideshow.js";
 
-
-// TODO: need to handle on slide next now, it needs to be able to append slides, and it
-// needs to be called so it can mark slide read and cleanup
-
 const fonts = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
@@ -120,28 +116,25 @@ function showErrorMessage(messageText) {
 
 // React to a message indicating that an entry expired (e.g. it was deleted, or archived)
 async function onEntryExpiredMessage(message) {
+  if(typeof message !== 'object') {
+    console.warn('Invalid message', message);
+    return;
+  }
 
-  // TODO: do not assert in UI
+  // Do not trust the message
+  if(!isValidEntryId(message.id)) {
+    console.warn('Invalid entry id', message);
+    return;
+  }
 
-  // Caller is responsible for providing valid message. This should never happen.
-  // TODO: use a stronger assertion of type
-  assert(typeof message !== 'undefined');
-  // Messages are a form of user-data, and can come from external sources outside of the app, and
-  // therefore merit being distrusted. There could also be an error in how the message was created
-  // or transfered (serialized, copied, and deserialized) by a channel. This should never happen
-  // because I assume the dispatcher verified the trustworthiness of the message, and I assume that
-  // the message poster formed a proper message.
-  assert(isValidEntryId(message.id));
-
-  // Search for a slide corresponding to the entry id. Assume the search never yields more than
-  // one match.
+  // Search for a slide corresponding to the entry id
   const slideElementName = Slideshow.getElementName();
   const slide = document.querySelector(slideElementName + '[entry="' + message.id + '"]');
 
   // There is no guarantee the entry id corresponds to a loaded slide. It is normal and frequent
   // for the slideshow to receive messages with entry ids that do not correspond to loaded slides.
   if(!slide) {
-    console.debug('Corresponding slide for entry not loaded, ignoring message', message);
+    console.debug('No slide found for entry', message.id);
     return;
   }
 
@@ -151,17 +144,14 @@ async function onEntryExpiredMessage(message) {
   // away. Instead, flag the slide as stale, so that other view functionality can react
   // appropriately at a later time in an unobtrusive manner.
   if(Slideshow.isCurrentSlide(slide)) {
-    console.log('Cannot make current slide stale', message);
+    console.log('Cannot remove active slide, marking as stale', message.id);
     slide.setAttribute('removed-after-load', 'true');
     return;
   }
 
-  // The slide is not the current slide and is either already read and offscreen, or preloaded and
-  // unread. In either case, remove the slide.
+  // TODO: because this handles clicks and not Slideshow, the remove call doesn't remove
+  // the listener, so it has to be removed here, but I would prefer something better.
   Slideshow.remove(slide);
-
-  // TODO: remove currently does not remove click listener, need to manually remove it here,
-  // but i'd like to think of a better way
   slide.removeEventListener('click', onSlideClick);
 }
 
