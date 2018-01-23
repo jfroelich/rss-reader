@@ -7,7 +7,7 @@ import * as Status from "/src/common/status.js";
 // TODO: write specific tests that test various assertions, e.g. preconditions, postconditions
 
 async function test(url) {
-  let timeoutMs, status, response, feed, message;
+  let timeoutMs, status, response, message;
   const requestURL = new URL(url);
   [status, response] = await FetchUtils.fetchFeed(requestURL, timeoutMs);
   if(status !== Status.OK) {
