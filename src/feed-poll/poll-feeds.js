@@ -47,6 +47,7 @@ const INACCESSIBLE_CONTENT_DESCRIPTORS = [
 export default function FeedPoll() {
   this.feedConn = null;
   this.iconConn = null;
+  this.channel = null;
   this.ignoreRecencyCheck = false;
   this.ignoreModifiedCheck = false;
   this.recencyPeriodMs = 5 * 60 * 1000;
@@ -54,15 +55,15 @@ export default function FeedPoll() {
   this.fetchHTMLTimeoutMs = 5000;
   this.fetchImageTimeoutMs = 3000;
   this.deactivationThreshold = 10;
-  this.channel = null;
 }
 
 FeedPoll.prototype.init = function() {
   assert(!this.feedConn);
   assert(!this.iconConn);
-
+  assert(!this.channel);
   this.feedConn = null;
   this.iconConn = null;
+  this.channel = null;
 };
 
 FeedPoll.prototype.open = async function() {
@@ -72,8 +73,6 @@ FeedPoll.prototype.open = async function() {
 
   const promises = [openFeedStore(), openIconStore()];
   [this.feedConn, this.iconConn] = await Promise.all(promises);
-
-  // TODO: channel name should be defined externally, as an instance prop or parameter
   this.channel = new BroadcastChannel('reader');
 };
 
@@ -141,8 +140,17 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   try {
     response = await fetchFeed(requestURL, this.fetchFeedTimeoutMs);
   } catch(error) {
-    await handlePollFeedError(error, this.feedConn, feed, 'fetch-feed',
-      this.deactivationThreshold);
+    console.debug(error);
+
+    await handlePollFeedError({
+      error: error,
+      conn: this.feedConn,
+      feed: feed,
+      category: 'fetch-feed',
+      threshold: this.deactivationThreshold,
+      channel: this.channel
+    });
+
     return 0;
   }
 
@@ -165,8 +173,17 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   try {
     feedXML = await response.text();
   } catch(error) {
-    await handlePollFeedError(error, this.feedConn, feed, 'read-response-body',
-      this.deactivationThreshold);
+    console.debug(error);
+
+    await handlePollFeedError({
+      error: error,
+      conn: this.feedConn,
+      feed: feed,
+      category: 'read-response-body',
+      threshold: this.deactivationThreshold,
+      channel: this.channel
+    });
+
     return 0;
   }
 
@@ -178,8 +195,17 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     parseResult = coerceFeed(feedXML, requestURL, new URL(response.url),
       responseLastModifiedDate, processEntries);
   } catch(error) {
-    await handlePollFeedError(error, this.feedConn, feed, 'parse-feed',
-      this.deactivationThreshold);
+    console.debug(error);
+
+    await handlePollFeedError({
+      error: error,
+      conn: this.feedConn,
+      feed: feed,
+      category: 'parse-feed',
+      threshold: this.deactivationThreshold,
+      channel: this.channel
+    });
+
     return 0;
   }
 
@@ -194,8 +220,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   const storableFeed = prepareFeed(mergedFeed);
   storableFeed.dateUpdated = new Date();
 
-  // TODO: use a channel
-  await putFeed(this.feedConn, null, storableFeed);
+  await putFeed(this.feedConn, this.channel, storableFeed);
 
   const entries = parseResult.entries;
   cascadeFeedPropertiesToEntries(storableFeed, entries);
@@ -228,18 +253,18 @@ FeedPoll.prototype.didPollFeedRecently = function(feed) {
   }
 
   const currentDate = new Date();
-  const elapsedSinceLastPollMs = currentDate - feed.dateFetched;
+  const millisElapsed = currentDate - feed.dateFetched;
 
   // Be wary of a fetchDate in the future. This indicates the data has been corrupted or something
   // is wrong somewhere.
-  if(elapsedSinceLastPollMs < 0) {
+  if(millisElapsed < 0) {
     throw new Error('Cannot poll feed fetched in the future ' + feed);
   }
 
-  return elapsedSinceLastPollMs < this.recencyPeriodMs;
+  return millisElapsed < this.recencyPeriodMs;
 };
 
-// Decrement error count if set and not 0
+// Decrement error count if set and not 0. Return whether or not state changed.
 function handleFetchFeedSuccess(feed) {
   if('errorCount' in feed) {
     if(typeof feed.errorCount === 'number') {
@@ -268,7 +293,16 @@ function handleFetchFeedSuccess(feed) {
 
 // TODO: this should be non-blocking. Caller should not need to await
 
-async function handlePollFeedError(error, conn, feed, callCategory, threshold) {
+async function handlePollFeedError(errorContext) {
+  assert(typeof errorContext === 'object' && 'conn' in errorContext);
+
+  const error = errorContext.error;
+  const conn = errorContext.conn;
+  const feed = errorContext.feed;
+  const callCategory = errorContext.category;
+  const threshold = errorContext.threshold;
+  const channel = errorContext.channel;
+
   assert(Number.isInteger(threshold));
 
   if(error instanceof OfflineError) {
@@ -296,9 +330,7 @@ async function handlePollFeedError(error, conn, feed, callCategory, threshold) {
 
   feed.dateUpdated = new Date();
 
-  // TODO: use a real channel
-  let nullChannel = null;
-  await putFeed(conn, nullChannel, feed);
+  await putFeed(conn, channel, feed);
 }
 
 FeedPoll.prototype.isUnmodifiedFeed = function(feedUpdated, feedDate, responseDate) {
