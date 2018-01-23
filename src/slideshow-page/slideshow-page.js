@@ -977,17 +977,50 @@ function appendFeed(feed) {
   }
 }
 
-
-// TODO: create a utils file and move this there
 function formatDate(date, delimiter) {
   if(!(date instanceof Date)) {
     return 'Invalid date';
   }
 
+  // TODO: date can literally contain "Invalid Date" somehow
+  // Like, "Invalid Date" is actually an instance of date.
+  // No idea. But a couple of things. First is to handle it here
+  // using try/catch to prevent failure. Second is to figure out
+  // where the bad date comes from. I should never be storing such
+  // a date, it should have been caught earlier in the pipeline.
+  // It came from http://www.lispcast.com/feed, the entry
+  // http://groups.google.com/group/ring-clojure/browse_thread/thread/f18338ffda7e38f5
+
+  // new Date('Tue 13 Dec 2011 09:37:46 AM ART') =>
+  // "Invalid Date".
+  // So, date parsing is not working, like it just fails
+  // How to detect "Invalid Date"?
+  // https://stackoverflow.com/questions/1353684
+  // Date.parse('Tue 13 Dec 2011 09:37:46 AM ART') => NaN
+
+  // var d = new Date('Tue 13 Dec 2011 09:37:46 AM ART'); d.getTime() === d.getTime(); => false
+  // So basically all the date parsing needs to be refactored. Not sure I even need the
+  // try/catches.
+
+/*
+function parseDate(string) {
+  const date = new Date(string);
+  if(date.getTime() !== date.getTime()) {
+    throw new Error('Date parsing error for value ' + string);
+  }
+  return date;
+}
+*/
+
   // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/
   // Reference/Global_Objects/DateTimeFormat
   const formatter = new Intl.DateTimeFormat();
-  return formatter.format(date);
+  try {
+    return formatter.format(date);
+  } catch(error) {
+    console.debug(error);
+    return 'Invalid date';
+  }
 }
 
 function openTab(url) {
