@@ -157,9 +157,10 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   [status, response] = await FetchUtils.fetchFeed(requestURL, this.fetchFeedTimeoutMs);
   if(status !== Status.OK) {
 
-    // TODO: this throws so there is no explicit return. I'd rather just return.
     await handlePollFeedError(status, this.feedConn, feed, 'fetch-feed',
       this.deactivationThreshold);
+    // The above does not always throw
+    return 0;
   }
 
   const responseLastModifiedDate = FetchUtils.getLastModified(response);
@@ -188,6 +189,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   } catch(error) {
     await handlePollFeedError(Status.EFETCH, this.feedConn, feed, 'read-response-body',
       this.deactivationThreshold);
+    return 0;
   }
 
   assert(typeof feedXML === 'string');
@@ -200,7 +202,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   } catch(error) {
     await handlePollFeedError(Status.EPARSEFEED, this.feedConn, feed, 'parse-feed',
       this.deactivationThreshold);
-    return;
+    return 0;
   }
 
   const mergedFeed = mergeFeeds(feed, parseResult.feed);
@@ -290,12 +292,16 @@ function handleFetchFeedSuccess(feed) {
 async function handlePollFeedError(errorCode, conn, feed, callCategory, threshold) {
 
   if(callCategory === 'fetch-feed' && errorCode === Status.EOFFLINE) {
-    throw new Error('Offline');
+    //throw new Error('Offline');
+    console.debug('Ignoring offline error');
+    return;
   }
 
   if(callCategory === 'fetch-feed' && errorCode === Status.ETIMEOUT) {
     console.debug('Ignoring timeout error in slow network environment');
-    throw new Error('Fetch timed out');
+
+    // TODO: this cannot throw or it causes uncaught exception in promise
+    return;
   }
 
   if(Number.isInteger(feed.errorCount)) {
@@ -322,10 +328,11 @@ async function handlePollFeedError(errorCode, conn, feed, callCategory, threshol
   // both are errors, and in this case I suppose the db error trumps the fetch error
   feed.dateUpdated = new Date();
 
-  let nullChannel;
+  // TODO: use a real channel
+  let nullChannel = null;
   await putFeed(conn, nullChannel, feed);
 
-  throw new Error('Poll error: ' + errorCode);
+  throw new Error('Poll error: ' + Status.toString(errorCode));
 }
 
 FeedPoll.prototype.isUnmodifiedFeed = function(feedUpdated, feedDate, responseDate) {
@@ -358,12 +365,12 @@ FeedPoll.prototype.pollEntry = async function(entry) {
 
   // Cannot assume the entry has a url (not an error). A url is required
   if(!entryHasURL(entry)) {
+    console.debug('Entry missing url', entry);
     return;
   }
 
   // This should never throw, so no try/catch. If it does throw it represents a programming error.
   const url = new URL(entryPeekURL(entry));
-
 
   const rewrittenURL = rewriteURL(url);
   if(rewrittenURL && url.href !== rewrittenURL.href) {
@@ -371,13 +378,11 @@ FeedPoll.prototype.pollEntry = async function(entry) {
     setURLHrefProperty(url, rewrittenURL.href);
   }
 
-  if(!isPollableURL(url)) {
-    return;
-  }
 
   // This should never fail except in case of serious database error, so no try/catch
   let containsEntry = await containsEntryWithURL(this.feedConn, url);
   if(containsEntry) {
+    //console.debug('Entry already exists for url', url.href);
     return;
   }
 
@@ -387,17 +392,23 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   //const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
   //return status === Status.OK ? response : null;
 
-  // Try and fetch the entry's full text. Prevent errors from bubbling
+  // Try to fetch the entry's full text. Prevent errors from bubbling. Only fetch is the
+  // content appears fetchable (e.g. not a pdf, paywalled)
+
   // TODO: revert fetchHML to throwing errors instead of status
   let response;
-  try {
-    const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
-    if(status !== Status.OK) {
-      throw new Error('Fetch error');
+
+  if(isPollableURL(url)) {
+    try {
+      const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
+      if(status !== Status.OK) {
+        console.debug('Error fetching entry content for url', url.href);
+        throw new Error('Fetch error');
+      }
+    } catch(error) {
+      console.debug(error);
+      // Ignore, leave response undefined
     }
-  } catch(error) {
-    console.debug(error);
-    // Ignore, leave response undefined
   }
 
   if(response) {
@@ -410,6 +421,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
 
       containsEntry = await containsEntryWithURL(this.feedConn, responseURL);
       if(containsEntry) {
+        console.debug('Entry already exists for url', responseURL.href);
         return;
       }
 
@@ -424,11 +436,14 @@ FeedPoll.prototype.pollEntry = async function(entry) {
     // Use the full text of the response in place of the in-feed content
     try {
       entryContent = await response.text();
+      console.debug('Replaced entry content with fetched content for url', url.href);
     } catch(error) {
       console.debug(error);
       // Ignore
     }
 
+  } else {
+    console.debug('Entry has no fetched response', url.href);
   }
 
   // Parse the response's full text into an html document. Trap any errors.
