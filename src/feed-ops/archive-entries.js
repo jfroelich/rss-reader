@@ -3,7 +3,7 @@ import {
   ENTRY_STATE_ARCHIVED,
   ENTRY_STATE_UNARCHIVED,
   ENTRY_STATE_READ,
-  open as openFeedStore
+  open as openReaderDb
 } from "/src/rdb.js";
 
 
@@ -50,7 +50,7 @@ export default async function archiveEntries(conn, channel, maxAge) {
     }
   }
 
-  const dconn = conn ? conn : await openFeedStore();
+  const dconn = conn ? conn : await openReaderDb();
   const entryIds = await archiveEntriesPromise(dconn, maxAge);
   if(!conn) {
     dconn.close();

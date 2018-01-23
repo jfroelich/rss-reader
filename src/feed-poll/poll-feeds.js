@@ -8,7 +8,7 @@ import {
   OfflineError
 } from "/src/common/fetch-utils.js";
 import {parseHTML} from "/src/common/html-utils.js";
-import {lookup as lookupFavicon, open as openIconStore} from "/src/favicon-service.js";
+import {lookup as lookupFavicon, open as openIconDb} from "/src/favicon-service.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
@@ -25,7 +25,7 @@ import {
   isEntry,
   isFeed,
   mergeFeeds,
-  open as openFeedStore,
+  open as openReaderDb,
   prepareFeed,
   putFeed
 } from "/src/rdb.js";
@@ -71,7 +71,7 @@ FeedPoll.prototype.open = async function() {
   assert(!this.feedConn);
   assert(!this.channel);
 
-  const promises = [openFeedStore(), openIconStore()];
+  const promises = [openReaderDb(), openIconDb()];
   [this.feedConn, this.iconConn] = await Promise.all(promises);
   this.channel = new BroadcastChannel('reader');
 };

@@ -1,7 +1,7 @@
 import * as Status from "/src/common/status.js";
-import {open as openIconStore} from "/src/favicon-service.js";
+import {open as openIconDb} from "/src/favicon-service.js";
 import subscribe from "/src/feed-ops/subscribe.js";
-import {open as openFeedStore} from "/src/rdb.js";
+import {open as openReaderDb} from "/src/rdb.js";
 
 // TODO: revert to no status
 
@@ -26,7 +26,7 @@ export default async function importOPMLFiles(importContext, files) {
   // Open databases
   let feedConn, iconConn;
   try {
-    [feedConn, iconConn] = await Promise.all([openFeedStore(), openIconStore()]);
+    [feedConn, iconConn] = await Promise.all([openReaderDb(), openIconDb()]);
   } catch(error) {
     return Status.EDB;
   }

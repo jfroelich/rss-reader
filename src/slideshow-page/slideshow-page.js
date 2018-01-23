@@ -10,7 +10,7 @@ import {
   getFeeds,
   isEntry,
   isValidEntryId,
-  open as openFeedStore
+  open as openReaderDb
 } from "/src/rdb.js";
 import exportFeeds from "/src/slideshow-page/export-feeds.js";
 import importOPMLFiles from "/src/slideshow-page/import-opml-files.js";
@@ -98,7 +98,7 @@ async function onEntryAddedMessage(message) {
 
   let conn;
   try {
-    conn = await openFeedStore();
+    conn = await openReaderDb();
     await appendSlides(conn);
   } finally {
     if(conn) {
@@ -492,7 +492,7 @@ async function onSlideClick(event) {
   // Mark the current slide as read
   let conn;
   try {
-    conn = await openFeedStore();
+    conn = await openReaderDb();
   } catch(error) {
     // TODO: visually show error
     console.error(error);
@@ -582,7 +582,7 @@ async function nextSlide() {
     // Mark the current slide as read
     let conn;
     try {
-      conn = await openFeedStore();
+      conn = await openReaderDb();
     } catch(error) {
       console.error(error);
       return;
@@ -605,7 +605,7 @@ async function nextSlide() {
   let appendCount = 0;
   let conn;
   try {
-    conn = await openFeedStore();
+    conn = await openReaderDb();
   } catch(error) {
     console.error(error);
     return;
@@ -1142,7 +1142,7 @@ async function initSlideshowPage() {
 
   let conn;
   try {
-    conn = await openFeedStore();
+    conn = await openReaderDb();
   } catch(error) {
     // TODO: visually show error message
     console.error(error);

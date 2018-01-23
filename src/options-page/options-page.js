@@ -4,7 +4,7 @@ import * as Status from "/src/common/status.js";
 
 // Needed by subscribe.
 // TODO: it would be better if subscribe could connect on demand
-import {open as openIconStore} from "/src/favicon-service.js";
+import {open as openIconDb} from "/src/favicon-service.js";
 
 import subscribe from "/src/feed-ops/subscribe.js";
 import unsubscribe from "/src/feed-ops/unsubscribe.js";
@@ -14,7 +14,7 @@ import {
   feedPeekURL,
   findFeedById,
   getFeeds,
-  open as openFeedStore
+  open as openReaderDb
 } from "/src/rdb.js";
 
 // TEMP: I plan to remove
@@ -356,7 +356,7 @@ async function subscribeFormOnsubmit(event) {
 
   let feedConn, iconConn;
   try {
-    [feedConn, iconConn] = await Promise.all([openFeedStore(), openIconStore()]);
+    [feedConn, iconConn] = await Promise.all([openReaderDb(), openIconDb()]);
   } catch(error) {
     console.error(error);
     subscriptionMonitorHide();

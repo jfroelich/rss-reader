@@ -4,7 +4,7 @@ import {
   clear as clearIconStore,
   compact as compactIconStore,
   lookup,
-  open as openIconStore
+  open as openIconDb
 } from "/src/favicon-service.js";
 import archiveEntries from "/src/feed-ops/archive-entries.js";
 import refreshFeedIcons from "/src/feed-ops/refresh-feed-icons.js";
@@ -12,7 +12,7 @@ import removeLostEntries from "/src/feed-ops/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/feed-ops/remove-orphaned-entries.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import FeedPoll from "/src/feed-poll/poll-feeds.js";
-import {open as openFeedStore} from "/src/rdb.js";
+import {open as openReaderDb} from "/src/rdb.js";
 
 function handleCompactFaviconsAlarm(alarm) {
   return compactIconStore().catch(console.error);
@@ -47,7 +47,7 @@ async function handleOrphanEntriesAlarm(alarm) {
 
 async function handleRefreshFeedIconsAlarm(alarm) {
   console.log('Refreshing feed favicons...');
-  const [feedConn, iconConn] = await Promise.all([openFeedStore(), openIconStore()]);
+  const [feedConn, iconConn] = await Promise.all([openReaderDb(), openIconDb()]);
   await refreshFeedIcons(feedConn, iconConn);
   feedConn.close();
   iconConn.close();
@@ -87,7 +87,7 @@ const cli = {};
 
 cli.refreshIcons = async function() {
   console.log('Refreshing feed favicons...');
-  const [feedConn, iconConn] = await Promise.all([openFeedStore(), openIconStore()]);
+  const [feedConn, iconConn] = await Promise.all([openReaderDb(), openIconDb()]);
   await refreshFeedIcons(feedConn, iconConn);
   feedConn.close();
   iconConn.close();
@@ -146,7 +146,7 @@ cli.lookupFavicon = async function(url, cached) {
   const query = {};
   query.url = new URL(url);
   if(cached) {
-    query.conn = await openIconStore();
+    query.conn = await openIconDb();
   }
 
   const iconURLString = await lookup(query);
@@ -168,12 +168,12 @@ chrome.runtime.onInstalled.addListener(function(event) {
   console.debug('Received install event:', event);
 
   console.log('Setting up feed store database');
-  openFeedStore().then(function(conn) {
+  openReaderDb().then(function(conn) {
     return conn.close();
   }).catch(console.error);
 
   console.log('Setting up favicon database');
-  openIconStore().then(function(conn) {
+  openIconDb().then(function(conn) {
     return conn.close();
   }).catch(console.error);
 });

@@ -1,11 +1,11 @@
-import {entryHasURL, open as openFeedStore} from "/src/rdb.js";
+import {entryHasURL, open as openReaderDb} from "/src/rdb.js";
 
 // TODO: update callers to use new channel argument, and optional conn parameter pattern,
 // and no status
 
 // Scans the entry store for entry objects that are missing urls and removes them
 export default async function removeLostEntries(conn, channel) {
-  const dconn = conn ? conn : await openFeedStore();
+  const dconn = conn ? conn : await openReaderDb();
   const entryIds = await removeLostEntriesPromise(dconn);
   if(!conn) {
     dconn.close();
