@@ -105,7 +105,7 @@ export async function tfetch(url, options) {
   }
 
   assert(response.ok);
-  return repsonse;
+  return response;
 }
 
 function sleep(ms) {
