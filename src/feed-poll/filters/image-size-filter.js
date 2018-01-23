@@ -37,8 +37,8 @@ export default async function applyImageSizeFilter(document, baseURL, timeout) {
     if('width' in result) {
       result.image.setAttribute('width', '' + result.width);
       result.image.setAttribute('height', '' + result.height);
-      console.debug('Set image size:', result.image.getAttribute('src'),
-        result.image.width, result.image.height, result.reason);
+      //console.debug('Set image size:', result.image.getAttribute('src'),
+      //  result.image.width, result.image.height, result.reason);
     }
   }
 }
