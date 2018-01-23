@@ -195,7 +195,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     parseResult = coerceFeed(feedXML, requestURL, new URL(response.url),
       responseLastModifiedDate, processEntries);
   } catch(error) {
-    console.debug(error);
+    console.debug('Error coercing feed with url', response.url, error);
 
     handlePollFeedError({
       error: error,
