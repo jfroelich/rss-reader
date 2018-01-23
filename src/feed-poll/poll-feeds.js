@@ -1,11 +1,13 @@
 import showDesktopNotification from "/src/notifications.js";
-import assert from "/src/common/assert.js";
-import * as FetchUtils from "/src/common/fetch-utils.js";
-import formatString from "/src/common/format-string.js";
+import {
+  detectURLChanged,
+  fetchFeed,
+  fetchHTML,
+  getLastModified
+} from "/src/common/fetch-utils.js";
 import {parseHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
-
-import {lookup, open as openIconStore} from "/src/favicon-service.js";
+import {lookup as lookupFavicon, open as openIconStore} from "/src/favicon-service.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
 import rewriteURL from "/src/feed-poll/rewrite-url.js";
@@ -138,7 +140,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
 
   const requestURL = new URL(feedURLString);
   let status, response;
-  [status, response] = await FetchUtils.fetchFeed(requestURL, this.fetchFeedTimeoutMs);
+  [status, response] = await fetchFeed(requestURL, this.fetchFeedTimeoutMs);
   if(status !== Status.OK) {
 
     await handlePollFeedError(new Error('Fetch feed error'), this.feedConn, feed, 'fetch-feed',
@@ -147,7 +149,7 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
     return 0;
   }
 
-  const responseLastModifiedDate = FetchUtils.getLastModified(response);
+  const responseLastModifiedDate = getLastModified(response);
 
   if(this.isUnmodifiedFeed(feed.dateUpdated, feed.dateLastModified, responseLastModifiedDate)) {
     const decremented = handleFetchFeedSuccess(feed);
@@ -234,8 +236,7 @@ FeedPoll.prototype.didPollFeedRecently = function(feed) {
   // Be wary of a fetchDate in the future. This indicates the data has been corrupted or something
   // is wrong somewhere.
   if(elapsedSinceLastPollMs < 0) {
-    const message = formatString('Cannot poll feed fetched in the future', feed);
-    throw new Error(message);
+    throw new Error('Cannot poll feed fetched in the future ' + feed);
   }
 
   return elapsedSinceLastPollMs < this.recencyPeriodMs;
@@ -381,7 +382,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   let response;
   if(isPollableURL(url)) {
     try {
-      const [status, response] = await FetchUtils.fetchHTML(url, this.fetchHTMLTimeoutMs);
+      const [status, response] = await fetchHTML(url, this.fetchHTMLTimeoutMs);
       if(status !== Status.OK) {
         console.debug('Error fetching entry content for url', url.href);
         throw new Error('Fetch error');
@@ -397,7 +398,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
   if(response) {
     const responseURL = new URL(response.url);
     let redirectIsPollable = true;
-    if(FetchUtils.detectURLChanged(url, responseURL)) {
+    if(detectURLChanged(url, responseURL)) {
 
       if(!isPollableURL(responseURL)) {
         return;
@@ -486,7 +487,7 @@ FeedPoll.prototype.setEntryFavicon = async function(entry, url, document) {
 
   let iconURLString;
   try {
-    iconURLString = await lookup(query);
+    iconURLString = await lookupFavicon(query);
     if(iconURLString) {
       entry.faviconURLString = iconURLString;
     }
@@ -506,4 +507,8 @@ function isInaccessibleContentURL(url) {
 
 function isHTTPURL(url) {
   return url.protocol === 'http:' || url.protocol === 'https:';
+}
+
+function assert(value, message) {
+  if(!value) throw new Error(message || 'Assertion error');
 }
