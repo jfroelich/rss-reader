@@ -343,11 +343,6 @@ function cascadeFeedPropertiesToEntries(feed, entries) {
   }
 }
 
-// TODO: I plan to deprecate promise utils, and therefore promiseEvery, and revert to using
-// Promise.all. In order to do that, I need to avoid Promise.all's shortcircuiting behavior in
-// the event of an error. Therefore, I need to review pollEntry and modify it if needed so that
-// it only throws an error in the event of an actual programming error.
-
 FeedPoll.prototype.pollEntry = async function(entry) {
   assert(this.feedConn instanceof IDBDatabase);
   assert(isEntry(entry));

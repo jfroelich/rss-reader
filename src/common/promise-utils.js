@@ -1,43 +1,6 @@
 import assert from "/src/common/assert.js";
 import {CheckedError} from "/src/common/errors.js";
 
-// TODO: deprecate promiseEvery and switch to Promise.all once I switch back to status codes. With
-// status codes, only unchecked errors are thrown, in which case both Promise.all and promiseEvery
-// share the same behavior.
-
-// A variant of Promise.all that does not shortcircuit. If any promise rejects, undefined is placed
-// in the output array in place of the promise's return value. However, if any project rejects
-// with an unchecked error, such as an assertion error, that causes short-circuiting and the error
-// is immediately thrown.
-// This was adapted from a twitter post by Jake Archibald
-// https://twitter.com/jaffathecake/status/833668073475416064
-// For additional implementation notes see issue #436
-// It is a bit counter-intuitive as to whether this is concurrent. Keep in mind that merely by
-// creating an array of promises, those promises are executing concurrently. Really what this is
-// doing when awaiting, is waiting for all promises to settle. Yes, the loop can block early while
-// waiting on a promise near the start of the array, but that doesn't matter, because the function
-// as a whole cannot resolve until all promises resolve.
-export async function promiseEvery(promises) {
-  assert(Array.isArray(promises));
-  const results = [];
-  for(const promise of promises) {
-    let result;
-    try {
-      result = await promise;
-    } catch(error) {
-      if(error instanceof CheckedError) {
-        // console.debug('Iteration swallowed checked error', error);
-      } else {
-        throw error;
-      }
-    }
-
-    results.push(result);
-  }
-
-  return results;
-}
-
 // Returns a promise that resolves to undefined after a certain amount of time, as well as a
 // timer id corresponding to the id of the internal setTimeout call. This returns an array so that
 // the caller can use destructuring such as `const [t,p] = setTimeoutPromise(n);`, and so that the
