@@ -431,7 +431,7 @@ FeedPoll.prototype.pollEntry = async function(entry) {
       try {
         entryContent = await response.text();
         didFetchContent = true;
-        console.debug('Replaced entry content with fetched content for url', url.href);
+        //console.debug('Replaced entry content with fetched content for url', url.href);
       } catch(error) {
         console.debug(error);
       }
