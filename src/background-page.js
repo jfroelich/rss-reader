@@ -1,4 +1,3 @@
-import {OK, toString as statusToString} from "/src/common/status.js";
 import showSlideshowTab from "/src/show-slideshow-tab.js";
 import {
   clear as clearIconStore,
