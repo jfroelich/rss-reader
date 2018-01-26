@@ -229,7 +229,14 @@ export async function markEntryRead(conn, channel, entryId) {
     dconn.close();
   }
   if(channel) {
-    channel.postMessage({type: 'entry-marked-read', id: entryId});
+    // channel may be closed by the time this executes when markEntryRead is not
+    // awaited, so trap the invalid state error and just log it
+    try {
+      channel.postMessage({type: 'entry-marked-read', id: entryId});
+    } catch(error) {
+      console.debug(error);
+    }
+
   }
 }
 
