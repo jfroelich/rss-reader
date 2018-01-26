@@ -352,9 +352,15 @@ function handlePollFeedError(errorInfo) {
 
 //detectedModification(pollFeedContext.ignoreModifiedCheck, feed, response)
 function detectedModification(ignoreModifiedCheck, feed, response) {
+  // If this flag is true, then pretend the feed is always modified
+  // I am leaving this comment here as a reminder, previously this was a bug
+  // where I returned false. Now I return true to indicate the feed SHOULD be
+  // polled. Minor ambiguity, this function is a combination of 'shouldPoll'
+  // and 'didChange', hence the confusion.
   if(ignoreModifiedCheck) {
-    return false;
+    return true;
   }
+
   if(!feed.dateUpdated) {
     return false;
   }
@@ -413,7 +419,27 @@ async function pollEntry(ctx, entry) {
   await updateEntryFavicon(ctx, entry, document);
   await updateEntryContent(ctx, entry, document);
 
-  const storedEntry = await addEntry(ctx.feedConn, ctx.channel, entry);
+  // Despite checks for whether the url exists, we can still get uniqueness constraint
+  // errors when putting an entry in the store (from url index of entry store). This should not
+  // be fatal to polling, so trap and log the error and return.
+
+  // TODO: I think I need to look into this more. This may be a consequence of not using a
+  // single shared transaction. Because I am pretty sure that if I am doing containsEntryWithURL
+  // lookups, that I shouldn't run into this error here?
+  // It could also be a dedup issue. Which I now realize should not be a concern of coerceFeed, it
+  // should only be a concern here.
+  // It could be the new way I am doing url rewriting. Perhaps I need to do contains checks on
+  // the intermediate urls of an entry's url list as well. Which would lead to more contains
+  // lookups, so maybe also look into batching those somehow.
+
+  let storedEntry;
+  try {
+    storedEntry = await addEntry(ctx.feedConn, ctx.channel, entry);
+  } catch(error) {
+    console.error(entry.urls, error);
+    return;
+  }
+
   return storedEntry.id;
 }
 
