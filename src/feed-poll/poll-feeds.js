@@ -31,7 +31,16 @@ import {
 } from "/src/rdb.js";
 import coerceFeed from "/src/coerce-feed.js";
 
-// TODO: get rid of object pattern, revert to basic function
+
+// TODO: fix all callers to use new function api, then test.
+// TODO: rename to poll-service
+
+// TODO: to enforce that the feed parameter is a feed object loaded from the database, it is
+// possible that pollFeed would be better implemented if it instead accepted a feedId as a
+// parameter rather than an in-mem feed. That would guarantee the feed it works with is more trusted
+// regarding the locally loaded issue.
+
+
 
 // An array of descriptors. Each descriptor represents a test against a url hostname, that if
 // matched, indicates the content is not accessible.
@@ -44,171 +53,192 @@ const INACCESSIBLE_CONTENT_DESCRIPTORS = [
   {pattern: /ripe\.net$/i, reason: 'requires-cookies'}
 ];
 
-export default function FeedPoll() {
-  this.feedConn = null;
-  this.iconConn = null;
-  this.channel = null;
-  this.ignoreRecencyCheck = false;
-  this.ignoreModifiedCheck = false;
-  this.recencyPeriodMs = 5 * 60 * 1000;
-  this.fetchFeedTimeoutMs = 5000;
-  this.fetchHTMLTimeoutMs = 5000;
-  this.fetchImageTimeoutMs = 3000;
-  this.deactivationThreshold = 10;
+const NULL_CONSOLE = {
+  log: noop,
+  warn: noop,
+  debug: noop
+};
+
+const defaultPollFeedsContext = {
+  feedConn: null,
+  iconConn: null,
+  channel: null,
+  ignoreRecencyCheck: false,
+  ignoreModifiedCheck: false,
+  recencyPeriod: 5 * 60 * 1000,
+  fetchFeedTimeout: 5000,
+  fetchHTMLTimeout: 5000,
+  fetchImageTimeout: 3000,
+  deactivationThreshold: 10,
+  console: NULL_CONSOLE
+};
+
+function noop() {}
+
+
+
+// Create a new context object that is the typical context used by pollFeeds
+export async function createPollFeedsContext() {
+  const context = {};
+  const promises = [openReaderDb(), openIconDb()];
+  [context.feedConn, context.iconConn] = await Promise.all(promises);
+  context.channel = new BroadcastChannel('reader');
+  return context;
 }
 
-FeedPoll.prototype.init = function() {
-  assert(!this.feedConn);
-  assert(!this.iconConn);
-  assert(!this.channel);
-  this.feedConn = null;
-  this.iconConn = null;
-  this.channel = null;
-};
+// Releases resources help in the pollFeeds context parameter
+export function closePollFeedsContext(context) {
+  if(context.channel) context.channel.close();
+  if(context.feedConn) context.feedConn.close();
+  if(context.iconConn) context.iconConn.close();
+}
 
-FeedPoll.prototype.open = async function() {
-  assert(!this.iconConn);
-  assert(!this.feedConn);
-  assert(!this.channel);
+export async function pollFeeds(inputPollFeedsContext) {
+  const pollFeedsContext = Object.assign({}, defaultPollFeedsContext, inputPollFeedsContext);
 
-  const promises = [openReaderDb(), openIconDb()];
-  [this.feedConn, this.iconConn] = await Promise.all(promises);
-  this.channel = new BroadcastChannel('reader');
-};
+  pollFeedsContext.console.log('Polling feeds...');
 
-FeedPoll.prototype.close = function() {
-  if(this.channel) this.channel.close();
-  if(this.feedConn) this.feedConn.close();
-  if(this.iconConn) this.iconConn.close();
-};
+  // Sanity check some of the context state
+  assert(pollFeedsContext.feedConn instanceof IDBDatabase);
+  assert(pollFeedsContext.iconConn instanceof IDBDatabase);
+  assert(pollFeedsContext.channel instanceof BroadcastChannel);
 
-FeedPoll.prototype.pollFeeds = async function() {
-  assert(this.feedConn instanceof IDBDatabase);
-  assert(this.iconConn instanceof IDBDatabase);
-  assert(this.channel instanceof BroadcastChannel);
+  // Setup a pollFeedContext to be shared among upcoming pollFeed calls
+  const pollFeedContext = Object.assign({}, pollFeedsContext);
+  // Append some flags specific to pollFeed and not pollFeeds
+  pollFeedContext.updateBadgeText = false;
+  pollFeedContext.notify = false;
 
-  const feeds = await findActiveFeeds(this.feedConn);
-  const batched = true;
-  const promises = [];
+  // Concurrently poll all the feeds
+  const feeds = await findActiveFeeds(pollFeedsContext.feedConn);
+  const pollFeedPromises = [];
   for(const feed of feeds) {
-    promises.push(this.pollFeed(feed, batched));
-  }
-  const resolutions = await Promise.all(promises);
-  const truthyResolutions = resolutions.filter(r => r);
-  const totalNumEntriesAdded = truthyResolutions.length;
-
-  if(totalNumEntriesAdded > 0) {
-    updateBadgeText(); // non-blocking
+    const promise = pollFeed(pollFeedContext, feed);
+    pollFeedPromises.push(promise);
   }
 
-  if(totalNumEntriesAdded > 0) {
+  // Wait for all outstanding promises to settle, then count up the total.
+  // pollFeed promises only throw in the case of programming/logic errors
+  const pollFeedResolutions = await Promise.all(pollFeedPromises);
+  let totalNumEntriesAdded = 0;
+  for(const numEntriesAdded of pollFeedResolutions) {
+    if(!isNaN(numEntriesAdded)) {
+      totalNumEntriesAdded += numEntriesAdded;
+    }
+  }
+
+  if(totalNumEntriesAdded) {
+    // TODO: it would be better to pass along feedConn here while still not awaiting. So long
+    // as the call starts, it should be fine
+    updateBadgeText();
+  }
+
+  if(totalNumEntriesAdded) {
     const title = 'Added articles';
     const message = 'Added articles';
     showDesktopNotification(title, message);
   }
 
-  console.log('Poll feeds completed normally, %d new entries', totalNumEntriesAdded);
-};
+  pollFeedsContext.console.log('Added %d new entries', totalNumEntriesAdded);
+}
 
-// TODO: to enforce that the feed parameter is a feed object loaded from the database, it is
-// possible that pollFeed would be better implemented if it instead accepted a feedId as a
-// parameter, and loaded the feed here. That would guarantee the feed it works with is more trusted
-// regarding the locally loaded issue.
+// TODO: part of refactoring, what I usually do is forget that I changed arguments, renamed
+// some variables. I renamed the helpers here, and changed their arguments, do not forget to
+// return and fix those as well
 
-// @param batched {Boolean} optional, if true then this does not send notifications or update
-// the badge unread count
-FeedPoll.prototype.pollFeed = async function(feed, batched) {
-  assert(this.feedConn instanceof IDBDatabase);
-  assert(this.iconConn instanceof IDBDatabase);
+// NOTE: remember that this function is also part of the public API and is intended to be
+// called directly
+
+export async function pollFeed(inputPollFeedContext, feed) {
+  const pollFeedContext = Object.assign({}, defaultPollFeedsContext, inputPollFeedContext);
+
+  // Recheck sanity given this may not be called by pollFeeds
+  assert(pollFeedContext.feedConn instanceof IDBDatabase);
+  assert(pollFeedContext.iconConn instanceof IDBDatabase);
+  assert(pollFeedContext.channel instanceof BroadcastChannel);
   assert(isFeed(feed));
   assert(feedHasURL(feed));
 
-  const feedURLString = feedPeekURL(feed);
-  console.log('Polling feed', feedURLString);
+  const console = pollFeedContext.console;
+  const feedTailURL = new URL(feedPeekURL(feed));
+  console.log('Polling feed', feedTailURL.href);
 
+  // Avoid polling inactive feeds
   if(!feed.active) {
+    console.debug('Canceling poll feed as feed inactive', feedTailURL.href);
     return 0;
   }
 
-  if(this.didPollFeedRecently(feed)) {
+  // Avoid polling recently polled feeds
+  if(polledFeedRecently(pollFeedContext, feed)) {
+    console.debug('Canceling poll feed as feed polled recently', feedTailURL.href);
     return 0;
   }
 
-  const requestURL = new URL(feedURLString);
-
+  // Fetch the feed. Trap the error to allow for Promise.all(pollFeed) to not short-circuit.
   let response;
   try {
-    response = await fetchFeed(requestURL, this.fetchFeedTimeoutMs);
+    response = await fetchFeed(feedTailURL, pollFeedContext.fetchFeedTimeout);
   } catch(error) {
     console.debug(error);
 
     handlePollFeedError({
+      context: pollFeedContext,
       error: error,
-      conn: this.feedConn,
       feed: feed,
-      category: 'fetch-feed',
-      threshold: this.deactivationThreshold,
-      channel: this.channel
+      category: 'fetch-feed'
     });
 
     return 0;
   }
 
-  const responseLastModifiedDate = getLastModified(response);
-
-  if(this.isUnmodifiedFeed(feed.dateUpdated, feed.dateLastModified, responseLastModifiedDate)) {
-    const decremented = handleFetchFeedSuccess(feed);
-    if(decremented) {
+  // Cancel polling if no change in date modified
+  if(!detectedModification(pollFeedContext.ignoreModifiedCheck, feed, response)) {
+    console.debug('Unmodified feed', feedTailURL.href);
+    const stateChanged = handleFetchFeedSuccess(feed);
+    if(stateChanged) {
       feed.dateUpdated = new Date();
-
-      // TODO: use a channel
-      await putFeed(this.feedConn, null, feed);
-
-
+      await putFeed(pollFeedContext.feedConn, pollFeedContext.channel, feed);
     }
     return 0;
   }
 
-  let feedXML;
+  // Get the body of the response
+  let responseText;
   try {
-    feedXML = await response.text();
+    responseText = await response.text();
   } catch(error) {
     console.debug(error);
-
     handlePollFeedError({
+      context: pollFeedContext,
       error: error,
-      conn: this.feedConn,
       feed: feed,
-      category: 'read-response-body',
-      threshold: this.deactivationThreshold,
-      channel: this.channel
+      category: 'read-response-body'
     });
-
     return 0;
   }
 
-  assert(typeof feedXML === 'string');
+  // Parse and coerce the response
   let parseResult;
   const processEntries = true;
-
+  const responseURL = new URL(response.url);
+  const responseLastModifiedDate = getLastModified(response);
   try {
-    parseResult = coerceFeed(feedXML, requestURL, new URL(response.url),
+    parseResult = coerceFeed(responseText, feedTailURL, responseURL,
       responseLastModifiedDate, processEntries);
   } catch(error) {
-    console.debug('Error coercing feed with url', response.url, error);
-
+    console.debug(error);
     handlePollFeedError({
+      context: pollFeedContext,
       error: error,
-      conn: this.feedConn,
       feed: feed,
-      category: 'parse-feed',
-      threshold: this.deactivationThreshold,
-      channel: this.channel
+      category: 'coerce-feed'
     });
-
     return 0;
   }
 
+  // Integrate the loaded feed with the fetched feed and store the
+  // result in the database
   const mergedFeed = mergeFeeds(feed, parseResult.feed);
 
   // If we did not exit earlier as a result of some kind of error, then we want to possibly
@@ -216,54 +246,61 @@ FeedPoll.prototype.pollFeed = async function(feed, batched) {
   // indefinitely.
   handleFetchFeedSuccess(mergedFeed);
 
-  // TODO: this could happen prior to merge? should it?
   const storableFeed = prepareFeed(mergedFeed);
   storableFeed.dateUpdated = new Date();
+  await putFeed(pollFeedContext.feedConn, pollFeedContext.channel, storableFeed);
 
-  await putFeed(this.feedConn, this.channel, storableFeed);
+  // Process the feed's entries
+
+  const pollEntryContext = Object.assign({}, pollFeedContext);
 
   const entries = parseResult.entries;
   cascadeFeedPropertiesToEntries(storableFeed, entries);
+  const pollEntryPromises = [];
+  for(const entry of entries) {
+    const promise = pollEntry(pollEntryContext, entry);
+    pollEntryPromises.push(promise);
+  }
 
-  const promises = entries.map(this.pollEntry, this);
-  const entryIds = await Promise.all(promises);
-  const numEntriesAdded = entryIds.filter(id => id > 0).length;
+  const entryIds = await Promise.all(pollEntryPromises);
+  let numEntriesAdded = 0;
+  for(const entryId of entryIds) {
+    if(entryId) {
+      numEntriesAdded++;
+    }
+  }
 
-  if(!batched && numEntriesAdded > 0) {
+  if(pollEntryContext.updateBadgeText && numEntriesAdded) {
+    // TODO: share conn, but stay unawaited to keep as non-blocking
     updateBadgeText();
+  }
 
+  if(pollEntryContext.notify && numEntriesAdded) {
     const title = 'Added articles';
-    const message = 'Added articles for feed ' + storableFeed.title;
+    const message = 'Added ' + numEntriesAdded + ' articles for feed ' + storableFeed.title;
     showDesktopNotification(title, message);
   }
 
   return numEntriesAdded;
-};
+}
 
-FeedPoll.prototype.didPollFeedRecently = function(feed) {
-  if(this.ignoreRecencyCheck) {
+function polledFeedRecently(pollFeedContext, feed) {
+  if(pollFeedContext.ignoreRecencyCheck) {
     return false;
   }
 
-  // Cannot assume a feed has ever been fetched, and therefore cannot assume dateFetched is set
-  // If a feed has never been fetched, then it cannot have been polled recently.
-  if(!(feed.dateFetched instanceof Date)) {
+  if(!feed.dateFetched) {
     return false;
   }
 
   const currentDate = new Date();
   const millisElapsed = currentDate - feed.dateFetched;
+  assert(millisElapsed >= 0, 'Polled feed in future??');
 
-  // Be wary of a fetchDate in the future. This indicates the data has been corrupted or something
-  // is wrong somewhere.
-  if(millisElapsed < 0) {
-    throw new Error('Cannot poll feed fetched in the future ' + feed);
-  }
+  return millisElapsed < pollFeedContext.recencyPeriod;
+}
 
-  return millisElapsed < this.recencyPeriodMs;
-};
-
-// Decrement error count if set and not 0. Return whether or not state changed.
+// Decrement error count if set and not 0. Return true if object state changed.
 function handleFetchFeedSuccess(feed) {
   if('errorCount' in feed) {
     if(typeof feed.errorCount === 'number') {
@@ -295,57 +332,44 @@ function handleFetchFeedSuccess(feed) {
 // the event at a later time. This removes all concern over encountering a closed database
 // or closed channel at the time of the call to putFeed, and maintains the non-blocking
 // characteristic.
-
-function handlePollFeedError(errorContext) {
-  assert(typeof errorContext === 'object' && 'conn' in errorContext);
-
-  const error = errorContext.error;
-  const conn = errorContext.conn;
-  const feed = errorContext.feed;
-  const callCategory = errorContext.category;
-  const threshold = errorContext.threshold;
-  const channel = errorContext.channel;
-
-  assert(Number.isInteger(threshold));
-
-  if(error instanceof OfflineError) {
-    console.debug('Ignoring offline error', error);
+function handlePollFeedError(errorInfo) {
+  if(errorInfo.error instanceof OfflineError || errorInfo.error instanceof TimeoutError) {
+    console.debug('Ignoring ephemeral poll feed error', errorInfo.error);
     return;
   }
 
-  if(error instanceof TimeoutError) {
-    console.debug('Ignoring timeout error', error);
-    return;
-  }
-
-  if(Number.isInteger(feed.errorCount)) {
-    feed.errorCount++;
-  } else {
-    feed.errorCount = 1;
-  }
-
-  if(feed.errorCount > threshold) {
-    console.debug('Error count exceeded threshold, deactivating feed', feed.id);
+  feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
+  if(feed.errorCount > errorInfo.context.deactivationThreshold) {
     feed.active = false;
-    feed.deactivationReasonText = callCategory;
+    feed.deactivationReasonText = errorInfo.category;
     feed.deactivationDate = new Date();
   }
 
   feed.dateUpdated = new Date();
-
-  // Call putFeed in a non-blocking manner. Any errors are simply logged since we return
-  // prior to this call settling. We still use the same database connection, because
-  // the put request is dispatched immediately using the connection, which is preferred
-  // to trying to use a completely separate connection.
-  putFeed(conn, channel, feed).catch(console.error);
+  // Call unawaited (non-blocking)
+  putFeed(errorInfo.context.feedConn, errorInfo.context.channel, feed).catch(console.error);
 }
 
-FeedPoll.prototype.isUnmodifiedFeed = function(feedUpdated, feedDate, responseDate) {
-  if(this.ignoreModifiedCheck || !feedUpdated) {
+//detectedModification(pollFeedContext.ignoreModifiedCheck, feed, response)
+function detectedModification(ignoreModifiedCheck, feed, response) {
+  if(ignoreModifiedCheck) {
     return false;
   }
-  return feedDate && responseDate && feedDate.getTime() === responseDate.getTime();
-};
+  if(!feed.dateUpdated) {
+    return false;
+  }
+  if(!feed.lastModifiedDate) {
+    return false;
+  }
+
+  const responseLastModifiedDate = getLastModified(response);
+  if(!responseLastModifiedDate) {
+    console.debug('Response missing last modified date', response);
+    return false;
+  }
+
+  return feed.lastModifiedDate.getTime() !== responseLastModifiedDate.getTime();
+}
 
 function cascadeFeedPropertiesToEntries(feed, entries) {
   for(const entry of entries) {
@@ -359,147 +383,180 @@ function cascadeFeedPropertiesToEntries(feed, entries) {
   }
 }
 
-FeedPoll.prototype.pollEntry = async function(entry) {
-  assert(this.feedConn instanceof IDBDatabase);
-  assert(isEntry(entry));
+// Returns the entry id if added.
+async function pollEntry(ctx, entry) {
+  assert(typeof ctx === 'object');
+  // The sanity check for the entry argument is implicit in the call to entryHasURL
 
-  // Only entries with a url can be stored. However, we cannot make any assumptions about the
-  // well-formedness of entries coming from the feed.
+  // This function cannot assume the input entry has a url, but a url is required to
+  // continue polling the entry
   if(!entryHasURL(entry)) {
-    console.debug('Entry missing url', entry);
     return;
   }
 
-  // This should never throw, so no try/catch. If it does throw it represents a programming error.
-  let url = new URL(entryPeekURL(entry));
+  ctx.console.debug('Polling entry', entryPeekURL(entry));
 
-  const rewrittenURL = rewriteURL(url);
-  if(rewrittenURL && url.href !== rewrittenURL.href) {
-    entryAppendURL(entry, rewrittenURL);
-    url = rewrittenURL;
-  }
+  rewriteEntryURL(entry);
 
-  // This should never fail except in case of a database error, so no try/catch
-  let containsEntry = await containsEntryWithURL(this.feedConn, url);
-  if(containsEntry) {
+  if(await entryExistsInDb(ctx.feedConn, entry)) {
     return;
   }
 
-  let entryContent = entry.content;
-
-  // Try to fetch the entry's full text. Prevent errors from bubbling. Only fetch is the
-  // content appears fetchable (e.g. not a pdf, paywalled)
-  // TODO: revert fetchHML to throwing errors instead of status
-  let response;
-  if(isPollableURL(url)) {
-    try {
-      response = await fetchHTML(url, this.fetchHTMLTimeoutMs);
-    } catch(error) {
-      console.debug(error);
-    }
+  const response = await fetchEntryResponse(entry, ctx.fetchHTMLTimeout);
+  const redirectedEntryExistsInDb = await handleEntryRedirect(ctx.feedConn, response, entry);
+  if(redirectedEntryExistsInDb) {
+    return;
   }
 
-  let didFetchContent = false;
-  if(response) {
-    const responseURL = new URL(response.url);
-    let redirectIsPollable = true;
-    if(detectURLChanged(url, responseURL)) {
+  const document = await getDocumentForEntryResponse(response);
+  updateEntryTitle(entry, document);
+  await updateEntryFavicon(ctx, entry, document);
+  await updateEntryContent(ctx, entry, document);
 
-      if(!isPollableURL(responseURL)) {
-        return;
-      }
-
-      containsEntry = await containsEntryWithURL(this.feedConn, responseURL);
-      if(containsEntry) {
-        console.debug('Entry already exists for url', responseURL.href);
-        return;
-      }
-
-      entryAppendURL(entry, responseURL);
-
-      url = responseURL;
-
-      // TODO: attempt to rewrite the redirected url as well?
-
-      // If we redirected, check if the redirect text is usable. For example, we redirected
-      // from pollable html page to pdf. In that case should not consider response body.
-      redirectIsPollable = isPollableURL(responseURL);
-    }
-
-    if(redirectIsPollable) {
-      // Use the full text of the response in place of the in-feed content
-      try {
-        entryContent = await response.text();
-        didFetchContent = true;
-        //console.debug('Replaced entry content with fetched content for url', url.href);
-      } catch(error) {
-        console.debug(error);
-      }
-    } else {
-      console.debug('Redirected url is not pollable', responseURL.href);
-    }
-  } else {
-    console.debug('Entry has no fetched response', url.href);
-  }
-
-  // Parse the response's full text into an html document. Trap any errors.
-  let entryDocument;
-  try {
-    entryDocument = parseHTML(entryContent);
-  } catch(error) {
-    console.debug(error);
-    // Continue
-  }
-
-  // If the entry is untitled, try and use the fetched content to set its title
-  if(!entry.title && didFetchContent && entryDocument) {
-    const titleElement = entryDocument.querySelector('html > head > title');
-    if(titleElement) {
-      const titleText = titleElement.textContent;
-      console.debug('Set missing entry title from fetched content', url.href, titleText);
-      entry.title = titleText;
-    }
-  }
-
-  await this.setEntryFavicon(entry, url, response ? entryDocument : undefined);
-
-  // Filter the entry content
-  if(entryDocument) {
-    await applyAllDocumentFilters(entryDocument, url, this.fetchImageTimeoutMs);
-    entry.content = entryDocument.documentElement.outerHTML.trim();
-  } else {
-    entry.content = 'Empty or malformed content';
-  }
-
-  const storedEntry = await addEntry(this.feedConn, this.channel, entry);
+  const storedEntry = await addEntry(ctx.feedConn, ctx.channel, entry);
   return storedEntry.id;
-};
-
-function isPollableURL(url) {
-  return isHTTPURL(url) && !isBinaryURL(url) && !isInaccessibleContentURL(url);
 }
 
-FeedPoll.prototype.setEntryFavicon = async function(entry, url, document) {
+// Examines the current tail url of the entry. Attempts to rewrite it and append a new tail url
+// if the url was rewritten and was distinct from other urls. Returns true if a new url was
+// appended.
+function rewriteEntryURL(entry) {
+  // sanity assertions about the entry argument are implicit within entryPeekURL
+  const url = new URL(entryPeekURL(entry));
+  const rurl = rewriteURL(url);
+  // rewriteURL returns undefined in case of error, or when no rewriting occurred.
+  if(!rurl) {
+    return false;
+  }
 
-  const query = {};
-  query.conn = this.iconConn;
-  query.skipURLFetch = true;
-  query.url = url;
-  query.document = document;
+  // entryAppendURL only appends the url if the url does not already exist in the entry's
+  // url list. entryAppendURL returns true if an append took place.
+  return entryAppendURL(rurl);
+}
 
-  // TODO: error suppression is part of control flow. I think control flow is clearer in
-  // calling context. This should just throw on error and expect caller to deal with it.
+function entryExistsInDb(conn, entry) {
+  const tailURL = new URL(entryPeekURL(entry));
+  return containsEntryWithURL(conn, tailURL);
+}
 
-  let iconURLString;
+// Tries to fetch the response for the entry. Returns undefined if the url is not fetchable by
+// policy, or if the fetch fails.
+async function fetchEntryResponse(entry, timeout) {
+  const url = new URL(entryPeekURL(entry));
+  if(!isAugmentableURL(url)) {
+    return;
+  }
+
   try {
-    iconURLString = await lookupFavicon(query);
+    return await fetchHTML(url, timeout);
+  } catch(error) {
+    console.debug(error);
+  }
+}
+
+// Checks if the entry redirected, and if so, possibly updates the entry and returns whether
+// the redirect url already exists in the database
+async function handleEntryRedirect(conn, response, entry) {
+  // response may be undefined due to fetch error, this is not an error or unexpected
+  if(!response) {
+    return false;
+  }
+
+  const turl = new URL(entryPeekURL(entry));
+  const rurl = new URL(response.url);
+  if(!detectURLChanged(turl, rurl)) {
+    return false;
+  }
+
+  entryAppendURL(entry, rurl);
+  rewriteEntryURL(entry);
+  return await entryExistsInDb(conn, entry);
+}
+
+async function getDocumentForEntryResponse(response) {
+  // There is no guarantee response is defined, this is not unexpected
+  if(!response) {
+    return;
+  }
+
+  try {
+    const responseText = await response.text();
+    return parseHTML(responseText);
+  } catch(error) {
+    console.debug(error);
+  }
+}
+
+function updateEntryTitle(entry, document) {
+  assert(isEntry(entry));
+
+  // There is no guarantee that document is defined. This is not an error or unexpected
+  if(!document) {
+    return;
+  }
+
+  // This only updates a title if the title is missing
+  if(entry.title) {
+    return;
+  }
+
+  const titleElement = document.querySelector('html > head > title');
+  if(titleElement) {
+    entry.title = titleElement.textContent;
+  }
+}
+
+async function updateEntryFavicon(ctx, entry, document) {
+
+  const tailURL = new URL(entryPeekURL(entry));
+
+  const lookupContext = {
+    conn: ctx.iconConn,
+    skipURLFetch: true,
+    url: tailURL,
+    document: document
+  };
+
+  try {
+    const iconURLString = await lookupFavicon(lookupContext);
     if(iconURLString) {
       entry.faviconURLString = iconURLString;
     }
   } catch(error) {
     console.debug(error);
   }
-};
+}
+
+async function updateEntryContent(ctx, entry, fetchedDocument) {
+  // There is no expectation that document is defined. When undefined, we want to use
+  // the entry original summary content from the feed. In both cases the content must
+  // be filtered
+
+  let document = fetchedDocument;
+
+  if(!document) {
+    try {
+      document = parseHTML(entry.content);
+    } catch(error) {
+      console.debug(error);
+      // We failed to fetch, and we also failed to parse the entry's content from
+      // the feed. Redact the content for safety.
+      entry.content = 'There was a problem with this article\'s content (unsafe HTML).';
+      return;
+    }
+  }
+
+  const documentURL = new URL(entryPeekURL(entry));
+  await applyAllDocumentFilters(document, documentURL, ctx.fetchImageTimeout);
+  entry.content = document.documentElement.outerHTML;
+}
+
+
+// BELOW IS NOT YET REFACTORED
+
+function isAugmentableURL(url) {
+  return isHTTPURL(url) && !isBinaryURL(url) && !isInaccessibleContentURL(url);
+}
 
 function isInaccessibleContentURL(url) {
   for(const desc of INACCESSIBLE_CONTENT_DESCRIPTORS) {

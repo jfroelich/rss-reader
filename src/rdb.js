@@ -1,24 +1,8 @@
 import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
 import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
 
-// TODO: if the file is so large, what I could do is present a unifying module that simply
-// imports from a bunch of helper files and then exports from here, and expect users to
-// import from here instead of directly from helpers. I've noticed this is an extremely
-// common practice in other open-source projects. I guess it is some kind of
-// single point of entry pattern? If I do this I think first I should do the other changes
-// and then examine the size of the module afterward. This will increase file coherency
-// without increasing coupling.
-// TODO: I should be more consistent in field names. A have a semi-hungarian notation, where
-// the type is the suffix, but sometimes I use it as the prefix (e.g. dateUpdated should be
-// renamed to updatedDate)
-// TODO: regarding feed schema, should the group of properties pertaining to a feed's active state
-// by grouped together into a sub object? Like:
-// {active-props: {active: true, deactivationReasonText: undefined, deactivationDate: undefined}};
-// TODO: the feed active property is poorly named. Something that is named as
-// active typically means active. So it would be more appropriate to name this as something
-// like activeState or activeFlag. That removes the ambiguity between presence/absence style
-// boolean, and true/false boolean.
-
+// TODO: rename feed.dateUpdated and entry.dateUpdated to updatedDate for better consistency
+// TODO: consider grouping feed.active properties together
 
 const FEED_MAGIC = 0xfeedfeed;
 const ENTRY_MAGIC = 0xdeadbeef;
@@ -67,24 +51,12 @@ function onUpgradeNeeded(event) {
   }
 
   if(event.oldVersion < 23) {
-    // Delete the title index in feed store. It is no longer in use. Because it is no longer
-    // created, and the db could be at any prior version, ensure that it exists before calling
-    // deleteIndex to avoid the not-found error
-
-    // @type {DOMStringList}
-    const indices = feedStore.indexNames;
-    if(indices.contains('title')) {
-      console.debug('Deleting title index of feed store as part of upgrade');
+    if(feedStore.indexNames.contains('title')) {
       feedStore.deleteIndex('title');
-    } else {
-      console.debug('No title index found to delete during upgrade past version 22');
     }
   }
 
   if(event.oldVersion < 24) {
-    // Version 24 adds an 'active' field to feeds. All existing feeds do not have an active
-    // field. So all existing feeds must be modified to have an active property that is default
-    // to true. It defaults to true because prior to this change, all feeds were presumed active.
     addActiveFieldToFeeds(feedStore);
   }
 }
@@ -127,14 +99,11 @@ function addFeedMagic(tx) {
 }
 
 function addActiveFieldToFeeds(store) {
-  console.debug('Adding active property to feeds');
   const feedsRequest = store.getAll();
   feedsRequest.onerror = console.error;
-
   feedsRequest.onsuccess = function(event) {
     const feeds = event.target.result;
     for(const feed of feeds) {
-      console.debug('Marking feed %d as active as part of upgrade', feed.id);
       feed.active = true;
       feed.dateUpdated = new Date();
       store.put(feed);
@@ -206,16 +175,15 @@ function deactivateFeedPromise(conn, feedId, reasonText) {
   });
 }
 
+// TODO: should validation be caller concern
+// TODO: I wonder if sanitization is a concern for something earlier in the
+// processing pipeline, and at this point, only validation is a concern, and
+// no magical mutations should happen
+
 export async function addEntry(conn, channel, entry) {
   assert(isEntry(entry), 'Invalid entry ' + entry);
   assert(!entry.id);
-
-  // TODO: I am not sure if I call this here, or in putEntry, or not at all
   validateEntry(entry);
-
-  // TODO: I wonder if sanitization is a concern for something earlier in the
-  // processing pipeline, and at this point, only validation is a concern, and
-  // no magical mutations should happen
 
   const sanitized = sanitizeEntry(entry);
   const storable = filterEmptyProps(sanitized);
@@ -224,19 +192,11 @@ export async function addEntry(conn, channel, entry) {
   storable.dateCreated = new Date();
   delete storable.dateUpdated;
 
-  // NOTE: this function is not concerned with dynamically connecting to the database.
-  // This delegates that concern entirely to putFeed. By using putFeed, this function
-  // can also claim that it dynamically connects.
-
-  // Pass a null channel to putEntry to suppress its message. This function
-  // posts its own entry-added message in place of the entry-updated message.
   let nullChannel = null;
   const entryId = await putEntry(conn, nullChannel, storable);
-
   if(channel) {
     channel.postMessage({type: 'entry-added', id: entryId});
   }
-
   storable.id = entryId;
   return storable;
 }
@@ -244,7 +204,6 @@ export async function addEntry(conn, channel, entry) {
 export async function countUnreadEntries(conn) {
   const dconn = conn ? conn : await open();
   const count = await countUnreadEntriesPromise(dconn);
-  console.debug('Counted %d unread entries', count);
   if(!conn) {
     dconn.close();
   }
@@ -263,14 +222,12 @@ function countUnreadEntriesPromise(conn) {
 }
 
 export async function markEntryRead(conn, channel, entryId) {
-  assert(isValidEntryId(entryId), 'Invalid entry id ' + entryId);
-
+  assert(isValidEntryId(entryId));
   const dconn = conn ? conn : await open();
   await markEntryReadPromise(dconn, entryId);
   if(!conn) {
     dconn.close();
   }
-
   if(channel) {
     channel.postMessage({type: 'entry-marked-read', id: entryId});
   }
@@ -286,17 +243,14 @@ function markEntryReadPromise(conn, entryId) {
     request.onsuccess = () => {
       const entry = request.result;
       assert(entry);
-
       if(entry.readState === ENTRY_STATE_READ) {
         console.warn('Entry %d already in read state, ignoring', entry.id);
         return;
       }
-
       if(entry.readState !== ENTRY_STATE_UNREAD) {
         console.warn('Entry %d not in unread state, ignoring', entry.id);
         return;
       }
-
       entry.readState = ENTRY_STATE_READ;
       const currentDate = new Date();
       entry.dateUpdated = currentDate;
@@ -311,9 +265,7 @@ export async function findActiveFeeds(conn) {
   return feeds.filter(feed => feed.active);
 }
 
-// TODO: if this is only called by one place then it should be inlined there.
-// I am overly abstracting and attempting to provide flexiblity when there is no alternate
-// use case at the moment.
+// TODO: inline
 async function findEntryIdByURL(conn, url) {
   const dconn = conn ? conn : await open();
   const entryId = await findEntryIdByURLPromise(dconn, url);
@@ -360,7 +312,7 @@ function findFeedByIdPromise(conn, feedId) {
   });
 }
 
-// TODO: inline this into containsFeedWithURL
+// TODO: inline
 async function findFeedIdByURL(conn, url) {
   const dconn = conn ? conn : await open();
   const feedId = await findFeedIdByURLPromise(dconn, url);
@@ -396,7 +348,6 @@ export async function findViewableEntries(conn, offset, limit) {
   return entries;
 }
 
-// TODO: reconsider getAll
 function findViewableEntriesPromise(conn, offset, limit) {
   return new Promise((resolve, reject) => {
     const entries = [];
@@ -406,7 +357,6 @@ function findViewableEntriesPromise(conn, offset, limit) {
     const tx = conn.transaction('entry');
     tx.oncomplete = () => resolve(entries);
     tx.onerror = () => reject(tx.error);
-
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
     const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
@@ -453,11 +403,9 @@ async function putEntry(conn, channel, entry) {
   if(!conn) {
     dconn.close();
   }
-
   if(channel) {
     channel.postMessage({type: 'entry-updated', id: entryId});
   }
-
   return entryId;
 }
 
@@ -473,29 +421,20 @@ function putEntryPromise(conn, entry) {
 }
 
 export function prepareFeed(feed) {
-  let prepped = sanitizeFeed(feed);
-  prepped = filterEmptyProps(prepped);
-  return prepped;
+  return filterEmptyProps(sanitizeFeed(feed));
 }
 
+// TODO: validateFeed (here or in putFeed)
 export async function addFeed(conn, channel, feed) {
-  // TODO: call validateFeed first. Or actually can delegate it to putFeed since that also
-  // has to call it.
   const preparedFeed = prepareFeed(feed);
-
-  // Initialize certain properties
   preparedFeed.active = true;
   preparedFeed.dateCreated = new Date();
   delete preparedFeed.dateUpdated;
-
-  let nullChannel = null;
-  const feedId = await putFeed(conn, nullChannel, preparedFeed);
+  const feedId = await putFeed(conn, null, preparedFeed);
   preparedFeed.id = feedId;
-
   if(channel) {
     channel.postMessage({type: 'feed-added', id: feedId});
   }
-
   return preparedFeed;
 }
 
@@ -506,22 +445,13 @@ export async function putFeed(conn, channel, feed) {
     dconn.close();
   }
 
-  // TODO: when updating, is put result still the feed id? I know
-  // that result is feed id when adding, but what about updating? Review
-  // the documentation on IDBObjectStore.prototype.put
-
-  // NOTE: in order to allow for calls to putFeed to be non-blocking, this must be able
-  // to handle the case where the channel is closed before putFeedPromise settles. In
-  // that case, trap the error and simply log it. There is no accessible property to
-  // determine channel state. The channel's 'closed' property is not accessible to script.
-
-  // TODO: in the blocking context, I'd prefer the error to be thrown. How?
-
+  // Suppress invalid state error when channel is closed in non-awaited call
+  // TODO: if awaited, I'd prefer to throw. How?
   if(channel) {
     try {
-      channel.postMessage({type: 'feed-updated', id: feed.id ? feed.id : feedId});
+      channel.postMessage({type: 'feed-updated', id: feedId});
     } catch(error) {
-      console.debug('Suppressed postMessage error (channel probably closed)');
+      console.debug(error);
     }
   }
 
@@ -534,6 +464,10 @@ function putFeedPromise(conn, feed) {
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
     const request = store.put(feed);
+    // TODO: when updating, is put result still the feed id? I know
+    // that result is feed id when adding, but what about updating? Review
+    // the documentation on IDBObjectStore.prototype.put
+    // So ... double check and warrant this resolves to an id
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -830,6 +764,8 @@ export function entryHasURL(entry) {
 
 // Returns the last url, as a string, in the entry's url list. This should never be called on an
 // entry without urls.
+// TODO: because this returns a string, be more explicit about it. I just caught myself expecting
+// URL.
 export function entryPeekURL(entry) {
   assert(isEntry(entry));
   assert(entryHasURL(entry));

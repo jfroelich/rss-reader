@@ -10,7 +10,11 @@ import refreshFeedIcons from "/src/feed-ops/refresh-feed-icons.js";
 import removeLostEntries from "/src/feed-ops/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/feed-ops/remove-orphaned-entries.js";
 import updateBadgeText from "/src/feed-ops/update-badge-text.js";
-import FeedPoll from "/src/feed-poll/poll-feeds.js";
+import {
+  closePollFeedsContext,
+  createPollFeedsContext,
+  pollFeeds
+} from "/src/feed-poll/poll-feeds.js";
 import {open as openReaderDb} from "/src/rdb.js";
 
 function handleCompactFaviconsAlarm(alarm) {
@@ -53,26 +57,22 @@ async function handleRefreshFeedIconsAlarm(alarm) {
 }
 
 async function handlePollFeedsAlarm(alarm) {
-  console.log('Polling feeds...');
+  console.log('poll feeds alarm wakeup');
 
   // If the non-idle restriction is in place, and the computer is not idle, then avoid polling.
   if('ONLY_POLL_IF_IDLE' in localStorage) {
     const idlePeriodSecs = 30;
     const state = await queryIdleState(idlePeriodSecs);
     if(state !== 'locked' || state !== 'idle') {
-      console.debug('Not idle, dismissing poll');
+      console.debug('Not idle, ignoring poll feeds alarm wakeup event');
       return;
     }
   }
 
-  const poll = new FeedPoll();
-  poll.init();
-  try {
-    await poll.open();
-    await poll.pollFeeds();
-  } finally {
-    poll.close();
-  }
+  const context = await createPollFeedsContext();
+  context.console = console;// enable logging
+  await pollFeeds(context);
+  closePollFeedsContext(context);
 }
 
 function queryIdleState(idlePeriodSecs) {
@@ -106,17 +106,12 @@ cli.archiveEntries = function(limit) {
 
 cli.pollFeeds = async function() {
   console.log('Polling feeds...');
-  const poll = new FeedPoll();
-  poll.init();
-  poll.ignoreRecencyCheck = true;
-  poll.ignoreModifiedCheck = true;
-
-  try {
-    await poll.open();
-    await poll.pollFeeds();
-  } finally {
-    poll.close();
-  }
+  const context = await createPollFeedsContext();
+  context.ignoreRecencyCheck = true;
+  context.ignoreModifiedCheck = true;
+  context.console = console;
+  await pollFeeds(context);
+  closePollFeedsContext(context);
 };
 
 cli.removeLostEntries = async function(limit) {

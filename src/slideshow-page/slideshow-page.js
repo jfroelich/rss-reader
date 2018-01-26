@@ -2,7 +2,11 @@ import assert from "/src/common/assert.js";
 import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
 import * as Status from "/src/common/status.js";
 import markEntryRead from "/src/feed-ops/mark-entry-read.js";
-import FeedPoll from "/src/feed-poll/poll-feeds.js";
+import {
+  closePollFeedsContext,
+  createPollFeedsContext,
+  pollFeeds
+} from "/src/feed-poll/poll-feeds.js";
 import {
   entryPeekURL,
   feedPeekURL,
@@ -660,22 +664,26 @@ async function refreshAnchorOnclick(event) {
   }
   refreshInProgress = true;
 
-  const poll = new FeedPoll();
-  poll.init();
-  poll.ignoreRecencyCheck = true;
-  poll.ignoreModifiedCheck = true;
+  // TODO: this approach leaks default channel in createPollFeedsContext
 
+  let ctx;
   try {
-    await poll.open();
-    await poll.pollFeeds();
+    ctx = await createPollFeedsContext();
+    ctx.ignoreRecencyCheck = true;
+    ctx.ignoreModifiedCheck = true;
+    ctx.console = console;
+    ctx.channel = channel;
+    await pollFeeds(ctx);
+
   } catch(error) {
     // TODO: show an error message
-    console.debug(error);
+    console.error(error);
   } finally {
-    poll.close();
-    console.log('Re-enabling refresh button');
-    refreshInProgress = false;// Always renable
+    closePollFeedsContext(ctx);
   }
+
+  console.log('Re-enabling refresh button');
+  refreshInProgress = false;// Always renable
 }
 
 function showMenuOptions() {

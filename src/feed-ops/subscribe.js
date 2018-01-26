@@ -1,7 +1,11 @@
 import showDesktopNotification from "/src/notifications.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
 import {lookup} from "/src/favicon-service.js";
-import FeedPoll from "/src/feed-poll/poll-feeds.js";
+import {
+  closePollFeedsContext,
+  createPollFeedsContext,
+  pollFeed
+} from "/src/feed-poll/poll-feeds.js";
 import {
   addFeed,
   containsFeedWithURL,
@@ -151,24 +155,12 @@ function showNotification(feed) {
 }
 
 async function deferredPollFeed(feed) {
-
-  const poll = new FeedPoll();
-  poll.init();
-
-  // We just fetched and added the feed. We definitely want to be able to process its entries,
-  // so disable these checks because they most likely otherwise cancel the operation
-  poll.ignoreRecencyCheck = true;
-  poll.ignoreModifiedCheck = true;
-
-  const batched = false;
-  try {
-    await poll.open();
-    await poll.pollFeed(feed, batched);
-  } catch(error) {
-    console.warn(error);
-  } finally {
-    poll.close();
-  }
+  const ctx = await createPollFeedsContext();
+  ctx.ignoreRecencyCheck = true;
+  ctx.ignoreModifiedCheck = true;
+  ctx.notify = false;
+  await pollFeed(ctx, feed);
+  closePollFeedsContext(ctx);
 }
 
 function assert(value, message) {
