@@ -133,7 +133,7 @@ export async function pollFeeds(inputPollFeedsContext) {
   if(totalNumEntriesAdded) {
     // TODO: it would be better to pass along feedConn here while still not awaiting. So long
     // as the call starts, it should be fine
-    updateBadgeText();
+    updateBadgeText(pollFeedsContext.feedConn);
   }
 
   if(totalNumEntriesAdded) {
@@ -274,8 +274,7 @@ export async function pollFeed(inputPollFeedContext, feed) {
   }
 
   if(pollEntryContext.updateBadgeText && numEntriesAdded) {
-    // TODO: share conn, but stay unawaited to keep as non-blocking
-    updateBadgeText();
+    updateBadgeText(pollEntryContext.feedConn);
   }
 
   if(pollEntryContext.notify && numEntriesAdded) {

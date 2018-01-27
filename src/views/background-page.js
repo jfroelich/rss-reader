@@ -181,7 +181,18 @@ chrome.runtime.onInstalled.addListener(function(event) {
 
 chrome.browserAction.onClicked.addListener(showSlideshowTab);
 
-updateBadgeText();
+let connForBadgeUpdate;
+try {
+  connForBadgeUpdate = await openReaderDb();
+  updateBadgeText(connForBadgeUpdate);
+} catch(error) {
+  console.error(error);
+} finally {
+  if(connForBadgeUpdate) {
+    connForBadgeUpdate.close();
+  }
+}
+
 
 chrome.alarms.onAlarm.addListener(function(alarm) {
   console.debug('Alarm awoke:', alarm.name);

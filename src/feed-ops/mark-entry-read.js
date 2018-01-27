@@ -11,9 +11,20 @@ import {markEntryRead as storeMarkEntryRead} from "/src/rdb.js";
 export default async function markEntryRead(conn, channel, entryId) {
 
   // TODO: I would prefer this to not be awaited, but I need to defer the badge update call
-  // until after it resolves.
+  // until after it resolves. I suppose I could use a promise?
 
   await storeMarkEntryRead(conn, channel, entryId);
   console.debug('Marked entry %d as read', entryId);
-  updateBadgeText();// non-blocking
+
+  // Call unawaited. We can still pass conn because the update starts in the current tick,
+  // which is prior to conn closing externally, because we know conn is open or else
+  // call to storeMarkEntryRead would have failed.
+  // TODO: actually, we don't. We await above, so it is entirely possible the connection
+  // is closed by now?
+  // TODO: second issue, now that I think about it, might be transactional consistency. Except
+  // that in this case consistency doesn't matter because a count of objects in a store is
+  // unrelated to any single CRUD operation exclusively, it is related to any of them, the
+  // only thing that matters is that the count happens after.
+
+  updateBadgeText(conn);// non-blocking
 }

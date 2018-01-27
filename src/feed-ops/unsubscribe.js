@@ -21,5 +21,5 @@ export default async function unsubscribe(conn, channel, feedId) {
   await removeFeed(conn, channel, feedId, reasonText);
 
   // Removing entries may impact the unread count
-  updateBadgeText();// non-blocking
+  updateBadgeText(conn);// non-blocking
 }
