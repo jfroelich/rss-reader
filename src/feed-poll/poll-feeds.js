@@ -10,7 +10,7 @@ import {
 import {parseHTML} from "/src/common/html-utils.js";
 import {lookup as lookupFavicon, open as openIconDb} from "/src/favicon-service.js";
 
-// TODO: this shouldn't be something in the view, it should be the other way around
+// TODO: this should not be dependent on something in the view, it should be the other way around
 import updateBadgeText from "/src/views/update-badge-text.js";
 
 import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
@@ -34,33 +34,12 @@ import {
 } from "/src/rdb.js";
 import coerceFeed from "/src/coerce-feed.js";
 
-
-// TODO: fix all callers to use new function api, then test.
 // TODO: rename to poll-service
 
 // TODO: to enforce that the feed parameter is a feed object loaded from the database, it is
 // possible that pollFeed would be better implemented if it instead accepted a feedId as a
 // parameter rather than an in-mem feed. That would guarantee the feed it works with is more trusted
 // regarding the locally loaded issue.
-
-
-
-// An array of descriptors. Each descriptor represents a test against a url hostname, that if
-// matched, indicates the content is not accessible.
-const INACCESSIBLE_CONTENT_DESCRIPTORS = [
-  {pattern: /forbes\.com$/i, reason: 'interstitial-advert'},
-  {pattern: /productforums\.google\.com/i, reason: 'script-generated'},
-  {pattern: /groups\.google\.com/i, reason: 'script-generated'},
-  {pattern: /nytimes\.com$/i, reason: 'paywall'},
-  {pattern: /heraldsun\.com\.au$/i, reason: 'requires-cookies'},
-  {pattern: /ripe\.net$/i, reason: 'requires-cookies'}
-];
-
-const NULL_CONSOLE = {
-  log: noop,
-  warn: noop,
-  debug: noop
-};
 
 const defaultPollFeedsContext = {
   feedConn: null,
@@ -73,7 +52,8 @@ const defaultPollFeedsContext = {
   fetchHTMLTimeout: 5000,
   fetchImageTimeout: 3000,
   deactivationThreshold: 10,
-  console: NULL_CONSOLE
+  // By default, direct all messages to void
+  console: {log: noop, warn: noop, debug: noop}
 };
 
 function noop() {}
@@ -85,11 +65,22 @@ export async function createPollFeedsContext() {
   const context = {};
   const promises = [openReaderDb(), openIconDb()];
   [context.feedConn, context.iconConn] = await Promise.all(promises);
+
+  // TODO: consider moving all lifetime management to caller
+  // NOTE: this is the source of an object leak in slideshow context, where this channel is
+  // created then replaced and left open. It has no listener, but it is still heavyweight and
+  // and well, just incorrect
   context.channel = new BroadcastChannel('reader');
+
   return context;
 }
 
-// Releases resources help in the pollFeeds context parameter
+// Releases resources held in the context
+// TODO: always closing channel is impedance mismatch with persistent channels used by calling
+// contexts, rendering callers unable to easily call this function. Consider removing the
+// close call here, or moving all channel lifetime management concerns to caller. This was
+// the source of a bug in polling from slideshow, where polling closed the slideshow's persistent
+// channel when it should not have
 export function closePollFeedsContext(context) {
   if(context.channel) context.channel.close();
   if(context.feedConn) context.feedConn.close();
@@ -351,7 +342,6 @@ function handlePollFeedError(errorInfo) {
   putFeed(errorInfo.context.feedConn, errorInfo.context.channel, feed).catch(console.error);
 }
 
-//detectedModification(pollFeedContext.ignoreModifiedCheck, feed, response)
 function detectedModification(ignoreModifiedCheck, feed, response) {
   // If this flag is true, then pretend the feed is always modified
   // I am leaving this comment here as a reminder, previously this was a bug
@@ -379,7 +369,8 @@ function detectedModification(ignoreModifiedCheck, feed, response) {
 
   // If response is undated, then return true to indicate maybe modified
   if(!rDate) {
-    console.debug('Response missing last modified date', response);
+    // TODO: if it is the normal case this shouldn't log. I am tentative for now, so logging
+    console.debug('Response missing last modified date?', response);
     return true;
   }
 
@@ -426,7 +417,7 @@ async function pollEntry(ctx, entry) {
     return;
   }
 
-  const document = await getDocumentForEntryResponse(response);
+  const document = await parseEntryResponseBody(response);
   updateEntryTitle(entry, document);
   await updateEntryFavicon(ctx, entry, document);
   await updateEntryContent(ctx, entry, document);
@@ -460,9 +451,12 @@ async function pollEntry(ctx, entry) {
 // appended.
 function rewriteEntryURL(entry) {
   // sanity assertions about the entry argument are implicit within entryPeekURL
-  const url = new URL(entryPeekURL(entry));
-  const rurl = rewriteURL(url);
+  const turl = new URL(entryPeekURL(entry));
+  const rurl = rewriteURL(turl);
   // rewriteURL returns undefined in case of error, or when no rewriting occurred.
+  // TODO: consider changing rewriteURL so that it always returns a url, which is simply
+  // the same url as the input url if no rewriting occurred.
+
   if(!rurl) {
     return false;
   }
@@ -473,6 +467,13 @@ function rewriteEntryURL(entry) {
 }
 
 function entryExistsInDb(conn, entry) {
+
+  // NOTE: this only inspects the tail, not all urls. It is possible due to some poorly
+  // implemented logic that one of the other urls in the entry's url list exists in the db
+  // At the moment I am more included to allow the indexedDB put request that happens later
+  // to fail due to a constraint error. This function is more of an attempt at reducing
+  // processing than maintaining data integrity.
+
   const tailURL = new URL(entryPeekURL(entry));
   return containsEntryWithURL(conn, tailURL);
 }
@@ -507,12 +508,17 @@ async function handleEntryRedirect(conn, response, entry) {
   }
 
   entryAppendURL(entry, rurl);
+
+  // It is important to rewrite before exists check to be consistent with the pattern used
+  // before fetching for the original url. This way we don't need to lookup the unwritten url,
+  // because all urls are always rewritten before storage
+
   rewriteEntryURL(entry);
   return await entryExistsInDb(conn, entry);
 }
 
-async function getDocumentForEntryResponse(response) {
-  // There is no guarantee response is defined, this is not unexpected
+async function parseEntryResponseBody(response) {
+  // There is no guarantee response is defined, this is not unexpected and not an error
   if(!response) {
     return;
   }
@@ -525,15 +531,17 @@ async function getDocumentForEntryResponse(response) {
   }
 }
 
+// If an entry is untitled in the feed, and we were able to fetch the full text of the entry,
+// try and set the entry's title using data from the full text.
 function updateEntryTitle(entry, document) {
   assert(isEntry(entry));
-
-  // There is no guarantee that document is defined. This is not an error or unexpected
+  // This does not expect document to always be defined. The caller may have failed to get
+  // the document. Rather than require the caller to check, do the check here.
   if(!document) {
     return;
   }
 
-  // This only updates a title if the title is missing
+  // This only applies to an untitled entry.
   if(entry.title) {
     return;
   }
@@ -544,9 +552,25 @@ function updateEntryTitle(entry, document) {
   }
 }
 
+// Attempts to set the favicon url property of the entry
+// @param ctx {Object} misc props, should contain iconConn, an active connection to the
+// favicon store. Technically the lookup can operate without an active connection so it is
+// ok if it is undefined
+// @param entry {Object} an object representing a entry in the app's storage format
+// @param document {Document} optional, the pre-fetched document for the entry. If specified,
+// the favicon lookup will reuse it instead of attempting to fetch the document again.
 async function updateEntryFavicon(ctx, entry, document) {
+  assert(typeof ctx === 'object');
+  assert(isEntry(entry));
+
+  // Something is really wrong if this fails
+  assert(entryHasURL(entry));
 
   const tailURL = new URL(entryPeekURL(entry));
+
+  // Create the lookup context. Signal to the lookup it should not try and fetch the document
+  // for the url, because we know we've already tried that. Lookup cannot otherwise tell because
+  // document may be undefined here.
 
   const lookupContext = {
     conn: ctx.iconConn,
@@ -555,8 +579,20 @@ async function updateEntryFavicon(ctx, entry, document) {
     document: document
   };
 
+  // Favicon lookup failure is not fatal to polling an entry. Rather than require the caller
+  // to handle the error, handle the error locally.
+
+  // TODO: if favicon only fails in event of a critical error, such as a programming error
+  // or database error, then it actually should be fatal, and this shouldn't use try/catch.
+  // However, I've forgotten all the specific cases of when the lookup throws. If it throws
+  // in case of failed fetch for example that is not a critical error. For now I am leaving
+  // in the try/catch.
+
   try {
     const iconURLString = await lookupFavicon(lookupContext);
+
+    // Only set favicon if known. This way the previous value is retained. Earlier code may
+    // set it, for example, to default to the feed's own favicon.
     if(iconURLString) {
       entry.faviconURLString = iconURLString;
     }
@@ -571,13 +607,12 @@ async function updateEntryContent(ctx, entry, fetchedDocument) {
   // be filtered
 
   let document = fetchedDocument;
-
   if(!document) {
     try {
       document = parseHTML(entry.content);
     } catch(error) {
       console.debug(error);
-      // We failed to fetch, and we also failed to parse the entry's content from
+      // We do not have a fetched doc, and we also failed to parse the entry's content from
       // the feed. Redact the content for safety.
       entry.content = 'There was a problem with this article\'s content (unsafe HTML).';
       return;
@@ -589,12 +624,20 @@ async function updateEntryContent(ctx, entry, fetchedDocument) {
   entry.content = document.documentElement.outerHTML;
 }
 
-
-// BELOW IS NOT YET REFACTORED
-
 function isAugmentableURL(url) {
   return isHTTPURL(url) && !isBinaryURL(url) && !isInaccessibleContentURL(url);
 }
+
+// An array of descriptors. Each descriptor represents a test against a url hostname, that if
+// matched, indicates the content is not accessible.
+const INACCESSIBLE_CONTENT_DESCRIPTORS = [
+  {pattern: /forbes\.com$/i, reason: 'interstitial-advert'},
+  {pattern: /productforums\.google\.com/i, reason: 'script-generated'},
+  {pattern: /groups\.google\.com/i, reason: 'script-generated'},
+  {pattern: /nytimes\.com$/i, reason: 'paywall'},
+  {pattern: /heraldsun\.com\.au$/i, reason: 'requires-cookies'},
+  {pattern: /ripe\.net$/i, reason: 'requires-cookies'}
+];
 
 function isInaccessibleContentURL(url) {
   for(const desc of INACCESSIBLE_CONTENT_DESCRIPTORS) {
