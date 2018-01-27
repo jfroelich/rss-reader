@@ -1,7 +1,6 @@
 import assert from "/src/common/assert.js";
-import * as Status from "/src/common/status.js";
 
-// TODO: factor out status. After this, status is only left in slideshow 
+// TODO: define assert locally, decouple from assert.js
 
 // Create a new OPML document
 // @param title {String} optional document title
