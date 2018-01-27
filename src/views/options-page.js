@@ -1,8 +1,6 @@
 import assert from "/src/common/assert.js";
 import {truncateHTML} from "/src/common/html-utils.js";
-import * as Status from "/src/common/status.js";
 
-// Needed by subscribe.
 // TODO: it would be better if subscribe could connect on demand
 import {open as openIconDb} from "/src/favicon-service.js";
 
