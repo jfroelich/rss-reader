@@ -787,7 +787,6 @@ async function importFiles(files) {
 
   // TODO: visually inform the user that the operation completed successfully
   // TODO: refresh feed list
-  // TODO: check for new articles?
   // TODO: switch to feed list section?
 }
 

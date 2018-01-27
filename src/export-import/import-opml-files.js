@@ -178,7 +178,7 @@ function parseOPML(xmlString) {
   const document = parseXML(xmlString);
   const name = document.documentElement.localName.toLowerCase();
   if(name !== 'opml') {
-    throw new Error('Document element is not opml: ' name);
+    throw new Error('Document element is not opml: ' + name);
   }
   return document;
 }
