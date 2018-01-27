@@ -775,10 +775,11 @@ async function importFiles(files) {
 
   // TODO: show operation started
 
-  let status = await importOPMLFiles(importContext, files);
-  if(status !== Status.OK) {
+  try {
+    await importOPMLFiles(importContext, files);
+  } catch(error) {
     // TODO: visual feedback in event an error
-    console.error('Failed to import opml files', Status.toString(status));
+    console.error(error);
     return;
   }
 
