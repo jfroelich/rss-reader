@@ -1,7 +1,6 @@
 import {paginationFindAnchors} from "/experimental/pagination.js";
 import assert from "/src/common/assert.js";
 import * as FetchUtils from "/src/common/fetch-utils.js";
-import * as Status from "/src/common/status.js";
 
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a
