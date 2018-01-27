@@ -1,4 +1,4 @@
-import showSlideshowTab from "/src/show-slideshow-tab.js";
+import showSlideshowTab from "/src/views/show-slideshow-tab.js";
 
 export default function showDesktopNotification(title, message, iconURL) {
   if(typeof Notification === 'undefined') {

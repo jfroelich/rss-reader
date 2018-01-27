@@ -1,4 +1,4 @@
-import showSlideshowTab from "/src/show-slideshow-tab.js";
+import showSlideshowTab from "/src/views/show-slideshow-tab.js";
 import {
   clear as clearIconStore,
   compact as compactIconStore,
@@ -9,13 +9,17 @@ import archiveEntries from "/src/feed-ops/archive-entries.js";
 import refreshFeedIcons from "/src/feed-ops/refresh-feed-icons.js";
 import removeLostEntries from "/src/feed-ops/remove-lost-entries.js";
 import removeOrphanedEntries from "/src/feed-ops/remove-orphaned-entries.js";
-import updateBadgeText from "/src/feed-ops/update-badge-text.js";
+import updateBadgeText from "/src/views/update-badge-text.js";
 import {
   closePollFeedsContext,
   createPollFeedsContext,
   pollFeeds
 } from "/src/feed-poll/poll-feeds.js";
 import {open as openReaderDb} from "/src/rdb.js";
+
+// TODO: this is doing somethings that should be in a layer below the view. move things into
+// that other layer. This should be a dumber view, like a thin-client
+
 
 function handleCompactFaviconsAlarm(alarm) {
   return compactIconStore().catch(console.error);

@@ -16,10 +16,10 @@ import {
   isValidEntryId,
   open as openReaderDb
 } from "/src/rdb.js";
-import exportFeeds from "/src/slideshow-page/export-feeds.js";
-import importOPMLFiles from "/src/slideshow-page/import-opml-files.js";
-import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
-import * as Slideshow from "/src/slideshow-page/slideshow.js";
+import exportFeeds from "/src/export-import/export-feeds.js";
+import importOPMLFiles from "/src/export-import/import-opml-files.js";
+import * as PageStyle from "/src/views/page-style-settings.js";
+import * as Slideshow from "/src/views/slideshow.js";
 
 const fonts = [
   'ArchivoNarrow-Regular',
@@ -679,7 +679,15 @@ async function refreshAnchorOnclick(event) {
     // TODO: show an error message
     console.error(error);
   } finally {
-    closePollFeedsContext(ctx);
+    if(ctx.feedConn) {
+      ctx.feedConn.close();
+    }
+
+    if(ctx.iconConn) {
+      ctx.iconConn.close();
+    }
+
+    // keep channel open, it has persistent lifetime
   }
 
   console.log('Re-enabling refresh button');

@@ -18,7 +18,7 @@ import {
 } from "/src/rdb.js";
 
 // TEMP: I plan to remove
-import * as PageStyle from "/src/slideshow-page/page-style-settings.js";
+import * as PageStyle from "/src/views/page-style-settings.js";
 
 
 const BG_IMAGES = [

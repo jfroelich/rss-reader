@@ -1,5 +1,5 @@
 import assert from "/src/common/assert.js";
-import * as OPMLUtils from "/src/slideshow-page/opml-utils.js";
+import * as OPMLUtils from "/src/export-import/opml-utils.js";
 import {feedPeekURL, isFeed} from "/src/rdb.js";
 
 // TODO: Change to return a blob object. Move downloadBlob to calling context. Export shouldn't
