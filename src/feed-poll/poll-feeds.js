@@ -197,7 +197,6 @@ export async function pollFeed(inputPollFeedContext, feed) {
 
   // Cancel polling if no change in date modified
   if(!detectedModification(pollFeedContext.ignoreModifiedCheck, feed, response)) {
-    console.debug('Unmodified feed', feedTailURL.href);
     const stateChanged = handleFetchFeedSuccess(feed);
     if(stateChanged) {
       feed.dateUpdated = new Date();
@@ -363,20 +362,33 @@ function detectedModification(ignoreModifiedCheck, feed, response) {
     return true;
   }
 
-  if(!feed.dateUpdated) {
-    return false;
-  }
-  if(!feed.lastModifiedDate) {
-    return false;
+  // TODO: rename dateLastModified to lastModifiedDate to be more consistent
+  // in field names. I just got bit by this inconsistency.
+
+  // Pretend feed modified if no known modified date
+  // NOTE: this returns true to indicate the feed SHOULD be considered modified,
+  // because without the last modified date, we can't use the dates to determine,
+  // so we presume modified. We can only more confidently assert not modified, but
+  // not unmodified.
+  if(!feed.dateLastModified) {
+    console.debug('Unknown last modified date for feed', feedPeekURL(feed));
+    return true;
   }
 
-  const responseLastModifiedDate = getLastModified(response);
-  if(!responseLastModifiedDate) {
+  const rDate = getLastModified(response);
+
+  // If response is undated, then return true to indicate maybe modified
+  if(!rDate) {
     console.debug('Response missing last modified date', response);
-    return false;
+    return true;
   }
 
-  return feed.lastModifiedDate.getTime() !== responseLastModifiedDate.getTime();
+  // TEMP: researching always unmodified issue
+  console.debug('local %d remote %d', feed.dateLastModified.getTime(), rDate.getTime());
+
+  // Return true if the dates are different
+  // Return false if the dates are the same
+  return feed.dateLastModified.getTime() !== rDate.getTime();
 }
 
 function cascadeFeedPropertiesToEntries(feed, entries) {

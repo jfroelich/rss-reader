@@ -79,6 +79,8 @@ async function handlePollFeedsAlarm(alarm) {
   closePollFeedsContext(context);
 }
 
+window.testHandlePollFeedsAlarm = handlePollFeedsAlarm;
+
 function queryIdleState(idlePeriodSecs) {
   return new Promise(function executor(resolve, reject) {
     chrome.idle.queryState(idlePeriodSecs, resolve);

@@ -21,6 +21,11 @@ import importOPMLFiles from "/src/export-import/import-opml-files.js";
 import * as PageStyle from "/src/views/page-style-settings.js";
 import * as Slideshow from "/src/views/slideshow.js";
 
+// BUG: some kind of mark-read bug, possibly due to the non-blocking call. The bug is logic,
+// there is no js error. Entries are getting marked as read, but re-appear occassionally when
+// navigation, and sometimes next-slide key press doesn't advance slide.
+
+
 const fonts = [
   'ArchivoNarrow-Regular',
   'Arial, sans-serif',
