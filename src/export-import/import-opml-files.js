@@ -1,35 +1,26 @@
-import * as Status from "/src/common/status.js";
 import {open as openIconDb} from "/src/favicon-service.js";
 import subscribe from "/src/feed-ops/subscribe.js";
 import {open as openReaderDb} from "/src/rdb.js";
 
-// TODO: revert to no status
-
 // TODO: conns should be optional params instead of always created locally so that this can
 // run on test databases. In other words, conns should be dependency injected.
-
-
-// TODO: now that channel is injected, caller is responsible for lifetime management
-
+// TODO: now that channel is injected, caller is responsible for lifetime management. review
+// if that is happening
 
 export default async function importOPMLFiles(importContext, files) {
-  if(!(files instanceof FileList)) {
-    return Status.EINVAL;
-  }
+  // TODO: consider relaxing this to array-like or is-iterable style test
+  assert(files instanceof FileList);
 
   console.log('Importing %d opml file(s)', files.length);
-
   if(!files.length) {
-    return Status.OK;
+    return;
   }
 
-  // Open databases
-  let feedConn, iconConn;
-  try {
-    [feedConn, iconConn] = await Promise.all([openReaderDb(), openIconDb()]);
-  } catch(error) {
-    return Status.EDB;
-  }
+  // Allow errors to bubble as fatal
+  // TODO: connections should be defined externally so that databases can be mocked. I moved
+  // them here so that caller has less burden, but it turns out that this removes dependency
+  // injection pattern
+  const [feedConn, iconConn] = await Promise.all([openReaderDb(), openIconDb()]);
 
   const subscribeContext = {
     feedConn: feedConn,
@@ -39,38 +30,39 @@ export default async function importOPMLFiles(importContext, files) {
     notify: false
   };
 
-  // Concurrently import files
+  // Concurrently import files.
   const promises = [];
   for(const file of files) {
     promises.push(importOPMLFile(subscribeContext, file));
   }
+
+  // Any individual promise rejection shortcircuits Promise.all and is fatal to import
   const results = await Promise.all(promises);
 
   // Check individual results. Just log failures
-  for(const result of results) {
-    if(result !== Status.OK) {
-      console.error('Failed to import file', Status.toString(status));
+  for(const perFileResult of results) {
+    if(!perFileResult) {
+      console.error('Failed to import file');
     }
   }
 
+  // Release resources
+  // TODO: lifetime management should probably be moved to caller
   feedConn.close();
   iconConn.close();
-
-  return Status.OK;
 }
 
-
+// Returns -1 in case of weak error. Returns 0 if no feeds subscribed. Otherwise returns the
+// count of feeds subscribed.
 async function importOPMLFile(subscribeContext, file) {
-  if(!(file instanceof File)) {
-    console.error('Invalid file argument', file);
-    return Status.EINVAL;
-  }
+  // Calling this with something other than a file is a persistent critical programming error
+  assert(file instanceof File);
 
   console.log('Importing file', file.name, file.type, file.size);
 
   if(file.size < 1) {
-    console.error('File %s is empty', file.name);
-    return Status.EINVAL;
+    console.debug('Skipping empty file', file.name);
+    return -1;
   }
 
   // Only process xml files
@@ -83,46 +75,49 @@ async function importOPMLFile(subscribeContext, file) {
     'text/xml'
   ];
   if(!xmlMimeTypes.includes(file.type)) {
-    console.error('File %s is not xml, it is', file.name, file.type);
-    return Status.EINVAL;
+    console.debug('Skipping non-xml file', file.name, file.type);
+    return -1;
   }
 
+  // The failure to read the file is not a critical error, just log and return
   let fileText;
   try {
     fileText = await readFileAsText(file);
   } catch(error) {
     console.error(file.name, error);
-    return Status.EINVAL;
+    return -1;
   }
 
-  let [status, document] = parseOPML(fileText);
-  if(status !== Status.OK) {
-    console.error('OPML parsing error:', Status.toString(status));
-    return status;
+  // The failure to parse a file is not a critical error, just log and return
+  let document;
+  try {
+    document = parseOPML(fileText);
+  } catch(error) {
+    console.debug(error);
+    return -1;
   }
 
-  const feedURLs = getFeedURLs(document);
-
-  let subCount = 0;
-  if(feedURLs.length) {
-    const promises = [];
-    for(const url of feedURLs) {
-      promises.push(subscribeNoExcept(subscribeContext, url));
-    }
-
-    const subscribeResults = await Promise.all(promises);
-    for(const subscribedFeed of subscribeResults) {
-      if(subscribedFeed) {
-        subCount++;
-      }
-    }
+  const urls = getFeedURLs(document);
+  if(!urls.length) {
+    console.debug('No feeds found in file', file.name);
+    return 0;
   }
 
-  console.log('Subscribed to %d feeds in file %s', subCount, file.name);
-  return Status.OK;
+  const thisArg = null;
+  const partialFunc = subscribeNoExcept.bind(thisArg, subscribeContext);
+  const promises = urls.map(partialFunc);
+  const subscribeReturnValues = await Promise.all(promises);
+  const count = subscribeReturnValues.filter(identity).length;
+  console.log('Subscribed to %d feeds in file', count, file.name);
+  return count;
 }
 
-// Call subscribe while suppressing any exceptions. Exceptions are simply logged to debug.
+function identity(value) {
+  return value;
+}
+
+// Call subscribe while suppressing any exceptions. Exceptions are simply logged
+// Returns the result of subscribe
 async function subscribeNoExcept(subscribeContext, url) {
   try {
     return await subscribe(subscribeContext, url);
@@ -166,39 +161,24 @@ function readFileAsText(file) {
 }
 
 function parseXML(xmlString) {
-  if(typeof xmlString !== 'string') {
-    throw new TypeError('Expected string, got ' + typeof xmlString);
-  }
-
+  assert(typeof xmlString === 'string');
   const parser = new DOMParser();
   const document = parser.parseFromString(xmlString, 'application/xml');
   const error = document.querySelector('parsererror');
   if(error) {
-    throw new Error(error.textContent.replace(/\s{2,}/g, ' '));
+    const prettyMessage = error.textContent.replace(/\s{2,}/g, ' ');
+    throw new Error(prettyMessage);
   }
-
   return document;
 }
 
 function parseOPML(xmlString) {
-  if(typeof xmlString !== 'string') {
-    console.error('Invalid xmlString argument:', xmlString);
-    return [Status.EINVAL];
-  }
-
-  let document;
-  try {
-    document = parseXML(xmlString);
-  } catch(error) {
-    console.error(error);
-    return [Status.EPARSEOPML];
-  }
-
+  assert(typeof xmlString === 'string');
+  // Rethrow parseXML errors as parseOPML errors
+  const document = parseXML(xmlString);
   const name = document.documentElement.localName.toLowerCase();
   if(name !== 'opml') {
-    console.error('Document element is not opml:', name);
-    return [Status.EPARSEOPML];
+    throw new Error('Document element is not opml: ' name);
   }
-
-  return [Status.OK, document];
+  return document;
 }
