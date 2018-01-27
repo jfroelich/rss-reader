@@ -402,8 +402,6 @@ async function pollEntry(ctx, entry) {
     return;
   }
 
-  ctx.console.debug('Polling entry', entryPeekURL(entry));
-
   rewriteEntryURL(entry);
 
   if(await entryExistsInDb(ctx.feedConn, entry)) {

@@ -181,17 +181,22 @@ chrome.runtime.onInstalled.addListener(function(event) {
 
 chrome.browserAction.onClicked.addListener(showSlideshowTab);
 
-let connForBadgeUpdate;
-try {
-  connForBadgeUpdate = await openReaderDb();
-  updateBadgeText(connForBadgeUpdate);
-} catch(error) {
-  console.error(error);
-} finally {
-  if(connForBadgeUpdate) {
-    connForBadgeUpdate.close();
+async function initBadge() {
+  let conn;
+  try {
+    conn = await openReaderDb();
+    updateBadgeText(conn);
+  } catch(error) {
+    console.error(error);
+  } finally {
+    if(conn) {
+      conn.close();
+    }
   }
 }
+
+initBadge();
+
 
 
 chrome.alarms.onAlarm.addListener(function(alarm) {
