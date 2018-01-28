@@ -1,6 +1,5 @@
 import assert from "/src/common/assert.js";
 import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
-import * as Status from "/src/common/status.js";
 import markEntryRead from "/src/feed-ops/mark-entry-read.js";
 import {
   closePollFeedsContext,
@@ -189,15 +188,24 @@ function hideLoadingInformation() {
 
 async function markSlideRead(conn, slideElement) {
 
-  // TODO: do not assert in the UI
+  if(!(conn instanceof IDBDatabase)) {
+    console.error('Invalid conn parameter');
+    return;
+  }
 
-  assert(slideElement instanceof Element);
+  if(!(slideElement instanceof Element)) {
+    console.error('Invalid slideElement parameter');
+    return;
+  }
 
   // Get the entry id for the slide
   const slideEntryAttributeValue = slideElement.getAttribute('entry');
   const entryId = parseInt(slideEntryAttributeValue, 10);
   // The entry id should always be valid or something is very wrong
-  assert(isValidEntryId(entryId));
+  if(!isValidEntryId(entryId)) {
+    console.error('Invalid entry id', entryId);
+    return;
+  }
 
   console.log('Marking slide for entry %d as read', entryId);
 
@@ -205,7 +213,7 @@ async function markSlideRead(conn, slideElement) {
   // and should not be considered an error.
   if(slideElement.hasAttribute('read')) {
     console.debug('Slide already marked as read', entryId);
-    return Status.OK;
+    return;
   }
 
   // TODO: rather than await, this should listen for entry-marked-read events roundtrip and
@@ -217,14 +225,12 @@ async function markSlideRead(conn, slideElement) {
   } catch(error) {
     // TODO: display an error
     console.error(error);
-    return Status.EDB;
+    return;
   }
 
   // Signal to the UI that the slide is read, so that unread counting works, and so that later
   // calls to this function exit prior to interacting with storage.
   slideElement.setAttribute('read', '');
-
-  return Status.OK;
 }
 
 // TODO: append slides shouldn't be responsible for loading. This should accept an array
@@ -499,13 +505,7 @@ async function onSlideClick(event) {
     return false;
   }
 
-  let status = await markSlideRead(conn, clickedSlide);
-  if(status !== Status.OK) {
-    // TODO: visually show error
-    console.error('Failed to mark slide as read', Status.toString(status));
-    conn.close();
-    return;
-  }
+  await markSlideRead(conn, clickedSlide);
 
   conn.close();
 
@@ -588,14 +588,7 @@ async function nextSlide() {
       return;
     }
 
-    let status = await markSlideRead(conn, currentSlide);
-    if(status !== Status.OK) {
-      // TODO: show an error message
-      console.error('Failed to mark slide as read', Status.toString(status));
-      conn.close();
-      return;
-    }
-
+    await markSlideRead(conn, currentSlide);
     conn.close();
 
     Slideshow.next();
@@ -620,15 +613,7 @@ async function nextSlide() {
   }
 
   Slideshow.next();
-
-  let status = await markSlideRead(conn, currentSlide);
-  if(status !== Status.OK) {
-    // TODO: show an error message
-    console.error('Failed to mark slide as read', Status.toString(status));
-    conn.close();
-    return;
-  }
-
+  await markSlideRead(conn, currentSlide);
   conn.close();
 
   if(appendCount < 1) {
