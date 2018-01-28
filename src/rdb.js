@@ -343,7 +343,7 @@ function findFeedIdByURLPromise(conn, url) {
 
 export async function containsFeedWithURL(conn, url) {
   const feedId = await findFeedIdByURL(conn, url);
-  return isValidFeedId(id);
+  return isValidFeedId(feedId);
 }
 
 export async function findViewableEntries(conn, offset, limit) {
