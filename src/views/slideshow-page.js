@@ -15,7 +15,7 @@ import {
   isValidEntryId,
   open as openReaderDb
 } from "/src/rdb.js";
-import exportFeeds from "/src/export-import/export-feeds.js";
+import exportOPML from "/src/export-import/export-opml.js";
 import importOPMLFiles from "/src/export-import/import-opml-files.js";
 import * as PageStyle from "/src/views/page-style-settings.js";
 import * as Slideshow from "/src/views/slideshow.js";
@@ -779,17 +779,14 @@ async function menuOptionExportOnclick() {
   const filename = 'subscriptions.xml';
   let conn, blob;
   try {
-    blob = exportFeeds(conn, title);
+    blob = exportOPML(conn, title);
   } catch(error) {
     // TODO: show an error message
     console.error(error);
     return;
   }
 
-  if(blob) {
-    downloadBlob(blob, filename);
-  }
-
+  downloadBlob(blob, filename);
   // TODO: visual feedback on completion
   console.log('Completed export');
 }

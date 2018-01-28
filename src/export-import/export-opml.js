@@ -8,9 +8,14 @@ import {feedPeekURL, getFeeds, isFeed} from "/src/rdb.js";
 // in the app's db
 // @param feeds {Array}
 // @param title {String} optional
-export default function exportFeeds(conn, title) {
+export default function exportOPML(conn, title) {
   const feeds = await getFeeds(conn);
-  const document = createDocumentAndAppendFeeds(feeds, title);
+  const document = createOPMLDocument(title);
+
+  for(const feed of feeds) {
+    appendOutlineObject(document, outlineFromFeed(feed));
+  }
+
   return xmlToBlob(document);
 }
 
@@ -50,13 +55,6 @@ function createOPMLDocument(title) {
   return doc;
 }
 
-function createDocumentAndAppendFeeds(feeds, title) {
-  const doc = createOPMLDocument(title);
-  for(const feed of feeds) {
-    appendOutlineObject(doc, outlineFromFeed(feed));
-  }
-  return doc;
-}
 
 // Create an outline from a feed
 function outlineFromFeed(feed) {

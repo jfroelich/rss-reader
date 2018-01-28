@@ -2,6 +2,9 @@ import {open as openIconDb} from "/src/favicon-service.js";
 import subscribe from "/src/feed-ops/subscribe.js";
 import {open as openReaderDb} from "/src/rdb.js";
 
+// TODO: review whether importContext is even helpful here. I'm not sure there are all that
+// many parameters.
+
 // TODO: conns should be optional params instead of always created locally so that this can
 // run on test databases. In other words, conns should be dependency injected.
 // TODO: now that channel is injected, caller is responsible for lifetime management. review
