@@ -778,7 +778,7 @@ async function menuOptionExportOnclick() {
   const filename = 'subscriptions.xml';
   let conn, blob;
   try {
-    blob = exportOPML(conn, title);
+    blob = await exportOPML(conn, title);
   } catch(error) {
     // TODO: show an error message
     console.error(error);

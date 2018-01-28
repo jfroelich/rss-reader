@@ -42,19 +42,19 @@ export async function exportOPML(conn, title) {
 
   // Append the feeds to the document as outline elements
   for(const feed of feeds) {
-    const outline = doc.createElement('outline');
+    const outlineElement = doc.createElement('outline');
     if(feed.type) {
-      outline.setAttribute('type', feed.type);
+      outlineElement.setAttribute('type', feed.type);
     }
-    outline.setAttribute('xmlUrl', feedPeekURL(feed));
+    outlineElement.setAttribute('xmlUrl', feedPeekURL(feed));
     if(feed.title) {
-      outline.setAttribute('title', feed.title);
+      outlineElement.setAttribute('title', feed.title);
     }
     if(feed.description) {
-      outline.setAttribute('description', feed.description);
+      outlineElement.setAttribute('description', feed.description);
     }
     if(feed.link) {
-      outline.setAttribute('htmlUrl', feed.link);
+      outlineElement.setAttribute('htmlUrl', feed.link);
     }
 
     bodyElement.appendChild(outlineElement);
