@@ -44,7 +44,7 @@ export default async function importOPML(importContext, files) {
 
   // Check individual results. Just log failures
   for(const perFileResult of results) {
-    if(!perFileResult) {
+    if(perFileResult < 0) {
       console.error('Failed to import file');
     }
   }
