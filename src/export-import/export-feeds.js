@@ -98,15 +98,8 @@ function appendOutlineElement(doc, element) {
   bodyElement.appendChild(element);
 }
 
-function isOutline(outline) {
-  return typeof outline === 'object' && outline !== null;
-}
-
-
-
 function outlineObjectToElement(doc, outline) {
   assert(doc instanceof Document);
-  assert(isOutline(outline));
 
   const element = doc.createElement('outline');
   if(outline.type) {
