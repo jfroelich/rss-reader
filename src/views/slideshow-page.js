@@ -776,19 +776,31 @@ async function importFiles(files) {
 
 async function menuOptionExportOnclick() {
   const title = 'Subscriptions';
-  const fileName = 'subscriptions.xml';
-  let conn, feeds;
+  const filename = 'subscriptions.xml';
+  let conn, blob;
   try {
-    feeds = await getFeeds(conn);
-    exportFeeds(feeds, title, fileName);
+    blob = exportFeeds(conn, title);
   } catch(error) {
     // TODO: show an error message
     console.error(error);
     return;
   }
 
+  if(blob) {
+    downloadBlob(blob, filename);
+  }
+
   // TODO: visual feedback on completion
   console.log('Completed export');
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.setAttribute('download', filename);
+  anchor.href = url;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 function errorMessageContainerOnclick(event) {
