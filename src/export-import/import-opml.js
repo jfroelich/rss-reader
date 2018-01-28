@@ -10,7 +10,7 @@ import {open as openReaderDb} from "/src/rdb.js";
 // TODO: now that channel is injected, caller is responsible for lifetime management. review
 // if that is happening
 
-export default async function importOPMLFiles(importContext, files) {
+export default async function importOPML(importContext, files) {
   // TODO: consider relaxing this to array-like or is-iterable style test
   assert(files instanceof FileList);
 

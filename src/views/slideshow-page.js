@@ -16,7 +16,7 @@ import {
   open as openReaderDb
 } from "/src/rdb.js";
 import exportOPML from "/src/export-import/export-opml.js";
-import importOPMLFiles from "/src/export-import/import-opml.js";
+import importOPML from "/src/export-import/import-opml.js";
 import * as PageStyle from "/src/views/page-style-settings.js";
 import * as Slideshow from "/src/views/slideshow.js";
 
@@ -760,7 +760,7 @@ async function importFiles(files) {
   // TODO: show operation started
 
   try {
-    await importOPMLFiles(importContext, files);
+    await importOPML(importContext, files);
   } catch(error) {
     // TODO: visual feedback in event an error
     console.error(error);
