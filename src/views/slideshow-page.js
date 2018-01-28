@@ -16,7 +16,7 @@ import {
   open as openReaderDb
 } from "/src/rdb.js";
 import exportOPML from "/src/export-import/export-opml.js";
-import importOPMLFiles from "/src/export-import/import-opml-files.js";
+import importOPMLFiles from "/src/export-import/import-opml.js";
 import * as PageStyle from "/src/views/page-style-settings.js";
 import * as Slideshow from "/src/views/slideshow.js";
 
