@@ -182,8 +182,7 @@ function hideLoadingInformation() {
 }
 
 
-// TODO: as a result of introducing status I lost the non-blocking nature I was going for, so
-// I need to rethink this.
+// TODO: I lost the non-blocking nature I was going for, so I need to rethink this.
 // TODO: I don't think this needs the conn parameter?
 
 async function markSlideRead(conn, slideElement) {
@@ -1147,14 +1146,12 @@ async function initSlideshowPage() {
     return;
   }
 
-  // TODO: change appendSlides to return status and check it here
   // First load only 1, to load quickly
   await appendSlides(conn, initialLimit);
   console.log('Initial slide loaded');
 
   hideLoadingInformation();
 
-  // TODO: change appendSlides to return status and check it here
   // Now preload a couple more
   await appendSlides(conn, 2);
 

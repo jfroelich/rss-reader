@@ -369,7 +369,6 @@ async function subscribeFormOnsubmit(event) {
   context.notify = true;
   context.fetchFeedTimeout = 2000;
 
-  // TODO: subscribe no longer returns status
   let feed;
   try {
     feed = await subscribe(context, url);
