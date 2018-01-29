@@ -2,6 +2,8 @@ import {open as openIconDb} from "/src/favicon-service.js";
 import subscribe from "/src/feed-ops/subscribe.js";
 import {feedPeekURL, getFeeds, open as openReaderDb} from "/src/rdb.js";
 
+// TODO: eventually I think this module belongs together with model, perhaps rename rdb to model.js
+// or something and move exim and rdb to model folder. or storage folder. something like that.
 
 // Returns an opml document as a blob that contains outlines representing the feeds
 // in the app's db
@@ -66,19 +68,17 @@ export async function exportOPML(conn, title) {
   return new Blob([string], {type: 'application/xml'});
 }
 
-// TODO: review whether importContext is even helpful here. I'm not sure there are all that
-// many parameters.
-
-// TODO: conns should be optional params instead of always created locally so that this can
-// run on test databases. In other words, conns should be dependency injected.
-// TODO: connections should be defined externally so that databases can be mocked. I moved
-// them here so that caller has less burden, but it turns out that this removes dependency
-// injection pattern
-// TODO: now that channel is injected, caller is responsible for lifetime management. review
-// if that is happening
-
-export async function importOPML(importContext, files) {
-  // TODO: consider relaxing this to array-like or is-iterable style test
+// Imports one or more opml files into the app
+// @param feedConn {IDBDatabase} open conn to reader database
+// @param iconConn {IDBDatabase} open conn to favicon database
+// @param channel {BroadcastChannel} optional channel to notify of storage events
+// @param fetchFeedTimeout {Number} parameter fowarded to subscribe
+// @param files {FileList} a list of opml files to import
+// @return {Promise} a promise that resolves when finished to an array of numbers, or rejects
+// with an error. Each number corresponds to one of the files. -1 means weak error, otherwise
+// a count of number of feeds subscribed from the file. Rejections can leave the db in an
+// inconsistent state.
+export function importOPML(feedConn, iconConn, channel, fetchFeedTimeout, files) {
   assert(files instanceof FileList);
 
   console.log('Importing %d opml file(s)', files.length);
@@ -87,13 +87,12 @@ export async function importOPML(importContext, files) {
   }
 
   // Allow errors to bubble as fatal
-  const [feedConn, iconConn] = await Promise.all([openReaderDb(), openIconDb()]);
 
   const subscribeContext = {
     feedConn: feedConn,
     iconConn: iconConn,
-    channel: importContext.channel,
-    fetchFeedTimeout: importContext.fetchFeedTimeout,
+    channel: channel,
+    fetchFeedTimeout: fetchFeedTimeout,
     notify: false
   };
 
@@ -103,22 +102,10 @@ export async function importOPML(importContext, files) {
     promises.push(importOPMLFile(subscribeContext, file));
   }
 
-  // Any individual promise rejection shortcircuits Promise.all and is fatal to import
-  const results = await Promise.all(promises);
-
-  // Check individual results. Just log failures
-  for(const perFileResult of results) {
-    if(perFileResult < 0) {
-      console.error('Failed to import file');
-    }
-  }
-
-  // Release resources
-  // TODO: lifetime management should probably be moved to caller
-  feedConn.close();
-  iconConn.close();
+  return Promise.all(promises);
 }
 
+// Reads the file, parses the opml, and then subscribes to each of the feeds
 // Returns -1 in case of weak error. Returns 0 if no feeds subscribed. Otherwise returns the
 // count of feeds subscribed.
 async function importOPMLFile(subscribeContext, file) {
@@ -193,6 +180,8 @@ async function subscribeNoExcept(subscribeContext, url) {
   }
 }
 
+
+// TODO: this is mixing together dedup with select. It should be two functions
 
 function getFeedURLs(document) {
   const elements = document.querySelectorAll('opml > body > outline');

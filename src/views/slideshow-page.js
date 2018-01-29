@@ -14,7 +14,7 @@ import {
   isValidEntryId,
   open as openReaderDb
 } from "/src/rdb.js";
-import {exportOPML, importOPML} from "/src/exim.js";
+import {exportOPML, importOPML} from "/src/exim-utils.js";
 import * as PageStyle from "/src/views/page-style-settings.js";
 import * as Slideshow from "/src/views/slideshow.js";
 
@@ -753,20 +753,10 @@ function menuOptionImportOnclick() {
 }
 
 async function importFiles(files) {
-
-  // For the import, use the slideshow page's persistent channel
-  // Given that there could be several feeds being subscribed, use a slightly
-  // higher timeout than average to reduce the chance that some contention delays
-  // result in failure
-  const importContext = {
-    channel: channel,
-    fetchFeedTimeout: 10 * 1000
-  };
-
   // TODO: show operation started
 
   try {
-    await importOPML(importContext, files);
+    await importOPML(channel, files);
   } catch(error) {
     // TODO: visual feedback in event an error
     console.error(error);
@@ -781,11 +771,10 @@ async function importFiles(files) {
 }
 
 async function menuOptionExportOnclick() {
-  const title = 'Subscriptions';
-  const filename = 'subscriptions.xml';
-  let conn, blob;
+  const title = 'Subscriptions', filename = 'subscriptions.xml';
+  let blob;
   try {
-    blob = await exportOPML(conn, title);
+    blob = await exportOPML(title);
   } catch(error) {
     // TODO: show an error message
     console.error(error);
@@ -794,7 +783,7 @@ async function menuOptionExportOnclick() {
 
   downloadBlob(blob, filename);
   // TODO: visual feedback on completion
-  console.log('Completed export');
+  console.log('Export completed');
 }
 
 function downloadBlob(blob, filename) {
