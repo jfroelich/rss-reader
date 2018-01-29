@@ -1,5 +1,8 @@
-import assert from "/src/common/assert.js";
 import isBinaryURL from "/src/feed-poll/is-binary-url.js";
+
+function assert(value) {
+  if(!value) throw new Error('Assertion error');
+}
 
 let input = new URL('http://www.example.com/example.pdf');
 let result = isBinaryURL(input);

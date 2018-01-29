@@ -1,7 +1,7 @@
-import assert from "/src/common/assert.js";
 import {truncateHTML} from "/src/common/html-utils.js";
 
 // TODO: it would be better if subscribe could connect on demand
+// so that this does not need to be explicit
 import {open as openIconDb} from "/src/favicon-service.js";
 
 import subscribe from "/src/feed-ops/subscribe.js";
@@ -148,7 +148,10 @@ export function errorMessageHide() {
 }
 
 function showSection(menuItemElement) {
-  assert(menuItemElement instanceof Element);
+  if(!menuItemElement) {
+    console.error('Invalid menuItemElement parameter');
+    return;
+  }
 
   if(currentMenuItem === menuItemElement) {
     return;
@@ -170,7 +173,10 @@ function showSection(menuItemElement) {
 
   // TODO: while this is certainly indicative of a serious error, serious errors shouldn't happen
   // at UI level, so something else should happen here?
-  assert(sectionElement instanceof Element, 'No matching section ' + sectionId);
+  if(!sectionElement) {
+    console.error('Could not find section element with id', sectionId);
+    return;
+  }
 
   sectionElement.style.display = 'block';
 
@@ -252,8 +258,6 @@ function feedListAppendFeed(feed) {
     feedListElement.appendChild(itemElement);
     inserted = true;
   }
-
-  assert(inserted);
   updateFeedCount();
 }
 
@@ -441,8 +445,10 @@ async function feedListInit() {
 function feedListRemoveFeed(feedId) {
   const feedElement = document.querySelector(`#feedlist li[feed="${feedId}"]`);
 
-  // TODO: don't assert in UI
-  assert(feedElement instanceof Element);
+  if(!feedElement) {
+    console.error('Could not find feed element with feed id', feedId);
+    return;
+  }
 
   feedElement.removeEventListener('click', feedListItemOnclick);
   feedElement.remove();
@@ -538,8 +544,10 @@ function enableBgProcessingCheckboxOnclick(event) {
 async function bgProcessingCheckboxInit() {
   const checkbox = document.getElementById('enable-background');
 
-  // TODO: do not assert in the UI
-  assert(checkbox instanceof Element);
+  if(!checkbox) {
+    console.error('Could not find checkbox #enable-background');
+    return;
+  }
 
   // TODO: this should be using a local storage variable and instead the permission should be
   // permanently defined.
@@ -763,10 +771,18 @@ showSectionById('subs-list-section');
 // Duration and delay can be integer or floats and are required.
 function fadeElement(element, durationSecs, delaySecs) {
   return new Promise(function executor(resolve, reject) {
-    assert(element instanceof Element);
-    assert(element.style instanceof CSSStyleDeclaration);
-    assert(typeof durationSecs === 'number');
-    assert(typeof delaySecs === 'number');
+    if(!element) {
+      console.error('Invalid element parameter', element);
+      return;
+    }
+
+    if(!element.style) {
+      console.debug('Cannot fade element without a style property');
+      return;
+    }
+
+    durationSecs = Number.isInteger(durationSecs) ? durationSecs : 1;
+    delaySecs = Number.isInteger(delaySecs) ? delaySecs : 0;
 
     const style = element.style;
     if(style.display === 'none') {

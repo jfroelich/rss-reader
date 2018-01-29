@@ -1,11 +1,11 @@
-import assert from "/src/common/assert.js";
 import * as MimeUtils from "/src/common/mime-utils.js";
 
-// Return true if url probably represents a binary resource. This is shallow in the sense that it
-// does not actually investigate the bytes of the resource, nor does it fetch the resource. This
-// sniffer looks purely at the url itself.
+// Return true if url probably represents a binary resource, based only on the characters of the
+// url itself (and not the actual resource).
 export default function isBinaryURL(url) {
-  assert(url instanceof URL);
+  if(!(url instanceof URL)) {
+    throw new TypeError('Invalid url parameter', url);
+  }
 
   // Handle a few obvious cases
   const textProtocols = ['tel:', 'mailto:', 'javascript:'];
@@ -38,19 +38,22 @@ export default function isBinaryURL(url) {
 // @param extension {String}
 // @returns {String} a mime type, or undefined on error or failed lookup
 function findMimeTypeForExtension(extension) {
-  const extensionVarType = typeof extension;
-  if(extensionVarType === 'undefined' || extension === null) {
-    return;
+  if(typeof extension === 'string') {
+    return EXTENSION_TYPE_MAP[extension];
   }
-
-  assert(extensionVarType === 'string');
-  return EXTENSION_TYPE_MAP[extension];
 }
 
 
 // Extracts the mime type of a data uri as string. Returns undefined if not found or invalid.
 function findMimeTypeInDataURL(url) {
-  assert(url.protocol === 'data:');
+
+  if(!(url instanceof URL)) {
+    throw new TypeError('Invalid url parameter', url);
+  }
+
+  if(url.protocol !== 'data:') {
+    throw new TypeError('Called findMimeTypeInDataURL on non data url', url.href);
+  }
 
   const href = url.href;
 
@@ -110,7 +113,10 @@ function isAlphanumeric(string) {
 
 
 function isBinaryMimeType(mimeType) {
-  assert(MimeUtils.isMimeType(mimeType));
+
+  if(!MimeUtils.isMimeType(mimeType)) {
+    throw new TypeError('Invalid mime type parameter', mimeType);
+  }
 
   // Mime types that have the application super type but are not binary
   const appTextTypes = [

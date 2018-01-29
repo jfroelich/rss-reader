@@ -1,4 +1,3 @@
-import assert from "/src/common/assert.js";
 
 // The type of the HTML element used for each slide
 export const SLIDE_ELEMENT_NAME = 'slide';
@@ -23,7 +22,6 @@ export function isCurrentSlide(slide) {
 }
 
 export function getFirstSlide() {
-  assert(container instanceof Element);
   return container.firstElementChild;
 }
 
@@ -82,13 +80,11 @@ export function prev() {
 
 // Returns the number of slides
 export function count() {
-  assert(container instanceof Element);
   return container.childElementCount;
 }
 
 // Returns a node list of the currently loaded slides
 export function getSlides() {
-  assert(container instanceof Element);
   return container.querySelectorAll(SLIDE_ELEMENT_NAME);
 }
 
@@ -104,7 +100,10 @@ function isValidTransitionDuration(duration) {
 
 // Change the duration of slide transitions from the default
 export function setTransitionDuration(durationInput) {
-  assert(isValidTransitionDuration(duration));
+  if(!isValidTransitionDuration(durationInput)) {
+    throw new TypeError('Invalid duration parameter', durationInput);
+  }
+
   duration = durationInput;
 }
 
@@ -115,8 +114,10 @@ export function create() {
 
 // Append a slide to the view
 export function append(slide) {
-  assert(container instanceof Element);
-  assert(isSlide(slide));
+
+  if(!isSlide(slide)) {
+    throw new TypeError('Invalid slide parameter', slide);
+  }
 
   // Caller handles slide clicks
   //slide.addEventListener('click', onClick);
@@ -162,11 +163,6 @@ export function append(slide) {
 
 // Remove a slide from the dom
 export function remove(slide) {
-  assert(slide instanceof Element);
-
-  // Caller responsible for removing
-  //slide.removeEventListener('click', onClick);
-
   slide.remove();
 }
 

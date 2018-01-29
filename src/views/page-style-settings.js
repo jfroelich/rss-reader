@@ -1,8 +1,3 @@
-import assert from "/src/common/assert.js";
-
-// TODO: it's not finding rules because I am using multiple style sheets.
-// Change rule finder to search all style sheets.
-
 // TODO: after moving display setting change ability from options page to slideshow page,
 // this this module will be used exclusively by slideshow page, and should merged into it, or
 // made as a helper module to it exclusively.
@@ -26,7 +21,6 @@ export function pageStyleSettingsOnchange(event) {
 // default style sheet.
 export function pageStyleSettingsOnload() {
   const sheet = document.styleSheets[0];
-  assert(sheet instanceof CSSStyleSheet);
   sheet.addRule('.entry', entryCSSCreateEntryRuleText());
 
   // TODO: convert these two to be like above pattern where I get the text and then add the rule
@@ -116,7 +110,6 @@ function entryCSSUpdateRule() {
     return;
   }
 
-  assert(rule instanceof CSSStyleRule);
   const style = rule.style;
 
   const path = localStorage.BG_IMAGE;
@@ -214,10 +207,8 @@ function entryCSSUpdateContentRule() {
 // @param selectorText {String}
 // @returns rule {CSSStyleRule}
 function findRule(selectorText) {
-  const sheets = document.styleSheets;
-  for(const sheet of sheets) {
-    const rules = sheet.rules;
-    for(const rule of rules) {
+  for(const sheet of document.styleSheets) {
+    for(const rule of sheet.rules) {
       if(rule.selectorText === selectorText) {
         return rule;
       }

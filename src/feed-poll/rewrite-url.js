@@ -1,11 +1,12 @@
-import assert from "/src/common/assert.js";
-
 // Applies a set of rules to a url object and returns a modified url object. Returns undefined if
 // no rewriting occurred or unable to rewrite successfully.
 // @param url {URL}
 // @returns {URL}
 export default function rewriteURL(url) {
-  assert(url instanceof URL);
+  if(!(url instanceof URL)) {
+    throw new TypeError('Invalid url parameter', url);
+  }
+
   if(url.hostname === 'news.google.com' && url.pathname === '/news/url') {
     const param = url.searchParams.get('url');
     try {

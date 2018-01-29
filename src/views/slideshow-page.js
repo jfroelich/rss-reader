@@ -1,4 +1,3 @@
-import assert from "/src/common/assert.js";
 import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
 import markEntryRead from "/src/feed-ops/mark-entry-read.js";
 import {
@@ -114,9 +113,11 @@ async function onEntryAddedMessage(message) {
 function showErrorMessage(messageText) {
   const container = document.getElementById('error-message-container');
 
-  // TODO: do not assert in UI
-  assert(container instanceof Element, 'Cannot find error message container element to show error',
-    messageText);
+  if(!container) {
+    console.error('Could not find element #error-message-container to show error', messageText);
+    return;
+  }
+
   container.textContent = messageText;
   container.style.display = 'block';
 }
@@ -262,8 +263,10 @@ async function appendSlides(conn, limit) {
 // Given an entry, create a new slide element and append it to the view
 function appendSlide(entry) {
 
-  // TODO: do not assert in the UI
-  assert(isEntry(entry));
+  if(!isEntry(entry)) {
+    console.error('Invalid entry parameter', entry);
+    return;
+  }
 
   console.log('Creating and appending slide for entry', entry.id);
   const slide = Slideshow.create();
@@ -364,7 +367,10 @@ function createFeedSourceElement(entry) {
 // @param title {String} the title of an web page
 // @returns {String} the title without publisher information
 function filterPublisher(title) {
-  assert(typeof title === 'string');
+  if(typeof title !== 'string') {
+    console.error('Invalid title parameter', title);
+  }
+
   // Look for a delimiter
   let delimiterPosition = title.lastIndexOf(' - ');
   if(delimiterPosition < 0) {
@@ -474,10 +480,11 @@ async function onSlideClick(event) {
   // Start from parent node to skip the closest test against the anchor itself.
   const clickedSlide = anchor.parentNode.closest('slide');
 
-  // Throw an assertion error if we didn't find the containing slide.
-  // TODO: don't assert at the UI level. Do something like show a human-friendly error message and
-  // exit early. But maybe this shouldn't be a visible error and bad behavior should happen?
-  assert(clickedSlide instanceof Element);
+  if(!clickedSlide) {
+    // TODO: show an error?
+    console.error('Could not find clicked slide');
+    return;
+  }
 
   // Weak sanity check that the element is a slide, mostly just to monitor the recent changes to
   // this function.
