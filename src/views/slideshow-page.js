@@ -14,7 +14,7 @@ import {
   isValidEntryId,
   open as openReaderDb
 } from "/src/rdb.js";
-import {exportOPML, importOPML} from "/src/exim-utils.js";
+import {exportOPML, importOPML} from "/src/views/exim-utils.js";
 import * as PageStyle from "/src/views/page-style-settings.js";
 import * as Slideshow from "/src/views/slideshow.js";
 
