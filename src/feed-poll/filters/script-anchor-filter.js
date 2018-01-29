@@ -21,11 +21,11 @@ export default function filterDocument(document) {
 // For a url string to have the script protocol it must be longer than this
 const JS_PREFIX_LEN = 'javascript:'.length;
 
-// Returns true if the url has the 'javascript:' protocol. Does not throw in the case of bad input.
-// Tolerates leading whitespace
+// Returns true if the url has the 'javascript:' protocol. Does not throw in
+// the case of bad input. Tolerates leading whitespace.
 function hasScriptProtocol(urlString) {
-  // The type check is done to allow for bad inputs for caller convenience. The length check is an
-  // attempt to reduce the number of regex calls.
+  // The type check is done to allow for bad inputs for caller convenience. The
+  // length check is an attempt to reduce the number of regex calls.
   return typeof urlString === 'string' &&
     urlString.length > JS_PREFIX_LEN &&
     /^\s*javascript:/i.test(urlString);

@@ -17,9 +17,9 @@ import {
 } from "/src/feed-poll/poll-feeds.js";
 import {open as openReaderDb} from "/src/rdb.js";
 
-// TODO: this is doing somethings that should be in a layer below the view. move things into
-// that other layer. This should be a dumber view, like a thin-client
-
+// TODO: this is doing somethings that should be in a layer below the view.
+// move things into that other layer. This should be a dumber view, like a
+// thin-client
 
 function handleCompactFaviconsAlarm(alarm) {
   return compactIconStore().catch(console.error);

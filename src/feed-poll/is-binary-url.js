@@ -1,7 +1,7 @@
 import * as MimeUtils from "/src/common/mime-utils.js";
 
-// Return true if url probably represents a binary resource, based only on the characters of the
-// url itself (and not the actual resource).
+// Return true if url probably represents a binary resource, based only on the
+// characters of the url itself (and not the actual resource).
 export default function isBinaryURL(url) {
   if(!(url instanceof URL)) {
     throw new TypeError('Invalid url parameter', url);
@@ -44,7 +44,8 @@ function findMimeTypeForExtension(extension) {
 }
 
 
-// Extracts the mime type of a data uri as string. Returns undefined if not found or invalid.
+// Extracts the mime type of a data uri as string. Returns undefined if not
+// found or invalid.
 function findMimeTypeInDataURL(url) {
 
   if(!(url instanceof URL)) {
@@ -52,7 +53,8 @@ function findMimeTypeInDataURL(url) {
   }
 
   if(url.protocol !== 'data:') {
-    throw new TypeError('Called findMimeTypeInDataURL on non data url', url.href);
+    throw new TypeError('Called findMimeTypeInDataURL on non data url',
+      url.href);
   }
 
   const href = url.href;
@@ -65,7 +67,8 @@ function findMimeTypeInDataURL(url) {
   const PREFIX_LENGTH = 'data:'.length;
 
   // Limit the scope of the search
-  const haystack = href.substring(PREFIX_LENGTH, PREFIX_LENGTH + MimeUtils.MIME_TYPE_MAX_LENGTH);
+  const haystack = href.substring(PREFIX_LENGTH,
+    PREFIX_LENGTH + MimeUtils.MIME_TYPE_MAX_LENGTH);
 
   const semicolonPosition = haystack.indexOf(';');
   if(semicolonPosition < 0) {
@@ -79,9 +82,9 @@ function findMimeTypeInDataURL(url) {
   }
 }
 
-// Given a url, return the extension of the filename component of the path component. Return
-// undefined if no extension found. The returned string excludes the leading '.'.
-// @returns {String}
+// Given a url, return the extension of the filename component of the path
+// component. Return undefined if no extension found. The returned string
+// excludes the leading '.'.
 function getExtensionFromURL(url) {
   // Approximate path min length '/.b'
   const minlen = 3;
@@ -101,8 +104,9 @@ function getExtensionFromURL(url) {
   }
 }
 
-// From the start of the string to its end, if one or more of the characters is not in the class of
-// alphanumeric characters, then the string is not alphanumeric.
+// From the start of the string to its end, if one or more of the characters is
+// not in the class of alphanumeric characters, then the string is not
+// alphanumeric.
 // See https://stackoverflow.com/questions/4434076
 // See https://stackoverflow.com/questions/336210
 // The empty string is true, null/undefined are true
@@ -110,7 +114,6 @@ function getExtensionFromURL(url) {
 function isAlphanumeric(string) {
   return /^[a-zA-Z0-9]*$/.test(string);
 }
-
 
 function isBinaryMimeType(mimeType) {
 
@@ -169,7 +172,8 @@ const EXTENSION_TYPE_MAP = {
   cpp:  'text/plain',
   css:  'text/css',
   doc:  'application/msword',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  docx:
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   eml:  'message/rfc822',
   eps:  'application/postscript',
   exe:  'application/octet-stream',
@@ -216,7 +220,8 @@ const EXTENSION_TYPE_MAP = {
   png:  'image/x-png',
   pps:  'application/vnd.ms-powerpoint',
   ppt:  'application/vnd.ms-powerpoint',
-  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  pptx:
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   ps:   'application/postscript',
   rar:  'application/octet-stream',
   rdf:  'application/rdf+xml',

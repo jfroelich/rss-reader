@@ -3,8 +3,9 @@ import {imageHasSource} from "/src/common/dom-utils.js";
 
 // Transforms lazily-loaded images found in document content
 
-// TODO: try and determine if an image with a src attribute is using a placeholder image in the
-// src attribute and a full image from another attribute
+// TODO: try and determine if an image with a src attribute is using a
+// placeholder image in the src attribute and a full image from another
+// attribute
 
 const DEBUG = false;
 

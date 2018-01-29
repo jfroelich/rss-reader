@@ -1,5 +1,5 @@
-// Applies a set of rules to a url object and returns a modified url object. Returns undefined if
-// no rewriting occurred or unable to rewrite successfully.
+// Applies a set of rules to a url object and returns a modified url object.
+// Returns undefined if no rewriting occurred or unable to rewrite successfully.
 // @param url {URL}
 // @returns {URL}
 export default function rewriteURL(url) {

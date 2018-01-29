@@ -3,9 +3,10 @@ import {parseSrcsetWrapper} from "/src/common/dom-utils.js";
 
 // Transforms responsive images in document content
 
-// An image is 'responsive' if it uses a srcset instead of a src, such that the actual image used
-// is derived dynamically after the document has been loaded. This filter looks for such images
-// and changes them to use one of the descriptors from the srcset as the src.
+// An image is 'responsive' if it uses a srcset instead of a src, such that the
+// actual image used is derived dynamically after the document has been loaded.
+// This filter looks for such images and changes them to use one of the
+// descriptors from the srcset as the src.
 
 export default function main(doc) {
   assert(doc instanceof Document);
@@ -26,8 +27,9 @@ export default function main(doc) {
   }
 }
 
-// Selects the best srcset to use from an image's srcset attribute value. Returns the parsed
-// descriptor object. Returns undefined if no descriptor found
+// Selects the best srcset to use from an image's srcset attribute value.
+// Returns the parsed descriptor object. Returns undefined if no descriptor
+// found
 function findBestSrcsetDescriptorForImage(image) {
   const srcsetValue = image.getAttribute('srcset');
   if(!srcsetValue) {
@@ -36,15 +38,16 @@ function findBestSrcsetDescriptorForImage(image) {
 
   const descriptors = parseSrcsetWrapper(srcsetValue);
 
-  // For the time being, the preference is whatever is first, no special handling of descriptor.d,
-  // and only one dimension needed
+  // For the time being, the preference is whatever is first, no special
+  // handling of descriptor.d, and only one dimension needed
   for(const desc of descriptors) {
     if(desc.url && (desc.w || desc.h)) {
       return desc;
     }
   }
 
-  // If we did not find a descriptor above, search again but relax the dimensions requirement
+  // If we did not find a descriptor above, search again but relax the
+  // dimensions requirement
   for(const desc of descriptors) {
     if(desc.url) {
       return desc;
@@ -52,8 +55,8 @@ function findBestSrcsetDescriptorForImage(image) {
   }
 }
 
-// Changes the src, width, and height of an image to the properties of the given descriptor,
-// and removes the srcset attribute.
+// Changes the src, width, and height of an image to the properties of the
+// given descriptor, and removes the srcset attribute.
 function transformImageToDescriptor(image, descriptor) {
   image.setAttribute('src', descriptor.url);
 

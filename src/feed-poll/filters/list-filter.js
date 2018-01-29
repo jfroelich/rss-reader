@@ -3,8 +3,9 @@ import assert from "/src/common/assert.js";
 // Filters certain list elements from document content
 
 
-// TODO: restrict children of list to proper child type. E.g. only allow li or form within ul/ol,
-// and dd/dt/form within dl. Do some type of transform like move such items to within a new child
+// TODO: restrict children of list to proper child type. E.g. only allow li or
+// form within ul/ol, and dd/dt/form within dl. Do some type of transform like
+// move such items to within a new child
 
 export default function filterDocument(doc) {
   assert(doc instanceof Document);
@@ -15,10 +16,11 @@ export default function filterDocument(doc) {
   const ancestor = doc.body;
   const lists = ancestor.querySelectorAll('ul, ol, dl');
 
-  // TODO: maybe this empty checking should be moved into the leafFilterIsLeaf logic as a special
-  // case for list elements. That way it will be recursive. But this does a moving of children where
-  // as the leaf code just removes. So that would also entail changing the meaning of leaf filtering
-  // from filter to transform.
+  // TODO: maybe this empty checking should be moved into the leafFilterIsLeaf
+  // logic as a special case for list elements. That way it will be recursive.
+  // But this does a moving of children where as the leaf code just removes. So
+  // that would also entail changing the meaning of leaf filtering from filter
+  // to transform.
   for(const list of lists) {
     if(isEmptyList(list)) {
       removeEmptyList(list);
@@ -32,8 +34,9 @@ export default function filterDocument(doc) {
 
 // Return true if list is 'empty'
 function isEmptyList(list) {
-  // Return true if the list has no child nodes. This is redundant with leaf filtering but I think
-  // it is ok and prefer to not make assumptions about composition with other filters
+  // Return true if the list has no child nodes. This is redundant with leaf
+  // filtering but I think it is ok and prefer to not make assumptions about
+  // composition with other filters
   if(!list.firstChild) {
     return true;
   }
@@ -45,13 +48,14 @@ function isEmptyList(list) {
     return true;
   }
 
-  // TODO: this check is too simple, because it ignores tolerable intermediate elements, such as
-  // <ul><form><li/><li/></form></ul>. That is not empty. And I believe it is still well-formed.
+  // TODO: this check is too simple, because it ignores tolerable intermediate
+  // elements, such as <ul><form><li/><li/></form></ul>. That is not empty. And
+  // I believe it is still well-formed.
 
   // If this is the only element in the list, then check if it is empty.
-  // NOTE: the first child check is admittedly simplistic and easily defeated even just by a
-  // whitespace text node. But the goal I think is not to be perfect and just grab low hanging
-  // fruit.
+  // NOTE: the first child check is admittedly simplistic and easily defeated
+  // even just by a whitespace text node. But the goal I think is not to be
+  // perfect and just grab low hanging fruit.
   if(!item.nextElementSibling && !item.firstChild) {
     return true;
   }
@@ -71,14 +75,14 @@ function removeEmptyList(list) {
 
   const firstChild = list.firstChild;
 
-  // Move any child nodes (there may be none). As each first child is moved, the next child becomes
-  // the first child.
+  // Move any child nodes (there may be none). As each first child is moved,
+  // the next child becomes the first child.
   for(let node = firstChild; node; node = list.firstChild) {
     list.parentNode.insertBefore(node, list);
   }
 
-  // Add trailing padding if needed. Also check if there were children, so as to not add padding on
-  // top of the leading padding when there is no need.
+  // Add trailing padding if needed. Also check if there were children, so as
+  // to not add padding on top of the leading padding when there is no need.
   if(firstChild && list.nextSibling &&
     list.nextSibling.nodeType === Node.TEXT_NODE) {
     list.parentNode.insertBefore(doc.createTextNode(' '), list);
@@ -98,9 +102,10 @@ function unwrapSingleItemList(list) {
   const doc = list.ownerDocument;
   const item = list.firstElementChild;
 
-  // If the list has no child elements then just remove. This is overly simple and could lead to
-  // data loss, but it is based on the assumption that empty lists are properly handled in the
-  // first place earlier. Basically, this should never happen and should almost be an assert?
+  // If the list has no child elements then just remove. This is overly simple
+  // and could lead to data loss, but it is based on the assumption that empty
+  // lists are properly handled in the first place earlier. Basically, this
+  // should never happen and should almost be an assert?
   if(!item) {
     list.remove();
     return;
@@ -117,9 +122,9 @@ function unwrapSingleItemList(list) {
     return;
   }
 
-  // If the list has one child element of the correct type, and that child element has no inner
-  // content, then remove the list. This will also remove any non-element nodes within the list
-  // outside of the child element.
+  // If the list has one child element of the correct type, and that child
+  // element has no inner content, then remove the list. This will also remove
+  // any non-element nodes within the list outside of the child element.
   if(!item.firstChild) {
     // If removing the list, avoid the possible merging of adjacent text nodes
     if(list.previousSibling &&
@@ -136,8 +141,8 @@ function unwrapSingleItemList(list) {
     return;
   }
 
-  // The list has one child element with one or more child nodes. Move the child nodes to before the
-  // list and then remove iterator.
+  // The list has one child element with one or more child nodes. Move the
+  // child nodes to before the list and then remove iterator.
 
   // Add leading padding
   if(list.previousSibling &&

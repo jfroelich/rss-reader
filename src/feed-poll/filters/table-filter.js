@@ -10,7 +10,8 @@ export default function filterDocument(doc, scanLimit) {
     return;
   }
 
-  const elements = doc.body.querySelectorAll('colgroup, hgroup, multicol, tbody, tfoot, thead');
+  const elements = doc.body.querySelectorAll(
+    'colgroup, hgroup, multicol, tbody, tfoot, thead');
   for(const element of elements) {
     unwrapElement(element);
   }

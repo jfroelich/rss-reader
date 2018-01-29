@@ -4,9 +4,10 @@ import assert from "/src/common/assert.js";
 
 // Filters width and height of large images to avoid skewing in view
 // An image is large if it is more than 1000px in width or height
-// This allows retaining of width and height in other images, which avoids the issue of removing
-// width and height from small images that have very large natural width or height. This is typical
-// of icon or svg images that are very large when missing dimensions.
+// This allows retaining of width and height in other images, which avoids the
+// issue of removing width and height from small images that have very large
+// natural width or height. This is typical of icon or svg images that are very
+// large when missing dimensions.
 export default function filterDocument(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {

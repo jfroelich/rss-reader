@@ -1,7 +1,7 @@
 import assert from "/src/common/assert.js";
 
-// Filters certain whitespace from a document. This scans the text nodes of a document and
-// modifies certain text nodes.
+// Filters certain whitespace from a document. This scans the text nodes of a
+// document and modifies certain text nodes.
 
 export default function nodeWhitespaceFilter(doc) {
   assert(doc instanceof Document);
@@ -26,7 +26,8 @@ export default function nodeWhitespaceFilter(doc) {
 }
 
 function isSensitive(textNode) {
-  return textNode.parentNode.closest('code, pre, ruby, script, style, textarea, xmp');
+  return textNode.parentNode.closest(
+    'code, pre, ruby, script, style, textarea, xmp');
 }
 
 function condenseWhitespace(string) {

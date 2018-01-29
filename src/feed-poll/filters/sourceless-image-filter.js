@@ -10,7 +10,8 @@ export default function filter(doc) {
     return;
   }
 
-  // Use querySelectorAll over getElementsByTagName to simplify removal during iteration.
+  // Use querySelectorAll over getElementsByTagName to simplify removal during
+  // iteration.
 
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {

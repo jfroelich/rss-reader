@@ -1,8 +1,6 @@
 import assert from "/src/common/assert.js";
 
 // Filters iframe elements from document content
-
-
 export default function filter(doc) {
   assert(doc instanceof Document);
   if(!doc.body) {

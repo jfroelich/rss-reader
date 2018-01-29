@@ -3,7 +3,8 @@ import {unwrapElement} from "/src/common/dom-utils.js";
 
 // TODO: move to basic filters
 
-// Filters or transforms certain form elements and form-related elements from document content
+// Filters or transforms certain form elements and form-related elements from
+// document content
 
 export default function formFilter(doc) {
   assert(doc instanceof Document);
@@ -25,8 +26,8 @@ export default function formFilter(doc) {
     unwrapElement(label);
   }
 
-  // TODO: add contains check to reduce operations like removing option nested in select removed in
-  // prior iteration
+  // TODO: add contains check to reduce operations like removing option nested
+  // in select removed in prior iteration
 
   // Remove form fields
   const inputSelector = 'button, fieldset, input, optgroup, option, select, textarea';

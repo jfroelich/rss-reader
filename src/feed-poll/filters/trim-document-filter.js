@@ -1,4 +1,5 @@
-// Remove whitespace and whitespace-like content from the start and end of a document's body.
+// Remove whitespace and whitespace-like content from the start and end of a
+// document's body.
 export default function trimDocumentFilter(doc) {
 
   if(!(doc instanceof Document)) {
@@ -29,7 +30,8 @@ function step(startNode, edgeName) {
 }
 
 function isTrimmable(node) {
-  // Leave it up to the engine to determine if this is a hotspot that needs hoisting
+  // Leave it up to the engine to determine if this is a hotspot that needs
+  // hoisting
   const spaceElements = ['br', 'hr', 'nobr'];
 
   if(node.nodeType === Node.TEXT_NODE) {

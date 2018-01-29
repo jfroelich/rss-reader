@@ -2,9 +2,9 @@ import assert from "/src/common/assert.js";
 
 // TODO: move to basic filters
 
-// TODO: hostSelectorMap should be a parameter to this function so that configuration is defined
-// externally so that it can be changed without needing to modify its internals (open-closed
-// principle)
+// TODO: hostSelectorMap should be a parameter to this function so that
+// configuration is defined externally so that it can be changed without
+// needing to modify its internals (open-closed principle)
 
 // @param doc {Document}
 // @param url {URL}

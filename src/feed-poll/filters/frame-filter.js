@@ -7,8 +7,8 @@ import assert from "/src/common/assert.js";
 export default function frameFilter(doc) {
   assert(doc instanceof Document);
 
-  // It is a bit counterintuitive but if a document is framed then the root frame is its body,
-  // and doc.body points to it (and not some <body> element)
+  // It is a bit counterintuitive but if a document is framed then the root
+  // frame is its body, and doc.body points to it (and not some <body> element)
 
   let originalBody = doc.body;
 
@@ -17,7 +17,8 @@ export default function frameFilter(doc) {
     return;
   }
 
-  // If the body element is a body element and not a frame element, then there is nothing to do
+  // If the body element is a body element and not a frame element, then there
+  // is nothing to do
   if(originalBody.localName !== 'frameset') {
     return;
   }
@@ -40,8 +41,8 @@ export default function frameFilter(doc) {
   }
 
   // Replace the old frameset body with the new body
-  // TODO: this assumes the body is always located under the doc element, I think that is ok? Should
-  // maybe be stricter.
+  // TODO: this assumes the body is always located under the doc element, I
+  // think that is ok? Should maybe be stricter.
   doc.documentElement.replaceChild(newBody, originalBody);
 
   // Remove any frame or frameset elements if somehow any remain

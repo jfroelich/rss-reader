@@ -44,24 +44,28 @@ export default function lonestarFilter(doc, documentURLString) {
   }
 
 
-  // Build document url. Implicitly this also validates that the url is canonical.
-  // If this fails this throws a type error, which is a kind of assertion error but it is expected
-  // here, but it should never happen. Anyway this is a mess and eventually I should just
-  // accept a URL as input instead of a string
+  // Build document url. Implicitly this also validates that the url is
+  // canonical.
+  // If this fails this throws a type error, which is a kind of assertion
+  // error but it is expected
+  // here, but it should never happen. Anyway this is a mess and eventually
+  // I should just accept a URL as input instead of a string
   assert(typeof documentURLString === 'string' && documentURLString.length > 0);
   const documentURL = new URL(documentURLString);
 
 
 
-  // TODO: when checking image visibility, should I be checking ancestry? Or just the image
-  // itself?
+  // TODO: when checking image visibility, should I be checking ancestry? Or
+  // just the image itself?
 
-  // Telemetry images are usually hidden, so treat visibility as an indicator. False positives are
-  // probably not too harmful. Removing images based on visibility overlaps with sanitization, but
-  // this is intentionally naive regarding what other filters are applied to the document.
+  // Telemetry images are usually hidden, so treat visibility as an indicator.
+  // False positives are probably not too harmful. Removing images based on
+  // visibility overlaps with sanitization, but this is intentionally naive
+  // regarding what other filters are applied to the document.
   const images = doc.body.querySelectorAll('img');
   for(const image of images) {
-    if(isHiddenInlineElement(image) || isPixel(image) || hasTelemetrySource(image, documentURL)) {
+    if(isHiddenInlineElement(image) || isPixel(image) ||
+      hasTelemetrySource(image, documentURL)) {
       removeImage(image);
     }
   }
@@ -69,12 +73,12 @@ export default function lonestarFilter(doc, documentURLString) {
 
 // Returns true if an image is a pixel-sized image
 function isPixel(image) {
-  return image.hasAttribute('src') && image.hasAttribute('width') && image.width < 2 &&
-    image.hasAttribute('height') && image.height < 2;
+  return image.hasAttribute('src') && image.hasAttribute('width') &&
+    image.width < 2 && image.hasAttribute('height') && image.height < 2;
 }
 
-// This test only considers the src attribute. Using srcset or picture source is exceedingly rare
-// mechanism for telemetry so ignore those channels.
+// This test only considers the src attribute. Using srcset or picture source
+// is exceedingly rare mechanism for telemetry so ignore those channels.
 // @param image {Image}
 // @param documentURL {URL}
 function hasTelemetrySource(image, documentURL) {
@@ -88,12 +92,16 @@ function hasTelemetrySource(image, documentURL) {
     return false;
   }
 
-  // TODO: does HTMLImageElement provide URL-like properties, similar to HTMLAnchorElement?
+  // TODO: does HTMLImageElement provide URL-like properties, similar to
+  // HTMLAnchorElement?
 
-  // TODO: all these attempts to avoid parsing are probably silly when it isn't even clear
-  // this is slow. Just parse the url. It is simpler. This was premature optimization
+  // TODO: all these attempts to avoid parsing are probably silly when it
+  // isn't even clear
+  // This is slow. Just parse the url. It is simpler. This was premature
+  // optimization
 
-  // Prior to parsing the url, try and exclude some of the url strings to avoid the parsing cost.
+  // Prior to parsing the url, try and exclude some of the url strings to avoid
+  // the parsing cost.
 
   // Very short urls are probably not telemetry
   const MIN_IMAGE_URL_LENGTH = 's.gif'.length;
@@ -101,21 +109,22 @@ function hasTelemetrySource(image, documentURL) {
     return false;
   }
 
-  // Ignore urls that appear invalid. Invalid urls are not a telemetry concern because requests will
-  // presumably fail.
+  // Ignore urls that appear invalid. Invalid urls are not a telemetry concern
+  // because requests will presumably fail.
   if(src.includes(' ')) {
     return false;
   }
 
   // For protocol-relative urls, allow them and continue.
-  // TODO: but that just fails in the URL parser ....? Need to revisit this. Basically I want to
-  // be able to match and reject protocol relative urls. But I want to work with a URL object.
-  // Perhaps I should substitute in http automatically? Or require base url here when constructing
-  // the url?
+  // TODO: but that just fails in the URL parser ....? Need to revisit this.
+  // Basically I want to be able to match and reject protocol relative urls.
+  // But I want to work with a URL object. Perhaps I should substitute in http
+  // automatically? Or require base url here when constructing the url?
 
   // Relative urls are generally not telemetry urls.
   // Urls using the 'data:' protocol are generally not telemetry
-  // urls because no networking is involved. Basically only look at http and https
+  // urls because no networking is involved. Basically only look at http and
+  // https
   // TODO: make non-capturing regex
   const URL_START_PATTERN = /^(http:\/\/|https:\/\/|\/\/)/i;
   if(!URL_START_PATTERN.test(src)) {
@@ -126,8 +135,8 @@ function hasTelemetrySource(image, documentURL) {
   try {
     imageURL = new URL(src);
   } catch(error) {
-    // It is a relative url, or an invalid url of some kind. It is probably not telemetry, or at
-    // least, not a telemetry concern.
+    // It is a relative url, or an invalid url of some kind. It is probably not
+    // telemetry, or at least, not a telemetry concern.
     return false;
   }
 
@@ -145,9 +154,11 @@ function hasTelemetrySource(image, documentURL) {
   return false;
 }
 
-// Returns true if otherURL is 'external' to the documentURL. Inaccurate and insecure.
+// Returns true if otherURL is 'external' to the documentURL. Inaccurate and
+// insecure.
 function isExternalURL(documentURL, otherURL) {
-  // Certain protocols are never external in the sense that a network request is not performed
+  // Certain protocols are never external in the sense that a network request
+  // is not performed
   const localProtocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
   if(localProtocols.includes(otherURL.protocol)) {
     return false;
@@ -158,8 +169,9 @@ function isExternalURL(documentURL, otherURL) {
   return docDomain !== otherDomain;
 }
 
-// Returns the 1st and 2nd level domains as a string. Basically hostname without subdomains. This
-// only does minimal symbolic validation of values, and is also inaccurate and insecure.
+// Returns the 1st and 2nd level domains as a string. Basically hostname
+// without subdomains. This only does minimal symbolic validation of values,
+// and is also inaccurate and insecure.
 function getUpperDomain(url) {
   assert(url instanceof URL);
 
@@ -180,9 +192,9 @@ function getUpperDomain(url) {
     return url.hostname;
   }
 
-  // This isn't meant to be super accurate or professional. Using the full list from
-  // https://publicsuffix.org/list/public_suffix_list.dat is overkill. As a compromise, just look
-  // at tld character count.
+  // This isn't meant to be super accurate or professional. Using the full list
+  // from https://publicsuffix.org/list/public_suffix_list.dat is overkill. As
+  // a compromise, just look at tld character count.
   const level1 = levels[levels.length - 1];
   if(level1.length === 2) {
     // Infer it is ccTLD, return levels 3 + 2 + 1

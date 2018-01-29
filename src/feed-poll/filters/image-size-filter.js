@@ -9,7 +9,8 @@ import {isAllowedURL} from "/src/common/fetch-utils.js";
 // Assumes that if an image has a src attribute value that is a url, that the
 // url is absolute.
 // @param document {Document}
-// @param allowedProtocols {Array} optional, if not provided then defaults data/http/https
+// @param allowedProtocols {Array} optional, if not provided then defaults
+// data/http/https
 // @param timeout {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
 export default async function applyImageSizeFilter(document, baseURL, timeout) {
@@ -50,7 +51,8 @@ async function getImageDimensions(image, baseURL, timeout) {
 
   let dims = getInlineStyleDimensions(image);
   if(dims) {
-    return {image: image, reason: 'inline-style', width: dims.width, height: dims.height};
+    return {image: image, reason: 'inline-style', width: dims.width,
+      height: dims.height};
   }
 
   const imageSource = image.getAttribute('src');
@@ -61,8 +63,8 @@ async function getImageDimensions(image, baseURL, timeout) {
 
   // NOTE: this assumes image source url is canonical.
 
-  // Parsing the url can throw an error. getImageDimensions should not throw except in the
-  // case of a programming error.
+  // Parsing the url can throw an error. getImageDimensions should not throw
+  // except in the case of a programming error.
   let sourceURL;
   try {
     sourceURL = new URL(imageSource, baseURL);
@@ -75,11 +77,13 @@ async function getImageDimensions(image, baseURL, timeout) {
 
   dims = sniffDimensionsFromURL(sourceURL);
   if(dims) {
-    return {image: image, reason: 'url-sniff', width: dims.width, height: dims.height};
+    return {image: image, reason: 'url-sniff', width: dims.width,
+      height: dims.height};
   }
 
-  // Failure to fetch should be trapped, because getImageDimensions should only throw in case of a
-  // programming error, so that it can be used together with Promise.all
+  // Failure to fetch should be trapped, because getImageDimensions should only
+  // throw in case of a programming error, so that it can be used together with
+  // Promise.all
   try {
     dims = await fetchImageElement(sourceURL, timeout);
   } catch(error) {
@@ -133,8 +137,9 @@ function sniffDimensionsFromURL(sourceURL) {
   }
 }
 
-// Try and find dimensions from the style attribute of an image element. This does not compute
-// style. This only considers the style attribute itself and not inherited styles.
+// Try and find dimensions from the style attribute of an image element. This
+// does not compute style. This only considers the style attribute itself and
+// not inherited styles.
 // TODO: this is currently incorrect when width/height are percentage based
 function getInlineStyleDimensions(element) {
   if(element.hasAttribute('style') && element.style) {
@@ -148,11 +153,12 @@ function getInlineStyleDimensions(element) {
   }
 }
 
-// TODO: use the fetch API to avoid cookies. First determine if this actually transmits cookies.
-// I think this should be simple to detect, just monitor the network tab in devtools
+// TODO: use the fetch API to avoid cookies. First determine if this actually
+// transmits cookies. I think this should be simple to detect, just monitor the
+// network tab in devtools
 
-// Fetches an image element. Returns a promise that resolves to a fetched image element. Note that
-// data uris are accepted.
+// Fetches an image element. Returns a promise that resolves to a fetched image
+// element. Note that data uris are accepted.
 // @param url {URL}
 // @param timeout {Number}
 // @returns {Promise}
@@ -185,8 +191,8 @@ function fetchImageElementPromise(url) {
     proxy.onload = () => resolve(proxy);
     proxy.onerror = (event) => {
 
-      // TODO: examine if there is a discernible error message to use rather than
-      // creating a custom one
+      // TODO: examine if there is a discernible error message to use rather
+      // than creating a custom one
       console.dir(event);
 
       reject(new Error('Unknown error fetching image ' + url.href));

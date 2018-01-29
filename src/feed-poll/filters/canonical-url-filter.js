@@ -124,19 +124,20 @@ function resolveElementAttribute(element, baseURL) {
 
   if(resolvedURL.href.length !== originalURLString.length) {
 
-    // TEMP: monitoring urls for above todo. This is going to spam but I think I will probably
-    // focus on the todo rather soon.
-    //console.debug('canonicalization change', originalURLString, resolvedURL.href);
+    // TEMP: monitoring urls for above todo. This is going to spam but I think
+    // I will probably focus on the todo rather soon.
+    // console.debug('canonicalization change', originalURLString,
+    //   resolvedURL.href);
 
     // NOTE: gathering some interesting messages
-    // - if url is just '#' then it becomes just full link with # appended. I probably should not
-    // be trying to canonical mailto at all.
-    // - if url is mailto, it basically just encodes the url (e.g. spaces escaped). Probably should
-    // just strip the #? Beware the bug i had last time with google groups urls, a webserver can
-    // interpret # as ?
-    // - https://play.freeciv.org https://play.freeciv.org/  . So yep, this is exactly the concern,
-    // that i talked above above, all that canonicalization accomplished was add a trailing slash.
-
+    // - if url is just '#' then it becomes just full link with # appended. I
+    // probably should not be trying to canonical mailto at all.
+    // - if url is mailto, it basically just encodes the url (e.g. spaces
+    // escaped). Probably should just strip the #? Beware the bug i had last
+    // time with google groups urls, a webserver can interpret # as ?
+    // - https://play.freeciv.org https://play.freeciv.org/ . So yep, this is
+    // exactly the concern, that i talked above above, all that
+    // canonicalization accomplished was add a trailing slash.
 
     element.setAttribute(attributeName, resolvedURL.href);
   }
@@ -173,9 +174,10 @@ function resolveURLString(urlString, baseURL) {
     return;
   }
 
-  // Check if urlString is just whitespace. If just whitespace, then return undefined. This departs
-  // from the behavior of the URL constructor, which tolerates an empty or whitespace string as
-  // input. The url constructor in that case will create a new URL from the base url exclusively.
+  // Check if urlString is just whitespace. If just whitespace, then return
+  // undefined. This departs from the behavior of the URL constructor, which
+  // tolerates an empty or whitespace string as input. The url constructor in
+  // that case will create a new URL from the base url exclusively.
   // That is misleading for this purpose.
 
   // If the length of the string is 0 then return undefined
@@ -198,7 +200,8 @@ function resolveURLString(urlString, baseURL) {
 }
 
 
-// @param descriptors {Array} an array of descriptors such as those produced by parseSrcset
+// @param descriptors {Array} an array of descriptors such as those produced
+// by parseSrcset
 // @returns {String} a string suitable for storing as srcset attribute value
 function serializeSrcset(descriptors) {
   assert(Array.isArray(descriptors));

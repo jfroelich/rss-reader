@@ -3,8 +3,8 @@ import assert from "/src/common/assert.js";
 // TODO: move to basic filters
 
 // Specifies that all links are noreferrer
-// TODO: this function's behavior conflicts with attribute filter. Need to whitelist this attribute
-// (and this value) for this element.
+// TODO: this function's behavior conflicts with attribute filter. Need to
+// whitelist this attribute (and this value) for this element.
 export default function filter(doc) {
   assert(doc instanceof Document);
 
