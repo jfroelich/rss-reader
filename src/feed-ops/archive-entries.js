@@ -6,35 +6,37 @@ import {
   open as openReaderDb
 } from "/src/rdb.js";
 
+// TODO: eventually reconsider how an entry is determined as archivable. Each
+// entry should specify its own lifetime as a property, at the time of creation
+// of update. This should then just be scanning for entries that whose
+// lifetimes have expired. This pattern is more in line with how traditional
+// cached object lifetimes are calculated. Using this alternate approach
+// allows each entry to manage its own lifetime. For example, I could say that
+// for all entries coming from a certain feed, those entries should have a
+// half-life.
 
-// TODO: eventually reconsider how an entry is determined as archivable. Each entry should
-// specify its own lifetime as a property, at the time of creation of update. This should then
-// just be scanning for entries that whose lifetimes have expired. This pattern is more in line
-// with how traditional cached object lifetimes are calculated. Using this alternate approach
-// allows each entry to manage its own lifetime. For example, I could say that for all entries
-// coming from a certain feed, those entries should have a half-life.
-
-// I think what I want to be doing is re-imagining entry store as a document store. Then look
-// at how a traditional document store works, and mimic that caching behavior. I believe it is
-// generally done with an expiresDate field of some sort, one that is defined when creating
-// the document, or updating it, and is optional. Then archiving becomes simply a matter of
-// finding all entries with an expireDate older than the current date. This type of change
-// correlates with the goal of removing the feed id foreign key from the entry store and linking
-// feeds and entries by feed url instead.
+// TODO: I think what I want to be doing is re-imagining entry store as a
+// document store. Then look at how a traditional document store works, and
+// mimic that caching behavior. I believe it is generally done with an
+// expiresDate field of some sort, one that is defined when creating the
+// document, or updating it, and is optional. Then archiving becomes simply a
+// matter of finding all entries with an expireDate older than the current date.
+// This type of change correlates with the goal of removing the feed id foreign
+// key from the entry store and linking feeds and entries by feed url instead.
 
 // TODO: maybe differentiating between the message type 'entry-updated' and
-// 'entry-archived' is pendantic. Or, perhaps I should introduce a reason code to the
-// message.
+// 'entry-archived' is pendantic. Or, perhaps I should introduce a reason code
+// to the message.
 
-// TODO: this now no longer layers anything on top of the feed store. It basically is part
-// of the model. So why do I have it in feed ops?
+// TODO: this now no longer layers anything on top of the feed store. It
+// basically is part of the model. So why do I have it in feed ops?
 
 
 // Archives certain entries in the database
-// - conn {IDBDatabase} optional, storage database, if not specified then default database will
-// be opened, used, and closed
-// - maxAge {Number} how long before an entry is considered archivable (using date entry
-// created), in milliseconds
+// - conn {IDBDatabase} optional, storage database, if not specified then
+// default database will be opened, used, and closed
+// - maxAge {Number} how long before an entry is considered archivable (using
+// date entry created), in milliseconds
 // - limit {Number} maximum number of entries to archive
 export default async function archiveEntries(conn, channel, maxAge) {
   console.log('Archiving entries...');
@@ -101,7 +103,8 @@ function archiveEntry(entry) {
   const beforeSize = sizeof(entry);
   const compactedEntry = compactEntry(entry);
   const afterSize = sizeof(compactedEntry);
-  console.debug('Changing entry %d size from ~%d to ~%d', entry.id, beforeSize, afterSize);
+  console.debug('Changing entry %d size from ~%d to ~%d', entry.id, beforeSize,
+    afterSize);
 
   compactedEntry.archiveState = ENTRY_STATE_ARCHIVED;
   compactedEntry.dateArchived = new Date();
@@ -126,22 +129,23 @@ function compactEntry(entry) {
 }
 
 
-// Calculates the approximate byte size of a value. This should only be used for informational
-// purposes because it is hilariously inaccurate.
+// Calculates the approximate byte size of a value. This should only be used
+// for informational purposes because it is hilariously inaccurate.
 //
 // Adapted from http://stackoverflow.com/questions/1248302
 //
-// Does not work with built-ins, which are objects that are a part of the basic Javascript library,
-// like Document, or Element.
+// Does not work with built-ins, which are objects that are a part of the basic
+// Javascript library, like Document, or Element.
 //
 // This uses a stack internally to avoid recursion
 //
 // @param inputValue {Any} a value of any type
-// @returns {Number} an integer representing the approximate byte size of the input value
+// @returns {Number} an integer representing the approximate byte size of the
+// input value
 function sizeof(inputValue) {
-  // visitedObjects is a memoization of previously visited objects. In theory a repeated object
-  // just means enough bytes to store a reference value, and only the first object actually
-  // allocates additional memory.
+  // visitedObjects is a memoization of previously visited objects. In theory a
+  // repeated object just means enough bytes to store a reference value, and
+  // only the first object actually allocates additional memory.
   const visitedObjects = [];
   const stack = [inputValue];
   const hasOwnProp = Object.prototype.hasOwnProperty;

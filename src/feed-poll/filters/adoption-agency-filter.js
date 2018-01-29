@@ -1,7 +1,8 @@
 import assert from "/src/common/assert.js";
 import {unwrapElement} from "/src/common/dom-utils.js";
 
-// Removes, moves, or otherwise changes certain out-of-place elements in document content
+// Removes, moves, or otherwise changes certain out-of-place elements in
+// document content
 export default function filterDocument(doc) {
   assert(doc instanceof Document);
 
@@ -15,8 +16,8 @@ export default function filterDocument(doc) {
     hr.remove();
   }
 
-  // Disallow nested anchors. If any anchor has an ancestor anchor, then unwrap the descendant
-  // anchor and keep the ancestor.
+  // Disallow nested anchors. If any anchor has an ancestor anchor, then unwrap
+  // the descendant anchor and keep the ancestor.
   const descendantAnchorsOfAnchors = doc.body.querySelectorAll('a a');
   for(const descendantAnchor of descendantAnchorsOfAnchors) {
     unwrapElement(descendantAnchor);

@@ -125,7 +125,8 @@ function deriveAttributeBias(element) {
 }
 
 function findHighScoreElement(doc, options) {
-  const candidateSelector = 'article, content, div, layer, main, section, span, td';
+  const candidateSelector =
+    'article, content, div, layer, main, section, span, td';
   const listSelector = 'li, ol, ul, dd, dl, dt';
   const navSelector = 'aside, header, footer, nav, menu, menuitem';
   let bestElement = doc.documentElement;
@@ -249,10 +250,10 @@ function findCaption(image) {
 }
 
 function deriveImageAreaBias(image) {
-  // Calculate the area of the image. For images missing a dimension, assume the image is a square.
-  // Inferring the missing dimension leads to a more accurate measure of image size, and lets
-  // image size contribute to bias more often, which generally leads to more accurate boilerplate
-  // analysis.
+  // Calculate the area of the image. For images missing a dimension, assume
+  // the image is a square. Inferring the missing dimension leads to a more
+  // accurate measure of image size, and lets image size contribute to bias
+  // more often, which generally leads to more accurate boilerplate analysis.
   let area;
   if(image.width && image.height) {
     area = image.width * image.height;
@@ -264,10 +265,11 @@ function deriveImageAreaBias(image) {
     // Leave area undefined
   }
 
-  // Calculate the bias. Bin the area into a few labeled buckets using hand-crafted boundaries,
-  // and use hand crafted bias value. Previously this calculated bias as a function of area
-  // that was then clamped and dampened. After some reflection, I think basic hacky binning is just
-  // as good if not better.
+  // Calculate the bias. Bin the area into a few labeled buckets using
+  // hand-crafted boundaries, and use a hand crafted bias value. Previously this
+  // calculated bias as a function of area that was then clamped and dampened.
+  // After some reflection, I think basic hacky binning is just as good if not
+  // better.
   let bias = 0;
 
   if(area > 100000) {

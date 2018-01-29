@@ -35,14 +35,17 @@ import sourcelessImageFilter from "/src/feed-poll/filters/sourceless-image-filte
 import tableFilter from "/src/feed-poll/filters/table-filter.js";
 import trimDocumentFilter from "/src/feed-poll/filters/trim-document-filter.js";
 
-// TODO: create a new filter that filters out small font text
+// TODO: move the next comment to github issue
+// TODO: create a new filter that filters out small font text.
 
-// Transforms a document's content by removing or changing nodes for various reasons.
+// Transforms a document's content by removing or changing nodes for various
+// reasons.
 // @param document {Document} the document to transform
 // @param documentURL {URL} the url of the document
-// @param fetchImageTimeoutMs {Number} optional, the number of milliseconds to wait before timing
-// out when fetching an image
-export default async function applyAllFilters(document, documentURL, fetchImageTimeoutMs) {
+// @param fetchImageTimeoutMs {Number} optional, the number of milliseconds to
+// wait before timing out when fetching an image
+export default async function applyAllFilters(document, documentURL,
+  fetchImageTimeoutMs) {
   assert(document instanceof Document);
   assert(documentURL instanceof URL);
 
@@ -60,12 +63,12 @@ export default async function applyAllFilters(document, documentURL, fetchImageT
   elementBlacklistFilter(document);
   scriptAnchorFilter(document);
 
-  // This should occur prior to boilerplateFilter because it has express knowledge of content
-  // organization
+  // This should occur prior to boilerplateFilter because it has express
+  // knowledge of content organization
   hostTemplateFilter(document, documentURL);
 
-  // This should occur before filtering attributes because it makes decisions based on attribute
-  // values.
+  // This should occur before filtering attributes because it makes decisions
+  // based on attribute values.
   // This should occur after filtering hidden elements
   boilerplateFilter(document);
 
@@ -82,26 +85,29 @@ export default async function applyAllFilters(document, documentURL, fetchImageT
   // Does not matter if before or after canonicalizing urls
   responsiveImageFilter(document);
 
-  // This should occur before removing images that are missing a src value, because lazily-loaded
-  // images often are missign a source value but are still useful
+  // This should occur before removing images that are missing a src value,
+  // because lazily-loaded images often are missign a source value but are
+  // still useful
   lazyImageFilter(document);
 
-  // This should occur before setting image sizes to avoid unwanted network requests
+  // This should occur before setting image sizes to avoid unwanted network
+  // requests
   // TODO: change to passing url instead of url string
   lonestarFilter(document, documentURL.href);
 
-  // This should occur before trying to set image sizes simply because it potentially reduces
-  // the number of images processed later
+  // This should occur before trying to set image sizes simply because it
+  // potentially reduces the number of images processed later
   sourcelessImageFilter(document);
 
-  // It does not matter if this occurs before or after resolving urls. This now accepts a
-  // base url parameter and dynamically canonicalizes image urls (without writing back to doc)
-  // This should occur after removing telemetry, because this involves network requests that
-  // perhaps the telemetry filter thinks should be avoided.
-  // Allow exceptions to bubble
+  // It does not matter if this occurs before or after resolving urls. This now
+  // accepts a base url parameter and dynamically canonicalizes image urls
+  // (without writing back to doc). This should occur after removing telemetry,
+  // because this involves network requests that perhaps the telemetry filter
+  // thinks should be avoided. Allow exceptions to bubble
   await imageSizeFilter(document, documentURL, fetchImageTimeoutMs);
 
-  // This should occur after setting image sizes because it requires knowledge of image size
+  // This should occur after setting image sizes because it requires knowledge
+  // of image size
   smallImageFilter(document);
 
 
@@ -126,32 +132,33 @@ export default async function applyAllFilters(document, documentURL, fetchImageT
   // Better to call later than earlier to reduce number of text nodes visited
   nodeWhitespaceFilter(document);
 
-  // This should be called near the end. Most of the other filters are naive in how they leave
-  // ancestor elements meaningless or empty, and simply remove. So this is like an additional pass
-  // now that several holes have been made.
+  // This should be called near the end. Most of the other filters are naive in
+  // how they leave ancestor elements meaningless or empty, and simply remove.
+  // So this is like an additional pass now that several holes have been made.
   leafFilter(document);
 
-  // Should be called near end because its behavior changes based on what content remains, and is
-  // faster with fewer elements
+  // Should be called near end because its behavior changes based on what
+  // content remains, and is faster with fewer elements
   trimDocumentFilter(document);
 
-  // Primarily an attribute filter, so it should be caller as late as possible to reduce the number
-  // of elements visited
+  // Primarily an attribute filter, so it should be caller as late as possible
+  // to reduce the number of elements visited
   noreferrerFilter(document);
   pingFilter(document);
 
-  // Filter attributes last because it is so slow and is sped up by processing fewer elements.
+  // Filter attributes close to last because it is so slow and is sped up
+  // by processing fewer elements.
   const attributeWhitelist = {
     a: ['href', 'name', 'title', 'rel'],
     iframe: ['src'],
     source: ['media', 'sizes', 'srcset', 'src', 'type'],
-    // Setting width and height explicitly lead to skewed large images in view, so forbid
     img: ['src', 'alt', 'title', 'srcset', 'width', 'height']
   };
 
   largeImageAttributeFilter(document);
-
   attributeFilter(document, attributeWhitelist);
 
+  // TODO: move this up to before some of the other attribute filters, or
+  // explain why it should occur later
   emptyAttributeFilter(document);
 }

@@ -1,6 +1,7 @@
 import {entryHasURL, open as openReaderDb} from "/src/rdb.js";
 
-// Scans the entry store for entry objects that are missing urls and removes them
+// Scans the entry store for entry objects that are missing urls and removes
+// them
 export default async function removeLostEntries(conn, channel, console) {
   console = console || NULL_CONSOLE;
   console.log('Removing lost entries...');
@@ -17,10 +18,11 @@ export default async function removeLostEntries(conn, channel, console) {
   // Now that the transaction has fully committed, notify observers. channel is
   // optional so check if present. Assume if present that it is correct type
 
-  // If removeLostEntries was called in non-blocking fashion, channel may have closed
-  // before promise settled above, which would cause postMessage to throw, but there is no
-  // way to check if channel closed, and we are forked so throwing sends an error to a place
-  // where no one is listening, so just trap and log the error
+  // If removeLostEntries was called in non-blocking fashion, channel may have
+  // closed before promise settled above, which would cause postMessage to
+  // throw, but there is no way to check if channel closed, and we are forked
+  // so throwing sends an error to a place where no one is listening, so just
+  // trap and log the error
   if(channel) {
     const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
     for(const id of entryIds) {
@@ -66,13 +68,14 @@ function removeLostEntriesPromise(conn, console) {
       if(!entryHasURL(entry)) {
         console.debug('Deleting lost entry', entry.id);
 
-        // Calling delete appends a request to the transaction. Remember that nothing
-        // has committed until the transaction completes. Therefore it would be
-        // inappropriate to do channel notifications here because it would be
-        // immature.
+        // Calling delete appends a request to the transaction. Remember that
+        // nothing has committed until the transaction completes. Therefore it
+        // would be inappropriate to do channel notifications here because it
+        // would be immature.
         // TODO: what if I post a message with the property 'speculative', or
-        // post a message of a different type, like 'entry-speculatively-deleted'?
-        // Worth it? Pedantic?
+        // post a message of a different type, like
+        // 'entry-speculatively-deleted'? Worth it? Pedantic? This comment
+        // should be moved to a github issue
 
         cursor.delete();
 

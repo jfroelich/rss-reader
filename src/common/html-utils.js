@@ -1,30 +1,36 @@
 
-// Given an input value, if it is a string, then creates and returns a new string where html
-// entities have been decoded into corresponding values. For example, '&lt;' becomes '<'.
-// Adapted from https://stackoverflow.com/questions/1912501
-// TODO: i'd eventually like to not involve the dom but for now just get something working
-// TODO: I believe the shared worker element technique is 'thread-safe' because all dom access
-// is synchronous. Right? Pretty sure but never really verified.
+// Given an input value, if it is a string, then creates and returns a new
+// string where html entities have been decoded into corresponding values. For
+// example, '&lt;' becomes '<'. Adapted from
+// https://stackoverflow.com/questions/1912501
+//
+// TODO: i'd eventually like to not involve the dom but for now just get
+// something working
+// TODO: I believe the shared worker element technique is 'thread-safe' because
+// all dom access is synchronous. Right? Pretty sure but never really verified.
 const workerElement = document.createElement('div');
 export function decodeEntities(value) {
   const entityPattern = /&[#0-9A-Za-z]+;/g;
   return typeof value === 'string' ? value.replace(entityPattern,
     function decodeEntitiesReplace(entityString) {
-    // Set the value of the shared worker element. By using innerHTML this sets the raw value
+    // Set the value of the shared worker element. By using innerHTML this sets
+    // the raw value
     workerElement.innerHTML = entityString;
-    // Now get the value back out. The accessor will do the decoding dynamically.
-    // TODO: why innerText? probably should just use textContent? Wait until I implement a
-    // testing lib to change.
+    // Now get the value back out. The accessor will do the decoding
+    // dynamically.
+    // TODO: why innerText? probably should just use textContent? Wait until I
+    // implement a testing lib to change.
     const text = workerElement.innerText;
-    // Reset it each time to avoid leaving crap hanging around because worker element lifetime
-    // is page lifetime not function scope lifetime
+    // Reset it each time to avoid leaving crap hanging around because worker
+    // element lifetime is page lifetime not function scope lifetime
     workerElement.innerHTML = '';
     return text;
   }) : value;
 }
 
-// Returns a new string where certain 'unsafe' characters in the input string have been replaced
-// with html entities. If input is not a string returns undefined.
+// Returns a new string where certain 'unsafe' characters in the input string
+// have been replaced with html entities. If input is not a string returns
+// undefined.
 // See https://stackoverflow.com/questions/784586 for reference
 export function escapeHTML(htmlString) {
   // TEMP: not replacing & due to common double encoding issue
@@ -42,7 +48,8 @@ function encodeFirst(string) {
 // Truncates an HTML string
 // @param htmlString {String}
 // @param position {Number} position after which to truncate
-// @param suffix {String} optional, appended after truncation, defaults to an ellipsis
+// @param suffix {String} optional, appended after truncation, defaults to an
+// ellipsis
 export function truncateHTML(htmlString, position, suffix) {
   assert(Number.isInteger(position) && position >= 0);
 
@@ -85,18 +92,19 @@ export function truncateHTML(htmlString, position, suffix) {
     node.remove();
   }
 
-  // parseHTML introduces body text for fragments. If full text then return full text, otherwise
-  // strip the added elements
+  // parseHTML introduces body text for fragments. If full text then return full
+  // text, otherwise strip the added elements
 
-  return isNotFragment(htmlString) ? document.documentElement.outerHTML : document.body.innerHTML;
+  return isNotFragment(htmlString) ? document.documentElement.outerHTML :
+    document.body.innerHTML;
 }
 
 function isNotFragment(htmlString) {
   return /<html/i.test(htmlString);
 }
 
-// Replaces tags in the input string with the replacement. If no replacement, then removes the
-// tags.
+// Replaces tags in the input string with the replacement. If no replacement,
+// then removes the tags.
 export function replaceTags(htmlString, replacement) {
   assert(typeof htmlString === 'string');
 
@@ -132,9 +140,10 @@ export function replaceTags(htmlString, replacement) {
   return nodeValues.join(replacement);
 }
 
-// When html is a fragment, it will be inserted into a new document using a default template
-// provided by the browser, that includes a document element and usually a body. If not a fragment,
-// then it is merged into a document with a default template.
+// When html is a fragment, it will be inserted into a new document using a
+// default template provided by the browser, that includes a document element
+// and usually a body. If not a fragment, then it is merged into a document
+// with a default template.
 export function parseHTML(htmlString) {
   assert(typeof htmlString === 'string');
   const parser = new DOMParser();

@@ -1,7 +1,8 @@
 import {decodeEntities} from "/src/common/html-utils.js";
 
-// Parses the input string into a feed object. The feed object will always have a defined entries
-// array, although it may be zero length. Returns a feed object or throws
+// Parses the input string into a feed object. The feed object will always have
+// a defined entries array, although it may be zero length. Returns a feed
+// object or throws
 export default function parseFeed(xmlString) {
   // Sanity checking xmlString delegated to parseXML
   // Rethrow parse xml errors
@@ -59,7 +60,8 @@ function findFeedTitle(channelElement) {
 function findFeedDescription(document, channelElement) {
   const documentElement = document.documentElement;
   const documentElementName = documentElement.localName.toLowerCase();
-  const elementName = documentElementName === 'feed' ? 'subtitle' : 'description';
+  const elementName = documentElementName === 'feed' ? 'subtitle' :
+    'description';
   return findChildElementText(channelElement, elementName);
 }
 
@@ -111,7 +113,8 @@ function findFeedDate(channelElement) {
     dateText = findChildElementText(channelElement, 'updated');
   } else {
     dateText = findChildElementText(channelElement, 'pubdate');
-    dateText = dateText || findChildElementText(channelElement, 'lastbuilddate');
+    dateText = dateText || findChildElementText(channelElement,
+      'lastbuilddate');
     dateText = dateText || findChildElementText(channelElement, 'date');
   }
 
@@ -277,8 +280,9 @@ function findEntryContent(entryElement) {
       return;
     }
 
-    // NOTE: so I think I handle cdata content correctly, but note the issue with title
-    // still having raw entities. Or, rather, should content be not encoded in any situation?
+    // NOTE: so I think I handle cdata content correctly, but note the issue
+    // with title still having raw entities. Or, rather, should content be not
+    // encoded in any situation?
 
     const nodes = content.childNodes;
     const texts = [];

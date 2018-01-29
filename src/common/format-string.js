@@ -26,8 +26,9 @@ export default function formatString(...args) {
     return formatArg;
   }
 
-  // Walk over each formatting argument thing in the format string, and replace it with one
-  // of the remaining arguments. We know there is at least one other argument.
+  // Walk over each formatting argument thing in the format string, and replace
+  // it with one of the remaining arguments. We know there is at least one
+  // other argument.
   const replacedString = formatArg.replace(syntaxPattern, function replacer(match) {
     // If we've reached or moved past the end, then there are more occurrences of
     // formatting codes than arguments. Stop doing any replacements.
@@ -35,8 +36,9 @@ export default function formatString(...args) {
       return match;
     }
 
-    // Replace the matched formatting code with the current argument, and advance the argument
-    // index to the next argument. The post-increment occurs after the value is read
+    // Replace the matched formatting code with the current argument, and
+    // advance the argument index to the next argument. The post-increment
+    // occurs after the value is read
     switch(match) {
     case '%%':  return '%';
     case '%s':  return anyTypeToStringString(args[argIndex++]);
@@ -51,9 +53,10 @@ export default function formatString(...args) {
     return replacedString;
   }
 
-  // There may be more arguments to the function than there are codes to replace in the format
-  // string. Some of the arguments were used to do replacements so far, but possibly not all of the
-  // arguments have been used. Append the remaining unused arguments to a buffer, then join them.
+  // There may be more arguments to the function than there are codes to
+  // replace in the format string. Some of the arguments were used to do
+  // replacements so far, but possibly not all of the arguments have been used.
+  // Append the remaining unused arguments to a buffer, then join them.
   // This still works even if the above check was not present.
   const buffer = [replacedString];
   while(argIndex < argCount) {
@@ -69,8 +72,9 @@ function anyTypeToNumberString(value) {
       // This matches console.log behavior.
       return '-0';
     } else {
-      // Convert the number to a string. I've chosen this syntax because apparently it is faster
-      // than calling the String constructor (either as a function or a constructor function).
+      // Convert the number to a string. I've chosen this syntax because
+      // apparently it is faster than calling the String constructor (either as
+      // a function or a constructor function).
       return '' + value;
     }
   } else {
@@ -78,21 +82,22 @@ function anyTypeToNumberString(value) {
   }
 }
 
-// Cache the reference to the native function so that the property lookup does not occur each
-// time anyTypeToObjectString is evaluated.
+// Cache the reference to the native function so that the property lookup does
+// not occur each time anyTypeToObjectString is evaluated.
 const nativeHasOwn = Object.prototype.hasOwnProperty;
 
 // Convert an object into a string. This does not assume the input is an object.
 function anyTypeToObjectString(value) {
 
-  // typeof null === 'object', so special case for null. Cannot assume caller already checked
-  // for this situation.
+  // typeof null === 'object', so special case for null. Cannot assume caller
+  // already checked for this situation.
   if(value === null) {
     return 'null';
   }
 
-  // NOTE: special case for undefined. Without this case, the call to nativeHasOwn.call below would
-  // throw an exception "TypeError: Cannot convert undefined or null to object"
+  // NOTE: special case for undefined. Without this case, the call to
+  // nativeHasOwn.call below would throw an exception "TypeError: Cannot
+  // convert undefined or null to object"
   // NOTE: undefined === void 0
   // NOTE: do not use void(0), void is an operator, not a function
   if(value === void 0) {
@@ -109,22 +114,25 @@ function anyTypeToObjectString(value) {
     return value.toString();
   }
 
-  // All objects subclass Object. And Object has a default toString implementation. So simply
-  // checking value.toString is wrong, because that property lookup will eventually go up the
-  // prototype chain and find Object.prototype.toString. Therefore, we want to test if the
-  // object itself has a toString method defined using the hasOwnProperty method. But, we don't
-  // want to use value.hasOwnProperty, because the value may have messed with it. So we use
-  // the native hasOwnProperty call of the base Object object. Which also may have been messed
-  // with but at that point it is overly-defensive.
+  // All objects subclass Object. And Object has a default toString
+  // implementation. So simply checking value.toString is wrong, because that
+  // property lookup will eventually go up the prototype chain and find
+  // Object.prototype.toString. Therefore, we want to test if the object itself
+  // has a toString method defined using the hasOwnProperty method. But,
+  // we don't want to use value.hasOwnProperty, because the value may have
+  // messed with it. So we use the native hasOwnProperty call of the base
+  // Object object. Which also may have been messed with but at that point it is
+  // overly-defensive.
 
   if(nativeHasOwn.call(value, 'toString')) {
-    // The anyTypeToStringString call is rather superfluous but it protects against custom objects
-    // or manipulations of builtin objects that return the improper type.
+    // The anyTypeToStringString call is rather superfluous but it protects
+    // against custom objects or manipulations of builtin objects that return
+    // the improper type.
     return value.toString();
   }
 
-  // NOTE: url.hasOwnProperty('toString') === false, so it is ok to perform this after
-  // checking hasOwn above
+  // NOTE: url.hasOwnProperty('toString') === false, so it is ok to perform
+  // this after checking hasOwn above
   // Url is not serializable by stringify
   if(value instanceof URL) {
     return value.href;

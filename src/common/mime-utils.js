@@ -53,8 +53,8 @@ function filterWhitespace(string) {
   return string.replace(/\s+/g, '');
 }
 
-// A basic trivial test of whether the parameter represents a mime type. Inaccurate. Few false
-// negatives but many false positives.
+// A basic trivial test of whether the parameter represents a mime type.
+// Inaccurate. Few false negatives but many false positives.
 export function isMimeType(value) {
   return typeof value === 'string' && value.length > MIME_TYPE_MIN_LENGTH &&
     value.length < MIME_TYPE_MAX_LENGTH && value.includes('/') &&

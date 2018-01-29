@@ -2,13 +2,10 @@ import {open as openIconDb} from "/src/favicon-service.js";
 import subscribe from "/src/feed-ops/subscribe.js";
 import {feedPeekURL, getFeeds, open as openReaderDb} from "/src/rdb.js";
 
-// TODO: eventually I think this module belongs together with model, perhaps rename rdb to model.js
-// or something and move exim and rdb to model folder. or storage folder. something like that.
-
 // Returns an opml document as a blob that contains outlines representing the feeds
 // in the app's db
-// @param conn {IDBDatabase} optional
-// @param title {String} optional
+// @param conn {IDBDatabase} optional, an open connection to the reader database
+// @param title {String} optional, the value to use for the title element in the document
 export async function exportOPML(conn, title) {
   const feeds = await getFeeds(conn);
 

@@ -17,28 +17,31 @@ import {
 } from "/src/rdb.js";
 import coerceFeed from "/src/coerce-feed.js";
 
-// TODO: reconsider the transaction lifetime. Right now it is protected by the error that
-// occurs due to violation of uniqueness constraint. But it would be better if both reads and
-// writes occurred on same transaction. Also because I have mixed feelings about treating
-// already-subscribed as an error. It isn't a programming error.
+// TODO: reconsider the transaction lifetime. Right now it is protected by the
+// error that occurs due to violation of uniqueness constraint. But it would be
+// better if both reads and writes occurred on same transaction. Also because I
+// have mixed feelings about treating already-subscribed as an error. It isn't a
+// programming error. But the subscribe in some sense failed.
 
-// TODO: currently the redirect url is not validated as to whether it is a fetchable
-// url according to the app's fetch policy. It is just assumed. I am not quite sure what to
-// do about it at the moment. Maybe I could create a second policy that controls what urls
-// are allowed by the app to be stored in the database? Or maybe I should just call
-// isAllowedURL here explicitly? This is partly a caveat of attempting to abstract it away behind
-// the call to the fetch helper, which checks the policy internally. The issue is that it cannot
-// be abstracted away if I need to use it again for non-fetch purposes. So really it is just the
-// wrong abstraction.
+// TODO: currently the redirect url is not validated as to whether it is a
+// fetchable url according to the app's fetch policy. It is just assumed. I am
+// not quite sure what to do about it at the moment. Maybe I could create a
+// second policy that controls what urls are allowed by the app to be stored in
+// the database? Or maybe I should just call isAllowedURL here explicitly? This
+// is partly a caveat of attempting to abstract it away behind the call to the
+// fetch helper, which checks the policy internally. The issue is that it cannot
+// be abstracted away if I need to use it again for non-fetch purposes. So
+// really it is just the wrong abstraction. Move this comment to github
 
 // TODO: connect on demand?
 
 // Properties for the context argument:
 // feedConn {IDBDatabase} an open conn to feed store
 // iconConn {IDBDatabase} an open conn to icon store
-// channel {BroadcastChannel} optional, an open channel to which to send feed added message
-// fetchFeedTimeout {Number} optional, positive integer, how long to wait in ms before considering
-// feed fetch a failure
+// channel {BroadcastChannel} optional, an open channel to which to send feed
+// added message
+// fetchFeedTimeout {Number} optional, positive integer, how long to wait in ms
+// before considering fetch a failure
 // notify {Boolean} optional, whether to show a desktop notification
 // console {console object} optional, console-like logging destination
 
@@ -50,23 +53,26 @@ export default async function subscribe(context, url) {
   const console = context.console || NULL_CONSOLE;
   console.log('Subscribing to', url.href);
 
-  // Treat any error from containsFeedWithURL as fatal to subscribe and do not catch
+  // If this fails, throw an error
   let containsFeed = await containsFeedWithURL(context.feedConn, url);
+
   // If already subscribed, throw an error
-  // TODO: is this really an error? This isn't an error. This just means cannot subscribe,
-  // but it isn't exception worthy. Should I return undefined instead? But then how do I know
-  // about failure? This is not a programmer error. This is just rejected user input, and
-  // users can input whatever they want. Even then, should I use an exception anyway? Ugh.
+  // TODO: is this really an error? This isn't an error. This just means cannot
+  // subscribe, but it isn't exception worthy. Should I return undefined
+  // instead? But then how do I know about failure? This is not a programmer
+  // error. This is just rejected user input, and users can input whatever they
+  // want. Even then, should I use an exception anyway? Ugh.
   if(containsFeed) {
     throw new Error('Already subscribed to ' + url.href);
   }
 
   let response;
   try {
-    response = await FetchUtils.fetchFeed(url, context.fetchFeedTimeout || 2000);
+    response = await FetchUtils.fetchFeed(url,
+      context.fetchFeedTimeout || 2000);
   } catch(error) {
     if(error instanceof FetchUtils.OfflineError) {
-      // continue
+      // continue with subscription
       console.debug('Subscribing while offline to', url.href);
     } else {
       throw error;
@@ -96,7 +102,8 @@ export default async function subscribe(context, url) {
     showNotification(storedFeed);
   }
 
-  // Call non-awaited (in a non-blocking manner) to allow for subscribe to settle immediately
+  // Call non-awaited (in a non-blocking manner) to allow for subscribe to
+  // settle before this completes.
   deferredPollFeed(storedFeed).catch(console.warn);
 
   return storedFeed;
@@ -115,8 +122,8 @@ async function createFeedFromResponse(context, response, url) {
     }
   }
 
-  // Treat any fetch error here as fatal. We are past the point of trying to subscribe
-  // while offline. This basically should never throw
+  // Treat any fetch error here as fatal. We are past the point of trying to
+  // subscribe while offline. This basically should never throw
   const responseText = await response.text();
 
   // Take the fetched feed xml and turn it into a storable feed object

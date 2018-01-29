@@ -1,4 +1,7 @@
-
+// Opens a connection to an indexedDB database. The important additions to
+// the normal functionality of indexedDB.open are that you can specify a
+// timeout after which to consider the connection a failure, and that a
+// blocked connection is treated implicitly as an error.
 export async function open(name, version, upgradeListener, timeout) {
   if(typeof name !== 'string') {
     throw new TypeError('Invalid name ' + name);
@@ -51,7 +54,8 @@ function createOpenPromise(context) {
         console.debug('Closing connection %s that unblocked', conn.name);
         conn.close();
       } else if(context.timedout) {
-        console.debug('Closing connection %s that opened after timeout', conn.name);
+        console.debug('Closing connection %s that opened after timeout',
+          conn.name);
         conn.close();
       } else {
         console.debug('Connected to database', conn.name);
@@ -66,11 +70,12 @@ function createOpenPromise(context) {
 
     request.onerror = () => reject(request.error);
 
-    // NOTE: an upgrade can still happen in the event of a rejection. I am not trying to prevent
-    // that as an implicit side effect, although it is possible to abort the versionchange
-    // transaction from within the upgrade listener. If I wanted to do that I would wrap the call
-    // to the listener here with a function that first checks if blocked/timedout and if so aborts
-    // the transaction and closes, otherwise forwards to the listener.
+    // NOTE: an upgrade can still happen in the event of a rejection. I am not
+    // trying to prevent that as an implicit side effect, although it is
+    // possible to abort the versionchange transaction from within the upgrade
+    // listener. If I wanted to do that I would wrap the call to the listener
+    // here with a function that first checks if blocked/timedout and if so
+    // aborts the transaction and closes, otherwise forwards to the listener.
     request.onupgradeneeded = context.upgradeListener;
   });
 }

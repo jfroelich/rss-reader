@@ -1,6 +1,8 @@
 import {isValidFeedId, open} from "/src/rdb.js";
 
-// TODO: does this potentially affect unread count? In which case this desync's badge text?
+// TODO: does this potentially affect unread count? In which case this desync's
+// badge text? I may have wrote this comment before introducing channel, can
+// not remember.
 
 // Scans the database for entries not linked to a feed and deletes them
 // conn is optional open database connection

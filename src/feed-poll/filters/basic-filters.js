@@ -1,15 +1,16 @@
 import assert from "/src/common/assert.js";
 import * as DOMUtils from "/src/common/dom-utils.js";
 
-// TODO: not sure where it happens, but whatever removes BRs or certain whitespace, should
-// not be removing BRs or line breaks that are descendants of <pre>. Or, if it does, it
-// should be leaving behind a single space. Right now text nodes separated by BRs in
-// a pre get merged.
+// TODO: this comment should be moved to github, labeled as bug
+// TODO: not sure where it happens, but whatever removes BRs or certain
+// whitespace, should not be removing BRs or line breaks that are descendants
+// of <pre>. Or, if it does, it should be leaving behind a single space. Right
+// now text nodes separated by BRs in a pre get merged.
 
 
-// There are several content filters. I do not like the number of files. Therefore, I've
-// created this module to aggregate together several of the filters that do not involve
-// a large amount of code.
+// There are several content filters. I do not like the number of files.
+// Therefore, I've created this module to aggregate together several of the
+// filters that do not involve a large amount of code.
 
 export function filterBaseElements(document) {
   assert(document instanceof Document);
@@ -76,14 +77,17 @@ export function filterEmphasis(document, maxTextLength) {
   }
 }
 
-// Unwrap captionless figures. Any figure with only 1 child has either only
-// a caption or only an image or something else, rendering it meaningless
+// Unwrap captionless figures
 export function filterFigureElements(document) {
   assert(document instanceof Document);
   if(document.body) {
     const figures = document.body.querySelectorAll('figure');
     for(const figure of figures) {
+      // We can tell a figure is captionless because a captioned element has
+      // at least two elements.
       if(figure.childElementCount === 1) {
+        // TODO: if the one child is a figcaption, then this should remove
+        // the figure rather than unwrap
         DOMUtils.unwrapElement(figure);
       }
     }
