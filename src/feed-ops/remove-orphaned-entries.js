@@ -4,9 +4,12 @@ import {isValidFeedId, open} from '/src/rdb.js';
 // badge text? I may have wrote this comment before introducing channel, can
 // not remember.
 
+// TODO: add console parameter and NULL_CONSOLE impl
+// TODO: trap postMessage errors in case channel closed when called unawaited
+
 // Scans the database for entries not linked to a feed and deletes them
-// conn is optional open database connection
-// channel is optional broadcast channel
+// conn {IDBDatabase} is optional open database connection
+// channel {BroadcastChannel} is optional broadcast channel
 export default async function removeOrphanedEntries(conn, channel) {
   const dconn = conn ? conn : await open();
   const entryIds = await removeOrphanedEntriesPromise(dconn);
@@ -37,9 +40,7 @@ function removeOrphanedEntriesPromise(conn) {
     getFeedIdsRequest.onsuccess = () => {
       const feedIds = getFeedIdsRequest.result;
 
-      // Use cursor instead of getAll to limit the amount of entries loaded.
-      // This is slower than getAll but that is ok because this is a bg task
-
+      // Use a cursor rather than getAll for scalability
       const entryStore = tx.objectStore('entry');
       const entryRequest = entryStore.openCursor();
       entryRequest.onsuccess = () => {
