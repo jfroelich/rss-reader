@@ -1,11 +1,12 @@
-import {open as openIconDb} from "/src/favicon-service.js";
-import subscribe from "/src/feed-ops/subscribe.js";
-import {feedPeekURL, getFeeds, open as openReaderDb} from "/src/rdb.js";
+import {open as openIconDb} from '/src/favicon-service.js';
+import subscribe from '/src/feed-ops/subscribe.js';
+import {feedPeekURL, getFeeds, open as openReaderDb} from '/src/rdb.js';
 
-// Returns an opml document as a blob that contains outlines representing the feeds
-// in the app's db
+// Returns an opml document as a blob that contains outlines representing the
+// feeds in the app's db
 // @param conn {IDBDatabase} optional, an open connection to the reader database
-// @param title {String} optional, the value to use for the title element in the document
+// @param title {String} optional, the value to use for the title element in the
+// document
 export async function exportOPML(conn, title) {
   const feeds = await getFeeds(conn);
 
@@ -17,7 +18,7 @@ export async function exportOPML(conn, title) {
   doc.documentElement.appendChild(headElement);
 
   const titleElement = doc.createElement('title');
-  if(title) {
+  if (title) {
     titleElement.textContent = title;
   }
 
@@ -40,19 +41,19 @@ export async function exportOPML(conn, title) {
   doc.documentElement.appendChild(bodyElement);
 
   // Append the feeds to the document as outline elements
-  for(const feed of feeds) {
+  for (const feed of feeds) {
     const outlineElement = doc.createElement('outline');
-    if(feed.type) {
+    if (feed.type) {
       outlineElement.setAttribute('type', feed.type);
     }
     outlineElement.setAttribute('xmlUrl', feedPeekURL(feed));
-    if(feed.title) {
+    if (feed.title) {
       outlineElement.setAttribute('title', feed.title);
     }
-    if(feed.description) {
+    if (feed.description) {
       outlineElement.setAttribute('description', feed.description);
     }
-    if(feed.link) {
+    if (feed.link) {
       outlineElement.setAttribute('htmlUrl', feed.link);
     }
 
@@ -68,18 +69,20 @@ export async function exportOPML(conn, title) {
 // Imports one or more opml files into the app
 // @param feedConn {IDBDatabase} open conn to reader database
 // @param iconConn {IDBDatabase} open conn to favicon database
-// @param channel {BroadcastChannel} optional channel to notify of storage events
+// @param channel {BroadcastChannel} optional channel to notify of storage
+// events
 // @param fetchFeedTimeout {Number} parameter fowarded to subscribe
 // @param files {FileList} a list of opml files to import
 // @return {Promise} a promise that resolves when finished to an array of numbers, or rejects
-// with an error. Each number corresponds to one of the files. -1 means weak error, otherwise
-// a count of number of feeds subscribed from the file. Rejections can leave the db in an
-// inconsistent state.
-export function importOPML(feedConn, iconConn, channel, fetchFeedTimeout, files) {
+// with an error. Each number corresponds to one of the files. -1 means weak
+// error, otherwise a count of number of feeds subscribed from the file.
+// Rejections can leave the db in an inconsistent state.
+export function importOPML(
+    feedConn, iconConn, channel, fetchFeedTimeout, files) {
   assert(files instanceof FileList);
 
   console.log('Importing %d opml file(s)', files.length);
-  if(!files.length) {
+  if (!files.length) {
     return;
   }
 
@@ -95,7 +98,7 @@ export function importOPML(feedConn, iconConn, channel, fetchFeedTimeout, files)
 
   // Concurrently import files.
   const promises = [];
-  for(const file of files) {
+  for (const file of files) {
     promises.push(importOPMLFile(subscribeContext, file));
   }
 
@@ -103,29 +106,26 @@ export function importOPML(feedConn, iconConn, channel, fetchFeedTimeout, files)
 }
 
 // Reads the file, parses the opml, and then subscribes to each of the feeds
-// Returns -1 in case of weak error. Returns 0 if no feeds subscribed. Otherwise returns the
-// count of feeds subscribed.
+// Returns -1 in case of weak error. Returns 0 if no feeds subscribed. Otherwise
+// returns the count of feeds subscribed.
 async function importOPMLFile(subscribeContext, file) {
-  // Calling this with something other than a file is a persistent critical programming error
+  // Calling this with something other than a file is a persistent critical
+  // programming error
   assert(file instanceof File);
 
   console.log('Importing file', file.name, file.type, file.size);
 
-  if(file.size < 1) {
+  if (file.size < 1) {
     console.debug('Skipping empty file', file.name);
     return -1;
   }
 
   // Only process xml files
   const xmlMimeTypes = [
-    'application/atom+xml',
-    'application/rdf+xml',
-    'application/rss+xml',
-    'application/xml',
-    'application/xhtml+xml',
-    'text/xml'
+    'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',
+    'application/xml', 'application/xhtml+xml', 'text/xml'
   ];
-  if(!xmlMimeTypes.includes(file.type)) {
+  if (!xmlMimeTypes.includes(file.type)) {
     console.debug('Skipping non-xml file', file.name, file.type);
     return -1;
   }
@@ -134,7 +134,7 @@ async function importOPMLFile(subscribeContext, file) {
   let fileText;
   try {
     fileText = await readFileAsText(file);
-  } catch(error) {
+  } catch (error) {
     console.error(file.name, error);
     return -1;
   }
@@ -143,13 +143,13 @@ async function importOPMLFile(subscribeContext, file) {
   let document;
   try {
     document = parseOPML(fileText);
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
     return -1;
   }
 
   const urls = getFeedURLs(document);
-  if(!urls.length) {
+  if (!urls.length) {
     console.debug('No feeds found in file', file.name);
     return 0;
   }
@@ -172,7 +172,7 @@ function identity(value) {
 async function subscribeNoExcept(subscribeContext, url) {
   try {
     return await subscribe(subscribeContext, url);
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
   }
 }
@@ -183,20 +183,21 @@ async function subscribeNoExcept(subscribeContext, url) {
 function getFeedURLs(document) {
   const elements = document.querySelectorAll('opml > body > outline');
   const typePattern = /^\s*(rss|rdf|feed)\s*$/i;
-  const seen = [];// distinct normalized url strings
-  const urls = [];// output URL objects
-  for(const element of elements) {
+  const seen = [];  // distinct normalized url strings
+  const urls = [];  // output URL objects
+  for (const element of elements) {
     const type = element.getAttribute('type');
-    if(typePattern.test(type)) {
+    if (typePattern.test(type)) {
       const value = element.getAttribute('xmlUrl');
-      if(value) {
+      if (value) {
         try {
           const url = new URL(value);
-          if(!seen.includes(url.href)) {
+          if (!seen.includes(url.href)) {
             seen.push(url.href);
             urls.push(url);
           }
-        } catch(error) {}
+        } catch (error) {
+        }
       }
     }
   }
@@ -218,7 +219,7 @@ function parseXML(xmlString) {
   const parser = new DOMParser();
   const document = parser.parseFromString(xmlString, 'application/xml');
   const error = document.querySelector('parsererror');
-  if(error) {
+  if (error) {
     const prettyMessage = error.textContent.replace(/\s{2,}/g, ' ');
     throw new Error(prettyMessage);
   }
@@ -230,12 +231,12 @@ function parseOPML(xmlString) {
   // Rethrow parseXML errors as parseOPML errors
   const document = parseXML(xmlString);
   const name = document.documentElement.localName.toLowerCase();
-  if(name !== 'opml') {
+  if (name !== 'opml') {
     throw new Error('Document element is not opml: ' + name);
   }
   return document;
 }
 
 function assert(value, message) {
-  if(!value) throw new Error(message || 'Assertion error');
+  if (!value) throw new Error(message || 'Assertion error');
 }
