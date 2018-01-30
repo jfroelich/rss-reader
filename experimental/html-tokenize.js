@@ -1,4 +1,4 @@
-import assert from "/src/common/assert.js";
+import assert from '/src/common/assert.js';
 
 // Tokenizes an arbitrary string of html. Makes some effort to comply with
 // standards but does not fully comply.
@@ -14,7 +14,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
   assert(typeof htmlString === 'string');
 
   const inputStringLength = htmlString.length;
-  if(inputStringLength < 1) {
+  if (inputStringLength < 1) {
     return [];
   }
 
@@ -95,13 +95,13 @@ export function tokenizeHTML(htmlString, inputState = 0) {
   // Buffer of characters of current token
   let token = [];
 
-  for(let index = 0; index < inputStringLength; index++) {
+  for (let index = 0; index < inputStringLength; index++) {
     const cursor = htmlString.charAt(index);
 
-    switch(state) {
+    switch (state) {
       case STATE_TEXT:
-        if(cursor === '<') {
-          if(token.length) {
+        if (cursor === '<') {
+          if (token.length) {
             tokens.push(token.join(''));
             token.length = 0;
           }
@@ -114,19 +114,19 @@ export function tokenizeHTML(htmlString, inputState = 0) {
       case STATE_TAG_OPEN:
         token.push(cursor);
 
-        if(cursor === '>') {
+        if (cursor === '>') {
           // <>
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '/') {
-          state = STATE_TAG_CLOSE;// </
-        } else if(cursor === '!') {
+        } else if (cursor === '/') {
+          state = STATE_TAG_CLOSE;  // </
+        } else if (cursor === '!') {
           state = STATE_TAG_OPEN_BANG;
-        } else if(cursor === '?') {
-          state = STATE_TAG_OPEN_NAME;// <? Start of pi
-        } else if(/[a-z]/i.test(cursor)) {
-          state = STATE_TAG_OPEN_NAME;// <character
+        } else if (cursor === '?') {
+          state = STATE_TAG_OPEN_NAME;  // <? Start of pi
+        } else if (/[a-z]/i.test(cursor)) {
+          state = STATE_TAG_OPEN_NAME;  // <character
         } else {
           // We do not allow leading spaces before a tag name, so if this
           // is a space it is not valid. Possibly an unencoded < in plain text
@@ -136,29 +136,29 @@ export function tokenizeHTML(htmlString, inputState = 0) {
       case STATE_TAG_OPEN_BANG:
         // <!
         token.push(cursor);
-        if(cursor === '>') {
+        if (cursor === '>') {
           // <!>
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '-') {
-          state = STATE_TAG_OPEN_BANG_DASH;// <!-
-        } else if(cursor === '[') {
-          state = STATE_TAG_OPEN_BANG_BRACKET;// <![
-        } else if(/[a-z]/i.test(cursor)) {
-          state = STATE_TAG_OPEN_NAME;// <!DOCTYPE
+        } else if (cursor === '-') {
+          state = STATE_TAG_OPEN_BANG_DASH;  // <!-
+        } else if (cursor === '[') {
+          state = STATE_TAG_OPEN_BANG_BRACKET;  // <![
+        } else if (/[a-z]/i.test(cursor)) {
+          state = STATE_TAG_OPEN_NAME;  // <!DOCTYPE
         } else {
           state = STATE_TAG_OPEN_AFTER_NAME;
         }
         break;
       case STATE_TAG_OPEN_BANG_DASH:
-        token.push(cursor);// <!-
-        if(cursor === '>') {
+        token.push(cursor);  // <!-
+        if (cursor === '>') {
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '-') {
-          state = STATE_COMMENT;// <!--
+        } else if (cursor === '-') {
+          state = STATE_COMMENT;  // <!--
         } else {
           // <!-? Malformed?
           // TODO: should i distinguish between open name and open after name
@@ -169,12 +169,12 @@ export function tokenizeHTML(htmlString, inputState = 0) {
       case STATE_TAG_OPEN_BANG_BRACKET:
         // <![
         token.push(cursor);
-        if(cursor === '>') {
+        if (cursor === '>') {
           // <![>
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === 'c' || cursor === 'C') {
+        } else if (cursor === 'c' || cursor === 'C') {
           state = STATE_TAG_OPEN_BANG_BRACKET_C;
         } else {
           // TODO: distinguish between name and after name states here?
@@ -184,12 +184,12 @@ export function tokenizeHTML(htmlString, inputState = 0) {
       case STATE_TAG_OPEN_BANG_BRACKET_C:
         // <![c
         token.push(cursor);
-        if(cursor === '>') {
+        if (cursor === '>') {
           // <![c>
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === 'd' || cursor === 'D') {
+        } else if (cursor === 'd' || cursor === 'D') {
           // <![cd
           state = STATE_TAG_OPEN_BANG_BRACKET_CD;
         } else {
@@ -201,12 +201,12 @@ export function tokenizeHTML(htmlString, inputState = 0) {
       case STATE_TAG_OPEN_BANG_BRACKET_CD:
         // <![cd
         token.push(cursor);
-        if(cursor === '>') {
+        if (cursor === '>') {
           // <![cd>
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === 'a' || cursor === 'A') {
+        } else if (cursor === 'a' || cursor === 'A') {
           // <![cda
           state = STATE_TAG_OPEN_BANG_BRACKET_CDA;
         } else {
@@ -217,11 +217,11 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_TAG_OPEN_BANG_BRACKET_CDA:
         token.push(cursor);
-        if(cursor === '>') {
+        if (cursor === '>') {
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === 't' || cursor === 'T') {
+        } else if (cursor === 't' || cursor === 'T') {
           state = STATE_TAG_OPEN_BANG_BRACKET_CDAT;
         } else {
           // TODO: distinguish between name and after name states here?
@@ -230,11 +230,11 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_TAG_OPEN_BANG_BRACKET_CDAT:
         token.push(cursor);
-        if(cursor === '>') {
+        if (cursor === '>') {
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === 'a' || cursor === 'A'){
+        } else if (cursor === 'a' || cursor === 'A') {
           state = STATE_TAG_OPEN_BANG_BRACKET_CDATA;
         } else {
           // TODO: distinguish between name and after name states here?
@@ -246,23 +246,23 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         // TODO: handle open name and after name states correctly, check for
         // space
         token.push(cursor);
-        if(cursor === '>') {
+        if (cursor === '>') {
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '[') {
+        } else if (cursor === '[') {
           state = STATE_CDATA;
         }
         break;
       case STATE_CDATA:
         token.push(cursor);
-        if(cursor === ']') {
+        if (cursor === ']') {
           state = STATE_CDATA_BRACKET;
         }
         break;
       case STATE_CDATA_BRACKET:
         token.push(cursor);
-        if(cursor === ']') {
+        if (cursor === ']') {
           // ]]
           state = STATE_CDATA_BRACKET_BRACKET;
         } else {
@@ -272,13 +272,13 @@ export function tokenizeHTML(htmlString, inputState = 0) {
       case STATE_CDATA_BRACKET_BRACKET:
         // ]]{cursor}
         token.push(cursor);
-        if(cursor === '>') {
+        if (cursor === '>') {
           // ]]>
           // End of CDATA section
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === ']') {
+        } else if (cursor === ']') {
           // ]]]
           // TODO: test this, not sure if correct
           // Retreat to treating the second bracket as the first
@@ -294,24 +294,22 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         const SCRIPT_NAME_LENGTH = 'script'.length;
         const STYLE_NAME_LENGTH = 'style'.length;
 
-        if(cursor === '>') {
-
+        if (cursor === '>') {
           // TODO: these conditions also need to happen in tag open after name
           // state
 
           let tagNameWithSigns = token.join('');
 
-          if(token.length === (SCRIPT_NAME_LENGTH + 2) &&
-            /<script>/i.test(tagNameWithSigns)) {
-
+          if (token.length === (SCRIPT_NAME_LENGTH + 2) &&
+              /<script>/i.test(tagNameWithSigns)) {
             // Emit the <script> token
             tokens.push(token.join(''));
             token.length = 0;
 
             state = STATE_SCRIPT_TEXT;
-          } else if(token.length === (STYLE_NAME_LENGTH + 2) &&
-            /<style>/i.test(tagNameWithSigns)) {
-
+          } else if (
+              token.length === (STYLE_NAME_LENGTH + 2) &&
+              /<style>/i.test(tagNameWithSigns)) {
             // Emit the <style> token
             tokens.push(token.join(''));
             token.length = 0;
@@ -324,7 +322,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
             state = STATE_TEXT;
           }
 
-        } else if(/[a-z]/i.test(cursor)) {
+        } else if (/[a-z]/i.test(cursor)) {
           // stay in tag name
         } else {
           state = STATE_TAG_OPEN_AFTER_NAME;
@@ -334,13 +332,13 @@ export function tokenizeHTML(htmlString, inputState = 0) {
       case STATE_TAG_OPEN_AFTER_NAME:
         token.push(cursor);
 
-        if(cursor === '>') {
+        if (cursor === '>') {
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '"') {
+        } else if (cursor === '"') {
           state = STATE_TAG_OPEN_DQATTRIBUTE;
-        } else if(cursor === '\'') {
+        } else if (cursor === '\'') {
           state = STATE_TAG_OPEN_SQATTRIBUTE;
         }
         break;
@@ -350,7 +348,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         // TODO: no whitespace before tag name
         // TODO: whitespace after tag name
 
-        if(cursor === '>') {
+        if (cursor === '>') {
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
@@ -359,13 +357,13 @@ export function tokenizeHTML(htmlString, inputState = 0) {
       case STATE_COMMENT:
         token.push(cursor);
 
-        if(cursor === '-') {
+        if (cursor === '-') {
           state = STATE_COMMENT_DASH;
         }
         break;
       case STATE_COMMENT_DASH:
         token.push(cursor);
-        if(cursor === '-') {
+        if (cursor === '-') {
           state = STATE_COMMENT_DASH_DASH;
         } else {
           state = STATE_COMMENT;
@@ -373,12 +371,12 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_COMMENT_DASH_DASH:
         token.push(cursor);
-        if(cursor === '>') {
+        if (cursor === '>') {
           // -->
           tokens.push(token.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(cursor === '-') {
+        } else if (cursor === '-') {
           // ---
           // Stay in this state. Now treat the last two dashes as possibly
           // terminating
@@ -390,26 +388,26 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_TAG_OPEN_SQATTRIBUTE:
         token.push(cursor);
-        if(cursor === "'") {
+        if (cursor === '\'') {
           state = STATE_TAG_OPEN_AFTER_NAME;
         }
         break;
       case STATE_TAG_OPEN_DQATTRIBUTE:
         token.push(cursor);
-        if(cursor === '"') {
+        if (cursor === '"') {
           state = STATE_TAG_OPEN_AFTER_NAME;
         }
         break;
 
       case STATE_STYLE_TEXT:
         token.push(cursor);
-        if(cursor === '/') {
+        if (cursor === '/') {
           state = STATE_STYLE_FORWARD_SLASH;
-        } else if(cursor === '<') {
+        } else if (cursor === '<') {
           state = STATE_STYLE_LESS_THAN_SIGN;
-        } else if(cursor === '\'') {
+        } else if (cursor === '\'') {
           state = STATE_STYLE_SINGLE_QUOTE;
-        } else if(cursor === '"') {
+        } else if (cursor === '"') {
           state = STATE_STYLE_DOUBLE_QUOTE;
         } else {
           // Stay in this state
@@ -417,9 +415,9 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_STYLE_SINGLE_QUOTE:
         token.push(cursor);
-        if(cursor === '\\') {
+        if (cursor === '\\') {
           state = STATE_STYLE_SINGLE_QUOTE_ESCAPE;
-        } else if(cursor === '\'') {
+        } else if (cursor === '\'') {
           state = STATE_STYLE_TEXT;
         } else {
           // Stay in this state
@@ -431,9 +429,9 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_STYLE_DOUBLE_QUOTE:
         token.push(cursor);
-        if(cursor === '\\') {
+        if (cursor === '\\') {
           state = STATE_STYLE_DOUBLE_QUOTE_ESCAPE;
-        } else if(cursor === '"') {
+        } else if (cursor === '"') {
           state = STATE_STYLE_TEXT;
         } else {
           // Stay in this state
@@ -441,9 +439,9 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_STYLE_LESS_THAN_SIGN:
         token.push(cursor);
-        if(cursor === '<') {
+        if (cursor === '<') {
           // Stay in same state
-        } else if(cursor === '/') {
+        } else if (cursor === '/') {
           // Go to next state of possible closing style tag
           state = STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH;
         } else {
@@ -453,11 +451,11 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH:
         token.push(cursor);
-        if(cursor === 's' || cursor === 'S') {
+        if (cursor === 's' || cursor === 'S') {
           state = STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH_S;
-        } else if(cursor === '<') {
+        } else if (cursor === '<') {
           state = STATE_STYLE_LESS_THAN_SIGN;
-        } else if(cursor === '*') {
+        } else if (cursor === '*') {
           // </* means a bad < followed by start of comment
           state = STATE_STYLE_MULTILINE_COMMENT;
         } else {
@@ -466,11 +464,11 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH_S:
         token.push(cursor);
-        if(cursor === 't' || cursor === 'T') {
+        if (cursor === 't' || cursor === 'T') {
           state = STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH_ST;
-        } else if(cursor === '<') {
+        } else if (cursor === '<') {
           state = STATE_STYLE_LESS_THAN_SIGN;
-        } else if(cursor === '/') {
+        } else if (cursor === '/') {
           state = STATE_STYLE_FORWARD_SLASH;
         } else {
           state = STATE_STYLE_TEXT;
@@ -478,11 +476,11 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH_ST:
         token.push(cursor);
-        if(cursor === 'y' || cursor === 'Y') {
+        if (cursor === 'y' || cursor === 'Y') {
           state = STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH_STY;
-        } else if(cursor === '<') {
+        } else if (cursor === '<') {
           state = STATE_STYLE_LESS_THAN_SIGN;
-        } else if(cursor === '/') {
+        } else if (cursor === '/') {
           state = STATE_STYLE_FORWARD_SLASH;
         } else {
           state = STATE_STYLE_TEXT;
@@ -490,11 +488,11 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH_STY:
         token.push(cursor);
-        if(cursor === 'l' || cursor === 'L') {
+        if (cursor === 'l' || cursor === 'L') {
           state = STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH_STYL;
-        } else if(cursor === '<') {
+        } else if (cursor === '<') {
           state = STATE_STYLE_LESS_THAN_SIGN;
-        } else if(cursor === '/') {
+        } else if (cursor === '/') {
           state = STATE_STYLE_FORWARD_SLASH;
         } else {
           state = STATE_STYLE_TEXT;
@@ -502,11 +500,11 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH_STYL:
         token.push(cursor);
-        if(cursor === 'e' || cursor === 'E') {
+        if (cursor === 'e' || cursor === 'E') {
           state = STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH_STYLE;
-        } else if(cursor === '<') {
+        } else if (cursor === '<') {
           state = STATE_STYLE_LESS_THAN_SIGN;
-        } else if(cursor === '/') {
+        } else if (cursor === '/') {
           state = STATE_STYLE_FORWARD_SLASH;
         } else {
           state = STATE_STYLE_TEXT;
@@ -514,12 +512,11 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_STYLE_LESS_THAN_SIGN_FORWARD_SLASH_STYLE:
         token.push(cursor);
-        if(cursor === '>') {
-
+        if (cursor === '>') {
           const styleEndTagLength = '</style>'.length;
 
           // We only have some text if the token is longer than the end tag
-          if(token.length > styleEndTagLength) {
+          if (token.length > styleEndTagLength) {
             const styleText = token.slice(0, -1 * styleEndTagLength);
             tokens.push(styleText.join(''));
           }
@@ -533,11 +530,11 @@ export function tokenizeHTML(htmlString, inputState = 0) {
           // Revert to normal state
           state = STATE_TEXT;
 
-        } else if(cursor === '<') {
+        } else if (cursor === '<') {
           state = STATE_STYLE_LESS_THAN_SIGN;
-        } else if(cursor === '/') {
+        } else if (cursor === '/') {
           state = STATE_STYLE_FORWARD_SLASH;
-        } else if(/\s/.test(cursor)) {
+        } else if (/\s/.test(cursor)) {
           // Stay in this state. This allows for arbitrary whitespace after
           // style closing tag name preceding >
         } else {
@@ -546,9 +543,9 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_STYLE_FORWARD_SLASH:
         token.push(cursor);
-        if(cursor === '*') {
+        if (cursor === '*') {
           state = STATE_STYLE_MULTILINE_COMMENT;
-        } else if(cursor === '/') {
+        } else if (cursor === '/') {
           // Stay in this state
         } else {
           state = STATE_STYLE_TEXT;
@@ -556,15 +553,15 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_STYLE_MULTILINE_COMMENT:
         token.push(cursor);
-        if(cursor === '*') {
+        if (cursor === '*') {
           state = STATE_STYLE_MULTILINE_COMMENT_STAR;
         }
         break;
       case STATE_STYLE_MULTILINE_COMMENT_STAR:
         token.push(cursor);
-        if(cursor === '/') {
+        if (cursor === '/') {
           state = STATE_STYLE_TEXT;
-        } else if(cursor === '*') {
+        } else if (cursor === '*') {
           // Stay in this state
         } else {
           state = STATE_STYLE_MULTILINE_COMMENT;
@@ -572,23 +569,23 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_SCRIPT_TEXT:
         token.push(cursor);
-        if(cursor === '/') {
+        if (cursor === '/') {
           state = STATE_SCRIPT_FORWARD_SLASH;
-        } else if(cursor === '<') {
+        } else if (cursor === '<') {
           state = STATE_SCRIPT_LESS_THAN_SIGN;
-        } else if(cursor === '\'') {
+        } else if (cursor === '\'') {
           state = STATE_SCRIPT_SINGLEQUOTE;
-        } else if(cursor === '"') {
+        } else if (cursor === '"') {
           state = STATE_SCRIPT_DOUBLEQUOTE;
-        } else if(cursor === '`'){
+        } else if (cursor === '`') {
           state = STATE_SCRIPT_BACKQUOTE;
         }
         break;
       case STATE_SCRIPT_SINGLEQUOTE:
         token.push(cursor);
-        if(cursor === '\\') {
+        if (cursor === '\\') {
           state = STATE_SCRIPT_SINGLEQUOTE_ESCAPE;
-        } else if(cursor === '\'') {
+        } else if (cursor === '\'') {
           state = STATE_SCRIPT_TEXT;
         }
         break;
@@ -598,9 +595,9 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_SCRIPT_DOUBLEQUOTE:
         token.push(cursor);
-        if(cursor === '\\') {
+        if (cursor === '\\') {
           state = STATE_SCRIPT_DOUBLEQUOTE_ESCAPE;
-        } else if(cursor === '"') {
+        } else if (cursor === '"') {
           state = STATE_SCRIPT_TEXT;
         }
         break;
@@ -612,9 +609,9 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         // TODO: not entirely clear on template syntax regarding escapes
         // nested backquotes and nested expressions
         token.push(cursor);
-        if(cursor === '\\') {
+        if (cursor === '\\') {
           state = STATE_SCRIPT_BACKQUOTE_ESCAPE;
-        } else if(cursor === '`') {
+        } else if (cursor === '`') {
           state = STATE_SCRIPT_TEXT;
         }
         break;
@@ -624,16 +621,15 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_SCRIPT_FORWARD_SLASH:
         token.push(cursor);
-        if(cursor === '/') {
+        if (cursor === '/') {
           state = STATE_SCRIPT_SINGLE_LINE_COMMENT;
-        } else if(cursor === '*') {
+        } else if (cursor === '*') {
           state = STATE_SCRIPT_MULTILINE_COMMENT;
         } else {
-
           // TODO: Either a division symbol, or start of regular expression
           // literal, or malformed. Ambiguous.
 
-          if(token.length === 2) {
+          if (token.length === 2) {
             // Token length is the full text of the javascript after the
             // script tag.
             // If token length is 2, and we know the previous character was
@@ -655,9 +651,8 @@ export function tokenizeHTML(htmlString, inputState = 0) {
             // const CHARS_CANNOT_PRECEDE_DIVISION = '(,=:[!&|?{};';
 
             const b3 = token[token.length - 3];
-            if(b3 === '(' || b3 === ',' || b3 === '=' ||
-              b3 === ':' || b3 === '[' || b3 === '!' ||
-              b3 === '&' || b3 === '') {
+            if (b3 === '(' || b3 === ',' || b3 === '=' || b3 === ':' ||
+                b3 === '[' || b3 === '!' || b3 === '&' || b3 === '') {
               console.log('b3 is %s which means must be regex', b3);
               state = STATE_SCRIPT_POSSIBLE_REGULAR_EXPRESS_LITERAL;
             }
@@ -669,7 +664,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_SCRIPT_LESS_THAN_SIGN:
         token.push(cursor);
-        if(cursor === '/') {
+        if (cursor === '/') {
           state = STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH;
         } else {
           state = STATE_SCRIPT_TEXT;
@@ -686,15 +681,15 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         // a second < in bitshift case
         // Something malformed (javascript syntax error)
 
-        if(cursor === '/') {
+        if (cursor === '/') {
           // <//
           token.push(cursor);
           state = STATE_SCRIPT_SINGLE_LINE_COMMENT;
-        } else if(cursor === '*') {
+        } else if (cursor === '*') {
           // </*
           token.push(cursor);
           state = STATE_SCRIPT_MULTILINE_COMMENT;
-        } else if(cursor === 's' || cursor === 'S') {
+        } else if (cursor === 's' || cursor === 'S') {
           // </s
           // TODO: actually this could be a regular expression literal...?
           // so we have to go all the way to </script>
@@ -711,7 +706,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH_S:
         token.push(cursor);
-        if(cursor === 'c' || cursor === 'C') {
+        if (cursor === 'c' || cursor === 'C') {
           state = STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH_SC;
         } else {
           state = STATE_SCRIPT_POSSIBLE_REGULAR_EXPRESS_LITERAL;
@@ -719,7 +714,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH_SC:
         token.push(cursor);
-        if(cursor === 'r' || cursor === 'R') {
+        if (cursor === 'r' || cursor === 'R') {
           state = STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH_SCR;
         } else {
           state = STATE_SCRIPT_POSSIBLE_REGULAR_EXPRESS_LITERAL;
@@ -727,7 +722,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH_SCR:
         token.push(cursor);
-        if(cursor === 'i' || cursor === 'I') {
+        if (cursor === 'i' || cursor === 'I') {
           state = STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH_SCRI;
         } else {
           state = STATE_SCRIPT_POSSIBLE_REGULAR_EXPRESS_LITERAL;
@@ -735,7 +730,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH_SCRI:
         token.push(cursor);
-        if(cursor === 'p' || cursor === 'P') {
+        if (cursor === 'p' || cursor === 'P') {
           state = STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH_SCRIP;
         } else {
           state = STATE_SCRIPT_POSSIBLE_REGULAR_EXPRESS_LITERAL;
@@ -743,7 +738,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH_SCRIP:
         token.push(cursor);
-        if(cursor === 't' || cursor === 'T') {
+        if (cursor === 't' || cursor === 'T') {
           state = STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH_SCRIPT;
         } else {
           state = STATE_SCRIPT_POSSIBLE_REGULAR_EXPRESS_LITERAL;
@@ -752,14 +747,13 @@ export function tokenizeHTML(htmlString, inputState = 0) {
       case STATE_SCRIPT_LESS_THAN_SIGN_FOWARD_SLASH_SCRIPT:
 
         token.push(cursor);
-        if(cursor === '>') {
-
+        if (cursor === '>') {
           // TODO: if i allow whitespace after tag name in closing tag, then
           // this logic is not correct
 
           const scriptCloseTagLength = '</script>'.length;
 
-          if(token.length > scriptCloseTagLength) {
+          if (token.length > scriptCloseTagLength) {
             const scriptText = token.slice(0, -1 * scriptCloseTagLength);
             tokens.push(scriptText.join(''));
           }
@@ -768,7 +762,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
           tokens.push(closeTagText.join(''));
           token.length = 0;
           state = STATE_TEXT;
-        } else if(/\s/.test(cursor)) {
+        } else if (/\s/.test(cursor)) {
           // TODO: actually this might not work because again the SCRIPT_TEXT
           // is a part of the token along with the closing tag
           state = STATE_TAG_CLOSE;
@@ -781,21 +775,21 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_SCRIPT_SINGLE_LINE_COMMENT:
         token.push(cursor);
-        if(cursor === '\n') {
+        if (cursor === '\n') {
           state = STATE_SCRIPT_TEXT;
         }
         break;
       case STATE_SCRIPT_MULTILINE_COMMENT:
         token.push(cursor);
-        if(cursor === '*') {
+        if (cursor === '*') {
           state = STATE_SCRIPT_MULTILINE_COMMENT_CLOSING;
         }
         break;
       case STATE_SCRIPT_MULTILINE_COMMENT_CLOSING:
         token.push(cursor);
-        if(cursor === '/') {
+        if (cursor === '/') {
           state = STATE_SCRIPT_TEXT;
-        } else if(cursor === '*') {
+        } else if (cursor === '*') {
           // **
           // Stay in the same state. The first star is not closing,
           // but the second could be
@@ -807,10 +801,9 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         break;
       case STATE_SCRIPT_POSSIBLE_REGULAR_EXPRESS_LITERAL:
         token.push(cursor);
-        if(cursor === '\\') {
+        if (cursor === '\\') {
           state = STATE_SCRIPT_REGULAR_EXPRESS_LITERAL_ESCAPE;
-        } else if(cursor === '\n' || cursor === '\r') {
-
+        } else if (cursor === '\n' || cursor === '\r') {
           // Regular expression literals cannot contain new lines according
           // to https://github.com/lydell/js-tokens
           // Therefore this must not be a regular expression literal, or is
@@ -820,7 +813,7 @@ export function tokenizeHTML(htmlString, inputState = 0) {
           // TODO: but what if we entered into a string literal
           state = STATE_SCRIPT_TEXT;
 
-        } else if(cursor === '/') {
+        } else if (cursor === '/') {
           state = STATE_SCRIPT_TEXT;
         } else {
           // Stay in this state
@@ -831,19 +824,20 @@ export function tokenizeHTML(htmlString, inputState = 0) {
         state = STATE_SCRIPT_POSSIBLE_REGULAR_EXPRESS_LITERAL;
         break;
       default:
-        // TODO: this should be an assertion error because this should never happen
+        // TODO: this should be an assertion error because this should never
+        // happen
         throw new Error('Unknown state: ' + state);
-    } // end switch statement
-  } // end for loop
+    }  // end switch statement
+  }    // end for loop
 
   // Handle the final token
-  if(token.length) {
+  if (token.length) {
     tokens.push(token.join(''));
   }
 
-  if(state !== STATE_TEXT) {
-    throw new Error('Ended in invalid state ' + state + ' with token ' +
-      token.join(''));
+  if (state !== STATE_TEXT) {
+    throw new Error(
+        'Ended in invalid state ' + state + ' with token ' + token.join(''));
   }
 
   return tokens;

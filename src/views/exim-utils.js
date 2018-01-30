@@ -1,9 +1,6 @@
-import {
-  exportOPML as exportOPMLImpl,
-  importOPML as importOPMLImpl
-} from "/src/exim.js";
-import {open as openReaderDb} from "/src/rdb.js";
-import {open as openIconDb} from "/src/favicon-service.js";
+import {exportOPML as exportOPMLImpl, importOPML as importOPMLImpl} from '/src/exim.js';
+import {open as openIconDb} from '/src/favicon-service.js';
+import {open as openReaderDb} from '/src/rdb.js';
 
 // The idea is that the view shouldn't directly call importOPML or exportOPML.
 // Wrap those functions here, and have the slideshow call these wrapped
@@ -18,10 +15,9 @@ import {open as openIconDb} from "/src/favicon-service.js";
 // few other db wrapper calls
 
 export async function importOPML(channel, files) {
-
   // Given that there could be several feeds being subscribed, use a slightly
-  // higher timeout than average to reduce the chance that some contention delays
-  // result in failure
+  // higher timeout than average to reduce the chance that some contention
+  // delays result in failure
   const fetchFeedTimeout = 10 * 1000;
   let feedConn, iconConn;
 
@@ -29,8 +25,8 @@ export async function importOPML(channel, files) {
     [feedConn, iconConn] = await Promise.all([openReaderDb(), openIconDb()]);
     await importOPMLImpl(feedConn, iconConn, channel, fetchFeedTimeout, files);
   } finally {
-    if(feedConn) feedConn.close();
-    if(iconConn) iconConn.close();
+    if (feedConn) feedConn.close();
+    if (iconConn) iconConn.close();
   }
 }
 
@@ -40,6 +36,6 @@ export async function exportOPML(title) {
     conn = await openReaderDb();
     exportOPMLImpl(conn, title);
   } finally {
-    if(conn) conn.close();
+    if (conn) conn.close();
   }
 }

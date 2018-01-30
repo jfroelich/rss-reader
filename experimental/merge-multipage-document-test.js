@@ -1,7 +1,6 @@
-import {paginationFindAnchorSequences} from "/experimental/pagination.js";
+import {paginationFindAnchorSequences} from '/experimental/pagination.js';
 
 function test() {
-
   const c = document.getElementById('c');
   const d = document.getElementById('d');
   const e = document.getElementById('e');

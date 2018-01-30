@@ -1,5 +1,5 @@
-import assert from "/src/common/assert.js";
-import {isHiddenInlineElement, unwrapElement} from "/src/common/dom-utils.js";
+import assert from '/src/common/assert.js';
+import {isHiddenInlineElement, unwrapElement} from '/src/common/dom-utils.js';
 
 // TODO: make a github issue about optimizing recursive unwrap. I previously
 // made several attempts at optimization. Unfortunately much of the code is
@@ -19,7 +19,7 @@ import {isHiddenInlineElement, unwrapElement} from "/src/common/dom-utils.js";
 export default function filterDocument(doc) {
   assert(doc instanceof Document);
   const body = doc.body;
-  if(!body) {
+  if (!body) {
     return;
   }
 
@@ -33,8 +33,8 @@ export default function filterDocument(doc) {
   // it, so there is no longer a concern of duplicate evaluation.
 
   const elements = body.querySelectorAll('*');
-  for(const element of elements) {
-    if(body.contains(element) && isHiddenInlineElement(element)) {
+  for (const element of elements) {
+    if (body.contains(element) && isHiddenInlineElement(element)) {
       unwrapElement(element);
     }
   }

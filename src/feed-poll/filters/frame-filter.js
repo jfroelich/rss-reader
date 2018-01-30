@@ -1,4 +1,4 @@
-import assert from "/src/common/assert.js";
+import assert from '/src/common/assert.js';
 
 // TODO: move to basic filters
 
@@ -13,13 +13,13 @@ export default function frameFilter(doc) {
   let originalBody = doc.body;
 
   // If the document has no body or frame element, then there is nothing to do
-  if(!originalBody) {
+  if (!originalBody) {
     return;
   }
 
   // If the body element is a body element and not a frame element, then there
   // is nothing to do
-  if(originalBody.localName !== 'frameset') {
+  if (originalBody.localName !== 'frameset') {
     return;
   }
 
@@ -28,14 +28,15 @@ export default function frameFilter(doc) {
 
   // If available, move noframes content into the new body.
   const noframesElement = doc.querySelector('noframes');
-  if(noframesElement) {
-    for(let node = noframesElement.firstChild; node; node = noframesElement.firstChild) {
+  if (noframesElement) {
+    for (let node = noframesElement.firstChild; node;
+         node = noframesElement.firstChild) {
       newBody.appendChild(node);
     }
   }
 
   // If the new body is empty, add an error message about framed content
-  if(!newBody.firstChild) {
+  if (!newBody.firstChild) {
     const errorNode = doc.createTextNode('Unable to display framed document');
     newBody.appendChild(errorNode);
   }
@@ -47,7 +48,7 @@ export default function frameFilter(doc) {
 
   // Remove any frame or frameset elements if somehow any remain
   const frames = doc.querySelectorAll('frame, frameset');
-  for(const frame of frames) {
+  for (const frame of frames) {
     frame.remove();
   }
 }

@@ -10,46 +10,53 @@ const syntaxPattern = /%[sdo%]/g;
 export default function formatString(...args) {
   // args is defined even when there are no arguments
   const argCount = args.length;
-  if(argCount === 0) {
+  if (argCount === 0) {
     return '';
   }
 
   let argIndex = 0;
   const formatArg = args[argIndex];
-  if(typeof formatArg !== 'string') {
+  if (typeof formatArg !== 'string') {
     return args.map(anyTypeToStringString).join(' ');
   }
 
   argIndex++;
 
-  if(argIndex === argCount) {
+  if (argIndex === argCount) {
     return formatArg;
   }
 
   // Walk over each formatting argument thing in the format string, and replace
   // it with one of the remaining arguments. We know there is at least one
   // other argument.
-  const replacedString = formatArg.replace(syntaxPattern, function replacer(match) {
-    // If we've reached or moved past the end, then there are more occurrences of
-    // formatting codes than arguments. Stop doing any replacements.
-    if(argIndex >= argCount) {
-      return match;
-    }
+  const replacedString =
+      formatArg.replace(syntaxPattern, function replacer(match) {
+        // If we've reached or moved past the end, then there are more
+        // occurrences of formatting codes than arguments. Stop doing any
+        // replacements.
+        if (argIndex >= argCount) {
+          return match;
+        }
 
-    // Replace the matched formatting code with the current argument, and
-    // advance the argument index to the next argument. The post-increment
-    // occurs after the value is read
-    switch(match) {
-    case '%%':  return '%';
-    case '%s':  return anyTypeToStringString(args[argIndex++]);
-    case '%d':  return anyTypeToNumberString(args[argIndex++]);
-    case '%o':  return anyTypeToObjectString(args[argIndex++]);
-    default:    return match;
-    }
-  });
+        // Replace the matched formatting code with the current argument, and
+        // advance the argument index to the next argument. The post-increment
+        // occurs after the value is read
+        switch (match) {
+          case '%%':
+            return '%';
+          case '%s':
+            return anyTypeToStringString(args[argIndex++]);
+          case '%d':
+            return anyTypeToNumberString(args[argIndex++]);
+          case '%o':
+            return anyTypeToObjectString(args[argIndex++]);
+          default:
+            return match;
+        }
+      });
 
   // Exit early if all arguments processed
-  if(argIndex >= argCount) {
+  if (argIndex >= argCount) {
     return replacedString;
   }
 
@@ -59,15 +66,15 @@ export default function formatString(...args) {
   // Append the remaining unused arguments to a buffer, then join them.
   // This still works even if the above check was not present.
   const buffer = [replacedString];
-  while(argIndex < argCount) {
+  while (argIndex < argCount) {
     buffer.push(anyTypeToStringString(args[argIndex++]));
   }
   return buffer.join(' ');
 }
 
 function anyTypeToNumberString(value) {
-  if(typeof value === 'number') {
-    if(Object.is(value, -0)) {
+  if (typeof value === 'number') {
+    if (Object.is(value, -0)) {
       // Special case for negative zero because otherwise ('' + -0) yields '0'.
       // This matches console.log behavior.
       return '-0';
@@ -88,10 +95,9 @@ const nativeHasOwn = Object.prototype.hasOwnProperty;
 
 // Convert an object into a string. This does not assume the input is an object.
 function anyTypeToObjectString(value) {
-
   // typeof null === 'object', so special case for null. Cannot assume caller
   // already checked for this situation.
-  if(value === null) {
+  if (value === null) {
     return 'null';
   }
 
@@ -100,17 +106,17 @@ function anyTypeToObjectString(value) {
   // convert undefined or null to object"
   // NOTE: undefined === void 0
   // NOTE: do not use void(0), void is an operator, not a function
-  if(value === void 0) {
+  if (value === void 0) {
     return 'undefined';
   }
 
   // Do not delegate to JSON.stringify because that wraps string in quotes
-  if(typeof value === 'string') {
+  if (typeof value === 'string') {
     return value;
   }
 
   // Handle date specifically, do not delegate to JSON.stringify
-  if(value instanceof Date) {
+  if (value instanceof Date) {
     return value.toString();
   }
 
@@ -124,7 +130,7 @@ function anyTypeToObjectString(value) {
   // Object object. Which also may have been messed with but at that point it is
   // overly-defensive.
 
-  if(nativeHasOwn.call(value, 'toString')) {
+  if (nativeHasOwn.call(value, 'toString')) {
     // The anyTypeToStringString call is rather superfluous but it protects
     // against custom objects or manipulations of builtin objects that return
     // the improper type.
@@ -134,35 +140,41 @@ function anyTypeToObjectString(value) {
   // NOTE: url.hasOwnProperty('toString') === false, so it is ok to perform
   // this after checking hasOwn above
   // Url is not serializable by stringify
-  if(value instanceof URL) {
+  if (value instanceof URL) {
     return value.href;
   }
 
   // functions are not serializable by stringify
-  if(typeof value === 'function') {
+  if (typeof value === 'function') {
     return value.toString();
   }
 
   try {
     return JSON.stringify(value);
-  } catch(error) {
+  } catch (error) {
     return '{Object(Uncoercable)}';
   }
 }
 
 // Convert a value of an unknown type into a string
 function anyTypeToStringString(value) {
-  if(value === null) {
+  if (value === null) {
     return 'null';
   }
 
   const type = typeof value;
-  switch(type) {
-  case 'undefined': return 'undefined';
-  case 'function':  return value.toString();
-  case 'number':    return anyTypeToNumberString(value);
-  case 'string':    return value;
-  case 'object':    return anyTypeToObjectString(value);
-  default:          return '' + value;
+  switch (type) {
+    case 'undefined':
+      return 'undefined';
+    case 'function':
+      return value.toString();
+    case 'number':
+      return anyTypeToNumberString(value);
+    case 'string':
+      return value;
+    case 'object':
+      return anyTypeToObjectString(value);
+    default:
+      return '' + value;
   }
 }

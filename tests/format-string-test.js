@@ -1,4 +1,4 @@
-import formatString from "/src/common/format-string.js";
+import formatString from '/src/common/format-string.js';
 
 // Enable direct calling in console
 window.formatString = formatString;
@@ -19,7 +19,7 @@ a(s(new URL('http://a.b.c')) === 'http://a.b.c/');
 a(s({}) === '{}');
 a(s({}, {}) === '{} {}');
 
-a(s(new Date("Sat Jan 01 2000 00:00:00 GMT-0500 (EST)")) ===
+a(s(new Date('Sat Jan 01 2000 00:00:00 GMT-0500 (EST)')) ===
   'Sat Jan 01 2000 00:00:00 GMT-0500 (EST)');
 
 
@@ -55,28 +55,30 @@ a(s('%d', new Date()) === 'NaN');
 a(s('%d', {}) === 'NaN');
 a(s('%d', []) === 'NaN');
 a(s('%d', '') === 'NaN');
-a(s('%d', function(){}) === 'NaN');
+a(s('%d', function() {}) === 'NaN');
 
 // Function tests
 // The space before () for anon func is added by native toString
-a(s(function(){}) === 'function (){}');
-a(s(function (){}) === 'function (){}');
-a(s(function foo(){}) === 'function foo(){}');
-a(s('%d', function(){}) === 'NaN');
-a(s('%s', function(){}) === 'function (){}');
-a(s('%o', function(){}) === 'function (){}');
+a(s(function() {}) === 'function (){}');
+a(s(function() {}) === 'function (){}');
+a(s(function foo() {}) === 'function foo(){}');
+a(s('%d', function() {}) === 'NaN');
+a(s('%s', function() {}) === 'function (){}');
+a(s('%o', function() {}) === 'function (){}');
 
 // Object tests
 a(s({}) === '{}');
 a(s('%o') === '%o');
 a(s('%o', {}) === '{}');
 a(s('%o', []) === '[]');
-a(s('%o', {a:1}) === '{"a":1}');
+a(s('%o', {a: 1}) === '{"a":1}');
 a(s('%o', 1) === '1');
 a(s('%o', 'hello') === 'hello');
-a(s('%o', new Date("Sat Jan 01 2000 00:00:00 GMT-0500 (EST)")) ===
+a(s('%o', new Date('Sat Jan 01 2000 00:00:00 GMT-0500 (EST)')) ===
   'Sat Jan 01 2000 00:00:00 GMT-0500 (EST)');
-function Bar() { this.hello = 'world'; }
+function Bar() {
+  this.hello = 'world';
+}
 const barInstance = new Bar();
 a(s('%o', barInstance) === '{"hello":"world"}');
 
@@ -84,4 +86,5 @@ a(s('%o', barInstance) === '{"hello":"world"}');
 // TODO: Mismatch between % flag things and argument counts test
 // TODO: test bad json object with cycle or whatever
 
-console.log('if all tests passed, nothing before this message appears in console');
+console.log(
+    'if all tests passed, nothing before this message appears in console');

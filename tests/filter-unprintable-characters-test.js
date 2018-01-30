@@ -1,10 +1,10 @@
-import {filterUnprintableCharacters} from "/src/rdb.js";
+import {filterUnprintableCharacters} from '/src/rdb.js';
 
 const d = console.debug;
 const f = filterUnprintableCharacters;
 
-// Given string, filter it, then assert whether the filtered string length is equal to the given
-// length, and print the result to the console.
+// Given string, filter it, then assert whether the filtered string length is
+// equal to the given length, and print the result to the console.
 const a = function(s, len) {
   const result = filterUnprintableCharacters(s);
   const passed = result.length === len;
@@ -12,22 +12,21 @@ const a = function(s, len) {
 };
 
 function run() {
-
   console.group('Testing [0 .. 31]');
 
-  for(let i = 0; i < 9;i++) {
+  for (let i = 0; i < 9; i++) {
     a(String.fromCharCode(i), 0);
   }
 
-  a('\t', 1); // 9
-  a('\n', 1); // 10
+  a('\t', 1);  // 9
+  a('\n', 1);  // 10
   a(String.fromCharCode(11), 0);
-  a('\f', 1); // 12
-  a('\r', 1); // 13
+  a('\f', 1);  // 12
+  a('\r', 1);  // 13
 
   const spaceCode = ' '.charCodeAt(0);
 
-  for(let i = 14; i < spaceCode; i++) {
+  for (let i = 14; i < spaceCode; i++) {
     a(String.fromCharCode(i), 0);
   }
 

@@ -1,22 +1,10 @@
-import assert from "/src/common/assert.js";
+import assert from '/src/common/assert.js';
 
 // See https://html.spec.whatwg.org/multipage/syntax.html#void-elements
 // This is a set, but given the small size, it is better to use a simple array.
 const voidElements = [
-  'area',
-  'base',
-  'br',
-  'col',
-  'embed',
-  'hr',
-  'img',
-  'input',
-  'link',
-  'meta',
-  'param',
-  'source',
-  'track',
-  'wbr'
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta',
+  'param', 'source', 'track', 'wbr'
 ];
 
 
@@ -32,7 +20,7 @@ const voidElements = [
 // when renaming
 export default function filterDocument(doc, copyAttributesFlag) {
   assert(doc instanceof Document);
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
@@ -46,7 +34,7 @@ function coerceElements(ancestorElement, oldName, newName, copyAttributesFlag) {
   assert(typeof newName === 'string');
 
   const elements = ancestorElement.querySelectorAll(oldName);
-  for(const element of elements) {
+  for (const element of elements) {
     coerceElement(element, newName, copyAttributesFlag);
   }
 }
@@ -86,14 +74,14 @@ export function coerceElement(element, newName, copyAttributesFlag) {
   // createElement("null")
   assert(isValidElementName(newName));
 
-  if(typeof copyAttributesFlag === 'undefined') {
+  if (typeof copyAttributesFlag === 'undefined') {
     copyAttributesFlag = true;
   }
 
   // Treat attempting to rename an element to the same name as a noop. I've
   // decided to allow this for caller convenience as opposed to throwing an
   // error.
-  if(element.localName === newName.toLowerCase()) {
+  if (element.localName === newName.toLowerCase()) {
     return element;
   }
 
@@ -102,7 +90,7 @@ export function coerceElement(element, newName, copyAttributesFlag) {
 
   // Treat attempting to rename an orphaned element as a noop. Caller not
   // required to guarantee parent for reasons of convenience.
-  if(!parentElement) {
+  if (!parentElement) {
     return element;
   }
 
@@ -123,7 +111,7 @@ export function coerceElement(element, newName, copyAttributesFlag) {
 
   const newElement = element.ownerDocument.createElement(newName);
 
-  if(copyAttributesFlag) {
+  if (copyAttributesFlag) {
     copyAttributes(element, newElement);
   }
 
@@ -143,12 +131,12 @@ export function coerceElement(element, newName, copyAttributesFlag) {
 function moveChildNodes(fromElement, toElement) {
   // If the target is a void element then this is a no-op. This assumes the
   // source element is detached, otherwise it would be misleading
-  if(isVoidElement(toElement)) {
+  if (isVoidElement(toElement)) {
     return;
   }
 
   let node = fromElement.firstChild;
-  while(node) {
+  while (node) {
     toElement.appendChild(node);
     node = fromElement.firstChild;
   }
@@ -179,7 +167,7 @@ function copyAttributes(fromElement, toElement) {
   // performance issues with element.attributes, and to allow unencumbered use
   // of the for..of syntax (I had issues with NamedNodeMap and for..of).
   const names = fromElement.getAttributeNames();
-  for(const name of names) {
+  for (const name of names) {
     const value = fromElement.getAttribute(name);
     toElement.setAttribute(name, value);
   }

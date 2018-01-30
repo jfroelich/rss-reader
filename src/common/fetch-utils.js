@@ -1,4 +1,4 @@
-import {fromContentType} from "/src/common/mime-utils.js";
+import {fromContentType} from '/src/common/mime-utils.js';
 
 // TODO: rather than throw timeout error or other custom errors, consider
 // creating an artificial response, setting the appropriate status code, and not
@@ -23,13 +23,8 @@ export async function fetchHTML(url, timeout) {
 }
 
 const feedMimeTypes = [
-  'application/octet-stream',
-  'application/rss+xml',
-  'application/rdf+xml',
-  'application/atom+xml',
-  'application/xml',
-  'text/html',
-  'text/xml'
+  'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
+  'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
 ];
 
 // Fetches a feed. Returns a basic object, similar to Response, with custom
@@ -72,14 +67,14 @@ export async function tfetch(url, options) {
 
   // Extract timeout from options
   let timeout;
-  if('timeout' in mergedOptions) {
+  if ('timeout' in mergedOptions) {
     timeout = mergedOptions.timeout;
     // Avoid passing non-standard options to fetch
     delete mergedOptions.timeout;
   }
 
   const untimed = typeof timeout === 'undefined';
-  if(!untimed) {
+  if (!untimed) {
     assert(Number.isInteger(timeout) && timeout >= 0);
   }
 
@@ -90,9 +85,9 @@ export async function tfetch(url, options) {
 
   // Distinguish offline errors from general fetch errors
   assert(navigator && 'onLine' in navigator);
-  if(!navigator.onLine) {
-    throw new OfflineError('Unable to fetch url ' + url.href +
-      ' while offline');
+  if (!navigator.onLine) {
+    throw new OfflineError(
+        'Unable to fetch url ' + url.href + ' while offline');
   }
 
   const fetchPromise = fetch(url.href, mergedOptions);
@@ -101,7 +96,7 @@ export async function tfetch(url, options) {
   // racing fetch against timeout. Otherwise, initialize a derived promise to
   // the result of fetch.
   let aggregatePromise;
-  if(untimed) {
+  if (untimed) {
     aggregatePromise = fetchPromise;
   } else {
     let timeoutPromise;
@@ -113,7 +108,7 @@ export async function tfetch(url, options) {
   const response = await aggregatePromise;
 
   // If timeout wins then response is undefined.
-  if(!untimed && !response) {
+  if (!untimed && !response) {
     throw new TimeoutError('Fetch timed out for url ' + url.href);
   }
 
@@ -148,16 +143,16 @@ export function getLastModified(response) {
   assert(response instanceof Response);
 
   const lastModifiedString = response.headers.get('Last-Modified');
-  if(lastModifiedString) {
+  if (lastModifiedString) {
     // TODO: is try/catch needed around date constructor?
     try {
       const date = new Date(lastModifiedString);
-      if(date.getTime() === date.getTime()) {
+      if (date.getTime() === date.getTime()) {
         return date;
       } else {
         console.debug('Date parsing error for string', lastModifiedString);
       }
-    } catch(error) {
+    } catch (error) {
       console.debug(error);
     }
   }
@@ -166,7 +161,7 @@ export function getLastModified(response) {
 export function getMimeType(response) {
   assert(response instanceof Response);
   const contentType = response.headers.get('Content-Type');
-  if(contentType) {
+  if (contentType) {
     return fromContentType(contentType);
   }
 }
@@ -182,30 +177,25 @@ export function isAllowedURL(url) {
 
   // Quickly check for data urls and allow them before any other tests. Data
   // URI fetches do not involve the network so there is no policy concern
-  if(protocol === 'data:') {
+  if (protocol === 'data:') {
     return true;
   }
 
   // Of course things like hosts file can be manipulated to whatever. This is
   // just one of the low-hanging fruits. Prevent fetches to local host urls.
-  if(hostname === 'localhost') {
+  if (hostname === 'localhost') {
     return false;
   }
 
   // Again, ignores things like punycode, IPv6, host manipulation, local dns
   // manipulation, etc. This is just a simple and typical case
-  if(hostname === '127.0.0.1') {
+  if (hostname === '127.0.0.1') {
     return false;
   }
 
-  const protocolBlacklist = [
-    'about:',
-    'chrome:',
-    'chrome-extension:',
-    'file:'
-  ];
+  const protocolBlacklist = ['about:', 'chrome:', 'chrome-extension:', 'file:'];
 
-  if(protocolBlacklist.includes(protocol)) {
+  if (protocolBlacklist.includes(protocol)) {
     return false;
   }
 
@@ -213,7 +203,7 @@ export function isAllowedURL(url) {
   // throws in this case, I prefer to explicit. Also, this is a public function
   // is use by other modules that may not call fetch (e.g. see
   // fetchImageElement) where I want the same policy to apply.
-  if(url.username || url.password) {
+  if (url.username || url.password) {
     return false;
   }
 
@@ -221,7 +211,7 @@ export function isAllowedURL(url) {
 }
 
 function assert(value, message) {
-  if(!value) throw new Error(message || 'Assertion error');
+  if (!value) throw new Error(message || 'Assertion error');
 }
 
 export class TimeoutError extends Error {

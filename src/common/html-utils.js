@@ -11,21 +11,25 @@
 const workerElement = document.createElement('div');
 export function decodeEntities(value) {
   const entityPattern = /&[#0-9A-Za-z]+;/g;
-  return typeof value === 'string' ? value.replace(entityPattern,
-    function decodeEntitiesReplace(entityString) {
-    // Set the value of the shared worker element. By using innerHTML this sets
-    // the raw value
-    workerElement.innerHTML = entityString;
-    // Now get the value back out. The accessor will do the decoding
-    // dynamically.
-    // TODO: why innerText? probably should just use textContent? Wait until I
-    // implement a testing lib to change.
-    const text = workerElement.innerText;
-    // Reset it each time to avoid leaving crap hanging around because worker
-    // element lifetime is page lifetime not function scope lifetime
-    workerElement.innerHTML = '';
-    return text;
-  }) : value;
+  return typeof value === 'string' ?
+      value.replace(
+          entityPattern,
+          function decodeEntitiesReplace(entityString) {
+            // Set the value of the shared worker element. By using innerHTML
+            // this sets the raw value
+            workerElement.innerHTML = entityString;
+            // Now get the value back out. The accessor will do the decoding
+            // dynamically.
+            // TODO: why innerText? probably should just use textContent? Wait
+            // until I implement a testing lib to change.
+            const text = workerElement.innerText;
+            // Reset it each time to avoid leaving crap hanging around because
+            // worker element lifetime is page lifetime not function scope
+            // lifetime
+            workerElement.innerHTML = '';
+            return text;
+          }) :
+      value;
 }
 
 // Returns a new string where certain 'unsafe' characters in the input string
@@ -35,7 +39,7 @@ export function decodeEntities(value) {
 export function escapeHTML(htmlString) {
   // TEMP: not replacing & due to common double encoding issue
   const escapeHTMLPattern = /[<>"']/g;
-  if(typeof htmlString === 'string') {
+  if (typeof htmlString === 'string') {
     return htmlString.replace(escapeHTMLPattern, encodeFirst);
   }
 }
@@ -54,19 +58,19 @@ export function truncateHTML(htmlString, position, suffix) {
   assert(Number.isInteger(position) && position >= 0);
 
   // Tolerate some bad input for convenience
-  if(typeof htmlString !== 'string') {
+  if (typeof htmlString !== 'string') {
     return '';
   }
 
   const ELLIPSIS = '\u2026';
-  if(typeof suffix !== 'string') {
+  if (typeof suffix !== 'string') {
     suffix = ELLIPSIS;
   }
 
   let document;
   try {
     document = parseHTML(htmlString);
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
     return 'Unsafe html';
   }
@@ -75,10 +79,10 @@ export function truncateHTML(htmlString, position, suffix) {
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   let totalLength = 0;
 
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
+  for (let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
     const valueLength = value.length;
-    if(totalLength + valueLength >= position) {
+    if (totalLength + valueLength >= position) {
       const remainingLength = position - totalLength;
       node.nodeValue = value.substr(0, remainingLength) + suffix;
       break;
@@ -88,7 +92,7 @@ export function truncateHTML(htmlString, position, suffix) {
   }
 
   // Remove remaining nodes past the truncation point
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
+  for (let node = it.nextNode(); node; node = it.nextNode()) {
     node.remove();
   }
 
@@ -96,7 +100,7 @@ export function truncateHTML(htmlString, position, suffix) {
   // text, otherwise strip the added elements
 
   return isNotFragment(htmlString) ? document.documentElement.outerHTML :
-    document.body.innerHTML;
+                                     document.body.innerHTML;
 }
 
 function isNotFragment(htmlString) {
@@ -110,30 +114,30 @@ export function replaceTags(htmlString, replacement) {
 
   // Fast case for empty strings
   // Because of the above assert this basically only checks 0 length
-  if(!htmlString) {
+  if (!htmlString) {
     return htmlString;
   }
 
-  if(replacement) {
+  if (replacement) {
     assert(typeof replacement === 'string');
   }
 
   let document;
   try {
     document = parseHTML(htmlString);
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
     return 'Unsafe html';
   }
 
-  if(!replacement) {
+  if (!replacement) {
     return document.body.textContent;
   }
 
   // Shove the text nodes into an array and then join by replacement
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   const nodeValues = [];
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
+  for (let node = it.nextNode(); node; node = it.nextNode()) {
     nodeValues.push(node.nodeValue);
   }
 
@@ -149,12 +153,12 @@ export function parseHTML(htmlString) {
   const parser = new DOMParser();
   const document = parser.parseFromString(htmlString, 'text/html');
   const error = document.querySelector('parsererror');
-  if(error) {
+  if (error) {
     throw new Error(error.textContent.replace(/\s{2,}/g, ' '));
   }
   return document;
 }
 
 function assert(value, message) {
-  if(!value) throw new Error(message || 'Assertion error');
+  if (!value) throw new Error(message || 'Assertion error');
 }

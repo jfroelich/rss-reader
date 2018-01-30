@@ -1,12 +1,12 @@
-import {fetchHTML} from "/src/common/fetch-utils.js";
-import {parseHTML} from "/src/common/html-utils.js";
-import filterBoilerplate from "/src/feed-poll/filters/boilerplate-filter.js";
-import canonicalizeURLs from "/src/feed-poll/filters/canonical-url-filter.js";
-import filterBlacklistedElements from "/src/feed-poll/filters/element-blacklist-filter.js";
-import filterFrames from "/src/feed-poll/filters/frame-filter.js";
-import filterIFrames from "/src/feed-poll/filters/iframe-filter.js";
-import setImageSizes from "/src/feed-poll/filters/image-size-filter.js";
-import filterScript from "/src/feed-poll/filters/script-filter.js";
+import {fetchHTML} from '/src/common/fetch-utils.js';
+import {parseHTML} from '/src/common/html-utils.js';
+import filterBoilerplate from '/src/feed-poll/filters/boilerplate-filter.js';
+import canonicalizeURLs from '/src/feed-poll/filters/canonical-url-filter.js';
+import filterBlacklistedElements from '/src/feed-poll/filters/element-blacklist-filter.js';
+import filterFrames from '/src/feed-poll/filters/frame-filter.js';
+import filterIFrames from '/src/feed-poll/filters/iframe-filter.js';
+import setImageSizes from '/src/feed-poll/filters/image-size-filter.js';
+import filterScript from '/src/feed-poll/filters/script-filter.js';
 
 window.test = async function(urlString) {
   const response = await fetchHTML(new URL(urlString));
@@ -17,19 +17,19 @@ window.test = async function(urlString) {
   filterFrames(document);
   filterIFrames(document);
 
-  // Filter scripts to at least make an attempt at security. Not terribly important technically
-  // because of CSP protections.
+  // Filter scripts to at least make an attempt at security. Not terribly
+  // important technically because of CSP protections.
   filterScript(document);
 
   // Strip some object stuff
   filterBlacklistedElements(document);
 
-  // Get rid of some annoying console errors, and ensure images canonical to allow for
-  // setting image size.
+  // Get rid of some annoying console errors, and ensure images canonical to
+  // allow for setting image size.
   canonicalizeURLs(document, new URL(response.url));
 
-  // TODO: I don't think I need to canonicalize urls any longer now that setImageSizes
-  // accepts an optional base url
+  // TODO: I don't think I need to canonicalize urls any longer now that
+  // setImageSizes accepts an optional base url
 
   // Set image sizes to more accurately test image bias
   await setImageSizes(document, new URL(response.url));
@@ -39,7 +39,7 @@ window.test = async function(urlString) {
 
   // Find the best element and outline it.
   const bestElement = document.querySelector('[data-bp-max]');
-  if(bestElement) {
+  if (bestElement) {
     bestElement.style.border = '3px solid green';
   }
 

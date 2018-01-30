@@ -1,4 +1,4 @@
-import assert from "/src/common/assert.js";
+import assert from '/src/common/assert.js';
 
 // TODO: move to basic filters
 
@@ -10,13 +10,13 @@ import assert from "/src/common/assert.js";
 // large when missing dimensions.
 export default function filterDocument(doc) {
   assert(doc instanceof Document);
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
   const images = doc.body.querySelectorAll('img');
-  for(const image of images) {
-    if(isLargeImage(image)) {
+  for (const image of images) {
+    if (isLargeImage(image)) {
       image.removeAttribute('width');
       image.removeAttribute('height');
     }
@@ -25,26 +25,26 @@ export default function filterDocument(doc) {
 
 function isLargeImage(image) {
   const widthString = image.getAttribute('width');
-  if(!widthString) {
+  if (!widthString) {
     return false;
   }
 
   const heightString = image.getAttribute('height');
-  if(!heightString) {
+  if (!heightString) {
     return false;
   }
 
   const widthInt = parseInt(widthString, 10);
-  if(isNaN(widthInt)) {
+  if (isNaN(widthInt)) {
     return false;
-  } else if(widthInt > 1000) {
+  } else if (widthInt > 1000) {
     return true;
   }
 
   const heightInt = parseInt(heightString, 10);
-  if(isNaN(heightInt)) {
+  if (isNaN(heightInt)) {
     return false;
-  } else if(heightInt > 1000) {
+  } else if (heightInt > 1000) {
     return true;
   }
 

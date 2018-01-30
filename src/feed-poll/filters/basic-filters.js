@@ -1,5 +1,5 @@
-import assert from "/src/common/assert.js";
-import * as DOMUtils from "/src/common/dom-utils.js";
+import assert from '/src/common/assert.js';
+import * as DOMUtils from '/src/common/dom-utils.js';
 
 // TODO: this comment should be moved to github, labeled as bug
 // TODO: not sure where it happens, but whatever removes BRs or certain
@@ -15,16 +15,16 @@ import * as DOMUtils from "/src/common/dom-utils.js";
 export function filterBaseElements(document) {
   assert(document instanceof Document);
   const bases = document.querySelectorAll('base');
-  for(const base of bases) {
+  for (const base of bases) {
     base.remove();
   }
 }
 
 export function filterBRElements(document) {
   assert(document instanceof Document);
-  if(document.body) {
+  if (document.body) {
     const brs = document.body.querySelectorAll('br + br');
-    for(const br of brs) {
+    for (const br of brs) {
       br.remove();
     }
   }
@@ -32,8 +32,9 @@ export function filterBRElements(document) {
 
 export function filterCommentNodes(document) {
   assert(document instanceof Document);
-  const it = document.createNodeIterator(document.documentElement, NodeFilter.SHOW_COMMENT);
-  for(let node = it.nextNode(); node; node = it.nextNode()) {
+  const it = document.createNodeIterator(
+      document.documentElement, NodeFilter.SHOW_COMMENT);
+  for (let node = it.nextNode(); node; node = it.nextNode()) {
     node.remove();
   }
 }
@@ -41,9 +42,9 @@ export function filterCommentNodes(document) {
 // Unwraps non-semantic container-like elements
 export function filterContainerElements(document) {
   assert(document instanceof Document);
-  if(document.body) {
+  if (document.body) {
     const elements = document.body.querySelectorAll('div, ilayer, layer');
-    for(const element of elements) {
+    for (const element of elements) {
       DOMUtils.unwrapElement(element);
     }
   }
@@ -55,23 +56,25 @@ export function filterContainerElements(document) {
 export function filterEmphasis(document, maxTextLength) {
   assert(document instanceof Document);
   const isLengthUndefined = typeof maxTextLength === 'undefined';
-  assert(isLengthUndefined || (Number.isInteger(maxTextLength) && maxTextLength >= 0));
+  assert(
+      isLengthUndefined ||
+      (Number.isInteger(maxTextLength) && maxTextLength >= 0));
 
   // If we don't have a length, which is optional, then there is no benefit to
   // filtering. We cannot use a default like 0 as that would effectively remove
   // all emphasis.
-  if(isLengthUndefined) {
+  if (isLengthUndefined) {
     return;
   }
 
-  if(!document.body) {
+  if (!document.body) {
     return;
   }
 
   const elements = document.body.querySelectorAll('b, big, em, i, strong');
-  for(const element of elements) {
+  for (const element of elements) {
     // TODO: use non-whitespace character count instead of full character count?
-    if(element.textContent.length > maxTextLength) {
+    if (element.textContent.length > maxTextLength) {
       DOMUtils.unwrapElement(element);
     }
   }
@@ -80,12 +83,12 @@ export function filterEmphasis(document, maxTextLength) {
 // Unwrap captionless figures
 export function filterFigureElements(document) {
   assert(document instanceof Document);
-  if(document.body) {
+  if (document.body) {
     const figures = document.body.querySelectorAll('figure');
-    for(const figure of figures) {
+    for (const figure of figures) {
       // We can tell a figure is captionless because a captioned element has
       // at least two elements.
-      if(figure.childElementCount === 1) {
+      if (figure.childElementCount === 1) {
         // TODO: if the one child is a figcaption, then this should remove
         // the figure rather than unwrap
         DOMUtils.unwrapElement(figure);
@@ -96,7 +99,7 @@ export function filterFigureElements(document) {
 
 export function ensureDocumentHasBodyElement(document) {
   assert(document instanceof Document);
-  if(!document.body) {
+  if (!document.body) {
     const message = 'This document has no content (missing body).';
     const errorNode = document.createTextNode(message);
     const bodyElement = document.createElement('body');

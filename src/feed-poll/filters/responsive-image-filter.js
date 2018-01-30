@@ -1,5 +1,5 @@
-import assert from "/src/common/assert.js";
-import {parseSrcsetWrapper} from "/src/common/dom-utils.js";
+import assert from '/src/common/assert.js';
+import {parseSrcsetWrapper} from '/src/common/dom-utils.js';
 
 // Transforms responsive images in document content
 
@@ -10,15 +10,15 @@ import {parseSrcsetWrapper} from "/src/common/dom-utils.js";
 
 export default function main(doc) {
   assert(doc instanceof Document);
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
   const images = doc.body.getElementsByTagName('img');
-  for(const image of images) {
-    if(!image.hasAttribute('src') && image.hasAttribute('srcset')) {
+  for (const image of images) {
+    if (!image.hasAttribute('src') && image.hasAttribute('srcset')) {
       const descriptor = findBestSrcsetDescriptorForImage(image);
-      if(descriptor) {
+      if (descriptor) {
         transformImageToDescriptor(image, descriptor);
       } else {
         console.debug('Could not find descriptor for image', image.outerHTML);
@@ -32,7 +32,7 @@ export default function main(doc) {
 // found
 function findBestSrcsetDescriptorForImage(image) {
   const srcsetValue = image.getAttribute('srcset');
-  if(!srcsetValue) {
+  if (!srcsetValue) {
     return;
   }
 
@@ -40,16 +40,16 @@ function findBestSrcsetDescriptorForImage(image) {
 
   // For the time being, the preference is whatever is first, no special
   // handling of descriptor.d, and only one dimension needed
-  for(const desc of descriptors) {
-    if(desc.url && (desc.w || desc.h)) {
+  for (const desc of descriptors) {
+    if (desc.url && (desc.w || desc.h)) {
       return desc;
     }
   }
 
   // If we did not find a descriptor above, search again but relax the
   // dimensions requirement
-  for(const desc of descriptors) {
-    if(desc.url) {
+  for (const desc of descriptors) {
+    if (desc.url) {
       return desc;
     }
   }
@@ -65,13 +65,13 @@ function transformImageToDescriptor(image, descriptor) {
 
   // Also change the width and height attributes. This avoids scaling issues
 
-  if(descriptor.w) {
+  if (descriptor.w) {
     image.setAttribute('width', '' + descriptor.w);
   } else {
     image.removeAttribute('width');
   }
 
-  if(descriptor.h) {
+  if (descriptor.h) {
     image.setAttribute('height', '' + descriptor.h);
   } else {
     image.removeAttribute('height');

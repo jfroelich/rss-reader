@@ -4,13 +4,13 @@ export default async function showSlideshowTab() {
   const newtabURL = 'chrome://newtab/';
 
   let tabs = await findTabsByURL(slideshowURL);
-  if(tabs && tabs.length) {
+  if (tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id, {active: true});
     return;
   }
 
   tabs = await findTabsByURL(newtabURL);
-  if(tabs && tabs.length) {
+  if (tabs && tabs.length) {
     chrome.tabs.update(tabs[0].id, {active: true, url: slideshowURL});
     return;
   }

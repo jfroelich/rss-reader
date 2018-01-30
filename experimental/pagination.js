@@ -1,14 +1,14 @@
-import assert from "/src/common/assert.js";
-import findLCA from "/experimental/lca.js";
-import {isHiddenInlineElement} from "/src/common/dom-utils.js";
+import findLCA from '/experimental/lca.js';
+import assert from '/src/common/assert.js';
+import {isHiddenInlineElement} from '/src/common/dom-utils.js';
 
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other
 // properties
 // TODO: If returning a pager should probably be renamed to something like
 // findPager
-// TODO: return something that tracks how pager was found, so it can be found again
-// for removal. Or ... remove on find, e.g. have a bool param
+// TODO: return something that tracks how pager was found, so it can be found
+// again for removal. Or ... remove on find, e.g. have a bool param
 
 
 // @param doc {HTMLDocument}
@@ -17,12 +17,12 @@ function paginationFindAnchors(doc, location, lcaMaxDistance) {
   assert(doc instanceof Document);
 
   const candidates = paginationFindCandidateAnchors(doc, location);
-  if(!candidates.length) {
+  if (!candidates.length) {
     return [];
   }
 
   const sequences = paginationFindAnchorSequences(candidates, lcaMaxDistance);
-  if(!sequences.length) {
+  if (!sequences.length) {
     return [];
   }
 
@@ -37,19 +37,19 @@ function paginationFindAnchors(doc, location, lcaMaxDistance) {
 // anchor
 function paginationFindCandidateAnchors(doc, location) {
   const bodyElement = doc.body;
-  if(!bodyElement) {
+  if (!bodyElement) {
     return [];
   }
 
   const anchors = bodyElement.getElementsByTagName('a');
-  if(!anchors.length) {
+  if (!anchors.length) {
     return [];
   }
 
   const candidates = [];
   const locationURL = new URL(location);
-  for(const anchor of anchors) {
-    if(paginationIsCandidateAnchor(anchor, locationURL)) {
+  for (const anchor of anchors) {
+    if (paginationIsCandidateAnchor(anchor, locationURL)) {
       candidates.push(anchor);
     }
   }
@@ -63,32 +63,32 @@ function paginationIsCandidateAnchor(anchorElement, baseURL) {
   // Although the following conditions are generally associative, they are
   // ordered so as to reduce the chance of performing more expensive operations
 
-  if(!anchorElement.firstChild) {
+  if (!anchorElement.firstChild) {
     return false;
   }
 
   const maxTextLength = 30;
   const textContent = anchorElement.textContent || '';
-  if(textContent.trim().length > maxTextLength) {
+  if (textContent.trim().length > maxTextLength) {
     return false;
   }
 
-  if(isHiddenElement(anchorElement)) {
+  if (isHiddenElement(anchorElement)) {
     return false;
   }
 
   const hrefURL = paginationGetHrefURL(anchorElement, baseURL);
-  if(!hrefURL) {
+  if (!hrefURL) {
     return false;
   }
 
   const allowedProtocols = ['https:', 'http:'];
-  if(!allowedProtocols.includes(hrefURL.protocol)) {
+  if (!allowedProtocols.includes(hrefURL.protocol)) {
     return false;
   }
 
   // If it an exactly identical url then ignore it
-  if(hrefURL.href === baseURL.href) {
+  if (hrefURL.href === baseURL.href) {
     return false;
   }
 
@@ -108,19 +108,19 @@ function paginationGetHrefURL(anchorElement, baseURL) {
   // new URL, so it is important to avoid passing in an empty string because
   // when calling new URL(empty string, base url), the result is a copy of
   // the base url, not an error.
-  if(!href) {
+  if (!href) {
     return;
   }
 
   href = href.trim();
-  if(!href) {
+  if (!href) {
     return;
   }
 
   let hrefURL;
   try {
     hrefURL = new URL(href, baseURL);
-  } catch(error) {
+  } catch (error) {
   }
   return hrefURL;
 }
@@ -129,12 +129,12 @@ function paginationGetHrefURL(anchorElement, baseURL) {
 // comparing path so this name is not great
 // Expects 2 URL objects. Return true if the second is similar to the first
 function paginationAreSimilarURLs(url1, url2) {
-  if(url1.origin !== url2.origin) {
+  if (url1.origin !== url2.origin) {
     return false;
   }
 
   let path1 = url1.pathname, path2 = url2.pathname;
-  if(path1 === path2) {
+  if (path1 === path2) {
     return true;
   }
 
@@ -148,11 +148,10 @@ function paginationAreSimilarURLs(url1, url2) {
 // Note that for basic path like '/' this may return an empty string.
 // Assume's input path string is defined, trimmed, and normalized.
 function paginationGetPartialPath(path) {
-
   // TODO: assert path starts with / as an ASSERTION, not a basic error
 
   const index = path.lastIndexOf('/');
-  if(index === -1) {
+  if (index === -1) {
     throw new TypeError('path missing forward slash');
   }
 
@@ -177,20 +176,19 @@ function paginationFindAnchorSequences(anchors, lcaMaxDistance) {
 
   assert(anchorCount > 0);
 
-  const minLength = 1, maxLength = 51; // exclusive end points
+  const minLength = 1, maxLength = 51;  // exclusive end points
   const seqs = [];
   const maxd = lcaMaxDistance - 1;
   let a1 = anchors[0], a2 = null;
   let seq = [a1];
   let lca1, lca2;
 
-  for(let i = 1; i < anchorCount; i++) {
+  for (let i = 1; i < anchorCount; i++) {
     a2 = anchors[i];
     lca2 = findLCA(a1, a2);
-    if((lca1 && (lca2.ancestor !== lca1.ancestor)) ||
-      (lca2.d1 !== lca2.d2) || (lca2.d1 > maxd)) {
-
-      if(seq.length > minLength && seq.length < maxLength) {
+    if ((lca1 && (lca2.ancestor !== lca1.ancestor)) || (lca2.d1 !== lca2.d2) ||
+        (lca2.d1 > maxd)) {
+      if (seq.length > minLength && seq.length < maxLength) {
         seqs.push(seq);
       }
 
@@ -204,64 +202,66 @@ function paginationFindAnchorSequences(anchors, lcaMaxDistance) {
     }
   }
 
-  if(seq.length > minLength && seq.length < maxLength) {
+  if (seq.length > minLength && seq.length < maxLength) {
     seqs.push(seq);
   }
 
   return seqs;
 }
 
-// TODO: consider a test that compares whether foreground color is too close to background color.
-// This kind of applies only to text nodes.
+// TODO: consider a test that compares whether foreground color is too close to
+// background color. This kind of applies only to text nodes.
 
-// Checks whether an element is hidden because the element itself is hidden, or any of its
-// ancestors are hidden.
+// Checks whether an element is hidden because the element itself is hidden, or
+// any of its ancestors are hidden.
 // @param element {Element}
 // @returns {Boolean} true if hidden
 export function isHiddenElement(element) {
   assert(element instanceof Element);
   const doc = element.ownerDocument;
 
-  // If a document does not have a body element, then assume it contains no visible content, and
-  // therefore consider the element as hidden.
-  if(!doc.body) {
+  // If a document does not have a body element, then assume it contains no
+  // visible content, and therefore consider the element as hidden.
+  if (!doc.body) {
     return true;
   }
 
   // If the element is the body, then assume visible
-  if(element === doc.body) {
+  if (element === doc.body) {
     return false;
   }
 
   // Assume all elements outside the body are not part of visible content
-  if(!doc.body.contains(element)) {
+  if (!doc.body.contains(element)) {
     return true;
   }
 
   // Test the element itself with the hope of avoiding ancestors path analysis
-  if(isHiddenInlineElement(element)) {
+  if (isHiddenInlineElement(element)) {
     return true;
   }
 
-  // Walk bottom-up from after element to before body, recording the path. Exclude the element
-  // itself from the path so it is not checked again.
+  // Walk bottom-up from after element to before body, recording the path.
+  // Exclude the element itself from the path so it is not checked again.
   const path = [];
-  for(let e = element.parentNode; e && e !== doc.body; e = e.parentNode) {
+  for (let e = element.parentNode; e && e !== doc.body; e = e.parentNode) {
     path.push(e);
   }
 
-  // The path is empty when the element is immediately under the body. Since we already checked
-  // the element, and do not plan to check the body, we're done. This empty check avoids going
-  // below the lower bound index of the path in the next loop.
-  if(!path.length) {
+  // The path is empty when the element is immediately under the body. Since we
+  // already checked the element, and do not plan to check the body, we're done.
+  // This empty check avoids going below the lower bound index of the path in
+  // the next loop.
+  if (!path.length) {
     return false;
   }
 
-  // Step backward along the path and stop upon finding the first hidden node. This does not
-  // re-test the element because it is not in the path. We know the path is not empty because of
-  // the above check, so it is safe to start from the last element in the path.
-  for(let i = path.length - 1; i >=0; i--) {
-    if(isHiddenInlineElement(path[i])) {
+  // Step backward along the path and stop upon finding the first hidden node.
+  // This does not re-test the element because it is not in the path. We know
+  // the path is not empty because of the above check, so it is safe to start
+  // from the last element in the path.
+  for (let i = path.length - 1; i >= 0; i--) {
+    if (isHiddenInlineElement(path[i])) {
       return true;
     }
   }

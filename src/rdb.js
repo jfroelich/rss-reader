@@ -1,7 +1,8 @@
-import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
-import {replaceTags, truncateHTML} from "/src/common/html-utils.js";
+import {replaceTags, truncateHTML} from '/src/common/html-utils.js';
+import {open as utilsOpen} from '/src/common/indexeddb-utils.js';
 
-// TODO: rename feed.dateUpdated and entry.dateUpdated to updatedDate for better consistency
+// TODO: rename feed.dateUpdated and entry.dateUpdated to updatedDate for better
+// consistency
 // TODO: consider grouping feed.active properties together
 
 const FEED_MAGIC = 0xfeedfeed;
@@ -24,39 +25,43 @@ function onUpgradeNeeded(event) {
   let feedStore, entryStore;
   const stores = conn.objectStoreNames;
 
-  console.log('Upgrading database %s to version %s from version', conn.name, conn.version,
-    event.oldVersion);
+  console.log(
+      'Upgrading database %s to version %s from version', conn.name,
+      conn.version, event.oldVersion);
 
-  if(event.oldVersion < 20) {
-    feedStore = conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
-    entryStore = conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
+  if (event.oldVersion < 20) {
+    feedStore =
+        conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
+    entryStore =
+        conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
     feedStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
 
     entryStore.createIndex('readState', 'readState');
     entryStore.createIndex('feed', 'feed');
-    entryStore.createIndex('archiveState-readState', ['archiveState', 'readState']);
+    entryStore.createIndex(
+        'archiveState-readState', ['archiveState', 'readState']);
     entryStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
   } else {
     feedStore = tx.objectStore('feed');
     entryStore = tx.objectStore('entry');
   }
 
-  if(event.oldVersion < 21) {
+  if (event.oldVersion < 21) {
     // Add magic to all older entries
     addEntryMagic(tx);
   }
 
-  if(event.oldVersion < 22) {
+  if (event.oldVersion < 22) {
     addFeedMagic(tx);
   }
 
-  if(event.oldVersion < 23) {
-    if(feedStore.indexNames.contains('title')) {
+  if (event.oldVersion < 23) {
+    if (feedStore.indexNames.contains('title')) {
       feedStore.deleteIndex('title');
     }
   }
 
-  if(event.oldVersion < 24) {
+  if (event.oldVersion < 24) {
     addActiveFieldToFeeds(feedStore);
   }
 }
@@ -76,7 +81,7 @@ function addEntryMagic(tx) {
 }
 
 function writeEntriesWithMagic(entryStore, entries) {
-  for(const entry of entries) {
+  for (const entry of entries) {
     entry.magic = ENTRY_MAGIC;
     entry.dateUpdated = new Date();
     entryStore.put(entry);
@@ -90,7 +95,7 @@ function addFeedMagic(tx) {
   getAllFeedsRequest.onerror = console.error;
   getAllFeedsRequest.onsuccess = function(event) {
     const feeds = event.target.result;
-    for(const feed of feeds) {
+    for (const feed of feeds) {
       feed.magic = FEED_MAGIC;
       feed.dateUpdated = new Date();
       store.put(feed);
@@ -103,7 +108,7 @@ function addActiveFieldToFeeds(store) {
   feedsRequest.onerror = console.error;
   feedsRequest.onsuccess = function(event) {
     const feeds = event.target.result;
-    for(const feed of feeds) {
+    for (const feed of feeds) {
       feed.active = true;
       feed.dateUpdated = new Date();
       store.put(feed);
@@ -115,10 +120,10 @@ export async function activateFeed(conn, channel, feedId) {
   assert(isValidFeedId(feedId), 'Invalid feed id', feedId);
   const dconn = conn ? conn : await open();
   await activateFeedPromise(dconn, feedId);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
-  if(channel) {
+  if (channel) {
     channel.postMessage({type: 'feed-activated', id: feedId});
   }
 }
@@ -147,10 +152,10 @@ export async function deactivateFeed(conn, channel, feedId, reasonText) {
   assert(isValidFeedId(feedId), 'Invalid feed id ' + feedId);
   const dconn = conn ? conn : await open();
   await deactivateFeedPromise(dconn, feedId, reasonText);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
-  if(channel) {
+  if (channel) {
     channel.postMessage({type: 'feed-deactivated', id: feedId});
   }
 }
@@ -194,7 +199,7 @@ export async function addEntry(conn, channel, entry) {
 
   let nullChannel = null;
   const entryId = await putEntry(conn, nullChannel, storable);
-  if(channel) {
+  if (channel) {
     channel.postMessage({type: 'entry-added', id: entryId});
   }
   storable.id = entryId;
@@ -204,7 +209,7 @@ export async function addEntry(conn, channel, entry) {
 export async function countUnreadEntries(conn) {
   const dconn = conn ? conn : await open();
   const count = await countUnreadEntriesPromise(dconn);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
   return count;
@@ -225,18 +230,17 @@ export async function markEntryRead(conn, channel, entryId) {
   assert(isValidEntryId(entryId));
   const dconn = conn ? conn : await open();
   await markEntryReadPromise(dconn, entryId);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
-  if(channel) {
+  if (channel) {
     // channel may be closed by the time this executes when markEntryRead is not
     // awaited, so trap the invalid state error and just log it
     try {
       channel.postMessage({type: 'entry-marked-read', id: entryId});
-    } catch(error) {
+    } catch (error) {
       console.debug(error);
     }
-
   }
 }
 
@@ -250,11 +254,11 @@ function markEntryReadPromise(conn, entryId) {
     request.onsuccess = () => {
       const entry = request.result;
       assert(entry);
-      if(entry.readState === ENTRY_STATE_READ) {
+      if (entry.readState === ENTRY_STATE_READ) {
         console.warn('Entry %d already in read state, ignoring', entry.id);
         return;
       }
-      if(entry.readState !== ENTRY_STATE_UNREAD) {
+      if (entry.readState !== ENTRY_STATE_UNREAD) {
         console.warn('Entry %d not in unread state, ignoring', entry.id);
         return;
       }
@@ -276,7 +280,7 @@ export async function findActiveFeeds(conn) {
 async function findEntryIdByURL(conn, url) {
   const dconn = conn ? conn : await open();
   const entryId = await findEntryIdByURLPromise(dconn, url);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
   return entryId;
@@ -302,7 +306,7 @@ export async function containsEntryWithURL(conn, url) {
 export async function findFeedById(conn, feedId) {
   const dconn = conn ? conn : await open();
   const feed = await findFeedByIdPromise(dconn, feedId);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
   return feed;
@@ -323,7 +327,7 @@ function findFeedByIdPromise(conn, feedId) {
 async function findFeedIdByURL(conn, url) {
   const dconn = conn ? conn : await open();
   const feedId = await findFeedIdByURLPromise(dconn, url);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
   return feedId;
@@ -349,7 +353,7 @@ export async function containsFeedWithURL(conn, url) {
 export async function findViewableEntries(conn, offset, limit) {
   const dconn = conn ? conn : await open();
   const entries = await findViewableEntriesPromise(dconn, offset, limit);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
   return entries;
@@ -370,13 +374,13 @@ function findViewableEntriesPromise(conn, offset, limit) {
     const request = index.openCursor(keyPath);
     request.onsuccess = function requestOnsuccess(event) {
       const cursor = event.target.result;
-      if(cursor) {
-        if(offset && !advanced) {
+      if (cursor) {
+        if (offset && !advanced) {
           advanced = true;
           cursor.advance(offset);
         } else {
           entries.push(cursor.value);
-          if(limited && ++counter < limit) {
+          if (limited && ++counter < limit) {
             cursor.continue();
           }
         }
@@ -388,7 +392,7 @@ function findViewableEntriesPromise(conn, offset, limit) {
 export async function getFeeds(conn) {
   const dconn = conn ? conn : await open();
   const feeds = await getFeedsPromise(dconn);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
   return feeds;
@@ -407,10 +411,10 @@ function getFeedsPromise(conn) {
 async function putEntry(conn, channel, entry) {
   const dconn = conn ? conn : await open();
   const entryId = await putEntryPromise(dconn, entry);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
-  if(channel) {
+  if (channel) {
     channel.postMessage({type: 'entry-updated', id: entryId});
   }
   return entryId;
@@ -439,7 +443,7 @@ export async function addFeed(conn, channel, feed) {
   delete preparedFeed.dateUpdated;
   const feedId = await putFeed(conn, null, preparedFeed);
   preparedFeed.id = feedId;
-  if(channel) {
+  if (channel) {
     channel.postMessage({type: 'feed-added', id: feedId});
   }
   return preparedFeed;
@@ -448,16 +452,16 @@ export async function addFeed(conn, channel, feed) {
 export async function putFeed(conn, channel, feed) {
   const dconn = conn ? conn : await open();
   const feedId = await putFeedPromise(dconn, feed);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
 
   // Suppress invalid state error when channel is closed in non-awaited call
   // TODO: if awaited, I'd prefer to throw. How?
-  if(channel) {
+  if (channel) {
     try {
       channel.postMessage({type: 'feed-updated', id: feedId});
-    } catch(error) {
+    } catch (error) {
       console.debug(error);
     }
   }
@@ -483,13 +487,13 @@ function putFeedPromise(conn, feed) {
 export async function removeFeed(conn, channel, feedId, reasonText) {
   const dconn = conn ? conn : await open();
   const entryIds = await removeFeedPromise(dconn, feedid);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
 
-  if(channel) {
+  if (channel) {
     channel.postMessage({type: 'feed-deleted', id: feedId, reason: reasonText});
-    for(const id of entryIds) {
+    for (const id of entryIds) {
       channel.postMessage({type: 'entry-deleted', id: id, reason: reasonText});
     }
   }
@@ -517,7 +521,7 @@ function removeFeedPromise(conn, feedId) {
       // Fire off all the requests concurrently without waiting for any one
       // to resolve. Eventually they all will resolve and the transaction
       // will complete and then the promise resolves.
-      for(const id of entryIds) {
+      for (const id of entryIds) {
         console.debug('Deleting entry', id);
         entryStore.delete(id);
       }
@@ -527,11 +531,11 @@ function removeFeedPromise(conn, feedId) {
 
 // Returns a shallow copy of the input feed with sanitized properties
 function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
-  if(typeof titleMaxLength === 'undefined') {
+  if (typeof titleMaxLength === 'undefined') {
     titleMaxLength = 1024;
   }
 
-  if(typeof descMaxLength === 'undefined') {
+  if (typeof descMaxLength === 'undefined') {
     descMaxLength = 1024 * 10;
   }
 
@@ -540,7 +544,7 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
   const tagReplacement = '';
   const suffix = '';
 
-  if(outputFeed.title) {
+  if (outputFeed.title) {
     let title = outputFeed.title;
     title = filterControls(title);
     title = replaceTags(title, tagReplacement);
@@ -549,7 +553,7 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
     outputFeed.title = title;
   }
 
-  if(outputFeed.description) {
+  if (outputFeed.description) {
     let desc = outputFeed.description;
     desc = filterControls(desc);
     desc = replaceTags(desc, tagReplacement);
@@ -569,30 +573,32 @@ function validateEntry(entry) {
 }
 
 // Returns a new entry object where fields have been sanitized. Impure
-// TODO: now that filterUnprintableCharacters is a thing, I want to also filter such
-// characters from input strings like author/title/etc. However it overlaps with the
-// call to filterControls here. There is some redundant work going on. Also, in a sense,
-// filterControls is now inaccurate. What I want is one function that strips binary
-// characters except important ones, and then a second function that replaces or removes
-// certain important binary characters (e.g. remove line breaks from author string).
-// Something like 'replaceFormattingCharacters'.
-function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLength) {
-  if(typeof authorMaxLength === 'undefined') {
+// TODO: now that filterUnprintableCharacters is a thing, I want to also filter
+// such characters from input strings like author/title/etc. However it overlaps
+// with the call to filterControls here. There is some redundant work going on.
+// Also, in a sense, filterControls is now inaccurate. What I want is one
+// function that strips binary characters except important ones, and then a
+// second function that replaces or removes certain important binary characters
+// (e.g. remove line breaks from author string). Something like
+// 'replaceFormattingCharacters'.
+function sanitizeEntry(
+    inputEntry, authorMaxLength, titleMaxLength, contentMaxLength) {
+  if (typeof authorMaxLength === 'undefined') {
     authorMaxLength = 200;
   }
 
-  if(typeof titleMaxLength === 'undefined') {
+  if (typeof titleMaxLength === 'undefined') {
     titleMaxLength = 1000;
   }
 
-  if(typeof contentMaxLength === 'undefined') {
+  if (typeof contentMaxLength === 'undefined') {
     contentMaxLength = 50000;
   }
 
   const blankEntry = createEntry();
   const outputEntry = Object.assign(blankEntry, inputEntry);
 
-  if(outputEntry.author) {
+  if (outputEntry.author) {
     let author = outputEntry.author;
     author = filterControls(author);
     author = replaceTags(author, '');
@@ -601,14 +607,14 @@ function sanitizeEntry(inputEntry, authorMaxLength, titleMaxLength, contentMaxLe
     outputEntry.author = author;
   }
 
-  if(outputEntry.content) {
+  if (outputEntry.content) {
     let content = outputEntry.content;
     content = filterUnprintableCharacters(content);
     content = truncateHTML(content, contentMaxLength);
     outputEntry.content = content;
   }
 
-  if(outputEntry.title) {
+  if (outputEntry.title) {
     let title = outputEntry.title;
     title = filterControls(title);
     title = replaceTags(title, '');
@@ -624,18 +630,18 @@ function condenseWhitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
 }
 
-// Returns a new object that is a copy of the input less empty properties. A property is empty if
-// it is null, undefined, or an empty string. Ignores prototype, deep objects, getters, etc.
-// Shallow copy by reference.
+// Returns a new object that is a copy of the input less empty properties. A
+// property is empty if it is null, undefined, or an empty string. Ignores
+// prototype, deep objects, getters, etc. Shallow copy by reference.
 function filterEmptyProps(object) {
   const hasOwnProp = Object.prototype.hasOwnProperty;
   const output = {};
   let undef;
-  if(typeof object === 'object' && object !== null) {
-    for(const key in object) {
-      if(hasOwnProp.call(object, key)) {
+  if (typeof object === 'object' && object !== null) {
+    for (const key in object) {
+      if (hasOwnProp.call(object, key)) {
         const value = object[key];
-        if(value !== undef && value !== null && value !== '') {
+        if (value !== undef && value !== null && value !== '') {
           output[key] = value;
         }
       }
@@ -645,12 +651,12 @@ function filterEmptyProps(object) {
   return output;
 }
 
-// If the input is a string then the function returns a new string that is approximately a copy of
-// the input less certain 'unprintable' characters. In the case of bad input the input itself is
-// returned. To test if characters were replaced, check if the output string length is less than
-// the input string length.
+// If the input is a string then the function returns a new string that is
+// approximately a copy of the input less certain 'unprintable' characters. In
+// the case of bad input the input itself is returned. To test if characters
+// were replaced, check if the output string length is less than the input
+// string length.
 function filterUnprintableCharacters(value) {
-
   // Basically this removes those characters in the range of [0..31] except for:
   // \t is \u0009 which is base10 9
   // \n is \u000a which is base10 10
@@ -659,15 +665,18 @@ function filterUnprintableCharacters(value) {
   // TODO: look into how much this overlaps with filterControls
 
   const pattern = /[\u0000-\u0008\u000b\u000e-\u001F]+/g;
-  // The length check is done because given that replace will be a no-op when the length is 0 it is
-  // faster to perform the length check than it is to call replace. I do not know the distribution
-  // of inputs but I expect that empty strings are not rare.
-  return typeof value === 'string' && value.length ? value.replace(pattern, '') : value;
+  // The length check is done because given that replace will be a no-op when
+  // the length is 0 it is faster to perform the length check than it is to call
+  // replace. I do not know the distribution of inputs but I expect that empty
+  // strings are not rare.
+  return typeof value === 'string' && value.length ?
+      value.replace(pattern, '') :
+      value;
 }
 
-// Returns a new string where Unicode Cc-class characters have been removed. Throws an error if
-// string is not a defined string. Adapted from these stack overflow questions:
-// http://stackoverflow.com/questions/4324790
+// Returns a new string where Unicode Cc-class characters have been removed.
+// Throws an error if string is not a defined string. Adapted from these stack
+// overflow questions: http://stackoverflow.com/questions/4324790
 // http://stackoverflow.com/questions/21284228
 // http://stackoverflow.com/questions/24229262
 function filterControls(string) {
@@ -675,7 +684,7 @@ function filterControls(string) {
 }
 
 function assert(value, message) {
-  if(!value) throw new Error(message || 'Assertion error');
+  if (!value) throw new Error(message || 'Assertion error');
 }
 
 export function createFeed() {
@@ -708,39 +717,39 @@ export function feedPeekURL(feed) {
 // @param feed {Object} a feed object
 // @param url {URL}
 export function feedAppendURL(feed, url) {
-
-  if(!isFeed(feed)) {
+  if (!isFeed(feed)) {
     console.error('Invalid feed argument:', feed);
     return false;
   }
 
-  if(!(url instanceof URL)) {
+  if (!(url instanceof URL)) {
     console.error('Invalid url argument:', url);
     return false;
   }
 
   feed.urls = feed.urls || [];
   const href = url.href;
-  if(feed.urls.includes(href)) {
+  if (feed.urls.includes(href)) {
     return false;
   }
   feed.urls.push(href);
   return true;
 }
 
-// Returns a new object that results from merging the old feed with the new feed. Fields from the
-// new feed take precedence, except for urls, which are merged to generate a distinct ordered set of
-// oldest to newest url. Impure because of copying by reference.
+// Returns a new object that results from merging the old feed with the new
+// feed. Fields from the new feed take precedence, except for urls, which are
+// merged to generate a distinct ordered set of oldest to newest url. Impure
+// because of copying by reference.
 export function mergeFeeds(oldFeed, newFeed) {
   const mergedFeed = Object.assign(createFeed(), oldFeed, newFeed);
 
-  // After assignment, the merged feed has only the urls from the new feed. So the output feed's url
-  // list needs to be fixed. First copy over the old feed's urls, then try and append each new feed
-  // url.
+  // After assignment, the merged feed has only the urls from the new feed. So
+  // the output feed's url list needs to be fixed. First copy over the old
+  // feed's urls, then try and append each new feed url.
   mergedFeed.urls = [...oldFeed.urls];
 
-  if(newFeed.urls) {
-    for(const urlString of newFeed.urls) {
+  if (newFeed.urls) {
+    for (const urlString of newFeed.urls) {
       feedAppendURL(mergedFeed, new URL(urlString));
     }
   }
@@ -769,27 +778,27 @@ export function entryHasURL(entry) {
   return entry.urls && (entry.urls.length > 0);
 }
 
-// Returns the last url, as a string, in the entry's url list. This should never be called on an
-// entry without urls.
-// TODO: because this returns a string, be more explicit about it. I just caught myself expecting
-// URL.
+// Returns the last url, as a string, in the entry's url list. This should never
+// be called on an entry without urls.
+// TODO: because this returns a string, be more explicit about it. I just caught
+// myself expecting URL.
 export function entryPeekURL(entry) {
   assert(isEntry(entry));
   assert(entryHasURL(entry));
   return entry.urls[entry.urls.length - 1];
 }
 
-// Append a url to an entry's url list. Lazily creates the urls property if needed. Normalizes the
-// url. The normalized url is compared against existing urls to ensure the new url is unique.
-// Returns true if entry was added, or false if the url already exists and was therefore
-// not added
+// Append a url to an entry's url list. Lazily creates the urls property if
+// needed. Normalizes the url. The normalized url is compared against existing
+// urls to ensure the new url is unique. Returns true if entry was added, or
+// false if the url already exists and was therefore not added
 export function entryAppendURL(entry, url) {
   assert(isEntry(entry));
   assert(url instanceof URL);
 
   const normalUrlString = url.href;
-  if(entry.urls) {
-    if(entry.urls.includes(normalUrlString)) {
+  if (entry.urls) {
+    if (entry.urls.includes(normalUrlString)) {
       return false;
     }
 
@@ -802,18 +811,19 @@ export function entryAppendURL(entry, url) {
 }
 
 // Returns the url used to lookup a feed's favicon
-// Note this expects an actual feed object, not any object. The magic property must be set
+// Note this expects an actual feed object, not any object. The magic property
+// must be set
 // @returns {URL}
 export function createIconLookupURLForFeed(feed) {
   assert(isFeed(feed));
 
-  // First, prefer the link, as this is the url of the webpage that is associated with the feed.
-  // Cannot assume the link is set or valid. But if set, can assume it is valid.
-  if(feed.link) {
-
+  // First, prefer the link, as this is the url of the webpage that is
+  // associated with the feed. Cannot assume the link is set or valid. But if
+  // set, can assume it is valid.
+  if (feed.link) {
     try {
       return new URL(feed.link);
-    } catch(error) {
+    } catch (error) {
       // If feed.link is set it should always be a valid URL
       console.warn(error);
 
@@ -821,8 +831,8 @@ export function createIconLookupURLForFeed(feed) {
     }
   }
 
-  // If the link is missing or invalid then use the origin of the feed's xml url. Assume the feed
-  // always has a url.
+  // If the link is missing or invalid then use the origin of the feed's xml
+  // url. Assume the feed always has a url.
   const urlString = feedPeekURL(feed);
   const urlObject = new URL(urlString);
   return new URL(urlObject.origin);

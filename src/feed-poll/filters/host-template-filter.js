@@ -1,4 +1,4 @@
-import assert from "/src/common/assert.js";
+import assert from '/src/common/assert.js';
 
 // TODO: move to basic filters
 
@@ -10,16 +10,14 @@ import assert from "/src/common/assert.js";
 // @param url {URL}
 export default function hostTemplateFilter(doc, url) {
   assert(doc instanceof Document);
-  if(!url) {
+  if (!url) {
     return;
   }
 
   const hostSelectorMap = {};
   hostSelectorMap['www.washingtonpost.com'] = [
-    'header#wp-header',
-    'div.top-sharebar-wrapper',
-    'div.newsletter-inline-unit',
-    'div.moat-trackable'
+    'header#wp-header', 'div.top-sharebar-wrapper',
+    'div.newsletter-inline-unit', 'div.moat-trackable'
   ];
   hostSelectorMap['theweek.com'] = ['div#head-wrap'];
   hostSelectorMap['www.usnews.com'] = ['header.header'];
@@ -27,7 +25,7 @@ export default function hostTemplateFilter(doc, url) {
   const hostname = url.hostname;
 
   const selectors = hostSelectorMap[hostname];
-  if(!selectors) {
+  if (!selectors) {
     return;
   }
 
@@ -35,7 +33,7 @@ export default function hostTemplateFilter(doc, url) {
 
   const selector = selectors.join(',');
   const elements = doc.querySelectorAll(selector);
-  for(const element of elements) {
+  for (const element of elements) {
     element.remove();
   }
 }

@@ -1,87 +1,65 @@
-import {escapeHTML, truncateHTML} from "/src/common/html-utils.js";
-import markEntryRead from "/src/feed-ops/mark-entry-read.js";
-import {
-  closePollFeedsContext,
-  createPollFeedsContext,
-  pollFeeds
-} from "/src/feed-poll/poll-feeds.js";
-import {
-  entryPeekURL,
-  feedPeekURL,
-  findViewableEntries,
-  getFeeds,
-  isEntry,
-  isValidEntryId,
-  open as openReaderDb
-} from "/src/rdb.js";
-import {exportOPML, importOPML} from "/src/views/exim-utils.js";
-import * as PageStyle from "/src/views/page-style-settings.js";
-import * as Slideshow from "/src/views/slideshow.js";
+import {escapeHTML, truncateHTML} from '/src/common/html-utils.js';
+import markEntryRead from '/src/feed-ops/mark-entry-read.js';
+import {closePollFeedsContext, createPollFeedsContext, pollFeeds} from '/src/feed-poll/poll-feeds.js';
+import {entryPeekURL, feedPeekURL, findViewableEntries, getFeeds, isEntry, isValidEntryId, open as openReaderDb} from '/src/rdb.js';
+import {exportOPML, importOPML} from '/src/views/exim-utils.js';
+import * as PageStyle from '/src/views/page-style-settings.js';
+import * as Slideshow from '/src/views/slideshow.js';
 
-// BUG: some kind of mark-read bug, possibly due to the non-blocking call. The bug is logic,
-// there is no js error. Entries are getting marked as read, but re-appear occassionally when
-// navigation, and sometimes next-slide key press doesn't advance slide.
+// BUG: some kind of mark-read bug, possibly due to the non-blocking call. The
+// bug is logic, there is no js error. Entries are getting marked as read, but
+// re-appear occassionally when navigation, and sometimes next-slide key press
+// doesn't advance slide.
 
 
 const fonts = [
-  'ArchivoNarrow-Regular',
-  'Arial, sans-serif',
-  'Calibri',
-  'Cambria',
-  'CartoGothicStd',
-  'Fanwood',
-  'Georgia',
-  'League Mono Regular',
-  'League Spartan',
-  'Montserrat',
-  'Noto Sans',
-  'Open Sans Regular',
-  'PathwayGothicOne',
-  'PlayfairDisplaySC',
-  'Roboto Regular'
+  'ArchivoNarrow-Regular', 'Arial, sans-serif', 'Calibri', 'Cambria',
+  'CartoGothicStd', 'Fanwood', 'Georgia', 'League Mono Regular',
+  'League Spartan', 'Montserrat', 'Noto Sans', 'Open Sans Regular',
+  'PathwayGothicOne', 'PlayfairDisplaySC', 'Roboto Regular'
 ];
 
 const channel = new BroadcastChannel('reader');
 channel.onmessage = function(event) {
-  if(!event.isTrusted) {
+  if (!event.isTrusted) {
     return;
   }
 
   const message = event.data;
-  if(typeof message !== 'object' || message === null) {
+  if (typeof message !== 'object' || message === null) {
     console.warn('Message event has missing or invalid message', event);
     return;
   }
 
-  switch(message.type) {
-  case 'display-settings-changed':
-    PageStyle.pageStyleSettingsOnchange(message);
-    break;
-  case 'entry-added':
-    onEntryAddedMessage(message).catch(console.warn);
-    break;
-  case 'entry-deleted':
-    onEntryExpiredMessage(message).catch(console.warn);
-    break;
-  case 'entry-archived':
-    onEntryExpiredMessage(message).catch(console.warn);
-    break;
-  case 'feed-deleted':
-    console.warn('Unhandled feed-deleted message', message);
-    break;
-  case 'entry-marked-read':
-    // TODO: call a mark read handler here that sets the slide element as read
-    console.warn('Unhandled entry-marked-read message', message);
-    break;
-  case 'feed-added':
-  case 'feed-updated':
-  case 'feed-activated':
-  case 'feed-deactivated':
-    //console.debug('Ignoring message', message.type);
-    break;
-  default:
-    console.warn('Unknown message type', message);
-    break;
+  switch (message.type) {
+    case 'display-settings-changed':
+      PageStyle.pageStyleSettingsOnchange(message);
+      break;
+    case 'entry-added':
+      onEntryAddedMessage(message).catch(console.warn);
+      break;
+    case 'entry-deleted':
+      onEntryExpiredMessage(message).catch(console.warn);
+      break;
+    case 'entry-archived':
+      onEntryExpiredMessage(message).catch(console.warn);
+      break;
+    case 'feed-deleted':
+      console.warn('Unhandled feed-deleted message', message);
+      break;
+    case 'entry-marked-read':
+      // TODO: call a mark read handler here that sets the slide element as read
+      console.warn('Unhandled entry-marked-read message', message);
+      break;
+    case 'feed-added':
+    case 'feed-updated':
+    case 'feed-activated':
+    case 'feed-deactivated':
+      // console.debug('Ignoring message', message.type);
+      break;
+    default:
+      console.warn('Unknown message type', message);
+      break;
   }
 };
 
@@ -89,13 +67,13 @@ channel.onmessageerror = function(event) {
   console.warn('Could not deserialize message from channel', event);
 };
 
-// Responds to the adding of an entry to the database from some background task. Conditionally
-// appends new articles as slides.
+// Responds to the adding of an entry to the database from some background task.
+// Conditionally appends new articles as slides.
 async function onEntryAddedMessage(message) {
   // Do not append if several unread slides are still loaded
   const unreadSlideCount = countUnreadSlides();
 
-  if(unreadSlideCount > 3) {
+  if (unreadSlideCount > 3) {
     return;
   }
 
@@ -104,7 +82,7 @@ async function onEntryAddedMessage(message) {
     conn = await openReaderDb();
     await appendSlides(conn);
   } finally {
-    if(conn) {
+    if (conn) {
       conn.close();
     }
   }
@@ -113,8 +91,10 @@ async function onEntryAddedMessage(message) {
 function showErrorMessage(messageText) {
   const container = document.getElementById('error-message-container');
 
-  if(!container) {
-    console.error('Could not find element #error-message-container to show error', messageText);
+  if (!container) {
+    console.error(
+        'Could not find element #error-message-container to show error',
+        messageText);
     return;
   }
 
@@ -122,50 +102,55 @@ function showErrorMessage(messageText) {
   container.style.display = 'block';
 }
 
-// React to a message indicating that an entry expired (e.g. it was deleted, or archived)
+// React to a message indicating that an entry expired (e.g. it was deleted, or
+// archived)
 async function onEntryExpiredMessage(message) {
-  if(typeof message !== 'object') {
+  if (typeof message !== 'object') {
     console.warn('Invalid message', message);
     return;
   }
 
   // Do not trust the message
-  if(!isValidEntryId(message.id)) {
+  if (!isValidEntryId(message.id)) {
     console.warn('Invalid entry id', message);
     return;
   }
 
   // Search for a slide corresponding to the entry id
   const slideElementName = Slideshow.getElementName();
-  const slide = document.querySelector(slideElementName + '[entry="' + message.id + '"]');
+  const slide =
+      document.querySelector(slideElementName + '[entry="' + message.id + '"]');
 
-  // There is no guarantee the entry id corresponds to a loaded slide. It is normal and frequent
-  // for the slideshow to receive messages with entry ids that do not correspond to loaded slides.
-  if(!slide) {
+  // There is no guarantee the entry id corresponds to a loaded slide. It is
+  // normal and frequent for the slideshow to receive messages with entry ids
+  // that do not correspond to loaded slides.
+  if (!slide) {
     console.debug('No slide found for entry', message.id);
     return;
   }
 
-  // The slide currently being viewed was externally modified such that it should no longer be
-  // viewed, so we could prefer to remove it from the view. However, it is the current slide being
-  // viewed which would lead to surprise as the article the user is reading is magically whisked
-  // away. Instead, flag the slide as stale, so that other view functionality can react
+  // The slide currently being viewed was externally modified such that it
+  // should no longer be viewed, so we could prefer to remove it from the view.
+  // However, it is the current slide being viewed which would lead to surprise
+  // as the article the user is reading is magically whisked away. Instead, flag
+  // the slide as stale, so that other view functionality can react
   // appropriately at a later time in an unobtrusive manner.
-  if(Slideshow.isCurrentSlide(slide)) {
+  if (Slideshow.isCurrentSlide(slide)) {
     console.log('Cannot remove active slide, marking as stale', message.id);
     slide.setAttribute('removed-after-load', 'true');
     return;
   }
 
-  // TODO: because this handles clicks and not Slideshow, the remove call doesn't remove
-  // the listener, so it has to be removed here, but I would prefer something better.
+  // TODO: because this handles clicks and not Slideshow, the remove call
+  // doesn't remove the listener, so it has to be removed here, but I would
+  // prefer something better.
   Slideshow.remove(slide);
   slide.removeEventListener('click', onSlideClick);
 }
 
 function showLoadingInformation() {
   const loadingElement = document.getElementById('initial-loading-panel');
-  if(loadingElement) {
+  if (loadingElement) {
     loadingElement.style.display = 'block';
   } else {
     console.error('Could not find initial loading panel');
@@ -174,7 +159,7 @@ function showLoadingInformation() {
 
 function hideLoadingInformation() {
   const loadingElement = document.getElementById('initial-loading-panel');
-  if(loadingElement) {
+  if (loadingElement) {
     loadingElement.style.display = 'none';
   } else {
     console.error('Could not find initial loading panel');
@@ -182,17 +167,17 @@ function hideLoadingInformation() {
 }
 
 
-// TODO: I lost the non-blocking nature I was going for, so I need to rethink this.
+// TODO: I lost the non-blocking nature I was going for, so I need to rethink
+// this.
 // TODO: I don't think this needs the conn parameter?
 
 async function markSlideRead(conn, slideElement) {
-
-  if(!(conn instanceof IDBDatabase)) {
+  if (!(conn instanceof IDBDatabase)) {
     console.error('Invalid conn parameter');
     return;
   }
 
-  if(!(slideElement instanceof Element)) {
+  if (!(slideElement instanceof Element)) {
     console.error('Invalid slideElement parameter');
     return;
   }
@@ -201,39 +186,40 @@ async function markSlideRead(conn, slideElement) {
   const slideEntryAttributeValue = slideElement.getAttribute('entry');
   const entryId = parseInt(slideEntryAttributeValue, 10);
   // The entry id should always be valid or something is very wrong
-  if(!isValidEntryId(entryId)) {
+  if (!isValidEntryId(entryId)) {
     console.error('Invalid entry id', entryId);
     return;
   }
 
   console.log('Marking slide for entry %d as read', entryId);
 
-  // Exit early if the slide has already been read. This is routine such as when navigating backward
-  // and should not be considered an error.
-  if(slideElement.hasAttribute('read')) {
+  // Exit early if the slide has already been read. This is routine such as when
+  // navigating backward and should not be considered an error.
+  if (slideElement.hasAttribute('read')) {
     console.debug('Slide already marked as read', entryId);
     return;
   }
 
-  // TODO: rather than await, this should listen for entry-marked-read events roundtrip and
-  // handle the event when it later occurs to mark the corresponding slide.
-  // Then this can be called non-awaited.
+  // TODO: rather than await, this should listen for entry-marked-read events
+  // roundtrip and handle the event when it later occurs to mark the
+  // corresponding slide. Then this can be called non-awaited.
 
   try {
     await markEntryRead(conn, channel, entryId);
-  } catch(error) {
+  } catch (error) {
     // TODO: display an error
     console.error(error);
     return;
   }
 
-  // Signal to the UI that the slide is read, so that unread counting works, and so that later
-  // calls to this function exit prior to interacting with storage.
+  // Signal to the UI that the slide is read, so that unread counting works, and
+  // so that later calls to this function exit prior to interacting with
+  // storage.
   slideElement.setAttribute('read', '');
 }
 
-// TODO: append slides shouldn't be responsible for loading. This should accept an array
-// of slides as input. Something else should be doing loading.
+// TODO: append slides shouldn't be responsible for loading. This should accept
+// an array of slides as input. Something else should be doing loading.
 async function appendSlides(conn, limit) {
   console.log('Appending slides (limit: %d)', limit);
 
@@ -243,13 +229,13 @@ async function appendSlides(conn, limit) {
   let entries;
   try {
     entries = await findViewableEntries(conn, offset, limit);
-  } catch(error) {
+  } catch (error) {
     console.error(error);
     showErrorMessage('There was a problem loading articles from storage');
     return 0;
   }
 
-  for(const entry of entries) {
+  for (const entry of entries) {
     appendSlide(entry);
   }
 
@@ -262,8 +248,7 @@ async function appendSlides(conn, limit) {
 
 // Given an entry, create a new slide element and append it to the view
 function appendSlide(entry) {
-
-  if(!isEntry(entry)) {
+  if (!isEntry(entry)) {
     console.error('Invalid entry parameter', entry);
     return;
   }
@@ -272,7 +257,7 @@ function appendSlide(entry) {
   const slide = Slideshow.create();
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
-  slide.setAttribute('class','entry');
+  slide.setAttribute('class', 'entry');
   slide.addEventListener('click', onSlideClick);
 
   // An after-the-fact change to fix padding
@@ -292,18 +277,19 @@ function createArticleTitleElement(entry) {
   titleElement.setAttribute('class', 'entry-title');
   titleElement.setAttribute('rel', 'noreferrer');
 
-  if(entry.title) {
+  if (entry.title) {
     let title = entry.title;
     let safeTitle = escapeHTML(title);
 
-    // Set the attribute value to the full title without truncation or publisher filter
-    // BUG: this is double encoding entities somehow, so entities show up in the value
+    // Set the attribute value to the full title without truncation or publisher
+    // filter BUG: this is double encoding entities somehow, so entities show up
+    // in the value
     titleElement.setAttribute('title', safeTitle);
 
     let filteredSafeTitle = filterPublisher(safeTitle);
     try {
       filteredSafeTitle = truncateHTML(filteredSafeTitle, 300);
-    } catch(error) {
+    } catch (error) {
       console.warn(error);
     }
 
@@ -331,10 +317,11 @@ function createFeedSourceElement(entry) {
   sourceElement.setAttribute('class', 'entry-source');
 
   // At this point, assume that if faviconURLString is set, that it is
-  // valid (defined, a string, a well-formed canonical url string). If it is not valid by this
-  // point then something is really wrong elsewhere in the app, but that is not our concern here.
-  // If the url is bad then show a broken image.
-  if(entry.faviconURLString) {
+  // valid (defined, a string, a well-formed canonical url string). If it is not
+  // valid by this point then something is really wrong elsewhere in the app,
+  // but that is not our concern here. If the url is bad then show a broken
+  // image.
+  if (entry.faviconURLString) {
     const faviconElement = document.createElement('img');
     faviconElement.setAttribute('src', entry.faviconURLString);
     faviconElement.setAttribute('width', '16');
@@ -343,7 +330,7 @@ function createFeedSourceElement(entry) {
   }
 
   const details = document.createElement('span');
-  if(entry.feedLink) {
+  if (entry.feedLink) {
     details.setAttribute('title', entry.feedLink);
   }
 
@@ -351,7 +338,7 @@ function createFeedSourceElement(entry) {
   buffer.push(entry.feedTitle || 'Unknown feed');
   buffer.push(' by ');
   buffer.push(entry.author || 'Unknown author');
-  if(entry.datePublished) {
+  if (entry.datePublished) {
     buffer.push(' on ');
     buffer.push(formatDate(entry.datePublished));
   }
@@ -367,34 +354,34 @@ function createFeedSourceElement(entry) {
 // @param title {String} the title of an web page
 // @returns {String} the title without publisher information
 function filterPublisher(title) {
-  if(typeof title !== 'string') {
+  if (typeof title !== 'string') {
     console.error('Invalid title parameter', title);
   }
 
   // Look for a delimiter
   let delimiterPosition = title.lastIndexOf(' - ');
-  if(delimiterPosition < 0) {
+  if (delimiterPosition < 0) {
     delimiterPosition = title.lastIndexOf(' | ');
   }
-  if(delimiterPosition < 0) {
+  if (delimiterPosition < 0) {
     delimiterPosition = title.lastIndexOf(' : ');
   }
 
   // Exit early if no delimiter found
-  if(delimiterPosition < 0) {
+  if (delimiterPosition < 0) {
     return title;
   }
 
   // Exit early if the delimiter did not occur late enough in the title
   const MIN_TITLE_LENGTH = 20;
-  if(delimiterPosition < MIN_TITLE_LENGTH) {
+  if (delimiterPosition < MIN_TITLE_LENGTH) {
     return title;
   }
 
   // Exit early if the delimiter was found too close to the end
   const MIN_PUBLISHER_NAME_LENGTH = 5;
   const remainingCharCount = title.length - delimiterPosition;
-  if(remainingCharCount < MIN_PUBLISHER_NAME_LENGTH) {
+  if (remainingCharCount < MIN_PUBLISHER_NAME_LENGTH) {
     return title;
   }
 
@@ -403,9 +390,10 @@ function filterPublisher(title) {
   const tail = title.substring(delimiterPosition + delimiterLength);
   const words = tokenize(tail);
 
-  // If there are too many words, return the full title, because tail is probably not a publisher
+  // If there are too many words, return the full title, because tail is
+  // probably not a publisher
   const MAX_TAIL_WORDS = 4;
-  if(words.length > MAX_TAIL_WORDS) {
+  if (words.length > MAX_TAIL_WORDS) {
     return title;
   }
 
@@ -416,10 +404,10 @@ function filterPublisher(title) {
 
 // Helper for filterPublisher, break apart string into array of words
 function tokenize(value) {
-  if(typeof value === 'string') {
+  if (typeof value === 'string') {
     // Avoid empty tokens by trimming and checking length
     const trimmedInput = value.trim();
-    if(trimmedInput.length > 0) {
+    if (trimmedInput.length > 0) {
       return trimmedInput.split(/\s+/g);
     }
   }
@@ -427,75 +415,81 @@ function tokenize(value) {
 }
 
 async function onSlideClick(event) {
-  // We only care about responding to left click. Ignore all other buttons like right click and
-  // mouse wheel.
+  // We only care about responding to left click. Ignore all other buttons like
+  // right click and mouse wheel.
   const CODE_LEFT_MOUSE_BUTTON = 1;
-  if(event.which !== CODE_LEFT_MOUSE_BUTTON) {
+  if (event.which !== CODE_LEFT_MOUSE_BUTTON) {
     return true;
   }
 
-  // Find the most immediate containing anchor. In theory there shouldn't be anchors nested in
-  // anchors. Also note this can fail to find one (which is not an unexpected error).
-  // event.target is the element that was clicked. This could be several things:
+  // Find the most immediate containing anchor. In theory there shouldn't be
+  // anchors nested in anchors. Also note this can fail to find one (which is
+  // not an unexpected error). event.target is the element that was clicked.
+  // This could be several things:
   // * a slide, clicked on misc area of a slide
   // * an anchor in a slide
   // * an element within an anchor, like a clickable image
   const anchor = event.target.closest('a');
 
-  // Ignore non-anchor-involved clicks, leave the click as is and defer click handling to
-  // browser.
-  if(!anchor) {
+  // Ignore non-anchor-involved clicks, leave the click as is and defer click
+  // handling to browser.
+  if (!anchor) {
     return true;
   }
 
-  // Technically this should never happen, right? Because all such anchors should have been
-  // removed by the content-filters in document preprocessing. Therefore, log a warning
-  // message and exit.
+  // Technically this should never happen, right? Because all such anchors
+  // should have been removed by the content-filters in document preprocessing.
+  // Therefore, log a warning message and exit.
   // TODO: should this be a visual error?
-  if(!anchor.hasAttribute('href')) {
-    console.warn('Clicked anchor that should have been filtered by preprocessing',
-      anchor.outerHTML);
+  if (!anchor.hasAttribute('href')) {
+    console.warn(
+        'Clicked anchor that should have been filtered by preprocessing',
+        anchor.outerHTML);
     return true;
   }
 
-  // We've determined at this point we are going to handle the click. Inform the browser that we
-  // are intercepting.
+  // We've determined at this point we are going to handle the click. Inform the
+  // browser that we are intercepting.
   event.preventDefault();
 
   // Get the url and open the url in a new tab.
   const urlString = anchor.getAttribute('href');
-  if(!urlString) {
+  if (!urlString) {
     console.error(
-      'An invalid url somehow got through data processing to the ui, should never happen',
-      anchor.outerHTML);
+        'An invalid url somehow got through data processing to the ui, should never happen',
+        anchor.outerHTML);
     return;
   }
 
   openTab(urlString);
 
-  // After opening the link in a new tab, then continue processing. Next, find the slide that was
-  // clicked. This is typically the current slide, but that isn't guaranteed. Article elements are
-  // filtered from document content, so the only time an ancestor of the anchor is an article is
-  // when it is the slide that contains the anchor.
-  // Start from parent node to skip the closest test against the anchor itself.
+  // After opening the link in a new tab, then continue processing. Next, find
+  // the slide that was clicked. This is typically the current slide, but that
+  // isn't guaranteed. Article elements are filtered from document content, so
+  // the only time an ancestor of the anchor is an article is when it is the
+  // slide that contains the anchor. Start from parent node to skip the closest
+  // test against the anchor itself.
   const clickedSlide = anchor.parentNode.closest('slide');
 
-  if(!clickedSlide) {
+  if (!clickedSlide) {
     // TODO: show an error?
     console.error('Could not find clicked slide');
     return;
   }
 
-  // Weak sanity check that the element is a slide, mostly just to monitor the recent changes to
-  // this function.
+  // Weak sanity check that the element is a slide, mostly just to monitor the
+  // recent changes to this function.
   const currentSlide = Slideshow.getCurrentSlide();
-  if(clickedSlide !== currentSlide) {
-    console.log('Clicked slide is different than current slide', clickedSlide, currentSlide);
+  if (clickedSlide !== currentSlide) {
+    console.log(
+        'Clicked slide is different than current slide', clickedSlide,
+        currentSlide);
   }
 
-  // Although this condition is primarily a concern of markSlideRead, and is redundant with
-  // the check that occurs within markSlideRead, checking it here avoids the call.
-  if(clickedSlide.hasAttribute('removed-after-load')) {
+  // Although this condition is primarily a concern of markSlideRead, and is
+  // redundant with the check that occurs within markSlideRead, checking it here
+  // avoids the call.
+  if (clickedSlide.hasAttribute('removed-after-load')) {
     console.log('Exiting click handler early due to stale state', clickedSlide);
     return false;
   }
@@ -504,7 +498,7 @@ async function onSlideClick(event) {
   let conn;
   try {
     conn = await openReaderDb();
-  } catch(error) {
+  } catch (error) {
     // TODO: visually show error
     console.error(error);
     return false;
@@ -514,11 +508,13 @@ async function onSlideClick(event) {
 
   conn.close();
 
-  // Still signal the click should not default to normal click behavior, the browser should not
-  // react to the click on its own. Even though I already called preventDefault.
-  // TODO: if a function does not explicitly return it returns undefined. Does the browser only
-  // cancel if exactly false or is returning undefined the same? If returning undefined is the
-  // same then this return statement is implicit and not necessary.
+  // Still signal the click should not default to normal click behavior, the
+  // browser should not react to the click on its own. Even though I already
+  // called preventDefault.
+  // TODO: if a function does not explicitly return it returns undefined. Does
+  // the browser only cancel if exactly false or is returning undefined the
+  // same? If returning undefined is the same then this return statement is
+  // implicit and not necessary.
   return false;
 }
 
@@ -531,64 +527,62 @@ function onKeyDown(event) {
   const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
   const code = event.keyCode;
 
-  switch(code) {
-  case RIGHT:
-  case N:
-  case SPACE: {
-    event.preventDefault();
-    cancelIdleCallback(keydownTimerId);
-    keydownTimerId = requestIdleCallback(nextSlide);
-    break;
-  }
+  switch (code) {
+    case RIGHT:
+    case N:
+    case SPACE: {
+      event.preventDefault();
+      cancelIdleCallback(keydownTimerId);
+      keydownTimerId = requestIdleCallback(nextSlide);
+      break;
+    }
 
-  case LEFT:
-  case P: {
-    event.preventDefault();
-    cancelIdleCallback(keydownTimerId);
-    keydownTimerId = requestIdleCallback(Slideshow.prev);
-    break;
-  }
+    case LEFT:
+    case P: {
+      event.preventDefault();
+      cancelIdleCallback(keydownTimerId);
+      keydownTimerId = requestIdleCallback(Slideshow.prev);
+      break;
+    }
   }
 }
 
 window.addEventListener('keydown', onKeyDown);
 
+// TODO: I should probably unlink loading on demand and navigation, because this
+// causes lag. navigation would be smoother if I appended even earlier, like
+// before even reaching the situation of its the last slide and there are no
+// more so append. It would be better if I did something like check the number
+// of remaining unread slides, and if that is less than some number, append
+// more. And it would be better if I did that before even navigating. However
+// that would cause lag. So it would be even better if I started in a separate
+// microtask an append operation and then continued in the current task. Or, the
+// check should happen not on append, but after doing the navigation. Or after
+// marking the slide as read.
 
-
-
-// TODO: I should probably unlink loading on demand and navigation, because this causes
-// lag.
-// navigation would be smoother if I appended even earlier, like before even reaching the
-// situation of its the last slide and there are no more so append. It would be better if I did
-// something like check the number of remaining unread slides, and if that is less than some
-// number, append more. And it would be better if I did that before even navigating. However that
-// would cause lag. So it would be even better if I started in a separate microtask an append
-// operation and then continued in the current task. Or, the check should happen not on append,
-// but after doing the navigation. Or after marking the slide as read.
-
-// TODO: sharing the connection between mark as read and appendSlides made sense at first but I
-// do not like the large try/catch block. Also I think the two can be unlinked because they do not
-// have to co-occur. Also I don't like how it has to wait for read to complete.
-
-
+// TODO: sharing the connection between mark as read and appendSlides made sense
+// at first but I do not like the large try/catch block. Also I think the two
+// can be unlinked because they do not have to co-occur. Also I don't like how
+// it has to wait for read to complete.
 
 async function nextSlide() {
-
   const currentSlide = Slideshow.getCurrentSlide();
 
-  // If there are still unread articles return. Do not mark the current article, if it exists,
-  // as read.
+  // If there are still unread articles return. Do not mark the current article,
+  // if it exists, as read.
   const unreadSlideCount = countUnreadSlides();
   // We still append if there is just one unread slide
-  if(unreadSlideCount > 1) {
-    console.debug('Not dynamically appending because %d unread slides remain', unreadSlideCount);
+  if (unreadSlideCount > 1) {
+    console.debug(
+        'Not dynamically appending because %d unread slides remain',
+        unreadSlideCount);
 
 
     // Mark the current slide as read
     let conn;
     try {
       conn = await openReaderDb();
-    } catch(error) {
+    } catch (error) {
       console.error(error);
       return;
     }
@@ -604,13 +598,12 @@ async function nextSlide() {
   let conn;
   try {
     conn = await openReaderDb();
-  } catch(error) {
+  } catch (error) {
     console.error(error);
     return;
   }
 
-
-  if(unreadSlideCount < 2) {
+  if (unreadSlideCount < 2) {
     console.log('Appending additional slides prior to navigation');
     appendCount = await appendSlides(conn);
   } else {
@@ -621,25 +614,24 @@ async function nextSlide() {
   await markSlideRead(conn, currentSlide);
   conn.close();
 
-  if(appendCount < 1) {
+  if (appendCount < 1) {
     return;
   }
 
   const maxLoadCount = 6;
   let firstSlide = Slideshow.getFirstSlide();
-  while(Slideshow.count() > maxLoadCount && firstSlide !== currentSlide) {
+  while (Slideshow.count() > maxLoadCount && firstSlide !== currentSlide) {
     Slideshow.remove(firstSlide);
     firstSlide.removeEventListener('click', onSlideClick);
     firstSlide = Slideshow.getFirstSlide();
   }
 }
 
-
 function countUnreadSlides() {
   const slides = Slideshow.getSlides();
   let count = 0;
-  for(const slide of slides) {
-    if(slide.hasAttribute('read')) {
+  for (const slide of slides) {
+    if (slide.hasAttribute('read')) {
       continue;
     }
     count++;
@@ -647,13 +639,12 @@ function countUnreadSlides() {
   return count;
 }
 
-
 let refreshInProgress = false;
 async function refreshAnchorOnclick(event) {
   event.preventDefault();
   console.log('Clicked refresh button');
 
-  if(refreshInProgress) {
+  if (refreshInProgress) {
     console.log('Ignoring refresh button click while refresh in progress');
     return;
   }
@@ -670,15 +661,15 @@ async function refreshAnchorOnclick(event) {
     ctx.channel = channel;
     await pollFeeds(ctx);
 
-  } catch(error) {
+  } catch (error) {
     // TODO: show an error message
     console.error(error);
   } finally {
-    if(ctx.feedConn) {
+    if (ctx.feedConn) {
       ctx.feedConn.close();
     }
 
-    if(ctx.iconConn) {
+    if (ctx.iconConn) {
       ctx.iconConn.close();
     }
 
@@ -686,7 +677,7 @@ async function refreshAnchorOnclick(event) {
   }
 
   console.log('Re-enabling refresh button');
-  refreshInProgress = false;// Always renable
+  refreshInProgress = false;  // Always renable
 }
 
 function showMenuOptions() {
@@ -698,14 +689,14 @@ function showMenuOptions() {
 function hideMenuOptions() {
   const menuOptions = document.getElementById('left-panel');
   menuOptions.style.marginLeft = '-320px';
-  menuOptions.style.boxShadow = '';// HACK
+  menuOptions.style.boxShadow = '';  // HACK
 }
 
 function mainMenuButtonOnclick(event) {
   const menuOptions = document.getElementById('left-panel');
-  if(menuOptions.style.marginLeft === '0px') {
+  if (menuOptions.style.marginLeft === '0px') {
     hideMenuOptions();
-  } else if(menuOptions.style.marginLeft === '') {
+  } else if (menuOptions.style.marginLeft === '') {
     showMenuOptions();
   } else {
     showMenuOptions();
@@ -715,30 +706,30 @@ function mainMenuButtonOnclick(event) {
 function menuOptionsOnclick(event) {
   // event.target points to either a clicked <li> or the <ul>
   const option = event.target;
-  if(option.localName !== 'li') {
+  if (option.localName !== 'li') {
     console.debug('Ignoring click on menu options that is not on menu item');
     return;
   }
 
-  switch(option.id) {
-  case 'menu-option-subscribe':
-    console.warn('Not yet implemented');
-    break;
-  case 'menu-option-import':
-    menuOptionImportOnclick();
-    break;
-  case 'menu-option-export':
-    menuOptionExportOnclick();
-    break;
-  case 'menu-option-header-font':
-    // Ignore, this has its own handler
-    break;
-  case 'menu-option-body-font':
-    // Ignore
-    break;
-  default:
-    console.debug('Unhandled menu option click', option.id);
-    break;
+  switch (option.id) {
+    case 'menu-option-subscribe':
+      console.warn('Not yet implemented');
+      break;
+    case 'menu-option-import':
+      menuOptionImportOnclick();
+      break;
+    case 'menu-option-export':
+      menuOptionExportOnclick();
+      break;
+    case 'menu-option-header-font':
+      // Ignore, this has its own handler
+      break;
+    case 'menu-option-body-font':
+      // Ignore
+      break;
+    default:
+      console.debug('Unhandled menu option click', option.id);
+      break;
   }
 }
 
@@ -757,7 +748,7 @@ async function importFiles(files) {
 
   try {
     await importOPML(channel, files);
-  } catch(error) {
+  } catch (error) {
     // TODO: visual feedback in event an error
     console.error(error);
     return;
@@ -775,7 +766,7 @@ async function menuOptionExportOnclick() {
   let blob;
   try {
     blob = await exportOPML(title);
-  } catch(error) {
+  } catch (error) {
     // TODO: show an error message
     console.error(error);
     return;
@@ -803,16 +794,17 @@ function errorMessageContainerOnclick(event) {
 function noop() {}
 
 function windowOnclick(event) {
-
   // TODO: am I still using marginLeft? I thought I switched to left?
 
-  // If the click occurred outside of the menu options panel, hide the menu options panel
+  // If the click occurred outside of the menu options panel, hide the menu
+  // options panel
   const avoidedZoneIds = ['main-menu-button', 'left-panel'];
-  if(!avoidedZoneIds.includes(event.target.id) && !event.target.closest('[id="left-panel"]')) {
-    // Hide only if not hidden. marginLeft is only 0px in visible state. If marginLeft is
-    // empty string or -320px then menu already hidden
+  if (!avoidedZoneIds.includes(event.target.id) &&
+      !event.target.closest('[id="left-panel"]')) {
+    // Hide only if not hidden. marginLeft is only 0px in visible state. If
+    // marginLeft is empty string or -320px then menu already hidden
     const aside = document.getElementById('left-panel');
-    if(aside.style.marginLeft === '0px') {
+    if (aside.style.marginLeft === '0px') {
       hideMenuOptions();
     }
   }
@@ -821,11 +813,11 @@ function windowOnclick(event) {
 }
 
 function feedsContainerOnclick(event) {
-  if(event.target.localName !== 'div') {
+  if (event.target.localName !== 'div') {
     return true;
   }
 
-  if(!event.target.id) {
+  if (!event.target.id) {
     return true;
   }
 
@@ -833,10 +825,9 @@ function feedsContainerOnclick(event) {
 }
 
 function toggleFeedContainerDetails(feedElement) {
-
   const table = feedElement.querySelector('table');
 
-  if(feedElement.hasAttribute('expanded')) {
+  if (feedElement.hasAttribute('expanded')) {
     // Collapse
     feedElement.removeAttribute('expanded');
     feedElement.style.width = '200px';
@@ -876,7 +867,7 @@ function readerButtonOnclick(event) {
 }
 
 function initFeedsContainer(feeds) {
-  for(const feed of feeds) {
+  for (const feed of feeds) {
     appendFeed(feed);
   }
 }
@@ -885,15 +876,14 @@ function unsubscribeButtonOnclick(event) {
   console.debug('Unsubscribe', event.target);
 }
 
-// TODO: create helper function createFeedElement that then is passed to this, rename this to
-// appendFeedElement and change its parameter
+// TODO: create helper function createFeedElement that then is passed to this,
+// rename this to appendFeedElement and change its parameter
 function appendFeed(feed) {
-
   const feedsContainer = document.getElementById('feeds-container');
   const feedElement = document.createElement('div');
   feedElement.id = feed.id;
 
-  if(feed.active !== true) {
+  if (feed.active !== true) {
     feedElement.setAttribute('inactive', 'true');
   }
 
@@ -953,7 +943,7 @@ function appendFeed(feed) {
   button.value = '' + feed.id;
   button.onclick = unsubscribeButtonOnclick;
   button.textContent = 'Activate';
-  if(feed.active) {
+  if (feed.active) {
     button.disabled = 'true';
   }
   col.appendChild(button);
@@ -962,7 +952,7 @@ function appendFeed(feed) {
   button.value = '' + feed.id;
   button.onclick = unsubscribeButtonOnclick;
   button.textContent = 'Deactivate';
-  if(!feed.active) {
+  if (!feed.active) {
     button.disabled = 'true';
   }
   col.appendChild(button);
@@ -973,16 +963,17 @@ function appendFeed(feed) {
 
   feedElement.appendChild(feedInfoElement);
 
-  if(feedsContainer) {
+  if (feedsContainer) {
     feedsContainer.appendChild(feedElement);
   }
 }
 
 function formatDate(date, delimiter) {
-  if(!(date instanceof Date)) {
+  if (!(date instanceof Date)) {
     return 'Invalid date';
   }
 
+  // TODO: move this to github issue
   // TODO: date can literally contain "Invalid Date" somehow
   // Like, "Invalid Date" is actually an instance of date.
   // No idea. But a couple of things. First is to handle it here
@@ -999,26 +990,26 @@ function formatDate(date, delimiter) {
   // https://stackoverflow.com/questions/1353684
   // Date.parse('Tue 13 Dec 2011 09:37:46 AM ART') => NaN
 
-  // var d = new Date('Tue 13 Dec 2011 09:37:46 AM ART'); d.getTime() === d.getTime(); => false
-  // So basically all the date parsing needs to be refactored. Not sure I even need the
-  // try/catches.
+  // var d = new Date('Tue 13 Dec 2011 09:37:46 AM ART'); d.getTime() ===
+  // d.getTime(); => false So basically all the date parsing needs to be
+  // refactored. Not sure I even need the try/catches.
 
-/*
-function parseDate(string) {
-  const date = new Date(string);
-  if(date.getTime() !== date.getTime()) {
-    throw new Error('Date parsing error for value ' + string);
+  /*
+  function parseDate(string) {
+    const date = new Date(string);
+    if(date.getTime() !== date.getTime()) {
+      throw new Error('Date parsing error for value ' + string);
+    }
+    return date;
   }
-  return date;
-}
-*/
+  */
 
   // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/
   // Reference/Global_Objects/DateTimeFormat
   const formatter = new Intl.DateTimeFormat();
   try {
     return formatter.format(date);
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
     return 'Invalid date';
   }
@@ -1031,7 +1022,7 @@ function openTab(url) {
 function headerFontMenuOnchange(event) {
   console.debug('Header font menu change event', event);
   const fontName = event.target.value;
-  if(fontName) {
+  if (fontName) {
     localStorage.HEADER_FONT_FAMILY = fontName;
   } else {
     delete localStorage.HEADER_FONT_FAMILY;
@@ -1043,7 +1034,7 @@ function headerFontMenuOnchange(event) {
 function bodyFontMenuOnchange(event) {
   console.debug('Body font menu change event', event);
   const fontName = event.target.value;
-  if(fontName) {
+  if (fontName) {
     localStorage.BODY_FONT_FAMILY = fontName;
   } else {
     delete localStorage.BODY_FONT_FAMILY;
@@ -1060,11 +1051,11 @@ function initHeaderFontMenu() {
   defaultOption.value = '';
   defaultOption.textContent = 'Header Font';
   menu.appendChild(defaultOption);
-  for(const fontName of fonts) {
+  for (const fontName of fonts) {
     const option = document.createElement('option');
     option.value = fontName;
     option.textContent = fontName;
-    if(fontName === currentHeaderFont) {
+    if (fontName === currentHeaderFont) {
       option.selected = true;
     }
     menu.appendChild(option);
@@ -1079,11 +1070,11 @@ function initBodyFontMenu() {
   defaultOption.value = '';
   defaultOption.textContent = 'Body Font';
   menu.appendChild(defaultOption);
-  for(const fontName of fonts) {
+  for (const fontName of fonts) {
     const option = document.createElement('option');
     option.value = fontName;
     option.textContent = fontName;
-    if(fontName === currentBodyFont) {
+    if (fontName === currentBodyFont) {
       option.selected = true;
     }
     menu.appendChild(option);
@@ -1091,7 +1082,6 @@ function initBodyFontMenu() {
 }
 
 async function initSlideshowPage() {
-
   showLoadingInformation();
 
   window.addEventListener('click', windowOnclick);
@@ -1111,12 +1101,12 @@ async function initSlideshowPage() {
 
   // Initialize error message container
   const errorContainer = document.getElementById('error-message-container');
-  if(errorContainer) {
+  if (errorContainer) {
     errorContainer.onclick = errorMessageContainerOnclick;
   }
 
   const feedsContainer = document.getElementById('feeds-container');
-  if(feedsContainer) {
+  if (feedsContainer) {
     feedsContainer.onclick = feedsContainerOnclick;
   }
 
@@ -1126,24 +1116,22 @@ async function initSlideshowPage() {
   initHeaderFontMenu();
   initBodyFontMenu();
 
-  // TODO: is it possible to defer this until after loading without slowing things down?
-  // Initialize entry display settings
+  // TODO: is it possible to defer this until after loading without slowing
+  // things down? Initialize entry display settings
   PageStyle.pageStyleSettingsOnload();
 
-  // TODO: closing should happen before append actually takes place, there is no need to keep
-  // the database open longer.
+  // TODO: closing should happen before append actually takes place, there is no
+  // need to keep the database open longer.
   // TODO: create a helper function that encapsulates this
 
   // Load and append slides
-
-
   const initialLimit = 1;
   let didHideLoading = false;
 
   let conn;
   try {
     conn = await openReaderDb();
-  } catch(error) {
+  } catch (error) {
     // TODO: visually show error message
     console.error(error);
     hideLoadingInformation();
@@ -1162,7 +1150,7 @@ async function initSlideshowPage() {
   let feeds;
   try {
     feeds = await getFeeds(conn);
-  } catch(error) {
+  } catch (error) {
     // TODO: show an error message
     console.error(error);
     conn.close();

@@ -1,39 +1,15 @@
-import showDesktopNotification from "/src/notifications.js";
-import {
-  detectURLChanged,
-  fetchFeed,
-  fetchHTML,
-  getLastModified,
-  TimeoutError,
-  OfflineError
-} from "/src/common/fetch-utils.js";
-import {parseHTML} from "/src/common/html-utils.js";
-import {lookup as lookupFavicon, open as openIconDb} from "/src/favicon-service.js";
-
+import coerceFeed from '/src/coerce-feed.js';
+import {detectURLChanged, fetchFeed, fetchHTML, getLastModified, OfflineError, TimeoutError} from '/src/common/fetch-utils.js';
+import {parseHTML} from '/src/common/html-utils.js';
+import {lookup as lookupFavicon, open as openIconDb} from '/src/favicon-service.js';
+import applyAllDocumentFilters from '/src/feed-poll/filters/apply-all.js';
+import isBinaryURL from '/src/feed-poll/is-binary-url.js';
+import rewriteURL from '/src/feed-poll/rewrite-url.js';
+import showDesktopNotification from '/src/notifications.js';
+import {addEntry, containsEntryWithURL, entryAppendURL, entryHasURL, entryPeekURL, feedHasURL, feedPeekURL, findActiveFeeds, isEntry, isFeed, mergeFeeds, open as openReaderDb, prepareFeed, putFeed} from '/src/rdb.js';
 // TODO: this should not be dependent on something in the view, it should be
 // the other way around
-import updateBadgeText from "/src/views/update-badge-text.js";
-
-import applyAllDocumentFilters from "/src/feed-poll/filters/apply-all.js";
-import rewriteURL from "/src/feed-poll/rewrite-url.js";
-import isBinaryURL from "/src/feed-poll/is-binary-url.js";
-import {
-  addEntry,
-  containsEntryWithURL,
-  entryAppendURL,
-  entryHasURL,
-  entryPeekURL,
-  feedHasURL,
-  feedPeekURL,
-  findActiveFeeds,
-  isEntry,
-  isFeed,
-  mergeFeeds,
-  open as openReaderDb,
-  prepareFeed,
-  putFeed
-} from "/src/rdb.js";
-import coerceFeed from "/src/coerce-feed.js";
+import updateBadgeText from '/src/views/update-badge-text.js';
 
 // TODO: rename to poll-service
 
@@ -85,14 +61,14 @@ export async function createPollFeedsContext() {
 // polling from slideshow, where polling closed the slideshow's persistent
 // channel when it should not have
 export function closePollFeedsContext(context) {
-  if(context.channel) context.channel.close();
-  if(context.feedConn) context.feedConn.close();
-  if(context.iconConn) context.iconConn.close();
+  if (context.channel) context.channel.close();
+  if (context.feedConn) context.feedConn.close();
+  if (context.iconConn) context.iconConn.close();
 }
 
 export async function pollFeeds(inputPollFeedsContext) {
-  const pollFeedsContext = Object.assign({}, defaultPollFeedsContext,
-    inputPollFeedsContext);
+  const pollFeedsContext =
+      Object.assign({}, defaultPollFeedsContext, inputPollFeedsContext);
 
   pollFeedsContext.console.log('Polling feeds...');
 
@@ -110,7 +86,7 @@ export async function pollFeeds(inputPollFeedsContext) {
   // Concurrently poll all the feeds
   const feeds = await findActiveFeeds(pollFeedsContext.feedConn);
   const pollFeedPromises = [];
-  for(const feed of feeds) {
+  for (const feed of feeds) {
     const promise = pollFeed(pollFeedContext, feed);
     pollFeedPromises.push(promise);
   }
@@ -119,19 +95,19 @@ export async function pollFeeds(inputPollFeedsContext) {
   // pollFeed promises only throw in the case of programming/logic errors
   const pollFeedResolutions = await Promise.all(pollFeedPromises);
   let totalNumEntriesAdded = 0;
-  for(const numEntriesAdded of pollFeedResolutions) {
-    if(!isNaN(numEntriesAdded)) {
+  for (const numEntriesAdded of pollFeedResolutions) {
+    if (!isNaN(numEntriesAdded)) {
       totalNumEntriesAdded += numEntriesAdded;
     }
   }
 
-  if(totalNumEntriesAdded) {
+  if (totalNumEntriesAdded) {
     // TODO: it would be better to pass along feedConn here while still not
     // awaiting. So long as the call starts, it should be fine
     updateBadgeText(pollFeedsContext.feedConn);
   }
 
-  if(totalNumEntriesAdded) {
+  if (totalNumEntriesAdded) {
     const title = 'Added articles';
     const message = 'Added articles';
     showDesktopNotification(title, message);
@@ -141,8 +117,8 @@ export async function pollFeeds(inputPollFeedsContext) {
 }
 
 export async function pollFeed(inputPollFeedContext, feed) {
-  const pollFeedContext = Object.assign({}, defaultPollFeedsContext,
-    inputPollFeedContext);
+  const pollFeedContext =
+      Object.assign({}, defaultPollFeedsContext, inputPollFeedContext);
 
   // Recheck sanity given this may not be called by pollFeeds
   assert(pollFeedContext.feedConn instanceof IDBDatabase);
@@ -156,15 +132,15 @@ export async function pollFeed(inputPollFeedContext, feed) {
   console.log('Polling feed', feedTailURL.href);
 
   // Avoid polling inactive feeds
-  if(!feed.active) {
+  if (!feed.active) {
     console.debug('Canceling poll feed as feed inactive', feedTailURL.href);
     return 0;
   }
 
   // Avoid polling recently polled feeds
-  if(polledFeedRecently(pollFeedContext, feed)) {
-    console.debug('Canceling poll feed as feed polled recently',
-      feedTailURL.href);
+  if (polledFeedRecently(pollFeedContext, feed)) {
+    console.debug(
+        'Canceling poll feed as feed polled recently', feedTailURL.href);
     return 0;
   }
 
@@ -173,7 +149,7 @@ export async function pollFeed(inputPollFeedContext, feed) {
   let response;
   try {
     response = await fetchFeed(feedTailURL, pollFeedContext.fetchFeedTimeout);
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
 
     handlePollFeedError({
@@ -187,11 +163,10 @@ export async function pollFeed(inputPollFeedContext, feed) {
   }
 
   // Cancel polling if no change in date modified
-  if(!detectedModification(pollFeedContext.ignoreModifiedCheck, feed,
-    response)) {
-
+  if (!detectedModification(
+          pollFeedContext.ignoreModifiedCheck, feed, response)) {
     const stateChanged = handleFetchFeedSuccess(feed);
-    if(stateChanged) {
+    if (stateChanged) {
       feed.dateUpdated = new Date();
       await putFeed(pollFeedContext.feedConn, pollFeedContext.channel, feed);
     }
@@ -202,7 +177,7 @@ export async function pollFeed(inputPollFeedContext, feed) {
   let responseText;
   try {
     responseText = await response.text();
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
     handlePollFeedError({
       context: pollFeedContext,
@@ -219,9 +194,10 @@ export async function pollFeed(inputPollFeedContext, feed) {
   const responseURL = new URL(response.url);
   const responseLastModifiedDate = getLastModified(response);
   try {
-    parseResult = coerceFeed(responseText, feedTailURL, responseURL,
-      responseLastModifiedDate, processEntries);
-  } catch(error) {
+    parseResult = coerceFeed(
+        responseText, feedTailURL, responseURL, responseLastModifiedDate,
+        processEntries);
+  } catch (error) {
     console.debug(error);
     handlePollFeedError({
       context: pollFeedContext,
@@ -243,8 +219,8 @@ export async function pollFeed(inputPollFeedContext, feed) {
 
   const storableFeed = prepareFeed(mergedFeed);
   storableFeed.dateUpdated = new Date();
-  await putFeed(pollFeedContext.feedConn, pollFeedContext.channel,
-    storableFeed);
+  await putFeed(
+      pollFeedContext.feedConn, pollFeedContext.channel, storableFeed);
 
   // Process the feed's entries
 
@@ -253,27 +229,27 @@ export async function pollFeed(inputPollFeedContext, feed) {
   const entries = parseResult.entries;
   cascadeFeedPropertiesToEntries(storableFeed, entries);
   const pollEntryPromises = [];
-  for(const entry of entries) {
+  for (const entry of entries) {
     const promise = pollEntry(pollEntryContext, entry);
     pollEntryPromises.push(promise);
   }
 
   const entryIds = await Promise.all(pollEntryPromises);
   let numEntriesAdded = 0;
-  for(const entryId of entryIds) {
-    if(entryId) {
+  for (const entryId of entryIds) {
+    if (entryId) {
       numEntriesAdded++;
     }
   }
 
-  if(pollEntryContext.updateBadgeText && numEntriesAdded) {
+  if (pollEntryContext.updateBadgeText && numEntriesAdded) {
     updateBadgeText(pollEntryContext.feedConn);
   }
 
-  if(pollEntryContext.notify && numEntriesAdded) {
+  if (pollEntryContext.notify && numEntriesAdded) {
     const title = 'Added articles';
-    const message = 'Added ' + numEntriesAdded + ' articles for feed ' +
-      storableFeed.title;
+    const message =
+        'Added ' + numEntriesAdded + ' articles for feed ' + storableFeed.title;
     showDesktopNotification(title, message);
   }
 
@@ -281,11 +257,11 @@ export async function pollFeed(inputPollFeedContext, feed) {
 }
 
 function polledFeedRecently(pollFeedContext, feed) {
-  if(pollFeedContext.ignoreRecencyCheck) {
+  if (pollFeedContext.ignoreRecencyCheck) {
     return false;
   }
 
-  if(!feed.dateFetched) {
+  if (!feed.dateFetched) {
     return false;
   }
 
@@ -298,9 +274,9 @@ function polledFeedRecently(pollFeedContext, feed) {
 
 // Decrement error count if set and not 0. Return true if object state changed.
 function handleFetchFeedSuccess(feed) {
-  if('errorCount' in feed) {
-    if(typeof feed.errorCount === 'number') {
-      if(feed.errorCount > 0) {
+  if ('errorCount' in feed) {
+    if (typeof feed.errorCount === 'number') {
+      if (feed.errorCount > 0) {
         feed.errorCount--;
         return true;
       } else {
@@ -331,14 +307,14 @@ function handleFetchFeedSuccess(feed) {
 // concern over encountering a closed database or closed channel at the time of
 // the call to putFeed, and maintains the non-blocking characteristic.
 function handlePollFeedError(errorInfo) {
-  if(errorInfo.error instanceof OfflineError ||
-    errorInfo.error instanceof TimeoutError) {
+  if (errorInfo.error instanceof OfflineError ||
+      errorInfo.error instanceof TimeoutError) {
     console.debug('Ignoring ephemeral poll feed error', errorInfo.error);
     return;
   }
 
   feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
-  if(feed.errorCount > errorInfo.context.deactivationThreshold) {
+  if (feed.errorCount > errorInfo.context.deactivationThreshold) {
     feed.active = false;
     feed.deactivationReasonText = errorInfo.category;
     feed.deactivationDate = new Date();
@@ -346,8 +322,8 @@ function handlePollFeedError(errorInfo) {
 
   feed.dateUpdated = new Date();
   // Call unawaited (non-blocking)
-  putFeed(errorInfo.context.feedConn, errorInfo.context.channel, feed).catch(
-    console.error);
+  putFeed(errorInfo.context.feedConn, errorInfo.context.channel, feed)
+      .catch(console.error);
 }
 
 function detectedModification(ignoreModifiedCheck, feed, response) {
@@ -356,7 +332,7 @@ function detectedModification(ignoreModifiedCheck, feed, response) {
   // where I returned false. Now I return true to indicate the feed SHOULD be
   // polled. Minor ambiguity, this function is a combination of 'shouldPoll'
   // and 'didChange', hence the confusion.
-  if(ignoreModifiedCheck) {
+  if (ignoreModifiedCheck) {
     return true;
   }
 
@@ -368,7 +344,7 @@ function detectedModification(ignoreModifiedCheck, feed, response) {
   // because without the last modified date, we can't use the dates to
   // determine, so we presume modified. We can only more confidently assert not
   // modified, but not unmodified.
-  if(!feed.dateLastModified) {
+  if (!feed.dateLastModified) {
     console.debug('Unknown last modified date for feed', feedPeekURL(feed));
     return true;
   }
@@ -376,7 +352,7 @@ function detectedModification(ignoreModifiedCheck, feed, response) {
   const rDate = getLastModified(response);
 
   // If response is undated, then return true to indicate maybe modified
-  if(!rDate) {
+  if (!rDate) {
     // TODO: if it is the normal case this shouldn't log. I am tentative for
     // now, so logging
     console.debug('Response missing last modified date?', response);
@@ -384,7 +360,8 @@ function detectedModification(ignoreModifiedCheck, feed, response) {
   }
 
   // TEMP: researching always unmodified issue
-  console.debug('local %d remote %d', feed.dateLastModified.getTime(), rDate.getTime());
+  console.debug(
+      'local %d remote %d', feed.dateLastModified.getTime(), rDate.getTime());
 
   // Return true if the dates are different
   // Return false if the dates are the same
@@ -392,12 +369,12 @@ function detectedModification(ignoreModifiedCheck, feed, response) {
 }
 
 function cascadeFeedPropertiesToEntries(feed, entries) {
-  for(const entry of entries) {
+  for (const entry of entries) {
     entry.feed = feed.id;
     entry.feedTitle = feed.title;
     entry.faviconURLString = feed.faviconURLString;
 
-    if(feed.datePublished && !entry.datePublished) {
+    if (feed.datePublished && !entry.datePublished) {
       entry.datePublished = feed.datePublished;
     }
   }
@@ -411,20 +388,20 @@ async function pollEntry(ctx, entry) {
 
   // This function cannot assume the input entry has a url, but a url is
   // required to continue polling the entry
-  if(!entryHasURL(entry)) {
+  if (!entryHasURL(entry)) {
     return;
   }
 
   rewriteEntryURL(entry);
 
-  if(await entryExistsInDb(ctx.feedConn, entry)) {
+  if (await entryExistsInDb(ctx.feedConn, entry)) {
     return;
   }
 
   const response = await fetchEntryResponse(entry, ctx.fetchHTMLTimeout);
-  const redirectedEntryExistsInDb = await handleEntryRedirect(ctx.feedConn,
-    response, entry);
-  if(redirectedEntryExistsInDb) {
+  const redirectedEntryExistsInDb =
+      await handleEntryRedirect(ctx.feedConn, response, entry);
+  if (redirectedEntryExistsInDb) {
     return;
   }
 
@@ -451,7 +428,7 @@ async function pollEntry(ctx, entry) {
   let storedEntry;
   try {
     storedEntry = await addEntry(ctx.feedConn, ctx.channel, entry);
-  } catch(error) {
+  } catch (error) {
     console.error(entry.urls, error);
     return;
   }
@@ -467,11 +444,12 @@ function rewriteEntryURL(entry) {
   // entryPeekURL
   const turl = new URL(entryPeekURL(entry));
   const rurl = rewriteURL(turl);
-  // rewriteURL returns undefined in case of error, or when no rewriting occurred.
+  // rewriteURL returns undefined in case of error, or when no rewriting
+  // occurred.
   // TODO: consider changing rewriteURL so that it always returns a url, which
   // is simply the same url as the input url if no rewriting occurred.
 
-  if(!rurl) {
+  if (!rurl) {
     return false;
   }
 
@@ -481,7 +459,6 @@ function rewriteEntryURL(entry) {
 }
 
 function entryExistsInDb(conn, entry) {
-
   // NOTE: this only inspects the tail, not all urls. It is possible due to
   // some poorly implemented logic that one of the other urls in the entry's
   // url list exists in the db At the moment I am more included to allow the
@@ -497,13 +474,13 @@ function entryExistsInDb(conn, entry) {
 // not fetchable by polling policy, or if the fetch fails.
 async function fetchEntryResponse(entry, timeout) {
   const url = new URL(entryPeekURL(entry));
-  if(!isAugmentableURL(url)) {
+  if (!isAugmentableURL(url)) {
     return;
   }
 
   try {
     return await fetchHTML(url, timeout);
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
   }
 }
@@ -513,13 +490,13 @@ async function fetchEntryResponse(entry, timeout) {
 async function handleEntryRedirect(conn, response, entry) {
   // response may be undefined due to fetch error, this is not an error or
   // unexpected
-  if(!response) {
+  if (!response) {
     return false;
   }
 
   const turl = new URL(entryPeekURL(entry));
   const rurl = new URL(response.url);
-  if(!detectURLChanged(turl, rurl)) {
+  if (!detectURLChanged(turl, rurl)) {
     return false;
   }
 
@@ -537,14 +514,14 @@ async function handleEntryRedirect(conn, response, entry) {
 async function parseEntryResponseBody(response) {
   // There is no guarantee response is defined, this is not unexpected and not
   // an error
-  if(!response) {
+  if (!response) {
     return;
   }
 
   try {
     const responseText = await response.text();
     return parseHTML(responseText);
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
   }
 }
@@ -557,17 +534,17 @@ function updateEntryTitle(entry, document) {
   // This does not expect document to always be defined. The caller may have
   // failed to get the document. Rather than require the caller to check, do
   // the check here.
-  if(!document) {
+  if (!document) {
     return;
   }
 
   // This only applies to an untitled entry.
-  if(entry.title) {
+  if (entry.title) {
     return;
   }
 
   const titleElement = document.querySelector('html > head > title');
-  if(titleElement) {
+  if (titleElement) {
     entry.title = titleElement.textContent;
   }
 }
@@ -617,10 +594,10 @@ async function updateEntryFavicon(ctx, entry, document) {
     // Only set favicon if found. This way the previous value is retained.
     // Earlier code may set it, for example, to default to the feed's own
     // favicon.
-    if(iconURLString) {
+    if (iconURLString) {
       entry.faviconURLString = iconURLString;
     }
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
   }
 }
@@ -631,14 +608,15 @@ async function updateEntryContent(ctx, entry, fetchedDocument) {
   // content must be filtered
 
   let document = fetchedDocument;
-  if(!document) {
+  if (!document) {
     try {
       document = parseHTML(entry.content);
-    } catch(error) {
+    } catch (error) {
       console.debug(error);
       // We do not have a fetched doc, and we also failed to parse the entry's
       // content from the feed. Redact the content for safety.
-      entry.content = 'There was a problem with this article\'s content (unsafe HTML).';
+      entry.content =
+          'There was a problem with this article\'s content (unsafe HTML).';
       return;
     }
   }
@@ -664,8 +642,8 @@ const INACCESSIBLE_CONTENT_DESCRIPTORS = [
 ];
 
 function isInaccessibleContentURL(url) {
-  for(const desc of INACCESSIBLE_CONTENT_DESCRIPTORS) {
-    if(desc.pattern && desc.pattern.test(url.hostname)) {
+  for (const desc of INACCESSIBLE_CONTENT_DESCRIPTORS) {
+    if (desc.pattern && desc.pattern.test(url.hostname)) {
       return true;
     }
   }
@@ -677,5 +655,5 @@ function isHTTPURL(url) {
 }
 
 function assert(value, message) {
-  if(!value) throw new Error(message || 'Assertion error');
+  if (!value) throw new Error(message || 'Assertion error');
 }

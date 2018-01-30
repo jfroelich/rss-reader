@@ -1,4 +1,4 @@
-import assert from "/src/common/assert.js";
+import assert from '/src/common/assert.js';
 
 // TODO: move to basic filters
 
@@ -10,13 +10,13 @@ import assert from "/src/common/assert.js";
 
 export default function filterDocument(doc) {
   assert(doc instanceof Document);
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
   const anchors = doc.body.querySelectorAll('a');
-  for(const anchor of anchors) {
-    if(isInvalidAnchor(anchor)) {
+  for (const anchor of anchors) {
+    if (isInvalidAnchor(anchor)) {
       anchor.remove();
     }
   }

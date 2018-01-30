@@ -1,5 +1,5 @@
-import assert from "/src/common/assert.js";
-import {unwrapElement} from "/src/common/dom-utils.js";
+import assert from '/src/common/assert.js';
+import {unwrapElement} from '/src/common/dom-utils.js';
 
 // TODO: move to basic filters
 
@@ -9,13 +9,13 @@ import {unwrapElement} from "/src/common/dom-utils.js";
 // that have href attr but is empty/whitespace
 export default function filter(doc) {
   assert(doc instanceof Document);
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
   const anchors = doc.body.querySelectorAll('a');
-  for(const anchor of anchors) {
-    if(!anchor.hasAttribute('href')) {
+  for (const anchor of anchors) {
+    if (!anchor.hasAttribute('href')) {
       unwrapElement(anchor);
     }
   }

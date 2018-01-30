@@ -1,5 +1,5 @@
-import assert from "/src/common/assert.js";
-import {unwrapElement} from "/src/common/dom-utils.js";
+import assert from '/src/common/assert.js';
+import {unwrapElement} from '/src/common/dom-utils.js';
 
 // TODO: move to basic filters
 
@@ -8,7 +8,7 @@ import {unwrapElement} from "/src/common/dom-utils.js";
 
 export default function formFilter(doc) {
   assert(doc instanceof Document);
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
@@ -16,13 +16,13 @@ export default function formFilter(doc) {
 
   // Unwrap forms
   const forms = ancestor.querySelectorAll('form');
-  for(const form of forms) {
+  for (const form of forms) {
     unwrapElement(form);
   }
 
   // Unwrap labels
   const labels = ancestor.querySelectorAll('label');
-  for(const label of labels) {
+  for (const label of labels) {
     unwrapElement(label);
   }
 
@@ -30,9 +30,10 @@ export default function formFilter(doc) {
   // in select removed in prior iteration
 
   // Remove form fields
-  const inputSelector = 'button, fieldset, input, optgroup, option, select, textarea';
+  const inputSelector =
+      'button, fieldset, input, optgroup, option, select, textarea';
   const inputs = ancestor.querySelectorAll(inputSelector);
-  for(const input of inputs) {
+  for (const input of inputs) {
     input.remove();
   }
 }

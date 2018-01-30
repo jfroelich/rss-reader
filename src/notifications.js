@@ -1,15 +1,15 @@
-import showSlideshowTab from "/src/views/show-slideshow-tab.js";
+import showSlideshowTab from '/src/views/show-slideshow-tab.js';
 
 export default function showDesktopNotification(title, message, iconURL) {
-  if(typeof Notification === 'undefined') {
+  if (typeof Notification === 'undefined') {
     return;
   }
 
-  if(!('SHOW_NOTIFICATIONS' in localStorage)) {
+  if (!('SHOW_NOTIFICATIONS' in localStorage)) {
     return;
   }
 
-  if(Notification.permission !== 'granted') {
+  if (Notification.permission !== 'granted') {
     return;
   }
 
@@ -25,14 +25,15 @@ export default function showDesktopNotification(title, message, iconURL) {
 }
 
 function notificationOnclick(event) {
+  // TODO: test if the absence of this approach still causes a crash in latest
+  // Chrome
 
-  // TODO: test if the absence of this approach still causes a crash in latest Chrome
-
-  // Ensure the browser is open to avoid crash that occurs in Chrome 55 running on Mac
+  // Ensure the browser is open to avoid crash that occurs in Chrome 55 running
+  // on Mac
   try {
     const windowHandle = window.open();
     windowHandle.close();
-  } catch(error) {
+  } catch (error) {
     console.warn(error);
     return;
   }

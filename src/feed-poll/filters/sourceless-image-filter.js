@@ -1,12 +1,12 @@
-import assert from "/src/common/assert.js";
-import {imageHasSource, removeImage} from "/src/common/dom-utils.js";
+import assert from '/src/common/assert.js';
+import {imageHasSource, removeImage} from '/src/common/dom-utils.js';
 
 // TODO: move to basic filters
 
 // Removes images that are missing source information from document content
 export default function filter(doc) {
   assert(doc instanceof Document);
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
@@ -14,9 +14,9 @@ export default function filter(doc) {
   // iteration.
 
   const images = doc.body.querySelectorAll('img');
-  for(const image of images) {
-    if(!imageHasSource(image)) {
-      //console.debug('Removing image', image.outerHTML);
+  for (const image of images) {
+    if (!imageHasSource(image)) {
+      // console.debug('Removing image', image.outerHTML);
       removeImage(image);
     }
   }

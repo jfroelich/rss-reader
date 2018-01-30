@@ -1,7 +1,7 @@
 
 // Need to do a review of bitwise, 2s complement, and all that. Seems I have
 // forgotten some of it.
-function itoa(i){
+function itoa(i) {
   return (i >>> 0).toString(2);
 }
 
@@ -17,27 +17,26 @@ function test() {
 
   console.log('maskab:', maskab, itoa(maskab));
 
-  console.log('a not connected to b?',
-    itoa(Node.DOCUMENT_POSITION_DISCONNECTED),
-    itoa(maskab & Node.DOCUMENT_POSITION_DISCONNECTED),
-    maskab & Node.DOCUMENT_POSITION_DISCONNECTED);
-  console.log('a precedes b?',
-    itoa(Node.DOCUMENT_POSITION_PRECEDING),
-    itoa(maskab & Node.DOCUMENT_POSITION_PRECEDING),
-    maskab & Node.DOCUMENT_POSITION_PRECEDING);
-  console.log('a follows b?',
-    itoa(Node.DOCUMENT_POSITION_FOLLOWING),
-    itoa(maskab & Node.DOCUMENT_POSITION_FOLLOWING),
-    maskab & Node.DOCUMENT_POSITION_FOLLOWING);
-  console.log('a contains b?',
-    itoa(Node.DOCUMENT_POSITION_CONTAINS),
-    itoa(maskab & Node.DOCUMENT_POSITION_CONTAINS),
-    maskab & Node.DOCUMENT_POSITION_CONTAINS);
-  console.log('a is contained by b?',
-    itoa(Node.DOCUMENT_POSITION_CONTAINED_BY),
-    itoa(maskab & Node.DOCUMENT_POSITION_CONTAINED_BY),
-    maskab & Node.DOCUMENT_POSITION_CONTAINED_BY);
-
+  console.log(
+      'a not connected to b?', itoa(Node.DOCUMENT_POSITION_DISCONNECTED),
+      itoa(maskab & Node.DOCUMENT_POSITION_DISCONNECTED),
+      maskab & Node.DOCUMENT_POSITION_DISCONNECTED);
+  console.log(
+      'a precedes b?', itoa(Node.DOCUMENT_POSITION_PRECEDING),
+      itoa(maskab & Node.DOCUMENT_POSITION_PRECEDING),
+      maskab & Node.DOCUMENT_POSITION_PRECEDING);
+  console.log(
+      'a follows b?', itoa(Node.DOCUMENT_POSITION_FOLLOWING),
+      itoa(maskab & Node.DOCUMENT_POSITION_FOLLOWING),
+      maskab & Node.DOCUMENT_POSITION_FOLLOWING);
+  console.log(
+      'a contains b?', itoa(Node.DOCUMENT_POSITION_CONTAINS),
+      itoa(maskab & Node.DOCUMENT_POSITION_CONTAINS),
+      maskab & Node.DOCUMENT_POSITION_CONTAINS);
+  console.log(
+      'a is contained by b?', itoa(Node.DOCUMENT_POSITION_CONTAINED_BY),
+      itoa(maskab & Node.DOCUMENT_POSITION_CONTAINED_BY),
+      maskab & Node.DOCUMENT_POSITION_CONTAINED_BY);
 }
 
 /*

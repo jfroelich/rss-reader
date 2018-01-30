@@ -3,11 +3,11 @@
 // timeout after which to consider the connection a failure, and that a
 // blocked connection is treated implicitly as an error.
 export async function open(name, version, upgradeListener, timeout) {
-  if(typeof name !== 'string') {
+  if (typeof name !== 'string') {
     throw new TypeError('Invalid name ' + name);
   }
 
-  if(!isNaN(timeout) && (!Number.isInteger(timeout) || timeout < 0)) {
+  if (!isNaN(timeout) && (!Number.isInteger(timeout) || timeout < 0)) {
     throw new TypeError('Invalid timeout ' + timeout);
   }
 
@@ -22,13 +22,13 @@ export async function open(name, version, upgradeListener, timeout) {
   const openPromise = createOpenPromise(context);
   const contestants = [openPromise];
 
-  if(timeout) {
+  if (timeout) {
     const timeoutPromise = createTimeoutPromise(context);
     contestants.push(timeoutPromise);
   }
 
   const conn = await Promise.race(contestants);
-  if(!conn) {
+  if (!conn) {
     context.timedout = true;
     throw new Error('Connection timed out');
   }
@@ -50,12 +50,12 @@ function createOpenPromise(context) {
     const request = indexedDB.open(context.name, context.version);
     request.onsuccess = function(event) {
       const conn = event.target.result;
-      if(blocked) {
+      if (blocked) {
         console.debug('Closing connection %s that unblocked', conn.name);
         conn.close();
-      } else if(context.timedout) {
-        console.debug('Closing connection %s that opened after timeout',
-          conn.name);
+      } else if (context.timedout) {
+        console.debug(
+            'Closing connection %s that opened after timeout', conn.name);
         conn.close();
       } else {
         console.debug('Connected to database', conn.name);

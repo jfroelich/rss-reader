@@ -1,4 +1,4 @@
-import assert from "/src/common/assert.js";
+import assert from '/src/common/assert.js';
 
 // TODO: move to basic filters
 
@@ -8,12 +8,12 @@ import assert from "/src/common/assert.js";
 export default function filter(doc) {
   assert(doc instanceof Document);
 
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
   const anchors = doc.body.getElementsByTagName('a');
-  for(const anchor of anchors) {
+  for (const anchor of anchors) {
     anchor.setAttribute('rel', 'noreferrer');
   }
 }

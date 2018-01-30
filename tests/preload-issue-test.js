@@ -1,4 +1,4 @@
-import * as MimeUtils from "/src/common/mime-utils.js";
+import * as MimeUtils from '/src/common/mime-utils.js';
 
 async function testPreloadIssue() {
   const options = {};
@@ -22,9 +22,8 @@ async function testPreloadIssue() {
 window.testPreloadIssue = testPreloadIssue;
 
 function testOptions() {
-  fetch('https://www.yahoo.com', {
-    method: 'options', mode: 'cors'
-  }).catch(console.warn);
+  fetch('https://www.yahoo.com', {method: 'options', mode: 'cors'})
+      .catch(console.warn);
 }
 
 window.testOptions = testOptions;

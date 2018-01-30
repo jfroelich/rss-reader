@@ -1,4 +1,4 @@
-import {fetchFeed} from "/src/common/fetch-utils.js";
+import {fetchFeed} from '/src/common/fetch-utils.js';
 
 window.test = async function(url, timeout) {
   const response = await fetchFeed(new URL(url), timeout);

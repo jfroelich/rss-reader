@@ -1,10 +1,10 @@
-import assert from "/src/common/assert.js";
+import assert from '/src/common/assert.js';
 
 
 // Boilerplate filtering module
 export default function boilerplateFilter(doc, options) {
   assert(doc instanceof Document);
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
@@ -14,7 +14,7 @@ export default function boilerplateFilter(doc, options) {
   assert(bestElement instanceof Element);
 
   const annotate = 'annotate' in options;
-  if(!annotate) {
+  if (!annotate) {
     prune(doc, bestElement);
   }
 }
@@ -83,7 +83,7 @@ function deriveTextBias(element) {
 function deriveAnchorLength(element) {
   const anchors = element.querySelectorAll('a[href]');
   let anchorLength = 0;
-  for(const anchor of anchors) {
+  for (const anchor of anchors) {
     const text = condenseWhitespace(anchor.textContent);
     anchorLength = anchorLength + text.length;
   }
@@ -92,10 +92,10 @@ function deriveAnchorLength(element) {
 
 function deriveAncestorBias(element) {
   let totalBias = 0;
-  for(let child = element.firstElementChild; child;
-    child = child.nextElementSibling) {
+  for (let child = element.firstElementChild; child;
+       child = child.nextElementSibling) {
     const bias = ANCESTOR_BIASES[child.localName];
-    if(bias) {
+    if (bias) {
       totalBias = totalBias + bias;
     }
   }
@@ -106,7 +106,7 @@ function deriveAttributeBias(element) {
   let totalBias = 0;
   const vals = [element.id, element.name, element.className];
   const valsFlatString = vals.join(' ');
-  if(valsFlatString.length < 3) {
+  if (valsFlatString.length < 3) {
     return totalBias;
   }
 
@@ -114,8 +114,8 @@ function deriveAttributeBias(element) {
   const tokens = normalValsString.split(/[\s\-_0-9]+/g);
   const seenTokens = {};
 
-  for(const token of tokens) {
-    if(!(token in seenTokens)) {
+  for (const token of tokens) {
+    if (!(token in seenTokens)) {
       seenTokens[token] = 1;
       totalBias += TOKEN_WEIGHTS[token] || 0;
     }
@@ -126,11 +126,11 @@ function deriveAttributeBias(element) {
 
 function findHighScoreElement(doc, options) {
   const candidateSelector =
-    'article, content, div, layer, main, section, span, td';
+      'article, content, div, layer, main, section, span, td';
   const listSelector = 'li, ol, ul, dd, dl, dt';
   const navSelector = 'aside, header, footer, nav, menu, menuitem';
   let bestElement = doc.documentElement;
-  if(!doc.body) {
+  if (!doc.body) {
     return bestElement;
   }
 
@@ -138,9 +138,8 @@ function findHighScoreElement(doc, options) {
 
   const elements = doc.body.querySelectorAll(candidateSelector);
   let highScore = 0;
-  for(const element of elements) {
-
-    if(annotate) {
+  for (const element of elements) {
+    if (annotate) {
       element.dataset.bpAnalyzed = 'true';
     }
 
@@ -148,53 +147,53 @@ function findHighScoreElement(doc, options) {
 
     const textBias = deriveTextBias(element);
     score += textBias;
-    if(annotate) {
+    if (annotate) {
       element.dataset.bpTextBias = textBias;
     }
 
-    if(element.closest(listSelector)) {
+    if (element.closest(listSelector)) {
       score -= 200;
-      if(annotate) {
+      if (annotate) {
         element.dataset.bpListBias = -200;
       }
     }
 
-    if(element.closest(navSelector)) {
+    if (element.closest(navSelector)) {
       score -= 500;
-      if(annotate) {
+      if (annotate) {
         element.dataset.bpNavBias = -500;
       }
     }
 
     const ancestorBias = deriveAncestorBias(element);
     score += ancestorBias;
-    if(annotate) {
+    if (annotate) {
       element.dataset.bpAncestorBias = ancestorBias;
     }
 
     const imageBias = deriveImageBias(element);
     score += imageBias;
-    if(annotate) {
+    if (annotate) {
       element.dataset.bpImageBias = imageBias;
     }
 
     const attrBias = deriveAttributeBias(element);
     score += attrBias;
-    if(annotate) {
+    if (annotate) {
       element.dataset.bpAttrBias = attrBias;
     }
 
-    if(annotate) {
+    if (annotate) {
       element.dataset.bpScore = score;
     }
 
-    if(score > highScore) {
+    if (score > highScore) {
       bestElement = element;
       highScore = score;
     }
   }
 
-  if(annotate) {
+  if (annotate) {
     bestElement.dataset.bpMax = 'true';
   }
 
@@ -204,15 +203,15 @@ function findHighScoreElement(doc, options) {
 function deriveImageBias(parentElement) {
   let bias = 0;
   let imageCount = 0;
-  for(const node of parentElement.childNodes) {
-    if(node.localName === 'img') {
+  for (const node of parentElement.childNodes) {
+    if (node.localName === 'img') {
       bias += deriveImageAreaBias(node) + deriveImageTextBias(node);
       imageCount++;
     }
   }
 
   // Penalize carousels
-  if(imageCount > 1) {
+  if (imageCount > 1) {
     bias += -50 * (imageCount - 1);
   }
 
@@ -222,15 +221,15 @@ function deriveImageBias(parentElement) {
 // Reward supporting text of images
 function deriveImageTextBias(image) {
   let bias = 0;
-  if(image.hasAttribute('alt')) {
+  if (image.hasAttribute('alt')) {
     bias += 20;
   }
 
-  if(image.hasAttribute('title')) {
+  if (image.hasAttribute('title')) {
     bias += 30;
   }
 
-  if(findCaption(image)) {
+  if (findCaption(image)) {
     bias += 100;
   }
 
@@ -241,9 +240,9 @@ function deriveImageTextBias(image) {
 function findCaption(image) {
   assert(image instanceof Element);
   const figure = image.closest('figure');
-  if(figure) {
+  if (figure) {
     const captions = figure.getElementsByTagName('figcaption');
-    if(captions && captions.length) {
+    if (captions && captions.length) {
       return captions[0];
     }
   }
@@ -255,11 +254,11 @@ function deriveImageAreaBias(image) {
   // accurate measure of image size, and lets image size contribute to bias
   // more often, which generally leads to more accurate boilerplate analysis.
   let area;
-  if(image.width && image.height) {
+  if (image.width && image.height) {
     area = image.width * image.height;
-  } else if(image.width) {
+  } else if (image.width) {
     area = image.width * image.width;
-  } else if(image.height) {
+  } else if (image.height) {
     area = image.height * image.height;
   } else {
     // Leave area undefined
@@ -272,16 +271,16 @@ function deriveImageAreaBias(image) {
   // better.
   let bias = 0;
 
-  if(area > 100000) {
+  if (area > 100000) {
     // Very large image
     bias = 500;
-  } else if(area > 50000) {
+  } else if (area > 50000) {
     // Large image
     bias = 300;
-  } else if(area > 20000) {
+  } else if (area > 20000) {
     // Medium image
     bias = 50;
-  } else if(!isNaN(area)){
+  } else if (!isNaN(area)) {
     // Penalty for very small image.
     bias = -10;
   } else {
@@ -294,25 +293,25 @@ function deriveImageAreaBias(image) {
 function prune(doc, bestElement) {
   assert(doc.documentElement.contains(bestElement));
 
-  if(bestElement === doc.documentElement) {
+  if (bestElement === doc.documentElement) {
     return;
   }
 
-  if(bestElement === doc.body) {
+  if (bestElement === doc.body) {
     return;
   }
 
   const elements = doc.body.querySelectorAll('*');
-  for(const element of elements) {
-    if(element.contains(bestElement)) {
+  for (const element of elements) {
+    if (element.contains(bestElement)) {
       continue;
     }
 
-    if(bestElement.contains(element)) {
+    if (bestElement.contains(element)) {
       continue;
     }
 
-    if(!doc.documentElement.contains(element)) {
+    if (!doc.documentElement.contains(element)) {
       continue;
     }
 

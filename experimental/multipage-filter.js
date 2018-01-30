@@ -1,6 +1,6 @@
-import {paginationFindAnchors} from "/experimental/pagination.js";
-import assert from "/src/common/assert.js";
-import * as FetchUtils from "/src/common/fetch-utils.js";
+import {paginationFindAnchors} from '/experimental/pagination.js';
+import assert from '/src/common/assert.js';
+import * as FetchUtils from '/src/common/fetch-utils.js';
 
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a
@@ -13,12 +13,12 @@ export async function multipageFilter(doc, location, timeoutMs) {
   assert(doc instanceof Document);
   const lcaMaxDistance = 3;
   const anchors = paginationFindAnchors(doc, location, lcaMaxDistance);
-  if(!anchors.length) {
+  if (!anchors.length) {
     return;
   }
 
   const urls = [];
-  for(const anchor of anchors) {
+  for (const anchor of anchors) {
     urls.push(anchor.getAttribute('href'));
   }
 
@@ -34,14 +34,14 @@ export async function multipageFilter(doc, location, timeoutMs) {
 
   // Concurrently fetch the array of urls. If any fetch fails then this fails.
   const promises = [];
-  for(const url of urls) {
+  for (const url of urls) {
     promises.push(fetchAndParseHTML(url, timeoutMs));
   }
 
   let docs;
   try {
     docs = await Promise.all(promises);
-  } catch(error) {
+  } catch (error) {
     // On fetch error, the merge fails
     // TODO: should I just not catch the error and expect caller to handle it?
     // Otherwise how would the caller differentiate between merge, no merge,

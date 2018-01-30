@@ -1,4 +1,4 @@
-import {open} from "/src/common/indexeddb-utils.js";
+import {open} from '/src/common/indexeddb-utils.js';
 
 async function test() {
   const name = 'indexeddb-utils-test';
@@ -8,12 +8,12 @@ async function test() {
   try {
     conn = await open(name, version, onUpgradeNeeded, timeout);
   } finally {
-    if(conn) {
+    if (conn) {
       conn.close();
     }
   }
 
-  if(conn) {
+  if (conn) {
     await remove(name);
   }
 

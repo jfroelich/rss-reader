@@ -96,6 +96,8 @@ export function importOPML(
     notify: false
   };
 
+  console.debug('TEMP: initiating importOPMLFile promises');
+
   // Concurrently import files.
   const promises = [];
   for (const file of files) {
@@ -109,6 +111,7 @@ export function importOPML(
 // Returns -1 in case of weak error. Returns 0 if no feeds subscribed. Otherwise
 // returns the count of feeds subscribed.
 async function importOPMLFile(subscribeContext, file) {
+  console.debug('importOPMLFile start');
   // Calling this with something other than a file is a persistent critical
   // programming error
   assert(file instanceof File);
@@ -139,12 +142,14 @@ async function importOPMLFile(subscribeContext, file) {
     return -1;
   }
 
+  console.debug('Loaded %d characters in file', fileText.length, file.name);
+
   // The failure to parse a file is not a critical error, just log and return
   let document;
   try {
     document = parseOPML(fileText);
   } catch (error) {
-    console.debug(error);
+    console.debug('Failed to parse opml', error);
     return -1;
   }
 

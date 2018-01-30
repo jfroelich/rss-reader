@@ -1,5 +1,5 @@
-import assert from "/src/common/assert.js";
-import {parseSrcsetWrapper} from "/src/common/dom-utils.js";
+import assert from '/src/common/assert.js';
+import {parseSrcsetWrapper} from '/src/common/dom-utils.js';
 
 const ELEMENT_ATTRIBUTE_MAP = {
   a: 'href',
@@ -32,7 +32,7 @@ const ELEMENT_ATTRIBUTE_MAP = {
 // Initialize ELEMENTS_WITH_SRC_SELECTOR once on module load in module scope
 const tags = Object.keys(ELEMENT_ATTRIBUTE_MAP);
 const parts = [];
-for(const tag of tags) {
+for (const tag of tags) {
   parts.push(`${tag}[${ELEMENT_ATTRIBUTE_MAP[tag]}]`);
 }
 const ELEMENTS_WITH_SRC_SELECTOR = parts.join(',');
@@ -44,14 +44,14 @@ export default function filterDocument(doc, baseURL) {
   assert(baseURL instanceof URL);
 
   const srcElements = doc.querySelectorAll(ELEMENTS_WITH_SRC_SELECTOR);
-  for(const srcElement of srcElements) {
+  for (const srcElement of srcElements) {
     resolveElementAttribute(srcElement, baseURL);
   }
 
-  if(doc.body) {
-    const srcsetElements = doc.body.querySelectorAll(
-      'img[srcset], source[srcset]');
-    for(const srcsetElement of srcsetElements) {
+  if (doc.body) {
+    const srcsetElements =
+        doc.body.querySelectorAll('img[srcset], source[srcset]');
+    for (const srcsetElement of srcsetElements) {
       resolveSrcset(srcsetElement, baseURL);
     }
   }
@@ -59,17 +59,17 @@ export default function filterDocument(doc, baseURL) {
 
 function resolveElementAttribute(element, baseURL) {
   const attributeName = ELEMENT_ATTRIBUTE_MAP[element.localName];
-  if(!attributeName) {
+  if (!attributeName) {
     return;
   }
 
   const originalURLString = element.getAttribute(attributeName);
-  if(!originalURLString) {
+  if (!originalURLString) {
     return;
   }
 
   const resolvedURL = resolveURLString(originalURLString, baseURL);
-  if(!resolvedURL) {
+  if (!resolvedURL) {
     return;
   }
 
@@ -122,8 +122,7 @@ function resolveElementAttribute(element, baseURL) {
   // does both canonicalization and condense filters at once, because
   // performance trumps over concern-based organization of functionality?
 
-  if(resolvedURL.href.length !== originalURLString.length) {
-
+  if (resolvedURL.href.length !== originalURLString.length) {
     // TEMP: monitoring urls for above todo. This is going to spam but I think
     // I will probably focus on the todo rather soon.
     // console.debug('canonicalization change', originalURLString,
@@ -148,17 +147,17 @@ function resolveSrcset(element, baseURL) {
   const descriptors = parseSrcsetWrapper(srcsetAttributeValue);
 
   let changeCount = 0;
-  for(const descriptor of descriptors) {
+  for (const descriptor of descriptors) {
     const resolvedURL = resolveURLString(descriptor.url, baseURL);
-    if(resolvedURL && resolvedURL.href.length !== descriptor.url.length) {
+    if (resolvedURL && resolvedURL.href.length !== descriptor.url.length) {
       descriptor.url = resolvedURL.href;
       changeCount++;
     }
   }
 
-  if(changeCount) {
+  if (changeCount) {
     const newValue = serializeSrcset(descriptors);
-    if(newValue) {
+    if (newValue) {
       element.setAttribute('srcset', newValue);
     }
   }
@@ -170,7 +169,7 @@ function resolveURLString(urlString, baseURL) {
 
   // Allow for bad input for caller convenience
   // If the url is not a string (e.g. undefined), return undefined
-  if(typeof urlString !== 'string') {
+  if (typeof urlString !== 'string') {
     return;
   }
 
@@ -181,19 +180,19 @@ function resolveURLString(urlString, baseURL) {
   // That is misleading for this purpose.
 
   // If the length of the string is 0 then return undefined
-  if(!urlString) {
+  if (!urlString) {
     return;
   }
 
   // If the trimmed length of the string is 0 then return undefined
-  if(!urlString.trim()) {
+  if (!urlString.trim()) {
     return;
   }
 
   let canonicalURL;
   try {
     canonicalURL = new URL(urlString, baseURL);
-  } catch(error) {
+  } catch (error) {
     // Ignore
   }
   return canonicalURL;
@@ -207,17 +206,17 @@ function serializeSrcset(descriptors) {
   assert(Array.isArray(descriptors));
 
   const descriptorStrings = [];
-  for(const descriptor of descriptors) {
+  for (const descriptor of descriptors) {
     const strings = [descriptor.url];
-    if(descriptor.d) {
+    if (descriptor.d) {
       strings.push(' ');
       strings.push(descriptor.d);
       strings.push('x');
-    } else if(descriptor.w) {
+    } else if (descriptor.w) {
       strings.push(' ');
       strings.push(descriptor.w);
       strings.push('w');
-    } else if(descriptor.h) {
+    } else if (descriptor.h) {
       strings.push(' ');
       strings.push(descriptor.h);
       strings.push('h');

@@ -1,5 +1,5 @@
-import assert from "/src/common/assert.js";
-import {isHiddenInlineElement, removeImage} from "/src/common/dom-utils.js";
+import assert from '/src/common/assert.js';
+import {isHiddenInlineElement, removeImage} from '/src/common/dom-utils.js';
 
 const PATTERNS = [
   /\/\/.*2o7\.net\//i,
@@ -39,7 +39,7 @@ export default function lonestarFilter(doc, documentURLString) {
   assert(doc instanceof Document);
 
   // Analysis is limited to descendants of body
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
@@ -63,9 +63,9 @@ export default function lonestarFilter(doc, documentURLString) {
   // visibility overlaps with sanitization, but this is intentionally naive
   // regarding what other filters are applied to the document.
   const images = doc.body.querySelectorAll('img');
-  for(const image of images) {
-    if(isHiddenInlineElement(image) || isPixel(image) ||
-      hasTelemetrySource(image, documentURL)) {
+  for (const image of images) {
+    if (isHiddenInlineElement(image) || isPixel(image) ||
+        hasTelemetrySource(image, documentURL)) {
       removeImage(image);
     }
   }
@@ -74,7 +74,7 @@ export default function lonestarFilter(doc, documentURLString) {
 // Returns true if an image is a pixel-sized image
 function isPixel(image) {
   return image.hasAttribute('src') && image.hasAttribute('width') &&
-    image.width < 2 && image.hasAttribute('height') && image.height < 2;
+      image.width < 2 && image.hasAttribute('height') && image.height < 2;
 }
 
 // This test only considers the src attribute. Using srcset or picture source
@@ -83,12 +83,12 @@ function isPixel(image) {
 // @param documentURL {URL}
 function hasTelemetrySource(image, documentURL) {
   assert(image instanceof Element);
-  if(!image.hasAttribute('src')) {
+  if (!image.hasAttribute('src')) {
     return false;
   }
 
   const src = image.getAttribute('src').trim();
-  if(!src) {
+  if (!src) {
     return false;
   }
 
@@ -105,13 +105,13 @@ function hasTelemetrySource(image, documentURL) {
 
   // Very short urls are probably not telemetry
   const MIN_IMAGE_URL_LENGTH = 's.gif'.length;
-  if(src.length < MIN_IMAGE_URL_LENGTH) {
+  if (src.length < MIN_IMAGE_URL_LENGTH) {
     return false;
   }
 
   // Ignore urls that appear invalid. Invalid urls are not a telemetry concern
   // because requests will presumably fail.
-  if(src.includes(' ')) {
+  if (src.includes(' ')) {
     return false;
   }
 
@@ -127,26 +127,26 @@ function hasTelemetrySource(image, documentURL) {
   // https
   // TODO: make non-capturing regex
   const URL_START_PATTERN = /^(http:\/\/|https:\/\/|\/\/)/i;
-  if(!URL_START_PATTERN.test(src)) {
+  if (!URL_START_PATTERN.test(src)) {
     return false;
   }
 
   let imageURL;
   try {
     imageURL = new URL(src);
-  } catch(error) {
+  } catch (error) {
     // It is a relative url, or an invalid url of some kind. It is probably not
     // telemetry, or at least, not a telemetry concern.
     return false;
   }
 
   // Ignore 'internal' urls.
-  if(!isExternalURL(documentURL, imageURL)) {
+  if (!isExternalURL(documentURL, imageURL)) {
     return false;
   }
 
-  for(const pattern of PATTERNS) {
-    if(pattern.test(src)) {
+  for (const pattern of PATTERNS) {
+    if (pattern.test(src)) {
       return true;
     }
   }
@@ -160,7 +160,7 @@ function isExternalURL(documentURL, otherURL) {
   // Certain protocols are never external in the sense that a network request
   // is not performed
   const localProtocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
-  if(localProtocols.includes(otherURL.protocol)) {
+  if (localProtocols.includes(otherURL.protocol)) {
     return false;
   }
 
@@ -176,19 +176,19 @@ function getUpperDomain(url) {
   assert(url instanceof URL);
 
   // Treat IP as whole
-  if(isIPv4Address(url.hostname) || isIPv6Address(url.hostname)) {
+  if (isIPv4Address(url.hostname) || isIPv6Address(url.hostname)) {
     return url.hostname;
   }
 
   const levels = url.hostname.split('.');
 
   // Handle the simple case of 'localhost'
-  if(levels.length === 1) {
+  if (levels.length === 1) {
     return url.hostname;
   }
 
   // Handle the simple case of 'example.com'
-  if(levels.length === 2) {
+  if (levels.length === 2) {
     return url.hostname;
   }
 
@@ -196,7 +196,7 @@ function getUpperDomain(url) {
   // from https://publicsuffix.org/list/public_suffix_list.dat is overkill. As
   // a compromise, just look at tld character count.
   const level1 = levels[levels.length - 1];
-  if(level1.length === 2) {
+  if (level1.length === 2) {
     // Infer it is ccTLD, return levels 3 + 2 + 1
     const usedLevels = levels.slice(-3);
     return usedLevels.join('.');
@@ -208,18 +208,18 @@ function getUpperDomain(url) {
 }
 
 function isIPv4Address(string) {
-  if(typeof string !== 'string') {
+  if (typeof string !== 'string') {
     return false;
   }
 
   const parts = string.split('.');
-  if(parts.length !== 4) {
+  if (parts.length !== 4) {
     return false;
   }
 
-  for(const part of parts) {
+  for (const part of parts) {
     const digit = parseInt(part, 10);
-    if(isNaN(digit) || digit < 0 || digit > 255) {
+    if (isNaN(digit) || digit < 0 || digit > 255) {
       return false;
     }
   }

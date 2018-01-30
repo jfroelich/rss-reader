@@ -1,4 +1,4 @@
-import {clear, compact, lookup, open} from "/src/favicon-service.js";
+import {clear, compact, lookup, open} from '/src/favicon-service.js';
 
 /*
 TODO:
@@ -16,17 +16,18 @@ TODO:
 * test compact
 */
 
-window.testLookup = async function(url, cached) {
+window.testLookup =
+    async function(url, cached) {
   const testDbName = 'test-favicon-cache';
 
   const query = {};
   query.url = new URL(url);
-  if(cached) {
+  if (cached) {
     query.conn = await open(testDbName);
   }
 
   const iconURL = await lookup(query);
-  if(cached) {
+  if (cached) {
     query.conn.close();
 
     await remove(query.conn.name);
@@ -35,7 +36,7 @@ window.testLookup = async function(url, cached) {
   return iconURL;
 }
 
-window.testClear = clear;
+    window.testClear = clear;
 window.testCompact = compact;
 
 function remove(name) {

@@ -1,5 +1,5 @@
-import assert from "/src/common/assert.js";
-import {removeImage} from "/src/common/dom-utils.js";
+import assert from '/src/common/assert.js';
+import {removeImage} from '/src/common/dom-utils.js';
 
 // TODO: move to basic filters
 
@@ -7,49 +7,48 @@ import {removeImage} from "/src/common/dom-utils.js";
 
 export default function filterDocument(doc) {
   assert(doc instanceof Document);
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
   const images = doc.body.querySelectorAll('img');
-  for(const image of images) {
-    if(isSmallImage(image)) {
+  for (const image of images) {
+    if (isSmallImage(image)) {
       removeImage(image);
     }
   }
 }
 
 function isSmallImage(image) {
-
   const widthString = image.getAttribute('width');
-  if(!widthString) {
+  if (!widthString) {
     return false;
   }
 
   const heightString = image.getAttribute('height');
-  if(!heightString) {
+  if (!heightString) {
     return false;
   }
 
   const widthInt = parseInt(widthString, 10);
-  if(isNaN(widthInt)) {
+  if (isNaN(widthInt)) {
     return false;
   }
 
   const heightInt = parseInt(heightString, 10);
-  if(isNaN(heightInt)) {
+  if (isNaN(heightInt)) {
     return false;
   }
 
-  if(widthInt < 3) {
+  if (widthInt < 3) {
     return false;
   }
 
-  if(heightInt < 3) {
+  if (heightInt < 3) {
     return false;
   }
 
-  if(widthInt < 33 && heightInt < 33) {
+  if (widthInt < 33 && heightInt < 33) {
     // console.debug('Small image detected', image.outerHTML);
     return true;
   }

@@ -1,21 +1,9 @@
-import showDesktopNotification from "/src/notifications.js";
-import * as FetchUtils from "/src/common/fetch-utils.js";
-import {lookup} from "/src/favicon-service.js";
-import {
-  closePollFeedsContext,
-  createPollFeedsContext,
-  pollFeed
-} from "/src/feed-poll/poll-feeds.js";
-import {
-  addFeed,
-  containsFeedWithURL,
-  createFeed,
-  createIconLookupURLForFeed,
-  feedAppendURL,
-  feedPeekURL,
-  isFeed
-} from "/src/rdb.js";
-import coerceFeed from "/src/coerce-feed.js";
+import coerceFeed from '/src/coerce-feed.js';
+import * as FetchUtils from '/src/common/fetch-utils.js';
+import {lookup} from '/src/favicon-service.js';
+import {closePollFeedsContext, createPollFeedsContext, pollFeed} from '/src/feed-poll/poll-feeds.js';
+import showDesktopNotification from '/src/notifications.js';
+import {addFeed, containsFeedWithURL, createFeed, createIconLookupURLForFeed, feedAppendURL, feedPeekURL, isFeed} from '/src/rdb.js';
 
 // TODO: reconsider the transaction lifetime. Right now it is protected by the
 // error that occurs due to violation of uniqueness constraint. But it would be
@@ -62,16 +50,16 @@ export default async function subscribe(context, url) {
   // instead? But then how do I know about failure? This is not a programmer
   // error. This is just rejected user input, and users can input whatever they
   // want. Even then, should I use an exception anyway? Ugh.
-  if(containsFeed) {
+  if (containsFeed) {
     throw new Error('Already subscribed to ' + url.href);
   }
 
   let response;
   try {
-    response = await FetchUtils.fetchFeed(url,
-      context.fetchFeedTimeout || 2000);
-  } catch(error) {
-    if(error instanceof FetchUtils.OfflineError) {
+    response =
+        await FetchUtils.fetchFeed(url, context.fetchFeedTimeout || 2000);
+  } catch (error) {
+    if (error instanceof FetchUtils.OfflineError) {
       // continue with subscription
       console.debug('Subscribing while offline to', url.href);
     } else {
@@ -80,7 +68,7 @@ export default async function subscribe(context, url) {
   }
 
   let feed;
-  if(response) {
+  if (response) {
     // Allow errors to bubble
     feed = await createFeedFromResponse(context, feed, url);
   } else {
@@ -98,7 +86,7 @@ export default async function subscribe(context, url) {
 
   const storedFeed = await addFeed(context.feedConn, context.channel, feed);
 
-  if(context.notify || !('notify' in context)) {
+  if (context.notify || !('notify' in context)) {
     showNotification(storedFeed);
   }
 
@@ -113,11 +101,10 @@ async function createFeedFromResponse(context, response, url) {
   const responseURL = new URL(response.url);
 
   // If there was a redirect, then check if subscribed to the redirect
-  if(FetchUtils.detectURLChanged(url, responseURL)) {
-
+  if (FetchUtils.detectURLChanged(url, responseURL)) {
     // Allow database error to bubble uncaught
     const containsFeed = await containsFeedWithURL(context.conn, responseURL);
-    if(containsFeed) {
+    if (containsFeed) {
       throw new Error('Already susbcribed to redirect url ' + responseURL.href);
     }
   }
@@ -129,8 +116,9 @@ async function createFeedFromResponse(context, response, url) {
   // Take the fetched feed xml and turn it into a storable feed object
   // Treat any coercion error as fatal and allow the error to bubble
   const procEntries = false;
-  const result = coerceFeed(responseText, url, responseURL,
-    FetchUtils.getLastModified(response), procEntries);
+  const result = coerceFeed(
+      responseText, url, responseURL, FetchUtils.getLastModified(response),
+      procEntries);
 
   return result.feed;
 }
@@ -144,12 +132,12 @@ async function setFeedFavicon(query, feed, console) {
   let iconURLString;
   try {
     iconURLString = await lookup(query);
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
     return;
   }
 
-  if(iconURLString) {
+  if (iconURLString) {
     feed.faviconURLString = iconURLString;
   }
 }
@@ -171,7 +159,7 @@ async function deferredPollFeed(feed) {
 }
 
 function assert(value, message) {
-  if(!value) throw new Error(message || 'Assertion error');
+  if (!value) throw new Error(message || 'Assertion error');
 }
 
 function noop() {}

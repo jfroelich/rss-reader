@@ -1,11 +1,5 @@
-import {lookup, open as openIconDb} from "/src/favicon-service.js";
-import {
-  createIconLookupURLForFeed,
-  feedHasURL,
-  findActiveFeeds,
-  open as openReaderDb,
-  putFeed
-} from "/src/rdb.js";
+import {lookup, open as openIconDb} from '/src/favicon-service.js';
+import {createIconLookupURLForFeed, feedHasURL, findActiveFeeds, open as openReaderDb, putFeed} from '/src/rdb.js';
 
 // Refreshes the favicon property of feeds in the feed store
 export default async function refreshFeedIcons(feedConn, iconConn, channel) {
@@ -13,12 +7,12 @@ export default async function refreshFeedIcons(feedConn, iconConn, channel) {
   const feeds = await findActiveFeeds(dconn);
 
   const promises = [];
-  for(const feed of feeds) {
+  for (const feed of feeds) {
     promises.push(refreshFeedIcon(dconn, iconConn, channel, feed));
   }
   await Promise.all(promises);
 
-  if(!feedConn) {
+  if (!feedConn) {
     dconn.close();
   }
 }
@@ -37,7 +31,7 @@ export default async function refreshFeedIcons(feedConn, iconConn, channel) {
 // lookup will fail. So not a perfect solution
 
 async function refreshFeedIcon(conn, iconConn, channel, feed) {
-  if(!feedHasURL(feed)) {
+  if (!feedHasURL(feed)) {
     throw new TypeError('Feed missing url ' + feed.id);
   }
 
@@ -53,13 +47,13 @@ async function refreshFeedIcon(conn, iconConn, channel, feed) {
   let iconURL;
   try {
     iconURL = await lookup(query);
-  } catch(error) {
+  } catch (error) {
     console.debug(error);
   }
 
   // If state changed then update
-  if(feed.faviconURLString !== iconURL) {
-    if(iconURL) {
+  if (feed.faviconURLString !== iconURL) {
+    if (iconURL) {
       feed.faviconURLString = iconURL;
     } else {
       delete feed.faviconURLString;
@@ -99,7 +93,7 @@ async function refreshFeedIcon(conn, iconConn, channel, feed) {
 
     try {
       await putFeed(conn, channel, feed);
-    } catch(error) {
+    } catch (error) {
       console.error(error);
     }
   }

@@ -1,4 +1,4 @@
-import assert from "/src/common/assert.js";
+import assert from '/src/common/assert.js';
 
 // TODO: move to basic filters
 
@@ -8,12 +8,12 @@ import assert from "/src/common/assert.js";
 export default function filter(doc) {
   assert(doc instanceof Document);
 
-  if(!doc.body) {
+  if (!doc.body) {
     return;
   }
 
   const hrs = doc.body.querySelectorAll('hr + hr');
-  for(const hr of hrs) {
+  for (const hr of hrs) {
     hr.remove();
   }
 }

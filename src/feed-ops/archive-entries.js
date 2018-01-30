@@ -1,10 +1,4 @@
-import {
-  createEntry,
-  ENTRY_STATE_ARCHIVED,
-  ENTRY_STATE_UNARCHIVED,
-  ENTRY_STATE_READ,
-  open as openReaderDb
-} from "/src/rdb.js";
+import {createEntry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, open as openReaderDb} from '/src/rdb.js';
 
 // TODO: eventually reconsider how an entry is determined as archivable. Each
 // entry should specify its own lifetime as a property, at the time of creation
@@ -41,25 +35,25 @@ import {
 export default async function archiveEntries(conn, channel, maxAge) {
   console.log('Archiving entries...');
 
-  if(typeof maxAge === 'undefined') {
+  if (typeof maxAge === 'undefined') {
     const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
     maxAge = TWO_DAYS_MS;
   }
 
-  if(typeof maxAge !== 'undefined') {
-    if(!Number.isInteger(maxAge) || maxAge < 1) {
+  if (typeof maxAge !== 'undefined') {
+    if (!Number.isInteger(maxAge) || maxAge < 1) {
       throw new TypeError('Invalid maxAge argument ' + maxAge);
     }
   }
 
   const dconn = conn ? conn : await openReaderDb();
   const entryIds = await archiveEntriesPromise(dconn, maxAge);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
 
-  if(channel) {
-    for(const id of entryIds) {
+  if (channel) {
+    for (const id of entryIds) {
       channel.postMessage({type: 'entry-archived', id: id});
     }
   }
@@ -79,15 +73,15 @@ function archiveEntriesPromise(conn, maxAge) {
     const request = index.openCursor(keyPath);
     request.onsuccess = () => {
       const cursor = request.result;
-      if(!cursor) {
+      if (!cursor) {
         return;
       }
 
       const entry = cursor.value;
-      if(entry.dateCreated) {
+      if (entry.dateCreated) {
         const currentDate = new Date();
         const age = currentDate - entry.dateCreated;
-        if(age > maxAge) {
+        if (age > maxAge) {
           const archivedEntry = archiveEntry(entry);
           store.put(archivedEntry);
           entryIds.push(archivedEntry.id);
@@ -103,8 +97,9 @@ function archiveEntry(entry) {
   const beforeSize = sizeof(entry);
   const compactedEntry = compactEntry(entry);
   const afterSize = sizeof(compactedEntry);
-  console.debug('Changing entry %d size from ~%d to ~%d', entry.id, beforeSize,
-    afterSize);
+  console.debug(
+      'Changing entry %d size from ~%d to ~%d', entry.id, beforeSize,
+      afterSize);
 
   compactedEntry.archiveState = ENTRY_STATE_ARCHIVED;
   compactedEntry.dateArchived = new Date();
@@ -117,7 +112,7 @@ function compactEntry(entry) {
   const compactedEntry = createEntry();
   compactedEntry.dateCreated = entry.dateCreated;
 
-  if(entry.dateRead) {
+  if (entry.dateRead) {
     compactedEntry.dateRead = entry.dateRead;
   }
 
@@ -153,58 +148,58 @@ function sizeof(inputValue) {
 
   let byteCount = 0;
 
-  while(stack.length) {
+  while (stack.length) {
     const value = stack.pop();
 
     // typeof null === 'object'
-    if(value === null) {
+    if (value === null) {
       continue;
     }
 
-    switch(typeof value) {
-    case 'undefined':
-      break;
-    case 'boolean':
-      byteCount += 4;
-      break;
-    case 'string':
-      byteCount += value.length * 2;
-      break;
-    case 'number':
-      byteCount += 8;
-      break;
-    case 'function':
-      // Treat as some kind of function identifier
-      byteCount += 8;
-      break;
-    case 'object':
-      if(visitedObjects.indexOf(value) === -1) {
-        visitedObjects.push(value);
+    switch (typeof value) {
+      case 'undefined':
+        break;
+      case 'boolean':
+        byteCount += 4;
+        break;
+      case 'string':
+        byteCount += value.length * 2;
+        break;
+      case 'number':
+        byteCount += 8;
+        break;
+      case 'function':
+        // Treat as some kind of function identifier
+        byteCount += 8;
+        break;
+      case 'object':
+        if (visitedObjects.indexOf(value) === -1) {
+          visitedObjects.push(value);
 
-        if(ArrayBuffer.isView(value)) {
-          byteCount += value.length;
-        } else if(Array.isArray(value)) {
-          stack.push(...value);
-        } else {
-          const toStringOutput = objectToString.call(value);
-          if(toStringOutput === '[object Date]') {
-            byteCount += 8; // guess
-          } else if(toStringOutput === '[object URL]') {
-            byteCount += 2 * value.href.length; // guess
+          if (ArrayBuffer.isView(value)) {
+            byteCount += value.length;
+          } else if (Array.isArray(value)) {
+            stack.push(...value);
           } else {
-            for(let propName in value) {
-              if(hasOwnProp.call(value, propName)) {
-                // Add size of the property name string itself
-                byteCount += propName.length * 2;
-                stack.push(value[propName]);
+            const toStringOutput = objectToString.call(value);
+            if (toStringOutput === '[object Date]') {
+              byteCount += 8;  // guess
+            } else if (toStringOutput === '[object URL]') {
+              byteCount += 2 * value.href.length;  // guess
+            } else {
+              for (let propName in value) {
+                if (hasOwnProp.call(value, propName)) {
+                  // Add size of the property name string itself
+                  byteCount += propName.length * 2;
+                  stack.push(value[propName]);
+                }
               }
             }
           }
         }
-      }
-      break;
-    default:
-      break;// ignore
+        break;
+      default:
+        break;  // ignore
     }
   }
 

@@ -1,4 +1,4 @@
-import {isValidFeedId, open} from "/src/rdb.js";
+import {isValidFeedId, open} from '/src/rdb.js';
 
 // TODO: does this potentially affect unread count? In which case this desync's
 // badge text? I may have wrote this comment before introducing channel, can
@@ -8,17 +8,16 @@ import {isValidFeedId, open} from "/src/rdb.js";
 // conn is optional open database connection
 // channel is optional broadcast channel
 export default async function removeOrphanedEntries(conn, channel) {
-
   const dconn = conn ? conn : await open();
   const entryIds = await removeOrphanedEntriesPromise(dconn);
-  if(!conn) {
+  if (!conn) {
     dconn.close();
   }
 
   // Now that the transaction committed, notify observers
-  if(channel && entryIds.length) {
+  if (channel && entryIds.length) {
     const message = {type: 'entry-deleted', id: null, reason: 'orphan'};
-    for(const id of entryIds) {
+    for (const id of entryIds) {
       message.id = id;
       channel.postMessage(message);
     }
@@ -45,9 +44,9 @@ function removeOrphanedEntriesPromise(conn) {
       const entryRequest = entryStore.openCursor();
       entryRequest.onsuccess = () => {
         const cursor = entryRequest.result;
-        if(cursor) {
+        if (cursor) {
           const entry = cursor.value;
-          if(!isValidFeedId(entry.feed) || !feedIds.includes(entry.feed)) {
+          if (!isValidFeedId(entry.feed) || !feedIds.includes(entry.feed)) {
             entryIds.push(entry.id);
             console.debug('Deleting orphaned entry', entry.id);
             cursor.delete();

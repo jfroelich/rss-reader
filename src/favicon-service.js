@@ -1,11 +1,11 @@
-import {detectURLChanged, fetchHTML, tfetch} from "/src/common/fetch-utils.js";
-import {open as utilsOpen} from "/src/common/indexeddb-utils.js";
-import {fromContentType as mimeFromContentType} from "/src/common/mime-utils.js";
+import {detectURLChanged, fetchHTML, tfetch} from '/src/common/fetch-utils.js';
+import {open as utilsOpen} from '/src/common/indexeddb-utils.js';
+import {fromContentType as mimeFromContentType} from '/src/common/mime-utils.js';
 
-// The favicon service provides the ability to lookup the url of a favicon for a given
-// web page. Lookups can optionally be cached in a database so that future lookups
-// resolve more quickly and avoid repeated network requests. The cache can be cleared
-// or compacted for maintenance.
+// The favicon service provides the ability to lookup the url of a favicon for a
+// given web page. Lookups can optionally be cached in a database so that future
+// lookups resolve more quickly and avoid repeated network requests. The cache
+// can be cleared or compacted for maintenance.
 
 // TODO: decouple from all common libraries to provide a severe service boundary
 // TODO: breakup the lookup function into smaller functions so it easier to read
@@ -25,8 +25,9 @@ const MAX_IMAGE_SIZE = 10240;
 
 function noop() {}
 
-// A partial drop in replacement for console that helps avoid the need to check if console is
-// defined every call to one of its methods. Only some methods supported.
+// A partial drop in replacement for console that helps avoid the need to check
+// if console is defined every call to one of its methods. Only some methods
+// supported.
 const NULL_CONSOLE = {
   log: noop,
   warn: noop,
@@ -34,39 +35,44 @@ const NULL_CONSOLE = {
 };
 
 
-// TODO: change lookup so that it only throws an exception in the event of a programming error,
-// and not in other cases such as a fetch error. A database error would be a programming error.
+// TODO: change lookup so that it only throws an exception in the event of a
+// programming error, and not in other cases such as a fetch error. A database
+// error would be a programming error.
 // TODO: the url parameter should be separate from options
 // TODO: the document parameter should be separate from options
-// TODO: rather than max age approach, cached entries should specify their own lifetimes, and
-// each new entry should get a default lifetime, and lookup caller should be able to provide
-// a custom lifetime for any new entries
+// TODO: rather than max age approach, cached entries should specify their own
+// lifetimes, and each new entry should get a default lifetime, and lookup
+// caller should be able to provide a custom lifetime for any new entries
 
 // Options:
 //
-// * console {Object} optional, a console object where logging information is sent. If not
-// specified then a goes-nowhere-stub is used which effectively means no logging.
-// * conn {IDBDatabase} optional, an open database connection to the favicon cache. If specified
-// then the lookup will interact with the cache. If not specified then a cacheless lookup is done.
-// * maxFailureCount {Number} optional, if the lookup detects that too many failures have been
-// recorded in the cache then the lookup will exit early. If a cache is provided and the lookup
-// fails then a corresponding failure will be recorded. Failures are aggregated by origin to limit
-// the  amount of failure entries in the cache.
-// * skipURLFetch {Boolean} optional, defaults to false, whether to skip attempting to fetch the
-// html of the input url
-// * maxAge {Number} optional, integer, defaults to a preset in defaults.js, the number of millis
-// after which an entry is considered to have expired
-// * fetchHTMLTimeout {Number} optional, integer, number of millis to wait before considering an
-// attempt to fetch the html of a url a failure
-// * fetchImageTimeout {Number} optional, integer, number of millis to wait before considering
-// an attempt to fetch an image (response to HEAD request) is a failure
-// * minImageSize {Number} optional, minimum size in bytes of an image for it to be considered
-// a valid favicon
-// * maxImageSize {Number} optional, maximum size in bytes of an image for it to be considered
-// a valid favicon
+// * console {Object} optional, a console object where logging information is
+// sent. If not specified then a goes-nowhere-stub is used which effectively
+// means no logging.
+// * conn {IDBDatabase} optional, an open database connection to the favicon
+// cache. If specified then the lookup will interact with the cache. If not
+// specified then a cacheless lookup is done.
+// * maxFailureCount {Number} optional, if the lookup detects that too many
+// failures have been recorded in the cache then the lookup will exit early. If
+// a cache is provided and the lookup fails then a corresponding failure will be
+// recorded. Failures are aggregated by origin to limit the  amount of failure
+// entries in the cache.
+// * skipURLFetch {Boolean} optional, defaults to false, whether to skip
+// attempting to fetch the html of the input url
+// * maxAge {Number} optional, integer, defaults to a preset in defaults.js, the
+// number of millis after which an entry is considered to have expired
+// * fetchHTMLTimeout {Number} optional, integer, number of millis to wait
+// before considering an attempt to fetch the html of a url a failure
+// * fetchImageTimeout {Number} optional, integer, number of millis to wait
+// before considering an attempt to fetch an image (response to HEAD request) is
+// a failure
+// * minImageSize {Number} optional, minimum size in bytes of an image for it to
+// be considered a valid favicon
+// * maxImageSize {Number} optional, maximum size in bytes of an image for it to
+// be considered a valid favicon
 // * url {URL} required, the url to lookup, typically some webpage
-// * document {Document} optional, pre-fetched document that should be specified if the page
-// was previously fetched
+// * document {Document} optional, pre-fetched document that should be specified
+// if the page was previously fetched
 
 const defaultOptions = {
   maxFailureCount: MAX_FAILURE_COUNT,
@@ -81,16 +87,18 @@ const defaultOptions = {
 
 // Lookup a favicon
 export async function lookup(inputOptions) {
+  // TODO: review Object.assign. I believe it is shallow but I've forgotten.
+  // Right now document is a property and I do not want to be cloning it, just
+  // copying the reference to it.
 
-  // TODO: review Object.assign. I believe it is shallow but I've forgotten. Right now
-  // document is a property and I do not want to be cloning it, just copying the reference
-  // to it.
-
-  // Merge options together. This treats inputOptions as immutable, and supplies defaults.
+  // Merge options together. This treats inputOptions as immutable, and supplies
+  // defaults.
   const options = Object.assign({}, defaultOptions, inputOptions);
 
   assert(options.url instanceof URL);
-  assert(typeof options.document === 'undefined' || options.document instanceof Document);
+  assert(
+      typeof options.document === 'undefined' ||
+      options.document instanceof Document);
   options.console.log('Favicon lookup', options.url.href);
 
   const urls = [];
@@ -100,34 +108,35 @@ export async function lookup(inputOptions) {
   let originEntry;
 
   // Check the cache for the input url
-  if(options.conn) {
+  if (options.conn) {
     const entry = await findEntry(options.conn, options.url);
-    if(entry && entry.iconURLString && !entryIsExpired(entry, options)) {
+    if (entry && entry.iconURLString && !entryIsExpired(entry, options)) {
       return entry.iconURLString;
     }
-    if(originURL.href === options.url.href && entry &&
-      entry.failureCount >= options.maxFailureCount) {
+    if (originURL.href === options.url.href && entry &&
+        entry.failureCount >= options.maxFailureCount) {
       options.console.debug('Too many failures', options.url.href);
       return;
     }
   }
 
   // If specified, examine the pre-fetched document
-  if(options.document) {
-    const iconURL = await searchDocument(options, options.document, options.url);
-    if(iconURL) {
-      if(options.conn) {
+  if (options.document) {
+    const iconURL =
+        await searchDocument(options, options.document, options.url);
+    if (iconURL) {
+      if (options.conn) {
         await putAll(options.conn, urls, iconURL);
       }
       return iconURL;
     }
   }
 
-  // Check if we reached the max failure count for the input url's origin (if we did not already
-  // do the check above because input itself was origin)
-  if(options.conn && originURL.href !== options.url.href) {
+  // Check if we reached the max failure count for the input url's origin (if we
+  // did not already do the check above because input itself was origin)
+  if (options.conn && originURL.href !== options.url.href) {
     originEntry = await findEntry(options.conn, originURL);
-    if(originEntry && originEntry.failureCount >= options.maxFailureCount) {
+    if (originEntry && originEntry.failureCount >= options.maxFailureCount) {
       options.console.debug('Exceeded max lookup failures', originURL.href);
       return;
     }
@@ -135,23 +144,22 @@ export async function lookup(inputOptions) {
 
   // Try and fetch the html for the url. Non-fatal.
   let response;
-  if(!document && !options.skipURLFetch) {
+  if (!document && !options.skipURLFetch) {
     try {
       response = await fetchHTML(url, options.fetchHTMLTimeout);
-    } catch(error) {
+    } catch (error) {
       options.console.debug(error);
     }
   }
 
   // Handle redirect
   let responseURL;
-  if(response) {
+  if (response) {
     responseURL = new URL(response.url);
 
-    if(detectURLChanged(url, responseURL)) {
-
+    if (detectURLChanged(url, responseURL)) {
       // Update origin url for later
-      if(responseURL.origin !== url.origin) {
+      if (responseURL.origin !== url.origin) {
         originURL = new URL(responseURL.origin);
       }
 
@@ -159,9 +167,9 @@ export async function lookup(inputOptions) {
       urls.push(responseURL.href);
 
       // Check the cache for the redirected url
-      if(options.conn) {
+      if (options.conn) {
         let entry = await findEntry(options.conn, responseURL);
-        if(entry && entry.iconURLString && !entryIsExpired(entry, options)) {
+        if (entry && entry.iconURLString && !entryIsExpired(entry, options)) {
           await putAll(options.conn, [url.href], entry.iconURLString);
           return entry.iconURLString;
         }
@@ -169,32 +177,32 @@ export async function lookup(inputOptions) {
     }
   }
 
-  // We will be re-using the document variable, so avoid any ambiguity between a parse failure and
-  // whether a pre-fetched document was specified
+  // We will be re-using the document variable, so avoid any ambiguity between a
+  // parse failure and whether a pre-fetched document was specified
   options.document = null;
 
   // Deserialize the html response. Error is not fatal.
-  if(response) {
+  if (response) {
     try {
       const text = await response.text();
       options.document = parseHTML(text);
-    } catch(error) {
+    } catch (error) {
       options.console.debug(error);
     }
   }
 
   // Search the document. Errors are not fatal.
-  if(options.document) {
+  if (options.document) {
     const baseURL = responseURL ? responseURL : options.url;
     let iconURL;
     try {
       iconURL = await searchDocument(options, options.document, baseURL);
-    } catch(error) {
+    } catch (error) {
       options.console.debug(error);
     }
 
-    if(iconURL) {
-      if(options.conn) {
+    if (iconURL) {
+      if (options.conn) {
         await putAll(options.conn, urls, iconURL);
       }
       return iconURL;
@@ -202,20 +210,20 @@ export async function lookup(inputOptions) {
   }
 
   // Check if the origin is in the cache if it is distinct
-  if(options.conn && !urls.includes(originURL.href)) {
+  if (options.conn && !urls.includes(originURL.href)) {
     originEntry = await findEntry(options.conn, originURL);
-    if(originEntry) {
-      if(originEntry.iconURLString && !entryIsExpired(originEntry, options)) {
+    if (originEntry) {
+      if (originEntry.iconURLString && !entryIsExpired(originEntry, options)) {
         await putAll(options.conn, urls, originEntry.iconURLString);
         return originEntry.iconURLString;
-      } else if(originEntry.failureCount >= options.maxFailureCount) {
+      } else if (originEntry.failureCount >= options.maxFailureCount) {
         options.console.debug('Exceeded failure count', originURL.href);
         return;
       }
     }
   }
 
-  if(!urls.includes(originURL.href)) {
+  if (!urls.includes(originURL.href)) {
     urls.push(originURL.href);
   }
 
@@ -224,33 +232,35 @@ export async function lookup(inputOptions) {
   const imageURL = new URL(baseURL.origin + '/favicon.ico');
   response = null;
   try {
-    response = await fetchImage(imageURL, options.fetchImageTimeout, options.minImageSize,
-      options.maxImageSize);
-  } catch(error) {
+    response = await fetchImage(
+        imageURL, options.fetchImageTimeout, options.minImageSize,
+        options.maxImageSize);
+  } catch (error) {
     options.console.debug(error);
   }
 
-  if(response) {
-    if(options.conn) {
+  if (response) {
+    if (options.conn) {
       await putAll(options.conn, urls, response.url);
     }
     return response.url;
   }
 
   // Conditionally record failed lookup
-  if(options.conn) {
-    onLookupFailure(options.conn, originURL, originEntry, options.maxFailureCount);
+  if (options.conn) {
+    onLookupFailure(
+        options.conn, originURL, originEntry, options.maxFailureCount);
   }
 }
 
 function onLookupFailure(conn, originURL, originEntry, maxFailureCount) {
-  if(originEntry) {
+  if (originEntry) {
     const newEntry = {};
     newEntry.pageURLString = originEntry.pageURLString;
     newEntry.dateUpdated = new Date();
     newEntry.iconURLString = originEntry.iconURLString;
-    if('failureCount' in originEntry) {
-      if(originEntry.failureCount <= maxFailureCount) {
+    if ('failureCount' in originEntry) {
+      if (originEntry.failureCount <= maxFailureCount) {
         newEntry.failureCount = originEntry.failureCount + 1;
         putEntry(conn, newEntry);
       }
@@ -270,7 +280,7 @@ function onLookupFailure(conn, originURL, originEntry, maxFailureCount) {
 
 function entryIsExpired(entry, options) {
   // Tolerate partially corrupted data
-  if(!entry.dateUpdated) {
+  if (!entry.dateUpdated) {
     options.console.warn('Entry missing date updated', entry);
     return false;
   }
@@ -279,7 +289,7 @@ function entryIsExpired(entry, options) {
   const entryAge = currentDate - entry.dateUpdated;
 
   // Tolerate partially corrupted data
-  if(entryAge < 0) {
+  if (entryAge < 0) {
     options.console.warn('Entry date updated is in the future', entry);
     return false;
   }
@@ -291,40 +301,41 @@ async function searchDocument(options, document, baseURL) {
   assert(document instanceof Document);
 
   const candidates = findCandidateURLs(document);
-  if(!candidates.length) {
+  if (!candidates.length) {
     return;
   }
 
   let urls = [];
-  for(const url of candidates) {
+  for (const url of candidates) {
     const canonical = resolveURLString(url, baseURL);
-    if(canonical) {
+    if (canonical) {
       urls.push(canonical);
     }
   }
 
-  if(!urls.length) {
+  if (!urls.length) {
     return;
   }
 
   const seen = [];
   const distinct = [];
-  for(const url of urls) {
-    if(!seen.includes(url.href)) {
+  for (const url of urls) {
+    if (!seen.includes(url.href)) {
       distinct.push(url);
       seen.push(url.href);
     }
   }
   urls = distinct;
 
-  for(const url of urls) {
+  for (const url of urls) {
     try {
-      const response = await fetchImage(url, options.fetchImageTimeout, options.minImageSize,
-        options.maxImageSize);
-      if(response) {
+      const response = await fetchImage(
+          url, options.fetchImageTimeout, options.minImageSize,
+          options.maxImageSize);
+      if (response) {
         return response.url;
       }
-    } catch(error) {
+    } catch (error) {
       // ignore
     }
   }
@@ -332,21 +343,20 @@ async function searchDocument(options, document, baseURL) {
 
 function findCandidateURLs(document) {
   const candidates = [];
-  if(!document.head) {
+  if (!document.head) {
     return candidates;
   }
 
   const selector = [
-    'link[rel="icon"][href]',
-    'link[rel="shortcut icon"][href]',
+    'link[rel="icon"][href]', 'link[rel="shortcut icon"][href]',
     'link[rel="apple-touch-icon"][href]',
     'link[rel="apple-touch-icon-precomposed"][href]'
   ].join(',');
 
   const links = document.head.querySelectorAll(selector);
-  for(const link of links) {
+  for (const link of links) {
     const href = link.getAttribute('href');
-    if(href) {
+    if (href) {
       candidates.push(href);
     }
   }
@@ -355,15 +365,15 @@ function findCandidateURLs(document) {
 }
 
 export function open(name, version, timeout) {
-  if(typeof name === 'undefined') {
+  if (typeof name === 'undefined') {
     name = NAME;
   }
 
-  if(typeof version === 'undefined') {
+  if (typeof version === 'undefined') {
     version = VERSION;
   }
 
-  if(typeof timeout === 'undefined') {
+  if (typeof timeout === 'undefined') {
     timeout = OPEN_TIMEOUT;
   }
 
@@ -375,7 +385,7 @@ function onUpgradeNeeded(event) {
   console.log('Creating or upgrading database', conn.name);
 
   let store;
-  if(!event.oldVersion || event.oldVersion < 1) {
+  if (!event.oldVersion || event.oldVersion < 1) {
     console.debug('Creating favicon-cache store');
     store = conn.createObjectStore('favicon-cache', {keyPath: 'pageURLString'});
   } else {
@@ -383,7 +393,7 @@ function onUpgradeNeeded(event) {
     store = tx.objectStore('favicon-cache');
   }
 
-  if(event.oldVersion < 2) {
+  if (event.oldVersion < 2) {
     console.debug('Creating dateUpdated index');
     store.createIndex('dateUpdated', 'dateUpdated');
   }
@@ -391,9 +401,10 @@ function onUpgradeNeeded(event) {
   // In the transition from 2 to 3, there were no changes
 }
 
-// Clears the favicon object store. Optionally specify open params, which are generally only
-// needed for testing. The clear function returns immediately, after starting the operation, but
-// prior to the operation completing. Returns a promise.
+// Clears the favicon object store. Optionally specify open params, which are
+// generally only needed for testing. The clear function returns immediately,
+// after starting the operation, but prior to the operation completing. Returns
+// a promise.
 export function clear(options = {}) {
   return open(options.name, options.version, options.timeout).then(conn => {
     const txn = conn.transaction('favicon-cache', 'readwrite');
@@ -412,9 +423,9 @@ export function clear(options = {}) {
   });
 }
 
-// Remove expired entries from the database. Optionally specify open params for testing, otherwise
-// this connects to the default database. This returns immediately, prior to the operation
-// completing. Returns a promise.
+// Remove expired entries from the database. Optionally specify open params for
+// testing, otherwise this connects to the default database. This returns
+// immediately, prior to the operation completing. Returns a promise.
 export async function compact(options = {}) {
   console.log('Compacting favicon store...');
   const cutoffTime = Date.now() - (options.maxAge || MAX_AGE);
@@ -436,7 +447,7 @@ export async function compact(options = {}) {
     const request = index.openCursor(range);
     request.onsuccess = () => {
       const cursor = request.result;
-      if(cursor) {
+      if (cursor) {
         console.debug('Deleting favicon entry', cursor.value);
         cursor.delete();
         cursor.continue();
@@ -485,19 +496,20 @@ function putAll(conn, urlStrings, iconURLString) {
       failureCount: 0
     };
 
-    for(const urlString of urlStrings) {
+    for (const urlString of urlStrings) {
       entry.pageURLString = urlString;
       store.put(entry);
     }
   });
 }
 
-// TODO: think of a better name. it isn't obvious that this is a HEAD request. Or that it is
-// restricted to the purpose of icons given that size constraints and mime constraints are
-// built in. Something like sendIconHeadRequest
-// TODO: despite moving in the size constraints and how convenient that is, now I am mixing
-// together a few concerns. There is the pure concern of fetching mixed together with the
-// additional constraint concern. Not sure how I feel about it.
+// TODO: think of a better name. it isn't obvious that this is a HEAD request.
+// Or that it is restricted to the purpose of icons given that size constraints
+// and mime constraints are built in. Something like sendIconHeadRequest
+// TODO: despite moving in the size constraints and how convenient that is, now
+// I am mixing together a few concerns. There is the pure concern of fetching
+// mixed together with the additional constraint concern. Not sure how I feel
+// about it.
 
 // TODO: instead of returning undefined, return a fake Response object with the
 // appropriate HTTP status error code.
@@ -508,29 +520,30 @@ async function fetchImage(url, timeout, minImageSize, maxImageSize) {
 
   // Only accept responses with an image-like mime-type
   const contentType = response.headers.get('Content-Type');
-  if(!contentType) {
+  if (!contentType) {
     console.debug('Response missing content type', url.href);
     return;
   }
   const mimeType = mimeFromContentType(contentType);
-  if(!mimeType) {
+  if (!mimeType) {
     console.debug('Invalid content type', contentType, url.href);
     return;
   }
 
-  if(!mimeType.startsWith('image/') && mimeType !== 'application/octet-stream') {
+  if (!mimeType.startsWith('image/') &&
+      mimeType !== 'application/octet-stream') {
     console.debug('Unacceptable mime type', mimeType, url.href);
     return;
   }
 
   // Only accept images of a certain size
   const size = parseInt(response.headers.get('Content-Length'), 10);
-  if(Number.isInteger(size)) {
-    if(size < minImageSize) {
+  if (Number.isInteger(size)) {
+    if (size < minImageSize) {
       console.debug('Content length too small', size, url.href);
       return;
     }
-    if(size > maxImageSize) {
+    if (size > maxImageSize) {
       console.debug('Content length too large', size, url.href);
       return;
     }
@@ -542,17 +555,17 @@ async function fetchImage(url, timeout, minImageSize, maxImageSize) {
 }
 
 function assert(value, message) {
-  if(!value) {
+  if (!value) {
     throw new Error(message || 'Assertion error');
   }
 }
 
 function resolveURLString(url, baseURL) {
   assert(baseURL instanceof URL);
-  if(typeof url === 'string' && url.trim()) {
+  if (typeof url === 'string' && url.trim()) {
     try {
       return new URL(url, baseURL);
-    } catch(error) {
+    } catch (error) {
       // ignore
     }
   }
@@ -563,7 +576,7 @@ function parseHTML(text) {
   const parser = new DOMParser();
   const document = parser.parseFromString(text, 'text/html');
   const error = document.querySelector('parsererror');
-  if(error) {
+  if (error) {
     throw new Error(error.textContent);
   }
   return document;

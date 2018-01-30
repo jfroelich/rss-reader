@@ -1,21 +1,12 @@
-import showSlideshowTab from "/src/views/show-slideshow-tab.js";
-import {
-  clear as clearIconStore,
-  compact as compactIconStore,
-  lookup,
-  open as openIconDb
-} from "/src/favicon-service.js";
-import archiveEntries from "/src/feed-ops/archive-entries.js";
-import refreshFeedIcons from "/src/feed-ops/refresh-feed-icons.js";
-import removeLostEntries from "/src/feed-ops/remove-lost-entries.js";
-import removeOrphanedEntries from "/src/feed-ops/remove-orphaned-entries.js";
-import updateBadgeText from "/src/views/update-badge-text.js";
-import {
-  closePollFeedsContext,
-  createPollFeedsContext,
-  pollFeeds
-} from "/src/feed-poll/poll-feeds.js";
-import {open as openReaderDb} from "/src/rdb.js";
+import {clear as clearIconStore, compact as compactIconStore, lookup, open as openIconDb} from '/src/favicon-service.js';
+import archiveEntries from '/src/feed-ops/archive-entries.js';
+import refreshFeedIcons from '/src/feed-ops/refresh-feed-icons.js';
+import removeLostEntries from '/src/feed-ops/remove-lost-entries.js';
+import removeOrphanedEntries from '/src/feed-ops/remove-orphaned-entries.js';
+import {closePollFeedsContext, createPollFeedsContext, pollFeeds} from '/src/feed-poll/poll-feeds.js';
+import {open as openReaderDb} from '/src/rdb.js';
+import showSlideshowTab from '/src/views/show-slideshow-tab.js';
+import updateBadgeText from '/src/views/update-badge-text.js';
 
 // TODO: this is doing somethings that should be in a layer below the view.
 // move things into that other layer. This should be a dumber view, like a
@@ -43,7 +34,7 @@ async function handleLostEntriesAlarm(alarm) {
 }
 
 async function handleOrphanEntriesAlarm(alarm) {
-  let conn;// leave undefined for auto-connect
+  let conn;  // leave undefined for auto-connect
   const channel = new BroadcastChannel('reader');
   try {
     await removeOrphanedEntries(conn, channel);
@@ -54,7 +45,8 @@ async function handleOrphanEntriesAlarm(alarm) {
 
 async function handleRefreshFeedIconsAlarm(alarm) {
   console.log('Refreshing feed favicons...');
-  const [feedConn, iconConn] = await Promise.all([openReaderDb(), openIconDb()]);
+  const [feedConn, iconConn] =
+      await Promise.all([openReaderDb(), openIconDb()]);
   await refreshFeedIcons(feedConn, iconConn);
   feedConn.close();
   iconConn.close();
@@ -63,18 +55,19 @@ async function handleRefreshFeedIconsAlarm(alarm) {
 async function handlePollFeedsAlarm(alarm) {
   console.log('poll feeds alarm wakeup');
 
-  // If the non-idle restriction is in place, and the computer is not idle, then avoid polling.
-  if('ONLY_POLL_IF_IDLE' in localStorage) {
+  // If the non-idle restriction is in place, and the computer is not idle, then
+  // avoid polling.
+  if ('ONLY_POLL_IF_IDLE' in localStorage) {
     const idlePeriodSecs = 30;
     const state = await queryIdleState(idlePeriodSecs);
-    if(state !== 'locked' || state !== 'idle') {
+    if (state !== 'locked' || state !== 'idle') {
       console.debug('Not idle, ignoring poll feeds alarm wakeup event');
       return;
     }
   }
 
   const context = await createPollFeedsContext();
-  context.console = console;// enable logging
+  context.console = console;  // enable logging
   await pollFeeds(context);
   closePollFeedsContext(context);
 }
@@ -92,7 +85,8 @@ const cli = {};
 
 cli.refreshIcons = async function() {
   console.log('Refreshing feed favicons...');
-  const [feedConn, iconConn] = await Promise.all([openReaderDb(), openIconDb()]);
+  const [feedConn, iconConn] =
+      await Promise.all([openReaderDb(), openIconDb()]);
   await refreshFeedIcons(feedConn, iconConn);
   feedConn.close();
   iconConn.close();
@@ -104,7 +98,7 @@ cli.archiveEntries = function(limit) {
   let conn, maxAge;
   const channel = new BroadcastChannel('reader');
   archiveEntries(conn, channel, maxAge).catch(console.error).finally(() => {
-    if(channel) {
+    if (channel) {
       channel.close();
     }
   });
@@ -147,12 +141,12 @@ cli.compactFavicons = compactIconStore;
 cli.lookupFavicon = async function(url, cached) {
   const query = {};
   query.url = new URL(url);
-  if(cached) {
+  if (cached) {
     query.conn = await openIconDb();
   }
 
   const iconURLString = await lookup(query);
-  if(cached) {
+  if (cached) {
     query.conn.close();
   }
 
@@ -170,14 +164,18 @@ chrome.runtime.onInstalled.addListener(function(event) {
   console.debug('Received install event:', event);
 
   console.log('Setting up feed store database');
-  openReaderDb().then(function(conn) {
-    return conn.close();
-  }).catch(console.error);
+  openReaderDb()
+      .then(function(conn) {
+        return conn.close();
+      })
+      .catch(console.error);
 
   console.log('Setting up favicon database');
-  openIconDb().then(function(conn) {
-    return conn.close();
-  }).catch(console.error);
+  openIconDb()
+      .then(function(conn) {
+        return conn.close();
+      })
+      .catch(console.error);
 });
 
 
@@ -188,10 +186,10 @@ async function initBadge() {
   try {
     conn = await openReaderDb();
     updateBadgeText(conn);
-  } catch(error) {
+  } catch (error) {
     console.error(error);
   } finally {
-    if(conn) {
+    if (conn) {
       conn.close();
     }
   }
@@ -205,34 +203,35 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
   console.debug('Alarm awoke:', alarm.name);
   localStorage.LAST_ALARM = alarm.name;
 
-  switch(alarm.name) {
-  case 'archive':
-    handleArchiveAlarmWakeup(alarm).catch(console.error);
-    break;
-  case 'poll':
-    handlePollFeedsAlarm(alarm).catch(console.error);
-    break;
-  case 'remove-entries-missing-urls':
-    handleLostEntriesAlarm(alarm).catch(console.error);
-    break;
-  case 'remove-orphaned-entries':
-    handleOrphanEntriesAlarm(alarm).catch(console.error);
-    break;
-  case 'refresh-feed-icons':
-    handleRefreshFeedIconsAlarm(alarm).catch(console.error);
-    break;
-  case 'compact-favicon-db':
-    handleCompactFaviconsAlarm(alarm);
-    break;
-  default:
-    console.warn('unhandled alarm', alarm.name);
-    break;
+  switch (alarm.name) {
+    case 'archive':
+      handleArchiveAlarmWakeup(alarm).catch(console.error);
+      break;
+    case 'poll':
+      handlePollFeedsAlarm(alarm).catch(console.error);
+      break;
+    case 'remove-entries-missing-urls':
+      handleLostEntriesAlarm(alarm).catch(console.error);
+      break;
+    case 'remove-orphaned-entries':
+      handleOrphanEntriesAlarm(alarm).catch(console.error);
+      break;
+    case 'refresh-feed-icons':
+      handleRefreshFeedIconsAlarm(alarm).catch(console.error);
+      break;
+    case 'compact-favicon-db':
+      handleCompactFaviconsAlarm(alarm);
+      break;
+    default:
+      console.warn('unhandled alarm', alarm.name);
+      break;
   }
 });
 
 chrome.alarms.create('archive', {periodInMinutes: 60 * 12});
 chrome.alarms.create('poll', {periodInMinutes: 60});
-chrome.alarms.create('remove-entries-missing-urls', {periodInMinutes: 60 * 24 * 7});
+chrome.alarms.create(
+    'remove-entries-missing-urls', {periodInMinutes: 60 * 24 * 7});
 chrome.alarms.create('remove-orphaned-entries', {periodInMinutes: 60 * 24 * 7});
 chrome.alarms.create('refresh-feed-icons', {periodInMinutes: 60 * 24 * 7 * 2});
 chrome.alarms.create('compact-favicon-db', {periodInMinutes: 60 * 24 * 7});

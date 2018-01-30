@@ -1,4 +1,4 @@
-import {isAllowedURL} from "/src/common/fetch-utils.js";
+import {isAllowedURL} from '/src/common/fetch-utils.js';
 
 // TODO: use console parameter pattern to enable/disable logging
 // TODO: consider somehow using document.baseURI over explicit baseURL
@@ -17,46 +17,50 @@ export default async function applyImageSizeFilter(document, baseURL, timeout) {
   assert(document instanceof Document);
   assert(typeof baseURL === 'undefined' || baseURL instanceof URL);
 
-  if(!document.body) {
+  if (!document.body) {
     return;
   }
 
   const images = document.body.getElementsByTagName('img');
-  if(!images.length) {
+  if (!images.length) {
     return;
   }
 
   // Concurrently get dimensions for each image
   const promises = [];
-  for(const image of images) {
+  for (const image of images) {
     promises.push(getImageDimensions(image, baseURL, timeout));
   }
 
   // Update the DOM for images that need state change
   const results = await Promise.all(promises);
-  for(const result of results) {
-    if('width' in result) {
+  for (const result of results) {
+    if ('width' in result) {
       result.image.setAttribute('width', '' + result.width);
       result.image.setAttribute('height', '' + result.height);
-      //console.debug('Set image size:', result.image.getAttribute('src'),
+      // console.debug('Set image size:', result.image.getAttribute('src'),
       //  result.image.width, result.image.height, result.reason);
     }
   }
 }
 
 async function getImageDimensions(image, baseURL, timeout) {
-  if(image.hasAttribute('width') && image.hasAttribute('height')) {
+  if (image.hasAttribute('width') && image.hasAttribute('height')) {
     return {image: image, reason: 'has-attributes'};
   }
 
   let dims = getInlineStyleDimensions(image);
-  if(dims) {
-    return {image: image, reason: 'inline-style', width: dims.width,
-      height: dims.height};
+  if (dims) {
+    return {
+      image: image,
+      reason: 'inline-style',
+      width: dims.width,
+      height: dims.height
+    };
   }
 
   const imageSource = image.getAttribute('src');
-  if(!imageSource) {
+  if (!imageSource) {
     return {image: image, reason: 'missing-src'};
     return;
   }
@@ -68,7 +72,7 @@ async function getImageDimensions(image, baseURL, timeout) {
   let sourceURL;
   try {
     sourceURL = new URL(imageSource, baseURL);
-  } catch(error) {
+  } catch (error) {
     // If we cannot parse the url, then we cannot reliably inspect
     // the url for dimensions, nor fetch the image, so we're done.
     return {image: image, reason: 'invalid-src'};
@@ -76,9 +80,13 @@ async function getImageDimensions(image, baseURL, timeout) {
   }
 
   dims = sniffDimensionsFromURL(sourceURL);
-  if(dims) {
-    return {image: image, reason: 'url-sniff', width: dims.width,
-      height: dims.height};
+  if (dims) {
+    return {
+      image: image,
+      reason: 'url-sniff',
+      width: dims.width,
+      height: dims.height
+    };
   }
 
   // Failure to fetch should be trapped, because getImageDimensions should only
@@ -86,36 +94,39 @@ async function getImageDimensions(image, baseURL, timeout) {
   // Promise.all
   try {
     dims = await fetchImageElement(sourceURL, timeout);
-  } catch(error) {
+  } catch (error) {
     return {image: image, reason: 'fetch-error'};
   }
 
-  return {image: image, reason: 'fetch', width: dims.width, height: dims.height};
+  return {
+    image: image,
+    reason: 'fetch',
+    width: dims.width,
+    height: dims.height
+  };
 }
 
 // Try and find image dimensions from the characters of its url
 function sniffDimensionsFromURL(sourceURL) {
   // Ignore data urls (will be handled later by fetching)
-  if(sourceURL.protocol === 'data:') {
+  if (sourceURL.protocol === 'data:') {
     return;
   }
 
-  const namedAttributePairs = [
-    {width: 'w', height: 'h'},
-    {width: 'width', height: 'height'}
-  ];
+  const namedAttributePairs =
+      [{width: 'w', height: 'h'}, {width: 'width', height: 'height'}];
 
   // Infer from url parameters
   const params = sourceURL.searchParams;
-  for(const pair of namedAttributePairs) {
+  for (const pair of namedAttributePairs) {
     const widthString = params.get(pair.width);
-    if(widthString) {
+    if (widthString) {
       const widthInt = parseInt(widthString, 10);
-      if(!isNaN(widthInt)) {
+      if (!isNaN(widthInt)) {
         const heightString = params.get(pair.height);
-        if(heightString) {
+        if (heightString) {
           const heightInt = parseInt(heightString, 10);
-          if(!isNaN(heightInt)) {
+          if (!isNaN(heightInt)) {
             const dimensions = {};
             dimensions.width = widthInt;
             dimensions.height = heightInt;
@@ -129,9 +140,9 @@ function sniffDimensionsFromURL(sourceURL) {
   // TODO: implement
   // Grab from file name (e.g. 100x100.jpg => [100,100])
   const fileName = getFileNameFromURL(sourceURL);
-  if(fileName) {
+  if (fileName) {
     const partialFileName = filterExtensionFromFileName(fileName);
-    if(partialFileName) {
+    if (partialFileName) {
       // not implemented
     }
   }
@@ -142,11 +153,11 @@ function sniffDimensionsFromURL(sourceURL) {
 // not inherited styles.
 // TODO: this is currently incorrect when width/height are percentage based
 function getInlineStyleDimensions(element) {
-  if(element.hasAttribute('style') && element.style) {
+  if (element.hasAttribute('style') && element.style) {
     const width = parseInt(element.style.width, 10);
-    if(!isNaN(width)) {
+    if (!isNaN(width)) {
       const height = parseInt(element.style.height, 10);
-      if(!isNaN(height)) {
+      if (!isNaN(height)) {
         return {width: width, height: height};
       }
     }
@@ -163,7 +174,9 @@ function getInlineStyleDimensions(element) {
 // @param timeout {Number}
 // @returns {Promise}
 async function fetchImageElement(url, timeout) {
-  assert(typeof timeout === 'undefined' || (Number.isInteger(timeout) && timeout >= 0));
+  assert(
+      typeof timeout === 'undefined' ||
+      (Number.isInteger(timeout) && timeout >= 0));
   const fetchPromise = fetchImageElementPromise(url);
   const contestants = timeout ? [fetchPromise, sleep(timeout)] : [fetchPromise];
   const image = await Promise.race(contestants);
@@ -184,7 +197,7 @@ function fetchImageElementPromise(url) {
     proxy.src = url.href;
 
     // If cached then resolve immediately
-    if(proxy.complete) {
+    if (proxy.complete) {
       return resolve(proxy);
     }
 
@@ -216,13 +229,13 @@ function filterExtensionFromFileName(fileName) {
 function getFileNameFromURL(url) {
   assert(url instanceof URL);
   const index = url.pathname.lastIndexOf('/');
-  if((index > -1) && (index + 1 < url.pathname.length)) {
+  if ((index > -1) && (index + 1 < url.pathname.length)) {
     return url.pathname.substring(index + 1);
   }
 }
 
 function assert(value, message) {
-  if(!value) {
+  if (!value) {
     throw new Error(message || 'Assertion error');
   }
 }

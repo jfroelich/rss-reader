@@ -1,5 +1,5 @@
-import updateBadgeText from "/src/views/update-badge-text.js";
-import {markEntryRead as storeMarkEntryRead} from "/src/rdb.js";
+import {markEntryRead as storeMarkEntryRead} from '/src/rdb.js';
+import updateBadgeText from '/src/views/update-badge-text.js';
 
 // TODO: this shouldn't be dependent on something in views, it should be the
 // other way around
@@ -11,7 +11,6 @@ import {markEntryRead as storeMarkEntryRead} from "/src/rdb.js";
 // http://www.micheltriana.com/blog/2012/04/09/library-oriented-architecture
 
 export default async function markEntryRead(conn, channel, entryId) {
-
   // TODO: I would prefer this to not be awaited, but I need to defer the badge
   // update call until after it resolves. I suppose I could use a promise?
 
@@ -29,5 +28,5 @@ export default async function markEntryRead(conn, channel, entryId) {
   // exclusively, it is related to any of them, the only thing that matters is
   // that the count happens after.
 
-  updateBadgeText(conn);// non-blocking
+  updateBadgeText(conn);  // non-blocking
 }

@@ -1,7 +1,7 @@
-import isBinaryURL from "/src/feed-poll/is-binary-url.js";
+import isBinaryURL from '/src/feed-poll/is-binary-url.js';
 
 function assert(value) {
-  if(!value) throw new Error('Assertion error');
+  if (!value) throw new Error('Assertion error');
 }
 
 let input = new URL('http://www.example.com/example.pdf');
@@ -30,4 +30,5 @@ input = new URL('data:image/png;base64,junk=');
 result = isBinaryURL(input);
 assert(result === true, input);
 
-console.debug('If no error messages appear in console before this then all tests passed');
+console.debug(
+    'If no error messages appear in console before this then all tests passed');

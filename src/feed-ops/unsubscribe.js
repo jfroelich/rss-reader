@@ -1,5 +1,5 @@
-import updateBadgeText from "/src/views/update-badge-text.js";
-import {removeFeed} from "/src/rdb.js";
+import {removeFeed} from '/src/rdb.js';
+import updateBadgeText from '/src/views/update-badge-text.js';
 
 // TODO: this shouldn't be dependent on something in the view, it should be the
 // other way around
@@ -20,5 +20,5 @@ export default async function unsubscribe(conn, channel, feedId) {
   await removeFeed(conn, channel, feedId, reasonText);
 
   // Removing entries may impact the unread count
-  updateBadgeText(conn);// non-blocking
+  updateBadgeText(conn);  // non-blocking
 }

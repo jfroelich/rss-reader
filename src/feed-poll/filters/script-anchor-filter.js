@@ -1,18 +1,18 @@
-import assert from "/src/common/assert.js";
-import {unwrapElement} from "/src/common/dom-utils.js";
+import assert from '/src/common/assert.js';
+import {unwrapElement} from '/src/common/dom-utils.js';
 
 // TODO: move to basic filters
 
 // Unwraps anchor elements containing href attribute values that are javascript
 export default function filterDocument(document) {
   assert(document instanceof Document);
-  if(!document.body) {
+  if (!document.body) {
     return;
   }
 
   const anchors = document.body.querySelectorAll('a[href]');
-  for(const anchor of anchors) {
-    if(hasScriptProtocol(anchor.getAttribute('href'))) {
+  for (const anchor of anchors) {
+    if (hasScriptProtocol(anchor.getAttribute('href'))) {
       unwrapElement(anchor);
     }
   }
@@ -26,7 +26,6 @@ const JS_PREFIX_LEN = 'javascript:'.length;
 function hasScriptProtocol(urlString) {
   // The type check is done to allow for bad inputs for caller convenience. The
   // length check is an attempt to reduce the number of regex calls.
-  return typeof urlString === 'string' &&
-    urlString.length > JS_PREFIX_LEN &&
-    /^\s*javascript:/i.test(urlString);
+  return typeof urlString === 'string' && urlString.length > JS_PREFIX_LEN &&
+      /^\s*javascript:/i.test(urlString);
 }

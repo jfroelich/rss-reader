@@ -1,4 +1,4 @@
-import {entryHasURL, open as openReaderDb} from "/src/rdb.js";
+import {entryHasURL, open as openReaderDb} from '/src/rdb.js';
 
 // Scans the entry store for entry objects that are missing urls and removes
 // them
@@ -8,7 +8,7 @@ export default async function removeLostEntries(conn, channel, console) {
 
   const dconn = conn ? conn : await openReaderDb();
   const entryIds = await removeLostEntriesPromise(dconn, console);
-  if(!conn) {
+  if (!conn) {
     console.debug('Closing dynamic connection to database', dconn.name);
     dconn.close();
   }
@@ -23,9 +23,9 @@ export default async function removeLostEntries(conn, channel, console) {
   // throw, but there is no way to check if channel closed, and we are forked
   // so throwing sends an error to a place where no one is listening, so just
   // trap and log the error
-  if(channel) {
+  if (channel) {
     const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
-    for(const id of entryIds) {
+    for (const id of entryIds) {
       message.id = id;
       channelPostMessageNoExcept(channel, message, console);
     }
@@ -36,7 +36,7 @@ function channelPostMessageNoExcept(channel, message, console) {
   try {
     channel.postMessage(message);
     console.debug('Posted message to channel', channel.name, message);
-  } catch(error) {
+  } catch (error) {
     console.warn(error);
   }
 }
@@ -59,13 +59,13 @@ function removeLostEntriesPromise(conn, console) {
     const request = store.openCursor();
     request.onsuccess = () => {
       const cursor = request.result;
-      if(!cursor) {
+      if (!cursor) {
         return;
       }
 
       const entry = cursor.value;
 
-      if(!entryHasURL(entry)) {
+      if (!entryHasURL(entry)) {
         console.debug('Deleting lost entry', entry.id);
 
         // Calling delete appends a request to the transaction. Remember that
