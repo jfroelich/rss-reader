@@ -11,7 +11,6 @@ import * as Slideshow from '/src/views/slideshow.js';
 // re-appear occassionally when navigation, and sometimes next-slide key press
 // doesn't advance slide.
 
-
 const fonts = [
   'ArchivoNarrow-Regular', 'Arial, sans-serif', 'Calibri', 'Cambria',
   'CartoGothicStd', 'Fanwood', 'Georgia', 'League Mono Regular',
@@ -22,17 +21,21 @@ const fonts = [
 const channel = new BroadcastChannel('reader');
 channel.onmessage = function(event) {
   if (!event.isTrusted) {
+    console.warn('Ignoring untrusted message event', event);
     return;
   }
 
   const message = event.data;
   if (typeof message !== 'object' || message === null) {
-    console.warn('Message event has missing or invalid message', event);
+    console.warn('Ignoring message event with invalid message', event);
     return;
   }
 
+  console.debug('Handling message', message);
+
   switch (message.type) {
     case 'display-settings-changed':
+      console.debug('Updating article style');
       PageStyle.pageStyleSettingsOnchange(message);
       break;
     case 'entry-added':

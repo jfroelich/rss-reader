@@ -134,8 +134,6 @@ function entryCSSUpdateTitleRule() {
     return;
   }
 
-  console.debug('Found rule:', rule, rule instanceof CSSStyleRule);
-
   const style = rule.style;
   style.background = '';
   style.fontFamily = localStorage.HEADER_FONT_FAMILY;
@@ -153,8 +151,6 @@ function entryCSSUpdateContentRule() {
     console.error('Could not find rule ".entry span.entry-content"');
     return;
   }
-
-  console.debug('Found rule:', rule, rule instanceof CSSStyleRule);
 
   if (!(rule instanceof CSSStyleRule)) {
     console.error('Rule is not a css style rule');

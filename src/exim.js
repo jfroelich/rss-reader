@@ -73,20 +73,19 @@ export async function exportOPML(conn, title) {
 // events
 // @param fetchFeedTimeout {Number} parameter fowarded to subscribe
 // @param files {FileList} a list of opml files to import
-// @return {Promise} a promise that resolves when finished to an array of numbers, or rejects
-// with an error. Each number corresponds to one of the files. -1 means weak
-// error, otherwise a count of number of feeds subscribed from the file.
-// Rejections can leave the db in an inconsistent state.
+// @return {Promise} a promise that resolves when finished to an array of
+// numbers, or rejects with an error. Each number corresponds to one of the
+// files. -1 means weak error, otherwise a count of number of feeds subscribed
+// from the file. Rejections can leave the db in an inconsistent state.
 export function importOPML(
     feedConn, iconConn, channel, fetchFeedTimeout, files) {
   assert(files instanceof FileList);
 
   console.log('Importing %d opml file(s)', files.length);
   if (!files.length) {
+    console.debug('Canceling import, no files found');
     return;
   }
-
-  // Allow errors to bubble as fatal
 
   const subscribeContext = {
     feedConn: feedConn,
@@ -95,8 +94,6 @@ export function importOPML(
     fetchFeedTimeout: fetchFeedTimeout,
     notify: false
   };
-
-  console.debug('TEMP: initiating importOPMLFile promises');
 
   // Concurrently import files.
   const promises = [];
@@ -111,7 +108,6 @@ export function importOPML(
 // Returns -1 in case of weak error. Returns 0 if no feeds subscribed. Otherwise
 // returns the count of feeds subscribed.
 async function importOPMLFile(subscribeContext, file) {
-  console.debug('importOPMLFile start');
   // Calling this with something other than a file is a persistent critical
   // programming error
   assert(file instanceof File);

@@ -68,9 +68,9 @@ export default async function subscribe(context, url) {
   }
 
   let feed;
-  if (response) {
+  if (response instanceof Response) {
     // Allow errors to bubble
-    feed = await createFeedFromResponse(context, feed, url);
+    feed = await createFeedFromResponse(context, response, url);
   } else {
     // Offline subscription
     feed = createFeed();
