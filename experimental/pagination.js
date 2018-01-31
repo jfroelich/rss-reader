@@ -1,6 +1,6 @@
 import findLCA from '/experimental/lca.js';
 import assert from '/src/common/assert.js';
-import {isHiddenInlineElement} from '/src/common/dom-utils.js';
+import {isHiddenInlineElement} from '/src/feed-poll/filters/content-filter-utils.js';
 
 // Returns an array
 // TODO: maybe revert to returning an object that abstracts the urls and other

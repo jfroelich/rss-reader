@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {isHiddenInlineElement, unwrapElement} from '/src/common/dom-utils.js';
+import {isHiddenInlineElement, unwrapElement} from '/src/feed-poll/filters/content-filter-utils.js';
 
 // TODO: make a github issue about optimizing recursive unwrap. I previously
 // made several attempts at optimization. Unfortunately much of the code is

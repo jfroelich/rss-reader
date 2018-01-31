@@ -27,17 +27,17 @@ export default async function removeLostEntries(conn, channel, console) {
     const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
     for (const id of entryIds) {
       message.id = id;
+
+      // If removeLostEntries is not awaited, channel may close before the
+      // promise settled above, which would cause postMessage to throw, but
+      // there is no way to check if channel closed, and we are forked so
+      // throwing sends an error to a place where no one is listening
       channelPostMessageNoExcept(channel, message, console);
     }
   }
 }
 
 function channelPostMessageNoExcept(channel, message, console) {
-  // If removeLostEntries was called in non-blocking fashion, channel may have
-  // closed before promise settled above, which would cause postMessage to
-  // throw, but there is no way to check if channel closed, and we are forked so
-  // throwing sends an error to a place where no one is listening, so just trap
-  // and log the error
   try {
     channel.postMessage(message);
     console.debug('Posted message to channel', channel.name, message);

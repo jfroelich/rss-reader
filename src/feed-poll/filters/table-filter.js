@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {unwrapElement} from '/src/common/dom-utils.js';
+import {unwrapElement} from '/src/feed-poll/filters/content-filter-utils.js';
 import {leafFilterIsLeaf} from '/src/feed-poll/filters/leaf-filter.js';
 
 // Filters certain table elements from document content

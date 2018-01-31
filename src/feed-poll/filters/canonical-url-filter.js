@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {parseSrcsetWrapper} from '/src/common/dom-utils.js';
+import {parseSrcsetWrapper} from '/src/feed-poll/filters/content-filter-utils.js';
 
 const ELEMENT_ATTRIBUTE_MAP = {
   a: 'href',

@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {isHiddenInlineElement, removeImage} from '/src/common/dom-utils.js';
+import {isHiddenInlineElement, removeImage} from '/src/feed-poll/filters/content-filter-utils.js';
 
 const PATTERNS = [
   /\/\/.*2o7\.net\//i,

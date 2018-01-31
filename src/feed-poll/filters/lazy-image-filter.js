@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {imageHasSource} from '/src/common/dom-utils.js';
+import {imageHasSource} from '/src/feed-poll/filters/content-filter-utils.js';
 
 // Transforms lazily-loaded images found in document content
 

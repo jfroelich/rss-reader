@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {removeImage} from '/src/common/dom-utils.js';
+import {removeImage} from '/src/feed-poll/filters/content-filter-utils.js';
 
 // TODO: move to basic filters
 

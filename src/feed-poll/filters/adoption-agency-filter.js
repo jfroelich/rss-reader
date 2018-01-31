@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {unwrapElement} from '/src/common/dom-utils.js';
+import {unwrapElement} from '/src/feed-poll/filters/content-filter-utils.js';
 
 // Removes, moves, or otherwise changes certain out-of-place elements in
 // document content
