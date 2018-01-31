@@ -39,8 +39,6 @@ function coerceElements(ancestorElement, oldName, newName, copyAttributesFlag) {
   }
 }
 
-
-
 // This is essentially a renaming of the element.
 //
 // The element's child nodes are retained. However, if the new name is the name

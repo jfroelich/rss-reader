@@ -123,7 +123,6 @@ function compactEntry(entry) {
   return compactedEntry;
 }
 
-
 // Calculates the approximate byte size of a value. This should only be used
 // for informational purposes because it is hilariously inaccurate.
 //

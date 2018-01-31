@@ -34,10 +34,6 @@ const NULL_CONSOLE = {
   debug: noop
 };
 
-
-// TODO: change lookup so that it only throws an exception in the event of a
-// programming error, and not in other cases such as a fetch error. A database
-// error would be a programming error.
 // TODO: the url parameter should be separate from options
 // TODO: the document parameter should be separate from options
 // TODO: rather than max age approach, cached entries should specify their own
@@ -59,7 +55,7 @@ const NULL_CONSOLE = {
 // entries in the cache.
 // * skipURLFetch {Boolean} optional, defaults to false, whether to skip
 // attempting to fetch the html of the input url
-// * maxAge {Number} optional, integer, defaults to a preset in defaults.js, the
+// * maxAge {Number} optional, integer, the
 // number of millis after which an entry is considered to have expired
 // * fetchHTMLTimeout {Number} optional, integer, number of millis to wait
 // before considering an attempt to fetch the html of a url a failure

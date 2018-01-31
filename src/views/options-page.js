@@ -1,7 +1,7 @@
 import {truncateHTML} from '/src/common/html-utils.js';
 
-// TODO: it would be better if subscribe could connect on demand
-// so that this does not need to be explicit
+// TODO: it would be better if subscribe could connect on demand so that this
+// does not need to be explicit
 import {open as openIconDb} from '/src/favicon-service.js';
 
 import subscribe from '/src/feed-ops/subscribe.js';
@@ -416,9 +416,8 @@ async function feedListInit() {
   // string is set for feeds missing titles? I kind of like that idea. I should
   // make a github issue first.
 
-  // Sort feeds by title
-  // Cannot use an title index at load-time because that excludes feeds missing
-  // titles
+  // Sort feeds by title. Cannot use an title index at load-time because that
+  // excludes feeds missing titles
   feeds.sort((a, b) => {
     const atitle = a.title ? a.title.toLowerCase() : '';
     const btitle = b.title ? b.title.toLowerCase() : '';
@@ -764,8 +763,6 @@ extURLElement.textContent = manifest.homepage_url;
 
 showSectionById('subs-list-section');
 
-
-
 // Duration and delay can be integer or floats and are required.
 function fadeElement(element, durationSecs, delaySecs) {
   return new Promise(function executor(resolve, reject) {
@@ -805,8 +802,6 @@ function fadeElement(element, durationSecs, delaySecs) {
     style.opacity = style.opacity === '1' ? '0' : '1';
   });
 }
-
-
 
 function hasBrowserPermission(permission) {
   return new Promise(function executor(resolve, reject) {

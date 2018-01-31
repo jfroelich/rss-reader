@@ -27,6 +27,7 @@ export default function showDesktopNotification(title, message, iconURL) {
 function notificationOnclick(event) {
   // TODO: test if the absence of this approach still causes a crash in latest
   // Chrome
+  // TODO: move this issue to github
 
   // Ensure the browser is open to avoid crash that occurs in Chrome 55 running
   // on Mac

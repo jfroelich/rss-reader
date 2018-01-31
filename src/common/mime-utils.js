@@ -9,23 +9,19 @@ export const MIME_TYPE_MAX_LENGTH = 100;
 // @returns {String} a mime type, or undefined if error
 export function fromContentType(contentType) {
   if (typeof contentType !== 'string') {
-    console.debug('Content type not a defined string', typeof contentType);
     return;
   }
 
   if (contentType.length < 1) {
-    console.debug('Zero length content type before trim');
     return;
   }
 
   contentType = contentType.trim();
   if (contentType.length < 1) {
-    console.debug('Zero length content type after trim');
     return;
   }
 
   if (contentType.length < MIME_TYPE_MIN_LENGTH) {
-    console.debug('Content type length too short', contentType);
     return;
   }
 
@@ -34,7 +30,6 @@ export function fromContentType(contentType) {
   let mimeType = scpos > -1 ? contentType.substring(0, scpos) : contentType;
 
   if (mimeType.length < MIME_TYPE_MIN_LENGTH) {
-    console.debug('Mime type is too short', mimeType);
     return;
   }
 
@@ -42,7 +37,6 @@ export function fromContentType(contentType) {
   mimeType = filterWhitespace(mimeType).toLowerCase();
 
   if (!isMimeType(mimeType)) {
-    console.debug('Mime type is not well-formed', mimeType);
     return;
   }
 
@@ -53,7 +47,7 @@ function filterWhitespace(string) {
   return string.replace(/\s+/g, '');
 }
 
-// A basic trivial test of whether the parameter represents a mime type.
+// A trivial test of whether the parameter represents a mime type.
 // Inaccurate. Few false negatives but many false positives.
 export function isMimeType(value) {
   return typeof value === 'string' && value.length > MIME_TYPE_MIN_LENGTH &&

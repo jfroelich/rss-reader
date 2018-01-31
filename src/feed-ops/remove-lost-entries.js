@@ -1,10 +1,10 @@
 import {entryHasURL, open as openReaderDb} from '/src/rdb.js';
 
 // TODO: move this comment to github issue
-// TODO: consider speculative messaging, where I post a message to a channel
-// of a different type before the database operation settled. one of the
-// benefits is that I avoid issues with channel closing early when remove
-// is called unawaited and channel is closed before settling.
+// TODO: consider speculative messaging, where I post a message to a channel of
+// a different type before the database operation settled. one of the benefits
+// is that I avoid issues with channel closing early when remove is called
+// unawaited and channel is closed before settling.
 
 // Scans the entry store for entry objects that are missing urls and removes
 // them
@@ -35,9 +35,9 @@ export default async function removeLostEntries(conn, channel, console) {
 function channelPostMessageNoExcept(channel, message, console) {
   // If removeLostEntries was called in non-blocking fashion, channel may have
   // closed before promise settled above, which would cause postMessage to
-  // throw, but there is no way to check if channel closed, and we are forked
-  // so throwing sends an error to a place where no one is listening, so just
-  // trap and log the error
+  // throw, but there is no way to check if channel closed, and we are forked so
+  // throwing sends an error to a place where no one is listening, so just trap
+  // and log the error
   try {
     channel.postMessage(message);
     console.debug('Posted message to channel', channel.name, message);

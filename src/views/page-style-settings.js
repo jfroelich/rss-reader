@@ -195,8 +195,7 @@ function entryCSSUpdateContentRule() {
 }
 
 
-// Returns the first matching css rule or undefined.
-//
+// Returns the first matching css rule or undefined
 // @param selectorText {String}
 // @returns rule {CSSStyleRule}
 function findRule(selectorText) {

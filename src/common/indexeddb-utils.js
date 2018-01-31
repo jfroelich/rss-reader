@@ -1,7 +1,7 @@
-// Opens a connection to an indexedDB database. The important additions to
-// the normal functionality of indexedDB.open are that you can specify a
-// timeout after which to consider the connection a failure, and that a
-// blocked connection is treated implicitly as an error.
+// Opens a connection to an indexedDB database. The important additions to the
+// normal functionality of indexedDB.open are that you can specify a timeout
+// after which to consider the connection a failure, and that a blocked
+// connection is treated implicitly as an error.
 export async function open(name, version, upgradeListener, timeout) {
   if (typeof name !== 'string') {
     throw new TypeError('Invalid name ' + name);

@@ -4,6 +4,8 @@
 // example, '&lt;' becomes '<'. Adapted from
 // https://stackoverflow.com/questions/1912501
 //
+// This is completely unsafe
+//
 // TODO: i'd eventually like to not involve the dom but for now just get
 // something working
 // TODO: I believe the shared worker element technique is 'thread-safe' because

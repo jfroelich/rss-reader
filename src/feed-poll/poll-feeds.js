@@ -7,12 +7,12 @@ import isBinaryURL from '/src/feed-poll/is-binary-url.js';
 import rewriteURL from '/src/feed-poll/rewrite-url.js';
 import showDesktopNotification from '/src/notifications.js';
 import {addEntry, containsEntryWithURL, entryAppendURL, entryHasURL, entryPeekURL, feedHasURL, feedPeekURL, findActiveFeeds, isEntry, isFeed, mergeFeeds, open as openReaderDb, prepareFeed, putFeed} from '/src/rdb.js';
+
 // TODO: this should not be dependent on something in the view, it should be
 // the other way around
 import updateBadgeText from '/src/views/update-badge-text.js';
 
 // TODO: rename to poll-service
-
 // TODO: to enforce that the feed parameter is a feed object loaded from the
 // database, it is possible that pollFeed would be better implemented if it
 // instead accepted a feedId as a parameter rather than an in-mem feed. That
@@ -35,8 +35,6 @@ const defaultPollFeedsContext = {
 };
 
 function noop() {}
-
-
 
 // Create a new context object that is the typical context used by pollFeeds
 export async function createPollFeedsContext() {

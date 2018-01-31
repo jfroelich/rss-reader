@@ -1,4 +1,4 @@
-// Basic string formatting. formatString returns a formatted string.
+// formatString returns a formatted string, similar to printf
 // Flags are case sensitive
 // %s - string
 // %d - number
@@ -8,7 +8,6 @@
 const syntaxPattern = /%[sdo%]/g;
 
 export default function formatString(...args) {
-  // args is defined even when there are no arguments
   const argCount = args.length;
   if (argCount === 0) {
     return '';
@@ -131,9 +130,6 @@ function anyTypeToObjectString(value) {
   // overly-defensive.
 
   if (nativeHasOwn.call(value, 'toString')) {
-    // The anyTypeToStringString call is rather superfluous but it protects
-    // against custom objects or manipulations of builtin objects that return
-    // the improper type.
     return value.toString();
   }
 

@@ -63,59 +63,57 @@ export async function exportOPML(conn, title) {
   // Serialize the document as a string and create and return a blob
   const serializer = new XMLSerializer();
   const string = serializer.serializeToString(doc);
-  return new Blob([string], {type: 'application/xml'});
+  return new Blob([ string ], {type : 'application/xml'});
 }
+
+// TODO: add optional console argument, default it to null NULL_CONSOLE
 
 // Imports one or more opml files into the app
 // @param feedConn {IDBDatabase} open conn to reader database
 // @param iconConn {IDBDatabase} open conn to favicon database
 // @param channel {BroadcastChannel} optional channel to notify of storage
 // events
-// @param fetchFeedTimeout {Number} parameter fowarded to subscribe
+// @param fetchFeedTimeout {Number} parameter forwarded to subscribe
 // @param files {FileList} a list of opml files to import
-// @return {Promise} a promise that resolves when finished to an array of
-// numbers, or rejects with an error. Each number corresponds to one of the
-// files. -1 means weak error, otherwise a count of number of feeds subscribed
+// @return {Promise} a promise that resolves to an array of numbers, or rejects
+// with an error. Each number corresponds to one of the files. -1 means weak
+// error (e.g. empty file), otherwise a count of number of feeds subscribed
 // from the file. Rejections can leave the db in an inconsistent state.
-export function importOPML(
-    feedConn, iconConn, channel, fetchFeedTimeout, files) {
+export function importOPML(feedConn, iconConn, channel, fetchFeedTimeout,
+                           files) {
   assert(files instanceof FileList);
-
   console.log('Importing %d opml file(s)', files.length);
-  if (!files.length) {
-    console.debug('Canceling import, no files found');
-    return;
-  }
 
-  const subscribeContext = {
-    feedConn: feedConn,
-    iconConn: iconConn,
-    channel: channel,
-    fetchFeedTimeout: fetchFeedTimeout,
-    notify: false
+  const context = {
+    feedConn : feedConn,
+    iconConn : iconConn,
+    channel : channel,
+    fetchFeedTimeout : fetchFeedTimeout,
+    notify : false
   };
 
-  // Concurrently import files.
-  const promises = [];
-  for (const file of files) {
-    promises.push(importOPMLFile(subscribeContext, file));
-  }
-
-  return Promise.all(promises);
+  const partial = importOPMLFile.bind(null, context, console);
+  return Promise.all(files.map(partial));
 }
+
+// TODO: why distinguish weak errors like empty files or incorrect file types?
+// Maybe just consider it part of the processing logic and just exit early. I
+// don't think any caller currently cares about it, or will any time soon, so
+// why did I distinguish it so exactly and carefully? At least explicitly
+// state why.
 
 // Reads the file, parses the opml, and then subscribes to each of the feeds
 // Returns -1 in case of weak error. Returns 0 if no feeds subscribed. Otherwise
 // returns the count of feeds subscribed.
-async function importOPMLFile(subscribeContext, file) {
-  // Calling this with something other than a file is a persistent critical
-  // programming error
+// @param subscribeContext {Object} parameters for subscribing to a feed
+// @param file {File} the file to import
+// @param console {Object} a console-like object for logging
+async function importOPMLFile(subscribeContext, console, file) {
   assert(file instanceof File);
-
   console.log('Importing file', file.name, file.type, file.size);
 
   if (file.size < 1) {
-    console.debug('Skipping empty file', file.name);
+    console.warn('Skipping empty file', file.name);
     return -1;
   }
 
@@ -125,31 +123,31 @@ async function importOPMLFile(subscribeContext, file) {
     'application/xml', 'application/xhtml+xml', 'text/xml'
   ];
   if (!xmlMimeTypes.includes(file.type)) {
-    console.debug('Skipping non-xml file', file.name, file.type);
+    console.warn('Skipping non-xml file', file.name, file.type);
     return -1;
   }
 
-  // The failure to read the file is not a critical error, just log and return
+  // I/O errors are not fatal to the batch import
   let fileText;
   try {
     fileText = await readFileAsText(file);
   } catch (error) {
-    console.error(file.name, error);
+    console.warn(file.name, error);
     return -1;
   }
 
   console.debug('Loaded %d characters in file', fileText.length, file.name);
 
-  // The failure to parse a file is not a critical error, just log and return
+  // Parse errors are not fatal to batch import
   let document;
   try {
     document = parseOPML(fileText);
   } catch (error) {
-    console.debug('Failed to parse opml', error);
+    console.warn(file.name, error);
     return -1;
   }
 
-  const urls = getFeedURLs(document);
+  const urls = dedupURLs(findFeedURLs(document));
   if (!urls.length) {
     console.debug('No feeds found in file', file.name);
     return 0;
@@ -158,18 +156,16 @@ async function importOPMLFile(subscribeContext, file) {
   const thisArg = null;
   const partialFunc = subscribeNoExcept.bind(thisArg, subscribeContext);
   const promises = urls.map(partialFunc);
+  // Any subscribe rejections are thrown
   const subscribeReturnValues = await Promise.all(promises);
   const count = subscribeReturnValues.filter(identity).length;
   console.log('Subscribed to %d feeds in file', count, file.name);
   return count;
 }
 
-function identity(value) {
-  return value;
-}
+function identity(value) { return value; }
 
 // Call subscribe while suppressing any exceptions. Exceptions are simply logged
-// Returns the result of subscribe
 async function subscribeNoExcept(subscribeContext, url) {
   try {
     return await subscribe(subscribeContext, url);
@@ -178,25 +174,22 @@ async function subscribeNoExcept(subscribeContext, url) {
   }
 }
 
-
-// TODO: this is mixing together dedup with select. It should be two functions
-
-function getFeedURLs(document) {
+// Searches an OPML document for urls of feeds. Returns an array of 0 or more
+// urls found. Each element is a URL object. Only outlines that are correctly
+// typed as a representing a feed are included in the result. Only valid urls
+// are included in the result. By using URL objects, the urls are also
+// normalized. The resulting urls are not guaranteed to be distinct.
+function findFeedURLs(document) {
   const elements = document.querySelectorAll('opml > body > outline');
   const typePattern = /^\s*(rss|rdf|feed)\s*$/i;
-  const seen = [];  // distinct normalized url strings
-  const urls = [];  // output URL objects
+  const urls = [];
   for (const element of elements) {
     const type = element.getAttribute('type');
     if (typePattern.test(type)) {
       const value = element.getAttribute('xmlUrl');
       if (value) {
         try {
-          const url = new URL(value);
-          if (!seen.includes(url.href)) {
-            seen.push(url.href);
-            urls.push(url);
-          }
+          urls.push(new URL(value));
         } catch (error) {
         }
       }
@@ -204,6 +197,19 @@ function getFeedURLs(document) {
   }
 
   return urls;
+}
+
+// Given an array of URL objects, returns a new array where duplicate urls
+// have been removed.
+function dedupURLs(urls) {
+  const uniqueURLs = [], seenURLStrings = [];
+  for (const url of urls) {
+    if (!seenURLStrings.includes(url.href)) {
+      uniqueURLs.push(url);
+      seenURLStrings.push(url.href);
+    }
+  }
+  return uniqueURLs;
 }
 
 function readFileAsText(file) {
@@ -228,8 +234,7 @@ function parseXML(xmlString) {
 }
 
 function parseOPML(xmlString) {
-  assert(typeof xmlString === 'string');
-  // Rethrow parseXML errors as parseOPML errors
+  // Rethrow parseXML errors
   const document = parseXML(xmlString);
   const name = document.documentElement.localName.toLowerCase();
   if (name !== 'opml') {
@@ -239,5 +244,6 @@ function parseOPML(xmlString) {
 }
 
 function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
+  if (!value)
+    throw new Error(message || 'Assertion error');
 }

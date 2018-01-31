@@ -1,6 +1,5 @@
 import assert from '/src/common/assert.js';
 
-
 // Boilerplate filtering module
 export default function boilerplateFilter(doc, options) {
   assert(doc instanceof Document);

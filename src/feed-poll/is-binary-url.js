@@ -33,7 +33,6 @@ export default function isBinaryURL(url) {
   return isBinaryMimeType(mimeType);
 }
 
-
 // Return a mime type corresponding a file name extension
 // @param extension {String}
 // @returns {String} a mime type, or undefined on error or failed lookup
@@ -42,7 +41,6 @@ function findMimeTypeForExtension(extension) {
     return EXTENSION_TYPE_MAP[extension];
   }
 }
-
 
 // Extracts the mime type of a data uri as string. Returns undefined if not
 // found or invalid.

@@ -49,9 +49,8 @@ export default async function updateBadgeText(conn) {
 
   // We trap the error for two reasons:
   // 1) the conn may have been closed when non-awaited
-  // 2) this is essentially a view, and views suppress errors or display
-  // them to the user, but this is a hidden view, so all this can do is
-  // log the error.
+  // 2) this is essentially a view, and views suppress errors or display them to
+  // the user, but this is a hidden view, so all this can do is log the error.
 
   let count;
   try {
