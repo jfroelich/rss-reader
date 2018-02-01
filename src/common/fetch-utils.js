@@ -1,4 +1,4 @@
-import {fromContentType} from '/src/common/mime-utils.js';
+import {findMimeTypeInContentType} from '/src/common/mime-utils.js';
 
 // TODO: rather than throw timeout error or other custom errors, consider
 // creating an artificial response, setting the appropriate status code, and not
@@ -162,7 +162,7 @@ export function getMimeType(response) {
   assert(response instanceof Response);
   const contentType = response.headers.get('Content-Type');
   if (contentType) {
-    return fromContentType(contentType);
+    return findMimeTypeInContentType(contentType);
   }
 }
 

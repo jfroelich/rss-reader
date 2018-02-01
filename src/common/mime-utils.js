@@ -7,7 +7,7 @@ export const MIME_TYPE_MAX_LENGTH = 100;
 // Returns a normalized mime type from a content type. Tolerant of bad input.
 // @param contentType {String} an http response header value, optional
 // @returns {String} a mime type, or undefined if error
-export function fromContentType(contentType) {
+export function findMimeTypeInContentType(contentType) {
   if (typeof contentType !== 'string') {
     return;
   }

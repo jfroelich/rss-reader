@@ -1,6 +1,6 @@
 import {detectURLChanged, fetchHTML, tfetch} from '/src/common/fetch-utils.js';
 import {open as utilsOpen} from '/src/common/indexeddb-utils.js';
-import {fromContentType as mimeFromContentType} from '/src/common/mime-utils.js';
+import {findMimeTypeInContentType} from '/src/common/mime-utils.js';
 
 // The favicon service provides the ability to lookup the url of a favicon for a
 // given web page. Lookups can optionally be cached in a database so that future
@@ -228,7 +228,7 @@ export async function lookup(inputOptions) {
   const imageURL = new URL(baseURL.origin + '/favicon.ico');
   response = null;
   try {
-    response = await fetchImage(
+    response = await fetchImageHead(
         imageURL, options.fetchImageTimeout, options.minImageSize,
         options.maxImageSize);
   } catch (error) {
@@ -325,7 +325,7 @@ async function searchDocument(options, document, baseURL) {
 
   for (const url of urls) {
     try {
-      const response = await fetchImage(
+      const response = await fetchImageHead(
           url, options.fetchImageTimeout, options.minImageSize,
           options.maxImageSize);
       if (response) {
@@ -499,55 +499,45 @@ function putAll(conn, urlStrings, iconURLString) {
   });
 }
 
-// TODO: think of a better name. it isn't obvious that this is a HEAD request.
-// Or that it is restricted to the purpose of icons given that size constraints
-// and mime constraints are built in. Something like sendIconHeadRequest
 // TODO: despite moving in the size constraints and how convenient that is, now
 // I am mixing together a few concerns. There is the pure concern of fetching
 // mixed together with the additional constraint concern. Not sure how I feel
-// about it.
-
-// TODO: instead of returning undefined, return a fake Response object with the
-// appropriate HTTP status error code.
-
-async function fetchImage(url, timeout, minImageSize, maxImageSize) {
+// about it. Perhaps what I should do is have a pure fetcher function, which
+// is wrapped by a fetchAndValidate function, and then have the caller use
+// fetchAndValidate instead of directly fetching.
+// TODO: it may be better to throw exceptions here and let caller decide what to
+// do in case of an exception
+// TODO: instead of returning undefined in event of an error, consider returning
+// a fake Response object with the appropriate HTTP status error code
+async function fetchImageHead(url, timeout, minImageSize, maxImageSize) {
   const options = {method: 'head', timeout: timeout};
   const response = await tfetch(url, options);
+  if (responseHasImageType(response) &&
+      responseIsInRange(response, minImageSize, maxImageSize)) {
+    return response;
+  }
+}
 
-  // Only accept responses with an image-like mime-type
+function responseIsInRange(response, minSize, maxSize) {
+  assert(response instanceof Response);
+  assert(Number.isInteger(minSize));
+  assert(Number.isInteger(maxSize));
+  const contentLength = response.headers.get('Content-Length');
+  const size = parseInt(contentLength, 10);
+  return isNaN(size) || (size >= minSize && size <= maxSize);
+}
+
+function responseHasImageType(response) {
+  assert(response instanceof Response);
   const contentType = response.headers.get('Content-Type');
-  if (!contentType) {
-    console.debug('Response missing content type', url.href);
-    return;
-  }
-  const mimeType = mimeFromContentType(contentType);
-  if (!mimeType) {
-    console.debug('Invalid content type', contentType, url.href);
-    return;
-  }
-
-  if (!mimeType.startsWith('image/') &&
-      mimeType !== 'application/octet-stream') {
-    console.debug('Unacceptable mime type', mimeType, url.href);
-    return;
-  }
-
-  // Only accept images of a certain size
-  const size = parseInt(response.headers.get('Content-Length'), 10);
-  if (Number.isInteger(size)) {
-    if (size < minImageSize) {
-      console.debug('Content length too small', size, url.href);
-      return;
+  if (contentType) {
+    const mimeType = findMimeTypeInContentType(contentType);
+    if (mimeType) {
+      return mimeType.startsWith('image/') ||
+          mimeType === 'application/octet-stream';
     }
-    if (size > maxImageSize) {
-      console.debug('Content length too large', size, url.href);
-      return;
-    }
-  } else {
-    // Allow unknown size
   }
-
-  return response;
+  return false;
 }
 
 function assert(value, message) {
