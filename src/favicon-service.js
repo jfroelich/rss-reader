@@ -223,12 +223,12 @@ export async function lookup(inputOptions) {
     urls.push(originURL.href);
   }
 
-  // Check root directory
+  // Check root directory for favicon.ico
   const baseURL = responseURL ? responseURL : options.url;
   const imageURL = new URL(baseURL.origin + '/favicon.ico');
   response = null;
   try {
-    response = await fetchImageHead(
+    response = await fetchAndValidateImageHead(
         imageURL, options.fetchImageTimeout, options.minImageSize,
         options.maxImageSize);
   } catch (error) {
@@ -325,12 +325,10 @@ async function searchDocument(options, document, baseURL) {
 
   for (const url of urls) {
     try {
-      const response = await fetchImageHead(
+      const response = await fetchAndValidateImageHead(
           url, options.fetchImageTimeout, options.minImageSize,
           options.maxImageSize);
-      if (response) {
-        return response.url;
-      }
+      return response.url;
     } catch (error) {
       // ignore
     }
@@ -499,23 +497,16 @@ function putAll(conn, urlStrings, iconURLString) {
   });
 }
 
-// TODO: despite moving in the size constraints and how convenient that is, now
-// I am mixing together a few concerns. There is the pure concern of fetching
-// mixed together with the additional constraint concern. Not sure how I feel
-// about it. Perhaps what I should do is have a pure fetcher function, which
-// is wrapped by a fetchAndValidate function, and then have the caller use
-// fetchAndValidate instead of directly fetching.
-// TODO: it may be better to throw exceptions here and let caller decide what to
-// do in case of an exception
-// TODO: instead of returning undefined in event of an error, consider returning
-// a fake Response object with the appropriate HTTP status error code
-async function fetchImageHead(url, timeout, minImageSize, maxImageSize) {
+// TODO: instead of throwing network errors, consider returning a fake Response
+// object with the appropriate HTTP status error code and only throwing in the
+// case of a programming error
+async function fetchAndValidateImageHead(
+    url, timeout, minImageSize, maxImageSize) {
   const options = {method: 'head', timeout: timeout};
   const response = await tfetch(url, options);
-  if (responseHasImageType(response) &&
-      responseIsInRange(response, minImageSize, maxImageSize)) {
-    return response;
-  }
+  assert(responseHasImageType(response));
+  assert(responseIsInRange(response, minImageSize, maxImageSize));
+  return response;
 }
 
 function responseIsInRange(response, minSize, maxSize) {
