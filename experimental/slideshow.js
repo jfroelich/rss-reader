@@ -63,6 +63,11 @@
 // key press while in transition. Ok i fixed it by letting activeTransitionCount
 // go negative. So it works! But, last problem. Why.
 
+// Much later figured it out when actually implementing. I was only incrementing
+// activeTransitionCount by 1, when in fact I was starting two animations. Oops.
+// I have not corrected it here, but I've corrected it in the live code. This is
+// just sandbox stuff now.
+
 
 const container = document.getElementById('container');
 const slides = container.querySelectorAll('section');
@@ -112,7 +117,6 @@ function onTransitionEnd(event) {
 }
 
 window.addEventListener('keydown', function(event) {
-
   const left = 37, right = 39;
 
   // NOTE: there is a premature decrement right now, so need to compare against
@@ -164,5 +168,4 @@ window.addEventListener('keydown', function(event) {
       currentSlide = nextSlide;
     }
   }
-
 });

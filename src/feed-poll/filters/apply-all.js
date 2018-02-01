@@ -1,4 +1,3 @@
-import assert from '/src/common/assert.js';
 import adoptionAgencyFilter from '/src/feed-poll/filters/adoption-agency-filter.js';
 import attributeFilter from '/src/feed-poll/filters/attribute-whitelist-filter.js';
 import * as BasicFilters from '/src/feed-poll/filters/basic-filters.js';
@@ -46,8 +45,13 @@ import trimDocumentFilter from '/src/feed-poll/filters/trim-document-filter.js';
 // wait before timing out when fetching an image
 export default async function applyAllFilters(
     document, documentURL, fetchImageTimeoutMs) {
-  assert(document instanceof Document);
-  assert(documentURL instanceof URL);
+  if (!(document instanceof Document)) {
+    throw new TypeError('Invalid document ' + document);
+  }
+
+  if (!(documentURL instanceof URL)) {
+    throw new TypeError('Invalid documentURL ' + documentURL);
+  }
 
   frameFilter(document);
 

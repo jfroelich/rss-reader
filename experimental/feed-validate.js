@@ -1,6 +1,5 @@
-import assert from '/src/common/assert.js';
-
 // TODO: this creates a circular dependency at the moment
+// Therefore this will eventually need to be a part of rdb.js
 import {isFeed, isValidFeedId} from '/src/rdb.js';
 
 // TODO: include this in places where sanitize is called
@@ -8,7 +7,6 @@ import {isFeed, isValidFeedId} from '/src/rdb.js';
 // TODO: assert type, if set, is one of the valid types
 // TODO: assert feed has one or more urls
 // TODO: assert the type of each property?
-
 
 export default function validateFeed(feed) {
   assert(isFeed(feed));
@@ -22,4 +20,8 @@ export default function validateFeed(feed) {
   if ('type' in feed && !types.includes(feed.type)) {
     throw new Error('Invalid feed type ' + feed.type);
   }
+}
+
+function assert(value) {
+  if (!value) throw new Error('Assertion error');
 }

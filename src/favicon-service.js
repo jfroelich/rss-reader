@@ -7,9 +7,15 @@ import {findMimeTypeInContentType} from '/src/common/mime-utils.js';
 // lookups resolve more quickly and avoid repeated network requests. The cache
 // can be cleared or compacted for maintenance.
 
+// TODO: create a github issue for this todo
 // TODO: decouple from all common libraries to provide a severe service boundary
+
+// TODO: create a github issue for this todo
 // TODO: breakup the lookup function into smaller functions so it easier to read
-// TODO: do tests after recent changes
+
+// TODO: create a github issue about a test library that fully tests this,
+// and what I should really do is write stubs for fetch and such and then
+// create a ton of tests that test every branch
 
 const NAME = 'favicon-cache';
 const VERSION = 3;

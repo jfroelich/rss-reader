@@ -1,6 +1,5 @@
 import {paginationFindAnchors} from '/experimental/pagination.js';
-import assert from '/src/common/assert.js';
-import * as FetchUtils from '/src/common/fetch-utils.js';
+import {fetchHTML} from '/src/common/fetch-utils.js';
 
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a
@@ -27,7 +26,7 @@ export async function multipageFilter(doc, location, timeoutMs) {
   async function fetchAndParseHTML(url, timeoutMs) {
     const parser = new DOMParser();
     const requestURLObject = new URL(url);
-    const response = await FetchUtils.fetchHTML(requestURLObject, timeoutMs);
+    const response = await fetchHTML(requestURLObject, timeoutMs);
     const text = await response.text();
     return parser.parseFromString(text, 'text/html');
   }
@@ -53,4 +52,8 @@ export async function multipageFilter(doc, location, timeoutMs) {
   // TODO: Merge the documents here. Copy each document's body into the body of
   // the main document.
   // TODO: once merged, remove the pagination information from the document
+}
+
+function assert(value) {
+  if (!value) throw new Error('Assertion error');
 }

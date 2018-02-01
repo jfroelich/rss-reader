@@ -1,18 +1,19 @@
 import findLCA from '/experimental/lca.js';
-import assert from '/src/common/assert.js';
 import {isHiddenInlineElement} from '/src/feed-poll/filters/content-filter-utils.js';
 
-// Returns an array
+
 // TODO: maybe revert to returning an object that abstracts the urls and other
 // properties
 // TODO: If returning a pager should probably be renamed to something like
 // findPager
 // TODO: return something that tracks how pager was found, so it can be found
 // again for removal. Or ... remove on find, e.g. have a bool param
+// TODO: location should be a URL, not a string
 
-
-// @param doc {HTMLDocument}
+// Returns an array of anchors
+// @param doc {HTMLDocument} the document to search
 // @param location {String} url location of the document
+// @param lcaMaxDistance {Number} ?
 function paginationFindAnchors(doc, location, lcaMaxDistance) {
   assert(doc instanceof Document);
 
@@ -30,11 +31,10 @@ function paginationFindAnchors(doc, location, lcaMaxDistance) {
   throw new Error('Not yet implemented');
 }
 
-// Search for anchors within the ancestor element. Return an array
-// of those anchors that may be pagination. Does not return undefined. If no
-// candidates found then an empty array is returned. Is not concerned with
-// sequence-related criteria for anchors, just the minimal criteria for any
-// anchor
+// Search for anchors within the ancestor element. Return an array of those
+// anchors that may be pagination. If no candidates found then an empty array is
+// returned. Is not concerned with sequence-related criteria for anchors, just
+// the minimal criteria for any anchor
 function paginationFindCandidateAnchors(doc, location) {
   const bodyElement = doc.body;
   if (!bodyElement) {
@@ -92,9 +92,9 @@ function paginationIsCandidateAnchor(anchorElement, baseURL) {
     return false;
   }
 
-  // TODO: Check for digits somewhere in the anchor. At least one feature must
+  // TODO: check for digits somewhere in the anchor. At least one feature must
   // have digits (or the name like one/two)
-  // TODO: Check id, class, href filename, href params, text
+  // TODO: check id, class, href filename, href params, text
   return paginationAreSimilarURLs(baseURL, hrefURL);
 }
 
@@ -106,8 +106,8 @@ function paginationGetHrefURL(anchorElement, baseURL) {
 
   // The anchor's href value will eventually be used as the first parameter to
   // new URL, so it is important to avoid passing in an empty string because
-  // when calling new URL(empty string, base url), the result is a copy of
-  // the base url, not an error.
+  // when calling new URL(empty string, base url), the result is a copy of the
+  // base url, not an error.
   if (!href) {
     return;
   }
@@ -267,4 +267,8 @@ export function isHiddenElement(element) {
   }
 
   return false;
+}
+
+function assert(value, message) {
+  if (!value) throw new Error(message || 'Assertion error');
 }

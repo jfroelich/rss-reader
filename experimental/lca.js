@@ -1,16 +1,9 @@
-import assert from '/src/common/assert.js';
-
-// NOTE: this functionality is working, but it is only in use by an experimental
-// module, so I have decided to leave it out of the dom folder.
-
 // TODO: change findLCA to varargs, find the LCAs of whatever args given,
-// instead of only 2. In other words, change to (...nodes).
+// instead of only 2.
 // TODO: look again at native functionality, I think something in Range already
 // does this?
 
-
 // Find the lowest common ancestor of two nodes.
-
 // Assumes node1 does not contain node2, and node2 does not contain node1. In
 // other words assume the nodes are not 'connected' in the DAG.
 //
@@ -51,4 +44,8 @@ function getAncestors(node) {
     ancestors.push(parent);
   }
   return ancestors;
+}
+
+function assert(value, message) {
+  if (!value) throw new Error(message || 'Assertion error');
 }

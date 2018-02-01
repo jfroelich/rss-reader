@@ -1,4 +1,6 @@
 
+// TODO: do not use a class, just export a function
+
 export class HTMLParser2 {
   static parse(html) {
     // Adapted from https://stackoverflow.com/questions/10585029

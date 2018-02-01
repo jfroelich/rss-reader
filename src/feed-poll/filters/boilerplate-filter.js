@@ -1,5 +1,3 @@
-import assert from '/src/common/assert.js';
-
 // Boilerplate filtering module
 export default function boilerplateFilter(doc, options) {
   assert(doc instanceof Document);
@@ -12,8 +10,7 @@ export default function boilerplateFilter(doc, options) {
   const bestElement = findHighScoreElement(doc, options);
   assert(bestElement instanceof Element);
 
-  const annotate = 'annotate' in options;
-  if (!annotate) {
+  if (!('annotate' in options)) {
     prune(doc, bestElement);
   }
 }
@@ -320,4 +317,8 @@ function prune(doc, bestElement) {
 
 function condenseWhitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
+}
+
+function assert(value, message) {
+  if (!value) throw new Error(message || 'Assertion error');
 }

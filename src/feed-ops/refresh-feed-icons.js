@@ -1,11 +1,5 @@
 import {lookup as lookupFavicon, open as openIconDb} from '/src/favicon-service.js';
-import {
-  createIconLookupURLForFeed,
-  feedHasURL,
-  findActiveFeeds,
-  open as openReaderDb,
-  putFeed
-} from '/src/rdb.js';
+import {createIconLookupURLForFeed, feedHasURL, findActiveFeeds, open as openReaderDb, putFeed} from '/src/rdb.js';
 
 // Refreshes the favicon property of feeds in the feed store
 export default async function refreshFeedIcons(feedConn, iconConn, channel) {

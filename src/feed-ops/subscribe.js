@@ -1,5 +1,5 @@
 import coerceFeed from '/src/coerce-feed.js';
-import * as FetchUtils from '/src/common/fetch-utils.js';
+import {detectURLChanged, fetchFeed, getLastModified, OfflineError} from '/src/common/fetch-utils.js';
 import {lookup} from '/src/favicon-service.js';
 import {closePollFeedsContext, createPollFeedsContext, pollFeed} from '/src/feed-poll/poll-feeds.js';
 import showDesktopNotification from '/src/notifications.js';
@@ -21,8 +21,6 @@ import {addFeed, containsFeedWithURL, createFeed, createIconLookupURLForFeed, fe
 // be abstracted away if I need to use it again for non-fetch purposes. So
 // really it is just the wrong abstraction. Move this comment to github
 
-// TODO: connect on demand?
-
 // Properties for the context argument:
 // feedConn {IDBDatabase} an open conn to feed store
 // iconConn {IDBDatabase} an open conn to icon store
@@ -32,7 +30,6 @@ import {addFeed, containsFeedWithURL, createFeed, createIconLookupURLForFeed, fe
 // before considering fetch a failure
 // notify {Boolean} optional, whether to show a desktop notification
 // console {console object} optional, console-like logging destination
-
 export default async function subscribe(context, url) {
   assert(typeof context === 'object');
   assert(context.feedConn instanceof IDBDatabase);
@@ -56,10 +53,9 @@ export default async function subscribe(context, url) {
 
   let response;
   try {
-    response =
-        await FetchUtils.fetchFeed(url, context.fetchFeedTimeout || 2000);
+    response = await fetchFeed(url, context.fetchFeedTimeout || 2000);
   } catch (error) {
-    if (error instanceof FetchUtils.OfflineError) {
+    if (error instanceof OfflineError) {
       // continue with subscription
       console.debug('Subscribing while offline to', url.href);
     } else {
@@ -101,7 +97,7 @@ async function createFeedFromResponse(context, response, url) {
   const responseURL = new URL(response.url);
 
   // If there was a redirect, then check if subscribed to the redirect
-  if (FetchUtils.detectURLChanged(url, responseURL)) {
+  if (detectURLChanged(url, responseURL)) {
     // Allow database error to bubble uncaught
     const containsFeed = await containsFeedWithURL(context.conn, responseURL);
     if (containsFeed) {
@@ -117,8 +113,7 @@ async function createFeedFromResponse(context, response, url) {
   // Treat any coercion error as fatal and allow the error to bubble
   const procEntries = false;
   const result = coerceFeed(
-      responseText, url, responseURL, FetchUtils.getLastModified(response),
-      procEntries);
+      responseText, url, responseURL, getLastModified(response), procEntries);
 
   return result.feed;
 }

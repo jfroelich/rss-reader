@@ -1,8 +1,11 @@
 import {replaceTags, truncateHTML} from '/src/common/html-utils.js';
 import {open as utilsOpen} from '/src/common/indexeddb-utils.js';
 
+// TODO: move this to github issue
 // TODO: rename feed.dateUpdated and entry.dateUpdated to updatedDate for better
 // consistency
+
+// TODO: move this to github issue as a mental note
 // TODO: consider grouping feed.active properties together
 
 const FEED_MAGIC = 0xfeedfeed;

@@ -1,4 +1,7 @@
-import assert from '/src/common/assert.js';
+
+function assert(value, message) {
+  if (!value) throw new Error(message || 'Assertion error');
+}
 
 let input;
 let tokens;

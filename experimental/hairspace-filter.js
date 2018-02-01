@@ -1,5 +1,3 @@
-import assert from '/src/common/assert.js';
-
 // TODO: this should be part of a general character normalization filter, or
 // perhaps a whitespace normalization filter, or an entity filter
 // TODO: accessing nodeValue does decoding, so maybe this doesn't work? Forgot.
@@ -20,4 +18,8 @@ export function hairspaceFilter(doc) {
       node.nodeValue = newValue;
     }
   }
+}
+
+function assert(value) {
+  if (!value) throw new Error('Assertion error');
 }

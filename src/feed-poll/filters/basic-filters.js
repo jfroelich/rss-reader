@@ -1,5 +1,4 @@
-import assert from '/src/common/assert.js';
-import * as DOMUtils from '/src/feed-poll/filters/content-filter-utils.js';
+import {unwrapElement} from '/src/feed-poll/filters/content-filter-utils.js';
 
 // TODO: this comment should be moved to github, labeled as bug
 // TODO: not sure where it happens, but whatever removes BRs or certain
@@ -7,10 +6,10 @@ import * as DOMUtils from '/src/feed-poll/filters/content-filter-utils.js';
 // of <pre>. Or, if it does, it should be leaving behind a single space. Right
 // now text nodes separated by BRs in a pre get merged.
 
-
 // There are several content filters. I do not like the number of files.
 // Therefore, I've created this module to aggregate together several of the
-// filters that do not involve a large amount of code.
+// filters that do not involve a large amount of code. There are still several
+// filters I plan to fold into this file.
 
 export function filterBaseElements(document) {
   assert(document instanceof Document);
@@ -45,7 +44,7 @@ export function filterContainerElements(document) {
   if (document.body) {
     const elements = document.body.querySelectorAll('div, ilayer, layer');
     for (const element of elements) {
-      DOMUtils.unwrapElement(element);
+      unwrapElement(element);
     }
   }
 }
@@ -75,7 +74,7 @@ export function filterEmphasis(document, maxTextLength) {
   for (const element of elements) {
     // TODO: use non-whitespace character count instead of full character count?
     if (element.textContent.length > maxTextLength) {
-      DOMUtils.unwrapElement(element);
+      unwrapElement(element);
     }
   }
 }
@@ -91,7 +90,7 @@ export function filterFigureElements(document) {
       if (figure.childElementCount === 1) {
         // TODO: if the one child is a figcaption, then this should remove
         // the figure rather than unwrap
-        DOMUtils.unwrapElement(figure);
+        unwrapElement(figure);
       }
     }
   }
@@ -106,4 +105,9 @@ export function ensureDocumentHasBodyElement(document) {
     bodyElement.appendChild(errorNode);
     document.documentElement.appendChild(bodyElement);
   }
+}
+
+
+function assert(value, message) {
+  if (!value) throw new Error(message || 'Assertion error');
 }
