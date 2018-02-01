@@ -11,7 +11,6 @@ import '/third-party/parse-srcset.js';
 export function imageHasSource(image) {
   assert(image instanceof Element);
 
-  // Alias the helper function name for brevity
   const has = elementHasNonEmptyAttributeValueAfterTrim;
 
   // Check if the image element itself has a source

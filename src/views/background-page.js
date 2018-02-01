@@ -22,8 +22,6 @@ function handleArchiveAlarmWakeup(alarm) {
 }
 
 async function handleLostEntriesAlarm(alarm) {
-  console.log('Removing lost entries...');
-
   let conn;
   const channel = new BroadcastChannel('reader');
   try {
@@ -34,7 +32,7 @@ async function handleLostEntriesAlarm(alarm) {
 }
 
 async function handleOrphanEntriesAlarm(alarm) {
-  let conn;  // leave undefined for auto-connect
+  let conn;
   const channel = new BroadcastChannel('reader');
   try {
     await removeOrphanedEntries(conn, channel);
@@ -55,13 +53,10 @@ async function handleRefreshFeedIconsAlarm(alarm) {
 async function handlePollFeedsAlarm(alarm) {
   console.log('poll feeds alarm wakeup');
 
-  // If the non-idle restriction is in place, and the computer is not idle, then
-  // avoid polling.
   if ('ONLY_POLL_IF_IDLE' in localStorage) {
     const idlePeriodSecs = 30;
     const state = await queryIdleState(idlePeriodSecs);
     if (state !== 'locked' || state !== 'idle') {
-      console.debug('Not idle, ignoring poll feeds alarm wakeup event');
       return;
     }
   }
@@ -138,6 +133,7 @@ cli.removeOrphanedEntries = async function() {
 
 cli.clearFavicons = clearIconStore;
 cli.compactFavicons = compactIconStore;
+
 cli.lookupFavicon = async function(url, cached) {
   const query = {};
   query.url = new URL(url);
@@ -153,10 +149,8 @@ cli.lookupFavicon = async function(url, cached) {
   return iconURLString;
 };
 
-// Expose cli to console
-window.cli = cli;
 
-
+window.cli = cli;  // expose to console
 
 console.debug('Initializing background page');
 
@@ -178,7 +172,6 @@ chrome.runtime.onInstalled.addListener(function(event) {
       .catch(console.error);
 });
 
-
 chrome.browserAction.onClicked.addListener(showSlideshowTab);
 
 async function initBadge() {
@@ -196,8 +189,6 @@ async function initBadge() {
 }
 
 initBadge();
-
-
 
 chrome.alarms.onAlarm.addListener(function(alarm) {
   console.debug('Alarm awoke:', alarm.name);
