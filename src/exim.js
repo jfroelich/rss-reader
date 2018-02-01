@@ -63,7 +63,7 @@ export async function exportOPML(conn, title) {
   // Serialize the document as a string and create and return a blob
   const serializer = new XMLSerializer();
   const string = serializer.serializeToString(doc);
-  return new Blob([ string ], {type : 'application/xml'});
+  return new Blob([string], {type: 'application/xml'});
 }
 
 // TODO: add optional console argument, default it to null NULL_CONSOLE
@@ -76,94 +76,74 @@ export async function exportOPML(conn, title) {
 // @param fetchFeedTimeout {Number} parameter forwarded to subscribe
 // @param files {FileList} a list of opml files to import
 // @return {Promise} a promise that resolves to an array of numbers, or rejects
-// with an error. Each number corresponds to one of the files. -1 means weak
-// error (e.g. empty file), otherwise a count of number of feeds subscribed
-// from the file. Rejections can leave the db in an inconsistent state.
-export function importOPML(feedConn, iconConn, channel, fetchFeedTimeout,
-                           files) {
+// with an error. Each number corresponds to a count of the number of feeds
+// subscribed from the file. That some files fail to import does not mean
+// other files were not imported
+export function importOPML(
+    feedConn, iconConn, channel, fetchFeedTimeout, files) {
   assert(files instanceof FileList);
   console.log('Importing %d opml file(s)', files.length);
 
   const context = {
-    feedConn : feedConn,
-    iconConn : iconConn,
-    channel : channel,
-    fetchFeedTimeout : fetchFeedTimeout,
-    notify : false
+    feedConn: feedConn,
+    iconConn: iconConn,
+    channel: channel,
+    fetchFeedTimeout: fetchFeedTimeout,
+    notify: false
   };
 
-  const partial = importOPMLFile.bind(null, context, console);
+  const partial = importOPMLFileNoExcept.bind(null, context, console);
   return Promise.all(files.map(partial));
 }
 
-// TODO: why distinguish weak errors like empty files or incorrect file types?
-// Maybe just consider it part of the processing logic and just exit early. I
-// don't think any caller currently cares about it, or will any time soon, so
-// why did I distinguish it so exactly and carefully? At least explicitly
-// state why.
+async function importOPMLFileNoExcept(context, console, file) {
+  try {
+    return await importOPMLFile(context, console, file);
+  } catch (error) {
+    console.warn(error);
+    return 0;
+  }
+}
 
 // Reads the file, parses the opml, and then subscribes to each of the feeds
-// Returns -1 in case of weak error. Returns 0 if no feeds subscribed. Otherwise
-// returns the count of feeds subscribed.
-// @param subscribeContext {Object} parameters for subscribing to a feed
+// Returns the count of feeds subscribed.
+// @param context {Object} parameters for subscribing to a feed
 // @param file {File} the file to import
 // @param console {Object} a console-like object for logging
-async function importOPMLFile(subscribeContext, console, file) {
+async function importOPMLFile(context, console, file) {
+  assert(context);
+  assert(console);
   assert(file instanceof File);
-  console.log('Importing file', file.name, file.type, file.size);
+  assert(file.size);
+  assert(fileHasFeedType(file));
 
-  if (file.size < 1) {
-    console.warn('Skipping empty file', file.name);
-    return -1;
-  }
-
-  // Only process xml files
-  const xmlMimeTypes = [
-    'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',
-    'application/xml', 'application/xhtml+xml', 'text/xml'
-  ];
-  if (!xmlMimeTypes.includes(file.type)) {
-    console.warn('Skipping non-xml file', file.name, file.type);
-    return -1;
-  }
-
-  // I/O errors are not fatal to the batch import
-  let fileText;
-  try {
-    fileText = await readFileAsText(file);
-  } catch (error) {
-    console.warn(file.name, error);
-    return -1;
-  }
-
-  console.debug('Loaded %d characters in file', fileText.length, file.name);
-
-  // Parse errors are not fatal to batch import
-  let document;
-  try {
-    document = parseOPML(fileText);
-  } catch (error) {
-    console.warn(file.name, error);
-    return -1;
-  }
-
+  console.debug(file);
+  const fileText = await readFileAsText(file);
+  const document = parseOPML(fileText);
   const urls = dedupURLs(findFeedURLs(document));
   if (!urls.length) {
-    console.debug('No feeds found in file', file.name);
     return 0;
   }
 
-  const thisArg = null;
-  const partialFunc = subscribeNoExcept.bind(thisArg, subscribeContext);
-  const promises = urls.map(partialFunc);
-  // Any subscribe rejections are thrown
+  const partial = subscribeNoExcept.bind(null, context);
+  const promises = urls.map(partial);
   const subscribeReturnValues = await Promise.all(promises);
   const count = subscribeReturnValues.filter(identity).length;
-  console.log('Subscribed to %d feeds in file', count, file.name);
+  console.debug(file.name, count);
   return count;
 }
 
-function identity(value) { return value; }
+function fileHasFeedType(file) {
+  const types = [
+    'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',
+    'application/xml', 'application/xhtml+xml', 'text/xml'
+  ];
+  return types.includes(file.type);
+}
+
+function identity(value) {
+  return value;
+}
 
 // Call subscribe while suppressing any exceptions. Exceptions are simply logged
 async function subscribeNoExcept(subscribeContext, url) {
@@ -212,6 +192,7 @@ function dedupURLs(urls) {
   return uniqueURLs;
 }
 
+// TODO: the error thrown should indicate file name
 function readFileAsText(file) {
   return new Promise(function executor(resolve, reject) {
     const reader = new FileReader();
@@ -244,6 +225,5 @@ function parseOPML(xmlString) {
 }
 
 function assert(value, message) {
-  if (!value)
-    throw new Error(message || 'Assertion error');
+  if (!value) throw new Error(message || 'Assertion error');
 }
