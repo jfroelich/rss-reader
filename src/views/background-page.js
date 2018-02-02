@@ -1,31 +1,31 @@
-import {clear as clearIconStore, compact as compactIconStore, lookup, open as openIconDb} from '/src/favicon-service.js';
-import archiveEntries from '/src/feed-ops/archive-entries.js';
-import refreshFeedIcons from '/src/feed-ops/refresh-feed-icons.js';
-import removeLostEntries from '/src/feed-ops/remove-lost-entries.js';
-import removeOrphanedEntries from '/src/feed-ops/remove-orphaned-entries.js';
-import {closePollFeedsContext, createPollFeedsContext, pollFeeds} from '/src/feed-poll/poll-feeds.js';
-import {open as openReaderDb} from '/src/rdb.js';
-import showSlideshowTab from '/src/views/show-slideshow-tab.js';
-import updateBadgeText from '/src/views/update-badge-text.js';
+import {clear as favicon_service_clear, compact as favicon_service_compact, lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service.js';
+import archive_entries from '/src/feed-ops/archive-entries.js';
+import feed_store_refresh_all_icons from '/src/feed-ops/refresh-feed-icons.js';
+import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
+import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
+import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
+import {open as reader_db_open} from '/src/rdb.js';
+import show_slideshow_tab from '/src/views/show-slideshow-tab.js';
+import badge_update_text from '/src/views/update-badge-text.js';
 
 // TODO: this is doing somethings that should be in a layer below the view. move
 // things into that other layer. This should be a dumber view, like a
 // thin-client
 
-function handleCompactFaviconsAlarm(alarm) {
-  return compactIconStore().catch(console.error);
+function handle_compact_favicons_alarm(alarm) {
+  return favicon_service_compact().catch(console.error);
 }
 
 function handleArchiveAlarmWakeup(alarm) {
   let conn, channel, maxAge;
-  return archiveEntries(conn, channel, maxAge).catch(console.error);
+  return archive_entries(conn, channel, maxAge).catch(console.error);
 }
 
 async function handleLostEntriesAlarm(alarm) {
   let conn;
   const channel = new BroadcastChannel('reader');
   try {
-    await removeLostEntries(conn, channel, console);
+    await entry_store_remove_lost_entries(conn, channel, console);
   } finally {
     channel.close();
   }
@@ -35,7 +35,7 @@ async function handleOrphanEntriesAlarm(alarm) {
   let conn;
   const channel = new BroadcastChannel('reader');
   try {
-    await removeOrphanedEntries(conn, channel);
+    await entry_store_remove_orphans(conn, channel);
   } finally {
     channel.close();
   }
@@ -44,8 +44,8 @@ async function handleOrphanEntriesAlarm(alarm) {
 async function handleRefreshFeedIconsAlarm(alarm) {
   console.log('Refreshing feed favicons...');
   const [feedConn, iconConn] =
-      await Promise.all([openReaderDb(), openIconDb()]);
-  await refreshFeedIcons(feedConn, iconConn);
+      await Promise.all([reader_db_open(), favicon_service_open()]);
+  await feed_store_refresh_all_icons(feedConn, iconConn);
   feedConn.close();
   iconConn.close();
 }
@@ -61,10 +61,10 @@ async function handlePollFeedsAlarm(alarm) {
     }
   }
 
-  const context = await createPollFeedsContext();
+  const context = await poll_service_create_context();
   context.console = console;  // enable logging
-  await pollFeeds(context);
-  closePollFeedsContext(context);
+  await poll_service_poll_feeds(context);
+  poll_service_close_context(context);
 }
 
 window.testHandlePollFeedsAlarm = handlePollFeedsAlarm;
@@ -81,67 +81,67 @@ const cli = {};
 cli.refreshIcons = async function() {
   console.log('Refreshing feed favicons...');
   const [feedConn, iconConn] =
-      await Promise.all([openReaderDb(), openIconDb()]);
-  await refreshFeedIcons(feedConn, iconConn);
+      await Promise.all([reader_db_open(), favicon_service_open()]);
+  await feed_store_refresh_all_icons(feedConn, iconConn);
   feedConn.close();
   iconConn.close();
 };
 
-cli.archiveEntries = function(limit) {
+cli.archive_entries = function(limit) {
   console.log('Archiving entries...');
 
   let conn, maxAge;
   const channel = new BroadcastChannel('reader');
-  archiveEntries(conn, channel, maxAge).catch(console.error).finally(() => {
+  archive_entries(conn, channel, maxAge).catch(console.error).finally(() => {
     if (channel) {
       channel.close();
     }
   });
 };
 
-cli.pollFeeds = async function() {
+cli.poll_service_poll_feeds = async function() {
   console.log('Polling feeds...');
-  const context = await createPollFeedsContext();
+  const context = await poll_service_create_context();
   context.ignoreRecencyCheck = true;
   context.ignoreModifiedCheck = true;
   context.console = console;
-  await pollFeeds(context);
-  closePollFeedsContext(context);
+  await poll_service_poll_feeds(context);
+  poll_service_close_context(context);
 };
 
-cli.removeLostEntries = async function(limit) {
+cli.entry_store_remove_lost_entries = async function(limit) {
   const channel = new BroadcastChannel('reader');
   let conn;
   try {
-    await removeLostEntries(conn, channel, console);
+    await entry_store_remove_lost_entries(conn, channel, console);
   } finally {
     channel.close();
   }
 };
 
-cli.removeOrphanedEntries = async function() {
+cli.entry_store_remove_orphans = async function() {
   console.log('Removing orphaned entries...');
 
   let conn;
   const channel = new BroadcastChannel('reader');
   try {
-    await removeOrphanedEntries(conn, channel);
+    await entry_store_remove_orphans(conn, channel);
   } finally {
     channel.close();
   }
 };
 
-cli.clearFavicons = clearIconStore;
-cli.compactFavicons = compactIconStore;
+cli.clearFavicons = favicon_service_clear;
+cli.compactFavicons = favicon_service_compact;
 
 cli.lookupFavicon = async function(url, cached) {
   const query = {};
   query.url = new URL(url);
   if (cached) {
-    query.conn = await openIconDb();
+    query.conn = await favicon_service_open();
   }
 
-  const iconURLString = await lookup(query);
+  const iconURLString = await favicon_service_lookup(query);
   if (cached) {
     query.conn.close();
   }
@@ -158,27 +158,27 @@ chrome.runtime.onInstalled.addListener(function(event) {
   console.debug('Received install event:', event);
 
   console.log('Setting up feed store database');
-  openReaderDb()
+  reader_db_open()
       .then(function(conn) {
         return conn.close();
       })
       .catch(console.error);
 
   console.log('Setting up favicon database');
-  openIconDb()
+  favicon_service_open()
       .then(function(conn) {
         return conn.close();
       })
       .catch(console.error);
 });
 
-chrome.browserAction.onClicked.addListener(showSlideshowTab);
+chrome.browserAction.onClicked.addListener(show_slideshow_tab);
 
 async function initBadge() {
   let conn;
   try {
-    conn = await openReaderDb();
-    updateBadgeText(conn);
+    conn = await reader_db_open();
+    badge_update_text(conn);
   } catch (error) {
     console.error(error);
   } finally {
@@ -211,7 +211,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
       handleRefreshFeedIconsAlarm(alarm).catch(console.error);
       break;
     case 'compact-favicon-db':
-      handleCompactFaviconsAlarm(alarm);
+      handle_compact_favicons_alarm(alarm);
       break;
     default:
       console.warn('unhandled alarm', alarm.name);

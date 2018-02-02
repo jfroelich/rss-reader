@@ -1,8 +1,8 @@
-import {parseHTML} from '/src/common/html-utils.js';
+import {html_parse} from '/src/common/html-utils.js';
 import filter, {coerceElement} from '/src/feed-poll/filters/condense-tagnames-filter.js';
 
 let input = '<html><head></head><body><a></a></body></html>';
-const doc = parseHTML(input);
+const doc = html_parse(input);
 
 let anchors = doc.querySelectorAll('a');
 for (let a of anchors) {

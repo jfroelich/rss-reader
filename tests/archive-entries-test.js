@@ -1,10 +1,10 @@
-import archiveEntries from '/src/feed-ops/archive-entries.js';
+import archive_entries from '/src/feed-ops/archive-entries.js';
 import {open as openReaderDb} from '/src/rdb.js';
 
 async function test() {
   let conn, channel, maxAge;
   const conn = await openReaderDb('archive-entries-test');
-  await archiveEntries(conn, channel, maxAge);
+  await archive_entries(conn, channel, maxAge);
   conn.close();
   await remove(conn.name);
 }

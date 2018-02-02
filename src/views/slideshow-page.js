@@ -1,7 +1,7 @@
-import {escapeHTML, truncateHTML} from '/src/common/html-utils.js';
-import markEntryRead from '/src/feed-ops/mark-entry-read.js';
-import {closePollFeedsContext, createPollFeedsContext, pollFeeds} from '/src/feed-poll/poll-feeds.js';
-import {entryPeekURL, feedPeekURL, findViewableEntries, getFeeds, isEntry, isValidEntryId, open as openReaderDb} from '/src/rdb.js';
+import {html_escape, html_truncate} from '/src/common/html-utils.js';
+import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
+import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
+import {entry_peek_url, feed_peek_url, findViewableEntries, getFeeds, entry_is_entry, isValidEntryId, open as openReaderDb} from '/src/rdb.js';
 import {exportOPML, importOPML} from '/src/views/exim-utils.js';
 import * as PageStyle from '/src/views/page-style-settings.js';
 import * as Slideshow from '/src/views/slideshow.js';
@@ -208,7 +208,7 @@ async function markSlideRead(conn, slideElement) {
   // corresponding slide. Then this can be called non-awaited.
 
   try {
-    await markEntryRead(conn, channel, entryId);
+    await entry_mark_read(conn, channel, entryId);
   } catch (error) {
     // TODO: display an error
     console.error(error);
@@ -251,7 +251,7 @@ async function appendSlides(conn, limit) {
 
 // Given an entry, create a new slide element and append it to the view
 function appendSlide(entry) {
-  if (!isEntry(entry)) {
+  if (!entry_is_entry(entry)) {
     console.error('Invalid entry parameter', entry);
     return;
   }
@@ -276,13 +276,13 @@ function appendSlide(entry) {
 
 function createArticleTitleElement(entry) {
   const titleElement = document.createElement('a');
-  titleElement.setAttribute('href', entryPeekURL(entry));
+  titleElement.setAttribute('href', entry_peek_url(entry));
   titleElement.setAttribute('class', 'entry-title');
   titleElement.setAttribute('rel', 'noreferrer');
 
   if (entry.title) {
     let title = entry.title;
-    let safeTitle = escapeHTML(title);
+    let safeTitle = html_escape(title);
 
     // Set the attribute value to the full title without truncation or publisher
     // filter BUG: this is double encoding entities somehow, so entities show up
@@ -291,7 +291,7 @@ function createArticleTitleElement(entry) {
 
     let filteredSafeTitle = filterPublisher(safeTitle);
     try {
-      filteredSafeTitle = truncateHTML(filteredSafeTitle, 300);
+      filteredSafeTitle = html_truncate(filteredSafeTitle, 300);
     } catch (error) {
       console.warn(error);
     }
@@ -653,16 +653,16 @@ async function refreshAnchorOnclick(event) {
   }
   refreshInProgress = true;
 
-  // TODO: this approach leaks default channel in createPollFeedsContext
+  // TODO: this approach leaks default channel in poll_service_create_context
 
   let ctx;
   try {
-    ctx = await createPollFeedsContext();
+    ctx = await poll_service_create_context();
     ctx.ignoreRecencyCheck = true;
     ctx.ignoreModifiedCheck = true;
     ctx.console = console;
     ctx.channel = channel;
-    await pollFeeds(ctx);
+    await poll_service_poll_feeds(ctx);
 
   } catch (error) {
     // TODO: show an error message
@@ -928,7 +928,7 @@ function appendFeed(feed) {
   col.textContent = 'URL';
   row.appendChild(col);
   col = document.createElement('td');
-  col.textContent = feedPeekURL(feed);
+  col.textContent = feed_peek_url(feed);
   row.appendChild(col);
   feedInfoElement.appendChild(row);
 

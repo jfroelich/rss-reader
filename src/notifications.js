@@ -1,6 +1,6 @@
-import showSlideshowTab from '/src/views/show-slideshow-tab.js';
+import show_slideshow_tab from '/src/views/show-slideshow-tab.js';
 
-export default function showDesktopNotification(title, message, iconURL) {
+export default function notification_show(title, message, iconURL) {
   if (typeof Notification === 'undefined') {
     return;
   }
@@ -39,5 +39,5 @@ function notificationOnclick(event) {
     return;
   }
 
-  showSlideshowTab().catch(console.warn);
+  show_slideshow_tab().catch(console.warn);
 }

@@ -1,4 +1,4 @@
-import {createEntry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, open as openReaderDb} from '/src/rdb.js';
+import {entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, open as open_reader_db} from '/src/rdb.js';
 
 // TODO: eventually reconsider how an entry is determined as archivable. Each
 // entry should specify its own lifetime as a property, at the time of creation
@@ -29,44 +29,44 @@ import {createEntry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHI
 // Archives certain entries in the database
 // - conn {IDBDatabase} optional, storage database, if not specified then
 // default database will be opened, used, and closed
-// - maxAge {Number} how long before an entry is considered archivable (using
-// date entry created), in milliseconds
+// - entry_age_max {Number} how long before an entry is considered archivable
+// (using date entry created), in milliseconds
 // - limit {Number} maximum number of entries to archive
-export default async function archiveEntries(conn, channel, maxAge) {
+export default async function archive_entries(conn, channel, entry_age_max) {
   console.log('Archiving entries...');
 
-  if (typeof maxAge === 'undefined') {
+  if (typeof entry_age_max === 'undefined') {
     const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
-    maxAge = TWO_DAYS_MS;
+    entry_age_max = TWO_DAYS_MS;
   }
 
-  if (typeof maxAge !== 'undefined') {
-    if (!Number.isInteger(maxAge) || maxAge < 1) {
-      throw new TypeError('Invalid maxAge argument ' + maxAge);
+  if (typeof entry_age_max !== 'undefined') {
+    if (!Number.isInteger(entry_age_max) || entry_age_max < 1) {
+      throw new TypeError('Invalid entry_age_max argument ' + entry_age_max);
     }
   }
 
-  const dconn = conn ? conn : await openReaderDb();
-  const entryIds = await archiveEntriesPromise(dconn, maxAge);
+  const dconn = conn ? conn : await open_reader_db();
+  const entry_ids = await archive_entries_promise(dconn, entry_age_max);
   if (!conn) {
     dconn.close();
   }
 
   if (channel) {
-    for (const id of entryIds) {
+    for (const id of entry_ids) {
       channel.postMessage({type: 'entry-archived', id: id});
     }
   }
 
-  console.debug('Archived %d entries', entryIds.length);
+  console.debug('Archived %d entries', entry_ids.length);
 }
 
-function archiveEntriesPromise(conn, maxAge) {
+function archive_entries_promise(conn, entry_age_max) {
   return new Promise((resolve, reject) => {
-    const entryIds = [];
+    const entry_ids = [];
     const tx = conn.transaction('entry', 'readwrite');
     tx.onerror = () => reject(tx.error);
-    tx.oncomplete = () => resolve(entryIds);
+    tx.oncomplete = () => resolve(entry_ids);
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
     const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
@@ -79,12 +79,12 @@ function archiveEntriesPromise(conn, maxAge) {
 
       const entry = cursor.value;
       if (entry.dateCreated) {
-        const currentDate = new Date();
-        const age = currentDate - entry.dateCreated;
-        if (age > maxAge) {
-          const archivedEntry = archiveEntry(entry);
-          store.put(archivedEntry);
-          entryIds.push(archivedEntry.id);
+        const current_date = new Date();
+        const age = current_date - entry.dateCreated;
+        if (age > entry_age_max) {
+          const archived_entry = entry_archive(entry);
+          store.put(archived_entry);
+          entry_ids.push(archived_entry.id);
         }
       }
 
@@ -93,59 +93,58 @@ function archiveEntriesPromise(conn, maxAge) {
   });
 }
 
-function archiveEntry(entry) {
-  const beforeSize = sizeof(entry);
-  const compactedEntry = compactEntry(entry);
-  const afterSize = sizeof(compactedEntry);
+function entry_archive(entry) {
+  const before_sz = sizeof(entry);
+  const compacted_entry = entry_compact(entry);
+  const after_sz = sizeof(compacted_entry);
   console.debug(
-      'Changing entry %d size from ~%d to ~%d', entry.id, beforeSize,
-      afterSize);
+      'Changing entry %d size from ~%d to ~%d', entry.id, before_sz, after_sz);
 
-  compactedEntry.archiveState = ENTRY_STATE_ARCHIVED;
-  compactedEntry.dateArchived = new Date();
-  compactedEntry.dateUpdated = new Date();
-  return compactedEntry;
+  compacted_entry.archiveState = ENTRY_STATE_ARCHIVED;
+  compacted_entry.dateArchived = new Date();
+  compacted_entry.dateUpdated = new Date();
+  return compacted_entry;
 }
 
 // Create a new entry and copy over certain fields
-function compactEntry(entry) {
-  const compactedEntry = createEntry();
-  compactedEntry.dateCreated = entry.dateCreated;
+function entry_compact(entry) {
+  const compacted_entry = entry_create();
+  compacted_entry.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {
-    compactedEntry.dateRead = entry.dateRead;
+    compacted_entry.dateRead = entry.dateRead;
   }
 
-  compactedEntry.feed = entry.feed;
-  compactedEntry.id = entry.id;
-  compactedEntry.readState = entry.readState;
-  compactedEntry.urls = entry.urls;
-  return compactedEntry;
+  compacted_entry.feed = entry.feed;
+  compacted_entry.id = entry.id;
+  compacted_entry.readState = entry.readState;
+  compacted_entry.urls = entry.urls;
+  return compacted_entry;
 }
 
-// Calculates the approximate byte size of a value. This should only be used
-// for informational purposes because it is hilariously inaccurate.
+// Calculates the approximate byte size of a value. This should only be used for
+// informational purposes because it is hilariously inaccurate.
 //
 // Adapted from http://stackoverflow.com/questions/1248302
 //
 // Does not work with built-ins, which are objects that are a part of the basic
 // Javascript library, like Document, or Element.
 //
-// This uses a stack internally to avoid recursion
+// This uses a stack internally to avoid recursion.
 //
-// @param inputValue {Any} a value of any type
-// @returns {Number} an integer representing the approximate byte size of the
-// input value
-function sizeof(inputValue) {
-  // visitedObjects is a memoization of previously visited objects. In theory a
+// @param input_value {Any} a value of any type
+// @returns {Number} a positive integer representing the approximate byte size
+// of the input value
+function sizeof(input_value) {
+  // visited_objects is a memoization of previously visited objects. In theory a
   // repeated object just means enough bytes to store a reference value, and
   // only the first object actually allocates additional memory.
-  const visitedObjects = [];
-  const stack = [inputValue];
-  const hasOwnProp = Object.prototype.hasOwnProperty;
-  const objectToString = Object.prototype.toString;
+  const visited_objects = [];
+  const stack = [input_value];
+  const has_own_prop = Object.prototype.hasOwnProperty;
+  const object_to_string = Object.prototype.toString;
 
-  let byteCount = 0;
+  let sz = 0;
 
   while (stack.length) {
     const value = stack.pop();
@@ -159,38 +158,38 @@ function sizeof(inputValue) {
       case 'undefined':
         break;
       case 'boolean':
-        byteCount += 4;
+        sz += 4;
         break;
       case 'string':
-        byteCount += value.length * 2;
+        sz += value.length * 2;
         break;
       case 'number':
-        byteCount += 8;
+        sz += 8;
         break;
       case 'function':
         // Treat as some kind of function identifier
-        byteCount += 8;
+        sz += 8;
         break;
       case 'object':
-        if (visitedObjects.indexOf(value) === -1) {
-          visitedObjects.push(value);
+        if (visited_objects.indexOf(value) === -1) {
+          visited_objects.push(value);
 
           if (ArrayBuffer.isView(value)) {
-            byteCount += value.length;
+            sz += value.length;
           } else if (Array.isArray(value)) {
             stack.push(...value);
           } else {
-            const toStringOutput = objectToString.call(value);
-            if (toStringOutput === '[object Date]') {
-              byteCount += 8;  // guess
-            } else if (toStringOutput === '[object URL]') {
-              byteCount += 2 * value.href.length;  // guess
+            const to_string_output = object_to_string.call(value);
+            if (to_string_output === '[object Date]') {
+              sz += 8;  // guess
+            } else if (to_string_output === '[object URL]') {
+              sz += 2 * value.href.length;  // guess
             } else {
-              for (let propName in value) {
-                if (hasOwnProp.call(value, propName)) {
+              for (let prop_name in value) {
+                if (has_own_prop.call(value, prop_name)) {
                   // Add size of the property name string itself
-                  byteCount += propName.length * 2;
-                  stack.push(value[propName]);
+                  sz += prop_name.length * 2;
+                  stack.push(value[prop_name]);
                 }
               }
             }
@@ -202,5 +201,5 @@ function sizeof(inputValue) {
     }
   }
 
-  return byteCount;
+  return sz;
 }

@@ -1,11 +1,11 @@
-import formatString from '/src/common/format-string.js';
+import string_format from '/src/common/format-string.js';
 
 // Enable direct calling in console
-window.formatString = formatString;
+window.string_format = string_format;
 
 // Aliases for convenience
 const a = console.assert;
-const s = formatString;
+const s = string_format;
 
 // No format tests
 a(s() === '');
@@ -14,7 +14,7 @@ a(s(null) === 'null');
 a(s('a') === 'a');
 a(s(1) === '1');
 a(s(1, 2) === '1 2');
-// NOTE: formatString api departs from console.log, as expected
+// NOTE: string_format api departs from console.log, as expected
 a(s(new URL('http://a.b.c')) === 'http://a.b.c/');
 a(s({}) === '{}');
 a(s({}, {}) === '{} {}');

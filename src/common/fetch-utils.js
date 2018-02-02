@@ -1,5 +1,6 @@
-import {findMimeTypeInContentType} from '/src/common/mime-utils.js';
+import {mime_type_from_content_type} from '/src/common/mime-utils.js';
 
+// TODO: move this comment to a github issue
 // TODO: rather than throw timeout error or other custom errors, consider
 // creating an artificial response, setting the appropriate status code, and not
 // asserting response.ok in tfetch. Instead, the caller can simply use
@@ -15,14 +16,13 @@ import {findMimeTypeInContentType} from '/src/common/mime-utils.js';
 // response before considering the request a failure.
 // @throws {Error} if the response is not an html mime type
 // @throws {Error} any of the errors thrown by tfetch
-export async function fetchHTML(url, timeout) {
+export async function fetch_html(url, timeout) {
   const response = await tfetch(url, {timeout: timeout});
-  const mimeType = getMimeType(response);
-  assert(mimeType === 'text/html');
+  assert(response_get_mime_type(response) === 'text/html');
   return response;
 }
 
-const feedMimeTypes = [
+const FEED_MIME_TYPES = [
   'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
   'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
 ];
@@ -33,10 +33,9 @@ const feedMimeTypes = [
 // @param timeout {Number} optional, timeout in milliseconds, before
 // considering the fetch a failure
 // @returns {Promise} a promise that resolves to a response
-export async function fetchFeed(url, timeout) {
+export async function fetch_feed(url, timeout) {
   const response = await tfetch(url, {timeout: timeout});
-  const mimeType = getMimeType(response);
-  assert(feedMimeTypes.includes(mimeType));
+  assert(FEED_MIME_TYPES.includes(response_get_mime_type(response)));
   return response;
 }
 
@@ -54,7 +53,7 @@ export async function tfetch(url, options) {
   assert(url instanceof URL);
 
   // Parameter options => custom defaults => fetch defaults
-  const defaultOptions = {
+  const default_options = {
     credentials: 'omit',
     method: 'get',
     mode: 'cors',
@@ -63,14 +62,14 @@ export async function tfetch(url, options) {
     referrer: 'no-referrer',
     referrerPolicy: 'no-referrer'
   };
-  const mergedOptions = Object.assign(defaultOptions, options);
+  const merged_options = Object.assign(default_options, options);
 
   // Extract timeout from options
   let timeout;
-  if ('timeout' in mergedOptions) {
-    timeout = mergedOptions.timeout;
+  if ('timeout' in merged_options) {
+    timeout = merged_options.timeout;
     // Avoid passing non-standard options to fetch
-    delete mergedOptions.timeout;
+    delete merged_options.timeout;
   }
 
   const untimed = typeof timeout === 'undefined';
@@ -78,34 +77,25 @@ export async function tfetch(url, options) {
     assert(Number.isInteger(timeout) && timeout >= 0);
   }
 
-  assert(isAllowedURL(url));
+  assert(url_is_allowed(url));
 
-  const method = mergedOptions.method.toUpperCase();
+  const method = merged_options.method.toUpperCase();
   assert(method === 'GET' || method === 'HEAD');
 
   // Distinguish offline errors from general fetch errors
   assert(navigator && 'onLine' in navigator);
   if (!navigator.onLine) {
-    throw new OfflineError(
-        'Unable to fetch url ' + url.href + ' while offline');
+    throw new OfflineError('Unable to fetch ' + url.href + ' while offline');
   }
 
-  const fetchPromise = fetch(url.href, mergedOptions);
+  const fetch_promise = fetch(url.href, merged_options);
 
   // If a timeout was specified, initialize a derived promise to the result of
   // racing fetch against timeout. Otherwise, initialize a derived promise to
   // the result of fetch.
-  let aggregatePromise;
-  if (untimed) {
-    aggregatePromise = fetchPromise;
-  } else {
-    let timeoutPromise;
-    timeoutPromise = sleep(timeout);
-    const contestants = [fetchPromise, timeoutPromise];
-    aggregatePromise = Promise.race(contestants);
-  }
-
-  const response = await aggregatePromise;
+  const response = await untimed ?
+      fetch_promise :
+      Promise.race([fetch_promise, sleep(timeout)]);
 
   // If timeout wins then response is undefined.
   if (!untimed && !response) {
@@ -120,37 +110,41 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Return true if the response url is 'different' than the request url
+// Return true if the response url is 'different' than the request url,
+// indicating a redirect, regardless of the value of response.redirected
 // @param requestURL {URL}
 // @param responseURL {URL}
-export function detectURLChanged(requestURL, responseURL) {
-  return !compareURLsWithoutHash(requestURL, responseURL);
+export function url_did_change(requestURL, responseURL) {
+  return !url_compare_no_hash(requestURL, responseURL);
 }
 
 // Compares two urls for equality without considering hash values
-function compareURLsWithoutHash(url1, url2) {
-  // Mutate only clones to preserve purity
-  const modURL1 = new URL(url1.href);
-  const modURL2 = new URL(url2.href);
-  modURL1.hash = '';
-  modURL2.hash = '';
-  return modURL1.href === modURL2.href;
+function url_compare_no_hash(url1, url2) {
+  // Create and operate on clones to avoid mutating input
+  const modified_url1 = new URL(url1.href);
+  const modified_url2 = new URL(url2.href);
+  modified_url1.hash = '';
+  modified_url2.hash = '';
+  return modified_url1.href === modified_url2.href;
 }
 
 // Returns the value of the response's Last-Modified header as a date, or
 // undefined on error
-export function getLastModified(response) {
+export function response_get_last_modified_date(response) {
   assert(response instanceof Response);
 
-  const lastModifiedString = response.headers.get('Last-Modified');
-  if (lastModifiedString) {
+  const header_value = response.headers.get('Last-Modified');
+  if (header_value) {
     // TODO: is try/catch needed around date constructor?
     try {
-      const date = new Date(lastModifiedString);
+      const date = new Date(header_value);
+
+      // If the date constructor fails to parse, it simply stored NaN
+      // internally, which is an invalid date, and NaN !== NaN
       if (date.getTime() === date.getTime()) {
         return date;
       } else {
-        console.debug('Date parsing error for string', lastModifiedString);
+        console.debug('Invalid date string:', header_value);
       }
     } catch (error) {
       console.debug(error);
@@ -158,18 +152,18 @@ export function getLastModified(response) {
   }
 }
 
-export function getMimeType(response) {
+export function response_get_mime_type(response) {
   assert(response instanceof Response);
-  const contentType = response.headers.get('Content-Type');
-  if (contentType) {
-    return findMimeTypeInContentType(contentType);
+  const content_type = response.headers.get('Content-Type');
+  if (content_type) {
+    return mime_type_from_content_type(content_type);
   }
 }
 
 // Return true if the app's policy permits fetching the url
 // TODO: allow various overrides through localStorage setting or some config
 // setting?
-export function isAllowedURL(url) {
+export function url_is_allowed(url) {
   assert(url instanceof URL);
 
   const protocol = url.protocol;
@@ -193,9 +187,9 @@ export function isAllowedURL(url) {
     return false;
   }
 
-  const protocolBlacklist = ['about:', 'chrome:', 'chrome-extension:', 'file:'];
-
-  if (protocolBlacklist.includes(protocol)) {
+  const protocol_blacklist =
+      ['about:', 'chrome:', 'chrome-extension:', 'file:'];
+  if (protocol_blacklist.includes(protocol)) {
     return false;
   }
 

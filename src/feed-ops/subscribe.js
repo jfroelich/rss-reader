@@ -1,9 +1,9 @@
-import coerceFeed from '/src/coerce-feed.js';
-import {detectURLChanged, fetchFeed, getLastModified, OfflineError} from '/src/common/fetch-utils.js';
-import {lookup} from '/src/favicon-service.js';
-import {closePollFeedsContext, createPollFeedsContext, pollFeed} from '/src/feed-poll/poll-feeds.js';
-import showDesktopNotification from '/src/notifications.js';
-import {addFeed, containsFeedWithURL, createFeed, createIconLookupURLForFeed, feedAppendURL, feedPeekURL, isFeed} from '/src/rdb.js';
+import feed_coerce from '/src/coerce-feed.js';
+import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_change} from '/src/common/fetch-utils.js';
+import {lookup as favicon_service_lookup} from '/src/favicon-service.js';
+import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/feed-poll/poll-feeds.js';
+import notification_show from '/src/notifications.js';
+import {feed_append_url, feed_create, feed_create_favicon_lookup_url, feed_is_feed, feed_peek_url, feed_store_add, feed_store_contains_feed_with_url} from '/src/rdb.js';
 
 // TODO: reconsider the transaction lifetime. Right now it is protected by the
 // error that occurs due to violation of uniqueness constraint. But it would be
@@ -15,11 +15,14 @@ import {addFeed, containsFeedWithURL, createFeed, createIconLookupURLForFeed, fe
 // fetchable url according to the app's fetch policy. It is just assumed. I am
 // not quite sure what to do about it at the moment. Maybe I could create a
 // second policy that controls what urls are allowed by the app to be stored in
-// the database? Or maybe I should just call isAllowedURL here explicitly? This
-// is partly a caveat of attempting to abstract it away behind the call to the
-// fetch helper, which checks the policy internally. The issue is that it cannot
-// be abstracted away if I need to use it again for non-fetch purposes. So
-// really it is just the wrong abstraction. Move this comment to github
+// the database? Or maybe I should just call url_is_allowed here explicitly?
+// This is partly a caveat of attempting to abstract it away behind the call to
+// the fetch helper, which checks the policy internally. The issue is that it
+// cannot be abstracted away if I need to use it again for non-fetch purposes.
+// So really it is just the wrong abstraction. Move this comment to github
+
+// TODO: rename context properties, deferred for now because it involves
+// other modules
 
 // Properties for the context argument:
 // feedConn {IDBDatabase} an open conn to feed store
@@ -32,14 +35,17 @@ import {addFeed, containsFeedWithURL, createFeed, createIconLookupURLForFeed, fe
 // console {console object} optional, console-like logging destination
 export default async function subscribe(context, url) {
   assert(typeof context === 'object');
+
   assert(context.feedConn instanceof IDBDatabase);
   assert(context.iconConn instanceof IDBDatabase);
+
   assert(url instanceof URL);
   const console = context.console || NULL_CONSOLE;
   console.log('Subscribing to', url.href);
 
   // If this fails, throw an error
-  let containsFeed = await containsFeedWithURL(context.feedConn, url);
+  let contains_feed =
+      await feed_store_contains_feed_with_url(context.feedConn, url);
 
   // If already subscribed, throw an error
   // TODO: is this really an error? This isn't an error. This just means cannot
@@ -47,13 +53,13 @@ export default async function subscribe(context, url) {
   // instead? But then how do I know about failure? This is not a programmer
   // error. This is just rejected user input, and users can input whatever they
   // want. Even then, should I use an exception anyway? Ugh.
-  if (containsFeed) {
+  if (contains_feed) {
     throw new Error('Already subscribed to ' + url.href);
   }
 
   let response;
   try {
-    response = await fetchFeed(url, context.fetchFeedTimeout || 2000);
+    response = await fetch_feed(url, context.fetchFeedTimeout || 2000);
   } catch (error) {
     if (error instanceof OfflineError) {
       // continue with subscription
@@ -66,11 +72,11 @@ export default async function subscribe(context, url) {
   let feed;
   if (response instanceof Response) {
     // Allow errors to bubble
-    feed = await createFeedFromResponse(context, response, url);
+    feed = await subscribe_create_feed_from_response(context, response, url);
   } else {
     // Offline subscription
-    feed = createFeed();
-    feedAppendURL(feed, url);
+    feed = feed_create();
+    feed_append_url(feed, url);
   }
 
   // Set the feed's favicon
@@ -78,79 +84,81 @@ export default async function subscribe(context, url) {
   query.conn = context.iconConn;
   query.skipURLFetch = true;
 
-  await setFeedFavicon(query, feed, console);
+  await subscribe_feed_set_favicon(query, feed, console);
 
-  const storedFeed = await addFeed(context.feedConn, context.channel, feed);
+  const stored_feed =
+      await feed_store_add(context.feedConn, context.channel, feed);
 
-  if (context.notify || !('notify' in context)) {
-    showNotification(storedFeed);
+  const should_notify = 'notify' in context ? context.notify : true;
+  if (should_notify) {
+    subscribe_notification_show(stored_feed);
   }
 
-  // Call non-awaited (in a non-blocking manner) to allow for subscribe to
-  // settle before this completes.
-  deferredPollFeed(storedFeed).catch(console.warn);
-
-  return storedFeed;
+  subscribe_feed_poll(stored_feed).catch(console.warn);  // non-blocking
+  return stored_feed;
 }
 
-async function createFeedFromResponse(context, response, url) {
-  const responseURL = new URL(response.url);
+async function subscribe_create_feed_from_response(context, response, url) {
+  const response_url = new URL(response.url);
 
   // If there was a redirect, then check if subscribed to the redirect
-  if (detectURLChanged(url, responseURL)) {
+  if (url_did_change(url, response_url)) {
     // Allow database error to bubble uncaught
-    const containsFeed = await containsFeedWithURL(context.conn, responseURL);
-    if (containsFeed) {
-      throw new Error('Already susbcribed to redirect url ' + responseURL.href);
+    const contains_feed =
+        await feed_store_contains_feed_with_url(context.conn, response_url);
+    if (contains_feed) {
+      throw new Error(
+          'Already susbcribed to redirect url ' + response_url.href);
     }
   }
 
   // Treat any fetch error here as fatal. We are past the point of trying to
   // subscribe while offline. This basically should never throw
-  const responseText = await response.text();
+  const response_text = await response.text();
 
   // Take the fetched feed xml and turn it into a storable feed object
   // Treat any coercion error as fatal and allow the error to bubble
-  const procEntries = false;
-  const result = coerceFeed(
-      responseText, url, responseURL, getLastModified(response), procEntries);
+  const process_entries_flag = false;
+  const result = feed_coerce(
+      response_text, url, response_url,
+      response_get_last_modified_date(response), process_entries_flag);
 
   return result.feed;
 }
 
-async function setFeedFavicon(query, feed, console) {
-  assert(isFeed(feed));
+async function subscribe_feed_set_favicon(query, feed, console) {
+  assert(feed_is_feed(feed));
 
-  const lookupURL = createIconLookupURLForFeed(feed);
+  const favicon_lookup_url = feed_create_favicon_lookup_url(feed);
 
-  // Lookup errors are not fatal. Simply do nothing on error.
-  let iconURLString;
+  // Suppress lookup errors
+  let favicon_url_string;
   try {
-    iconURLString = await lookup(query);
+    favicon_url_string = await favicon_service_lookup(query);
   } catch (error) {
     console.debug(error);
     return;
   }
 
-  if (iconURLString) {
-    feed.faviconURLString = iconURLString;
+  if (favicon_url_string) {
+    feed.faviconURLString = favicon_url_string;
   }
 }
 
-function showNotification(feed) {
+function subscribe_notification_show(feed) {
   const title = 'Subscribed!';
-  const feedName = feed.title || feedPeekURL(feed);
-  const message = 'Subscribed to ' + feedName;
-  showDesktopNotification(title, message, feed.faviconURLString);
+  const feed_title = feed.title || feed_peek_url(feed);
+  const message = 'Subscribed to ' + feed_title;
+  notification_show(title, message, feed.faviconURLString);
 }
 
-async function deferredPollFeed(feed) {
-  const ctx = await createPollFeedsContext();
+async function subscribe_feed_poll(feed) {
+  const ctx = await poll_service_create_context();
   ctx.ignoreRecencyCheck = true;
   ctx.ignoreModifiedCheck = true;
   ctx.notify = false;
-  await pollFeed(ctx, feed);
-  closePollFeedsContext(ctx);
+  await poll_service_feed_poll(ctx, feed);
+  poll_service_close_context(ctx);
 }
 
 function assert(value, message) {

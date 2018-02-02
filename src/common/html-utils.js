@@ -10,25 +10,25 @@
 // something working
 // TODO: I believe the shared worker element technique is 'thread-safe' because
 // all dom access is synchronous. Right? Pretty sure but never really verified.
-const workerElement = document.createElement('div');
-export function decodeEntities(value) {
-  const entityPattern = /&[#0-9A-Za-z]+;/g;
+const PERSISTENT_WORKER_ELEMENT = document.createElement('div');
+export function html_decode_entities(value) {
+  const entity_pattern = /&[#0-9A-Za-z]+;/g;
   return typeof value === 'string' ?
       value.replace(
-          entityPattern,
-          function decodeEntitiesReplace(entityString) {
+          entity_pattern,
+          function replacer(entity) {
             // Set the value of the shared worker element. By using innerHTML
             // this sets the raw value
-            workerElement.innerHTML = entityString;
+            PERSISTENT_WORKER_ELEMENT.innerHTML = entity;
             // Now get the value back out. The accessor will do the decoding
             // dynamically.
             // TODO: why innerText? probably should just use textContent? Wait
             // until I implement a testing lib to change.
-            const text = workerElement.innerText;
+            const text = PERSISTENT_WORKER_ELEMENT.innerText;
             // Reset it each time to avoid leaving crap hanging around because
             // worker element lifetime is page lifetime not function scope
             // lifetime
-            workerElement.innerHTML = '';
+            PERSISTENT_WORKER_ELEMENT.innerHTML = '';
             return text;
           }) :
       value;
@@ -38,29 +38,29 @@ export function decodeEntities(value) {
 // have been replaced with html entities. If input is not a string returns
 // undefined.
 // See https://stackoverflow.com/questions/784586 for reference
-export function escapeHTML(htmlString) {
+export function html_escape(html_string) {
   // TEMP: not replacing & due to common double encoding issue
   const escapeHTMLPattern = /[<>"']/g;
-  if (typeof htmlString === 'string') {
-    return htmlString.replace(escapeHTMLPattern, encodeFirst);
+  if (typeof html_string === 'string') {
+    return html_string.replace(escapeHTMLPattern, html_encode_first_char);
   }
 }
 
 // Returns the first character of the input string as an numeric html entity
-function encodeFirst(string) {
+function html_encode_first_char(string) {
   return '&#' + string.charCodeAt(0) + ';';
 }
 
 // Truncates an HTML string
-// @param htmlString {String}
+// @param html_string {String}
 // @param position {Number} position after which to truncate
 // @param suffix {String} optional, appended after truncation, defaults to an
 // ellipsis
-export function truncateHTML(htmlString, position, suffix) {
+export function html_truncate(html_string, position, suffix) {
   assert(Number.isInteger(position) && position >= 0);
 
   // Tolerate some bad input for convenience
-  if (typeof htmlString !== 'string') {
+  if (typeof html_string !== 'string') {
     return '';
   }
 
@@ -71,7 +71,7 @@ export function truncateHTML(htmlString, position, suffix) {
 
   let document;
   try {
-    document = parseHTML(htmlString);
+    document = html_parse(html_string);
   } catch (error) {
     console.debug(error);
     return 'Unsafe html';
@@ -79,17 +79,17 @@ export function truncateHTML(htmlString, position, suffix) {
 
   // Search for the text node in which truncation should occur and truncate it
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
-  let totalLength = 0;
+  let total_length = 0;
 
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
-    const valueLength = value.length;
-    if (totalLength + valueLength >= position) {
-      const remainingLength = position - totalLength;
-      node.nodeValue = value.substr(0, remainingLength) + suffix;
+    const value_length = value.length;
+    if (total_length + value_length >= position) {
+      const remaining_length = position - total_length;
+      node.nodeValue = value.substr(0, remaining_length) + suffix;
       break;
     } else {
-      totalLength += valueLength;
+      total_length += value_length;
     }
   }
 
@@ -98,26 +98,26 @@ export function truncateHTML(htmlString, position, suffix) {
     node.remove();
   }
 
-  // parseHTML introduces body text for fragments. If full text then return full
-  // text, otherwise strip the added elements
+  // html_parse introduces body text for fragments. If full text then return
+  // full text, otherwise strip the added elements
 
-  return isNotFragment(htmlString) ? document.documentElement.outerHTML :
-                                     document.body.innerHTML;
+  return html_is_fragment(html_string) ? document.body.innerHTML :
+                                         document.documentElement.outerHTML;
 }
 
-function isNotFragment(htmlString) {
-  return /<html/i.test(htmlString);
+function html_is_fragment(html_string) {
+  return !/<html/i.test(html_string);
 }
 
-// Replaces tags in the input string with the replacement. If no replacement,
-// then removes the tags.
-export function replaceTags(htmlString, replacement) {
-  assert(typeof htmlString === 'string');
+// Replaces tags in the input string with the replacement. If a replacement is
+// not specified, then this removes the tags.
+export function html_replace_tags(html_string, replacement) {
+  assert(typeof html_string === 'string');
 
   // Fast case for empty strings
   // Because of the above assert this basically only checks 0 length
-  if (!htmlString) {
-    return htmlString;
+  if (!html_string) {
+    return html_string;
   }
 
   if (replacement) {
@@ -126,7 +126,7 @@ export function replaceTags(htmlString, replacement) {
 
   let document;
   try {
-    document = parseHTML(htmlString);
+    document = html_parse(html_string);
   } catch (error) {
     console.debug(error);
     return 'Unsafe html';
@@ -138,22 +138,22 @@ export function replaceTags(htmlString, replacement) {
 
   // Shove the text nodes into an array and then join by replacement
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
-  const nodeValues = [];
+  const node_values = [];
   for (let node = it.nextNode(); node; node = it.nextNode()) {
-    nodeValues.push(node.nodeValue);
+    node_values.push(node.nodeValue);
   }
 
-  return nodeValues.join(replacement);
+  return node_values.join(replacement);
 }
 
 // When html is a fragment, it will be inserted into a new document using a
 // default template provided by the browser, that includes a document element
 // and usually a body. If not a fragment, then it is merged into a document
 // with a default template.
-export function parseHTML(htmlString) {
-  assert(typeof htmlString === 'string');
+export function html_parse(html_string) {
+  assert(typeof html_string === 'string');
   const parser = new DOMParser();
-  const document = parser.parseFromString(htmlString, 'text/html');
+  const document = parser.parseFromString(html_string, 'text/html');
   const error = document.querySelector('parsererror');
   if (error) {
     throw new Error(error.textContent.replace(/\s{2,}/g, ' '));

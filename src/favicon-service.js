@@ -1,6 +1,6 @@
-import {detectURLChanged, fetchHTML, tfetch} from '/src/common/fetch-utils.js';
+import {url_did_change, fetch_html, tfetch} from '/src/common/fetch-utils.js';
 import {open as utilsOpen} from '/src/common/indexeddb-utils.js';
-import {findMimeTypeInContentType} from '/src/common/mime-utils.js';
+import {mime_type_from_content_type} from '/src/common/mime-utils.js';
 
 // The favicon service provides the ability to lookup the url of a favicon for a
 // given web page. Lookups can optionally be cached in a database so that future
@@ -148,7 +148,7 @@ export async function lookup(inputOptions) {
   let response;
   if (!document && !options.skipURLFetch) {
     try {
-      response = await fetchHTML(url, options.fetchHTMLTimeout);
+      response = await fetch_html(url, options.fetchHTMLTimeout);
     } catch (error) {
       options.console.debug(error);
     }
@@ -159,7 +159,7 @@ export async function lookup(inputOptions) {
   if (response) {
     responseURL = new URL(response.url);
 
-    if (detectURLChanged(url, responseURL)) {
+    if (url_did_change(url, responseURL)) {
       // Update origin url for later
       if (responseURL.origin !== url.origin) {
         originURL = new URL(responseURL.origin);
@@ -187,7 +187,7 @@ export async function lookup(inputOptions) {
   if (response) {
     try {
       const text = await response.text();
-      options.document = parseHTML(text);
+      options.document = html_parse(text);
     } catch (error) {
       options.console.debug(error);
     }
@@ -528,7 +528,7 @@ function responseHasImageType(response) {
   assert(response instanceof Response);
   const contentType = response.headers.get('Content-Type');
   if (contentType) {
-    const mimeType = findMimeTypeInContentType(contentType);
+    const mimeType = mime_type_from_content_type(contentType);
     if (mimeType) {
       return mimeType.startsWith('image/') ||
           mimeType === 'application/octet-stream';
@@ -554,7 +554,7 @@ function resolveURLString(url, baseURL) {
   }
 }
 
-function parseHTML(text) {
+function html_parse(text) {
   assert(typeof text === 'string');
   const parser = new DOMParser();
   const document = parser.parseFromString(text, 'text/html');

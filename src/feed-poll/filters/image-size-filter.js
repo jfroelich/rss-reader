@@ -1,4 +1,4 @@
-import {isAllowedURL} from '/src/common/fetch-utils.js';
+import {url_is_allowed} from '/src/common/fetch-utils.js';
 
 // TODO: use console parameter pattern to enable/disable logging
 // TODO: consider somehow using document.baseURI over explicit baseURL
@@ -189,7 +189,7 @@ function fetchImageElementPromise(url) {
     assert(url instanceof URL);
     const allowedProtocols = ['data:', 'http:', 'https:'];
     assert(allowedProtocols.includes(url.protocol));
-    assert(isAllowedURL(url));
+    assert(url_is_allowed(url));
 
     // Create a proxy element within this script's document
     const proxy = new Image();

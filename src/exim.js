@@ -1,6 +1,6 @@
 import {open as openIconDb} from '/src/favicon-service.js';
 import subscribe from '/src/feed-ops/subscribe.js';
-import {feedPeekURL, getFeeds, open as openReaderDb} from '/src/rdb.js';
+import {feed_peek_url, getFeeds, open as openReaderDb} from '/src/rdb.js';
 
 // Returns an opml document as a blob that contains outlines representing the
 // feeds in the app's db
@@ -46,7 +46,7 @@ export async function exportOPML(conn, title) {
     if (feed.type) {
       outlineElement.setAttribute('type', feed.type);
     }
-    outlineElement.setAttribute('xmlUrl', feedPeekURL(feed));
+    outlineElement.setAttribute('xmlUrl', feed_peek_url(feed));
     if (feed.title) {
       outlineElement.setAttribute('title', feed.title);
     }

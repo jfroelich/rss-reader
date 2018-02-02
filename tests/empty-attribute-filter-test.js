@@ -1,9 +1,9 @@
-import {parseHTML} from '/src/common/html-utils.js';
+import {html_parse} from '/src/common/html-utils.js';
 import filterEmptyAttributes from '/src/feed-poll/filters/empty-attribute-filter.js';
 
 // Simple empty non-boolean attribute in body
 let input = '<html><head></head><body><a name="">test</a></body></html>';
-let doc = parseHTML(input);
+let doc = html_parse(input);
 filterEmptyAttributes(doc);
 console.assert(
     doc.documentElement.outerHTML ===
@@ -12,7 +12,7 @@ console.assert(
 // boolean attribute with value in body
 input =
     '<html><head></head><body><a disabled="disabled">test</a></body></html>';
-doc = parseHTML(input);
+doc = html_parse(input);
 filterEmptyAttributes(doc);
 console.assert(
     doc.documentElement.outerHTML ===
@@ -20,7 +20,7 @@ console.assert(
 
 // boolean attribute without value in body
 input = '<html><head></head><body><a disabled="">test</a></body></html>';
-doc = parseHTML(input);
+doc = html_parse(input);
 filterEmptyAttributes(doc);
 console.assert(
     doc.documentElement.outerHTML ===
@@ -28,7 +28,7 @@ console.assert(
 
 // Body element with attribute
 input = '<html><head></head><body foo="">test</body></html>';
-doc = parseHTML(input);
+doc = html_parse(input);
 filterEmptyAttributes(doc);
 console.assert(
     doc.documentElement.outerHTML ===
@@ -37,7 +37,7 @@ console.assert(
 // Multiple elements with non-boolean attributes in body
 input =
     '<html><head></head><body><p id=""><a name="">test</a></p></body></html>';
-doc = parseHTML(input);
+doc = html_parse(input);
 filterEmptyAttributes(doc);
 console.assert(
     doc.documentElement.outerHTML ===
@@ -45,7 +45,7 @@ console.assert(
 
 // Multiple non-boolean attributes in element in body
 input = '<html><head></head><body><a id="" name="">test</a></body></html>';
-doc = parseHTML(input);
+doc = html_parse(input);
 filterEmptyAttributes(doc);
 console.assert(
     doc.documentElement.outerHTML ===
@@ -53,7 +53,7 @@ console.assert(
 
 // Element with both non-boolean and boolean attribute in body
 input = '<html><head></head><body><a id="" disabled="">test</a></body></html>';
-doc = parseHTML(input);
+doc = html_parse(input);
 filterEmptyAttributes(doc);
 console.assert(
     doc.documentElement.outerHTML ===

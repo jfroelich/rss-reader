@@ -1,4 +1,4 @@
-import {truncateHTML} from '/src/common/html-utils.js';
+import {html_truncate} from '/src/common/html-utils.js';
 
 // TODO: it would be better if subscribe could connect on demand so that this
 // does not need to be explicit
@@ -6,7 +6,7 @@ import {open as openIconDb} from '/src/favicon-service.js';
 
 import subscribe from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
-import {activateFeed, deactivateFeed, feedPeekURL, findFeedById, getFeeds, open as openReaderDb} from '/src/rdb.js';
+import {activateFeed, deactivateFeed, feed_peek_url, findFeedById, getFeeds, open as openReaderDb} from '/src/rdb.js';
 
 // TEMP: I plan to remove
 import * as PageStyle from '/src/views/page-style-settings.js';
@@ -225,7 +225,7 @@ function feedListAppendFeed(feed) {
   let feedTitle = feed.title || 'Untitled';
 
   // TODO: handle the parse error, this is near root scope
-  feedTitle = truncateHTML(feedTitle, 300);
+  feedTitle = html_truncate(feedTitle, 300);
   titleElement.textContent = feedTitle;
   itemElement.appendChild(titleElement);
   const feedListElement = document.getElementById('feedlist');
@@ -287,7 +287,7 @@ async function feedListItemOnclick(event) {
   }
 
   const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = feedPeekURL(feed);
+  feedURLElement.textContent = feed_peek_url(feed);
   const feedLinkElement = document.getElementById('details-feed-link');
   feedLinkElement.textContent = feed.link || '';
 
@@ -382,7 +382,7 @@ async function subscribeFormOnsubmit(event) {
   iconConn.close();
 
   feedListAppendFeed(feed);
-  const feedURL = feedPeekURL(feed);
+  const feedURL = feed_peek_url(feed);
   subscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
   subscriptionMonitorHide();
   showSectionById('subs-list-section');

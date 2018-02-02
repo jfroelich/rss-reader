@@ -1,4 +1,4 @@
-// formatString returns a formatted string, similar to printf
+// string_format returns a formatted string, similar to printf
 // Flags are case sensitive
 // %s - string
 // %d - number
@@ -7,7 +7,7 @@
 
 const syntaxPattern = /%[sdo%]/g;
 
-export default function formatString(...args) {
+export default function string_format(...args) {
   const argCount = args.length;
   if (argCount === 0) {
     return '';

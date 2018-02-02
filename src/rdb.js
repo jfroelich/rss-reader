@@ -1,4 +1,4 @@
-import {replaceTags, truncateHTML} from '/src/common/html-utils.js';
+import {html_replace_tags, html_truncate} from '/src/common/html-utils.js';
 import {open as utilsOpen} from '/src/common/indexeddb-utils.js';
 
 // TODO: move this to github issue
@@ -120,7 +120,7 @@ function addActiveFieldToFeeds(store) {
 }
 
 export async function activateFeed(conn, channel, feedId) {
-  assert(isValidFeedId(feedId), 'Invalid feed id', feedId);
+  assert(feed_is_valid_id(feedId), 'Invalid feed id', feedId);
   const dconn = conn ? conn : await open();
   await activateFeedPromise(dconn, feedId);
   if (!conn) {
@@ -152,7 +152,7 @@ function activateFeedPromise(conn, feedId) {
 }
 
 export async function deactivateFeed(conn, channel, feedId, reasonText) {
-  assert(isValidFeedId(feedId), 'Invalid feed id ' + feedId);
+  assert(feed_is_valid_id(feedId), 'Invalid feed id ' + feedId);
   const dconn = conn ? conn : await open();
   await deactivateFeedPromise(dconn, feedId, reasonText);
   if (!conn) {
@@ -188,8 +188,8 @@ function deactivateFeedPromise(conn, feedId, reasonText) {
 // processing pipeline, and at this point, only validation is a concern, and
 // no magical mutations should happen
 
-export async function addEntry(conn, channel, entry) {
-  assert(isEntry(entry), 'Invalid entry ' + entry);
+export async function entry_store_add_entry(conn, channel, entry) {
+  assert(entry_is_entry(entry), 'Invalid entry ' + entry);
   assert(!entry.id);
   validateEntry(entry);
 
@@ -229,7 +229,7 @@ function countUnreadEntriesPromise(conn) {
   });
 }
 
-export async function markEntryRead(conn, channel, entryId) {
+export async function entry_mark_read(conn, channel, entryId) {
   assert(isValidEntryId(entryId));
   const dconn = conn ? conn : await open();
   await markEntryReadPromise(dconn, entryId);
@@ -237,7 +237,7 @@ export async function markEntryRead(conn, channel, entryId) {
     dconn.close();
   }
   if (channel) {
-    // channel may be closed by the time this executes when markEntryRead is not
+    // channel may be closed by the time this executes when entry_mark_read is not
     // awaited, so trap the invalid state error and just log it
     try {
       channel.postMessage({type: 'entry-marked-read', id: entryId});
@@ -274,7 +274,7 @@ function markEntryReadPromise(conn, entryId) {
   });
 }
 
-export async function findActiveFeeds(conn) {
+export async function find_active_feeds(conn) {
   const feeds = await getFeeds(conn);
   return feeds.filter(feed => feed.active);
 }
@@ -301,7 +301,7 @@ function findEntryIdByURLPromise(conn, url) {
   });
 }
 
-export async function containsEntryWithURL(conn, url) {
+export async function entry_store_contains_entry_with_url(conn, url) {
   const entryId = await findEntryIdByURL(conn, url);
   return isValidEntryId(entryId);
 }
@@ -317,7 +317,7 @@ export async function findFeedById(conn, feedId) {
 
 function findFeedByIdPromise(conn, feedId) {
   return new Promise((resolve, reject) => {
-    assert(isValidFeedId(feedId));
+    assert(feed_is_valid_id(feedId));
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
     const request = store.get(feedId);
@@ -348,9 +348,9 @@ function findFeedIdByURLPromise(conn, url) {
   });
 }
 
-export async function containsFeedWithURL(conn, url) {
+export async function feed_store_contains_feed_with_url(conn, url) {
   const feedId = await findFeedIdByURL(conn, url);
-  return isValidFeedId(feedId);
+  return feed_is_valid_id(feedId);
 }
 
 export async function findViewableEntries(conn, offset, limit) {
@@ -425,7 +425,7 @@ async function putEntry(conn, channel, entry) {
 
 function putEntryPromise(conn, entry) {
   return new Promise((resolve, reject) => {
-    assert(isEntry(entry));
+    assert(entry_is_entry(entry));
     const tx = conn.transaction('entry', 'readwrite');
     const store = tx.objectStore('entry');
     const request = store.put(entry);
@@ -434,17 +434,17 @@ function putEntryPromise(conn, entry) {
   });
 }
 
-export function prepareFeed(feed) {
+export function feed_prepare(feed) {
   return filterEmptyProps(sanitizeFeed(feed));
 }
 
-// TODO: validateFeed (here or in putFeed)
-export async function addFeed(conn, channel, feed) {
-  const preparedFeed = prepareFeed(feed);
+// TODO: validateFeed (here or in feed_store_feed_put)
+export async function feed_store_add(conn, channel, feed) {
+  const preparedFeed = feed_prepare(feed);
   preparedFeed.active = true;
   preparedFeed.dateCreated = new Date();
   delete preparedFeed.dateUpdated;
-  const feedId = await putFeed(conn, null, preparedFeed);
+  const feedId = await feed_store_feed_put(conn, null, preparedFeed);
   preparedFeed.id = feedId;
   if (channel) {
     channel.postMessage({type: 'feed-added', id: feedId});
@@ -452,7 +452,7 @@ export async function addFeed(conn, channel, feed) {
   return preparedFeed;
 }
 
-export async function putFeed(conn, channel, feed) {
+export async function feed_store_feed_put(conn, channel, feed) {
   const dconn = conn ? conn : await open();
   const feedId = await putFeedPromise(dconn, feed);
   if (!conn) {
@@ -474,7 +474,7 @@ export async function putFeed(conn, channel, feed) {
 
 function putFeedPromise(conn, feed) {
   return new Promise((resolve, reject) => {
-    assert(isFeed(feed));
+    assert(feed_is_feed(feed));
     const tx = conn.transaction('feed', 'readwrite');
     const store = tx.objectStore('feed');
     const request = store.put(feed);
@@ -487,7 +487,7 @@ function putFeedPromise(conn, feed) {
   });
 }
 
-export async function removeFeed(conn, channel, feedId, reasonText) {
+export async function feed_store_remove_feed(conn, channel, feedId, reasonText) {
   const dconn = conn ? conn : await open();
   const entryIds = await removeFeedPromise(dconn, feedid);
   if (!conn) {
@@ -504,7 +504,7 @@ export async function removeFeed(conn, channel, feedId, reasonText) {
 
 function removeFeedPromise(conn, feedId) {
   return new Promise(function executor(resolve, reject) {
-    assert(isValidFeedId(feedId));
+    assert(feed_is_valid_id(feedId));
     let entryIds;
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');
     tx.oncomplete = () => resolve(entryIds);
@@ -542,7 +542,7 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
     descMaxLength = 1024 * 10;
   }
 
-  const blankFeed = createFeed();
+  const blankFeed = feed_create();
   const outputFeed = Object.assign(blankFeed, feed);
   const tagReplacement = '';
   const suffix = '';
@@ -550,18 +550,18 @@ function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
   if (outputFeed.title) {
     let title = outputFeed.title;
     title = filterControls(title);
-    title = replaceTags(title, tagReplacement);
+    title = html_replace_tags(title, tagReplacement);
     title = condenseWhitespace(title);
-    title = truncateHTML(title, titleMaxLength, suffix);
+    title = html_truncate(title, titleMaxLength, suffix);
     outputFeed.title = title;
   }
 
   if (outputFeed.description) {
     let desc = outputFeed.description;
     desc = filterControls(desc);
-    desc = replaceTags(desc, tagReplacement);
+    desc = html_replace_tags(desc, tagReplacement);
     desc = condenseWhitespace(desc);
-    desc = truncateHTML(desc, descMaxLength, suffix);
+    desc = html_truncate(desc, descMaxLength, suffix);
     outputFeed.description = desc;
   }
 
@@ -598,31 +598,31 @@ function sanitizeEntry(
     contentMaxLength = 50000;
   }
 
-  const blankEntry = createEntry();
+  const blankEntry = entry_create();
   const outputEntry = Object.assign(blankEntry, inputEntry);
 
   if (outputEntry.author) {
     let author = outputEntry.author;
     author = filterControls(author);
-    author = replaceTags(author, '');
+    author = html_replace_tags(author, '');
     author = condenseWhitespace(author);
-    author = truncateHTML(author, authorMaxLength);
+    author = html_truncate(author, authorMaxLength);
     outputEntry.author = author;
   }
 
   if (outputEntry.content) {
     let content = outputEntry.content;
     content = filterUnprintableCharacters(content);
-    content = truncateHTML(content, contentMaxLength);
+    content = html_truncate(content, contentMaxLength);
     outputEntry.content = content;
   }
 
   if (outputEntry.title) {
     let title = outputEntry.title;
     title = filterControls(title);
-    title = replaceTags(title, '');
+    title = html_replace_tags(title, '');
     title = condenseWhitespace(title);
-    title = truncateHTML(title, titleMaxLength);
+    title = html_truncate(title, titleMaxLength);
     outputEntry.title = title;
   }
 
@@ -690,37 +690,37 @@ function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }
 
-export function createFeed() {
+export function feed_create() {
   return {magic: FEED_MAGIC};
 }
 
 // Return true if the value looks like a feed object
-export function isFeed(value) {
+export function feed_is_feed(value) {
   return value && typeof value === 'object' && value.magic === FEED_MAGIC;
 }
 
-export function isValidFeedId(id) {
+export function feed_is_valid_id(id) {
   return Number.isInteger(id) && id > 0;
 }
 
-export function feedHasURL(feed) {
-  assert(isFeed(feed));
+export function feed_has_url(feed) {
+  assert(feed_is_feed(feed));
   return feed.urls && (feed.urls.length > 0);
 }
 
 // Returns the last url in the feed's url list as a string
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
-export function feedPeekURL(feed) {
-  assert(feedHasURL(feed));
+export function feed_peek_url(feed) {
+  assert(feed_has_url(feed));
   return feed.urls[feed.urls.length - 1];
 }
 
 // Appends a url to the feed's internal list. Lazily creates the list if needed
 // @param feed {Object} a feed object
 // @param url {URL}
-export function feedAppendURL(feed, url) {
-  if (!isFeed(feed)) {
+export function feed_append_url(feed, url) {
+  if (!feed_is_feed(feed)) {
     console.error('Invalid feed argument:', feed);
     return false;
   }
@@ -743,8 +743,8 @@ export function feedAppendURL(feed, url) {
 // feed. Fields from the new feed take precedence, except for urls, which are
 // merged to generate a distinct ordered set of oldest to newest url. Impure
 // because of copying by reference.
-export function mergeFeeds(oldFeed, newFeed) {
-  const mergedFeed = Object.assign(createFeed(), oldFeed, newFeed);
+export function feed_merge(oldFeed, newFeed) {
+  const mergedFeed = Object.assign(feed_create(), oldFeed, newFeed);
 
   // After assignment, the merged feed has only the urls from the new feed. So
   // the output feed's url list needs to be fixed. First copy over the old
@@ -753,19 +753,19 @@ export function mergeFeeds(oldFeed, newFeed) {
 
   if (newFeed.urls) {
     for (const urlString of newFeed.urls) {
-      feedAppendURL(mergedFeed, new URL(urlString));
+      feed_append_url(mergedFeed, new URL(urlString));
     }
   }
 
   return mergedFeed;
 }
 
-export function createEntry() {
+export function entry_create() {
   return {magic: ENTRY_MAGIC};
 }
 
 // Return true if the first parameter looks like an entry object
-export function isEntry(value) {
+export function entry_is_entry(value) {
   // note: typeof null === 'object', hence the truthy test
   return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
 }
@@ -776,8 +776,8 @@ export function isValidEntryId(value) {
 }
 
 // Returns true if the entry has at least one url
-export function entryHasURL(entry) {
-  assert(isEntry(entry));
+export function entry_has_url(entry) {
+  assert(entry_is_entry(entry));
   return entry.urls && (entry.urls.length > 0);
 }
 
@@ -785,9 +785,9 @@ export function entryHasURL(entry) {
 // be called on an entry without urls.
 // TODO: because this returns a string, be more explicit about it. I just caught
 // myself expecting URL.
-export function entryPeekURL(entry) {
-  assert(isEntry(entry));
-  assert(entryHasURL(entry));
+export function entry_peek_url(entry) {
+  assert(entry_is_entry(entry));
+  assert(entry_has_url(entry));
   return entry.urls[entry.urls.length - 1];
 }
 
@@ -795,8 +795,8 @@ export function entryPeekURL(entry) {
 // needed. Normalizes the url. The normalized url is compared against existing
 // urls to ensure the new url is unique. Returns true if entry was added, or
 // false if the url already exists and was therefore not added
-export function entryAppendURL(entry, url) {
-  assert(isEntry(entry));
+export function entry_append_url(entry, url) {
+  assert(entry_is_entry(entry));
   assert(url instanceof URL);
 
   const normalUrlString = url.href;
@@ -817,8 +817,8 @@ export function entryAppendURL(entry, url) {
 // Note this expects an actual feed object, not any object. The magic property
 // must be set
 // @returns {URL}
-export function createIconLookupURLForFeed(feed) {
-  assert(isFeed(feed));
+export function feed_create_favicon_lookup_url(feed) {
+  assert(feed_is_feed(feed));
 
   // First, prefer the link, as this is the url of the webpage that is
   // associated with the feed. Cannot assume the link is set or valid. But if
@@ -836,7 +836,7 @@ export function createIconLookupURLForFeed(feed) {
 
   // If the link is missing or invalid then use the origin of the feed's xml
   // url. Assume the feed always has a url.
-  const urlString = feedPeekURL(feed);
+  const urlString = feed_peek_url(feed);
   const urlObject = new URL(urlString);
   return new URL(urlObject.origin);
 }

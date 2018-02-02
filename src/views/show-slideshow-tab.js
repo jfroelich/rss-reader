@@ -1,5 +1,5 @@
 
-export default async function showSlideshowTab() {
+export default async function show_slideshow_tab() {
   const slideshowURL = chrome.extension.getURL('slideshow.html');
   const newtabURL = 'chrome://newtab/';
 

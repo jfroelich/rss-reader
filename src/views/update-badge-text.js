@@ -5,7 +5,7 @@ import {countUnreadEntries, open} from '/src/rdb.js';
 // it does not matter?
 
 // TODO: this should be able to accept an input connection. I removed the conn
-// parameter earlier when every call to updateBadgeText was awaited. I can still
+// parameter earlier when every call to badge_update_text was awaited. I can still
 // use a non-blocking call, because the request enters pending state in the
 // current tick, before the conn is closed externally. So this should be changed
 // to accept connection again and not connect locally.
@@ -37,9 +37,9 @@ import {countUnreadEntries, open} from '/src/rdb.js';
 let badgeUpdatePending = false;
 
 // Updates the text of the application's badge. Non-blocking.
-export default async function updateBadgeText(conn) {
+export default async function badge_update_text(conn) {
   if (badgeUpdatePending) {
-    console.debug('updateBadgeText request already pending, ignoring call');
+    console.debug('badge_update_text request already pending, ignoring call');
     return;
   }
 

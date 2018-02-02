@@ -1,4 +1,4 @@
-import formatString from '/src/common/format-string.js';
+import string_format from '/src/common/format-string.js';
 
 // Throws an error when the value is false-like. Should generally be used for
 // things that should never happen, but it is Javascript, so basically use it
@@ -10,7 +10,7 @@ import formatString from '/src/common/format-string.js';
 // format string, the first one usually being the formatting string
 export default function assert(value, ...varargs) {
   if (!value) {
-    const message = formatString(...varargs) || 'Assertion failed';
+    const message = string_format(...varargs) || 'Assertion failed';
     throw new Error(message);
   }
 }

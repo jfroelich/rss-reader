@@ -2,7 +2,7 @@
 // Returns undefined if no rewriting occurred or unable to rewrite successfully.
 // @param url {URL}
 // @returns {URL}
-export default function rewriteURL(url) {
+export default function url_rewrite(url) {
   if (!(url instanceof URL)) {
     throw new TypeError('Invalid url parameter', url);
   }

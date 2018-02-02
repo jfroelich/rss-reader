@@ -1,5 +1,5 @@
 import * as FetchUtils from '/src/common/fetch-utils.js';
-import {parseHTML} from '/src/common/html-utils.js';
+import {html_parse} from '/src/common/html-utils.js';
 import setImageSizes from '/src/feed-poll/filters/image-size-filter.js';
 
 // TODO: research http://exercism.io/ svg loading issue
@@ -12,9 +12,9 @@ import setImageSizes from '/src/feed-poll/filters/image-size-filter.js';
 
 window.test = async function(urlString) {
   const requestURL = new URL(urlString);
-  const response = await FetchUtils.fetchHTML(requestURL);
+  const response = await FetchUtils.fetch_html(requestURL);
   const html = await response.text();
-  const document = parseHTML(html);
+  const document = html_parse(html);
   const responseURL = new URL(response.url);
   await setImageSizes(document, responseURL);
 };
@@ -22,6 +22,6 @@ window.test = async function(urlString) {
 window.test2 = async function() {
   const html =
       '<html><body><img src="http://exercism.io/icons/brand-logo.svg"></body></html>';
-  const document = parseHTML(html);
+  const document = html_parse(html);
   await setImageSizes(document);
 };

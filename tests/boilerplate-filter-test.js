@@ -1,5 +1,5 @@
-import {fetchHTML} from '/src/common/fetch-utils.js';
-import {parseHTML} from '/src/common/html-utils.js';
+import {fetch_html} from '/src/common/fetch-utils.js';
+import {html_parse} from '/src/common/html-utils.js';
 import filterBoilerplate from '/src/feed-poll/filters/boilerplate-filter.js';
 import canonicalizeURLs from '/src/feed-poll/filters/canonical-url-filter.js';
 import filterBlacklistedElements from '/src/feed-poll/filters/element-blacklist-filter.js';
@@ -9,9 +9,9 @@ import setImageSizes from '/src/feed-poll/filters/image-size-filter.js';
 import filterScript from '/src/feed-poll/filters/script-filter.js';
 
 window.test = async function(urlString) {
-  const response = await fetchHTML(new URL(urlString));
+  const response = await fetch_html(new URL(urlString));
   const responseText = await response.text();
-  const document = parseHTML(responseText);
+  const document = html_parse(responseText);
 
   // Strip some annoying iframe stuff
   filterFrames(document);

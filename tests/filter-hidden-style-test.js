@@ -1,10 +1,10 @@
 import * as FetchUtils from '/src/common/fetch-utils.js';
-import {parseHTML} from '/src/common/html-utils.js';
+import {html_parse} from '/src/common/html-utils.js';
 
 window.test = async function(url) {
-  const response = await FetchUtils.fetchHTML(url);
+  const response = await FetchUtils.fetch_html(url);
   const text = await response.text();
-  const doc = parseHTML(text);
+  const doc = html_parse(text);
   filterUsingStyle(doc);
 };
 

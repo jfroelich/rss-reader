@@ -1,5 +1,5 @@
-import parseFeed from '/src/common/parse-feed.js';
-import {createEntry, entryAppendURL, entryHasURL, feedAppendURL} from '/src/rdb.js';
+import feed_parse from '/src/common/parse-feed.js';
+import {entry_create, entry_append_url, entry_has_url, feed_append_url} from '/src/rdb.js';
 
 // One of the key points to think about is how this logic is basically a shared
 // library that involves knowledge of the implementation details of several
@@ -23,12 +23,12 @@ import {createEntry, entryAppendURL, entryHasURL, feedAppendURL} from '/src/rdb.
 // to setting processEntries flag to false, and calling the function is
 // equivalent to setting the flag to true. On the other hand, this means the
 // caller has to juggle the entries object externally. Also, it means this
-// cannot wrap parseFeed, because parseFeed includes entries in its result, and
+// cannot wrap feed_parse, because feed_parse includes entries in its result, and
 // there is no other way to get entries. I could go back to saying that an
-// entries array is a property of the parsed feed, and have parseFeed (the
+// entries array is a property of the parsed feed, and have feed_parse (the
 // internal) just yield a properties object. That is technically ok.
 // Or, I could also just have two coercion functions. Require the caller to call
-// parseFeed directly. Pass the result to a function like coerceFeed. And then,
+// feed_parse directly. Pass the result to a function like feed_coerce. And then,
 // if the caller wants to process entries, pass the result to a function like
 // coerceEntries. The caller would also need to pass the coerced feed result to
 // the coerceEntries function. I do not love how much extra work is being placed
@@ -45,13 +45,13 @@ import {createEntry, entryAppendURL, entryHasURL, feedAppendURL} from '/src/rdb.
 
 // Parses an xml input string representing a feed. Returns a result with a feed
 // object and an array of entries. Throws both checked and unchecked errors.
-export default function coerceFeed(
+export default function feed_coerce(
     xmlString, requestURL, responseURL, lastModDate, processEntries) {
   assert(requestURL instanceof URL);
   assert(responseURL instanceof URL);
 
   // Rethrow any parsing errors
-  const feed = parseFeed(xmlString);
+  const feed = feed_parse(xmlString);
 
   // Coerce the parsed feed object into a storage feed object. This must occur
   // before attempting to use other functions that operate on storage feed
@@ -62,15 +62,15 @@ export default function coerceFeed(
   feed.magic = 0xfeedfeed;
 
   // Compose fetch urls as the initial feed urls
-  feedAppendURL(feed, requestURL);
-  feedAppendURL(feed, responseURL);
+  feed_append_url(feed, requestURL);
+  feed_append_url(feed, responseURL);
 
   // Normalize feed link if set and valid, otherwise set to undefined. Save a
   // reference to the url so that it can be used to resolve entry links later.
   let feedLinkURL;
   if (feed.link) {
     // Try/catch is necessary, there is no guarantee feed.link is valid, and
-    // also this should not cause coerceFeed to throw
+    // also this should not cause feed_coerce to throw
     try {
       feedLinkURL = new URL(feed.link);
       // Overwrite with the normalized version of the string
@@ -115,7 +115,7 @@ export default function coerceFeed(
   }
 
 
-  // parseFeed warrants that if entries are parsed, that the entries property of
+  // feed_parse warrants that if entries are parsed, that the entries property of
   // the output object is a defined array; albeit possibly empty. Using map
   // implicitly warrants this.
   result.entries = entries.map(coerceEntry.bind(null, feedLinkURL));
@@ -137,7 +137,7 @@ export default function coerceFeed(
 // Coerce a parsed entry object into a reader storage entry object.
 function coerceEntry(feedLinkURL, parsedEntry) {
   // Create a blank entry, and copy over all properties from the parsed entry
-  const storableEntry = Object.assign(createEntry(), parsedEntry);
+  const storableEntry = Object.assign(entry_create(), parsedEntry);
 
   // Mutate the storable entry
   resolveEntryLink(storableEntry, feedLinkURL);
@@ -166,7 +166,7 @@ function convertEntryLinkToURL(entry) {
   if ('link' in entry) {
     try {
       const url = new URL(entry.link);
-      entryAppendURL(entry, url);
+      entry_append_url(entry, url);
     } catch (error) {
       console.debug('Failed to coerce entry link to url', entry.link);
     }
@@ -183,7 +183,7 @@ function dedupEntries(entries) {
 
   for (const entry of entries) {
     // Retain entries without urls in the output without comparison
-    if (!entryHasURL(entry)) {
+    if (!entry_has_url(entry)) {
       distinctEntries.push(entry);
       continue;
     }
