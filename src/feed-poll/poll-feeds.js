@@ -317,6 +317,8 @@ function handle_poll_feed_error(error_info) {
     return;
   }
 
+  const feed = error_info.feed;
+
   feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
   if (feed.errorCount > error_info.context.deactivationThreshold) {
     feed.active = false;

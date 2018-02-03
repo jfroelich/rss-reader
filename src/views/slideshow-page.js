@@ -573,7 +573,7 @@ async function slide_next() {
     return;
   }
 
-  let appendCount = 0;
+  let append_count = 0;
   let conn;
   try {
     conn = await reader_db_open();
@@ -584,7 +584,7 @@ async function slide_next() {
 
   if (slide_unread_count < 2) {
     console.log('Appending additional slides prior to navigation');
-    appendCount = await slide_load_and_append_multiple(conn);
+    append_count = await slide_load_and_append_multiple(conn);
   } else {
     console.log('Not appending additional slides prior to navigation');
   }
@@ -593,7 +593,7 @@ async function slide_next() {
   await slide_mark_read(conn, current_slide);
   conn.close();
 
-  if (appendCount < 1) {
+  if (append_count < 1) {
     return;
   }
 

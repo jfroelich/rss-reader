@@ -93,16 +93,18 @@ export async function tfetch(url, options) {
   // If a timeout was specified, initialize a derived promise to the result of
   // racing fetch against timeout. Otherwise, initialize a derived promise to
   // the result of fetch.
-  const response = await untimed ?
-      fetch_promise :
-      Promise.race([fetch_promise, sleep(timeout)]);
+  const response = await (
+      untimed ? fetch_promise : Promise.race([fetch_promise, sleep(timeout)]));
 
   // If timeout wins then response is undefined.
   if (!untimed && !response) {
     throw new TimeoutError('Fetch timed out for url ' + url.href);
   }
 
-  assert(response.ok);
+  if (!response.ok) {
+    throw new Error('Failed to fetch (' + response.status + ') ' + url.href);
+  }
+
   return response;
 }
 
