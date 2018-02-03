@@ -1,6 +1,10 @@
 import {html_replace_tags, html_truncate} from '/src/common/html-utils.js';
 import {open as utilsOpen} from '/src/common/indexeddb-utils.js';
 
+// TODO: do away with all auto-connecting. The solution to inconvenient resource
+// lifetime management is through using wrapper functions, not through dynamic
+// variables
+
 // TODO: move this to github issue
 // TODO: rename feed.dateUpdated and entry.dateUpdated to updatedDate for better
 // consistency
@@ -230,15 +234,15 @@ function countUnreadEntriesPromise(conn) {
 }
 
 export async function entry_mark_read(conn, channel, entryId) {
-  assert(isValidEntryId(entryId));
+  assert(entry_is_valid_id(entryId));
   const dconn = conn ? conn : await open();
   await markEntryReadPromise(dconn, entryId);
   if (!conn) {
     dconn.close();
   }
   if (channel) {
-    // channel may be closed by the time this executes when entry_mark_read is not
-    // awaited, so trap the invalid state error and just log it
+    // channel may be closed by the time this executes when entry_mark_read is
+    // not awaited, so trap the invalid state error and just log it
     try {
       channel.postMessage({type: 'entry-marked-read', id: entryId});
     } catch (error) {
@@ -275,7 +279,7 @@ function markEntryReadPromise(conn, entryId) {
 }
 
 export async function find_active_feeds(conn) {
-  const feeds = await getFeeds(conn);
+  const feeds = await reader_db_get_feeds(conn);
   return feeds.filter(feed => feed.active);
 }
 
@@ -303,7 +307,7 @@ function findEntryIdByURLPromise(conn, url) {
 
 export async function entry_store_contains_entry_with_url(conn, url) {
   const entryId = await findEntryIdByURL(conn, url);
-  return isValidEntryId(entryId);
+  return entry_is_valid_id(entryId);
 }
 
 export async function findFeedById(conn, feedId) {
@@ -353,7 +357,7 @@ export async function feed_store_contains_feed_with_url(conn, url) {
   return feed_is_valid_id(feedId);
 }
 
-export async function findViewableEntries(conn, offset, limit) {
+export async function reader_db_find_viewable_entries(conn, offset, limit) {
   const dconn = conn ? conn : await open();
   const entries = await findViewableEntriesPromise(dconn, offset, limit);
   if (!conn) {
@@ -392,7 +396,7 @@ function findViewableEntriesPromise(conn, offset, limit) {
   });
 }
 
-export async function getFeeds(conn) {
+export async function reader_db_get_feeds(conn) {
   const dconn = conn ? conn : await open();
   const feeds = await getFeedsPromise(dconn);
   if (!conn) {
@@ -487,7 +491,8 @@ function putFeedPromise(conn, feed) {
   });
 }
 
-export async function feed_store_remove_feed(conn, channel, feedId, reasonText) {
+export async function feed_store_remove_feed(
+    conn, channel, feedId, reasonText) {
   const dconn = conn ? conn : await open();
   const entryIds = await removeFeedPromise(dconn, feedid);
   if (!conn) {
@@ -771,7 +776,7 @@ export function entry_is_entry(value) {
 }
 
 // Return true if the first parameter looks like an entry id
-export function isValidEntryId(value) {
+export function entry_is_valid_id(value) {
   return Number.isInteger(value) && value > 0;
 }
 

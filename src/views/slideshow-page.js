@@ -1,8 +1,8 @@
 import {html_escape, html_truncate} from '/src/common/html-utils.js';
 import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
 import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
-import {entry_peek_url, feed_peek_url, findViewableEntries, getFeeds, entry_is_entry, isValidEntryId, open as openReaderDb} from '/src/rdb.js';
-import {exportOPML, importOPML} from '/src/views/exim-utils.js';
+import {ral_export, ral_import} from '/src/ral.js';
+import {entry_is_entry, entry_is_valid_id, entry_peek_url, feed_peek_url, open as reader_db_open, reader_db_find_viewable_entries, reader_db_get_feeds} from '/src/rdb.js';
 import * as PageStyle from '/src/views/page-style-settings.js';
 import * as Slideshow from '/src/views/slideshow.js';
 
@@ -11,27 +11,38 @@ import * as Slideshow from '/src/views/slideshow.js';
 // re-appear occassionally when navigation, and sometimes next-slide key press
 // doesn't advance slide.
 
+// clang-format off
 const fonts = [
-  'ArchivoNarrow-Regular', 'Arial, sans-serif', 'Calibri', 'Cambria',
-  'CartoGothicStd', 'Fanwood', 'Georgia', 'League Mono Regular',
-  'League Spartan', 'Montserrat', 'Noto Sans', 'Open Sans Regular',
-  'PathwayGothicOne', 'PlayfairDisplaySC', 'Roboto Regular'
+  'ArchivoNarrow-Regular',
+  'Arial, sans-serif',
+  'Calibri',
+  'Cambria',
+  'CartoGothicStd',
+  'Fanwood',
+  'Georgia',
+  'League Mono Regular',
+  'League Spartan',
+  'Montserrat',
+  'Noto Sans',
+  'Open Sans Regular',
+  'PathwayGothicOne',
+  'PlayfairDisplaySC',
+  'Roboto Regular'
 ];
+// clang-format on
 
 const channel = new BroadcastChannel('reader');
 channel.onmessage = function(event) {
   if (!event.isTrusted) {
-    console.warn('Ignoring untrusted message event', event);
+    console.warn('Untrusted event', event);
     return;
   }
 
   const message = event.data;
   if (typeof message !== 'object' || message === null) {
-    console.warn('Ignoring message event with invalid message', event);
+    console.warn('Invalid message', event);
     return;
   }
-
-  console.debug('Handling message', message);
 
   switch (message.type) {
     case 'display-settings-changed':
@@ -39,13 +50,13 @@ channel.onmessage = function(event) {
       PageStyle.pageStyleSettingsOnchange(message);
       break;
     case 'entry-added':
-      onEntryAddedMessage(message).catch(console.warn);
+      on_entry_added_message(message).catch(console.warn);
       break;
     case 'entry-deleted':
-      onEntryExpiredMessage(message).catch(console.warn);
+      on_entry_expired_message(message).catch(console.warn);
       break;
     case 'entry-archived':
-      onEntryExpiredMessage(message).catch(console.warn);
+      on_entry_expired_message(message).catch(console.warn);
       break;
     case 'feed-deleted':
       console.warn('Unhandled feed-deleted message', message);
@@ -72,18 +83,18 @@ channel.onmessageerror = function(event) {
 
 // Responds to the adding of an entry to the database from some background task.
 // Conditionally appends new articles as slides.
-async function onEntryAddedMessage(message) {
+async function on_entry_added_message(message) {
   // Do not append if several unread slides are still loaded
-  const unreadSlideCount = countUnreadSlides();
+  const slide_unread_count = slideshow_count_unread();
 
-  if (unreadSlideCount > 3) {
+  if (slide_unread_count > 3) {
     return;
   }
 
   let conn;
   try {
-    conn = await openReaderDb();
-    await appendSlides(conn);
+    conn = await reader_db_open();
+    await slide_load_and_append_multiple(conn);
   } finally {
     if (conn) {
       conn.close();
@@ -91,44 +102,42 @@ async function onEntryAddedMessage(message) {
   }
 }
 
-function showErrorMessage(messageText) {
+function error_message_show(message_text) {
   const container = document.getElementById('error-message-container');
 
   if (!container) {
     console.error(
         'Could not find element #error-message-container to show error',
-        messageText);
+        message_text);
     return;
   }
 
-  container.textContent = messageText;
+  container.textContent = message_text;
   container.style.display = 'block';
 }
 
 // React to a message indicating that an entry expired (e.g. it was deleted, or
 // archived)
-async function onEntryExpiredMessage(message) {
+async function on_entry_expired_message(message) {
   if (typeof message !== 'object') {
     console.warn('Invalid message', message);
     return;
   }
 
-  // Do not trust the message
-  if (!isValidEntryId(message.id)) {
+  if (!entry_is_valid_id(message.id)) {
     console.warn('Invalid entry id', message);
     return;
   }
 
   // Search for a slide corresponding to the entry id
-  const slideElementName = Slideshow.getElementName();
-  const slide =
-      document.querySelector(slideElementName + '[entry="' + message.id + '"]');
+  const slide_element_name = Slideshow.getElementName();
+  const slide = document.querySelector(
+      slide_element_name + '[entry="' + message.id + '"]');
 
   // There is no guarantee the entry id corresponds to a loaded slide. It is
   // normal and frequent for the slideshow to receive messages with entry ids
   // that do not correspond to loaded slides.
   if (!slide) {
-    console.debug('No slide found for entry', message.id);
     return;
   }
 
@@ -136,70 +145,73 @@ async function onEntryExpiredMessage(message) {
   // should no longer be viewed, so we could prefer to remove it from the view.
   // However, it is the current slide being viewed which would lead to surprise
   // as the article the user is reading is magically whisked away. Instead, flag
-  // the slide as stale, so that other view functionality can react
-  // appropriately at a later time in an unobtrusive manner.
+  // the slide as stale.
   if (Slideshow.isCurrentSlide(slide)) {
-    console.log('Cannot remove active slide, marking as stale', message.id);
-    slide.setAttribute('removed-after-load', 'true');
+    slide.setAttribute('stale', 'true');
     return;
   }
 
-  // TODO: because this handles clicks and not Slideshow, the remove call
-  // doesn't remove the listener, so it has to be removed here, but I would
-  // prefer something better.
   Slideshow.remove(slide);
-  slide.removeEventListener('click', onSlideClick);
+  // TODO: because the click listener is done in slideshow-page instead of in
+  // the Slideshow helper module, Slideshow.remove does not remove the listener,
+  // so it has to be explicitly removed here. I would prefer something better. I
+  // initially started doing the click handler within Slideshow, but it turns
+  // out that there are several things that must happen in response to a click,
+  // and I did a poor job of separating out the functionality
+  slide.removeEventListener('click', slide_onclick);
 }
 
-function showLoadingInformation() {
-  const loadingElement = document.getElementById('initial-loading-panel');
-  if (loadingElement) {
-    loadingElement.style.display = 'block';
+function loading_info_show() {
+  const loading_info_element = document.getElementById('initial-loading-panel');
+  if (loading_info_element) {
+    loading_info_element.style.display = 'block';
   } else {
     console.error('Could not find initial loading panel');
   }
 }
 
-function hideLoadingInformation() {
-  const loadingElement = document.getElementById('initial-loading-panel');
-  if (loadingElement) {
-    loadingElement.style.display = 'none';
+function loading_info_hide() {
+  const loading_info_element = document.getElementById('initial-loading-panel');
+  if (loading_info_element) {
+    loading_info_element.style.display = 'none';
   } else {
     console.error('Could not find initial loading panel');
   }
 }
-
 
 // TODO: I lost the non-blocking nature I was going for, so I need to rethink
 // this.
-// TODO: I don't think this needs the conn parameter?
-
-async function markSlideRead(conn, slideElement) {
+async function slide_mark_read(conn, slide_element) {
   if (!(conn instanceof IDBDatabase)) {
-    console.error('Invalid conn parameter');
+    console.error('Invalid conn');
     return;
   }
 
-  if (!(slideElement instanceof Element)) {
-    console.error('Invalid slideElement parameter');
+  if (!(slide_element instanceof Element)) {
+    console.error('Invalid slide_element');
     return;
   }
 
-  // Get the entry id for the slide
-  const slideEntryAttributeValue = slideElement.getAttribute('entry');
-  const entryId = parseInt(slideEntryAttributeValue, 10);
-  // The entry id should always be valid or something is very wrong
-  if (!isValidEntryId(entryId)) {
-    console.error('Invalid entry id', entryId);
+  // If the slide is stale, for whatever reason, do nothing
+  if (slide.hasAttribute('stale')) {
+    console.debug('slide is stale, not marking as read');
     return;
   }
 
-  console.log('Marking slide for entry %d as read', entryId);
+  // Get and validate the entry id
+  const entry_attribute_value = slide_element.getAttribute('entry');
+  const entry_id = parseInt(entry_attribute_value, 10);
+  if (!entry_is_valid_id(entry_id)) {
+    console.error('Invalid entry id', entry_id);
+    return;
+  }
+
+  console.log('Marking slide with entry id %d as read', entry_id);
 
   // Exit early if the slide has already been read. This is routine such as when
-  // navigating backward and should not be considered an error.
-  if (slideElement.hasAttribute('read')) {
-    console.debug('Slide already marked as read', entryId);
+  // navigating backward then forward. navigation does not warrant that it
+  // inspects slide state to determine whether to mark as read
+  if (slide_element.hasAttribute('read')) {
     return;
   }
 
@@ -208,7 +220,7 @@ async function markSlideRead(conn, slideElement) {
   // corresponding slide. Then this can be called non-awaited.
 
   try {
-    await entry_mark_read(conn, channel, entryId);
+    await entry_mark_read(conn, channel, entry_id);
   } catch (error) {
     // TODO: display an error
     console.error(error);
@@ -217,29 +229,30 @@ async function markSlideRead(conn, slideElement) {
 
   // Signal to the UI that the slide is read, so that unread counting works, and
   // so that later calls to this function exit prior to interacting with
-  // storage.
-  slideElement.setAttribute('read', '');
+  // storage. This happens regardless of whether state updated correctly, at the
+  // moment, because there is no easy way to tell whether an error occurred pre
+  // or post commit (before state actually changed)
+  slide_element.setAttribute('read', '');
 }
 
 // TODO: append slides shouldn't be responsible for loading. This should accept
 // an array of slides as input. Something else should be doing loading.
-async function appendSlides(conn, limit) {
-  console.log('Appending slides (limit: %d)', limit);
-
+async function slide_load_and_append_multiple(conn, limit) {
   limit = typeof limit === 'undefined' ? 3 : limit;
-  const offset = countUnreadSlides();
+  console.log('Appending slides (limit: %d)', limit);
+  const offset = slideshow_count_unread();
 
   let entries;
   try {
-    entries = await findViewableEntries(conn, offset, limit);
+    entries = await reader_db_find_viewable_entries(conn, offset, limit);
   } catch (error) {
     console.error(error);
-    showErrorMessage('There was a problem loading articles from storage');
+    error_message_show('There was a problem loading articles from storage');
     return 0;
   }
 
   for (const entry of entries) {
-    appendSlide(entry);
+    slide_append(entry);
   }
 
   return entries.length;
@@ -247,10 +260,10 @@ async function appendSlides(conn, limit) {
 
 // TODO: the creation of a slide element, and the appending of a slide element,
 // should be two separate tasks. This will increase flexibility and maybe
-// clarity. appendSlide should accept a slide element, not an entry.
+// clarity. slide_append should accept a slide element, not an entry.
 
 // Given an entry, create a new slide element and append it to the view
-function appendSlide(entry) {
+function slide_append(entry) {
   if (!entry_is_entry(entry)) {
     console.error('Invalid entry parameter', entry);
     return;
@@ -261,63 +274,63 @@ function appendSlide(entry) {
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
   slide.setAttribute('class', 'entry');
-  slide.addEventListener('click', onSlideClick);
+  slide.addEventListener('click', slide_onclick);
 
   // An after-the-fact change to fix padding
-  const slidePaddingWrapper = document.createElement('div');
-  slidePaddingWrapper.className = 'slide-padding-wrapper';
-  slidePaddingWrapper.appendChild(createArticleTitleElement(entry));
-  slidePaddingWrapper.appendChild(createArticleContentElement(entry));
-  slidePaddingWrapper.appendChild(createFeedSourceElement(entry));
-  slide.appendChild(slidePaddingWrapper);
+  const slide_pad_wrap = document.createElement('div');
+  slide_pad_wrap.className = 'slide-padding-wrapper';
+  slide_pad_wrap.appendChild(create_article_title_element(entry));
+  slide_pad_wrap.appendChild(create_article_content_element(entry));
+  slide_pad_wrap.appendChild(create_feed_source_element(entry));
+  slide.appendChild(slide_pad_wrap);
 
   Slideshow.append(slide);
 }
 
-function createArticleTitleElement(entry) {
-  const titleElement = document.createElement('a');
-  titleElement.setAttribute('href', entry_peek_url(entry));
-  titleElement.setAttribute('class', 'entry-title');
-  titleElement.setAttribute('rel', 'noreferrer');
+function create_article_title_element(entry) {
+  const title_element = document.createElement('a');
+  title_element.setAttribute('href', entry_peek_url(entry));
+  title_element.setAttribute('class', 'entry-title');
+  title_element.setAttribute('rel', 'noreferrer');
 
   if (entry.title) {
     let title = entry.title;
-    let safeTitle = html_escape(title);
+    let safe_title = html_escape(title);
 
     // Set the attribute value to the full title without truncation or publisher
     // filter BUG: this is double encoding entities somehow, so entities show up
     // in the value
-    titleElement.setAttribute('title', safeTitle);
+    title_element.setAttribute('title', safe_title);
 
-    let filteredSafeTitle = filterPublisher(safeTitle);
+    let filtered_safe_title = filter_title_publisher(safe_title);
     try {
-      filteredSafeTitle = html_truncate(filteredSafeTitle, 300);
+      filtered_safe_title = html_truncate(filtered_safe_title, 300);
     } catch (error) {
       console.warn(error);
     }
 
     // Use innerHTML to allow entities in titles
-    titleElement.innerHTML = filteredSafeTitle;
+    title_element.innerHTML = filtered_safe_title;
 
   } else {
-    titleElement.setAttribute('title', 'Untitled');
-    titleElement.textContent = 'Untitled';
+    title_element.setAttribute('title', 'Untitled');
+    title_element.textContent = 'Untitled';
   }
 
-  return titleElement;
+  return title_element;
 }
 
-function createArticleContentElement(entry) {
-  const contentElement = document.createElement('span');
-  contentElement.setAttribute('class', 'entry-content');
+function create_article_content_element(entry) {
+  const content_element = document.createElement('span');
+  content_element.setAttribute('class', 'entry-content');
   // <html><body> will be implicitly stripped
-  contentElement.innerHTML = entry.content;
-  return contentElement;
+  content_element.innerHTML = entry.content;
+  return content_element;
 }
 
-function createFeedSourceElement(entry) {
-  const sourceElement = document.createElement('span');
-  sourceElement.setAttribute('class', 'entry-source');
+function create_feed_source_element(entry) {
+  const source_element = document.createElement('span');
+  source_element.setAttribute('class', 'entry-source');
 
   // At this point, assume that if faviconURLString is set, that it is
   // valid (defined, a string, a well-formed canonical url string). If it is not
@@ -325,11 +338,11 @@ function createFeedSourceElement(entry) {
   // but that is not our concern here. If the url is bad then show a broken
   // image.
   if (entry.faviconURLString) {
-    const faviconElement = document.createElement('img');
-    faviconElement.setAttribute('src', entry.faviconURLString);
-    faviconElement.setAttribute('width', '16');
-    faviconElement.setAttribute('height', '16');
-    sourceElement.appendChild(faviconElement);
+    const favicon_element = document.createElement('img');
+    favicon_element.setAttribute('src', entry.faviconURLString);
+    favicon_element.setAttribute('width', '16');
+    favicon_element.setAttribute('height', '16');
+    source_element.appendChild(favicon_element);
   }
 
   const details = document.createElement('span');
@@ -346,51 +359,51 @@ function createFeedSourceElement(entry) {
     buffer.push(formatDate(entry.datePublished));
   }
   details.textContent = buffer.join('');
-  sourceElement.appendChild(details);
-  return sourceElement;
+  source_element.appendChild(details);
+  return source_element;
 }
 
-// TODO: create a utils.js file for slideshow-page and move this to that file
-
+// TODO: move this back to a helper file, it is too detailed and I dislike how
+// huge this file has become
 // TODO: support alternate whitespace expressions around delimiters
 // Filter publisher information from an article title
 // @param title {String} the title of an web page
 // @returns {String} the title without publisher information
-function filterPublisher(title) {
+function filter_title_publisher(title) {
   if (typeof title !== 'string') {
     console.error('Invalid title parameter', title);
   }
 
   // Look for a delimiter
-  let delimiterPosition = title.lastIndexOf(' - ');
-  if (delimiterPosition < 0) {
-    delimiterPosition = title.lastIndexOf(' | ');
+  let delimiter_position = title.lastIndexOf(' - ');
+  if (delimiter_position < 0) {
+    delimiter_position = title.lastIndexOf(' | ');
   }
-  if (delimiterPosition < 0) {
-    delimiterPosition = title.lastIndexOf(' : ');
+  if (delimiter_position < 0) {
+    delimiter_position = title.lastIndexOf(' : ');
   }
 
   // Exit early if no delimiter found
-  if (delimiterPosition < 0) {
+  if (delimiter_position < 0) {
     return title;
   }
 
   // Exit early if the delimiter did not occur late enough in the title
   const MIN_TITLE_LENGTH = 20;
-  if (delimiterPosition < MIN_TITLE_LENGTH) {
+  if (delimiter_position < MIN_TITLE_LENGTH) {
     return title;
   }
 
   // Exit early if the delimiter was found too close to the end
   const MIN_PUBLISHER_NAME_LENGTH = 5;
-  const remainingCharCount = title.length - delimiterPosition;
-  if (remainingCharCount < MIN_PUBLISHER_NAME_LENGTH) {
+  const remaining_char_count = title.length - delimiter_position;
+  if (remaining_char_count < MIN_PUBLISHER_NAME_LENGTH) {
     return title;
   }
 
   // Break apart the tail into words
-  const delimiterLength = 3;
-  const tail = title.substring(delimiterPosition + delimiterLength);
+  const delimiter_length = 3;
+  const tail = title.substring(delimiter_position + delimiter_length);
   const words = tokenize(tail);
 
   // If there are too many words, return the full title, because tail is
@@ -400,54 +413,38 @@ function filterPublisher(title) {
     return title;
   }
 
-  // Return the modified title
-  let outputTitle = title.substring(0, delimiterPosition);
-  return outputTitle.trim();
+  return title.substring(0, delimiter_position).trim();
 }
 
-// Helper for filterPublisher, break apart string into array of words
+// Helper for filter_title_publisher, break apart string into array of words
 function tokenize(value) {
   if (typeof value === 'string') {
     // Avoid empty tokens by trimming and checking length
-    const trimmedInput = value.trim();
-    if (trimmedInput.length > 0) {
-      return trimmedInput.split(/\s+/g);
+    const trimmed_input = value.trim();
+    if (trimmed_input.length) {
+      return trimmed_input.split(/\s+/g);
     }
   }
   return [];
 }
 
-async function onSlideClick(event) {
-  // We only care about responding to left click. Ignore all other buttons like
-  // right click and mouse wheel.
-  const CODE_LEFT_MOUSE_BUTTON = 1;
-  if (event.which !== CODE_LEFT_MOUSE_BUTTON) {
+async function slide_onclick(event) {
+  // We only care about responding to left click
+  const LEFT_MOUSE_BUTTON_CODE = 1;
+  if (event.which !== LEFT_MOUSE_BUTTON_CODE) {
     return true;
   }
 
-  // Find the most immediate containing anchor. In theory there shouldn't be
-  // anchors nested in anchors. Also note this can fail to find one (which is
-  // not an unexpected error). event.target is the element that was clicked.
-  // This could be several things:
-  // * a slide, clicked on misc area of a slide
-  // * an anchor in a slide
-  // * an element within an anchor, like a clickable image
+  // event.target is the clicked element, which could be an anchor, an element
+  // that is a descendant of an anchor, or some other element in the slide.
+  // Search for the containing anchor (which includes testing against the
+  // clicked element itself)
   const anchor = event.target.closest('a');
-
-  // Ignore non-anchor-involved clicks, leave the click as is and defer click
-  // handling to browser.
   if (!anchor) {
     return true;
   }
 
-  // Technically this should never happen, right? Because all such anchors
-  // should have been removed by the content-filters in document preprocessing.
-  // Therefore, log a warning message and exit.
-  // TODO: should this be a visual error?
   if (!anchor.hasAttribute('href')) {
-    console.warn(
-        'Clicked anchor that should have been filtered by preprocessing',
-        anchor.outerHTML);
     return true;
   }
 
@@ -455,78 +452,54 @@ async function onSlideClick(event) {
   // browser that we are intercepting.
   event.preventDefault();
 
-  // Get the url and open the url in a new tab.
-  const urlString = anchor.getAttribute('href');
-  if (!urlString) {
-    console.error(
-        'An invalid url somehow got through data processing to the ui, should never happen',
-        anchor.outerHTML);
+  // Open the url in a new tab.
+  const url_string = anchor.getAttribute('href');
+  if (!url_string) {
     return;
   }
 
-  openTab(urlString);
+  tab_open(url_string);
 
-  // After opening the link in a new tab, then continue processing. Next, find
-  // the slide that was clicked. This is typically the current slide, but that
-  // isn't guaranteed. Article elements are filtered from document content, so
-  // the only time an ancestor of the anchor is an article is when it is the
-  // slide that contains the anchor. Start from parent node to skip the closest
-  // test against the anchor itself.
-  const clickedSlide = anchor.parentNode.closest('slide');
-
-  if (!clickedSlide) {
-    // TODO: show an error?
-    console.error('Could not find clicked slide');
+  // Find the slide that was clicked
+  const clicked_slide = anchor.parentNode.closest('slide');
+  if (!clicked_slide) {
     return;
   }
 
-  // Weak sanity check that the element is a slide, mostly just to monitor the
-  // recent changes to this function.
-  const currentSlide = Slideshow.getCurrentSlide();
-  if (clickedSlide !== currentSlide) {
-    console.log(
-        'Clicked slide is different than current slide', clickedSlide,
-        currentSlide);
-  }
+  const current_slide = Slideshow.getCurrentSlide();
 
-  // Although this condition is primarily a concern of markSlideRead, and is
-  // redundant with the check that occurs within markSlideRead, checking it here
-  // avoids the call.
-  if (clickedSlide.hasAttribute('removed-after-load')) {
-    console.log('Exiting click handler early due to stale state', clickedSlide);
+  if (clicked_slide.hasAttribute('stale')) {
     return false;
   }
+
+  // TODO: this belongs in a helper in ral.js. The problem however is that I
+  // split up the functionality, this uses the element, I cannot use the element
+  // in ral. So really the problem is that slide_mark_read does too much. This
+  // should be able to use only those components of slide_mark_read that it
+  // cares about. But in order to break up slide_mark_read appropriately, I
+  // think I need to refactor how the element is updated after click, I think it
+  // needs to be done from message event handler instead of explicitly done, so
+  // that it no longer matters which initiator started the sequence
 
   // Mark the current slide as read
   let conn;
   try {
-    conn = await openReaderDb();
+    conn = await reader_db_open();
   } catch (error) {
     // TODO: visually show error
     console.error(error);
     return false;
   }
 
-  await markSlideRead(conn, clickedSlide);
+  await slide_mark_read(conn, clicked_slide);
 
   conn.close();
-
-  // Still signal the click should not default to normal click behavior, the
-  // browser should not react to the click on its own. Even though I already
-  // called preventDefault.
-  // TODO: if a function does not explicitly return it returns undefined. Does
-  // the browser only cancel if exactly false or is returning undefined the
-  // same? If returning undefined is the same then this return statement is
-  // implicit and not necessary.
-  return false;
 }
-
-
 
 // TODO: is the debouncing stuff with idle callback approach needed??
 // TODO: do not handle key press if target is input/textarea
-let keydownTimerId = null;
-function onKeyDown(event) {
+let keydown_timer_id = null;
+function on_key_down(event) {
   const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
   const code = event.keyCode;
 
@@ -535,22 +508,22 @@ function onKeyDown(event) {
     case N:
     case SPACE: {
       event.preventDefault();
-      cancelIdleCallback(keydownTimerId);
-      keydownTimerId = requestIdleCallback(nextSlide);
+      cancelIdleCallback(keydown_timer_id);
+      keydown_timer_id = requestIdleCallback(slide_next);
       break;
     }
 
     case LEFT:
     case P: {
       event.preventDefault();
-      cancelIdleCallback(keydownTimerId);
-      keydownTimerId = requestIdleCallback(Slideshow.prev);
+      cancelIdleCallback(keydown_timer_id);
+      keydown_timer_id = requestIdleCallback(Slideshow.prev);
       break;
     }
   }
 }
 
-window.addEventListener('keydown', onKeyDown);
+window.addEventListener('keydown', on_key_down);
 
 // TODO: I should probably unlink loading on demand and navigation, because this
 // causes lag. navigation would be smoother if I appended even earlier, like
@@ -563,34 +536,37 @@ window.addEventListener('keydown', onKeyDown);
 // check should happen not on append, but after doing the navigation. Or after
 // marking the slide as read.
 
-// TODO: sharing the connection between mark as read and appendSlides made sense
-// at first but I do not like the large try/catch block. Also I think the two
-// can be unlinked because they do not have to co-occur. Also I don't like how
-// it has to wait for read to complete.
+// TODO: sharing the connection between mark as read and
+// slide_load_and_append_multiple made sense at first but I do not like the
+// large try/catch block. Also I think the two can be unlinked because they do
+// not have to co-occur. Also I don't like how it has to wait for read to
+// complete.
 
-async function nextSlide() {
-  const currentSlide = Slideshow.getCurrentSlide();
+async function slide_next() {
+  const current_slide = Slideshow.getCurrentSlide();
 
   // If there are still unread articles return. Do not mark the current article,
   // if it exists, as read.
-  const unreadSlideCount = countUnreadSlides();
+  const slide_unread_count = slideshow_count_unread();
   // We still append if there is just one unread slide
-  if (unreadSlideCount > 1) {
+  if (slide_unread_count > 1) {
     console.debug(
         'Not dynamically appending because %d unread slides remain',
-        unreadSlideCount);
+        slide_unread_count);
 
+    // TODO: like the notes in the click handler, this should be calling to a
+    // helper in ral.js that deals with conn open and close
 
     // Mark the current slide as read
     let conn;
     try {
-      conn = await openReaderDb();
+      conn = await reader_db_open();
     } catch (error) {
       console.error(error);
       return;
     }
 
-    await markSlideRead(conn, currentSlide);
+    await slide_mark_read(conn, current_slide);
     conn.close();
 
     Slideshow.next();
@@ -600,21 +576,21 @@ async function nextSlide() {
   let appendCount = 0;
   let conn;
   try {
-    conn = await openReaderDb();
+    conn = await reader_db_open();
   } catch (error) {
     console.error(error);
     return;
   }
 
-  if (unreadSlideCount < 2) {
+  if (slide_unread_count < 2) {
     console.log('Appending additional slides prior to navigation');
-    appendCount = await appendSlides(conn);
+    appendCount = await slide_load_and_append_multiple(conn);
   } else {
     console.log('Not appending additional slides prior to navigation');
   }
 
   Slideshow.next();
-  await markSlideRead(conn, currentSlide);
+  await slide_mark_read(conn, current_slide);
   conn.close();
 
   if (appendCount < 1) {
@@ -623,35 +599,29 @@ async function nextSlide() {
 
   const maxLoadCount = 6;
   let firstSlide = Slideshow.getFirstSlide();
-  while (Slideshow.count() > maxLoadCount && firstSlide !== currentSlide) {
+  while (Slideshow.count() > maxLoadCount && firstSlide !== current_slide) {
     Slideshow.remove(firstSlide);
-    firstSlide.removeEventListener('click', onSlideClick);
+    firstSlide.removeEventListener('click', slide_onclick);
     firstSlide = Slideshow.getFirstSlide();
   }
 }
 
-function countUnreadSlides() {
-  const slides = Slideshow.getSlides();
-  let count = 0;
-  for (const slide of slides) {
-    if (slide.hasAttribute('read')) {
-      continue;
-    }
-    count++;
-  }
-  return count;
+function slideshow_count_unread() {
+  return Slideshow.getSlides()
+      .filter(slide => !slide.hasAttribute('read'))
+      .length;
 }
 
-let refreshInProgress = false;
-async function refreshAnchorOnclick(event) {
+let refresh_in_progress = false;
+async function refresh_anchor_onclick(event) {
   event.preventDefault();
   console.log('Clicked refresh button');
 
-  if (refreshInProgress) {
+  if (refresh_in_progress) {
     console.log('Ignoring refresh button click while refresh in progress');
     return;
   }
-  refreshInProgress = true;
+  refresh_in_progress = true;
 
   // TODO: this approach leaks default channel in poll_service_create_context
 
@@ -680,37 +650,38 @@ async function refreshAnchorOnclick(event) {
   }
 
   console.log('Re-enabling refresh button');
-  refreshInProgress = false;  // Always renable
+  refresh_in_progress = false;  // Always renable
 }
 
-function showMenuOptions() {
+function options_menu_show() {
   const menuOptions = document.getElementById('left-panel');
   menuOptions.style.marginLeft = '0px';
   menuOptions.style.boxShadow = '2px 0px 10px 2px #8e8e8e';
 }
 
-function hideMenuOptions() {
+function options_menu_hide() {
   const menuOptions = document.getElementById('left-panel');
   menuOptions.style.marginLeft = '-320px';
   menuOptions.style.boxShadow = '';  // HACK
 }
 
-function mainMenuButtonOnclick(event) {
+function main_menu_button_onclick(event) {
   const menuOptions = document.getElementById('left-panel');
   if (menuOptions.style.marginLeft === '0px') {
-    hideMenuOptions();
+    options_menu_hide();
   } else if (menuOptions.style.marginLeft === '') {
-    showMenuOptions();
+    options_menu_show();
   } else {
-    showMenuOptions();
+    options_menu_show();
   }
 }
 
-function menuOptionsOnclick(event) {
+function options_menu_onclick(event) {
   // event.target points to either a clicked <li> or the <ul>
   const option = event.target;
+
+  // Ignore clicks on elements that are not menu options
   if (option.localName !== 'li') {
-    console.debug('Ignoring click on menu options that is not on menu item');
     return;
   }
 
@@ -719,10 +690,10 @@ function menuOptionsOnclick(event) {
       console.warn('Not yet implemented');
       break;
     case 'menu-option-import':
-      menuOptionImportOnclick();
+      import_menu_option_handle_click(event);
       break;
     case 'menu-option-export':
-      menuOptionExportOnclick();
+      export_menu_option_handle_click(event);
       break;
     case 'menu-option-header-font':
       // Ignore, this has its own handler
@@ -736,7 +707,7 @@ function menuOptionsOnclick(event) {
   }
 }
 
-function menuOptionImportOnclick() {
+function import_menu_option_handle_click(event) {
   const uploaderInput = document.createElement('input');
   uploaderInput.setAttribute('type', 'file');
   uploaderInput.setAttribute('accept', 'text/xml');
@@ -750,7 +721,7 @@ async function importFiles(files) {
   // TODO: show operation started
 
   try {
-    await importOPML(channel, files);
+    await ral_import(channel, files);
   } catch (error) {
     // TODO: visual feedback in event an error
     console.error(error);
@@ -764,11 +735,11 @@ async function importFiles(files) {
   // TODO: switch to feed list section?
 }
 
-async function menuOptionExportOnclick() {
+async function export_menu_option_handle_click(event) {
   const title = 'Subscriptions', filename = 'subscriptions.xml';
   let blob;
   try {
-    blob = await exportOPML(title);
+    blob = await ral_export(title);
   } catch (error) {
     // TODO: show an error message
     console.error(error);
@@ -808,7 +779,7 @@ function windowOnclick(event) {
     // marginLeft is empty string or -320px then menu already hidden
     const aside = document.getElementById('left-panel');
     if (aside.style.marginLeft === '0px') {
-      hideMenuOptions();
+      options_menu_hide();
     }
   }
 
@@ -890,9 +861,9 @@ function appendFeed(feed) {
     feedElement.setAttribute('inactive', 'true');
   }
 
-  let titleElement = document.createElement('span');
-  titleElement.textContent = feed.title;
-  feedElement.appendChild(titleElement);
+  let title_element = document.createElement('span');
+  title_element.textContent = feed.title;
+  feedElement.appendChild(title_element);
 
   const feedInfoElement = document.createElement('table');
 
@@ -1018,7 +989,7 @@ function formatDate(date, delimiter) {
   }
 }
 
-function openTab(url) {
+function tab_open(url) {
   chrome.tabs.create({active: true, url: url});
 }
 
@@ -1085,16 +1056,16 @@ function initBodyFontMenu() {
 }
 
 async function initSlideshowPage() {
-  showLoadingInformation();
+  loading_info_show();
 
   window.addEventListener('click', windowOnclick);
 
   const mainMenuButton = document.getElementById('main-menu-button');
-  mainMenuButton.onclick = mainMenuButtonOnclick;
+  mainMenuButton.onclick = main_menu_button_onclick;
 
   // Initialize the refresh icon in the header
   const refreshButton = document.getElementById('refresh');
-  refreshButton.onclick = refreshAnchorOnclick;
+  refreshButton.onclick = refresh_anchor_onclick;
 
   const feedsButton = document.getElementById('feeds-button');
   feedsButton.onclick = feedsButtonOnclick;
@@ -1114,7 +1085,7 @@ async function initSlideshowPage() {
   }
 
   const menuOptions = document.getElementById('left-panel');
-  menuOptions.onclick = menuOptionsOnclick;
+  menuOptions.onclick = options_menu_onclick;
 
   initHeaderFontMenu();
   initBodyFontMenu();
@@ -1133,26 +1104,26 @@ async function initSlideshowPage() {
 
   let conn;
   try {
-    conn = await openReaderDb();
+    conn = await reader_db_open();
   } catch (error) {
     // TODO: visually show error message
     console.error(error);
-    hideLoadingInformation();
+    loading_info_hide();
     return;
   }
 
   // First load only 1, to load quickly
-  await appendSlides(conn, initialLimit);
+  await slide_load_and_append_multiple(conn, initialLimit);
   console.log('Initial slide loaded');
 
-  hideLoadingInformation();
+  loading_info_hide();
 
   // Now preload a couple more
-  await appendSlides(conn, 2);
+  await slide_load_and_append_multiple(conn, 2);
 
   let feeds;
   try {
-    feeds = await getFeeds(conn);
+    feeds = await reader_db_get_feeds(conn);
   } catch (error) {
     // TODO: show an error message
     console.error(error);

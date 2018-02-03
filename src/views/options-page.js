@@ -6,7 +6,7 @@ import {open as openIconDb} from '/src/favicon-service.js';
 
 import subscribe from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
-import {activateFeed, deactivateFeed, feed_peek_url, findFeedById, getFeeds, open as openReaderDb} from '/src/rdb.js';
+import {activateFeed, deactivateFeed, feed_peek_url, findFeedById, reader_db_get_feeds, open as openReaderDb} from '/src/rdb.js';
 
 // TEMP: I plan to remove
 import * as PageStyle from '/src/views/page-style-settings.js';
@@ -395,7 +395,7 @@ async function feedListInit() {
 
   let feeds, conn;
   try {
-    feeds = await getFeeds(conn);
+    feeds = await reader_db_get_feeds(conn);
   } catch (error) {
     // TODO: show an error message
     console.error(error);

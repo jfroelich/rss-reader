@@ -16,12 +16,12 @@ function handle_compact_favicons_alarm(alarm) {
   return favicon_service_compact().catch(console.error);
 }
 
-function handleArchiveAlarmWakeup(alarm) {
-  let conn, channel, maxAge;
-  return archive_entries(conn, channel, maxAge).catch(console.error);
+function handle_archive_alarm_wakeup(alarm) {
+  let conn, channel, max_age;
+  return archive_entries(conn, channel, max_age).catch(console.error);
 }
 
-async function handleLostEntriesAlarm(alarm) {
+async function handle_lost_entries_alarm(alarm) {
   let conn;
   const channel = new BroadcastChannel('reader');
   try {
@@ -31,7 +31,7 @@ async function handleLostEntriesAlarm(alarm) {
   }
 }
 
-async function handleOrphanEntriesAlarm(alarm) {
+async function handle_orphan_entries_alarm(alarm) {
   let conn;
   const channel = new BroadcastChannel('reader');
   try {
@@ -41,21 +41,18 @@ async function handleOrphanEntriesAlarm(alarm) {
   }
 }
 
-async function handleRefreshFeedIconsAlarm(alarm) {
-  console.log('Refreshing feed favicons...');
-  const [feedConn, iconConn] =
+async function handle_refresh_feed_icons_alarm(alarm) {
+  const [reader_conn, favicon_conn] =
       await Promise.all([reader_db_open(), favicon_service_open()]);
-  await feed_store_refresh_all_icons(feedConn, iconConn);
-  feedConn.close();
-  iconConn.close();
+  await feed_store_refresh_all_icons(reader_conn, favicon_conn);
+  reader_conn.close();
+  favicon_conn.close();
 }
 
-async function handlePollFeedsAlarm(alarm) {
-  console.log('poll feeds alarm wakeup');
-
+async function handle_poll_feeds_alarm(alarm) {
   if ('ONLY_POLL_IF_IDLE' in localStorage) {
-    const idlePeriodSecs = 30;
-    const state = await queryIdleState(idlePeriodSecs);
+    const idle_period_secs = 30;
+    const state = await query_idle_state(idle_period_secs);
     if (state !== 'locked' || state !== 'idle') {
       return;
     }
@@ -67,32 +64,28 @@ async function handlePollFeedsAlarm(alarm) {
   poll_service_close_context(context);
 }
 
-window.testHandlePollFeedsAlarm = handlePollFeedsAlarm;
+window.test_handle_poll_feeds_alarm = handle_poll_feeds_alarm;
 
-function queryIdleState(idlePeriodSecs) {
+function query_idle_state(idle_period_secs) {
   return new Promise(function executor(resolve, reject) {
-    chrome.idle.queryState(idlePeriodSecs, resolve);
+    chrome.idle.queryState(idle_period_secs, resolve);
   });
 }
 
-
 const cli = {};
 
-cli.refreshIcons = async function() {
-  console.log('Refreshing feed favicons...');
-  const [feedConn, iconConn] =
+cli.refresh_icons = async function() {
+  const [reader_conn, favicon_conn] =
       await Promise.all([reader_db_open(), favicon_service_open()]);
-  await feed_store_refresh_all_icons(feedConn, iconConn);
-  feedConn.close();
-  iconConn.close();
+  await feed_store_refresh_all_icons(reader_conn, favicon_conn);
+  reader_conn.close();
+  favicon_conn.close();
 };
 
 cli.archive_entries = function(limit) {
-  console.log('Archiving entries...');
-
-  let conn, maxAge;
+  let conn, max_age;
   const channel = new BroadcastChannel('reader');
-  archive_entries(conn, channel, maxAge).catch(console.error).finally(() => {
+  archive_entries(conn, channel, max_age).catch(console.error).finally(() => {
     if (channel) {
       channel.close();
     }
@@ -100,7 +93,6 @@ cli.archive_entries = function(limit) {
 };
 
 cli.poll_service_poll_feeds = async function() {
-  console.log('Polling feeds...');
   const context = await poll_service_create_context();
   context.ignoreRecencyCheck = true;
   context.ignoreModifiedCheck = true;
@@ -120,8 +112,6 @@ cli.entry_store_remove_lost_entries = async function(limit) {
 };
 
 cli.entry_store_remove_orphans = async function() {
-  console.log('Removing orphaned entries...');
-
   let conn;
   const channel = new BroadcastChannel('reader');
   try {
@@ -131,32 +121,29 @@ cli.entry_store_remove_orphans = async function() {
   }
 };
 
-cli.clearFavicons = favicon_service_clear;
-cli.compactFavicons = favicon_service_compact;
+cli.clear_favicons = favicon_service_clear;
+cli.compact_favicons = favicon_service_compact;
 
-cli.lookupFavicon = async function(url, cached) {
+cli.lookup_favicon = async function(url, cached) {
   const query = {};
   query.url = new URL(url);
   if (cached) {
     query.conn = await favicon_service_open();
   }
 
-  const iconURLString = await favicon_service_lookup(query);
+  const icon_url_string = await favicon_service_lookup(query);
   if (cached) {
     query.conn.close();
   }
 
-  return iconURLString;
+  return icon_url_string;
 };
-
 
 window.cli = cli;  // expose to console
 
 console.debug('Initializing background page');
 
 chrome.runtime.onInstalled.addListener(function(event) {
-  console.debug('Received install event:', event);
-
   console.log('Setting up feed store database');
   reader_db_open()
       .then(function(conn) {
@@ -174,7 +161,7 @@ chrome.runtime.onInstalled.addListener(function(event) {
 
 chrome.browserAction.onClicked.addListener(show_slideshow_tab);
 
-async function initBadge() {
+async function badge_init() {
   let conn;
   try {
     conn = await reader_db_open();
@@ -188,7 +175,7 @@ async function initBadge() {
   }
 }
 
-initBadge();
+badge_init();
 
 chrome.alarms.onAlarm.addListener(function(alarm) {
   console.debug('Alarm awoke:', alarm.name);
@@ -196,19 +183,19 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
 
   switch (alarm.name) {
     case 'archive':
-      handleArchiveAlarmWakeup(alarm).catch(console.error);
+      handle_archive_alarm_wakeup(alarm).catch(console.error);
       break;
     case 'poll':
-      handlePollFeedsAlarm(alarm).catch(console.error);
+      handle_poll_feeds_alarm(alarm).catch(console.error);
       break;
     case 'remove-entries-missing-urls':
-      handleLostEntriesAlarm(alarm).catch(console.error);
+      handle_lost_entries_alarm(alarm).catch(console.error);
       break;
     case 'remove-orphaned-entries':
-      handleOrphanEntriesAlarm(alarm).catch(console.error);
+      handle_orphan_entries_alarm(alarm).catch(console.error);
       break;
     case 'refresh-feed-icons':
-      handleRefreshFeedIconsAlarm(alarm).catch(console.error);
+      handle_refresh_feed_icons_alarm(alarm).catch(console.error);
       break;
     case 'compact-favicon-db':
       handle_compact_favicons_alarm(alarm);
