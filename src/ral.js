@@ -56,12 +56,11 @@ export async function ral_load_initial(
   try {
     conn = await reader_db_open();
 
-    // TODO: these two can co-occur? I should not wait to start the second until
-    // after the first. So I should be using Promise.all here
-
-    await reader_db_viewable_entries_for_each(
+    const p1 = reader_db_viewable_entries_for_each(
         conn, entry_cursor_offset, entry_cursor_limit, entry_handler);
-    await reader_db_for_each_active_feed(conn, feed_handler);
+    const p2 = reader_db_for_each_active_feed(conn, feed_handler);
+
+    await Promise.all([p1, p2]);
   } finally {
     if (conn) {
       console.debug('Closing connection', conn.name);

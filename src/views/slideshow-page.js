@@ -949,7 +949,7 @@ function body_font_menu_init() {
   }
 }
 
-async function slideshow_page_init() {
+function slideshow_page_init() {
   loading_info_show();
 
   window.addEventListener('click', window_onclick);
@@ -984,25 +984,17 @@ async function slideshow_page_init() {
   header_font_menu_init();
   body_font_menu_init();
 
-  // Initialize entry display settings
-  // TODO: is it possible to defer this until after loading without slowing
-  // things down?
   PageStyle.page_style_onload();
 
-  const entry_cursor_offset = 0;
-  const entry_cursor_limit = 6;
-  try {
-    await ral_load_initial(
-        entry_cursor_offset, entry_cursor_limit, slide_append,
-        feeds_container_append_feed);
-  } catch (error) {
-    // TODO: visually show error message
-    console.error(error);
-  }
-
-  loading_info_hide();
+  const entry_cursor_offset = 0, entry_cursor_limit = 6;
+  ral_load_initial(
+      entry_cursor_offset, entry_cursor_limit, slide_append,
+      feeds_container_append_feed)
+      .then(loading_info_hide)
+      .catch((error) => {
+        // TODO: show an error message
+        console.error(error);
+      });
 }
 
-
-// TODO: visually show error
-slideshow_page_init().catch(console.warn);
+slideshow_page_init();
