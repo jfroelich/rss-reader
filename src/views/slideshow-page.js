@@ -648,47 +648,52 @@ function options_menu_onclick(event) {
 }
 
 function import_menu_option_handle_click(event) {
-  const uploaderInput = document.createElement('input');
-  uploaderInput.setAttribute('type', 'file');
-  uploaderInput.setAttribute('accept', 'text/xml');
-  uploaderInput.onchange = function importInputOnchange(event) {
-    importFiles(uploaderInput.files).catch(console.warn);
-  };
-  uploaderInput.click();
+  const uploader_input = document.createElement('input');
+  uploader_input.setAttribute('type', 'file');
+  uploader_input.setAttribute('accept', 'text/xml');
+  uploader_input.onchange = uploader_input_onchange;
+  uploader_input.click();
 }
 
-async function importFiles(files) {
+function uploader_input_onchange(event) {
+  const files = event.target.files;
+  if (!files) {
+    console.error('No files', event);
+    return;
+  }
+
   // TODO: show operation started
 
-  try {
-    await ral_import(channel, files);
-  } catch (error) {
-    // TODO: visual feedback in event an error
-    console.error(error);
-    return;
-  }
+  ral_import(channel, files)
+      .then(() => {
+        console.log('Import completed');
 
-  console.log('Import completed');
-
-  // TODO: visually inform the user that the operation completed successfully
-  // TODO: refresh feed list
-  // TODO: switch to feed list section?
+        // TODO: visually inform the user that the operation completed
+        // successfully
+        // TODO: refresh feed list so that it displays any new feeds
+        // TODO: switch to feed list section or at least show a message about
+        // how the import completed successfully, and perhaps other details such
+        // as the number of subscriptions added
+      })
+      .catch(error => {
+        // TODO: show a friendly error message
+        console.error(error);
+      });
 }
 
-async function export_menu_option_handle_click(event) {
-  const title = 'Subscriptions', filename = 'subscriptions.xml';
-  let blob;
-  try {
-    blob = await ral_export(title);
-  } catch (error) {
-    // TODO: show an error message
-    console.error(error);
-    return;
-  }
-
-  download_blob(blob, filename);
-  // TODO: visual feedback on completion
-  console.log('Export completed');
+function export_menu_option_handle_click(event) {
+  const title = 'Subscriptions';
+  ral_export(title)
+      .then(blob => {
+        const filename = 'subscriptions.xml';
+        download_blob(blob, filename);
+        // TODO: visual feedback on completion
+        console.log('Export completed');
+      })
+      .catch(error => {
+        // TODO: show an error message
+        console.error(error);
+      });
 }
 
 function download_blob(blob, filename) {
