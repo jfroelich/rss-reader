@@ -1,8 +1,10 @@
 import {html_escape, html_truncate} from '/src/common/html-utils.js';
 import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
 import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
-import {ral_export, ral_import} from '/src/ral.js';
+import {ral_export, ral_import, ral_load_initial} from '/src/ral.js';
 import {entry_is_entry, entry_is_valid_id, entry_peek_url, feed_peek_url, open as reader_db_open, reader_db_find_viewable_entries, reader_db_get_feeds} from '/src/rdb.js';
+import {filter_title_publisher} from '/src/views/article-utils.js';
+import {date_format} from '/src/views/date.js';
 import * as PageStyle from '/src/views/page-style-settings.js';
 import * as Slideshow from '/src/views/slideshow.js';
 
@@ -269,7 +271,8 @@ function slide_append(entry) {
     return;
   }
 
-  console.log('Creating and appending slide for entry', entry.id);
+  console.debug('Appending entry', entry_peek_url(entry));
+
   const slide = Slideshow.create();
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
@@ -363,70 +366,6 @@ function create_feed_source_element(entry) {
   return source_element;
 }
 
-// TODO: move this back to a helper file, it is too detailed and I dislike how
-// huge this file has become
-// TODO: support alternate whitespace expressions around delimiters
-// Filter publisher information from an article title
-// @param title {String} the title of an web page
-// @returns {String} the title without publisher information
-function filter_title_publisher(title) {
-  if (typeof title !== 'string') {
-    console.error('Invalid title parameter', title);
-  }
-
-  // Look for a delimiter
-  let delimiter_position = title.lastIndexOf(' - ');
-  if (delimiter_position < 0) {
-    delimiter_position = title.lastIndexOf(' | ');
-  }
-  if (delimiter_position < 0) {
-    delimiter_position = title.lastIndexOf(' : ');
-  }
-
-  // Exit early if no delimiter found
-  if (delimiter_position < 0) {
-    return title;
-  }
-
-  // Exit early if the delimiter did not occur late enough in the title
-  const MIN_TITLE_LENGTH = 20;
-  if (delimiter_position < MIN_TITLE_LENGTH) {
-    return title;
-  }
-
-  // Exit early if the delimiter was found too close to the end
-  const MIN_PUBLISHER_NAME_LENGTH = 5;
-  const remaining_char_count = title.length - delimiter_position;
-  if (remaining_char_count < MIN_PUBLISHER_NAME_LENGTH) {
-    return title;
-  }
-
-  // Break apart the tail into words
-  const delimiter_length = 3;
-  const tail = title.substring(delimiter_position + delimiter_length);
-  const words = tokenize(tail);
-
-  // If there are too many words, return the full title, because tail is
-  // probably not a publisher
-  const MAX_TAIL_WORDS = 4;
-  if (words.length > MAX_TAIL_WORDS) {
-    return title;
-  }
-
-  return title.substring(0, delimiter_position).trim();
-}
-
-// Helper for filter_title_publisher, break apart string into array of words
-function tokenize(value) {
-  if (typeof value === 'string') {
-    // Avoid empty tokens by trimming and checking length
-    const trimmed_input = value.trim();
-    if (trimmed_input.length) {
-      return trimmed_input.split(/\s+/g);
-    }
-  }
-  return [];
-}
 
 async function slide_onclick(event) {
   // We only care about responding to left click
@@ -841,12 +780,6 @@ function reader_button_onclick(event) {
   feeds_container.style.display = 'none';
 }
 
-function feeds_container_init(feeds) {
-  for (const feed of feeds) {
-    feeds_container_append_feed(feed);
-  }
-}
-
 function unsubscribe_button_onclick(event) {
   console.debug('Unsubscribe (not yet implemented)', event.target);
 }
@@ -854,6 +787,8 @@ function unsubscribe_button_onclick(event) {
 // TODO: create helper function createFeedElement that then is passed to this,
 // rename this to appendFeedElement and change its parameter
 function feeds_container_append_feed(feed) {
+  console.debug('Appending feed', feed_peek_url(feed));
+
   const feeds_container = document.getElementById('feeds-container');
   const feed_element = document.createElement('div');
   feed_element.id = feed.id;
@@ -932,62 +867,22 @@ function feeds_container_append_feed(feed) {
   }
   col.appendChild(button);
 
-
   row.appendChild(col);
   feed_info_element.appendChild(row);
-
   feed_element.appendChild(feed_info_element);
 
-  if (feeds_container) {
-    feeds_container.appendChild(feed_element);
-  }
+  // TODO: this needs to find the proper place to append the feed
+  // using feed_compare. This needs to iterate over the existing feeds and
+  // compare each one to the feed and find where to insert, and fall back to
+  // append. I no longer am pre-sorting an array and then iterating over it,
+  // I am using a callback that loads feeds from the db in natural order.
+  feeds_container.appendChild(feed_element);
 }
 
-function date_format(date, delimiter) {
-  if (!(date instanceof Date)) {
-    return 'Invalid date';
-  }
-
-  // TODO: move this to github issue
-  // TODO: date can literally contain "Invalid Date" somehow
-  // Like, "Invalid Date" is actually an instance of date.
-  // No idea. But a couple of things. First is to handle it here
-  // using try/catch to prevent failure. Second is to figure out
-  // where the bad date comes from. I should never be storing such
-  // a date, it should have been caught earlier in the pipeline.
-  // It came from http://www.lispcast.com/feed, the entry
-  // http://groups.google.com/group/ring-clojure/browse_thread/thread/f18338ffda7e38f5
-
-  // new Date('Tue 13 Dec 2011 09:37:46 AM ART') =>
-  // "Invalid Date".
-  // So, date parsing is not working, like it just fails
-  // How to detect "Invalid Date"?
-  // https://stackoverflow.com/questions/1353684
-  // Date.parse('Tue 13 Dec 2011 09:37:46 AM ART') => NaN
-
-  // var d = new Date('Tue 13 Dec 2011 09:37:46 AM ART'); d.getTime() ===
-  // d.getTime(); => false So basically all the date parsing needs to be
-  // refactored. Not sure I even need the try/catches.
-
-  /*
-  function parseDate(string) {
-    const date = new Date(string);
-    if(date.getTime() !== date.getTime()) {
-      throw new Error('Date parsing error for value ' + string);
-    }
-    return date;
-  }
-  */
-
-  // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/
-  // Reference/Global_Objects/DateTimeFormat
-  const formatter = new Intl.DateTimeFormat();
-  try {
-    return formatter.format(date);
-  } catch (error) {
-    console.debug(error);
-    return 'Invalid date';
-  }
+function feed_compare(a, b) {
+  const atitle = a.title ? a.title.toLowerCase() : '';
+  const btitle = b.title ? b.title.toLowerCase() : '';
+  return indexedDB.cmp(atitle, btitle);
 }
 
 function tab_open(url) {
@@ -1089,63 +984,25 @@ async function slideshow_page_init() {
   header_font_menu_init();
   body_font_menu_init();
 
+  // Initialize entry display settings
   // TODO: is it possible to defer this until after loading without slowing
-  // things down? Initialize entry display settings
+  // things down?
   PageStyle.page_style_onload();
 
-  // TODO: closing should happen before append actually takes place, there is no
-  // need to keep the database open longer.
-  // TODO: create a helper function that encapsulates this
-  // There should be a new helper in ral.js. But before I can do that I need
-  // to change it so that I just do loading in the helper, and appendSlides
-  // takes an array of things loaded from db, instead of doing the loading
-  // itself
-
-  // Load and append slides
-  const initial_limit = 1;
-  let did_hide_loading = false;
-
-  let conn;
+  const entry_cursor_offset = 0;
+  const entry_cursor_limit = 6;
   try {
-    conn = await reader_db_open();
+    await ral_load_initial(
+        entry_cursor_offset, entry_cursor_limit, slide_append,
+        feeds_container_append_feed);
   } catch (error) {
     // TODO: visually show error message
     console.error(error);
-    loading_info_hide();
-    return;
   }
-
-  // First load only 1, to load quickly
-  await slide_load_and_append_multiple(conn, initial_limit);
-  console.log('Initial slide loaded');
 
   loading_info_hide();
-
-  // Now preload a couple more
-  await slide_load_and_append_multiple(conn, 2);
-
-  // TODO: this should be a helper in ral.js
-  let feeds;
-  try {
-    feeds = await reader_db_get_feeds(conn);
-  } catch (error) {
-    // TODO: show an error message
-    console.error(error);
-    conn.close();
-    return;
-  }
-
-  conn.close();
-
-  // TODO: this should be implicit in a helper function
-  feeds.sort(function compareFeedTitle(a, b) {
-    const atitle = a.title ? a.title.toLowerCase() : '';
-    const btitle = b.title ? b.title.toLowerCase() : '';
-    return indexedDB.cmp(atitle, btitle);
-  });
-
-  feeds_container_init(feeds);
 }
+
 
 // TODO: visually show error
 slideshow_page_init().catch(console.warn);

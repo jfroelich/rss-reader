@@ -1,6 +1,6 @@
 import {export_opml as export_opml_impl, import_opml as import_opml_impl} from '/src/exim.js';
 import {open as favicon_service_open} from '/src/favicon-service.js';
-import {open as reader_db_open} from '/src/rdb.js';
+import {open as reader_db_open, reader_db_for_each_active_feed, reader_db_viewable_entries_for_each} from '/src/rdb.js';
 
 // Resource acquisition layer (RAL). An intermediate layer between storage and
 // the view that helps calls acquire and release needed resources, and supplies
@@ -37,5 +37,35 @@ export async function ral_export(title) {
     export_opml_impl(conn, title);
   } finally {
     if (conn) conn.close();
+  }
+}
+
+// Opens a connection to indexedDB. Then walks the entry store for viewable
+// entries and calls back to entry_handler as each entry is visited. Then walks
+// the feed store for feeds and calls back to feed_handler as each feed is
+// visited. Then closes the connection.
+// @param entry_cursor_offset {Number} the number of entries to skip past before
+// starting to pass entries back to visitor function
+// @param entry_handler {Function} called for each visited entry with the loaded
+// entry object
+// @param feed_handler {Function} called for each visited feed with the loaded
+// feed object
+export async function ral_load_initial(
+    entry_cursor_offset, entry_cursor_limit, entry_handler, feed_handler) {
+  let conn;
+  try {
+    conn = await reader_db_open();
+
+    // TODO: these two can co-occur? I should not wait to start the second until
+    // after the first. So I should be using Promise.all here
+
+    await reader_db_viewable_entries_for_each(
+        conn, entry_cursor_offset, entry_cursor_limit, entry_handler);
+    await reader_db_for_each_active_feed(conn, feed_handler);
+  } finally {
+    if (conn) {
+      console.debug('Closing connection', conn.name);
+      conn.close();
+    }
   }
 }

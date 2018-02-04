@@ -1,5 +1,5 @@
 import {html_replace_tags, html_truncate} from '/src/common/html-utils.js';
-import {open as utilsOpen} from '/src/common/indexeddb-utils.js';
+import {open as indexeddb_utils_open} from '/src/common/indexeddb-utils.js';
 
 // TODO: do away with all auto-connecting. The solution to inconvenient resource
 // lifetime management is through using wrapper functions, not through dynamic
@@ -21,15 +21,15 @@ export const ENTRY_STATE_UNARCHIVED = 0;
 export const ENTRY_STATE_ARCHIVED = 1;
 
 export function open(name = 'reader', version = 24, timeout = 500) {
-  return utilsOpen(name, version, onUpgradeNeeded, timeout);
+  return indexeddb_utils_open(name, version, on_upgrade_needed, timeout);
 }
 
 // Helper for open. Does the database upgrade. This should never be
 // called directly. To do an upgrade, call open with a higher version number.
-function onUpgradeNeeded(event) {
+function on_upgrade_needed(event) {
   const conn = event.target.result;
   const tx = event.target.transaction;
-  let feedStore, entryStore;
+  let feed_store, entry_store;
   const stores = conn.objectStoreNames;
 
   console.log(
@@ -37,70 +37,70 @@ function onUpgradeNeeded(event) {
       conn.version, event.oldVersion);
 
   if (event.oldVersion < 20) {
-    feedStore =
+    feed_store =
         conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
-    entryStore =
+    entry_store =
         conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
-    feedStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+    feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
 
-    entryStore.createIndex('readState', 'readState');
-    entryStore.createIndex('feed', 'feed');
-    entryStore.createIndex(
+    entry_store.createIndex('readState', 'readState');
+    entry_store.createIndex('feed', 'feed');
+    entry_store.createIndex(
         'archiveState-readState', ['archiveState', 'readState']);
-    entryStore.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+    entry_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
   } else {
-    feedStore = tx.objectStore('feed');
-    entryStore = tx.objectStore('entry');
+    feed_store = tx.objectStore('feed');
+    entry_store = tx.objectStore('entry');
   }
 
   if (event.oldVersion < 21) {
     // Add magic to all older entries
-    addEntryMagic(tx);
+    add_entry_magic(tx);
   }
 
   if (event.oldVersion < 22) {
-    addFeedMagic(tx);
+    add_feed_magic(tx);
   }
 
   if (event.oldVersion < 23) {
-    if (feedStore.indexNames.contains('title')) {
-      feedStore.deleteIndex('title');
+    if (feed_store.indexNames.contains('title')) {
+      feed_store.deleteIndex('title');
     }
   }
 
   if (event.oldVersion < 24) {
-    addActiveFieldToFeeds(feedStore);
+    add_active_field_to_feeds(feed_store);
   }
 }
 
 // Expects the transaction to be writable (either readwrite or versionchange)
-function addEntryMagic(tx) {
+function add_entry_magic(tx) {
   console.debug('Adding entry magic');
   const store = tx.objectStore('entry');
-  const getAllEntriesRequest = store.getAll();
-  getAllEntriesRequest.onerror = function(event) {
-    console.error(getAllEntriesRequest.error);
+  const get_all_entries_request = store.getAll();
+  get_all_entries_request.onerror = function(event) {
+    console.error(get_all_entries_request.error);
   };
-  getAllEntriesRequest.onsuccess = function(event) {
+  get_all_entries_request.onsuccess = function(event) {
     const entries = event.target.result;
-    writeEntriesWithMagic(store, entries);
+    write_entries_with_magic(store, entries);
   };
 }
 
-function writeEntriesWithMagic(entryStore, entries) {
+function write_entries_with_magic(entry_store, entries) {
   for (const entry of entries) {
     entry.magic = ENTRY_MAGIC;
     entry.dateUpdated = new Date();
-    entryStore.put(entry);
+    entry_store.put(entry);
   }
 }
 
-function addFeedMagic(tx) {
+function add_feed_magic(tx) {
   console.debug('Adding feed magic');
   const store = tx.objectStore('feed');
-  const getAllFeedsRequest = store.getAll();
-  getAllFeedsRequest.onerror = console.error;
-  getAllFeedsRequest.onsuccess = function(event) {
+  const get_all_feeds_request = store.getAll();
+  get_all_feeds_request.onerror = console.error;
+  get_all_feeds_request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
       feed.magic = FEED_MAGIC;
@@ -110,10 +110,10 @@ function addFeedMagic(tx) {
   }
 }
 
-function addActiveFieldToFeeds(store) {
-  const feedsRequest = store.getAll();
-  feedsRequest.onerror = console.error;
-  feedsRequest.onsuccess = function(event) {
+function add_active_field_to_feeds(store) {
+  const feeds_request = store.getAll();
+  feeds_request.onerror = console.error;
+  feeds_request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
       feed.active = true;
@@ -123,29 +123,29 @@ function addActiveFieldToFeeds(store) {
   };
 }
 
-export async function reader_db_activate_feed(conn, channel, feedId) {
-  assert(feed_is_valid_id(feedId), 'Invalid feed id', feedId);
+export async function reader_db_activate_feed(conn, channel, feed_id) {
+  assert(feed_is_valid_id(feed_id), 'Invalid feed id', feed_id);
   const dconn = conn ? conn : await open();
-  await activateFeedPromise(dconn, feedId);
+  await activate_feed_promise(dconn, feed_id);
   if (!conn) {
     dconn.close();
   }
   if (channel) {
-    channel.postMessage({type: 'feed-activated', id: feedId});
+    channel.postMessage({type: 'feed-activated', id: feed_id});
   }
 }
 
-function activateFeedPromise(conn, feedId) {
+function activate_feed_promise(conn, feed_id) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('feed');
-    const request = store.get(feedId);
+    const request = store.get(feed_id);
     request.onsuccess = () => {
       const feed = request.result;
-      assert(feed, 'Could not find feed', feedId);
-      assert(!feed.active, 'Feed is already active ' + feedId);
+      assert(feed, 'Could not find feed', feed_id);
+      assert(!feed.active, 'Feed is already active ' + feed_id);
       feed.active = true;
       delete feed.deactivationReasonText;
       delete feed.deactivateDate;
@@ -155,29 +155,30 @@ function activateFeedPromise(conn, feedId) {
   });
 }
 
-export async function reader_db_deactivate_feed(conn, channel, feedId, reasonText) {
-  assert(feed_is_valid_id(feedId), 'Invalid feed id ' + feedId);
+export async function reader_db_deactivate_feed(
+    conn, channel, feed_id, reasonText) {
+  assert(feed_is_valid_id(feed_id), 'Invalid feed id ' + feed_id);
   const dconn = conn ? conn : await open();
-  await deactivateFeedPromise(dconn, feedId, reasonText);
+  await deactivate_feed_promise(dconn, feed_id, reasonText);
   if (!conn) {
     dconn.close();
   }
   if (channel) {
-    channel.postMessage({type: 'feed-deactivated', id: feedId});
+    channel.postMessage({type: 'feed-deactivated', id: feed_id});
   }
 }
 
-function deactivateFeedPromise(conn, feedId, reasonText) {
+function deactivate_feed_promise(conn, feed_id, reasonText) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('feed');
-    const request = store.get(feedId);
+    const request = store.get(feed_id);
     request.onsuccess = () => {
       const feed = request.result;
-      assert(feed, 'Could not find feed', feedId);
-      assert(feed.active, 'Feed is inactive', feedId);
+      assert(feed, 'Could not find feed', feed_id);
+      assert(feed.active, 'Feed is inactive', feed_id);
       feed.active = false;
       feed.deactivationDate = new Date();
       feed.deactivationReasonText = reasonText;
@@ -195,34 +196,34 @@ function deactivateFeedPromise(conn, feedId, reasonText) {
 export async function entry_store_add_entry(conn, channel, entry) {
   assert(entry_is_entry(entry), 'Invalid entry ' + entry);
   assert(!entry.id);
-  validateEntry(entry);
+  entry_validate(entry);
 
-  const sanitized = sanitizeEntry(entry);
-  const storable = filterEmptyProps(sanitized);
+  const sanitized = entry_sanitize(entry);
+  const storable = object_filter_empty_properties(sanitized);
   storable.readState = ENTRY_STATE_UNREAD;
   storable.archiveState = ENTRY_STATE_UNARCHIVED;
   storable.dateCreated = new Date();
   delete storable.dateUpdated;
 
   let nullChannel = null;
-  const entryId = await putEntry(conn, nullChannel, storable);
+  const entry_id = await putEntry(conn, nullChannel, storable);
   if (channel) {
-    channel.postMessage({type: 'entry-added', id: entryId});
+    channel.postMessage({type: 'entry-added', id: entry_id});
   }
-  storable.id = entryId;
+  storable.id = entry_id;
   return storable;
 }
 
 export async function reader_db_count_unread_entries(conn) {
   const dconn = conn ? conn : await open();
-  const count = await countUnreadEntriesPromise(dconn);
+  const count = await count_unread_entries_promise(dconn);
   if (!conn) {
     dconn.close();
   }
   return count;
 }
 
-function countUnreadEntriesPromise(conn) {
+function count_unread_entries_promise(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -233,10 +234,10 @@ function countUnreadEntriesPromise(conn) {
   });
 }
 
-export async function entry_mark_read(conn, channel, entryId) {
-  assert(entry_is_valid_id(entryId));
+export async function entry_mark_read(conn, channel, entry_id) {
+  assert(entry_is_valid_id(entry_id));
   const dconn = conn ? conn : await open();
-  await markEntryReadPromise(dconn, entryId);
+  await mark_entry_read_promise(dconn, entry_id);
   if (!conn) {
     dconn.close();
   }
@@ -244,20 +245,20 @@ export async function entry_mark_read(conn, channel, entryId) {
     // channel may be closed by the time this executes when entry_mark_read is
     // not awaited, so trap the invalid state error and just log it
     try {
-      channel.postMessage({type: 'entry-marked-read', id: entryId});
+      channel.postMessage({type: 'entry-marked-read', id: entry_id});
     } catch (error) {
       console.debug(error);
     }
   }
 }
 
-function markEntryReadPromise(conn, entryId) {
+function mark_entry_read_promise(conn, entry_id) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry', 'readwrite');
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('entry');
-    const request = store.get(entryId);
+    const request = store.get(entry_id);
     request.onsuccess = () => {
       const entry = request.result;
       assert(entry);
@@ -283,17 +284,24 @@ export async function find_active_feeds(conn) {
   return feeds.filter(feed => feed.active);
 }
 
+export async function reader_db_for_each_active_feed(conn, per_feed_callback) {
+  const feeds = await reader_db_get_feeds(conn);
+  for (const feed of feeds) {
+    per_feed_callback(feed);
+  }
+}
+
 // TODO: inline
-async function findEntryIdByURL(conn, url) {
+async function find_entry_id_by_url(conn, url) {
   const dconn = conn ? conn : await open();
-  const entryId = await findEntryIdByURLPromise(dconn, url);
+  const entry_id = await find_entry_id_by_url_promise(dconn, url);
   if (!conn) {
     dconn.close();
   }
-  return entryId;
+  return entry_id;
 }
 
-function findEntryIdByURLPromise(conn, url) {
+function find_entry_id_by_url_promise(conn, url) {
   return new Promise((resolve, reject) => {
     assert(url instanceof URL);
     const tx = conn.transaction('entry');
@@ -306,41 +314,41 @@ function findEntryIdByURLPromise(conn, url) {
 }
 
 export async function entry_store_contains_entry_with_url(conn, url) {
-  const entryId = await findEntryIdByURL(conn, url);
-  return entry_is_valid_id(entryId);
+  const entry_id = await find_entry_id_by_url(conn, url);
+  return entry_is_valid_id(entry_id);
 }
 
-export async function reader_db_find_feed_by_id(conn, feedId) {
+export async function reader_db_find_feed_by_id(conn, feed_id) {
   const dconn = conn ? conn : await open();
-  const feed = await findFeedByIdPromise(dconn, feedId);
+  const feed = await find_feed_by_id_promise(dconn, feed_id);
   if (!conn) {
     dconn.close();
   }
   return feed;
 }
 
-function findFeedByIdPromise(conn, feedId) {
+function find_feed_by_id_promise(conn, feed_id) {
   return new Promise((resolve, reject) => {
-    assert(feed_is_valid_id(feedId));
+    assert(feed_is_valid_id(feed_id));
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
-    const request = store.get(feedId);
+    const request = store.get(feed_id);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
 
 // TODO: inline
-async function findFeedIdByURL(conn, url) {
+async function find_feed_id_by_url(conn, url) {
   const dconn = conn ? conn : await open();
-  const feedId = await findFeedIdByURLPromise(dconn, url);
+  const feed_id = await find_feed_id_by_url_promise(dconn, url);
   if (!conn) {
     dconn.close();
   }
-  return feedId;
+  return feed_id;
 }
 
-function findFeedIdByURLPromise(conn, url) {
+function find_feed_id_by_url_promise(conn, url) {
   return new Promise((resolve, reject) => {
     assert(url instanceof URL);
     const tx = conn.transaction('feed');
@@ -353,20 +361,20 @@ function findFeedIdByURLPromise(conn, url) {
 }
 
 export async function feed_store_contains_feed_with_url(conn, url) {
-  const feedId = await findFeedIdByURL(conn, url);
-  return feed_is_valid_id(feedId);
+  const feed_id = await find_feed_id_by_url(conn, url);
+  return feed_is_valid_id(feed_id);
 }
 
 export async function reader_db_find_viewable_entries(conn, offset, limit) {
   const dconn = conn ? conn : await open();
-  const entries = await findViewableEntriesPromise(dconn, offset, limit);
+  const entries = await find_viewable_entries_promise(dconn, offset, limit);
   if (!conn) {
     dconn.close();
   }
   return entries;
 }
 
-function findViewableEntriesPromise(conn, offset, limit) {
+function find_viewable_entries_promise(conn, offset, limit) {
   return new Promise((resolve, reject) => {
     const entries = [];
     let counter = 0;
@@ -379,7 +387,7 @@ function findViewableEntriesPromise(conn, offset, limit) {
     const index = store.index('archiveState-readState');
     const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
     const request = index.openCursor(keyPath);
-    request.onsuccess = function requestOnsuccess(event) {
+    request.onsuccess = function request_onsuccess(event) {
       const cursor = event.target.result;
       if (cursor) {
         if (offset && !advanced) {
@@ -396,16 +404,56 @@ function findViewableEntriesPromise(conn, offset, limit) {
   });
 }
 
+// Opens a cursor over the entry store for viewable entries starting from the
+// given offset, and iterates up to the given limit, sequentially passing each
+// deserialized entry to the entry_handler function. Returns a promise that
+// resolves once all appropriate entries have been iterated. The promise rejects
+// if an error occurs in indexedDB.
+// @param conn {IDBDatabase}
+// @param offset {Number}
+// @param limit {Number}
+// @param entry_handler {Function}
+export function reader_db_viewable_entries_for_each(
+    conn, offset, limit, entry_handler) {
+  return new Promise((resolve, reject) => {
+    let counter = 0;
+    let advanced = false;
+    const limited = limit > 0;
+    const tx = conn.transaction('entry');
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+    const store = tx.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
+    const request = index.openCursor(keyPath);
+    request.onsuccess = function request_onsuccess(event) {
+      const cursor = event.target.result;
+      if (cursor) {
+        if (offset && !advanced) {
+          advanced = true;
+          cursor.advance(offset);
+        } else {
+          entry_handler(cursor.value);
+          if (limited && ++counter < limit) {
+            cursor.continue();
+          }
+        }
+      }
+    };
+  });
+}
+
+
 export async function reader_db_get_feeds(conn) {
   const dconn = conn ? conn : await open();
-  const feeds = await getFeedsPromise(dconn);
+  const feeds = await get_feeds_promise(dconn);
   if (!conn) {
     dconn.close();
   }
   return feeds;
 }
 
-function getFeedsPromise(conn) {
+function get_feeds_promise(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed');
     const store = tx.objectStore('feed');
@@ -417,17 +465,17 @@ function getFeedsPromise(conn) {
 
 async function putEntry(conn, channel, entry) {
   const dconn = conn ? conn : await open();
-  const entryId = await putEntryPromise(dconn, entry);
+  const entry_id = await put_entry_promise(dconn, entry);
   if (!conn) {
     dconn.close();
   }
   if (channel) {
-    channel.postMessage({type: 'entry-updated', id: entryId});
+    channel.postMessage({type: 'entry-updated', id: entry_id});
   }
-  return entryId;
+  return entry_id;
 }
 
-function putEntryPromise(conn, entry) {
+function put_entry_promise(conn, entry) {
   return new Promise((resolve, reject) => {
     assert(entry_is_entry(entry));
     const tx = conn.transaction('entry', 'readwrite');
@@ -439,26 +487,26 @@ function putEntryPromise(conn, entry) {
 }
 
 export function feed_prepare(feed) {
-  return filterEmptyProps(sanitizeFeed(feed));
+  return object_filter_empty_properties(feed_sanitize(feed));
 }
 
 // TODO: validateFeed (here or in feed_store_feed_put)
 export async function feed_store_add(conn, channel, feed) {
-  const preparedFeed = feed_prepare(feed);
-  preparedFeed.active = true;
-  preparedFeed.dateCreated = new Date();
-  delete preparedFeed.dateUpdated;
-  const feedId = await feed_store_feed_put(conn, null, preparedFeed);
-  preparedFeed.id = feedId;
+  const prepared_feed = feed_prepare(feed);
+  prepared_feed.active = true;
+  prepared_feed.dateCreated = new Date();
+  delete prepared_feed.dateUpdated;
+  const feed_id = await feed_store_feed_put(conn, null, prepared_feed);
+  prepared_feed.id = feed_id;
   if (channel) {
-    channel.postMessage({type: 'feed-added', id: feedId});
+    channel.postMessage({type: 'feed-added', id: feed_id});
   }
-  return preparedFeed;
+  return prepared_feed;
 }
 
 export async function feed_store_feed_put(conn, channel, feed) {
   const dconn = conn ? conn : await open();
-  const feedId = await putFeedPromise(dconn, feed);
+  const feed_id = await put_feed_promise(dconn, feed);
   if (!conn) {
     dconn.close();
   }
@@ -467,16 +515,16 @@ export async function feed_store_feed_put(conn, channel, feed) {
   // TODO: if awaited, I'd prefer to throw. How?
   if (channel) {
     try {
-      channel.postMessage({type: 'feed-updated', id: feedId});
+      channel.postMessage({type: 'feed-updated', id: feed_id});
     } catch (error) {
       console.debug(error);
     }
   }
 
-  return feedId;
+  return feed_id;
 }
 
-function putFeedPromise(conn, feed) {
+function put_feed_promise(conn, feed) {
   return new Promise((resolve, reject) => {
     assert(feed_is_feed(feed));
     const tx = conn.transaction('feed', 'readwrite');
@@ -492,156 +540,158 @@ function putFeedPromise(conn, feed) {
 }
 
 export async function feed_store_remove_feed(
-    conn, channel, feedId, reasonText) {
+    conn, channel, feed_id, reasonText) {
   const dconn = conn ? conn : await open();
-  const entryIds = await removeFeedPromise(dconn, feedid);
+  const entry_ids = await remove_feed_promise(dconn, feedid);
   if (!conn) {
     dconn.close();
   }
 
   if (channel) {
-    channel.postMessage({type: 'feed-deleted', id: feedId, reason: reasonText});
-    for (const id of entryIds) {
+    channel.postMessage(
+        {type: 'feed-deleted', id: feed_id, reason: reasonText});
+    for (const id of entry_ids) {
       channel.postMessage({type: 'entry-deleted', id: id, reason: reasonText});
     }
   }
 }
 
-function removeFeedPromise(conn, feedId) {
+function remove_feed_promise(conn, feed_id) {
   return new Promise(function executor(resolve, reject) {
-    assert(feed_is_valid_id(feedId));
-    let entryIds;
+    assert(feed_is_valid_id(feed_id));
+    let entry_ids;
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');
-    tx.oncomplete = () => resolve(entryIds);
+    tx.oncomplete = () => resolve(entry_ids);
     tx.onerror = () => reject(tx.error);
 
-    const feedStore = tx.objectStore('feed');
-    console.debug('Deleting feed with id', feedId);
-    feedStore.delete(feedId);
+    const feed_store = tx.objectStore('feed');
+    console.debug('Deleting feed with id', feed_id);
+    feed_store.delete(feed_id);
 
     // Get all entry ids for the feed and then delete them
-    const entryStore = tx.objectStore('entry');
-    const feedIndex = entryStore.index('feed');
-    const request = feedIndex.getAllKeys(feedId);
+    const entry_store = tx.objectStore('entry');
+    const feed_index = entry_store.index('feed');
+    const request = feed_index.getAllKeys(feed_id);
     request.onsuccess = function(event) {
-      entryIds = request.result;
+      entry_ids = request.result;
 
       // Fire off all the requests concurrently without waiting for any one
       // to resolve. Eventually they all will resolve and the transaction
       // will complete and then the promise resolves.
-      for (const id of entryIds) {
+      for (const id of entry_ids) {
         console.debug('Deleting entry', id);
-        entryStore.delete(id);
+        entry_store.delete(id);
       }
     };
   });
 }
 
 // Returns a shallow copy of the input feed with sanitized properties
-function sanitizeFeed(feed, titleMaxLength, descMaxLength) {
-  if (typeof titleMaxLength === 'undefined') {
-    titleMaxLength = 1024;
+function feed_sanitize(feed, title_max_length, description_max_length) {
+  if (typeof title_max_length === 'undefined') {
+    title_max_length = 1024;
   }
 
-  if (typeof descMaxLength === 'undefined') {
-    descMaxLength = 1024 * 10;
+  if (typeof description_max_length === 'undefined') {
+    description_max_length = 1024 * 10;
   }
 
-  const blankFeed = feed_create();
-  const outputFeed = Object.assign(blankFeed, feed);
-  const tagReplacement = '';
+  const blank_feed = feed_create();
+  const output_feed = Object.assign(blank_feed, feed);
+  const html_tag_replacement = '';
   const suffix = '';
 
-  if (outputFeed.title) {
-    let title = outputFeed.title;
-    title = filterControls(title);
-    title = html_replace_tags(title, tagReplacement);
-    title = condenseWhitespace(title);
-    title = html_truncate(title, titleMaxLength, suffix);
-    outputFeed.title = title;
+  if (output_feed.title) {
+    let title = output_feed.title;
+    title = string_filter_control_characters(title);
+    title = html_replace_tags(title, html_tag_replacement);
+    title = string_condense_whitespace(title);
+    title = html_truncate(title, title_max_length, suffix);
+    output_feed.title = title;
   }
 
-  if (outputFeed.description) {
-    let desc = outputFeed.description;
-    desc = filterControls(desc);
-    desc = html_replace_tags(desc, tagReplacement);
-    desc = condenseWhitespace(desc);
-    desc = html_truncate(desc, descMaxLength, suffix);
-    outputFeed.description = desc;
+  if (output_feed.description) {
+    let desc = output_feed.description;
+    desc = string_filter_control_characters(desc);
+    desc = html_replace_tags(desc, html_tag_replacement);
+    desc = string_condense_whitespace(desc);
+    desc = html_truncate(desc, description_max_length, suffix);
+    output_feed.description = desc;
   }
 
-  return outputFeed;
+  return output_feed;
 }
 
 // Inspect the entry object and throw an error if any value is invalid
 // or any required properties are missing
-function validateEntry(entry) {
+function entry_validate(entry) {
   // TODO: implement
   // By not throwing an error, this indicates the entry is valid
 }
 
 // Returns a new entry object where fields have been sanitized. Impure
-// TODO: now that filterUnprintableCharacters is a thing, I want to also filter
-// such characters from input strings like author/title/etc. However it overlaps
-// with the call to filterControls here. There is some redundant work going on.
-// Also, in a sense, filterControls is now inaccurate. What I want is one
+// TODO: now that string_filter_unprintable_characters is a thing, I want to
+// also filter such characters from input strings like author/title/etc. However
+// it overlaps with the call to string_filter_control_characters here. There is
+// some redundant work going on. Also, in a sense,
+// string_filter_control_characters is now inaccurate. What I want is one
 // function that strips binary characters except important ones, and then a
 // second function that replaces or removes certain important binary characters
 // (e.g. remove line breaks from author string). Something like
 // 'replaceFormattingCharacters'.
-function sanitizeEntry(
-    inputEntry, authorMaxLength, titleMaxLength, contentMaxLength) {
-  if (typeof authorMaxLength === 'undefined') {
-    authorMaxLength = 200;
+function entry_sanitize(
+    input_entry, author_max_length, title_max_length, content_max_length) {
+  if (typeof author_max_length === 'undefined') {
+    author_max_length = 200;
   }
 
-  if (typeof titleMaxLength === 'undefined') {
-    titleMaxLength = 1000;
+  if (typeof title_max_length === 'undefined') {
+    title_max_length = 1000;
   }
 
-  if (typeof contentMaxLength === 'undefined') {
-    contentMaxLength = 50000;
+  if (typeof content_max_length === 'undefined') {
+    content_max_length = 50000;
   }
 
-  const blankEntry = entry_create();
-  const outputEntry = Object.assign(blankEntry, inputEntry);
+  const blank_entry = entry_create();
+  const output_entry = Object.assign(blank_entry, input_entry);
 
-  if (outputEntry.author) {
-    let author = outputEntry.author;
-    author = filterControls(author);
+  if (output_entry.author) {
+    let author = output_entry.author;
+    author = string_filter_control_characters(author);
     author = html_replace_tags(author, '');
-    author = condenseWhitespace(author);
-    author = html_truncate(author, authorMaxLength);
-    outputEntry.author = author;
+    author = string_condense_whitespace(author);
+    author = html_truncate(author, author_max_length);
+    output_entry.author = author;
   }
 
-  if (outputEntry.content) {
-    let content = outputEntry.content;
-    content = filterUnprintableCharacters(content);
-    content = html_truncate(content, contentMaxLength);
-    outputEntry.content = content;
+  if (output_entry.content) {
+    let content = output_entry.content;
+    content = string_filter_unprintable_characters(content);
+    content = html_truncate(content, content_max_length);
+    output_entry.content = content;
   }
 
-  if (outputEntry.title) {
-    let title = outputEntry.title;
-    title = filterControls(title);
+  if (output_entry.title) {
+    let title = output_entry.title;
+    title = string_filter_control_characters(title);
     title = html_replace_tags(title, '');
-    title = condenseWhitespace(title);
-    title = html_truncate(title, titleMaxLength);
-    outputEntry.title = title;
+    title = string_condense_whitespace(title);
+    title = html_truncate(title, title_max_length);
+    output_entry.title = title;
   }
 
-  return outputEntry;
+  return output_entry;
 }
 
-function condenseWhitespace(string) {
+function string_condense_whitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
 }
 
 // Returns a new object that is a copy of the input less empty properties. A
 // property is empty if it is null, undefined, or an empty string. Ignores
 // prototype, deep objects, getters, etc. Shallow copy by reference.
-function filterEmptyProps(object) {
+function object_filter_empty_properties(object) {
   const hasOwnProp = Object.prototype.hasOwnProperty;
   const output = {};
   let undef;
@@ -664,13 +714,14 @@ function filterEmptyProps(object) {
 // the case of bad input the input itself is returned. To test if characters
 // were replaced, check if the output string length is less than the input
 // string length.
-function filterUnprintableCharacters(value) {
+function string_filter_unprintable_characters(value) {
   // Basically this removes those characters in the range of [0..31] except for:
   // \t is \u0009 which is base10 9
   // \n is \u000a which is base10 10
   // \f is \u000c which is base10 12
   // \r is \u000d which is base10 13
-  // TODO: look into how much this overlaps with filterControls
+  // TODO: look into how much this overlaps with
+  // string_filter_control_characters
 
   const pattern = /[\u0000-\u0008\u000b\u000e-\u001F]+/g;
   // The length check is done because given that replace will be a no-op when
@@ -687,7 +738,7 @@ function filterUnprintableCharacters(value) {
 // overflow questions: http://stackoverflow.com/questions/4324790
 // http://stackoverflow.com/questions/21284228
 // http://stackoverflow.com/questions/24229262
-function filterControls(string) {
+function string_filter_control_characters(string) {
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }
 
