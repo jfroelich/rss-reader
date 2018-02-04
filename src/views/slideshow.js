@@ -7,28 +7,28 @@ const container = document.getElementById('slideshow-container');
 // Handle for the element that is the current slide
 let cursor;
 // Number of slides in movement
-let activeTransitionCount = 0;
+let active_transition_count = 0;
 
-export function getElementName() {
+export function element_get_name() {
   return SLIDE_ELEMENT_NAME;
 }
 
-export function getCurrentSlide() {
+export function get_current_slide() {
   return cursor;
 }
 
-export function isCurrentSlide(slide) {
+export function slide_is_current(slide) {
   return slide === cursor;
 }
 
-export function getFirstSlide() {
+export function slide_get_first() {
   return container.firstElementChild;
 }
 
 // Move current slide out of view and next slide into view. Returns true if a
 // move transition will occur.
 export function next() {
-  if (activeTransitionCount > 0) {
+  if (active_transition_count > 0) {
     return false;
   }
 
@@ -41,13 +41,13 @@ export function next() {
     return false;
   }
 
-  activeTransitionCount++;
+  active_transition_count++;
   cursor.style.left = '-100%';
 
   // NOTE: in process of creating this lib I noticed the source of the strange
   // behavior with why count is only 1 despite two transitions, it was here
   // because I forgot to increment again. But it is working like I want so I am
-  // hesitant to change it at the moment. activeTransitionCount++;
+  // hesitant to change it at the moment. active_transition_count++;
 
   nextSlide.style.left = '0';
   cursor = nextSlide;
@@ -57,7 +57,7 @@ export function next() {
 
 // Move current slide out of view and previous slide into view
 export function prev() {
-  if (activeTransitionCount > 0) {
+  if (active_transition_count > 0) {
     return;
   }
 
@@ -70,9 +70,9 @@ export function prev() {
     return;
   }
 
-  activeTransitionCount++;
+  active_transition_count++;
   cursor.style.left = '100%';
-  // activeTransitionCount++;
+  // active_transition_count++;
   previousSlide.style.left = '0';
   cursor = previousSlide;
 }
@@ -83,23 +83,23 @@ export function count() {
 }
 
 // Returns a node list of the currently loaded slides
-export function getSlides() {
+export function slide_get_all() {
   return container.querySelectorAll(SLIDE_ELEMENT_NAME);
 }
 
-export function isSlide(element) {
+export function slide_is_slide(element) {
   return element instanceof Element && element.localName === SLIDE_ELEMENT_NAME;
 }
 
 let duration = 0.35;
 
-function isValidTransitionDuration(duration) {
+function is_valid_transition_duration(duration) {
   return !isNaN(duration) && isFinite(duration) && duration >= 0;
 }
 
 // Change the duration of slide transitions from the default
-export function setTransitionDuration(durationInput) {
-  if (!isValidTransitionDuration(durationInput)) {
+export function set_transition_duration(durationInput) {
+  if (!is_valid_transition_duration(durationInput)) {
     throw new TypeError('Invalid duration parameter', durationInput);
   }
 
@@ -113,7 +113,7 @@ export function create() {
 
 // Append a slide to the view
 export function append(slide) {
-  if (!isSlide(slide)) {
+  if (!slide_is_slide(slide)) {
     throw new TypeError('Invalid slide parameter', slide);
   }
 
@@ -139,7 +139,7 @@ export function append(slide) {
   // active, such as what happens when a slide is moved, interrupts the
   // transition. Therefore, schedule a call to focus the slide for when the
   // transition completes.
-  slide.addEventListener('webkitTransitionEnd', onTransitionEnd);
+  slide.addEventListener('webkitTransitionEnd', transition_onend);
 
   // Define the animation effect that will occur when moving the slide. Slides
   // are moved by changing a slide's css left property, which is basically its
@@ -167,7 +167,7 @@ export function remove(slide) {
   slide.remove();
 }
 
-function onTransitionEnd(event) {
+function transition_onend(event) {
   // The slide that the transition occured upon (event.target) is not guaranteed
   // to be equal to the current slide. We fire off two transitions per
   // animation, one for the slide being moved out of view, and one for the slide
@@ -181,5 +181,5 @@ function onTransitionEnd(event) {
   // There may be more than one transition effect occurring at the moment. Point
   // out that this transition completed. This provides a method for checking if
   // any transitions are outstanding.
-  activeTransitionCount--;
+  active_transition_count--;
 }

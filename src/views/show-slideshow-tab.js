@@ -1,25 +1,24 @@
 
 export default async function show_slideshow_tab() {
-  const slideshowURL = chrome.extension.getURL('slideshow.html');
-  const newtabURL = 'chrome://newtab/';
+  const slideshow_url_string = chrome.extension.getURL('slideshow.html');
+  const new_tab_url_string = 'chrome://newtab/';
 
-  let tabs = await findTabsByURL(slideshowURL);
-  if (tabs && tabs.length) {
-    chrome.tabs.update(tabs[0].id, {active: true});
+  const slideshow_tabs = await tabs_find_by_url(slideshow_url_string);
+  if (slideshow_tabs && slideshow_tabs.length) {
+    chrome.tabs.update(slideshow_tabs[0].id, {active: true});
     return;
   }
 
-  tabs = await findTabsByURL(newtabURL);
-  if (tabs && tabs.length) {
-    chrome.tabs.update(tabs[0].id, {active: true, url: slideshowURL});
+  const new_tabs = await tabs_find_by_url(new_tab_url_string);
+  if (new_tabs && new_tabs.length) {
+    chrome.tabs.update(
+        new_tabs[0].id, {active: true, url: slideshow_url_string});
     return;
   }
 
-  chrome.tabs.create({url: slideshowURL});
+  chrome.tabs.create({url: slideshow_url_string});
 }
 
-function findTabsByURL(urlString) {
-  return new Promise(function executor(resolve, reject) {
-    return chrome.tabs.query({url: urlString}, resolve);
-  });
+function tabs_find_by_url(url_string) {
+  return new Promise(resolve => chrome.tabs.query({url: url_string}, resolve));
 }

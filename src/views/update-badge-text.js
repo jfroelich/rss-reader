@@ -1,14 +1,14 @@
-import {countUnreadEntries, open} from '/src/rdb.js';
+import {open, reader_db_count_unread_entries} from '/src/rdb.js';
 
 // TODO: think of how to reduce connection usage, maybe maintain a persistent
 // connection? Then again now that this is non-blocking, maybe the slowness of
 // it does not matter?
 
 // TODO: this should be able to accept an input connection. I removed the conn
-// parameter earlier when every call to badge_update_text was awaited. I can still
-// use a non-blocking call, because the request enters pending state in the
-// current tick, before the conn is closed externally. So this should be changed
-// to accept connection again and not connect locally.
+// parameter earlier when every call to badge_update_text was awaited. I can
+// still use a non-blocking call, because the request enters pending state in
+// the current tick, before the conn is closed externally. So this should be
+// changed to accept connection again and not connect locally.
 
 
 // TODO: perhaps think of badge as a view, like the other pages or the CLI. In
@@ -34,18 +34,18 @@ import {countUnreadEntries, open} from '/src/rdb.js';
 // extension.getBackgroundPage()? That would load the page if not loaded
 
 // A lock to discard concurrent calls
-let badgeUpdatePending = false;
+let badge_update_pending = false;
 
 // Updates the text of the application's badge. Non-blocking.
 export default async function badge_update_text(conn) {
-  if (badgeUpdatePending) {
+  if (badge_update_pending) {
     console.debug('badge_update_text request already pending, ignoring call');
     return;
   }
 
   console.debug('Updating badge text...');
 
-  badgeUpdatePending = true;
+  badge_update_pending = true;
 
   // We trap the error for two reasons:
   // 1) the conn may have been closed when non-awaited
@@ -54,12 +54,12 @@ export default async function badge_update_text(conn) {
 
   let count;
   try {
-    count = await countUnreadEntries(conn);
+    count = await reader_db_count_unread_entries(conn);
   } catch (error) {
     console.error(error);
     return;
   } finally {
-    badgeUpdatePending = false;
+    badge_update_pending = false;
   }
 
   const text = count > 999 ? '1k+' : '' + count;

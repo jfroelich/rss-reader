@@ -56,7 +56,7 @@ channel.onmessage = function(event) {
 
   switch (message.type) {
     case 'display-settings-changed':
-      PageStyle.pageStyleSettingsOnchange(event);
+      PageStyle.page_style_onchange(event);
       break;
     default:
       break;
@@ -688,7 +688,7 @@ function body_line_height_input_oninput(event) {
 }
 
 function options_page_init() {
-  PageStyle.pageStyleSettingsOnload();
+  PageStyle.page_style_onload();
 
   // Attach click handlers to menu items
   // TODO: use single event listener on list itself instead

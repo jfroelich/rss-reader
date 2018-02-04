@@ -213,7 +213,7 @@ export async function entry_store_add_entry(conn, channel, entry) {
   return storable;
 }
 
-export async function countUnreadEntries(conn) {
+export async function reader_db_count_unread_entries(conn) {
   const dconn = conn ? conn : await open();
   const count = await countUnreadEntriesPromise(dconn);
   if (!conn) {

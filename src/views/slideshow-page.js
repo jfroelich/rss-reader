@@ -47,7 +47,7 @@ channel.onmessage = function(event) {
   switch (message.type) {
     case 'display-settings-changed':
       console.debug('Updating article style');
-      PageStyle.pageStyleSettingsOnchange(message);
+      PageStyle.page_style_onchange(message);
       break;
     case 'entry-added':
       on_entry_added_message(message).catch(console.warn);
@@ -130,7 +130,7 @@ async function on_entry_expired_message(message) {
   }
 
   // Search for a slide corresponding to the entry id
-  const slide_element_name = Slideshow.getElementName();
+  const slide_element_name = Slideshow.element_get_name();
   const slide = document.querySelector(
       slide_element_name + '[entry="' + message.id + '"]');
 
@@ -146,7 +146,7 @@ async function on_entry_expired_message(message) {
   // However, it is the current slide being viewed which would lead to surprise
   // as the article the user is reading is magically whisked away. Instead, flag
   // the slide as stale.
-  if (Slideshow.isCurrentSlide(slide)) {
+  if (Slideshow.slide_is_current(slide)) {
     slide.setAttribute('stale', 'true');
     return;
   }
@@ -356,7 +356,7 @@ function create_feed_source_element(entry) {
   buffer.push(entry.author || 'Unknown author');
   if (entry.datePublished) {
     buffer.push(' on ');
-    buffer.push(formatDate(entry.datePublished));
+    buffer.push(date_format(entry.datePublished));
   }
   details.textContent = buffer.join('');
   source_element.appendChild(details);
@@ -466,7 +466,7 @@ async function slide_onclick(event) {
     return;
   }
 
-  const current_slide = Slideshow.getCurrentSlide();
+  const current_slide = Slideshow.get_current_slide();
 
   if (clicked_slide.hasAttribute('stale')) {
     return false;
@@ -543,7 +543,7 @@ window.addEventListener('keydown', on_key_down);
 // complete.
 
 async function slide_next() {
-  const current_slide = Slideshow.getCurrentSlide();
+  const current_slide = Slideshow.get_current_slide();
 
   // If there are still unread articles return. Do not mark the current article,
   // if it exists, as read.
@@ -598,16 +598,16 @@ async function slide_next() {
   }
 
   const maxLoadCount = 6;
-  let firstSlide = Slideshow.getFirstSlide();
+  let firstSlide = Slideshow.slide_get_first();
   while (Slideshow.count() > maxLoadCount && firstSlide !== current_slide) {
     Slideshow.remove(firstSlide);
     firstSlide.removeEventListener('click', slide_onclick);
-    firstSlide = Slideshow.getFirstSlide();
+    firstSlide = Slideshow.slide_get_first();
   }
 }
 
 function slideshow_count_unread() {
-  return Slideshow.getSlides()
+  return Slideshow.slide_get_all()
       .filter(slide => !slide.hasAttribute('read'))
       .length;
 }
@@ -654,22 +654,22 @@ async function refresh_anchor_onclick(event) {
 }
 
 function options_menu_show() {
-  const menuOptions = document.getElementById('left-panel');
-  menuOptions.style.marginLeft = '0px';
-  menuOptions.style.boxShadow = '2px 0px 10px 2px #8e8e8e';
+  const menu_options = document.getElementById('left-panel');
+  menu_options.style.marginLeft = '0px';
+  menu_options.style.boxShadow = '2px 0px 10px 2px #8e8e8e';
 }
 
 function options_menu_hide() {
-  const menuOptions = document.getElementById('left-panel');
-  menuOptions.style.marginLeft = '-320px';
-  menuOptions.style.boxShadow = '';  // HACK
+  const menu_options = document.getElementById('left-panel');
+  menu_options.style.marginLeft = '-320px';
+  menu_options.style.boxShadow = '';  // HACK
 }
 
 function main_menu_button_onclick(event) {
-  const menuOptions = document.getElementById('left-panel');
-  if (menuOptions.style.marginLeft === '0px') {
+  const menu_options = document.getElementById('left-panel');
+  if (menu_options.style.marginLeft === '0px') {
     options_menu_hide();
-  } else if (menuOptions.style.marginLeft === '') {
+  } else if (menu_options.style.marginLeft === '') {
     options_menu_show();
   } else {
     options_menu_show();
@@ -746,12 +746,12 @@ async function export_menu_option_handle_click(event) {
     return;
   }
 
-  downloadBlob(blob, filename);
+  download_blob(blob, filename);
   // TODO: visual feedback on completion
   console.log('Export completed');
 }
 
-function downloadBlob(blob, filename) {
+function download_blob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.setAttribute('download', filename);
@@ -760,25 +760,25 @@ function downloadBlob(blob, filename) {
   URL.revokeObjectURL(url);
 }
 
-function errorMessageContainerOnclick(event) {
+function error_message_container_onclick(event) {
   const container = document.getElementById('error-message-container');
   container.style.display = 'none';
 }
 
 function noop() {}
 
-function windowOnclick(event) {
+function window_onclick(event) {
   // TODO: am I still using marginLeft? I thought I switched to left?
 
   // If the click occurred outside of the menu options panel, hide the menu
   // options panel
-  const avoidedZoneIds = ['main-menu-button', 'left-panel'];
-  if (!avoidedZoneIds.includes(event.target.id) &&
+  const avoided_zone_ids = ['main-menu-button', 'left-panel'];
+  if (!avoided_zone_ids.includes(event.target.id) &&
       !event.target.closest('[id="left-panel"]')) {
     // Hide only if not hidden. marginLeft is only 0px in visible state. If
     // marginLeft is empty string or -320px then menu already hidden
-    const aside = document.getElementById('left-panel');
-    if (aside.style.marginLeft === '0px') {
+    const left_panel_element = document.getElementById('left-panel');
+    if (left_panel_element.style.marginLeft === '0px') {
       options_menu_hide();
     }
   }
@@ -786,7 +786,7 @@ function windowOnclick(event) {
   return true;
 }
 
-function feedsContainerOnclick(event) {
+function feeds_container_onclick(event) {
   if (event.target.localName !== 'div') {
     return true;
   }
@@ -795,77 +795,77 @@ function feedsContainerOnclick(event) {
     return true;
   }
 
-  toggleFeedContainerDetails(event.target);
+  feed_container_toggle_details(event.target);
 }
 
-function toggleFeedContainerDetails(feedElement) {
-  const table = feedElement.querySelector('table');
+function feed_container_toggle_details(feed_element) {
+  const table = feed_element.querySelector('table');
 
-  if (feedElement.hasAttribute('expanded')) {
+  if (feed_element.hasAttribute('expanded')) {
     // Collapse
-    feedElement.removeAttribute('expanded');
-    feedElement.style.width = '200px';
-    feedElement.style.height = '200px';
-    feedElement.style.cursor = 'zoom-in';
+    feed_element.removeAttribute('expanded');
+    feed_element.style.width = '200px';
+    feed_element.style.height = '200px';
+    feed_element.style.cursor = 'zoom-in';
     table.style.display = 'none';
   } else {
     // Expand
-    feedElement.setAttribute('expanded', 'true');
-    feedElement.style.width = '100%';
-    feedElement.style.height = 'auto';
-    feedElement.style.cursor = 'zoom-out';
+    feed_element.setAttribute('expanded', 'true');
+    feed_element.style.width = '100%';
+    feed_element.style.height = 'auto';
+    feed_element.style.cursor = 'zoom-out';
     table.style.display = 'block';
   }
 }
 
-function feedsButtonOnclick(event) {
-  const feedsButton = document.getElementById('feeds-button');
-  feedsButton.disabled = true;
-  const readerButton = document.getElementById('reader-button');
-  readerButton.disabled = false;
-  const slidesContainer = document.getElementById('slideshow-container');
-  slidesContainer.style.display = 'none';
-  const feedsContainer = document.getElementById('feeds-container');
-  feedsContainer.style.display = 'block';
+function feeds_button_onclick(event) {
+  const feeds_button = document.getElementById('feeds-button');
+  feeds_button.disabled = true;
+  const reader_button = document.getElementById('reader-button');
+  reader_button.disabled = false;
+  const slideshow_container = document.getElementById('slideshow-container');
+  slideshow_container.style.display = 'none';
+  const feeds_container = document.getElementById('feeds-container');
+  feeds_container.style.display = 'block';
 }
 
-function readerButtonOnclick(event) {
-  const feedsButton = document.getElementById('feeds-button');
-  feedsButton.disabled = false;
-  const readerButton = document.getElementById('reader-button');
-  readerButton.disabled = true;
-  const slidesContainer = document.getElementById('slideshow-container');
-  slidesContainer.style.display = 'block';
-  const feedsContainer = document.getElementById('feeds-container');
-  feedsContainer.style.display = 'none';
+function reader_button_onclick(event) {
+  const feeds_button = document.getElementById('feeds-button');
+  feeds_button.disabled = false;
+  const reader_button = document.getElementById('reader-button');
+  reader_button.disabled = true;
+  const slideshow_container = document.getElementById('slideshow-container');
+  slideshow_container.style.display = 'block';
+  const feeds_container = document.getElementById('feeds-container');
+  feeds_container.style.display = 'none';
 }
 
-function initFeedsContainer(feeds) {
+function feeds_container_init(feeds) {
   for (const feed of feeds) {
-    appendFeed(feed);
+    feeds_container_append_feed(feed);
   }
 }
 
-function unsubscribeButtonOnclick(event) {
-  console.debug('Unsubscribe', event.target);
+function unsubscribe_button_onclick(event) {
+  console.debug('Unsubscribe (not yet implemented)', event.target);
 }
 
 // TODO: create helper function createFeedElement that then is passed to this,
 // rename this to appendFeedElement and change its parameter
-function appendFeed(feed) {
-  const feedsContainer = document.getElementById('feeds-container');
-  const feedElement = document.createElement('div');
-  feedElement.id = feed.id;
+function feeds_container_append_feed(feed) {
+  const feeds_container = document.getElementById('feeds-container');
+  const feed_element = document.createElement('div');
+  feed_element.id = feed.id;
 
   if (feed.active !== true) {
-    feedElement.setAttribute('inactive', 'true');
+    feed_element.setAttribute('inactive', 'true');
   }
 
-  let title_element = document.createElement('span');
+  const title_element = document.createElement('span');
   title_element.textContent = feed.title;
-  feedElement.appendChild(title_element);
+  feed_element.appendChild(title_element);
 
-  const feedInfoElement = document.createElement('table');
+  const feed_info_element = document.createElement('table');
 
   let row = document.createElement('tr');
   let col = document.createElement('td');
@@ -874,7 +874,7 @@ function appendFeed(feed) {
   col = document.createElement('td');
   col.textContent = feed.description || 'No description';
   row.appendChild(col);
-  feedInfoElement.appendChild(row);
+  feed_info_element.appendChild(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
@@ -883,7 +883,7 @@ function appendFeed(feed) {
   col = document.createElement('td');
   col.textContent = feed.link || 'Not specified';
   row.appendChild(col);
-  feedInfoElement.appendChild(row);
+  feed_info_element.appendChild(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
@@ -892,7 +892,7 @@ function appendFeed(feed) {
   col = document.createElement('td');
   col.textContent = feed.faviconURLString || 'Unknown';
   row.appendChild(col);
-  feedInfoElement.appendChild(row);
+  feed_info_element.appendChild(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
@@ -901,7 +901,7 @@ function appendFeed(feed) {
   col = document.createElement('td');
   col.textContent = feed_peek_url(feed);
   row.appendChild(col);
-  feedInfoElement.appendChild(row);
+  feed_info_element.appendChild(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
@@ -909,13 +909,13 @@ function appendFeed(feed) {
 
   let button = document.createElement('button');
   button.value = '' + feed.id;
-  button.onclick = unsubscribeButtonOnclick;
+  button.onclick = unsubscribe_button_onclick;
   button.textContent = 'Unsubscribe';
   col.appendChild(button);
 
   button = document.createElement('button');
   button.value = '' + feed.id;
-  button.onclick = unsubscribeButtonOnclick;
+  button.onclick = unsubscribe_button_onclick;
   button.textContent = 'Activate';
   if (feed.active) {
     button.disabled = 'true';
@@ -924,7 +924,7 @@ function appendFeed(feed) {
 
   button = document.createElement('button');
   button.value = '' + feed.id;
-  button.onclick = unsubscribeButtonOnclick;
+  button.onclick = unsubscribe_button_onclick;
   button.textContent = 'Deactivate';
   if (!feed.active) {
     button.disabled = 'true';
@@ -933,16 +933,16 @@ function appendFeed(feed) {
 
 
   row.appendChild(col);
-  feedInfoElement.appendChild(row);
+  feed_info_element.appendChild(row);
 
-  feedElement.appendChild(feedInfoElement);
+  feed_element.appendChild(feed_info_element);
 
-  if (feedsContainer) {
-    feedsContainer.appendChild(feedElement);
+  if (feeds_container) {
+    feeds_container.appendChild(feed_element);
   }
 }
 
-function formatDate(date, delimiter) {
+function date_format(date, delimiter) {
   if (!(date instanceof Date)) {
     return 'Invalid date';
   }
@@ -993,114 +993,116 @@ function tab_open(url) {
   chrome.tabs.create({active: true, url: url});
 }
 
-function headerFontMenuOnchange(event) {
-  console.debug('Header font menu change event', event);
-  const fontName = event.target.value;
-  if (fontName) {
-    localStorage.HEADER_FONT_FAMILY = fontName;
+function header_font_menu_onchange(event) {
+  const font_name = event.target.value;
+  if (font_name) {
+    localStorage.HEADER_FONT_FAMILY = font_name;
   } else {
     delete localStorage.HEADER_FONT_FAMILY;
   }
 
-  PageStyle.pageStyleSettingsOnchange();
+  PageStyle.page_style_onchange();
 }
 
-function bodyFontMenuOnchange(event) {
-  console.debug('Body font menu change event', event);
-  const fontName = event.target.value;
-  if (fontName) {
-    localStorage.BODY_FONT_FAMILY = fontName;
+function body_font_menu_onchange(event) {
+  const font_name = event.target.value;
+  if (font_name) {
+    localStorage.BODY_FONT_FAMILY = font_name;
   } else {
     delete localStorage.BODY_FONT_FAMILY;
   }
 
-  PageStyle.pageStyleSettingsOnchange();
+  PageStyle.page_style_onchange();
 }
 
-function initHeaderFontMenu() {
+function header_font_menu_init() {
   const menu = document.getElementById('header-font-menu');
-  menu.onchange = headerFontMenuOnchange;
-  const currentHeaderFont = localStorage.HEADER_FONT_FAMILY;
-  const defaultOption = document.createElement('option');
-  defaultOption.value = '';
-  defaultOption.textContent = 'Header Font';
-  menu.appendChild(defaultOption);
-  for (const fontName of fonts) {
+  menu.onchange = header_font_menu_onchange;
+  const current_header_font = localStorage.HEADER_FONT_FAMILY;
+  const default_option = document.createElement('option');
+  default_option.value = '';
+  default_option.textContent = 'Header Font';
+  menu.appendChild(default_option);
+  for (const font_name of fonts) {
     const option = document.createElement('option');
-    option.value = fontName;
-    option.textContent = fontName;
-    if (fontName === currentHeaderFont) {
+    option.value = font_name;
+    option.textContent = font_name;
+    if (font_name === current_header_font) {
       option.selected = true;
     }
     menu.appendChild(option);
   }
 }
 
-function initBodyFontMenu() {
+function body_font_menu_init() {
   const menu = document.getElementById('body-font-menu');
-  menu.onchange = bodyFontMenuOnchange;
-  const currentBodyFont = localStorage.BODY_FONT_FAMILY;
-  const defaultOption = document.createElement('option');
-  defaultOption.value = '';
-  defaultOption.textContent = 'Body Font';
-  menu.appendChild(defaultOption);
-  for (const fontName of fonts) {
+  menu.onchange = body_font_menu_onchange;
+  const current_body_font = localStorage.BODY_FONT_FAMILY;
+  const default_option = document.createElement('option');
+  default_option.value = '';
+  default_option.textContent = 'Body Font';
+  menu.appendChild(default_option);
+  for (const font_name of fonts) {
     const option = document.createElement('option');
-    option.value = fontName;
-    option.textContent = fontName;
-    if (fontName === currentBodyFont) {
+    option.value = font_name;
+    option.textContent = font_name;
+    if (font_name === current_body_font) {
       option.selected = true;
     }
     menu.appendChild(option);
   }
 }
 
-async function initSlideshowPage() {
+async function slideshow_page_init() {
   loading_info_show();
 
-  window.addEventListener('click', windowOnclick);
+  window.addEventListener('click', window_onclick);
 
-  const mainMenuButton = document.getElementById('main-menu-button');
-  mainMenuButton.onclick = main_menu_button_onclick;
+  const main_menu_button = document.getElementById('main-menu-button');
+  main_menu_button.onclick = main_menu_button_onclick;
 
   // Initialize the refresh icon in the header
-  const refreshButton = document.getElementById('refresh');
-  refreshButton.onclick = refresh_anchor_onclick;
+  const refresh_button = document.getElementById('refresh');
+  refresh_button.onclick = refresh_anchor_onclick;
 
-  const feedsButton = document.getElementById('feeds-button');
-  feedsButton.onclick = feedsButtonOnclick;
+  const feeds_button = document.getElementById('feeds-button');
+  feeds_button.onclick = feeds_button_onclick;
 
-  const readerButton = document.getElementById('reader-button');
-  readerButton.onclick = readerButtonOnclick;
+  const reader_button = document.getElementById('reader-button');
+  reader_button.onclick = reader_button_onclick;
 
   // Initialize error message container
-  const errorContainer = document.getElementById('error-message-container');
-  if (errorContainer) {
-    errorContainer.onclick = errorMessageContainerOnclick;
+  const error_container = document.getElementById('error-message-container');
+  if (error_container) {
+    error_container.onclick = error_message_container_onclick;
   }
 
-  const feedsContainer = document.getElementById('feeds-container');
-  if (feedsContainer) {
-    feedsContainer.onclick = feedsContainerOnclick;
+  const feeds_container = document.getElementById('feeds-container');
+  if (feeds_container) {
+    feeds_container.onclick = feeds_container_onclick;
   }
 
-  const menuOptions = document.getElementById('left-panel');
-  menuOptions.onclick = options_menu_onclick;
+  const menu_options = document.getElementById('left-panel');
+  menu_options.onclick = options_menu_onclick;
 
-  initHeaderFontMenu();
-  initBodyFontMenu();
+  header_font_menu_init();
+  body_font_menu_init();
 
   // TODO: is it possible to defer this until after loading without slowing
   // things down? Initialize entry display settings
-  PageStyle.pageStyleSettingsOnload();
+  PageStyle.page_style_onload();
 
   // TODO: closing should happen before append actually takes place, there is no
   // need to keep the database open longer.
   // TODO: create a helper function that encapsulates this
+  // There should be a new helper in ral.js. But before I can do that I need
+  // to change it so that I just do loading in the helper, and appendSlides
+  // takes an array of things loaded from db, instead of doing the loading
+  // itself
 
   // Load and append slides
-  const initialLimit = 1;
-  let didHideLoading = false;
+  const initial_limit = 1;
+  let did_hide_loading = false;
 
   let conn;
   try {
@@ -1113,7 +1115,7 @@ async function initSlideshowPage() {
   }
 
   // First load only 1, to load quickly
-  await slide_load_and_append_multiple(conn, initialLimit);
+  await slide_load_and_append_multiple(conn, initial_limit);
   console.log('Initial slide loaded');
 
   loading_info_hide();
@@ -1121,6 +1123,7 @@ async function initSlideshowPage() {
   // Now preload a couple more
   await slide_load_and_append_multiple(conn, 2);
 
+  // TODO: this should be a helper in ral.js
   let feeds;
   try {
     feeds = await reader_db_get_feeds(conn);
@@ -1133,14 +1136,15 @@ async function initSlideshowPage() {
 
   conn.close();
 
+  // TODO: this should be implicit in a helper function
   feeds.sort(function compareFeedTitle(a, b) {
     const atitle = a.title ? a.title.toLowerCase() : '';
     const btitle = b.title ? b.title.toLowerCase() : '';
     return indexedDB.cmp(atitle, btitle);
   });
 
-  initFeedsContainer(feeds);
+  feeds_container_init(feeds);
 }
 
 // TODO: visually show error
-initSlideshowPage().catch(console.warn);
+slideshow_page_init().catch(console.warn);

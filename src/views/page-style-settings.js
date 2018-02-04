@@ -4,29 +4,26 @@
 
 // Get the current settings from local storage and then modify the css rules in
 // the default style sheet
-export function pageStyleSettingsOnchange(event) {
-  entryCSSUpdateRule();
-  entryCSSUpdateTitleRule();
-  entryCSSUpdateContentRule();
+export function page_style_onchange(event) {
+  page_style_entry_update();
+  page_style_title_update();
+  page_style_content_update();
 
   // Padding wrapper change
-  const rule = findRule('.slide-padding-wrapper');
+  const rule = css_rule_find('.slide-padding-wrapper');
   if (rule) {
-    const padding = localStorage.PADDING || '0';
-    rule.style.padding = padding;
+    // It is fine is padding is set to undefined
+    rule.style.padding = localStorage.PADDING;
   }
 }
 
 // Get the current settings from local storage and then create css rules and
 // append them to the default style sheet.
-export function pageStyleSettingsOnload() {
+export function page_style_onload() {
   const sheet = document.styleSheets[0];
-  sheet.addRule('.entry', entryCSSCreateEntryRuleText());
-
-  // TODO: convert these two to be like above pattern where I get the text and
-  // then add the rule
-  entryCSSAddTitleRule(sheet);
-  entryCSSAddContentRule(sheet);
+  sheet.addRule('.entry', page_style_entry_rule_create());
+  sheet.addRule('.entry .entry-title', page_style_title_rule_create());
+  sheet.addRule('.entry .entry-content', page_style_content_rule_create());
 
   // Padding wrapper init
   const padding = localStorage.PADDING;
@@ -35,7 +32,7 @@ export function pageStyleSettingsOnload() {
   }
 }
 
-function entryCSSCreateEntryRuleText() {
+function page_style_entry_rule_create() {
   const buffer = [];
   const path = localStorage.BG_IMAGE;
   const color = localStorage.BG_COLOR;
@@ -48,70 +45,66 @@ function entryCSSCreateEntryRuleText() {
   return buffer.join('');
 }
 
-function entryCSSAddTitleRule(sheet) {
-  let buffer = [];
-  const headerFontSize = parseInt(localStorage.HEADER_FONT_SIZE || '0', 10);
-  if (headerFontSize) {
-    buffer.push(`font-size: ${(headerFontSize / 10).toFixed(2)}em;`);
+function page_style_title_rule_create(sheet) {
+  const buffer = [];
+  const header_font_size = parseInt(localStorage.HEADER_FONT_SIZE, 10);
+  if (header_font_size) {
+    buffer.push(`font-size:${(header_font_size / 10).toFixed(2)}em;`);
   }
 
-  const headerFontFamily = localStorage.HEADER_FONT_FAMILY;
-  if (headerFontFamily) {
-    buffer.push(`font-family:${headerFontFamily};`);
+  const header_font_family = localStorage.HEADER_FONT_FAMILY;
+  if (header_font_family) {
+    buffer.push(`font-family:${header_font_family};`);
   }
 
-  sheet.addRule('.entry .entry-title', buffer.join(''));
+  return buffer.join('');
 }
 
-function entryCSSAddContentRule(sheet) {
-  let buffer = [];
+function page_style_content_rule_create(sheet) {
+  const buffer = [];
 
-  // TODO: use px not em
-  const bodyFontSize = parseInt(localStorage.BODY_FONT_SIZE || '0', 10);
-  if (bodyFontSize) {
-    buffer.push(`font-size: ${(bodyFontSize / 10).toFixed(2)}em;`);
+  // TODO: use px, and append value as is
+  const font_size = parseInt(localStorage.BODY_FONT_SIZE, 10);
+  if (font_size) {
+    buffer.push(`font-size: ${(font_size / 10).toFixed(2)}em;`);
   }
 
-  const bodyJustifyText = localStorage.JUSTIFY_TEXT === '1';
-  if (bodyJustifyText) {
+  if (localStorage.JUSTIFY_TEXT === '1') {
     buffer.push('text-align: justify;');
   }
 
-  const bodyFontFamily = localStorage.BODY_FONT_FAMILY;
-  if (bodyFontFamily) {
-    buffer.push(`font-family: ${bodyFontFamily};`);
+  const font_family = localStorage.BODY_FONT_FAMILY;
+  if (font_family) {
+    buffer.push(`font-family: ${font_family};`);
   }
 
-  let bodyLineHeightString = localStorage.BODY_LINE_HEIGHT;
-  if (bodyLineHeightString) {
-    const bodyLineHeight = parseInt(bodyLineHeightString, 10);
-
-    // TODO: units?
-    if (bodyLineHeight) {
-      buffer.push(`line-height: ${(bodyLineHeight / 10).toFixed(2)};`);
+  // TODO: use px, append as is
+  let line_height_string = localStorage.BODY_LINE_HEIGHT;
+  if (line_height_string) {
+    const line_height = parseInt(line_height_string, 10);
+    if (line_height) {
+      buffer.push(`line-height: ${(line_height / 10).toFixed(2)};`);
     }
   }
 
-  const columnCountString = localStorage.COLUMN_COUNT;
-  if (columnCountString === '2' || columnCountString === '3') {
-    buffer.push(`-webkit-column-count: ${columnCountString};`);
+  // TODO: did column-count become standard css yet?
+  const column_count = localStorage.COLUMN_COUNT;
+  if (column_count === '2' || column_count === '3') {
+    buffer.push(`-webkit-column-count: ${column_count};`);
     buffer.push('-webkit-column-gap: 30px;');
     buffer.push('-webkit-column-rule: 1px outset #AAAAAA;');
   }
 
-  sheet.addRule('.entry .entry-content', buffer.join(''));
+  return buffer.join('');
 }
 
-function entryCSSUpdateRule() {
-  const rule = findRule('.entry');
-
+function page_style_entry_update() {
+  const rule = css_rule_find('.entry');
   if (!rule) {
-    console.error('Could not find rule ".entry"');
     return;
   }
 
   const style = rule.style;
-
   const path = localStorage.BG_IMAGE;
   const color = localStorage.BG_COLOR;
 
@@ -127,78 +120,66 @@ function entryCSSUpdateRule() {
   }
 }
 
-function entryCSSUpdateTitleRule() {
-  const rule = findRule('.entry .entry-title');
+function page_style_title_update() {
+  const rule = css_rule_find('.entry .entry-title');
   if (!rule) {
-    console.error('Could not find rule ".entry a.entry-title"');
     return;
   }
 
   const style = rule.style;
-  style.background = '';
   style.fontFamily = localStorage.HEADER_FONT_FAMILY;
 
+  // TODO: use raw value, px
   const size = parseInt(localStorage.HEADER_FONT_SIZE, 10);
   if (!isNaN(size)) {
     style.fontSize = (size / 10).toFixed(2) + 'em';
   }
 }
 
-function entryCSSUpdateContentRule() {
-  const rule = findRule('.entry .entry-content');
-
+function page_style_content_update() {
+  const rule = css_rule_find('.entry .entry-content');
   if (!rule) {
-    console.error('Could not find rule ".entry span.entry-content"');
-    return;
-  }
-
-  if (!(rule instanceof CSSStyleRule)) {
-    console.error('Rule is not a css style rule');
     return;
   }
 
   rule.style.background = '';
 
-  const bodyFontFamily = localStorage.BODY_FONT_FAMILY;
-  if (bodyFontFamily) {
-    rule.style.fontFamily = bodyFontFamily;
+  const font_family = localStorage.BODY_FONT_FAMILY;
+  if (font_family) {
+    rule.style.fontFamily = font_family;
   } else {
     rule.style.fontFamily = 'initial';
   }
 
-  const bodyFontSizeString = localStorage.BODY_FONT_SIZE;
-  if (bodyFontSizeString) {
-    const bodyFontSizeNumber = parseInt(bodyFontSizeString, 10);
+  const font_size_string = localStorage.BODY_FONT_SIZE;
+  if (font_size_string) {
+    const font_size = parseInt(font_size_string, 10);
 
-    // TODO:
-    // Why am I dividing by 10 here??
-    // Why am I using em?
-    // What is the base font?
-    if (bodyFontSizeNumber) {
-      rule.style.fontSize = (bodyFontSizeNumber / 10).toFixed(2) + 'em';
+    // TODO: use px, raw value
+    if (font_size) {
+      rule.style.fontSize = (font_size / 10).toFixed(2) + 'em';
     }
   }
 
   rule.style.textAlign =
       (localStorage.JUSTIFY_TEXT === '1') ? 'justify' : 'left';
 
-  const bodyLineHeight = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
-  rule.style.lineHeight = (bodyLineHeight / 10).toFixed(2);
+  // TODO: use px, raw value
+  const line_height = parseInt(localStorage.BODY_LINE_HEIGHT, 10);
+  rule.style.lineHeight = (line_height / 10).toFixed(2);
 
-  let columnCountString = localStorage.COLUMN_COUNT;
-  const validColumnCounts = {'1': 1, '2': 1, '3': 1};
-  if (!(columnCountString in validColumnCounts)) {
-    columnCountString = '1';
+  let column_count_string = localStorage.COLUMN_COUNT;
+  if (column_count_string && !['1', '2', '3'].includes(column_count_string)) {
+    column_count_string = '1';
   }
-
-  rule.style.webkitColumnCount = columnCountString;
+  rule.style.webkitColumnCount = column_count_string;
 }
 
 
 // Returns the first matching css rule or undefined
 // @param selectorText {String}
 // @returns rule {CSSStyleRule}
-function findRule(selectorText) {
+function css_rule_find(selectorText) {
   for (const sheet of document.styleSheets) {
     for (const rule of sheet.rules) {
       if (rule.selectorText === selectorText) {
