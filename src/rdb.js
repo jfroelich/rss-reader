@@ -406,15 +406,15 @@ function find_viewable_entries_promise(conn, offset, limit) {
 
 // Opens a cursor over the entry store for viewable entries starting from the
 // given offset, and iterates up to the given limit, sequentially passing each
-// deserialized entry to the entry_handler function. Returns a promise that
+// deserialized entry to the per_entry_callback function. Returns a promise that
 // resolves once all appropriate entries have been iterated. The promise rejects
 // if an error occurs in indexedDB.
 // @param conn {IDBDatabase}
 // @param offset {Number}
 // @param limit {Number}
-// @param entry_handler {Function}
+// @param per_entry_callback {Function}
 export function reader_db_viewable_entries_for_each(
-    conn, offset, limit, entry_handler) {
+    conn, offset, limit, per_entry_callback) {
   return new Promise((resolve, reject) => {
     let counter = 0;
     let advanced = false;
@@ -433,10 +433,17 @@ export function reader_db_viewable_entries_for_each(
           advanced = true;
           cursor.advance(offset);
         } else {
-          entry_handler(cursor.value);
+          // per_entry_callback is a blocking synchronous call. If called prior
+          // to advancing the cursor then the cursor.continue call does not
+          // start until per_entry_callback exists. Instead, call the handler
+          // after already requesting the cursor to advance, so it does not have
+          // to wait.
+
           if (limited && ++counter < limit) {
             cursor.continue();
           }
+
+          per_entry_callback(cursor.value);
         }
       }
     };

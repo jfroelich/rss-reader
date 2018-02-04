@@ -1,5 +1,6 @@
 import {export_opml as export_opml_impl, import_opml as import_opml_impl} from '/src/exim.js';
 import {open as favicon_service_open} from '/src/favicon-service.js';
+import {poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
 import {open as reader_db_open, reader_db_for_each_active_feed, reader_db_viewable_entries_for_each} from '/src/rdb.js';
 
 // Resource acquisition layer (RAL). An intermediate layer between storage and
@@ -65,6 +66,32 @@ export async function ral_load_initial(
     if (conn) {
       console.debug('Closing connection', conn.name);
       conn.close();
+    }
+  }
+}
+
+export async function ral_poll_feeds(channel, console) {
+  const ctx = {};
+  ctx.ignoreRecencyCheck = true;
+  ctx.ignoreModifiedCheck = true;
+  ctx.console = console;
+  ctx.channel = channel;
+
+  let reader_conn, favicon_conn;
+  const conn_promises = [reader_db_open(), favicon_service_open()];
+
+  try {
+    [reader_conn, favicon_conn] = await Promise.all(conn_promises);
+    ctx.feedConn = reader_conn;
+    ctx.iconConn = favicon_conn;
+    await poll_service_poll_feeds(ctx);
+  } finally {
+    if (reader_conn) {
+      reader_conn.close();
+    }
+
+    if (favicon_conn) {
+      favicon_conn.close();
     }
   }
 }

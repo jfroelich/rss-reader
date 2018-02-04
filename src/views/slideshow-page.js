@@ -1,7 +1,6 @@
 import {html_escape, html_truncate} from '/src/common/html-utils.js';
 import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
-import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
-import {ral_export, ral_import, ral_load_initial} from '/src/ral.js';
+import {ral_export, ral_import, ral_load_initial, ral_poll_feeds} from '/src/ral.js';
 import {entry_is_entry, entry_is_valid_id, entry_peek_url, feed_peek_url, open as reader_db_open, reader_db_find_viewable_entries, reader_db_get_feeds} from '/src/rdb.js';
 import {filter_title_publisher} from '/src/views/article-utils.js';
 import {date_format} from '/src/views/date.js';
@@ -553,44 +552,23 @@ function slideshow_count_unread() {
 }
 
 let refresh_in_progress = false;
-async function refresh_anchor_onclick(event) {
+function refresh_anchor_onclick(event) {
   event.preventDefault();
-  console.log('Clicked refresh button');
-
   if (refresh_in_progress) {
-    console.log('Ignoring refresh button click while refresh in progress');
     return;
   }
   refresh_in_progress = true;
 
-  // TODO: this approach leaks default channel in poll_service_create_context
-
-  let ctx;
-  try {
-    ctx = await poll_service_create_context();
-    ctx.ignoreRecencyCheck = true;
-    ctx.ignoreModifiedCheck = true;
-    ctx.console = console;
-    ctx.channel = channel;
-    await poll_service_poll_feeds(ctx);
-
-  } catch (error) {
-    // TODO: show an error message
-    console.error(error);
-  } finally {
-    if (ctx.feedConn) {
-      ctx.feedConn.close();
-    }
-
-    if (ctx.iconConn) {
-      ctx.iconConn.close();
-    }
-
-    // keep channel open, it has persistent lifetime
-  }
-
-  console.log('Re-enabling refresh button');
-  refresh_in_progress = false;  // Always renable
+  ral_poll_feeds(channel, console)
+      .then(
+          _ => {
+              // TODO: show a completed message?
+          })
+      .catch(error => {
+        // TODO: show an error message
+        console.error(error);
+      })
+      .finally(_ => refresh_in_progress = false);
 }
 
 function options_menu_show() {
