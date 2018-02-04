@@ -193,7 +193,7 @@ async function slide_mark_read(conn, slide_element) {
   }
 
   // If the slide is stale, for whatever reason, do nothing
-  if (slide.hasAttribute('stale')) {
+  if (slide_element.hasAttribute('stale')) {
     console.debug('slide is stale, not marking as read');
     return;
   }
@@ -607,9 +607,10 @@ async function slide_next() {
 }
 
 function slideshow_count_unread() {
-  return Slideshow.slide_get_all()
-      .filter(slide => !slide.hasAttribute('read'))
-      .length;
+  const slides = Slideshow.slide_get_all();
+  const unread_slides =
+      Array.prototype.filter.call(slides, slide => !slide.hasAttribute('read'));
+  return unread_slides.length;
 }
 
 let refresh_in_progress = false;
