@@ -2,9 +2,8 @@ import {html_truncate} from '/src/common/html-utils.js';
 // TODO: it would be better if subscribe could connect on demand so that this
 // does not need to be explicit
 import {open as favicon_service_open} from '/src/favicon-service.js';
-import subscribe from '/src/feed-ops/subscribe.js';
-import unsubscribe from '/src/feed-ops/unsubscribe.js';
-import {feed_peek_url, open as reader_db_open, reader_db_activate_feed, reader_db_deactivate_feed, reader_db_find_feed_by_id, reader_db_get_feeds} from '/src/rdb.js';
+import {ral_activate_feed, ral_deactivate_feed, ral_find_feed_by_id, ral_get_feeds, ral_unsubscribe} from '/src/ral.js';
+import {feed_peek_url} from '/src/rdb.js';
 import {element_fade} from '/src/views/element-fade.js';
 // TEMP: I plan to remove
 import * as PageStyle from '/src/views/page-style-settings.js';
@@ -274,16 +273,15 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-
-  // TODO: this should be a call to ral.js
-  let feed, conn;
+  let feed;
   try {
-    feed = await reader_db_find_feed_by_id(conn, feed_id);
+    feed = await ral_find_feed_by_id(feed_id);
   } catch (error) {
     // TODO: show an error message
     console.error(error);
     return;
   }
+
 
   // Update the UI with the loaded feed data
   const title_element = document.getElementById('details-title');
@@ -364,44 +362,14 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_show();
   subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
-  // TODO: most of this should be a call to a helper in ral.js, the view should
-  // less concerned with resource lifetime management, and ral.js provides
-  // helpers that abstract that away. Create ral_subscribe in ral.js that
-  // accepts at least a channel as input, maybe also other context params,
-  // that opens conn, calls subscribe, and closes conns, and throws errors,
-  // and then call ral_subscribe here in a try/catch
-
-  let reader_conn, favicon_conn;
-  try {
-    [reader_conn, favicon_conn] =
-        await Promise.all([reader_db_open(), favicon_service_open()]);
-  } catch (error) {
-    console.error(error);
-    subscription_monitor_hide();
-    return;
-  }
-
-  const context = {};
-  context.feedConn = reader_conn;
-  context.iconConn = favicon_conn;
-  // Use the options page's persistent channel
-  context.channel = channel;
-  context.notify = true;
-  context.fetchFeedTimeout = 2000;
-
   let feed;
   try {
-    feed = await subscribe(context, subscribe_url);
+    feed = await ral_subscribe(channel, subscribe_url);
   } catch (error) {
     console.error(error);
     subscription_monitor_hide();
-    reader_conn.close();
-    favicon_conn.close();
     return;
   }
-
-  reader_conn.close();
-  favicon_conn.close();
 
   feed_list_append_feed(feed);
   subscription_monitor_append_message('Subscribed to ' + feed_peek_url(feed));
@@ -411,52 +379,26 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function feed_list_init() {
-  const no_feeds_element = document.getElementById('nosubs');
-  const feed_list_element = document.getElementById('feedlist');
-
-  // TODO: this should be a call to ral.js, and reader_db_get_feeds should
-  // no longer be able to connect on demand
-
-  let feeds, conn;
+  const title_sort_flag = true;
+  let feeds;
   try {
-    feeds = await reader_db_get_feeds(conn);
+    feeds = await ral_get_feeds(title_sort_flag);
   } catch (error) {
     // TODO: show an error message
     console.error(error);
     return;
   }
 
-  // Ensure feeds have titles
   for (const feed of feeds) {
-    feed.title = feed.title || feed.link || 'Untitled';
-  }
-
-  // TODO: create a helper function that encapsulates sorting the feeds.
-  // Possibly move it into the helper function that loads the feeds array from
-  // the database.
-
-  // TODO: if I add a function ral.js for getting feeds, maybe provide a
-  // flag, sort_by_title, that if true does that, and then set it to true here
-  // instead of doing this explicitly. This will also help abstract away the
-  // fact that sorting is done outside of indexedDB
-
-  // TODO: what if I stored a 'sort-key' field in feeds, indexed it, and then
-  // loaded by that? I could normalize titles, and guarantee at least an empty
-  // string is set for feeds missing titles? I kind of like that idea. I should
-  // make a github issue first.
-
-  // Sort feeds by title. Cannot use an title index at load-time because that
-  // excludes feeds missing titles
-  feeds.sort((a, b) => {
-    const atitle = a.title ? a.title.toLowerCase() : '';
-    const btitle = b.title ? b.title.toLowerCase() : '';
-    return indexedDB.cmp(atitle, btitle);
-  });
-
-  for (let feed of feeds) {
+    // Ensure feeds have titles
+    // TODO: I think this is actually a concern of feed_list_append_feed? I do
+    // not think this needs to be done here, but not sure
+    feed.title = feed.title || 'Untitled';
     feed_list_append_feed(feed);
   }
 
+  const no_feeds_element = document.getElementById('nosubs');
+  const feed_list_element = document.getElementById('feedlist');
   if (feeds.length) {
     no_feeds_element.style.display = 'none';
     feed_list_element.style.display = 'block';
@@ -495,12 +437,8 @@ function feed_list_remove_feed(feed_id) {
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  // TODO: this should be a call to a new helper function in ral.js, and
-  // should not rely on the ability of unsubscribe to connect on demand
-
-  let conn;
   try {
-    unsubscribe(conn, channel, feed_id);
+    await ral_unsubscribe(channel, feed_id);
   } catch (error) {
     // TODO: show an error message
     console.error(error);
@@ -511,45 +449,42 @@ async function unsubscribe_button_onclick(event) {
   section_show_by_id('subs-list-section');
 }
 
-async function activate_feed_button_onclick(event) {
+function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  // TODO: this should be a call to a helper function in ral.js
+  return ral_activate_feed(channel, feed_id)
+      .then(_ => {
+        // Mark the corresponding feed element displayed in the view as active
+        const item_element =
+            document.querySelector('li[feed="' + feed_id + '"]');
+        if (item_element) {
+          item_element.removeAttribute('inactive');
+        }
 
-  try {
-    await reader_db_activate_feed(null, channel, feed_id);
-  } catch (error) {
-    // TODO: show visual error
-    console.error(error);
-    return;
-  }
-
-  // Update the feed loaded in the UI
-  const item_element = document.querySelector('li[feed="' + feed_id + '"]');
-  if (item_element) {
-    item_element.removeAttribute('inactive');
-  }
-
-  section_show_by_id('subs-list-section');
+        section_show_by_id('subs-list-section');
+      })
+      .catch(error => {
+        // TODO: show an error message
+        console.error(error);
+      });
 }
 
-async function deactivate_feed_button_onclick(event) {
+function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
+  const reason = 'click';
 
-  // TODO: this should be a call to a new helper in ral.js, do not rely on
-  // auto-connect
-
-  try {
-    await reader_db_deactivate_feed(null, channel, feed_id, 'manual-click');
-  } catch (error) {
-    // TODO: show visual error
-    console.error(error);
-    return;
-  }
-
-  const item_element = document.querySelector('li[feed="' + feed_id + '"]');
-  item_element.setAttribute('inactive', 'true');
-  section_show_by_id('subs-list-section');
+  ral_deactivate_feed(channel, feed_id, reason)
+      .then(_ => {
+        // Deactive the corresponding feed element in the view
+        const item_element =
+            document.querySelector('li[feed="' + feed_id + '"]');
+        item_element.setAttribute('inactive', 'true');
+        section_show_by_id('subs-list-section');
+      })
+      .catch(error => {
+        // TODO: show visual error
+        console.error(error);
+      });
 }
 
 function menu_item_onclick(event) {

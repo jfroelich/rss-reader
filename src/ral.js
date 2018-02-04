@@ -1,11 +1,70 @@
 import {export_opml as export_opml_impl, import_opml as import_opml_impl} from '/src/exim.js';
 import {open as favicon_service_open} from '/src/favicon-service.js';
+import subscribe from '/src/feed-ops/subscribe.js';
+import unsubscribe from '/src/feed-ops/unsubscribe.js';
 import {poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
-import {open as reader_db_open, reader_db_for_each_active_feed, reader_db_viewable_entries_for_each} from '/src/rdb.js';
+import {open as reader_db_open, reader_db_activate_feed, reader_db_deactivate_feed, reader_db_for_each_active_feed, reader_db_get_feeds, reader_db_viewable_entries_for_each} from '/src/rdb.js';
 
 // Resource acquisition layer (RAL). An intermediate layer between storage and
 // the view that helps calls acquire and release needed resources, and supplies
-// some default values
+// some default values. The goal is to generally boil down calls from the view
+// to simple function calls against a simple api, and abstract away the need to
+// open and close databases and setup other values. The functions in this layer
+// implicitly connect to databases using the app's default settings. Therefore
+// these functions are not easily testable, and the calls that have been wrapped
+// should be tested instead, because those calls accept an open database
+// connection as input, which allows for using a mock database.
+
+
+// Load all feeds from the database as an array of feed objects. This is
+// basically a wrapper to reader_db_get_feeds that manages opening and closing
+// the database, and sorting the resulting collection by feed title.
+// @param title_sort_flag {Boolean} if true, the array is sorted by feed title.
+// If false, the array is naturally ordered based on database order
+// @throws {Error} database errors
+// @return {Array} an array of basic feed objects
+export async function ral_get_feeds(title_sort_flag) {
+  // TODO: do not rely on auto-connect feature of reader_db_get_feeds
+  let conn;
+  const feeds = await reader_db_get_feeds(conn);
+
+  // TODO: move this comment to a github issue
+  // TODO: originally I had a title index in the database, and loaded the feeds
+  // in sorted order. That caused a big problem, because indexedDB does not
+  // index missing values, so the result excluded untitled feeds. So now I sort
+  // in memory after load. However, I'd still like to think about how to do this
+  // more quickly. One idea is that I store a sort-key property per feed in the
+  // feed store. I guarantee the property always has a value when storing a
+  // feed. Each time the feed is updated, and when the feed is created, the
+  // property is derived from title, and it also normalizes the title (e.g.
+  // toLowerCase). Then I can create an index on that property, and let
+  // indexedDB do the sorting implicitly, and quickly, and more efficiently.
+  // At the moment, this isn't urgent.
+  // A second component of the the decision is that it would support a for_each
+  // approach. Right now I am forced to fully buffer all feeds into an array
+  // first in order to sort. If a let the db do the work I could use a callback
+  // as each feed is loaded.
+
+  if (title_sort_flag) {
+    feeds.sort(feed_compare);
+  }
+
+  return feeds;
+}
+
+function feed_compare(a, b) {
+  const atitle = a.title ? a.title.toLowerCase() : '';
+  const btitle = b.title ? b.title.toLowerCase() : '';
+  return indexedDB.cmp(atitle, btitle);
+}
+
+
+export async function ral_find_feed_by_id(feed_id) {
+  // TODO: open the conn here, remove the auto-conn ability from
+  // reader_db_find_feed_by_id
+  let conn;
+  return await reader_db_find_feed_by_id(conn, feed_id);
+}
 
 // @param files {FileList}
 // @param channel {BroadcastChannel}
@@ -94,4 +153,67 @@ export async function ral_poll_feeds(channel, console) {
       favicon_conn.close();
     }
   }
+}
+
+// Subscribe to the feed at the given url. This is a wrapper to subscribe
+// that automates opening and closing databases and setting some default
+// subscription process options.
+// @param channel {BroadcastChannel} optional, an open channel that will receive
+// messages about storage events like the feed being added to the database
+// @param url {URL} the url of a feed
+// @throws {Error} subscription errors, database errors, fetch errors, etc
+// @return {Object} returns the feed object that was stored in the database
+// if successful
+export async function ral_subscribe(channel, url) {
+  const ctx = {};
+  ctx.channel = channel;
+
+  // This is not intended to be a batch call. Regardless of the default setting
+  // for subscribe, be explicit that we desire a single notification in this
+  // situation
+  ctx.notify = true;
+
+  // This is in response to user manually pressing a subscribe button. This is
+  // a guess as to the approximate maximum of a time a user will wait before
+  // becoming frustrated with app responsiveness, regardless of network
+  // conditions. This is hardcoded here for convenience.
+  ctx.fetchFeedTimeout = 2000;
+
+  const conn_promises = Promise.all([reader_db_open(), favicon_service_open()]);
+  let reader_conn, favicon_conn;
+  try {
+    [reader_conn, favicon_conn] = await conn_promises;
+    ctx.feedConn = reader_conn;
+    ctx.iconConn = favicon_conn;
+    return await subscribe(ctx, url);
+  } finally {
+    if (reader_conn) {
+      console.debug('Closing connection to database', reader_conn.name);
+      reader_conn.close();
+    }
+
+    if (favicon_conn) {
+      console.debug('Closing connection to database', favicon_conn.name);
+      favicon_conn.close();
+    }
+  }
+}
+
+export async function ral_unsubscribe(channel, feed_id) {
+  // TODO: do not rely on unsubscribe auto-connect, do the conn here,
+  // remove the auto-connect ability from unsubscribe
+  let conn;
+  await unsubscribe(conn, channel, feed_id);
+}
+
+export async function ral_activate_feed(channel, feed_id) {
+  // TODO: do not rely on auto-connect
+  let conn;
+  await reader_db_activate_feed(conn, channel, feed_id);
+}
+
+export async function ral_deactivate_feed(channel, feed_id, reason) {
+  // TODO: do not rely on auto-connect
+  let conn;
+  await reader_db_deactivate_feed(conn, channel, feed_id, reason);
 }
