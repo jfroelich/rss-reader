@@ -112,8 +112,8 @@ cli.entry_store_remove_lost_entries = async function(limit) {
 };
 
 cli.entry_store_remove_orphans = async function() {
-  let conn;
   const channel = new BroadcastChannel('reader');
+  let conn;
   try {
     await entry_store_remove_orphans(conn, channel);
   } finally {

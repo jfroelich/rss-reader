@@ -123,7 +123,7 @@ function addActiveFieldToFeeds(store) {
   };
 }
 
-export async function activateFeed(conn, channel, feedId) {
+export async function reader_db_activate_feed(conn, channel, feedId) {
   assert(feed_is_valid_id(feedId), 'Invalid feed id', feedId);
   const dconn = conn ? conn : await open();
   await activateFeedPromise(dconn, feedId);
@@ -155,7 +155,7 @@ function activateFeedPromise(conn, feedId) {
   });
 }
 
-export async function deactivateFeed(conn, channel, feedId, reasonText) {
+export async function reader_db_deactivate_feed(conn, channel, feedId, reasonText) {
   assert(feed_is_valid_id(feedId), 'Invalid feed id ' + feedId);
   const dconn = conn ? conn : await open();
   await deactivateFeedPromise(dconn, feedId, reasonText);
@@ -310,7 +310,7 @@ export async function entry_store_contains_entry_with_url(conn, url) {
   return entry_is_valid_id(entryId);
 }
 
-export async function findFeedById(conn, feedId) {
+export async function reader_db_find_feed_by_id(conn, feedId) {
   const dconn = conn ? conn : await open();
   const feed = await findFeedByIdPromise(dconn, feedId);
   if (!conn) {

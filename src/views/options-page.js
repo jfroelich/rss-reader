@@ -1,19 +1,19 @@
 import {html_truncate} from '/src/common/html-utils.js';
-
 // TODO: it would be better if subscribe could connect on demand so that this
 // does not need to be explicit
-import {open as openIconDb} from '/src/favicon-service.js';
-
+import {open as favicon_service_open} from '/src/favicon-service.js';
 import subscribe from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
-import {activateFeed, deactivateFeed, feed_peek_url, findFeedById, reader_db_get_feeds, open as openReaderDb} from '/src/rdb.js';
-
+import {feed_peek_url, open as reader_db_open, reader_db_activate_feed, reader_db_deactivate_feed, reader_db_find_feed_by_id, reader_db_get_feeds} from '/src/rdb.js';
+import {element_fade} from '/src/views/element-fade.js';
 // TEMP: I plan to remove
 import * as PageStyle from '/src/views/page-style-settings.js';
+import {permission_has, permission_remove, permission_request} from '/src/views/permission.js';
 
-
+// clang-format off
 const BG_IMAGES = [
-  '/images/bgfons-paper_texture318.jpg', '/images/CCXXXXXXI_by_aqueous.jpg',
+  '/images/bgfons-paper_texture318.jpg',
+  '/images/CCXXXXXXI_by_aqueous.jpg',
   '/images/paper-backgrounds-vintage-white.jpg',
   '/images/pickering-texturetastic-gray.png',
   '/images/reusage-recycled-paper-white-first.png',
@@ -22,7 +22,8 @@ const BG_IMAGES = [
   '/images/subtle-patterns-exclusive-paper.png',
   '/images/subtle-patterns-groove-paper.png',
   '/images/subtle-patterns-handmade-paper.png',
-  '/images/subtle-patterns-paper-1.png', '/images/subtle-patterns-paper-2.png',
+  '/images/subtle-patterns-paper-1.png',
+  '/images/subtle-patterns-paper-2.png',
   '/images/subtle-patterns-paper.png',
   '/images/subtle-patterns-rice-paper-2.png',
   '/images/subtle-patterns-rice-paper-3.png',
@@ -31,11 +32,12 @@ const BG_IMAGES = [
   '/images/subtle-patterns-witewall-3.png',
   '/images/thomas-zucx-noise-lines.png'
 ];
+// clang-format on
 
 
 // View state
-let currentMenuItem;
-let currentSection;
+let current_menu_item;
+let current_section;
 
 const channel = new BroadcastChannel('reader');
 channel.onmessage = function(event) {
@@ -57,210 +59,226 @@ channel.onmessage = function(event) {
       PageStyle.pageStyleSettingsOnchange(event);
       break;
     default:
-      // Ignore all other message types
       break;
   }
 };
 
 channel.onmessageerror = function(event) {
-  console.warn('Error deserializing message', event);
+  console.warn(event);
 };
 
 // TODO: instead of removing and re-adding, reset and reuse
-function subscriptionMonitorShow() {
-  let monitorElement = document.getElementById('submon');
-  if (monitorElement) {
-    monitorElement.remove();
+function subscription_monitor_show() {
+  let monitor_element = document.getElementById('submon');
+  if (monitor_element) {
+    monitor_element.remove();
   }
 
-  monitorElement = document.createElement('div');
-  monitorElement.setAttribute('id', 'submon');
-  monitorElement.style.opacity = '1';
-  document.body.appendChild(monitorElement);
+  monitor_element = document.createElement('div');
+  monitor_element.setAttribute('id', 'submon');
 
-  const progressElement = document.createElement('progress');
-  progressElement.textContent = 'Working...';
-  monitorElement.appendChild(progressElement);
+  // Explicitly make the element fade-able, for compatibility with element_fade
+  // TODO: why not just rely on element_fade's ability to handle the situation
+  // of an element without an explicit opacity? My instinct is that this was a
+  // leftover setting from back when I was developing element_fade and was
+  // running into the unexpected situation of an element that did not have an
+  // opacity set, but I know that I've since rectified element_fade to handle
+  // that case, so I do not think this is needed. In fact I am relying on that
+  // behavior in several other places so this is rather inconsistent.
+  // Inconsistency is bad
+  monitor_element.style.opacity = '1';
+  document.body.appendChild(monitor_element);
+
+  const progress_element = document.createElement('progress');
+  progress_element.textContent = 'Working...';
+  monitor_element.appendChild(progress_element);
 }
 
-function subscriptionMonitorAppendMessage(message) {
-  const messageElement = document.createElement('p');
-  messageElement.textContent = message;
-  const monitorElement = document.getElementById('submon');
-  monitorElement.appendChild(messageElement);
+function subscription_monitor_append_message(message) {
+  const message_element = document.createElement('p');
+  message_element.textContent = message;
+  const monitor_element = document.getElementById('submon');
+  monitor_element.appendChild(message_element);
 }
 
-async function subscriptionMonitorHide() {
-  const monitorElement = document.getElementById('submon');
-  const duration = 2, delay = 1;
-  await fadeElement(monitorElement, duration, delay);
-  monitorElement.remove();
+async function subscription_monitor_hide() {
+  const monitor_element = document.getElementById('submon');
+  if (!monitor_element) {
+    console.error('Cannot find element #submon');
+    return;
+  }
+
+  const duration_secs = 2, delay_secs = 1;
+  await element_fade(monitor_element, duration_secs, delay_secs);
+  monitor_element.remove();
 }
 
-export function errorMessageShow(message, fade) {
-  errorMessageHide();
+export function error_message_show(message, fade) {
+  error_message_hide();
 
-  const errorElement = document.createElement('div');
-  errorElement.setAttribute('id', 'options-error-message');
+  const error_element = document.createElement('div');
+  error_element.setAttribute('id', 'options-error-message');
 
-  const messageElement = document.createElement('span');
-  messageElement.textContent = message;
-  errorElement.appendChild(messageElement);
+  const message_element = document.createElement('span');
+  message_element.textContent = message;
+  error_element.appendChild(message_element);
 
-  const dismissButton = document.createElement('button');
-  dismissButton.setAttribute('id', 'dismiss-error-button');
-  dismissButton.textContent = 'Dismiss';
-  dismissButton.onclick = errorMessageHide;
-  errorElement.appendChild(dismissButton);
+  const dismiss_button = document.createElement('button');
+  dismiss_button.setAttribute('id', 'dismiss-error-button');
+  dismiss_button.textContent = 'Dismiss';
+  dismiss_button.onclick = error_message_hide;
+  error_element.appendChild(dismiss_button);
 
   if (fade) {
-    errorElement.style.opacity = '0';
-    document.body.appendChild(errorElement);
+    error_element.style.opacity = '0';
+    document.body.appendChild(error_element);
     const duration = 1, delay = 0;
-    fadeElement(container, duration, delay);
+    element_fade(container, duration, delay);
   } else {
-    errorElement.style.opacity = '1';
-    errorElement.style.display = 'block';
-    document.body.appendChild(errorElement);
+    error_element.style.opacity = '1';
+    error_element.style.display = 'block';
+    document.body.appendChild(error_element);
   }
 }
 
-export function errorMessageHide() {
-  const errorMessageElement = document.getElementById('options-error-message');
-  if (!errorMessageElement) {
+export function error_message_hide() {
+  const error_element = document.getElementById('options-error-message');
+  if (!error_element) {
     return;
   }
 
-  const dismissButton = document.getElementById('dismiss-error-button');
-  if (dismissButton) {
-    dismissButton.removeEventListener('click', errorMessageHide);
+  const dismiss_button = document.getElementById('dismiss-error-button');
+  if (dismiss_button) {
+    dismiss_button.removeEventListener('click', error_message_hide);
   }
-  errorMessageElement.remove();
+  error_element.remove();
 }
 
-function showSection(menuItemElement) {
-  if (!menuItemElement) {
-    console.error('Invalid menuItemElement parameter');
+function section_show(menu_item_element) {
+  if (!menu_item_element) {
+    console.error('Invalid menu_item_element');
     return;
   }
 
-  if (currentMenuItem === menuItemElement) {
+  if (current_menu_item === menu_item_element) {
     return;
   }
 
-  if (currentMenuItem) {
-    currentMenuItem.classList.remove('navigation-item-selected');
+  if (current_menu_item) {
+    current_menu_item.classList.remove('navigation-item-selected');
   }
 
-  if (currentSection) {
-    currentSection.style.display = 'none';
+  if (current_section) {
+    current_section.style.display = 'none';
   }
 
-  menuItemElement.classList.add('navigation-item-selected');
+  menu_item_element.classList.add('navigation-item-selected');
 
   // Show the new section
-  const sectionId = menuItemElement.getAttribute('section');
-  const sectionElement = document.getElementById(sectionId);
+  const section_id = menu_item_element.getAttribute('section');
+  const section_element = document.getElementById(section_id);
 
   // TODO: while this is certainly indicative of a serious error, serious errors
   // shouldn't happen at UI level, so something else should happen here?
-  if (!sectionElement) {
-    console.error('Could not find section element with id', sectionId);
+  if (!section_element) {
+    console.error('Could not find section element with id', section_id);
     return;
   }
 
-  sectionElement.style.display = 'block';
+  section_element.style.display = 'block';
 
   // Update the global tracking vars
-  currentMenuItem = menuItemElement;
-  currentSection = sectionElement;
+  current_menu_item = menu_item_element;
+  current_section = section_element;
 }
 
-function showSectionById(id) {
-  showSection(document.getElementById(id));
+function section_show_by_id(id) {
+  section_show(document.getElementById(id));
 }
 
-function updateFeedCount() {
-  const feedListElement = document.getElementById('feedlist');
-  const count = feedListElement.childElementCount;
-  const feedCountElement = document.getElementById('subscription-count');
+function feed_count_update() {
+  const feed_list_element = document.getElementById('feedlist');
+  const count = feed_list_element.childElementCount;
+  const feed_count_element = document.getElementById('subscription-count');
   if (count > 50) {
-    feedCountElement.textContent = ' (50+)';
+    feed_count_element.textContent = ' (50+)';
   } else {
-    feedCountElement.textContent = ` (${count})`;
+    feed_count_element.textContent = ` (${count})`;
   }
 }
 
-function feedListAppendFeed(feed) {
-  const itemElement = document.createElement('li');
-  itemElement.setAttribute('sort-key', feed.title);
+function feed_list_append_feed(feed) {
+  const item_element = document.createElement('li');
+  item_element.setAttribute('sort-key', feed.title);
 
   // TODO: stop using custom feed attribute?
   // it is used on unsubscribe event to find the LI again,
   // is there an alternative?
-  itemElement.setAttribute('feed', feed.id);
+  item_element.setAttribute('feed', feed.id);
   if (feed.description) {
-    itemElement.setAttribute('title', feed.description);
+    item_element.setAttribute('title', feed.description);
   }
 
   if (feed.active !== true) {
-    itemElement.setAttribute('inactive', 'true');
+    item_element.setAttribute('inactive', 'true');
   }
 
-  itemElement.onclick = feedListItemOnclick;
+  item_element.onclick = feed_list_item_onclick;
 
   if (feed.faviconURLString) {
-    const faviconElement = document.createElement('img');
-    faviconElement.src = feed.faviconURLString;
+    const favicon_element = document.createElement('img');
+    favicon_element.src = feed.faviconURLString;
     if (feed.title) {
-      faviconElement.title = feed.title;
+      favicon_element.title = feed.title;
     }
 
-    faviconElement.setAttribute('width', '16');
-    faviconElement.setAttribute('height', '16');
-    itemElement.appendChild(faviconElement);
+    favicon_element.setAttribute('width', '16');
+    favicon_element.setAttribute('height', '16');
+    item_element.appendChild(favicon_element);
   }
 
-  const titleElement = document.createElement('span');
-  let feedTitle = feed.title || 'Untitled';
+  const title_element = document.createElement('span');
+  let feed_title = feed.title || 'Untitled';
 
   // TODO: handle the parse error, this is near root scope
-  feedTitle = html_truncate(feedTitle, 300);
-  titleElement.textContent = feedTitle;
-  itemElement.appendChild(titleElement);
-  const feedListElement = document.getElementById('feedlist');
-  const normalTitle = feedTitle.toLowerCase();
+  feed_title = html_truncate(feed_title, 300);
+  title_element.textContent = feed_title;
+  item_element.appendChild(title_element);
+  const feed_list_element = document.getElementById('feedlist');
+  const normal_title = feed_title.toLowerCase();
 
   // Insert the feed element into the proper position in the list
   let inserted = false;
-  for (const childNode of feedListElement.childNodes) {
-    let keyString = childNode.getAttribute('sort-key');
-    keyString = keyString || '';
-    keyString = keyString.toLowerCase();
+  for (const child_node of feed_list_element.childNodes) {
+    let key_string = child_node.getAttribute('sort-key');
+    key_string = key_string || '';
+    key_string = key_string.toLowerCase();
 
-    if (indexedDB.cmp(normalTitle, keyString) < 1) {
-      feedListElement.insertBefore(itemElement, childNode);
+    if (indexedDB.cmp(normal_title, key_string) < 1) {
+      feed_list_element.insertBefore(item_element, child_node);
       inserted = true;
       break;
     }
   }
 
   if (!inserted) {
-    feedListElement.appendChild(itemElement);
+    feed_list_element.appendChild(item_element);
     inserted = true;
   }
-  updateFeedCount();
+  feed_count_update();
 }
 
-async function feedListItemOnclick(event) {
+async function feed_list_item_onclick(event) {
   // Use current target to capture the element with the feed attribute
-  const feedListItem = event.currentTarget;
-  const feedIdString = feedListItem.getAttribute('feed');
-  const feedId = parseInt(feedIdString, 10);
+  const feed_list_item_element = event.currentTarget;
+  const feed_id_string = feed_list_item_element.getAttribute('feed');
+  const feed_id = parseInt(feed_id_string, 10);
 
+
+  // TODO: this should be a call to ral.js
   let feed, conn;
   try {
-    feed = await findFeedById(conn, feedId);
+    feed = await reader_db_find_feed_by_id(conn, feed_id);
   } catch (error) {
     // TODO: show an error message
     console.error(error);
@@ -268,100 +286,104 @@ async function feedListItemOnclick(event) {
   }
 
   // Update the UI with the loaded feed data
-  const titleElement = document.getElementById('details-title');
-  titleElement.textContent = feed.title || feed.link || 'Untitled';
+  const title_element = document.getElementById('details-title');
+  title_element.textContent = feed.title || feed.link || 'Untitled';
 
-  const faviconElement = document.getElementById('details-favicon');
+  const favicon_element = document.getElementById('details-favicon');
   if (feed.faviconURLString) {
-    faviconElement.setAttribute('src', feed.faviconURLString);
+    favicon_element.setAttribute('src', feed.faviconURLString);
   } else {
-    faviconElement.removeAttribute('src');
+    favicon_element.removeAttribute('src');
   }
 
-  const descriptionElement =
+  const description_element =
       document.getElementById('details-feed-description');
   if (feed.description) {
-    descriptionElement.textContent = feed.description;
+    description_element.textContent = feed.description;
   } else {
-    descriptionElement.textContent = '';
+    description_element.textContent = '';
   }
 
-  const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = feed_peek_url(feed);
-  const feedLinkElement = document.getElementById('details-feed-link');
-  feedLinkElement.textContent = feed.link || '';
+  const feed_url_element = document.getElementById('details-feed-url');
+  feed_url_element.textContent = feed_peek_url(feed);
+  const feed_link_element = document.getElementById('details-feed-link');
+  feed_link_element.textContent = feed.link || '';
 
-  const unsubscribeButton = document.getElementById('details-unsubscribe');
-  unsubscribeButton.value = '' + feed.id;
+  const unsubscribe_button = document.getElementById('details-unsubscribe');
+  unsubscribe_button.value = '' + feed.id;
 
-  const activateButton = document.getElementById('details-activate');
-  activateButton.value = '' + feed.id;
-  activateButton.disabled = feed.active === true ? true : false;
+  const activate_button = document.getElementById('details-activate');
+  activate_button.value = '' + feed.id;
+  activate_button.disabled = feed.active === true ? true : false;
 
-  const deactivateButton = document.getElementById('details-deactivate');
-  deactivateButton.value = '' + feed.id;
-  deactivateButton.disabled = feed.active === false ? true : false;
+  const deactivate_button = document.getElementById('details-deactivate');
+  deactivate_button.value = '' + feed.id;
+  deactivate_button.disabled = feed.active === false ? true : false;
 
   // TODO: show num entries, num unread/red, etc
   // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
 
-  showSectionById('mi-feed-details');
+  section_show_by_id('mi-feed-details');
 
   // Ensure the details are visible when the feed list is taller than window
   // height and user has scrolled down
   window.scrollTo(0, 0);
 }
 
-async function subscribeFormOnsubmit(event) {
+async function subscribe_form_onsubmit(event) {
   event.preventDefault();
 
-  const monitorElement = document.getElementById('submon');
-  if (monitorElement) {
-    console.debug(
-        'monitorElement.style.display: "%s"', monitorElement.style.display);
-  }
-
-  if (monitorElement && monitorElement.style.display === 'block') {
-    console.debug('in progress, canceling submit');
+  const monitor_element = document.getElementById('submon');
+  if (!monitor_element) {
     return false;
   }
 
-  // TODO: rename, this is no longer query, simply a text input that should
-  // contain a url
-  const queryElement = document.getElementById('subscribe-url');
-  let queryString = queryElement.value;
-  queryString = queryString || '';
-  queryString = queryString.trim();
-
-  if (!queryString) {
+  if (monitor_element.style.display === 'block') {
     return false;
   }
 
-  let url;
+  const subscribe_url_input_element = document.getElementById('subscribe-url');
+  let subscribe_url_string = subscribe_url_input_element.value;
+  subscribe_url_string = subscribe_url_string || '';
+  subscribe_url_string = subscribe_url_string.trim();
+
+  if (!subscribe_url_string) {
+    return false;
+  }
+
+  let subscribe_url;
   try {
-    url = new URL(queryString);
+    subscribe_url = new URL(subscribe_url_string);
   } catch (exception) {
     // TODO: show error like "Please enter a valid url"
     console.warn(exception);
     return false;
   }
 
-  queryElement.value = '';
-  subscriptionMonitorShow();
-  subscriptionMonitorAppendMessage(`Subscribing to ${url.href}`);
+  subscribe_url_input_element.value = '';
+  subscription_monitor_show();
+  subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
-  let feedConn, iconConn;
+  // TODO: most of this should be a call to a helper in ral.js, the view should
+  // less concerned with resource lifetime management, and ral.js provides
+  // helpers that abstract that away. Create ral_subscribe in ral.js that
+  // accepts at least a channel as input, maybe also other context params,
+  // that opens conn, calls subscribe, and closes conns, and throws errors,
+  // and then call ral_subscribe here in a try/catch
+
+  let reader_conn, favicon_conn;
   try {
-    [feedConn, iconConn] = await Promise.all([openReaderDb(), openIconDb()]);
+    [reader_conn, favicon_conn] =
+        await Promise.all([reader_db_open(), favicon_service_open()]);
   } catch (error) {
     console.error(error);
-    subscriptionMonitorHide();
+    subscription_monitor_hide();
     return;
   }
 
   const context = {};
-  context.feedConn = feedConn;
-  context.iconConn = iconConn;
+  context.feedConn = reader_conn;
+  context.iconConn = favicon_conn;
   // Use the options page's persistent channel
   context.channel = channel;
   context.notify = true;
@@ -369,29 +391,31 @@ async function subscribeFormOnsubmit(event) {
 
   let feed;
   try {
-    feed = await subscribe(context, url);
+    feed = await subscribe(context, subscribe_url);
   } catch (error) {
     console.error(error);
-    subscriptionMonitorHide();
-    feedConn.close();
-    iconConn.close();
+    subscription_monitor_hide();
+    reader_conn.close();
+    favicon_conn.close();
     return;
   }
 
-  feedConn.close();
-  iconConn.close();
+  reader_conn.close();
+  favicon_conn.close();
 
-  feedListAppendFeed(feed);
-  const feedURL = feed_peek_url(feed);
-  subscriptionMonitorAppendMessage(`Subscribed to ${feedURL}`);
-  subscriptionMonitorHide();
-  showSectionById('subs-list-section');
+  feed_list_append_feed(feed);
+  subscription_monitor_append_message('Subscribed to ' + feed_peek_url(feed));
+  subscription_monitor_hide();
+  section_show_by_id('subs-list-section');
   return false;
 }
 
-async function feedListInit() {
-  const noFeedsElement = document.getElementById('nosubs');
-  const feedListElement = document.getElementById('feedlist');
+async function feed_list_init() {
+  const no_feeds_element = document.getElementById('nosubs');
+  const feed_list_element = document.getElementById('feedlist');
+
+  // TODO: this should be a call to ral.js, and reader_db_get_feeds should
+  // no longer be able to connect on demand
 
   let feeds, conn;
   try {
@@ -411,6 +435,11 @@ async function feedListInit() {
   // Possibly move it into the helper function that loads the feeds array from
   // the database.
 
+  // TODO: if I add a function ral.js for getting feeds, maybe provide a
+  // flag, sort_by_title, that if true does that, and then set it to true here
+  // instead of doing this explicitly. This will also help abstract away the
+  // fact that sorting is done outside of indexedDB
+
   // TODO: what if I stored a 'sort-key' field in feeds, indexed it, and then
   // loaded by that? I could normalize titles, and guarantee at least an empty
   // string is set for feeds missing titles? I kind of like that idea. I should
@@ -425,65 +454,70 @@ async function feedListInit() {
   });
 
   for (let feed of feeds) {
-    feedListAppendFeed(feed);
+    feed_list_append_feed(feed);
   }
 
   if (feeds.length) {
-    noFeedsElement.style.display = 'none';
-    feedListElement.style.display = 'block';
+    no_feeds_element.style.display = 'none';
+    feed_list_element.style.display = 'block';
   } else {
-    noFeedsElement.style.display = 'block';
-    feedListElement.style.display = 'none';
+    no_feeds_element.style.display = 'block';
+    feed_list_element.style.display = 'none';
   }
 }
 
-// @param feedId {Number}
-function feedListRemoveFeed(feedId) {
-  const feedElement = document.querySelector(`#feedlist li[feed="${feedId}"]`);
+// @param feed_id {Number}
+function feed_list_remove_feed(feed_id) {
+  const feed_element =
+      document.querySelector(`#feedlist li[feed="${feed_id}"]`);
 
-  if (!feedElement) {
-    console.error('Could not find feed element with feed id', feedId);
+  if (!feed_element) {
+    console.error('Could not find feed element with feed id', feed_id);
     return;
   }
 
-  feedElement.removeEventListener('click', feedListItemOnclick);
-  feedElement.remove();
+  feed_element.removeEventListener('click', feed_list_item_onclick);
+  feed_element.remove();
 
   // Upon removing the feed, update the displayed number of feeds.
-  updateFeedCount();
+  feed_count_update();
 
   // Upon removing the feed, update the state of the feed list. If the feed list
   // has no items, hide it and show a message instead.
-  const feedListElement = document.getElementById('feedlist');
-  const noFeedsElement = document.getElementById('nosubs');
-  if (!feedListElement.childElementCount) {
-    feedListElement.style.display = 'none';
-    noFeedsElement.style.display = 'block';
+  const feed_list_element = document.getElementById('feedlist');
+  const no_feeds_element = document.getElementById('nosubs');
+  if (!feed_list_element.childElementCount) {
+    feed_list_element.style.display = 'none';
+    no_feeds_element.style.display = 'block';
   }
 }
 
+async function unsubscribe_button_onclick(event) {
+  const feed_id = parseInt(event.target.value, 10);
 
-async function unsubscribeButtonOnclick(event) {
-  const feedId = parseInt(event.target.value, 10);
+  // TODO: this should be a call to a new helper function in ral.js, and
+  // should not rely on the ability of unsubscribe to connect on demand
 
   let conn;
   try {
-    unsubscribe(conn, channel, feedId);
+    unsubscribe(conn, channel, feed_id);
   } catch (error) {
     // TODO: show an error message
     console.error(error);
     return;
   }
 
-  feedListRemoveFeed(feedId);
-  showSectionById('subs-list-section');
+  feed_list_remove_feed(feed_id);
+  section_show_by_id('subs-list-section');
 }
 
-async function activateButtonOnclick(event) {
-  const feedId = parseInt(event.target.value, 10);
+async function activate_feed_button_onclick(event) {
+  const feed_id = parseInt(event.target.value, 10);
+
+  // TODO: this should be a call to a helper function in ral.js
 
   try {
-    await activateFeed(null, channel, feedId);
+    await reader_db_activate_feed(null, channel, feed_id);
   } catch (error) {
     // TODO: show visual error
     console.error(error);
@@ -491,37 +525,41 @@ async function activateButtonOnclick(event) {
   }
 
   // Update the feed loaded in the UI
-  const itemElement = document.querySelector('li[feed="' + feedId + '"]');
-  if (itemElement) {
-    itemElement.removeAttribute('inactive');
+  const item_element = document.querySelector('li[feed="' + feed_id + '"]');
+  if (item_element) {
+    item_element.removeAttribute('inactive');
   }
 
-  showSectionById('subs-list-section');
+  section_show_by_id('subs-list-section');
 }
 
-async function deactivateButtonOnclick(event) {
-  const feedId = parseInt(event.target.value, 10);
+async function deactivate_feed_button_onclick(event) {
+  const feed_id = parseInt(event.target.value, 10);
+
+  // TODO: this should be a call to a new helper in ral.js, do not rely on
+  // auto-connect
 
   try {
-    await deactivateFeed(null, channel, feedId, 'manual-click');
+    await reader_db_deactivate_feed(null, channel, feed_id, 'manual-click');
   } catch (error) {
     // TODO: show visual error
     console.error(error);
     return;
   }
 
-  const itemElement = document.querySelector('li[feed="' + feedId + '"]');
-  itemElement.setAttribute('inactive', 'true');
-  showSectionById('subs-list-section');
+  const item_element = document.querySelector('li[feed="' + feed_id + '"]');
+  item_element.setAttribute('inactive', 'true');
+  section_show_by_id('subs-list-section');
 }
 
-function menuItemOnclick(event) {
-  const clickedElement = event.target;
-  const sectionElement = event.currentTarget;
-  showSection(sectionElement);
+function menu_item_onclick(event) {
+  // The listener is attached to the item, but that not be what triggered
+  // the click event of event.target, so use currentTarget to get the element
+  // where the listener is attached
+  section_show(event.currentTarget);
 }
 
-function enableNotificationsCheckboxOnclick(event) {
+function enable_notifications_checkbox_onclick(event) {
   if (event.target.checked) {
     localStorage.SHOW_NOTIFICATIONS = '1';
   } else {
@@ -529,15 +567,15 @@ function enableNotificationsCheckboxOnclick(event) {
   }
 }
 
-function enableBgProcessingCheckboxOnclick(event) {
+function enable_bg_processing_checkbox_onclick(event) {
   if (event.target.checked) {
-    requestBrowserPermission('background');
+    permission_request('background');
   } else {
-    removeBrowserPermission('background');
+    permission_remove('background');
   }
 }
 
-async function bgProcessingCheckboxInit() {
+async function enable_bg_processing_checkbox_init() {
   const checkbox = document.getElementById('enable-background');
 
   if (!checkbox) {
@@ -548,11 +586,11 @@ async function bgProcessingCheckboxInit() {
   // TODO: this should be using a local storage variable and instead the
   // permission should be permanently defined.
 
-  checkbox.onclick = enableBgProcessingCheckboxOnclick;
-  checkbox.checked = await hasBrowserPermission('background');
+  checkbox.onclick = enable_bg_processing_checkbox_onclick;
+  checkbox.checked = await permission_has('background');
 }
 
-function restrictIdlePollingCheckboxOnclick(event) {
+function restrict_idle_polling_checkbox_onclick(event) {
   if (event.target.checked) {
     localStorage.ONLY_POLL_IF_IDLE = '1';
   } else {
@@ -560,7 +598,7 @@ function restrictIdlePollingCheckboxOnclick(event) {
   }
 }
 
-function bgImageMenuOnchange(event) {
+function bg_image_menu_onchange(event) {
   const path = event.target.value;
   if (path) {
     localStorage.BG_IMAGE = path;
@@ -571,7 +609,7 @@ function bgImageMenuOnchange(event) {
   channel.postMessage({type: 'display-settings-changed'});
 }
 
-function columnCountMenuOnchange(event) {
+function column_count_menu_onchange(event) {
   const count = event.target.value;
   if (count) {
     localStorage.COLUMN_COUNT = count;
@@ -582,7 +620,7 @@ function columnCountMenuOnchange(event) {
   channel.postMessage({type: 'display-settings-changed'});
 }
 
-function entryBgColorInputOninput(event) {
+function entry_bg_color_input_oninput(event) {
   const color = event.target.value;
   if (color) {
     localStorage.BG_COLOR = color;
@@ -593,9 +631,9 @@ function entryBgColorInputOninput(event) {
   channel.postMessage({type: 'display-settings-changed'});
 }
 
-function entryMarginSliderOnchange(event) {
+function entry_margin_slider_onchange(event) {
   const margin = event.target.value;
-  console.log('entryMarginSliderOnchange new value', margin);
+  console.log('entry_margin_slider_onchange new value', margin);
 
   if (margin) {
     localStorage.PADDING = margin;
@@ -606,7 +644,7 @@ function entryMarginSliderOnchange(event) {
   channel.postMessage({type: 'display-settings-changed'});
 }
 
-function headerFontSizeSliderOnchange(event) {
+function header_font_size_slider_onchange(event) {
   const size = event.target.value;
   if (size) {
     localStorage.HEADER_FONT_SIZE = size;
@@ -617,7 +655,7 @@ function headerFontSizeSliderOnchange(event) {
   channel.postMessage({type: 'display-settings-changed'});
 }
 
-function bodyFontSizeSliderOnchange(event) {
+function body_font_size_slider_onchange(event) {
   const size = event.target.value;
   if (size) {
     localStorage.BODY_FONT_SIZE = size;
@@ -628,7 +666,7 @@ function bodyFontSizeSliderOnchange(event) {
   channel.postMessage({type: 'display-settings-changed'});
 }
 
-function justifyTextCheckboxOnchange(event) {
+function justify_text_checkbox_onchange(event) {
   if (event.target.checked) {
     localStorage.JUSTIFY_TEXT = '1';
   } else {
@@ -638,7 +676,7 @@ function justifyTextCheckboxOnchange(event) {
   channel.postMessage({type: 'display-settings-changed'});
 }
 
-function bodyHeightInputOninput(event) {
+function body_line_height_input_oninput(event) {
   const height = event.target.value;
   if (height) {
     localStorage.BODY_LINE_HEIGHT = height;
@@ -649,177 +687,119 @@ function bodyHeightInputOninput(event) {
   channel.postMessage({type: 'display-settings-changed'});
 }
 
+function options_page_init() {
+  PageStyle.pageStyleSettingsOnload();
+
+  // Attach click handlers to menu items
+  // TODO: use single event listener on list itself instead
+  const menu_items = document.querySelectorAll('#navigation-menu li');
+  for (const menuItem of menu_items) {
+    menuItem.onclick = menu_item_onclick;
+  }
+
+  // Init Enable notifications checkbox
+  const enable_notifications_checkbox =
+      document.getElementById('enable-notifications');
+  enable_notifications_checkbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
+  enable_notifications_checkbox.onclick = enable_notifications_checkbox_onclick;
+
+  enable_bg_processing_checkbox_init();
+
+  const restrict_idle_polling_checkbox =
+      document.getElementById('enable-idle-check');
+  restrict_idle_polling_checkbox.checked = 'ONLY_POLL_IF_IDLE' in localStorage;
+  restrict_idle_polling_checkbox.onclick =
+      restrict_idle_polling_checkbox_onclick;
+
+  feed_list_init();
+
+  // Init feed details section unsubscribe button click handler
+  const unsubscribe_button = document.getElementById('details-unsubscribe');
+  unsubscribe_button.onclick = unsubscribe_button_onclick;
+
+  const activate_button = document.getElementById('details-activate');
+  activate_button.onclick = activate_feed_button_onclick;
+
+  const deactivate_button = document.getElementById('details-deactivate');
+  deactivate_button.onclick = deactivate_feed_button_onclick;
+
+  // Init the subscription form section
+  const subscription_form = document.getElementById('subscription-form');
+  subscription_form.onsubmit = subscribe_form_onsubmit;
 
 
-// Initialization
-
-PageStyle.pageStyleSettingsOnload();
-
-// Attach click handlers to menu items
-// TODO: use single event listener on list itself instead
-const menuItems = document.querySelectorAll('#navigation-menu li');
-for (const menuItem of menuItems) {
-  menuItem.onclick = menuItemOnclick;
-}
-
-// Init Enable notifications checkbox
-const enableNotificationsCheckbox =
-    document.getElementById('enable-notifications');
-enableNotificationsCheckbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
-enableNotificationsCheckbox.onclick = enableNotificationsCheckboxOnclick;
-
-bgProcessingCheckboxInit();
-
-const enableRestrictIdlePollingCheckbox =
-    document.getElementById('enable-idle-check');
-enableRestrictIdlePollingCheckbox.checked = 'ONLY_POLL_IF_IDLE' in localStorage;
-enableRestrictIdlePollingCheckbox.onclick = restrictIdlePollingCheckboxOnclick;
-
-feedListInit();
-
-// Init feed details section unsubscribe button click handler
-const unsubscribeButton = document.getElementById('details-unsubscribe');
-unsubscribeButton.onclick = unsubscribeButtonOnclick;
-
-const activateButton = document.getElementById('details-activate');
-activateButton.onclick = activateButtonOnclick;
-
-const deactivateButton = document.getElementById('details-deactivate');
-deactivateButton.onclick = deactivateButtonOnclick;
-
-// Init the subscription form section
-const subscriptionForm = document.getElementById('subscription-form');
-subscriptionForm.onsubmit = subscribeFormOnsubmit;
-
-
-// Init background image menu
-{
-  const backgroundImageMenu = document.getElementById('entry-background-image');
-  backgroundImageMenu.onchange = bgImageMenuOnchange;
-  let option = document.createElement('option');
-  option.value = '';
-  option.textContent = 'Use background color';
-  backgroundImageMenu.appendChild(option);
-
-  const currentBgImagePath = localStorage.BG_IMAGE;
-  const bgImagePathOffset = '/images/'.length;
-  for (const path of BG_IMAGES) {
+  // Init background image menu
+  {
+    const bg_image_menu = document.getElementById('entry-background-image');
+    bg_image_menu.onchange = bg_image_menu_onchange;
     let option = document.createElement('option');
-    option.value = path;
-    option.textContent = path.substring(bgImagePathOffset);
-    option.selected = currentBgImagePath === path;
-    backgroundImageMenu.appendChild(option);
+    option.value = '';
+    option.textContent = 'Use background color';
+    bg_image_menu.appendChild(option);
+
+    const current_bg_image_path = localStorage.BG_IMAGE;
+    const bg_image_relative_path_offset = '/images/'.length;
+    for (const path of BG_IMAGES) {
+      let option = document.createElement('option');
+      option.value = path;
+      option.textContent = path.substring(bg_image_relative_path_offset);
+      option.selected = current_bg_image_path === path;
+      bg_image_menu.appendChild(option);
+    }
   }
-}
 
-{
-  const columnCountMenu = document.getElementById('column-count');
-  columnCountMenu.onchange = columnCountMenuOnchange;
-  const columnCounts = ['1', '2', '3'];
-  const currentColumnCount = localStorage.COLUMN_COUNT
-  for (const columnCount of columnCounts) {
-    const option = document.createElement('option');
-    option.value = columnCount;
-    option.selected = columnCount === currentColumnCount;
-    option.textContent = columnCount;
-    columnCountMenu.appendChild(option);
+  {
+    const column_count_menu = document.getElementById('column-count');
+    column_count_menu.onchange = column_count_menu_onchange;
+    const column_count_options = ['1', '2', '3'];
+    const current_column_count = localStorage.COLUMN_COUNT
+    for (const column_count of column_count_options) {
+      const option = document.createElement('option');
+      option.value = column_count;
+      option.selected = column_count === current_column_count;
+      option.textContent = column_count;
+      column_count_menu.appendChild(option);
+    }
   }
+
+  const bg_color_input = document.getElementById('entry-background-color');
+  if (localStorage.BG_COLOR) {
+    bg_color_input.value = localStorage.BG_COLOR;
+  } else {
+    bg_color_input.removeAttribute('value');
+  }
+  bg_color_input.oninput = entry_bg_color_input_oninput;
+
+  const entry_margin_input = document.getElementById('entry-margin');
+  entry_margin_input.value = localStorage.PADDING || '10';
+  entry_margin_input.onchange = entry_margin_slider_onchange;
+
+  const justify_text_checkbox = document.getElementById('justify-text');
+  justify_text_checkbox.checked = 'JUSTIFY_TEXT' in localStorage;
+  justify_text_checkbox.onchange = justify_text_checkbox_onchange;
+
+  const body_line_height_input = document.getElementById('body-line-height');
+  body_line_height_input.oninput = body_line_height_input_oninput;
+  const current_body_line_height = parseInt(localStorage.BODY_LINE_HEIGHT, 10);
+  if (!isNaN(current_body_line_height)) {
+    body_line_height_input.value = (current_body_line_height / 10).toFixed(2);
+  }
+
+  const manifest = chrome.runtime.getManifest();
+  const extension_name_element = document.getElementById('extension-name');
+  extension_name_element.textContent = manifest.name;
+  const extension_version_element =
+      document.getElementById('extension-version');
+  extension_version_element.textValue = manifest.version;
+  const extension_author_element = document.getElementById('extension-author');
+  extension_author_element.textContent = manifest.author;
+  const extension_description_element =
+      document.getElementById('extension-description');
+  extension_description_element.textContent = manifest.description || '';
+  const extension_url_element = document.getElementById('extension-homepage');
+  extension_url_element.textContent = manifest.homepage_url;
+
+  section_show_by_id('subs-list-section');
 }
 
-const bgColorInput = document.getElementById('entry-background-color');
-if (localStorage.BG_COLOR) {
-  bgColorInput.value = localStorage.BG_COLOR;
-} else {
-  bgColorInput.removeAttribute('value');
-}
-bgColorInput.oninput = entryBgColorInputOninput;
-
-const marginInput = document.getElementById('entry-margin');
-marginInput.value = localStorage.PADDING || '10';
-marginInput.onchange = entryMarginSliderOnchange;
-
-const justifyTextCheckbox = document.getElementById('justify-text');
-justifyTextCheckbox.checked = 'JUSTIFY_TEXT' in localStorage;
-justifyTextCheckbox.onchange = justifyTextCheckboxOnchange;
-
-const bodyLineHeightInput = document.getElementById('body-line-height');
-bodyLineHeightInput.oninput = bodyHeightInputOninput;
-const bodyLineHeightNumber = parseInt(localStorage.BODY_LINE_HEIGHT, 10) || 10;
-if (!isNaN(bodyLineHeightNumber)) {
-  bodyLineHeightInput.value = (bodyLineHeightNumber / 10).toFixed(2);
-}
-
-const manifest = chrome.runtime.getManifest();
-const extNameElement = document.getElementById('extension-name');
-extNameElement.textContent = manifest.name;
-const extVersionElement = document.getElementById('extension-version');
-extVersionElement.textValue = manifest.version;
-const extAuthorElement = document.getElementById('extension-author');
-extAuthorElement.textContent = manifest.author;
-const extDescriptionElement = document.getElementById('extension-description');
-extDescriptionElement.textContent = manifest.description || '';
-const extURLElement = document.getElementById('extension-homepage');
-extURLElement.textContent = manifest.homepage_url;
-
-showSectionById('subs-list-section');
-
-// Duration and delay can be integer or floats and are required.
-function fadeElement(element, durationSecs, delaySecs) {
-  return new Promise(function executor(resolve, reject) {
-    if (!element) {
-      console.error('Invalid element parameter', element);
-      return;
-    }
-
-    if (!element.style) {
-      console.debug('Cannot fade element without a style property');
-      return;
-    }
-
-    durationSecs = Number.isInteger(durationSecs) ? durationSecs : 1;
-    delaySecs = Number.isInteger(delaySecs) ? delaySecs : 0;
-
-    const style = element.style;
-    if (style.display === 'none') {
-      // If the element is hidden, it may not have an opacity set. When fading
-      // in the element by setting opacity to 1, it has to change from 0 to
-      // work.
-      style.opacity = '0';
-
-      // If the element is hidden, and its opacity is 0, make it eventually
-      // visible
-      style.display = 'block';
-    } else {
-      // If the element is visible, and we plan to hide it by setting its
-      // opacity to 0, it has to change from opacity 1 for fade to work
-      style.opacity = '1';
-    }
-
-    element.addEventListener('webkitTransitionEnd', resolve, {'once': true});
-
-    // property duration function delay
-    style.transition = `opacity ${durationSecs}s ease ${delaySecs}s`;
-    style.opacity = style.opacity === '1' ? '0' : '1';
-  });
-}
-
-function hasBrowserPermission(permission) {
-  return new Promise(function executor(resolve, reject) {
-    const descriptor = {permissions: [permission]};
-    chrome.permissions.contains(descriptor, resolve);
-  });
-}
-
-function requestBrowserPermission(permission) {
-  return new Promise(function executor(resolve, reject) {
-    const descriptor = {permissions: [permission]};
-    chrome.permissions.request(descriptor, resolve);
-  });
-}
-
-function removeBrowserPermission(permission) {
-  return new Promise(function executor(resolve, reject) {
-    const descriptor = {permissions: [permission]};
-    chrome.permissions.remove(descriptor, resolve);
-  });
-}
+options_page_init();

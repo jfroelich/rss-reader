@@ -303,6 +303,7 @@ function handle_fetch_feed_success(feed) {
 // that happen to have a parsing error that is actually ephemeral (temporary)
 // and not permanent.
 
+
 // TODO: rather than try and update the database, perhaps it would be better to
 // simply generate an event with feed id and some basic error information, and
 // let some error handler handle the event at a later time. This removes all
@@ -310,15 +311,11 @@ function handle_fetch_feed_success(feed) {
 // the call to feed_store_feed_put, and maintains the non-blocking
 // characteristic.
 function handle_poll_feed_error(error_info) {
-  // TODO: create a helper like error_is_ephemeral(error)
-  if (error_info.error instanceof OfflineError ||
-      error_info.error instanceof TimeoutError) {
-    console.debug('Ignoring ephemeral poll feed error', error_info.error);
+  if (error_is_ephemeral(error_info.error)) {
     return;
   }
 
   const feed = error_info.feed;
-
   feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
   if (feed.errorCount > error_info.context.deactivationThreshold) {
     feed.active = false;
@@ -361,11 +358,6 @@ function detected_modification(ignore_modified_check, feed, response) {
     console.debug('Response missing last modified date?', response);
     return true;
   }
-
-  // TEMP: researching always unmodified issue
-  console.debug(
-      'local %d remote %d', feed.dateLastModified.getTime(),
-      response_last_modified_date.getTime());
 
   // Return true if the dates are different
   // Return false if the dates are the same
@@ -491,6 +483,8 @@ async function entry_fetch(entry, timeout) {
     console.debug(error);
   }
 }
+
+
 
 // Checks if the entry redirected, and if so, possibly updates the entry and
 // returns whether the redirect url already exists in the database
@@ -638,6 +632,11 @@ async function entry_update_content(ctx, entry, fetched_document) {
 function url_is_augmentable(url) {
   return url_is_http(url) && !url_is_binary(url) &&
       !url_is_inaccessible_content(url);
+}
+
+// Return true if the error represents a temporary error
+function error_is_ephemeral(error) {
+  return error instanceof OfflineError || error instanceof TimeoutError;
 }
 
 // An array of descriptors. Each descriptor represents a test against a url
