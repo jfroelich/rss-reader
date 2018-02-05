@@ -264,11 +264,11 @@ function onLookupFailure(conn, originURL, originEntry, maxFailureCount) {
     if ('failureCount' in originEntry) {
       if (originEntry.failureCount <= maxFailureCount) {
         newEntry.failureCount = originEntry.failureCount + 1;
-        putEntry(conn, newEntry);
+        rdb_entry_put(conn, newEntry);
       }
     } else {
       newEntry.failureCount = 1;
-      putEntry(conn, newEntry);
+      rdb_entry_put(conn, newEntry);
     }
   } else {
     const newEntry = {};
@@ -276,7 +276,7 @@ function onLookupFailure(conn, originURL, originEntry, maxFailureCount) {
     newEntry.iconURLString = undefined;
     newEntry.dateUpdated = new Date();
     newEntry.failureCount = 1;
-    putEntry(conn, newEntry);
+    rdb_entry_put(conn, newEntry);
   }
 }
 
@@ -468,7 +468,7 @@ function findEntry(conn, url) {
   });
 }
 
-function putEntry(conn, entry) {
+function rdb_entry_put(conn, entry) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('favicon-cache', 'readwrite');
     const store = txn.objectStore('favicon-cache');

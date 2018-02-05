@@ -1,7 +1,7 @@
 import {html_escape, html_truncate} from '/src/common/html-utils.js';
 import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
 import {ral_export, ral_import, ral_load_initial, ral_poll_feeds} from '/src/ral.js';
-import {entry_is_entry, entry_is_valid_id, entry_peek_url, feed_peek_url, open as reader_db_open, reader_db_find_viewable_entries, reader_db_get_feeds} from '/src/rdb.js';
+import {entry_is_entry, entry_is_valid_id, entry_peek_url, feed_peek_url, rdb_open, reader_db_find_viewable_entries, reader_db_get_feeds} from '/src/rdb.js';
 import {filter_title_publisher} from '/src/views/article-utils.js';
 import {date_format} from '/src/views/date.js';
 import * as PageStyle from '/src/views/page-style-settings.js';
@@ -94,7 +94,7 @@ async function on_entry_added_message(message) {
 
   let conn;
   try {
-    conn = await reader_db_open();
+    conn = await rdb_open();
     await slide_load_and_append_multiple(conn);
   } finally {
     if (conn) {
@@ -422,7 +422,7 @@ async function slide_onclick(event) {
   // Mark the current slide as read
   let conn;
   try {
-    conn = await reader_db_open();
+    conn = await rdb_open();
   } catch (error) {
     // TODO: visually show error
     console.error(error);
@@ -498,7 +498,7 @@ async function slide_next() {
     // Mark the current slide as read
     let conn;
     try {
-      conn = await reader_db_open();
+      conn = await rdb_open();
     } catch (error) {
       console.error(error);
       return;
@@ -514,7 +514,7 @@ async function slide_next() {
   let append_count = 0;
   let conn;
   try {
-    conn = await reader_db_open();
+    conn = await rdb_open();
   } catch (error) {
     console.error(error);
     return;

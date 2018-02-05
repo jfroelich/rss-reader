@@ -1,4 +1,4 @@
-import {open, reader_db_count_unread_entries} from '/src/rdb.js';
+import {rdb_entry_count_unread} from '/src/rdb.js';
 
 // TODO: think of how to reduce connection usage, maybe maintain a persistent
 // connection? Then again now that this is non-blocking, maybe the slowness of
@@ -54,7 +54,7 @@ export default async function badge_update_text(conn) {
 
   let count;
   try {
-    count = await reader_db_count_unread_entries(conn);
+    count = await rdb_entry_count_unread(conn);
   } catch (error) {
     console.error(error);
     return;

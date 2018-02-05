@@ -6,7 +6,7 @@ import apply_all_document_filters from '/src/feed-poll/filters/apply-all.js';
 import url_is_binary from '/src/feed-poll/is-binary-url.js';
 import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import notification_show from '/src/notifications.js';
-import {entry_append_url, entry_has_url, entry_is_entry, entry_peek_url, entry_store_add_entry, entry_store_contains_entry_with_url, feed_has_url, feed_is_feed, feed_merge, feed_peek_url, feed_prepare, feed_store_feed_put, find_active_feeds, open as reader_db_open} from '/src/rdb.js';
+import {entry_append_url, entry_has_url, entry_is_entry, entry_peek_url, rdb_entry_add, entry_store_contains_entry_with_url, feed_has_url, feed_is_feed, feed_merge, feed_peek_url, feed_prepare, feed_store_feed_put, rdb_find_active_feeds, rdb_open} from '/src/rdb.js';
 // TODO: this should not be dependent on something in the view, it should be the
 // other way around
 import badge_update_text from '/src/views/update-badge-text.js';
@@ -39,7 +39,7 @@ function noop() {}
 // poll_service_poll_feeds
 export async function poll_service_create_context() {
   const context = {};
-  const promises = [reader_db_open(), favicon_service_open()];
+  const promises = [rdb_open(), favicon_service_open()];
   [context.feedConn, context.iconConn] = await Promise.all(promises);
 
   // TODO: consider moving all lifetime management to caller
@@ -83,7 +83,7 @@ export async function poll_service_poll_feeds(input_poll_feeds_context) {
   poll_feed_context.notify = false;
 
   // Concurrently poll all the feeds
-  const feeds = await find_active_feeds(poll_feeds_context.feedConn);
+  const feeds = await rdb_find_active_feeds(poll_feeds_context.feedConn);
   const poll_feed_promises = [];
   for (const feed of feeds) {
     const promise = poll_service_feed_poll(poll_feed_context, feed);
@@ -425,7 +425,7 @@ async function poll_entry(ctx, entry) {
   let stored_entry;
   try {
     stored_entry =
-        await entry_store_add_entry(ctx.feedConn, ctx.channel, entry);
+        await rdb_entry_add(ctx.feedConn, ctx.channel, entry);
   } catch (error) {
     console.error(entry.urls, error);
     return;

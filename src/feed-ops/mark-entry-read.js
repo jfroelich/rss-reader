@@ -1,4 +1,4 @@
-import {entry_mark_read as store_entry_mark_read} from '/src/rdb.js';
+import {rdb_entry_mark_read} from '/src/rdb.js';
 import badge_update_text from '/src/views/update-badge-text.js';
 
 // TODO: this shouldn't be dependent on something in views, it should be the
@@ -14,12 +14,12 @@ export default async function entry_mark_read(conn, channel, entry_id) {
   // TODO: I would prefer this to not be awaited, but I need to defer the badge
   // update call until after it resolves. I suppose I could use a promise?
 
-  await store_entry_mark_read(conn, channel, entry_id);
+  await rdb_entry_mark_read(conn, channel, entry_id);
   console.debug('Marked entry %d as read', entry_id);
 
   // Call unawaited. We can still pass conn because the update starts in the
   // current tick, which is prior to conn closing externally, because we know
-  // conn is open or else call to store_entry_mark_read would have failed.
+  // conn is open or else call to rdb_entry_mark_read would have failed.
   // TODO: actually, we don't. We await above, so it is entirely possible the
   // connection is closed by now?
   // TODO: second issue, now that I think about it, might be transactional

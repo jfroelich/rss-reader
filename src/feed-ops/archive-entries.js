@@ -1,37 +1,15 @@
-import {entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, open as open_reader_db} from '/src/rdb.js';
+import {entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, rdb_open} from '/src/rdb.js';
 
-// TODO: eventually reconsider how an entry is determined as archivable. Each
-// entry should specify its own lifetime as a property, at the time of creation
-// of update. This should then just be scanning for entries that whose
-// lifetimes have expired. This pattern is more in line with how traditional
-// cached object lifetimes are calculated. Using this alternate approach
-// allows each entry to manage its own lifetime. For example, I could say that
-// for all entries coming from a certain feed, those entries should have a
-// half-life.
+// TODO: all modules in the feed-ops layer should use the feed-ops prefix
 
-// TODO: I think what I want to be doing is re-imagining entry store as a
-// document store. Then look at how a traditional document store works, and
-// mimic that caching behavior. I believe it is generally done with an
-// expiresDate field of some sort, one that is defined when creating the
-// document, or updating it, and is optional. Then archiving becomes simply a
-// matter of finding all entries with an expireDate older than the current date.
-// This type of change correlates with the goal of removing the feed id foreign
-// key from the entry store and linking feeds and entries by feed url instead.
-
-// TODO: maybe differentiating between the message type 'entry-updated' and
-// 'entry-archived' is pendantic. Or, perhaps I should introduce a reason code
-// to the message.
-
-// TODO: this now no longer layers anything on top of the feed store. It
-// basically is part of the model. So why do I have it in feed ops?
-
+// TODO: drop auto-connect support
 
 // Archives certain entries in the database
-// - conn {IDBDatabase} optional, storage database, if not specified then
+// @param conn {IDBDatabase} optional, storage database, if not specified then
 // default database will be opened, used, and closed
-// - entry_age_max {Number} how long before an entry is considered archivable
-// (using date entry created), in milliseconds
-// - limit {Number} maximum number of entries to archive
+// @param channel {BroadcastChannel} optional, post entry-archived messages
+// @param entry_age_max {Number} how long before an entry is considered
+// archivable (using date entry created), in milliseconds
 export default async function archive_entries(conn, channel, entry_age_max) {
   console.log('Archiving entries...');
 
@@ -46,7 +24,7 @@ export default async function archive_entries(conn, channel, entry_age_max) {
     }
   }
 
-  const dconn = conn ? conn : await open_reader_db();
+  const dconn = conn ? conn : await rdb_open();
   const entry_ids = await archive_entries_promise(dconn, entry_age_max);
   if (!conn) {
     dconn.close();
@@ -69,8 +47,8 @@ function archive_entries_promise(conn, entry_age_max) {
     tx.oncomplete = () => resolve(entry_ids);
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
-    const request = index.openCursor(keyPath);
+    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
+    const request = index.openCursor(key_path);
     request.onsuccess = () => {
       const cursor = request.result;
       if (!cursor) {

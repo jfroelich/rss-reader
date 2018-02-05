@@ -1,4 +1,4 @@
-import {entry_has_url, open as reader_db_open} from '/src/rdb.js';
+import {entry_has_url, rdb_open as reader_db_open} from '/src/rdb.js';
 
 // TODO: move this comment to github issue
 // TODO: consider speculative messaging, where I post a message to a channel of
@@ -30,10 +30,10 @@ export default async function entry_store_remove_lost_entries(
     for (const id of entry_ids) {
       message.id = id;
 
-      // If entry_store_remove_lost_entries is not awaited, channel may close before the
-      // promise settled above, which would cause postMessage to throw, but
-      // there is no way to check if channel closed, and we are forked so
-      // throwing sends an error to a place where no one is listening
+      // If entry_store_remove_lost_entries is not awaited, channel may close
+      // before the promise settled above, which would cause postMessage to
+      // throw, but there is no way to check if channel closed, and we are
+      // forked so throwing sends an error to a place where no one is listening
       channel_post_message_noexcept(channel, message, console);
     }
   }

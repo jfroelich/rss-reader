@@ -1,9 +1,9 @@
-import {feed_is_valid_id, open} from '/src/rdb.js';
+import {feed_is_valid_id, rdb_open} from '/src/rdb.js';
 
-// TODO: does this potentially affect unread count? In which case this desync's
-// badge text? I may have wrote this comment before introducing channel, can
-// not remember.
-
+// TODO: drop auto-connect support. The proper way, if at all, is to go through
+// a layer similar to ral.js
+// TODO: this potentially affects unread count and therefore should be
+// interacting with badge_update_text
 // TODO: add console parameter and NULL_CONSOLE impl
 // TODO: trap postMessage errors in case channel closed when called unawaited
 
@@ -11,7 +11,7 @@ import {feed_is_valid_id, open} from '/src/rdb.js';
 // conn {IDBDatabase} is optional open database connection
 // channel {BroadcastChannel} is optional broadcast channel
 export default async function entry_store_remove_orphans(conn, channel) {
-  const dconn = conn ? conn : await open();
+  const dconn = conn ? conn : await rdb_open();
   const entry_ids = await entry_store_remove_orphans_promise(dconn);
   if (!conn) {
     dconn.close();

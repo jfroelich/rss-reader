@@ -1,6 +1,6 @@
 import {open as openIconDb} from '/src/favicon-service.js';
 import subscribe from '/src/feed-ops/subscribe.js';
-import {feed_peek_url, open as openReaderDb, reader_db_get_feeds} from '/src/rdb.js';
+import {feed_peek_url, rdb_open, reader_db_get_feeds} from '/src/rdb.js';
 
 // Returns an opml document as a blob that contains outlines representing the
 // feeds in the app's db

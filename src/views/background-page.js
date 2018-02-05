@@ -4,7 +4,7 @@ import feed_store_refresh_all_icons from '/src/feed-ops/refresh-feed-icons.js';
 import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
 import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
 import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
-import {open as reader_db_open} from '/src/rdb.js';
+import {rdb_open} from '/src/rdb.js';
 import show_slideshow_tab from '/src/views/show-slideshow-tab.js';
 import badge_update_text from '/src/views/update-badge-text.js';
 
@@ -43,7 +43,7 @@ async function handle_orphan_entries_alarm(alarm) {
 
 async function handle_refresh_feed_icons_alarm(alarm) {
   const [reader_conn, favicon_conn] =
-      await Promise.all([reader_db_open(), favicon_service_open()]);
+      await Promise.all([rdb_open(), favicon_service_open()]);
   await feed_store_refresh_all_icons(reader_conn, favicon_conn);
   reader_conn.close();
   favicon_conn.close();
@@ -76,7 +76,7 @@ const cli = {};
 
 cli.refresh_icons = async function() {
   const [reader_conn, favicon_conn] =
-      await Promise.all([reader_db_open(), favicon_service_open()]);
+      await Promise.all([rdb_open(), favicon_service_open()]);
   await feed_store_refresh_all_icons(reader_conn, favicon_conn);
   reader_conn.close();
   favicon_conn.close();
@@ -145,7 +145,7 @@ console.debug('Initializing background page');
 
 chrome.runtime.onInstalled.addListener(function(event) {
   console.log('Setting up feed store database');
-  reader_db_open()
+  rdb_open()
       .then(function(conn) {
         return conn.close();
       })
@@ -164,7 +164,7 @@ chrome.browserAction.onClicked.addListener(show_slideshow_tab);
 async function badge_init() {
   let conn;
   try {
-    conn = await reader_db_open();
+    conn = await rdb_open();
     badge_update_text(conn);
   } catch (error) {
     console.error(error);

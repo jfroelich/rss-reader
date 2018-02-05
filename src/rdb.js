@@ -1,16 +1,21 @@
 import {html_replace_tags, html_truncate} from '/src/common/html-utils.js';
 import {open as indexeddb_utils_open} from '/src/common/indexeddb-utils.js';
 
+// TODO: consistently use rdb prefix here, and throughout all modules. Change
+// other module imports to no longer renaming imported functions. The rdb
+// prefix is unique to this module. rdb is shorter than reader_db
+
 // TODO: do away with all auto-connecting. The solution to inconvenient resource
 // lifetime management is through using wrapper functions, not through dynamic
-// variables
+// variables. In addition, this may allow me to stop using two functions per
+// api function. Instead of an async function calling a promise returning
+// helper, I can just expose the promise returning helper.
 
-// TODO: move this to github issue
+// TODO: move this to github issue, and make it more general, this is about
+// consistent object field naming.
 // TODO: rename feed.dateUpdated and entry.dateUpdated to updatedDate for better
-// consistency
+// consistency. Also consider using underscore instead of camel case
 
-// TODO: move this to github issue as a mental note
-// TODO: consider grouping feed.active properties together
 
 const FEED_MAGIC = 0xfeedfeed;
 const ENTRY_MAGIC = 0xdeadbeef;
@@ -20,13 +25,14 @@ export const ENTRY_STATE_READ = 1;
 export const ENTRY_STATE_UNARCHIVED = 0;
 export const ENTRY_STATE_ARCHIVED = 1;
 
-export function open(name = 'reader', version = 24, timeout = 500) {
-  return indexeddb_utils_open(name, version, on_upgrade_needed, timeout);
+export function rdb_open(name = 'reader', version = 24, timeout = 500) {
+  return indexeddb_utils_open(name, version, rdb_on_upgrade_needed, timeout);
 }
 
-// Helper for open. Does the database upgrade. This should never be
-// called directly. To do an upgrade, call open with a higher version number.
-function on_upgrade_needed(event) {
+// Helper for rdb_open. Does the database upgrade. This should never be
+// called directly. To do an upgrade, call rdb_open with a higher version
+// number.
+function rdb_on_upgrade_needed(event) {
   const conn = event.target.result;
   const tx = event.target.transaction;
   let feed_store, entry_store;
@@ -38,9 +44,9 @@ function on_upgrade_needed(event) {
 
   if (event.oldVersion < 20) {
     feed_store =
-        conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
+        conn.createObjectStore('feed', {key_path: 'id', autoIncrement: true});
     entry_store =
-        conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
+        conn.createObjectStore('entry', {key_path: 'id', autoIncrement: true});
     feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
 
     entry_store.createIndex('readState', 'readState');
@@ -123,10 +129,10 @@ function add_active_field_to_feeds(store) {
   };
 }
 
-export async function reader_db_activate_feed(conn, channel, feed_id) {
+export async function rdb_feed_activate(conn, channel, feed_id) {
   assert(feed_is_valid_id(feed_id), 'Invalid feed id', feed_id);
-  const dconn = conn ? conn : await open();
-  await activate_feed_promise(dconn, feed_id);
+  const dconn = conn ? conn : await rdb_open();
+  await rdb_feed_activate_promise(dconn, feed_id);
   if (!conn) {
     dconn.close();
   }
@@ -135,7 +141,7 @@ export async function reader_db_activate_feed(conn, channel, feed_id) {
   }
 }
 
-function activate_feed_promise(conn, feed_id) {
+function rdb_feed_activate_promise(conn, feed_id) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed', 'readwrite');
     tx.oncomplete = resolve;
@@ -155,11 +161,10 @@ function activate_feed_promise(conn, feed_id) {
   });
 }
 
-export async function reader_db_deactivate_feed(
-    conn, channel, feed_id, reasonText) {
+export async function rdb_feed_deactivate(conn, channel, feed_id, reasonText) {
   assert(feed_is_valid_id(feed_id), 'Invalid feed id ' + feed_id);
-  const dconn = conn ? conn : await open();
-  await deactivate_feed_promise(dconn, feed_id, reasonText);
+  const dconn = conn ? conn : await rdb_open();
+  await rdb_feed_deactivate_promise(dconn, feed_id, reasonText);
   if (!conn) {
     dconn.close();
   }
@@ -168,7 +173,7 @@ export async function reader_db_deactivate_feed(
   }
 }
 
-function deactivate_feed_promise(conn, feed_id, reasonText) {
+function rdb_feed_deactivate_promise(conn, feed_id, reasonText) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('feed', 'readwrite');
     tx.oncomplete = resolve;
@@ -188,12 +193,12 @@ function deactivate_feed_promise(conn, feed_id, reasonText) {
   });
 }
 
-// TODO: should validation be caller concern
+// TODO: should validation be caller concern?
 // TODO: I wonder if sanitization is a concern for something earlier in the
 // processing pipeline, and at this point, only validation is a concern, and
-// no magical mutations should happen
+// no magical mutations should happen?
 
-export async function entry_store_add_entry(conn, channel, entry) {
+export async function rdb_entry_add(conn, channel, entry) {
   assert(entry_is_entry(entry), 'Invalid entry ' + entry);
   assert(!entry.id);
   entry_validate(entry);
@@ -205,8 +210,8 @@ export async function entry_store_add_entry(conn, channel, entry) {
   storable.dateCreated = new Date();
   delete storable.dateUpdated;
 
-  let nullChannel = null;
-  const entry_id = await putEntry(conn, nullChannel, storable);
+  let null_channel = null;
+  const entry_id = await rdb_entry_put(conn, null_channel, storable);
   if (channel) {
     channel.postMessage({type: 'entry-added', id: entry_id});
   }
@@ -214,16 +219,16 @@ export async function entry_store_add_entry(conn, channel, entry) {
   return storable;
 }
 
-export async function reader_db_count_unread_entries(conn) {
-  const dconn = conn ? conn : await open();
-  const count = await count_unread_entries_promise(dconn);
+export async function rdb_entry_count_unread(conn) {
+  const dconn = conn ? conn : await rdb_open();
+  const count = await rdb_entry_count_unread_promise(dconn);
   if (!conn) {
     dconn.close();
   }
   return count;
 }
 
-function count_unread_entries_promise(conn) {
+function rdb_entry_count_unread_promise(conn) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry');
     const store = tx.objectStore('entry');
@@ -234,16 +239,16 @@ function count_unread_entries_promise(conn) {
   });
 }
 
-export async function entry_mark_read(conn, channel, entry_id) {
+export async function rdb_entry_mark_read(conn, channel, entry_id) {
   assert(entry_is_valid_id(entry_id));
-  const dconn = conn ? conn : await open();
-  await mark_entry_read_promise(dconn, entry_id);
+  const dconn = conn ? conn : await rdb_open();
+  await rdb_entry_mark_read_promise(dconn, entry_id);
   if (!conn) {
     dconn.close();
   }
   if (channel) {
-    // channel may be closed by the time this executes when entry_mark_read is
-    // not awaited, so trap the invalid state error and just log it
+    // channel may be closed by the time this executes when rdb_entry_mark_read
+    // is not awaited, so trap the invalid state error and just log it
     try {
       channel.postMessage({type: 'entry-marked-read', id: entry_id});
     } catch (error) {
@@ -252,7 +257,7 @@ export async function entry_mark_read(conn, channel, entry_id) {
   }
 }
 
-function mark_entry_read_promise(conn, entry_id) {
+function rdb_entry_mark_read_promise(conn, entry_id) {
   return new Promise((resolve, reject) => {
     const tx = conn.transaction('entry', 'readwrite');
     tx.oncomplete = resolve;
@@ -279,12 +284,12 @@ function mark_entry_read_promise(conn, entry_id) {
   });
 }
 
-export async function find_active_feeds(conn) {
+export async function rdb_find_active_feeds(conn) {
   const feeds = await reader_db_get_feeds(conn);
   return feeds.filter(feed => feed.active);
 }
 
-export async function reader_db_for_each_active_feed(conn, per_feed_callback) {
+export async function rdb_for_each_active_feed(conn, per_feed_callback) {
   const feeds = await reader_db_get_feeds(conn);
   for (const feed of feeds) {
     per_feed_callback(feed);
@@ -292,16 +297,16 @@ export async function reader_db_for_each_active_feed(conn, per_feed_callback) {
 }
 
 // TODO: inline
-async function find_entry_id_by_url(conn, url) {
-  const dconn = conn ? conn : await open();
-  const entry_id = await find_entry_id_by_url_promise(dconn, url);
+async function rdb_find_entry_id_by_url(conn, url) {
+  const dconn = conn ? conn : await rdb_open();
+  const entry_id = await rdb_find_entry_id_by_url_promise(dconn, url);
   if (!conn) {
     dconn.close();
   }
   return entry_id;
 }
 
-function find_entry_id_by_url_promise(conn, url) {
+function rdb_find_entry_id_by_url_promise(conn, url) {
   return new Promise((resolve, reject) => {
     assert(url instanceof URL);
     const tx = conn.transaction('entry');
@@ -314,12 +319,12 @@ function find_entry_id_by_url_promise(conn, url) {
 }
 
 export async function entry_store_contains_entry_with_url(conn, url) {
-  const entry_id = await find_entry_id_by_url(conn, url);
+  const entry_id = await rdb_find_entry_id_by_url(conn, url);
   return entry_is_valid_id(entry_id);
 }
 
 export async function reader_db_find_feed_by_id(conn, feed_id) {
-  const dconn = conn ? conn : await open();
+  const dconn = conn ? conn : await rdb_open();
   const feed = await find_feed_by_id_promise(dconn, feed_id);
   if (!conn) {
     dconn.close();
@@ -340,7 +345,7 @@ function find_feed_by_id_promise(conn, feed_id) {
 
 // TODO: inline
 async function find_feed_id_by_url(conn, url) {
-  const dconn = conn ? conn : await open();
+  const dconn = conn ? conn : await rdb_open();
   const feed_id = await find_feed_id_by_url_promise(dconn, url);
   if (!conn) {
     dconn.close();
@@ -366,7 +371,7 @@ export async function feed_store_contains_feed_with_url(conn, url) {
 }
 
 export async function reader_db_find_viewable_entries(conn, offset, limit) {
-  const dconn = conn ? conn : await open();
+  const dconn = conn ? conn : await rdb_open();
   const entries = await find_viewable_entries_promise(dconn, offset, limit);
   if (!conn) {
     dconn.close();
@@ -385,8 +390,8 @@ function find_viewable_entries_promise(conn, offset, limit) {
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
-    const request = index.openCursor(keyPath);
+    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
+    const request = index.openCursor(key_path);
     request.onsuccess = function request_onsuccess(event) {
       const cursor = event.target.result;
       if (cursor) {
@@ -424,8 +429,8 @@ export function reader_db_viewable_entries_for_each(
     tx.onerror = () => reject(tx.error);
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const keyPath = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
-    const request = index.openCursor(keyPath);
+    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
+    const request = index.openCursor(key_path);
     request.onsuccess = function request_onsuccess(event) {
       const cursor = event.target.result;
       if (cursor) {
@@ -452,7 +457,7 @@ export function reader_db_viewable_entries_for_each(
 
 
 export async function reader_db_get_feeds(conn) {
-  const dconn = conn ? conn : await open();
+  const dconn = conn ? conn : await rdb_open();
   const feeds = await get_feeds_promise(dconn);
   if (!conn) {
     dconn.close();
@@ -470,8 +475,8 @@ function get_feeds_promise(conn) {
   });
 }
 
-async function putEntry(conn, channel, entry) {
-  const dconn = conn ? conn : await open();
+async function rdb_entry_put(conn, channel, entry) {
+  const dconn = conn ? conn : await rdb_open();
   const entry_id = await put_entry_promise(dconn, entry);
   if (!conn) {
     dconn.close();
@@ -512,7 +517,7 @@ export async function feed_store_add(conn, channel, feed) {
 }
 
 export async function feed_store_feed_put(conn, channel, feed) {
-  const dconn = conn ? conn : await open();
+  const dconn = conn ? conn : await rdb_open();
   const feed_id = await put_feed_promise(dconn, feed);
   if (!conn) {
     dconn.close();
@@ -548,7 +553,7 @@ function put_feed_promise(conn, feed) {
 
 export async function feed_store_remove_feed(
     conn, channel, feed_id, reasonText) {
-  const dconn = conn ? conn : await open();
+  const dconn = conn ? conn : await rdb_open();
   const entry_ids = await remove_feed_promise(dconn, feedid);
   if (!conn) {
     dconn.close();

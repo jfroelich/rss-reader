@@ -3,7 +3,7 @@ import {open as favicon_service_open} from '/src/favicon-service.js';
 import subscribe from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
 import {poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
-import {open as reader_db_open, reader_db_activate_feed, reader_db_deactivate_feed, reader_db_for_each_active_feed, reader_db_get_feeds, reader_db_viewable_entries_for_each} from '/src/rdb.js';
+import {rdb_open, rdb_feed_activate, rdb_feed_deactivate, rdb_for_each_active_feed, reader_db_get_feeds, reader_db_viewable_entries_for_each} from '/src/rdb.js';
 
 // Resource acquisition layer (RAL). An intermediate layer between storage and
 // the view that helps calls acquire and release needed resources, and supplies
@@ -78,7 +78,7 @@ export async function ral_import(channel, files) {
 
   try {
     [reader_conn, favicon_conn] =
-        await Promise.all([reader_db_open(), favicon_service_open()]);
+        await Promise.all([rdb_open(), favicon_service_open()]);
     await import_opml_impl(
         reader_conn, favicon_conn, channel, fetch_feed_timeout, files);
   } finally {
@@ -93,7 +93,7 @@ export async function ral_import(channel, files) {
 export async function ral_export(title) {
   let conn;
   try {
-    conn = await reader_db_open();
+    conn = await rdb_open();
     export_opml_impl(conn, title);
   } finally {
     if (conn) conn.close();
@@ -114,11 +114,11 @@ export async function ral_load_initial(
     entry_cursor_offset, entry_cursor_limit, entry_handler, feed_handler) {
   let conn;
   try {
-    conn = await reader_db_open();
+    conn = await rdb_open();
 
     const p1 = reader_db_viewable_entries_for_each(
         conn, entry_cursor_offset, entry_cursor_limit, entry_handler);
-    const p2 = reader_db_for_each_active_feed(conn, feed_handler);
+    const p2 = rdb_for_each_active_feed(conn, feed_handler);
 
     await Promise.all([p1, p2]);
   } finally {
@@ -137,7 +137,7 @@ export async function ral_poll_feeds(channel, console) {
   ctx.channel = channel;
 
   let reader_conn, favicon_conn;
-  const conn_promises = [reader_db_open(), favicon_service_open()];
+  const conn_promises = [rdb_open(), favicon_service_open()];
 
   try {
     [reader_conn, favicon_conn] = await Promise.all(conn_promises);
@@ -179,7 +179,7 @@ export async function ral_subscribe(channel, url) {
   // conditions. This is hardcoded here for convenience.
   ctx.fetchFeedTimeout = 2000;
 
-  const conn_promises = Promise.all([reader_db_open(), favicon_service_open()]);
+  const conn_promises = Promise.all([rdb_open(), favicon_service_open()]);
   let reader_conn, favicon_conn;
   try {
     [reader_conn, favicon_conn] = await conn_promises;
@@ -209,11 +209,11 @@ export async function ral_unsubscribe(channel, feed_id) {
 export async function ral_activate_feed(channel, feed_id) {
   // TODO: do not rely on auto-connect
   let conn;
-  await reader_db_activate_feed(conn, channel, feed_id);
+  await rdb_feed_activate(conn, channel, feed_id);
 }
 
 export async function ral_deactivate_feed(channel, feed_id, reason) {
   // TODO: do not rely on auto-connect
   let conn;
-  await reader_db_deactivate_feed(conn, channel, feed_id, reason);
+  await rdb_feed_deactivate(conn, channel, feed_id, reason);
 }
