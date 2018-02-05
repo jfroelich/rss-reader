@@ -409,7 +409,7 @@ async function feed_list_init() {
 }
 
 // @param feed_id {Number}
-function feed_list_remove_feed(feed_id) {
+function feed_list_remove_feed_by_id(feed_id) {
   const feed_element =
       document.querySelector(`#feedlist li[feed="${feed_id}"]`);
 
@@ -434,24 +434,21 @@ function feed_list_remove_feed(feed_id) {
   }
 }
 
-async function unsubscribe_button_onclick(event) {
+function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-
-  try {
-    await ral_unsubscribe(channel, feed_id);
-  } catch (error) {
-    // TODO: show an error message
-    console.error(error);
-    return;
-  }
-
-  feed_list_remove_feed(feed_id);
-  section_show_by_id('subs-list-section');
+  return ral_unsubscribe(channel, feed_id)
+      .then(_ => {
+        feed_list_remove_feed_by_id(feed_id);
+        section_show_by_id('subs-list-section');
+      })
+      .catch(error => {
+        // TODO: show an error message
+        console.error(error);
+      });
 }
 
 function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-
   return ral_activate_feed(channel, feed_id)
       .then(_ => {
         // Mark the corresponding feed element displayed in the view as active
@@ -472,7 +469,6 @@ function activate_feed_button_onclick(event) {
 function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const reason = 'click';
-
   ral_deactivate_feed(channel, feed_id, reason)
       .then(_ => {
         // Deactive the corresponding feed element in the view
@@ -482,7 +478,7 @@ function deactivate_feed_button_onclick(event) {
         section_show_by_id('subs-list-section');
       })
       .catch(error => {
-        // TODO: show visual error
+        // TODO: show an error message
         console.error(error);
       });
 }
@@ -513,11 +509,7 @@ function enable_bg_processing_checkbox_onclick(event) {
 async function enable_bg_processing_checkbox_init() {
   const checkbox = document.getElementById('enable-background');
 
-  if (!checkbox) {
-    console.error('Could not find checkbox #enable-background');
-    return;
-  }
-
+  // TODO: move this comment to github, make a note of the general pattern
   // TODO: this should be using a local storage variable and instead the
   // permission should be permanently defined.
 
@@ -661,7 +653,6 @@ function options_page_init() {
   // Init the subscription form section
   const subscription_form = document.getElementById('subscription-form');
   subscription_form.onsubmit = subscribe_form_onsubmit;
-
 
   // Init background image menu
   {
