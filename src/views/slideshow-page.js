@@ -1,7 +1,7 @@
 import {html_escape, html_truncate} from '/src/common/html-utils.js';
 import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
 import {ral_export, ral_import, ral_load_initial, ral_poll_feeds} from '/src/ral.js';
-import {entry_is_entry, entry_is_valid_id, entry_peek_url, feed_peek_url, rdb_open, reader_db_find_viewable_entries, reader_db_get_feeds} from '/src/rdb.js';
+import {entry_is_valid_id, entry_peek_url, feed_peek_url, rdb_find_viewable_entries, rdb_get_feeds, rdb_is_entry, rdb_open} from '/src/rdb.js';
 import {filter_title_publisher} from '/src/views/article-utils.js';
 import {date_format} from '/src/views/date.js';
 import * as PageStyle from '/src/views/page-style-settings.js';
@@ -220,6 +220,13 @@ async function slide_mark_read(conn, slide_element) {
   // roundtrip and handle the event when it later occurs to mark the
   // corresponding slide. Then this can be called non-awaited.
 
+  // TEMP: overly paranoid assertion of conn given that internals of
+  // entry_mark_read can no longer rely on dynamic auto-connect
+  if (!(conn instanceof IDBDatabase)) {
+    console.error('Invalid database connection');
+    return;
+  }
+
   try {
     await entry_mark_read(conn, channel, entry_id);
   } catch (error) {
@@ -245,7 +252,7 @@ async function slide_load_and_append_multiple(conn, limit) {
 
   let entries;
   try {
-    entries = await reader_db_find_viewable_entries(conn, offset, limit);
+    entries = await rdb_find_viewable_entries(conn, offset, limit);
   } catch (error) {
     console.error(error);
     error_message_show('There was a problem loading articles from storage');
@@ -265,7 +272,7 @@ async function slide_load_and_append_multiple(conn, limit) {
 
 // Given an entry, create a new slide element and append it to the view
 function slide_append(entry) {
-  if (!entry_is_entry(entry)) {
+  if (!rdb_is_entry(entry)) {
     console.error('Invalid entry parameter', entry);
     return;
   }

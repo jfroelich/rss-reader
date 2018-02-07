@@ -14,6 +14,11 @@ export default async function entry_mark_read(conn, channel, entry_id) {
   // TODO: I would prefer this to not be awaited, but I need to defer the badge
   // update call until after it resolves. I suppose I could use a promise?
 
+  // TODO: make sure conn is defined by this point because rdb_entry_mark_read
+  // no longer auto-connects
+  // TEMP: paranoid assertion
+  assert(conn instanceof IDBDatabase);
+
   await rdb_entry_mark_read(conn, channel, entry_id);
   console.debug('Marked entry %d as read', entry_id);
 
@@ -28,5 +33,19 @@ export default async function entry_mark_read(conn, channel, entry_id) {
   // exclusively, it is related to any of them, the only thing that matters is
   // that the count happens after.
 
-  badge_update_text(conn);  // non-blocking
+  // TEMP: I am planning on removing the auto-connect feature from the internals
+  // of badge_update_text. Which means that conn must be defined and active
+  // here. I am logging something here to quickly tell if for some reason the
+  // conn is unavailable.
+  assert(conn instanceof IDBDatabase);
+
+  // This is not awaited because we don't care when this returns. We cannot do
+  // anything about an error either so it is simply logged. We return prior to
+  // this completing. By not blocking until this completes, we can quickly move
+  // on to other work.
+  badge_update_text(conn).catch(console.error);
+}
+
+function assert(value, message) {
+  if (!value) throw new Error(message || 'Assertion error');
 }

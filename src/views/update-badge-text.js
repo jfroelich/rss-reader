@@ -1,14 +1,10 @@
 import {rdb_entry_count_unread} from '/src/rdb.js';
 
-// TODO: think of how to reduce connection usage, maybe maintain a persistent
-// connection? Then again now that this is non-blocking, maybe the slowness of
-// it does not matter?
+// TODO: primary todo, trying to remove auto-connect from rdb.js, this is the
+// sole caller of rdb_entry_count_unread. In order to remove auto-connect I
+// need ensure all callers of this function use a valid connection. In doing so,
+// do not forget that this can _still_ be called non-awaited with a connection.
 
-// TODO: this should be able to accept an input connection. I removed the conn
-// parameter earlier when every call to badge_update_text was awaited. I can
-// still use a non-blocking call, because the request enters pending state in
-// the current tick, before the conn is closed externally. So this should be
-// changed to accept connection again and not connect locally.
 
 
 // TODO: perhaps think of badge as a view, like the other pages or the CLI. In

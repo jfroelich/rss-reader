@@ -6,7 +6,7 @@ import apply_all_document_filters from '/src/feed-poll/filters/apply-all.js';
 import url_is_binary from '/src/feed-poll/is-binary-url.js';
 import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import notification_show from '/src/notifications.js';
-import {entry_append_url, entry_has_url, entry_is_entry, entry_peek_url, rdb_entry_add, entry_store_contains_entry_with_url, feed_has_url, feed_is_feed, feed_merge, feed_peek_url, feed_prepare, feed_store_feed_put, rdb_find_active_feeds, rdb_open} from '/src/rdb.js';
+import {entry_append_url, entry_has_url, entry_peek_url, feed_has_url, feed_is_feed, feed_merge, feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_open} from '/src/rdb.js';
 // TODO: this should not be dependent on something in the view, it should be the
 // other way around
 import badge_update_text from '/src/views/update-badge-text.js';
@@ -102,9 +102,9 @@ export async function poll_service_poll_feeds(input_poll_feeds_context) {
   }
 
   if (entry_add_count) {
-    // TODO: it would be better to pass along feedConn here while still not
-    // awaiting. So long as the call starts, it should be fine
-    badge_update_text(poll_feeds_context.feedConn);
+    // Not awaited. We don't care if and when this ever completes, we just hope
+    // that it does
+    badge_update_text(poll_feeds_context.feedConn).catch(console.error);
   }
 
   if (entry_add_count) {
@@ -169,7 +169,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     const state_changed = handle_fetch_feed_success(feed);
     if (state_changed) {
       feed.dateUpdated = new Date();
-      await feed_store_feed_put(
+      await rdb_feed_put(
           poll_feed_context.feedConn, poll_feed_context.channel, feed);
     }
     return 0;
@@ -219,9 +219,9 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   // that errors do not persist indefinitely.
   handle_fetch_feed_success(merged_feed);
 
-  const storable_feed = feed_prepare(merged_feed);
+  const storable_feed = rdb_feed_prepare(merged_feed);
   storable_feed.dateUpdated = new Date();
-  await feed_store_feed_put(
+  await rdb_feed_put(
       poll_feed_context.feedConn, poll_feed_context.channel, storable_feed);
 
   // Process the feed's entries
@@ -245,7 +245,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   }
 
   if (poll_entry_context.badge_update_text && entry_add_count_per_feed) {
-    badge_update_text(poll_entry_context.feedConn);
+    badge_update_text(poll_entry_context.feedConn).catch(console.error);
   }
 
   if (poll_entry_context.notify && entry_add_count_per_feed) {
@@ -308,7 +308,7 @@ function handle_fetch_feed_success(feed) {
 // simply generate an event with feed id and some basic error information, and
 // let some error handler handle the event at a later time. This removes all
 // concern over encountering a closed database or closed channel at the time of
-// the call to feed_store_feed_put, and maintains the non-blocking
+// the call to rdb_feed_put, and maintains the non-blocking
 // characteristic.
 function handle_poll_feed_error(error_info) {
   if (error_is_ephemeral(error_info.error)) {
@@ -325,8 +325,7 @@ function handle_poll_feed_error(error_info) {
 
   feed.dateUpdated = new Date();
   // Call unawaited (non-blocking)
-  feed_store_feed_put(
-      error_info.context.feedConn, error_info.context.channel, feed)
+  rdb_feed_put(error_info.context.feedConn, error_info.context.channel, feed)
       .catch(console.error);
 }
 
@@ -414,7 +413,7 @@ async function poll_entry(ctx, entry) {
 
   // TODO: I think I need to look into this more. This may be a consequence of
   // not using a single shared transaction. Because I am pretty sure that if I
-  // am doing entry_store_contains_entry_with_url lookups, that I shouldn't run
+  // am doing rdb_contains_entry_with_url lookups, that I shouldn't run
   // into this error here? It could also be a dedup issue. Which I now realize
   // should not be a concern of feed_coerce, it should only be a concern here.
   // It could be the new way I am doing url rewriting. Perhaps I need to do
@@ -424,8 +423,7 @@ async function poll_entry(ctx, entry) {
 
   let stored_entry;
   try {
-    stored_entry =
-        await rdb_entry_add(ctx.feedConn, ctx.channel, entry);
+    stored_entry = await rdb_entry_add(ctx.feedConn, ctx.channel, entry);
   } catch (error) {
     console.error(entry.urls, error);
     return;
@@ -466,7 +464,7 @@ function entry_reader_db_exists(conn, entry) {
   // maintaining data integrity.
 
   const entry_tail_url = new URL(entry_peek_url(entry));
-  return entry_store_contains_entry_with_url(conn, entry_tail_url);
+  return rdb_contains_entry_with_url(conn, entry_tail_url);
 }
 
 // Tries to fetch the response for the entry. Returns undefined if the url is
@@ -531,7 +529,7 @@ async function entry_parse_response(response) {
 // text of the entry, try and set the entry's title using data from the full
 // text.
 function entry_update_title(entry, document) {
-  assert(entry_is_entry(entry));
+  assert(rdb_is_entry(entry));
   // This does not expect document to always be defined. The caller may have
   // failed to get the document. Rather than require the caller to check, do
   // the check here.
@@ -561,7 +559,7 @@ function entry_update_title(entry, document) {
 // fetch the document again.
 async function entry_update_favicon(ctx, entry, document) {
   assert(typeof ctx === 'object');
-  assert(entry_is_entry(entry));
+  assert(rdb_is_entry(entry));
 
   // Something is really wrong if this fails
   assert(entry_has_url(entry));

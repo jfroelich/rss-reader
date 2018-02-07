@@ -165,7 +165,10 @@ async function badge_init() {
   let conn;
   try {
     conn = await rdb_open();
-    badge_update_text(conn);
+
+    // Here we await, because that is the entire point of this init function
+    // I think this is the only place where we actually block
+    await badge_update_text(conn);
   } catch (error) {
     console.error(error);
   } finally {

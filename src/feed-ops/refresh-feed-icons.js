@@ -1,5 +1,5 @@
 import {lookup as favicon_service_lookup} from '/src/favicon-service.js';
-import {feed_create_favicon_lookup_url, feed_has_url, feed_store_feed_put, rdb_find_active_feeds, rdb_open} from '/src/rdb.js';
+import {feed_create_favicon_lookup_url, feed_has_url, rdb_feed_put, rdb_find_active_feeds, rdb_open} from '/src/rdb.js';
 
 // Refreshes the favicon property of feeds in the feed store
 export default async function feed_store_refresh_all_icons(
@@ -46,7 +46,7 @@ async function feed_store_feed_refresh_icons(conn, icon_conn, channel, feed) {
     feed.dateUpdated = new Date();
 
     try {
-      await feed_store_feed_put(conn, channel, feed);
+      await rdb_feed_put(conn, channel, feed);
     } catch (error) {
       console.error(error);
     }

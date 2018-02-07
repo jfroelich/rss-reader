@@ -3,7 +3,7 @@ import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_chang
 import {lookup as favicon_service_lookup} from '/src/favicon-service.js';
 import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/feed-poll/poll-feeds.js';
 import notification_show from '/src/notifications.js';
-import {feed_append_url, feed_create, feed_create_favicon_lookup_url, feed_is_feed, feed_peek_url, feed_store_add, feed_store_contains_feed_with_url} from '/src/rdb.js';
+import {feed_append_url, feed_create, feed_create_favicon_lookup_url, feed_is_feed, feed_peek_url, rdb_feed_add, rdb_contains_feed_with_url} from '/src/rdb.js';
 
 // TODO: reconsider the transaction lifetime. Right now it is protected by the
 // error that occurs due to violation of uniqueness constraint. But it would be
@@ -45,7 +45,7 @@ export default async function subscribe(context, url) {
 
   // If this fails, throw an error
   let contains_feed =
-      await feed_store_contains_feed_with_url(context.feedConn, url);
+      await rdb_contains_feed_with_url(context.feedConn, url);
 
   // If already subscribed, throw an error
   // TODO: is this really an error? This isn't an error. This just means cannot
@@ -87,7 +87,7 @@ export default async function subscribe(context, url) {
   await subscribe_feed_set_favicon(query, feed, console);
 
   const stored_feed =
-      await feed_store_add(context.feedConn, context.channel, feed);
+      await rdb_feed_add(context.feedConn, context.channel, feed);
 
   const should_notify = 'notify' in context ? context.notify : true;
   if (should_notify) {
@@ -105,7 +105,7 @@ async function subscribe_create_feed_from_response(context, response, url) {
   if (url_did_change(url, response_url)) {
     // Allow database error to bubble uncaught
     const contains_feed =
-        await feed_store_contains_feed_with_url(context.conn, response_url);
+        await rdb_contains_feed_with_url(context.conn, response_url);
     if (contains_feed) {
       throw new Error(
           'Already susbcribed to redirect url ' + response_url.href);

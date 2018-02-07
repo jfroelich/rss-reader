@@ -3,7 +3,8 @@ import {open as favicon_service_open} from '/src/favicon-service.js';
 import subscribe from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
 import {poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
-import {rdb_open, rdb_feed_activate, rdb_feed_deactivate, rdb_for_each_active_feed, reader_db_get_feeds, reader_db_viewable_entries_for_each} from '/src/rdb.js';
+import {rdb_feed_activate, rdb_feed_deactivate, rdb_for_each_active_feed, rdb_get_feeds, rdb_open, rdb_viewable_entries_for_each} from '/src/rdb.js';
+
 
 // Resource acquisition layer (RAL). An intermediate layer between storage and
 // the view that helps calls acquire and release needed resources, and supplies
@@ -17,16 +18,16 @@ import {rdb_open, rdb_feed_activate, rdb_feed_deactivate, rdb_for_each_active_fe
 
 
 // Load all feeds from the database as an array of feed objects. This is
-// basically a wrapper to reader_db_get_feeds that manages opening and closing
+// basically a wrapper to rdb_get_feeds that manages opening and closing
 // the database, and sorting the resulting collection by feed title.
 // @param title_sort_flag {Boolean} if true, the array is sorted by feed title.
 // If false, the array is naturally ordered based on database order
 // @throws {Error} database errors
 // @return {Array} an array of basic feed objects
 export async function ral_get_feeds(title_sort_flag) {
-  // TODO: do not rely on auto-connect feature of reader_db_get_feeds
+  // TODO: do not rely on auto-connect feature of rdb_get_feeds
   let conn;
-  const feeds = await reader_db_get_feeds(conn);
+  const feeds = await rdb_get_feeds(conn);
 
   // TODO: move this comment to a github issue
   // TODO: originally I had a title index in the database, and loaded the feeds
@@ -116,7 +117,7 @@ export async function ral_load_initial(
   try {
     conn = await rdb_open();
 
-    const p1 = reader_db_viewable_entries_for_each(
+    const p1 = rdb_viewable_entries_for_each(
         conn, entry_cursor_offset, entry_cursor_limit, entry_handler);
     const p2 = rdb_for_each_active_feed(conn, feed_handler);
 
@@ -207,13 +208,27 @@ export async function ral_unsubscribe(channel, feed_id) {
 }
 
 export async function ral_activate_feed(channel, feed_id) {
-  // TODO: do not rely on auto-connect
   let conn;
-  await rdb_feed_activate(conn, channel, feed_id);
+  try {
+    conn = await rdb_open();
+    await rdb_feed_activate(conn, channel, feed_id);
+  } finally {
+    if (conn) {
+      console.debug('Closing connection to database', conn.name);
+      conn.close();
+    }
+  }
 }
 
 export async function ral_deactivate_feed(channel, feed_id, reason) {
-  // TODO: do not rely on auto-connect
   let conn;
-  await rdb_feed_deactivate(conn, channel, feed_id, reason);
+  try {
+    conn = await rdb_open();
+    await rdb_feed_deactivate(conn, channel, feed_id, reason);
+  } finally {
+    if (conn) {
+      console.debug('Closing connection to database', conn.name);
+      conn.close();
+    }
+  }
 }
