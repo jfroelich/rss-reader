@@ -1,16 +1,25 @@
 import {entry_append_url, entry_create, entry_has_url, feed_append_url, feed_create} from '/src/rdb.js';
 
-// TODO: once coerce_feed and coerce_entries are implemented, then
-// coerce_feed_and_entries basically consists of calling those two functions.
-// What I should do is then deprecate coerce_feed_and_entries, and move the 2
-// function calls into the calling context. Then there is the plus of no longer
-// needing the process_entries_flag param, because caller simply decides whether
-// to call both coerce_feed and coerce_entries or just one of them.
+// TODO: deprecate coerce_feed_and_entries. The caller should just call the
+// respective helper functions directly.
 
 // Give a parsed feed object and some fetch information, creates new storable
 // feed and entry objects
 export default function coerce_feed_and_entries(
     parsed_feed, fetch_info, process_entries_flag) {
+  const result = {feed: null, entries: []};
+  result.feed = coerce_feed(parsed_feed, fetch_info);
+
+  if (process_entries_flag) {
+    result.entries = coerce_entries(parsed_feed.entries);
+  }
+
+  return result;
+}
+
+// TODO: review if i copied over all correct feed properties
+
+function coerce_feed(parsed_feed, fetch_info) {
   const request_url = fetch_info.request_url;
   const response_url = fetch_info.response_url;
   const response_last_modified_date = fetch_info.response_last_modified_date;
@@ -59,36 +68,20 @@ export default function coerce_feed_and_entries(
   // Initialize date last modified to response last modified date
   feed.dateLastModified = response_last_modified_date;
 
-  // TODO: review if i copied over all correct feed properties
-
-
-  if (!process_entries_flag) {
-    return {feed: feed, entries: []};
-  }
-
-  const entries = parsed_feed.entries;
-  assert(Array.isArray(entries));
-
-  const result = {feed: feed, entries: null};
-  result.entries = entries.map(coerce_entry);
-  return result;
+  return feed;
 }
 
-// TODO: implement. This should basically generate a storage-formatted feed
-// object using the section of coerce_feed_and_entries
-function coerce_feed(parsed_feed) {}
-
 // TODO: implement, this should be the other half of coerce_feed_and_entries
-// Note that in doing so I need to rethink how to set entry urls. I should
-// just reparse feed.link directly from parsed feed instead of relying on any
-// output of coerce_feed
-function coerce_entries() {}
-
+function coerce_entries(entries) {
+  assert(Array.isArray(entries));
+  return entries.map(coerce_entry);
+}
 
 // Coerce a parsed entry object into a reader storage entry object.
 function coerce_entry(parsed_entry) {
   // Create a blank entry, and copy over all properties from the parsed entry
-  const storable_entry = Object.assign(entry_create(), parsed_entry);
+  const blank_storable_entry = entry_create();
+  const storable_entry = Object.assign(blank_storable_entry, parsed_entry);
 
   // The link has already been resolved using the feed link as the base url.
   // This was done by feed_parse. At least, it is better to say, this now
