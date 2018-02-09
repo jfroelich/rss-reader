@@ -1,14 +1,14 @@
 import {entry_append_url, entry_create, entry_has_url, feed_append_url, feed_create} from '/src/rdb.js';
 
+// TODO: I enabled entry url resolution in feed_parse. This should no longer
+// do entry url resolution.
+
 // TODO: once coerce_feed and coerce_entries are implemented, then
 // coerce_feed_and_entries basically consists of calling those two functions.
 // What I should do is then deprecate coerce_feed_and_entries, and move the 2
 // function calls into the calling context. Then there is the plus of no longer
 // needing the process_entries_flag param, because caller simply decides whether
 // to call both coerce_feed and coerce_entries or just one of them.
-
-// TODO: move entry url resolution to feed_parse, change the functions here
-// to assume that entries are resolved
 
 // Give a parsed feed object and some fetch information, creates new storable
 // feed and entry objects
@@ -29,12 +29,11 @@ export default function coerce_feed_and_entries(
   feed_append_url(feed, response_url);
 
   // Set the feed's link property. There is no guarantee the parsed feed's link
-  // value is set, nor valid.
-  let feed_link_url;
+  // value is set, nor valid. This only sets if valid.
   if (parsed_feed.link) {
     try {
-      feed_link_url = new URL(parsed_feed.link);
-      feed.link = feed_link_url.href;
+      const url = new URL(parsed_feed.link);
+      feed.link = url.href;
     } catch (error) {
       // Ignore
     }
@@ -63,7 +62,7 @@ export default function coerce_feed_and_entries(
   // Initialize date last modified to response last modified date
   feed.dateLastModified = response_last_modified_date;
 
-  // TODO: review if i setup all entries
+  // TODO: review if i copied over all correct feed properties
 
 
   if (!process_entries_flag) {
@@ -74,11 +73,7 @@ export default function coerce_feed_and_entries(
   assert(Array.isArray(entries));
 
   const result = {feed: feed, entries: null};
-
-  result.entries = entries.map(coerce_entry.bind(null, feed_link_url));
-
-  // TODO: move dedup_entries to later in the pipeline, this isn't a concern
-  // of coercion. This is a polling concern. Move dedup_entries to poll-feeds
+  result.entries = entries.map(coerce_entry);
   return result;
 }
 
@@ -94,16 +89,21 @@ function coerce_entries() {}
 
 
 // Coerce a parsed entry object into a reader storage entry object.
-function coerce_entry(feed_link_url, parsed_entry) {
+function coerce_entry(parsed_entry) {
   // Create a blank entry, and copy over all properties from the parsed entry
   const storable_entry = Object.assign(entry_create(), parsed_entry);
 
+  // The link has already been resolved using the feed link as the base url.
+  // This was done by feed_parse. At least, it is better to say, this now
+  // assumes that was done, and no longer does it here as well
+
   // Mutate the storable entry
-  entry_resolve_link(storable_entry, feed_link_url);
   entry_convert_link_to_url(storable_entry);
   return storable_entry;
 }
 
+/*
+// DEPRECATED. WILL FULLY DELETE AFTER MORE TESTING
 // If the entry has a link property, canonicalize and normalize it, base_url is
 // optional, generally should be feed.link
 function entry_resolve_link(entry, base_url) {
@@ -117,6 +117,7 @@ function entry_resolve_link(entry, base_url) {
     }
   }
 }
+*/
 
 // entries are fetched as objects with a link property. for each entry that has
 // a link, convert it into the app's storage format that uses a urls array. this

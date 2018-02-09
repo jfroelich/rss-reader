@@ -195,9 +195,12 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   // Parse the response into a parsed feed object. Note that a parsed feed
   // object is not formatted the same as a storable feed object
   const feed_parse_skip_entries_flag = false;
+  const feed_parse_resolve_entry_urls_flag = true;
   let parsed_feed;
   try {
-    parsed_feed = feed_parse(response_text, feed_parse_skip_entries_flag);
+    parsed_feed = feed_parse(
+        response_text, feed_parse_skip_entries_flag,
+        feed_parse_resolve_entry_urls_flag);
   } catch (error) {
     console.debug(error);
     handle_poll_feed_error({

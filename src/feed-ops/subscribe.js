@@ -119,7 +119,10 @@ async function subscribe_create_feed_from_response(context, response, url) {
   // and rethrown. Entries are not processed by subscribe (only later by
   // polling)
   const feed_parse_skip_entries_flag = true;
-  const parsed_feed = feed_parse(response_text, feed_parse_skip_entries_flag);
+  const feed_parse_resolve_entry_urls_flag = false;
+  const parsed_feed = feed_parse(
+      response_text, feed_parse_skip_entries_flag,
+      feed_parse_resolve_entry_urls_flag);
 
   // Take the parsed feed object and reformat it as a storable feed object,
   // while also introducing fetch information

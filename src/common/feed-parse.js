@@ -1,6 +1,11 @@
 import {html_decode_entities} from '/src/common/html-utils.js';
 
-// TODO: introduce resolve_entry_urls parameter
+// TODO: review proper base url determination for entry link resolution. There
+// is a chance I am ignoring something like a base-url element that trumps feed
+// link as base url.
+// TODO: right now find_feed_link returns a string, which I then parse back into
+// a url. I would like to avoid this double parsing. maybe it is ok to parse
+// urls into actual urls?
 
 // Parses the input string into a feed object. The feed object will always have
 // a defined entries array, although it may be zero length. Returns a feed
@@ -8,11 +13,15 @@ import {html_decode_entities} from '/src/common/html-utils.js';
 // @param xml_string {String}
 // @param skip_entries {Boolean} if true, entries are not processed, and an
 // empty entries array is included in the result
-export default function feed_parse(xml_string, skip_entries) {
+// @param resolve_entry_urls {Boolean} if true, entry urls are canonicalized
+// using feed.link as the base url. Only done if entries not skipped. Only done
+// if feed link is a valid url.
+export default function feed_parse(
+    xml_string, skip_entries, resolve_entry_urls) {
   // Sanity checking xml_string delegated to xml_parse
   // Rethrow parse xml errors
   const document = xml_parse(xml_string);
-  return unmarshall_xml(document, skip_entries);
+  return unmarshall_xml(document, skip_entries, resolve_entry_urls);
 }
 
 function xml_parse(xml_string) {
@@ -32,7 +41,7 @@ function xml_parse(xml_string) {
 // @param document {Document} an XML document representing a feed
 // @param skip_entries {Boolean}
 // @returns {Object} a feed object
-function unmarshall_xml(document, skip_entries) {
+function unmarshall_xml(document, skip_entries, resolve_entry_urls) {
   const document_element = document.documentElement;
   const document_element_name = element_get_local_name(document_element);
 
@@ -58,6 +67,10 @@ function unmarshall_xml(document, skip_entries) {
   } else {
     const entry_elements = find_entry_elements(channel_element);
     feed.entries = entry_elements.map(create_entry);
+
+    if (resolve_entry_urls) {
+      feed_resolve_entry_urls(feed.entries, feed.link);
+    }
   }
 
   return feed;
@@ -322,6 +335,39 @@ function find_entry_content(entry_element) {
     result = result || find_child_element_text(entry_element, 'summary');
   }
   return result;
+}
+
+function feed_resolve_entry_urls(entries, feed_link_url_string) {
+  if (!feed_link_url_string) {
+    return;
+  }
+
+  // Parse the base url, bail on failure
+  // TODO: if a feed has a link, and the link is invalid, should that actually
+  // be considered a parse error? In other words, this should not catch this
+  // error here?
+  let base_url;
+  try {
+    base_url = new URL(feed_link_url_string);
+  } catch (error) {
+    console.debug('Invalid base url', feed_link_url_string);
+    return;
+  }
+
+  for (const entry of entries) {
+    if (entry.link) {
+      try {
+        const url = new URL(entry.link, base_url);
+        entry.link = url.href;
+        // TEMP: debugging new functionality
+        console.debug('entry.link:', entry.link);
+
+      } catch (error) {
+        // TODO: unset entry.link?
+        console.debug(error);
+      }
+    }
+  }
 }
 
 function find_child_element(parent_element, predicate) {
