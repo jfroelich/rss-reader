@@ -1,4 +1,4 @@
-import {url_did_change, fetch_html, tfetch} from '/src/common/fetch-utils.js';
+import {fetch_html, tfetch, url_did_change} from '/src/common/fetch-utils.js';
 import {open as utilsOpen} from '/src/common/indexeddb-utils.js';
 import {mime_type_from_content_type} from '/src/common/mime-utils.js';
 
@@ -264,11 +264,11 @@ function onLookupFailure(conn, originURL, originEntry, maxFailureCount) {
     if ('failureCount' in originEntry) {
       if (originEntry.failureCount <= maxFailureCount) {
         newEntry.failureCount = originEntry.failureCount + 1;
-        rdb_entry_put(conn, newEntry);
+        putEntry(conn, newEntry);
       }
     } else {
       newEntry.failureCount = 1;
-      rdb_entry_put(conn, newEntry);
+      putEntry(conn, newEntry);
     }
   } else {
     const newEntry = {};
@@ -276,7 +276,7 @@ function onLookupFailure(conn, originURL, originEntry, maxFailureCount) {
     newEntry.iconURLString = undefined;
     newEntry.dateUpdated = new Date();
     newEntry.failureCount = 1;
-    rdb_entry_put(conn, newEntry);
+    putEntry(conn, newEntry);
   }
 }
 
@@ -468,7 +468,7 @@ function findEntry(conn, url) {
   });
 }
 
-function rdb_entry_put(conn, entry) {
+function putEntry(conn, entry) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('favicon-cache', 'readwrite');
     const store = txn.objectStore('favicon-cache');

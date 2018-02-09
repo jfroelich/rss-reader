@@ -17,6 +17,24 @@ import {rdb_feed_activate, rdb_feed_deactivate, rdb_for_each_active_feed, rdb_ge
 // connection as input, which allows for using a mock database.
 
 
+
+// TODO: move this comment to a github issue
+// TODO: originally I had a title index in the database, and loaded the feeds
+// in sorted order. That caused a big problem, because indexedDB does not
+// index missing values, so the result excluded untitled feeds. So now I sort
+// in memory after load. However, I'd still like to think about how to do this
+// more quickly. One idea is that I store a sort-key property per feed in the
+// feed store. I guarantee the property always has a value when storing a
+// feed. Each time the feed is updated, and when the feed is created, the
+// property is derived from title, and it also normalizes the title (e.g.
+// toLowerCase). Then I can create an index on that property, and let
+// indexedDB do the sorting implicitly, and quickly, and more efficiently.
+// At the moment, this isn't urgent.
+// A second component of the the decision is that it would support a for_each
+// approach. Right now I am forced to fully buffer all feeds into an array
+// first in order to sort. If a let the db do the work I could use a callback
+// as each feed is loaded.
+
 // Load all feeds from the database as an array of feed objects. This is
 // basically a wrapper to rdb_get_feeds that manages opening and closing
 // the database, and sorting the resulting collection by feed title.
@@ -25,26 +43,15 @@ import {rdb_feed_activate, rdb_feed_deactivate, rdb_for_each_active_feed, rdb_ge
 // @throws {Error} database errors
 // @return {Array} an array of basic feed objects
 export async function ral_get_feeds(title_sort_flag) {
-  // TODO: do not rely on auto-connect feature of rdb_get_feeds
-  let conn;
-  const feeds = await rdb_get_feeds(conn);
-
-  // TODO: move this comment to a github issue
-  // TODO: originally I had a title index in the database, and loaded the feeds
-  // in sorted order. That caused a big problem, because indexedDB does not
-  // index missing values, so the result excluded untitled feeds. So now I sort
-  // in memory after load. However, I'd still like to think about how to do this
-  // more quickly. One idea is that I store a sort-key property per feed in the
-  // feed store. I guarantee the property always has a value when storing a
-  // feed. Each time the feed is updated, and when the feed is created, the
-  // property is derived from title, and it also normalizes the title (e.g.
-  // toLowerCase). Then I can create an index on that property, and let
-  // indexedDB do the sorting implicitly, and quickly, and more efficiently.
-  // At the moment, this isn't urgent.
-  // A second component of the the decision is that it would support a for_each
-  // approach. Right now I am forced to fully buffer all feeds into an array
-  // first in order to sort. If a let the db do the work I could use a callback
-  // as each feed is loaded.
+  let conn, feeds;
+  try {
+    conn = await rdb_open();
+    feeds = await rdb_get_feeds(conn);
+  } finally {
+    if (conn) {
+      conn.close();
+    }
+  }
 
   if (title_sort_flag) {
     feeds.sort(feed_compare);

@@ -1,6 +1,6 @@
 import {open as openIconDb} from '/src/favicon-service.js';
 import subscribe from '/src/feed-ops/subscribe.js';
-import {feed_peek_url, rdb_open, rdb_get_feeds} from '/src/rdb.js';
+import {feed_peek_url, rdb_get_feeds, rdb_open} from '/src/rdb.js';
 
 // Returns an opml document as a blob that contains outlines representing the
 // feeds in the app's db
@@ -8,6 +8,7 @@ import {feed_peek_url, rdb_open, rdb_get_feeds} from '/src/rdb.js';
 // @param title {String} optional, the value to use for the title element in the
 // document
 export async function export_opml(conn, title) {
+  assert(conn instanceof IDBDatabase);
   const feeds = await rdb_get_feeds(conn);
 
   // Create a generic opml document

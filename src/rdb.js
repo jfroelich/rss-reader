@@ -348,21 +348,32 @@ export function rdb_entry_mark_read(conn, channel, entry_id) {
 
 // Returns an array of active feeds
 export async function rdb_find_active_feeds(conn) {
+  // NOTE: rdb_get_feeds no longer auto-connects
+  assert(conn instanceof IDBDatabase);
+
   const feeds = await rdb_get_feeds(conn);
   return feeds.filter(feed => feed.active);
 }
 
 // Calls the callback function on each feed in the store
+// TODO: currently each call to the callback is blocked by waiting for the
+// prior callback to complete, essentially a serial progression. This should
+// directly interact with the database instead of using rdb_get_feeds and
+// pre-loading into an array, and this should walk the feed store and call the
+// callback per cursor walk, advancing the cursor PRIOR to calling the callback,
+// taking advantage of the asynchronous nature of indexedDB cursor request
+// callbacks. This will yield a minor speedup at the cost of being a mild DRY
+// violation. However, the speed is admittedly not that important
 export async function rdb_for_each_active_feed(conn, per_feed_callback) {
+  // NOTE: rdb_get_feeds no longer auto-connects
+  assert(conn instanceof IDBDatabase);
+
   const feeds = await rdb_get_feeds(conn);
   for (const feed of feeds) {
     per_feed_callback(feed);
   }
 }
 
-
-
-// TODO: auto-connect ability has been dropped, review whether callers work
 export function rdb_contains_entry_with_url(conn, url) {
   return new Promise((resolve, reject) => {
     assert(url instanceof URL);
@@ -370,25 +381,13 @@ export function rdb_contains_entry_with_url(conn, url) {
     const store = txn.objectStore('entry');
     const index = store.index('urls');
     const request = index.getKey(url.href);
-    request.onsuccess = () => {
-      const entry_id = request.result;
-      const validity = entry_is_valid_id(entry_id);
-      resolve(validity);
-    };
+    request.onsuccess = () => resolve(entry_is_valid_id(request.result));
     request.onerror = () => reject(request.error);
   });
 }
 
-export async function rdb_find_feed_by_id(conn, feed_id) {
-  const dconn = conn ? conn : await rdb_open();
-  const feed = await rdb_find_feed_by_id_promise(dconn, feed_id);
-  if (!conn) {
-    dconn.close();
-  }
-  return feed;
-}
-
-function rdb_find_feed_by_id_promise(conn, feed_id) {
+// TODO: is this even in use??? it seems like it is not
+export function rdb_find_feed_by_id(conn, feed_id) {
   return new Promise((resolve, reject) => {
     assert(feed_is_valid_id(feed_id));
     const txn = conn.transaction('feed');
@@ -399,57 +398,40 @@ function rdb_find_feed_by_id_promise(conn, feed_id) {
   });
 }
 
-// TODO: inline
-async function rdb_find_feed_by_url(conn, url) {
-  const dconn = conn ? conn : await rdb_open();
-  const feed_id = await rdb_find_feed_by_url_promise(dconn, url);
-  if (!conn) {
-    dconn.close();
-  }
-  return feed_id;
-}
-
-function rdb_find_feed_by_url_promise(conn, url) {
+export function rdb_contains_feed_with_url(conn, url) {
   return new Promise((resolve, reject) => {
     assert(url instanceof URL);
     const txn = conn.transaction('feed');
     const store = txn.objectStore('feed');
     const index = store.index('urls');
     const request = index.getKey(url.href);
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      const feed_id = request.result;
+      resolve(feed_is_valid_id(feed_id));
+    };
     request.onerror = () => reject(request.error);
   });
 }
 
-export async function rdb_contains_feed_with_url(conn, url) {
-  const feed_id = await rdb_find_feed_by_url(conn, url);
-  return feed_is_valid_id(feed_id);
-}
-
-export async function rdb_find_viewable_entries(conn, offset, limit) {
-  const dconn = conn ? conn : await rdb_open();
-  const entries = await rdb_find_viewable_entries_promise(dconn, offset, limit);
-  if (!conn) {
-    dconn.close();
-  }
-  return entries;
-}
-
-function rdb_find_viewable_entries_promise(conn, offset, limit) {
+export function rdb_find_viewable_entries(conn, offset, limit) {
   return new Promise((resolve, reject) => {
+    assert(conn instanceof IDBDatabase);
+    if (offset !== null && typeof offset !== 'undefined') {
+      assert(Number.isInteger(offset) && offset >= 0);
+    }
     const entries = [];
     let counter = 0;
     let advanced = false;
     const limited = limit > 0;
     const txn = conn.transaction('entry');
-    txn.oncomplete = () => resolve(entries);
-    txn.onerror = () => reject(txn.error);
+    txn.oncomplete = _ => resolve(entries);
+    txn.onerror = _ => reject(txn.error);
     const store = txn.objectStore('entry');
     const index = store.index('archiveState-readState');
     const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
     const request = index.openCursor(key_path);
-    request.onsuccess = function request_onsuccess(event) {
-      const cursor = event.target.result;
+    request.onsuccess = _ => {
+      const cursor = request.result;
       if (cursor) {
         if (offset && !advanced) {
           advanced = true;
@@ -494,12 +476,7 @@ export function rdb_viewable_entries_for_each(
           advanced = true;
           cursor.advance(offset);
         } else {
-          // per_entry_callback is a blocking synchronous call. If called prior
-          // to advancing the cursor then the cursor.continue call does not
-          // start until per_entry_callback exists. Instead, call the handler
-          // after already requesting the cursor to advance, so it does not have
-          // to wait.
-
+          // Put the request on the stack prior to the callback
           if (limited && ++counter < limit) {
             cursor.continue();
           }
@@ -511,16 +488,7 @@ export function rdb_viewable_entries_for_each(
   });
 }
 
-export async function rdb_get_feeds(conn) {
-  const dconn = conn ? conn : await rdb_open();
-  const feeds = await rdb_get_feeds_promise(dconn);
-  if (!conn) {
-    dconn.close();
-  }
-  return feeds;
-}
-
-function rdb_get_feeds_promise(conn) {
+export function rdb_get_feeds(conn) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('feed');
     const store = txn.objectStore('feed');
@@ -530,26 +498,29 @@ function rdb_get_feeds_promise(conn) {
   });
 }
 
-async function rdb_entry_put(conn, channel, entry) {
-  const dconn = conn ? conn : await rdb_open();
-  const entry_id = await rdb_entry_put_promise(dconn, entry);
-  if (!conn) {
-    dconn.close();
-  }
-  if (channel) {
-    channel.postMessage({type: 'entry-updated', id: entry_id});
-  }
-  return entry_id;
-}
-
-function rdb_entry_put_promise(conn, entry) {
+// Returns the new id if adding
+// This could be exported, but is not, as there is nothing that currently uses
+// this functionality directly outside of this module.
+// @param conn {IDBDatabase}
+// @param channel {BroadcastChannel} optional
+// @param entry {object}
+function rdb_entry_put(conn, channel, entry) {
   return new Promise((resolve, reject) => {
+    assert(conn instanceof IDBDatabase);
+    if (channel) {
+      assert(channel instanceof BroadcastChannel);
+    }
     assert(rdb_is_entry(entry));
     const txn = conn.transaction('entry', 'readwrite');
     const store = txn.objectStore('entry');
     const request = store.put(entry);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const entry_id = request.result;
+      if (channel) {
+        channel.postMessage({type: 'entry-updated', id: entry_id});
+      }
+      resolve(entry_id);
+    } request.onerror = () => reject(request.error);
   });
 }
 
@@ -557,7 +528,7 @@ export function rdb_feed_prepare(feed) {
   return object_filter_empty_properties(rdb_feed_sanitize(feed));
 }
 
-// TODO: validateFeed (here or in rdb_feed_put)
+// TODO: rdb_feed_validate (here or in rdb_feed_put or both in a sense)
 export async function rdb_feed_add(conn, channel, feed) {
   const prepared_feed = rdb_feed_prepare(feed);
   prepared_feed.active = true;
@@ -571,6 +542,7 @@ export async function rdb_feed_add(conn, channel, feed) {
   return prepared_feed;
 }
 
+// TODO: drop support for auto-connect
 export async function rdb_feed_put(conn, channel, feed) {
   const dconn = conn ? conn : await rdb_open();
   const feed_id = await rdb_feed_put_promise(dconn, feed);
@@ -579,7 +551,8 @@ export async function rdb_feed_put(conn, channel, feed) {
   }
 
   // Suppress invalid state error when channel is closed in non-awaited call
-  // TODO: if awaited, I'd prefer to throw. How?
+  // TODO: if awaited, I'd prefer to throw. How? Or, should it really just be
+  // an error, and the caller is responsible for keeping this open?
   if (channel) {
     try {
       channel.postMessage({type: 'feed-updated', id: feed_id});
@@ -606,6 +579,7 @@ function rdb_feed_put_promise(conn, feed) {
   });
 }
 
+// TODO: drop support for auto-connect
 export async function rdb_feed_remove(conn, channel, feed_id, reason_text) {
   const dconn = conn ? conn : await rdb_open();
   const entry_ids = await rdb_feed_remove_promise(dconn, feedid);
@@ -634,16 +608,12 @@ function rdb_feed_remove_promise(conn, feed_id) {
     console.debug('Deleting feed with id', feed_id);
     feed_store.delete(feed_id);
 
-    // Get all entry ids for the feed and then delete them
+    // Delete all entries belonging to the feed
     const entry_store = txn.objectStore('entry');
     const feed_index = entry_store.index('feed');
     const request = feed_index.getAllKeys(feed_id);
     request.onsuccess = function(event) {
       entry_ids = request.result;
-
-      // Fire off all the requests concurrently without waiting for any one
-      // to resolve. Eventually they all will resolve and the transaction
-      // will complete and then the promise resolves.
       for (const id of entry_ids) {
         console.debug('Deleting entry', id);
         entry_store.delete(id);

@@ -3,7 +3,7 @@ import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_chang
 import {lookup as favicon_service_lookup} from '/src/favicon-service.js';
 import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/feed-poll/poll-feeds.js';
 import notification_show from '/src/notifications.js';
-import {feed_append_url, feed_create, feed_create_favicon_lookup_url, feed_is_feed, feed_peek_url, rdb_feed_add, rdb_contains_feed_with_url} from '/src/rdb.js';
+import {feed_append_url, feed_create, feed_create_favicon_lookup_url, feed_is_feed, feed_peek_url, rdb_contains_feed_with_url, rdb_feed_add} from '/src/rdb.js';
 
 // TODO: reconsider the transaction lifetime. Right now it is protected by the
 // error that occurs due to violation of uniqueness constraint. But it would be
@@ -44,8 +44,7 @@ export default async function subscribe(context, url) {
   console.log('Subscribing to', url.href);
 
   // If this fails, throw an error
-  let contains_feed =
-      await rdb_contains_feed_with_url(context.feedConn, url);
+  let contains_feed = await rdb_contains_feed_with_url(context.feedConn, url);
 
   // If already subscribed, throw an error
   // TODO: is this really an error? This isn't an error. This just means cannot
@@ -105,7 +104,7 @@ async function subscribe_create_feed_from_response(context, response, url) {
   if (url_did_change(url, response_url)) {
     // Allow database error to bubble uncaught
     const contains_feed =
-        await rdb_contains_feed_with_url(context.conn, response_url);
+        await rdb_contains_feed_with_url(context.feedConn, response_url);
     if (contains_feed) {
       throw new Error(
           'Already susbcribed to redirect url ' + response_url.href);
