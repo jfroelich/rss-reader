@@ -17,8 +17,6 @@ export default function coerce_feed_and_entries(
   return result;
 }
 
-// TODO: review if i copied over all correct feed properties
-
 function coerce_feed(parsed_feed, fetch_info) {
   const request_url = fetch_info.request_url;
   const response_url = fetch_info.response_url;
@@ -30,8 +28,16 @@ function coerce_feed(parsed_feed, fetch_info) {
   // Create a new blank feed into which we copy certain properties
   const feed = feed_create();
 
-  // Append urls to the feed
+  // Copy over type
+  if (parsed_feed.type) {
+    feed.type = parsed_feed.type;
+  }
+
+  // Copy over urls using fetch info
   feed_append_url(feed, request_url);
+
+  // feed_append_url automatically detects duplication and maintains uniqueness
+  // of the urls set, so not our concern
   feed_append_url(feed, response_url);
 
   // Set the feed's link property. There is no guarantee the parsed feed's link
@@ -71,10 +77,9 @@ function coerce_feed(parsed_feed, fetch_info) {
   return feed;
 }
 
-// TODO: implement, this should be the other half of coerce_feed_and_entries
-function coerce_entries(entries) {
-  assert(Array.isArray(entries));
-  return entries.map(coerce_entry);
+function coerce_entries(parsed_entries) {
+  assert(Array.isArray(parsed_entries));
+  return parsed_entries.map(coerce_entry);
 }
 
 // Coerce a parsed entry object into a reader storage entry object.
