@@ -1,4 +1,4 @@
-import {coerce_entries} from '/src/coerce-entries.js';
+import {coerce_entry} from '/src/coerce-entry.js';
 import {coerce_feed} from '/src/coerce-feed.js';
 import feed_parse from '/src/common/feed-parse.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/common/fetch-utils.js';
@@ -253,7 +253,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
       poll_feed_context.feedConn, poll_feed_context.channel, storable_feed);
 
   // Process the entries
-  const coerced_entries = coerce_entries(parsed_feed.entries);
+  const coerced_entries = parsed_feed.entries.map(coerce_entry);
   const entries = dedup_entries(coerced_entries);
   cascade_feed_properties_to_entries(storable_feed, entries);
   const poll_entry_promises = [];
