@@ -1,4 +1,4 @@
-import coerce_feed_and_entries from '/src/coerce-feed-and-entries.js';
+import {coerce_entries, coerce_feed} from '/src/coerce-feed-and-entries.js';
 import feed_parse from '/src/common/feed-parse.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/common/fetch-utils.js';
 import {html_parse} from '/src/common/html-utils.js';
@@ -194,13 +194,12 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
 
   // Parse the response into a parsed feed object. Note that a parsed feed
   // object is not formatted the same as a storable feed object
-  const feed_parse_skip_entries_flag = false;
-  const feed_parse_resolve_entry_urls_flag = true;
+  const skip_entries_flag = false;
+  const resolve_entry_urls_flag = true;
   let parsed_feed;
   try {
-    parsed_feed = feed_parse(
-        response_text, feed_parse_skip_entries_flag,
-        feed_parse_resolve_entry_urls_flag);
+    parsed_feed =
+        feed_parse(response_text, skip_entries_flag, resolve_entry_urls_flag);
   } catch (error) {
     console.debug(error);
     handle_poll_feed_error({
@@ -212,9 +211,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     return 0;
   }
 
-  // Coerce the parsed feed and entries from a parsed format to a storable
-  // format
-  const process_entries_flag = true;
+  // Reformat the fetched feed as a storable feed
   const response_url = new URL(response.url);
   const response_last_modified_date = response_get_last_modified_date(response);
 
@@ -224,10 +221,11 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     response_last_modified_date: response_last_modified_date
   };
 
-  let parse_result;
+  // TODO: does coerce_feed throw anymore? I don't think it does actually
+  // Revisit once coerce_feed_and_entries is fully deprecated
+  let coerced_feed;
   try {
-    parse_result =
-        coerce_feed_and_entries(parsed_feed, fetch_info, process_entries_flag);
+    coerced_feed = coerce_feed(parsed_feed, fetch_info);
   } catch (error) {
     console.debug(error);
     handle_poll_feed_error({
@@ -241,7 +239,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
 
   // Integrate the loaded feed with the fetched feed and store the
   // result in the database
-  const merged_feed = feed_merge(feed, parse_result.feed);
+  const merged_feed = feed_merge(feed, coerced_feed);
 
   // If we did not exit earlier as a result of some kind of error, then we want
   // to possibly decrement the error count and save the updated error count, so
@@ -253,13 +251,12 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   await rdb_feed_put(
       poll_feed_context.feedConn, poll_feed_context.channel, storable_feed);
 
-  // Process the feed's entries
-
-  const poll_entry_context = Object.assign({}, poll_feed_context);
-
-  const entries = dedup_entries(parse_result.entries);
+  // Process the entries
+  const coerced_entries = coerce_entries(parse_result.entries);
+  const entries = dedup_entries(coerced_entries);
   cascade_feed_properties_to_entries(storable_feed, entries);
   const poll_entry_promises = [];
+  const poll_entry_context = Object.assign({}, poll_feed_context);
   for (const entry of entries) {
     const promise = poll_entry(poll_entry_context, entry);
     poll_entry_promises.push(promise);
@@ -443,12 +440,10 @@ async function poll_entry(ctx, entry) {
   // TODO: I think I need to look into this more. This may be a consequence of
   // not using a single shared transaction. Because I am pretty sure that if I
   // am doing rdb_contains_entry_with_url lookups, that I shouldn't run
-  // into this error here? It could also be a dedup issue. Which I now realize
-  // should not be a concern of coerce_feed_and_entries, it should only be a
-  // concern here. It could be the new way I am doing url rewriting. Perhaps I
-  // need to do contains checks on the intermediate urls of an entry's url list
-  // as well. Which would lead to more contains lookups, so maybe also look into
-  // batching those somehow.
+  // into this error here? It could be the new way I am doing url rewriting.
+  // Perhaps I need to do contains checks on the intermediate urls of an entry's
+  // url list as well. Which would lead to more contains lookups, so maybe also
+  // look into batching those somehow.
 
   let stored_entry;
   try {

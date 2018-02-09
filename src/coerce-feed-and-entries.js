@@ -1,23 +1,8 @@
 import {entry_append_url, entry_create, entry_has_url, feed_append_url, feed_create} from '/src/rdb.js';
 
-// TODO: deprecate coerce_feed_and_entries. The caller should just call the
-// respective helper functions directly.
+// TODO: split into two files, coerce-feed.js and coerce-entries.js
 
-// Give a parsed feed object and some fetch information, creates new storable
-// feed and entry objects
-export default function coerce_feed_and_entries(
-    parsed_feed, fetch_info, process_entries_flag) {
-  const result = {feed: null, entries: []};
-  result.feed = coerce_feed(parsed_feed, fetch_info);
-
-  if (process_entries_flag) {
-    result.entries = coerce_entries(parsed_feed.entries);
-  }
-
-  return result;
-}
-
-function coerce_feed(parsed_feed, fetch_info) {
+export function coerce_feed(parsed_feed, fetch_info) {
   const request_url = fetch_info.request_url;
   const response_url = fetch_info.response_url;
   const response_last_modified_date = fetch_info.response_last_modified_date;
@@ -77,7 +62,7 @@ function coerce_feed(parsed_feed, fetch_info) {
   return feed;
 }
 
-function coerce_entries(parsed_entries) {
+export function coerce_entries(parsed_entries) {
   assert(Array.isArray(parsed_entries));
   return parsed_entries.map(coerce_entry);
 }

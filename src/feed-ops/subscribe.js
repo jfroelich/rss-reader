@@ -1,4 +1,4 @@
-import coerce_feed_and_entries from '/src/coerce-feed-and-entries.js';
+import {coerce_feed} from '/src/coerce-feed-and-entries.js';
 import feed_parse from '/src/common/feed-parse.js';
 import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_change} from '/src/common/fetch-utils.js';
 import {lookup as favicon_service_lookup} from '/src/favicon-service.js';
@@ -116,27 +116,21 @@ async function subscribe_create_feed_from_response(context, response, url) {
   const response_text = await response.text();
 
   // Parse the feed xml. Parsing errors are intentionally not handled here
-  // and rethrown. Entries are not processed by subscribe (only later by
-  // polling)
-  const feed_parse_skip_entries_flag = true;
-  const feed_parse_resolve_entry_urls_flag = false;
-  const parsed_feed = feed_parse(
-      response_text, feed_parse_skip_entries_flag,
-      feed_parse_resolve_entry_urls_flag);
+  // and rethrown.
+  const skip_entries_flag = true;
+  const resolve_entry_urls_flag = false;
+  const parsed_feed =
+      feed_parse(response_text, skip_entries_flag, resolve_entry_urls_flag);
 
-  // Take the parsed feed object and reformat it as a storable feed object,
-  // while also introducing fetch information
-  // Treat any coercion error as fatal and allow the error to bubble
-  const fetch_info = {
+  // Reformat the parsed feed object as a storable feed object, while also
+  // introducing fetch information. Treat any coercion error as fatal and allow
+  // the error to bubble.
+  const coerced_feed = coerce_feed(parsed_feed, {
     request_url: url,
     response_url: response_url,
     response_last_modified_date: response_get_last_modified_date(response)
-  };
-  const process_entries_flag = false;
-
-  const coerce_result =
-      coerce_feed_and_entries(parsed_feed, fetch_info, process_entries_flag);
-  return coerce_result.feed;
+  });
+  return coerced_feed;
 }
 
 async function subscribe_feed_set_favicon(query, feed, console) {
