@@ -1,6 +1,6 @@
 import coerce_feed_and_entries from '/src/coerce-feed-and-entries.js';
-import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_change} from '/src/common/fetch-utils.js';
 import feed_parse from '/src/common/feed-parse.js';
+import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_change} from '/src/common/fetch-utils.js';
 import {lookup as favicon_service_lookup} from '/src/favicon-service.js';
 import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/feed-poll/poll-feeds.js';
 import notification_show from '/src/notifications.js';
@@ -116,10 +116,10 @@ async function subscribe_create_feed_from_response(context, response, url) {
   const response_text = await response.text();
 
   // Parse the feed xml. Parsing errors are intentionally not handled here
-  // and rethrown
-  // TODO: reintroduce skip_entry_parsing parameter to feed_parse, set to true
-  // here, because we do not care about entries here
-  const parsed_feed = feed_parse(response_text);
+  // and rethrown. Entries are not processed by subscribe (only later by
+  // polling)
+  const feed_parse_skip_entries_flag = true;
+  const parsed_feed = feed_parse(response_text, feed_parse_skip_entries_flag);
 
   // Take the parsed feed object and reformat it as a storable feed object,
   // while also introducing fetch information

@@ -1,13 +1,18 @@
 import {html_decode_entities} from '/src/common/html-utils.js';
 
+// TODO: introduce resolve_entry_urls parameter
+
 // Parses the input string into a feed object. The feed object will always have
 // a defined entries array, although it may be zero length. Returns a feed
 // object or throws
-export default function feed_parse(xml_string) {
+// @param xml_string {String}
+// @param skip_entries {Boolean} if true, entries are not processed, and an
+// empty entries array is included in the result
+export default function feed_parse(xml_string, skip_entries) {
   // Sanity checking xml_string delegated to xml_parse
   // Rethrow parse xml errors
   const document = xml_parse(xml_string);
-  return unmarshall_xml(document);
+  return unmarshall_xml(document, skip_entries);
 }
 
 function xml_parse(xml_string) {
@@ -25,8 +30,9 @@ function xml_parse(xml_string) {
 }
 
 // @param document {Document} an XML document representing a feed
+// @param skip_entries {Boolean}
 // @returns {Object} a feed object
-function unmarshall_xml(document) {
+function unmarshall_xml(document, skip_entries) {
   const document_element = document.documentElement;
   const document_element_name = element_get_local_name(document_element);
 
@@ -47,8 +53,12 @@ function unmarshall_xml(document) {
   feed.link = find_feed_link(channel_element);
   feed.datePublished = find_feed_date(channel_element);
 
-  const entry_elements = find_entry_elements(channel_element);
-  feed.entries = entry_elements.map(create_entry);
+  if (skip_entries) {
+    feed.entries = [];
+  } else {
+    const entry_elements = find_entry_elements(channel_element);
+    feed.entries = entry_elements.map(create_entry);
+  }
 
   return feed;
 }
