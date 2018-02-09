@@ -1,7 +1,7 @@
 import coerce_feed_and_entries from '/src/coerce-feed-and-entries.js';
+import feed_parse from '/src/common/feed-parse.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/common/fetch-utils.js';
 import {html_parse} from '/src/common/html-utils.js';
-import feed_parse from '/src/common/parse-feed.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service.js';
 import {dedup_entries} from '/src/feed-poll/dedup-entries.js';
 import apply_all_document_filters from '/src/feed-poll/filters/apply-all.js';

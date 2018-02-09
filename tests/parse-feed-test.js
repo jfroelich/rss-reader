@@ -1,5 +1,5 @@
 import {fetch_feed} from '/src/common/fetch-utils.js';
-import feed_parse from '/src/common/parse-feed.js';
+import feed_parse from '/src/common/feed-parse.js';
 
 // TODO: write specific tests that test various assertions, e.g. preconditions,
 // postconditions
