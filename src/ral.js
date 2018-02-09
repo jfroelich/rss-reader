@@ -208,10 +208,14 @@ export async function ral_subscribe(channel, url) {
 }
 
 export async function ral_unsubscribe(channel, feed_id) {
-  // TODO: do not rely on unsubscribe auto-connect, do the conn here,
-  // remove the auto-connect ability from unsubscribe
   let conn;
-  await unsubscribe(conn, channel, feed_id);
+  try {
+    await unsubscribe(conn, channel, feed_id);
+  } finally {
+    if (conn) {
+      conn.close();
+    }
+  }
 }
 
 export async function ral_activate_feed(channel, feed_id) {

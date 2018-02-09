@@ -3,7 +3,7 @@ import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_chang
 import {lookup as favicon_service_lookup} from '/src/favicon-service.js';
 import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/feed-poll/poll-feeds.js';
 import notification_show from '/src/notifications.js';
-import {feed_append_url, feed_create, feed_create_favicon_lookup_url, feed_is_feed, feed_peek_url, rdb_contains_feed_with_url, rdb_feed_add} from '/src/rdb.js';
+import {feed_append_url, feed_create, feed_create_favicon_lookup_url, rdb_is_feed, feed_peek_url, rdb_contains_feed_with_url, rdb_feed_add} from '/src/rdb.js';
 
 // TODO: reconsider the transaction lifetime. Right now it is protected by the
 // error that occurs due to violation of uniqueness constraint. But it would be
@@ -126,7 +126,7 @@ async function subscribe_create_feed_from_response(context, response, url) {
 }
 
 async function subscribe_feed_set_favicon(query, feed, console) {
-  assert(feed_is_feed(feed));
+  assert(rdb_is_feed(feed));
 
   const favicon_lookup_url = feed_create_favicon_lookup_url(feed);
 

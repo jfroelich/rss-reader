@@ -6,7 +6,7 @@ import apply_all_document_filters from '/src/feed-poll/filters/apply-all.js';
 import url_is_binary from '/src/feed-poll/is-binary-url.js';
 import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import notification_show from '/src/notifications.js';
-import {entry_append_url, entry_has_url, entry_peek_url, feed_has_url, feed_is_feed, feed_merge, feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_open} from '/src/rdb.js';
+import {entry_append_url, entry_has_url, entry_peek_url, feed_has_url, rdb_is_feed, feed_merge, feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_open} from '/src/rdb.js';
 // TODO: this should not be dependent on something in the view, it should be the
 // other way around
 import badge_update_text from '/src/views/update-badge-text.js';
@@ -124,7 +124,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   assert(poll_feed_context.feedConn instanceof IDBDatabase);
   assert(poll_feed_context.iconConn instanceof IDBDatabase);
   assert(poll_feed_context.channel instanceof BroadcastChannel);
-  assert(feed_is_feed(feed));
+  assert(rdb_is_feed(feed));
   assert(feed_has_url(feed));
 
   const console = poll_feed_context.console;

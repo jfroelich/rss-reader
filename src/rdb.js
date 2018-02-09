@@ -162,7 +162,7 @@ export function rdb_feed_activate(conn, channel, feed_id) {
     const request = store.get(feed_id);
     request.onsuccess = () => {
       const feed = request.result;
-      assert(feed_is_feed(feed));
+      assert(rdb_is_feed(feed));
       assert(!feed.active || !('active' in feed));
       feed.active = true;
       delete feed.deactivationReasonText;
@@ -501,9 +501,9 @@ export function rdb_get_feeds(conn) {
 // Returns the new id if adding
 // This could be exported, but is not, as there is nothing that currently uses
 // this functionality directly outside of this module.
-// @param conn {IDBDatabase}
+// @param conn {IDBDatabase} required
 // @param channel {BroadcastChannel} optional
-// @param entry {object}
+// @param entry {object} required
 function rdb_entry_put(conn, channel, entry) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof IDBDatabase);
@@ -520,7 +520,8 @@ function rdb_entry_put(conn, channel, entry) {
         channel.postMessage({type: 'entry-updated', id: entry_id});
       }
       resolve(entry_id);
-    } request.onerror = () => reject(request.error);
+    };
+    request.onerror = () => reject(request.error);
   });
 }
 
@@ -528,45 +529,79 @@ export function rdb_feed_prepare(feed) {
   return object_filter_empty_properties(rdb_feed_sanitize(feed));
 }
 
-// TODO: rdb_feed_validate (here or in rdb_feed_put or both in a sense)
+// TODO: implement fully
+// Return whether the feed has valid properties
+// @param feed {any} any value, this should be a feed object, but it is not
+// required
+// @return {Boolean}
+export function rdb_feed_is_valid(feed) {
+  // rdb_feed_is_valid is generally called in the context of an assertion, so
+  // while this could be its own assert, there is no need. It is simpler to
+  // return here than throw an exception. It is, notably, generally an error to
+  // ever call this function on something other than a feed, but that care is
+  // left to the caller
+  if (!rdb_is_feed(feed)) {
+    return false;
+  }
+
+  // Validate the feed's id. It may not be present in the case of validating
+  // a feed that has never been stored.
+  if ('id' in feed && !feed_is_valid_id(feed.id)) {
+    return false;
+  }
+
+  // NOTE: wait to fill out the rest of this until after finishing the
+  // auto-connect deprecation
+
+  return true;
+}
+
+// Add a feed to the database
+// @param conn {IDBDatabase} an open database connection
+// @param channel {BroadcastChannel} optional, the channel to receive a message
+// about the feed being added
+// @param feed {object} the feed to insert
+// @return {Promise} resolves the object that was stored in the database, or
+// rejects with an error (e.g. database error, invalid arguments)
 export async function rdb_feed_add(conn, channel, feed) {
+  // Delegate feed type check to rdb_feed_is_valid
+  assert(rdb_feed_is_valid(feed));
+
+  // Clone the feed, sanitize the clone, setup default props
   const prepared_feed = rdb_feed_prepare(feed);
   prepared_feed.active = true;
   prepared_feed.dateCreated = new Date();
   delete prepared_feed.dateUpdated;
-  const feed_id = await rdb_feed_put(conn, null, prepared_feed);
-  prepared_feed.id = feed_id;
+
+  // Delegate database modification to rdb_feed_put. In doing so, suppress the
+  // message from rdb_feed_put because we will post our own, and suppress
+  // validation because we did it above.
+  let void_channel;
+  const validate = false;
+  const feed_id =
+      await rdb_feed_put(conn, void_channel, prepared_feed, validate);
   if (channel) {
     channel.postMessage({type: 'feed-added', id: feed_id});
   }
+
+  prepared_feed.id = feed_id;
   return prepared_feed;
 }
 
-// TODO: drop support for auto-connect
-export async function rdb_feed_put(conn, channel, feed) {
-  const dconn = conn ? conn : await rdb_open();
-  const feed_id = await rdb_feed_put_promise(dconn, feed);
-  if (!conn) {
-    dconn.close();
-  }
-
-  // Suppress invalid state error when channel is closed in non-awaited call
-  // TODO: if awaited, I'd prefer to throw. How? Or, should it really just be
-  // an error, and the caller is responsible for keeping this open?
-  if (channel) {
-    try {
-      channel.postMessage({type: 'feed-updated', id: feed_id});
-    } catch (error) {
-      console.debug(error);
-    }
-  }
-
-  return feed_id;
-}
-
-function rdb_feed_put_promise(conn, feed) {
+// Create or update a feed in the database
+// @param conn {IDBDatabase}
+// @param channel {BroadcastChannel} optional
+// @param feed {object}
+// @param validate {Boolean} optional
+export function rdb_feed_put(conn, channel, feed, validate = true) {
   return new Promise((resolve, reject) => {
-    assert(feed_is_feed(feed));
+    if (validate) {
+      // Defer rdb_is_feed call to validation in this case
+      assert(rdb_feed_is_valid(feed));
+    } else {
+      assert(rdb_is_feed(feed));
+    }
+
     const txn = conn.transaction('feed', 'readwrite');
     const store = txn.objectStore('feed');
     const request = store.put(feed);
@@ -574,35 +609,46 @@ function rdb_feed_put_promise(conn, feed) {
     // that result is feed id when adding, but what about updating? Review
     // the documentation on IDBObjectStore.prototype.put
     // So ... double check and warrant this resolves to an id
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      // Suppress invalid state error when channel is closed in non-awaited call
+      // TODO: if awaited, I'd prefer to throw. How? Or, should it really just
+      // be an error, and the caller is responsible for keeping this open?
+      if (channel) {
+        try {
+          channel.postMessage({type: 'feed-updated', id: feed_id});
+        } catch (error) {
+          console.debug(error);
+        }
+      }
+      resolve(request.result);
+    };
     request.onerror = () => reject(request.error);
   });
 }
 
-// TODO: drop support for auto-connect
-export async function rdb_feed_remove(conn, channel, feed_id, reason_text) {
-  const dconn = conn ? conn : await rdb_open();
-  const entry_ids = await rdb_feed_remove_promise(dconn, feedid);
-  if (!conn) {
-    dconn.close();
-  }
-
-  if (channel) {
-    channel.postMessage(
-        {type: 'feed-deleted', id: feed_id, reason: reason_text});
-    for (const id of entry_ids) {
-      channel.postMessage({type: 'entry-deleted', id: id, reason: reason_text});
-    }
-  }
-}
-
-function rdb_feed_remove_promise(conn, feed_id) {
+// Remove a feed any entries tied to the feed from the database
+// @param conn {IDBDatabase}
+// @param channel {BroadcastChannel} optional
+// @param feed_id {Number}
+// @param reason_text {String}
+export function rdb_feed_remove(conn, channel, feed_id, reason_text) {
   return new Promise(function executor(resolve, reject) {
     assert(feed_is_valid_id(feed_id));
     let entry_ids;
     const txn = conn.transaction(['feed', 'entry'], 'readwrite');
-    txn.oncomplete = () => resolve(entry_ids);
-    txn.onerror = () => reject(txn.error);
+    txn.oncomplete = _ => {
+      if (channel) {
+        channel.postMessage(
+            {type: 'feed-deleted', id: feed_id, reason: reason_text});
+        for (const id of entry_ids) {
+          channel.postMessage(
+              {type: 'entry-deleted', id: id, reason: reason_text});
+        }
+      }
+
+      resolve(entry_ids);
+    };
+    txn.onerror = _ => reject(txn.error);
 
     const feed_store = txn.objectStore('feed');
     console.debug('Deleting feed with id', feed_id);
@@ -658,8 +704,12 @@ function rdb_feed_sanitize(feed, title_max_length, description_max_length) {
   return output_feed;
 }
 
+// TODO: implement
 function rdb_entry_is_valid(entry) {
-  // TODO: implement
+  if (!rdb_is_entry(entry)) {
+    return false;
+  }
+
   return true;
 }
 
@@ -787,7 +837,7 @@ export function feed_create() {
 }
 
 // Return true if the value looks like a feed object
-export function feed_is_feed(value) {
+export function rdb_is_feed(value) {
   // While it perenially appears like the value condition is implied in the
   // typeof condition, this is not true. The value condition is short for value
   // !== null, because typeof null === 'object', and not checking value
@@ -808,7 +858,7 @@ export function feed_is_valid_id(id) {
 }
 
 export function feed_has_url(feed) {
-  assert(feed_is_feed(feed));
+  assert(rdb_is_feed(feed));
   return feed.urls && (feed.urls.length > 0);
 }
 
@@ -824,7 +874,7 @@ export function feed_peek_url(feed) {
 // @param feed {Object} a feed object
 // @param url {URL}
 export function feed_append_url(feed, url) {
-  if (!feed_is_feed(feed)) {
+  if (!rdb_is_feed(feed)) {
     console.error('Invalid feed argument:', feed);
     return false;
   }
@@ -920,7 +970,7 @@ export function entry_append_url(entry, url) {
 // Returns the url used to lookup a feed's favicon
 // @returns {URL}
 export function feed_create_favicon_lookup_url(feed) {
-  assert(feed_is_feed(feed));
+  assert(rdb_is_feed(feed));
 
   // First, prefer the link, as this is the url of the webpage that is
   // associated with the feed. Cannot assume the link is set or valid.
