@@ -17,13 +17,13 @@ export async function open(name, version, upgrade_listener, timeout) {
     version: version,
     upgrade_listener: upgrade_listener,
     timeout: timeout,
-    timed_out: false
+    timed_out: false,
+    timer: null
   };
 
-  const conn = await timeout ?
-      create_open_promise(context) :
-      Promise.race(
-          [create_open_promise(context), create_timeout_promise(context)]);
+  const conn = await (timeout ? create_open_promise(context) : Promise.race([
+    create_open_promise(context), create_timeout_promise(context)
+  ]));
 
   if (conn) {
     clearTimeout(context.timer);

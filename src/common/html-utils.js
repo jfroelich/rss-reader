@@ -4,7 +4,9 @@
 // example, '&lt;' becomes '<'. Adapted from
 // https://stackoverflow.com/questions/1912501
 //
-// This is completely unsafe
+// COMPLETELY UNSAFE
+// COMPLETELY UNSAFE
+// COMPLETELY UNSAFE
 //
 // TODO: i'd eventually like to not involve the dom but for now just get
 // something working

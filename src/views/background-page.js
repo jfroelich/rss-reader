@@ -1,6 +1,6 @@
 import {clear as favicon_service_clear, compact as favicon_service_compact, lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service.js';
 import archive_entries from '/src/feed-ops/archive-entries.js';
-import feed_store_refresh_all_icons from '/src/feed-ops/refresh-feed-icons.js';
+import rdb_refresh_feed_icons from '/src/feed-ops/refresh-feed-icons.js';
 import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
 import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
 import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
@@ -44,7 +44,7 @@ async function handle_orphan_entries_alarm(alarm) {
 async function handle_refresh_feed_icons_alarm(alarm) {
   const [reader_conn, favicon_conn] =
       await Promise.all([rdb_open(), favicon_service_open()]);
-  await feed_store_refresh_all_icons(reader_conn, favicon_conn);
+  await rdb_refresh_feed_icons(reader_conn, favicon_conn);
   reader_conn.close();
   favicon_conn.close();
 }
@@ -77,7 +77,7 @@ const cli = {};
 cli.refresh_icons = async function() {
   const [reader_conn, favicon_conn] =
       await Promise.all([rdb_open(), favicon_service_open()]);
-  await feed_store_refresh_all_icons(reader_conn, favicon_conn);
+  await rdb_refresh_feed_icons(reader_conn, favicon_conn);
   reader_conn.close();
   favicon_conn.close();
 };

@@ -5,7 +5,7 @@ import {feed_is_valid_id, rdb_open} from '/src/rdb.js';
 // TODO: this potentially affects unread count and therefore should be
 // interacting with badge_update_text
 // TODO: add console parameter and NULL_CONSOLE impl
-// TODO: trap postMessage errors in case channel closed when called unawaited
+// TODO: trap postMessage errors in case channel closed when called unawaited?
 
 // Scans the database for entries not linked to a feed and deletes them
 // conn {IDBDatabase} is optional open database connection

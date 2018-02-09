@@ -1,26 +1,23 @@
-import {entry_has_url, rdb_open as reader_db_open} from '/src/rdb.js';
+import {entry_has_url, rdb_open} from '/src/rdb.js';
 
-// TODO: move this comment to github issue
-// TODO: consider speculative messaging, where I post a message to a channel of
-// a different type before the database operation settled. one of the benefits
-// is that I avoid issues with channel closing early when remove is called
-// unawaited and channel is closed before settling.
+// TODO: this potentially affects unread count
 
-// Scans the entry store for entry objects that are missing urls and removes
-// them
-// @param conn {IDBDatabase}
-// @param channel {BroadcastChannel}
-// @param console {Object}
+// Removes entries missing urls from the database
+// @param conn {IDBDatabase} an open database connection, optional, if not
+// specified this will auto-connect to the default database
+// @param channel {BroadcastChannel} optional, the channel over which to
+// communicate storage change events
+// @param console {Object} optional, logging destination, if specified should
+// comply with the window.console interface
 export default async function entry_store_remove_lost_entries(
     conn, channel, console) {
   console = console || NULL_CONSOLE;
-  console.log('Removing lost entries...');
 
-  const dconn = conn ? conn : await reader_db_open();
+  const dconn = conn ? conn : await rdb_open();
   const entry_ids =
       await entry_store_remove_lost_entries_promise(dconn, console);
   if (!conn) {
-    console.debug('Closing dynamic connection to database', dconn.name);
+    console.debug('Closing connection to database', dconn.name);
     dconn.close();
   }
 
@@ -42,12 +39,10 @@ export default async function entry_store_remove_lost_entries(
 function channel_post_message_noexcept(channel, message, console) {
   try {
     channel.postMessage(message);
-    console.debug('Posted message to channel', channel.name, message);
   } catch (error) {
     console.warn(error);
   }
 }
-
 
 // Returns a promise that resolves to an array of entry ids that were deleted
 // This uses a single transaction to ensure consistency.
@@ -59,7 +54,7 @@ function entry_store_remove_lost_entries_promise(conn, console) {
     tx.oncomplete = () => resolve(entry_ids);
     const store = tx.objectStore('entry');
 
-    // Although getAll would be faster, it does not scale
+    // Use openCursor instead of getAll for scalability
     const request = store.openCursor();
     request.onsuccess = () => {
       const cursor = request.result;

@@ -1,9 +1,10 @@
-import feed_coerce from '/src/coerce-feed.js';
+import coerce_feed_and_entries from '/src/coerce-feed-and-entries.js';
 import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_change} from '/src/common/fetch-utils.js';
+import feed_parse from '/src/common/parse-feed.js';
 import {lookup as favicon_service_lookup} from '/src/favicon-service.js';
 import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/feed-poll/poll-feeds.js';
 import notification_show from '/src/notifications.js';
-import {feed_append_url, feed_create, feed_create_favicon_lookup_url, rdb_is_feed, feed_peek_url, rdb_contains_feed_with_url, rdb_feed_add} from '/src/rdb.js';
+import {feed_append_url, feed_create, feed_create_favicon_lookup_url, feed_peek_url, rdb_contains_feed_with_url, rdb_feed_add, rdb_is_feed} from '/src/rdb.js';
 
 // TODO: reconsider the transaction lifetime. Right now it is protected by the
 // error that occurs due to violation of uniqueness constraint. But it would be
@@ -35,11 +36,10 @@ import {feed_append_url, feed_create, feed_create_favicon_lookup_url, rdb_is_fee
 // console {console object} optional, console-like logging destination
 export default async function subscribe(context, url) {
   assert(typeof context === 'object');
-
   assert(context.feedConn instanceof IDBDatabase);
   assert(context.iconConn instanceof IDBDatabase);
-
   assert(url instanceof URL);
+
   const console = context.console || NULL_CONSOLE;
   console.log('Subscribing to', url.href);
 
@@ -115,14 +115,25 @@ async function subscribe_create_feed_from_response(context, response, url) {
   // subscribe while offline. This basically should never throw
   const response_text = await response.text();
 
-  // Take the fetched feed xml and turn it into a storable feed object
-  // Treat any coercion error as fatal and allow the error to bubble
-  const process_entries_flag = false;
-  const result = feed_coerce(
-      response_text, url, response_url,
-      response_get_last_modified_date(response), process_entries_flag);
+  // Parse the feed xml. Parsing errors are intentionally not handled here
+  // and rethrown
+  // TODO: reintroduce skip_entry_parsing parameter to feed_parse, set to true
+  // here, because we do not care about entries here
+  const parsed_feed = feed_parse(response_text);
 
-  return result.feed;
+  // Take the parsed feed object and reformat it as a storable feed object,
+  // while also introducing fetch information
+  // Treat any coercion error as fatal and allow the error to bubble
+  const fetch_info = {
+    request_url: url,
+    response_url: response_url,
+    response_last_modified_date: response_get_last_modified_date(response)
+  };
+  const process_entries_flag = false;
+
+  const coerce_result =
+      coerce_feed_and_entries(parsed_feed, fetch_info, process_entries_flag);
+  return coerce_result.feed;
 }
 
 async function subscribe_feed_set_favicon(query, feed, console) {

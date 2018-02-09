@@ -1,12 +1,14 @@
-import feed_coerce from '/src/coerce-feed.js';
+import coerce_feed_and_entries from '/src/coerce-feed-and-entries.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/common/fetch-utils.js';
 import {html_parse} from '/src/common/html-utils.js';
+import feed_parse from '/src/common/parse-feed.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service.js';
+import {dedup_entries} from '/src/feed-poll/dedup-entries.js';
 import apply_all_document_filters from '/src/feed-poll/filters/apply-all.js';
 import url_is_binary from '/src/feed-poll/is-binary-url.js';
 import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import notification_show from '/src/notifications.js';
-import {entry_append_url, entry_has_url, entry_peek_url, feed_has_url, rdb_is_feed, feed_merge, feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_open} from '/src/rdb.js';
+import {entry_append_url, entry_has_url, entry_peek_url, feed_has_url, feed_merge, feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb.js';
 // TODO: this should not be dependent on something in the view, it should be the
 // other way around
 import badge_update_text from '/src/views/update-badge-text.js';
@@ -190,15 +192,41 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     return 0;
   }
 
-  // Parse and coerce the response
-  let parse_result;
+  // Parse the response into a parsed feed object. Note that a parsed feed
+  // object is not formatted the same as a storable feed object
+  let parsed_feed;
+  try {
+    parsed_feed = feed_parse(response_text);
+  } catch (error) {
+    console.debug(error);
+    handle_poll_feed_error({
+      context: poll_feed_context,
+      error: error,
+      feed: feed,
+      category: 'parse-feed'
+    });
+    return 0;
+  }
+
+
+
+  // Coerce the parsed feed and entries from a parsed format to a storable
+  // format
+
   const process_entries_flag = true;
   const response_url = new URL(response.url);
   const response_last_modified_date = response_get_last_modified_date(response);
+
+  const fetch_info = {
+    request_url: feed_tail_url,
+    response_url: response_url,
+    response_last_modified_date: response_last_modified_date
+  };
+
+  let parse_result;
   try {
-    parse_result = feed_coerce(
-        response_text, feed_tail_url, response_url, response_last_modified_date,
-        process_entries_flag);
+    parse_result =
+        coerce_feed_and_entries(parsed_feed, fetch_info, process_entries_flag);
   } catch (error) {
     console.debug(error);
     handle_poll_feed_error({
@@ -228,7 +256,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
 
   const poll_entry_context = Object.assign({}, poll_feed_context);
 
-  const entries = parse_result.entries;
+  const entries = dedup_entries(parse_result.entries);
   cascade_feed_properties_to_entries(storable_feed, entries);
   const poll_entry_promises = [];
   for (const entry of entries) {
@@ -415,10 +443,10 @@ async function poll_entry(ctx, entry) {
   // not using a single shared transaction. Because I am pretty sure that if I
   // am doing rdb_contains_entry_with_url lookups, that I shouldn't run
   // into this error here? It could also be a dedup issue. Which I now realize
-  // should not be a concern of feed_coerce, it should only be a concern here.
-  // It could be the new way I am doing url rewriting. Perhaps I need to do
-  // contains checks on the intermediate urls of an entry's url list as well.
-  // Which would lead to more contains lookups, so maybe also look into
+  // should not be a concern of coerce_feed_and_entries, it should only be a
+  // concern here. It could be the new way I am doing url rewriting. Perhaps I
+  // need to do contains checks on the intermediate urls of an entry's url list
+  // as well. Which would lead to more contains lookups, so maybe also look into
   // batching those somehow.
 
   let stored_entry;

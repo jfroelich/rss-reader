@@ -2,10 +2,8 @@ import {rdb_entry_mark_read} from '/src/rdb.js';
 import badge_update_text from '/src/views/update-badge-text.js';
 
 // TODO: this shouldn't be dependent on something in views, it should be the
-// other way around
-
-// TODO: if I refactor badge to listen for events then I could call the
-// database function directly. Right now this intermediate operation exists
+// other way around, if I refactor badge to listen for events then I could call
+// the database function directly. Right now this intermediate operation exists
 // primarily because badge stuff does not belong in feed store
 // TODO: review
 // http://www.micheltriana.com/blog/2012/04/09/library-oriented-architecture
@@ -32,12 +30,6 @@ export default async function entry_mark_read(conn, channel, entry_id) {
   // count of objects in a store is unrelated to any single CRUD operation
   // exclusively, it is related to any of them, the only thing that matters is
   // that the count happens after.
-
-  // TEMP: I am planning on removing the auto-connect feature from the internals
-  // of badge_update_text. Which means that conn must be defined and active
-  // here. I am logging something here to quickly tell if for some reason the
-  // conn is unavailable.
-  assert(conn instanceof IDBDatabase);
 
   // This is not awaited because we don't care when this returns. We cannot do
   // anything about an error either so it is simply logged. We return prior to
