@@ -1,8 +1,5 @@
 import {entry_append_url, entry_create, entry_has_url, feed_append_url, feed_create} from '/src/rdb.js';
 
-// TODO: I enabled entry url resolution in feed_parse. This should no longer
-// do entry url resolution.
-
 // TODO: once coerce_feed and coerce_entries are implemented, then
 // coerce_feed_and_entries basically consists of calling those two functions.
 // What I should do is then deprecate coerce_feed_and_entries, and move the 2
@@ -101,23 +98,6 @@ function coerce_entry(parsed_entry) {
   entry_convert_link_to_url(storable_entry);
   return storable_entry;
 }
-
-/*
-// DEPRECATED. WILL FULLY DELETE AFTER MORE TESTING
-// If the entry has a link property, canonicalize and normalize it, base_url is
-// optional, generally should be feed.link
-function entry_resolve_link(entry, base_url) {
-  if (entry.link) {
-    try {
-      const url = new URL(entry.link, base_url);
-      entry.link = url.href;
-    } catch (error) {
-      console.debug(error);
-      entry.link = undefined;
-    }
-  }
-}
-*/
 
 // entries are fetched as objects with a link property. for each entry that has
 // a link, convert it into the app's storage format that uses a urls array. this

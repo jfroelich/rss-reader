@@ -359,11 +359,8 @@ function feed_resolve_entry_urls(entries, feed_link_url_string) {
       try {
         const url = new URL(entry.link, base_url);
         entry.link = url.href;
-        // TEMP: debugging new functionality
-        console.debug('entry.link:', entry.link);
-
       } catch (error) {
-        // TODO: unset entry.link?
+        // TODO: unset entry.link in this case?
         console.debug(error);
       }
     }

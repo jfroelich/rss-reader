@@ -610,6 +610,7 @@ export function rdb_feed_put(conn, channel, feed, validate = true) {
     // the documentation on IDBObjectStore.prototype.put
     // So ... double check and warrant this resolves to an id
     request.onsuccess = () => {
+      const feed_id = request.result;
       // Suppress invalid state error when channel is closed in non-awaited call
       // TODO: if awaited, I'd prefer to throw. How? Or, should it really just
       // be an error, and the caller is responsible for keeping this open?
@@ -620,7 +621,7 @@ export function rdb_feed_put(conn, channel, feed, validate = true) {
           console.debug(error);
         }
       }
-      resolve(request.result);
+      resolve(feed_id);
     };
     request.onerror = () => reject(request.error);
   });
