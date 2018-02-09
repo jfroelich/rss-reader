@@ -1,4 +1,5 @@
-import {coerce_entries, coerce_feed} from '/src/coerce-feed-and-entries.js';
+import {coerce_entries} from '/src/coerce-entries.js';
+import {coerce_feed} from '/src/coerce-feed.js';
 import feed_parse from '/src/common/feed-parse.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/common/fetch-utils.js';
 import {html_parse} from '/src/common/html-utils.js';

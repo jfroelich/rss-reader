@@ -1,4 +1,4 @@
-import {coerce_feed} from '/src/coerce-feed-and-entries.js';
+import {coerce_feed} from '/src/coerce-feed.js';
 import feed_parse from '/src/common/feed-parse.js';
 import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_change} from '/src/common/fetch-utils.js';
 import {lookup as favicon_service_lookup} from '/src/favicon-service.js';
