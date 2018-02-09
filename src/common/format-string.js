@@ -5,35 +5,35 @@
 // %o - object
 // %% - literal '%'
 
-const syntaxPattern = /%[sdo%]/g;
+const syntax_pattern = /%[sdo%]/g;
 
 export default function string_format(...args) {
-  const argCount = args.length;
-  if (argCount === 0) {
+  const arg_count = args.length;
+  if (arg_count === 0) {
     return '';
   }
 
-  let argIndex = 0;
-  const formatArg = args[argIndex];
-  if (typeof formatArg !== 'string') {
-    return args.map(anyTypeToStringString).join(' ');
+  let arg_index = 0;
+  const format_arg = args[arg_index];
+  if (typeof format_arg !== 'string') {
+    return args.map(any_type_to_string_string).join(' ');
   }
 
-  argIndex++;
+  arg_index++;
 
-  if (argIndex === argCount) {
-    return formatArg;
+  if (arg_index === arg_count) {
+    return format_arg;
   }
 
   // Walk over each formatting argument thing in the format string, and replace
   // it with one of the remaining arguments. We know there is at least one
   // other argument.
-  const replacedString =
-      formatArg.replace(syntaxPattern, function replacer(match) {
+  const replaced_string =
+      format_arg.replace(syntax_pattern, function replacer(match) {
         // If we've reached or moved past the end, then there are more
         // occurrences of formatting codes than arguments. Stop doing any
         // replacements.
-        if (argIndex >= argCount) {
+        if (arg_index >= arg_count) {
           return match;
         }
 
@@ -44,19 +44,19 @@ export default function string_format(...args) {
           case '%%':
             return '%';
           case '%s':
-            return anyTypeToStringString(args[argIndex++]);
+            return any_type_to_string_string(args[arg_index++]);
           case '%d':
-            return anyTypeToNumberString(args[argIndex++]);
+            return any_type_to_number_string(args[arg_index++]);
           case '%o':
-            return anyTypeToObjectString(args[argIndex++]);
+            return any_type_to_object_string(args[arg_index++]);
           default:
             return match;
         }
       });
 
   // Exit early if all arguments processed
-  if (argIndex >= argCount) {
-    return replacedString;
+  if (arg_index >= arg_count) {
+    return replaced_string;
   }
 
   // There may be more arguments to the function than there are codes to
@@ -64,14 +64,14 @@ export default function string_format(...args) {
   // replacements so far, but possibly not all of the arguments have been used.
   // Append the remaining unused arguments to a buffer, then join them.
   // This still works even if the above check was not present.
-  const buffer = [replacedString];
-  while (argIndex < argCount) {
-    buffer.push(anyTypeToStringString(args[argIndex++]));
+  const buffer = [replaced_string];
+  while (arg_index < arg_count) {
+    buffer.push(any_type_to_string_string(args[arg_index++]));
   }
   return buffer.join(' ');
 }
 
-function anyTypeToNumberString(value) {
+function any_type_to_number_string(value) {
   if (typeof value === 'number') {
     if (Object.is(value, -0)) {
       // Special case for negative zero because otherwise ('' + -0) yields '0'.
@@ -89,11 +89,11 @@ function anyTypeToNumberString(value) {
 }
 
 // Cache the reference to the native function so that the property lookup does
-// not occur each time anyTypeToObjectString is evaluated.
-const nativeHasOwn = Object.prototype.hasOwnProperty;
+// not occur each time any_type_to_object_string is evaluated.
+const native_has_own = Object.prototype.hasOwnProperty;
 
 // Convert an object into a string. This does not assume the input is an object.
-function anyTypeToObjectString(value) {
+function any_type_to_object_string(value) {
   // typeof null === 'object', so special case for null. Cannot assume caller
   // already checked for this situation.
   if (value === null) {
@@ -101,7 +101,7 @@ function anyTypeToObjectString(value) {
   }
 
   // NOTE: special case for undefined. Without this case, the call to
-  // nativeHasOwn.call below would throw an exception "TypeError: Cannot
+  // native_has_own.call below would throw an exception "TypeError: Cannot
   // convert undefined or null to object"
   // NOTE: undefined === void 0
   // NOTE: do not use void(0), void is an operator, not a function
@@ -129,7 +129,7 @@ function anyTypeToObjectString(value) {
   // Object object. Which also may have been messed with but at that point it is
   // overly-defensive.
 
-  if (nativeHasOwn.call(value, 'toString')) {
+  if (native_has_own.call(value, 'toString')) {
     return value.toString();
   }
 
@@ -153,7 +153,7 @@ function anyTypeToObjectString(value) {
 }
 
 // Convert a value of an unknown type into a string
-function anyTypeToStringString(value) {
+function any_type_to_string_string(value) {
   if (value === null) {
     return 'null';
   }
@@ -165,11 +165,11 @@ function anyTypeToStringString(value) {
     case 'function':
       return value.toString();
     case 'number':
-      return anyTypeToNumberString(value);
+      return any_type_to_number_string(value);
     case 'string':
       return value;
     case 'object':
-      return anyTypeToObjectString(value);
+      return any_type_to_object_string(value);
     default:
       return '' + value;
   }
