@@ -253,7 +253,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
       poll_feed_context.feedConn, poll_feed_context.channel, storable_feed);
 
   // Process the entries
-  const coerced_entries = coerce_entries(parse_result.entries);
+  const coerced_entries = coerce_entries(parsed_feed.entries);
   const entries = dedup_entries(coerced_entries);
   cascade_feed_properties_to_entries(storable_feed, entries);
   const poll_entry_promises = [];
