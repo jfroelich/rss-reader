@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {imageHasSource} from '/src/feed-poll/filters/content-filter-utils.js';
+import {image_has_source} from '/src/content-filter/content-filter-utils.js';
 
 // Transforms lazily-loaded images found in document content
 
@@ -25,7 +25,7 @@ export default function filter(doc) {
   const images = doc.body.getElementsByTagName('img');
 
   for (const image of images) {
-    if (imageHasSource(image)) {
+    if (image_has_source(image)) {
       continue;
     }
 

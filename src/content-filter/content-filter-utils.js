@@ -1,0 +1,489 @@
+// Declares parseSrcset in window scope as side effect
+import '/third-party/parse-srcset.js';
+
+// TODO: convert from camel case to c-style underscore identifier names
+
+// Returns a promise that resolves to undefined after a given amount of time (in
+// milliseconds)
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+export function assert(value, message) {
+  if (!value) throw new Error(message || 'Assertion error');
+}
+
+// Returns true if the image element has at least one source, which could be:
+// * a src attribute,
+// * a srcset attribute,
+// * an associate picture element with one or more source elements that has a
+// src or srcset attribute.
+//
+// This does not check whether the urls are syntactically correct, but this does
+// check that an attribue value is not empty after trimming.
+export function image_has_source(image) {
+  assert(image instanceof Element);
+
+  const has = element_attribute_not_empty_after_trim;  // alias
+
+  // Check if the image element itself has a source
+  if (has(image, 'src') || has(image, 'srcset')) {
+    return true;
+  }
+
+  // Check if the image element is part of a picture that has a descendant
+  // source with a source attribute value
+  const picture = image.closest('picture');
+  if (picture) {
+    const sources = picture.getElementsByTagName('source');
+    for (const source of sources) {
+      if (has(source, 'src') || has(source, 'srcset')) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+// Removes an image element from its containing document along with some baggage
+export function image_remove(image) {
+  // This check is implicit in later checks. However, performing it redundantly
+  // upfront here can avoid a substantial amount of processing. There is no
+  // apparent value in removing an orphaned image, so silently cancel.
+  if (!image.parentNode) {
+    return;
+  }
+
+  const figure = image.closest('figure');
+  if (figure) {
+    // While it is tempting to simply remove the figure element itself and
+    // thereby indirectly remove the image, this would risk data loss. The
+    // figure may be used as a general container and contain content not related
+    // to the image. The only content we know for certain that is related to
+    // to the image in this case is the caption. There should only be one,
+    // but this cannot assume well-formedness, so remove any captions.
+    const captions = figure.querySelectorAll('figcaption');
+    for (const caption of captions) {
+      caption.remove();
+    }
+
+    element_unwrap(figure);
+  }
+
+  const picture = image.closest('picture');
+  if (picture) {
+    // Similar to figure, picture may be used as general container, so unwrap
+    // rather than remove. The only thing we know that can be removed are the
+    // source elements.
+    const sources = picture.querySelectorAll('source');
+    for (const source of sources) {
+      source.remove();
+    }
+
+    element_unwrap(picture);
+  }
+
+  image.remove();
+}
+
+function element_attribute_not_empty_after_trim(element, attributeName) {
+  const value = element.getAttribute(attributeName);
+  return (value && value.trim()) ? true : false;
+}
+
+// Parses a srcset value into an array of descriptors. If the input is bad, or
+// an error occurs, or no descriptors found, returns an empty array. This
+// function makes use of third-party code.
+// @param srcset {Any} preferably a string, the value of a srcset attribute of
+// an element
+export function parse_srcset_wrapper(srcset) {
+  const fallback_output = [];
+
+  // Tolerate bad input for convenience
+  if (typeof srcset !== 'string') {
+    return fallback_output;
+  }
+
+  // Avoid parsing empty string
+  if (!srcset) {
+    return fallback_output;
+  }
+
+  // parseSrcset doesn't throw in the ordinary case, but avoid surprises
+  let descriptors;
+  try {
+    descriptors = parseSrcset(srcset);
+  } catch (error) {
+    console.warn(error);
+    return fallback_output;
+  }
+
+  if (!Array.isArray(descriptors)) {
+    return fallback_output;
+  }
+
+  return descriptors;
+}
+
+// Replace an element with its child nodes. Special care is taken to add
+// whitespace if the operation would result in adjacent text nodes. The element
+// should be attached (it should be a node, or a descendant of a node, that is
+// in the document).
+export function element_unwrap(element) {
+  assert(element instanceof Element);
+
+  // An orphaned node is any parentless node. An orphaned node is obviously
+  // detached from the document, as all attached nodes have a parent. There is
+  // generally no benefit to unwrapping orphans.
+  //
+  // Although attempting to unwrap an orphaned node should probably represent a
+  // programming error, and so in some sense this case should never be true,
+  // just exit early. Encourage the caller to change their behavior.
+  if (!element.parentNode) {
+    console.warn('Tried to unwrap orphaned element', element.outerHTML);
+    return;
+  }
+
+  // Cache stuff prior to removal
+  const parentElement = element.parentNode;
+  const previousSibling = element.previousSibling;
+  const nextSibling = element.nextSibling;
+  const firstChild = element.firstChild;
+  const lastChild = element.lastChild;
+  const TEXT = Node.TEXT_NODE;
+  const frag = element.ownerDocument.createDocumentFragment();
+
+  // Detach upfront for O(2) live dom ops, compared to O(n-children) otherwise
+  element.remove();
+
+  // Add leading padding
+  if (previousSibling && previousSibling.nodeType === TEXT && firstChild &&
+      firstChild.nodeType === TEXT) {
+    frag.appendChild(element.ownerDocument.createTextNode(' '));
+  }
+
+  // Move children to fragment, maintaining order
+  for (let node = firstChild; node; node = element.firstChild) {
+    frag.appendChild(node);
+  }
+
+  // Add trailing padding
+  if (lastChild && firstChild !== lastChild && nextSibling &&
+      nextSibling.nodeType === TEXT && lastChild.nodeType === TEXT) {
+    frag.appendChild(element.ownerDocument.createTextNode(' '));
+  }
+
+  // If nextSibling is undefined then insertBefore appends
+  parentElement.insertBefore(frag, nextSibling);
+}
+
+// Returns true if the element has a non-empty inline style.
+function element_has_inline_style_properties(element) {
+  // It is an error to call this on a non-element
+  assert(element instanceof Element);
+
+  // NOTE: <math> does not have a style, not sure why
+  // NOTE: <svg> does have a style property
+  // NOTE: style only has a length > 0 if there are one or more specified
+  // css properties that were parsed.
+  // NOTE: element.style I believe is lazily computed, by which I mean the
+  // first time the getter is called, the value is parsed, and the value is
+  // not parsed until that time, but after which is cached, so some parsing cost
+  // has been deferred until the time of this function's call, so sometimes this
+  // will be fast and sometimes slow
+
+  return element.style && element.style.length;
+}
+
+// Returns true if an element is hidden according to its inline style. Makes
+// mostly conservative guesses because false positives carry a greater penalty
+// than false negatives. In an inert document, element style is lazily computed,
+// and getComputedStyle is even more lazily computed. getComputedStyle is
+// ridiculously slow. Combined with the fact that stylesheet information and
+// style elements are filtered out in other modules, these functions are
+// restricted to looking only at an element's own style attribute.
+//
+// In an inert document, offsetWidth and offsetHeight are unknown and cannot
+// be used.
+export function element_is_hidden_inline(element) {
+  assert(element instanceof Element);
+
+  // Without an inline style, assume visible
+  if (!element_has_inline_style_properties(element)) {
+    return false;
+  }
+
+  const style = element.style;
+  return style.display === 'none' || style.visibility === 'hidden' ||
+      element_is_near_transparent(style) || element_is_offscreen(element);
+}
+
+// Returns true if the element's opacity is too close to 0
+// Throws error is style is undefined
+// TODO: support other formats of the opacity property more accurately
+// TODO: how does negative opacity work?
+function element_is_near_transparent(style) {
+  const visibility_threshold = 0.3;
+  if (style.opacity) {
+    const opacity_f = parseFloat(style.opacity);
+    return !isNaN(opacity_f) && opacity_f <= visibility_threshold;
+  }
+}
+
+// Returns true if the element is positioned off screen. Heuristic guess.
+// Probably several false negatives, and a few false positives. The cost of
+// guessing wrong is not too high. This is pretty inaccurate. Mostly just a
+// prototype of the idea of the test to use.
+// TODO: why element instead of style as param??
+function element_is_offscreen(element) {
+  if (element.style.position === 'absolute') {
+    const left = parseInt(element.style.left, 10);
+    if (!isNaN(left) && left < 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// TODO: in hindsight this function is overly simplistic, just inline it
+// (probably need to export element_coerce in its place)
+export function element_coerce_all(
+    ancestor_element, old_name, new_name, copy_attributes_flag) {
+  assert(ancestor_element instanceof Element);
+  assert(typeof old_name === 'string');
+  assert(typeof new_name === 'string');
+
+  const elements = ancestor_element.querySelectorAll(old_name);
+  for (const element of elements) {
+    element_coerce(element, new_name, copy_attributes_flag);
+  }
+}
+
+// element_coerce essentially a renames an element. An element's name indicates
+// the element's type. Hence the name of this function, because this effectively
+// changes the html type of the element. The element's child nodes are retained,
+// generally without regard to whether the new parent-child relations are
+// sensible. However, if the new name is the name of one of HTML's void
+// elements, then the child nodes of the element are effectively removed (all
+// children are removed during the call, but children of void elements are not
+// re-added).
+//
+// Event listeners are lost on rename. See
+// https://stackoverflow.com/questions/15408394. This generally is not a concern
+// in the case of content filtering because attributes that would cause binding
+// are filtered prior to binding.
+//
+// element_coerce does not validate whether the result is correct, except in the
+// case of renaming an element to a known void element. It is the caller's
+// responsibility to ensure that the coercion makes sense and that the resulting
+// document is still 'well-formed', supposing that well-formedness is a
+// requirement. Don't forget, the new element may not belong under its parent,
+// or its children may not belong under it either. There is the possiblity of a
+// hierarchy error being thrown by the DOM in the final insertBefore call but so
+// far I have not encountered it.
+//
+// @param element {Element} the element to change
+// @param new_name {String} the name of the element's new type
+// @param copy_attributes_flag {Boolean} optional, if true then attributes are
+// maintained, defaults to true.
+// @throws {Error} if the input element is not a type of Element, such as when
+// it is undefined, or if the new name is not valid. Note that the name validity
+// check is very minimal and not spec compliant.
+// @return {Element} the new element that replaced the old one
+function element_coerce(element, new_name, copy_attributes_flag = true) {
+  assert(element instanceof Element);
+
+  // Document.prototype.createElement is very forgiving regarding a new
+  // element's name. For example, if you pass a null value, it will create an
+  // element named "null". I find this behavior very confusing and misleading.
+  // To avoid this, treat any attempt to use an invalid name as a programming
+  // error. Specifically disallow createElement(null) working like
+  // createElement("null")
+  assert(element_name_is_valid(new_name));
+
+  // Treat attempting to rename an element to the same name as a noop. I've
+  // decided to allow this for caller convenience as opposed to throwing an
+  // error. Assume the document is html-flagged
+  if (element.localName === new_name.toLowerCase()) {
+    return element;
+  }
+
+  // TODO: rename var
+  // Prior to detachment, cache the reference to the parent
+  const parentElement = element.parentNode;
+
+  // Treat attempting to rename an orphaned element as a noop. Caller not
+  // required to guarantee parent for reasons of convenience.
+  if (!parentElement) {
+    return element;
+  }
+
+  // TODO: rename var
+  // Use next sibling to record position prior to detach. May be undefined.
+  const nextSibling = element.nextSibling;
+
+  // Detach the existing node prior to performing other dom operations so that
+  // later operations take place on a detached node, so that the least amount
+  // of live dom operations are made. Implicitly this sets element.parentNode
+  // and element.nextSibling to undefined.
+  element.remove();
+
+  // NOTE: a detached element is still 'owned' by a document
+  // NOTE: we are using the document in which the element resides, not the
+  // document executing this function. This would otherwise be a serious XSS
+  // vulnerability, and also possibly trigger document adoption (which is slow).
+
+  const new_element = element.ownerDocument.createElement(new_name);
+
+  if (copy_attributes_flag) {
+    element_copy_attributes(element, new_element);
+  }
+
+  element_move_child_nodes(element, new_element);
+
+  // Attach the new element in place of the old element. If nextSibling is
+  // undefined then insertBefore simply appends. Return the new element.
+  return parentElement.insertBefore(new_element, nextSibling);
+}
+
+// Move all child nodes of from_element to to_element, maintaining order. If
+// to_element has existing children, the new elements are appended at the end.
+// NOTE: I've looked for ways of doing this faster, but nothing seems to work.
+// There is no batch move operation in native dom.
+// TODO: one possible speedup might be using a document fragment? See what I
+// did for unwrap
+// TODO: might not need to export
+export function element_move_child_nodes(from_element, to_element) {
+  // If the target is a void element then this is a no-op. This assumes the
+  // source element is detached. The result in this case is the child nodes
+  // are effectively deleted.
+  if (element_is_void(to_element)) {
+    return;
+  }
+
+  // Each call to appendChild does the move. As such, in each iteration, the
+  // next accessing of old parent's firstChild points to the old parent's new
+  // first child, if any children are left.
+  let node = from_element.firstChild;
+  while (node) {
+    to_element.appendChild(node);
+    node = from_element.firstChild;
+  }
+}
+
+// See https://html.spec.whatwg.org/multipage/syntax.html#void-elements
+// This is a set, but given the small size, it is better to use a simple array.
+export const html_void_element_names = [
+  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta',
+  'param', 'source', 'track', 'wbr'
+];
+
+export function element_is_void(element) {
+  // This assumes element.ownerDocument is implicitly flagged as html so that
+  // localName yields the normalized name which is in lowercase. For now I'd
+  // rather make the assumption and let errors happen than incur the cost of
+  // calling toLowerCase
+  return html_void_element_names.includes(element.localName);
+}
+
+// Returns true if the given name is a valid name for an element. This only
+// does minimal validation and may yield false positives. This function is
+// defensive so it can easily be asserted against.
+// TODO: research what characters are allowed in an element's name
+function element_name_is_valid(value) {
+  return typeof value === 'string' && value.length && !value.includes(' ');
+}
+
+// Copies the attributes of an element to another element. Overwrites any
+// existing attributes in the other element.
+// @param from_element {Element}
+// @param to_element {Element}
+// @throws {Error} if either element is not an Element
+// @returns void
+export function element_copy_attributes(from_element, to_element) {
+  // Use getAttributeNames in preference to element.attributes due to
+  // performance issues with element.attributes, and to allow unencumbered use
+  // of the for..of syntax (I had issues with NamedNodeMap and for..of).
+  const names = from_element.getAttributeNames();
+  for (const name of names) {
+    const value = from_element.getAttribute(name);
+    to_element.setAttribute(name, value);
+  }
+}
+
+// Adapted from https://github.com/kangax/html-minifier/issues/63
+const boolean_attribute_names = [
+  'allowfullscreen', 'async',          'autofocus',     'autoplay',
+  'checked',         'compact',        'controls',      'declare',
+  'default',         'defaultchecked', 'defaultmuted',  'defaultselected',
+  'defer',           'disabled',       'draggable',     'enabled',
+  'formnovalidate',  'hidden',         'indeterminate', 'inert',
+  'ismap',           'itemscope',      'loop',          'multiple',
+  'muted',           'nohref',         'noresize',      'noshade',
+  'novalidate',      'nowrap',         'open',          'pauseonexit',
+  'readonly',        'required',       'reversed',      'scoped',
+  'seamless',        'selected',       'sortable',      'spellcheck',
+  'translate',       'truespeed',      'typemustmatch', 'visible'
+];
+
+// Returns whether the attribute name is boolean. The element parameter is
+// present due to legacy code, and currently unused, but I decided to leave it
+// in, in the case that in the future I decide to vary the outcome of the
+// boolean determination based on the type of element in addition to attribute
+// name.
+export function attribute_is_boolean(element, attribute_name) {
+  return boolean_attribute_names.includes(attribute_name);
+}
+
+
+// TODO: move this comment to github issues
+// TODO: use the fetch API to avoid cookies. First determine if this actually
+// transmits cookies. I think this should be simple to detect, just monitor the
+// network tab in devtools
+
+// Fetches an image element. Returns a promise that resolves to a fetched image
+// element. Data URIs are accepted.
+// @param url {URL}
+// @param timeout {Number}
+// @returns {Promise}
+export async function fetch_image_element(url, timeout) {
+  assert(
+      typeof timeout === 'undefined' ||
+      (Number.isInteger(timeout) && timeout >= 0));
+  const fetch_promise = fetch_image_element_promise(url);
+  const contestants =
+      timeout ? [fetch_promise, sleep(timeout)] : [fetch_promise];
+  const image = await Promise.race(contestants);
+  assert(image, 'Fetched timed out ' + url.href);
+  return image;
+}
+
+function fetch_image_element_promise(url) {
+  return new Promise((resolve, reject) => {
+    assert(url instanceof URL);
+    const allowedProtocols = ['data:', 'http:', 'https:'];
+    assert(allowedProtocols.includes(url.protocol));
+    assert(url_is_allowed(url));
+
+    // Create a proxy element within this script's document
+    const proxy = new Image();
+    // Set the proxy's source to trigger the fetch
+    proxy.src = url.href;
+
+    // If cached then resolve immediately
+    if (proxy.complete) {
+      return resolve(proxy);
+    }
+
+    proxy.onload = () => resolve(proxy);
+    proxy.onerror = (event) => {
+      // TODO: examine if there is a discernible error message to use rather
+      // than creating a custom one
+      console.dir(event);
+
+      reject(new Error('Unknown error fetching image ' + url.href));
+    };
+  });
+}

@@ -1,6 +1,6 @@
 import assert from '/src/common/assert.js';
-import {unwrapElement} from '/src/feed-poll/filters/content-filter-utils.js';
-import {leafFilterIsLeaf} from '/src/feed-poll/filters/leaf-filter.js';
+import {element_unwrap} from '/src/content-filter/content-filter-utils.js';
+import {leafFilterIsLeaf} from '/src/content-filter/leaf-filter.js';
 
 // Filters certain table elements from document content
 
@@ -13,7 +13,7 @@ export default function filterDocument(doc, scanLimit) {
   const elements = doc.body.querySelectorAll(
       'colgroup, hgroup, multicol, tbody, tfoot, thead');
   for (const element of elements) {
-    unwrapElement(element);
+    element_unwrap(element);
   }
 
   const tables = doc.body.querySelectorAll('table');

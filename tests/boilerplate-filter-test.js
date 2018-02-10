@@ -1,12 +1,12 @@
 import {fetch_html} from '/src/common/fetch-utils.js';
 import {html_parse} from '/src/common/html-utils.js';
-import filterBoilerplate from '/src/feed-poll/filters/boilerplate-filter.js';
-import canonicalizeURLs from '/src/feed-poll/filters/canonical-url-filter.js';
-import filterBlacklistedElements from '/src/feed-poll/filters/element-blacklist-filter.js';
-import filterFrames from '/src/feed-poll/filters/frame-filter.js';
-import filterIFrames from '/src/feed-poll/filters/iframe-filter.js';
-import setImageSizes from '/src/feed-poll/filters/image-size-filter.js';
-import filterScript from '/src/feed-poll/filters/script-filter.js';
+import filterBoilerplate from '/src/content-filter/boilerplate-filter.js';
+import canonicalizeURLs from '/src/content-filter/canonical-url-filter.js';
+import filterBlacklistedElements from '/src/content-filter/element-blacklist-filter.js';
+import filterFrames from '/src/content-filter/frame-filter.js';
+import filterIFrames from '/src/content-filter/iframe-filter.js';
+import setImageSizes from '/src/content-filter/image-size-filter.js';
+import filterScript from '/src/content-filter/script-filter.js';
 
 window.test = async function(urlString) {
   const response = await fetch_html(new URL(urlString));

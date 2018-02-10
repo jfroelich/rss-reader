@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {unwrapElement} from '/src/feed-poll/filters/content-filter-utils.js';
+import {element_unwrap} from '/src/content-filter/content-filter-utils.js';
 
 // TODO: move to basic filters
 
@@ -12,6 +12,6 @@ export default function filterDocument(doc) {
 
   const noscripts = doc.body.querySelectorAll('noscript');
   for (const noscript of noscripts) {
-    unwrapElement(noscript);
+    element_unwrap(noscript);
   }
 }

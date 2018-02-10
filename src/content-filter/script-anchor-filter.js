@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {unwrapElement} from '/src/feed-poll/filters/content-filter-utils.js';
+import {element_unwrap} from '/src/content-filter/content-filter-utils.js';
 
 // TODO: move to basic filters
 
@@ -13,7 +13,7 @@ export default function filterDocument(document) {
   const anchors = document.body.querySelectorAll('a[href]');
   for (const anchor of anchors) {
     if (hasScriptProtocol(anchor.getAttribute('href'))) {
-      unwrapElement(anchor);
+      element_unwrap(anchor);
     }
   }
 }

@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {removeImage} from '/src/feed-poll/filters/content-filter-utils.js';
+import {image_remove} from '/src/content-filter/content-filter-utils.js';
 
 // TODO: move to basic filters
 
@@ -14,7 +14,7 @@ export default function filterDocument(doc) {
   const images = doc.body.querySelectorAll('img');
   for (const image of images) {
     if (isSmallImage(image)) {
-      removeImage(image);
+      image_remove(image);
     }
   }
 }

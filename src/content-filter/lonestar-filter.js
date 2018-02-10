@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {isHiddenInlineElement, removeImage} from '/src/feed-poll/filters/content-filter-utils.js';
+import {element_is_hidden_inline, image_remove} from '/src/content-filter/content-filter-utils.js';
 
 const PATTERNS = [
   /\/\/.*2o7\.net\//i,
@@ -64,9 +64,9 @@ export default function lonestarFilter(doc, documentURLString) {
   // regarding what other filters are applied to the document.
   const images = doc.body.querySelectorAll('img');
   for (const image of images) {
-    if (isHiddenInlineElement(image) || isPixel(image) ||
+    if (element_is_hidden_inline(image) || isPixel(image) ||
         hasTelemetrySource(image, documentURL)) {
-      removeImage(image);
+      image_remove(image);
     }
   }
 }

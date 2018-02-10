@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {parseSrcsetWrapper} from '/src/feed-poll/filters/content-filter-utils.js';
+import {parse_srcset_wrapper} from '/src/content-filter/content-filter-utils.js';
 
 // Transforms responsive images in document content
 
@@ -36,7 +36,7 @@ function findBestSrcsetDescriptorForImage(image) {
     return;
   }
 
-  const descriptors = parseSrcsetWrapper(srcsetValue);
+  const descriptors = parse_srcset_wrapper(srcsetValue);
 
   // For the time being, the preference is whatever is first, no special
   // handling of descriptor.d, and only one dimension needed

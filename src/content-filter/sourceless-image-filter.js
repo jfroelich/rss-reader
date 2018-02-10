@@ -1,5 +1,5 @@
 import assert from '/src/common/assert.js';
-import {imageHasSource, removeImage} from '/src/feed-poll/filters/content-filter-utils.js';
+import {image_has_source, image_remove} from '/src/content-filter/content-filter-utils.js';
 
 // TODO: move to basic filters
 
@@ -15,9 +15,9 @@ export default function filter(doc) {
 
   const images = doc.body.querySelectorAll('img');
   for (const image of images) {
-    if (!imageHasSource(image)) {
+    if (!image_has_source(image)) {
       // console.debug('Removing image', image.outerHTML);
-      removeImage(image);
+      image_remove(image);
     }
   }
 }

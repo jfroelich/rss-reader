@@ -1,5 +1,5 @@
 import findLCA from '/experimental/lca.js';
-import {isHiddenInlineElement} from '/src/feed-poll/filters/content-filter-utils.js';
+import {element_is_hidden_inline} from '/src/content-filter/content-filter-utils.js';
 
 
 // TODO: maybe revert to returning an object that abstracts the urls and other
@@ -237,7 +237,7 @@ export function isHiddenElement(element) {
   }
 
   // Test the element itself with the hope of avoiding ancestors path analysis
-  if (isHiddenInlineElement(element)) {
+  if (element_is_hidden_inline(element)) {
     return true;
   }
 
@@ -261,7 +261,7 @@ export function isHiddenElement(element) {
   // the path is not empty because of the above check, so it is safe to start
   // from the last element in the path.
   for (let i = path.length - 1; i >= 0; i--) {
-    if (isHiddenInlineElement(path[i])) {
+    if (element_is_hidden_inline(path[i])) {
       return true;
     }
   }
