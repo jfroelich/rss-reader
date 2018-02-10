@@ -1,7 +1,9 @@
 // Declares parseSrcset in window scope as side effect
 import '/third-party/parse-srcset.js';
+import {url_is_allowed} from '/src/common/fetch-utils.js';
 
-// TODO: convert from camel case to c-style underscore identifier names
+// TODO: convert from camel case to c-style underscore identifier names. waiting
+// to complete this until after merging filter modules
 
 // Returns a promise that resolves to undefined after a given amount of time (in
 // milliseconds)
@@ -9,22 +11,24 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Throws a basic error when the value is falsy with the optional message
 export function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }
 
-// Returns true if the image element has at least one source, which could be:
-// * a src attribute,
-// * a srcset attribute,
-// * an associate picture element with one or more source elements that has a
-// src or srcset attribute.
-//
-// This does not check whether the urls are syntactically correct, but this does
-// check that an attribue value is not empty after trimming.
+export function string_condense_whitespace(string) {
+  return string.replace(/\s{2,}/g, ' ');
+}
+
+// Returns true if the image element has at least one source, which could be a
+// src attribute, a srcset attribute, or an associate picture element with one
+// or more source elements that has a src or srcset attribute. This does not
+// check whether the urls are syntactically correct, but this does check that an
+// attribue value is not empty after trimming.
 export function image_has_source(image) {
   assert(image instanceof Element);
 
-  const has = element_attribute_not_empty_after_trim;  // alias
+  const has = element_attribute_not_empty_after_trim;  // local alias
 
   // Check if the image element itself has a source
   if (has(image, 'src') || has(image, 'srcset')) {
@@ -486,4 +490,96 @@ function fetch_image_element_promise(url) {
       reject(new Error('Unknown error fetching image ' + url.href));
     };
   });
+}
+
+
+// Only minor validation for speed. Tolerates bad input. This isn't intended to
+// be the most accurate classification. Instead, it is intended to easily find
+// bad urls and rule them out as invalid, even though some slip through, and not
+// unintentionally rule out good urls.
+// @param value {Any} should be a string but this tolerates bad input
+// @returns {Boolean}
+export function url_string_is_valid(value) {
+  // The upper bound on len is an estimate, kind of a safeguard, hopefully never
+  // causes a problem
+  return typeof value === 'string' && value.length > 1 &&
+      value.length <= 3000 && !value.trim().includes(' ');
+}
+
+// Returns true if otherURL is 'external' to the documentURL. Inaccurate and
+// insecure.
+export function url_is_external(documentURL, otherURL) {
+  // Certain protocols are never external in the sense that a network request
+  // is not performed
+  const localProtocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
+  if (localProtocols.includes(otherURL.protocol)) {
+    return false;
+  }
+
+  const docDomain = url_get_upper_domain(documentURL);
+  const otherDomain = url_get_upper_domain(otherURL);
+  return docDomain !== otherDomain;
+}
+
+// Returns the 1st and 2nd level domains as a string. Basically hostname
+// without subdomains. This only does minimal symbolic validation of values,
+// and is also inaccurate and insecure.
+function url_get_upper_domain(url) {
+  assert(url instanceof URL);
+
+  // Treat IP as whole
+  if (hostname_is_ipv4(url.hostname) || hostname_is_ipv6(url.hostname)) {
+    return url.hostname;
+  }
+
+  const levels = url.hostname.split('.');
+
+  // Handle the simple case of 'localhost'
+  if (levels.length === 1) {
+    return url.hostname;
+  }
+
+  // Handle the simple case of 'example.com'
+  if (levels.length === 2) {
+    return url.hostname;
+  }
+
+  // This isn't meant to be super accurate or professional. Using the full list
+  // from https://publicsuffix.org/list/public_suffix_list.dat is overkill. As
+  // a compromise, just look at tld character count.
+  const level1 = levels[levels.length - 1];
+  if (level1.length === 2) {
+    // Infer it is ccTLD, return levels 3 + 2 + 1
+    const usedLevels = levels.slice(-3);
+    return usedLevels.join('.');
+  } else {
+    // Infer it is gTLD, returns levels 2 + 1
+    const usedLevels = levels.slice(-2);
+    return usedLevels.join('.');
+  }
+}
+
+function hostname_is_ipv4(string) {
+  if (typeof string !== 'string') {
+    return false;
+  }
+
+  const parts = string.split('.');
+  if (parts.length !== 4) {
+    return false;
+  }
+
+  for (const part of parts) {
+    const digit = parseInt(part, 10);
+    if (isNaN(digit) || digit < 0 || digit > 255) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// Expects a hostname string property value from a URL object.
+function hostname_is_ipv6(value) {
+  return typeof value === 'string' && value.includes(':');
 }

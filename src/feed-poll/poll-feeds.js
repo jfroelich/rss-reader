@@ -5,7 +5,7 @@ import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, T
 import {html_parse} from '/src/common/html-utils.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service.js';
 import {dedup_entries} from '/src/feed-poll/dedup-entries.js';
-import apply_all_document_filters from '/src/content-filter/apply-all.js';
+import apply_all_document_filters from '/src/content-filter/content-filter.js';
 import url_is_binary from '/src/feed-poll/is-binary-url.js';
 import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import notification_show from '/src/notifications.js';
