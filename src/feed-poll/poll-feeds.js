@@ -3,9 +3,9 @@ import {coerce_feed} from '/src/coerce-feed.js';
 import feed_parse from '/src/common/feed-parse.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/common/fetch-utils.js';
 import {html_parse} from '/src/common/html-utils.js';
+import apply_all_document_filters from '/src/content-filter/content-filter.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service.js';
 import {dedup_entries} from '/src/feed-poll/dedup-entries.js';
-import apply_all_document_filters from '/src/content-filter/content-filter.js';
 import url_is_binary from '/src/feed-poll/is-binary-url.js';
 import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import notification_show from '/src/notifications.js';
@@ -477,7 +477,7 @@ function entry_url_rewrite(entry) {
   // entry_append_url only appends the url if the url does not already exist in
   // the entry's url list. entry_append_url returns true if an append took
   // place.
-  return entry_append_url(entry_response_url);
+  return entry_append_url(entry, entry_response_url);
 }
 
 function entry_reader_db_exists(conn, entry) {
