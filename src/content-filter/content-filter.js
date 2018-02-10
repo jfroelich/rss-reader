@@ -1,33 +1,7 @@
-import boilerplateFilter from '/src/content-filter/boilerplate-filter.js';
-// clang-format off
-import {
-  assert,
-  attribute_is_boolean,
-  element_coerce_all,
-  element_is_hidden_inline,
-  element_unwrap,
-  fetch_image_element,
-  image_has_source,
-  image_remove,
-  parse_srcset_wrapper,
-  string_condense_whitespace,
-  url_is_external,
-  url_string_is_valid
-} from '/src/content-filter/content-filter-utils.js';
-// clang-format on
+import filter_boilerplate from '/src/content-filter/boilerplate-filter.js';
+import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, image_has_source, image_remove, parse_srcset_wrapper, string_condense_whitespace, url_is_external, url_string_is_valid} from '/src/content-filter/content-filter-utils.js';
 
-// TODO: merge most of the filters back into a single module, it is ok to have
-// a large file
 // TODO: switch to underscore naming (c-style)
-// TODO: rename this file, rename apply-all
-// TODO: move the next comment to github issue
-// TODO: create a new filter that filters out small font text.
-
-// TODO: this comment should be moved to github, labeled as bug
-// TODO: not sure where it happens, but whatever removes BRs or certain
-// whitespace, should not be removing BRs or line breaks that are descendants
-// of <pre>. Or, if it does, it should be leaving behind a single space. Right
-// now text nodes separated by BRs in a pre get merged.
 
 // Transforms a document's content by removing or changing nodes for various
 // reasons.
@@ -54,14 +28,14 @@ export default async function content_filter_apply_all(
   filter_blacklisted_elements(document);
   filter_script_anchors(document);
 
-  // This should occur prior to boilerplateFilter because it has express
+  // This should occur prior to filter_boilerplate because it has express
   // knowledge of content organization
   filter_by_host_template(document, document_url);
 
   // This should occur before filtering attributes because it makes decisions
   // based on attribute values.
   // This should occur after filtering hidden elements
-  boilerplateFilter(document);
+  filter_boilerplate(document);
 
   const condense_copy_attrs_flag = false;
   condense_tagnames(document, condense_copy_attrs_flag);
@@ -100,7 +74,6 @@ export default async function content_filter_apply_all(
   // This should occur after setting image sizes because it requires knowledge
   // of image size
   filter_small_images(document);
-
 
   filter_invalid_anchors(document);
   filter_formatting_anchors(document);
@@ -149,7 +122,7 @@ export default async function content_filter_apply_all(
 
   // TODO: move this up to before some of the other attribute filters, or
   // explain why it should occur later
-  filter_document_empty_attributes(document);
+  document_filter_empty_attributes(document);
 }
 
 // Removes certain attributes from elements in a document
@@ -614,7 +587,7 @@ function filter_blacklisted_elements(document) {
   }
 }
 
-function filter_document_empty_attributes(document) {
+function document_filter_empty_attributes(document) {
   assert(document instanceof Document);
 
   if (!document.body) {

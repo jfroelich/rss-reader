@@ -150,11 +150,11 @@ export function element_unwrap(element) {
   }
 
   // Cache stuff prior to removal
-  const parentElement = element.parentNode;
-  const previousSibling = element.previousSibling;
-  const nextSibling = element.nextSibling;
-  const firstChild = element.firstChild;
-  const lastChild = element.lastChild;
+  const parent_element = element.parentNode;
+  const psib = element.previousSibling;
+  const nsib = element.nextSibling;
+  const fchild = element.firstChild;
+  const lchild = element.lastChild;
   const TEXT = Node.TEXT_NODE;
   const frag = element.ownerDocument.createDocumentFragment();
 
@@ -162,24 +162,23 @@ export function element_unwrap(element) {
   element.remove();
 
   // Add leading padding
-  if (previousSibling && previousSibling.nodeType === TEXT && firstChild &&
-      firstChild.nodeType === TEXT) {
+  if (psib && psib.nodeType === TEXT && fchild && fchild.nodeType === TEXT) {
     frag.appendChild(element.ownerDocument.createTextNode(' '));
   }
 
   // Move children to fragment, maintaining order
-  for (let node = firstChild; node; node = element.firstChild) {
+  for (let node = fchild; node; node = element.firstChild) {
     frag.appendChild(node);
   }
 
   // Add trailing padding
-  if (lastChild && firstChild !== lastChild && nextSibling &&
-      nextSibling.nodeType === TEXT && lastChild.nodeType === TEXT) {
+  if (lchild && fchild !== lchild && nsib && nsib.nodeType === TEXT &&
+      lchild.nodeType === TEXT) {
     frag.appendChild(element.ownerDocument.createTextNode(' '));
   }
 
-  // If nextSibling is undefined then insertBefore appends
-  parentElement.insertBefore(frag, nextSibling);
+  // If nsib is undefined then insertBefore appends
+  parent_element.insertBefore(frag, nsib);
 }
 
 // Returns true if the element has a non-empty inline style.
@@ -196,7 +195,6 @@ function element_has_inline_style_properties(element) {
   // not parsed until that time, but after which is cached, so some parsing cost
   // has been deferred until the time of this function's call, so sometimes this
   // will be fast and sometimes slow
-
   return element.style && element.style.length;
 }
 
@@ -316,17 +314,17 @@ function element_coerce(element, new_name, copy_attributes_flag = true) {
 
   // TODO: rename var
   // Prior to detachment, cache the reference to the parent
-  const parentElement = element.parentNode;
+  const parent_element = element.parentNode;
 
   // Treat attempting to rename an orphaned element as a noop. Caller not
   // required to guarantee parent for reasons of convenience.
-  if (!parentElement) {
+  if (!parent_element) {
     return element;
   }
 
   // TODO: rename var
   // Use next sibling to record position prior to detach. May be undefined.
-  const nextSibling = element.nextSibling;
+  const nsib = element.nextSibling;
 
   // Detach the existing node prior to performing other dom operations so that
   // later operations take place on a detached node, so that the least amount
@@ -349,7 +347,7 @@ function element_coerce(element, new_name, copy_attributes_flag = true) {
 
   // Attach the new element in place of the old element. If nextSibling is
   // undefined then insertBefore simply appends. Return the new element.
-  return parentElement.insertBefore(new_element, nextSibling);
+  return parent_element.insertBefore(new_element, nsib);
 }
 
 // Move all child nodes of from_element to to_element, maintaining order. If
