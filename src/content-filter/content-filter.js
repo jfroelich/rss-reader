@@ -24,7 +24,7 @@ export default async function content_filter_apply_all(
   filter_comment_nodes(document);
   filter_base_elements(document);
 
-  filter_low_text_contast(document);
+  filter_low_text_contast(document, localStorage.MIN_CONTRAST_RATIO);
   filter_hidden_elements(document);
   filter_noscript_elements(document);
   filter_blacklisted_elements(document);
@@ -128,7 +128,7 @@ export default async function content_filter_apply_all(
 }
 
 // Remove text nodes with poor contrast against background
-function filter_low_text_contast(document) {
+function filter_low_text_contast(document, min_contrast_ratio) {
   if (!document.body) {
     return;
   }
@@ -136,7 +136,7 @@ function filter_low_text_contast(document) {
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   let node = it.nextNode();
   while (node) {
-    if (text_node_is_color_perceptible(node) === false) {
+    if (text_node_is_color_perceptible(node, min_contrast_ratio) === false) {
       console.debug('Removing poor contrast node', node.parentNode.outerHTML);
 
       node.remove();
