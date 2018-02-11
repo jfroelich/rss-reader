@@ -181,53 +181,28 @@ export function element_unwrap(element) {
   parent_element.insertBefore(frag, nsib);
 }
 
-// Returns true if the element has a non-empty inline style.
-function element_has_inline_style_properties(element) {
-  // It is an error to call this on a non-element
-  assert(element instanceof Element);
-
-  // NOTE: <math> does not have a style, not sure why
-  // NOTE: <svg> does have a style property
-  // NOTE: style only has a length > 0 if there are one or more specified
-  // css properties that were parsed.
-  // NOTE: element.style I believe is lazily computed, by which I mean the
-  // first time the getter is called, the value is parsed, and the value is
-  // not parsed until that time, but after which is cached, so some parsing cost
-  // has been deferred until the time of this function's call, so sometimes this
-  // will be fast and sometimes slow
-  return element.style && element.style.length;
-}
-
-// Returns true if an element is hidden according to its inline style. Makes
-// mostly conservative guesses because false positives carry a greater penalty
-// than false negatives. In an inert document, element style is lazily computed,
-// and getComputedStyle is even more lazily computed. getComputedStyle is
-// ridiculously slow. Combined with the fact that stylesheet information and
-// style elements are filtered out in other modules, these functions are
-// restricted to looking only at an element's own style attribute.
-//
-// In an inert document, offsetWidth and offsetHeight are unknown and cannot
-// be used.
+// Returns true if an element is hidden according to its inline style
 export function element_is_hidden_inline(element) {
+  // It is an error to call this on something other than an element
   assert(element instanceof Element);
-
-  // Without an inline style, assume visible
-  if (!element_has_inline_style_properties(element)) {
-    return false;
-  }
-
+  // offset width and height are unreliable in an inert document so this must
+  // rely on style. style may be undefined for elements such as <math>, in which
+  // case elements are presumed visible. style.length is 0 when no inline
+  // properties set.
   const style = element.style;
-  return style.display === 'none' || style.visibility === 'hidden' ||
-      element_is_near_transparent(style) || element_is_offscreen(element);
+  if (style && style.length) {
+    return style.display === 'none' || style.visibility === 'hidden' ||
+        element_is_near_transparent(style) || element_is_offscreen(style);
+  }
 }
 
 // Returns true if the element's opacity is too close to 0
 // Throws error is style is undefined
 // TODO: support other formats of the opacity property more accurately
-// TODO: how does negative opacity work?
+// TODO: how does negative opacity work, or other invalid opacities?
 function element_is_near_transparent(style) {
-  const visibility_threshold = 0.3;
   if (style.opacity) {
+    const visibility_threshold = 0.3;
     const opacity_f = parseFloat(style.opacity);
     return !isNaN(opacity_f) && opacity_f <= visibility_threshold;
   }
@@ -235,12 +210,10 @@ function element_is_near_transparent(style) {
 
 // Returns true if the element is positioned off screen. Heuristic guess.
 // Probably several false negatives, and a few false positives. The cost of
-// guessing wrong is not too high. This is pretty inaccurate. Mostly just a
-// prototype of the idea of the test to use.
-// TODO: why element instead of style as param??
-function element_is_offscreen(element) {
-  if (element.style.position === 'absolute') {
-    const left = parseInt(element.style.left, 10);
+// guessing wrong is not too high. This is inaccurate.
+function element_is_offscreen(style) {
+  if (style.position === 'absolute') {
+    const left = parseInt(style.left, 10);
     if (!isNaN(left) && left < 0) {
       return true;
     }
