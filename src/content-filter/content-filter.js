@@ -177,21 +177,24 @@ function apply_adoption_agency_filter(document) {
   }
 
   // Fix hr in lists. Simple case of invalid parent
-  const nestedHRs = document.body.querySelectorAll('ul > hr, ol > hr, dl > hr');
-  for (const hr of nestedHRs) {
+  const nested_hr_elements =
+      document.body.querySelectorAll('ul > hr, ol > hr, dl > hr');
+  for (const hr of nested_hr_elements) {
     hr.remove();
   }
 
   // Disallow nested anchors. If any anchor has an ancestor anchor, then unwrap
   // the descendant anchor and keep the ancestor.
-  const descendantAnchorsOfAnchors = document.body.querySelectorAll('a a');
-  for (const descendantAnchor of descendantAnchorsOfAnchors) {
-    element_unwrap(descendantAnchor);
+  const descendant_anchors_of_anchors = document.body.querySelectorAll('a a');
+  for (const descendant_anchor of descendant_anchors_of_anchors) {
+    element_unwrap(descendant_anchor);
   }
 
   // Remove figcaption elements not tied to a figure
   const captions = document.body.querySelectorAll('figcaption');
   for (const caption of captions) {
+    // We know the current element is not a figure, so speed up closest by
+    // starting from parent node, because closest checks self
     if (!caption.parentNode.closest('figure')) {
       caption.remove();
     }
@@ -206,12 +209,12 @@ function apply_adoption_agency_filter(document) {
   }
 
   // Relocate some basic occurrences of invalid ancestor
-  const blockSelector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
-  const inlineSelector = 'a, span, b, strong, i';
+  const block_selector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
+  const inline_selector = 'a, span, b, strong, i';
 
-  const blocks = document.body.querySelectorAll(blockSelector);
+  const blocks = document.body.querySelectorAll(block_selector);
   for (const block of blocks) {
-    const ancestor = block.closest(inlineSelector);
+    const ancestor = block.closest(inline_selector);
     if (ancestor && ancestor.parentNode) {
       ancestor.parentNode.insertBefore(block, ancestor);
       for (let node = block.firstChild; node; node = block.firstChild) {
@@ -260,20 +263,19 @@ function filter_container_elements(document) {
   }
 }
 
-
 // Unwraps emphasis elements that are longer than the given max length
 // @param maxTextLength {Number} optional, integer >= 0,
 function filter_emphasis_elements(document, maxTextLength) {
   assert(document instanceof Document);
-  const isLengthUndefined = typeof maxTextLength === 'undefined';
+  const is_length_undefined = typeof maxTextLength === 'undefined';
   assert(
-      isLengthUndefined ||
+      is_length_undefined ||
       (Number.isInteger(maxTextLength) && maxTextLength >= 0));
 
   // If we don't have a length, which is optional, then there is no benefit to
   // filtering. We cannot use a default like 0 as that would effectively remove
   // all emphasis.
-  if (isLengthUndefined) {
+  if (is_length_undefined) {
     return;
   }
 

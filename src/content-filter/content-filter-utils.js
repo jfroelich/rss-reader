@@ -377,17 +377,17 @@ export function element_move_child_nodes(from_element, to_element) {
 
 // See https://html.spec.whatwg.org/multipage/syntax.html#void-elements
 // This is a set, but given the small size, it is better to use a simple array.
-export const html_void_element_names = [
+const void_elements = [
   'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta',
   'param', 'source', 'track', 'wbr'
 ];
 
+// Returns whether an element is a void element. This assumes
+// element.ownerDocument is implicitly flagged as html so that localName yields
+// the normalized name which is in lowercase. For now I'd rather make the
+// assumption and let errors happen than incur the cost of calling toLowerCase
 export function element_is_void(element) {
-  // This assumes element.ownerDocument is implicitly flagged as html so that
-  // localName yields the normalized name which is in lowercase. For now I'd
-  // rather make the assumption and let errors happen than incur the cost of
-  // calling toLowerCase
-  return html_void_element_names.includes(element.localName);
+  return void_elements.includes(element.localName);
 }
 
 // Returns true if the given name is a valid name for an element. This only
@@ -439,12 +439,6 @@ export function attribute_is_boolean(element, attribute_name) {
   return boolean_attribute_names.includes(attribute_name);
 }
 
-
-// TODO: move this comment to github issues
-// TODO: use the fetch API to avoid cookies. First determine if this actually
-// transmits cookies. I think this should be simple to detect, just monitor the
-// network tab in devtools
-
 // Fetches an image element. Returns a promise that resolves to a fetched image
 // element. Data URIs are accepted.
 // @param url {URL}
@@ -465,8 +459,8 @@ export async function fetch_image_element(url, timeout) {
 function fetch_image_element_promise(url) {
   return new Promise((resolve, reject) => {
     assert(url instanceof URL);
-    const allowedProtocols = ['data:', 'http:', 'https:'];
-    assert(allowedProtocols.includes(url.protocol));
+    const allowed_protocols = ['data:', 'http:', 'https:'];
+    assert(allowed_protocols.includes(url.protocol));
     assert(url_is_allowed(url));
 
     // Create a proxy element within this script's document
@@ -484,7 +478,6 @@ function fetch_image_element_promise(url) {
       // TODO: examine if there is a discernible error message to use rather
       // than creating a custom one
       console.dir(event);
-
       reject(new Error('Unknown error fetching image ' + url.href));
     };
   });
@@ -504,19 +497,19 @@ export function url_string_is_valid(value) {
       value.length <= 3000 && !value.trim().includes(' ');
 }
 
-// Returns true if otherURL is 'external' to the documentURL. Inaccurate and
+// Returns true if other_url is 'external' to the document_url. Inaccurate and
 // insecure.
-export function url_is_external(documentURL, otherURL) {
+export function url_is_external(document_url, other_url) {
   // Certain protocols are never external in the sense that a network request
   // is not performed
-  const localProtocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
-  if (localProtocols.includes(otherURL.protocol)) {
+  const local_protocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
+  if (local_protocols.includes(other_url.protocol)) {
     return false;
   }
 
-  const docDomain = url_get_upper_domain(documentURL);
-  const otherDomain = url_get_upper_domain(otherURL);
-  return docDomain !== otherDomain;
+  const doc_domain = url_get_upper_domain(document_url);
+  const other_domain = url_get_upper_domain(other_url);
+  return doc_domain !== other_domain;
 }
 
 // Returns the 1st and 2nd level domains as a string. Basically hostname
@@ -544,9 +537,11 @@ function url_get_upper_domain(url) {
 
   // This isn't meant to be super accurate or professional. Using the full list
   // from https://publicsuffix.org/list/public_suffix_list.dat is overkill. As
-  // a compromise, just look at tld character count.
-  const level1 = levels[levels.length - 1];
-  if (level1.length === 2) {
+  // a compromise, just look at character count of top level domain. If
+  // character count is 2, assume it is a geotld, and return 3 levels. Otherwise
+  // return 2.
+  const top_level = levels[levels.length - 1];
+  if (top_level.length === 2) {
     // Infer it is ccTLD, return levels 3 + 2 + 1
     const usedLevels = levels.slice(-3);
     return usedLevels.join('.');

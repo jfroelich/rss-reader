@@ -1,5 +1,4 @@
-import assert from '/src/common/assert.js';
-
+// Replace entities with utf8 characters to reduce byte size
 export function entityDecodeFilter(doc) {
   assert(doc instanceof Document);
 
@@ -8,4 +7,8 @@ export function entityDecodeFilter(doc) {
   }
 
   throw new Error('Not implemented');
+}
+
+function assert(value) {
+  if (!value) throw new Error('Assertion error');
 }

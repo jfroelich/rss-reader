@@ -1,5 +1,3 @@
-import assert from '/src/common/assert.js';
-
 // Tokenizes an arbitrary string of html. Makes some effort to comply with
 // standards but does not fully comply.
 // Entities are not distinguished from text and are not validated.
@@ -841,4 +839,8 @@ export function tokenizeHTML(htmlString, inputState = 0) {
   }
 
   return tokens;
+}
+
+function assert(value) {
+  if (!value) throw new Error('Assertion error');
 }
