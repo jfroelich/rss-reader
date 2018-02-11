@@ -24,14 +24,19 @@ export default async function content_filter_apply_all(
   filter_comment_nodes(document);
   filter_base_elements(document);
 
-  filter_low_text_contast(document, localStorage.MIN_CONTRAST_RATIO);
   filter_hidden_elements(document);
+
+  // Do this after filtering hidden elements so that it does less work
+  // This should be done prior to removing style information (either style
+  // elements or inline style attributes)
+  filter_low_text_contrast(document, localStorage.MIN_CONTRAST_RATIO);
+
   filter_noscript_elements(document);
   filter_blacklisted_elements(document);
   filter_script_anchors(document);
 
-  // This should occur prior to filter_boilerplate because it has express
-  // knowledge of content organization
+  // This should occur prior to removing boilerplate content because it has
+  // express knowledge of content organization
   filter_by_host_template(document, document_url);
 
   // This should occur before filtering attributes because it makes decisions
@@ -127,8 +132,9 @@ export default async function content_filter_apply_all(
   document_filter_empty_attributes(document);
 }
 
-// Remove text nodes with poor contrast against background
-function filter_low_text_contast(document, min_contrast_ratio) {
+// Remove text nodes with a text-color-to-background-color contrast ratio that
+// is less than or equal to the given minimum contrast ratio.
+function filter_low_text_contrast(document, min_contrast_ratio) {
   if (!document.body) {
     return;
   }
