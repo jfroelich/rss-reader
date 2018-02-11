@@ -1,12 +1,5 @@
 import {mime_type_from_content_type} from '/src/mime-utils.js';
 
-// TODO: move this comment to a github issue
-// TODO: rather than throw timeout error or other custom errors, consider
-// creating an artificial response, setting the appropriate status code, and not
-// asserting response.ok in tfetch. Instead, the caller can simply use
-// `if(response.ok)` to determine what to do. This would remove the need to use
-// try/catch everywhere, which would reduce a ton of boilerplate.
-
 // Fetches the response of the given url. This basically does a tfetch but
 // with an attached post-condition on mime-type. I've chosen not to parse
 // the result immediately here, to allow the caller to interact with the
@@ -22,7 +15,7 @@ export async function fetch_html(url, timeout) {
   return response;
 }
 
-const FEED_MIME_TYPES = [
+const feed_mime_types = [
   'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
   'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
 ];
@@ -35,7 +28,7 @@ const FEED_MIME_TYPES = [
 // @returns {Promise} a promise that resolves to a response
 export async function fetch_feed(url, timeout) {
   const response = await tfetch(url, {timeout: timeout});
-  assert(FEED_MIME_TYPES.includes(response_get_mime_type(response)));
+  assert(feed_mime_types.includes(response_get_mime_type(response)));
   return response;
 }
 

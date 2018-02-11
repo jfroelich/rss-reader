@@ -1,5 +1,5 @@
 import {fetch_html, tfetch, url_did_change} from '/src/fetch-utils.js';
-import {open as utilsOpen} from '/src/indexeddb-utils.js';
+import {open as indexeddb_utils_open} from '/src/indexeddb-utils.js';
 import {mime_type_from_content_type} from '/src/mime-utils.js';
 
 // The favicon service provides the ability to lookup the url of a favicon for a
@@ -377,7 +377,7 @@ export function open(name, version, timeout) {
     timeout = OPEN_TIMEOUT;
   }
 
-  return utilsOpen(name, version, onUpgradeNeeded, timeout);
+  return indexeddb_utils_open(name, version, onUpgradeNeeded, timeout);
 }
 
 function onUpgradeNeeded(event) {
