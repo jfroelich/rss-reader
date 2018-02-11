@@ -190,10 +190,9 @@ export function element_is_hidden_inline(element) {
   // case elements are presumed visible. style.length is 0 when no inline
   // properties set.
   const style = element.style;
-  if (style && style.length) {
-    return style.display === 'none' || style.visibility === 'hidden' ||
-        element_is_near_transparent(style) || element_is_offscreen(style);
-  }
+  return style && style.length &&
+      (style.display === 'none' || style.visibility === 'hidden' ||
+       element_is_near_transparent(style) || element_is_offscreen(style));
 }
 
 // Returns true if the element's opacity is too close to 0
