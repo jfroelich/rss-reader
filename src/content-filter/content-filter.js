@@ -1,5 +1,6 @@
 import filter_boilerplate from '/src/content-filter/boilerplate-filter.js';
 import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, image_has_source, image_remove, parse_srcset_wrapper, string_condense_whitespace, url_is_external, url_string_is_valid} from '/src/content-filter/content-filter-utils.js';
+import {text_node_is_color_perceptible} from '/src/content-filter/text-contrast.js';
 
 // TODO: switch to underscore naming (c-style)
 
@@ -23,6 +24,7 @@ export default async function content_filter_apply_all(
   filter_comment_nodes(document);
   filter_base_elements(document);
 
+  filter_low_text_contast(document);
   filter_hidden_elements(document);
   filter_noscript_elements(document);
   filter_blacklisted_elements(document);
@@ -123,6 +125,24 @@ export default async function content_filter_apply_all(
   // TODO: move this up to before some of the other attribute filters, or
   // explain why it should occur later
   document_filter_empty_attributes(document);
+}
+
+// Remove text nodes with poor contrast against background
+function filter_low_text_contast(document) {
+  if (!document.body) {
+    return;
+  }
+
+  const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
+  let node = it.nextNode();
+  while (node) {
+    if (text_node_is_color_perceptible(node) === false) {
+      console.debug('Removing poor contrast node', node.parentNode.outerHTML);
+
+      node.remove();
+    }
+    node = it.nextNode();
+  }
 }
 
 // Removes certain attributes from elements in a document

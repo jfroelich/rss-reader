@@ -43,7 +43,7 @@ export function text_node_is_color_perceptible(node, min_contrast_ratio) {
   }
 }
 
-function element_derive_text_color(element) {
+export function element_derive_text_color(element) {
   // Unlike background color, it is important to use computed style
   const style = getComputedStyle(element);
   if (style) {
@@ -62,7 +62,7 @@ function element_derive_text_color(element) {
 // examines explicitly set inline style. Note that not all elements have a style
 // (e.g. math).  Note that browser returns default value of either
 // 'transparent', or rgba with alpha channel 0 (indicating transparent).
-function element_derive_background_color(element) {
+export function element_derive_background_color(element) {
   // Walk upwards, starting from and including the input element, and find the
   // first element that has a non-transparent background.
   let node = element;
