@@ -1,6 +1,6 @@
 // Declares parseSrcset in window scope as side effect
 import '/third-party/parse-srcset.js';
-import {url_is_allowed} from '/src/common/fetch-utils.js';
+import {url_is_allowed} from '/src/fetch-utils.js';
 
 // TODO: convert from camel case to c-style underscore identifier names. waiting
 // to complete this until after merging filter modules

@@ -1,4 +1,4 @@
-import {html_parse} from '/src/common/html-utils.js';
+import {html_parse} from '/src/html-utils.js';
 import filter, {element_coerce} from '/src/content-filter/condense-tagnames-filter.js';
 
 let input = '<html><head></head><body><a></a></body></html>';

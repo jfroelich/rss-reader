@@ -1,5 +1,5 @@
-import {html_replace_tags, html_truncate} from '/src/common/html-utils.js';
-import {open as indexeddb_utils_open} from '/src/common/indexeddb-utils.js';
+import {html_replace_tags, html_truncate} from '/src/html-utils.js';
+import {open as indexeddb_utils_open} from '/src/indexeddb-utils.js';
 
 // TODO: consistently use rdb prefix here, and throughout all modules. Change
 // other module imports to no longer renaming imported functions. The rdb

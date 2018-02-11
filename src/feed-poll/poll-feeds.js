@@ -1,7 +1,7 @@
 import {coerce_entry} from '/src/coerce-entry.js';
 import {coerce_feed} from '/src/coerce-feed.js';
-import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/common/fetch-utils.js';
-import {html_parse} from '/src/common/html-utils.js';
+import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch-utils.js';
+import {html_parse} from '/src/html-utils.js';
 import apply_all_document_filters from '/src/content-filter/content-filter.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service.js';
 import feed_parse from '/src/feed-parse.js';

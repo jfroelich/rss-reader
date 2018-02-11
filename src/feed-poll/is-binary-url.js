@@ -1,4 +1,4 @@
-import {is_mime_type, MIME_TYPE_MAX_LENGTH, MIME_TYPE_MIN_LENGTH} from '/src/common/mime-utils.js';
+import {is_mime_type, MIME_TYPE_MAX_LENGTH, MIME_TYPE_MIN_LENGTH} from '/src/mime-utils.js';
 
 // TODO: while this API is straightforward, I feel like at the same type it is
 // presented in an unconventional manner. I would prefer this API orient itself

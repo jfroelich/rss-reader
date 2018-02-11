@@ -1,4 +1,4 @@
-import string_format from '/src/common/format-string.js';
+import string_format from '/src/format-string.js';
 
 // Enable direct calling in console
 window.string_format = string_format;

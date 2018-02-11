@@ -1,4 +1,4 @@
-import {html_decode_entities} from '/src/common/html-utils.js';
+import {html_decode_entities} from '/src/html-utils.js';
 
 // TODO: review proper base url determination for entry link resolution. There
 // is a chance I am ignoring something like a base-url element that trumps feed

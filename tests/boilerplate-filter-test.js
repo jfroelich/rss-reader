@@ -1,5 +1,5 @@
-import {fetch_html} from '/src/common/fetch-utils.js';
-import {html_parse} from '/src/common/html-utils.js';
+import {fetch_html} from '/src/fetch-utils.js';
+import {html_parse} from '/src/html-utils.js';
 import filterBoilerplate from '/src/content-filter/boilerplate-filter.js';
 import canonicalizeURLs from '/src/content-filter/canonical-url-filter.js';
 import filterBlacklistedElements from '/src/content-filter/element-blacklist-filter.js';

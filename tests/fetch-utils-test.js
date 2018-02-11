@@ -1,4 +1,4 @@
-import * as FetchUtils from '/src/common/fetch-utils.js';
+import * as FetchUtils from '/src/fetch-utils.js';
 
 // Expose to console
 window.FetchUtils = FetchUtils;

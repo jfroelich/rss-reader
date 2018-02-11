@@ -1,4 +1,4 @@
-import {fetch_feed} from '/src/common/fetch-utils.js';
+import {fetch_feed} from '/src/fetch-utils.js';
 import feed_parse from '/src/feed-parse.js';
 
 // TODO: write specific tests that test various assertions, e.g. preconditions,

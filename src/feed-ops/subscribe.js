@@ -1,5 +1,5 @@
 import {coerce_feed} from '/src/coerce-feed.js';
-import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_change} from '/src/common/fetch-utils.js';
+import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_change} from '/src/fetch-utils.js';
 import {lookup as favicon_service_lookup} from '/src/favicon-service.js';
 import feed_parse from '/src/feed-parse.js';
 import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/feed-poll/poll-feeds.js';

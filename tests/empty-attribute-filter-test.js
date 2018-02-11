@@ -1,4 +1,4 @@
-import {html_parse} from '/src/common/html-utils.js';
+import {html_parse} from '/src/html-utils.js';
 import filterEmptyAttributes from '/src/content-filter/empty-attribute-filter.js';
 
 // Simple empty non-boolean attribute in body

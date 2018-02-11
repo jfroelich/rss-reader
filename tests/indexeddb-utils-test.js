@@ -1,4 +1,4 @@
-import {open} from '/src/common/indexeddb-utils.js';
+import {open} from '/src/indexeddb-utils.js';
 
 async function test() {
   const name = 'indexeddb-utils-test';

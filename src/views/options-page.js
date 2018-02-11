@@ -1,4 +1,4 @@
-import {html_truncate} from '/src/common/html-utils.js';
+import {html_truncate} from '/src/html-utils.js';
 // TODO: it would be better if subscribe could connect on demand so that this
 // does not need to be explicit
 import {open as favicon_service_open} from '/src/favicon-service.js';

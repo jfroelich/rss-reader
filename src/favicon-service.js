@@ -1,6 +1,6 @@
-import {fetch_html, tfetch, url_did_change} from '/src/common/fetch-utils.js';
-import {open as utilsOpen} from '/src/common/indexeddb-utils.js';
-import {mime_type_from_content_type} from '/src/common/mime-utils.js';
+import {fetch_html, tfetch, url_did_change} from '/src/fetch-utils.js';
+import {open as utilsOpen} from '/src/indexeddb-utils.js';
+import {mime_type_from_content_type} from '/src/mime-utils.js';
 
 // The favicon service provides the ability to lookup the url of a favicon for a
 // given web page. Lookups can optionally be cached in a database so that future

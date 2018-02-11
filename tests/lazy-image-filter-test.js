@@ -1,5 +1,5 @@
-import * as FetchUtils from '/src/common/fetch-utils.js';
-import {html_parse} from '/src/common/html-utils.js';
+import * as FetchUtils from '/src/fetch-utils.js';
+import {html_parse} from '/src/html-utils.js';
 import filterLazyImages from '/src/content-filter/lazy-image-filter.js';
 import filterSourcelessImages from '/src/content-filter/sourceless-image-filter.js';
 

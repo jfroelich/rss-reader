@@ -1,4 +1,4 @@
-import {mime_type_from_content_type} from '/src/common/mime-utils.js';
+import {mime_type_from_content_type} from '/src/mime-utils.js';
 
 // TODO: move this comment to a github issue
 // TODO: rather than throw timeout error or other custom errors, consider
