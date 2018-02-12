@@ -1,8 +1,6 @@
-import filter_boilerplate from '/src/content-filter/boilerplate-filter.js';
+import filter_boilerplate from '/src/content-filter/boilerplate.js';
 import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, image_has_source, image_remove, parse_srcset_wrapper, string_condense_whitespace, url_is_external, url_string_is_valid} from '/src/content-filter/content-filter-utils.js';
 import {text_node_is_color_perceptible} from '/src/content-filter/text-contrast.js';
-
-// TODO: switch to underscore naming (c-style)
 
 // Transforms a document's content by removing or changing nodes for various
 // reasons.
@@ -180,10 +178,10 @@ function element_filter_non_whitelisted_attributes(element, whitelist) {
   // 2) Simpler use of for..of
   // 3) For the moment, appears to be faster than iterating element.attributes
 
-  const attribute_names = element.getAttributeNames();
-  if (attribute_names.length) {
+  const attr_names = element.getAttributeNames();
+  if (attr_names.length) {
     const whitelisted_names = whitelist[element.localName] || [];
-    for (const attribute_name of attribute_names) {
+    for (const attribute_name of attr_names) {
       if (!whitelisted_names.includes(attribute_name)) {
         element.removeAttribute(attribute_name);
       }
@@ -290,13 +288,13 @@ function filter_container_elements(document) {
 }
 
 // Unwraps emphasis elements that are longer than the given max length
-// @param maxTextLength {Number} optional, integer >= 0,
-function filter_emphasis_elements(document, maxTextLength) {
+// @param text_length_max {Number} optional, integer >= 0,
+function filter_emphasis_elements(document, text_length_max) {
   assert(document instanceof Document);
-  const is_length_undefined = typeof maxTextLength === 'undefined';
+  const is_length_undefined = typeof text_length_max === 'undefined';
   assert(
       is_length_undefined ||
-      (Number.isInteger(maxTextLength) && maxTextLength >= 0));
+      (Number.isInteger(text_length_max) && text_length_max >= 0));
 
   // If we don't have a length, which is optional, then there is no benefit to
   // filtering. We cannot use a default like 0 as that would effectively remove
@@ -312,7 +310,7 @@ function filter_emphasis_elements(document, maxTextLength) {
   const elements = document.body.querySelectorAll('b, big, em, i, strong');
   for (const element of elements) {
     // TODO: use non-whitespace character count instead of full character count?
-    if (element.textContent.length > maxTextLength) {
+    if (element.textContent.length > text_length_max) {
       element_unwrap(element);
     }
   }
@@ -340,14 +338,13 @@ function document_ensure_body_element(document) {
   if (!document.body) {
     const message = 'This document has no content (missing body).';
     const error_node = document.createTextNode(message);
-    const bodyElement = document.createElement('body');
-    bodyElement.appendChild(error_node);
-    document.documentElement.appendChild(bodyElement);
+    const body_element = document.createElement('body');
+    body_element.appendChild(error_node);
+    document.documentElement.appendChild(body_element);
   }
 }
 
-// TODO: use less generic name
-const ELEMENT_ATTRIBUTE_MAP = {
+const element_url_attribute_map = {
   a: 'href',
   applet: 'codebase',
   area: 'href',
@@ -375,14 +372,17 @@ const ELEMENT_ATTRIBUTE_MAP = {
   video: 'src'
 };
 
-// TODO: use less generic names
-// Initialize ELEMENTS_WITH_SRC_SELECTOR once on module load in module scope
-const tags = Object.keys(ELEMENT_ATTRIBUTE_MAP);
-const parts = [];
-for (const tag of tags) {
-  parts.push(`${tag}[${ELEMENT_ATTRIBUTE_MAP[tag]}]`);
+// Initialize the selector once on module load
+const element_url_attribute_selector = build_element_url_attribute_selector();
+
+function build_element_url_attribute_selector() {
+  const keys = Object.keys(element_url_attribute_map);
+  const parts = [];
+  for (const part of keys) {
+    parts.push(`${part}[${element_url_attribute_map[part]}]`);
+  }
+  return parts.join(',');
 }
-const ELEMENTS_WITH_SRC_SELECTOR = parts.join(',');
 
 // @param document {Document}
 // @param base_url {URL}
@@ -390,101 +390,38 @@ function resolve_document_urls(document, base_url) {
   assert(document instanceof Document);
   assert(base_url instanceof URL);
 
-  const srcElements = document.querySelectorAll(ELEMENTS_WITH_SRC_SELECTOR);
-  for (const srcElement of srcElements) {
-    resolveElementAttribute(srcElement, base_url);
+  const src_elements =
+      document.querySelectorAll(element_url_attribute_selector);
+  for (const src_element of src_elements) {
+    element_resolve_attribute(src_element, base_url);
   }
 
   if (document.body) {
-    const srcsetElements =
+    const elements_with_srcset =
         document.body.querySelectorAll('img[srcset], source[srcset]');
-    for (const srcsetElement of srcsetElements) {
-      srcset_resolve(srcsetElement, base_url);
+    for (const element_with_srcset of elements_with_srcset) {
+      srcset_resolve(element_with_srcset, base_url);
     }
   }
 }
 
-function resolveElementAttribute(element, base_url) {
-  const attribute_name = ELEMENT_ATTRIBUTE_MAP[element.localName];
+function element_resolve_attribute(element, base_url) {
+  const attribute_name = element_url_attribute_map[element.localName];
   if (!attribute_name) {
     return;
   }
 
-  const originalURLString = element.getAttribute(attribute_name);
-  if (!originalURLString) {
+  const original_url_string = element.getAttribute(attribute_name);
+  if (!original_url_string) {
     return;
   }
 
-  const resolved_url = url_string_resolve(originalURLString, base_url);
+  const resolved_url = url_string_resolve(original_url_string, base_url);
   if (!resolved_url) {
     return;
   }
 
-  // TODO: if this is simply appending the slash, maybe it shouldn't.
-  // Technically the slash is implicit, and just a waste of space. Space saving
-  // is also a concern. Maybe it should be a concern of a separate filter that
-  // removes unimportant characters from urls, or maybe it should just also be
-  // a concern of this module? Maybe I do something extra here like just check
-  // if path is empty or just a '/', and if so, use .href.substring(-1) or
-  // something like that? Maybe that should be encapsulated in some helper
-  // function call too, like getCondensedURLString?
-
-  // Also, I think URL serialization leaves in '?' even when parameter count is
-  // 0, so maybe also consider that. Also, if I do it here, I should do it for
-  // srcset too? Or wait, maybe this is dumb for certain elements that point to
-  // actual resources. For example image urls pretty much all have paths. So
-  // this is really only for things like anchors? Maybe it really is just too
-  // much of a separate concern, but I suppose the aggregate concern is
-  // performance, because I suspect using a separate filter would require
-  // re-parsing the url. So I really should do it here. For that matter, I
-  // should be doing it almost anywhere I set an attribute that contains a url,
-  // for those attributes not pointing to files necessarily. Also, if I do the
-  // substring thing, I still want to check if length is not equal to avoid the
-  // cost of setAttribute. So I have to do two length checks. So maybe what I
-  // should do is rewrite this condition to check if lengths equal then return
-  // early, otherwise do stuff. The return
-  // early style would be consistent with earlier sections of this function.
-  // Also maybe store resolved_url.href in a variable like canonicalURLString.
-  // It mirrors the variable originalURLString better, and avoids the possible
-  // case that Chrome doesn't do lazy-setter-call-memoization?
-
-  // Another note. If I am doing condense, then I may still want to condense
-  // the original url EVEN IF it did not change due to canonicalization. So it
-  // should not only be done for length change. So the exit early thing would
-  // be less convenient, or rather, naive.
-
-  // TODO: separate concern, https://github.com/omidh28/clarifyjs#### should be
-  // changed to
-  // https://github.com/omidh28/clarifyjs# or just
-  // https://github.com/omidh28/clarifyjs
-
-  // TODO: separate idea to explore, what if i have a url-condense-filter that
-  // is also site aware and does things like (if stackoverflow keep only the
-  // question id part of the url and strip the rest)? At this point I am moving
-  // way beyond the concerns of canonicalization and in this sense, it really
-  // seems more appropriate to have any condense concerns be apart of this other
-  // filter and not here since I am going to just deal with the perf cost of
-  // re-parsing. Or, maybe performance is the definining concern, and really,
-  // I should be using a more general filter concept like "url-filter.js" that
-  // does both canonicalization and condense filters at once, because
-  // performance trumps over concern-based organization of functionality?
-
-  if (resolved_url.href.length !== originalURLString.length) {
-    // TEMP: monitoring urls for above todo. This is going to spam but I think
-    // I will probably focus on the todo rather soon.
-    // console.debug('canonicalization change', originalURLString,
-    //   resolved_url.href);
-
-    // NOTE: gathering some interesting messages
-    // - if url is just '#' then it becomes just full link with # appended. I
-    // probably should not be trying to canonical mailto at all.
-    // - if url is mailto, it basically just encodes the url (e.g. spaces
-    // escaped). Probably should just strip the #? Beware the bug i had last
-    // time with google groups urls, a webserver can interpret # as ?
-    // - https://play.freeciv.org https://play.freeciv.org/ . So yep, this is
-    // exactly the concern, that i talked above above, all that
-    // canonicalization accomplished was add a trailing slash.
-
+  if (resolved_url.href.length !== original_url_string.length) {
     element.setAttribute(attribute_name, resolved_url.href);
   }
 }
@@ -510,41 +447,17 @@ function srcset_resolve(element, base_url) {
   }
 }
 
-// TODO: maybe inline
+// Returns a resolved URL or undefined if there is an error
 function url_string_resolve(url_string, base_url) {
-  assert(base_url instanceof URL);
-
-  // Allow for bad input for caller convenience
-  // If the url is not a string (e.g. undefined), return undefined
-  if (typeof url_string !== 'string') {
-    return;
+  // Guard against passing empty string to URL constructor as that simply
+  // clones the base url
+  if (typeof url_string === 'string' && url_string && url_string.trim()) {
+    try {
+      return new URL(url_string, base_url);
+    } catch (error) {
+    }
   }
-
-  // Check if url_string is just whitespace. If just whitespace, then return
-  // undefined. This departs from the behavior of the URL constructor, which
-  // tolerates an empty or whitespace string as input. The url constructor in
-  // that case will create a new URL from the base url exclusively.
-  // That is misleading for this purpose.
-
-  // If the length of the string is 0 then return undefined
-  if (!url_string) {
-    return;
-  }
-
-  // If the trimmed length of the string is 0 then return undefined
-  if (!url_string.trim()) {
-    return;
-  }
-
-  let canonical_url;
-  try {
-    canonical_url = new URL(url_string, base_url);
-  } catch (error) {
-    // Ignore
-  }
-  return canonical_url;
 }
-
 
 // @param descriptors {Array} an array of descriptors such as those produced
 // by parseSrcset
@@ -576,16 +489,9 @@ function srcset_serialize(descriptors) {
   return descriptor_strings.join(', ');
 }
 
-
-
-// Changes the names of certain elements in document content
-// TODO: take a look at the following article
-// https://blog.usejournal.com/of-svg-minification-and-gzip-21cd26a5d007
-// Look into how the html is stored in indexedDB, e.g. what compression, and
-// then reconsider if this filter is more harmful than helpful.
-// Use shorter names for common elements
+// Replace certain elements with alternative elements that have names with
+// fewer characters
 // @param copy_attrs_flag {Boolean} optional, if true then copy attributes
-// when renaming
 function condense_tagnames(document, copy_attrs_flag) {
   assert(document instanceof Document);
   if (!document.body) {
@@ -616,22 +522,17 @@ function filter_blacklisted_elements(document) {
 }
 
 function document_filter_empty_attributes(document) {
-  assert(document instanceof Document);
-
-  if (!document.body) {
-    return;
-  }
-
-  const elements = document.body.getElementsByTagName('*');
-  for (const element of elements) {
-    filter_element_empty_attributes(element);
+  if (document.body) {
+    const elements = document.body.getElementsByTagName('*');
+    for (const element of elements) {
+      element_filter_empty_attributes(element);
+    }
   }
 }
 
-function filter_element_empty_attributes(element) {
+function element_filter_empty_attributes(element) {
   // TODO: does getAttributeNames lowercase? Just noticed I assume that it
   // does but never verified
-
   const names = element.getAttributeNames();
   for (const name of names) {
     if (!attribute_is_boolean(element, name)) {
@@ -646,21 +547,18 @@ function filter_element_empty_attributes(element) {
 // Filters or transforms certain form elements and form-related elements from
 // document content
 function filter_form_elements(document) {
-  assert(document instanceof Document);
   if (!document.body) {
     return;
   }
 
-  const ancestor = document.body;
-
   // Unwrap forms
-  const forms = ancestor.querySelectorAll('form');
+  const forms = document.body.querySelectorAll('form');
   for (const form of forms) {
     element_unwrap(form);
   }
 
   // Unwrap labels
-  const labels = ancestor.querySelectorAll('label');
+  const labels = document.body.querySelectorAll('label');
   for (const label of labels) {
     element_unwrap(label);
   }
@@ -669,27 +567,22 @@ function filter_form_elements(document) {
   // in select removed in prior iteration
 
   // Remove form fields
-  const inputSelector =
+  const input_selector =
       'button, fieldset, input, optgroup, option, select, textarea';
-  const inputs = ancestor.querySelectorAll(inputSelector);
+  const inputs = document.body.querySelectorAll(input_selector);
   for (const input of inputs) {
     input.remove();
   }
 }
 
-// Filters certain anchor elements from document content
-// An anchor that acts like a span can be unwrapped. Currently misses anchors
-// that have href attr but is empty/whitespace
+// Unwrap anchors without href attributes
 function filter_formatting_anchors(document) {
-  assert(document instanceof Document);
-  if (!document.body) {
-    return;
-  }
-
-  const anchors = document.body.querySelectorAll('a');
-  for (const anchor of anchors) {
-    if (!anchor.hasAttribute('href')) {
-      element_unwrap(anchor);
+  if (document.body) {
+    const anchors = document.body.querySelectorAll('a');
+    for (const anchor of anchors) {
+      if (!anchor.hasAttribute('href')) {
+        element_unwrap(anchor);
+      }
     }
   }
 }
@@ -715,7 +608,6 @@ function filter_formatting_elements(document) {
 // Removes frame content from a document
 // @param document {Document} the document to inspect and modify
 function filter_frame_elements(document) {
-  assert(document instanceof Document);
   // It is a bit counterintuitive but if a document is framed then the root
   // frame is its body, and document.body points to it (and not some <body>
   // element)
@@ -763,20 +655,6 @@ function filter_frame_elements(document) {
   }
 }
 
-// TODO: make a github issue about optimizing recursive unwrap. I previously
-// made several attempts at optimization. Unfortunately much of the code is
-// lost. There may still be something in the filter hidden test file. It
-// probably belongs in experimental, the test was created before I decided on
-// organizing experimental code in a folder.
-// TODO: move above comment to github issue
-
-// This does not differentiate between content hidden temporarily and content
-// hidden permanently. This looks at content presumably at the time of page
-// load. While this has no real knowledge of how other modules work it is
-// assumed this is called in a setting where script is disabled and css is
-// restricted so there is little possibility of ephemerally hidden content ever
-// becoming visible.
-
 // Filters hidden elements from a document
 function filter_hidden_elements(document) {
   assert(document instanceof Document);
@@ -785,14 +663,8 @@ function filter_hidden_elements(document) {
     return;
   }
 
-  // * contains is called to avoid removing descendants of elements detached in
+  // contains is called to avoid removing descendants of elements detached in
   // prior iterations.
-  // * querySelectorAll is used over getElementsByTagName to simplify removal
-  // during iteration.
-
-  // This works top-down, which is why each visibility check ignores whether
-  // ancestors are visible. Once an ancestor is removed, body no longer contains
-  // it, so there is no longer a concern of duplicate evaluation.
 
   const elements = body.querySelectorAll('*');
   for (const element of elements) {
@@ -809,10 +681,6 @@ function filter_by_host_template(document, url) {
   if (!url) {
     return;
   }
-
-  // TODO: host_selector_map should be a parameter to this function so that
-  // configuration is defined externally so that it can be changed without
-  // needing to modify its internals (open-closed principle)
 
   const host_selector_map = {};
   host_selector_map['www.washingtonpost.com'] = [
@@ -839,33 +707,24 @@ function filter_by_host_template(document, url) {
 // Look for all <hr><hr> sequences and remove the second one. Naive in that it
 // does not fully account for new document state as hrs removed.
 function filter_hr_elements(document) {
-  assert(document instanceof Document);
-
-  if (!document.body) {
-    return;
-  }
-
-  const hrs = document.body.querySelectorAll('hr + hr');
-  for (const hr of hrs) {
-    hr.remove();
+  if (document.body) {
+    const hrs = document.body.querySelectorAll('hr + hr');
+    for (const hr of hrs) {
+      hr.remove();
+    }
   }
 }
 
-// Filters iframe elements from document content
+// Removes iframe elements
 function filter_iframe_elements(document) {
-  assert(document instanceof Document);
-  if (!document.body) {
-    return;
-  }
-
-  const iframes = document.body.querySelectorAll('iframe');
-  for (const iframe of iframes) {
-    iframe.remove();
+  if (document.body) {
+    const frames = document.body.querySelectorAll('iframe');
+    for (const frame of frames) {
+      frame.remove();
+    }
   }
 }
 
-// TODO: use console parameter pattern to enable/disable logging
-// TODO: consider using document.baseURI over explicit base_url
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.
@@ -890,18 +749,18 @@ async function document_set_image_sizes(document, base_url, timeout) {
     return;
   }
 
-  // Concurrently get dimensions for each image
+  // Concurrently get dimensions for each image then wait for all to complete
   const promises = [];
   for (const image of images) {
     promises.push(image_get_dimensions(image, base_url, timeout));
   }
+  const results = await Promise.all(promises);
 
   // Update the DOM for images that need state change
-  const results = await Promise.all(promises);
   for (const result of results) {
     if ('width' in result) {
-      result.image.setAttribute('width', '' + result.width);
-      result.image.setAttribute('height', '' + result.height);
+      result.image.setAttribute('width', result.width);
+      result.image.setAttribute('height', result.height);
     }
   }
 }
@@ -924,7 +783,6 @@ async function image_get_dimensions(image, base_url, timeout) {
   const image_source = image.getAttribute('src');
   if (!image_source) {
     return {image: image, reason: 'missing-src'};
-    return;
   }
 
   // NOTE: this assumes image source url is canonical.
@@ -938,7 +796,6 @@ async function image_get_dimensions(image, base_url, timeout) {
     // If we cannot parse the url, then we cannot reliably inspect
     // the url for dimensions, nor fetch the image, so we're done.
     return {image: image, reason: 'invalid-src'};
-    return;
   }
 
   dims = url_sniff_dimensions(source_url);
@@ -1026,8 +883,7 @@ function element_get_inline_style_dimensions(element) {
   }
 }
 
-
-
+// TODO: move to utils
 // Returns a file name without its extension (and without the '.')
 function file_name_filter_extension(file_name) {
   assert(typeof file_name === 'string');
@@ -1035,6 +891,7 @@ function file_name_filter_extension(file_name) {
   return index < 0 ? file_name : file_name.substring(0, index);
 }
 
+// TODO: move to utils
 function url_get_filename(url) {
   assert(url instanceof URL);
   const index = url.pathname.lastIndexOf('/');
@@ -1053,25 +910,22 @@ function url_get_filename(url) {
 // invalid urls
 // TODO: shouldn't this be an unwrap? what if the anchor has valuable content?
 function filter_invalid_anchors(document) {
-  assert(document instanceof Document);
-  if (!document.body) {
-    return;
-  }
-
-  const anchors = document.body.querySelectorAll('a');
-  for (const anchor of anchors) {
-    if (anchor_is_invalid(anchor)) {
-      anchor.remove();
+  if (document.body) {
+    const anchors = document.body.querySelectorAll('a');
+    for (const anchor of anchors) {
+      if (anchor_is_invalid(anchor)) {
+        anchor.remove();
+      }
     }
   }
 }
 
 // Returns true if the anchor has an invalid href
+// TODO: inline
 function anchor_is_invalid(anchor) {
   const hrefValue = anchor.getAttribute('href');
   return hrefValue && /^\s*https?:\/\/#/i.test(hrefValue);
 }
-
 
 // Filters width and height of large images to avoid skewing in view
 // An image is large if it is more than 1000px in width or height
@@ -1095,27 +949,27 @@ function filter_large_image_attributes(document) {
 }
 
 function isLargeImage(image) {
-  const widthString = image.getAttribute('width');
-  if (!widthString) {
+  const width_string = image.getAttribute('width');
+  if (!width_string) {
     return false;
   }
 
-  const heightString = image.getAttribute('height');
-  if (!heightString) {
+  const height_string = image.getAttribute('height');
+  if (!height_string) {
     return false;
   }
 
-  const widthInt = parseInt(widthString, 10);
-  if (isNaN(widthInt)) {
+  const width_int = parseInt(width_string, 10);
+  if (isNaN(width_int)) {
     return false;
-  } else if (widthInt > 1000) {
+  } else if (width_int > 1000) {
     return true;
   }
 
-  const heightInt = parseInt(heightString, 10);
-  if (isNaN(heightInt)) {
+  const height_int = parseInt(height_string, 10);
+  if (isNaN(height_int)) {
     return false;
-  } else if (heightInt > 1000) {
+  } else if (height_int > 1000) {
     return true;
   }
 
@@ -1148,13 +1002,13 @@ function filter_lazy_images(document) {
       continue;
     }
 
-    const attribute_names = image.getAttributeNames();
+    const attr_names = image.getAttributeNames();
 
-    for (const lazyAttributeName of lazy_image_attribute_names) {
-      if (attribute_names.includes(lazyAttributeName)) {
-        const lazyAttributeValue = image.getAttribute(lazyAttributeName);
-        if (url_string_is_valid(lazyAttributeValue)) {
-          lazy_image_transform(image, lazyAttributeName, lazyAttributeValue);
+    for (const lazy_attr_name of lazy_image_attribute_names) {
+      if (attr_names.includes(lazy_attr_name)) {
+        const lazy_attr_name = image.getAttribute(lazy_attr_name);
+        if (url_string_is_valid(lazy_attr_name)) {
+          lazy_image_transform(image, lazy_attr_name, lazy_attr_name);
           break;
         }
       }
@@ -1162,42 +1016,24 @@ function filter_lazy_images(document) {
   }
 }
 
-function lazy_image_transform(image, lazyAttributeName, lazyAttributeValue) {
-  // const before = image.outerHTML;
-
+// TODO: inline
+function lazy_image_transform(image, lazy_attr_name, lazy_attr_name) {
   // Remove the lazy attribute, it is no longer needed.
-  image.removeAttribute(lazyAttributeName);
-
+  image.removeAttribute(lazy_attr_name);
   // Create a src, or replace whatever is in the current src, with the value
   // from the lazy attribute.
-  image.setAttribute('src', lazyAttributeValue);
-
-  // const after = image.outerHTML;
-  // console.debug('lazy_image_transform', before, after);
+  image.setAttribute('src', lazy_attr_name);
 }
 
-
-
 // Filters empty leaf-like nodes from document content
-// TODO: remove near empty anchor elements, e.g. only containing whitespace
-// text nodes, that result from removing nested elements in other filters. Or
-// at least investigate why it isn't getting removed, because it looks like it
-// should be. Or the problem is that this doesn't consider the ripple effect of
-// how removing a leaf leads to other leaves? The problem occurs at
-// http://freakonomics.com/podcast/make-match-rebroadcast/
-
 function filter_leaf_nodes(document) {
-  assert(document instanceof Document);
-
-  if (!document.body) {
-    return;
-  }
-
-  const documentElement = document.documentElement;
-  const elements = document.body.querySelectorAll('*');
-  for (const element of elements) {
-    if (documentElement.contains(element) && node_is_leaf(element)) {
-      element.remove();
+  if (document.body) {
+    const root = document.documentElement;
+    const elements = document.body.querySelectorAll('*');
+    for (const element of elements) {
+      if (root.contains(element) && node_is_leaf(element)) {
+        element.remove();
+      }
     }
   }
 }
@@ -1243,41 +1079,36 @@ function element_is_leaf_exception(element) {
   return leaf_exception_element_names.includes(element.localName);
 }
 
-
-
 // Filters certain list elements from document content
-
-
 // TODO: restrict children of list to proper child type. E.g. only allow li or
 // form within ul/ol, and dd/dt/form within dl. Do some type of transform like
 // move such items to within a new child
-function filter_list_elements(doc) {
-  assert(doc instanceof Document);
-  if (!doc.body) {
+function filter_list_elements(document) {
+  if (!document.body) {
     return;
   }
 
-  const ancestor = doc.body;
+  const ancestor = document.body;
   const lists = ancestor.querySelectorAll('ul, ol, dl');
 
-  // TODO: maybe this empty checking should be moved into the leafFilterIsLeaf
+  // TODO: maybe this empty checking should be moved into the node_is_leaf
   // logic as a special case for list elements. That way it will be recursive.
   // But this does a moving of children where as the leaf code just removes. So
   // that would also entail changing the meaning of leaf filtering from filter
   // to transform.
   for (const list of lists) {
-    if (isEmptyList(list)) {
-      removeEmptyList(list);
+    if (list_element_is_empty(list)) {
+      list_element_remove(list);
     }
   }
 
   for (const list of lists) {
-    unwrapSingleItemList(list);
+    list_element_unwrap_single_item(list);
   }
 }
 
 // Return true if list is 'empty'
-function isEmptyList(list) {
+function list_element_is_empty(list) {
   // Return true if the list has no child nodes. This is redundant with leaf
   // filtering but I think it is ok and prefer to not make assumptions about
   // composition with other filters
@@ -1308,41 +1139,41 @@ function isEmptyList(list) {
   return false;
 }
 
-function removeEmptyList(list) {
-  const doc = list.ownerDocument;
+function list_element_remove(list) {
+  const document = list.ownerDocument;
 
   // Add leading padding
   if (list.previousSibling &&
       list.previousSibling.nodeType === Node.TEXT_NODE) {
-    list.parentNode.insertBefore(doc.createTextNode(' '), list);
+    list.parentNode.insertBefore(document.createTextNode(' '), list);
   }
 
-  const firstChild = list.firstChild;
+  const first_child = list.firstChild;
 
   // Move any child nodes (there may be none). As each first child is moved,
   // the next child becomes the first child.
-  for (let node = firstChild; node; node = list.firstChild) {
+  for (let node = first_child; node; node = list.firstChild) {
     list.parentNode.insertBefore(node, list);
   }
 
   // Add trailing padding if needed. Also check if there were children, so as
   // to not add padding on top of the leading padding when there is no need.
-  if (firstChild && list.nextSibling &&
+  if (first_child && list.nextSibling &&
       list.nextSibling.nodeType === Node.TEXT_NODE) {
-    list.parentNode.insertBefore(doc.createTextNode(' '), list);
+    list.parentNode.insertBefore(document.createTextNode(' '), list);
   }
 
   list.remove();
 }
 
 // Unwraps single item or empty list elements
-function unwrapSingleItemList(list) {
-  const listParent = list.parentNode;
-  if (!listParent) {
+function list_element_unwrap_single_item(list) {
+  const list_parent = list.parentNode;
+  if (!list_parent) {
     return;
   }
 
-  const doc = list.ownerDocument;
+  const document = list.ownerDocument;
   const item = list.firstElementChild;
 
   // If the list has no child elements then just remove. This is overly simple
@@ -1360,8 +1191,9 @@ function unwrapSingleItemList(list) {
   }
 
   // If the list's only child element isn't one of the correct types, ignore it
-  const listItemNames = {li: 0, dt: 0, dd: 0};
-  if (!(item.localName in listItemNames)) {
+  // TODO: use array and .includes
+  const list_item_names = {li: 0, dt: 0, dd: 0};
+  if (!(item.localName in list_item_names)) {
     return;
   }
 
@@ -1373,7 +1205,7 @@ function unwrapSingleItemList(list) {
     if (list.previousSibling &&
         list.previousSibling.nodeType === Node.TEXT_NODE && list.nextSibling &&
         list.nextSibling.nodeType === Node.TEXT_NODE) {
-      listParent.replaceChild(doc.createTextNode(' '), list);
+      list_parent.replaceChild(document.createTextNode(' '), list);
 
     } else {
       list.remove();
@@ -1389,44 +1221,40 @@ function unwrapSingleItemList(list) {
   if (list.previousSibling &&
       list.previousSibling.nodeType === Node.TEXT_NODE && item.firstChild &&
       item.firstChild.nodeType === Node.TEXT_NODE) {
-    listParent.insertBefore(doc.createTextNode(' '), list);
+    list_parent.insertBefore(document.createTextNode(' '), list);
   }
 
   // Move the children of the item to before the list, maintainin order
   for (let node = item.firstChild; node; node = item.firstChild) {
-    listParent.insertBefore(node, list);
+    list_parent.insertBefore(node, list);
   }
 
   // Add trailing padding
   if (list.nextSibling && list.nextSibling.nodeType === Node.TEXT_NODE &&
       list.previousSibling &&
       list.previousSibling.nodeType === Node.TEXT_NODE) {
-    listParent.insertBefore(doc.createTextNode(' '), list);
+    list_parent.insertBefore(document.createTextNode(' '), list);
   }
 
   list.remove();
 }
 
 
-
 // Filters certain whitespace from a document. This scans the text nodes of a
 // document and modifies certain text nodes.
-
-function filter_node_whitespace(doc) {
-  assert(doc instanceof Document);
-  if (!doc.body) {
+function filter_node_whitespace(document) {
+  if (!document.body) {
     return;
   }
 
   // Ignore node values shorter than this length
-  const minNodeValueLength = 3;
+  const node_value_length_min = 3;
 
-  const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
+  const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
-    if (value.length > minNodeValueLength && !node_is_ws_sensitive(node)) {
+    if (value.length > node_value_length_min && !node_is_ws_sensitive(node)) {
       const new_value = string_condense_whitespace(value);
-
       if (new_value.length !== value.length) {
         node.nodeValue = new_value;
       }
@@ -1434,6 +1262,7 @@ function filter_node_whitespace(doc) {
   }
 }
 
+// TODO: inline
 function node_is_ws_sensitive(node) {
   return node.parentNode.closest(
       'code, pre, ruby, script, style, textarea, xmp');
@@ -1443,70 +1272,50 @@ function node_is_ws_sensitive(node) {
 // Specifies that all links are noreferrer
 // TODO: this function's behavior conflicts with attribute filter. Need to
 // whitelist this attribute (and this value) for this element.
-function add_noreferrer_to_anchors(doc) {
-  assert(doc instanceof Document);
-
-  if (!doc.body) {
-    return;
-  }
-
-  const anchors = doc.body.getElementsByTagName('a');
-  for (const anchor of anchors) {
-    anchor.setAttribute('rel', 'noreferrer');
+function add_noreferrer_to_anchors(document) {
+  if (document.body) {
+    const anchors = document.body.getElementsByTagName('a');
+    for (const anchor of anchors) {
+      anchor.setAttribute('rel', 'noreferrer');
+    }
   }
 }
 
-
-// Transforms noscript content in document content
-function filter_noscript_elements(doc) {
-  assert(doc instanceof Document);
-  if (!doc.body) {
-    return;
-  }
-
-  const noscripts = doc.body.querySelectorAll('noscript');
-  for (const noscript of noscripts) {
-    element_unwrap(noscript);
+// Transforms noscript elements
+function filter_noscript_elements(document) {
+  if (document.body) {
+    const noscripts = document.body.querySelectorAll('noscript');
+    for (const noscript of noscripts) {
+      element_unwrap(noscript);
+    }
   }
 }
 
 // Removes ping attributes from anchor elements in document content
-function remove_ping_attribute_from_all_anchors(doc) {
-  assert(doc instanceof Document);
-
-  if (!doc.body) {
-    return;
-  }
-
-  const anchors = doc.body.querySelectorAll('a[ping]');
-  for (const anchor of anchors) {
-    anchor.removeAttribute('ping');
+function remove_ping_attribute_from_all_anchors(document) {
+  if (document.body) {
+    const anchors = document.body.querySelectorAll('a[ping]');
+    for (const anchor of anchors) {
+      anchor.removeAttribute('ping');
+    }
   }
 }
 
 
-
-// Transforms responsive images in document content
-
-// An image is 'responsive' if it uses a srcset instead of a src, such that the
-// actual image used is derived dynamically after the document has been loaded.
-// This filter looks for such images and changes them to use one of the
-// descriptors from the srcset as the src.
-
-function filter_responsive_images(doc) {
-  assert(doc instanceof Document);
-  if (!doc.body) {
-    return;
-  }
-
-  const images = doc.body.getElementsByTagName('img');
-  for (const image of images) {
-    if (!image.hasAttribute('src') && image.hasAttribute('srcset')) {
-      const descriptor = findBestSrcsetDescriptorForImage(image);
-      if (descriptor) {
-        transformImageToDescriptor(image, descriptor);
-      } else {
-        console.debug('Could not find descriptor for image', image.outerHTML);
+// Transforms responsive images in document content. An image is 'responsive' if
+// it uses a srcset instead of a src, such that the actual image used is derived
+// dynamically after the document has been loaded. This filter looks for such
+// images and changes them to use one of the descriptors from the srcset as the
+// src.
+function filter_responsive_images(document) {
+  if (document.body) {
+    const images = document.body.getElementsByTagName('img');
+    for (const image of images) {
+      if (!image.hasAttribute('src') && image.hasAttribute('srcset')) {
+        const descriptor = image_find_best_srcset_descriptor(image);
+        if (descriptor) {
+          image_transform_to_descriptor(image, descriptor);
+        }
       }
     }
   }
@@ -1515,13 +1324,13 @@ function filter_responsive_images(doc) {
 // Selects the best srcset to use from an image's srcset attribute value.
 // Returns the parsed descriptor object. Returns undefined if no descriptor
 // found
-function findBestSrcsetDescriptorForImage(image) {
-  const srcsetValue = image.getAttribute('srcset');
-  if (!srcsetValue) {
+function image_find_best_srcset_descriptor(image) {
+  const srcset_attr_value = image.getAttribute('srcset');
+  if (!srcset_attr_value) {
     return;
   }
 
-  const descriptors = parse_srcset_wrapper(srcsetValue);
+  const descriptors = parse_srcset_wrapper(srcset_attr_value);
 
   // For the time being, the preference is whatever is first, no special
   // handling of descriptor.d, and only one dimension needed
@@ -1542,7 +1351,7 @@ function findBestSrcsetDescriptorForImage(image) {
 
 // Changes the src, width, and height of an image to the properties of the
 // given descriptor, and removes the srcset attribute.
-function transformImageToDescriptor(image, descriptor) {
+function image_transform_to_descriptor(image, descriptor) {
   image.setAttribute('src', descriptor.url);
 
   // The srcset is no longer in use
@@ -1566,25 +1375,22 @@ function transformImageToDescriptor(image, descriptor) {
 
 // Unwraps anchor elements containing href attribute values that are javascript
 function filter_script_anchors(document) {
-  assert(document instanceof Document);
-  if (!document.body) {
-    return;
-  }
-
-  const anchors = document.body.querySelectorAll('a[href]');
-  for (const anchor of anchors) {
-    if (url_string_has_script_protocol(anchor.getAttribute('href'))) {
-      element_unwrap(anchor);
+  if (document.body) {
+    const anchors = document.body.querySelectorAll('a[href]');
+    for (const anchor of anchors) {
+      if (url_string_has_script_protocol(anchor.getAttribute('href'))) {
+        element_unwrap(anchor);
+      }
     }
   }
 }
 
-// For a url string to have the script protocol it must be longer than this
-const JS_PREFIX_LEN = 'javascript:'.length;
-
+// TODO: inline
 // Returns true if the url has the 'javascript:' protocol. Does not throw in
 // the case of bad input. Tolerates leading whitespace.
 function url_string_has_script_protocol(url_string) {
+  // For a url string to have the script protocol it must be longer than this
+  const JS_PREFIX_LEN = 'javascript:'.length;
   // The type check is done to allow for bad inputs for caller convenience. The
   // length check is an attempt to reduce the number of regex calls.
   return typeof url_string === 'string' && url_string.length > JS_PREFIX_LEN &&
@@ -1593,63 +1399,57 @@ function url_string_has_script_protocol(url_string) {
 
 
 // Removes script elements from document content
-function filter_script_elements(doc) {
-  assert(doc instanceof Document);
-
-  const scripts = doc.querySelectorAll('script');
+function filter_script_elements(document) {
+  const scripts = document.querySelectorAll('script');
   for (const script of scripts) {
     script.remove();
   }
 }
 
-function filter_small_images(doc) {
-  assert(doc instanceof Document);
-  if (!doc.body) {
-    return;
-  }
-
-  const images = doc.body.querySelectorAll('img');
-  for (const image of images) {
-    if (isSmallImage(image)) {
-      image_remove(image);
+function filter_small_images(document) {
+  if (document.body) {
+    const images = document.body.querySelectorAll('img');
+    for (const image of images) {
+      if (image_is_small(image)) {
+        image_remove(image);
+      }
     }
   }
 }
 
 // TODO: merge this with isLargeImage, make a function that does something like
 // image_bin_size, and returns small or large or other. Then deprecate
-// isSmallImage and isLargeImage
-function isSmallImage(image) {
-  const widthString = image.getAttribute('width');
-  if (!widthString) {
+// image_is_small and isLargeImage
+function image_is_small(image) {
+  const width_string = image.getAttribute('width');
+  if (!width_string) {
     return false;
   }
 
-  const heightString = image.getAttribute('height');
-  if (!heightString) {
+  const height_string = image.getAttribute('height');
+  if (!height_string) {
     return false;
   }
 
-  const widthInt = parseInt(widthString, 10);
-  if (isNaN(widthInt)) {
+  const width_int = parseInt(width_string, 10);
+  if (isNaN(width_int)) {
     return false;
   }
 
-  const heightInt = parseInt(heightString, 10);
-  if (isNaN(heightInt)) {
+  const height_int = parseInt(height_string, 10);
+  if (isNaN(height_int)) {
     return false;
   }
 
-  if (widthInt < 3) {
+  if (width_int < 3) {
     return false;
   }
 
-  if (heightInt < 3) {
+  if (height_int < 3) {
     return false;
   }
 
-  if (widthInt < 33 && heightInt < 33) {
-    // console.debug('Small image detected', image.outerHTML);
+  if (width_int < 33 && height_int < 33) {
     return true;
   }
 
@@ -1659,7 +1459,6 @@ function isSmallImage(image) {
 
 // Filter semantic web elements from document content
 function filter_semantic_elements(document) {
-  assert(document instanceof Document);
   if (document.body) {
     const selector = 'article, aside, footer, header, main, section';
     const elements = document.body.querySelectorAll(selector);
@@ -1669,108 +1468,85 @@ function filter_semantic_elements(document) {
   }
 }
 
-
-// Removes images that are missing source information from document content
-function filter_sourceless_images(doc) {
-  assert(doc instanceof Document);
-  if (!doc.body) {
-    return;
-  }
-
-  // Use querySelectorAll over getElementsByTagName to simplify removal during
-  // iteration.
-
-  const images = doc.body.querySelectorAll('img');
-  for (const image of images) {
-    if (!image_has_source(image)) {
-      // console.debug('Removing image', image.outerHTML);
-      image_remove(image);
+// Removes images without src attribute
+function filter_sourceless_images(document) {
+  if (document.body) {
+    const images = document.body.querySelectorAll('img');
+    for (const image of images) {
+      if (!image_has_source(image)) {
+        image_remove(image);
+      }
     }
   }
 }
-
 
 // Remove whitespace and whitespace-like content from the start and end of a
 // document's body.
-function document_trim(doc) {
-  if (!(doc instanceof Document)) {
-    throw new TypeError('Invalid document parameter', doc);
-  }
-
-  if (!doc.body) {
-    return;
-  }
-
-  const firstChild = doc.body.firstChild;
-  if (firstChild) {
-    trim_document_step(firstChild, 'nextSibling');
-    const lastChild = doc.body.lastChild;
-    if (lastChild && lastChild !== firstChild) {
-      trim_document_step(lastChild, 'previousSibling');
+function document_trim(document) {
+  if (document.body) {
+    const first_child = document.body.firstChild;
+    if (first_child) {
+      trim_document_step(first_child, 'nextSibling');
+      const last_child = document.body.lastChild;
+      if (last_child && last_child !== first_child) {
+        trim_document_step(last_child, 'previousSibling');
+      }
     }
   }
 }
 
-function trim_document_step(startNode, edgeName) {
-  let node = startNode;
+function trim_document_step(start_node, edge_name) {
+  let node = start_node;
   while (node && node_is_trimmable(node)) {
-    const sibling = node[edgeName];
+    const sibling = node[edge_name];
     node.remove();
     node = sibling;
   }
 }
 
 function node_is_trimmable(node) {
-  // Leave it up to the engine to determine if this is a hotspot that needs
-  // hoisting
-  const spaceElements = ['br', 'hr', 'nobr'];
-
-  if (node.nodeType === Node.TEXT_NODE) {
-    return !node.nodeValue.trim();
-  } else {
-    return spaceElements.includes(node.localName);
-  }
+  return node.nodeType === Node.TEXT_NODE ?
+      !node.nodeValue.trim() :
+      ['br', 'hr', 'nobr'].includes(node.localName);
 }
-
-
 
 // Filters certain table elements from document content
-function filter_table_elements(doc, scanLimit) {
-  assert(doc instanceof Document);
-  if (!doc.body) {
-    return;
-  }
+function filter_table_elements(document, table_row_scan_max) {
+  if (document.body) {
+    const elements = document.body.querySelectorAll(
+        'colgroup, hgroup, multicol, tbody, tfoot, thead');
+    for (const element of elements) {
+      element_unwrap(element);
+    }
 
-  const elements = doc.body.querySelectorAll(
-      'colgroup, hgroup, multicol, tbody, tfoot, thead');
-  for (const element of elements) {
-    element_unwrap(element);
-  }
-
-  const tables = doc.body.querySelectorAll('table');
-  for (const table of tables) {
-    if (isSingleColumnTable(table, scanLimit)) {
-      unwrapTable(table);
+    const tables = document.body.querySelectorAll('table');
+    for (const table of tables) {
+      if (table_element_is_single_column(table, table_row_scan_max)) {
+        table_element_unwrap(table);
+      }
     }
   }
 }
 
-function isSingleColumnTable(table, scanLimit) {
+function table_element_is_single_column(table, table_row_scan_max) {
   const rows = table.rows;
-  const safeLimit = Math.min(rows.length, scanLimit);
-  for (let i = 0; i < safeLimit; i++) {
-    if (!isSingleColumnRow(rows[i])) {
+  const safe_limit = Math.min(rows.length, table_row_scan_max);
+  for (let i = 0; i < safe_limit; i++) {
+    if (!row_is_single_column(rows[i])) {
       return false;
     }
   }
   return true;
 }
 
-function isSingleColumnRow(row) {
+function row_is_single_column(row) {
   const cells = row.cells;
-  let nonEmptyCellCount = 0;
+  let filled_cell_count = 0;
+
+  // TODO: review the logic here. Is pre-dec op correct?
+
   for (let i = 0, len = cells.length; i < len; i++) {
-    if (!node_is_leaf(cells[i]) && ++nonEmptyCellCount > 1) {
+    if (!node_is_leaf(cells[i]) && ++filled_cell_count > 1) {
       return false;
     }
   }
@@ -1778,15 +1554,15 @@ function isSingleColumnRow(row) {
   return true;
 }
 
-function unwrapTable(table) {
+function table_element_unwrap(table) {
   const rows = table.rows;
-  const rowCount = rows.length;
+  const row_count = rows.length;
   const parent = table.parentNode;
-  const doc = table.ownerDocument;
+  const document = table.ownerDocument;
 
-  parent.insertBefore(doc.createTextNode(' '), table);
+  parent.insertBefore(document.createTextNode(' '), table);
 
-  for (let i = 0; i < rowCount; i++) {
+  for (let i = 0; i < row_count; i++) {
     const row = rows[i];
     for (let j = 0, clen = row.cells.length; j < clen; j++) {
       const cell = row.cells[j];
@@ -1797,14 +1573,12 @@ function unwrapTable(table) {
       }
     }
 
-    parent.insertBefore(doc.createElement('p'), table);
+    parent.insertBefore(document.createElement('p'), table);
   }
 
-  parent.insertBefore(doc.createTextNode(' '), table);
+  parent.insertBefore(document.createTextNode(' '), table);
   table.remove();
 }
-
-
 
 const telemetry_host_patterns = [
   /\/\/.*2o7\.net\//i,
@@ -1839,27 +1613,24 @@ const telemetry_host_patterns = [
 // TODO: switch to accepting url object instead of url string
 
 // Removes some telemetry data from a document.
-// @param doc {Document}
+// @param document {Document}
 // @param url {String} canonical document url
-function filter_telemetry_elements(doc, documentURLString) {
-  assert(doc instanceof Document);
-
-  // Analysis is limited to descendants of body
-  if (!doc.body) {
-    return;
-  }
-
-
+function filter_telemetry_elements(document, document_url_string) {
   // Build document url. Implicitly this also validates that the url is
   // canonical.
   // If this fails this throws a type error, which is a kind of assertion
   // error but it is expected
   // here, but it should never happen. Anyway this is a mess and eventually
   // I should just accept a URL as input instead of a string
-  assert(typeof documentURLString === 'string' && documentURLString.length > 0);
-  const documentURL = new URL(documentURLString);
+  assert(
+      typeof document_url_string === 'string' &&
+      document_url_string.length > 0);
+  const document_url = new URL(document_url_string);
 
-
+  // Analysis is limited to descendants of body
+  if (!document.body) {
+    return;
+  }
 
   // TODO: when checking image visibility, should I be checking ancestry? Or
   // just the image itself?
@@ -1868,10 +1639,10 @@ function filter_telemetry_elements(doc, documentURLString) {
   // False positives are probably not too harmful. Removing images based on
   // visibility overlaps with sanitization, but this is intentionally naive
   // regarding what other filters are applied to the document.
-  const images = doc.body.querySelectorAll('img');
+  const images = document.body.querySelectorAll('img');
   for (const image of images) {
     if (element_is_hidden_inline(image) || image_is_pixel(image) ||
-        image_has_telemetry_source(image, documentURL)) {
+        image_has_telemetry_source(image, document_url)) {
       image_remove(image);
     }
   }
@@ -1886,9 +1657,8 @@ function image_is_pixel(image) {
 // This test only considers the src attribute. Using srcset or picture source
 // is exceedingly rare mechanism for telemetry so ignore those channels.
 // @param image {Image}
-// @param documentURL {URL}
-function image_has_telemetry_source(image, documentURL) {
-  assert(image instanceof Element);
+// @param document_url {URL}
+function image_has_telemetry_source(image, document_url) {
   if (!image.hasAttribute('src')) {
     return false;
   }
@@ -1947,7 +1717,7 @@ function image_has_telemetry_source(image, documentURL) {
   }
 
   // Ignore 'internal' urls.
-  if (!url_is_external(documentURL, imageURL)) {
+  if (!url_is_external(document_url, imageURL)) {
     return false;
   }
 

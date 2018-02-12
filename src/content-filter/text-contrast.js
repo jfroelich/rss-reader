@@ -3,7 +3,6 @@ import '/third-party/tinycolor-min.js';
 // TODO: consider color blindness
 // TODO: consider hidden-green-preference or whatever the vision stuff said
 // TODO: consider font-size-based threshold variation
-// TODO: consider element_derive_text_color helper
 // TODO: This ignores blending of partially-transparent backgrounds. The correct
 // way would be to find all the colors in the ancestry and blend them. That
 // would be even slower, and more complex, so not bothering with it for now
@@ -19,7 +18,7 @@ const default_background_tinycolor = tinycolor('#fff');
 // Analyzes a node for color perceptibility. If the node, based on its
 // containing element, has an explicit text color and background color, and the
 // contrast ratio between those two colors is too low, then the node is deemed
-// not perceptible. Return true if perceptible, false is not perceptible,
+// not perceptible. Return true if perceptible, false if not perceptible,
 // undefined on error or ambiguity. Throws if not called on a text node.
 export function text_node_is_color_perceptible(node, min_contrast_ratio) {
   if (!(node instanceof Node)) {
@@ -38,8 +37,8 @@ export function text_node_is_color_perceptible(node, min_contrast_ratio) {
   if (element) {
     const text_color = element_derive_text_color(element);
     const background_color = element_derive_background_color(element);
-    const contrast = tinycolor.readability(text_color, background_color);
-    return contrast > min_contrast_ratio;
+    const contrast_ratio = tinycolor.readability(text_color, background_color);
+    return contrast_ratio > min_contrast_ratio;
   }
 }
 

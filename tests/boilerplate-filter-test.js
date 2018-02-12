@@ -1,12 +1,12 @@
-import {fetch_html} from '/src/fetch-utils.js';
-import {html_parse} from '/src/html-utils.js';
-import filterBoilerplate from '/src/content-filter/boilerplate-filter.js';
+import filterBoilerplate from '/src/content-filter/boilerplate.js';
 import canonicalizeURLs from '/src/content-filter/canonical-url-filter.js';
 import filterBlacklistedElements from '/src/content-filter/element-blacklist-filter.js';
 import filterFrames from '/src/content-filter/frame-filter.js';
 import filterIFrames from '/src/content-filter/iframe-filter.js';
 import setImageSizes from '/src/content-filter/image-size-filter.js';
 import filterScript from '/src/content-filter/script-filter.js';
+import {fetch_html} from '/src/fetch-utils.js';
+import {html_parse} from '/src/html-utils.js';
 
 window.test = async function(urlString) {
   const response = await fetch_html(new URL(urlString));
