@@ -250,7 +250,6 @@ function apply_adoption_agency_filter(document) {
 }
 
 function filter_base_elements(document) {
-  assert(document instanceof Document);
   const bases = document.querySelectorAll('base');
   for (const base of bases) {
     base.remove();
@@ -258,7 +257,6 @@ function filter_base_elements(document) {
 }
 
 function filter_br_elements(document) {
-  assert(document instanceof Document);
   if (document.body) {
     const brs = document.body.querySelectorAll('br + br');
     for (const br of brs) {
@@ -268,7 +266,6 @@ function filter_br_elements(document) {
 }
 
 function filter_comment_nodes(document) {
-  assert(document instanceof Document);
   const it = document.createNodeIterator(
       document.documentElement, NodeFilter.SHOW_COMMENT);
   for (let node = it.nextNode(); node; node = it.nextNode()) {
@@ -278,7 +275,6 @@ function filter_comment_nodes(document) {
 
 // Unwraps non-semantic container-like elements
 function filter_container_elements(document) {
-  assert(document instanceof Document);
   if (document.body) {
     const elements = document.body.querySelectorAll('div, ilayer, layer');
     for (const element of elements) {
@@ -290,7 +286,6 @@ function filter_container_elements(document) {
 // Unwraps emphasis elements that are longer than the given max length
 // @param text_length_max {Number} optional, integer >= 0,
 function filter_emphasis_elements(document, text_length_max) {
-  assert(document instanceof Document);
   const is_length_undefined = typeof text_length_max === 'undefined';
   assert(
       is_length_undefined ||
@@ -318,7 +313,6 @@ function filter_emphasis_elements(document, text_length_max) {
 
 // Unwrap captionless figures
 function filter_figure_elements(document) {
-  assert(document instanceof Document);
   if (document.body) {
     const figures = document.body.querySelectorAll('figure');
     for (const figure of figures) {
@@ -334,7 +328,6 @@ function filter_figure_elements(document) {
 }
 
 function document_ensure_body_element(document) {
-  assert(document instanceof Document);
   if (!document.body) {
     const message = 'This document has no content (missing body).';
     const error_node = document.createTextNode(message);
@@ -387,7 +380,6 @@ function build_element_url_attribute_selector() {
 // @param document {Document}
 // @param base_url {URL}
 function resolve_document_urls(document, base_url) {
-  assert(document instanceof Document);
   assert(base_url instanceof URL);
 
   const src_elements =
@@ -493,7 +485,6 @@ function srcset_serialize(descriptors) {
 // fewer characters
 // @param copy_attrs_flag {Boolean} optional, if true then copy attributes
 function condense_tagnames(document, copy_attrs_flag) {
-  assert(document instanceof Document);
   if (!document.body) {
     return;
   }
@@ -511,7 +502,6 @@ const blacklisted_element_selector = [
 
 // Filters blacklisted elements from document content
 function filter_blacklisted_elements(document) {
-  assert(document instanceof Document);
   const document_element = document.documentElement;
   const elements = document.querySelectorAll(blacklisted_element_selector);
   for (const element of elements) {
@@ -595,7 +585,6 @@ const formatting_elements_selector = [
 
 // Remove formatting elements
 function filter_formatting_elements(document) {
-  assert(document instanceof Document);
   if (document.body) {
     const elements =
         document.body.querySelectorAll(formatting_elements_selector);
@@ -657,7 +646,6 @@ function filter_frame_elements(document) {
 
 // Filters hidden elements from a document
 function filter_hidden_elements(document) {
-  assert(document instanceof Document);
   const body = document.body;
   if (!body) {
     return;
@@ -677,7 +665,6 @@ function filter_hidden_elements(document) {
 // @param document {Document}
 // @param url {URL}
 function filter_by_host_template(document, url) {
-  assert(document instanceof Document);
   if (!url) {
     return;
   }
@@ -736,7 +723,6 @@ function filter_iframe_elements(document) {
 // @param timeout {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
 async function document_set_image_sizes(document, base_url, timeout) {
-  assert(document instanceof Document);
   assert(
       base_url === null || typeof base_url === 'undefined' ||
       base_url instanceof URL);
@@ -934,7 +920,6 @@ function anchor_is_invalid(anchor) {
 // natural width or height. This is typical of icon or svg images that are very
 // large when missing dimensions.
 function filter_large_image_attributes(document) {
-  assert(document instanceof Document);
   if (!document.body) {
     return;
   }
@@ -990,7 +975,6 @@ const lazy_image_attribute_names = [
 // placeholder image in the src attribute and a full image from another
 // attribute
 function filter_lazy_images(document) {
-  assert(document instanceof Document);
   if (!document.body) {
     return;
   }
