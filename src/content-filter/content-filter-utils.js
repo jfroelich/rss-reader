@@ -1,14 +1,56 @@
-// Declares parseSrcset in window scope as side effect
 import '/third-party/parse-srcset.js';
 import {url_is_allowed} from '/src/fetch-utils.js';
 
-// TODO: convert from camel case to c-style underscore identifier names. waiting
-// to complete this until after merging filter modules
-
 // Returns a promise that resolves to undefined after a given amount of time (in
-// milliseconds)
-function sleep(ms) {
+// milliseconds). By racing this promise against another promise, this is useful
+// for imposing a timeout on the other operation.
+export function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Resolve a url
+// @param url_string {String} a relative or absolute url string
+// @param base_url {URL} a base url to use for resolution
+// @returns {URL} the resolved url or undefined
+export function url_string_resolve(url_string, base_url) {
+  // Guard against passing empty string to URL constructor as that simply
+  // clones the base url
+  if (typeof url_string === 'string' && url_string && url_string.trim()) {
+    try {
+      return new URL(url_string, base_url);
+    } catch (error) {
+    }
+  }
+}
+
+// @param descriptors {Array} an array of descriptors such as those produced
+// by parseSrcset
+// @returns {String} a string suitable for storing as srcset attribute value
+export function srcset_serialize(descriptors) {
+  assert(Array.isArray(descriptors));
+
+  const descriptor_strings = [];
+  for (const descriptor of descriptors) {
+    const strings = [descriptor.url];
+    if (descriptor.d) {
+      strings.push(' ');
+      strings.push(descriptor.d);
+      strings.push('x');
+    } else if (descriptor.w) {
+      strings.push(' ');
+      strings.push(descriptor.w);
+      strings.push('w');
+    } else if (descriptor.h) {
+      strings.push(' ');
+      strings.push(descriptor.h);
+      strings.push('h');
+    }
+
+    const descriptor_string = strings.join('');
+    descriptor_strings.push(descriptor_string);
+  }
+
+  return descriptor_strings.join(', ');
 }
 
 // Throws a basic error when the value is falsy with the optional message
@@ -423,7 +465,7 @@ export function attribute_is_boolean(element, attribute_name) {
 // @returns {Promise}
 export async function fetch_image_element(url, timeout) {
   assert(
-      typeof timeout === 'undefined' ||
+      typeof timeout === 'undefined' || timeout === null ||
       (Number.isInteger(timeout) && timeout >= 0));
   const fetch_promise = fetch_image_element_promise(url);
   const contestants =
@@ -520,12 +562,12 @@ function url_get_upper_domain(url) {
   const top_level = levels[levels.length - 1];
   if (top_level.length === 2) {
     // Infer it is ccTLD, return levels 3 + 2 + 1
-    const usedLevels = levels.slice(-3);
-    return usedLevels.join('.');
+    const used_levels = levels.slice(-3);
+    return used_levels.join('.');
   } else {
     // Infer it is gTLD, returns levels 2 + 1
-    const usedLevels = levels.slice(-2);
-    return usedLevels.join('.');
+    const used_levels = levels.slice(-2);
+    return used_levels.join('.');
   }
 }
 

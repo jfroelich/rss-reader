@@ -1,11 +1,10 @@
 import filter_boilerplate from '/src/content-filter/boilerplate.js';
-import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, image_has_source, image_remove, parse_srcset_wrapper, string_condense_whitespace, url_is_external, url_string_is_valid} from '/src/content-filter/content-filter-utils.js';
+import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, image_has_source, image_remove, parse_srcset_wrapper, srcset_serialize, string_condense_whitespace, url_is_external, url_string_is_valid, url_string_resolve} from '/src/content-filter/content-filter-utils.js';
 import {text_node_is_color_perceptible} from '/src/content-filter/text-contrast.js';
 
-// Transforms a document's content by removing or changing nodes for various
-// reasons.
+// Transforms a document by removing or changing nodes for various reasons.
 // @param document {Document} the document to transform
-// @param document_url {URL} the url of the document
+// @param document_url {URL} the location of the document
 // @param fetch_image_timeout {Number} optional, the number of milliseconds to
 // wait before timing out when fetching an image
 export async function content_filter_apply_all(
@@ -13,29 +12,56 @@ export async function content_filter_apply_all(
   assert(document instanceof Document);
   assert(document_url instanceof URL);
 
+  // These filters related to document.body should occur near the start, because
+  // 90% of the other content filters pertain to document.body.
   filter_frame_elements(document);
-
   document_ensure_body_element(document);
 
+  // This filter does not apply only to body, and is a primary security concern.
+  // It could occur later but doing it earlier means later filters visit fewer
+  // elements.
   filter_script_elements(document);
   filter_iframe_elements(document);
   filter_comment_nodes(document);
+
+  // This can occur at any point. It should generally be done before urls are
+  // resolved to reduce the work done by that filter.
   filter_base_elements(document);
 
+  // This should occur earlier on in the pipeline. It will reduce the amount of
+  // work done by later filters. It should occur before processing boilerplate,
+  // because the boilerplate filter is naive about hidden elements.
   filter_hidden_elements(document);
 
   // Do this after filtering hidden elements so that it does less work
   // This should be done prior to removing style information (either style
-  // elements or inline style attributes)
+  // elements or inline style attributes). I am not sure whether this should be
+  // done before or after boilerplate filter, but my instinct is that spam
+  // techniques are boilerplate, and the boilerplate filter is naive with regard
+  // to spam, so it is preferable to do it before.
   filter_low_text_contrast(document, localStorage.MIN_CONTRAST_RATIO);
 
+  // This should generally occur earlier, because of websites that use an
+  // information-revealing technique with noscript.
   filter_noscript_elements(document);
+
   filter_blacklisted_elements(document);
+
+  // This should occur before the boilerplate filter (I think?).
   filter_script_anchors(document);
 
   // This should occur prior to removing boilerplate content because it has
   // express knowledge of content organization
   filter_by_host_template(document, document_url);
+
+  // This should occur before the boilerplate filter, because the boilerplate
+  // filter may make decisions based on the hierarchical position of content
+  // TODO: this should be a parameter to the apply all function instead of
+  // hardcoding
+  // TODO: i should possibly have this consult style attribute instead of just
+  // element type (e.g. look at font-weight)
+  const emphasis_length_max = 200;
+  filter_emphasis_elements(document, emphasis_length_max);
 
   // This should occur before filtering attributes because it makes decisions
   // based on attribute values.
@@ -45,9 +71,7 @@ export async function content_filter_apply_all(
   const condense_copy_attrs_flag = false;
   condense_tagnames(document, condense_copy_attrs_flag);
 
-  const emphasis_length_max = 200;
-  filter_emphasis_elements(document, emphasis_length_max);
-
+  // This should occur before trying to set image sizes
   resolve_document_urls(document, document_url);
 
   // This should occur prior to lazyImageFilter
@@ -62,8 +86,7 @@ export async function content_filter_apply_all(
 
   // This should occur before setting image sizes to avoid unwanted network
   // requests
-  // TODO: change to passing url instead of url string
-  filter_telemetry_elements(document, document_url.href);
+  filter_telemetry_elements(document, document_url);
 
   // This should occur before trying to set image sizes simply because it
   // potentially reduces the number of images processed later
@@ -141,30 +164,20 @@ function filter_low_text_contrast(document, min_contrast_ratio) {
   let node = it.nextNode();
   while (node) {
     if (text_node_is_color_perceptible(node, min_contrast_ratio) === false) {
-      console.debug('Removing poor contrast node', node.parentNode.outerHTML);
-
+      // console.debug('Removing poor contrast node',
+      // node.parentNode.outerHTML);
       node.remove();
     }
     node = it.nextNode();
   }
 }
 
-// Removes certain attributes from elements in a document
+// Removes non-whitelisted attributes from elements
 // @param document {Document}
 // @param whitelist {Object} each property is element name, each value is array
-// of attribute names
+// of retainable attribute names
 function document_filter_non_whitelisted_attributes(document, whitelist) {
-  if (!(document instanceof Document)) {
-    throw new TypeError('Invalid document argument ' + document);
-  }
-
-  if (whitelist === null || typeof whitelist !== 'object') {
-    throw new TypeError('Invalid whitelist argument ' + whitelist);
-  }
-
-  // Use getElementsByTagName because there is no concern about removing
-  // attributes while iterating over the collection and because it is supposedly
-  // faster than querySelectorAll
+  assert(typeof whitelist === 'object');
   const elements = document.getElementsByTagName('*');
   for (const element of elements) {
     element_filter_non_whitelisted_attributes(element, whitelist);
@@ -172,12 +185,6 @@ function document_filter_non_whitelisted_attributes(document, whitelist) {
 }
 
 function element_filter_non_whitelisted_attributes(element, whitelist) {
-  // Use getAttributeNames over element.attributes because:
-  // 1) Avoid complexity with changing attributes while iterating over
-  // element.attributes
-  // 2) Simpler use of for..of
-  // 3) For the moment, appears to be faster than iterating element.attributes
-
   const attr_names = element.getAttributeNames();
   if (attr_names.length) {
     const whitelisted_names = whitelist[element.localName] || [];
@@ -284,43 +291,39 @@ function filter_container_elements(document) {
 }
 
 // Unwraps emphasis elements that are longer than the given max length
-// @param text_length_max {Number} optional, integer >= 0,
+// @param text_length_max {Number} the number of characters above which emphasis
+// is removed, required, positive integer
+// TODO: use non-whitespace character count instead of full character count
 function filter_emphasis_elements(document, text_length_max) {
-  const is_length_undefined = typeof text_length_max === 'undefined';
-  assert(
-      is_length_undefined ||
-      (Number.isInteger(text_length_max) && text_length_max >= 0));
-
-  // If we don't have a length, which is optional, then there is no benefit to
-  // filtering. We cannot use a default like 0 as that would effectively remove
-  // all emphasis.
-  if (is_length_undefined) {
-    return;
-  }
-
-  if (!document.body) {
-    return;
-  }
-
-  const elements = document.body.querySelectorAll('b, big, em, i, strong');
-  for (const element of elements) {
-    // TODO: use non-whitespace character count instead of full character count?
-    if (element.textContent.length > text_length_max) {
-      element_unwrap(element);
+  assert(Number.isInteger(text_length_max) && text_length_max > 0);
+  if (document.body) {
+    const elements = document.body.querySelectorAll('b, big, em, i, strong');
+    for (const element of elements) {
+      if (element.textContent.length > text_length_max) {
+        element_unwrap(element);
+      }
     }
   }
 }
 
-// Unwrap captionless figures
+// Remove captionless figure elements. Well-formed figures have more than one
+// child element, one being a caption and one being the captioned element. If
+// the figure has no children, it is likely used as merely a formatting element,
+// similar to a div, and should be removed. If the figure has only element,
+// then it cannot have both a caption and a captioned element, and should
+// removed.
 function filter_figure_elements(document) {
   if (document.body) {
     const figures = document.body.querySelectorAll('figure');
     for (const figure of figures) {
-      // We can tell a figure is captionless because a captioned element has
-      // at least two elements.
-      if (figure.childElementCount === 1) {
-        // TODO: if the one child is a figcaption, then this should remove
-        // the figure rather than unwrap
+      const child_count = figure.childElementCount;
+      if (child_count === 1) {
+        if (figure.firstElementChild.localName === 'figcaption') {
+          figure.remove();
+        } else {
+          element_unwrap(figure);
+        }
+      } else if (child_count === 0) {
         element_unwrap(figure);
       }
     }
@@ -329,7 +332,7 @@ function filter_figure_elements(document) {
 
 function document_ensure_body_element(document) {
   if (!document.body) {
-    const message = 'This document has no content (missing body).';
+    const message = 'This document has no content';
     const error_node = document.createTextNode(message);
     const body_element = document.createElement('body');
     body_element.appendChild(error_node);
@@ -377,6 +380,7 @@ function build_element_url_attribute_selector() {
   return parts.join(',');
 }
 
+// Resolves all attribute values that contain urls
 // @param document {Document}
 // @param base_url {URL}
 function resolve_document_urls(document, base_url) {
@@ -439,47 +443,7 @@ function srcset_resolve(element, base_url) {
   }
 }
 
-// Returns a resolved URL or undefined if there is an error
-function url_string_resolve(url_string, base_url) {
-  // Guard against passing empty string to URL constructor as that simply
-  // clones the base url
-  if (typeof url_string === 'string' && url_string && url_string.trim()) {
-    try {
-      return new URL(url_string, base_url);
-    } catch (error) {
-    }
-  }
-}
 
-// @param descriptors {Array} an array of descriptors such as those produced
-// by parseSrcset
-// @returns {String} a string suitable for storing as srcset attribute value
-function srcset_serialize(descriptors) {
-  assert(Array.isArray(descriptors));
-
-  const descriptor_strings = [];
-  for (const descriptor of descriptors) {
-    const strings = [descriptor.url];
-    if (descriptor.d) {
-      strings.push(' ');
-      strings.push(descriptor.d);
-      strings.push('x');
-    } else if (descriptor.w) {
-      strings.push(' ');
-      strings.push(descriptor.w);
-      strings.push('w');
-    } else if (descriptor.h) {
-      strings.push(' ');
-      strings.push(descriptor.h);
-      strings.push('h');
-    }
-
-    const descriptor_string = strings.join('');
-    descriptor_strings.push(descriptor_string);
-  }
-
-  return descriptor_strings.join(', ');
-}
 
 // Replace certain elements with alternative elements that have names with
 // fewer characters
@@ -990,9 +954,9 @@ function filter_lazy_images(document) {
 
     for (const lazy_attr_name of lazy_image_attribute_names) {
       if (attr_names.includes(lazy_attr_name)) {
-        const lazy_attr_name = image.getAttribute(lazy_attr_name);
-        if (url_string_is_valid(lazy_attr_name)) {
-          lazy_image_transform(image, lazy_attr_name, lazy_attr_name);
+        const lazy_attr_value = image.getAttribute(lazy_attr_name);
+        if (url_string_is_valid(lazy_attr_value)) {
+          lazy_image_transform(image, lazy_attr_name, lazy_attr_value);
           break;
         }
       }
@@ -1001,12 +965,12 @@ function filter_lazy_images(document) {
 }
 
 // TODO: inline
-function lazy_image_transform(image, lazy_attr_name, lazy_attr_name) {
+function lazy_image_transform(image, attr_name, attr_value) {
   // Remove the lazy attribute, it is no longer needed.
-  image.removeAttribute(lazy_attr_name);
+  image.removeAttribute(attr_name);
   // Create a src, or replace whatever is in the current src, with the value
   // from the lazy attribute.
-  image.setAttribute('src', lazy_attr_name);
+  image.setAttribute('src', attr_value);
 }
 
 // Filters empty leaf-like nodes from document content
@@ -1592,32 +1556,17 @@ const telemetry_host_patterns = [
   /\/\/www\.facebook\.com\/tr/i
 ];
 
-
-
-// TODO: switch to accepting url object instead of url string
-
 // Removes some telemetry data from a document.
 // @param document {Document}
-// @param url {String} canonical document url
-function filter_telemetry_elements(document, document_url_string) {
-  // Build document url. Implicitly this also validates that the url is
-  // canonical.
-  // If this fails this throws a type error, which is a kind of assertion
-  // error but it is expected
-  // here, but it should never happen. Anyway this is a mess and eventually
-  // I should just accept a URL as input instead of a string
-  assert(
-      typeof document_url_string === 'string' &&
-      document_url_string.length > 0);
-  const document_url = new URL(document_url_string);
+// @param document_url {URL} canonical document url
+function filter_telemetry_elements(document, document_url) {
+  assert(document_url instanceof URL);
 
   // Analysis is limited to descendants of body
   if (!document.body) {
     return;
   }
 
-  // TODO: when checking image visibility, should I be checking ancestry? Or
-  // just the image itself?
 
   // Telemetry images are usually hidden, so treat visibility as an indicator.
   // False positives are probably not too harmful. Removing images based on
