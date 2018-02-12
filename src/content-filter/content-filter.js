@@ -8,7 +8,7 @@ import {text_node_is_color_perceptible} from '/src/content-filter/text-contrast.
 // @param document_url {URL} the url of the document
 // @param fetch_image_timeout {Number} optional, the number of milliseconds to
 // wait before timing out when fetching an image
-export default async function content_filter_apply_all(
+export async function content_filter_apply_all(
     document, document_url, fetch_image_timeout) {
   assert(document instanceof Document);
   assert(document_url instanceof URL);

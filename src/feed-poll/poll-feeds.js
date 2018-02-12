@@ -1,13 +1,13 @@
 import {coerce_entry} from '/src/coerce-entry.js';
 import {coerce_feed} from '/src/coerce-feed.js';
-import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch-utils.js';
-import {html_parse} from '/src/html-utils.js';
-import apply_all_document_filters from '/src/content-filter/content-filter.js';
+import {content_filter_apply_all} from '/src/content-filter/content-filter.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service.js';
 import feed_parse from '/src/feed-parse.js';
 import {dedup_entries} from '/src/feed-poll/dedup-entries.js';
 import url_is_binary from '/src/feed-poll/is-binary-url.js';
 import url_rewrite from '/src/feed-poll/rewrite-url.js';
+import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch-utils.js';
+import {html_parse} from '/src/html-utils.js';
 import notification_show from '/src/notifications.js';
 import {entry_append_url, entry_has_url, entry_peek_url, feed_has_url, feed_merge, feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb.js';
 // TODO: this should not be dependent on something in the view, it should be the
@@ -647,7 +647,7 @@ async function entry_update_content(ctx, entry, fetched_document) {
   }
 
   const document_url = new URL(entry_peek_url(entry));
-  await apply_all_document_filters(
+  await content_filter_apply_all(
       document, document_url, ctx.fetchImageTimeout);
   entry.content = document.documentElement.outerHTML;
 }
