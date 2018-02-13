@@ -1,13 +1,15 @@
 import {filter_boilerplate} from '/src/content-filter/boilerplate.js';
-import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, image_has_source, image_remove, parse_srcset_wrapper, srcset_serialize, string_condense_whitespace, url_is_external, url_string_is_valid, url_string_resolve} from '/src/content-filter/content-filter-utils.js';
+import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, parse_srcset_wrapper, srcset_serialize, string_condense_whitespace, url_get_filename, url_is_external, url_string_is_valid, url_string_resolve} from '/src/content-filter/content-filter-utils.js';
 import {text_node_is_color_perceptible} from '/src/content-filter/text-contrast.js';
+
+// TODO: create a filter that turns <picture> stuff into simple image. This
+// will reduce the document size.
 
 // Re-export as if this were inline
 // TODO: look into re-export, should not need to wrap
 export function remove_boilerplate(document, options) {
   return filter_boilerplate(document, options);
 }
-
 
 // Remove text nodes with a text-color-to-background-color contrast ratio that
 // is less than or equal to the given minimum contrast ratio.
@@ -20,14 +22,11 @@ export function filter_low_text_contrast(document, min_contrast_ratio) {
   let node = it.nextNode();
   while (node) {
     if (text_node_is_color_perceptible(node, min_contrast_ratio) === false) {
-      // console.debug('Removing poor contrast node',
-      // node.parentNode.outerHTML);
       node.remove();
     }
     node = it.nextNode();
   }
 }
-
 
 // Removes non-whitelisted attributes from elements
 // @param document {Document}
@@ -301,8 +300,6 @@ function srcset_resolve(element, base_url) {
   }
 }
 
-
-
 // Replace certain elements with alternative elements that have names with
 // fewer characters
 // @param copy_attrs_flag {Boolean} optional, if true then copy attributes
@@ -420,12 +417,11 @@ export function filter_formatting_elements(document) {
 // Removes frame content from a document
 // @param document {Document} the document to inspect and modify
 export function filter_frame_elements(document) {
-  // It is a bit counterintuitive but if a document is framed then the root
-  // frame is its body, and document.body points to it (and not some <body>
-  // element)
+  // If a document is framed then the root frame is its body, and document.body
+  // points to it and not some <body> element
   let original_body = document.body;
 
-  // If the document has no body or frame element, then there is nothing to do
+  // If the document has no body, then there is nothing to do
   if (!original_body) {
     return;
   }
@@ -437,9 +433,10 @@ export function filter_frame_elements(document) {
   }
 
   // The document is framed, transform into unframed
-  let new_body = document.createElement('body');
+  const new_body = document.createElement('body');
 
   // If available, move noframes content into the new body.
+  // TODO: support multiple noframes elements
   const noframes_element = document.querySelector('noframes');
   if (noframes_element) {
     for (let node = noframes_element.firstChild; node;
@@ -456,8 +453,6 @@ export function filter_frame_elements(document) {
   }
 
   // Replace the old frameset body with the new body
-  // TODO: this assumes the body is always located under the document element, I
-  // think that is ok? Should maybe be stricter.
   document.documentElement.replaceChild(new_body, original_body);
 
   // Remove any frame or frameset elements if somehow any remain
@@ -476,6 +471,9 @@ export function filter_hidden_elements(document) {
 
   // contains is called to avoid removing descendants of elements detached in
   // prior iterations.
+  // This unwraps rather than removes due to progressive content loading
+  // techniques. There were too many cases of completely empty documents
+  // as a result of removal.
 
   const elements = body.querySelectorAll('*');
   for (const element of elements) {
@@ -594,8 +592,6 @@ async function image_get_dimensions(image, base_url, timeout) {
     return {image: image, reason: 'missing-src'};
   }
 
-  // NOTE: this assumes image source url is canonical.
-
   // Parsing the url can throw an error. image_get_dimensions should not throw
   // except in the case of a programming error.
   let source_url;
@@ -692,24 +688,6 @@ function element_get_inline_style_dimensions(element) {
   }
 }
 
-// TODO: move to utils
-// Returns a file name without its extension (and without the '.')
-function file_name_filter_extension(file_name) {
-  assert(typeof file_name === 'string');
-  const index = file_name.lastIndexOf('.');
-  return index < 0 ? file_name : file_name.substring(0, index);
-}
-
-// TODO: move to utils
-function url_get_filename(url) {
-  assert(url instanceof URL);
-  const index = url.pathname.lastIndexOf('/');
-  if ((index > -1) && (index + 1 < url.pathname.length)) {
-    return url.pathname.substring(index + 1);
-  }
-}
-
-
 // Filters certain anchors from document content
 // This is a largely a hack for a particular feed I subscribe to that uses
 // something along the lines of placeholder urls in the content, but because
@@ -743,20 +721,18 @@ function anchor_is_invalid(anchor) {
 // natural width or height. This is typical of icon or svg images that are very
 // large when missing dimensions.
 export function filter_large_image_attributes(document) {
-  if (!document.body) {
-    return;
-  }
-
-  const images = document.body.querySelectorAll('img');
-  for (const image of images) {
-    if (isLargeImage(image)) {
-      image.removeAttribute('width');
-      image.removeAttribute('height');
+  if (document.body) {
+    const images = document.body.querySelectorAll('img');
+    for (const image of images) {
+      if (image_is_large(image)) {
+        image.removeAttribute('width');
+        image.removeAttribute('height');
+      }
     }
   }
 }
 
-function isLargeImage(image) {
+function image_is_large(image) {
   const width_string = image.getAttribute('width');
   if (!width_string) {
     return false;
@@ -784,8 +760,6 @@ function isLargeImage(image) {
   return false;
 }
 
-
-
 const lazy_image_attribute_names = [
   'load-src', 'data-src', 'data-src-full16x9', 'data-src-large',
   'data-original-desktop', 'data-baseurl', 'data-flickity-lazyload',
@@ -798,38 +772,28 @@ const lazy_image_attribute_names = [
 // placeholder image in the src attribute and a full image from another
 // attribute
 export function filter_lazy_images(document) {
-  if (!document.body) {
-    return;
-  }
+  // Look for images that are missing a src attribute, and have an alternate
+  // attribute that contains a url that could serve as the image's new src,
+  // and then set the src
 
-  const images = document.body.getElementsByTagName('img');
-
-  for (const image of images) {
-    if (image_has_source(image)) {
-      continue;
-    }
-
-    const attr_names = image.getAttributeNames();
-
-    for (const lazy_attr_name of lazy_image_attribute_names) {
-      if (attr_names.includes(lazy_attr_name)) {
-        const lazy_attr_value = image.getAttribute(lazy_attr_name);
-        if (url_string_is_valid(lazy_attr_value)) {
-          lazy_image_transform(image, lazy_attr_name, lazy_attr_value);
-          break;
+  if (document.body) {
+    const images = document.body.getElementsByTagName('img');
+    for (const image of images) {
+      if (!image_has_source(image)) {
+        const attr_names = image.getAttributeNames();
+        for (const attr_name of lazy_image_attribute_names) {
+          if (attr_names.includes(attr_name)) {
+            const lazy_attr_value = image.getAttribute(attr_name);
+            if (url_string_is_valid(lazy_attr_value)) {
+              image.removeAttribute(attr_name);
+              image.setAttribute('src', lazy_attr_value);
+              break;
+            }
+          }
         }
       }
     }
   }
-}
-
-// TODO: inline
-function lazy_image_transform(image, attr_name, attr_value) {
-  // Remove the lazy attribute, it is no longer needed.
-  image.removeAttribute(attr_name);
-  // Create a src, or replace whatever is in the current src, with the value
-  // from the lazy attribute.
-  image.setAttribute('src', attr_value);
 }
 
 // Filters empty leaf-like nodes from document content
@@ -1224,9 +1188,9 @@ export function filter_small_images(document) {
   }
 }
 
-// TODO: merge this with isLargeImage, make a function that does something like
-// image_bin_size, and returns small or large or other. Then deprecate
-// image_is_small and isLargeImage
+// TODO: merge this with image_is_large, make a function that does something
+// like image_bin_size, and returns small or large or other. Then deprecate
+// image_is_small and image_is_large
 // TODO: furthermore, consider merging filter_small_images and
 // filter_large_image into a single filter filter_image_by_size
 function image_is_small(image) {

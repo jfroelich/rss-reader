@@ -1,6 +1,6 @@
 import show_slideshow_tab from '/src/views/show-slideshow-tab.js';
 
-export default function notification_show(title, message, iconURL) {
+export default function notification_show(title, message, icon_url) {
   if (typeof Notification === 'undefined') {
     return;
   }
@@ -13,18 +13,19 @@ export default function notification_show(title, message, iconURL) {
     return;
   }
 
-  const defaultIconURL = chrome.extension.getURL('/images/rss_icon_trans.gif');
+  const default_icon_url =
+      chrome.extension.getURL('/images/rss_icon_trans.gif');
 
   const details = {};
   details.body = message || '';
-  details.icon = iconURL || defaultIconURL;
+  details.icon = icon_url || default_icon_url;
 
   // Instantiation implicitly shows the notification
   const notification = new Notification(title, details);
-  notification.addEventListener('click', notificationOnclick);
+  notification.addEventListener('click', notification_onclick);
 }
 
-function notificationOnclick(event) {
+function notification_onclick(event) {
   // TODO: test if the absence of this approach still causes a crash in latest
   // Chrome
   // TODO: move this issue to github
@@ -32,8 +33,8 @@ function notificationOnclick(event) {
   // Ensure the browser is open to avoid crash that occurs in Chrome 55 running
   // on Mac
   try {
-    const windowHandle = window.open();
-    windowHandle.close();
+    const hwnd = window.open();
+    hwnd.close();
   } catch (error) {
     console.warn(error);
     return;

@@ -5,7 +5,6 @@ import unsubscribe from '/src/feed-ops/unsubscribe.js';
 import {poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
 import {rdb_feed_activate, rdb_feed_deactivate, rdb_for_each_active_feed, rdb_get_feeds, rdb_open, rdb_viewable_entries_for_each} from '/src/rdb.js';
 
-
 // Resource acquisition layer (RAL). An intermediate layer between storage and
 // the view that helps calls acquire and release needed resources, and supplies
 // some default values. The goal is to generally boil down calls from the view
@@ -15,7 +14,6 @@ import {rdb_feed_activate, rdb_feed_deactivate, rdb_for_each_active_feed, rdb_ge
 // these functions are not easily testable, and the calls that have been wrapped
 // should be tested instead, because those calls accept an open database
 // connection as input, which allows for using a mock database.
-
 
 
 // TODO: move this comment to a github issue

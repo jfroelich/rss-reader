@@ -107,10 +107,10 @@ function sleep(ms) {
 
 // Return true if the response url is 'different' than the request url,
 // indicating a redirect, regardless of the value of response.redirected
-// @param requestURL {URL}
-// @param responseURL {URL}
-export function url_did_change(requestURL, responseURL) {
-  return !url_compare_no_hash(requestURL, responseURL);
+// @param request_url {URL}
+// @param response_url {URL}
+export function url_did_change(request_url, response_url) {
+  return !url_compare_no_hash(request_url, response_url);
 }
 
 // Compares two urls for equality without considering hash values

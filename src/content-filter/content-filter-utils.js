@@ -1,6 +1,22 @@
 import '/third-party/parse-srcset.js';
 import {url_is_allowed} from '/src/fetch-utils.js';
 
+// Returns a file name without its extension (and without the '.')
+export function file_name_filter_extension(file_name) {
+  assert(typeof file_name === 'string');
+  const index = file_name.lastIndexOf('.');
+  return index < 0 ? file_name : file_name.substring(0, index);
+}
+
+// Gets the file name part of a url, or undefined
+export function url_get_filename(url) {
+  assert(url instanceof URL);
+  const index = url.pathname.lastIndexOf('/');
+  if ((index > -1) && (index + 1 < url.pathname.length)) {
+    return url.pathname.substring(index + 1);
+  }
+}
+
 // Returns a promise that resolves to undefined after a given amount of time (in
 // milliseconds). By racing this promise against another promise, this is useful
 // for imposing a timeout on the other operation.

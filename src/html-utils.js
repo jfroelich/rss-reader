@@ -1,4 +1,3 @@
-
 // Given an input value, if it is a string, then creates and returns a new
 // string where html entities have been decoded into corresponding values. For
 // example, '&lt;' becomes '<'. Adapted from
@@ -12,7 +11,7 @@
 // something working
 // TODO: I believe the shared worker element technique is 'thread-safe' because
 // all dom access is synchronous. Right? Pretty sure but never really verified.
-const PERSISTENT_WORKER_ELEMENT = document.createElement('div');
+const UNSAFE_PERSISTENT_WORKER_ELEMENT = document.createElement('div');
 export function html_decode_entities(value) {
   const entity_pattern = /&[#0-9A-Za-z]+;/g;
   return typeof value === 'string' ?
@@ -21,16 +20,16 @@ export function html_decode_entities(value) {
           function replacer(entity) {
             // Set the value of the shared worker element. By using innerHTML
             // this sets the raw value
-            PERSISTENT_WORKER_ELEMENT.innerHTML = entity;
+            UNSAFE_PERSISTENT_WORKER_ELEMENT.innerHTML = entity;
             // Now get the value back out. The accessor will do the decoding
             // dynamically.
             // TODO: why innerText? probably should just use textContent? Wait
             // until I implement a testing lib to change.
-            const text = PERSISTENT_WORKER_ELEMENT.innerText;
+            const text = UNSAFE_PERSISTENT_WORKER_ELEMENT.innerText;
             // Reset it each time to avoid leaving crap hanging around because
             // worker element lifetime is page lifetime not function scope
             // lifetime
-            PERSISTENT_WORKER_ELEMENT.innerHTML = '';
+            UNSAFE_PERSISTENT_WORKER_ELEMENT.innerHTML = '';
             return text;
           }) :
       value;
@@ -42,9 +41,9 @@ export function html_decode_entities(value) {
 // See https://stackoverflow.com/questions/784586 for reference
 export function html_escape(html_string) {
   // TEMP: not replacing & due to common double encoding issue
-  const escapeHTMLPattern = /[<>"']/g;
+  const escape_html_pattern = /[<>"']/g;
   if (typeof html_string === 'string') {
-    return html_string.replace(escapeHTMLPattern, html_encode_first_char);
+    return html_string.replace(escape_html_pattern, html_encode_first_char);
   }
 }
 
