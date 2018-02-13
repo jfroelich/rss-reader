@@ -1,6 +1,5 @@
 import findLCA from '/experimental/lca.js';
-import {element_is_hidden_inline} from '/src/content-filter/content-filter-utils.js';
-
+import {element_is_hidden_inline} from '/src/content-filters/utils.js';
 
 // TODO: maybe revert to returning an object that abstracts the urls and other
 // properties

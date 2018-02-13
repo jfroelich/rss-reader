@@ -1,5 +1,5 @@
 import {html_parse} from '/src/html-utils.js';
-import filterEmptyAttributes from '/src/content-filter/empty-attribute-filter.js';
+import filterEmptyAttributes from '/src/content-filters/empty-attribute-filter.js';
 
 // Simple empty non-boolean attribute in body
 let input = '<html><head></head><body><a name="">test</a></body></html>';

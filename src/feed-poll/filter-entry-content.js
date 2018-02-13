@@ -1,4 +1,4 @@
-import * as filters from '/src/content-filter/content-filter.js';
+import * as filters from '/src/content-filters/content-filters.js';
 
 // Transforms a document by removing or changing nodes for various reasons.
 // @param document {Document} the document to transform

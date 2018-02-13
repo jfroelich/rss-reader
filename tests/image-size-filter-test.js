@@ -1,6 +1,6 @@
 import * as FetchUtils from '/src/fetch-utils.js';
 import {html_parse} from '/src/html-utils.js';
-import setImageSizes from '/src/content-filter/image-size-filter.js';
+import setImageSizes from '/src/content-filters/image-size-filter.js';
 
 // TODO: research http://exercism.io/ svg loading issue
 // Actually there is now a separate issue. It's not finding any urls. Something
