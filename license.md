@@ -1,4 +1,4 @@
-Copyright 2017 Josh Froelich. All rights reserved.
+Copyright 2018 Josh Froelich. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -23,7 +23,12 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Font license information
+Third-party code license information:
+
+* tinycolor.js - MIT License
+* parse-srcset.js - MIT License
+
+Font license information:
 
 * Fanwood https://www.theleagueofmoveabletype.com/
 * League Mono Regular https://www.theleagueofmoveabletype.com/
