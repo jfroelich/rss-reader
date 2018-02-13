@@ -565,6 +565,7 @@ function url_get_upper_domain(url) {
   // Using the full list from
   // https://publicsuffix.org/list/public_suffix_list.dat is overkill. Decide
   // based on tld character length. We know levels.length > 2.
+  const top_level = levels[levels.length - 1];
   const reverse_offset = top_level.length === 2 ? -3 : -2;
   // [1,2,3,4].slice(-2) => [3,4]
   // [1,2,3,4].slice(-3) => [2,3,4]
