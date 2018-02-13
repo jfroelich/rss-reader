@@ -1,9 +1,9 @@
 import {coerce_entry} from '/src/coerce-entry.js';
 import {coerce_feed} from '/src/coerce-feed.js';
-import {content_filter_apply_all} from '/src/content-filter/content-filter.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service.js';
 import feed_parse from '/src/feed-parse.js';
 import {dedup_entries} from '/src/feed-poll/dedup-entries.js';
+import {filter_entry_content} from '/src/feed-poll/filter-entry-content.js';
 import url_is_binary from '/src/feed-poll/is-binary-url.js';
 import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch-utils.js';
@@ -647,8 +647,7 @@ async function entry_update_content(ctx, entry, fetched_document) {
   }
 
   const document_url = new URL(entry_peek_url(entry));
-  await content_filter_apply_all(
-      document, document_url, ctx.fetchImageTimeout);
+  await filter_entry_content(document, document_url, ctx.fetchImageTimeout);
   entry.content = document.documentElement.outerHTML;
 }
 

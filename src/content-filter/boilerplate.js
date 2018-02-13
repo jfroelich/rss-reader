@@ -1,6 +1,6 @@
 // Removes boilerplate content from a document
 // @param document {Document}
-export default function filter_boilerplate(document, options) {
+export function filter_boilerplate(document, options) {
   assert(document instanceof Document);
   if (!document.body) {
     return;

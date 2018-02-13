@@ -1,161 +1,17 @@
-import filter_boilerplate from '/src/content-filter/boilerplate.js';
+import {filter_boilerplate} from '/src/content-filter/boilerplate.js';
 import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, image_has_source, image_remove, parse_srcset_wrapper, srcset_serialize, string_condense_whitespace, url_is_external, url_string_is_valid, url_string_resolve} from '/src/content-filter/content-filter-utils.js';
 import {text_node_is_color_perceptible} from '/src/content-filter/text-contrast.js';
 
-// Transforms a document by removing or changing nodes for various reasons.
-// @param document {Document} the document to transform
-// @param document_url {URL} the location of the document
-// @param fetch_image_timeout {Number} optional, the number of milliseconds to
-// wait before timing out when fetching an image
-export async function content_filter_apply_all(
-    document, document_url, fetch_image_timeout) {
-  assert(document instanceof Document);
-  assert(document_url instanceof URL);
-
-  // These filters related to document.body should occur near the start, because
-  // 90% of the other content filters pertain to document.body.
-  filter_frame_elements(document);
-  document_ensure_body_element(document);
-
-  // This filter does not apply only to body, and is a primary security concern.
-  // It could occur later but doing it earlier means later filters visit fewer
-  // elements.
-  filter_script_elements(document);
-  filter_iframe_elements(document);
-  filter_comment_nodes(document);
-
-  // This can occur at any point. It should generally be done before urls are
-  // resolved to reduce the work done by that filter.
-  filter_base_elements(document);
-
-  // This should occur earlier on in the pipeline. It will reduce the amount of
-  // work done by later filters. It should occur before processing boilerplate,
-  // because the boilerplate filter is naive about hidden elements.
-  filter_hidden_elements(document);
-
-  // Do this after filtering hidden elements so that it does less work
-  // This should be done prior to removing style information (either style
-  // elements or inline style attributes). I am not sure whether this should be
-  // done before or after boilerplate filter, but my instinct is that spam
-  // techniques are boilerplate, and the boilerplate filter is naive with regard
-  // to spam, so it is preferable to do it before.
-  filter_low_text_contrast(document, localStorage.MIN_CONTRAST_RATIO);
-
-  // This should generally occur earlier, because of websites that use an
-  // information-revealing technique with noscript.
-  filter_noscript_elements(document);
-
-  filter_blacklisted_elements(document);
-
-  // This should occur before the boilerplate filter (I think?).
-  filter_script_anchors(document);
-
-  // This should occur prior to removing boilerplate content because it has
-  // express knowledge of content organization
-  filter_by_host_template(document, document_url);
-
-  // This should occur before the boilerplate filter, because the boilerplate
-  // filter may make decisions based on the hierarchical position of content
-  // TODO: this should be a parameter to the apply all function instead of
-  // hardcoding
-  // TODO: i should possibly have this consult style attribute instead of just
-  // element type (e.g. look at font-weight)
-  const emphasis_length_max = 200;
-  filter_emphasis_elements(document, emphasis_length_max);
-
-  // This should occur before filtering attributes because it makes decisions
-  // based on attribute values.
-  // This should occur after filtering hidden elements
-  filter_boilerplate(document);
-
-  const condense_copy_attrs_flag = false;
-  condense_tagnames(document, condense_copy_attrs_flag);
-
-  // This should occur before trying to set image sizes
-  resolve_document_urls(document, document_url);
-
-  // This should occur prior to lazyImageFilter
-  // This should occur prior to imageSizeFilter
-  // Does not matter if before or after canonicalizing urls
-  filter_responsive_images(document);
-
-  // This should occur before removing images that are missing a src value,
-  // because lazily-loaded images often are missign a source value but are
-  // still useful
-  filter_lazy_images(document);
-
-  // This should occur before setting image sizes to avoid unwanted network
-  // requests
-  filter_telemetry_elements(document, document_url);
-
-  // This should occur before trying to set image sizes simply because it
-  // potentially reduces the number of images processed later
-  filter_sourceless_images(document);
-
-  // It does not matter if this occurs before or after resolving urls. This now
-  // accepts a base url parameter and dynamically canonicalizes image urls
-  // (without writing back to document). This should occur after removing
-  // telemetry, because this involves network requests that perhaps the
-  // telemetry filter thinks should be avoided. Allow exceptions to bubble
-  await document_set_image_sizes(document, document_url, fetch_image_timeout);
-
-  // This should occur after setting image sizes because it requires knowledge
-  // of image size
-  filter_small_images(document);
-
-  filter_invalid_anchors(document);
-  filter_formatting_anchors(document);
-  filter_form_elements(document);
-  filter_br_elements(document);
-  filter_hr_elements(document);
-  filter_formatting_elements(document);
-  apply_adoption_agency_filter(document);
-  filter_semantic_elements(document);
-  filter_figure_elements(document);
-  filter_container_elements(document);
-  filter_list_elements(document);
-
-  const table_row_scan_max = 20;
-  filter_table_elements(document, table_row_scan_max);
-
-  // Better to call later than earlier to reduce number of text nodes visited
-  filter_node_whitespace(document);
-
-  // This should be called after most of the other filters. Most of the other
-  // filters are naive in how they leave ancestor elements meaningless or empty,
-  // and simply remove elements without considering ripple effects. So this is
-  // like an additional pass now that several holes have been made.
-  filter_leaf_nodes(document);
-
-  // Should be called near end because its behavior changes based on what
-  // content remains, and is faster with fewer elements
-  document_trim(document);
-
-  // Primarily an attribute filter, so it should be caller as late as possible
-  // to reduce the number of elements visited
-  add_noreferrer_to_anchors(document);
-  remove_ping_attribute_from_all_anchors(document);
-
-  // Filter attributes close to last because it is so slow and is sped up
-  // by processing fewer elements.
-  const attribute_whitelist = {
-    a: ['href', 'name', 'title', 'rel'],
-    iframe: ['src'],
-    source: ['media', 'sizes', 'srcset', 'src', 'type'],
-    img: ['src', 'alt', 'title', 'srcset', 'width', 'height']
-  };
-
-  filter_large_image_attributes(document);
-  document_filter_non_whitelisted_attributes(document, attribute_whitelist);
-
-  // TODO: move this up to before some of the other attribute filters, or
-  // explain why it should occur later
-  document_filter_empty_attributes(document);
+// Re-export as if this were inline
+// TODO: look into re-export, should not need to wrap
+export function remove_boilerplate(document, options) {
+  return filter_boilerplate(document, options);
 }
+
 
 // Remove text nodes with a text-color-to-background-color contrast ratio that
 // is less than or equal to the given minimum contrast ratio.
-function filter_low_text_contrast(document, min_contrast_ratio) {
+export function filter_low_text_contrast(document, min_contrast_ratio) {
   if (!document.body) {
     return;
   }
@@ -172,11 +28,13 @@ function filter_low_text_contrast(document, min_contrast_ratio) {
   }
 }
 
+
 // Removes non-whitelisted attributes from elements
 // @param document {Document}
 // @param whitelist {Object} each property is element name, each value is array
 // of retainable attribute names
-function document_filter_non_whitelisted_attributes(document, whitelist) {
+export function document_filter_non_whitelisted_attributes(
+    document, whitelist) {
   assert(typeof whitelist === 'object');
   const elements = document.getElementsByTagName('*');
   for (const element of elements) {
@@ -184,7 +42,7 @@ function document_filter_non_whitelisted_attributes(document, whitelist) {
   }
 }
 
-function element_filter_non_whitelisted_attributes(element, whitelist) {
+export function element_filter_non_whitelisted_attributes(element, whitelist) {
   const attr_names = element.getAttributeNames();
   if (attr_names.length) {
     const whitelisted_names = whitelist[element.localName] || [];
@@ -198,7 +56,7 @@ function element_filter_non_whitelisted_attributes(element, whitelist) {
 
 // Removes, moves, or otherwise changes certain out-of-place elements in
 // document content
-function apply_adoption_agency_filter(document) {
+export function apply_adoption_agency_filter(document) {
   if (!(document instanceof Document)) {
     throw new TypeError('Invalid document ' + document);
   }
@@ -256,14 +114,14 @@ function apply_adoption_agency_filter(document) {
   }
 }
 
-function filter_base_elements(document) {
+export function filter_base_elements(document) {
   const bases = document.querySelectorAll('base');
   for (const base of bases) {
     base.remove();
   }
 }
 
-function filter_br_elements(document) {
+export function filter_br_elements(document) {
   if (document.body) {
     const brs = document.body.querySelectorAll('br + br');
     for (const br of brs) {
@@ -272,7 +130,7 @@ function filter_br_elements(document) {
   }
 }
 
-function filter_comment_nodes(document) {
+export function filter_comment_nodes(document) {
   const it = document.createNodeIterator(
       document.documentElement, NodeFilter.SHOW_COMMENT);
   for (let node = it.nextNode(); node; node = it.nextNode()) {
@@ -281,7 +139,7 @@ function filter_comment_nodes(document) {
 }
 
 // Unwraps non-semantic container-like elements
-function filter_container_elements(document) {
+export function filter_container_elements(document) {
   if (document.body) {
     const elements = document.body.querySelectorAll('div, ilayer, layer');
     for (const element of elements) {
@@ -294,7 +152,7 @@ function filter_container_elements(document) {
 // @param text_length_max {Number} the number of characters above which emphasis
 // is removed, required, positive integer
 // TODO: use non-whitespace character count instead of full character count
-function filter_emphasis_elements(document, text_length_max) {
+export function filter_emphasis_elements(document, text_length_max) {
   assert(Number.isInteger(text_length_max) && text_length_max > 0);
   if (document.body) {
     const elements = document.body.querySelectorAll('b, big, em, i, strong');
@@ -312,7 +170,7 @@ function filter_emphasis_elements(document, text_length_max) {
 // similar to a div, and should be removed. If the figure has only element,
 // then it cannot have both a caption and a captioned element, and should
 // removed.
-function filter_figure_elements(document) {
+export function filter_figure_elements(document) {
   if (document.body) {
     const figures = document.body.querySelectorAll('figure');
     for (const figure of figures) {
@@ -330,7 +188,7 @@ function filter_figure_elements(document) {
   }
 }
 
-function document_ensure_body_element(document) {
+export function document_ensure_body_element(document) {
   if (!document.body) {
     const message = 'This document has no content';
     const error_node = document.createTextNode(message);
@@ -371,7 +229,7 @@ const element_url_attribute_map = {
 // Initialize the selector once on module load
 const element_url_attribute_selector = build_element_url_attribute_selector();
 
-function build_element_url_attribute_selector() {
+export function build_element_url_attribute_selector() {
   const keys = Object.keys(element_url_attribute_map);
   const parts = [];
   for (const part of keys) {
@@ -383,7 +241,7 @@ function build_element_url_attribute_selector() {
 // Resolves all attribute values that contain urls
 // @param document {Document}
 // @param base_url {URL}
-function resolve_document_urls(document, base_url) {
+export function resolve_document_urls(document, base_url) {
   assert(base_url instanceof URL);
 
   const src_elements =
@@ -448,11 +306,12 @@ function srcset_resolve(element, base_url) {
 // Replace certain elements with alternative elements that have names with
 // fewer characters
 // @param copy_attrs_flag {Boolean} optional, if true then copy attributes
-function condense_tagnames(document, copy_attrs_flag) {
+export function condense_tagnames(document, copy_attrs_flag) {
   if (!document.body) {
     return;
   }
 
+  // TODO: inline coerce all
   element_coerce_all(document.body, 'strong', 'b', copy_attrs_flag);
   element_coerce_all(document.body, 'em', 'i', copy_attrs_flag);
 }
@@ -465,7 +324,7 @@ const blacklisted_element_selector = [
 ].join(',');
 
 // Filters blacklisted elements from document content
-function filter_blacklisted_elements(document) {
+export function filter_blacklisted_elements(document) {
   const document_element = document.documentElement;
   const elements = document.querySelectorAll(blacklisted_element_selector);
   for (const element of elements) {
@@ -475,7 +334,7 @@ function filter_blacklisted_elements(document) {
   }
 }
 
-function document_filter_empty_attributes(document) {
+export function document_filter_empty_attributes(document) {
   if (document.body) {
     const elements = document.body.getElementsByTagName('*');
     for (const element of elements) {
@@ -484,7 +343,7 @@ function document_filter_empty_attributes(document) {
   }
 }
 
-function element_filter_empty_attributes(element) {
+export function element_filter_empty_attributes(element) {
   // TODO: does getAttributeNames lowercase? Just noticed I assume that it
   // does but never verified
   const names = element.getAttributeNames();
@@ -500,7 +359,7 @@ function element_filter_empty_attributes(element) {
 
 // Filters or transforms certain form elements and form-related elements from
 // document content
-function filter_form_elements(document) {
+export function filter_form_elements(document) {
   if (!document.body) {
     return;
   }
@@ -530,7 +389,7 @@ function filter_form_elements(document) {
 }
 
 // Unwrap anchors without href attributes
-function filter_formatting_anchors(document) {
+export function filter_formatting_anchors(document) {
   if (document.body) {
     const anchors = document.body.querySelectorAll('a');
     for (const anchor of anchors) {
@@ -548,7 +407,7 @@ const formatting_elements_selector = [
 ].join(',');
 
 // Remove formatting elements
-function filter_formatting_elements(document) {
+export function filter_formatting_elements(document) {
   if (document.body) {
     const elements =
         document.body.querySelectorAll(formatting_elements_selector);
@@ -560,7 +419,7 @@ function filter_formatting_elements(document) {
 
 // Removes frame content from a document
 // @param document {Document} the document to inspect and modify
-function filter_frame_elements(document) {
+export function filter_frame_elements(document) {
   // It is a bit counterintuitive but if a document is framed then the root
   // frame is its body, and document.body points to it (and not some <body>
   // element)
@@ -609,7 +468,7 @@ function filter_frame_elements(document) {
 }
 
 // Filters hidden elements from a document
-function filter_hidden_elements(document) {
+export function filter_hidden_elements(document) {
   const body = document.body;
   if (!body) {
     return;
@@ -628,7 +487,7 @@ function filter_hidden_elements(document) {
 
 // @param document {Document}
 // @param url {URL}
-function filter_by_host_template(document, url) {
+export function filter_by_host_template(document, url) {
   if (!url) {
     return;
   }
@@ -657,7 +516,7 @@ function filter_by_host_template(document, url) {
 // Filters certain horizontal rule elements from document content
 // Look for all <hr><hr> sequences and remove the second one. Naive in that it
 // does not fully account for new document state as hrs removed.
-function filter_hr_elements(document) {
+export function filter_hr_elements(document) {
   if (document.body) {
     const hrs = document.body.querySelectorAll('hr + hr');
     for (const hr of hrs) {
@@ -667,7 +526,7 @@ function filter_hr_elements(document) {
 }
 
 // Removes iframe elements
-function filter_iframe_elements(document) {
+export function filter_iframe_elements(document) {
   if (document.body) {
     const frames = document.body.querySelectorAll('iframe');
     for (const frame of frames) {
@@ -686,7 +545,7 @@ function filter_iframe_elements(document) {
 // data/http/https
 // @param timeout {Number} optional, if undefined or 0 then no timeout
 // @returns {Number} the number of images modified
-async function document_set_image_sizes(document, base_url, timeout) {
+export async function document_set_image_sizes(document, base_url, timeout) {
   assert(
       base_url === null || typeof base_url === 'undefined' ||
       base_url instanceof URL);
@@ -859,7 +718,7 @@ function url_get_filename(url) {
 // TODO: maybe just generalize this to unwrap all anchors that contain
 // invalid urls
 // TODO: shouldn't this be an unwrap? what if the anchor has valuable content?
-function filter_invalid_anchors(document) {
+export function filter_invalid_anchors(document) {
   if (document.body) {
     const anchors = document.body.querySelectorAll('a');
     for (const anchor of anchors) {
@@ -883,7 +742,7 @@ function anchor_is_invalid(anchor) {
 // issue of removing width and height from small images that have very large
 // natural width or height. This is typical of icon or svg images that are very
 // large when missing dimensions.
-function filter_large_image_attributes(document) {
+export function filter_large_image_attributes(document) {
   if (!document.body) {
     return;
   }
@@ -938,7 +797,7 @@ const lazy_image_attribute_names = [
 // TODO: try and determine if an image with a src attribute is using a
 // placeholder image in the src attribute and a full image from another
 // attribute
-function filter_lazy_images(document) {
+export function filter_lazy_images(document) {
   if (!document.body) {
     return;
   }
@@ -974,7 +833,7 @@ function lazy_image_transform(image, attr_name, attr_value) {
 }
 
 // Filters empty leaf-like nodes from document content
-function filter_leaf_nodes(document) {
+export function filter_leaf_nodes(document) {
   if (document.body) {
     const root = document.documentElement;
     const elements = document.body.querySelectorAll('*');
@@ -1023,7 +882,7 @@ const leaf_exception_element_names = [
 // TODO: re-use void elements list? maybe something like a two part condition
 // that returns true if node is void element or is in extras list. Actually
 // that doesn't seem quite right. I've confused myself here with this comment.
-function element_is_leaf_exception(element) {
+export function element_is_leaf_exception(element) {
   return leaf_exception_element_names.includes(element.localName);
 }
 
@@ -1031,7 +890,7 @@ function element_is_leaf_exception(element) {
 // TODO: restrict children of list to proper child type. E.g. only allow li or
 // form within ul/ol, and dd/dt/form within dl. Do some type of transform like
 // move such items to within a new child
-function filter_list_elements(document) {
+export function filter_list_elements(document) {
   if (!document.body) {
     return;
   }
@@ -1190,7 +1049,7 @@ function list_element_unwrap_single_item(list) {
 
 // Filters certain whitespace from a document. This scans the text nodes of a
 // document and modifies certain text nodes.
-function filter_node_whitespace(document) {
+export function filter_node_whitespace(document) {
   if (!document.body) {
     return;
   }
@@ -1220,7 +1079,7 @@ function node_is_ws_sensitive(node) {
 // Specifies that all links are noreferrer
 // TODO: this function's behavior conflicts with attribute filter. Need to
 // whitelist this attribute (and this value) for this element.
-function add_noreferrer_to_anchors(document) {
+export function add_noreferrer_to_anchors(document) {
   if (document.body) {
     const anchors = document.body.getElementsByTagName('a');
     for (const anchor of anchors) {
@@ -1230,7 +1089,7 @@ function add_noreferrer_to_anchors(document) {
 }
 
 // Transforms noscript elements
-function filter_noscript_elements(document) {
+export function filter_noscript_elements(document) {
   if (document.body) {
     const noscripts = document.body.querySelectorAll('noscript');
     for (const noscript of noscripts) {
@@ -1240,7 +1099,7 @@ function filter_noscript_elements(document) {
 }
 
 // Removes ping attributes from anchor elements in document content
-function remove_ping_attribute_from_all_anchors(document) {
+export function remove_ping_attribute_from_all_anchors(document) {
   if (document.body) {
     const anchors = document.body.querySelectorAll('a[ping]');
     for (const anchor of anchors) {
@@ -1255,7 +1114,7 @@ function remove_ping_attribute_from_all_anchors(document) {
 // dynamically after the document has been loaded. This filter looks for such
 // images and changes them to use one of the descriptors from the srcset as the
 // src.
-function filter_responsive_images(document) {
+export function filter_responsive_images(document) {
   if (document.body) {
     const images = document.body.getElementsByTagName('img');
     for (const image of images) {
@@ -1322,7 +1181,7 @@ function image_transform_to_descriptor(image, descriptor) {
 
 
 // Unwraps anchor elements containing href attribute values that are javascript
-function filter_script_anchors(document) {
+export function filter_script_anchors(document) {
   if (document.body) {
     const anchors = document.body.querySelectorAll('a[href]');
     for (const anchor of anchors) {
@@ -1347,14 +1206,14 @@ function url_string_has_script_protocol(url_string) {
 
 
 // Removes script elements from document content
-function filter_script_elements(document) {
+export function filter_script_elements(document) {
   const scripts = document.querySelectorAll('script');
   for (const script of scripts) {
     script.remove();
   }
 }
 
-function filter_small_images(document) {
+export function filter_small_images(document) {
   if (document.body) {
     const images = document.body.querySelectorAll('img');
     for (const image of images) {
@@ -1368,6 +1227,8 @@ function filter_small_images(document) {
 // TODO: merge this with isLargeImage, make a function that does something like
 // image_bin_size, and returns small or large or other. Then deprecate
 // image_is_small and isLargeImage
+// TODO: furthermore, consider merging filter_small_images and
+// filter_large_image into a single filter filter_image_by_size
 function image_is_small(image) {
   const width_string = image.getAttribute('width');
   if (!width_string) {
@@ -1406,7 +1267,7 @@ function image_is_small(image) {
 
 
 // Filter semantic web elements from document content
-function filter_semantic_elements(document) {
+export function filter_semantic_elements(document) {
   if (document.body) {
     const selector = 'article, aside, footer, header, main, section';
     const elements = document.body.querySelectorAll(selector);
@@ -1417,7 +1278,7 @@ function filter_semantic_elements(document) {
 }
 
 // Removes images without src attribute
-function filter_sourceless_images(document) {
+export function filter_sourceless_images(document) {
   if (document.body) {
     const images = document.body.querySelectorAll('img');
     for (const image of images) {
@@ -1430,7 +1291,7 @@ function filter_sourceless_images(document) {
 
 // Remove whitespace and whitespace-like content from the start and end of a
 // document's body.
-function document_trim(document) {
+export function document_trim(document) {
   if (document.body) {
     const first_child = document.body.firstChild;
     if (first_child) {
@@ -1459,7 +1320,7 @@ function node_is_trimmable(node) {
 }
 
 // Filters certain table elements from document content
-function filter_table_elements(document, table_row_scan_max) {
+export function filter_table_elements(document, table_row_scan_max) {
   if (document.body) {
     const elements = document.body.querySelectorAll(
         'colgroup, hgroup, multicol, tbody, tfoot, thead');
@@ -1559,7 +1420,7 @@ const telemetry_host_patterns = [
 // Removes some telemetry data from a document.
 // @param document {Document}
 // @param document_url {URL} canonical document url
-function filter_telemetry_elements(document, document_url) {
+export function filter_telemetry_elements(document, document_url) {
   assert(document_url instanceof URL);
 
   // Analysis is limited to descendants of body

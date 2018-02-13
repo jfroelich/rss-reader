@@ -268,8 +268,7 @@ function element_is_offscreen(style) {
   return false;
 }
 
-// TODO: in hindsight this function is overly simplistic, just inline it
-// (probably need to export element_coerce in its place)
+// TODO: inline
 export function element_coerce_all(
     ancestor_element, old_name, new_name, copy_attributes_flag) {
   assert(ancestor_element instanceof Element);
@@ -313,7 +312,7 @@ export function element_coerce_all(
 // it is undefined, or if the new name is not valid. Note that the name validity
 // check is very minimal and not spec compliant.
 // @return {Element} the new element that replaced the old one
-function element_coerce(element, new_name, copy_attributes_flag = true) {
+export function element_coerce(element, new_name, copy_attributes_flag = true) {
   assert(element instanceof Element);
 
   // Document.prototype.createElement is very forgiving regarding a new
@@ -396,7 +395,7 @@ export function element_move_child_nodes(from_element, to_element) {
 
 // See https://html.spec.whatwg.org/multipage/syntax.html#void-elements
 // This is a set, but given the small size, it is better to use a simple array.
-const void_elements = [
+export const void_elements = [
   'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta',
   'param', 'source', 'track', 'wbr'
 ];
@@ -494,9 +493,8 @@ function fetch_image_element_promise(url) {
 
     proxy.onload = () => resolve(proxy);
     proxy.onerror = (event) => {
-      // TODO: examine if there is a discernible error message to use rather
-      // than creating a custom one
-      console.dir(event);
+      // NOTE: the event does not contain a useful error object, or any error
+      // information at all really, so create our own error
       reject(new Error('Unknown error fetching image ' + url.href));
     };
   });
@@ -532,43 +530,29 @@ export function url_is_external(document_url, other_url) {
 }
 
 // Returns the 1st and 2nd level domains as a string. Basically hostname
-// without subdomains. This only does minimal symbolic validation of values,
-// and is also inaccurate and insecure.
+// without subdomains. This only does minimal symbolic validation, and is
+// inaccurate.
 function url_get_upper_domain(url) {
   assert(url instanceof URL);
 
-  // Treat IP as whole
   if (hostname_is_ipv4(url.hostname) || hostname_is_ipv6(url.hostname)) {
     return url.hostname;
   }
 
   const levels = url.hostname.split('.');
-
-  // Handle the simple case of 'localhost'
-  if (levels.length === 1) {
+  // We know hostname is a non-0 length string, so we know levels.length is
+  // greater than 0. Handle the simple cases of 'localhost' or 'example.com'
+  if (levels.length < 3) {
     return url.hostname;
   }
 
-  // Handle the simple case of 'example.com'
-  if (levels.length === 2) {
-    return url.hostname;
-  }
-
-  // This isn't meant to be super accurate or professional. Using the full list
-  // from https://publicsuffix.org/list/public_suffix_list.dat is overkill. As
-  // a compromise, just look at character count of top level domain. If
-  // character count is 2, assume it is a geotld, and return 3 levels. Otherwise
-  // return 2.
-  const top_level = levels[levels.length - 1];
-  if (top_level.length === 2) {
-    // Infer it is ccTLD, return levels 3 + 2 + 1
-    const used_levels = levels.slice(-3);
-    return used_levels.join('.');
-  } else {
-    // Infer it is gTLD, returns levels 2 + 1
-    const used_levels = levels.slice(-2);
-    return used_levels.join('.');
-  }
+  // Using the full list from
+  // https://publicsuffix.org/list/public_suffix_list.dat is overkill. Decide
+  // based on tld character length. We know levels.length > 2.
+  const reverse_offset = top_level.length === 2 ? -3 : -2;
+  // [1,2,3,4].slice(-2) => [3,4]
+  // [1,2,3,4].slice(-3) => [2,3,4]
+  return levels.slice(reverse_offset).join('.');
 }
 
 function hostname_is_ipv4(string) {
