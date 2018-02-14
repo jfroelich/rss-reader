@@ -13,18 +13,18 @@ export async function filter_entry_content(
   // These filters related to document.body should occur near the start, because
   // 90% of the other content filters pertain to document.body.
   filters.filter_frame_elements(document);
-  filters.document_ensure_body_element(document);
+  filters.cf_ensure_body(document);
 
   // This filter does not apply only to body, and is a primary security concern.
   // It could occur later but doing it earlier means later filters visit fewer
   // elements.
   filters.filter_script_elements(document);
   filters.filter_iframe_elements(document);
-  filters.filter_comment_nodes(document);
+  filters.cf_filter_comments(document);
 
   // This can occur at any point. It should generally be done before urls are
   // resolved to reduce the work done by that filter.
-  filters.filter_base_elements(document);
+  filters.cf_filter_base_elements(document);
 
   // This should occur earlier on in the pipeline. It will reduce the amount of
   // work done by later filters. It should occur before processing boilerplate,
@@ -37,7 +37,7 @@ export async function filter_entry_content(
   // done before or after boilerplate filter, but my instinct is that spam
   // techniques are boilerplate, and the boilerplate filter is naive with regard
   // to spam, so it is preferable to do it before.
-  filters.filter_low_text_contrast(document, localStorage.MIN_CONTRAST_RATIO);
+  filters.cf_filter_low_contrast(document, localStorage.MIN_CONTRAST_RATIO);
 
   // This should generally occur earlier, because of websites that use an
   // information-revealing technique with noscript.
@@ -59,18 +59,18 @@ export async function filter_entry_content(
   // TODO: i should possibly have this consult style attribute instead of just
   // element type (e.g. look at font-weight)
   const emphasis_length_max = 200;
-  filters.filter_emphasis_elements(document, emphasis_length_max);
+  filters.cf_filter_emphasis(document, emphasis_length_max);
 
   // This should occur before filtering attributes because it makes decisions
   // based on attribute values.
   // This should occur after filtering hidden elements
-  filters.remove_boilerplate(document);
+  filters.cf_filter_boilerplate(document);
 
   const condense_copy_attrs_flag = false;
-  filters.condense_tagnames(document, condense_copy_attrs_flag);
+  filters.cf_condense_tagnames(document, condense_copy_attrs_flag);
 
   // This should occur before trying to set image sizes
-  filters.resolve_document_urls(document, document_url);
+  filters.cf_resolve_document_urls(document, document_url);
 
   // This should occur prior to lazyImageFilter
   // This should occur prior to imageSizeFilter
@@ -105,12 +105,12 @@ export async function filter_entry_content(
   filters.filter_invalid_anchors(document);
   filters.filter_formatting_anchors(document);
   filters.filter_form_elements(document);
-  filters.filter_br_elements(document);
+  filters.cf_filter_br_elements(document);
   filters.filter_hr_elements(document);
   filters.filter_formatting_elements(document);
-  filters.apply_adoption_agency_filter(document);
+  filters.cf_filter_misnested_elements(document);
   filters.filter_semantic_elements(document);
-  filters.filter_figure_elements(document);
+  filters.cf_filter_figures(document);
   filters.filter_container_elements(document);
   filters.filter_list_elements(document);
 
@@ -145,7 +145,7 @@ export async function filter_entry_content(
   };
 
   filters.filter_large_image_attributes(document);
-  filters.document_filter_non_whitelisted_attributes(
+  filters.cf_filter_non_whitelisted_attributes(
       document, attribute_whitelist);
 
   // TODO: move this up to before some of the other attribute filters, or

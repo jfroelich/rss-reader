@@ -2,29 +2,27 @@ import {filter_boilerplate} from '/src/content-filters/boilerplate.js';
 import {text_node_is_color_perceptible} from '/src/content-filters/text-contrast.js';
 import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, parse_srcset_wrapper, srcset_serialize, string_condense_whitespace, url_get_filename, url_is_external, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 
-// TODO: create a filter that turns <picture> stuff into simple image. This
-// will reduce the document size.
-
+// Removes text classified as boilerplate
 // Re-export as if this were inline
 // TODO: look into re-export, should not need to wrap
-export function remove_boilerplate(document, options) {
+export function cf_filter_boilerplate(document, options) {
   return filter_boilerplate(document, options);
 }
 
 // Remove text nodes with a text-color-to-background-color contrast ratio that
 // is less than or equal to the given minimum contrast ratio.
-export function filter_low_text_contrast(document, min_contrast_ratio) {
-  if (!document.body) {
-    return;
-  }
-
-  const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
-  let node = it.nextNode();
-  while (node) {
-    if (text_node_is_color_perceptible(node, min_contrast_ratio) === false) {
-      node.remove();
+export function cf_filter_low_contrast(document, min_contrast_ratio) {
+  if (document.body) {
+    const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
+    let node = it.nextNode();
+    while (node) {
+      // The perception check returns undefined when uncertain. If uncertain,
+      // keep the node. This is why this strictly compares to false.
+      if (text_node_is_color_perceptible(node, min_contrast_ratio) === false) {
+        node.remove();
+      }
+      node = it.nextNode();
     }
-    node = it.nextNode();
   }
 }
 
@@ -32,16 +30,16 @@ export function filter_low_text_contrast(document, min_contrast_ratio) {
 // @param document {Document}
 // @param whitelist {Object} each property is element name, each value is array
 // of retainable attribute names
-export function document_filter_non_whitelisted_attributes(
-    document, whitelist) {
+export function cf_filter_non_whitelisted_attributes(document, whitelist) {
   assert(typeof whitelist === 'object');
   const elements = document.getElementsByTagName('*');
   for (const element of elements) {
-    element_filter_non_whitelisted_attributes(element, whitelist);
+    cf_element_filter_non_whitelisted_attributes(element, whitelist);
   }
 }
 
-export function element_filter_non_whitelisted_attributes(element, whitelist) {
+export function cf_element_filter_non_whitelisted_attributes(
+    element, whitelist) {
   const attr_names = element.getAttributeNames();
   if (attr_names.length) {
     const whitelisted_names = whitelist[element.localName] || [];
@@ -55,11 +53,7 @@ export function element_filter_non_whitelisted_attributes(element, whitelist) {
 
 // Removes, moves, or otherwise changes certain out-of-place elements in
 // document content
-export function apply_adoption_agency_filter(document) {
-  if (!(document instanceof Document)) {
-    throw new TypeError('Invalid document ' + document);
-  }
-
+export function cf_filter_misnested_elements(document) {
   if (!document.body) {
     return;
   }
@@ -113,14 +107,14 @@ export function apply_adoption_agency_filter(document) {
   }
 }
 
-export function filter_base_elements(document) {
+export function cf_filter_base_elements(document) {
   const bases = document.querySelectorAll('base');
   for (const base of bases) {
     base.remove();
   }
 }
 
-export function filter_br_elements(document) {
+export function cf_filter_br_elements(document) {
   if (document.body) {
     const brs = document.body.querySelectorAll('br + br');
     for (const br of brs) {
@@ -129,7 +123,7 @@ export function filter_br_elements(document) {
   }
 }
 
-export function filter_comment_nodes(document) {
+export function cf_filter_comments(document) {
   const it = document.createNodeIterator(
       document.documentElement, NodeFilter.SHOW_COMMENT);
   for (let node = it.nextNode(); node; node = it.nextNode()) {
@@ -147,20 +141,28 @@ export function filter_container_elements(document) {
   }
 }
 
-// Unwraps emphasis elements that are longer than the given max length
+// De-emphasizes text that after removing whitespace is longer than the given
+// length
 // @param text_length_max {Number} the number of characters above which emphasis
-// is removed, required, positive integer
-// TODO: use non-whitespace character count instead of full character count
-export function filter_emphasis_elements(document, text_length_max) {
+// is removed (exclusive), required, positive integer greater than 0
+export function cf_filter_emphasis(document, text_length_max) {
   assert(Number.isInteger(text_length_max) && text_length_max > 0);
   if (document.body) {
     const elements = document.body.querySelectorAll('b, big, em, i, strong');
     for (const element of elements) {
-      if (element.textContent.length > text_length_max) {
+      if (cf_get_emphasis_length(element) > text_length_max) {
         element_unwrap(element);
       }
     }
   }
+}
+
+function cf_get_emphasis_length(element) {
+  return cf_string_filter_whitespace(element.textContent).length;
+}
+
+function cf_string_filter_whitespace(value) {
+  return value.replace(/\s+/, '');
 }
 
 // Remove captionless figure elements. Well-formed figures have more than one
@@ -168,8 +170,8 @@ export function filter_emphasis_elements(document, text_length_max) {
 // the figure has no children, it is likely used as merely a formatting element,
 // similar to a div, and should be removed. If the figure has only element,
 // then it cannot have both a caption and a captioned element, and should
-// removed.
-export function filter_figure_elements(document) {
+// removed or unwrapped.
+export function cf_filter_figures(document) {
   if (document.body) {
     const figures = document.body.querySelectorAll('figure');
     for (const figure of figures) {
@@ -187,7 +189,7 @@ export function filter_figure_elements(document) {
   }
 }
 
-export function document_ensure_body_element(document) {
+export function cf_ensure_body(document) {
   if (!document.body) {
     const message = 'This document has no content';
     const error_node = document.createTextNode(message);
@@ -197,6 +199,9 @@ export function document_ensure_body_element(document) {
   }
 }
 
+// A string-to-string mapping between names of elements that have an attribute
+// that is expected to contain a url, and the name of the element's attribute
+// that contains the url
 const element_url_attribute_map = {
   a: 'href',
   applet: 'codebase',
@@ -226,13 +231,13 @@ const element_url_attribute_map = {
 };
 
 // Initialize the selector once on module load
-const element_url_attribute_selector = build_element_url_attribute_selector();
+const element_url_attribute_selector = build_resolver_selector();
 
-export function build_element_url_attribute_selector() {
+function build_resolver_selector() {
   const keys = Object.keys(element_url_attribute_map);
   const parts = [];
-  for (const part of keys) {
-    parts.push(`${part}[${element_url_attribute_map[part]}]`);
+  for (const key of keys) {
+    parts.push(`${key}[${element_url_attribute_map[key]}]`);
   }
   return parts.join(',');
 }
@@ -240,7 +245,7 @@ export function build_element_url_attribute_selector() {
 // Resolves all attribute values that contain urls
 // @param document {Document}
 // @param base_url {URL}
-export function resolve_document_urls(document, base_url) {
+export function cf_resolve_document_urls(document, base_url) {
   assert(base_url instanceof URL);
 
   const src_elements =
@@ -303,7 +308,7 @@ function srcset_resolve(element, base_url) {
 // Replace certain elements with alternative elements that have names with
 // fewer characters
 // @param copy_attrs_flag {Boolean} optional, if true then copy attributes
-export function condense_tagnames(document, copy_attrs_flag) {
+export function cf_condense_tagnames(document, copy_attrs_flag) {
   if (!document.body) {
     return;
   }
