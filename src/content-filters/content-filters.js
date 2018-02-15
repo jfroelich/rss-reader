@@ -378,15 +378,17 @@ export function filter_form_elements(document) {
     element_unwrap(label);
   }
 
-  // TODO: add contains check to reduce operations like removing option nested
-  // in select removed in prior iteration
+  // TODO: actually I should be unwrapping fieldset?
 
   // Remove form fields
   const input_selector =
       'button, fieldset, input, optgroup, option, select, textarea';
   const inputs = document.body.querySelectorAll(input_selector);
+  const body = document.body;
   for (const input of inputs) {
-    input.remove();
+    if (body.contains(input)) {
+      input.remove();
+    }
   }
 }
 
@@ -424,7 +426,7 @@ export function filter_formatting_elements(document) {
 export function filter_frame_elements(document) {
   // If a document is framed then the root frame is its body, and document.body
   // points to it and not some <body> element
-  let original_body = document.body;
+  const original_body = document.body;
 
   // If the document has no body, then there is nothing to do
   if (!original_body) {
@@ -1431,13 +1433,9 @@ function image_has_telemetry_source(image, document_url) {
     return false;
   }
 
-  // TODO: does HTMLImageElement provide URL-like properties, similar to
-  // HTMLAnchorElement?
-
   // TODO: all these attempts to avoid parsing are probably silly when it
-  // isn't even clear
-  // This is slow. Just parse the url. It is simpler. This was premature
-  // optimization
+  // isn't even clear that this is slow. Just parse the url. It is simpler. This
+  // was premature optimization
 
   // Prior to parsing the url, try and exclude some of the url strings to avoid
   // the parsing cost.

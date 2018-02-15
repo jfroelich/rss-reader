@@ -9,7 +9,7 @@ import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch-utils.js';
 import {html_parse} from '/src/html-utils.js';
 import notification_show from '/src/notifications.js';
-import {entry_append_url, entry_has_url, entry_peek_url, feed_has_url, feed_merge, feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb.js';
+import {rdb_entry_append_url, rdb_entry_has_url, entry_peek_url, feed_has_url, feed_merge, feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb.js';
 // TODO: this should not be dependent on something in the view, it should be the
 // other way around
 import badge_update_text from '/src/views/update-badge-text.js';
@@ -407,11 +407,11 @@ function cascade_feed_properties_to_entries(feed, entries) {
 async function poll_entry(ctx, entry) {
   assert(typeof ctx === 'object');
   // The sanity check for the entry argument is implicit in the call to
-  // entry_has_url
+  // rdb_entry_has_url
 
   // This function cannot assume the input entry has a url, but a url is
   // required to continue polling the entry
-  if (!entry_has_url(entry)) {
+  if (!rdb_entry_has_url(entry)) {
     return;
   }
 
@@ -474,10 +474,10 @@ function entry_url_rewrite(entry) {
     return false;
   }
 
-  // entry_append_url only appends the url if the url does not already exist in
-  // the entry's url list. entry_append_url returns true if an append took
+  // rdb_entry_append_url only appends the url if the url does not already exist in
+  // the entry's url list. rdb_entry_append_url returns true if an append took
   // place.
-  return entry_append_url(entry, entry_response_url);
+  return rdb_entry_append_url(entry, entry_response_url);
 }
 
 function entry_reader_db_exists(conn, entry) {
@@ -524,7 +524,7 @@ async function entry_handle_redirect(conn, response, entry) {
     return false;
   }
 
-  entry_append_url(entry, entry_response_url);
+  rdb_entry_append_url(entry, entry_response_url);
 
   // It is important to rewrite before exists check to be consistent with the
   // pattern used before fetching for the original url. This way we don't need
@@ -587,7 +587,7 @@ async function entry_update_favicon(ctx, entry, document) {
   assert(rdb_is_entry(entry));
 
   // Something is really wrong if this fails
-  assert(entry_has_url(entry));
+  assert(rdb_entry_has_url(entry));
 
   const entry_tail_url = new URL(entry_peek_url(entry));
 

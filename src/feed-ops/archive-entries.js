@@ -1,4 +1,4 @@
-import {entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, rdb_open} from '/src/rdb.js';
+import {rdb_entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, rdb_open} from '/src/rdb.js';
 
 // TODO: all modules in the feed-ops layer should use the feed-ops prefix
 
@@ -86,7 +86,7 @@ function entry_archive(entry) {
 
 // Create a new entry and copy over certain fields
 function entry_compact(entry) {
-  const compacted_entry = entry_create();
+  const compacted_entry = rdb_entry_create();
   compacted_entry.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {

@@ -1,4 +1,4 @@
-import {entry_has_url} from '/src/rdb.js';
+import {rdb_entry_has_url} from '/src/rdb.js';
 
 // Filter duplicate entries by comparing urls
 export function dedup_entries(entries) {
@@ -7,7 +7,7 @@ export function dedup_entries(entries) {
 
   for (const entry of entries) {
     // Retain entries without urls in the output without comparison
-    if (!entry_has_url(entry)) {
+    if (!rdb_entry_has_url(entry)) {
       distinct_entries.push(entry);
       continue;
     }

@@ -737,7 +737,7 @@ function rdb_entry_sanitize(
     input_entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
   // Create a shallow clone of the entry. This is partly the source of impurity.
-  const blank_entry = entry_create();
+  const blank_entry = rdb_entry_create();
   const output_entry = Object.assign(blank_entry, input_entry);
 
   if (output_entry.author) {
@@ -915,7 +915,7 @@ export function feed_merge(old_feed, new_feed) {
   return merged_feed;
 }
 
-export function entry_create() {
+export function rdb_entry_create() {
   return {magic: ENTRY_MAGIC};
 }
 
@@ -931,7 +931,7 @@ export function entry_is_valid_id(value) {
 }
 
 // Returns true if the entry has at least one url
-export function entry_has_url(entry) {
+export function rdb_entry_has_url(entry) {
   assert(rdb_is_entry(entry));
   return entry.urls && (entry.urls.length > 0);
 }
@@ -942,7 +942,7 @@ export function entry_has_url(entry) {
 // myself expecting URL.
 export function entry_peek_url(entry) {
   assert(rdb_is_entry(entry));
-  assert(entry_has_url(entry));
+  assert(rdb_entry_has_url(entry));
   return entry.urls[entry.urls.length - 1];
 }
 
@@ -950,7 +950,7 @@ export function entry_peek_url(entry) {
 // needed. Normalizes the url. The normalized url is compared against existing
 // urls to ensure the new url is unique. Returns true if entry was added, or
 // false if the url already exists and was therefore not added
-export function entry_append_url(entry, url) {
+export function rdb_entry_append_url(entry, url) {
   assert(rdb_is_entry(entry));
   assert(url instanceof URL);
 
