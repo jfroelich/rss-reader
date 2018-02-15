@@ -11,22 +11,6 @@ import {rgba, rgba_composite, RGBA_WHITE_OPAQUE} from '/src/content-filters/blen
 // TODO: the api should be based off any node, not just text nodes. It should
 // accept element nodes or text nodes.
 
-// TODO: i would like to think of a better way to compactly represent a color,
-// but that is premature opt so not worried for now. One would be to use an
-// 4-element array instead of an object. Next would be to somehow pack into an
-// int or something, and carry out operations on an int. Basic research shows it
-// is obvious. For example see:
-// https://developer.android.com/reference/android/graphics/Color.html
-// encoding:
-// int color = (A & 0xff) << 24 | (R & 0xff) << 16 | (G & 0xff) << 8 | (B &
-// 0xff);
-// decoding:
-// int A = (color >> 24) & 0xff; // or color >>> 24
-// int R = (color >> 16) & 0xff;
-// int G = (color >>  8) & 0xff;
-// int B = (color      ) & 0xff;
-
-
 // Elements with contrast ratios below this threshold are inperceptible. I use a
 // value that is lower than the recommendation of 4.5, but distinguishes
 // red/green better. It screws up dark gray on black. The difference in contrast
@@ -43,7 +27,8 @@ const transparent_tinycolor = tinycolor('rgba(0,0,0,0)');
 // not perceptible. Return true if perceptible, false if not perceptible,
 // undefined on error or ambiguity. Throws if not called on a text node.
 export function text_node_is_color_perceptible(node, min_contrast_ratio) {
-  if (!(node instanceof Node)) {
+  // Allow for simulated nodes by using weaker type check
+  if (!(nodeType in node)) {
     throw new TypeError('node is not a Node');
   }
 
