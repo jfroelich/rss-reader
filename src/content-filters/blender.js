@@ -33,7 +33,7 @@ export function rgba_lerp(c1, c2) {
   return c3;
 }
 
-const RGBA_WHITE_OPAQUE = new rgba(255, 255, 255, 1);
+export const RGBA_WHITE_OPAQUE = new rgba(255, 255, 255, 1);
 
 // Given an array of colors, return the composed color. The array should be
 // ordered from bottom color layer to top color layer. The default rgba
