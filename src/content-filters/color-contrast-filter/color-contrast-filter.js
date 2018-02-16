@@ -63,6 +63,8 @@ import {text_node_is_color_perceptible} from '/src/content-filters/color-contras
 // for clarity, so resist the urge to refactor to using
 // !text_node_is_color_perceptible.
 
+// @param document {Document}
+// @param min_contrast_ratio {Number} optional
 export function color_contrast_filter(document, min_contrast_ratio) {
   if (document.body) {
     const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
