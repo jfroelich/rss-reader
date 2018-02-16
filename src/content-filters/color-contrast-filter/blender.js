@@ -4,6 +4,9 @@
 // https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
 // Processing.js lerpColor
 
+// TODO: this should be updated to work with color.js values instead of
+// custom rgba objects
+
 // Represents a color
 export function rgba(r, g, b, a) {
   this.r = isNaN(r) ? 0 : r;

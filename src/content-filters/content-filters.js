@@ -1,5 +1,5 @@
 import {filter_boilerplate} from '/src/content-filters/boilerplate.js';
-import {text_node_is_color_perceptible} from '/src/content-filters/text-contrast.js';
+import {text_node_is_color_perceptible} from '/src/content-filters/color-contrast-filter/text-contrast.js';
 import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, parse_srcset_wrapper, srcset_serialize, string_condense_whitespace, url_get_filename, url_is_external, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 
 // Removes text classified as boilerplate

@@ -1,5 +1,5 @@
 import {rgba_to_string} from '/src/content-filters/blender.js';
-import {element_derive_background_color, text_node_is_color_perceptible} from '/src/content-filters/text-contrast.js';
+import {element_derive_background_color, text_node_is_color_perceptible} from '/src/content-filters/color-contrast-filter/text-contrast.js';
 
 window.test1 = function() {
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);

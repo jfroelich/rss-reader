@@ -1,12 +1,9 @@
 import '/third-party/tinycolor-min.js';
-import {rgba, rgba_composite, RGBA_WHITE_OPAQUE} from '/src/content-filters/blender.js';
+import {rgba, rgba_composite, RGBA_WHITE_OPAQUE} from '/src/content-filters/color-contrast-filter/blender.js';
 
-// TODO: I think I would prefer that rather than directly work with tinycolor
-// objects I provide a layer around the third-party api. I would like a function
-// similar to css3_parse_color(value) that returns a basic array or an rgba
-// object rather than a tinycolor object. That is more forward thinking if and
-// when I would ever write such a function. It is also more of a c-style
-// approach and less object-oriented, which has its pros and cons.
+// TODO: use color-parse.js instead of directly interacting with tinycolor
+// TODO: use color.js color type instead of tinycolor or blend rgba types
+
 
 // TODO: the api should be based off any node, not just text nodes. It should
 // accept element nodes or text nodes.
