@@ -25,7 +25,7 @@ const transparent_tinycolor = tinycolor('rgba(0,0,0,0)');
 // undefined on error or ambiguity. Throws if not called on a text node.
 export function text_node_is_color_perceptible(node, min_contrast_ratio) {
   // Allow for simulated nodes by using weaker type check
-  if (!(nodeType in node)) {
+  if (!('nodeType' in node)) {
     throw new TypeError('node is not a Node');
   }
 
