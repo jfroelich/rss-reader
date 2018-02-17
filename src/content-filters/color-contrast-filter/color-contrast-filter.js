@@ -3,72 +3,20 @@ import '/third-party/tinycolor-min.js';
 export const COLOR_WHITE = color_pack(255, 255, 255);
 export const COLOR_BLACK = color_pack(0, 0, 0);
 export const COLOR_TRANSPARENT = 0;
-
-// Elements with contrast ratios below this threshold are inperceptible. I use a
-// default value that is lower than the recommendation of 4.5, but distinguishes
-// red/green better. It screws up dark gray on black. The difference in contrast
-// ratios is basically because I am making unreliable approximations and because
-// the immediate audience is a content-filter, not a person.
 export const default_min_contrast_ratio = 1.2;
+export const default_matte = COLOR_WHITE;
 
-
-// Removes text nodes with a text-color-to-background-color contrast ratio that
-// is less than or equal to the given minimum contrast ratio. If no contrast
-// ratio is given then a default contrast ratio is used.
-//
-// The idea is that the code makes another pass over the content of an article,
-// during pre-processing, that looks at each element and makes a determination
-// as to whether an element is faint. If any element is faint, then it is a sign
-// of a malicious SEO optimization, and that the content of that element is
-// undesirable and should be filtered.
-//
-// While I would prefer to design a pure function that returns a new document,
-// that is too heavyweight. Therefore this mutates the document input in place
-// in an irreversible, lossy manner.
-//
-// This filter is very naive. The filter has no knowledge of what other filters
-// have been applied, or will be applied. This filter completely ignores other
-// aspects of whether content is visible, such as elements with css display =
-// none. The filter naively analyzes every text node, including ones that are
-// basically whitespace. The filter uses an approximation when determining
-// colors because it is not possible to know color without doing a full
-// composite pass, which is prohibitively expensive and error-prone, and because
-// the accuracy difference is marginal.
-//
-// The filter is restricted to enumerating text nodes within body content,
-// because nodes outside of body are presumed hidden. However, the color
-// analysis may consider ancestor elements above the body element during
-// alpha-blending. Also, browsers tolerate malformed html and may include text
-// nodes outside of body within the body anyway, so this does not mirror the
-// browser's behavior.
-//
-// This has no knowledge of image backgrounds and the hundreds of other ways
-// that content is rendered like negative margins, non-rectangular shaped
-// elements, inverted z-indices, custom blend modes, etc. Again, this is an
-// extremely naive approximation. This views the dom as a simple hierarchy of
-// overlapping colored boxes, with text leaves, and with most of the boxes being
-// transparent, and imputes a default white background with default black text
-// for missing values.
-//
-// This completely ignores dhtml. The document is analyzed in phase0, the time
-// the document is loaded, before animations occur and such.
-//
-// This currently scans text nodes in document order, removing nodes as the
-// iterator advances. The iterator is smart enough to deal with mutation
-// during iteration. I do not currently know of a better way to iterate text
-// nodes.
-//
-// I decided to scan text nodes, as opposed to all elements, because those are
-// really the only data points we are concerned with. There isn't much value
-// in filtering other elements.
+// Filters inperceptible text nodes from a document
 // @param document {Document}
-// @param min_contrast_ratio {Number} optional
+// @param min_contrast_ratio {Number} optional, the minimum contrast above which
+// content is perceptible
 export function color_contrast_filter(document, min_contrast_ratio) {
   if (document.body) {
     const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
     let node = it.nextNode();
     while (node) {
-      if (!element_is_perceptible(node.parentNode, min_contrast_ratio)) {
+      if (!element_is_perceptible(
+              node.parentNode, default_matte, min_contrast_ratio)) {
         node.remove();
       }
       node = it.nextNode();
@@ -81,20 +29,12 @@ export function color_contrast_filter(document, min_contrast_ratio) {
 // colors is too low, then the node is deemed not perceptible. Return true if
 // perceptible, false if not perceptible. Ratio is on scale of 1 to 21, with 21
 // being maximum contrast (e.g. pure black opaque on pure white opaque)
-// TODO: WAG spec says to also pay attention to shadow. If a text has a
-// contrasting shadow then it does contrast. If text does not have a shadow then
-// look at background. This seems doable. See
-// https://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
-// Note 5: When there is a border around the letter, the border can add contrast
-// and would be used in calculating the contrast between the letter and its
-// background. A narrow border around the letter would be used as the letter. A
-// wide border around the letter that fills in the inner details of the letters
-// acts as a halo and would be considered background.
 export function element_is_perceptible(
-    element, min_contrast_ratio = default_min_contrast_ratio) {
-  return color_contrast(
-             element_derive_text_color(element),
-             element_derive_background_color(element)) > min_contrast_ratio;
+    element, matte = COLOR_WHITE,
+    min_contrast_ratio = default_min_contrast_ratio) {
+  const fore = element_derive_text_color(element);
+  const back = element_derive_background_color(element, matte);
+  return color_contrast(fore, back) > min_contrast_ratio;
 }
 
 // Get the foreground color (aka the text color) of an element
@@ -151,34 +91,17 @@ export function element_ancestors(element, include_self) {
 }
 
 // Get the effective background color of an element. This works by doing a
-// simple alpha blend of the ancestor elements, from shallowest to deepest.
-export function element_derive_background_color(element) {
+// simple alpha blend of the ancestor elements. This function is extremely
+// naive. The output is an approximation.
+// @param matte {Number} the base color, typically opaque white
+export function element_derive_background_color(element, matte) {
   const layers = element_ancestors(element, /* include_self */ true);
   const colors = layers.map(element_derive_background_color_inline);
-  return color_blend(colors.reverse(), COLOR_WHITE);
+  return color_blend(colors.reverse(), matte);
 }
 
 // Returns the contrast ratio between the fore color and the back color
-// http://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
 export function color_contrast(fore_color, back_color = COLOR_WHITE) {
-  // The spec states that "the ratio is (L1 + 0.05) / (L2 + 0.05), where L1 is
-  // the relative luminance of the lighter of the colors, and L2 is the relative
-  // luminance of the darker of the colors." Luminance is on a scale of [0..1],
-  // where 0 is darkest black and 1 is lightest white. Therefore, a higher
-  // luminance value means a 'lighter' value.
-
-  // Note that we can add 0.05 before the inequality test because it does not
-  // matter if the addition is done before or after the test, the result of the
-  // inequality does not change (the operations are commutative). Also note that
-  // if the two luminances are equal the result is 1 regardless of which
-  // luminance value is the numerator or denominator in the contrast ratio, so
-  // there is no need to differentiate the values-equal case from the l1 < l2
-  // case.
-
-  // I am not entirely sure why the spec says to add 0.05. My guess is that it
-  // is an effecient way to avoid the divide-by-zero error if either luminance
-  // is 0 when it is the denominator.
-
   const l1 = color_luminance(fore_color) + 0.05;
   const l2 = color_luminance(back_color) + 0.05;
   return (l1 > l2) ? l1 / l2 : l2 / l1;
@@ -207,37 +130,42 @@ export function lerp(start, stop, amount) {
 }
 
 // Get color as a css string value
-export function color_to_css(color) {
+export function color_format(color) {
   return 'rgba(' + color_red(color) + ', ' + color_green(color) + ', ' +
       color_blue(color) + ', ' + color_alpha(color) / 255 + ')';
 }
 
 // Blend two rgba colors (via linear interpolation) to produce a blended color
-export function color_lerp(c1, c2) {
-  const c3 = COLOR_TRANSPARENT;
+// This does not validate its input. This does not 'clamp' the distance ratio
+// between the two colors to a value in the range [0..1], it is just assumed, so
+// using colors that produce a ratio outside that range yield undefined
+// behavior.
+// @param c1 {Number} start from this color
+// @param c2 {Number} end at this color
+// @param amount {Number} some number between 0 and 1, defaults to 1 (assumes
+// the intent is to go the full distance), represents how far to traverse along
+// the distance between the two colors
+// @return {Number} the resulting color
+export function color_lerp(c1, c2, amount = 1) {
+  // Early exits
+  if (amount === 1) {
+    return c2;
+  } else if (amount === 0) {
+    return c1;
+  }
 
-  // TODO: this is what I need to review most. I don't think I got it right on
-  // the first pass.
+  // TODO: so this is possibly wrong. The problem is that lerp is really a
+  // function for rgb, not rgba.
 
-  // I am not totally certain about this, but my current understanding is that
-  // I want to use the alpha of the higher layer, and somewhat ignore the
-  // alpha of the lower layer except for setting the alpha of the output. This
-  // could be wrong. lerp expects an amount [0..1] but alpha is [0..255]
-  const alpha = color_alpha(c2) / 255;
+  const r = lerp(color_red(c1), color_red(c2), amount) | 0;
+  const g = lerp(color_green(c1), color_green(c2), amount) | 0;
+  const b = lerp(color_blue(c1), color_blue(c2), amount) | 0;
 
-  const r = Math.round(lerp(color_red(c1), color_red(c2), alpha));
-  const g = Math.round(lerp(color_green(c1), color_green(c2), alpha));
-  const b = Math.round(lerp(color_blue(c1), color_blue(c2), alpha));
+  // TODO: there basically should be no point to this. This is simply the
+  // amount * 255. Because we expect c1 to be rgba with a 1.
+  const a = lerp(color_alpha(c1), color_alpha(c2), amount) | 0;
 
-  // Rather than 'pre-multiply' I guess I want to maintain the alpha component
-  // in the output? Really uncertain.
-  let a = lerp(color_alpha(c1) / 255, color_alpha(c2) / 255, alpha);
-  // round output alpha to 2 precision
-  a = Math.round(a * 100) / 100;
-
-  // pack expects alpha in [0..255], so convert it from [0..1] by multiplying
-  // by the upper bound of 255
-  return color_pack(r, g, b, a * 255);
+  return color_pack(r, g, b, a);
 }
 
 // Given an array of colors, return the composed color. The array should be
@@ -247,7 +175,11 @@ export function color_lerp(c1, c2) {
 export function color_blend(colors, base_color = COLOR_WHITE) {
   let output = base_color;
   for (const color of colors) {
-    output = color_lerp(output, color);
+    // Transition to the next color using the alpha component of that color
+    // as a ratio
+    const amount = color_alpha(color) / 255;
+
+    output = color_lerp(output, color, amount);
   }
   return output;
 }
@@ -281,17 +213,22 @@ export function color_blue(c) {
   return c & 0xff;
 }
 
-// Get the relative luminance (brightness) of a color, normalized to 0 for
-// darkest black and 1 for lightest white. Based on the spec, which provides the
-// formula. http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+// Get the relative luminance of a color, normalized to 0 for darkest black and
+// 1 for lightest white. Based on the spec, which provides the formula.
+// http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
 // Calculating luminance is needed to calculate contrast.
 export function color_luminance(color) {
-  // TODO: does luminance ignore the alpha? Or am I supposed to pre-multiply
-  // each component by the alpha? Right now this ignores the alpha and assumes
-  // the color is opaque. I think I did not play close enough attention to the
-  // term "sRGB" in the spec. My instinct is that this is wrong. On the other
-  // hand, testing with tinycolor shows that its getLuminance output does
-  // not change when changing alpha suggesting it ignores alpha.
+  // This accepts a color, which is rgba, but the calculation is done on rgb,
+  // which does not have an alpha component, which means that alpha must be
+  // 'applied' to any rgba color before calling this function (the rgba color
+  // value must be converted to rgb). Applying alpha means that rgba will have a
+  // 100% alpha (a value of 255), so if this detects that is not the case, warn
+  // TODO: eventually remove this warning once I sanity check things
+  if (color_alpha(color) !== 255) {
+    console.warn(
+        'Calculating luminance on non-opaque color (undefined behavior)',
+        color_alpha(color), color_format(color));
+  }
 
   const rr = color_red(color) / 255;
   const rg = color_green(color) / 255;

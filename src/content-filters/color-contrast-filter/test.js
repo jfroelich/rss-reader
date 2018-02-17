@@ -17,7 +17,8 @@ window.test1 = function() {
     if (value) {
       console.debug(
           value,
-          ccf.element_is_perceptible(node.parentNode, min_contrast_ratio) ?
+          ccf.element_is_perceptible(
+              node.parentNode, ccf.COLOR_WHITE, min_contrast_ratio) ?
               'yes' :
               'no');
     }
@@ -32,8 +33,9 @@ window.test2 = function() {
   while (node) {
     const value = node.nodeValue.trim();
     if (value) {
-      const color = ccf.element_derive_background_color(node.parentNode);
-      console.debug(value, ccf.color_to_css(color));
+      const color =
+          ccf.element_derive_background_color(node.parentNode, ccf.COLOR_WHITE);
+      console.debug(value, ccf.color_format(color));
     }
 
     node = it.nextNode();
