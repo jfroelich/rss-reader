@@ -1,5 +1,6 @@
 
-export const COLOR_WHITE_OPAQUE = color_pack_3(255, 255, 255);
+export const COLOR_WHITE = color_pack_3(255, 255, 255);
+export const COLOR_BLACK = color_pack_3(0, 0, 0);
 export const COLOR_TRANSPARENT = 0;
 
 // Creates a new color. By default the new color is black transparent.

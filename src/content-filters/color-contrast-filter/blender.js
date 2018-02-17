@@ -1,8 +1,4 @@
-// References:
-// https://en.wikipedia.org/wiki/Painter%27s_algorithm
-// https://en.wikipedia.org/wiki/Linear_interpolation
-// https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
-// Processing.js lerpColor
+
 
 // TODO: this should be updated to work with color.js values instead of
 // custom rgba objects

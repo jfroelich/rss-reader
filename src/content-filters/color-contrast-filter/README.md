@@ -1,11 +1,12 @@
-random stuff copied from comments in source code that did not belong there:
+random stuff copied from comments
 
-// This would eventually be incorporated into the content filters. The idea is
-// that the code makes another pass over the content of an article, during
-// pre-processing, that looks at each element and makes a determination as to
-// whether an element is faint. If any element is faint, then it is a sign of a
-// malicious SEO optimization, and that the content of that element is
-// undesirable and should be filtered.
+// This would eventually be incorporated into the content filters.
+
+// References:
+// https://en.wikipedia.org/wiki/Painter%27s_algorithm
+// https://en.wikipedia.org/wiki/Linear_interpolation
+// https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
+// Processing.js lerpColor
 
 // I am not totally clear on how to proceed. There are couple concerns:
 // * How possible it is to accurately extract the features from the data upon
