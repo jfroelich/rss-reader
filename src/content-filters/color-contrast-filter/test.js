@@ -1,7 +1,9 @@
 import * as ccf from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
 
-window.ccf = ccf;
+// TODO: semi-automated tests that compare output to expected output
 
+// expose to console under a prefix to play with stuff directly
+window.ccf = ccf;
 
 window.test1 = function() {
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
