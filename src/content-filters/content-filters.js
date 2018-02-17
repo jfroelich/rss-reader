@@ -1,4 +1,4 @@
-import {filter_boilerplate} from '/src/content-filters/boilerplate.js';
+import {boilerplate_filter} from '/src/content-filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
 import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, parse_srcset_wrapper, srcset_serialize, string_condense_whitespace, url_get_filename, url_is_external, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 
@@ -6,7 +6,7 @@ import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inli
 // Re-export as if this were inline
 // TODO: look into re-export, should not need to wrap
 export function cf_filter_boilerplate(document, options) {
-  return filter_boilerplate(document, options);
+  return boilerplate_filter(document, options);
 }
 
 // TODO: make this work

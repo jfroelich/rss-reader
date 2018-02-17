@@ -1,17 +1,22 @@
-import filterBoilerplate from '/src/content-filters/boilerplate.js';
-import canonicalizeURLs from '/src/content-filters/canonical-url-filter.js';
-import filterBlacklistedElements from '/src/content-filters/element-blacklist-filter.js';
-import filterFrames from '/src/content-filters/frame-filter.js';
-import filterIFrames from '/src/content-filters/iframe-filter.js';
-import setImageSizes from '/src/content-filters/image-size-filter.js';
-import filterScript from '/src/content-filters/script-filter.js';
+import boilerplate_filter from '/src/content-filters/boilerplate-filter.js';
+
+// TODO: these imports are incorrect, I did not update when I merged filters
+// into content-filters.js
+// import canonicalizeURLs from '/src/content-filters/canonical-url-filter.js';
+// import filterBlacklistedElements from
+// '/src/content-filters/element-blacklist-filter.js';  import filterFrames from
+// '/src/content-filters/frame-filter.js';  import filterIFrames from
+// '/src/content-filters/iframe-filter.js';  import setImageSizes from
+// '/src/content-filters/image-size-filter.js';  import filterScript from
+// '/src/content-filters/script-filter.js';
+
 import {fetch_html} from '/src/fetch-utils.js';
 import {html_parse} from '/src/html-utils.js';
 
-window.test = async function(urlString) {
-  const response = await fetch_html(new URL(urlString));
-  const responseText = await response.text();
-  const document = html_parse(responseText);
+window.test = async function(url_string) {
+  const response = await fetch_html(new URL(url_string));
+  const response_text = await response.text();
+  const document = html_parse(response_text);
 
   // Strip some annoying iframe stuff
   filterFrames(document);
@@ -35,7 +40,7 @@ window.test = async function(urlString) {
   await setImageSizes(document, new URL(response.url));
 
   // Finally filter boilerplate
-  filterBoilerplate(document, {annotate: true});
+  boilerplate_filter(document, {annotate: true});
 
   // Find the best element and outline it.
   const bestElement = document.querySelector('[data-bp-max]');
