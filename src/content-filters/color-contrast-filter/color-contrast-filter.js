@@ -147,6 +147,10 @@ export function color_format(color) {
 // the distance between the two colors
 // @return {Number} the resulting color
 export function color_lerp(c1, c2, amount = 1) {
+  if (color_alpha(c1) !== 255) {
+    console.warn('Bad base color', color_alpha(c1), color_format(c1));
+  }
+
   // Early exits
   if (amount === 1) {
     return c2;
@@ -162,7 +166,8 @@ export function color_lerp(c1, c2, amount = 1) {
   const b = lerp(color_blue(c1), color_blue(c2), amount) | 0;
 
   // TODO: there basically should be no point to this. This is simply the
-  // amount * 255. Because we expect c1 to be rgba with a 1.
+  // amount * 255. Because we expect c1 to be rgba with a 1, and amount is
+  // c2 alpha
   const a = lerp(color_alpha(c1), color_alpha(c2), amount) | 0;
 
   return color_pack(r, g, b, a);
