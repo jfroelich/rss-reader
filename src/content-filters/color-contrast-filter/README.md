@@ -66,7 +66,7 @@ the immediate audience is a content-filter, not a person.
 
 # About the contrast calculation
 
-http:www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
+http://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
 
 The spec states that "the ratio is (L1 + 0.05) / (L2 + 0.05), where L1 is
 the relative luminance of the lighter of the colors, and L2 is the relative
@@ -88,27 +88,27 @@ is 0 when it is the denominator.
 
 # References and research
 
-* https:en.wikipedia.org/wiki/Painter%27s_algorithm
-* https:en.wikipedia.org/wiki/Linear_interpolation
-* https:en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
+* https://en.wikipedia.org/wiki/Painter%27s_algorithm
+* https://en.wikipedia.org/wiki/Linear_interpolation
+* https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
 * Processing.js lerpColor
 * tinycolor library
 * Unity documentation on vectors and lerp
-* https:www.alanzucconi.com/2016/01/06/colour-interpolation/
-* https:github.com/gka/chroma.js/tree/master/src
-* https:github.com/deanm/css-color-parser-js/blob/master/csscolorparser.js
-* https:github.com/substack/parse-color
-* https:github.com/bgrins/TinyColor
-* https:stackoverflow.com/questions/1855884
-* http:jxnblk.com/colorable/
-* https:snook.ca/technical/colour_contrast/colour.html#fg=33FF33,bg=333333
+* https://www.alanzucconi.com/2016/01/06/colour-interpolation/
+* https://github.com/gka/chroma.js/tree/master/src
+* https://github.com/deanm/css-color-parser-js/blob/master/csscolorparser.js
+* https://github.com/substack/parse-color
+* https://github.com/bgrins/TinyColor
+* https://stackoverflow.com/questions/1855884
+* http://jxnblk.com/colorable/
+* https://snook.ca/technical/colour_contrast/colour.html#fg=33FF33,bg=333333
 
 # TODO: Handle text shadow more accurately
 
 TODO: WAG spec says to also pay attention to shadow. If a text has a
 contrasting shadow then it does contrast. If text does not have a shadow then
 look at background. This seems doable. See
-https:www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
+https://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
 Note 5: When there is a border around the letter, the border can add contrast
 and would be used in calculating the contrast between the letter and its
 background. A narrow border around the letter would be used as the letter. A
@@ -117,7 +117,8 @@ acts as a halo and would be considered background.
 
 # TODO: Vary contrast based on text size
 
-See https:www.w3.org/TR/WCAG20/
+* See https://www.w3.org/TR/WCAG20/
+* See TinyColor's isReadable function
 
 # TODO: Consider deferring filter until render
 
@@ -127,11 +128,14 @@ dynamically show/hide based on percept-slider. The user could change the
 minimum readability-score in real time. That would be kind of cool. Possibly
 too toy-like. Would also lead to increased data size instead of reduction
 
+More than that, is re-envisioning how the logic is structured. The current implementation admittedly is a conflation of operations. This both evaluates the model against the data (a document), and applies the model (prunes). What if instead of pruning this just evaluated the model. This opens up a ton of flexibility in how the model is used. The logic becomes less opinionated because now the caller controls how they want to make use of the results (e.g. consider annotation). The tradeoff I suppose is that I have to score the data, and it turns out that doing things like introducing intermediate steps of storing attributes per element is kind of slow. However it does tie in with some thoughts about how I wanted to change the boilerplate filter to also no longer due any pruning.
+
 # Ephemeral visibility thoughts
 
-put some more thought into ephemeral invisibility. all the filters ignore
+Put some more thought into ephemeral invisibility. all the filters ignore
 animation and that elements may become visible over time. if anything i should
-be more explicit that filters assume visibility based on initial state
+be more explicit that filters assume visibility based on initial state. I am actually not sure I can do anything about it. Perhaps projections of dhtml and scrolling (in the same way that document screenshotters scroll down view) that
+examines how long content is visible, or when content first becomes visible or hidden? This would probably require javascript evaluation so I guess it is out of the question.
 
 # Calibration notes
 
@@ -140,4 +144,4 @@ inform the app about when they think text is visible. Basically just like
 video game installation wizard. Then all this really does is set the min contrast
 ratio in local storage, and this applies only to future article processing. Or,
 if I do late-filtering and just have the contrast filter tag elements, then it
-can apply in real time.
+can apply in real time. Basically I don't want to harcode the min_contrast_ratio. This would provide a nice way to enable the user to adjust it.
