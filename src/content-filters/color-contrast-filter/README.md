@@ -1,8 +1,8 @@
-# About the color contrast filter
 
-Removes text nodes with a text-color-to-background-color contrast ratio that
-is less than or equal to the given minimum contrast ratio. If no contrast
-ratio is given then a default contrast ratio is used.
+The color contrast filter removes text nodes with a text-color to
+background-color contrast ratio that is less than or equal to the given minimum
+contrast ratio. If no contrast ratio is given then a default contrast ratio is
+used.
 
 The idea is that the code makes another pass over the content of an article,
 during pre-processing, that looks at each element and makes a determination
@@ -50,58 +50,13 @@ I decided to scan text nodes, as opposed to all elements, because those are
 really the only data points we are concerned with. There isn't much value
 in filtering other elements.
 
-# Terminology
-
-A color is represented by a signed 32 bit integer, the javascript primitive.
-Some online stuff provides this is basically a vector. A vector's items are
-called components. This is why, when referring to red or blue parts of a color,
-they are sometimes called components.
-
 # About the default contrast ratio
+
 Elements with contrast ratios below this threshold are inperceptible. I use a
 default value that is lower than the recommendation of 4.5, but distinguishes
 red/green better. It screws up dark gray on black. The difference in contrast
 ratios is basically because I am making unreliable approximations and because
 the immediate audience is a content-filter, not a person.
-
-# About the contrast calculation
-
-http://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
-
-The spec states that "the ratio is (L1 + 0.05) / (L2 + 0.05), where L1 is
-the relative luminance of the lighter of the colors, and L2 is the relative
-luminance of the darker of the colors." Luminance is on a scale of [0..1],
-where 0 is darkest black and 1 is lightest white. Therefore, a higher
-luminance value means a 'lighter' value.
-
-Note that we can add 0.05 before the inequality test because it does not
-matter if the addition is done before or after the test, the result of the
-inequality does not change (the operations are commutative). Also note that
-if the two luminances are equal the result is 1 regardless of which
-luminance value is the numerator or denominator in the contrast ratio, so
-there is no need to differentiate the values-equal case from the l1 < l2
-case.
-
-I am not entirely sure why the spec says to add 0.05. My guess is that it
-is an efficient way to avoid the divide-by-zero error if either luminance
-is 0 when it is the denominator.
-
-# References and research
-
-* https://en.wikipedia.org/wiki/Painter%27s_algorithm
-* https://en.wikipedia.org/wiki/Linear_interpolation
-* https://en.wikipedia.org/wiki/Alpha_compositing#Alpha_blending
-* Processing.js lerpColor
-* tinycolor library
-* Unity documentation on vectors and lerp
-* https://www.alanzucconi.com/2016/01/06/colour-interpolation/
-* https://github.com/gka/chroma.js/tree/master/src
-* https://github.com/deanm/css-color-parser-js/blob/master/csscolorparser.js
-* https://github.com/substack/parse-color
-* https://github.com/bgrins/TinyColor
-* https://stackoverflow.com/questions/1855884
-* http://jxnblk.com/colorable/
-* https://snook.ca/technical/colour_contrast/colour.html#fg=33FF33,bg=333333
 
 # TODO: Handle text shadow more accurately
 
@@ -115,11 +70,6 @@ background. A narrow border around the letter would be used as the letter. A
 wide border around the letter that fills in the inner details of the letters
 acts as a halo and would be considered background.
 
-# TODO: Vary contrast based on text size
-
-* See https://www.w3.org/TR/WCAG20/
-* See TinyColor's isReadable function
-
 # TODO: Consider deferring filter until render
 
 What if instead of filtering, all I did was
@@ -130,18 +80,19 @@ too toy-like. Would also lead to increased data size instead of reduction
 
 More than that, is re-envisioning how the logic is structured. The current implementation admittedly is a conflation of operations. This both evaluates the model against the data (a document), and applies the model (prunes). What if instead of pruning this just evaluated the model. This opens up a ton of flexibility in how the model is used. The logic becomes less opinionated because now the caller controls how they want to make use of the results (e.g. consider annotation). The tradeoff I suppose is that I have to score the data, and it turns out that doing things like introducing intermediate steps of storing attributes per element is kind of slow. However it does tie in with some thoughts about how I wanted to change the boilerplate filter to also no longer due any pruning.
 
-# Ephemeral visibility thoughts
+# TODO: ephemeral visibility ideas
 
 Put some more thought into ephemeral invisibility. all the filters ignore
 animation and that elements may become visible over time. if anything i should
-be more explicit that filters assume visibility based on initial state. I am actually not sure I can do anything about it. Perhaps projections of dhtml and scrolling (in the same way that document screenshotters scroll down view) that
+be more explicit that filters assume visibility based on initial state. I am actually not sure I can do anything about it. Perhaps projections of dhtml and scrolling (in the same way that document screen-shotters scroll down view) that
 examines how long content is visible, or when content first becomes visible or hidden? This would probably require javascript evaluation so I guess it is out of the question.
 
-# Calibration notes
+# TODO: calibration ideas
 
-The reader app should have a calibration setting that let's the user
-inform the app about when they think text is visible. Basically just like
-video game installation wizard. Then all this really does is set the min contrast
-ratio in local storage, and this applies only to future article processing. Or,
-if I do late-filtering and just have the contrast filter tag elements, then it
-can apply in real time. Basically I don't want to harcode the min_contrast_ratio. This would provide a nice way to enable the user to adjust it.
+The reader app should have a calibration setting that let's the user inform the
+app about when they think text is visible. Basically just like video game
+installation wizard. Then all this really does is set the min contrast ratio in
+local storage, and this applies only to future article processing. Or, if I do late-filtering and just have the contrast filter tag elements, then it can apply
+in real time. Basically I don't want to hardcode the min_contrast_ratio. This
+would provide a nice way to enable the user to adjust it. The calibration wizard
+should warn the user about choosing a high threshold

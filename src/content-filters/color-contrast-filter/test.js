@@ -1,3 +1,4 @@
+import {color_format, COLOR_WHITE} from '/src/color/color.js';
 import * as ccf from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
 
 // TODO: semi-automated tests that compare output to expected output
@@ -8,8 +9,8 @@ window.ccf = ccf;
 window.test1 = function() {
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
 
-  const min_contrast_ratio = localStorage.MIN_CONTRAST_RATIO || 1.2;
-  console.debug('Using minimum contrast ratio', min_contrast_ratio);
+  const matte = COLOR_WHITE;
+  const threshold = localStorage.MIN_CONTRAST_RATIO;
 
   let node = it.nextNode();
   while (node) {
@@ -17,8 +18,7 @@ window.test1 = function() {
     if (value) {
       console.debug(
           value,
-          ccf.element_is_perceptible(
-              node.parentNode, ccf.COLOR_WHITE, min_contrast_ratio) ?
+          ccf.element_is_perceptible(node.parentNode, matte, threshold) ?
               'yes' :
               'no');
     }
@@ -28,14 +28,16 @@ window.test1 = function() {
 };
 
 window.test2 = function() {
+  const matte = COLOR_WHITE;
+
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   let node = it.nextNode();
   while (node) {
     const value = node.nodeValue.trim();
     if (value) {
-      const color =
-          ccf.element_derive_background_color(node.parentNode, ccf.COLOR_WHITE);
-      console.debug(value, ccf.color_format(color));
+      const back_color =
+          ccf.element_derive_background_color(node.parentNode, matte);
+      console.debug(value, color_format(back_color));
     }
 
     node = it.nextNode();
