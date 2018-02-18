@@ -5,7 +5,6 @@ export const COLOR_BLACK = color_pack(0, 0, 0, 255);
 export const COLOR_TRANSPARENT = 0;
 
 // Parses a CSS3 color value into a color type. Returns undefined on error
-// TODO: write my own parser to stop relying on third-party
 export function css_color_parse(css_value_string) {
   if (typeof css_value_string === 'string' && css_value_string.length) {
     const tc_color = new tinycolor(css_value_string);
@@ -24,7 +23,6 @@ export function color_format(color) {
       color_blue(color) + ', ' + color_alpha(color) / 255 + ')';
 }
 
-
 // Linear interpolation. Basically, given two points get a point between them
 // based on the amount. We get the distance between the two points, we get a
 // percentage of that distance based on amount, then add it to the starting
@@ -33,12 +31,8 @@ export function lerp(start, stop, amount) {
   return amount * (stop - start) + start;
 }
 
-
 // Blend two rgba colors (via linear interpolation) to produce a blended color
-// This does not validate its input. This does not 'clamp' the distance ratio
-// between the two colors to a value in the range [0..1], it is just assumed, so
-// using colors that produce a ratio outside that range yield undefined
-// behavior.
+// This does not validate its input.
 // @param c1 {Number} start from this color
 // @param c2 {Number} end at this color
 // @param amount {Number} some number between 0 and 1, defaults to 1 (assumes
@@ -46,6 +40,8 @@ export function lerp(start, stop, amount) {
 // the distance between the two colors
 // @return {Number} the resulting color
 export function color_lerp(c1, c2, amount = 1) {
+  // TODO: is css opacity a function of the layer immediately underneath, or the
+  // blend of all prior layers? Is that even the right question to ask?
   if (color_alpha(c1) !== 255) {
     console.warn('Bad base color', color_alpha(c1), color_format(c1));
   }
@@ -57,16 +53,12 @@ export function color_lerp(c1, c2, amount = 1) {
     return c1;
   }
 
-  // TODO: so this is possibly wrong. The problem is that lerp is really a
-  // function for rgb, not rgba.
-
   const r = lerp(color_red(c1), color_red(c2), amount) | 0;
   const g = lerp(color_green(c1), color_green(c2), amount) | 0;
   const b = lerp(color_blue(c1), color_blue(c2), amount) | 0;
 
-  // TODO: there basically should be no point to this. This is simply the
-  // amount * 255. Because we expect c1 to be rgba with a 1, and amount is
-  // c2 alpha
+  // TODO: there basically should be no point to this. This is simply the amount
+  // * 255. Because we expect c1 to be rgba with a 1, and amount is c2 alpha.
   // Also, isn't this flattening? So basically the new color alpha will always
   // be 1?
   const a = lerp(color_alpha(c1), color_alpha(c2), amount) | 0;

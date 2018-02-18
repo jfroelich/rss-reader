@@ -21,11 +21,9 @@ export function color_contrast_filter(document, min_contrast_ratio) {
   }
 }
 
-// Analyzes an element for color perceptibility. If the element has an explicit
-// text color and background color and the contrast ratio between those two
-// colors is too low, then the node is deemed not perceptible. Return true if
-// perceptible, false if not perceptible. Ratio is on scale of 1 to 21, with 21
-// being maximum contrast (e.g. pure black opaque on pure white opaque)
+// Analyzes an element for color perceptibility based on the element's
+// foreground and background colors. Return true if perceptible, false if not
+// perceptible. Ratio is on scale of 1 to 21, with 21 being maximum contrast.
 export function element_is_perceptible(
     element, matte = COLOR_WHITE,
     min_contrast_ratio = DEFAULT_MIN_CONTRAST_RATIO) {
@@ -34,12 +32,7 @@ export function element_is_perceptible(
   return color_contrast(fore, back) > min_contrast_ratio;
 }
 
-// Get the foreground color (aka the text color) of an element
-// TODO: use getComputedStyle based on the document containing the element,
-// not this script's document? I think I saw the note on mdn, getComputedStyle
-// is basically a shortcut for document. My fear is that by using the shortcut,
-// it is using the script document, adopting the element, then doing the
-// calculation. I'd rather not force cross-document adoption.
+// Get the foreground color of an element, defaulting to black
 export function element_derive_text_color(element) {
   const style = getComputedStyle(element);
   if (style) {
@@ -51,9 +44,7 @@ export function element_derive_text_color(element) {
   return COLOR_BLACK;
 }
 
-// Get the effective background color of an element. This works by doing a
-// simple alpha blend of the ancestor elements. This function is extremely
-// naive. The output is an approximation.
+// Approximate the effective background color of an element
 // @param matte {Number} the base color, typically opaque white
 export function element_derive_background_color(element, matte) {
   const layers = element_ancestors(element, /* include_self */ true);
@@ -61,15 +52,8 @@ export function element_derive_background_color(element, matte) {
   return color_blend(colors.reverse(), matte);
 }
 
-// Get the background color of an element. This is not the effective color, just
-// the color based on the element's own style information. If there is any
-// problem getting the color this returns the default transparent color.
+// Get the background color of an element, defaulting to transparent
 export function element_derive_background_color_inline(element) {
-  // TODO: it is possible I should still use getComputedStyle due to the
-  // use of css values such as inherit? Or maybe it doesn't matter since I plan
-  // to blend. Or maybe it does because I should not assume that is the only way
-  // this function is used
-
   const style = element.style;
   if (style) {
     const css_bgcolor = style.backgroundColor;

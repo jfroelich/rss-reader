@@ -5,6 +5,8 @@ import * as ccf from '/src/content-filters/color-contrast-filter/color-contrast-
 
 // expose to console under a prefix to play with stuff directly
 window.ccf = ccf;
+window.color_format = color_format;
+window.COLOR_WHITE = COLOR_WHITE;
 
 window.test1 = function() {
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);

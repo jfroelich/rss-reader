@@ -50,13 +50,30 @@ I decided to scan text nodes, as opposed to all elements, because those are
 really the only data points we are concerned with. There isn't much value
 in filtering other elements.
 
+I read somewhere the reason this is so difficult and hard, and the reason there
+is no built in eye-dropper-style api call that just gives me an element's color,
+is due to security concerns over being able to see user passwords or something.
+I eventually want to look into that.
+
 # About the default contrast ratio
 
-Elements with contrast ratios below this threshold are inperceptible. I use a
+Elements with contrast ratios below this threshold are not perceptible. I use a
 default value that is lower than the recommendation of 4.5, but distinguishes
 red/green better. It screws up dark gray on black. The difference in contrast
 ratios is basically because I am making unreliable approximations and because
 the immediate audience is a content-filter, not a person.
+
+# TODO: consider using getComputedStyle when getting element background
+
+It is possible I should still use getComputedStyle due to the use of css values such as inherit? Or maybe it doesn't matter since I plan to blend. Or maybe it does because I should not assume that is the only way this function is used
+
+# TODO: make sure getComputedStyle does not cause adoption
+
+Use getComputedStyle based on the document containing the element, not this script's document? I think I saw the note on mdn, getComputedStyle is basically a shortcut for document. My fear is that by using the shortcut, it is using the script document, adopting the element, then doing the calculation. I'd rather not force cross-document adoption.
+
+# TODO: does getComputedStyle ever return undefined?
+
+If the function always returns something then maybe there is no need to check if the result is defined.
 
 # TODO: Handle text shadow more accurately
 
@@ -84,8 +101,12 @@ More than that, is re-envisioning how the logic is structured. The current imple
 
 Put some more thought into ephemeral invisibility. all the filters ignore
 animation and that elements may become visible over time. if anything i should
-be more explicit that filters assume visibility based on initial state. I am actually not sure I can do anything about it. Perhaps projections of dhtml and scrolling (in the same way that document screen-shotters scroll down view) that
-examines how long content is visible, or when content first becomes visible or hidden? This would probably require javascript evaluation so I guess it is out of the question.
+be more explicit that filters assume visibility based on initial state. I am
+actually not sure I can do anything about it. Perhaps projections of dhtml and
+scrolling (in the same way that document screen-shotters scroll down view) that
+examines how long content is visible, or when content first becomes visible or
+hidden? This would probably require javascript evaluation so I guess it is out
+of the question.
 
 # TODO: calibration ideas
 
