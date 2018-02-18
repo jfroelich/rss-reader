@@ -1,10 +1,10 @@
 import '/third-party/tinycolor-min.js';
 
-export const COLOR_WHITE = color_pack(255, 255, 255);
-export const COLOR_BLACK = color_pack(0, 0, 0);
+export const COLOR_WHITE = color_pack(255, 255, 255, 255);
+export const COLOR_BLACK = color_pack(0, 0, 0, 255);
 export const COLOR_TRANSPARENT = 0;
-export const default_min_contrast_ratio = 1.2;
-export const default_matte = COLOR_WHITE;
+export const DEFAULT_MIN_CONTRAST_RATIO = 1.2;
+export const DEFAULT_MATTE = COLOR_WHITE;
 
 // Filters inperceptible text nodes from a document
 // @param document {Document}
@@ -16,7 +16,7 @@ export function color_contrast_filter(document, min_contrast_ratio) {
     let node = it.nextNode();
     while (node) {
       if (!element_is_perceptible(
-              node.parentNode, default_matte, min_contrast_ratio)) {
+              node.parentNode, DEFAULT_MATTE, min_contrast_ratio)) {
         node.remove();
       }
       node = it.nextNode();
@@ -31,7 +31,7 @@ export function color_contrast_filter(document, min_contrast_ratio) {
 // being maximum contrast (e.g. pure black opaque on pure white opaque)
 export function element_is_perceptible(
     element, matte = COLOR_WHITE,
-    min_contrast_ratio = default_min_contrast_ratio) {
+    min_contrast_ratio = DEFAULT_MIN_CONTRAST_RATIO) {
   const fore = element_derive_text_color(element);
   const back = element_derive_background_color(element, matte);
   return color_contrast(fore, back) > min_contrast_ratio;
@@ -168,6 +168,8 @@ export function color_lerp(c1, c2, amount = 1) {
   // TODO: there basically should be no point to this. This is simply the
   // amount * 255. Because we expect c1 to be rgba with a 1, and amount is
   // c2 alpha
+  // Also, isn't this flattening? So basically the new color alpha will always
+  // be 1?
   const a = lerp(color_alpha(c1), color_alpha(c2), amount) | 0;
 
   return color_pack(r, g, b, a);
@@ -190,8 +192,8 @@ export function color_blend(colors, base_color = COLOR_WHITE) {
 }
 
 // Pack four color components into an int. Note that alpha is on scale of
-// [0..255], so if you have a ratio, multiple it by 255 and round to nearest
-// int. Using values out of range is undefined behavior.
+// [0..255], so if you have a ratio in the [0..1] interval, multiple it by 255
+// and round to nearest int. Using values out of range is undefined behavior.
 // @param a {Number} optional, the alpha channel, defaults to max opacity
 export function color_pack(r, g, b, a = 255) {
   return (a & 0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
@@ -203,17 +205,17 @@ export function color_alpha(c) {
   return (c >> 24) && 0xff;
 }
 
-// Unpacks the red component from the color as an int
+// Unpacks the red component from the color as an int in interval [0..255]
 export function color_red(c) {
   return (c >> 16) & 0xff;
 }
 
-// Unpacks the green component from the color
+// Unpacks the green component from the color in interval [0..255]
 export function color_green(c) {
   return (c >> 8) & 0xff;
 }
 
-// Unpacks the blue component from the color
+// Unpacks the blue component from the color in interval [0..255]
 export function color_blue(c) {
   return c & 0xff;
 }
@@ -222,13 +224,13 @@ export function color_blue(c) {
 // 1 for lightest white. Based on the spec, which provides the formula.
 // http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
 // Calculating luminance is needed to calculate contrast.
+// This accepts a color, which is rgba, but the calculation is done on rgb,
+// which does not have an alpha component, which means that alpha must be
+// 'applied' to any rgba color before calling this function (the rgba color
+// value must be converted to rgb). Applying alpha means that rgba will have a
+// 100% alpha (a value of 255), so if this detects that is not the case, warn
+// TODO: eventually remove the alpha check warning because it is overhead
 export function color_luminance(color) {
-  // This accepts a color, which is rgba, but the calculation is done on rgb,
-  // which does not have an alpha component, which means that alpha must be
-  // 'applied' to any rgba color before calling this function (the rgba color
-  // value must be converted to rgb). Applying alpha means that rgba will have a
-  // 100% alpha (a value of 255), so if this detects that is not the case, warn
-  // TODO: eventually remove this warning once I sanity check things
   if (color_alpha(color) !== 255) {
     console.warn(
         'Calculating luminance on non-opaque color (undefined behavior)',
