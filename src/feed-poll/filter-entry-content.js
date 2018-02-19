@@ -1,3 +1,4 @@
+import {COLOR_WHITE} from '/src/color/color.js';
 import * as filters from '/src/content-filters/content-filters.js';
 
 // Transforms a document by removing or changing nodes for various reasons.
@@ -37,7 +38,9 @@ export async function filter_entry_content(
   // done before or after boilerplate filter, but my instinct is that spam
   // techniques are boilerplate, and the boilerplate filter is naive with regard
   // to spam, so it is preferable to do it before.
-  filters.cf_filter_low_contrast(document, localStorage.MIN_CONTRAST_RATIO);
+  const matte = COLOR_WHITE;
+  filters.cf_filter_low_contrast(
+      document, matte, localStorage.MIN_CONTRAST_RATIO);
 
   // This should generally occur earlier, because of websites that use an
   // information-revealing technique with noscript.
@@ -145,8 +148,7 @@ export async function filter_entry_content(
   };
 
   filters.filter_large_image_attributes(document);
-  filters.cf_filter_non_whitelisted_attributes(
-      document, attribute_whitelist);
+  filters.cf_filter_non_whitelisted_attributes(document, attribute_whitelist);
 
   // TODO: move this up to before some of the other attribute filters, or
   // explain why it should occur later

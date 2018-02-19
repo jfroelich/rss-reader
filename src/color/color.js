@@ -37,15 +37,10 @@ export function lerp(start, stop, amount) {
 // @param c2 {Number} end at this color
 // @param amount {Number} some number between 0 and 1, defaults to 1 (assumes
 // the intent is to go the full distance), represents how far to traverse along
-// the distance between the two colors
+// the distance between the two colors, this is usually the opacity of the
+// second color, or in other words, the alpha component of the second color
 // @return {Number} the resulting color
 export function color_lerp(c1, c2, amount = 1) {
-  // TODO: is css opacity a function of the layer immediately underneath, or the
-  // blend of all prior layers? Is that even the right question to ask?
-  if (color_alpha(c1) !== 255) {
-    console.warn('Bad base color', color_alpha(c1), color_format(c1));
-  }
-
   // Early exits
   if (amount === 1) {
     return c2;
@@ -53,14 +48,11 @@ export function color_lerp(c1, c2, amount = 1) {
     return c1;
   }
 
+  // | 0 is equivalent to Math.round
+
   const r = lerp(color_red(c1), color_red(c2), amount) | 0;
   const g = lerp(color_green(c1), color_green(c2), amount) | 0;
   const b = lerp(color_blue(c1), color_blue(c2), amount) | 0;
-
-  // TODO: there basically should be no point to this. This is simply the amount
-  // * 255. Because we expect c1 to be rgba with a 1, and amount is c2 alpha.
-  // Also, isn't this flattening? So basically the new color alpha will always
-  // be 1?
   const a = lerp(color_alpha(c1), color_alpha(c2), amount) | 0;
 
   return color_pack(r, g, b, a);

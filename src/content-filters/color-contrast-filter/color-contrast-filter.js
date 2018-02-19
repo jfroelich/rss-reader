@@ -5,9 +5,12 @@ export const DEFAULT_MATTE = COLOR_WHITE;
 
 // Filters inperceptible text nodes from a document
 // @param document {Document}
+// @param matte {Number} optional, the base color to use for composition
 // @param min_contrast_ratio {Number} optional, the minimum contrast above which
 // content is perceptible
-export function color_contrast_filter(document, min_contrast_ratio) {
+export function color_contrast_filter(
+    document, matte = DEFAULT_MATTE,
+    min_contrast_ratio = DEFAULT_MIN_CONTRAST_RATIO) {
   if (document.body) {
     const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
     let node = it.nextNode();

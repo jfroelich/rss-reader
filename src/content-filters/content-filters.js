@@ -2,19 +2,8 @@ import {boilerplate_filter} from '/src/content-filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
 import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, parse_srcset_wrapper, srcset_serialize, string_condense_whitespace, url_get_filename, url_is_external, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 
-// Removes text classified as boilerplate
-// Re-export as if this were inline
-// TODO: look into re-export, should not need to wrap
-export function cf_filter_boilerplate(document, options) {
-  return boilerplate_filter(document, options);
-}
-
-// TODO: make this work
-// export const cf_filter_low_contrast = color_contrast_filter;
-
-export function cf_filter_low_contrast(document, min_contrast_ratio) {
-  return color_contrast_filter(document, min_contrast_ratio);
-}
+export const cf_filter_boilerplate = boilerplate_filter;
+export const cf_filter_low_contrast = color_contrast_filter;
 
 // Removes non-whitelisted attributes from elements
 // @param document {Document}
