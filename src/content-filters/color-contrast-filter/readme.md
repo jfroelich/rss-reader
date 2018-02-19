@@ -117,3 +117,9 @@ local storage, and this applies only to future article processing. Or, if I do l
 in real time. Basically I don't want to hardcode the min_contrast_ratio. This
 would provide a nice way to enable the user to adjust it. The calibration wizard
 should warn the user about choosing a high threshold
+
+# TODO: pay more attention to css opacity
+
+Rather than only looking at the alpha channel of background-color, do I also need to pay attention to the opacity property of the element? I know that the hidden-elements filter looks at opacity. Even that maybe should be changed because it might be naive. It feels like there is a bit of an overlapping concern between the hidden-elements filter and the color contrast filter. Maybe opacity should only be a concern here?
+
+Before proceeding I need to clarify some basic things. What does it mean to have an opaque background color with alpha 100%, but an opacity of 0? Does opacity just apply as basically another layer on top of the background color, such as a color of (0,0,0,opacity)? Or is it already built in to the alpha of background color? Basically I do not know what browsers do in this case, and need to find that out.
