@@ -1,4 +1,4 @@
-import boilerplate_filter from '/src/content-filters/boilerplate-filter.js';
+import {boilerplate_filter} from '/src/content-filters/boilerplate-filter/boilerplate-filter.js';
 
 // TODO: these imports are incorrect, I did not update when I merged filters
 // into content-filters.js
