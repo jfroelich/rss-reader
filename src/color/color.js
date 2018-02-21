@@ -61,8 +61,16 @@ export function color_blend(colors, base_color = COLOR_WHITE) {
 
 // Pack four color components into an int. Note that alpha is on scale of
 // [0..255], so if you have a ratio in the [0..1] interval, multiple it by 255
-// and round to nearest int. Using values out of range is undefined behavior.
-// @param a {Number} optional, the alpha channel, defaults to max opacity
+// and round to nearest int.
+//
+// Using values out of range is undefined behavior. This does no input
+// validation for speed.
+//
+// @param r {Number} a number in the range [0..255] representing red
+// @param g {Number} a number in the range [0..255] reprsenting green
+// @param b {Number} a number in the range [0..255] representing blue
+// @param a {Number} optional, a number in the range [0..255] representing the
+// alpha value, also known as opacity. Defaults to 255.
 export function color_pack(r, g, b, a = 255) {
   return (a & 0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
 }
@@ -117,4 +125,18 @@ export function color_contrast(fore_color, back_color = COLOR_WHITE) {
   const l1 = color_luminance(fore_color) + 0.05;
   const l2 = color_luminance(back_color) + 0.05;
   return (l1 > l2) ? l1 / l2 : l2 / l1;
+}
+
+// Return true if the component value is a valid component of a color
+export function color_valid_component(component) {
+  return Number.isInteger(component) && component >= 0 && component <= 255;
+}
+
+// Return true if color is a valid color value
+export function color_is_valid(color) {
+  // TODO: improve performance
+  return Number.isInteger(color) && color_valid_component(color_red(color)) &&
+      color_valid_component(color_green(color)) &&
+      color_valid_component(color_blue(color)) &&
+      color_valid_component(color_alpha(color));
 }
