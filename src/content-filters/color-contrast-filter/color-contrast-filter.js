@@ -1,4 +1,5 @@
-import {COLOR_BLACK, color_blend, color_contrast, COLOR_TRANSPARENT, COLOR_WHITE, css_color_parse} from '/src/color/color.js';
+import {COLOR_BLACK, color_blend, color_contrast, COLOR_TRANSPARENT, COLOR_WHITE} from '/src/color/color.js';
+import {css_color_parse} from '/src/color/css-color.js';
 
 export const DEFAULT_MIN_CONTRAST_RATIO = 1.2;
 export const DEFAULT_MATTE = COLOR_WHITE;

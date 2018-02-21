@@ -1,27 +1,6 @@
-import '/third-party/tinycolor-min.js';
-
 export const COLOR_WHITE = color_pack(255, 255, 255, 255);
 export const COLOR_BLACK = color_pack(0, 0, 0, 255);
 export const COLOR_TRANSPARENT = 0;
-
-// Parses a CSS3 color value into a color type. Returns undefined on error
-export function css_color_parse(css_value_string) {
-  if (typeof css_value_string === 'string' && css_value_string.length) {
-    const tc_color = new tinycolor(css_value_string);
-    if (tc_color.isValid()) {
-      const rgba = tc_color.toRgb();
-      // The alpha value of the rgba value is on a scale of 0-1, so we multiple
-      // it by 255 to put it on color.js scale of 0-255.
-      return color_pack(rgba.r, rgba.g, rgba.b, rgba.a * 255);
-    }
-  }
-}
-
-// Get color as a css string value
-export function color_format(color) {
-  return 'rgba(' + color_red(color) + ', ' + color_green(color) + ', ' +
-      color_blue(color) + ', ' + color_alpha(color) / 255 + ')';
-}
 
 // Linear interpolation. Basically, given two points get a point between them
 // based on the amount. We get the distance between the two points, we get a
@@ -31,8 +10,8 @@ export function lerp(start, stop, amount) {
   return amount * (stop - start) + start;
 }
 
-// Blend two rgba colors (via linear interpolation) to produce a blended color
-// This does not validate its input.
+// Blend two rgba colors to produce a blended color. This does not validate
+// input.
 // @param c1 {Number} start from this color
 // @param c2 {Number} end at this color
 // @param amount {Number} some number between 0 and 1, defaults to 1 (assumes
@@ -40,8 +19,17 @@ export function lerp(start, stop, amount) {
 // the distance between the two colors, this is usually the opacity of the
 // second color, or in other words, the alpha component of the second color
 // @return {Number} the resulting color
-export function color_lerp(c1, c2, amount = 1) {
-  // Early exits
+export function color_lerp(c1, c2, amount = 1.0) {
+  // Temporary weak assertion just to catch programming errors. These will
+  // eventually be removed once I am more confident.
+  console.assert(Number.isInteger(c1));
+  console.assert(Number.isInteger(c2));
+  console.assert(amount >= 0 && amount <= 1);
+
+  // Early exits. When the upper color is opaque, there is no point in blending,
+  // it occludes the background, so return the upper color. When the upper color
+  // is transparent, there is similarly no point in blending, so return the
+  // lower color.
   if (amount === 1) {
     return c2;
   } else if (amount === 0) {
@@ -49,12 +37,10 @@ export function color_lerp(c1, c2, amount = 1) {
   }
 
   // | 0 is equivalent to Math.round
-
   const r = lerp(color_red(c1), color_red(c2), amount) | 0;
   const g = lerp(color_green(c1), color_green(c2), amount) | 0;
   const b = lerp(color_blue(c1), color_blue(c2), amount) | 0;
   const a = lerp(color_alpha(c1), color_alpha(c2), amount) | 0;
-
   return color_pack(r, g, b, a);
 }
 
@@ -68,7 +54,6 @@ export function color_blend(colors, base_color = COLOR_WHITE) {
     // Transition to the next color using the alpha component of that color
     // as a ratio
     const amount = color_alpha(color) / 255;
-
     output = color_lerp(output, color, amount);
   }
   return output;
@@ -103,21 +88,12 @@ export function color_blue(c) {
   return c & 0xff;
 }
 
-// Get the relative luminance of a color, normalized to 0 for darkest black and
-// 1 for lightest white. Based on the spec, which provides the formula.
-// http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
-// Calculating luminance is needed to calculate contrast.
-// This accepts a color, which is rgba, but the calculation is done on rgb,
-// which does not have an alpha component, which means that alpha must be
-// 'applied' to any rgba color before calling this function (the rgba color
-// value must be converted to rgb). Applying alpha means that rgba will have a
-// 100% alpha (a value of 255), so if this detects that is not the case, warn
-// TODO: eventually remove the alpha check warning because it is overhead
+// Get the relative luminance of a color, normalized to 0 for black and 1 for
+// white.
 export function color_luminance(color) {
+  // TODO: remove this once I am more confident
   if (color_alpha(color) !== 255) {
-    console.warn(
-        'Calculating luminance on non-opaque color (undefined behavior)',
-        color_alpha(color), color_format(color));
+    console.warn('Not opaque', color_to_string(color));
   }
 
   const rr = color_red(color) / 255;
@@ -129,8 +105,14 @@ export function color_luminance(color) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+// Returns a string in the form [r,g,b,a], with a as ratio. Mostly just for
+// debugging, not for css-usage
+export function color_to_string(color) {
+  return '[' + color_red(color) + ',' + color_green(color) + ',' +
+      color_blue(color) + ',' + (color_alpha(color) / 255) + ']';
+}
 
-// Returns the contrast ratio between the fore color and the back color
+// Returns the W3C contrast ratio between the fore color and the back color
 export function color_contrast(fore_color, back_color = COLOR_WHITE) {
   const l1 = color_luminance(fore_color) + 0.05;
   const l2 = color_luminance(back_color) + 0.05;

@@ -1,4 +1,5 @@
-import {color_format, COLOR_WHITE} from '/src/color/color.js';
+import {COLOR_WHITE} from '/src/color/color.js';
+import {color_format} from '/src/color/css-color.js';
 import * as ccf from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
 
 // TODO: semi-automated tests that compare output to expected output

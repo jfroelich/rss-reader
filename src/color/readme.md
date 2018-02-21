@@ -63,6 +63,13 @@ I am not entirely sure why the spec says to add 0.05. My guess is that it
 is an efficient way to avoid the divide-by-zero error if either luminance
 is 0 when it is the denominator.
 
+# About luminance calc
+
+Based on the spec, which provides the formula.
+http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+
+Calculating luminance is needed to calculate contrast.
+
 # Misc references and research
 
 * https://en.wikipedia.org/wiki/Painter%27s_algorithm
@@ -82,17 +89,10 @@ is 0 when it is the denominator.
 * https://www.theimagingsource.com/support/documentation/ic-imaging-control-cpp/PixelformatRGB565.htm
 * https://stackoverflow.com/questions/25467682
 
-
 # TODO: Vary contrast based on text size
 
 * See https://www.w3.org/TR/WCAG20/
 * See TinyColor's isReadable function
-
-# TODO: write my own parser to stop relying on third-party
-
-Maybe move color_parse and color_format to a separate module that depends on
-color, and acts as a layer above it. It involves a lot of css which is not
-logically related to color itself.
 
 # TODO: maybe make a color_valid function
 
