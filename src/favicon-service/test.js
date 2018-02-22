@@ -16,30 +16,36 @@ TODO:
 * test compact
 */
 
-window.testLookup =
-    async function(url, cached) {
-  const testDbName = 'test-favicon-cache';
+// clang has problems here for some reason
+// clang-format off
+
+// @param cached {Boolean} if true, use a database
+window.test_lookup = async function(url, cached) {
+  const test_db_name = 'test-favicon-cache';
 
   const query = {};
   query.url = new URL(url);
   if (cached) {
-    query.conn = await open(testDbName);
+    query.conn = await open(test_db_name);
   }
 
-  const iconURL = await lookup(query);
+  const icon_url_string = await lookup(query);
   if (cached) {
     query.conn.close();
 
-    await remove(query.conn.name);
+    await db_remove(query.conn.name);
   }
 
-  return iconURL;
+  return icon_url_string;
 }
 
-    window.testClear = clear;
-window.testCompact = compact;
+window.test_compact = compact;
+window.test_clear = clear;
+// clang-format on
 
-function remove(name) {
+// Remove an indexedDB database by name
+// @param name {String}
+function db_remove(name) {
   return new Promise((resolve, reject) => {
     console.debug('Deleting database', name);
     const request = indexedDB.deleteDatabase(name);
