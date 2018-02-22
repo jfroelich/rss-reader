@@ -2,18 +2,6 @@ import {fetch_html, tfetch, url_did_change} from '/src/fetch-utils.js';
 import {open as indexeddb_utils_open} from '/src/indexeddb-utils.js';
 import {mime_type_from_content_type} from '/src/mime-utils.js';
 
-// The favicon service provides the ability to lookup the url of a favicon for a
-// given web page. Lookups can optionally be cached in a database so that future
-// lookups resolve more quickly and avoid repeated network requests. The cache
-// can be cleared or compacted for maintenance.
-
-// TODO: create a github issue for this todo
-// TODO: breakup the lookup function into smaller functions so it easier to read
-
-// TODO: create a github issue about a test library that fully tests this,
-// and what I should really do is write stubs for fetch and such and then
-// create a ton of tests that test every branch
-
 const NAME = 'favicon-cache';
 const VERSION = 3;
 const OPEN_TIMEOUT = 500;
