@@ -1,6 +1,7 @@
-import * as FetchUtils from '/src/fetch-utils.js';
-import {html_parse} from '/src/html-utils.js';
+// TODO: fix import
 import setImageSizes from '/src/content-filters/image-size-filter.js';
+import {fetch_html} from '/src/fetch-utils.js';
+import {html_parse} from '/src/html-utils.js';
 
 // TODO: research http://exercism.io/ svg loading issue
 // Actually there is now a separate issue. It's not finding any urls. Something
@@ -12,7 +13,7 @@ import setImageSizes from '/src/content-filters/image-size-filter.js';
 
 window.test = async function(urlString) {
   const requestURL = new URL(urlString);
-  const response = await FetchUtils.fetch_html(requestURL);
+  const response = await fetch_html(requestURL);
   const html = await response.text();
   const document = html_parse(html);
   const responseURL = new URL(response.url);

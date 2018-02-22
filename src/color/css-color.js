@@ -19,7 +19,7 @@ function tinycolor_to_color(tiny_color) {
 }
 
 // Get a color as a css string value
-export function color_format(color) {
+export function css_color_format(color) {
   return 'rgba(' + color_red(color) + ', ' + color_green(color) + ', ' +
       color_blue(color) + ', ' + color_alpha(color) / 255 + ')';
 }

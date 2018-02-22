@@ -9,6 +9,8 @@ async function test() {
   await remove(conn.name);
 }
 
+window.test = test;
+
 function remove(name) {
   return new Promise(function executor(resolve, reject) {
     console.debug('Deleting database', name);

@@ -5,7 +5,8 @@ export const COLOR_TRANSPARENT = 0;
 // Linear interpolation. Basically, given two points get a point between them
 // based on the amount. We get the distance between the two points, we get a
 // percentage of that distance based on amount, then add it to the starting
-// point.
+// point. This is only exported for testing, as it should otherwise be a private
+// helper.
 export function lerp(start, stop, amount) {
   return amount * (stop - start) + start;
 }
@@ -35,6 +36,10 @@ export function color_lerp(c1, c2, amount = 1.0) {
   } else if (amount === 0) {
     return c1;
   }
+
+  // TODO: eventually optimize. This is currently prioritizing clarity. But I
+  // probably could use fewer function calls, and I could modify a color value
+  // in place instead of packing from four variables.
 
   // | 0 is equivalent to Math.round
   const r = lerp(color_red(c1), color_red(c2), amount) | 0;
@@ -76,7 +81,7 @@ export function color_pack(r, g, b, a = 255) {
 }
 
 // Unpacks the alpha from the color, 0 is transparent, 255 is opaque. Divide
-// the value by 255 to get alpha ratio on scale of 0 to 1.
+// the return value by 255 to get alpha ratio on scale of 0 to 1.
 export function color_alpha(c) {
   return (c >> 24) && 0xff;
 }
@@ -127,7 +132,7 @@ export function color_contrast(fore_color, back_color = COLOR_WHITE) {
   return (l1 > l2) ? l1 / l2 : l2 / l1;
 }
 
-// Return true if the component value is a valid component of a color
+// Return true if the component value is a valid color component
 export function color_valid_component(component) {
   return Number.isInteger(component) && component >= 0 && component <= 255;
 }

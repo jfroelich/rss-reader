@@ -1,12 +1,12 @@
 import {COLOR_WHITE} from '/src/color/color.js';
-import {color_format} from '/src/color/css-color.js';
+import {css_color_format} from '/src/color/css-color.js';
 import * as ccf from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
 
 // TODO: semi-automated tests that compare output to expected output
 
 // expose to console under a prefix to play with stuff directly
 window.ccf = ccf;
-window.color_format = color_format;
+window.css_color_format = css_color_format;
 window.COLOR_WHITE = COLOR_WHITE;
 
 window.test1 = function() {
@@ -40,7 +40,7 @@ window.test2 = function() {
     if (value) {
       const back_color =
           ccf.element_derive_background_color(node.parentNode, matte);
-      console.debug(value, color_format(back_color));
+      console.debug(value, css_color_format(back_color));
     }
 
     node = it.nextNode();
