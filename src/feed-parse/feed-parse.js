@@ -1,36 +1,25 @@
 import {html_decode_entities} from '/src/html/html.js';
 
-// TODO: review proper base url determination for entry link resolution. There
-// is a chance I am ignoring something like a base-url element that trumps feed
-// link as base url.
-// TODO: right now find_feed_link returns a string, which I then parse back into
-// a url. I would like to avoid this double parsing. maybe it is ok to parse
-// urls into actual urls?
-
 // Parses the input string into a feed object. The feed object will always have
 // a defined entries array, although it may be zero length. Returns a feed
 // object or throws
-// @param xml_string {String}
+// @param value {String} the xml string to parse
 // @param skip_entries {Boolean} if true, entries are not processed, and an
 // empty entries array is included in the result
 // @param resolve_entry_urls {Boolean} if true, entry urls are canonicalized
-// using feed.link as the base url. Only done if entries not skipped. Only done
-// if feed link is a valid url.
-export default function feed_parse(
-    xml_string, skip_entries, resolve_entry_urls) {
-  // Sanity checking xml_string delegated to xml_parse
-  // Rethrow parse xml errors
-  const document = xml_parse(xml_string);
+// using feed.link as the base url
+export default function feed_parse(value, skip_entries, resolve_entry_urls) {
+  const document = xml_parse(value);
   return unmarshall_xml(document, skip_entries, resolve_entry_urls);
 }
 
-function xml_parse(xml_string) {
-  if (typeof xml_string !== 'string') {
-    throw new Error('xml_string is not a string');
+function xml_parse(value) {
+  if (typeof value !== 'string') {
+    throw new Error('value is not a string');
   }
 
   const parser = new DOMParser();
-  const document = parser.parseFromString(xml_string, 'application/xml');
+  const document = parser.parseFromString(value, 'application/xml');
   const error = document.querySelector('parsererror');
   if (error) {
     throw new Error(error.textContent);
