@@ -1,7 +1,7 @@
 import {coerce_entry} from '/src/coerce-entry.js';
 import {coerce_feed} from '/src/coerce-feed.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
-import feed_parse from '/src/feed-parse.js';
+import feed_parse from '/src/feed-parse/feed-parse.js';
 import {dedup_entries} from '/src/feed-poll/dedup-entries.js';
 import {filter_entry_content} from '/src/feed-poll/filter-entry-content.js';
 import url_is_binary from '/src/feed-poll/is-binary-url.js';

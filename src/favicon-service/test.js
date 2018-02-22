@@ -16,9 +16,6 @@ TODO:
 * test compact
 */
 
-// clang has problems here for some reason
-// clang-format off
-
 // @param cached {Boolean} if true, use a database
 window.test_lookup = async function(url, cached) {
   const test_db_name = 'test-favicon-cache';
@@ -37,11 +34,10 @@ window.test_lookup = async function(url, cached) {
   }
 
   return icon_url_string;
-}
+};
 
 window.test_compact = compact;
 window.test_clear = clear;
-// clang-format on
 
 // Remove an indexedDB database by name
 // @param name {String}
