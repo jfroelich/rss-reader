@@ -1,6 +1,6 @@
 import {coerce_entry} from '/src/coerce-entry.js';
 import {coerce_feed} from '/src/coerce-feed.js';
-import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service.js';
+import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse.js';
 import {dedup_entries} from '/src/feed-poll/dedup-entries.js';
 import {filter_entry_content} from '/src/feed-poll/filter-entry-content.js';
@@ -9,7 +9,7 @@ import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch-utils.js';
 import {html_parse} from '/src/html-utils.js';
 import notification_show from '/src/notifications.js';
-import {rdb_entry_append_url, rdb_entry_has_url, entry_peek_url, feed_has_url, feed_merge, feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb.js';
+import {entry_peek_url, feed_has_url, feed_merge, feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb.js';
 // TODO: this should not be dependent on something in the view, it should be the
 // other way around
 import badge_update_text from '/src/views/update-badge-text.js';
@@ -474,9 +474,9 @@ function entry_url_rewrite(entry) {
     return false;
   }
 
-  // rdb_entry_append_url only appends the url if the url does not already exist in
-  // the entry's url list. rdb_entry_append_url returns true if an append took
-  // place.
+  // rdb_entry_append_url only appends the url if the url does not already exist
+  // in the entry's url list. rdb_entry_append_url returns true if an append
+  // took place.
   return rdb_entry_append_url(entry, entry_response_url);
 }
 

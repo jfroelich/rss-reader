@@ -1,4 +1,4 @@
-import {lookup as favicon_service_lookup} from '/src/favicon-service.js';
+import {lookup as favicon_service_lookup} from '/src/favicon-service/favicon-service.js';
 import {feed_create_favicon_lookup_url, feed_has_url, rdb_feed_put, rdb_find_active_feeds, rdb_open} from '/src/rdb.js';
 
 // Refreshes the favicon property of feeds in the feed store

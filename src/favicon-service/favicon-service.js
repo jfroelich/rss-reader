@@ -8,9 +8,6 @@ import {mime_type_from_content_type} from '/src/mime-utils.js';
 // can be cleared or compacted for maintenance.
 
 // TODO: create a github issue for this todo
-// TODO: decouple from all common libraries to provide a severe service boundary
-
-// TODO: create a github issue for this todo
 // TODO: breakup the lookup function into smaller functions so it easier to read
 
 // TODO: create a github issue about a test library that fully tests this,

@@ -1,4 +1,4 @@
-import {clear, compact, lookup, open} from '/src/favicon-service.js';
+import {clear, compact, lookup, open} from '/src/favicon-service/favicon-service.js';
 
 /*
 TODO:
