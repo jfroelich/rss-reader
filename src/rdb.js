@@ -1,4 +1,4 @@
-import {html_replace_tags, html_truncate} from '/src/html-utils.js';
+import {html_replace_tags, html_truncate} from '/src/html/html.js';
 import {open as indexeddb_utils_open} from '/src/indexeddb-utils.js';
 
 // TODO: consistently use rdb prefix here, and throughout all modules. Change

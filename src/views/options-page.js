@@ -1,5 +1,5 @@
 import {open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
-import {html_truncate} from '/src/html-utils.js';
+import {html_truncate} from '/src/html/html.js';
 import {ral_activate_feed, ral_deactivate_feed, ral_find_feed_by_id, ral_get_feeds, ral_unsubscribe} from '/src/ral.js';
 import {feed_peek_url} from '/src/rdb.js';
 import {element_fade} from '/src/views/element-fade.js';

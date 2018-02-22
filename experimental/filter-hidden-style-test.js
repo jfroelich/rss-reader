@@ -1,5 +1,5 @@
 import * as FetchUtils from '/src/fetch-utils.js';
-import {html_parse} from '/src/html-utils.js';
+import {html_parse} from '/src/html/html.js';
 
 window.test = async function(url) {
   const response = await FetchUtils.fetch_html(url);

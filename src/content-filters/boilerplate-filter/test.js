@@ -1,7 +1,7 @@
 import {boilerplate_filter} from '/src/content-filters/boilerplate-filter/boilerplate-filter.js';
 import {document_set_image_sizes, filter_blacklisted_elements, filter_frame_elements, filter_iframe_elements, filter_script_elements} from '/src/content-filters/content-filters.js';
 import {fetch_html} from '/src/fetch-utils.js';
-import {html_parse} from '/src/html-utils.js';
+import {html_parse} from '/src/html/html.js';
 
 window.test = async function(url_string) {
   const request_url = new URL(url_string);
