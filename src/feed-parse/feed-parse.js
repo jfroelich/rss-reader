@@ -27,9 +27,6 @@ function xml_parse(value) {
   return document;
 }
 
-// @param document {Document} an XML document representing a feed
-// @param skip_entries {Boolean}
-// @returns {Object} a feed object
 function unmarshall_xml(document, skip_entries, resolve_entry_urls) {
   const document_element = document.documentElement;
   const document_element_name = element_get_local_name(document_element);
@@ -297,10 +294,6 @@ function find_entry_content(entry_element) {
       return;
     }
 
-    // NOTE: so I think I handle cdata content correctly, but note the issue
-    // with title still having raw entities. Or, rather, should content be not
-    // encoded in any situation?
-
     const nodes = content.childNodes;
     const texts = [];
     for (let node of nodes) {
@@ -331,10 +324,6 @@ function feed_resolve_entry_urls(entries, feed_link_url_string) {
     return;
   }
 
-  // Parse the base url, bail on failure
-  // TODO: if a feed has a link, and the link is invalid, should that actually
-  // be considered a parse error? In other words, this should not catch this
-  // error here?
   let base_url;
   try {
     base_url = new URL(feed_link_url_string);
@@ -349,7 +338,6 @@ function feed_resolve_entry_urls(entries, feed_link_url_string) {
         const url = new URL(entry.link, base_url);
         entry.link = url.href;
       } catch (error) {
-        // TODO: unset entry.link in this case?
         console.debug(error);
       }
     }
@@ -391,8 +379,6 @@ function find_child_element_text(parentElement, element_name) {
   }
 }
 
-// In xml-flagged documents, element.localName is case-sensitive. This
-// normalizes the name to lowercase
 function element_get_local_name(element) {
   return element.localName.toLowerCase();
 }
