@@ -1,4 +1,4 @@
-import * as FetchUtils from '/src/fetch-utils.js';
+import * as FetchUtils from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
 
 window.test = async function(url) {

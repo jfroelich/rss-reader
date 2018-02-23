@@ -1,6 +1,6 @@
 // TODO: fix import
 import setImageSizes from '/src/content-filters/image-size-filter.js';
-import {fetch_html} from '/src/fetch-utils.js';
+import {fetch_html} from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
 
 // TODO: research http://exercism.io/ svg loading issue

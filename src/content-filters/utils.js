@@ -1,5 +1,5 @@
 import '/third-party/parse-srcset.js';
-import {url_is_allowed} from '/src/fetch-utils.js';
+import {url_is_allowed} from '/src/fetch/fetch.js';
 
 // Returns a file name without its extension (and without the '.')
 export function file_name_filter_extension(file_name) {

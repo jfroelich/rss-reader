@@ -1,5 +1,5 @@
 import {paginationFindAnchors} from '/experimental/pagination.js';
-import {fetch_html} from '/src/fetch-utils.js';
+import {fetch_html} from '/src/fetch/fetch.js';
 
 // Investigates whether a document is a multi-page document. If the document
 // is a single page, the input document is left as is. If the document is a
