@@ -1,4 +1,4 @@
-import {rdb_entry_mark_read} from '/src/rdb.js';
+import {rdb_entry_mark_read} from '/src/rdb/rdb.js';
 import badge_update_text from '/src/views/update-badge-text.js';
 
 // TODO: this shouldn't be dependent on something in views, it should be the

@@ -1,6 +1,6 @@
-import {rdb_entry_count_unread} from '/src/rdb.js';
+import {rdb_entry_count_unread} from '/src/rdb/rdb.js';
 
-// TODO: primary todo, trying to remove auto-connect from rdb.js, this is the
+// TODO: primary todo, trying to remove auto-connect from rdb/rdb.js, this is the
 // sole caller of rdb_entry_count_unread. In order to remove auto-connect I
 // need ensure all callers of this function use a valid connection. In doing so,
 // do not forget that this can _still_ be called non-awaited with a connection.
@@ -9,7 +9,7 @@ import {rdb_entry_count_unread} from '/src/rdb.js';
 
 // TODO: perhaps think of badge as a view, like the other pages or the CLI. In
 // that sense it would be reasonable to open a channel and listen for change
-// events. I am going to wait on making this change until rdb.js redesign is
+// events. I am going to wait on making this change until rdb/rdb.js redesign is
 // more complete.
 
 // TODO: even if I don't do the observer thing, thinking of badge as a page,

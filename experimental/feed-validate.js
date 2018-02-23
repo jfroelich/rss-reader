@@ -1,6 +1,6 @@
 // TODO: this creates a circular dependency at the moment
-// Therefore this will eventually need to be a part of rdb.js
-import {rdb_is_feed, feed_is_valid_id} from '/src/rdb.js';
+// Therefore this will eventually need to be a part of rdb/rdb.js
+import {rdb_is_feed, feed_is_valid_id} from '/src/rdb/rdb.js';
 
 // TODO: include this in places where sanitize is called
 // TODO: assert required properties are present

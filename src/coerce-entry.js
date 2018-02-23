@@ -1,4 +1,4 @@
-import {rdb_entry_append_url, rdb_entry_create, rdb_entry_has_url} from '/src/rdb.js';
+import {rdb_entry_append_url, rdb_entry_create, rdb_entry_has_url} from '/src/rdb/rdb.js';
 
 // Reformats a parsed feed entry as a storable entry
 // @param parsed_entry {Object} an entry object such as that produced by

@@ -1,7 +1,7 @@
 import {html_escape, html_truncate} from '/src/html/html.js';
 import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
 import {ral_export, ral_import, ral_load_initial, ral_poll_feeds} from '/src/ral.js';
-import {entry_is_valid_id, entry_peek_url, feed_peek_url, rdb_find_viewable_entries, rdb_get_feeds, rdb_is_entry, rdb_open} from '/src/rdb.js';
+import {entry_is_valid_id, entry_peek_url, feed_peek_url, rdb_find_viewable_entries, rdb_get_feeds, rdb_is_entry, rdb_open} from '/src/rdb/rdb.js';
 import {filter_title_publisher} from '/src/views/article-utils.js';
 import {date_format} from '/src/views/date.js';
 import * as PageStyle from '/src/views/page-style-settings.js';

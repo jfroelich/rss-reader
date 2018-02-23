@@ -1,4 +1,4 @@
-import {rdb_entry_has_url, rdb_open} from '/src/rdb.js';
+import {rdb_entry_has_url, rdb_open} from '/src/rdb/rdb.js';
 
 // TODO: this potentially affects unread count
 

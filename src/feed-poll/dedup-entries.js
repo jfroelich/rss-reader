@@ -1,4 +1,4 @@
-import {rdb_entry_has_url} from '/src/rdb.js';
+import {rdb_entry_has_url} from '/src/rdb/rdb.js';
 
 // Filter duplicate entries by comparing urls
 export function dedup_entries(entries) {

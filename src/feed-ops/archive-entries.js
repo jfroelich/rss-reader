@@ -1,4 +1,4 @@
-import {rdb_entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, rdb_open} from '/src/rdb.js';
+import {rdb_entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, rdb_open} from '/src/rdb/rdb.js';
 
 // TODO: all modules in the feed-ops layer should use the feed-ops prefix
 

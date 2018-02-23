@@ -16,7 +16,6 @@ import {open as indexeddb_utils_open} from '/src/indexeddb-utils.js';
 // TODO: rename feed.dateUpdated and entry.dateUpdated to updatedDate for better
 // consistency. Also consider using underscore instead of camel case
 
-
 const FEED_MAGIC = 0xfeedfeed;
 const ENTRY_MAGIC = 0xdeadbeef;
 
@@ -802,7 +801,7 @@ function object_filter_empty_properties(object) {
 // line, carriage return and form feed. In the case of bad input the input
 // itself is returned. To test if characters were replaced, check if the output
 // string length is less than the input string length.
-function string_filter_unprintable_characters(value) {
+export function string_filter_unprintable_characters(value) {
   // \t \u0009 9, \n \u000a 10, \f \u000c 12, \r \u000d 13
 
   // Match 0-8, 11, and 14-31

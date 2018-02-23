@@ -1,5 +1,5 @@
 import subscribe from '/src/feed-ops/subscribe.js';
-import {feed_peek_url, rdb_get_feeds, rdb_open} from '/src/rdb.js';
+import {feed_peek_url, rdb_get_feeds, rdb_open} from '/src/rdb/rdb.js';
 
 // Returns an opml document as a blob that contains outlines representing the
 // feeds in the app's db

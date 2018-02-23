@@ -1,4 +1,4 @@
-import {feed_append_url, feed_create} from '/src/rdb.js';
+import {feed_append_url, feed_create} from '/src/rdb/rdb.js';
 
 // TODO: think about fetch info parameter more, I'd prefer maybe to just accept
 // a Response object. But I don't know how to get request url.
