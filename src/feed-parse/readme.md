@@ -21,3 +21,5 @@ So I think I handle cdata content correctly, but note the issue with title still
 
 * If a feed has a link, and the link is invalid, should that actually be considered a parse error? In other words, this should not catch this error here?
 * If failing to resolve an entry, should this set entry.link to undefined or remove the property, or leave it as is like now?
+
+# TODO: not sure if this is best place to set fetch policy

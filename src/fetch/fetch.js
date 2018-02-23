@@ -1,9 +1,7 @@
 import {mime_type_from_content_type} from '/src/mime-utils.js';
 
-// Fetches the response of the given url. This basically does a tfetch but
-// with an attached post-condition on mime-type. I've chosen not to parse
-// the result immediately here, to allow the caller to interact with the
-// response before involving more heavyweight parsing.
+// Fetches the response of the given url and validates its response content
+// type. Throws an error if the fetch times out.
 // @param url {URL} request url
 // @param timeout {Number} optional, the number of millis to wait for a
 // response before considering the request a failure.
