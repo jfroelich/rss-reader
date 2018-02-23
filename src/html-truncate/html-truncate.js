@@ -50,10 +50,10 @@ export function html_truncate(html_string, position, suffix) {
     node.remove();
   }
 
-  return html_is_fragment(html_string) ? document.body.innerHTML :
-                                         document.documentElement.outerHTML;
-}
-
-function html_is_fragment(html_string) {
-  return !/<html/i.test(html_string);
+  // Return either the full text or the fragment
+  if (/<html/i.test(html_string)) {
+    return document.documentElement.outerHTML;
+  } else {
+    return document.body.innerHTML;
+  }
 }
