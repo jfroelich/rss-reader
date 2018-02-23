@@ -1,21 +1,6 @@
 import {html_replace_tags, html_truncate} from '/src/html/html.js';
 import {open as indexeddb_utils_open} from '/src/indexeddb-utils.js';
 
-// TODO: consistently use rdb prefix here, and throughout all modules. Change
-// other module imports to no longer renaming imported functions. The rdb
-// prefix is unique to this module. rdb is shorter than reader_db
-
-// TODO: do away with all auto-connecting. The solution to inconvenient resource
-// lifetime management is through using wrapper functions, not through dynamic
-// variables. In addition, this may allow me to stop using two functions per
-// api function. Instead of an async function calling a promise returning
-// helper, I can just expose the promise returning helper.
-
-// TODO: move this to github issue, and make it more general, this is about
-// consistent object field naming.
-// TODO: rename feed.dateUpdated and entry.dateUpdated to updatedDate for better
-// consistency. Also consider using underscore instead of camel case
-
 const RDB_FEED_MAGIC = 0xfeedfeed;
 const RDB_ENTRY_MAGIC = 0xdeadbeef;
 
@@ -252,9 +237,8 @@ export async function rdb_entry_add(conn, channel, entry) {
 
   // Delegate the database work to put, because put can be used for both add and
   // put, and the two operations are nearly identical. However, do not supply
-  // to put the input channel, so that its message is suppressed, so that add
-  // can send its own message as a substitute. Rethrow any put errors as add
-  // errors.
+  // the input channel, so that its message is suppressed, so that add can send
+  // its own message as a substitute. Rethrow any put errors as add errors.
   let void_channel;
   const entry_id = await rdb_entry_put(conn, void_channel, storable_entry);
 
@@ -289,9 +273,6 @@ export function rdb_entry_count_unread(conn) {
 // @param conn {IDBDatabase} required
 export function rdb_entry_mark_read(conn, channel, entry_id) {
   return new Promise((resolve, reject) => {
-    // TEMP: paranoid assertion given recent change to no longer auto-connect
-    assert(conn instanceof IDBDatabase);
-
     assert(rdb_entry_is_valid_id(entry_id));
 
     const txn = conn.transaction('entry', 'readwrite');
@@ -347,9 +328,7 @@ export function rdb_entry_mark_read(conn, channel, entry_id) {
 
 // Returns an array of active feeds
 export async function rdb_find_active_feeds(conn) {
-  // NOTE: rdb_get_feeds no longer auto-connects
   assert(conn instanceof IDBDatabase);
-
   const feeds = await rdb_get_feeds(conn);
   return feeds.filter(feed => feed.active);
 }
@@ -364,7 +343,6 @@ export async function rdb_find_active_feeds(conn) {
 // callbacks. This will yield a minor speedup at the cost of being a mild DRY
 // violation. However, the speed is admittedly not that important
 export async function rdb_for_each_active_feed(conn, per_feed_callback) {
-  // NOTE: rdb_get_feeds no longer auto-connects
   assert(conn instanceof IDBDatabase);
 
   const feeds = await rdb_get_feeds(conn);
@@ -381,18 +359,6 @@ export function rdb_contains_entry_with_url(conn, url) {
     const index = store.index('urls');
     const request = index.getKey(url.href);
     request.onsuccess = () => resolve(rdb_entry_is_valid_id(request.result));
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// TODO: is this even in use??? it seems like it is not
-export function rdb_find_feed_by_id(conn, feed_id) {
-  return new Promise((resolve, reject) => {
-    assert(rdb_feed_is_valid_id(feed_id));
-    const txn = conn.transaction('feed');
-    const store = txn.objectStore('feed');
-    const request = store.get(feed_id);
-    request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 }
@@ -598,6 +564,7 @@ export function rdb_feed_put(conn, channel, feed, validate = true) {
       // Defer rdb_is_feed call to validation in this case
       assert(rdb_feed_is_valid(feed));
     } else {
+      // Otherwise provide minimal validation
       assert(rdb_is_feed(feed));
     }
 
