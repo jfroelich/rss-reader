@@ -7,8 +7,8 @@ const f = string_filter_unprintable_characters;
 // equal to the given length, and print the result to the console.
 const a = function(s, len) {
   const result = string_filter_unprintable_characters(s);
-  const passed = result.length === len;
-  d('input', escape(s), 'length', len, passed ? 'passed' : 'failed');
+  const passed = (result.length === len) ? 'passed' : 'failed';
+  d('input', escape(s), 'length', len, passed);
 };
 
 function run() {
@@ -55,4 +55,6 @@ function run() {
 // Run test on module load
 run();
 
-window.string_filter_unprintable_characters = string_filter_unprintable_characters;
+// Export to console for manual testing shenanigans
+window.string_filter_unprintable_characters =
+    string_filter_unprintable_characters;
