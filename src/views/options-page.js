@@ -1,5 +1,5 @@
 import {open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
-import {html_truncate} from '/src/html/html.js';
+import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {ral_activate_feed, ral_deactivate_feed, ral_find_feed_by_id, ral_get_feeds, ral_unsubscribe} from '/src/ral.js';
 import {rdb_feed_peek_url} from '/src/rdb/rdb.js';
 import {element_fade} from '/src/views/element-fade.js';
@@ -370,7 +370,8 @@ async function subscribe_form_onsubmit(event) {
   }
 
   feed_list_append_feed(feed);
-  subscription_monitor_append_message('Subscribed to ' + rdb_feed_peek_url(feed));
+  subscription_monitor_append_message(
+      'Subscribed to ' + rdb_feed_peek_url(feed));
   subscription_monitor_hide();
   section_show_by_id('subs-list-section');
   return false;

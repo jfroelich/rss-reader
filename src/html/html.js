@@ -34,60 +34,6 @@ function html_encode_first_char(string) {
   return '&#' + string.charCodeAt(0) + ';';
 }
 
-// Truncates an HTML string
-// @param html_string {String}
-// @param position {Number} position after which to truncate
-// @param suffix {String} optional, appended after truncation, defaults to an
-// ellipsis
-export function html_truncate(html_string, position, suffix) {
-  assert(Number.isInteger(position) && position >= 0);
-
-  if (typeof html_string !== 'string') {
-    return '';
-  }
-
-  const ELLIPSIS = '\u2026';
-  if (typeof suffix !== 'string') {
-    suffix = ELLIPSIS;
-  }
-
-  let document;
-  try {
-    document = html_parse(html_string);
-  } catch (error) {
-    console.debug(error);
-    return 'Unsafe html';
-  }
-
-  // Search for the text node in which truncation should occur and truncate it
-  const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
-  let total_length = 0;
-
-  for (let node = it.nextNode(); node; node = it.nextNode()) {
-    const value = node.nodeValue;
-    const value_length = value.length;
-    if (total_length + value_length >= position) {
-      const remaining_length = position - total_length;
-      node.nodeValue = value.substr(0, remaining_length) + suffix;
-      break;
-    } else {
-      total_length += value_length;
-    }
-  }
-
-  // Remove remaining nodes past the truncation point
-  for (let node = it.nextNode(); node; node = it.nextNode()) {
-    node.remove();
-  }
-
-  return html_is_fragment(html_string) ? document.body.innerHTML :
-                                         document.documentElement.outerHTML;
-}
-
-function html_is_fragment(html_string) {
-  return !/<html/i.test(html_string);
-}
-
 // Replaces tags in the input string with the replacement. If a replacement is
 // not specified, then this removes the tags.
 export function html_replace_tags(html_string, replacement) {

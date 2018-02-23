@@ -1,4 +1,5 @@
-import {html_replace_tags, html_truncate} from '/src/html/html.js';
+import {html_truncate} from '/src/html-truncate/html-truncate.js';
+import {html_replace_tags} from '/src/html/html.js';
 import {idb_open} from '/src/idb/idb.js';
 
 const RDB_FEED_MAGIC = 0xfeedfeed;

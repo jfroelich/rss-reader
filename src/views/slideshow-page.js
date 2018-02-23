@@ -1,5 +1,6 @@
-import {html_escape, html_truncate} from '/src/html/html.js';
 import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
+import {html_truncate} from '/src/html-truncate/html-truncate.js';
+import {html_escape} from '/src/html/html.js';
 import {ral_export, ral_import, ral_load_initial, ral_poll_feeds} from '/src/ral.js';
 import {rdb_entry_is_valid_id, rdb_entry_peek_url, rdb_feed_peek_url, rdb_find_viewable_entries, rdb_get_feeds, rdb_is_entry, rdb_open} from '/src/rdb/rdb.js';
 import {filter_title_publisher} from '/src/views/article-utils.js';
