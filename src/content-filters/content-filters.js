@@ -2,6 +2,9 @@ import {boilerplate_filter} from '/src/content-filters/boilerplate-filter/boiler
 import {color_contrast_filter} from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
 import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, parse_srcset_wrapper, srcset_serialize, string_condense_whitespace, url_get_filename, url_is_external, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 
+// TODO: add a filter that condenses by doing this like replacing &copy; with
+// the equivalent single utf8/unicode character.
+
 export const cf_filter_boilerplate = boilerplate_filter;
 export const cf_filter_low_contrast = color_contrast_filter;
 
