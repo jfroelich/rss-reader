@@ -1,5 +1,5 @@
 import {fetch_html, tfetch, url_did_change} from '/src/fetch/fetch.js';
-import {open as indexeddb_utils_open} from '/src/indexeddb-utils.js';
+import {idb_open} from '/src/idb/idb.js';
 import {mime_type_from_content_type} from '/src/mime-utils.js';
 
 const NAME = 'favicon-cache';
@@ -352,7 +352,7 @@ export function open(name, version, timeout) {
     timeout = OPEN_TIMEOUT;
   }
 
-  return indexeddb_utils_open(name, version, db_onupgradeneeded, timeout);
+  return idb_open(name, version, db_onupgradeneeded, timeout);
 }
 
 function db_onupgradeneeded(event) {

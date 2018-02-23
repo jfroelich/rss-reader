@@ -3,7 +3,7 @@
 // timeout after which to consider the connection a failure, and that a blocked
 // connection is treated as an error (and the connection is automatically closed
 // should it ever open later).
-export async function open(name, version, upgrade_listener, timeout) {
+export async function idb_open(name, version, upgrade_listener, timeout) {
   if (typeof name !== 'string') {
     throw new TypeError('Invalid name ' + name);
   }

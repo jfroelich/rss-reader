@@ -1,4 +1,4 @@
-import {open} from '/src/indexeddb-utils.js';
+import {idb_open} from '/src/idb/idb.js';
 
 async function test() {
   const name = 'indexeddb-utils-test';
@@ -6,7 +6,7 @@ async function test() {
   let conn, timeout, onUpgradeNeeded;
 
   try {
-    conn = await open(name, version, onUpgradeNeeded, timeout);
+    conn = await idb_open(name, version, onUpgradeNeeded, timeout);
   } finally {
     if (conn) {
       conn.close();

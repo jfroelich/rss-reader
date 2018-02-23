@@ -1,5 +1,5 @@
 import {html_replace_tags, html_truncate} from '/src/html/html.js';
-import {open as indexeddb_utils_open} from '/src/indexeddb-utils.js';
+import {idb_open} from '/src/idb/idb.js';
 
 const RDB_FEED_MAGIC = 0xfeedfeed;
 const RDB_ENTRY_MAGIC = 0xdeadbeef;
@@ -11,7 +11,7 @@ export const RDB_ENTRY_STATE_ARCHIVED = 1;
 
 // Open a connection to the reader database. All parameters are optional
 export function rdb_open(name = 'reader', version = 24, timeout = 500) {
-  return indexeddb_utils_open(name, version, rdb_on_upgrade_needed, timeout);
+  return idb_open(name, version, rdb_on_upgrade_needed, timeout);
 }
 
 // Helper for rdb_open. Does the database upgrade. This should never be
