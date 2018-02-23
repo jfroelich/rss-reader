@@ -1,7 +1,7 @@
 import {html_escape, html_truncate} from '/src/html/html.js';
 import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
 import {ral_export, ral_import, ral_load_initial, ral_poll_feeds} from '/src/ral.js';
-import {entry_is_valid_id, entry_peek_url, feed_peek_url, rdb_find_viewable_entries, rdb_get_feeds, rdb_is_entry, rdb_open} from '/src/rdb/rdb.js';
+import {rdb_entry_is_valid_id, rdb_entry_peek_url, rdb_feed_peek_url, rdb_find_viewable_entries, rdb_get_feeds, rdb_is_entry, rdb_open} from '/src/rdb/rdb.js';
 import {filter_title_publisher} from '/src/views/article-utils.js';
 import {date_format} from '/src/views/date.js';
 import * as PageStyle from '/src/views/page-style-settings.js';
@@ -125,7 +125,7 @@ async function on_entry_expired_message(message) {
     return;
   }
 
-  if (!entry_is_valid_id(message.id)) {
+  if (!rdb_entry_is_valid_id(message.id)) {
     console.warn('Invalid entry id', message);
     return;
   }
@@ -202,7 +202,7 @@ async function slide_mark_read(conn, slide_element) {
   // Get and validate the entry id
   const entry_attribute_value = slide_element.getAttribute('entry');
   const entry_id = parseInt(entry_attribute_value, 10);
-  if (!entry_is_valid_id(entry_id)) {
+  if (!rdb_entry_is_valid_id(entry_id)) {
     console.error('Invalid entry id', entry_id);
     return;
   }
@@ -277,7 +277,7 @@ function slide_append(entry) {
     return;
   }
 
-  console.debug('Appending entry', entry_peek_url(entry));
+  console.debug('Appending entry', rdb_entry_peek_url(entry));
 
   const slide = Slideshow.create();
   slide.setAttribute('entry', entry.id);
@@ -298,7 +298,7 @@ function slide_append(entry) {
 
 function create_article_title_element(entry) {
   const title_element = document.createElement('a');
-  title_element.setAttribute('href', entry_peek_url(entry));
+  title_element.setAttribute('href', rdb_entry_peek_url(entry));
   title_element.setAttribute('class', 'entry-title');
   title_element.setAttribute('rel', 'noreferrer');
 
@@ -777,7 +777,7 @@ function unsubscribe_button_onclick(event) {
 // TODO: create helper function createFeedElement that then is passed to this,
 // rename this to appendFeedElement and change its parameter
 function feeds_container_append_feed(feed) {
-  console.debug('Appending feed', feed_peek_url(feed));
+  console.debug('Appending feed', rdb_feed_peek_url(feed));
 
   const feeds_container = document.getElementById('feeds-container');
   const feed_element = document.createElement('div');
@@ -825,7 +825,7 @@ function feeds_container_append_feed(feed) {
   col.textContent = 'URL';
   row.appendChild(col);
   col = document.createElement('td');
-  col.textContent = feed_peek_url(feed);
+  col.textContent = rdb_feed_peek_url(feed);
   row.appendChild(col);
   feed_info_element.appendChild(row);
 

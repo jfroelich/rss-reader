@@ -1,4 +1,4 @@
-import {feed_is_valid_id, rdb_open} from '/src/rdb/rdb.js';
+import {rdb_feed_is_valid_id, rdb_open} from '/src/rdb/rdb.js';
 
 // TODO: drop auto-connect support. The proper way, if at all, is to go through
 // a layer similar to ral.js
@@ -47,7 +47,7 @@ function entry_store_remove_orphans_promise(conn) {
         const cursor = entry_store_cursor_request.result;
         if (cursor) {
           const entry = cursor.value;
-          if (!feed_is_valid_id(entry.feed) || !feed_ids.includes(entry.feed)) {
+          if (!rdb_feed_is_valid_id(entry.feed) || !feed_ids.includes(entry.feed)) {
             entry_ids.push(entry.id);
             console.debug('Deleting orphaned entry', entry.id);
             cursor.delete();

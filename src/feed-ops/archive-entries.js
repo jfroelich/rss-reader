@@ -1,4 +1,4 @@
-import {rdb_entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, rdb_open} from '/src/rdb/rdb.js';
+import {rdb_entry_create, RDB_ENTRY_STATE_ARCHIVED, RDB_ENTRY_STATE_READ, RDB_ENTRY_STATE_UNARCHIVED, rdb_open} from '/src/rdb/rdb.js';
 
 // TODO: all modules in the feed-ops layer should use the feed-ops prefix
 
@@ -47,7 +47,7 @@ function archive_entries_promise(conn, entry_age_max) {
     tx.oncomplete = () => resolve(entry_ids);
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
+    const key_path = [RDB_ENTRY_STATE_UNARCHIVED, RDB_ENTRY_STATE_READ];
     const request = index.openCursor(key_path);
     request.onsuccess = () => {
       const cursor = request.result;
@@ -78,7 +78,7 @@ function entry_archive(entry) {
   console.debug(
       'Changing entry %d size from ~%d to ~%d', entry.id, before_sz, after_sz);
 
-  compacted_entry.archiveState = ENTRY_STATE_ARCHIVED;
+  compacted_entry.archiveState = RDB_ENTRY_STATE_ARCHIVED;
   compacted_entry.dateArchived = new Date();
   compacted_entry.dateUpdated = new Date();
   return compacted_entry;

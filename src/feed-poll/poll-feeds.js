@@ -9,7 +9,7 @@ import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
 import notification_show from '/src/notifications.js';
-import {entry_peek_url, feed_has_url, feed_merge, feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb/rdb.js';
+import {rdb_entry_peek_url, rdb_feed_has_url, rdb_feed_merge, rdb_feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb/rdb.js';
 // TODO: this should not be dependent on something in the view, it should be the
 // other way around
 import badge_update_text from '/src/views/update-badge-text.js';
@@ -128,10 +128,10 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   assert(poll_feed_context.iconConn instanceof IDBDatabase);
   assert(poll_feed_context.channel instanceof BroadcastChannel);
   assert(rdb_is_feed(feed));
-  assert(feed_has_url(feed));
+  assert(rdb_feed_has_url(feed));
 
   const console = poll_feed_context.console;
-  const feed_tail_url = new URL(feed_peek_url(feed));
+  const feed_tail_url = new URL(rdb_feed_peek_url(feed));
   console.log('Polling feed', feed_tail_url.href);
 
   // Avoid polling inactive feeds
@@ -240,7 +240,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
 
   // Integrate the loaded feed with the fetched feed and store the
   // result in the database
-  const merged_feed = feed_merge(feed, coerced_feed);
+  const merged_feed = rdb_feed_merge(feed, coerced_feed);
 
   // If we did not exit earlier as a result of some kind of error, then we want
   // to possibly decrement the error count and save the updated error count, so
@@ -371,7 +371,7 @@ function detected_modification(ignore_modified_check, feed, response) {
   // determine, so we presume modified. We can only more confidently assert not
   // modified, but not unmodified.
   if (!feed.dateLastModified) {
-    console.debug('Unknown last modified date for feed', feed_peek_url(feed));
+    console.debug('Unknown last modified date for feed', rdb_feed_peek_url(feed));
     return true;
   }
 
@@ -462,8 +462,8 @@ async function poll_entry(ctx, entry) {
 // urls. Returns true if a new url was appended.
 function entry_url_rewrite(entry) {
   // sanity assertions about the entry argument are implicit within
-  // entry_peek_url
-  const entry_tail_url = new URL(entry_peek_url(entry));
+  // rdb_entry_peek_url
+  const entry_tail_url = new URL(rdb_entry_peek_url(entry));
   const entry_response_url = url_rewrite(entry_tail_url);
   // url_rewrite returns undefined in case of error, or when no rewriting
   // occurred.
@@ -488,14 +488,14 @@ function entry_reader_db_exists(conn, entry) {
   // error. This function is more of an attempt at reducing processing than
   // maintaining data integrity.
 
-  const entry_tail_url = new URL(entry_peek_url(entry));
+  const entry_tail_url = new URL(rdb_entry_peek_url(entry));
   return rdb_contains_entry_with_url(conn, entry_tail_url);
 }
 
 // Tries to fetch the response for the entry. Returns undefined if the url is
 // not fetchable by polling policy, or if the fetch fails.
 async function entry_fetch(entry, timeout) {
-  const url = new URL(entry_peek_url(entry));
+  const url = new URL(rdb_entry_peek_url(entry));
   if (!url_is_augmentable(url)) {
     return;
   }
@@ -518,7 +518,7 @@ async function entry_handle_redirect(conn, response, entry) {
     return false;
   }
 
-  const entry_tail_url = new URL(entry_peek_url(entry));
+  const entry_tail_url = new URL(rdb_entry_peek_url(entry));
   const entry_response_url = new URL(response.url);
   if (!url_did_change(entry_tail_url, entry_response_url)) {
     return false;
@@ -589,7 +589,7 @@ async function entry_update_favicon(ctx, entry, document) {
   // Something is really wrong if this fails
   assert(rdb_entry_has_url(entry));
 
-  const entry_tail_url = new URL(entry_peek_url(entry));
+  const entry_tail_url = new URL(rdb_entry_peek_url(entry));
 
   // Create the lookup context. Signal to the lookup it should not try and
   // fetch the document for the url, because we know we've already tried that.
@@ -646,7 +646,7 @@ async function entry_update_content(ctx, entry, fetched_document) {
     }
   }
 
-  const document_url = new URL(entry_peek_url(entry));
+  const document_url = new URL(rdb_entry_peek_url(entry));
   await filter_entry_content(document, document_url, ctx.fetchImageTimeout);
   entry.content = document.documentElement.outerHTML;
 }

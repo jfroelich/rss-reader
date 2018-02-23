@@ -1,5 +1,5 @@
 import {lookup as favicon_service_lookup} from '/src/favicon-service/favicon-service.js';
-import {feed_create_favicon_lookup_url, feed_has_url, rdb_feed_put, rdb_find_active_feeds, rdb_open} from '/src/rdb/rdb.js';
+import {rdb_feed_create_favicon_lookup_url, rdb_feed_has_url, rdb_feed_put, rdb_find_active_feeds, rdb_open} from '/src/rdb/rdb.js';
 
 // Refreshes the favicon property of feeds in the feed store
 export default async function rdb_refresh_feed_icons(
@@ -16,12 +16,12 @@ export default async function rdb_refresh_feed_icons(
 }
 
 async function feed_store_feed_refresh_icons(conn, icon_conn, channel, feed) {
-  if (!feed_has_url(feed)) {
+  if (!rdb_feed_has_url(feed)) {
     throw new TypeError('Feed missing url ' + feed.id);
   }
 
   // Throw on failure
-  const favicon_lookup_url = feed_create_favicon_lookup_url(feed);
+  const favicon_lookup_url = rdb_feed_create_favicon_lookup_url(feed);
 
   const lookup_ctx = {};
   lookup_ctx.conn = icon_conn;

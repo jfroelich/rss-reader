@@ -1,6 +1,6 @@
 // TODO: this creates a circular dependency at the moment
 // Therefore this will eventually need to be a part of rdb/rdb.js
-import {rdb_is_feed, feed_is_valid_id} from '/src/rdb/rdb.js';
+import {rdb_is_feed, rdb_feed_is_valid_id} from '/src/rdb/rdb.js';
 
 // TODO: include this in places where sanitize is called
 // TODO: assert required properties are present
@@ -12,7 +12,7 @@ export default function validateFeed(feed) {
   assert(rdb_is_feed(feed));
 
   // If the feed has an id then the id must be valid
-  if ('id' in feed && !feed_is_valid_id(feed.id)) {
+  if ('id' in feed && !rdb_feed_is_valid_id(feed.id)) {
     throw new Error('Invalid feed id ' + feed.id);
   }
 
