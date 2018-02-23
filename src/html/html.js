@@ -2,15 +2,6 @@
 // string where html entities have been decoded into corresponding values. For
 // example, '&lt;' becomes '<'. Adapted from
 // https://stackoverflow.com/questions/1912501
-//
-// COMPLETELY UNSAFE
-// COMPLETELY UNSAFE
-// COMPLETELY UNSAFE
-//
-// TODO: i'd eventually like to not involve the dom but for now just get
-// something working
-// TODO: I believe the shared worker element technique is 'thread-safe' because
-// all dom access is synchronous. Right? Pretty sure but never really verified.
 const UNSAFE_PERSISTENT_WORKER_ELEMENT = document.createElement('div');
 export function html_decode_entities(value) {
   const entity_pattern = /&[#0-9A-Za-z]+;/g;
@@ -18,17 +9,8 @@ export function html_decode_entities(value) {
       value.replace(
           entity_pattern,
           function replacer(entity) {
-            // Set the value of the shared worker element. By using innerHTML
-            // this sets the raw value
             UNSAFE_PERSISTENT_WORKER_ELEMENT.innerHTML = entity;
-            // Now get the value back out. The accessor will do the decoding
-            // dynamically.
-            // TODO: why innerText? probably should just use textContent? Wait
-            // until I implement a testing lib to change.
             const text = UNSAFE_PERSISTENT_WORKER_ELEMENT.innerText;
-            // Reset it each time to avoid leaving crap hanging around because
-            // worker element lifetime is page lifetime not function scope
-            // lifetime
             UNSAFE_PERSISTENT_WORKER_ELEMENT.innerHTML = '';
             return text;
           }) :
@@ -60,7 +42,6 @@ function html_encode_first_char(string) {
 export function html_truncate(html_string, position, suffix) {
   assert(Number.isInteger(position) && position >= 0);
 
-  // Tolerate some bad input for convenience
   if (typeof html_string !== 'string') {
     return '';
   }
@@ -98,9 +79,6 @@ export function html_truncate(html_string, position, suffix) {
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     node.remove();
   }
-
-  // html_parse introduces body text for fragments. If full text then return
-  // full text, otherwise strip the added elements
 
   return html_is_fragment(html_string) ? document.body.innerHTML :
                                          document.documentElement.outerHTML;
