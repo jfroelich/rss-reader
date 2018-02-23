@@ -1,13 +1,16 @@
-import {COLOR_WHITE} from '/src/color/color.js';
 import * as filters from '/src/content-filters/content-filters.js';
 
 // Transforms a document by removing or changing nodes for various reasons.
 // @param document {Document} the document to transform
 // @param document_url {URL} the location of the document
-// @param fetch_image_timeout {Number} optional, the number of milliseconds to
+// @param options {Object} optional, various options including:
+// * fetch_image_timeout {Number} optional, the number of milliseconds to
 // wait before timing out when fetching an image
+// * matte
+// * min_contrast_ratio
+// * emphasis_length_max
 export async function filter_entry_content(
-    document, document_url, fetch_image_timeout) {
+    document, document_url, options = {}) {
   assert(document instanceof Document);
   assert(document_url instanceof URL);
 
@@ -38,9 +41,8 @@ export async function filter_entry_content(
   // done before or after boilerplate filter, but my instinct is that spam
   // techniques are boilerplate, and the boilerplate filter is naive with regard
   // to spam, so it is preferable to do it before.
-  const matte = COLOR_WHITE;
   filters.cf_filter_low_contrast(
-      document, matte, localStorage.MIN_CONTRAST_RATIO);
+      document, options.matte, options.min_contrast_ratio);
 
   // This should generally occur earlier, because of websites that use an
   // information-revealing technique with noscript.
@@ -57,12 +59,7 @@ export async function filter_entry_content(
 
   // This should occur before the boilerplate filter, because the boilerplate
   // filter may make decisions based on the hierarchical position of content
-  // TODO: this should be a parameter to the apply all function instead of
-  // hardcoding
-  // TODO: i should possibly have this consult style attribute instead of just
-  // element type (e.g. look at font-weight)
-  const emphasis_length_max = 200;
-  filters.cf_filter_emphasis(document, emphasis_length_max);
+  filters.cf_filter_emphasis(document, options.emphasis_length_max);
 
   // This should occur before filtering attributes because it makes decisions
   // based on attribute values.
@@ -98,6 +95,7 @@ export async function filter_entry_content(
   // (without writing back to document). This should occur after removing
   // telemetry, because this involves network requests that perhaps the
   // telemetry filter thinks should be avoided. Allow exceptions to bubble
+  const fetch_image_timeout = options.fetch_image_timeout;
   await filters.document_set_image_sizes(
       document, document_url, fetch_image_timeout);
 

@@ -124,6 +124,8 @@ export function filter_container_elements(document) {
 // length
 // @param text_length_max {Number} the number of characters above which emphasis
 // is removed (exclusive), required, positive integer greater than 0
+// TODO: i should possibly have this consult style attribute instead of just
+// element type (e.g. look at font-weight)
 export function cf_filter_emphasis(document, text_length_max) {
   assert(Number.isInteger(text_length_max) && text_length_max > 0);
   if (document.body) {

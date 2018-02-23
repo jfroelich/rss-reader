@@ -1,5 +1,6 @@
 import {coerce_entry} from '/src/coerce-entry.js';
 import {coerce_feed} from '/src/coerce-feed.js';
+import {COLOR_WHITE} from '/src/color/color.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse/feed-parse.js';
 import {dedup_entries} from '/src/feed-poll/dedup-entries.js';
@@ -9,7 +10,7 @@ import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
 import notification_show from '/src/notifications.js';
-import {rdb_entry_peek_url, rdb_feed_has_url, rdb_feed_merge, rdb_feed_peek_url, rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb/rdb.js';
+import {rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_entry_peek_url, rdb_feed_has_url, rdb_feed_merge, rdb_feed_peek_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb/rdb.js';
 // TODO: this should not be dependent on something in the view, it should be the
 // other way around
 import badge_update_text from '/src/views/update-badge-text.js';
@@ -371,7 +372,8 @@ function detected_modification(ignore_modified_check, feed, response) {
   // determine, so we presume modified. We can only more confidently assert not
   // modified, but not unmodified.
   if (!feed.dateLastModified) {
-    console.debug('Unknown last modified date for feed', rdb_feed_peek_url(feed));
+    console.debug(
+        'Unknown last modified date for feed', rdb_feed_peek_url(feed));
     return true;
   }
 
@@ -646,8 +648,18 @@ async function entry_update_content(ctx, entry, fetched_document) {
     }
   }
 
+  // TODO: the min contrast ratio should be loaded from local storage once,
+  // not per call here. I don't care if it changes from call to call, use the
+  // initial value
+
   const document_url = new URL(rdb_entry_peek_url(entry));
-  await filter_entry_content(document, document_url, ctx.fetchImageTimeout);
+  const filter_options = {
+    fetch_image_timeout: ctx.fetchImageTimeout,
+    matte: COLOR_WHITE,
+    min_contrast_ratio: localStorage.MIN_CONTRAST_RATIO,
+    emphasis_length_max: 200
+  };
+  await filter_entry_content(document, document_url, filter_options);
   entry.content = document.documentElement.outerHTML;
 }
 
