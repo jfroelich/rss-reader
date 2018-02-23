@@ -189,12 +189,6 @@ export function rdb_feed_deactivate(conn, channel, feed_id, reason_text) {
   });
 }
 
-// TODO: move these questions to a github issue
-// TODO: should validation be caller concern or add concern?
-// TODO: I wonder if sanitization is a concern for something earlier in the
-// processing pipeline, and at this point, only validation is a concern, and
-// no magical mutations should happen?
-
 export async function rdb_entry_add(conn, channel, entry) {
   assert(conn instanceof IDBDatabase);
   assert(
