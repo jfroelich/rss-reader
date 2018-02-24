@@ -80,7 +80,3 @@ Calculating luminance is needed to calculate contrast.
 
 * See https://www.w3.org/TR/WCAG20/
 * See TinyColor's isReadable function
-
-# TODO: does lerp belong in a math dependency?
-
-Or is that overdoing the organization?
