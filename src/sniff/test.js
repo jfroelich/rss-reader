@@ -1,5 +1,8 @@
 import {url_is_binary} from '/src/sniff/sniff.js';
 
+// TODO: use console.assert rather than throw exception
+// TODO: test other functions in sniff.js
+
 function assert(value) {
   if (!value) throw new Error('Assertion error');
 }

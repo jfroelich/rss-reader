@@ -1,5 +1,8 @@
 import {is_mime_type, MIME_TYPE_MAX_LENGTH, MIME_TYPE_MIN_LENGTH} from '/src/mime/mime.js';
 
+// TODO: move all the misc todo comments and ideas and such either to readme.md
+// or as individual github issues, then simplify all the superfluous commentary
+
 // Returns whether the url represents a binary resource. Note that the return
 // value of false means either text or unknown; false does not mean only text.
 export function url_is_binary(url) {
