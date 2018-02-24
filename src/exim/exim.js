@@ -10,7 +10,6 @@ export async function export_opml(conn, title) {
   assert(conn instanceof IDBDatabase);
   const feeds = await rdb_get_feeds(conn);
 
-  // Create a generic opml document
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
@@ -65,8 +64,6 @@ export async function export_opml(conn, title) {
   const string = serializer.serializeToString(doc);
   return new Blob([string], {type: 'application/xml'});
 }
-
-// TODO: add optional console argument, default it to null NULL_CONSOLE
 
 // Imports one or more opml files into the app
 // @param feedConn {IDBDatabase} open conn to reader database
