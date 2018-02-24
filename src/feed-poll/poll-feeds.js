@@ -6,7 +6,7 @@ import {filter_entry_content} from '/src/feed-poll/filter-entry-content.js';
 import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
-import notification_show from '/src/notifications.js';
+import notification_show from '/src/notifications/notifications.js';
 import {coerce_entry} from '/src/rdb/coerce-entry.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import {rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_entry_peek_url, rdb_feed_has_url, rdb_feed_merge, rdb_feed_peek_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb/rdb.js';
