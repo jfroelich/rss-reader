@@ -1,11 +1,5 @@
 import {is_mime_type, MIME_TYPE_MAX_LENGTH, MIME_TYPE_MIN_LENGTH} from '/src/mime/mime.js';
 
-// TODO: while this API is straightforward, I feel like at the same type it is
-// presented in an unconventional manner. I would prefer this API orient itself
-// more similarly to what other sniffing APIs usually look like. Perhaps it
-// should be renamed to something like sniff? I think what I would like to do is
-// spend some time looking at how other sniffer libraries are implemented and
-// consider more closely mimicing their API.
 
 // Returns whether the url represents a binary resource. Note that the return
 // value of false means either text or unknown; false does not mean only text.
