@@ -1,4 +1,4 @@
-import {mime_type_from_content_type} from '/src/mime-utils.js';
+import {mime_type_from_content_type} from '/src/mime/mime.js';
 
 // Fetches the response of the given url and validates its response content
 // type. Throws an error if the fetch times out.

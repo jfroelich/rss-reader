@@ -1,4 +1,4 @@
-import * as MimeUtils from '/src/mime-utils.js';
+import * as MimeUtils from '/src/mime/mime.js';
 
 async function testPreloadIssue() {
   const options = {};

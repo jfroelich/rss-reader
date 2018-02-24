@@ -1,6 +1,6 @@
 import {fetch_html, tfetch, url_did_change} from '/src/fetch/fetch.js';
 import {idb_open} from '/src/idb/idb.js';
-import {mime_type_from_content_type} from '/src/mime-utils.js';
+import {mime_type_from_content_type} from '/src/mime/mime.js';
 
 const NAME = 'favicon-cache';
 const VERSION = 3;

@@ -1,6 +1,4 @@
-// These constraints are rather arbitrary, but just as a general bound. These
-// are intended as exclusive end points (use lt/gt, not lte/gte).
-// TODO: increase accuracy
+
 export const MIME_TYPE_MIN_LENGTH = 7;
 export const MIME_TYPE_MAX_LENGTH = 100;
 
