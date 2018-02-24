@@ -55,7 +55,7 @@ const NULL_CONSOLE = {
 // * document {Document} optional, pre-fetched document that should be specified
 // if the page was previously fetched
 
-const defaultOptions = {
+const default_options = {
   maxFailureCount: MAX_FAILURE_COUNT,
   maxAge: MAX_AGE,
   skipURLFetch: SKIP_FETCH,
@@ -67,8 +67,8 @@ const defaultOptions = {
 };
 
 // Lookup the favicon image url according to input options
-export async function lookup(inputOptions) {
-  const options = Object.assign({}, defaultOptions, inputOptions);
+export async function lookup(input_options) {
+  const options = Object.assign({}, default_options, input_options);
 
   assert(options.url instanceof URL);
   assert(

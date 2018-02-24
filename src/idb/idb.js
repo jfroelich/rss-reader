@@ -72,3 +72,13 @@ function create_open_promise(context) {
     request.onupgradeneeded = context.upgrade_listener;
   });
 }
+
+
+export function idb_remove(name) {
+  return new Promise((resolve, reject) => {
+    console.debug('Deleting database', name);
+    const request = indexedDB.deleteDatabase(name);
+    request.onsuccess = resolve;
+    request.onerror = () => reject(request.error);
+  });
+}
