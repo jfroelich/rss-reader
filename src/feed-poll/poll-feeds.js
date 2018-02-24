@@ -1,5 +1,3 @@
-import {coerce_entry} from '/src/coerce-entry.js';
-import {coerce_feed} from '/src/coerce-feed.js';
 import {COLOR_WHITE} from '/src/color/color.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse/feed-parse.js';
@@ -9,6 +7,8 @@ import url_rewrite from '/src/feed-poll/rewrite-url.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
 import notification_show from '/src/notifications.js';
+import {coerce_entry} from '/src/rdb/coerce-entry.js';
+import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import {rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_entry_peek_url, rdb_feed_has_url, rdb_feed_merge, rdb_feed_peek_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb/rdb.js';
 import {url_is_binary} from '/src/sniff/sniff.js';
 // TODO: this should not be dependent on something in the view, it should be the
