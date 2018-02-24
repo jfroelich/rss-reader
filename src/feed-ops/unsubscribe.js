@@ -1,5 +1,5 @@
 import {rdb_feed_remove} from '/src/rdb/rdb.js';
-import badge_update_text from '/src/views/update-badge-text.js';
+import badge_update_text from '/src/update-badge-text.js';
 
 // TODO: this shouldn't be dependent on badge_update_text, it should be the
 // other way around. See notes in update-badge-text.js. There is a chance there

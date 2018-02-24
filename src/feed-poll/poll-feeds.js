@@ -13,7 +13,7 @@ import {rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_en
 import {url_is_binary} from '/src/sniff/sniff.js';
 // TODO: this should not be dependent on something in the view, it should be the
 // other way around
-import badge_update_text from '/src/views/update-badge-text.js';
+import badge_update_text from '/src/update-badge-text.js';
 
 // TODO: rename to poll-service
 // TODO: to enforce that the feed parameter is a feed object loaded from the

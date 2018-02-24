@@ -1,4 +1,4 @@
-import show_slideshow_tab from '/src/views/show-slideshow-tab.js';
+import show_slideshow_tab from '/src/show-slideshow-tab.js';
 
 export default function notification_show(title, message, icon_url) {
   if (typeof Notification === 'undefined') {

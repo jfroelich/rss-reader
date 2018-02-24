@@ -1,5 +1,5 @@
 import {rdb_entry_mark_read} from '/src/rdb/rdb.js';
-import badge_update_text from '/src/views/update-badge-text.js';
+import badge_update_text from '/src/update-badge-text.js';
 
 // TODO: this shouldn't be dependent on something in views, it should be the
 // other way around, if I refactor badge to listen for events then I could call

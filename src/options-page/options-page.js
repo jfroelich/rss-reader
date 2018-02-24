@@ -1,11 +1,11 @@
+import {element_fade} from '/src/element-fade.js';
 import {open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {permission_has, permission_remove, permission_request} from '/src/options-page/permission.js';
 import {ral_activate_feed, ral_deactivate_feed, ral_find_feed_by_id, ral_get_feeds, ral_unsubscribe} from '/src/ral/ral.js';
 import {rdb_feed_peek_url} from '/src/rdb/rdb.js';
-import {element_fade} from '/src/views/element-fade.js';
 // TEMP: I plan to remove
-import * as PageStyle from '/src/views/page-style-settings.js';
+import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
 
 // clang-format off
 const BG_IMAGES = [

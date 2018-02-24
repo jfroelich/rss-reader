@@ -5,8 +5,8 @@ import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.j
 import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
 import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
 import {rdb_open} from '/src/rdb/rdb.js';
-import show_slideshow_tab from '/src/views/show-slideshow-tab.js';
-import badge_update_text from '/src/views/update-badge-text.js';
+import show_slideshow_tab from '/src/show-slideshow-tab.js';
+import badge_update_text from '/src/update-badge-text.js';
 
 function handle_compact_favicons_alarm(alarm) {
   return favicon_service_compact().catch(console.error);
