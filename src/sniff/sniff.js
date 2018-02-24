@@ -1,9 +1,8 @@
 import {is_mime_type, MIME_TYPE_MAX_LENGTH, MIME_TYPE_MIN_LENGTH} from '/src/mime/mime.js';
 
-
 // Returns whether the url represents a binary resource. Note that the return
 // value of false means either text or unknown; false does not mean only text.
-export default function url_is_binary(url) {
+export function url_is_binary(url) {
   if (!(url instanceof URL)) {
     throw new TypeError('Invalid url ' + url);
   }
@@ -57,7 +56,7 @@ export default function url_is_binary(url) {
 // Return a mime type corresponding a file name extension
 // @param extension {String}
 // @returns {String} a mime type, or undefined on error or failed lookup
-function find_mime_type_for_extension(extension) {
+export function find_mime_type_for_extension(extension) {
   if (typeof extension === 'string') {
     return EXTENSION_TYPE_MAP[extension];
   }
@@ -65,7 +64,7 @@ function find_mime_type_for_extension(extension) {
 
 // Extracts the mime type of a data uri. Returns undefined if not
 // found or invalid.
-function find_mime_type_in_data_url(url) {
+export function find_mime_type_in_data_url(url) {
   if (!(url instanceof URL)) {
     throw new TypeError('Invalid url ' + url);
   }
@@ -124,7 +123,7 @@ function find_mime_type_in_data_url(url) {
 // Given a url, return the extension of the filename component of the path
 // component. Return undefined if no extension found. The returned string
 // excludes the leading '.'. This assumes the url uses English characters.
-function url_get_extension(url) {
+export function url_get_extension(url) {
   // Approximate path min length including the period is '/.b'
   const minlen = 3;
   // Approximate extension max length excluding the period
@@ -149,12 +148,12 @@ function url_get_extension(url) {
 // See https://stackoverflow.com/questions/336210
 // The empty string is true, null/undefined are true
 // Does NOT support languages other than English
-function string_is_alphanumeric(string) {
+export function string_is_alphanumeric(string) {
   return /^[a-zA-Z0-9]*$/.test(string);
 }
 
 // Returns whether the mime type is binary
-function mime_type_is_binary(mime_type) {
+export function mime_type_is_binary(mime_type) {
   if (!is_mime_type(mime_type)) {
     throw new TypeError('Invalid mime_type ' + mime_type);
   }
@@ -205,7 +204,7 @@ function mime_type_is_binary(mime_type) {
 // A mapping of common file extensions to corresponding mime types. I've tried
 // to pick standardized mime types but unfortunately there does not appear to be
 // much of a standard.
-const EXTENSION_TYPE_MAP = {
+export const EXTENSION_TYPE_MAP = {
   ai: 'application/postscript',
   aif: 'audio/aiff',
   atom: 'application/atom+xml',

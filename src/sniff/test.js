@@ -1,4 +1,4 @@
-import url_is_binary from '/src/sniff/sniff.js';
+import {url_is_binary} from '/src/sniff/sniff.js';
 
 function assert(value) {
   if (!value) throw new Error('Assertion error');
