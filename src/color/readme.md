@@ -45,28 +45,15 @@ The truth is really that this is an exercise of me doing bit operations, and to 
 
 http://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
 
-The spec states that "the ratio is (L1 + 0.05) / (L2 + 0.05), where L1 is
-the relative luminance of the lighter of the colors, and L2 is the relative
-luminance of the darker of the colors." Luminance is on a scale of [0..1],
-where 0 is darkest black and 1 is lightest white. Therefore, a higher
-luminance value means a 'lighter' value.
+The spec states that "the ratio is (L1 + 0.05) / (L2 + 0.05), where L1 is the relative luminance of the lighter of the colors, and L2 is the relative luminance of the darker of the colors." Luminance is on a scale of [0..1], where 0 is darkest black and 1 is lightest white. Therefore, a higher luminance value means a 'lighter' value.
 
-Note that we can add 0.05 before the inequality test because it does not
-matter if the addition is done before or after the test, the result of the
-inequality does not change (the operations are commutative). Also note that
-if the two luminances are equal the result is 1 regardless of which
-luminance value is the numerator or denominator in the contrast ratio, so
-there is no need to differentiate the values-equal case from the l1 < l2
-case.
+Note that we can add 0.05 before the inequality test because it does not matter if the addition is done before or after the test, the result of the inequality does not change (the operations are commutative). Also note that if the two luminances are equal the result is 1 regardless of which luminance value is the numerator or denominator in the contrast ratio, so there is no need to differentiate the values-equal case from the l1 < l2 case.
 
-I am not entirely sure why the spec says to add 0.05. My guess is that it
-is an efficient way to avoid the divide-by-zero error if either luminance
-is 0 when it is the denominator.
+I am not entirely sure why the spec says to add 0.05. My guess is that it is an efficient way to avoid the divide-by-zero error if either luminance is 0 when it is the denominator.
 
 # About luminance calc
 
-Based on the spec, which provides the formula.
-http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+Based on the spec, which provides the formula. http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
 
 Calculating luminance is needed to calculate contrast.
 
