@@ -8,10 +8,6 @@ import {rdb_open} from '/src/rdb/rdb.js';
 import show_slideshow_tab from '/src/views/show-slideshow-tab.js';
 import badge_update_text from '/src/views/update-badge-text.js';
 
-// TODO: this is doing somethings that should be in a layer below the view. move
-// things into that other layer. This should be a dumber view, like a
-// thin-client
-
 function handle_compact_favicons_alarm(alarm) {
   return favicon_service_compact().catch(console.error);
 }
