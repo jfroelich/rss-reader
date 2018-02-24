@@ -24,9 +24,8 @@ export function url_is_binary(url) {
     // find_mime_type_in_data_url returns undefined? The logic remains the same
     // but involves one less function call in one of the two paths.
 
-    const default_data_uri_mime_type = 'text/plain';
-    const mime_type =
-        find_mime_type_in_data_url(url) || default_data_uri_mime_type;
+    const default_type = 'text/plain';
+    const mime_type = find_mime_type_in_data_url(url) || default_type;
     return mime_type_is_binary(mime_type);
   }
 
