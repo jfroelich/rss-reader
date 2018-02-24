@@ -1,5 +1,7 @@
 import * as mime from '/src/mime/mime.js';
 
+console.log('starting tests');
+
 const a = console.assert;
 
 // constants tests
@@ -42,7 +44,7 @@ a(mime.mime_type_from_content_type('TeXt/HTmL') === 'text/html');
 // no semicolon no character encoding
 a(mime.mime_type_from_content_type('text/html') === 'text/html');
 // extra trimmable whitespace
-a(mime.mime_type_from_content_type(' \t\b\ntext/html  \n\t  ') === 'text/html');
+a(mime.mime_type_from_content_type(' \t\ntext/html  \n\t  ') === 'text/html');
 // typical input
 a(mime.mime_type_from_content_type('text/html;charset=UTF-8') === 'text/html');
 // space leading character encoding
@@ -52,11 +54,11 @@ a(mime.mime_type_from_content_type('text/html; charset=UTF-8') === 'text/html');
 a(mime.mime_type_from_content_type('text / html') === 'text/html');
 a(mime.mime_type_from_content_type('   text / html   ') === 'text/html');
 
-// fictional mime types with correct formatting
-a(mime.mime_type_from_content_type('foo/bar') === 'foo/bar');
+// fictional mime type with correct formatting and sufficient length
+a(mime.mime_type_from_content_type('foofoo/barbar') === 'foofoo/barbar');
 
 // duplicate slash
-a(mime.mime_type_from_content_type('text/html/foo') === undefined);
+a(mime.mime_type_from_content_type('text/html/foo') === 'text/html/foo');
 
 // duplicate semicolon
 a(mime.mime_type_from_content_type('text/html;;charset=UTF-8') === 'text/html');
@@ -65,4 +67,13 @@ a(mime.mime_type_from_content_type('text/html;;charset=UTF-8') === 'text/html');
 // is_mime_type tests
 a(mime.is_mime_type('text/html'));
 a(mime.is_mime_type('text/xml'));
+a(!mime.is_mime_type(false));
+a(!mime.is_mime_type(true));
+a(!mime.is_mime_type(-4321));
+a(!mime.is_mime_type('asdf'));
+a(!mime.is_mime_type('a b c'));
+a(!mime.is_mime_type('a b c / 123'));
+
 a(!mime.is_mime_type('text\\xml'));
+
+console.log('tests completed');
