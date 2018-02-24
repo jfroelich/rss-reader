@@ -1,6 +1,6 @@
 import {COLOR_WHITE} from '/src/color/color.js';
-import {css_color_format} from '/src/color/css-color.js';
 import * as ccf from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
+import {css_color_format} from '/src/css/css.js';
 
 // TODO: semi-automated tests that compare output to expected output
 
