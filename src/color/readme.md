@@ -94,14 +94,6 @@ Calculating luminance is needed to calculate contrast.
 * See https://www.w3.org/TR/WCAG20/
 * See TinyColor's isReadable function
 
-# TODO: maybe make a color_valid function
-
-Return true if valid. Pretty much none of the color functions validate input,
-pushing all responsibility of sanity checks to the caller. The caller could
-benefit from a convenient utility function in this case that has in-depth
-knowledge of the color type. So the caller could assert pre-post conditions
-using a trivial expression like `assert(color_valid(color))`.
-
 # TODO: does lerp belong in a math dependency?
 
 Or is that overdoing the organization?
