@@ -37,10 +37,6 @@ export function color_lerp(c1, c2, amount = 1.0) {
     return c1;
   }
 
-  // TODO: eventually optimize. This is currently prioritizing clarity. But I
-  // probably could use fewer function calls, and I could modify a color value
-  // in place instead of packing from four variables.
-
   // | 0 is equivalent to Math.round
   const r = lerp(color_red(c1), color_red(c2), amount) | 0;
   const g = lerp(color_green(c1), color_green(c2), amount) | 0;
@@ -101,10 +97,8 @@ export function color_blue(c) {
   return c & 0xff;
 }
 
-// Get the relative luminance of a color, normalized to 0 for black and 1 for
-// white.
+// Get the relative luminance of a color
 export function color_luminance(color) {
-  // TODO: remove this once I am more confident
   if (color_alpha(color) !== 255) {
     console.warn('Not opaque', color_to_string(color));
   }
@@ -139,7 +133,6 @@ export function color_valid_component(component) {
 
 // Return true if color is a valid color value
 export function color_is_valid(color) {
-  // TODO: improve performance
   return Number.isInteger(color) && color_valid_component(color_red(color)) &&
       color_valid_component(color_green(color)) &&
       color_valid_component(color_blue(color)) &&

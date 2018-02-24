@@ -1,11 +1,7 @@
-
-// TODO: support alternate whitespace expressions around delimiters
-// Filter publisher information from an article title
-// @param title {String} the title of an web page
-// @returns {String} the title without publisher information
 export function filter_title_publisher(title) {
   if (typeof title !== 'string') {
     console.error('Invalid title parameter', title);
+    return title;
   }
 
   // Look for a delimiter
@@ -50,7 +46,7 @@ export function filter_title_publisher(title) {
   return title.substring(0, delimiter_position).trim();
 }
 
-// Helper for filter_title_publisher, break apart string into array of words
+// Break apart string into array of words
 function tokenize(value) {
   if (typeof value === 'string') {
     // Avoid empty tokens by trimming and checking length

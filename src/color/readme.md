@@ -76,7 +76,19 @@ Calculating luminance is needed to calculate contrast.
 * https://www.theimagingsource.com/support/documentation/ic-imaging-control-cpp/PixelformatRGB565.htm
 * https://stackoverflow.com/questions/25467682
 
+# TODO: remove the alpha check from color_luminance
+
+Remove this once I am more confident
+
+# TODO: optimize color_lerp
+
+Eventually optimize. This is currently prioritizing clarity. But I probably could use fewer function calls, and I could modify a color value in place instead of packing from four variables.
+
 # TODO: Vary contrast based on text size
 
 * See https://www.w3.org/TR/WCAG20/
 * See TinyColor's isReadable function
+
+# TODO: improve performance of color_is_valid
+
+The first implementation is conservative and my attempt at being accurate. I think there is a faster way of implementing this function.
