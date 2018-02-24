@@ -1,4 +1,4 @@
-import {export_opml as export_opml_impl, import_opml as import_opml_impl} from '/src/exim.js';
+import {export_opml as export_opml_impl, import_opml as import_opml_impl} from '/src/exim/exim.js';
 import {open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import subscribe from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
