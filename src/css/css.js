@@ -12,7 +12,7 @@ export function css_color_parse(css_value_string) {
 
 function tinycolor_to_color(tiny_color) {
   const o = tiny_color.toRgb();
-  return color_pack(o.r, o.g, o.b, o.a * 255);
+  return color_pack(o.r, o.g, o.b, Math.round(o.a * 255));
 }
 
 export function css_color_format(color) {
