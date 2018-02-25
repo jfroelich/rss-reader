@@ -26,12 +26,6 @@ export default function notification_show(title, message, icon_url) {
 }
 
 function notification_onclick(event) {
-  // TODO: test if the absence of this approach still causes a crash in latest
-  // Chrome
-  // TODO: move this issue to github
-
-  // Ensure the browser is open to avoid crash that occurs in Chrome 55 running
-  // on Mac
   try {
     const hwnd = window.open();
     hwnd.close();
