@@ -141,18 +141,9 @@ console.debug('Initializing background page');
 
 chrome.runtime.onInstalled.addListener(function(event) {
   console.log('Setting up feed store database');
-  rdb_open()
-      .then(function(conn) {
-        return conn.close();
-      })
-      .catch(console.error);
-
+  rdb_open().then(conn => conn.close()).catch(console.error);
   console.log('Setting up favicon database');
-  favicon_service_open()
-      .then(function(conn) {
-        return conn.close();
-      })
-      .catch(console.error);
+  favicon_service_open().then(conn => conn.close()).catch(console.error);
 });
 
 chrome.browserAction.onClicked.addListener(show_slideshow_tab);
