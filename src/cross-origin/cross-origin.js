@@ -1,11 +1,15 @@
 
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
-}
 
-// Returns true if other_url is 'external' to the document_url. Inaccurate and
-// insecure.
 export function url_is_external(document_url, other_url) {
+  if (!(document_url instanceof URL)) {
+    throw new TypeError('document_url is not a URL');
+  }
+
+  if (!(other_url instanceof URL)) {
+    throw new TypeError('other_url is not a URL');
+  }
+
+
   // Certain protocols are never external in the sense that a network request
   // is not performed
   const local_protocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
@@ -22,8 +26,6 @@ export function url_is_external(document_url, other_url) {
 // without subdomains. This only does minimal symbolic validation, and is
 // inaccurate.
 function url_get_upper_domain(url) {
-  assert(url instanceof URL);
-
   if (hostname_is_ipv4(url.hostname) || hostname_is_ipv6(url.hostname)) {
     return url.hostname;
   }
