@@ -11,8 +11,13 @@ import * as filters from '/src/content-filters/content-filters.js';
 // * emphasis_length_max
 export async function filter_entry_content(
     document, document_url, options = {}) {
-  assert(document instanceof Document);
-  assert(document_url instanceof URL);
+  if (!(document instanceof Document)) {
+    throw new TypeError('document is not a Document');
+  }
+
+  if (!(document_url instanceof URL)) {
+    throw new TypeError('document_url is not a URL');
+  }
 
   // These filters related to document.body should occur near the start, because
   // 90% of the other content filters pertain to document.body.
@@ -151,8 +156,4 @@ export async function filter_entry_content(
   // TODO: move this up to before some of the other attribute filters, or
   // explain why it should occur later
   filters.document_filter_empty_attributes(document);
-}
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
 }
