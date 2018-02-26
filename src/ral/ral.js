@@ -5,13 +5,6 @@ import unsubscribe from '/src/feed-ops/unsubscribe.js';
 import {poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
 import {rdb_feed_activate, rdb_feed_deactivate, rdb_for_each_active_feed, rdb_get_feeds, rdb_open, rdb_viewable_entries_for_each} from '/src/rdb/rdb.js';
 
-// Load all feeds from the database as an array of feed objects. This is
-// basically a wrapper to rdb_get_feeds that manages opening and closing
-// the database, and sorting the resulting collection by feed title.
-// @param title_sort_flag {Boolean} if true, the array is sorted by feed title.
-// If false, the array is naturally ordered based on database order
-// @throws {Error} database errors
-// @return {Array} an array of basic feed objects
 export async function ral_get_feeds(title_sort_flag) {
   let conn, feeds;
   try {
@@ -41,13 +34,7 @@ export async function ral_find_feed_by_id(feed_id) {
   return await reader_db_find_feed_by_id(conn, feed_id);
 }
 
-// @param files {FileList}
-// @param channel {BroadcastChannel}
 export async function ral_import(channel, files) {
-  // Given that there could be several feeds being subscribed, use a slightly
-  // higher timeout than average to reduce the chance that some contention
-  // delays result in failure. Defined here so caller does not need to worry
-  // about it.
   const fetch_feed_timeout = 10 * 1000;
   let reader_conn, favicon_conn;
 
@@ -62,9 +49,6 @@ export async function ral_import(channel, files) {
   }
 }
 
-// Returns a blob of an opml xml file containing feeds from storage
-// @param title {String} the value of the title element in the opml file
-// @returns {Blob} a promise that resolves to a blob
 export async function ral_export(title) {
   let conn;
   try {
@@ -75,16 +59,6 @@ export async function ral_export(title) {
   }
 }
 
-// Opens a connection to indexedDB. Then walks the entry store for viewable
-// entries and calls back to entry_handler as each entry is visited. Then walks
-// the feed store for feeds and calls back to feed_handler as each feed is
-// visited. Then closes the connection.
-// @param entry_cursor_offset {Number} the number of entries to skip past before
-// starting to pass entries back to visitor function
-// @param entry_handler {Function} called for each visited entry with the loaded
-// entry object
-// @param feed_handler {Function} called for each visited feed with the loaded
-// feed object
 export async function ral_load_initial(
     entry_cursor_offset, entry_cursor_limit, entry_handler, feed_handler) {
   let conn;
@@ -130,28 +104,10 @@ export async function ral_poll_feeds(channel, console) {
   }
 }
 
-// Subscribe to the feed at the given url. This is a wrapper to subscribe
-// that automates opening and closing databases and setting some default
-// subscription process options.
-// @param channel {BroadcastChannel} optional, an open channel that will receive
-// messages about storage events like the feed being added to the database
-// @param url {URL} the url of a feed
-// @throws {Error} subscription errors, database errors, fetch errors, etc
-// @return {Object} returns the feed object that was stored in the database
-// if successful
 export async function ral_subscribe(channel, url) {
   const ctx = {};
   ctx.channel = channel;
-
-  // This is not intended to be a batch call. Regardless of the default setting
-  // for subscribe, be explicit that we desire a single notification in this
-  // situation
   ctx.notify = true;
-
-  // This is in response to user manually pressing a subscribe button. This is
-  // a guess as to the approximate maximum of a time a user will wait before
-  // becoming frustrated with app responsiveness, regardless of network
-  // conditions. This is hardcoded here for convenience.
   ctx.fetchFeedTimeout = 2000;
 
   const conn_promises = Promise.all([rdb_open(), favicon_service_open()]);
