@@ -1,26 +1,23 @@
 import {COLOR_WHITE} from '/src/color/color.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse/feed-parse.js';
-import {dedup_entries} from '/src/poll-service/dedup-entries.js';
-import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
-import url_rewrite from '/src/poll-service/rewrite-url.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
 import notification_show from '/src/notifications/notifications.js';
+import {dedup_entries} from '/src/poll-service/dedup-entries.js';
+import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
+import url_rewrite from '/src/poll-service/rewrite-url.js';
 import {coerce_entry} from '/src/rdb/coerce-entry.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import {rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_entry_peek_url, rdb_feed_has_url, rdb_feed_merge, rdb_feed_peek_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb/rdb.js';
 import {url_is_binary} from '/src/sniff/sniff.js';
-// TODO: this should not be dependent on something in the view, it should be the
-// other way around
 import badge_update_text from '/src/update-badge-text.js';
 
-// TODO: rename to poll-service
-// TODO: to enforce that the feed parameter is a feed object loaded from the
-// database, it is possible that poll_service_feed_poll would be better
-// implemented if it instead accepted a feedId as a parameter rather than an
-// in-mem feed. That would guarantee the feed it works with is more trusted
-// regarding the locally loaded issue.
+const null_console = {
+  log: noop,
+  warn: noop,
+  debug: noop
+};
 
 const default_poll_feeds_context = {
   feedConn: null,
@@ -33,8 +30,7 @@ const default_poll_feeds_context = {
   fetchHTMLTimeout: 5000,
   fetchImageTimeout: 3000,
   deactivationThreshold: 10,
-  // By default, direct all messages to void
-  console: {log: noop, warn: noop, debug: noop}
+  console: null_console
 };
 
 function noop() {}
@@ -45,23 +41,10 @@ export async function poll_service_create_context() {
   const context = {};
   const promises = [rdb_open(), favicon_service_open()];
   [context.feedConn, context.iconConn] = await Promise.all(promises);
-
-  // TODO: consider moving all lifetime management to caller
-  // NOTE: this is the source of an object leak in slideshow context, where
-  // this channel is created then replaced and left open. It has no listener,
-  // but it is still heavyweight and and well, just incorrect.
   context.channel = new BroadcastChannel('reader');
-
   return context;
 }
 
-// Releases resources held in the context
-// TODO: always closing channel is impedance mismatch with persistent channels
-// used by calling contexts, rendering callers unable to easily call this
-// function. Consider removing the close call here, or moving all channel
-// lifetime management concerns to caller. This was the source of a bug in
-// polling from slideshow, where polling closed the slideshow's persistent
-// channel when it should not have
 export function poll_service_close_context(context) {
   if (context.channel) context.channel.close();
   if (context.feedConn) context.feedConn.close();
@@ -71,10 +54,8 @@ export function poll_service_close_context(context) {
 export async function poll_service_poll_feeds(input_poll_feeds_context) {
   const poll_feeds_context =
       Object.assign({}, default_poll_feeds_context, input_poll_feeds_context);
-
   poll_feeds_context.console.log('Polling feeds...');
 
-  // Sanity check some of the context state
   assert(poll_feeds_context.feedConn instanceof IDBDatabase);
   assert(poll_feeds_context.iconConn instanceof IDBDatabase);
   assert(poll_feeds_context.channel instanceof BroadcastChannel);
@@ -94,9 +75,6 @@ export async function poll_service_poll_feeds(input_poll_feeds_context) {
     poll_feed_promises.push(promise);
   }
 
-  // Wait for all outstanding promises to settle, then count up the total.
-  // poll_service_feed_poll promises only throw in the case of programming/logic
-  // errors
   const poll_feed_resolutions = await Promise.all(poll_feed_promises);
   let entry_add_count = 0;
   for (const entry_add_count_per_feed of poll_feed_resolutions) {
@@ -106,8 +84,6 @@ export async function poll_service_poll_feeds(input_poll_feeds_context) {
   }
 
   if (entry_add_count) {
-    // Not awaited. We don't care if and when this ever completes, we just hope
-    // that it does
     badge_update_text(poll_feeds_context.feedConn).catch(console.error);
   }
 
@@ -124,7 +100,6 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   const poll_feed_context =
       Object.assign({}, default_poll_feeds_context, input_poll_feed_context);
 
-  // Recheck sanity given this may not be called by poll_service_poll_feeds
   assert(poll_feed_context.feedConn instanceof IDBDatabase);
   assert(poll_feed_context.iconConn instanceof IDBDatabase);
   assert(poll_feed_context.channel instanceof BroadcastChannel);
@@ -135,35 +110,29 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   const feed_tail_url = new URL(rdb_feed_peek_url(feed));
   console.log('Polling feed', feed_tail_url.href);
 
-  // Avoid polling inactive feeds
   if (!feed.active) {
     console.debug('Canceling poll feed as feed inactive', feed_tail_url.href);
     return 0;
   }
 
-  // Avoid polling recently polled feeds
   if (polled_feed_recently(poll_feed_context, feed)) {
     console.debug(
         'Canceling poll feed as feed polled recently', feed_tail_url.href);
     return 0;
   }
 
-  // Fetch the feed. Trap the error to allow for
-  // Promise.all(poll_service_feed_poll) to not short-circuit.
   let response;
   try {
     response =
         await fetch_feed(feed_tail_url, poll_feed_context.fetchFeedTimeout);
   } catch (error) {
     console.debug(error);
-
     handle_poll_feed_error({
       context: poll_feed_context,
       error: error,
       feed: feed,
       category: 'fetch-feed'
     });
-
     return 0;
   }
 
@@ -194,8 +163,6 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     return 0;
   }
 
-  // Parse the response into a parsed feed object. Note that a parsed feed
-  // object is not formatted the same as a storable feed object
   const skip_entries_flag = false;
   const resolve_entry_urls_flag = true;
   let parsed_feed;
@@ -239,13 +206,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     return 0;
   }
 
-  // Integrate the loaded feed with the fetched feed and store the
-  // result in the database
   const merged_feed = rdb_feed_merge(feed, coerced_feed);
-
-  // If we did not exit earlier as a result of some kind of error, then we want
-  // to possibly decrement the error count and save the updated error count, so
-  // that errors do not persist indefinitely.
   handle_fetch_feed_success(merged_feed);
 
   const storable_feed = rdb_feed_prepare(merged_feed);
