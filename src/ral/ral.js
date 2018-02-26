@@ -2,7 +2,7 @@ import {export_opml as export_opml_impl, import_opml as import_opml_impl} from '
 import {open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import subscribe from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
-import {poll_service_poll_feeds} from '/src/feed-poll/poll-feeds.js';
+import {poll_service_poll_feeds} from '/src/poll-service/poll-feeds.js';
 import {rdb_feed_activate, rdb_feed_deactivate, rdb_for_each_active_feed, rdb_get_feeds, rdb_open, rdb_viewable_entries_for_each} from '/src/rdb/rdb.js';
 
 export async function ral_get_feeds(title_sort_flag) {

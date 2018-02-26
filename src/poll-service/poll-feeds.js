@@ -1,9 +1,9 @@
 import {COLOR_WHITE} from '/src/color/color.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse/feed-parse.js';
-import {dedup_entries} from '/src/feed-poll/dedup-entries.js';
-import {filter_entry_content} from '/src/feed-poll/filter-entry-content.js';
-import url_rewrite from '/src/feed-poll/rewrite-url.js';
+import {dedup_entries} from '/src/poll-service/dedup-entries.js';
+import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
+import url_rewrite from '/src/poll-service/rewrite-url.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
 import notification_show from '/src/notifications/notifications.js';

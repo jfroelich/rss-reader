@@ -1,6 +1,6 @@
 import {lookup as favicon_service_lookup} from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse/feed-parse.js';
-import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/feed-poll/poll-feeds.js';
+import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/poll-service/poll-feeds.js';
 import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_change} from '/src/fetch/fetch.js';
 import notification_show from '/src/notifications/notifications.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
