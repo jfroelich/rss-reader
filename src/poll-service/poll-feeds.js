@@ -136,7 +136,6 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     return 0;
   }
 
-  // Cancel polling if no change in date modified
   if (!detected_modification(
           poll_feed_context.ignoreModifiedCheck, feed, response)) {
     const state_changed = handle_fetch_feed_success(feed);
@@ -148,7 +147,6 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     return 0;
   }
 
-  // Get the body of the response
   let response_text;
   try {
     response_text = await response.text();
@@ -180,7 +178,6 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     return 0;
   }
 
-  // Reformat the fetched feed as a storable feed
   const response_url = new URL(response.url);
   const response_last_modified_date = response_get_last_modified_date(response);
 
@@ -190,8 +187,6 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     response_last_modified_date: response_last_modified_date
   };
 
-  // TODO: does coerce_feed throw anymore? I don't think it does actually
-  // Revisit once coerce_feed_and_entries is fully deprecated
   let coerced_feed;
   try {
     coerced_feed = coerce_feed(parsed_feed, fetch_info);
@@ -263,7 +258,6 @@ function polled_feed_recently(poll_feed_context, feed) {
   return elapsed_millis < poll_feed_context.recencyPeriod;
 }
 
-// Decrement error count if set and not 0. Return true if object state changed.
 function handle_fetch_feed_success(feed) {
   if ('errorCount' in feed) {
     if (typeof feed.errorCount === 'number') {
@@ -281,24 +275,6 @@ function handle_fetch_feed_success(feed) {
   return false;
 }
 
-// TODO: new kind of problem, in hindsight, is merging of count of errors for
-// parsing and fetching. suppose a feed file which is periodically updated
-// becomes not-well-formed, causing parsing error. This is going to on the poll
-// period update the error count. This means that after a couple polls, the
-// feed quickly becomes inactive. That would be desired for the fetch error
-// count, maybe, but not for the parse error count. Because eventually the feed
-// file will get updated again and probably become well formed again. I've
-// actually witnessed this. So the issue is this prematurely deactivates feeds
-// that happen to have a parsing error that is actually ephemeral (temporary)
-// and not permanent.
-
-
-// TODO: rather than try and update the database, perhaps it would be better to
-// simply generate an event with feed id and some basic error information, and
-// let some error handler handle the event at a later time. This removes all
-// concern over encountering a closed database or closed channel at the time of
-// the call to rdb_feed_put, and maintains the non-blocking
-// characteristic.
 function handle_poll_feed_error(error_info) {
   if (error_is_ephemeral(error_info.error)) {
     return;
@@ -319,37 +295,19 @@ function handle_poll_feed_error(error_info) {
 }
 
 function detected_modification(ignore_modified_check, feed, response) {
-  // If this flag is true, then pretend the feed is always modified
   if (ignore_modified_check) {
     return true;
   }
 
-  // TODO: rename dateLastModified to lastModifiedDate to be more consistent
-  // in field names. I just got bit by this inconsistency.
-
-  // Pretend feed modified if no known modified date
-  // NOTE: this returns true to indicate the feed SHOULD be considered modified,
-  // because without the last modified date, we can't use the dates to
-  // determine, so we presume modified. We can only more confidently assert not
-  // modified, but not unmodified.
   if (!feed.dateLastModified) {
-    console.debug(
-        'Unknown last modified date for feed', rdb_feed_peek_url(feed));
     return true;
   }
 
   const response_last_modified_date = response_get_last_modified_date(response);
-
-  // If response is undated, then return true to indicate maybe modified
   if (!response_last_modified_date) {
-    // TODO: if it is the normal case this shouldn't log. I am tentative for
-    // now, so logging
-    console.debug('Response missing last modified date?', response);
     return true;
   }
 
-  // Return true if the dates are different
-  // Return false if the dates are the same
   return feed.dateLastModified.getTime() !==
       response_last_modified_date.getTime();
 }
@@ -366,21 +324,14 @@ function cascade_feed_properties_to_entries(feed, entries) {
   }
 }
 
-// Returns the entry id if added.
 async function poll_entry(ctx, entry) {
   assert(typeof ctx === 'object');
-  // The sanity check for the entry argument is implicit in the call to
-  // rdb_entry_has_url
-
-  // This function cannot assume the input entry has a url, but a url is
-  // required to continue polling the entry
   if (!rdb_entry_has_url(entry)) {
     return;
   }
 
-  entry_url_rewrite(entry);
-
-  if (await entry_reader_db_exists(ctx.feedConn, entry)) {
+  entry_rewrite_tail_url(entry);
+  if (await entry_exists_in_db(ctx.feedConn, entry)) {
     return;
   }
 
@@ -396,18 +347,6 @@ async function poll_entry(ctx, entry) {
   await entry_update_favicon(ctx, entry, document);
   await entry_update_content(ctx, entry, document);
 
-  // Despite checks for whether the url exists, we can still get uniqueness
-  // constraint errors when putting an entry in the store (from url index of
-  // entry store). This should not be fatal to polling, so trap and log the
-  // error and return.
-
-  // TODO: I think I need to look into this more. This may be a consequence of
-  // not using a single shared transaction. Because I am pretty sure that if I
-  // am doing rdb_contains_entry_with_url lookups, that I shouldn't run
-  // into this error here? It could be the new way I am doing url rewriting.
-  // Perhaps I need to do contains checks on the intermediate urls of an entry's
-  // url list as well. Which would lead to more contains lookups, so maybe also
-  // look into batching those somehow.
 
   let stored_entry;
   try {
@@ -420,43 +359,20 @@ async function poll_entry(ctx, entry) {
   return stored_entry.id;
 }
 
-// Examines the current tail url of the entry. Attempts to rewrite it and
-// append a new tail url if the url was rewritten and was distinct from other
-// urls. Returns true if a new url was appended.
-function entry_url_rewrite(entry) {
-  // sanity assertions about the entry argument are implicit within
-  // rdb_entry_peek_url
+function entry_rewrite_tail_url(entry) {
   const entry_tail_url = new URL(rdb_entry_peek_url(entry));
   const entry_response_url = url_rewrite(entry_tail_url);
-  // url_rewrite returns undefined in case of error, or when no rewriting
-  // occurred.
-  // TODO: consider changing url_rewrite so that it always returns a url, which
-  // is simply the same url as the input url if no rewriting occurred.
-
   if (!entry_response_url) {
     return false;
   }
-
-  // rdb_entry_append_url only appends the url if the url does not already exist
-  // in the entry's url list. rdb_entry_append_url returns true if an append
-  // took place.
   return rdb_entry_append_url(entry, entry_response_url);
 }
 
-function entry_reader_db_exists(conn, entry) {
-  // NOTE: this only inspects the tail, not all urls. It is possible due to
-  // some poorly implemented logic that one of the other urls in the entry's
-  // url list exists in the db At the moment I am more included to allow the
-  // indexedDB put request that happens later to fail due to a constraint
-  // error. This function is more of an attempt at reducing processing than
-  // maintaining data integrity.
-
+function entry_exists_in_db(conn, entry) {
   const entry_tail_url = new URL(rdb_entry_peek_url(entry));
   return rdb_contains_entry_with_url(conn, entry_tail_url);
 }
 
-// Tries to fetch the response for the entry. Returns undefined if the url is
-// not fetchable by polling policy, or if the fetch fails.
 async function entry_fetch(entry, timeout) {
   const url = new URL(rdb_entry_peek_url(entry));
   if (!url_is_augmentable(url)) {
@@ -470,13 +386,7 @@ async function entry_fetch(entry, timeout) {
   }
 }
 
-
-
-// Checks if the entry redirected, and if so, possibly updates the entry and
-// returns whether the redirect url already exists in the database
 async function entry_handle_redirect(conn, response, entry) {
-  // response may be undefined due to fetch error, this is not an error or
-  // unexpected
   if (!response) {
     return false;
   }
@@ -488,19 +398,11 @@ async function entry_handle_redirect(conn, response, entry) {
   }
 
   rdb_entry_append_url(entry, entry_response_url);
-
-  // It is important to rewrite before exists check to be consistent with the
-  // pattern used before fetching for the original url. This way we don't need
-  // to lookup the unwritten url, because all urls are always rewritten before
-  // interacting with reader db
-
-  entry_url_rewrite(entry);
-  return await entry_reader_db_exists(conn, entry);
+  entry_rewrite_tail_url(entry);
+  return await entry_exists_in_db(conn, entry);
 }
 
 async function entry_parse_response(response) {
-  // There is no guarantee response is defined, this is not unexpected and not
-  // an error
   if (!response) {
     return;
   }
@@ -513,51 +415,21 @@ async function entry_parse_response(response) {
   }
 }
 
-// If an entry is untitled in the feed, and we were able to fetch the full
-// text of the entry, try and set the entry's title using data from the full
-// text.
 function entry_update_title(entry, document) {
   assert(rdb_is_entry(entry));
-  // This does not expect document to always be defined. The caller may have
-  // failed to get the document. Rather than require the caller to check, do
-  // the check here.
-  if (!document) {
-    return;
-  }
-
-  // This only applies to an untitled entry.
-  if (entry.title) {
-    return;
-  }
-
-  const title_element = document.querySelector('html > head > title');
-  if (title_element) {
-    entry.title = title_element.textContent;
+  if (document && !entry.title) {
+    const title_element = document.querySelector('html > head > title');
+    if (title_element) {
+      entry.title = title_element.textContent;
+    }
   }
 }
 
-// Attempts to set the favicon url property of the entry
-// @param ctx {Object} misc props, should contain iconConn, an active
-// connection to the favicon store. Technically the lookup can operate without
-// an active connection so it is ok if it is undefined
-// @param entry {Object} an object representing a entry in the app's storage
-// format
-// @param document {Document} optional, the pre-fetched document for the entry.
-// If specified, the favicon lookup will reuse it instead of attempting to
-// fetch the document again.
 async function entry_update_favicon(ctx, entry, document) {
   assert(typeof ctx === 'object');
   assert(rdb_is_entry(entry));
-
-  // Something is really wrong if this fails
   assert(rdb_entry_has_url(entry));
-
   const entry_tail_url = new URL(rdb_entry_peek_url(entry));
-
-  // Create the lookup context. Signal to the lookup it should not try and
-  // fetch the document for the url, because we know we've already tried that.
-  // Lookup cannot otherwise tell because document may be undefined here.
-
   const favicon_service_lookup_context = {
     conn: ctx.iconConn,
     skipURLFetch: true,
@@ -565,23 +437,9 @@ async function entry_update_favicon(ctx, entry, document) {
     document: document
   };
 
-  // Favicon lookup failure is not fatal to polling an entry. Rather than
-  // require the caller to handle the error, handle the error locally.
-
-  // TODO: if favicon only fails in event of a critical error, such as a
-  // programming error or database error, then it actually should be fatal, and
-  // this shouldn't use try/catch. However, I've forgotten all the specific
-  // cases of when the lookup throws. If it throws in case of failed fetch for
-  // example that is not a critical error. For now I am leaving in the
-  // try/catch.
-
   try {
     const icon_url_string =
         await favicon_service_lookup(favicon_service_lookup_context);
-
-    // Only set favicon if found. This way the previous value is retained.
-    // Earlier code may set it, for example, to default to the feed's own
-    // favicon.
     if (icon_url_string) {
       entry.faviconURLString = icon_url_string;
     }
@@ -591,27 +449,17 @@ async function entry_update_favicon(ctx, entry, document) {
 }
 
 async function entry_update_content(ctx, entry, fetched_document) {
-  // There is no expectation that document is defined. When undefined, we want
-  // to use the entry original summary content from the feed. In both cases the
-  // content must be filtered
-
   let document = fetched_document;
   if (!document) {
     try {
       document = html_parse(entry.content);
     } catch (error) {
       console.debug(error);
-      // We do not have a fetched doc, and we also failed to parse the entry's
-      // content from the feed. Redact the content for safety.
       entry.content =
           'There was a problem with this article\'s content (unsafe HTML).';
       return;
     }
   }
-
-  // TODO: the min contrast ratio should be loaded from local storage once,
-  // not per call here. I don't care if it changes from call to call, use the
-  // initial value
 
   const document_url = new URL(rdb_entry_peek_url(entry));
   const filter_options = {
@@ -629,13 +477,10 @@ function url_is_augmentable(url) {
       !url_is_inaccessible_content(url);
 }
 
-// Return true if the error represents a temporary error
 function error_is_ephemeral(error) {
   return error instanceof OfflineError || error instanceof TimeoutError;
 }
 
-// An array of descriptors. Each descriptor represents a test against a url
-// hostname, that if matched, indicates the content is not accessible.
 const INACCESSIBLE_CONTENT_DESCRIPTORS = [
   {pattern: /forbes\.com$/i, reason: 'interstitial-advert'},
   {pattern: /productforums\.google\.com/i, reason: 'script-generated'},
