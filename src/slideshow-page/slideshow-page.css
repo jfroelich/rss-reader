@@ -106,6 +106,7 @@ html, body {
 }
 
 #initial-loading-panel {
+  background-color: white;
   position: absolute;
   display: none;
   left: 0;
