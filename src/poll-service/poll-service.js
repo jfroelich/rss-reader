@@ -6,10 +6,10 @@ import {html_parse} from '/src/html/html.js';
 import notification_show from '/src/notifications/notifications.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
-import url_rewrite from '/src/poll-service/rewrite-url.js';
 import {coerce_entry} from '/src/rdb/coerce-entry.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import {rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_entry_peek_url, rdb_feed_has_url, rdb_feed_merge, rdb_feed_peek_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb/rdb.js';
+import url_rewrite from '/src/rewrite-url/rewrite-url.js';
 import {url_is_binary} from '/src/sniff/sniff.js';
 import badge_update_text from '/src/update-badge-text.js';
 
