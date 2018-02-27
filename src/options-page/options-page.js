@@ -63,7 +63,6 @@ channel.onmessageerror = function(event) {
   console.warn(event);
 };
 
-// TODO: instead of removing and re-adding, reset and reuse
 function subscription_monitor_show() {
   let monitor_element = document.getElementById('submon');
   if (monitor_element) {
@@ -72,19 +71,8 @@ function subscription_monitor_show() {
 
   monitor_element = document.createElement('div');
   monitor_element.setAttribute('id', 'submon');
-
-  // Explicitly make the element fade-able, for compatibility with element_fade
-  // TODO: why not just rely on element_fade's ability to handle the situation
-  // of an element without an explicit opacity? My instinct is that this was a
-  // leftover setting from back when I was developing element_fade and was
-  // running into the unexpected situation of an element that did not have an
-  // opacity set, but I know that I've since rectified element_fade to handle
-  // that case, so I do not think this is needed. In fact I am relying on that
-  // behavior in several other places so this is rather inconsistent.
-  // Inconsistency is bad
   monitor_element.style.opacity = '1';
   document.body.appendChild(monitor_element);
-
   const progress_element = document.createElement('progress');
   progress_element.textContent = 'Working...';
   monitor_element.appendChild(progress_element);
@@ -151,41 +139,20 @@ export function error_message_hide() {
 }
 
 function section_show(menu_item_element) {
-  if (!menu_item_element) {
-    console.error('Invalid menu_item_element');
-    return;
+  if (menu_item_element && menu_item_element !== current_menu_item) {
+    if (current_menu_item) {
+      current_menu_item.classList.remove('navigation-item-selected');
+    }
+    if (current_section) {
+      current_section.style.display = 'none';
+    }
+    menu_item_element.classList.add('navigation-item-selected');
+    const section_id = menu_item_element.getAttribute('section');
+    const section_element = document.getElementById(section_id);
+    section_element.style.display = 'block';
+    current_menu_item = menu_item_element;
+    current_section = section_element;
   }
-
-  if (current_menu_item === menu_item_element) {
-    return;
-  }
-
-  if (current_menu_item) {
-    current_menu_item.classList.remove('navigation-item-selected');
-  }
-
-  if (current_section) {
-    current_section.style.display = 'none';
-  }
-
-  menu_item_element.classList.add('navigation-item-selected');
-
-  // Show the new section
-  const section_id = menu_item_element.getAttribute('section');
-  const section_element = document.getElementById(section_id);
-
-  // TODO: while this is certainly indicative of a serious error, serious errors
-  // shouldn't happen at UI level, so something else should happen here?
-  if (!section_element) {
-    console.error('Could not find section element with id', section_id);
-    return;
-  }
-
-  section_element.style.display = 'block';
-
-  // Update the global tracking vars
-  current_menu_item = menu_item_element;
-  current_section = section_element;
 }
 
 function section_show_by_id(id) {
@@ -196,20 +163,12 @@ function feed_count_update() {
   const feed_list_element = document.getElementById('feedlist');
   const count = feed_list_element.childElementCount;
   const feed_count_element = document.getElementById('subscription-count');
-  if (count > 50) {
-    feed_count_element.textContent = ' (50+)';
-  } else {
-    feed_count_element.textContent = ` (${count})`;
-  }
+  feed_count_element.textContent = count > 50 ? ' (50+)' : ` (${count})`;
 }
 
 function feed_list_append_feed(feed) {
   const item_element = document.createElement('li');
   item_element.setAttribute('sort-key', feed.title);
-
-  // TODO: stop using custom feed attribute?
-  // it is used on unsubscribe event to find the LI again,
-  // is there an alternative?
   item_element.setAttribute('feed', feed.id);
   if (feed.description) {
     item_element.setAttribute('title', feed.description);
@@ -235,15 +194,12 @@ function feed_list_append_feed(feed) {
 
   const title_element = document.createElement('span');
   let feed_title = feed.title || 'Untitled';
-
-  // TODO: handle the parse error, this is near root scope
   feed_title = html_truncate(feed_title, 300);
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
   const feed_list_element = document.getElementById('feedlist');
   const normal_title = feed_title.toLowerCase();
 
-  // Insert the feed element into the proper position in the list
   let inserted = false;
   for (const child_node of feed_list_element.childNodes) {
     let key_string = child_node.getAttribute('sort-key');
@@ -265,7 +221,6 @@ function feed_list_append_feed(feed) {
 }
 
 async function feed_list_item_onclick(event) {
-  // Use current target to capture the element with the feed attribute
   const feed_list_item_element = event.currentTarget;
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
@@ -274,13 +229,10 @@ async function feed_list_item_onclick(event) {
   try {
     feed = await ral_find_feed_by_id(feed_id);
   } catch (error) {
-    // TODO: show an error message
     console.error(error);
     return;
   }
 
-
-  // Update the UI with the loaded feed data
   const title_element = document.getElementById('details-title');
   title_element.textContent = feed.title || feed.link || 'Untitled';
 
@@ -291,12 +243,11 @@ async function feed_list_item_onclick(event) {
     favicon_element.removeAttribute('src');
   }
 
-  const description_element =
-      document.getElementById('details-feed-description');
+  const desc_element = document.getElementById('details-feed-description');
   if (feed.description) {
-    description_element.textContent = feed.description;
+    desc_element.textContent = feed.description;
   } else {
-    description_element.textContent = '';
+    desc_element.textContent = '';
   }
 
   const feed_url_element = document.getElementById('details-feed-url');
@@ -315,13 +266,7 @@ async function feed_list_item_onclick(event) {
   deactivate_button.value = '' + feed.id;
   deactivate_button.disabled = feed.active === false ? true : false;
 
-  // TODO: show num entries, num unread/red, etc
-  // TODO: show dateLastModified, datePublished, dateCreated, dateUpdated
-
   section_show_by_id('mi-feed-details');
-
-  // Ensure the details are visible when the feed list is taller than window
-  // height and user has scrolled down
   window.scrollTo(0, 0);
 }
 
@@ -350,7 +295,6 @@ async function subscribe_form_onsubmit(event) {
   try {
     subscribe_url = new URL(subscribe_url_string);
   } catch (exception) {
-    // TODO: show error like "Please enter a valid url"
     console.warn(exception);
     return false;
   }
@@ -388,7 +332,6 @@ async function feed_list_init() {
   }
 
   for (const feed of feeds) {
-    // Ensure feeds have titles
     // TODO: I think this is actually a concern of feed_list_append_feed? I do
     // not think this needs to be done here, but not sure
     feed.title = feed.title || 'Untitled';
