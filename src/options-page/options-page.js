@@ -362,11 +362,8 @@ function feed_list_remove_feed_by_id(feed_id) {
   feed_element.removeEventListener('click', feed_list_item_onclick);
   feed_element.remove();
 
-  // Upon removing the feed, update the displayed number of feeds.
   feed_count_update();
 
-  // Upon removing the feed, update the state of the feed list. If the feed list
-  // has no items, hide it and show a message instead.
   const feed_list_element = document.getElementById('feedlist');
   const no_feeds_element = document.getElementById('nosubs');
   if (!feed_list_element.childElementCount) {
