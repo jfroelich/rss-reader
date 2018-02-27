@@ -4,14 +4,9 @@ import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {html_escape} from '/src/html/html.js';
 import {ral_export, ral_import, ral_load_initial, ral_poll_feeds} from '/src/ral/ral.js';
-import {rdb_entry_is_valid_id, rdb_entry_peek_url, rdb_feed_peek_url, rdb_find_viewable_entries, rdb_get_feeds, rdb_is_entry, rdb_open} from '/src/rdb/rdb.js';
+import * as rdb from '/src/rdb/rdb.js';
 import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/slideshow-page/slideshow.js';
-
-// BUG: some kind of mark-read bug, possibly due to the non-blocking call. The
-// bug is logic, there is no js error. Entries are getting marked as read, but
-// re-appear occassionally when navigation, and sometimes next-slide key press
-// doesn't advance slide.
 
 // clang-format off
 const fonts = [
@@ -83,84 +78,35 @@ channel.onmessageerror = function(event) {
   console.warn('Could not deserialize message from channel', event);
 };
 
-// Responds to the adding of an entry to the database from some background task.
-// Conditionally appends new articles as slides.
 async function on_entry_added_message(message) {
-  // Do not append if several unread slides are still loaded
-  const slide_unread_count = slideshow_count_unread();
-
-  if (slide_unread_count > 3) {
-    return;
-  }
-
-  let conn;
-  try {
-    conn = await rdb_open();
-    await slide_load_and_append_multiple(conn);
-  } finally {
-    if (conn) {
-      conn.close();
+  if (slideshow_count_unread() <= 3) {
+    let conn;
+    try {
+      conn = await rdb.rdb_open();
+      await slide_load_and_append_multiple(conn);
+    } finally {
+      if (conn) {
+        conn.close();
+      }
     }
   }
 }
 
-function error_message_show(message_text) {
-  const container = document.getElementById('error-message-container');
-
-  if (!container) {
-    console.error(
-        'Could not find element #error-message-container to show error',
-        message_text);
-    return;
-  }
-
-  container.textContent = message_text;
-  container.style.display = 'block';
-}
-
-// React to a message indicating that an entry expired (e.g. it was deleted, or
-// archived)
 async function on_entry_expired_message(message) {
-  if (typeof message !== 'object') {
-    console.warn('Invalid message', message);
-    return;
+  if (typeof message === 'object' && rdb.rdb_entry_is_valid_id(message.id)) {
+    const slide_name = Slideshow.element_get_name();
+    const selector = slide_name + '[entry="' + message.id + '"]';
+    const slide = document.querySelector(selector);
+    if (slide) {
+      if (Slideshow.slide_is_current(slide)) {
+        slide.setAttribute('stale', 'true');
+        return;
+      }
+
+      Slideshow.remove(slide);
+      slide.removeEventListener('click', slide_onclick);
+    }
   }
-
-  if (!rdb_entry_is_valid_id(message.id)) {
-    console.warn('Invalid entry id', message);
-    return;
-  }
-
-  // Search for a slide corresponding to the entry id
-  const slide_element_name = Slideshow.element_get_name();
-  const slide = document.querySelector(
-      slide_element_name + '[entry="' + message.id + '"]');
-
-  // There is no guarantee the entry id corresponds to a loaded slide. It is
-  // normal and frequent for the slideshow to receive messages with entry ids
-  // that do not correspond to loaded slides.
-  if (!slide) {
-    return;
-  }
-
-  // The slide currently being viewed was externally modified such that it
-  // should no longer be viewed, so we could prefer to remove it from the view.
-  // However, it is the current slide being viewed which would lead to surprise
-  // as the article the user is reading is magically whisked away. Instead, flag
-  // the slide as stale.
-  if (Slideshow.slide_is_current(slide)) {
-    slide.setAttribute('stale', 'true');
-    return;
-  }
-
-  Slideshow.remove(slide);
-  // TODO: because the click listener is done in slideshow-page instead of in
-  // the Slideshow helper module, Slideshow.remove does not remove the listener,
-  // so it has to be explicitly removed here. I would prefer something better. I
-  // initially started doing the click handler within Slideshow, but it turns
-  // out that there are several things that must happen in response to a click,
-  // and I did a poor job of separating out the functionality
-  slide.removeEventListener('click', slide_onclick);
 }
 
 function loading_info_show() {
@@ -174,78 +120,27 @@ function loading_info_show() {
 
 function loading_info_hide() {
   const loading_info_element = document.getElementById('initial-loading-panel');
-  if (loading_info_element) {
-    loading_info_element.style.display = 'none';
-  } else {
-    console.error('Could not find initial loading panel');
+  loading_info_element.style.display = 'none';
+}
+
+// TODO: this should not need to be async and await. However, right now when it
+// does not wait the call to update badge unread count fails because the
+// subsequent conn.close call occurs too early
+async function slide_mark_read(conn, slide) {
+  if (!slide.hasAttribute('read') && !slide.hasAttribute('stale')) {
+    const id = parseInt(slide.getAttribute('entry'), 10);
+    console.log('Marking slide with entry id %d as read', id);
+    await entry_mark_read(conn, channel, id);
+    slide.setAttribute('read', '');
   }
 }
 
-// TODO: I lost the non-blocking nature I was going for, so I need to rethink
-// this.
-async function slide_mark_read(conn, slide_element) {
-  if (!(conn instanceof IDBDatabase)) {
-    console.error('Invalid conn');
-    return;
-  }
-
-  if (!(slide_element instanceof Element)) {
-    console.error('Invalid slide_element');
-    return;
-  }
-
-  // If the slide is stale, for whatever reason, do nothing
-  if (slide_element.hasAttribute('stale')) {
-    console.debug('slide is stale, not marking as read');
-    return;
-  }
-
-  // Get and validate the entry id
-  const entry_attribute_value = slide_element.getAttribute('entry');
-  const entry_id = parseInt(entry_attribute_value, 10);
-  if (!rdb_entry_is_valid_id(entry_id)) {
-    console.error('Invalid entry id', entry_id);
-    return;
-  }
-
-  console.log('Marking slide with entry id %d as read', entry_id);
-
-  // Exit early if the slide has already been read. This is routine such as when
-  // navigating backward then forward. navigation does not warrant that it
-  // inspects slide state to determine whether to mark as read
-  if (slide_element.hasAttribute('read')) {
-    return;
-  }
-
-  // TODO: rather than await, this should listen for entry-marked-read events
-  // roundtrip and handle the event when it later occurs to mark the
-  // corresponding slide. Then this can be called non-awaited.
-
-  // TEMP: overly paranoid assertion of conn given that internals of
-  // entry_mark_read can no longer rely on dynamic auto-connect
-  if (!(conn instanceof IDBDatabase)) {
-    console.error('Invalid database connection');
-    return;
-  }
-
-  try {
-    await entry_mark_read(conn, channel, entry_id);
-  } catch (error) {
-    // TODO: display an error
-    console.error(error);
-    return;
-  }
-
-  // Signal to the UI that the slide is read, so that unread counting works, and
-  // so that later calls to this function exit prior to interacting with
-  // storage. This happens regardless of whether state updated correctly, at the
-  // moment, because there is no easy way to tell whether an error occurred pre
-  // or post commit (before state actually changed)
-  slide_element.setAttribute('read', '');
+function error_message_show(message_text) {
+  const container = document.getElementById('error-message-container');
+  container.textContent = message_text;
+  container.style.display = 'block';
 }
 
-// TODO: append slides shouldn't be responsible for loading. This should accept
-// an array of slides as input. Something else should be doing loading.
 async function slide_load_and_append_multiple(conn, limit) {
   limit = typeof limit === 'undefined' ? 3 : limit;
   console.log('Appending slides (limit: %d)', limit);
@@ -253,7 +148,7 @@ async function slide_load_and_append_multiple(conn, limit) {
 
   let entries;
   try {
-    entries = await rdb_find_viewable_entries(conn, offset, limit);
+    entries = await rdb.rdb_find_viewable_entries(conn, offset, limit);
   } catch (error) {
     console.error(error);
     error_message_show('There was a problem loading articles from storage');
@@ -268,12 +163,12 @@ async function slide_load_and_append_multiple(conn, limit) {
 }
 
 function slide_append(entry) {
-  if (!rdb_is_entry(entry)) {
+  if (!rdb.rdb_is_entry(entry)) {
     console.error('Invalid entry parameter', entry);
     return;
   }
 
-  console.debug('Appending entry', rdb_entry_peek_url(entry));
+  console.debug('Appending entry', rdb.rdb_entry_peek_url(entry));
 
   const slide = Slideshow.create();
   slide.setAttribute('entry', entry.id);
@@ -293,7 +188,7 @@ function slide_append(entry) {
 
 function create_article_title_element(entry) {
   const title_element = document.createElement('a');
-  title_element.setAttribute('href', rdb_entry_peek_url(entry));
+  title_element.setAttribute('href', rdb.rdb_entry_peek_url(entry));
   title_element.setAttribute('class', 'entry-title');
   title_element.setAttribute('rel', 'noreferrer');
 
@@ -398,7 +293,7 @@ async function slide_onclick(event) {
 
   let conn;
   try {
-    conn = await rdb_open();
+    conn = await rdb.rdb_open();
   } catch (error) {
     // TODO: visually show error
     console.error(error);
@@ -444,7 +339,7 @@ async function slide_next() {
   if (slide_unread_count > 1) {
     let conn;
     try {
-      conn = await rdb_open();
+      conn = await rdb.rdb_open();
     } catch (error) {
       console.error(error);
       return;
@@ -460,7 +355,7 @@ async function slide_next() {
   let append_count = 0;
   let conn;
   try {
-    conn = await rdb_open();
+    conn = await rdb.rdb_open();
   } catch (error) {
     console.error(error);
     return;
@@ -673,7 +568,7 @@ function unsubscribe_button_onclick(event) {
 }
 
 function feeds_container_append_feed(feed) {
-  console.debug('Appending feed', rdb_feed_peek_url(feed));
+  // console.debug('Appending feed', rdb.rdb_feed_peek_url(feed));
   const feeds_container = document.getElementById('feeds-container');
   const feed_element = document.createElement('div');
   feed_element.id = feed.id;
@@ -720,7 +615,7 @@ function feeds_container_append_feed(feed) {
   col.textContent = 'URL';
   row.appendChild(col);
   col = document.createElement('td');
-  col.textContent = rdb_feed_peek_url(feed);
+  col.textContent = rdb.rdb_feed_peek_url(feed);
   row.appendChild(col);
   feed_info_element.appendChild(row);
 

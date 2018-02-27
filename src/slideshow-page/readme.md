@@ -5,11 +5,33 @@ this is double encoding entities somehow, so entities show up in the value
 
 i partially fixed by not escaping ampersand but that's not right.
 
+# TODO: fix bug with mark read
+// BUG: some kind of mark-read bug, possibly due to the non-blocking call. The
+// bug is logic, there is no js error. Entries are getting marked as read, but
+// re-appear occassionally when navigation, and sometimes next-slide key press
+// doesn't advance slide.
+
+TODO: on_entry_expired_message note
+// TODO: because the click listener is done in slideshow-page instead of in
+// the Slideshow helper module, Slideshow.remove does not remove the listener,
+// so it has to be explicitly removed here. I would prefer something better. I
+// initially started doing the click handler within Slideshow, but it turns
+// out that there are several things that must happen in response to a click,
+// and I did a poor job of separating out the functionality
+
 # TODO: improve slide_append
 
 the creation of a slide element, and the appending of a slide element, should be two separate tasks. This will increase flexibility and maybe clarity. slide_append should accept a slide element, not an entry.
 
+# TODO: slide_mark_read notes
 
+* rather than await call to entry_mark_read, this should listen for entry-marked-read events roundtrip and handle the event when it later occurs to mark the corresponding slide. Then this can be called non-awaited
+* maybe display an error if entry_mark_read fails?
+
+
+# TODO: slide_load_and_append_multiple notes
+
+Append slides shouldn't be responsible for loading. This should accept an array of slides as input. Something else should be doing loading.
 
 # TODO improve slide_onclick handler
 
