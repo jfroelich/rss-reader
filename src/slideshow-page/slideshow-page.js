@@ -267,11 +267,6 @@ async function slide_load_and_append_multiple(conn, limit) {
   return entries.length;
 }
 
-// TODO: the creation of a slide element, and the appending of a slide element,
-// should be two separate tasks. This will increase flexibility and maybe
-// clarity. slide_append should accept a slide element, not an entry.
-
-// Given an entry, create a new slide element and append it to the view
 function slide_append(entry) {
   if (!rdb_is_entry(entry)) {
     console.error('Invalid entry parameter', entry);
@@ -286,7 +281,6 @@ function slide_append(entry) {
   slide.setAttribute('class', 'entry');
   slide.addEventListener('click', slide_onclick);
 
-  // An after-the-fact change to fix padding
   const slide_pad_wrap = document.createElement('div');
   slide_pad_wrap.className = 'slide-padding-wrapper';
   slide_pad_wrap.appendChild(create_article_title_element(entry));
@@ -308,8 +302,7 @@ function create_article_title_element(entry) {
     let safe_title = html_escape(title);
 
     // Set the attribute value to the full title without truncation or publisher
-    // filter BUG: this is double encoding entities somehow, so entities show up
-    // in the value
+    // filter
     title_element.setAttribute('title', safe_title);
 
     let filtered_safe_title = filter_title_publisher(safe_title);
@@ -342,11 +335,6 @@ function create_feed_source_element(entry) {
   const source_element = document.createElement('span');
   source_element.setAttribute('class', 'entry-source');
 
-  // At this point, assume that if faviconURLString is set, that it is
-  // valid (defined, a string, a well-formed canonical url string). If it is not
-  // valid by this point then something is really wrong elsewhere in the app,
-  // but that is not our concern here. If the url is bad then show a broken
-  // image.
   if (entry.faviconURLString) {
     const favicon_element = document.createElement('img');
     favicon_element.setAttribute('src', entry.faviconURLString);
@@ -373,18 +361,12 @@ function create_feed_source_element(entry) {
   return source_element;
 }
 
-
 async function slide_onclick(event) {
-  // We only care about responding to left click
   const LEFT_MOUSE_BUTTON_CODE = 1;
   if (event.which !== LEFT_MOUSE_BUTTON_CODE) {
     return true;
   }
 
-  // event.target is the clicked element, which could be an anchor, an element
-  // that is a descendant of an anchor, or some other element in the slide.
-  // Search for the containing anchor (which includes testing against the
-  // clicked element itself)
   const anchor = event.target.closest('a');
   if (!anchor) {
     return true;
@@ -394,11 +376,8 @@ async function slide_onclick(event) {
     return true;
   }
 
-  // We've determined at this point we are going to handle the click. Inform the
-  // browser that we are intercepting.
   event.preventDefault();
 
-  // Open the url in a new tab.
   const url_string = anchor.getAttribute('href');
   if (!url_string) {
     return;
@@ -406,7 +385,6 @@ async function slide_onclick(event) {
 
   tab_open(url_string);
 
-  // Find the slide that was clicked
   const clicked_slide = anchor.parentNode.closest('slide');
   if (!clicked_slide) {
     return;
@@ -418,16 +396,6 @@ async function slide_onclick(event) {
     return false;
   }
 
-  // TODO: this belongs in a helper in ral.js. The problem however is that I
-  // split up the functionality, this uses the element, I cannot use the element
-  // in ral. So really the problem is that slide_mark_read does too much. This
-  // should be able to use only those components of slide_mark_read that it
-  // cares about. But in order to break up slide_mark_read appropriately, I
-  // think I need to refactor how the element is updated after click, I think it
-  // needs to be done from message event handler instead of explicitly done, so
-  // that it no longer matters which initiator started the sequence
-
-  // Mark the current slide as read
   let conn;
   try {
     conn = await rdb_open();
@@ -442,8 +410,6 @@ async function slide_onclick(event) {
   conn.close();
 }
 
-// TODO: is the debouncing stuff with idle callback approach needed??
-// TODO: do not handle key press if target is input/textarea
 let keydown_timer_id = null;
 function on_key_down(event) {
   const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
@@ -471,39 +437,11 @@ function on_key_down(event) {
 
 window.addEventListener('keydown', on_key_down);
 
-// TODO: I should probably unlink loading on demand and navigation, because this
-// causes lag. navigation would be smoother if I appended even earlier, like
-// before even reaching the situation of its the last slide and there are no
-// more so append. It would be better if I did something like check the number
-// of remaining unread slides, and if that is less than some number, append
-// more. And it would be better if I did that before even navigating. However
-// that would cause lag. So it would be even better if I started in a separate
-// microtask an append operation and then continued in the current task. Or, the
-// check should happen not on append, but after doing the navigation. Or after
-// marking the slide as read.
-
-// TODO: sharing the connection between mark as read and
-// slide_load_and_append_multiple made sense at first but I do not like the
-// large try/catch block. Also I think the two can be unlinked because they do
-// not have to co-occur. Also I don't like how it has to wait for read to
-// complete.
-
 async function slide_next() {
   const current_slide = Slideshow.get_current_slide();
-
-  // If there are still unread articles return. Do not mark the current article,
-  // if it exists, as read.
   const slide_unread_count = slideshow_count_unread();
-  // We still append if there is just one unread slide
+
   if (slide_unread_count > 1) {
-    console.debug(
-        'Not dynamically appending because %d unread slides remain',
-        slide_unread_count);
-
-    // TODO: like the notes in the click handler, this should be calling to a
-    // helper in ral.js that deals with conn open and close
-
-    // Mark the current slide as read
     let conn;
     try {
       conn = await rdb_open();
@@ -529,10 +467,7 @@ async function slide_next() {
   }
 
   if (slide_unread_count < 2) {
-    console.log('Appending additional slides prior to navigation');
     append_count = await slide_load_and_append_multiple(conn);
-  } else {
-    console.log('Not appending additional slides prior to navigation');
   }
 
   Slideshow.next();
@@ -562,21 +497,15 @@ function slideshow_count_unread() {
 let refresh_in_progress = false;
 function refresh_anchor_onclick(event) {
   event.preventDefault();
-  if (refresh_in_progress) {
-    return;
+  if (!refresh_in_progress) {
+    refresh_in_progress = true;
+    ral_poll_feeds(channel, console)
+        .then(_ => {})
+        .catch(error => {
+          console.error(error);
+        })
+        .finally(_ => refresh_in_progress = false);
   }
-  refresh_in_progress = true;
-
-  ral_poll_feeds(channel, console)
-      .then(
-          _ => {
-              // TODO: show a completed message?
-          })
-      .catch(error => {
-        // TODO: show an error message
-        console.error(error);
-      })
-      .finally(_ => refresh_in_progress = false);
 }
 
 function options_menu_show() {
@@ -603,10 +532,7 @@ function main_menu_button_onclick(event) {
 }
 
 function options_menu_onclick(event) {
-  // event.target points to either a clicked <li> or the <ul>
   const option = event.target;
-
-  // Ignore clicks on elements that are not menu options
   if (option.localName !== 'li') {
     return;
   }
@@ -622,10 +548,8 @@ function options_menu_onclick(event) {
       export_menu_option_handle_click(event);
       break;
     case 'menu-option-header-font':
-      // Ignore, this has its own handler
       break;
     case 'menu-option-body-font':
-      // Ignore
       break;
     default:
       console.debug('Unhandled menu option click', option.id);
@@ -648,21 +572,11 @@ function uploader_input_onchange(event) {
     return;
   }
 
-  // TODO: show operation started
-
   ral_import(channel, files)
       .then(() => {
         console.log('Import completed');
-
-        // TODO: visually inform the user that the operation completed
-        // successfully
-        // TODO: refresh feed list so that it displays any new feeds
-        // TODO: switch to feed list section or at least show a message about
-        // how the import completed successfully, and perhaps other details such
-        // as the number of subscriptions added
       })
       .catch(error => {
-        // TODO: show a friendly error message
         console.error(error);
       });
 }
@@ -673,11 +587,9 @@ function export_menu_option_handle_click(event) {
       .then(blob => {
         const filename = 'subscriptions.xml';
         download_blob(blob, filename);
-        // TODO: visual feedback on completion
         console.log('Export completed');
       })
       .catch(error => {
-        // TODO: show an error message
         console.error(error);
       });
 }
@@ -699,15 +611,9 @@ function error_message_container_onclick(event) {
 function noop() {}
 
 function window_onclick(event) {
-  // TODO: am I still using marginLeft? I thought I switched to left?
-
-  // If the click occurred outside of the menu options panel, hide the menu
-  // options panel
   const avoided_zone_ids = ['main-menu-button', 'left-panel'];
   if (!avoided_zone_ids.includes(event.target.id) &&
       !event.target.closest('[id="left-panel"]')) {
-    // Hide only if not hidden. marginLeft is only 0px in visible state. If
-    // marginLeft is empty string or -320px then menu already hidden
     const left_panel_element = document.getElementById('left-panel');
     if (left_panel_element.style.marginLeft === '0px') {
       options_menu_hide();
@@ -718,29 +624,20 @@ function window_onclick(event) {
 }
 
 function feeds_container_onclick(event) {
-  if (event.target.localName !== 'div') {
-    return true;
+  if (event.target.localName === 'div' && event.target.id) {
+    feed_container_toggle_details(event.target);
   }
-
-  if (!event.target.id) {
-    return true;
-  }
-
-  feed_container_toggle_details(event.target);
 }
 
 function feed_container_toggle_details(feed_element) {
   const table = feed_element.querySelector('table');
-
   if (feed_element.hasAttribute('expanded')) {
-    // Collapse
     feed_element.removeAttribute('expanded');
     feed_element.style.width = '200px';
     feed_element.style.height = '200px';
     feed_element.style.cursor = 'zoom-in';
     table.style.display = 'none';
   } else {
-    // Expand
     feed_element.setAttribute('expanded', 'true');
     feed_element.style.width = '100%';
     feed_element.style.height = 'auto';
@@ -775,11 +672,8 @@ function unsubscribe_button_onclick(event) {
   console.debug('Unsubscribe (not yet implemented)', event.target);
 }
 
-// TODO: create helper function createFeedElement that then is passed to this,
-// rename this to appendFeedElement and change its parameter
 function feeds_container_append_feed(feed) {
   console.debug('Appending feed', rdb_feed_peek_url(feed));
-
   const feeds_container = document.getElementById('feeds-container');
   const feed_element = document.createElement('div');
   feed_element.id = feed.id;
@@ -862,11 +756,6 @@ function feeds_container_append_feed(feed) {
   feed_info_element.appendChild(row);
   feed_element.appendChild(feed_info_element);
 
-  // TODO: this needs to find the proper place to append the feed
-  // using feed_compare. This needs to iterate over the existing feeds and
-  // compare each one to the feed and find where to insert, and fall back to
-  // append. I no longer am pre-sorting an array and then iterating over it,
-  // I am using a callback that loads feeds from the db in natural order.
   feeds_container.appendChild(feed_element);
 }
 
@@ -947,18 +836,12 @@ function slideshow_page_init() {
 
   const main_menu_button = document.getElementById('main-menu-button');
   main_menu_button.onclick = main_menu_button_onclick;
-
-  // Initialize the refresh icon in the header
   const refresh_button = document.getElementById('refresh');
   refresh_button.onclick = refresh_anchor_onclick;
-
   const feeds_button = document.getElementById('feeds-button');
   feeds_button.onclick = feeds_button_onclick;
-
   const reader_button = document.getElementById('reader-button');
   reader_button.onclick = reader_button_onclick;
-
-  // Initialize error message container
   const error_container = document.getElementById('error-message-container');
   if (error_container) {
     error_container.onclick = error_message_container_onclick;
@@ -983,7 +866,6 @@ function slideshow_page_init() {
       feeds_container_append_feed)
       .then(loading_info_hide)
       .catch((error) => {
-        // TODO: show an error message
         console.error(error);
       });
 }
