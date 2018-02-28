@@ -622,10 +622,6 @@ function url_sniff_dimensions(source_url) {
   }
 }
 
-// Try and find dimensions from the style attribute of an image element. This
-// does not compute style. This only considers the style attribute itself and
-// not inherited styles.
-// TODO: this is currently incorrect when width/height are percentage based
 function element_get_inline_style_dimensions(element) {
   if (element.hasAttribute('style') && element.style) {
     const width = parseInt(element.style.width, 10);
@@ -638,14 +634,6 @@ function element_get_inline_style_dimensions(element) {
   }
 }
 
-// Filters certain anchors from document content
-// This is a largely a hack for a particular feed I subscribe to that uses
-// something along the lines of placeholder urls in the content, but because
-// script is not evaluated elsewhere the bad urls all stay and this causes
-// issues elsewhere and broken links.
-// TODO: maybe just generalize this to unwrap all anchors that contain
-// invalid urls
-// TODO: shouldn't this be an unwrap? what if the anchor has valuable content?
 export function filter_invalid_anchors(document) {
   if (document.body) {
     const anchors = document.body.querySelectorAll('a');
@@ -657,19 +645,11 @@ export function filter_invalid_anchors(document) {
   }
 }
 
-// Returns true if the anchor has an invalid href
-// TODO: inline
 function anchor_is_invalid(anchor) {
   const hrefValue = anchor.getAttribute('href');
   return hrefValue && /^\s*https?:\/\/#/i.test(hrefValue);
 }
 
-// Filters width and height of large images to avoid skewing in view
-// An image is large if it is more than 1000px in width or height
-// This allows retaining of width and height in other images, which avoids the
-// issue of removing width and height from small images that have very large
-// natural width or height. This is typical of icon or svg images that are very
-// large when missing dimensions.
 export function filter_large_image_attributes(document) {
   if (document.body) {
     const images = document.body.querySelectorAll('img');
@@ -717,15 +697,7 @@ const lazy_image_attribute_names = [
   'data-adaptive-image', 'data-imgsrc', 'data-default-src', 'data-hi-res-src'
 ];
 
-// Transforms lazily-loaded images found in document content
-// TODO: try and determine if an image with a src attribute is using a
-// placeholder image in the src attribute and a full image from another
-// attribute
 export function filter_lazy_images(document) {
-  // Look for images that are missing a src attribute, and have an alternate
-  // attribute that contains a url that could serve as the image's new src,
-  // and then set the src
-
   if (document.body) {
     const images = document.body.getElementsByTagName('img');
     for (const image of images) {
@@ -746,7 +718,6 @@ export function filter_lazy_images(document) {
   }
 }
 
-// Filters empty leaf-like nodes from document content
 export function filter_leaf_nodes(document) {
   if (document.body) {
     const root = document.documentElement;
@@ -759,7 +730,6 @@ export function filter_leaf_nodes(document) {
   }
 }
 
-// Recursive
 function node_is_leaf(node) {
   switch (node.nodeType) {
     case Node.ELEMENT_NODE: {
@@ -793,9 +763,6 @@ const leaf_exception_element_names = [
   'path', 'source', 'sbg',  'textarea', 'track',   'video', 'wbr'
 ];
 
-// TODO: re-use void elements list? maybe something like a two part condition
-// that returns true if node is void element or is in extras list. Actually
-// that doesn't seem quite right. I've confused myself here with this comment.
 export function element_is_leaf_exception(element) {
   return leaf_exception_element_names.includes(element.localName);
 }

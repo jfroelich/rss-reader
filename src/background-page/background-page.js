@@ -55,7 +55,7 @@ async function handle_poll_feeds_alarm(alarm) {
   }
 
   const context = await poll_service_create_context();
-  context.console = console;  // enable logging
+  context.console = console;
   await poll_service_poll_feeds(context);
   poll_service_close_context(context);
 }
@@ -152,9 +152,6 @@ async function badge_init() {
   let conn;
   try {
     conn = await rdb_open();
-
-    // Here we await, because that is the entire point of this init function
-    // I think this is the only place where we actually block
     await badge_update_text(conn);
   } catch (error) {
     console.error(error);
