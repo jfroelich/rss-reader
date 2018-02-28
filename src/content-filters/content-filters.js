@@ -620,14 +620,6 @@ function url_sniff_dimensions(source_url) {
       }
     }
   }
-
-  // Not implemented
-  // const file_name = url_get_filename(source_url);
-  // if (file_name) {
-  //  const partial_file_name = file_name_filter_extension(file_name);
-  //  if (partial_file_name) {
-  //  }
-  // }
 }
 
 // Try and find dimensions from the style attribute of an image element. This
