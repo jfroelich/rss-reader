@@ -325,8 +325,6 @@ export function document_filter_empty_attributes(document) {
 }
 
 export function element_filter_empty_attributes(element) {
-  // TODO: does getAttributeNames lowercase? Just noticed I assume that it
-  // does but never verified
   const names = element.getAttributeNames();
   for (const name of names) {
     if (!attribute_is_boolean(element, name)) {
@@ -345,24 +343,19 @@ export function filter_form_elements(document) {
     return;
   }
 
-  // Unwrap forms
   const forms = document.body.querySelectorAll('form');
   for (const form of forms) {
     element_unwrap(form);
   }
 
-  // Unwrap labels
   const labels = document.body.querySelectorAll('label');
   for (const label of labels) {
     element_unwrap(label);
   }
 
-  // TODO: actually I should be unwrapping fieldset?
-
-  // Remove form fields
-  const input_selector =
+  const selector =
       'button, fieldset, input, optgroup, option, select, textarea';
-  const inputs = document.body.querySelectorAll(input_selector);
+  const inputs = document.body.querySelectorAll(selector);
   const body = document.body;
   for (const input of inputs) {
     if (body.contains(input)) {
@@ -371,7 +364,6 @@ export function filter_form_elements(document) {
   }
 }
 
-// Unwrap anchors without href attributes
 export function filter_formatting_anchors(document) {
   if (document.body) {
     const anchors = document.body.querySelectorAll('a');
@@ -389,7 +381,6 @@ const formatting_elements_selector = [
   'plaintext', 'small', 'tt'
 ].join(',');
 
-// Remove formatting elements
 export function filter_formatting_elements(document) {
   if (document.body) {
     const elements =
@@ -406,23 +397,16 @@ export function filter_frame_elements(document) {
   // If a document is framed then the root frame is its body, and document.body
   // points to it and not some <body> element
   const original_body = document.body;
-
-  // If the document has no body, then there is nothing to do
   if (!original_body) {
     return;
   }
 
-  // If the body element is a body element and not a frame element, then there
-  // is nothing to do
   if (original_body.localName !== 'frameset') {
     return;
   }
 
-  // The document is framed, transform into unframed
   const new_body = document.createElement('body');
 
-  // If available, move noframes content into the new body.
-  // TODO: support multiple noframes elements
   const noframes_element = document.querySelector('noframes');
   if (noframes_element) {
     for (let node = noframes_element.firstChild; node;
@@ -431,35 +415,25 @@ export function filter_frame_elements(document) {
     }
   }
 
-  // If the new body is empty, add an error message about framed content
   if (!new_body.firstChild) {
     const error_node =
         document.createTextNode('Unable to display framed document');
     new_body.appendChild(error_node);
   }
 
-  // Replace the old frameset body with the new body
   document.documentElement.replaceChild(new_body, original_body);
 
-  // Remove any frame or frameset elements if somehow any remain
   const frames = document.querySelectorAll('frame, frameset');
   for (const frame of frames) {
     frame.remove();
   }
 }
 
-// Filters hidden elements from a document
 export function filter_hidden_elements(document) {
   const body = document.body;
   if (!body) {
     return;
   }
-
-  // contains is called to avoid removing descendants of elements detached in
-  // prior iterations.
-  // This unwraps rather than removes due to progressive content loading
-  // techniques. There were too many cases of completely empty documents
-  // as a result of removal.
 
   const elements = body.querySelectorAll('*');
   for (const element of elements) {
@@ -647,15 +621,13 @@ function url_sniff_dimensions(source_url) {
     }
   }
 
-  // TODO: implement
-  // Grab from file name (e.g. 100x100.jpg => [100,100])
-  const file_name = url_get_filename(source_url);
-  if (file_name) {
-    const partial_file_name = file_name_filter_extension(file_name);
-    if (partial_file_name) {
-      // not implemented
-    }
-  }
+  // Not implemented
+  // const file_name = url_get_filename(source_url);
+  // if (file_name) {
+  //  const partial_file_name = file_name_filter_extension(file_name);
+  //  if (partial_file_name) {
+  //  }
+  // }
 }
 
 // Try and find dimensions from the style attribute of an image element. This
