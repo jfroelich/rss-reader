@@ -3,9 +3,6 @@ import {color_contrast_filter} from '/src/content-filters/color-contrast-filter/
 import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, parse_srcset_wrapper, srcset_serialize, string_condense_whitespace, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 import {url_is_external} from '/src/cross-origin/cross-origin.js';
 
-// TODO: add a filter that condenses by doing this like replacing &copy; with
-// the equivalent single utf8/unicode character.
-
 export const cf_filter_boilerplate = boilerplate_filter;
 export const cf_filter_low_contrast = color_contrast_filter;
 
@@ -128,8 +125,6 @@ export function filter_container_elements(document) {
 // length
 // @param text_length_max {Number} the number of characters above which emphasis
 // is removed (exclusive), required, positive integer greater than 0
-// TODO: i should possibly have this consult style attribute instead of just
-// element type (e.g. look at font-weight)
 export function cf_filter_emphasis(document, text_length_max) {
   assert(Number.isInteger(text_length_max) && text_length_max > 0);
   if (document.body) {
@@ -298,7 +293,6 @@ export function cf_condense_tagnames(document, copy_attrs_flag) {
     return;
   }
 
-  // TODO: inline coerce all
   element_coerce_all(document.body, 'strong', 'b', copy_attrs_flag);
   element_coerce_all(document.body, 'em', 'i', copy_attrs_flag);
 }
