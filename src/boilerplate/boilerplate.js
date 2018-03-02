@@ -15,6 +15,7 @@ export function deannotate(document) {
   }
 }
 
+// Add boilerplate annotations to a document
 export function annotate(document) {
   if (!(document instanceof Document)) {
     throw new TypeError('Invalid document argument');
@@ -126,9 +127,7 @@ const token_weights = {
 
 function derive_text_bias(element) {
   const text = string_condense_whitespace(element.textContent);
-  const text_length = text.length;
-  const anchor_length = derive_anchor_length(element);
-  return 0.25 * text_length - 0.7 * anchor_length;
+  return 0.25 * text.length - 0.7 * derive_anchor_length(element);
 }
 
 function derive_anchor_length(element) {
@@ -147,7 +146,7 @@ function derive_ancestor_bias(element) {
        child = child.nextElementSibling) {
     const bias = ancestor_biases[child.localName];
     if (bias) {
-      total_bias = total_bias + bias;
+      total_bias += bias;
     }
   }
   return total_bias;
@@ -178,7 +177,6 @@ function derive_attribute_bias(element) {
 
   return total_bias;
 }
-
 
 function derive_image_bias(parent_element) {
   let bias = 0;
@@ -226,10 +224,7 @@ function image_find_caption(image) {
 }
 
 function image_derive_area_bias(image) {
-  // Calculate the area of the image. For images missing a dimension, assume
-  // the image is a square. Inferring the missing dimension leads to a more
-  // accurate measure of image size, and lets image size contribute to bias
-  // more often, which generally leads to more accurate boilerplate analysis.
+  // Get area, impute square for missing dims
   let area;
   if (image.width && image.height) {
     area = image.width * image.height;
@@ -241,27 +236,16 @@ function image_derive_area_bias(image) {
     // Leave area undefined
   }
 
-  // Calculate the bias. Bin the area into a few labeled buckets using
-  // hand-crafted boundaries, and use a hand crafted bias value. Previously this
-  // calculated bias as a function of area that was then clamped and dampened.
-  // After some reflection, I think basic hacky binning is just as good if not
-  // better.
+  // Bin
   let bias = 0;
-
   if (area > 100000) {
-    // Very large image
     bias = 500;
   } else if (area > 50000) {
-    // Large image
     bias = 300;
   } else if (area > 20000) {
-    // Medium image
     bias = 50;
   } else if (!isNaN(area)) {
-    // Penalty for very small image.
     bias = -10;
-  } else {
-    // Unknown area, leave bias as is, 0
   }
 
   return bias;
