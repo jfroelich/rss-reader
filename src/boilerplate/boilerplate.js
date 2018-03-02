@@ -1,19 +1,57 @@
-// Removes boilerplate content from a document
-// @param document {Document}
-export function boilerplate_filter(document, options) {
-  assert(document instanceof Document);
+
+export function annotate(document) {
+  if (!(document instanceof Document)) {
+    throw new TypeError('Invalid document argument');
+  }
+
   if (!document.body) {
     return;
   }
 
-  options = options || {};
+  const candidate_selector =
+      'article, content, div, layer, main, section, span, td';
+  const list_selector = 'li, ol, ul, dd, dl, dt';
+  const nav_selector = 'aside, header, footer, nav, menu, menuitem';
+  let best_element = document.documentElement;
 
-  const best_element = find_high_score_element(document, options);
-  assert(best_element instanceof Element);
+  const elements = document.body.querySelectorAll(candidate_selector);
+  let high_score = 0;
+  for (const element of elements) {
+    let score = 0;
+    element.dataset.bpAnalyzed = 'true';
 
-  if (!('annotate' in options)) {
-    prune(document, best_element);
+    const text_bias = derive_text_bias(element);
+    score += text_bias;
+    element.dataset.bpTextBias = text_bias;
+
+    if (element.closest(list_selector)) {
+      score -= 200;
+      element.dataset.bpListBias = -200;
+    }
+
+    if (element.closest(nav_selector)) {
+      score -= 500;
+      element.dataset.bpNavBias = -500;
+    }
+
+    const ancestor_bias = derive_ancestor_bias(element);
+    score += ancestor_bias;
+    element.dataset.bpAncestorBias = ancestor_bias;
+    const image_bias = derive_image_bias(element);
+    score += image_bias;
+    element.dataset.bpImageBias = image_bias;
+    const attribute_bias = derive_attribute_bias(element);
+    score += attribute_bias;
+    element.dataset.bpAttrBias = attribute_bias;
+    element.dataset.bpScore = score;
+
+    if (score > high_score) {
+      best_element = element;
+      high_score = score;
+    }
   }
+
+  best_element.dataset.bpMax = 'true';
 }
 
 const ancestor_biases = {
@@ -125,81 +163,6 @@ function derive_attribute_bias(element) {
   return total_bias;
 }
 
-function find_high_score_element(document, options) {
-  const candidate_selector =
-      'article, content, div, layer, main, section, span, td';
-  const list_selector = 'li, ol, ul, dd, dl, dt';
-  const nav_selector = 'aside, header, footer, nav, menu, menuitem';
-  let best_element = document.documentElement;
-  if (!document.body) {
-    return best_element;
-  }
-
-  const annotate = 'annotate' in options;
-
-  const elements = document.body.querySelectorAll(candidate_selector);
-  let high_score = 0;
-  for (const element of elements) {
-    if (annotate) {
-      element.dataset.bpAnalyzed = 'true';
-    }
-
-    let score = 0;
-
-    const text_bias = derive_text_bias(element);
-    score += text_bias;
-    if (annotate) {
-      element.dataset.bpTextBias = text_bias;
-    }
-
-    if (element.closest(list_selector)) {
-      score -= 200;
-      if (annotate) {
-        element.dataset.bpListBias = -200;
-      }
-    }
-
-    if (element.closest(nav_selector)) {
-      score -= 500;
-      if (annotate) {
-        element.dataset.bpNavBias = -500;
-      }
-    }
-
-    const ancestor_bias = derive_ancestor_bias(element);
-    score += ancestor_bias;
-    if (annotate) {
-      element.dataset.bpAncestorBias = ancestor_bias;
-    }
-
-    const image_bias = derive_image_bias(element);
-    score += image_bias;
-    if (annotate) {
-      element.dataset.bpImageBias = image_bias;
-    }
-
-    const attribute_bias = derive_attribute_bias(element);
-    score += attribute_bias;
-    if (annotate) {
-      element.dataset.bpAttrBias = attribute_bias;
-    }
-
-    if (annotate) {
-      element.dataset.bpScore = score;
-    }
-
-    if (score > high_score) {
-      best_element = element;
-      high_score = score;
-    }
-  }
-
-  if (annotate) {
-    best_element.dataset.bpMax = 'true';
-  }
-
-  return best_element;
-}
 
 function derive_image_bias(parent_element) {
   let bias = 0;
@@ -219,7 +182,6 @@ function derive_image_bias(parent_element) {
   return bias;
 }
 
-// Reward supporting text of images
 function image_derive_text_bias(image) {
   let bias = 0;
   if (image.hasAttribute('alt')) {
@@ -237,9 +199,7 @@ function image_derive_text_bias(image) {
   return bias;
 }
 
-// Searches for and returns the corresponding figcaption element
 function image_find_caption(image) {
-  assert(image instanceof Element);
   const figure = image.closest('figure');
   if (figure) {
     const captions = figure.getElementsByTagName('figcaption');
@@ -291,39 +251,6 @@ function image_derive_area_bias(image) {
   return bias;
 }
 
-function prune(document, best_element) {
-  assert(document.documentElement.contains(best_element));
-
-  if (best_element === document.documentElement) {
-    return;
-  }
-
-  if (best_element === document.body) {
-    return;
-  }
-
-  const elements = document.body.querySelectorAll('*');
-  for (const element of elements) {
-    if (element.contains(best_element)) {
-      continue;
-    }
-
-    if (best_element.contains(element)) {
-      continue;
-    }
-
-    if (!document.documentElement.contains(element)) {
-      continue;
-    }
-
-    element.remove();
-  }
-}
-
 function string_condense_whitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
-}
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
 }
