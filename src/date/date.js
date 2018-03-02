@@ -1,4 +1,4 @@
-export function date_format(date, delimiter) {
+export function date_format(date) {
   if (!(date instanceof Date)) {
     return 'Invalid date';
   }
