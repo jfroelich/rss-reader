@@ -1,8 +1,3 @@
-
-// Replace an element with its child nodes. Special care is taken to add
-// whitespace if the operation would result in adjacent text nodes. The element
-// should be attached (it should be a node, or a descendant of a node, that is
-// in the document).
 export function element_unwrap(element) {
   if (!(element instanceof Element)) {
     throw new TypeError('element is not an element');
