@@ -1,4 +1,3 @@
-import '/third-party/parse-srcset.js';
 import {url_is_allowed} from '/src/fetch/fetch.js';
 
 // Returns a file name without its extension (and without the '.')
@@ -37,36 +36,6 @@ export function url_string_resolve(url_string, base_url) {
     } catch (error) {
     }
   }
-}
-
-// @param descriptors {Array} an array of descriptors such as those produced
-// by parseSrcset
-// @returns {String} a string suitable for storing as srcset attribute value
-export function srcset_serialize(descriptors) {
-  assert(Array.isArray(descriptors));
-
-  const descriptor_strings = [];
-  for (const descriptor of descriptors) {
-    const strings = [descriptor.url];
-    if (descriptor.d) {
-      strings.push(' ');
-      strings.push(descriptor.d);
-      strings.push('x');
-    } else if (descriptor.w) {
-      strings.push(' ');
-      strings.push(descriptor.w);
-      strings.push('w');
-    } else if (descriptor.h) {
-      strings.push(' ');
-      strings.push(descriptor.h);
-      strings.push('h');
-    }
-
-    const descriptor_string = strings.join('');
-    descriptor_strings.push(descriptor_string);
-  }
-
-  return descriptor_strings.join(', ');
 }
 
 // Throws a basic error when the value is falsy with the optional message
@@ -152,40 +121,6 @@ export function image_remove(image) {
 function element_attribute_not_empty_after_trim(element, attributeName) {
   const value = element.getAttribute(attributeName);
   return (value && value.trim()) ? true : false;
-}
-
-// Parses a srcset value into an array of descriptors. If the input is bad, or
-// an error occurs, or no descriptors found, returns an empty array. This
-// function makes use of third-party code.
-// @param srcset {Any} preferably a string, the value of a srcset attribute of
-// an element
-export function parse_srcset_wrapper(srcset) {
-  const fallback_output = [];
-
-  // Tolerate bad input for convenience
-  if (typeof srcset !== 'string') {
-    return fallback_output;
-  }
-
-  // Avoid parsing empty string
-  if (!srcset) {
-    return fallback_output;
-  }
-
-  // parseSrcset doesn't throw in the ordinary case, but avoid surprises
-  let descriptors;
-  try {
-    descriptors = parseSrcset(srcset);
-  } catch (error) {
-    console.warn(error);
-    return fallback_output;
-  }
-
-  if (!Array.isArray(descriptors)) {
-    return fallback_output;
-  }
-
-  return descriptors;
 }
 
 // Replace an element with its child nodes. Special care is taken to add

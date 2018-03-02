@@ -1,8 +1,8 @@
 import {filter_boilerplate} from '/src/content-filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
-import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, parse_srcset_wrapper, srcset_serialize, string_condense_whitespace, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
+import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, element_unwrap, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, string_condense_whitespace, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 import {url_is_external} from '/src/cross-origin/cross-origin.js';
-
+import {srcset_parse, srcset_serialize} from '/src/srcset/srcset.js';
 export const cf_filter_boilerplate = filter_boilerplate;
 export const cf_filter_low_contrast = color_contrast_filter;
 
@@ -266,7 +266,7 @@ function element_resolve_attribute(element, base_url) {
 
 function srcset_resolve(element, base_url) {
   const srcset_attr_value = element.getAttribute('srcset');
-  const descriptors = parse_srcset_wrapper(srcset_attr_value);
+  const descriptors = srcset_parse(srcset_attr_value);
 
   let change_count = 0;
   for (const descriptor of descriptors) {
@@ -1018,7 +1018,7 @@ function image_find_best_srcset_descriptor(image) {
     return;
   }
 
-  const descriptors = parse_srcset_wrapper(srcset_attr_value);
+  const descriptors = srcset_parse(srcset_attr_value);
 
   // For the time being, the preference is whatever is first, no special
   // handling of descriptor.d, and only one dimension needed
