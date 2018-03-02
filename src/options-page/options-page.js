@@ -1,4 +1,4 @@
-import {element_fade} from '/src/element-fade.js';
+import {element_fade} from '/src/dom/element-fade.js';
 import {open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {permission_has, permission_remove, permission_request} from '/src/permissions/permissions.js';
