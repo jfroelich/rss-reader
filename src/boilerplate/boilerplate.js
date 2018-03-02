@@ -1,4 +1,20 @@
 
+// Strip boilerplate annotations from a document
+export function deannotate(document) {
+  const annotated_attr_names = [
+    'data-bp-analyzed', 'data-bp-text-bias', 'data-bp-list-bias',
+    'data-bp-nav-bias', 'data-bp-ancestor-bias', 'data-bp-image-bias',
+    'data-bp-attr-bias', 'data-bp-score', 'data-bp-max'
+  ];
+
+  for (const attr_name of annotated_attr_names) {
+    const elements = document.querySelectorAll('[' + attr_name + ']');
+    for (const element of elements) {
+      element.removeAttribute(attr_name);
+    }
+  }
+}
+
 export function annotate(document) {
   if (!(document instanceof Document)) {
     throw new TypeError('Invalid document argument');
