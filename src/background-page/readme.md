@@ -13,7 +13,3 @@ The background page is concerned with the following:
 Both libs do roughly the same thing. Currently there is some redundancy and real similarity between the bodies of the functions in each lib.
 
 Maybe have a layer called headless-tasks that provides functions that carry out a task. Then have both the cli and alarm wakeup handlers just call out to this helper module.
-
-# TODO: consider using ral.js
-
-The background page is a view, just like the slideshow and options page. Rather than deal with connecting to the databases, consider defining helper functions in ral.js and just calling those functions.
