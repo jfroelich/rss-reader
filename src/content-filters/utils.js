@@ -1,3 +1,4 @@
+import {element_unwrap} from '/src/dom/element-unwrap.js';
 import {url_is_allowed} from '/src/fetch/fetch.js';
 
 // Returns a file name without its extension (and without the '.')
@@ -123,56 +124,6 @@ function element_attribute_not_empty_after_trim(element, attributeName) {
   return (value && value.trim()) ? true : false;
 }
 
-// Replace an element with its child nodes. Special care is taken to add
-// whitespace if the operation would result in adjacent text nodes. The element
-// should be attached (it should be a node, or a descendant of a node, that is
-// in the document).
-export function element_unwrap(element) {
-  assert(element instanceof Element);
-
-  // An orphaned node is any parentless node. An orphaned node is obviously
-  // detached from the document, as all attached nodes have a parent. There is
-  // generally no benefit to unwrapping orphans.
-  //
-  // Although attempting to unwrap an orphaned node should probably represent a
-  // programming error, and so in some sense this case should never be true,
-  // just exit early. Encourage the caller to change their behavior.
-  if (!element.parentNode) {
-    console.warn('Tried to unwrap orphaned element', element.outerHTML);
-    return;
-  }
-
-  // Cache stuff prior to removal
-  const parent_element = element.parentNode;
-  const psib = element.previousSibling;
-  const nsib = element.nextSibling;
-  const fchild = element.firstChild;
-  const lchild = element.lastChild;
-  const TEXT = Node.TEXT_NODE;
-  const frag = element.ownerDocument.createDocumentFragment();
-
-  // Detach upfront for O(2) live dom ops, compared to O(n-children) otherwise
-  element.remove();
-
-  // Add leading padding
-  if (psib && psib.nodeType === TEXT && fchild && fchild.nodeType === TEXT) {
-    frag.appendChild(element.ownerDocument.createTextNode(' '));
-  }
-
-  // Move children to fragment, maintaining order
-  for (let node = fchild; node; node = element.firstChild) {
-    frag.appendChild(node);
-  }
-
-  // Add trailing padding
-  if (lchild && fchild !== lchild && nsib && nsib.nodeType === TEXT &&
-      lchild.nodeType === TEXT) {
-    frag.appendChild(element.ownerDocument.createTextNode(' '));
-  }
-
-  // If nsib is undefined then insertBefore appends
-  parent_element.insertBefore(frag, nsib);
-}
 
 // Returns true if an element is hidden according to its inline style
 export function element_is_hidden_inline(element) {
