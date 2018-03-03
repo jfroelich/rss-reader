@@ -14,13 +14,9 @@ window.test = async function(url_string) {
   filters.filter_iframe_elements(document);
   filters.filter_script_elements(document);
   filters.filter_blacklisted_elements(document);
+  filters.cf_resolve_document_urls(document, response_url);
   await filters.document_set_image_sizes(document, response_url);
   annotate(document);
-
-  const best_element = document.querySelector('[data-bp-max]');
-  if (best_element) {
-    best_element.style.border = '3px solid green';
-  }
 
   const preview = window.document.getElementById('preview');
   preview.innerHTML = document.body.innerHTML;
