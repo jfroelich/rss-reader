@@ -1,4 +1,4 @@
-import {COLOR_WHITE} from '/src/color/color.js';
+import * as color from '/src/color/color.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse/feed-parse.js';
 import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch/fetch.js';
@@ -464,7 +464,7 @@ async function entry_update_content(ctx, entry, fetched_document) {
   const document_url = new URL(rdb_entry_peek_url(entry));
   const filter_options = {
     fetch_image_timeout: ctx.fetchImageTimeout,
-    matte: COLOR_WHITE,
+    matte: color.WHITE,
     min_contrast_ratio: localStorage.MIN_CONTRAST_RATIO,
     emphasis_length_max: 200
   };

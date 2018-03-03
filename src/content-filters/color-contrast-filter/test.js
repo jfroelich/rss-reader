@@ -1,4 +1,4 @@
-import {COLOR_WHITE} from '/src/color/color.js';
+import * as color from '/src/color/color.js';
 import * as ccf from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
 import * as css_color from '/src/css-color/css-color.js';
 
@@ -6,13 +6,13 @@ import * as css_color from '/src/css-color/css-color.js';
 
 // expose to console under a prefix to play with stuff directly
 window.ccf = ccf;
+window.color = color;
 window.css_color = css_color;
-window.COLOR_WHITE = COLOR_WHITE;
 
 window.test1 = function() {
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
 
-  const matte = COLOR_WHITE;
+  const matte = color.WHITE;
   const threshold = localStorage.MIN_CONTRAST_RATIO;
 
   let node = it.nextNode();
@@ -31,7 +31,7 @@ window.test1 = function() {
 };
 
 window.test2 = function() {
-  const matte = COLOR_WHITE;
+  const matte = color.WHITE;
 
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   let node = it.nextNode();
