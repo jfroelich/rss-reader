@@ -1,5 +1,5 @@
 import '/third-party/tinycolor-min.js';
-import {color_alpha, color_blue, color_green, color_pack, color_red} from '/src/color/color.js';
+import * as color from '/src/color/color.js';
 
 export function css_color_parse(css_value_string) {
   if (typeof css_value_string === 'string' && css_value_string.length) {
@@ -12,10 +12,11 @@ export function css_color_parse(css_value_string) {
 
 function tinycolor_to_color(tiny_color) {
   const o = tiny_color.toRgb();
-  return color_pack(o.r, o.g, o.b, Math.round(o.a * 255));
+  return color.color_pack(o.r, o.g, o.b, o.a * 255 | 0);
 }
 
-export function css_color_format(color) {
-  return 'rgba(' + color_red(color) + ', ' + color_green(color) + ', ' +
-      color_blue(color) + ', ' + color_alpha(color) / 255 + ')';
+export function css_color_format(color_value) {
+  return 'rgba(' + color.color_red(color_value) + ', ' +
+      color.color_green(color_value) + ', ' + color.color_blue(color_value) +
+      ', ' + color.color_alpha(color_value) / 255 + ')';
 }
