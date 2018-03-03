@@ -21,12 +21,6 @@ export function lerp(start, stop, amount) {
 // second color, or in other words, the alpha component of the second color
 // @return {Number} the resulting color
 export function color_lerp(c1, c2, amount = 1.0) {
-  // Temporary weak assertion just to catch programming errors. These will
-  // eventually be removed once I am more confident.
-  console.assert(Number.isInteger(c1));
-  console.assert(Number.isInteger(c2));
-  console.assert(amount >= 0 && amount <= 1);
-
   // Early exits. When the upper color is opaque, there is no point in blending,
   // it occludes the background, so return the upper color. When the upper color
   // is transparent, there is similarly no point in blending, so return the
