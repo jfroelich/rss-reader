@@ -1,5 +1,5 @@
 import {COLOR_BLACK, color_blend, color_contrast, COLOR_TRANSPARENT, COLOR_WHITE} from '/src/color/color.js';
-import {css_color_parse} from '/src/css/css.js';
+import * as css_color from '/src/css-color/css-colos.js';
 
 export const DEFAULT_MIN_CONTRAST_RATIO = 1.2;
 export const DEFAULT_MATTE = COLOR_WHITE;
@@ -40,7 +40,7 @@ export function element_is_perceptible(
 export function element_derive_text_color(element) {
   const style = getComputedStyle(element);
   if (style) {
-    const color = css_color_parse(style.color);
+    const color = css_color.parse(style.color);
     if (typeof color !== 'undefined') {
       return color;
     }
@@ -62,7 +62,7 @@ export function element_derive_background_color_inline(element) {
   if (style) {
     const css_bgcolor = style.backgroundColor;
     if (css_bgcolor) {
-      const color = css_color_parse(css_bgcolor);
+      const color = css_color.parse(css_bgcolor);
       if (color) {
         return color;
       }
