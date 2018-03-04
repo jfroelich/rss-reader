@@ -1,9 +1,5 @@
 const has_own = Object.prototype.hasOwnProperty;
 
-// Returns a new object that is a copy of the input less empty properties. A
-// property is empty if it is null, undefined, or an empty string. Ignores
-// prototype, deep objects, getters, etc. Shallow copy by reference and
-// therefore impure.
 export function filter_empty_properties(object) {
   const output = {};
   let undef;
