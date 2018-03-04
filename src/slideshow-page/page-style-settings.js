@@ -1,3 +1,5 @@
+import {css_rule_find} from '/src/css/css.js';
+
 // TODO: after moving display setting change ability from options page to
 // slideshow page, this this module will be used exclusively by slideshow page,
 // and should merged into it, or made as a helper module to it exclusively.
@@ -173,18 +175,4 @@ function page_style_content_update() {
     column_count_string = '1';
   }
   rule.style.webkitColumnCount = column_count_string;
-}
-
-
-// Returns the first matching css rule or undefined
-// @param selectorText {String}
-// @returns rule {CSSStyleRule}
-function css_rule_find(selectorText) {
-  for (const sheet of document.styleSheets) {
-    for (const rule of sheet.rules) {
-      if (rule.selectorText === selectorText) {
-        return rule;
-      }
-    }
-  }
 }
