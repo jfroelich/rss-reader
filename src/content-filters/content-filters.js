@@ -5,7 +5,7 @@ import {url_is_external} from '/src/cross-origin/cross-origin.js';
 import {attribute_is_boolean} from '/src/dom/attribute.js';
 import {element_coerce} from '/src/dom/element-coerce.js';
 import {element_unwrap} from '/src/dom/element-unwrap.js';
-import {image_has_source, image_remove} from '/src/dom/image.js';
+import * as imagemod from '/src/dom/image.js';
 import * as srcset from '/src/srcset/srcset.js';
 import * as string from '/src/string/string.js';
 
@@ -713,7 +713,7 @@ export function filter_lazy_images(document) {
   if (document.body) {
     const images = document.body.getElementsByTagName('img');
     for (const image of images) {
-      if (!image_has_source(image)) {
+      if (!imagemod.has_source(image)) {
         const attr_names = image.getAttributeNames();
         for (const attr_name of lazy_image_attribute_names) {
           if (attr_names.includes(attr_name)) {
@@ -1111,7 +1111,7 @@ export function filter_small_images(document) {
     const images = document.body.querySelectorAll('img');
     for (const image of images) {
       if (image_is_small(image)) {
-        image_remove(image);
+        imagemod.remove(image);
       }
     }
   }
@@ -1175,8 +1175,8 @@ export function filter_sourceless_images(document) {
   if (document.body) {
     const images = document.body.querySelectorAll('img');
     for (const image of images) {
-      if (!image_has_source(image)) {
-        image_remove(image);
+      if (!imagemod.has_source(image)) {
+        imagemod.remove(image);
       }
     }
   }
@@ -1330,7 +1330,7 @@ export function filter_telemetry_elements(document, document_url) {
   for (const image of images) {
     if (element_is_hidden_inline(image) || image_is_pixel(image) ||
         image_has_telemetry_source(image, document_url)) {
-      image_remove(image);
+      imagemod.remove(image);
     }
   }
 }

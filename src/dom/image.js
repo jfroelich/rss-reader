@@ -5,7 +5,7 @@ import {element_unwrap} from '/src/dom/element-unwrap.js';
 // or more source elements that has a src or srcset attribute. This does not
 // check whether the urls are syntactically correct, but this does check that an
 // attribue value is not empty after trimming.
-export function image_has_source(image) {
+export function has_source(image) {
   const has = element_attribute_not_empty_after_trim;  // local alias
 
   if (!(image instanceof Element)) {
@@ -30,7 +30,7 @@ export function image_has_source(image) {
 }
 
 // Removes an image element from its containing document along with some baggage
-export function image_remove(image) {
+export function remove(image) {
   // This check is implicit in later checks. However, performing it redundantly
   // upfront here can avoid a substantial amount of processing. There is no
   // apparent value in removing an orphaned image, so silently cancel.
@@ -38,14 +38,19 @@ export function image_remove(image) {
     return;
   }
 
-  const figure = image.closest('figure');
+  // Because Element.prototype.closest tests against itself in addition to its
+  // ancestors, and we know that image is an HTMLImageElement that closest will
+  // not match, we can reduce the work done by closet by calling closest on the
+  // parent element
+
+  const figure = image.parentNode.closest('figure');
   if (figure) {
     // While it is tempting to simply remove the figure element itself and
     // thereby indirectly remove the image, this would risk data loss. The
     // figure may be used as a general container and contain content not related
-    // to the image. The only content we know for certain that is related to
-    // to the image in this case is the caption. There should only be one,
-    // but this cannot assume well-formedness, so remove any captions.
+    // to the image. The only content we know for certain that is related to the
+    // image in this case is the caption. There should only be one, but this
+    // cannot assume well-formedness, so remove any captions.
     const captions = figure.querySelectorAll('figcaption');
     for (const caption of captions) {
       caption.remove();
@@ -54,7 +59,7 @@ export function image_remove(image) {
     element_unwrap(figure);
   }
 
-  const picture = image.closest('picture');
+  const picture = image.parentNode.closest('picture');
   if (picture) {
     // Similar to figure, picture may be used as general container, so unwrap
     // rather than remove. The only thing we know that can be removed are the
