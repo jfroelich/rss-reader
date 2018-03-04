@@ -9,6 +9,6 @@ export function filter_unprintable_characters(value) {
       value;
 }
 
-function filter_control_characters(string) {
+export function filter_control_characters(string) {
   return string.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }
