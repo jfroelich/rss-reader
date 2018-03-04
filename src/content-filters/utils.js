@@ -39,7 +39,7 @@ export function url_string_resolve(url_string, base_url) {
   }
 }
 
-export function assert(value, message) {
+function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }
 

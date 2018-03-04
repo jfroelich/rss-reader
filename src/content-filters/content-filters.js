@@ -1,6 +1,6 @@
 import {filter_boilerplate} from '/src/content-filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
-import {assert, element_is_hidden_inline, fetch_image_element, file_name_filter_extension, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
+import {element_is_hidden_inline, fetch_image_element, file_name_filter_extension, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 import {url_is_external} from '/src/cross-origin/cross-origin.js';
 import {attribute_is_boolean} from '/src/dom/attribute.js';
 import {element_coerce} from '/src/dom/element-coerce.js';
@@ -1411,4 +1411,8 @@ function image_has_telemetry_source(image, document_url) {
   }
 
   return false;
+}
+
+function assert(value, message) {
+  if (!value) throw new Error(message || 'Assertion error');
 }
