@@ -2,7 +2,7 @@ import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {html_replace_tags} from '/src/html/html.js';
 import {idb_open} from '/src/idb/idb.js';
 import {object_filter_empty_properties} from '/src/object/object.js';
-import {condense_whitespace, filter_control_characters, filter_unprintable_characters} from '/src/string/string.js';
+import * as string from '/src/string/string.js';
 
 const RDB_FEED_MAGIC = 0xfeedfeed;
 const RDB_ENTRY_MAGIC = 0xdeadbeef;
@@ -649,18 +649,18 @@ function rdb_feed_sanitize(feed, title_max_length, description_max_length) {
 
   if (output_feed.title) {
     let title = output_feed.title;
-    title = filter_control_characters(title);
+    title = string.filter_control_characters(title);
     title = html_replace_tags(title, html_tag_replacement);
-    title = condense_whitespace(title);
+    title = string.condense_whitespace(title);
     title = html_truncate(title, title_max_length, suffix);
     output_feed.title = title;
   }
 
   if (output_feed.description) {
     let desc = output_feed.description;
-    desc = filter_control_characters(desc);
+    desc = string.filter_control_characters(desc);
     desc = html_replace_tags(desc, html_tag_replacement);
-    desc = condense_whitespace(desc);
+    desc = string.condense_whitespace(desc);
     desc = html_truncate(desc, description_max_length, suffix);
     output_feed.description = desc;
   }
@@ -687,11 +687,11 @@ function rdb_entry_is_valid(entry) {
 // but validation places no maximum length constraint on it, just requiredness,
 // but sanitization also places a max length constraint on it and does the
 // necessary changes to bring the entry into compliance via truncation.
-// TODO: now that filter_unprintable_characters exists, I want to also
+// TODO: now that string.filter_unprintable_characters exists, I want to also
 // filter such characters from input strings like author/title/etc. However it
-// overlaps with the call to filter_control_characters here. There is
+// overlaps with the call to string.filter_control_characters here. There is
 // some redundant work going on. Also, in a sense,
-// filter_control_characters is now inaccurate. What I want is one
+// string.filter_control_characters is now inaccurate. What I want is one
 // function that strips binary characters except important ones, and then a
 // second function that replaces or removes certain important binary characters
 // (e.g. remove line breaks from author string). Something like
@@ -705,25 +705,25 @@ function rdb_entry_sanitize(
 
   if (output_entry.author) {
     let author = output_entry.author;
-    author = filter_control_characters(author);
+    author = string.filter_control_characters(author);
     author = html_replace_tags(author, '');
-    author = condense_whitespace(author);
+    author = string.condense_whitespace(author);
     author = html_truncate(author, author_max_length);
     output_entry.author = author;
   }
 
   if (output_entry.content) {
     let content = output_entry.content;
-    content = filter_unprintable_characters(content);
+    content = string.filter_unprintable_characters(content);
     content = html_truncate(content, content_max_length);
     output_entry.content = content;
   }
 
   if (output_entry.title) {
     let title = output_entry.title;
-    title = filter_control_characters(title);
+    title = string.filter_control_characters(title);
     title = html_replace_tags(title, '');
-    title = condense_whitespace(title);
+    title = string.condense_whitespace(title);
     title = html_truncate(title, title_max_length);
     output_entry.title = title;
   }
