@@ -1,3 +1,5 @@
+import * as string from '/src/string/string.js';
+
 export function annotate(document) {
   if (!(document instanceof Document)) {
     throw new TypeError('Invalid document argument');
@@ -123,7 +125,7 @@ const token_weights = {
 };
 
 function derive_text_bias(element) {
-  const text = string_condense_whitespace(element.textContent);
+  const text = string.condense_whitespace(element.textContent);
   return 0.25 * text.length - 0.7 * derive_anchor_length(element);
 }
 
@@ -131,7 +133,7 @@ function derive_anchor_length(element) {
   const anchors = element.querySelectorAll('a[href]');
   let anchor_length = 0;
   for (const anchor of anchors) {
-    const text = string_condense_whitespace(anchor.textContent);
+    const text = string.condense_whitespace(anchor.textContent);
     anchor_length += text.length;
   }
   return anchor_length;
@@ -246,8 +248,4 @@ function image_derive_area_bias(image) {
   }
 
   return bias;
-}
-
-function string_condense_whitespace(string) {
-  return string.replace(/\s{2,}/g, ' ');
 }
