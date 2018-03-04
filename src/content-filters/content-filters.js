@@ -1,7 +1,8 @@
 import {filter_boilerplate} from '/src/content-filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
-import {assert, attribute_is_boolean, element_coerce_all, element_is_hidden_inline, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, string_condense_whitespace, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
+import {assert, attribute_is_boolean, element_is_hidden_inline, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, string_condense_whitespace, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 import {url_is_external} from '/src/cross-origin/cross-origin.js';
+import {element_coerce_all} from '/src/dom/element-coerce.js';
 import {element_unwrap} from '/src/dom/element-unwrap.js';
 import {srcset_parse, srcset_serialize} from '/src/srcset/srcset.js';
 

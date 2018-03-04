@@ -1,5 +1,6 @@
 // TODO: fix
-import filter, {element_coerce} from '/src/content-filters/condense-tagnames-filter.js';
+import filter from '/src/content-filters/condense-tagnames-filter.js';
+import {element_coerce} from '/src/dom/element-coerce.js';
 import {html_parse} from '/src/html/html.js';
 
 let input = '<html><head></head><body><a></a></body></html>';
