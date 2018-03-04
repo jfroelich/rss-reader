@@ -1,4 +1,4 @@
-import {css_rule_find} from '/src/css/css.js';
+import * as css from '/src/css/css.js';
 
 // TODO: after moving display setting change ability from options page to
 // slideshow page, this this module will be used exclusively by slideshow page,
@@ -12,7 +12,7 @@ export function page_style_onchange(event) {
   page_style_content_update();
 
   // Padding wrapper change
-  const rule = css_rule_find('.slide-padding-wrapper');
+  const rule = css.find_rule('.slide-padding-wrapper');
   if (rule) {
     // It is fine is padding is set to undefined
     rule.style.padding = localStorage.PADDING;
@@ -101,7 +101,7 @@ function page_style_content_rule_create(sheet) {
 }
 
 function page_style_entry_update() {
-  const rule = css_rule_find('.entry');
+  const rule = css.find_rule('.entry');
   if (!rule) {
     return;
   }
@@ -123,7 +123,7 @@ function page_style_entry_update() {
 }
 
 function page_style_title_update() {
-  const rule = css_rule_find('.entry .entry-title');
+  const rule = css.find_rule('.entry .entry-title');
   if (!rule) {
     return;
   }
@@ -139,7 +139,7 @@ function page_style_title_update() {
 }
 
 function page_style_content_update() {
-  const rule = css_rule_find('.entry .entry-content');
+  const rule = css.find_rule('.entry .entry-content');
   if (!rule) {
     return;
   }
