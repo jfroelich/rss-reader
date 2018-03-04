@@ -1,4 +1,4 @@
-export function element_coerce(element, new_name, copy_attributes_flag = true) {
+export function element_coerce(element, new_name, copy_attributes = true) {
   if (!(element instanceof Element)) {
     throw new TypeError('element is not an Element');
   }
@@ -16,16 +16,16 @@ export function element_coerce(element, new_name, copy_attributes_flag = true) {
     return element;
   }
 
-  const nsib = element.nextSibling;
+  const next_sibling = element.nextSibling;
   element.remove();
 
   const new_element = element.ownerDocument.createElement(new_name);
-  if (copy_attributes_flag) {
+  if (copy_attributes) {
     element_copy_attributes(element, new_element);
   }
 
   element_move_child_nodes(element, new_element);
-  return parent_element.insertBefore(new_element, nsib);
+  return parent_element.insertBefore(new_element, next_sibling);
 }
 
 export function element_move_child_nodes(from_element, to_element) {

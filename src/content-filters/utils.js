@@ -123,7 +123,6 @@ function element_attribute_not_empty_after_trim(element, attributeName) {
   return (value && value.trim()) ? true : false;
 }
 
-
 // Returns true if an element is hidden according to its inline style
 export function element_is_hidden_inline(element) {
   // It is an error to call this on something other than an element
@@ -168,7 +167,6 @@ function element_is_offscreen(style) {
 
   return false;
 }
-
 
 // Adapted from https://github.com/kangax/html-minifier/issues/63
 const boolean_attribute_names = [
@@ -236,7 +234,6 @@ function fetch_image_element_promise(url) {
     };
   });
 }
-
 
 // Only minor validation for speed. Tolerates bad input. This isn't intended to
 // be the most accurate classification. Instead, it is intended to easily find
