@@ -1,6 +1,6 @@
 import '/third-party/parse-srcset.js';
 
-export function srcset_serialize(descriptors) {
+export function serialize(descriptors) {
   if (!Array.isArray(descriptors)) {
     throw new TypeError('descriptors is not an array');
   }
@@ -29,7 +29,7 @@ export function srcset_serialize(descriptors) {
   return descriptor_strings.join(', ');
 }
 
-export function srcset_parse(srcset) {
+export function parse(srcset) {
   const fallback_output = [];
 
   if (typeof srcset !== 'string') {
