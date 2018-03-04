@@ -1,11 +1,12 @@
 import {filter_boilerplate} from '/src/content-filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
-import {assert, element_is_hidden_inline, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, string_condense_whitespace, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
+import {assert, element_is_hidden_inline, fetch_image_element, file_name_filter_extension, image_has_source, image_remove, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 import {url_is_external} from '/src/cross-origin/cross-origin.js';
 import {attribute_is_boolean} from '/src/dom/attribute.js';
 import {element_coerce} from '/src/dom/element-coerce.js';
 import {element_unwrap} from '/src/dom/element-unwrap.js';
 import * as srcset from '/src/srcset/srcset.js';
+import * as string from '/src/string/string.js';
 
 export const cf_filter_boilerplate = filter_boilerplate;
 export const cf_filter_low_contrast = color_contrast_filter;
@@ -952,7 +953,7 @@ export function filter_node_whitespace(document) {
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
     if (value.length > node_value_length_min && !node_is_ws_sensitive(node)) {
-      const new_value = string_condense_whitespace(value);
+      const new_value = string.condense_whitespace(value);
       if (new_value.length !== value.length) {
         node.nodeValue = new_value;
       }

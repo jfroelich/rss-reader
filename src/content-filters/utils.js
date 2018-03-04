@@ -43,10 +43,6 @@ export function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }
 
-export function string_condense_whitespace(string) {
-  return string.replace(/\s{2,}/g, ' ');
-}
-
 // Returns true if the image element has at least one source, which could be a
 // src attribute, a srcset attribute, or an associate picture element with one
 // or more source elements that has a src or srcset attribute. This does not
