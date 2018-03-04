@@ -1,6 +1,7 @@
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {html_replace_tags} from '/src/html/html.js';
 import {idb_open} from '/src/idb/idb.js';
+import {object_filter_empty_properties} from '/src/object/object.js';
 
 const RDB_FEED_MAGIC = 0xfeedfeed;
 const RDB_ENTRY_MAGIC = 0xdeadbeef;
@@ -733,27 +734,6 @@ function string_condense_whitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
 }
 
-// Returns a new object that is a copy of the input less empty properties. A
-// property is empty if it is null, undefined, or an empty string. Ignores
-// prototype, deep objects, getters, etc. Shallow copy by reference and
-// therefore impure.
-function object_filter_empty_properties(object) {
-  const has_own = Object.prototype.hasOwnProperty;
-  const output = {};
-  let undef;
-  if (typeof object === 'object' && object !== null) {
-    for (const key in object) {
-      if (has_own.call(object, key)) {
-        const value = object[key];
-        if (value !== undef && value !== null && value !== '') {
-          output[key] = value;
-        }
-      }
-    }
-  }
-
-  return output;
-}
 
 // TODO: look into how much this overlaps with string_filter_control_characters
 // TODO: review why I decided to allow form-feed? I'm not sure why.
