@@ -1,7 +1,7 @@
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {html_replace_tags} from '/src/html/html.js';
 import {idb_open} from '/src/idb/idb.js';
-import {object_filter_empty_properties} from '/src/object/object.js';
+import * as object from '/src/object/object.js';
 import * as string from '/src/string/string.js';
 
 const RDB_FEED_MAGIC = 0xfeedfeed;
@@ -208,7 +208,7 @@ export async function rdb_entry_add(conn, channel, entry) {
   // to avoid revalidation because it could end up being a heavier operation
 
   const sanitized_entry = rdb_entry_sanitize(entry);
-  const storable_entry = object_filter_empty_properties(sanitized_entry);
+  const storable_entry = object.object_filter_empty_properties(sanitized_entry);
 
   // TODO: is it correct to have this be concerned with state initialization,
   // or should it be a responsibility of something earlier in the pipeline? I
@@ -488,7 +488,7 @@ function rdb_entry_put(conn, channel, entry) {
 }
 
 export function rdb_feed_prepare(feed) {
-  return object_filter_empty_properties(rdb_feed_sanitize(feed));
+  return object.object_filter_empty_properties(rdb_feed_sanitize(feed));
 }
 
 // TODO: implement fully
