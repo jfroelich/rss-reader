@@ -1,37 +1,40 @@
-const MAX_TAIL_WORDS = 4;
-const MIN_TITLE_LENGTH = 20;
-const MIN_PUBLISHER_NAME_LENGTH = 5;
 
-export function filter_title_publisher(title) {
-  const delim_len = 3;
+const DEFAULT_OPTIONS = {
+  max_tail_words: 4,
+  min_title_length: 20,
+  min_publisher_length: 5,
+  delims: [' - ', ' | ', ' : ']
+};
 
+export function filter_title_publisher(title, options = DEFAULT_OPTIONS) {
   if (typeof title !== 'string') {
     return title;
   }
 
-  let delim_pos = title.lastIndexOf(' - ');
-  if (delim_pos < 0) {
-    delim_pos = title.lastIndexOf(' | ');
-  }
-  if (delim_pos < 0) {
-    delim_pos = title.lastIndexOf(' : ');
+  let delim_pos = -1;
+  for (const delim of options.delims) {
+    delim_pos = title.lastIndexOf(delim);
+    if (delim_pos > -1) {
+      break;
+    }
   }
 
   if (delim_pos < 0) {
     return title;
   }
 
-  if (delim_pos < MIN_TITLE_LENGTH) {
+  if (delim_pos < options.min_title_length) {
     return title;
   }
 
   const remaining = title.length - delim_pos;
-  if (remaining < MIN_PUBLISHER_NAME_LENGTH) {
+  if (remaining < options.min_publisher_length) {
     return title;
   }
 
+  const delim_len = 3;
   const tail = title.substring(delim_pos + delim_len);
-  if (count_words(tail) > MAX_TAIL_WORDS) {
+  if (count_words(tail) > options.max_tail_words) {
     return title;
   }
 
