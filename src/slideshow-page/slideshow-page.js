@@ -1,4 +1,3 @@
-import {filter_title_publisher} from '/src/article-title-filter/article-title-filter.js';
 import {date_format} from '/src/date/date.js';
 import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
@@ -7,6 +6,7 @@ import {ral_export, ral_import, ral_load_initial, ral_poll_feeds} from '/src/ral
 import * as rdb from '/src/rdb/rdb.js';
 import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/slideshow-page/slideshow.js';
+import {filter_title_publisher} from '/src/title-filter/title-filter.js';
 
 // clang-format off
 const fonts = [
