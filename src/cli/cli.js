@@ -6,7 +6,7 @@ import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js
 import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/poll-service/poll-service.js';
 import {rdb_open} from '/src/rdb/rdb.js';
 
-function archive_entries() {
+function cli_archive_entries() {
   let conn, max_age;
   const channel = new BroadcastChannel('reader');
   archive_entries(conn, channel, max_age).catch(console.error).finally(() => {
@@ -69,9 +69,9 @@ async function lookup_favicon(url, cached) {
 }
 
 const cli = {
-  archive_entries: archive_entries,
-  clear_favicons: clear_favicons,
-  compact_favicons: compact_favicons,
+  archive_entries: cli_archive_entries,
+  clear_favicons: favicon_service_clear,
+  compact_favicons: favicon_service_compact,
   remove_orphans: remove_orphans,
   remove_lost_entries: remove_lost_entries,
   lookup_favicon: lookup_favicon,
