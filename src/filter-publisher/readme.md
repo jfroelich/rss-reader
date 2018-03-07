@@ -7,12 +7,12 @@ If there is any problem, then the original title is returned. For example, the f
 
 ## Options
 
-* **max_tail_words** - the maximum number of words following delimiter
-* **min_title_length** - the minimum number of characters in a title
-* **min_publisher_length** - minimum number of characters in publisher name, including spaces
+* **max_tail_words** - the maximum number of words following delimiter, if the number of words following the delimiter is greater than this number then the publisher is considered too long and therefore unlikely a publisher and therefore is not filtered
+* **min_title_length** - the minimum number of characters in a title, if the title is too short before or after filtering the publisher then the publisher is not filtered
+* **min_publisher_length** - minimum number of characters in publisher name, including spaces, if the publisher is too short then the publisher is not filtered
 * **delims** - array of strings, delimiters (currently including spaces between the delimiter and other words)
 
-NOTE: currently the options are all or nothing, the defaults are not supplied per option, just to the entire options object
+If any option is not set, a default value is used. Options are not validated
 
 ## Other notes
 
@@ -22,4 +22,4 @@ NOTE: currently the options are all or nothing, the defaults are not supplied pe
 ## Todos
 
 * input is a DOM string, think more about entities
-* per option defaults to allow for only changing certain props
+* do not require delims to have spaces, make it less wonky

@@ -6,10 +6,12 @@ const DEFAULT_OPTIONS = {
   delims: [' - ', ' | ', ' : ']
 };
 
-export function filter_publisher(title, options = DEFAULT_OPTIONS) {
+export function filter_publisher(title, input_options = {}) {
   if (typeof title !== 'string') {
     return title;
   }
+
+  const options = Object.assign({}, DEFAULT_OPTIONS, input_options);
 
   let delim_pos = -1;
   for (const delim of options.delims) {
