@@ -6,7 +6,7 @@ import {ral_export, ral_import, ral_load_initial, ral_poll_feeds} from '/src/ral
 import * as rdb from '/src/rdb/rdb.js';
 import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/slideshow-page/slideshow.js';
-import {filter_title_publisher} from '/src/title-filter/title-filter.js';
+import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
 
 // clang-format off
 const fonts = [
@@ -200,7 +200,7 @@ function create_article_title_element(entry) {
     // filter
     title_element.setAttribute('title', safe_title);
 
-    let filtered_safe_title = filter_title_publisher(safe_title);
+    let filtered_safe_title = filter_publisher(safe_title);
     try {
       filtered_safe_title = html_truncate(filtered_safe_title, 300);
     } catch (error) {

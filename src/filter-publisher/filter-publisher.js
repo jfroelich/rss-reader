@@ -6,7 +6,7 @@ const DEFAULT_OPTIONS = {
   delims: [' - ', ' | ', ' : ']
 };
 
-export function filter_title_publisher(title, options = DEFAULT_OPTIONS) {
+export function filter_publisher(title, options = DEFAULT_OPTIONS) {
   if (typeof title !== 'string') {
     return title;
   }

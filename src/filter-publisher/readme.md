@@ -1,5 +1,5 @@
 # Overview
-The `filter_title_publisher` function provides a way to strip publisher information from an article title. The input title variable is a `DOMString` and an optional options object. The function returns a new string where the publisher information has been stripped.
+The `filter_publisher` function provides a way to strip publisher information from an article title. The input title variable is a `DOMString` and an optional options object. The function returns a new string where the publisher information has been stripped.
 
 The function basically works by looking for typical delimiters found in document titles, such as the dash character found in &quot;Florida man shoots self - Your Florida News&quot;.
 
@@ -22,5 +22,4 @@ NOTE: currently the options are all or nothing, the defaults are not supplied pe
 ## Todos
 
 * input is a DOM string, think more about entities
-* still not happy with name, maybe filter_publisher and filter-publisher? is article title implied?
 * per option defaults to allow for only changing certain props
