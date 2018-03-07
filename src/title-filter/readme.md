@@ -12,13 +12,15 @@ If there is any problem, then the original title is returned. For example, the f
 * **min_publisher_length** - minimum number of characters in publisher name, including spaces
 * **delims** - array of strings, delimiters (currently including spaces between the delimiter and other words)
 
+NOTE: currently the options are all or nothing, the defaults are not supplied per option, just to the entire options object
+
 ## Other notes
 
-* This is intended to be a standalone JavaScript module with no dependencies. The idea is modeled after a microservice architecture. This extreme decoupling makes it easy to change so long as the API's warranties are continually supported.
+* This is intended to be a standalone JavaScript module with no dependencies. The idea is modeled after a micro-service architecture. This extreme decoupling makes it easy to change so long as the API's warranties are continually supported.
 * This uses a typical optional options object instead of several parameters, along with some defaults. This is intentional. It is a typical pattern. It is used in other programs and used throughout this set of modules.
-
 
 ## Todos
 
 * input is a DOM string, think more about entities
-* implement tests
+* still not happy with name, maybe filter_publisher and filter-publisher? is article title implied?
+* per option defaults to allow for only changing certain props
