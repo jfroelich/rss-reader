@@ -1,4 +1,4 @@
-import {clear as favicon_service_clear, compact as favicon_service_compact, lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
+import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import archive_entries from '/src/feed-ops/archive-entries.js';
 import rdb_refresh_feed_icons from '/src/feed-ops/refresh-feed-icons.js';
 import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
@@ -18,7 +18,7 @@ function cli_archive_entries() {
 
 async function refresh_icons() {
   const [reader_conn, favicon_conn] =
-      await Promise.all([rdb_open(), favicon_service_open()]);
+      await Promise.all([rdb_open(), favicon_service.open()]);
   await rdb_refresh_feed_icons(reader_conn, favicon_conn);
   reader_conn.close();
   favicon_conn.close();
@@ -57,10 +57,10 @@ async function lookup_favicon(url, cached) {
   const query = {};
   query.url = new URL(url);
   if (cached) {
-    query.conn = await favicon_service_open();
+    query.conn = await favicon_service.open();
   }
 
-  const icon_url_string = await favicon_service_lookup(query);
+  const icon_url_string = await favicon_service.lookup(query);
   if (cached) {
     query.conn.close();
   }
@@ -70,8 +70,8 @@ async function lookup_favicon(url, cached) {
 
 const cli = {
   archive_entries: cli_archive_entries,
-  clear_favicons: favicon_service_clear,
-  compact_favicons: favicon_service_compact,
+  clear_favicons: favicon_service.clear,
+  compact_favicons: favicon_service.compact,
   remove_orphans: remove_orphans,
   remove_lost_entries: remove_lost_entries,
   lookup_favicon: lookup_favicon,
