@@ -6,14 +6,11 @@ import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js
 import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/poll-service/poll-service.js';
 import {rdb_open} from '/src/rdb/rdb.js';
 
-function cli_archive_entries() {
+async function cli_archive_entries() {
   let conn, max_age;
   const channel = new BroadcastChannel('reader');
-  archive_entries(conn, channel, max_age).catch(console.error).finally(() => {
-    if (channel) {
-      channel.close();
-    }
-  });
+  await archive_entries(conn, channel, max_age);
+  channel.close();
 }
 
 async function refresh_icons() {
