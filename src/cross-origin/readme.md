@@ -15,3 +15,4 @@ https://publicsuffix.org/list/public_suffix_list.dat
 
 * review punycode support
 * does origin include port? Maybe I should be doing port comparison
+* rename to something like cross-site or site-bounds, this is more accurate given that this does not operate on origin, maybe use a real-property legal metaphor
