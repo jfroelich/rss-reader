@@ -1,4 +1,4 @@
-import {idb_open} from '/src/idb/idb.js';
+import {idb_open, idb_remove} from '/src/idb/idb.js';
 
 async function test() {
   const name = 'indexeddb-utils-test';
@@ -14,19 +14,10 @@ async function test() {
   }
 
   if (conn) {
-    await remove(name);
+    await idb_remove(name);
   }
 
   console.debug('Test completed');
-}
-
-function remove(name) {
-  return new Promise(function executor(resolve, reject) {
-    console.debug('Deleting database', name);
-    const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
 }
 
 window.test = test;

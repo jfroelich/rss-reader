@@ -1,9 +1,24 @@
-// Open a connection to an indexedDB database
-// @param name {String}
-// @param version {Number}
-// @param upgrade_listener {Function}
-// @param timeout {Number}
-export async function idb_open(name, version, upgrade_listener, timeout) {
+
+function noop() {}
+
+const null_console = {
+  warn: noop,
+  debug: noop,
+  log: noop
+};
+
+function idb_context_t() {
+  this.name = null;
+  this.version = null;
+  this.upgrade_listener = null;
+  this.timeout = NaN;
+  this.timed_out = false;
+  this.timer = null;
+  this.console = null_console;
+}
+
+export async function idb_open(
+    name, version, upgrade_listener, timeout, console = null_console) {
   if (typeof name !== 'string') {
     throw new TypeError('Invalid database name ' + name);
   }
@@ -12,29 +27,36 @@ export async function idb_open(name, version, upgrade_listener, timeout) {
     throw new TypeError('Invalid connection timeout ' + timeout);
   }
 
-  const context = {
-    name: name,
-    version: version,
-    upgrade_listener: upgrade_listener,
-    timeout: timeout,
-    timed_out: false,
-    timer: null
-  };
+  const context = new idb_context_t();
+  context.name = name;
+  context.version = version;
+  context.upgrade_listener = upgrade_listener;
+  context.timeout = timeout;
 
-  // I do not understand why, but the parens are needed here or it is a syntax
-  // error.
-  const conn = await (timeout ? create_open_promise(context) : Promise.race([
-    create_open_promise(context), create_timeout_promise(context)
-  ]));
+  const open_promise = create_open_promise(context);
 
-  if (conn) {
-    clearTimeout(context.timer);
+  let conn_promise;
+  if (timeout) {
+    const timeout_promise = create_timeout_promise(context);
+    conn_promise = Promise.race([open_promise, timeout_promise]);
   } else {
-    context.timed_out = true;
-    throw new Error('Connection timed out');
+    conn_promise = open_promise;
   }
 
+  const conn = await conn_promise;
+  if (!conn) {
+    context.timed_out = true;
+    throw new TimeoutError('Failed to connect within ' + timeout + ' ms');
+  }
+
+  clearTimeout(context.timer);
   return conn;
+}
+
+export class TimeoutError extends Error {
+  constructor(message) {
+    super(message);
+  }
 }
 
 function create_timeout_promise(context) {
@@ -45,20 +67,21 @@ function create_timeout_promise(context) {
 
 function create_open_promise(context) {
   return new Promise((resolve, reject) => {
-    console.debug('Connecting to database', context.name);
+    context.console.debug('Connecting to database', context.name);
     let blocked = false;
     const request = indexedDB.open(context.name, context.version);
     request.onsuccess = function(event) {
       const conn = event.target.result;
       if (blocked) {
-        console.debug('Closing connection %s that unblocked', conn.name);
+        context.console.debug(
+            'Closing connection %s that unblocked', conn.name);
         conn.close();
       } else if (context.timed_out) {
-        console.debug(
-            'Closing connection %s that opened after timeout', conn.name);
+        context.console.debug(
+            'Closing connection %s opened after timeout', conn.name);
         conn.close();
       } else {
-        console.debug('Connected to database', conn.name);
+        context.console.debug('Connected to database', conn.name);
         resolve(conn);
       }
     };
@@ -73,8 +96,7 @@ function create_open_promise(context) {
   });
 }
 
-
-export function idb_remove(name) {
+export function idb_remove(name, console = null_console) {
   return new Promise((resolve, reject) => {
     console.debug('Deleting database', name);
     const request = indexedDB.deleteDatabase(name);
