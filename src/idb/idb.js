@@ -59,6 +59,12 @@ export class TimeoutError extends Error {
   }
 }
 
+export class BlockError extends Error {
+  constructor(message = 'Connection blocked') {
+    super(message);
+  }
+}
+
 function create_timeout_promise(context) {
   return new Promise(resolve => {
     context.timer = setTimeout(resolve, context.timeout);
@@ -88,7 +94,7 @@ function create_open_promise(context) {
 
     request.onblocked = function(event) {
       blocked = true;
-      reject(new Error('Connection blocked'));
+      reject(new BlockError());
     };
 
     request.onerror = () => reject(request.error);
