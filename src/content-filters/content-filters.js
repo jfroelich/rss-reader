@@ -1,7 +1,7 @@
 import {filter_boilerplate} from '/src/content-filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
 import {element_is_hidden_inline, fetch_image_element, file_name_filter_extension, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
-import {url_is_external} from '/src/cross-origin/cross-origin.js';
+import {url_is_external} from '/src/cross-site/cross-site.js';
 import {attribute_is_boolean} from '/src/dom/attribute.js';
 import {element_coerce} from '/src/dom/element-coerce.js';
 import {element_unwrap} from '/src/dom/element-unwrap.js';
