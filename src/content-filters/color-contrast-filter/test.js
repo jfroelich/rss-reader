@@ -2,9 +2,6 @@ import * as color from '/src/color/color.js';
 import * as ccf from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
 import * as css_color from '/src/css-color/css-color.js';
 
-// TODO: semi-automated tests that compare output to expected output
-
-// expose to console under a prefix to play with stuff directly
 window.ccf = ccf;
 window.color = color;
 window.css_color = css_color;

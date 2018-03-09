@@ -12,8 +12,6 @@ import * as string from '/src/string/string.js';
 export const cf_filter_boilerplate = filter_boilerplate;
 export const cf_filter_low_contrast = color_contrast_filter;
 
-// Removes non-whitelisted attributes from elements
-// @param document {Document}
 // @param whitelist {Object} each property is element name, each value is array
 // of retainable attribute names
 export function cf_filter_non_whitelisted_attributes(document, whitelist) {
@@ -37,38 +35,29 @@ export function cf_element_filter_non_whitelisted_attributes(
   }
 }
 
-// Removes, moves, or otherwise changes certain out-of-place elements in
-// document content
 export function cf_filter_misnested_elements(document) {
   if (!document.body) {
     return;
   }
 
-  // Fix hr in lists. Simple case of invalid parent
   const nested_hr_elements =
       document.body.querySelectorAll('ul > hr, ol > hr, dl > hr');
   for (const hr of nested_hr_elements) {
     hr.remove();
   }
 
-  // Disallow nested anchors. If any anchor has an ancestor anchor, then unwrap
-  // the descendant anchor and keep the ancestor.
   const descendant_anchors_of_anchors = document.body.querySelectorAll('a a');
   for (const descendant_anchor of descendant_anchors_of_anchors) {
     element_unwrap(descendant_anchor);
   }
 
-  // Remove figcaption elements not tied to a figure
   const captions = document.body.querySelectorAll('figcaption');
   for (const caption of captions) {
-    // We know the current element is not a figure, so speed up closest by
-    // starting from parent node, because closest checks self
     if (!caption.parentNode.closest('figure')) {
       caption.remove();
     }
   }
 
-  // Remove source elements not meaningfully tied to an ancestor
   const sources = document.body.querySelectorAll('source');
   for (const source of sources) {
     if (!source.parentNode.closest('audio, picture, video')) {
@@ -76,7 +65,6 @@ export function cf_filter_misnested_elements(document) {
     }
   }
 
-  // Relocate some basic occurrences of invalid ancestor
   const block_selector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
   const inline_selector = 'a, span, b, strong, i';
 
@@ -117,7 +105,6 @@ export function cf_filter_comments(document) {
   }
 }
 
-// Unwraps non-semantic container-like elements
 export function filter_container_elements(document) {
   if (document.body) {
     const elements = document.body.querySelectorAll('div, ilayer, layer');
@@ -127,10 +114,6 @@ export function filter_container_elements(document) {
   }
 }
 
-// De-emphasizes text that after removing whitespace is longer than the given
-// length
-// @param text_length_max {Number} the number of characters above which emphasis
-// is removed (exclusive), required, positive integer greater than 0
 export function cf_filter_emphasis(document, text_length_max) {
   assert(Number.isInteger(text_length_max) && text_length_max > 0);
   if (document.body) {
@@ -151,12 +134,6 @@ function cf_string_filter_whitespace(value) {
   return value.replace(/\s+/, '');
 }
 
-// Remove captionless figure elements. Well-formed figures have more than one
-// child element, one being a caption and one being the captioned element. If
-// the figure has no children, it is likely used as merely a formatting element,
-// similar to a div, and should be removed. If the figure has only element,
-// then it cannot have both a caption and a captioned element, and should
-// removed or unwrapped.
 export function cf_filter_figures(document) {
   if (document.body) {
     const figures = document.body.querySelectorAll('figure');
@@ -185,9 +162,6 @@ export function cf_ensure_body(document) {
   }
 }
 
-// A string-to-string mapping between names of elements that have an attribute
-// that is expected to contain a url, and the name of the element's attribute
-// that contains the url
 const element_url_attribute_map = {
   a: 'href',
   applet: 'codebase',

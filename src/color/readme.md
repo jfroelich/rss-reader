@@ -41,6 +41,41 @@ value property, but I still think I am going to stick with prims.
 
 The truth is really that this is an exercise of me doing bit operations, and to learn about how computers typically work with colors.
 
+# About math_lerp
+
+// Linear interpolation. Basically, given two points get a point between them
+// based on the amount. We get the distance between the two points, we get a
+// percentage of that distance based on amount, then add it to the starting
+// point. This is only exported for testing, as it should otherwise be a private
+// helper.
+
+# About lerp
+
+
+// Blend two rgba colors to produce a blended color. This does not validate
+// input.
+// @param c1 {Number} start from this color
+// @param c2 {Number} end at this color
+// @param amount {Number} some number between 0 and 1, defaults to 1 (assumes
+// the intent is to go the full distance), represents how far to traverse along
+// the distance between the two colors, this is usually the opacity of the
+// second color, or in other words, the alpha component of the second color
+// @return {Number} the resulting color
+
+// Early exits. When the upper color is opaque, there is no point in blending,
+// it occludes the background, so return the upper color. When the upper color
+// is transparent, there is similarly no point in blending, so return the
+// lower color.
+
+  // | 0 is generally equivalent to Math.round
+
+# About blend
+
+// Given an array of colors, return the composed color. The array should be
+// ordered from bottom color layer to top color layer. The base color
+// represents the default background color behind the colors in the array. If
+// the array is empty the base color is output. The default base is opaque white
+
 # About the contrast calculation
 
 http://www.w3.org/TR/2008/REC-WCAG20-20081211/#contrast-ratiodef
@@ -92,3 +127,8 @@ Eventually optimize. This is currently prioritizing clarity. But I probably coul
 # TODO: improve performance of is_valid
 
 The first implementation is conservative and my attempt at being accurate. I think there is a faster way of implementing this function.
+
+# Test todo
+
+// TODO: write pass/fail style tests that test various inputs
+// Consider comparing this library's output to other well known libs

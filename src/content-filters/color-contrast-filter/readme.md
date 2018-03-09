@@ -1,4 +1,10 @@
 
+// Filters inperceptible text nodes from a document
+// @param document {Document}
+// @param matte {Number} optional, the base color to use for composition
+// @param min_contrast_ratio {Number} optional, the minimum contrast above which
+// content is perceptible
+
 The color contrast filter removes text nodes with a text-color to
 background-color contrast ratio that is less than or equal to the given minimum
 contrast ratio. If no contrast ratio is given then a default contrast ratio is
@@ -54,6 +60,11 @@ I read somewhere the reason this is so difficult and hard, and the reason there
 is no built in eye-dropper-style api call that just gives me an element's color,
 is due to security concerns over being able to see user passwords or something.
 I eventually want to look into that.
+
+# About element_is_perceptible
+// Analyzes an element for color perceptibility based on the element's
+// foreground and background colors. Return true if perceptible, false if not
+// perceptible. Ratio is on scale of 1 to 21, with 21 being maximum contrast.
 
 # About the default contrast ratio
 
@@ -123,3 +134,11 @@ should warn the user about choosing a high threshold
 Rather than only looking at the alpha channel of background-color, do I also need to pay attention to the opacity property of the element? I know that the hidden-elements filter looks at opacity. Even that maybe should be changed because it might be naive. It feels like there is a bit of an overlapping concern between the hidden-elements filter and the color contrast filter. Maybe opacity should only be a concern here?
 
 Before proceeding I need to clarify some basic things. What does it mean to have an opaque background color with alpha 100%, but an opacity of 0? Does opacity just apply as basically another layer on top of the background color, such as a color of (0,0,0,opacity)? Or is it already built in to the alpha of background color? Basically I do not know what browsers do in this case, and need to find that out.
+
+# TODO: test stuff
+
+// TODO: semi-automated tests that compare output to expected output
+
+# TODO: maybe merge with hidden elements filter
+
+basically the contrast ratio test is just another component of a visibility test and in this sense it is all just concerned with visibility, so really it does not need to be a standalone feature. the defining trait is removing content that cannot be seen
