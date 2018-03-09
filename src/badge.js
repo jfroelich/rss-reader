@@ -1,11 +1,9 @@
 import {rdb_entry_count_unread} from '/src/rdb/rdb.js';
 
-// TODO: primary todo, trying to remove auto-connect from rdb/rdb.js, this is the
-// sole caller of rdb_entry_count_unread. In order to remove auto-connect I
+// TODO: primary todo, trying to remove auto-connect from rdb/rdb.js, this is
+// the sole caller of rdb_entry_count_unread. In order to remove auto-connect I
 // need ensure all callers of this function use a valid connection. In doing so,
 // do not forget that this can _still_ be called non-awaited with a connection.
-
-
 
 // TODO: perhaps think of badge as a view, like the other pages or the CLI. In
 // that sense it would be reasonable to open a channel and listen for change
@@ -30,18 +28,17 @@ import {rdb_entry_count_unread} from '/src/rdb/rdb.js';
 // extension.getBackgroundPage()? That would load the page if not loaded
 
 // A lock to discard concurrent calls
-let badge_update_pending = false;
+let update_pending = false;
 
 // Updates the text of the application's badge. Non-blocking.
-export default async function badge_update_text(conn) {
-  if (badge_update_pending) {
-    console.debug('badge_update_text request already pending, ignoring call');
+export async function update(conn) {
+  if (update_pending) {
+    console.debug('update request already pending, ignoring call');
     return;
   }
 
   console.debug('Updating badge text...');
-
-  badge_update_pending = true;
+  update_pending = true;
 
   // We trap the error for two reasons:
   // 1) the conn may have been closed when non-awaited
@@ -55,7 +52,7 @@ export default async function badge_update_text(conn) {
     console.error(error);
     return;
   } finally {
-    badge_update_pending = false;
+    update_pending = false;
   }
 
   const text = count > 999 ? '1k+' : '' + count;

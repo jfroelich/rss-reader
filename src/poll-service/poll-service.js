@@ -1,3 +1,4 @@
+import * as badge from '/src/badge.js';
 import * as color from '/src/color/color.js';
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse/feed-parse.js';
@@ -11,7 +12,6 @@ import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import {rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_entry_peek_url, rdb_feed_has_url, rdb_feed_merge, rdb_feed_peek_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb/rdb.js';
 import url_rewrite from '/src/rewrite-url/rewrite-url.js';
 import {url_is_binary} from '/src/sniff/sniff.js';
-import badge_update_text from '/src/update-badge-text.js';
 
 const null_console = {
   log: noop,
@@ -59,7 +59,7 @@ export async function poll_service_poll_feeds(input_poll_feeds_context) {
   assert(poll_feeds_context.channel instanceof BroadcastChannel);
 
   const poll_feed_context = Object.assign({}, poll_feeds_context);
-  poll_feed_context.badge_update_text = false;
+  poll_feed_context.badge_update = false;
   poll_feed_context.notify = false;
 
   // Concurrently poll the feeds
@@ -79,7 +79,7 @@ export async function poll_service_poll_feeds(input_poll_feeds_context) {
   }
 
   if (entry_add_count) {
-    badge_update_text(poll_feeds_context.feedConn).catch(console.error);
+    badge.update(poll_feeds_context.feedConn).catch(console.error);
   }
 
   if (entry_add_count) {
@@ -223,8 +223,8 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     }
   }
 
-  if (poll_entry_context.badge_update_text && entry_add_count_per_feed) {
-    badge_update_text(poll_entry_context.feedConn).catch(console.error);
+  if (poll_entry_context.badge_update && entry_add_count_per_feed) {
+    badge.update(poll_entry_context.feedConn).catch(console.error);
   }
 
   if (poll_entry_context.notify && entry_add_count_per_feed) {
