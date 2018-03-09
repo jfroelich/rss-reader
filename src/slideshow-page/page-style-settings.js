@@ -1,33 +1,22 @@
 import * as css from '/src/css/css.js';
 
-// TODO: after moving display setting change ability from options page to
-// slideshow page, this this module will be used exclusively by slideshow page,
-// and should merged into it, or made as a helper module to it exclusively.
-
-// Get the current settings from local storage and then modify the css rules in
-// the default style sheet
 export function page_style_onchange(event) {
   page_style_entry_update();
   page_style_title_update();
   page_style_content_update();
 
-  // Padding wrapper change
   const rule = css.find_rule('.slide-padding-wrapper');
   if (rule) {
-    // It is fine is padding is set to undefined
     rule.style.padding = localStorage.PADDING;
   }
 }
 
-// Get the current settings from local storage and then create css rules and
-// append them to the default style sheet.
 export function page_style_onload() {
   const sheet = document.styleSheets[0];
   sheet.addRule('.entry', page_style_entry_rule_create());
   sheet.addRule('.entry .entry-title', page_style_title_rule_create());
   sheet.addRule('.entry .entry-content', page_style_content_rule_create());
 
-  // Padding wrapper init
   const padding = localStorage.PADDING;
   if (padding) {
     sheet.addRule('.slide-padding-wrapper', 'padding:' + padding);
@@ -64,8 +53,6 @@ function page_style_title_rule_create(sheet) {
 
 function page_style_content_rule_create(sheet) {
   const buffer = [];
-
-  // TODO: use px, and append value as is
   const font_size = parseInt(localStorage.BODY_FONT_SIZE, 10);
   if (font_size) {
     buffer.push(`font-size: ${(font_size / 10).toFixed(2)}em;`);
@@ -80,7 +67,6 @@ function page_style_content_rule_create(sheet) {
     buffer.push(`font-family: ${font_family};`);
   }
 
-  // TODO: use px, append as is
   let line_height_string = localStorage.BODY_LINE_HEIGHT;
   if (line_height_string) {
     const line_height = parseInt(line_height_string, 10);
@@ -89,7 +75,6 @@ function page_style_content_rule_create(sheet) {
     }
   }
 
-  // TODO: did column-count become standard css yet?
   const column_count = localStorage.COLUMN_COUNT;
   if (column_count === '2' || column_count === '3') {
     buffer.push(`-webkit-column-count: ${column_count};`);
@@ -131,7 +116,6 @@ function page_style_title_update() {
   const style = rule.style;
   style.fontFamily = localStorage.HEADER_FONT_FAMILY;
 
-  // TODO: use raw value, px
   const size = parseInt(localStorage.HEADER_FONT_SIZE, 10);
   if (!isNaN(size)) {
     style.fontSize = (size / 10).toFixed(2) + 'em';
@@ -156,17 +140,14 @@ function page_style_content_update() {
   const font_size_string = localStorage.BODY_FONT_SIZE;
   if (font_size_string) {
     const font_size = parseInt(font_size_string, 10);
-
-    // TODO: use px, raw value
     if (font_size) {
       rule.style.fontSize = (font_size / 10).toFixed(2) + 'em';
     }
   }
 
-  rule.style.textAlign =
-      (localStorage.JUSTIFY_TEXT === '1') ? 'justify' : 'left';
+  const should_justify = localStorage.JUSTIFY_TEXT === '1';
+  rule.style.textAlign = should_justify ? 'justify' : 'left';
 
-  // TODO: use px, raw value
   const line_height = parseInt(localStorage.BODY_LINE_HEIGHT, 10);
   rule.style.lineHeight = (line_height / 10).toFixed(2);
 

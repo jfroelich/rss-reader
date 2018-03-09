@@ -1,4 +1,7 @@
-import {string_filter_unprintable_characters} from '/src/rdb/rdb.js';
+import {string_filter_unprintable_characters} from '/src/string/string.js';
+
+window.string_filter_unprintable_characters =
+    string_filter_unprintable_characters;
 
 const d = console.debug;
 const f = string_filter_unprintable_characters;
@@ -6,7 +9,7 @@ const f = string_filter_unprintable_characters;
 // Given string, filter it, then assert whether the filtered string length is
 // equal to the given length, and print the result to the console.
 const a = function(s, len) {
-  const result = string_filter_unprintable_characters(s);
+  const result = f(s);
   const passed = (result.length === len) ? 'passed' : 'failed';
   d('input', escape(s), 'length', len, passed);
 };
@@ -52,9 +55,4 @@ function run() {
   console.groupEnd();
 }
 
-// Run test on module load
 run();
-
-// Export to console for manual testing shenanigans
-window.string_filter_unprintable_characters =
-    string_filter_unprintable_characters;

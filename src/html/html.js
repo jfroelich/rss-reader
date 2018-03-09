@@ -40,7 +40,6 @@ export function html_replace_tags(html_string, replacement) {
   assert(typeof html_string === 'string');
 
   // Fast case for empty strings
-  // Because of the above assert this basically only checks 0 length
   if (!html_string) {
     return html_string;
   }
@@ -61,7 +60,6 @@ export function html_replace_tags(html_string, replacement) {
     return document.body.textContent;
   }
 
-  // Shove the text nodes into an array and then join by replacement
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   const node_values = [];
   for (let node = it.nextNode(); node; node = it.nextNode()) {
@@ -71,10 +69,6 @@ export function html_replace_tags(html_string, replacement) {
   return node_values.join(replacement);
 }
 
-// When html is a fragment, it will be inserted into a new document using a
-// default template provided by the browser, that includes a document element
-// and usually a body. If not a fragment, then it is merged into a document
-// with a default template.
 export function html_parse(html_string) {
   assert(typeof html_string === 'string');
   const parser = new DOMParser();

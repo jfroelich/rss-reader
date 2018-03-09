@@ -6,3 +6,21 @@ The primary benefit of using this library instead of directly interacting with f
 In addition to that problem, there is still the problem of aborting/canceling the fetch. There is no way to do this. Yet another waste of resources. I read about some talk of cancelable promises but it looks like that went nowhere.
 
 Notably, several of the functions just provide the response and do not go the full distance of parsing the body into an appropriate format. For example, the fetch_html function does not produce an html document. This is because there is sometimes logic that needs to occur between the time of learning of the response details and parsing the body. Forcing the parsing to occur immediately along with the fetch would be a waste because sometimes the logic that follows the fetch indicates the response should be discarded.
+
+
+### `url_is_allowed` notes
+
+fetch policy really does kind of belong in its own file
+
+// TODO: allow various overrides through localStorage setting or some config
+// setting?
+
+// Of course things like hosts file can be manipulated to whatever. This is
+// just one of the low-hanging fruits. Prevent fetches to local host urls.
+// When checking against localhost values, again, ignores things like punycode, IPv6, host manipulation, local dns
+// manipulation, etc. This is just a simple and typical case
+
+// When checking for username/pass, Prevent fetches of urls containing credentials. Although fetch implicitly
+// throws in this case, I prefer to explicit. Also, this is a public function
+// is use by other modules that may not call fetch (e.g. see
+// fetchImageElement) where I want the same policy to apply.

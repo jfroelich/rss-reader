@@ -1,10 +1,5 @@
-import {is_mime_type, MIME_TYPE_MAX_LENGTH, MIME_TYPE_MIN_LENGTH} from '/src/mime/mime.js';
+import * as mime from '/src/mime/mime.js';
 
-// TODO: move all the misc todo comments and ideas and such either to readme.md
-// or as individual github issues, then simplify all the superfluous commentary
-
-// Returns whether the url represents a binary resource. Note that the return
-// value of false means either text or unknown; false does not mean only text.
 export function url_is_binary(url) {
   if (!(url instanceof URL)) {
     throw new TypeError('Invalid url ' + url);
@@ -14,58 +9,36 @@ export function url_is_binary(url) {
     return false;
   }
 
-  // Non-exhaustive
   const text_protocols = ['tel:', 'mailto:', 'javascript:'];
   if (text_protocols.includes(url.protocol)) {
     return false;
   }
 
-  // Special handling for data uris
   if (url.protocol === 'data:') {
-    // TODO: if text/plain is the default, that indicates non-binary. Why call
-    // mime_type_is_binary? Why not just return false if
-    // find_mime_type_in_data_url returns undefined? The logic remains the same
-    // but involves one less function call in one of the two paths.
-
     const default_type = 'text/plain';
     const mime_type = find_mime_type_in_data_url(url) || default_type;
     return mime_type_is_binary(mime_type);
   }
 
-  // TODO: the call to url_get_extension should be implicit in
-  // find_mime_type_for_extension
-
-  // If we cannot make a decision based on protocol, decide based on file
-  // extension
   const extension = url_get_extension(url);
   if (!extension) {
-    // We cannot confidently say it is binary so report it is not
-    // TODO: I do not like how this implies that it is not-binary. This
-    // potentially induces a false reliance. Perhaps url_is_binary should return
-    // true, false, and indeterminate, and let the caller decide how to react
     return false;
   }
 
   const mime_type = find_mime_type_for_extension(extension);
   if (!mime_type) {
-    // TODO: again, I do not like how this implies non-binary
     return false;
   }
 
   return mime_type_is_binary(mime_type);
 }
 
-// Return a mime type corresponding a file name extension
-// @param extension {String}
-// @returns {String} a mime type, or undefined on error or failed lookup
 export function find_mime_type_for_extension(extension) {
   if (typeof extension === 'string') {
     return EXTENSION_TYPE_MAP[extension];
   }
 }
 
-// Extracts the mime type of a data uri. Returns undefined if not
-// found or invalid.
 export function find_mime_type_in_data_url(url) {
   if (!(url instanceof URL)) {
     throw new TypeError('Invalid url ' + url);
@@ -75,60 +48,33 @@ export function find_mime_type_in_data_url(url) {
     throw new TypeError('Invalid data url ' + url.href);
   }
 
-  // Capture the href and cache. The href getter is dynamic and a function,
-  // similar to how array.length is a function. I do not trust that that the URL
-  // implementation is smart enough to cache property access, at least for now.
-  // This admittedly may be premature optimization, but I am overlooking that as
-  // I remain ambivalent about its importance. What I am concerned about is
-  // whether this is actually slower.
   const href = url.href;
-
-  // If the url is too short to contain a mime type, fail.
-  if (href.length < MIME_TYPE_MIN_LENGTH) {
+  if (href.length < mime.MIME_TYPE_MIN_LENGTH) {
     return;
   }
 
-  // Limit the scope of the string search space to starting after the protocol
-  // ends, and up to the longest possible mime type that can be found, plus 1
-  // for the trailing semicolon.
   const PREFIX_LENGTH = 'data:'.length;
   const search_start = PREFIX_LENGTH;
-  const search_end = PREFIX_LENGTH + MIME_TYPE_MAX_LENGTH + 1;
+  const search_end = PREFIX_LENGTH + mime.MIME_TYPE_MAX_LENGTH + 1;
   const haystack = href.substring(search_start, search_end);
 
-  // Data uris that include a mime type include a delimiting semicolon after the
-  // mime type.
   const sc_position = haystack.indexOf(';');
-
-  // If we cannot find the ';' then conclude the mime type is not present
   if (sc_position < 0) {
     return;
   }
 
-  // If we found a ';' that was located so close to the start that it is
-  // impossible for the characters between start and ';' to represent a mime
-  // type, then fail.
-  if (sc_position < MIME_TYPE_MIN_LENGTH) {
+  if (sc_position < mime.MIME_TYPE_MIN_LENGTH) {
     return;
   }
 
-  // Pluck the candidate characters from the search space. Note this is from the
-  // search space, not the full data uri, which begins after the protocol
   const mime_type = haystack.substring(0, sc_position);
-
-  // Finally, validate and return
-  if (is_mime_type(mime_type)) {
+  if (mime.is_mime_type(mime_type)) {
     return mime_type;
   }
 }
 
-// Given a url, return the extension of the filename component of the path
-// component. Return undefined if no extension found. The returned string
-// excludes the leading '.'. This assumes the url uses English characters.
 export function url_get_extension(url) {
-  // Approximate path min length including the period is '/.b'
   const minlen = 3;
-  // Approximate extension max length excluding the period
   const maxlen = 255;
   const path = url.pathname;
   const pathlen = path.length;
@@ -144,47 +90,27 @@ export function url_get_extension(url) {
   }
 }
 
-// Returns whether the string is alphanumeric. Counter-intuitively, this works
-// by testing for the presence of any non-alphanumeric character.
-// See https://stackoverflow.com/questions/4434076
-// See https://stackoverflow.com/questions/336210
-// The empty string is true, null/undefined are true
-// Does NOT support languages other than English
 export function string_is_alphanumeric(string) {
   return /^[a-zA-Z0-9]*$/.test(string);
 }
 
-// Returns whether the mime type is binary
+const application_text_types = [
+  'application/atom+xml', 'application/javascript', 'application/json',
+  'application/rdf+xml', 'application/rss+xml',
+  'application/vnd.mozilla.xul+xml', 'application/xhtml+xml', 'application/xml'
+];
+
 export function mime_type_is_binary(mime_type) {
-  if (!is_mime_type(mime_type)) {
+  if (!mime.is_mime_type(mime_type)) {
     throw new TypeError('Invalid mime_type ' + mime_type);
   }
-
-  // This algorithm assumes that mime types with the 'application' supertype are
-  // binary unless the subtype is one of the following. The following list is
-  // not exhaustive, but it covers most of the cases this app is interested in,
-  // which is about fetching xml files.
-
-  // clang-format off
-  const application_text_types = [
-    'application/atom+xml',
-    'application/javascript',
-    'application/json',
-    'application/rdf+xml',
-    'application/rss+xml',
-    'application/vnd.mozilla.xul+xml',
-    'application/xhtml+xml',
-    'application/xml'
-  ];
-  // clang-format on
 
   const slash_position = mime_type.indexOf('/');
   const super_type = mime_type.substring(0, slash_position);
 
   switch (super_type) {
-    case 'application': {
+    case 'application':
       return !application_text_types.includes(mime_type);
-    }
     case 'text':
       return false;
     case 'audio':
@@ -196,16 +122,10 @@ export function mime_type_is_binary(mime_type) {
     case 'multipart':
       return true;
     default:
-      // As I am not sure this is an exhaustive list of super types, and I do
-      // not really care if it is, reaching the default case does not represent
-      // an error
       return false;
   }
 }
 
-// A mapping of common file extensions to corresponding mime types. I've tried
-// to pick standardized mime types but unfortunately there does not appear to be
-// much of a standard.
 export const EXTENSION_TYPE_MAP = {
   ai: 'application/postscript',
   aif: 'audio/aiff',

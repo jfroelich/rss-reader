@@ -1,12 +1,6 @@
-
-// The type of the HTML element used for each slide
 export const SLIDE_ELEMENT_NAME = 'slide';
-
-// Handle for the element that contains the slideshow
 const container = document.getElementById('slideshow-container');
-// Handle for the element that is the current slide
 let cursor;
-// Number of slides in movement
 let active_transition_count = 0;
 
 export function element_get_name() {
@@ -25,8 +19,6 @@ export function slide_get_first() {
   return container.firstElementChild;
 }
 
-// Move current slide out of view and next slide into view. Returns true if a
-// move transition will occur.
 export function next() {
   if (active_transition_count > 0) {
     return false;
@@ -47,7 +39,9 @@ export function next() {
   // NOTE: in process of creating this lib I noticed the source of the strange
   // behavior with why count is only 1 despite two transitions, it was here
   // because I forgot to increment again. But it is working like I want so I am
-  // hesitant to change it at the moment. active_transition_count++;
+  // hesitant to change it at the moment.
+
+  // active_transition_count++;
 
   nextSlide.style.left = '0';
   cursor = nextSlide;
@@ -55,7 +49,6 @@ export function next() {
   return true;
 }
 
-// Move current slide out of view and previous slide into view
 export function prev() {
   if (active_transition_count > 0) {
     return;
@@ -77,12 +70,10 @@ export function prev() {
   cursor = previousSlide;
 }
 
-// Returns the number of slides
 export function count() {
   return container.childElementCount;
 }
 
-// Returns a node list of the currently loaded slides
 export function slide_get_all() {
   return container.querySelectorAll(SLIDE_ELEMENT_NAME);
 }
@@ -97,21 +88,18 @@ function is_valid_transition_duration(duration) {
   return !isNaN(duration) && isFinite(duration) && duration >= 0;
 }
 
-// Change the duration of slide transitions from the default
-export function set_transition_duration(durationInput) {
-  if (!is_valid_transition_duration(durationInput)) {
-    throw new TypeError('Invalid duration parameter', durationInput);
+export function set_transition_duration(input_duration) {
+  if (!is_valid_transition_duration(input_duration)) {
+    throw new TypeError('Invalid duration parameter', input_duration);
   }
 
-  duration = durationInput;
+  duration = input_duration;
 }
 
-// Create a new slide. It is not yet attached
 export function create() {
   return document.createElement(SLIDE_ELEMENT_NAME);
 }
 
-// Append a slide to the view
 export function append(slide) {
   if (!slide_is_slide(slide)) {
     throw new TypeError('Invalid slide parameter', slide);

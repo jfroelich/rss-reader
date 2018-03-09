@@ -11,20 +11,17 @@ html, body {
 }
 
 #left-panel {
-  /* Needed to get shadow to appear when element earlier in document order than adjacent */
   position: absolute;
   z-index: 2;
   top: 0;
   left: 0;
   bottom: 0;
   right: auto;
-
   flex-grow: 0;
   flex-shrink: 0;
   width: 320px;
   background-color: #ffffff;
   opacity: 1;
-  /* Initialize off screen */
   margin-left: -320px;
   padding-top: 56px;
   transition: all 0.1s linear 0s;
@@ -73,14 +70,12 @@ html, body {
 
 #left-panel ul {
   list-style-type: none;
-  /* Turn off whatever the hell Chrome is doing to UL */
   -webkit-margin-before: 0;
   -webkit-margin-after: 0;
   -webkit-padding-start: 0;
 }
 
 #left-panel li {
-  /*padding: 0;*/
   padding-left: 12px;
   padding-top: 12px;
   padding-bottom: 12px;
@@ -92,7 +87,6 @@ html, body {
   background-color: #efefef;
   cursor: pointer;
 }
-
 
 #refresh {
   pointer-events: initial;

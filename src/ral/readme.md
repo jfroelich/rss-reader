@@ -18,3 +18,5 @@ A second component of the the decision is that it would support a for_each
 approach. Right now I am forced to fully buffer all feeds into an array
 first in order to sort. If a let the db do the work I could use a callback
 as each feed is loaded.
+
+TODO: make a closer helper that does log-and-close

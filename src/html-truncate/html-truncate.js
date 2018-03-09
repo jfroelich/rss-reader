@@ -1,10 +1,4 @@
-// Truncates an HTML string
-// @param html_string {String}
-// @param position {Number} position after which to truncate
-// @param suffix {String} optional, appended after truncation, defaults to an
-// ellipsis
 export function html_truncate(html_string, position, suffix) {
-  // Allow for bad input, for convenience
   if (typeof html_string !== 'string') {
     return '';
   }
@@ -29,7 +23,6 @@ export function html_truncate(html_string, position, suffix) {
     return 'Unsafe malformed html string';
   }
 
-  // Search for the text node in which truncation should occur and truncate it
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
   let total_length = 0;
 
@@ -45,12 +38,10 @@ export function html_truncate(html_string, position, suffix) {
     }
   }
 
-  // Remove remaining nodes past the truncation point
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     node.remove();
   }
 
-  // Return either the full text or the fragment
   if (/<html/i.test(html_string)) {
     return document.documentElement.outerHTML;
   } else {

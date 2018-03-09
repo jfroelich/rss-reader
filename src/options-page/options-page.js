@@ -578,7 +578,6 @@ function options_page_init() {
 
   feed_list_init();
 
-  // Init feed details section unsubscribe button click handler
   const unsubscribe_button = document.getElementById('details-unsubscribe');
   unsubscribe_button.onclick = unsubscribe_button_onclick;
 
@@ -588,7 +587,6 @@ function options_page_init() {
   const deactivate_button = document.getElementById('details-deactivate');
   deactivate_button.onclick = deactivate_feed_button_onclick;
 
-  // Init the subscription form section
   const subscription_form = document.getElementById('subscription-form');
   subscription_form.onsubmit = subscribe_form_onsubmit;
 

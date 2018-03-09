@@ -35,8 +35,6 @@ const default_poll_feeds_context = {
 
 function noop() {}
 
-// Create a new context object that is the typical context used by
-// poll_service_poll_feeds
 export async function poll_service_create_context() {
   const context = {};
   const promises = [rdb_open(), favicon_service_open()];
@@ -60,14 +58,11 @@ export async function poll_service_poll_feeds(input_poll_feeds_context) {
   assert(poll_feeds_context.iconConn instanceof IDBDatabase);
   assert(poll_feeds_context.channel instanceof BroadcastChannel);
 
-  // Setup a poll_feed_context to be shared among upcoming
-  // poll_service_feed_poll calls
   const poll_feed_context = Object.assign({}, poll_feeds_context);
-  // Flags specific to poll_service_feed_poll
   poll_feed_context.badge_update_text = false;
   poll_feed_context.notify = false;
 
-  // Concurrently poll all the feeds
+  // Concurrently poll the feeds
   const feeds = await rdb_find_active_feeds(poll_feeds_context.feedConn);
   const poll_feed_promises = [];
   for (const feed of feeds) {
@@ -289,7 +284,7 @@ function handle_poll_feed_error(error_info) {
   }
 
   feed.dateUpdated = new Date();
-  // Call unawaited (non-blocking)
+  // Call unawaited
   rdb_feed_put(error_info.context.feedConn, error_info.context.channel, feed)
       .catch(console.error);
 }
@@ -346,7 +341,6 @@ async function poll_entry(ctx, entry) {
   entry_update_title(entry, document);
   await entry_update_favicon(ctx, entry, document);
   await entry_update_content(ctx, entry, document);
-
 
   let stored_entry;
   try {

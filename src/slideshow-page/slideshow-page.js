@@ -1,12 +1,12 @@
 import {date_format} from '/src/date/date.js';
 import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
+import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {html_escape} from '/src/html/html.js';
 import {ral_export, ral_import, ral_load_initial, ral_poll_feeds} from '/src/ral/ral.js';
 import * as rdb from '/src/rdb/rdb.js';
 import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/slideshow-page/slideshow.js';
-import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
 
 // clang-format off
 const fonts = [
@@ -66,7 +66,6 @@ channel.onmessage = function(event) {
     case 'feed-updated':
     case 'feed-activated':
     case 'feed-deactivated':
-      // console.debug('Ignoring message', message.type);
       break;
     default:
       console.warn('Unknown message type', message);
@@ -123,9 +122,6 @@ function loading_info_hide() {
   loading_info_element.style.display = 'none';
 }
 
-// TODO: this should not need to be async and await. However, right now when it
-// does not wait the call to update badge unread count fails because the
-// subsequent conn.close call occurs too early
 async function slide_mark_read(conn, slide) {
   if (!slide.hasAttribute('read') && !slide.hasAttribute('stale')) {
     const id = parseInt(slide.getAttribute('entry'), 10);
@@ -195,9 +191,6 @@ function create_article_title_element(entry) {
   if (entry.title) {
     let title = entry.title;
     let safe_title = html_escape(title);
-
-    // Set the attribute value to the full title without truncation or publisher
-    // filter
     title_element.setAttribute('title', safe_title);
 
     let filtered_safe_title = filter_publisher(safe_title);
@@ -207,7 +200,7 @@ function create_article_title_element(entry) {
       console.warn(error);
     }
 
-    // Use innerHTML to allow entities in titles
+    // Allow entities
     title_element.innerHTML = filtered_safe_title;
 
   } else {
@@ -221,7 +214,7 @@ function create_article_title_element(entry) {
 function create_article_content_element(entry) {
   const content_element = document.createElement('span');
   content_element.setAttribute('class', 'entry-content');
-  // <html><body> will be implicitly stripped
+  // <html><body> is implicitly stripped
   content_element.innerHTML = entry.content;
   return content_element;
 }
@@ -295,13 +288,11 @@ async function slide_onclick(event) {
   try {
     conn = await rdb.rdb_open();
   } catch (error) {
-    // TODO: visually show error
     console.error(error);
     return false;
   }
 
   await slide_mark_read(conn, clicked_slide);
-
   conn.close();
 }
 
@@ -568,7 +559,6 @@ function unsubscribe_button_onclick(event) {
 }
 
 function feeds_container_append_feed(feed) {
-  // console.debug('Appending feed', rdb.rdb_feed_peek_url(feed));
   const feeds_container = document.getElementById('feeds-container');
   const feed_element = document.createElement('div');
   feed_element.id = feed.id;
