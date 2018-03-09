@@ -1,13 +1,5 @@
 import {html_decode_entities} from '/src/html/html.js';
 
-// Parses the input string into a feed object. The feed object will always have
-// a defined entries array, although it may be zero length. Returns a feed
-// object or throws
-// @param value {String} the xml string to parse
-// @param skip_entries {Boolean} if true, entries are not processed, and an
-// empty entries array is included in the result
-// @param resolve_entry_urls {Boolean} if true, entry urls are canonicalized
-// using feed.link as the base url
 export default function feed_parse(value, skip_entries, resolve_entry_urls) {
   const document = xml_parse(value);
   return unmarshall_xml(document, skip_entries, resolve_entry_urls);
@@ -110,7 +102,6 @@ function find_entry_elements(channel_element) {
 }
 
 function find_feed_type(document_element) {
-  // TODO: just use element_get_local_name?
   return document_element.localName.toLowerCase();
 }
 

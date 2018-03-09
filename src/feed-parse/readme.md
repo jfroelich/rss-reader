@@ -1,6 +1,15 @@
 
 feed-parse.js provides a basic feed_parse function. The feed_parse function accepts a string as input. The string should be the full text of an xml file. The xml is parsed into a Document object, and then the Document object is coerced into a basic JavaScript object. Feed properties are stored in the parsed object. The output object contains an entries property that is an array of entry objects, where each entry represents one of the xml items (or entries).
 
+// Parses the input string into a feed object. The feed object will always have
+// a defined entries array, although it may be zero length. Returns a feed
+// object or throws
+// @param value {String} the xml string to parse
+// @param skip_entries {Boolean} if true, entries are not processed, and an
+// empty entries array is included in the result
+// @param resolve_entry_urls {Boolean} if true, entry urls are canonicalized
+// using feed.link as the base url
+
 # element_get_local_name notes
 
 One of the counter-intuitive things about the Document object is that it secretly holds a flag for whether the document is xml or html. Certain Document method behavior changes based on this private flag. The flag is not exposed.
@@ -23,3 +32,7 @@ So I think I handle cdata content correctly, but note the issue with title still
 * If failing to resolve an entry, should this set entry.link to undefined or remove the property, or leave it as is like now?
 
 # TODO: not sure if this is best place to set fetch policy
+
+# TODO:
+
+* when finding feed type, use element_get_local_name?

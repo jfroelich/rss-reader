@@ -7,6 +7,12 @@ In addition to that problem, there is still the problem of aborting/canceling th
 
 Notably, several of the functions just provide the response and do not go the full distance of parsing the body into an appropriate format. For example, the fetch_html function does not produce an html document. This is because there is sometimes logic that needs to occur between the time of learning of the response details and parsing the body. Forcing the parsing to occur immediately along with the fetch would be a waste because sometimes the logic that follows the fetch indicates the response should be discarded.
 
+### todos
+
+* Just deprecate fetch_html and such, use a 'accepted mime types' parameter to a generic function
+* Instead of throwing assertion error on invalid mime type, return the bad status code
+* similarly instead of throwing assertion error on !response.ok, return the bad status code
+* once above two are done, then no need for try/catch per call
 
 ### `url_is_allowed` notes
 
