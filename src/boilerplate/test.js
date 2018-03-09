@@ -1,4 +1,4 @@
-import {annotate} from '/src/boilerplate/boilerplate.js';
+import * as boilerplate from '/src/boilerplate/boilerplate.js';
 import * as filters from '/src/content-filters/content-filters.js';
 import {fetch_html} from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
@@ -16,7 +16,7 @@ window.test = async function(url_string) {
   filters.filter_blacklisted_elements(document);
   filters.cf_resolve_document_urls(document, response_url);
   await filters.document_set_image_sizes(document, response_url);
-  annotate(document);
+  boilerplate.annotate(document);
 
   const preview = window.document.getElementById('preview');
   preview.innerHTML = document.body.innerHTML;

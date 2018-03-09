@@ -1,12 +1,8 @@
-import {annotate} from '/src/boilerplate/boilerplate.js';
+import * as boilerplate from '/src/boilerplate/boilerplate.js';
 
 export function filter_boilerplate(document) {
   // Score the data
-  annotate(document);
-
-  // TODO: is it better to have annotate return the best element, or to find it
-  // again here? Returning best element avoids need for querySelector call but
-  // it also locks in the boilerplate API (reduces flexibility).
+  boilerplate.annotate(document);
 
   // Search for the best element
   const best_element = document.querySelector('[data-bp-max]');
@@ -23,8 +19,6 @@ export function filter_boilerplate(document) {
   }
 
   // Prune elements not connected to the best element
-  // TODO: optimize pruning to use fewer calls to contains
-
   const elements = document.body.querySelectorAll('*');
   for (const element of elements) {
     if (element.contains(best_element)) {
