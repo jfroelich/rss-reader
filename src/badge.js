@@ -1,10 +1,10 @@
-import {rdb_entry_count_unread} from '/src/rdb/rdb.js';
+import * as rdb from '/src/rdb/rdb.js';
 
 let update_pending = false;
 
 export async function update(conn) {
   if (update_pending) {
-    console.debug('update request already pending, ignoring call');
+    console.debug('prior update pending, update request canceled');
     return;
   }
 
@@ -13,7 +13,7 @@ export async function update(conn) {
 
   let count;
   try {
-    count = await rdb_entry_count_unread(conn);
+    count = await rdb.rdb_entry_count_unread(conn);
   } catch (error) {
     console.error(error);
     return;
