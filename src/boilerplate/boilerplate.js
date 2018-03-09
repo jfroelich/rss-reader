@@ -14,9 +14,9 @@ export function annotate(document) {
   const list_selector = 'li, ol, ul, dd, dl, dt';
   const nav_selector = 'aside, header, footer, nav, menu, menuitem';
   let best_element = document.documentElement;
+  let high_score = 0;
 
   const elements = document.body.querySelectorAll(candidate_selector);
-  let high_score = 0;
   for (const element of elements) {
     let score = 0;
     element.dataset.bpAnalyzed = 'true';
@@ -38,12 +38,15 @@ export function annotate(document) {
     const ancestor_bias = derive_ancestor_bias(element);
     score += ancestor_bias;
     element.dataset.bpAncestorBias = ancestor_bias;
-    const image_bias = derive_image_bias(element);
+
+    const image_bias = derive_child_image_bias(element);
     score += image_bias;
     element.dataset.bpImageBias = image_bias;
+
     const attribute_bias = derive_attribute_bias(element);
     score += attribute_bias;
     element.dataset.bpAttrBias = attribute_bias;
+
     element.dataset.bpScore = score;
 
     if (score > high_score) {
@@ -70,6 +73,21 @@ export function deannotate(document) {
   }
 }
 
+function derive_text_bias(element) {
+  const text = string.condense_whitespace(element.textContent);
+  return 0.25 * text.length - 0.7 * derive_anchor_length(element);
+}
+
+function derive_anchor_length(element) {
+  const anchors = element.querySelectorAll('a[href]');
+  let anchor_length = 0;
+  for (const anchor of anchors) {
+    const text = string.condense_whitespace(anchor.textContent);
+    anchor_length += text.length;
+  }
+  return anchor_length;
+}
+
 const ancestor_biases = {
   a: -5,
   aside: -50,
@@ -90,6 +108,18 @@ const ancestor_biases = {
   section: -20,
   ul: -20
 };
+
+function derive_ancestor_bias(element) {
+  let total_bias = 0;
+  for (let child = element.firstElementChild; child;
+       child = child.nextElementSibling) {
+    const bias = ancestor_biases[child.localName];
+    if (bias) {
+      total_bias += bias;
+    }
+  }
+  return total_bias;
+}
 
 const token_weights = {
   ad: -500,
@@ -124,63 +154,44 @@ const token_weights = {
   zone: -50
 };
 
-function derive_text_bias(element) {
-  const text = string.condense_whitespace(element.textContent);
-  return 0.25 * text.length - 0.7 * derive_anchor_length(element);
-}
-
-function derive_anchor_length(element) {
-  const anchors = element.querySelectorAll('a[href]');
-  let anchor_length = 0;
-  for (const anchor of anchors) {
-    const text = string.condense_whitespace(anchor.textContent);
-    anchor_length += text.length;
-  }
-  return anchor_length;
-}
-
-function derive_ancestor_bias(element) {
-  let total_bias = 0;
-  for (let child = element.firstElementChild; child;
-       child = child.nextElementSibling) {
-    const bias = ancestor_biases[child.localName];
-    if (bias) {
-      total_bias += bias;
-    }
-  }
-  return total_bias;
-}
-
 function derive_attribute_bias(element) {
-  let total_bias = 0;
   const vals = [element.id, element.name, element.className];
 
-  // join implicitly filters undefined
-  const vals_flat_string = vals.join(' ');
-  if (vals_flat_string.length < 3) {
-    return total_bias;
+  // It is not obvious, so note that join implicitly filters undefined values so
+  // no need to explicitly check
+  const joined_vals = vals.join(' ');
+  if (joined_vals.length < 3) {
+    return 0;
   }
 
-  const vals_normal_string = vals_flat_string.toLowerCase();
-  const tokens = vals_normal_string.split(/[\s\-_0-9]+/g);
+  // It is actually faster to use one lowercase call on the entire string than
+  // normalizing each token, even though the length check could intercept
 
-  // TODO: revert to using an array. do not use obj as dic it just messes up v8
-  const seen_tokens = {};
+  const tokens = tokenize(joined_vals.toLowerCase());
+  const distinct_tokens = [];
 
+  // Inexact, just an upper bound to try and reduce includes calls
+  const max_token_len = 15;
+
+  let bias = 0;
   for (const token of tokens) {
-    if (!(token in seen_tokens)) {
-      seen_tokens[token] = 1;
-      total_bias += token_weights[token] || 0;
+    if (token.length < max_token_len && !distinct_tokens.includes(token)) {
+      distinct_tokens.push(token);
+      bias += token_weights[token] || 0;
     }
   }
 
-  return total_bias;
+  return bias;
 }
 
-function derive_image_bias(parent_element) {
+function tokenize(value) {
+  return value.split(/[\s\-_0-9]+/g);
+}
+
+function derive_child_image_bias(element) {
   let bias = 0;
   let image_count = 0;
-  for (const node of parent_element.childNodes) {
+  for (const node of element.childNodes) {
     if (node.localName === 'img') {
       bias += image_derive_area_bias(node) + image_derive_text_bias(node);
       image_count++;
@@ -213,30 +224,33 @@ function image_derive_text_bias(image) {
 }
 
 function image_find_caption(image) {
-  const figure = image.closest('figure');
-  if (figure) {
-    const captions = figure.getElementsByTagName('figcaption');
-    if (captions && captions.length) {
-      return captions[0];
+  const parent = image.parentNode;
+  if (parent) {
+    const figure = parent.closest('figure');
+    if (figure) {
+      const captions = figure.getElementsByTagName('figcaption');
+      if (captions && captions.length) {
+        return captions[0];
+      }
     }
   }
 }
 
-function image_derive_area_bias(image) {
-  // Get area, impute square for missing dims
-  let area;
+// For images with only one dimension assume it is a square
+function image_calc_area(image) {
   if (image.width && image.height) {
-    area = image.width * image.height;
+    return image.width * image.height;
   } else if (image.width) {
-    area = image.width * image.width;
+    return image.width * image.width;
   } else if (image.height) {
-    area = image.height * image.height;
-  } else {
-    // Leave area undefined
+    return image.height * image.height;
   }
+}
 
-  // Bin
+function image_derive_area_bias(image) {
   let bias = 0;
+  const area = image_calc_area(image);
+
   if (area > 100000) {
     bias = 500;
   } else if (area > 50000) {
