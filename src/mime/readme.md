@@ -1,11 +1,17 @@
+# About
 
-MIME utility functions
+A mime-type value is a specialized form of a string. Therefore, there is no explicit data type, just helpers that work with strings that purport to be mime types.
 
-`parse_content_type` parses a mime type string from an HTTP response header value for the `Content-Type` header.
+* `parse_content_type` extracts the mime type of an HTTP `Content-Type` header.
+* `is_mime_type` returns whether a string represents a mime type.
 
-The current implementation is relaxed regarding input to increase caller convenience. The function does not throw in the case the input is not a string. Technically I usually consider passing invalid input to a function as a programming error. However, here I've made an exception to the rule because in the typical case the header value coming from an http response cannot be trusted as well-formed. All that being strict accomplishes is to make it more annoying for the caller and creates a need for more boilerplate wrapper code. In other words, I am saying that input validation in this case is the callee's responsibility.
+### parse_content_type notes
 
-`is_mime_type` returns whether the given string represents a valid mime type. The check is relatively lax (aka loose, not-strict). The goal of this function is to provide a floor, a minimum validity guarantee that the value at least appears to be a mime type, even if the value does not correspond to a real mime type. In other words, I want to treat most inputs as valid, and only reject when I am pretty sure the input is invalid.
+Rather than throw when input is invalid, this simply returns undefined, for convenience.
+
+### is_mime_type notes
+
+This is inaccurate. This only provides a loose guarantee that a string looks like a mime type.
 
 # TODO: increase the accuracy of min/max constants
 
