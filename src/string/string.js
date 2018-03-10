@@ -1,3 +1,7 @@
+export function filter_whitespace(string) {
+  return string.replace(/\s+/g, '');
+}
+
 export function condense_whitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
 }
