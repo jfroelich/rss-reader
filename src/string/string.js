@@ -1,3 +1,7 @@
+export function is_alphanumeric(string) {
+  return /^[a-zA-Z0-9]*$/.test(string);
+}
+
 export function filter_whitespace(string) {
   return string.replace(/\s+/g, '');
 }

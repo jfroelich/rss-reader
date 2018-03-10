@@ -1,4 +1,5 @@
 import * as mime from '/src/mime/mime.js';
+import * as string from '/src/string/string.js';
 
 export function url_is_binary(url) {
   if (!(url instanceof URL)) {
@@ -83,15 +84,11 @@ export function url_get_extension(url) {
     const last_dot_pos = path.lastIndexOf('.');
     if ((last_dot_pos >= 0) && (last_dot_pos + 1 < pathlen)) {
       const ext = path.substring(last_dot_pos + 1);
-      if (ext.length <= maxlen && string_is_alphanumeric(ext)) {
+      if (ext.length <= maxlen && string.is_alphanumeric(ext)) {
         return ext;
       }
     }
   }
-}
-
-export function string_is_alphanumeric(string) {
-  return /^[a-zA-Z0-9]*$/.test(string);
 }
 
 const application_text_types = [

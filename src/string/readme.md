@@ -25,3 +25,10 @@
 // http://stackoverflow.com/questions/4324790
 // http://stackoverflow.com/questions/21284228
 // http://stackoverflow.com/questions/24229262
+
+### Notes on is_alphanumeric
+
+The function returns whether the string is alphanumeric. Counter-intuitively, this works by testing for the presence of any non-alphanumeric character. The empty string is true, null/undefined are true. Does NOT support languages other than English
+
+* See https://stackoverflow.com/questions/4434076
+* See https://stackoverflow.com/questions/336210
