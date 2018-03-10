@@ -1,6 +1,6 @@
 import {fetch_html, tfetch, url_did_change} from '/src/fetch/fetch.js';
 import {idb_open} from '/src/idb/idb.js';
-import {mime_type_from_content_type} from '/src/mime/mime.js';
+import {parse_content_type} from '/src/mime/mime.js';
 
 const NAME = 'favicon-cache';
 const VERSION = 3;
@@ -500,7 +500,7 @@ function response_has_image_type(response) {
   assert(response instanceof Response);
   const content_type = response.headers.get('Content-Type');
   if (content_type) {
-    const mime_type = mime_type_from_content_type(content_type);
+    const mime_type = parse_content_type(content_type);
     if (mime_type) {
       return mime_type.startsWith('image/') ||
           mime_type === 'application/octet-stream';

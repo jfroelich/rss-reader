@@ -1,7 +1,7 @@
 
 MIME utility functions
 
-`mime_type_from_content_type` parses a mime type string from an HTTP response header value for the `Content-Type` header.
+`parse_content_type` parses a mime type string from an HTTP response header value for the `Content-Type` header.
 
 The current implementation is relaxed regarding input to increase caller convenience. The function does not throw in the case the input is not a string. Technically I usually consider passing invalid input to a function as a programming error. However, here I've made an exception to the rule because in the typical case the header value coming from an http response cannot be trusted as well-formed. All that being strict accomplishes is to make it more annoying for the caller and creates a need for more boilerplate wrapper code. In other words, I am saying that input validation in this case is the callee's responsibility.
 

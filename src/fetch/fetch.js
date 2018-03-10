@@ -1,4 +1,4 @@
-import {mime_type_from_content_type} from '/src/mime/mime.js';
+import {parse_content_type} from '/src/mime/mime.js';
 
 // Fetches the response of the given url and validates its response content
 // type. Throws an error if the fetch times out.
@@ -141,7 +141,7 @@ export function response_get_mime_type(response) {
   assert(response instanceof Response);
   const content_type = response.headers.get('Content-Type');
   if (content_type) {
-    return mime_type_from_content_type(content_type);
+    return parse_content_type(content_type);
   }
 }
 

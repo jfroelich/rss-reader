@@ -9,59 +9,59 @@ a(mime.MIME_TYPE_MIN_LENGTH < mime.MIME_TYPE_MAX_LENGTH);
 a(mime.MIME_TYPE_MIN_LENGTH >= 0);
 a(mime.MIME_TYPE_MAX_LENGTH >= 0);
 
-// mime_type_from_content_type tests
+// parse_content_type tests
 // no input
-a(mime.mime_type_from_content_type() === undefined);
+a(mime.parse_content_type() === undefined);
 
 // bad input
-a(mime.mime_type_from_content_type(1234) === undefined);
-a(mime.mime_type_from_content_type(false) === undefined);
-a(mime.mime_type_from_content_type(null) === undefined);
-a(mime.mime_type_from_content_type([]) === undefined);
-a(mime.mime_type_from_content_type({}) === undefined);
+a(mime.parse_content_type(1234) === undefined);
+a(mime.parse_content_type(false) === undefined);
+a(mime.parse_content_type(null) === undefined);
+a(mime.parse_content_type([]) === undefined);
+a(mime.parse_content_type({}) === undefined);
 
 
 // short string input
-a(mime.mime_type_from_content_type('') === undefined);
-a(mime.mime_type_from_content_type('a') === undefined);
+a(mime.parse_content_type('') === undefined);
+a(mime.parse_content_type('a') === undefined);
 
 // long string input
 let long_string = '';
 for (let i = 0; i < 100; i++) {
   long_string += 'abc';
 }
-a(mime.mime_type_from_content_type(long_string) === undefined);
+a(mime.parse_content_type(long_string) === undefined);
 
 
 
 // uppercase
-a(mime.mime_type_from_content_type('TEXT/HTML') === 'text/html');
+a(mime.parse_content_type('TEXT/HTML') === 'text/html');
 
 // mixed case
-a(mime.mime_type_from_content_type('TeXt/HTmL') === 'text/html');
+a(mime.parse_content_type('TeXt/HTmL') === 'text/html');
 
 
 // no semicolon no character encoding
-a(mime.mime_type_from_content_type('text/html') === 'text/html');
+a(mime.parse_content_type('text/html') === 'text/html');
 // extra trimmable whitespace
-a(mime.mime_type_from_content_type(' \t\ntext/html  \n\t  ') === 'text/html');
+a(mime.parse_content_type(' \t\ntext/html  \n\t  ') === 'text/html');
 // typical input
-a(mime.mime_type_from_content_type('text/html;charset=UTF-8') === 'text/html');
+a(mime.parse_content_type('text/html;charset=UTF-8') === 'text/html');
 // space leading character encoding
-a(mime.mime_type_from_content_type('text/html; charset=UTF-8') === 'text/html');
+a(mime.parse_content_type('text/html; charset=UTF-8') === 'text/html');
 
 // extra whitespace
-a(mime.mime_type_from_content_type('text / html') === 'text/html');
-a(mime.mime_type_from_content_type('   text / html   ') === 'text/html');
+a(mime.parse_content_type('text / html') === 'text/html');
+a(mime.parse_content_type('   text / html   ') === 'text/html');
 
 // fictional mime type with correct formatting and sufficient length
-a(mime.mime_type_from_content_type('foofoo/barbar') === 'foofoo/barbar');
+a(mime.parse_content_type('foofoo/barbar') === 'foofoo/barbar');
 
 // duplicate slash
-a(mime.mime_type_from_content_type('text/html/foo') === 'text/html/foo');
+a(mime.parse_content_type('text/html/foo') === 'text/html/foo');
 
 // duplicate semicolon
-a(mime.mime_type_from_content_type('text/html;;charset=UTF-8') === 'text/html');
+a(mime.parse_content_type('text/html;;charset=UTF-8') === 'text/html');
 
 
 // is_mime_type tests
