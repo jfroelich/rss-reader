@@ -1,3 +1,4 @@
+import * as string from '/src/string/string.js';
 
 export const MIME_TYPE_MIN_LENGTH = 7;
 export const MIME_TYPE_MAX_LENGTH = 100;
@@ -6,43 +7,31 @@ export const MIME_TYPE_MAX_LENGTH = 100;
 // @param content_type {String} an http response header value, optional
 // @returns {String} a mime type, or undefined if error
 export function mime_type_from_content_type(content_type) {
-  // Tolerate bad input. Just fail to parse without error
   if (typeof content_type !== 'string') {
     return;
   }
 
-  // If the content type string itself is too small, exit early
   if (content_type.length < MIME_TYPE_MIN_LENGTH) {
     return;
   }
 
-  // Trim and test again
   content_type = content_type.trim();
   if (content_type.length < MIME_TYPE_MIN_LENGTH) {
     return;
   }
 
-  // Get the character sequence prior to the semicolon, or the full sequence
-  // if no semicolon exists
   const scpos = content_type.indexOf(';');
   let mime_type = scpos > -1 ? content_type.substring(0, scpos) : content_type;
-
-  // Test length again with the hope of avoiding the next three helper function
-  // calls in the case of a short mime type. This check is not for logic, just
-  // performance.
-  if (mime_type.length < MIME_TYPE_MIN_LENGTH) {
-    return;
-  }
-
-  // Normalize output, validate and return
-  mime_type = filter_whitespace(mime_type).toLowerCase();
-  if (is_mime_type(mime_type)) {
-    return mime_type;
+  if (mime_type.length >= MIME_TYPE_MIN_LENGTH) {
+    mime_type = normalize(mime_type);
+    if (is_mime_type(mime_type)) {
+      return mime_type;
+    }
   }
 }
 
-function filter_whitespace(string) {
-  return string.replace(/\s+/g, '');
+function normalize(mime_type) {
+  return string.filter_whitespace(mime_type).toLowerCase();
 }
 
 // A trivial test of whether the parameter represents a mime type.
