@@ -1,15 +1,15 @@
-import {export_opml as export_opml_impl, import_opml as import_opml_impl} from '/src/exim/exim.js';
-import {open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
+import * as exim from '/src/exim/exim.js';
+import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import subscribe from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
 import {poll_service_poll_feeds} from '/src/poll-service/poll-service.js';
-import {rdb_feed_activate, rdb_feed_deactivate, rdb_for_each_active_feed, rdb_get_feeds, rdb_open, rdb_viewable_entries_for_each} from '/src/rdb/rdb.js';
+import * as rdb from '/src/rdb/rdb.js';
 
 export async function ral_get_feeds(title_sort_flag) {
   let conn, feeds;
   try {
-    conn = await rdb_open();
-    feeds = await rdb_get_feeds(conn);
+    conn = await rdb.rdb_open();
+    feeds = await rdb.rdb_get_feeds(conn);
   } finally {
     if (conn) {
       conn.close();
@@ -40,8 +40,8 @@ export async function ral_import(channel, files) {
 
   try {
     [reader_conn, favicon_conn] =
-        await Promise.all([rdb_open(), favicon_service_open()]);
-    await import_opml_impl(
+        await Promise.all([rdb.rdb_open(), favicon_service.open()]);
+    await exim.import_opml(
         reader_conn, favicon_conn, channel, fetch_feed_timeout, files);
   } finally {
     if (reader_conn) reader_conn.close();
@@ -52,8 +52,8 @@ export async function ral_import(channel, files) {
 export async function ral_export(title) {
   let conn;
   try {
-    conn = await rdb_open();
-    export_opml_impl(conn, title);
+    conn = await rdb.rdb_open();
+    exim.export_opml(conn, title);
   } finally {
     if (conn) conn.close();
   }
@@ -63,11 +63,11 @@ export async function ral_load_initial(
     entry_cursor_offset, entry_cursor_limit, entry_handler, feed_handler) {
   let conn;
   try {
-    conn = await rdb_open();
+    conn = await rdb.rdb_open();
 
-    const p1 = rdb_viewable_entries_for_each(
+    const p1 = rdb.rdb_viewable_entries_for_each(
         conn, entry_cursor_offset, entry_cursor_limit, entry_handler);
-    const p2 = rdb_for_each_active_feed(conn, feed_handler);
+    const p2 = rdb.rdb_for_each_active_feed(conn, feed_handler);
 
     await Promise.all([p1, p2]);
   } finally {
@@ -86,7 +86,7 @@ export async function ral_poll_feeds(channel, console) {
   ctx.channel = channel;
 
   let reader_conn, favicon_conn;
-  const conn_promises = [rdb_open(), favicon_service_open()];
+  const conn_promises = [rdb.rdb_open(), favicon_service.open()];
 
   try {
     [reader_conn, favicon_conn] = await Promise.all(conn_promises);
@@ -110,7 +110,7 @@ export async function ral_subscribe(channel, url) {
   ctx.notify = true;
   ctx.fetchFeedTimeout = 2000;
 
-  const conn_promises = Promise.all([rdb_open(), favicon_service_open()]);
+  const conn_promises = Promise.all([rdb.rdb_open(), favicon_service.open()]);
   let reader_conn, favicon_conn;
   try {
     [reader_conn, favicon_conn] = await conn_promises;
@@ -144,8 +144,8 @@ export async function ral_unsubscribe(channel, feed_id) {
 export async function ral_activate_feed(channel, feed_id) {
   let conn;
   try {
-    conn = await rdb_open();
-    await rdb_feed_activate(conn, channel, feed_id);
+    conn = await rdb.rdb_open();
+    await rdb.rdb_feed_activate(conn, channel, feed_id);
   } finally {
     if (conn) {
       console.debug('Closing connection to database', conn.name);
@@ -157,8 +157,8 @@ export async function ral_activate_feed(channel, feed_id) {
 export async function ral_deactivate_feed(channel, feed_id, reason) {
   let conn;
   try {
-    conn = await rdb_open();
-    await rdb_feed_deactivate(conn, channel, feed_id, reason);
+    conn = await rdb.rdb_open();
+    await rdb.rdb_feed_deactivate(conn, channel, feed_id, reason);
   } finally {
     if (conn) {
       console.debug('Closing connection to database', conn.name);
