@@ -10,7 +10,7 @@ import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
 import {coerce_entry} from '/src/rdb/coerce-entry.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import {rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_entry_peek_url, rdb_feed_has_url, rdb_feed_merge, rdb_feed_peek_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb/rdb.js';
-import url_rewrite from '/src/rewrite-url/rewrite-url.js';
+import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
 import {url_is_binary} from '/src/sniff/sniff.js';
 
 const null_console = {
@@ -355,7 +355,7 @@ async function poll_entry(ctx, entry) {
 
 function entry_rewrite_tail_url(entry) {
   const entry_tail_url = new URL(rdb_entry_peek_url(entry));
-  const entry_response_url = url_rewrite(entry_tail_url);
+  const entry_response_url = rewrite_url(entry_tail_url);
   if (!entry_response_url) {
     return false;
   }

@@ -1,7 +1,7 @@
 
 const rules = [];
 
-export default function url_rewrite(url) {
+export function rewrite_url(url) {
   if (!(url instanceof URL)) {
     throw new TypeError('Invalid url parameter', url);
   }
