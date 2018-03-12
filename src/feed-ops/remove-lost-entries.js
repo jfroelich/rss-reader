@@ -61,7 +61,7 @@ function entry_store_remove_lost_entries_promise(conn, console) {
       const cursor = request.result;
       if (cursor) {
         const entry = cursor.value;
-        if (!rdb.rdb_entry_has_url(entry)) {
+        if (!rdb.entry_has_url(entry)) {
           console.debug('Deleting lost entry', entry.id);
           cursor.delete();
           entry_ids.push(entry.id);

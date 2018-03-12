@@ -76,7 +76,7 @@ function entry_archive(entry) {
 
 // Create a new entry and copy over certain fields
 function entry_compact(entry) {
-  const compacted_entry = rdb.rdb_entry_create();
+  const compacted_entry = rdb.entry_create();
   compacted_entry.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {

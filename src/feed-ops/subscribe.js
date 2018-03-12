@@ -47,7 +47,7 @@ export default async function subscribe(context, url) {
 
   // If this fails, throw an error
   let contains_feed =
-      await rdb.rdb_contains_feed_with_url(context.feedConn, url);
+      await rdb.contains_feed_with_url(context.feedConn, url);
 
   // If already subscribed, throw an error
   // TODO: is this really an error? This isn't an error. This just means cannot
@@ -79,8 +79,8 @@ export default async function subscribe(context, url) {
     feed = await subscribe_create_feed_from_response(context, response, url);
   } else {
     // Offline subscription
-    feed = rdb.rdb_feed_create();
-    rdb.rdb_feed_append_url(feed, url);
+    feed = rdb.feed_create();
+    rdb.feed_append_url(feed, url);
   }
 
   // Set the feed's favicon
@@ -91,7 +91,7 @@ export default async function subscribe(context, url) {
   await subscribe_feed_set_favicon(query, feed, console);
 
   const stored_feed =
-      await rdb.rdb_feed_add(context.feedConn, context.channel, feed);
+      await rdb.feed_add(context.feedConn, context.channel, feed);
 
   const should_notify = 'notify' in context ? context.notify : true;
   if (should_notify) {
@@ -109,7 +109,7 @@ async function subscribe_create_feed_from_response(context, response, url) {
   if (fetchlib.url_did_change(url, response_url)) {
     // Allow database error to bubble uncaught
     const contains_feed =
-        await rdb.rdb_contains_feed_with_url(context.feedConn, response_url);
+        await rdb.contains_feed_with_url(context.feedConn, response_url);
     if (contains_feed) {
       throw new Error(
           'Already susbcribed to redirect url ' + response_url.href);
@@ -140,9 +140,9 @@ async function subscribe_create_feed_from_response(context, response, url) {
 }
 
 async function subscribe_feed_set_favicon(query, feed, console) {
-  assert(rdb.rdb_is_feed(feed));
+  assert(rdb.is_feed(feed));
 
-  const favicon_lookup_url = rdb.rdb_feed_create_favicon_lookup_url(feed);
+  const favicon_lookup_url = rdb.feed_create_favicon_lookup_url(feed);
 
   // Suppress lookup errors
   let favicon_url_string;
@@ -160,7 +160,7 @@ async function subscribe_feed_set_favicon(query, feed, console) {
 
 function subscribe_notification_show(feed) {
   const title = 'Subscribed!';
-  const feed_title = feed.title || rdb.rdb_feed_peek_url(feed);
+  const feed_title = feed.title || rdb.feed_peek_url(feed);
   const message = 'Subscribed to ' + feed_title;
   notification_show(title, message, feed.faviconURLString);
 }

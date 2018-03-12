@@ -36,13 +36,13 @@ Does coerce_feed throw anymore? I don't think it does actually, so I should not 
 
 New kind of problem, in hindsight, is merging of count of errors for parsing and fetching. suppose a feed file which is periodically updated becomes not-well-formed, causing parsing error. This is going to on the poll period update the error count. This means that after a couple polls, the feed quickly becomes inactive. That would be desired for the fetch error count, maybe, but not for the parse error count. Because eventually the feed file will get updated again and probably become well formed again. I've actually witnessed this. So the issue is this prematurely deactivates feeds that happen to have a parsing error that is actually ephemeral (temporary) and not permanent.
 
-Rather than try and update the database, perhaps it would be better to simply generate an event with feed id and some basic error information, and let some error handler handle the event at a later time. This removes all concern over encountering a closed database or closed channel at the time of the call to rdb_feed_put, and maintains the non-blocking characteristic.
+Rather than try and update the database, perhaps it would be better to simply generate an event with feed id and some basic error information, and let some error handler handle the event at a later time. This removes all concern over encountering a closed database or closed channel at the time of the call to feed_put, and maintains the non-blocking characteristic.
 
 # poll_entry notes and todo
 
 Despite checks for whether the url exists, we can still get uniqueness constraint errors when putting an entry in the store (from url index of entry store). This should not be fatal to polling, so trap and log the error and return.
 
-I think I need to look into this more. This may be a consequence of not using a single shared transaction. Because I am pretty sure that if I am doing rdb_contains_entry_with_url lookups, that I shouldn't run into this error here? It could be the new way I am doing url rewriting. Perhaps I need to do contains checks on the intermediate urls of an entry's url list as well. Which would lead to more contains lookups, so maybe also look into batching those somehow.
+I think I need to look into this more. This may be a consequence of not using a single shared transaction. Because I am pretty sure that if I am doing contains_entry_with_url lookups, that I shouldn't run into this error here? It could be the new way I am doing url rewriting. Perhaps I need to do contains checks on the intermediate urls of an entry's url list as well. Which would lead to more contains lookups, so maybe also look into batching those somehow.
 
 # entry_reader_db_exists note
 

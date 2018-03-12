@@ -92,7 +92,7 @@ async function on_entry_added_message(message) {
 }
 
 async function on_entry_expired_message(message) {
-  if (typeof message === 'object' && rdb.rdb_entry_is_valid_id(message.id)) {
+  if (typeof message === 'object' && rdb.entry_is_valid_id(message.id)) {
     const slide_name = Slideshow.element_get_name();
     const selector = slide_name + '[entry="' + message.id + '"]';
     const slide = document.querySelector(selector);
@@ -144,7 +144,7 @@ async function slide_load_and_append_multiple(conn, limit) {
 
   let entries;
   try {
-    entries = await rdb.rdb_find_viewable_entries(conn, offset, limit);
+    entries = await rdb.find_viewable_entries(conn, offset, limit);
   } catch (error) {
     console.error(error);
     error_message_show('There was a problem loading articles from storage');
@@ -159,12 +159,12 @@ async function slide_load_and_append_multiple(conn, limit) {
 }
 
 function slide_append(entry) {
-  if (!rdb.rdb_is_entry(entry)) {
+  if (!rdb.is_entry(entry)) {
     console.error('Invalid entry parameter', entry);
     return;
   }
 
-  console.debug('Appending entry', rdb.rdb_entry_peek_url(entry));
+  console.debug('Appending entry', rdb.entry_peek_url(entry));
 
   const slide = Slideshow.create();
   slide.setAttribute('entry', entry.id);
@@ -184,7 +184,7 @@ function slide_append(entry) {
 
 function create_article_title_element(entry) {
   const title_element = document.createElement('a');
-  title_element.setAttribute('href', rdb.rdb_entry_peek_url(entry));
+  title_element.setAttribute('href', rdb.entry_peek_url(entry));
   title_element.setAttribute('class', 'entry-title');
   title_element.setAttribute('rel', 'noreferrer');
 
@@ -605,7 +605,7 @@ function feeds_container_append_feed(feed) {
   col.textContent = 'URL';
   row.appendChild(col);
   col = document.createElement('td');
-  col.textContent = rdb.rdb_feed_peek_url(feed);
+  col.textContent = rdb.feed_peek_url(feed);
   row.appendChild(col);
   feed_info_element.appendChild(row);
 

@@ -47,7 +47,7 @@ function entry_store_remove_orphans_promise(conn) {
         const cursor = entry_store_cursor_request.result;
         if (cursor) {
           const entry = cursor.value;
-          if (!rdb.rdb_feed_is_valid_id(entry.feed) ||
+          if (!rdb.feed_is_valid_id(entry.feed) ||
               !feed_ids.includes(entry.feed)) {
             entry_ids.push(entry.id);
             console.debug('Deleting orphaned entry', entry.id);

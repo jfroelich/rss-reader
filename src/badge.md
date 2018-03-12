@@ -1,6 +1,6 @@
 
 // TODO: primary todo, trying to remove auto-connect from rdb/rdb.js, this is
-// the sole caller of rdb_entry_count_unread. In order to remove auto-connect I
+// the sole caller of entry_count_unread. In order to remove auto-connect I
 // need ensure all callers of this function use a valid connection. In doing so,
 // do not forget that this can _still_ be called non-awaited with a connection.
 

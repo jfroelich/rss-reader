@@ -13,7 +13,7 @@ export async function update(conn) {
 
   let count;
   try {
-    count = await rdb.rdb_entry_count_unread(conn);
+    count = await rdb.entry_count_unread(conn);
   } catch (error) {
     console.error(error);
     return;

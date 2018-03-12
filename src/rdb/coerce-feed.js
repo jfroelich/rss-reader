@@ -8,14 +8,14 @@ export function coerce_feed(parsed_feed, fetch_info) {
   assert(request_url instanceof URL);
   assert(response_url instanceof URL);
 
-  const feed = rdb.rdb_feed_create();
+  const feed = rdb.feed_create();
 
   if (parsed_feed.type) {
     feed.type = parsed_feed.type;
   }
 
-  rdb.rdb_feed_append_url(feed, request_url);
-  rdb.rdb_feed_append_url(feed, response_url);
+  rdb.feed_append_url(feed, request_url);
+  rdb.feed_append_url(feed, response_url);
 
   if (parsed_feed.link) {
     try {

@@ -8,7 +8,7 @@ import * as rdb from '/src/rdb/rdb.js';
 // document
 export async function export_opml(conn, title) {
   assert(conn instanceof IDBDatabase);
-  const feeds = await rdb.rdb_get_feeds(conn);
+  const feeds = await rdb.get_feeds(conn);
 
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
@@ -45,7 +45,7 @@ export async function export_opml(conn, title) {
     if (feed.type) {
       outline_element.setAttribute('type', feed.type);
     }
-    outline_element.setAttribute('xmlUrl', rdb.rdb_feed_peek_url(feed));
+    outline_element.setAttribute('xmlUrl', rdb.feed_peek_url(feed));
     if (feed.title) {
       outline_element.setAttribute('title', feed.title);
     }

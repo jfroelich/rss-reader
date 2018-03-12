@@ -5,7 +5,7 @@ export function dedup_entries(entries) {
   const seen_url_strings = [];
 
   for (const entry of entries) {
-    if (!rdb.rdb_entry_has_url(entry)) {
+    if (!rdb.entry_has_url(entry)) {
       distinct_entries.push(entry);
       continue;
     }

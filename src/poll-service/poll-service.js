@@ -63,7 +63,7 @@ export async function poll_service_poll_feeds(input_poll_feeds_context) {
   poll_feed_context.notify = false;
 
   // Concurrently poll the feeds
-  const feeds = await rdb.rdb_find_active_feeds(poll_feeds_context.feedConn);
+  const feeds = await rdb.find_active_feeds(poll_feeds_context.feedConn);
   const poll_feed_promises = [];
   for (const feed of feeds) {
     const promise = poll_service_feed_poll(poll_feed_context, feed);
@@ -98,11 +98,11 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   assert(poll_feed_context.feedConn instanceof IDBDatabase);
   assert(poll_feed_context.iconConn instanceof IDBDatabase);
   assert(poll_feed_context.channel instanceof BroadcastChannel);
-  assert(rdb.rdb_is_feed(feed));
-  assert(rdb.rdb_feed_has_url(feed));
+  assert(rdb.is_feed(feed));
+  assert(rdb.feed_has_url(feed));
 
   const console = poll_feed_context.console;
-  const feed_tail_url = new URL(rdb.rdb_feed_peek_url(feed));
+  const feed_tail_url = new URL(rdb.feed_peek_url(feed));
   console.log('Polling feed', feed_tail_url.href);
 
   if (!feed.active) {
@@ -148,7 +148,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     const state_changed = handle_fetch_feed_success(feed);
     if (state_changed) {
       feed.dateUpdated = new Date();
-      await rdb.rdb_feed_put(
+      await rdb.feed_put(
           poll_feed_context.feedConn, poll_feed_context.channel, feed);
     }
     return 0;
@@ -209,12 +209,12 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     return 0;
   }
 
-  const merged_feed = rdb.rdb_feed_merge(feed, coerced_feed);
+  const merged_feed = rdb.feed_merge(feed, coerced_feed);
   handle_fetch_feed_success(merged_feed);
 
-  const storable_feed = rdb.rdb_feed_prepare(merged_feed);
+  const storable_feed = rdb.feed_prepare(merged_feed);
   storable_feed.dateUpdated = new Date();
-  await rdb.rdb_feed_put(
+  await rdb.feed_put(
       poll_feed_context.feedConn, poll_feed_context.channel, storable_feed);
 
   // Process the entries
@@ -298,7 +298,7 @@ function handle_poll_feed_error(error_info) {
 
   feed.dateUpdated = new Date();
   // Call unawaited
-  rdb.rdb_feed_put(
+  rdb.feed_put(
          error_info.context.feedConn, error_info.context.channel, feed)
       .catch(console.error);
 }
@@ -336,7 +336,7 @@ function cascade_feed_properties_to_entries(feed, entries) {
 
 async function poll_entry(ctx, entry) {
   assert(typeof ctx === 'object');
-  if (!rdb.rdb_entry_has_url(entry)) {
+  if (!rdb.entry_has_url(entry)) {
     return;
   }
 
@@ -359,7 +359,7 @@ async function poll_entry(ctx, entry) {
 
   let stored_entry;
   try {
-    stored_entry = await rdb.rdb_entry_add(ctx.feedConn, ctx.channel, entry);
+    stored_entry = await rdb.entry_add(ctx.feedConn, ctx.channel, entry);
   } catch (error) {
     console.error(entry.urls, error);
     return;
@@ -369,21 +369,21 @@ async function poll_entry(ctx, entry) {
 }
 
 function entry_rewrite_tail_url(entry) {
-  const entry_tail_url = new URL(rdb.rdb_entry_peek_url(entry));
+  const entry_tail_url = new URL(rdb.entry_peek_url(entry));
   const entry_response_url = rewrite_url(entry_tail_url);
   if (!entry_response_url) {
     return false;
   }
-  return rdb.rdb_entry_append_url(entry, entry_response_url);
+  return rdb.entry_append_url(entry, entry_response_url);
 }
 
 function entry_exists_in_db(conn, entry) {
-  const entry_tail_url = new URL(rdb.rdb_entry_peek_url(entry));
-  return rdb.rdb_contains_entry_with_url(conn, entry_tail_url);
+  const entry_tail_url = new URL(rdb.entry_peek_url(entry));
+  return rdb.contains_entry_with_url(conn, entry_tail_url);
 }
 
 async function entry_fetch(entry, timeout) {
-  const url = new URL(rdb.rdb_entry_peek_url(entry));
+  const url = new URL(rdb.entry_peek_url(entry));
   if (!url_is_augmentable(url)) {
     return;
   }
@@ -401,13 +401,13 @@ async function entry_handle_redirect(conn, response, entry) {
     return false;
   }
 
-  const entry_tail_url = new URL(rdb.rdb_entry_peek_url(entry));
+  const entry_tail_url = new URL(rdb.entry_peek_url(entry));
   const entry_response_url = new URL(response.url);
   if (!fetchlib.url_did_change(entry_tail_url, entry_response_url)) {
     return false;
   }
 
-  rdb.rdb_entry_append_url(entry, entry_response_url);
+  rdb.entry_append_url(entry, entry_response_url);
   entry_rewrite_tail_url(entry);
   return await entry_exists_in_db(conn, entry);
 }
@@ -426,7 +426,7 @@ async function entry_parse_response(response) {
 }
 
 function entry_update_title(entry, document) {
-  assert(rdb.rdb_is_entry(entry));
+  assert(rdb.is_entry(entry));
   if (document && !entry.title) {
     const title_element = document.querySelector('html > head > title');
     if (title_element) {
@@ -437,9 +437,9 @@ function entry_update_title(entry, document) {
 
 async function entry_update_favicon(ctx, entry, document) {
   assert(typeof ctx === 'object');
-  assert(rdb.rdb_is_entry(entry));
-  assert(rdb.rdb_entry_has_url(entry));
-  const entry_tail_url = new URL(rdb.rdb_entry_peek_url(entry));
+  assert(rdb.is_entry(entry));
+  assert(rdb.entry_has_url(entry));
+  const entry_tail_url = new URL(rdb.entry_peek_url(entry));
   const favicon_service_lookup_context = {
     conn: ctx.iconConn,
     skipURLFetch: true,
@@ -471,7 +471,7 @@ async function entry_update_content(ctx, entry, fetched_document) {
     }
   }
 
-  const document_url = new URL(rdb.rdb_entry_peek_url(entry));
+  const document_url = new URL(rdb.entry_peek_url(entry));
   const filter_options = {
     fetch_image_timeout: ctx.fetchImageTimeout,
     matte: color.WHITE,

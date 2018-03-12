@@ -9,7 +9,7 @@ export async function ral_get_feeds(title_sort_flag) {
   let conn, feeds;
   try {
     conn = await rdb.open();
-    feeds = await rdb.rdb_get_feeds(conn);
+    feeds = await rdb.get_feeds(conn);
   } finally {
     if (conn) {
       conn.close();
@@ -65,9 +65,9 @@ export async function ral_load_initial(
   try {
     conn = await rdb.open();
 
-    const p1 = rdb.rdb_viewable_entries_for_each(
+    const p1 = rdb.viewable_entries_for_each(
         conn, entry_cursor_offset, entry_cursor_limit, entry_handler);
-    const p2 = rdb.rdb_for_each_active_feed(conn, feed_handler);
+    const p2 = rdb.for_each_active_feed(conn, feed_handler);
 
     await Promise.all([p1, p2]);
   } finally {
@@ -145,7 +145,7 @@ export async function ral_activate_feed(channel, feed_id) {
   let conn;
   try {
     conn = await rdb.open();
-    await rdb.rdb_feed_activate(conn, channel, feed_id);
+    await rdb.feed_activate(conn, channel, feed_id);
   } finally {
     if (conn) {
       console.debug('Closing connection to database', conn.name);

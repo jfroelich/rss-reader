@@ -14,13 +14,13 @@ export const ENTRY_STATE_ARCHIVED = 1;
 
 // Open a connection to the reader database. All parameters are optional
 export function open(name = 'reader', version = 24, timeout = 500) {
-  return idb_open(name, version, rdb_on_upgrade_needed, timeout);
+  return idb_open(name, version, on_upgrade_needed, timeout);
 }
 
 // Helper for open. Does the database upgrade. This should never be
 // called directly. To do an upgrade, call open with a higher version
 // number.
-function rdb_on_upgrade_needed(event) {
+function on_upgrade_needed(event) {
   const conn = event.target.result;
   const txn = event.target.transaction;
   let feed_store, entry_store;
@@ -48,11 +48,11 @@ function rdb_on_upgrade_needed(event) {
   }
 
   if (event.oldVersion < 21) {
-    rdb_add_magic_to_entries(txn);
+    add_magic_to_entries(txn);
   }
 
   if (event.oldVersion < 22) {
-    rdb_add_magic_to_feeds(txn);
+    add_magic_to_feeds(txn);
   }
 
   if (event.oldVersion < 23) {
@@ -62,7 +62,7 @@ function rdb_on_upgrade_needed(event) {
   }
 
   if (event.oldVersion < 24) {
-    rdb_add_active_field_to_feeds(feed_store);
+    add_active_field_to_feeds(feed_store);
   }
 }
 
@@ -70,7 +70,7 @@ function rdb_on_upgrade_needed(event) {
 // each entry. This returns prior to the operation completing.
 // @param txn {IDBTransaction}
 // @return {void}
-function rdb_add_magic_to_entries(txn) {
+function add_magic_to_entries(txn) {
   const store = txn.objectStore('entry');
   const request = store.openCursor();
   request.onsuccess = function() {
@@ -88,7 +88,7 @@ function rdb_add_magic_to_entries(txn) {
 }
 
 // TODO: use cursor over getAll for scalability
-function rdb_add_magic_to_feeds(txn) {
+function add_magic_to_feeds(txn) {
   console.debug('Adding feed magic');
   const store = txn.objectStore('feed');
   const request = store.getAll();
@@ -103,8 +103,8 @@ function rdb_add_magic_to_feeds(txn) {
   }
 }
 
-function rdb_add_active_field_to_feeds(store) {
-  // TODO: use cursor rather than getAll
+// TODO: use cursor rather than getAll for scalability
+function add_active_field_to_feeds(store) {
   const feeds_request = store.getAll();
   feeds_request.onerror = console.error;
   feeds_request.onsuccess = function(event) {
@@ -129,13 +129,13 @@ function rdb_add_active_field_to_feeds(store) {
 // @throws {Error} database error, invalid input error, channel error, note
 // these are technically rejections unless this is awaited
 // @return {Promise} a promise that resolves
-export function rdb_feed_activate(conn, channel, feed_id) {
+export function feed_activate(conn, channel, feed_id) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof IDBDatabase);
     assert(
         typeof channel === 'undefined' || channel === null ||
         channel instanceof BroadcastChannel);
-    assert(rdb_feed_is_valid_id(feed_id));
+    assert(feed_is_valid_id(feed_id));
 
     const txn = conn.transaction('feed', 'readwrite');
     txn.oncomplete = () => {
@@ -149,7 +149,7 @@ export function rdb_feed_activate(conn, channel, feed_id) {
     const request = store.get(feed_id);
     request.onsuccess = () => {
       const feed = request.result;
-      assert(rdb_is_feed(feed));
+      assert(is_feed(feed));
       assert(!feed.active || !('active' in feed));
       feed.active = true;
       delete feed.deactivationReasonText;
@@ -160,15 +160,15 @@ export function rdb_feed_activate(conn, channel, feed_id) {
   });
 }
 
-// TODO: rather than reject in the case of an inactive feed, maybe instead
-// become a no-op?
+// TODO: rather than reject when inactive, maybe just skip?
 export function rdb_feed_deactivate(conn, channel, feed_id, reason_text) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof IDBDatabase);
     assert(
         typeof channel === 'undefined' || channel === null ||
         channel instanceof BroadcastChannel);
-    assert(rdb_feed_is_valid_id(feed_id));
+    assert(feed_is_valid_id(feed_id));
+
     const txn = conn.transaction('feed', 'readwrite');
     txn.oncomplete = () => {
       if (channel) {
@@ -181,7 +181,6 @@ export function rdb_feed_deactivate(conn, channel, feed_id, reason_text) {
     const request = store.get(feed_id);
     request.onsuccess = () => {
       const feed = request.result;
-      assert(feed);
       assert(feed.active || !('active' in feed));
       feed.active = false;
       feed.deactivationDate = new Date();
@@ -192,22 +191,22 @@ export function rdb_feed_deactivate(conn, channel, feed_id, reason_text) {
   });
 }
 
-export async function rdb_entry_add(conn, channel, entry) {
+export async function entry_add(conn, channel, entry) {
   assert(conn instanceof IDBDatabase);
   assert(
       typeof channel === 'undefined' || channel === null ||
       channel instanceof BroadcastChannel);
-  assert(rdb_is_entry(entry));
+  assert(is_entry(entry));
   assert(!('id' in entry) || entry.id === null || entry.id === void 0);
 
   // Throw an error if the entry object has any invalid properties
-  assert(rdb_entry_is_valid(entry));
+  assert(entry_is_valid(entry));
 
-  // TODO: if I plan to have validation also occur in rdb_entry_sanitize, then
+  // TODO: if I plan to have validation also occur in entry_sanitize, then
   // I think what should happen here is that I pass a no-revalidate flag along
   // to avoid revalidation because it could end up being a heavier operation
 
-  const sanitized_entry = rdb_entry_sanitize(entry);
+  const sanitized_entry = entry_sanitize(entry);
   const storable_entry = object.filter_empty_properties(sanitized_entry);
 
   // TODO: is it correct to have this be concerned with state initialization,
@@ -221,7 +220,7 @@ export async function rdb_entry_add(conn, channel, entry) {
   storable_entry.archiveState = ENTRY_STATE_UNARCHIVED;
   storable_entry.dateCreated = new Date();
 
-  // rdb_entry_put stores the value as is, and will not automatically add a
+  // entry_put stores the value as is, and will not automatically add a
   // dateUpdated property, so this is sensible. New entries have never been
   // dirtied, and therefore should not have a date updated. Alternatively, this
   // could even throw an error. For the time being, it is more convenient to
@@ -237,7 +236,7 @@ export async function rdb_entry_add(conn, channel, entry) {
   // the input channel, so that its message is suppressed, so that add can send
   // its own message as a substitute. Rethrow any put errors as add errors.
   let void_channel;
-  const entry_id = await rdb_entry_put(conn, void_channel, storable_entry);
+  const entry_id = await entry_put(conn, void_channel, storable_entry);
 
   // Send our own message as a substitute for put's message
   if (channel) {
@@ -251,14 +250,10 @@ export async function rdb_entry_add(conn, channel, entry) {
 // @param conn {IDBDatabase} an open database connection, required
 // @return {Promise} a promise that resolves to the number of unread entries, or
 // rejects with a database error
-export function rdb_entry_count_unread(conn) {
+export function entry_count_unread(conn) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('entry');
     const store = txn.objectStore('entry');
-
-    // The readState index contains all entries in the read or unread state.
-    // We simply count the number of entries in this index in the unread state
-
     const index = store.index('readState');
     const request = index.count(ENTRY_STATE_UNREAD);
     request.onsuccess = () => resolve(request.result);
@@ -268,9 +263,9 @@ export function rdb_entry_count_unread(conn) {
 
 // Marks the entry corresponding to the entry_id as read in the database.
 // @param conn {IDBDatabase} required
-export function rdb_entry_mark_read(conn, channel, entry_id) {
+export function entry_mark_read(conn, channel, entry_id) {
   return new Promise((resolve, reject) => {
-    assert(rdb_entry_is_valid_id(entry_id));
+    assert(entry_is_valid_id(entry_id));
 
     const txn = conn.transaction('entry', 'readwrite');
     txn.oncomplete = () => {
@@ -280,10 +275,10 @@ export function rdb_entry_mark_read(conn, channel, entry_id) {
         // is extremely unlikely the channel has been closed and moreover it
         // probably signals an actual error of premature channel close. I am
         // going to wait on that until I resolve the new non-auto-connect
-        // requirement in which rdb_entry_mark_read is called
+        // requirement in which entry_mark_read is called
 
         // channel may be closed by the time this executes when
-        // rdb_entry_mark_read is not awaited, so trap the invalid state error
+        // entry_mark_read is not awaited, so trap the invalid state error
         // and just log it
         try {
           channel.postMessage({type: 'entry-marked-read', id: entry_id});
@@ -324,43 +319,43 @@ export function rdb_entry_mark_read(conn, channel, entry_id) {
 }
 
 // Returns an array of active feeds
-export async function rdb_find_active_feeds(conn) {
+export async function find_active_feeds(conn) {
   assert(conn instanceof IDBDatabase);
-  const feeds = await rdb_get_feeds(conn);
+  const feeds = await get_feeds(conn);
   return feeds.filter(feed => feed.active);
 }
 
 // Calls the callback function on each feed in the store
 // TODO: currently each call to the callback is blocked by waiting for the
 // prior callback to complete, essentially a serial progression. This should
-// directly interact with the database instead of using rdb_get_feeds and
+// directly interact with the database instead of using get_feeds and
 // pre-loading into an array, and this should walk the feed store and call the
 // callback per cursor walk, advancing the cursor PRIOR to calling the callback,
 // taking advantage of the asynchronous nature of indexedDB cursor request
 // callbacks. This will yield a minor speedup at the cost of being a mild DRY
-// violation. However, the speed is admittedly not that important
-export async function rdb_for_each_active_feed(conn, per_feed_callback) {
-  assert(conn instanceof IDBDatabase);
+// violation. However, the speed is admittedly not that important. This will
+// also make the approach scalable to N feeds (until stack overflow).
 
-  const feeds = await rdb_get_feeds(conn);
+export async function for_each_active_feed(conn, per_feed_callback) {
+  const feeds = await get_feeds(conn);
   for (const feed of feeds) {
     per_feed_callback(feed);
   }
 }
 
-export function rdb_contains_entry_with_url(conn, url) {
+export function contains_entry_with_url(conn, url) {
   return new Promise((resolve, reject) => {
     assert(url instanceof URL);
     const txn = conn.transaction('entry');
     const store = txn.objectStore('entry');
     const index = store.index('urls');
     const request = index.getKey(url.href);
-    request.onsuccess = () => resolve(rdb_entry_is_valid_id(request.result));
+    request.onsuccess = () => resolve(entry_is_valid_id(request.result));
     request.onerror = () => reject(request.error);
   });
 }
 
-export function rdb_contains_feed_with_url(conn, url) {
+export function contains_feed_with_url(conn, url) {
   return new Promise((resolve, reject) => {
     assert(url instanceof URL);
     const txn = conn.transaction('feed');
@@ -369,13 +364,13 @@ export function rdb_contains_feed_with_url(conn, url) {
     const request = index.getKey(url.href);
     request.onsuccess = () => {
       const feed_id = request.result;
-      resolve(rdb_feed_is_valid_id(feed_id));
+      resolve(feed_is_valid_id(feed_id));
     };
     request.onerror = () => reject(request.error);
   });
 }
 
-export function rdb_find_viewable_entries(conn, offset, limit) {
+export function find_viewable_entries(conn, offset, limit) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof IDBDatabase);
     if (offset !== null && typeof offset !== 'undefined') {
@@ -418,7 +413,7 @@ export function rdb_find_viewable_entries(conn, offset, limit) {
 // @param offset {Number}
 // @param limit {Number}
 // @param per_entry_callback {Function}
-export function rdb_viewable_entries_for_each(
+export function viewable_entries_for_each(
     conn, offset, limit, per_entry_callback) {
   return new Promise((resolve, reject) => {
     let counter = 0;
@@ -450,7 +445,7 @@ export function rdb_viewable_entries_for_each(
   });
 }
 
-export function rdb_get_feeds(conn) {
+export function get_feeds(conn) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('feed');
     const store = txn.objectStore('feed');
@@ -466,13 +461,13 @@ export function rdb_get_feeds(conn) {
 // @param conn {IDBDatabase} required
 // @param channel {BroadcastChannel} optional
 // @param entry {object} required
-function rdb_entry_put(conn, channel, entry) {
+function entry_put(conn, channel, entry) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof IDBDatabase);
     if (channel) {
       assert(channel instanceof BroadcastChannel);
     }
-    assert(rdb_is_entry(entry));
+    assert(is_entry(entry));
     const txn = conn.transaction('entry', 'readwrite');
     const store = txn.objectStore('entry');
     const request = store.put(entry);
@@ -487,8 +482,8 @@ function rdb_entry_put(conn, channel, entry) {
   });
 }
 
-export function rdb_feed_prepare(feed) {
-  return object.filter_empty_properties(rdb_feed_sanitize(feed));
+export function feed_prepare(feed) {
+  return object.filter_empty_properties(feed_sanitize(feed));
 }
 
 // TODO: implement fully
@@ -496,19 +491,19 @@ export function rdb_feed_prepare(feed) {
 // @param feed {any} any value, this should be a feed object, but it is not
 // required
 // @return {Boolean}
-export function rdb_feed_is_valid(feed) {
-  // rdb_feed_is_valid is generally called in the context of an assertion, so
+export function feed_is_valid(feed) {
+  // feed_is_valid is generally called in the context of an assertion, so
   // while this could be its own assert, there is no need. It is simpler to
   // return here than throw an exception. It is, notably, generally an error to
   // ever call this function on something other than a feed, but that care is
   // left to the caller
-  if (!rdb_is_feed(feed)) {
+  if (!is_feed(feed)) {
     return false;
   }
 
   // Validate the feed's id. It may not be present in the case of validating
   // a feed that has never been stored.
-  if ('id' in feed && !rdb_feed_is_valid_id(feed.id)) {
+  if ('id' in feed && !feed_is_valid_id(feed.id)) {
     return false;
   }
 
@@ -525,23 +520,23 @@ export function rdb_feed_is_valid(feed) {
 // @param feed {object} the feed to insert
 // @return {Promise} resolves the object that was stored in the database, or
 // rejects with an error (e.g. database error, invalid arguments)
-export async function rdb_feed_add(conn, channel, feed) {
-  // Delegate feed type check to rdb_feed_is_valid
-  assert(rdb_feed_is_valid(feed));
+export async function feed_add(conn, channel, feed) {
+  // Delegate feed type check to feed_is_valid
+  assert(feed_is_valid(feed));
 
   // Clone the feed, sanitize the clone, setup default props
-  const prepared_feed = rdb_feed_prepare(feed);
+  const prepared_feed = feed_prepare(feed);
   prepared_feed.active = true;
   prepared_feed.dateCreated = new Date();
   delete prepared_feed.dateUpdated;
 
-  // Delegate database modification to rdb_feed_put. In doing so, suppress the
-  // message from rdb_feed_put because we will post our own, and suppress
+  // Delegate database modification to feed_put. In doing so, suppress the
+  // message from feed_put because we will post our own, and suppress
   // validation because we did it above.
   let void_channel;
   const validate = false;
   const feed_id =
-      await rdb_feed_put(conn, void_channel, prepared_feed, validate);
+      await feed_put(conn, void_channel, prepared_feed, validate);
   if (channel) {
     channel.postMessage({type: 'feed-added', id: feed_id});
   }
@@ -555,14 +550,14 @@ export async function rdb_feed_add(conn, channel, feed) {
 // @param channel {BroadcastChannel} optional
 // @param feed {object}
 // @param validate {Boolean} optional
-export function rdb_feed_put(conn, channel, feed, validate = true) {
+export function feed_put(conn, channel, feed, validate = true) {
   return new Promise((resolve, reject) => {
     if (validate) {
-      // Defer rdb_is_feed call to validation in this case
-      assert(rdb_feed_is_valid(feed));
+      // Defer is_feed call to validation in this case
+      assert(feed_is_valid(feed));
     } else {
       // Otherwise provide minimal validation
-      assert(rdb_is_feed(feed));
+      assert(is_feed(feed));
     }
 
     const txn = conn.transaction('feed', 'readwrite');
@@ -595,9 +590,9 @@ export function rdb_feed_put(conn, channel, feed, validate = true) {
 // @param channel {BroadcastChannel} optional
 // @param feed_id {Number}
 // @param reason_text {String}
-export function rdb_feed_remove(conn, channel, feed_id, reason_text) {
+export function feed_remove(conn, channel, feed_id, reason_text) {
   return new Promise(function executor(resolve, reject) {
-    assert(rdb_feed_is_valid_id(feed_id));
+    assert(feed_is_valid_id(feed_id));
     let entry_ids;
     const txn = conn.transaction(['feed', 'entry'], 'readwrite');
     txn.oncomplete = _ => {
@@ -633,7 +628,7 @@ export function rdb_feed_remove(conn, channel, feed_id, reason_text) {
 }
 
 // Returns a shallow copy of the input feed with sanitized properties
-function rdb_feed_sanitize(feed, title_max_length, description_max_length) {
+function feed_sanitize(feed, title_max_length, description_max_length) {
   if (typeof title_max_length === 'undefined') {
     title_max_length = 1024;
   }
@@ -642,7 +637,7 @@ function rdb_feed_sanitize(feed, title_max_length, description_max_length) {
     description_max_length = 1024 * 10;
   }
 
-  const blank_feed = rdb_feed_create();
+  const blank_feed = feed_create();
   const output_feed = Object.assign(blank_feed, feed);
   const html_tag_replacement = '';
   const suffix = '';
@@ -669,8 +664,8 @@ function rdb_feed_sanitize(feed, title_max_length, description_max_length) {
 }
 
 // TODO: implement
-function rdb_entry_is_valid(entry) {
-  if (!rdb_is_entry(entry)) {
+function entry_is_valid(entry) {
+  if (!is_entry(entry)) {
     return false;
   }
 
@@ -679,7 +674,7 @@ function rdb_entry_is_valid(entry) {
 
 // Returns a new entry object where fields have been sanitized. Impure. Note
 // that this assumes the entry is valid. As in, passing the entry to
-// rdb_entry_is_valid before calling this function would return true. This does
+// entry_is_valid before calling this function would return true. This does
 // not revalidate. Sanitization is not validation. Here, sanitization acts more
 // like a normalizing procedure, where certain properties are modified into a
 // more preferable canonical form. A property can be perfectly valid, but
@@ -696,11 +691,11 @@ function rdb_entry_is_valid(entry) {
 // second function that replaces or removes certain important binary characters
 // (e.g. remove line breaks from author string). Something like
 // 'string_replace_formatting_characters'.
-function rdb_entry_sanitize(
+function entry_sanitize(
     input_entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
   // Create a shallow clone of the entry. This is partly the source of impurity.
-  const blank_entry = rdb_entry_create();
+  const blank_entry = entry_create();
   const output_entry = Object.assign(blank_entry, input_entry);
 
   if (output_entry.author) {
@@ -735,12 +730,12 @@ function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }
 
-export function rdb_feed_create() {
+export function feed_create() {
   return {magic: FEED_MAGIC};
 }
 
 // Return true if the value looks like a feed object
-export function rdb_is_feed(value) {
+export function is_feed(value) {
   // While it perenially appears like the value condition is implied in the
   // typeof condition, this is not true. The value condition is short for value
   // !== null, because typeof null === 'object', and not checking value
@@ -756,28 +751,28 @@ export function rdb_is_feed(value) {
   return value && typeof value === 'object' && value.magic === FEED_MAGIC;
 }
 
-export function rdb_feed_is_valid_id(id) {
+export function feed_is_valid_id(id) {
   return Number.isInteger(id) && id > 0;
 }
 
-export function rdb_feed_has_url(feed) {
-  assert(rdb_is_feed(feed));
+export function feed_has_url(feed) {
+  assert(is_feed(feed));
   return feed.urls && (feed.urls.length > 0);
 }
 
 // Returns the last url in the feed's url list as a string
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
-export function rdb_feed_peek_url(feed) {
-  assert(rdb_feed_has_url(feed));
+export function feed_peek_url(feed) {
+  assert(feed_has_url(feed));
   return feed.urls[feed.urls.length - 1];
 }
 
 // Appends a url to the feed's internal list. Lazily creates the list if needed
 // @param feed {Object} a feed object
 // @param url {URL}
-export function rdb_feed_append_url(feed, url) {
-  if (!rdb_is_feed(feed)) {
+export function feed_append_url(feed, url) {
+  if (!is_feed(feed)) {
     console.error('Invalid feed argument:', feed);
     return false;
   }
@@ -800,8 +795,8 @@ export function rdb_feed_append_url(feed, url) {
 // feed. Fields from the new feed take precedence, except for urls, which are
 // merged to generate a distinct ordered set of oldest to newest url. Impure
 // because of copying by reference.
-export function rdb_feed_merge(old_feed, new_feed) {
-  const merged_feed = Object.assign(rdb_feed_create(), old_feed, new_feed);
+export function feed_merge(old_feed, new_feed) {
+  const merged_feed = Object.assign(feed_create(), old_feed, new_feed);
 
   // After assignment, the merged feed has only the urls from the new feed. So
   // the output feed's url list needs to be fixed. First copy over the old
@@ -810,31 +805,31 @@ export function rdb_feed_merge(old_feed, new_feed) {
 
   if (new_feed.urls) {
     for (const url_string of new_feed.urls) {
-      rdb_feed_append_url(merged_feed, new URL(url_string));
+      feed_append_url(merged_feed, new URL(url_string));
     }
   }
 
   return merged_feed;
 }
 
-export function rdb_entry_create() {
+export function entry_create() {
   return {magic: ENTRY_MAGIC};
 }
 
 // Return true if the first parameter looks like an entry object
-export function rdb_is_entry(value) {
+export function is_entry(value) {
   // note: typeof null === 'object', hence the truthy test
   return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
 }
 
 // Return true if the first parameter looks like an entry id
-export function rdb_entry_is_valid_id(value) {
+export function entry_is_valid_id(value) {
   return Number.isInteger(value) && value > 0;
 }
 
 // Returns true if the entry has at least one url
-export function rdb_entry_has_url(entry) {
-  assert(rdb_is_entry(entry));
+export function entry_has_url(entry) {
+  assert(is_entry(entry));
   return entry.urls && (entry.urls.length > 0);
 }
 
@@ -842,9 +837,9 @@ export function rdb_entry_has_url(entry) {
 // be called on an entry without urls.
 // TODO: because this returns a string, be more explicit about it. I just caught
 // myself expecting URL.
-export function rdb_entry_peek_url(entry) {
-  assert(rdb_is_entry(entry));
-  assert(rdb_entry_has_url(entry));
+export function entry_peek_url(entry) {
+  assert(is_entry(entry));
+  assert(entry_has_url(entry));
   return entry.urls[entry.urls.length - 1];
 }
 
@@ -852,8 +847,8 @@ export function rdb_entry_peek_url(entry) {
 // needed. Normalizes the url. The normalized url is compared against existing
 // urls to ensure the new url is unique. Returns true if entry was added, or
 // false if the url already exists and was therefore not added
-export function rdb_entry_append_url(entry, url) {
-  assert(rdb_is_entry(entry));
+export function entry_append_url(entry, url) {
+  assert(is_entry(entry));
   assert(url instanceof URL);
 
   const normal_url_string = url.href;
@@ -872,8 +867,8 @@ export function rdb_entry_append_url(entry, url) {
 
 // Returns the url used to lookup a feed's favicon
 // @returns {URL}
-export function rdb_feed_create_favicon_lookup_url(feed) {
-  assert(rdb_is_feed(feed));
+export function feed_create_favicon_lookup_url(feed) {
+  assert(is_feed(feed));
 
   // First, prefer the link, as this is the url of the webpage that is
   // associated with the feed. Cannot assume the link is set or valid.
@@ -890,6 +885,6 @@ export function rdb_feed_create_favicon_lookup_url(feed) {
 
   // If the feed's link is missing/invalid then use the origin of the feed's
   // xml url. Assume the feed always has a url.
-  const tail_url = new URL(rdb_feed_peek_url(feed));
+  const tail_url = new URL(feed_peek_url(feed));
   return new URL(tail_url.origin);
 }
