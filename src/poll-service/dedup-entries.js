@@ -1,11 +1,11 @@
-import {rdb_entry_has_url} from '/src/rdb/rdb.js';
+import * as rdb from '/src/rdb/rdb.js';
 
 export function dedup_entries(entries) {
   const distinct_entries = [];
   const seen_url_strings = [];
 
   for (const entry of entries) {
-    if (!rdb_entry_has_url(entry)) {
+    if (!rdb.rdb_entry_has_url(entry)) {
       distinct_entries.push(entry);
       continue;
     }

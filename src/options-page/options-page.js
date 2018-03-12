@@ -1,9 +1,8 @@
 import {element_fade} from '/src/dom/element-fade.js';
-import {open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
-import {permission_has, permission_remove, permission_request} from '/src/permissions/permissions.js';
-import {ral_activate_feed, ral_deactivate_feed, ral_find_feed_by_id, ral_get_feeds, ral_unsubscribe} from '/src/ral/ral.js';
-import {rdb_feed_peek_url} from '/src/rdb/rdb.js';
+import * as perm from '/src/permissions/permissions.js';
+import * as ral from '/src/ral/ral.js';
+import * as rdb from '/src/rdb/rdb.js';
 import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
 
 // clang-format off
@@ -227,7 +226,7 @@ async function feed_list_item_onclick(event) {
 
   let feed;
   try {
-    feed = await ral_find_feed_by_id(feed_id);
+    feed = await ral.ral_find_feed_by_id(feed_id);
   } catch (error) {
     console.error(error);
     return;
@@ -251,7 +250,7 @@ async function feed_list_item_onclick(event) {
   }
 
   const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = rdb_feed_peek_url(feed);
+  feed_url_element.textContent = rdb.rdb_feed_peek_url(feed);
   const feed_link_element = document.getElementById('details-feed-link');
   feed_link_element.textContent = feed.link || '';
 
@@ -314,7 +313,7 @@ async function subscribe_form_onsubmit(event) {
 
   feed_list_append_feed(feed);
   subscription_monitor_append_message(
-      'Subscribed to ' + rdb_feed_peek_url(feed));
+      'Subscribed to ' + rdb.rdb_feed_peek_url(feed));
   subscription_monitor_hide();
   section_show_by_id('subs-list-section');
   return false;
@@ -324,7 +323,7 @@ async function feed_list_init() {
   const title_sort_flag = true;
   let feeds;
   try {
-    feeds = await ral_get_feeds(title_sort_flag);
+    feeds = await ral.ral_get_feeds(title_sort_flag);
   } catch (error) {
     // TODO: show an error message
     console.error(error);
@@ -374,7 +373,7 @@ function feed_list_remove_feed_by_id(feed_id) {
 
 function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  return ral_unsubscribe(channel, feed_id)
+  return ral.ral_unsubscribe(channel, feed_id)
       .then(_ => {
         feed_list_remove_feed_by_id(feed_id);
         section_show_by_id('subs-list-section');
@@ -387,7 +386,7 @@ function unsubscribe_button_onclick(event) {
 
 function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  return ral_activate_feed(channel, feed_id)
+  return ral.ral_activate_feed(channel, feed_id)
       .then(_ => {
         // Mark the corresponding feed element displayed in the view as active
         const item_element =
@@ -407,7 +406,7 @@ function activate_feed_button_onclick(event) {
 function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const reason = 'click';
-  ral_deactivate_feed(channel, feed_id, reason)
+  ral.ral_deactivate_feed(channel, feed_id, reason)
       .then(_ => {
         // Deactive the corresponding feed element in the view
         const item_element =
@@ -438,9 +437,9 @@ function enable_notifications_checkbox_onclick(event) {
 
 function enable_bg_processing_checkbox_onclick(event) {
   if (event.target.checked) {
-    permission_request('background');
+    perm.request('background');
   } else {
-    permission_remove('background');
+    perm.remove('background');
   }
 }
 
@@ -452,7 +451,7 @@ async function enable_bg_processing_checkbox_init() {
   // permission should be permanently defined.
 
   checkbox.onclick = enable_bg_processing_checkbox_onclick;
-  checkbox.checked = await permission_has('background');
+  checkbox.checked = await perm.has('background');
 }
 
 function restrict_idle_polling_checkbox_onclick(event) {

@@ -1,5 +1,6 @@
-import {rdb_entry_has_url, rdb_open} from '/src/rdb/rdb.js';
+import * as rdb from '/src/rdb/rdb.js';
 
+// TODO: add readme
 // TODO: this potentially affects unread count
 
 // Removes entries missing urls from the database
@@ -13,7 +14,7 @@ export default async function entry_store_remove_lost_entries(
     conn, channel, console) {
   console = console || NULL_CONSOLE;
 
-  const dconn = conn ? conn : await rdb_open();
+  const dconn = conn ? conn : await rdb.rdb_open();
   const entry_ids =
       await entry_store_remove_lost_entries_promise(dconn, console);
   if (!conn) {
@@ -60,7 +61,7 @@ function entry_store_remove_lost_entries_promise(conn, console) {
       const cursor = request.result;
       if (cursor) {
         const entry = cursor.value;
-        if (!rdb_entry_has_url(entry)) {
+        if (!rdb.rdb_entry_has_url(entry)) {
           console.debug('Deleting lost entry', entry.id);
           cursor.delete();
           entry_ids.push(entry.id);

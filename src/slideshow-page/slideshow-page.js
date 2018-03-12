@@ -3,9 +3,9 @@ import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
 import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {html_escape} from '/src/html/html.js';
-import {ral_export, ral_import, ral_load_initial, ral_poll_feeds} from '/src/ral/ral.js';
+import * as ral from '/src/ral/ral.js';
 import * as rdb from '/src/rdb/rdb.js';
-import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
+import * as page_style from '/src/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/slideshow-page/slideshow.js';
 
 // clang-format off
@@ -44,7 +44,7 @@ channel.onmessage = function(event) {
   switch (message.type) {
     case 'display-settings-changed':
       console.debug('Updating article style');
-      PageStyle.page_style_onchange(message);
+      page_style.page_style_onchange(message);
       break;
     case 'entry-added':
       on_entry_added_message(message).catch(console.warn);
@@ -385,7 +385,7 @@ function refresh_anchor_onclick(event) {
   event.preventDefault();
   if (!refresh_in_progress) {
     refresh_in_progress = true;
-    ral_poll_feeds(channel, console)
+    ral.ral_poll_feeds(channel, console)
         .then(_ => {})
         .catch(error => {
           console.error(error);
@@ -458,7 +458,7 @@ function uploader_input_onchange(event) {
     return;
   }
 
-  ral_import(channel, files)
+  ral.ral_import(channel, files)
       .then(() => {
         console.log('Import completed');
       })
@@ -469,7 +469,7 @@ function uploader_input_onchange(event) {
 
 function export_menu_option_handle_click(event) {
   const title = 'Subscriptions';
-  ral_export(title)
+  ral.ral_export(title)
       .then(blob => {
         const filename = 'subscriptions.xml';
         download_blob(blob, filename);
@@ -662,7 +662,7 @@ function header_font_menu_onchange(event) {
     delete localStorage.HEADER_FONT_FAMILY;
   }
 
-  PageStyle.page_style_onchange();
+  page_style.page_style_onchange();
 }
 
 function body_font_menu_onchange(event) {
@@ -673,7 +673,7 @@ function body_font_menu_onchange(event) {
     delete localStorage.BODY_FONT_FAMILY;
   }
 
-  PageStyle.page_style_onchange();
+  page_style.page_style_onchange();
 }
 
 function header_font_menu_init() {
@@ -743,12 +743,12 @@ function slideshow_page_init() {
   header_font_menu_init();
   body_font_menu_init();
 
-  PageStyle.page_style_onload();
+  page_style.page_style_onload();
 
   const entry_cursor_offset = 0, entry_cursor_limit = 6;
-  ral_load_initial(
-      entry_cursor_offset, entry_cursor_limit, slide_append,
-      feeds_container_append_feed)
+  ral.ral_load_initial(
+         entry_cursor_offset, entry_cursor_limit, slide_append,
+         feeds_container_append_feed)
       .then(loading_info_hide)
       .catch((error) => {
         console.error(error);

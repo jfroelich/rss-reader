@@ -1,10 +1,12 @@
-import {lookup as favicon_service_lookup} from '/src/favicon-service/favicon-service.js';
+import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse/feed-parse.js';
-import {fetch_feed, OfflineError, response_get_last_modified_date, STATUS_OFFLINE, url_did_change} from '/src/fetch/fetch.js';
+import * as fetchlib from '/src/fetch/fetch.js';
 import notification_show from '/src/notifications/notifications.js';
-import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/poll-service/poll-service.js';
+import * as poll_service from '/src/poll-service/poll-service.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
-import {rdb_contains_feed_with_url, rdb_feed_add, rdb_feed_append_url, rdb_feed_create, rdb_feed_create_favicon_lookup_url, rdb_feed_peek_url, rdb_is_feed} from '/src/rdb/rdb.js';
+import * as rdb from '/src/rdb/rdb.js';
+
+// TODO: create docs
 
 // TODO: reconsider the transaction lifetime. Right now it is protected by the
 // error that occurs due to violation of uniqueness constraint. But it would be
@@ -44,7 +46,8 @@ export default async function subscribe(context, url) {
   console.log('Subscribing to', url.href);
 
   // If this fails, throw an error
-  let contains_feed = await rdb_contains_feed_with_url(context.feedConn, url);
+  let contains_feed =
+      await rdb.rdb_contains_feed_with_url(context.feedConn, url);
 
   // If already subscribed, throw an error
   // TODO: is this really an error? This isn't an error. This just means cannot
@@ -56,9 +59,10 @@ export default async function subscribe(context, url) {
     throw new Error('Already subscribed to ' + url.href);
   }
 
-  let response = await fetch_feed(url, context.fetchFeedTimeout || 2000);
+  let response =
+      await fetchlib.fetch_feed(url, context.fetchFeedTimeout || 2000);
   if (!response.ok) {
-    if (response.status === STATUS_OFFLINE) {
+    if (response.status === fetchlib.STATUS_OFFLINE) {
       // continue with offline subscription
       console.debug('Subscribing while offline to', url.href);
       // nullify so that legacy code following this behaves as before in case of
@@ -75,8 +79,8 @@ export default async function subscribe(context, url) {
     feed = await subscribe_create_feed_from_response(context, response, url);
   } else {
     // Offline subscription
-    feed = rdb_feed_create();
-    rdb_feed_append_url(feed, url);
+    feed = rdb.rdb_feed_create();
+    rdb.rdb_feed_append_url(feed, url);
   }
 
   // Set the feed's favicon
@@ -87,7 +91,7 @@ export default async function subscribe(context, url) {
   await subscribe_feed_set_favicon(query, feed, console);
 
   const stored_feed =
-      await rdb_feed_add(context.feedConn, context.channel, feed);
+      await rdb.rdb_feed_add(context.feedConn, context.channel, feed);
 
   const should_notify = 'notify' in context ? context.notify : true;
   if (should_notify) {
@@ -102,10 +106,10 @@ async function subscribe_create_feed_from_response(context, response, url) {
   const response_url = new URL(response.url);
 
   // If there was a redirect, then check if subscribed to the redirect
-  if (url_did_change(url, response_url)) {
+  if (fetchlib.url_did_change(url, response_url)) {
     // Allow database error to bubble uncaught
     const contains_feed =
-        await rdb_contains_feed_with_url(context.feedConn, response_url);
+        await rdb.rdb_contains_feed_with_url(context.feedConn, response_url);
     if (contains_feed) {
       throw new Error(
           'Already susbcribed to redirect url ' + response_url.href);
@@ -129,20 +133,21 @@ async function subscribe_create_feed_from_response(context, response, url) {
   const coerced_feed = coerce_feed(parsed_feed, {
     request_url: url,
     response_url: response_url,
-    response_last_modified_date: response_get_last_modified_date(response)
+    response_last_modified_date:
+        fetchlib.response_get_last_modified_date(response)
   });
   return coerced_feed;
 }
 
 async function subscribe_feed_set_favicon(query, feed, console) {
-  assert(rdb_is_feed(feed));
+  assert(rdb.rdb_is_feed(feed));
 
-  const favicon_lookup_url = rdb_feed_create_favicon_lookup_url(feed);
+  const favicon_lookup_url = rdb.rdb_feed_create_favicon_lookup_url(feed);
 
   // Suppress lookup errors
   let favicon_url_string;
   try {
-    favicon_url_string = await favicon_service_lookup(query);
+    favicon_url_string = await favicon_service.lookup(query);
   } catch (error) {
     console.debug(error);
     return;
@@ -155,18 +160,18 @@ async function subscribe_feed_set_favicon(query, feed, console) {
 
 function subscribe_notification_show(feed) {
   const title = 'Subscribed!';
-  const feed_title = feed.title || rdb_feed_peek_url(feed);
+  const feed_title = feed.title || rdb.rdb_feed_peek_url(feed);
   const message = 'Subscribed to ' + feed_title;
   notification_show(title, message, feed.faviconURLString);
 }
 
 async function subscribe_feed_poll(feed) {
-  const ctx = await poll_service_create_context();
+  const ctx = await poll_service.poll_service_create_context();
   ctx.ignoreRecencyCheck = true;
   ctx.ignoreModifiedCheck = true;
   ctx.notify = false;
-  await poll_service_feed_poll(ctx, feed);
-  poll_service_close_context(ctx);
+  await poll_service.poll_service_feed_poll(ctx, feed);
+  poll_service.poll_service_close_context(ctx);
 }
 
 function assert(value, message) {

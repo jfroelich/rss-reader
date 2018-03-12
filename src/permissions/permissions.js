@@ -1,18 +1,14 @@
-
-export function permission_has(permission) {
+export function has(perm) {
   return new Promise(
-      resolve =>
-          chrome.permissions.contains({permissions: [permission]}, resolve));
+      resolve => chrome.permissions.contains({permissions: [perm]}, resolve));
 }
 
-export function permission_request(permission) {
+export function request(perm) {
   return new Promise(
-      resolve =>
-          chrome.permissions.request({permissions: [permission]}, resolve));
+      resolve => chrome.permissions.request({permissions: [perm]}, resolve));
 }
 
-export function permission_remove(permission) {
+export function remove(perm) {
   return new Promise(
-      resolve =>
-          chrome.permissions.remove({permissions: [permission]}, resolve));
+      resolve => chrome.permissions.remove({permissions: [perm]}, resolve));
 }

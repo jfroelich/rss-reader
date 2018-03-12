@@ -1,11 +1,13 @@
-import {lookup as favicon_service_lookup} from '/src/favicon-service/favicon-service.js';
-import {rdb_feed_create_favicon_lookup_url, rdb_feed_has_url, rdb_feed_put, rdb_find_active_feeds, rdb_open} from '/src/rdb/rdb.js';
+import * as favicon_service from '/src/favicon-service/favicon-service.js';
+import * as rdb from '/src/rdb/rdb.js';
 
-// Refreshes the favicon property of feeds in the feed store
+// TODO: drop auto-connect support, use ral.js for that if desired
+// TODO: add docs
+
 export default async function rdb_refresh_feed_icons(
     feed_conn, icon_conn, channel) {
   const dconn = feed_conn ? feed_conn : await open_reader_db();
-  const feeds = await rdb_find_active_feeds(dconn);
+  const feeds = await rdb.rdb_find_active_feeds(dconn);
   const partial =
       feed_store_feed_refresh_icons.bind(null, dconn, icon_conn, channel);
   const promises = feeds.map(partial);
@@ -16,12 +18,12 @@ export default async function rdb_refresh_feed_icons(
 }
 
 async function feed_store_feed_refresh_icons(conn, icon_conn, channel, feed) {
-  if (!rdb_feed_has_url(feed)) {
+  if (!rdb.rdb_feed_has_url(feed)) {
     throw new TypeError('Feed missing url ' + feed.id);
   }
 
   // Throw on failure
-  const favicon_lookup_url = rdb_feed_create_favicon_lookup_url(feed);
+  const favicon_lookup_url = rdb.rdb_feed_create_favicon_lookup_url(feed);
 
   const lookup_ctx = {};
   lookup_ctx.conn = icon_conn;
@@ -30,7 +32,7 @@ async function feed_store_feed_refresh_icons(conn, icon_conn, channel, feed) {
   // lookup errors are not fatal
   let icon_url;
   try {
-    icon_url = await favicon_service_lookup(lookup_ctx);
+    icon_url = await favicon_service.lookup(lookup_ctx);
   } catch (error) {
     console.debug(error);
   }
@@ -46,7 +48,7 @@ async function feed_store_feed_refresh_icons(conn, icon_conn, channel, feed) {
     feed.dateUpdated = new Date();
 
     try {
-      await rdb_feed_put(conn, channel, feed);
+      await rdb.rdb_feed_put(conn, channel, feed);
     } catch (error) {
       console.error(error);
     }

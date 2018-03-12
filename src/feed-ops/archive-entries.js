@@ -1,15 +1,5 @@
-import {rdb_entry_create, RDB_ENTRY_STATE_ARCHIVED, RDB_ENTRY_STATE_READ, RDB_ENTRY_STATE_UNARCHIVED, rdb_open} from '/src/rdb/rdb.js';
+import * as rdb from '/src/rdb/rdb.js';
 
-// TODO: all modules in the feed-ops layer should use the feed-ops prefix
-
-// TODO: drop auto-connect support
-
-// Archives certain entries in the database
-// @param conn {IDBDatabase} optional, storage database, if not specified then
-// default database will be opened, used, and closed
-// @param channel {BroadcastChannel} optional, post entry-archived messages
-// @param entry_age_max {Number} how long before an entry is considered
-// archivable (using date entry created), in milliseconds
 export default async function archive_entries(conn, channel, entry_age_max) {
   console.log('Archiving entries...');
 
@@ -24,7 +14,7 @@ export default async function archive_entries(conn, channel, entry_age_max) {
     }
   }
 
-  const dconn = conn ? conn : await rdb_open();
+  const dconn = conn ? conn : await rdb.rdb_open();
   const entry_ids = await archive_entries_promise(dconn, entry_age_max);
   if (!conn) {
     dconn.close();
@@ -47,7 +37,7 @@ function archive_entries_promise(conn, entry_age_max) {
     tx.oncomplete = () => resolve(entry_ids);
     const store = tx.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const key_path = [RDB_ENTRY_STATE_UNARCHIVED, RDB_ENTRY_STATE_READ];
+    const key_path = [rdb.RDB_ENTRY_STATE_UNARCHIVED, rdb.RDB_ENTRY_STATE_READ];
     const request = index.openCursor(key_path);
     request.onsuccess = () => {
       const cursor = request.result;
@@ -78,7 +68,7 @@ function entry_archive(entry) {
   console.debug(
       'Changing entry %d size from ~%d to ~%d', entry.id, before_sz, after_sz);
 
-  compacted_entry.archiveState = RDB_ENTRY_STATE_ARCHIVED;
+  compacted_entry.archiveState = rdb.RDB_ENTRY_STATE_ARCHIVED;
   compacted_entry.dateArchived = new Date();
   compacted_entry.dateUpdated = new Date();
   return compacted_entry;
@@ -86,7 +76,7 @@ function entry_archive(entry) {
 
 // Create a new entry and copy over certain fields
 function entry_compact(entry) {
-  const compacted_entry = rdb_entry_create();
+  const compacted_entry = rdb.rdb_entry_create();
   compacted_entry.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {

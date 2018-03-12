@@ -1,18 +1,15 @@
 import * as badge from '/src/badge.js';
 import * as color from '/src/color/color.js';
-
-// TODO: simplify these imports
-
-import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
+import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse/feed-parse.js';
-import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, STATUS_OFFLINE, STATUS_TIMEOUT, TimeoutError, url_did_change} from '/src/fetch/fetch.js';
+import * as fetchlib from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
 import notification_show from '/src/notifications/notifications.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
 import {coerce_entry} from '/src/rdb/coerce-entry.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
-import {rdb_contains_entry_with_url, rdb_entry_add, rdb_entry_append_url, rdb_entry_has_url, rdb_entry_peek_url, rdb_feed_has_url, rdb_feed_merge, rdb_feed_peek_url, rdb_feed_prepare, rdb_feed_put, rdb_find_active_feeds, rdb_is_entry, rdb_is_feed, rdb_open} from '/src/rdb/rdb.js';
+import * as rdb from '/src/rdb/rdb.js';
 import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
 import {url_is_binary} from '/src/sniff/sniff.js';
 
@@ -40,7 +37,7 @@ function noop() {}
 
 export async function poll_service_create_context() {
   const context = {};
-  const promises = [rdb_open(), favicon_service_open()];
+  const promises = [rdb.rdb_open(), favicon_service.open()];
   [context.feedConn, context.iconConn] = await Promise.all(promises);
   context.channel = new BroadcastChannel('reader');
   return context;
@@ -66,7 +63,7 @@ export async function poll_service_poll_feeds(input_poll_feeds_context) {
   poll_feed_context.notify = false;
 
   // Concurrently poll the feeds
-  const feeds = await rdb_find_active_feeds(poll_feeds_context.feedConn);
+  const feeds = await rdb.rdb_find_active_feeds(poll_feeds_context.feedConn);
   const poll_feed_promises = [];
   for (const feed of feeds) {
     const promise = poll_service_feed_poll(poll_feed_context, feed);
@@ -101,11 +98,11 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   assert(poll_feed_context.feedConn instanceof IDBDatabase);
   assert(poll_feed_context.iconConn instanceof IDBDatabase);
   assert(poll_feed_context.channel instanceof BroadcastChannel);
-  assert(rdb_is_feed(feed));
-  assert(rdb_feed_has_url(feed));
+  assert(rdb.rdb_is_feed(feed));
+  assert(rdb.rdb_feed_has_url(feed));
 
   const console = poll_feed_context.console;
-  const feed_tail_url = new URL(rdb_feed_peek_url(feed));
+  const feed_tail_url = new URL(rdb.rdb_feed_peek_url(feed));
   console.log('Polling feed', feed_tail_url.href);
 
   if (!feed.active) {
@@ -119,18 +116,19 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     return 0;
   }
 
-  let response =
-      await fetch_feed(feed_tail_url, poll_feed_context.fetchFeedTimeout);
+  let response = await fetchlib.fetch_feed(
+      feed_tail_url, poll_feed_context.fetchFeedTimeout);
   if (!response.ok) {
     // Now that fetch utility no longer throws and instead always returns
     // response, this needs to translate the response status into an error.
     // Eventually I should have handle_poll_feed_error just accept status code
     // instead
     let error;
-    if (response.status === STATUS_TIMEOUT) {
-      error = new TimeoutError('Timeout error fetching ' + feed_tail_url.href);
-    } else if (response.status === STATUS_OFFLINE) {
-      error = new OfflineError(
+    if (response.status === fetchlib.STATUS_TIMEOUT) {
+      error = new fetchlib.TimeoutError(
+          'Timeout error fetching ' + feed_tail_url.href);
+    } else if (response.status === fetchlib.STATUS_OFFLINE) {
+      error = new fetchlib.OfflineError(
           'Unable to fetch while offline ' + feed_tail_url.href);
     } else {
       error = new Error('Failed to fetch ' + feed_tail_url.href);
@@ -150,7 +148,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     const state_changed = handle_fetch_feed_success(feed);
     if (state_changed) {
       feed.dateUpdated = new Date();
-      await rdb_feed_put(
+      await rdb.rdb_feed_put(
           poll_feed_context.feedConn, poll_feed_context.channel, feed);
     }
     return 0;
@@ -188,7 +186,8 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   }
 
   const response_url = new URL(response.url);
-  const response_last_modified_date = response_get_last_modified_date(response);
+  const response_last_modified_date =
+      fetchlib.response_get_last_modified_date(response);
 
   const fetch_info = {
     request_url: feed_tail_url,
@@ -210,12 +209,12 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     return 0;
   }
 
-  const merged_feed = rdb_feed_merge(feed, coerced_feed);
+  const merged_feed = rdb.rdb_feed_merge(feed, coerced_feed);
   handle_fetch_feed_success(merged_feed);
 
-  const storable_feed = rdb_feed_prepare(merged_feed);
+  const storable_feed = rdb.rdb_feed_prepare(merged_feed);
   storable_feed.dateUpdated = new Date();
-  await rdb_feed_put(
+  await rdb.rdb_feed_put(
       poll_feed_context.feedConn, poll_feed_context.channel, storable_feed);
 
   // Process the entries
@@ -299,7 +298,8 @@ function handle_poll_feed_error(error_info) {
 
   feed.dateUpdated = new Date();
   // Call unawaited
-  rdb_feed_put(error_info.context.feedConn, error_info.context.channel, feed)
+  rdb.rdb_feed_put(
+         error_info.context.feedConn, error_info.context.channel, feed)
       .catch(console.error);
 }
 
@@ -312,7 +312,8 @@ function detected_modification(ignore_modified_check, feed, response) {
     return true;
   }
 
-  const response_last_modified_date = response_get_last_modified_date(response);
+  const response_last_modified_date =
+      fetchlib.response_get_last_modified_date(response);
   if (!response_last_modified_date) {
     return true;
   }
@@ -335,7 +336,7 @@ function cascade_feed_properties_to_entries(feed, entries) {
 
 async function poll_entry(ctx, entry) {
   assert(typeof ctx === 'object');
-  if (!rdb_entry_has_url(entry)) {
+  if (!rdb.rdb_entry_has_url(entry)) {
     return;
   }
 
@@ -358,7 +359,7 @@ async function poll_entry(ctx, entry) {
 
   let stored_entry;
   try {
-    stored_entry = await rdb_entry_add(ctx.feedConn, ctx.channel, entry);
+    stored_entry = await rdb.rdb_entry_add(ctx.feedConn, ctx.channel, entry);
   } catch (error) {
     console.error(entry.urls, error);
     return;
@@ -368,26 +369,26 @@ async function poll_entry(ctx, entry) {
 }
 
 function entry_rewrite_tail_url(entry) {
-  const entry_tail_url = new URL(rdb_entry_peek_url(entry));
+  const entry_tail_url = new URL(rdb.rdb_entry_peek_url(entry));
   const entry_response_url = rewrite_url(entry_tail_url);
   if (!entry_response_url) {
     return false;
   }
-  return rdb_entry_append_url(entry, entry_response_url);
+  return rdb.rdb_entry_append_url(entry, entry_response_url);
 }
 
 function entry_exists_in_db(conn, entry) {
-  const entry_tail_url = new URL(rdb_entry_peek_url(entry));
-  return rdb_contains_entry_with_url(conn, entry_tail_url);
+  const entry_tail_url = new URL(rdb.rdb_entry_peek_url(entry));
+  return rdb.rdb_contains_entry_with_url(conn, entry_tail_url);
 }
 
 async function entry_fetch(entry, timeout) {
-  const url = new URL(rdb_entry_peek_url(entry));
+  const url = new URL(rdb.rdb_entry_peek_url(entry));
   if (!url_is_augmentable(url)) {
     return;
   }
 
-  const response = await fetch_html(url, timeout);
+  const response = await fetchlib.fetch_html(url, timeout);
   if (!response.ok) {
     console.debug('Failed to fetch url ' + url.href);
     return;  // return undefined response
@@ -400,13 +401,13 @@ async function entry_handle_redirect(conn, response, entry) {
     return false;
   }
 
-  const entry_tail_url = new URL(rdb_entry_peek_url(entry));
+  const entry_tail_url = new URL(rdb.rdb_entry_peek_url(entry));
   const entry_response_url = new URL(response.url);
-  if (!url_did_change(entry_tail_url, entry_response_url)) {
+  if (!fetchlib.url_did_change(entry_tail_url, entry_response_url)) {
     return false;
   }
 
-  rdb_entry_append_url(entry, entry_response_url);
+  rdb.rdb_entry_append_url(entry, entry_response_url);
   entry_rewrite_tail_url(entry);
   return await entry_exists_in_db(conn, entry);
 }
@@ -425,7 +426,7 @@ async function entry_parse_response(response) {
 }
 
 function entry_update_title(entry, document) {
-  assert(rdb_is_entry(entry));
+  assert(rdb.rdb_is_entry(entry));
   if (document && !entry.title) {
     const title_element = document.querySelector('html > head > title');
     if (title_element) {
@@ -436,9 +437,9 @@ function entry_update_title(entry, document) {
 
 async function entry_update_favicon(ctx, entry, document) {
   assert(typeof ctx === 'object');
-  assert(rdb_is_entry(entry));
-  assert(rdb_entry_has_url(entry));
-  const entry_tail_url = new URL(rdb_entry_peek_url(entry));
+  assert(rdb.rdb_is_entry(entry));
+  assert(rdb.rdb_entry_has_url(entry));
+  const entry_tail_url = new URL(rdb.rdb_entry_peek_url(entry));
   const favicon_service_lookup_context = {
     conn: ctx.iconConn,
     skipURLFetch: true,
@@ -448,7 +449,7 @@ async function entry_update_favicon(ctx, entry, document) {
 
   try {
     const icon_url_string =
-        await favicon_service_lookup(favicon_service_lookup_context);
+        await favicon_service.lookup(favicon_service_lookup_context);
     if (icon_url_string) {
       entry.faviconURLString = icon_url_string;
     }
@@ -470,7 +471,7 @@ async function entry_update_content(ctx, entry, fetched_document) {
     }
   }
 
-  const document_url = new URL(rdb_entry_peek_url(entry));
+  const document_url = new URL(rdb.rdb_entry_peek_url(entry));
   const filter_options = {
     fetch_image_timeout: ctx.fetchImageTimeout,
     matte: color.WHITE,
@@ -487,7 +488,8 @@ function url_is_augmentable(url) {
 }
 
 function error_is_ephemeral(error) {
-  return error instanceof OfflineError || error instanceof TimeoutError;
+  return error instanceof fetchlib.OfflineError ||
+      error instanceof fetchlib.TimeoutError;
 }
 
 const INACCESSIBLE_CONTENT_DESCRIPTORS = [
