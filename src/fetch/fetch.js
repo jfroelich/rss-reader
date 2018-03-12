@@ -148,24 +148,10 @@ function url_compare_no_hash(url1, url2) {
 
 export function response_get_last_modified_date(response) {
   assert(response instanceof Response);
-
   const header_value = response.headers.get('Last-Modified');
-  if (header_value) {
-    // TODO: is try/catch needed around date constructor?
-    try {
-      const date = new Date(header_value);
-
-      // If the date constructor fails to parse, it simply stored NaN
-      // internally, which is an invalid date, and NaN !== NaN
-      if (date.getTime() === date.getTime()) {
-        return date;
-      } else {
-        console.debug('Invalid date string:', header_value);
-      }
-    } catch (error) {
-      console.debug(error);
-    }
-  }
+  const date = new Date(header_value);
+  // on parse error, date stores NaN
+  return isNaN(date.getTime()) ? null : date;
 }
 
 export function response_get_mime_type(response) {
