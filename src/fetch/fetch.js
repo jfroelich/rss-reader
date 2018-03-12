@@ -80,7 +80,6 @@ export async function tfetch(url, options) {
   }
 
   if (!url_is_allowed(url)) {
-    // throw new Error('Forbidden request to url ' + url);
     const body = null;
     return new Response(body, {
       status: STATUS_POLICY_REFUSAL,
@@ -90,9 +89,7 @@ export async function tfetch(url, options) {
   }
 
   const method = merged_options.method.toUpperCase();
-  // assert(method === 'GET' || method === 'HEAD');
   if (method !== 'GET' && method !== 'HEAD') {
-    // throw new Error('Forbidden method ' + method);
     const body = null;
     return new Response(body, {
       status: STATUS_FORBIDDEN_METHOD,
@@ -102,7 +99,6 @@ export async function tfetch(url, options) {
   }
 
   if (!navigator.onLine) {
-    // throw new OfflineError('Unable to fetch ' + url.href + ' while offline');
     const body = null;
     return new Response(body, {
       status: STATUS_OFFLINE,
@@ -120,7 +116,6 @@ export async function tfetch(url, options) {
       untimed ? fetch_promise : Promise.race([fetch_promise, sleep(timeout)]));
 
   if (!response) {
-    // throw new TimeoutError('Fetch timed out for url ' + url.href);
     const body = null;
     return new Response(body, {
       status: STATUS_TIMEOUT,
@@ -129,10 +124,6 @@ export async function tfetch(url, options) {
     });
   }
 
-  // if (!response.ok) {
-  //  throw new Error('Failed to fetch (' + response.status + ') ' + url.href);
-  //}
-
   return response;
 }
 
@@ -140,14 +131,14 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Return whether the response url is 'different' than the request url,
+// Return whether the response url is "different" than the request url,
 // indicating a redirect, regardless of the value of response.redirected
 export function url_did_change(request_url, response_url) {
   return !url_compare_no_hash(request_url, response_url);
 }
 
 function url_compare_no_hash(url1, url2) {
-  // operate on clones to avoid mutating input (to stay pure)
+  // operate on clones to avoid mutating input (stay "pure")
   const modified_url1 = new URL(url1.href);
   const modified_url2 = new URL(url2.href);
   modified_url1.hash = '';
