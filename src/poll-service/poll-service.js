@@ -37,7 +37,7 @@ function noop() {}
 
 export async function poll_service_create_context() {
   const context = {};
-  const promises = [rdb.rdb_open(), favicon_service.open()];
+  const promises = [rdb.open(), favicon_service.open()];
   [context.feedConn, context.iconConn] = await Promise.all(promises);
   context.channel = new BroadcastChannel('reader');
   return context;

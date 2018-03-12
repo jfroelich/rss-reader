@@ -14,7 +14,7 @@ export default async function entry_store_remove_lost_entries(
     conn, channel, console) {
   console = console || NULL_CONSOLE;
 
-  const dconn = conn ? conn : await rdb.rdb_open();
+  const dconn = conn ? conn : await rdb.open();
   const entry_ids =
       await entry_store_remove_lost_entries_promise(dconn, console);
   if (!conn) {

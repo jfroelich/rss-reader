@@ -11,7 +11,7 @@ import * as rdb from '/src/rdb/rdb.js';
 // conn {IDBDatabase} is optional open database connection
 // channel {BroadcastChannel} is optional broadcast channel
 export default async function entry_store_remove_orphans(conn, channel) {
-  const dconn = conn ? conn : await rdb.rdb_open();
+  const dconn = conn ? conn : await rdb.open();
   const entry_ids = await entry_store_remove_orphans_promise(dconn);
   if (!conn) {
     dconn.close();

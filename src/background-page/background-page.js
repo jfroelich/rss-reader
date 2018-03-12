@@ -1,16 +1,16 @@
 import '/src/cli/cli.js';
 import * as badge from '/src/badge.js';
-import {compact as favicon_service_compact, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
+import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import archive_entries from '/src/feed-ops/archive-entries.js';
 import rdb_refresh_feed_icons from '/src/feed-ops/refresh-feed-icons.js';
 import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
 import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
-import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/poll-service/poll-service.js';
-import {rdb_open} from '/src/rdb/rdb.js';
+import * as poll_service from '/src/poll-service/poll-service.js';
+import * as rdb from '/src/rdb/rdb.js';
 import show_slideshow_tab from '/src/show-slideshow-tab.js';
 
 function handle_compact_favicons_alarm(alarm) {
-  return favicon_service_compact().catch(console.error);
+  return favicon_service.compact().catch(console.error);
 }
 
 function handle_archive_alarm_wakeup(alarm) {
@@ -40,7 +40,7 @@ async function handle_orphan_entries_alarm(alarm) {
 
 async function handle_refresh_feed_icons_alarm(alarm) {
   const [reader_conn, favicon_conn] =
-      await Promise.all([rdb_open(), favicon_service_open()]);
+      await Promise.all([rdb.open(), favicon_service.open()]);
   await rdb_refresh_feed_icons(reader_conn, favicon_conn);
   reader_conn.close();
   favicon_conn.close();
@@ -55,10 +55,10 @@ async function handle_poll_feeds_alarm(alarm) {
     }
   }
 
-  const context = await poll_service_create_context();
+  const context = await poll_service.poll_service_create_context();
   context.console = console;
-  await poll_service_poll_feeds(context);
-  poll_service_close_context(context);
+  await poll_service.poll_service_poll_feeds(context);
+  poll_service.poll_service_close_context(context);
 }
 
 window.test_handle_poll_feeds_alarm = handle_poll_feeds_alarm;
@@ -73,9 +73,9 @@ console.debug('Initializing background page');
 
 chrome.runtime.onInstalled.addListener(function(event) {
   console.log('Setting up feed store database');
-  rdb_open().then(conn => conn.close()).catch(console.error);
+  rdb.open().then(conn => conn.close()).catch(console.error);
   console.log('Setting up favicon database');
-  favicon_service_open().then(conn => conn.close()).catch(console.error);
+  favicon_service.open().then(conn => conn.close()).catch(console.error);
 });
 
 chrome.browserAction.onClicked.addListener(show_slideshow_tab);
@@ -83,7 +83,7 @@ chrome.browserAction.onClicked.addListener(show_slideshow_tab);
 async function badge_init() {
   let conn;
   try {
-    conn = await rdb_open();
+    conn = await rdb.open();
     await badge.update(conn);
   } catch (error) {
     console.error(error);

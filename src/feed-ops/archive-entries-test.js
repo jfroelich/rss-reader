@@ -1,9 +1,9 @@
 import archive_entries from '/src/feed-ops/archive-entries.js';
-import {rdb_open} from '/src/rdb/rdb.js';
+import {open} from '/src/rdb/rdb.js';
 
 async function test() {
   let conn, channel, max_age;
-  const conn = await rdb_open('archive-entries-test');
+  const conn = await open('archive-entries-test');
   await archive_entries(conn, channel, max_age);
   conn.close();
   await remove(conn.name);

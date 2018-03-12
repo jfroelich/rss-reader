@@ -81,7 +81,7 @@ async function on_entry_added_message(message) {
   if (slideshow_count_unread() <= 3) {
     let conn;
     try {
-      conn = await rdb.rdb_open();
+      conn = await rdb.open();
       await slide_load_and_append_multiple(conn);
     } finally {
       if (conn) {
@@ -286,7 +286,7 @@ async function slide_onclick(event) {
 
   let conn;
   try {
-    conn = await rdb.rdb_open();
+    conn = await rdb.open();
   } catch (error) {
     console.error(error);
     return false;
@@ -330,7 +330,7 @@ async function slide_next() {
   if (slide_unread_count > 1) {
     let conn;
     try {
-      conn = await rdb.rdb_open();
+      conn = await rdb.open();
     } catch (error) {
       console.error(error);
       return;
@@ -346,7 +346,7 @@ async function slide_next() {
   let append_count = 0;
   let conn;
   try {
-    conn = await rdb.rdb_open();
+    conn = await rdb.open();
   } catch (error) {
     console.error(error);
     return;

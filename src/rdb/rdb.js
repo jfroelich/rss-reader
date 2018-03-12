@@ -4,21 +4,21 @@ import {idb_open} from '/src/idb/idb.js';
 import * as object from '/src/object/object.js';
 import * as string from '/src/string/string.js';
 
-const RDB_FEED_MAGIC = 0xfeedfeed;
-const RDB_ENTRY_MAGIC = 0xdeadbeef;
+const FEED_MAGIC = 0xfeedfeed;
+const ENTRY_MAGIC = 0xdeadbeef;
 
-export const RDB_ENTRY_STATE_UNREAD = 0;
-export const RDB_ENTRY_STATE_READ = 1;
-export const RDB_ENTRY_STATE_UNARCHIVED = 0;
-export const RDB_ENTRY_STATE_ARCHIVED = 1;
+export const ENTRY_STATE_UNREAD = 0;
+export const ENTRY_STATE_READ = 1;
+export const ENTRY_STATE_UNARCHIVED = 0;
+export const ENTRY_STATE_ARCHIVED = 1;
 
 // Open a connection to the reader database. All parameters are optional
-export function rdb_open(name = 'reader', version = 24, timeout = 500) {
+export function open(name = 'reader', version = 24, timeout = 500) {
   return idb_open(name, version, rdb_on_upgrade_needed, timeout);
 }
 
-// Helper for rdb_open. Does the database upgrade. This should never be
-// called directly. To do an upgrade, call rdb_open with a higher version
+// Helper for open. Does the database upgrade. This should never be
+// called directly. To do an upgrade, call open with a higher version
 // number.
 function rdb_on_upgrade_needed(event) {
   const conn = event.target.result;
@@ -78,7 +78,7 @@ function rdb_add_magic_to_entries(txn) {
     if (cursor) {
       const entry = cursor.value;
       if (!('magic' in entry)) {
-        entry.magic = RDB_ENTRY_MAGIC;
+        entry.magic = ENTRY_MAGIC;
         entry.dateUpdated = new Date();
         cursor.update(entry);
       }
@@ -96,7 +96,7 @@ function rdb_add_magic_to_feeds(txn) {
   request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
-      feed.magic = RDB_FEED_MAGIC;
+      feed.magic = FEED_MAGIC;
       feed.dateUpdated = new Date();
       store.put(feed);
     }
@@ -217,8 +217,8 @@ export async function rdb_entry_add(conn, channel, entry) {
   // That required all callers to set dateUpdated and increased inconvenience,
   // but it was overall good. Should I apply the same idea here?
 
-  storable_entry.readState = RDB_ENTRY_STATE_UNREAD;
-  storable_entry.archiveState = RDB_ENTRY_STATE_UNARCHIVED;
+  storable_entry.readState = ENTRY_STATE_UNREAD;
+  storable_entry.archiveState = ENTRY_STATE_UNARCHIVED;
   storable_entry.dateCreated = new Date();
 
   // rdb_entry_put stores the value as is, and will not automatically add a
@@ -260,7 +260,7 @@ export function rdb_entry_count_unread(conn) {
     // We simply count the number of entries in this index in the unread state
 
     const index = store.index('readState');
-    const request = index.count(RDB_ENTRY_STATE_UNREAD);
+    const request = index.count(ENTRY_STATE_UNREAD);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -304,17 +304,17 @@ export function rdb_entry_mark_read(conn, channel, entry_id) {
       // error.
       assert(entry);
 
-      if (entry.readState === RDB_ENTRY_STATE_READ) {
+      if (entry.readState === ENTRY_STATE_READ) {
         console.warn('Entry %d already in read state, ignoring', entry.id);
         return;
       }
 
-      if (entry.readState !== RDB_ENTRY_STATE_UNREAD) {
+      if (entry.readState !== ENTRY_STATE_UNREAD) {
         console.warn('Entry %d not in unread state, ignoring', entry.id);
         return;
       }
 
-      entry.readState = RDB_ENTRY_STATE_READ;
+      entry.readState = ENTRY_STATE_READ;
       const currentDate = new Date();
       entry.dateUpdated = currentDate;
       entry.dateRead = currentDate;
@@ -390,7 +390,7 @@ export function rdb_find_viewable_entries(conn, offset, limit) {
     txn.onerror = _ => reject(txn.error);
     const store = txn.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const key_path = [RDB_ENTRY_STATE_UNARCHIVED, RDB_ENTRY_STATE_UNREAD];
+    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
     const request = index.openCursor(key_path);
     request.onsuccess = _ => {
       const cursor = request.result;
@@ -429,7 +429,7 @@ export function rdb_viewable_entries_for_each(
     txn.onerror = () => reject(txn.error);
     const store = txn.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const key_path = [RDB_ENTRY_STATE_UNARCHIVED, RDB_ENTRY_STATE_UNREAD];
+    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
     const request = index.openCursor(key_path);
     request.onsuccess = function request_onsuccess(event) {
       const cursor = event.target.result;
@@ -736,7 +736,7 @@ function assert(value, message) {
 }
 
 export function rdb_feed_create() {
-  return {magic: RDB_FEED_MAGIC};
+  return {magic: FEED_MAGIC};
 }
 
 // Return true if the value looks like a feed object
@@ -753,7 +753,7 @@ export function rdb_is_feed(value) {
   // cannot get us any additional type guarantee beyond stating the value is
   // some object, we use a hidden property called magic to further guarantee the
   // type.
-  return value && typeof value === 'object' && value.magic === RDB_FEED_MAGIC;
+  return value && typeof value === 'object' && value.magic === FEED_MAGIC;
 }
 
 export function rdb_feed_is_valid_id(id) {
@@ -818,13 +818,13 @@ export function rdb_feed_merge(old_feed, new_feed) {
 }
 
 export function rdb_entry_create() {
-  return {magic: RDB_ENTRY_MAGIC};
+  return {magic: ENTRY_MAGIC};
 }
 
 // Return true if the first parameter looks like an entry object
 export function rdb_is_entry(value) {
   // note: typeof null === 'object', hence the truthy test
-  return value && typeof value === 'object' && value.magic === RDB_ENTRY_MAGIC;
+  return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
 }
 
 // Return true if the first parameter looks like an entry id

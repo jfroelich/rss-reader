@@ -3,8 +3,8 @@ import archive_entries from '/src/feed-ops/archive-entries.js';
 import rdb_refresh_feed_icons from '/src/feed-ops/refresh-feed-icons.js';
 import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
 import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
-import {poll_service_close_context, poll_service_create_context, poll_service_poll_feeds} from '/src/poll-service/poll-service.js';
-import {rdb_open} from '/src/rdb/rdb.js';
+import * as poll_service from '/src/poll-service/poll-service.js';
+import * as rdb from '/src/rdb/rdb.js';
 
 async function cli_archive_entries() {
   let conn, max_age;
@@ -14,20 +14,20 @@ async function cli_archive_entries() {
 }
 
 async function refresh_icons() {
-  const [reader_conn, favicon_conn] =
-      await Promise.all([rdb_open(), favicon_service.open()]);
+  const open_promises = [rdb.open(), favicon_service.open()];
+  const [reader_conn, favicon_conn] = await Promise.all(open_promises);
   await rdb_refresh_feed_icons(reader_conn, favicon_conn);
   reader_conn.close();
   favicon_conn.close();
 }
 
 async function poll_feeds() {
-  const context = await poll_service_create_context();
+  const context = await poll_service.poll_service_create_context();
   context.ignoreRecencyCheck = true;
   context.ignoreModifiedCheck = true;
   context.console = console;
-  await poll_service_poll_feeds(context);
-  poll_service_close_context(context);
+  await poll_service.poll_service_poll_feeds(context);
+  poll_service.poll_service_close_context(context);
 }
 
 async function remove_lost_entries(limit) {
