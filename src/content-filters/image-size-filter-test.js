@@ -1,5 +1,4 @@
-// TODO: fix import
-import setImageSizes from '/src/content-filters/image-size-filter.js';
+import * as filters from '/src/content-filters/content-filters.js';
 import {fetch_html} from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
 
@@ -11,18 +10,23 @@ import {html_parse} from '/src/html/html.js';
 // particular url until I figure out the problem ok the size was getting loaded,
 // attribute filter didn't whitelist image sizes
 
-window.test = async function(urlString) {
-  const requestURL = new URL(urlString);
-  const response = await fetch_html(requestURL);
+window.test = async function(url_string) {
+  const request_url = new URL(url_string);
+  const response = await fetch_html(request_url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch ' + request_url.href);
+  }
+
   const html = await response.text();
   const document = html_parse(html);
-  const responseURL = new URL(response.url);
-  await setImageSizes(document, responseURL);
+  const response_url = new URL(response.url);
+  await filters.document_set_image_sizes(document, response_url);
 };
 
 window.test2 = async function() {
   const html =
-      '<html><body><img src="http://exercism.io/icons/brand-logo.svg"></body></html>';
+      '<html><body><img src="http://exercism.io/icons/brand-logo.svg">' +
+      '</body></html>';
   const document = html_parse(html);
-  await setImageSizes(document);
+  await filters.document_set_image_sizes(document);
 };

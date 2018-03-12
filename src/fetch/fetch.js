@@ -1,15 +1,31 @@
 import {parse_content_type} from '/src/mime/mime.js';
 
-// Fetches the response of the given url and validates its response content
-// type. Throws an error if the fetch times out.
-// @param url {URL} request url
-// @param timeout {Number} optional, the number of millis to wait for a
-// response before considering the request a failure.
-// @throws {Error} if the response is not an html mime type
-// @throws {Error} any of the errors thrown by tfetch
+export const STATUS_UNACCEPTABLE = 801;
+export const STATUS_UNACCEPTABLE_TEXT = 'Unacceptable mime type';
+export const STATUS_POLICY_REFUSAL = 802;
+export const STATUS_POLICY_REFUSAL_TEXT = 'Refused to fetch';
+export const STATUS_FORBIDDEN_METHOD = 803;
+export const STATUS_FORBIDDEN_METHOD_TEXT = 'Forbidden request method';
+export const STATUS_OFFLINE = 804;
+export const STATUS_OFFLINE_TEXT = 'Offline';
+export const STATUS_TIMEOUT = 805;
+export const STATUS_TIMEOUT_TEXT = 'Request timed out';
+
 export async function fetch_html(url, timeout) {
   const response = await tfetch(url, {timeout: timeout});
-  assert(response_get_mime_type(response) === 'text/html');
+  if (!response.ok) {
+    return response;
+  }
+
+  if (response_get_mime_type(response) !== 'text/html') {
+    const body = null;
+    return new Response(body, {
+      status: STATUS_UNACCEPTABLE,
+      statusText: STATUS_UNACCEPTABLE_TEXT,
+      headers: response.headers
+    });
+  }
+
   return response;
 }
 
@@ -20,24 +36,26 @@ const feed_mime_types = [
 
 export async function fetch_feed(url, timeout) {
   const response = await tfetch(url, {timeout: timeout});
-  assert(feed_mime_types.includes(response_get_mime_type(response)));
+
+  if (!response.ok) {
+    return response;
+  }
+
+  if (!feed_mime_types.includes(response_get_mime_type(response))) {
+    const body = null;
+    return new Response(body, {
+      status: STATUS_UNACCEPTABLE,
+      statusText: STATUS_UNACCEPTABLE_TEXT,
+      headers: response.headers
+    });
+  }
+
   return response;
 }
 
-// Does a fetch with a timeout
-// @param url {URL} request url
-// @param options {Object} optional, fetch options parameter. This extends the
-// basic fetch api with a non-standard option, 'timeout', that if specified
-// should be a positive integer, that causes fetch to fail if it takes longer
-// than the given number of milliseconds
-// @throws {TimeoutError} if the fetch takes too long
-// @throws {Error} if the url parameter is invalid
-// @throws {Error} if the fetch cannot be performed for policy reasons
-// @returns {Response}
 export async function tfetch(url, options) {
   assert(url instanceof URL);
 
-  // Parameter options => custom defaults => fetch defaults
   const default_options = {
     credentials: 'omit',
     method: 'get',
@@ -48,12 +66,8 @@ export async function tfetch(url, options) {
     referrerPolicy: 'no-referrer'
   };
 
-  // TODO: does this modify defaults? does options get copied into defaults?
-  // I think I need to be copying into empty object, right?
+  const merged_options = Object.assign({}, default_options, options);
 
-  const merged_options = Object.assign(default_options, options);
-
-  // Extract timeout from options to avoid passing non-standard options to fetch
   let timeout;
   if ('timeout' in merged_options) {
     timeout = merged_options.timeout;
@@ -65,33 +79,59 @@ export async function tfetch(url, options) {
     assert(Number.isInteger(timeout) && timeout >= 0);
   }
 
-  assert(url_is_allowed(url));
+  if (!url_is_allowed(url)) {
+    // throw new Error('Forbidden request to url ' + url);
+    const body = null;
+    return new Response(body, {
+      status: STATUS_POLICY_REFUSAL,
+      statusText: STATUS_POLICY_REFUSAL_TEXT,
+      headers: response.headers
+    });
+  }
 
   const method = merged_options.method.toUpperCase();
-  assert(method === 'GET' || method === 'HEAD');
+  // assert(method === 'GET' || method === 'HEAD');
+  if (method !== 'GET' && method !== 'HEAD') {
+    // throw new Error('Forbidden method ' + method);
+    const body = null;
+    return new Response(body, {
+      status: STATUS_FORBIDDEN_METHOD,
+      statusText: STATUS_FORBIDDEN_METHOD_TEXT,
+      headers: response.headers
+    });
+  }
 
-  // Distinguish offline errors from general fetch errors
-  assert(navigator && 'onLine' in navigator);
   if (!navigator.onLine) {
-    throw new OfflineError('Unable to fetch ' + url.href + ' while offline');
+    // throw new OfflineError('Unable to fetch ' + url.href + ' while offline');
+    const body = null;
+    return new Response(body, {
+      status: STATUS_OFFLINE,
+      statusText: STATUS_OFFLINE_TEXT,
+      headers: response.headers
+    });
   }
 
   const fetch_promise = fetch(url.href, merged_options);
 
   // If a timeout was specified, initialize a derived promise to the result of
   // racing fetch against timeout. Otherwise, initialize a derived promise to
-  // the result of fetch.
+  // the result of fetch. If timeout wins then response is undefined.
   const response = await (
       untimed ? fetch_promise : Promise.race([fetch_promise, sleep(timeout)]));
 
-  // If timeout wins then response is undefined.
-  if (!untimed && !response) {
-    throw new TimeoutError('Fetch timed out for url ' + url.href);
+  if (!response) {
+    // throw new TimeoutError('Fetch timed out for url ' + url.href);
+    const body = null;
+    return new Response(body, {
+      status: STATUS_TIMEOUT,
+      statusText: STATUS_TIMEOUT_TEXT,
+      headers: response.headers
+    });
   }
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch (' + response.status + ') ' + url.href);
-  }
+  // if (!response.ok) {
+  //  throw new Error('Failed to fetch (' + response.status + ') ' + url.href);
+  //}
 
   return response;
 }

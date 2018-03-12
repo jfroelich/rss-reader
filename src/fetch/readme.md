@@ -10,9 +10,6 @@ Notably, several of the functions just provide the response and do not go the fu
 ### todos
 
 * Just deprecate fetch_html and such, use a 'accepted mime types' parameter to a generic function
-* Instead of throwing assertion error on invalid mime type, return the bad status code
-* similarly instead of throwing assertion error on !response.ok, return the bad status code
-* once above two are done, then no need for try/catch per call
 
 ### `url_is_allowed` notes
 

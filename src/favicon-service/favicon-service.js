@@ -118,13 +118,13 @@ export async function lookup(input_options) {
     }
   }
 
-  // Try and fetch the html for the url. Non-fatal.
+  // Try and fetch the html for the url
   let response;
   if (!document && !options.skipURLFetch) {
-    try {
-      response = await fetch_html(url, options.fetchHTMLTimeout);
-    } catch (error) {
-      options.console.debug(error);
+    response = await fetch_html(url, options.fetchHTMLTimeout);
+    if (!response.ok) {
+      options.console.debug(
+          'Fetch failed', url.href, response.status, response.statusText);
     }
   }
 
@@ -482,6 +482,7 @@ async function image_fetch_head_and_validate(
     url, timeout, min_image_size, max_image_size) {
   const options = {method: 'head', timeout: timeout};
   const response = await tfetch(url, options);
+  assert(response.ok);
   assert(response_has_image_type(response));
   assert(response_is_in_range(response, min_image_size, max_image_size));
   return response;

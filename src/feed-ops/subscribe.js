@@ -1,8 +1,8 @@
 import {lookup as favicon_service_lookup} from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse/feed-parse.js';
-import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/poll-service/poll-service.js';
 import {fetch_feed, OfflineError, response_get_last_modified_date, url_did_change} from '/src/fetch/fetch.js';
 import notification_show from '/src/notifications/notifications.js';
+import {poll_service_close_context, poll_service_create_context, poll_service_feed_poll} from '/src/poll-service/poll-service.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import {rdb_contains_feed_with_url, rdb_feed_add, rdb_feed_append_url, rdb_feed_create, rdb_feed_create_favicon_lookup_url, rdb_feed_peek_url, rdb_is_feed} from '/src/rdb/rdb.js';
 
@@ -56,15 +56,16 @@ export default async function subscribe(context, url) {
     throw new Error('Already subscribed to ' + url.href);
   }
 
-  let response;
-  try {
-    response = await fetch_feed(url, context.fetchFeedTimeout || 2000);
-  } catch (error) {
-    if (error instanceof OfflineError) {
-      // continue with subscription
+  let response = await fetch_feed(url, context.fetchFeedTimeout || 2000);
+  if (!response.ok) {
+    if (response.status === STATUS_OFFLINE) {
+      // continue with offline subscription
       console.debug('Subscribing while offline to', url.href);
+      // nullify so that legacy code following this behaves as before in case of
+      // exception where response is left undefined
+      response = null;
     } else {
-      throw error;
+      throw new Error('Failed to fetch ' + url.href);
     }
   }
 

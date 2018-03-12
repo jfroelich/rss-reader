@@ -1,8 +1,11 @@
 import * as badge from '/src/badge.js';
 import * as color from '/src/color/color.js';
+
+// TODO: simplify these imports
+
 import {lookup as favicon_service_lookup, open as favicon_service_open} from '/src/favicon-service/favicon-service.js';
 import feed_parse from '/src/feed-parse/feed-parse.js';
-import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, TimeoutError, url_did_change} from '/src/fetch/fetch.js';
+import {fetch_feed, fetch_html, OfflineError, response_get_last_modified_date, STATUS_OFFLINE, STATUS_TIMEOUT, TimeoutError, url_did_change} from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
 import notification_show from '/src/notifications/notifications.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
@@ -116,12 +119,23 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     return 0;
   }
 
-  let response;
-  try {
-    response =
-        await fetch_feed(feed_tail_url, poll_feed_context.fetchFeedTimeout);
-  } catch (error) {
-    console.debug(error);
+  let response =
+      await fetch_feed(feed_tail_url, poll_feed_context.fetchFeedTimeout);
+  if (!response.ok) {
+    // Now that fetch utility no longer throws and instead always returns
+    // response, this needs to translate the response status into an error.
+    // Eventually I should have handle_poll_feed_error just accept status code
+    // instead
+    let error;
+    if (response.status === STATUS_TIMEOUT) {
+      error = new TimeoutError('Timeout error fetching ' + feed_tail_url.href);
+    } else if (response.status === STATUS_OFFLINE) {
+      error = new OfflineError(
+          'Unable to fetch while offline ' + feed_tail_url.href);
+    } else {
+      error = new Error('Failed to fetch ' + feed_tail_url.href);
+    }
+
     handle_poll_feed_error({
       context: poll_feed_context,
       error: error,
@@ -373,11 +387,12 @@ async function entry_fetch(entry, timeout) {
     return;
   }
 
-  try {
-    return await fetch_html(url, timeout);
-  } catch (error) {
-    console.debug(error);
+  const response = await fetch_html(url, timeout);
+  if (!response.ok) {
+    console.debug('Failed to fetch url ' + url.href);
+    return;  // return undefined response
   }
+  return response;
 }
 
 async function entry_handle_redirect(conn, response, entry) {

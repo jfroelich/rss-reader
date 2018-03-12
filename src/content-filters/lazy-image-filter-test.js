@@ -1,14 +1,18 @@
-import * as FetchUtils from '/src/fetch/fetch.js';
+import * as filters from '/src/content-filters/content-filters.js';
+import {fetch_html} from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
-import filterLazyImages from '/src/content-filters/lazy-image-filter.js';
-import filterSourcelessImages from '/src/content-filters/sourceless-image-filter.js';
 
-window.test = async function(urlString) {
-  const urlObject = new URL(urlString);
-  const response = await FetchUtils.fetch_html(urlObject);
-  const responseText = await response.text();
-  const document = html_parse(responseText);
-  filterLazyImages(document);
+window.test = async function(url_string) {
+  const request_url = new URL(url_string);
+  const response = await fetch_html(request_url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch ' + request_url.href);
+  }
+
+  const response_text = await response.text();
+  const document = html_parse(response_text);
+  filters.filter_lazy_images(document);
+
   // Call this subsequently because it prints out missing images
-  filterSourcelessImages(document);
+  // filters.filter_sourceless_images(document);
 };

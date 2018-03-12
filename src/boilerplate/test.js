@@ -6,6 +6,10 @@ import {html_parse} from '/src/html/html.js';
 window.test = async function(url_string) {
   const request_url = new URL(url_string);
   const response = await fetch_html(request_url);
+  if (!response.ok) {
+    throw new Error('Failed to fetch ' + request_url.href);
+  }
+
   const response_url = new URL(response.url);
   const response_text = await response.text();
   const document = html_parse(response_text);
