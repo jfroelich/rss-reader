@@ -31,7 +31,15 @@ function feed_compare(a, b) {
 
 export async function ral_find_feed_by_id(feed_id) {
   let conn;
-  return await reader_db_find_feed_by_id(conn, feed_id);
+  try {
+    conn = await rdb.open();
+    return await rdb.find_feed_by_id(conn, feed_id);
+  } finally {
+    if (conn) {
+      console.debug('Closing connection to database', conn.name);
+      conn.close();
+    }
+  }
 }
 
 export async function ral_import(channel, files) {
@@ -44,8 +52,12 @@ export async function ral_import(channel, files) {
     await exim.import_opml(
         reader_conn, favicon_conn, channel, fetch_feed_timeout, files);
   } finally {
-    if (reader_conn) reader_conn.close();
-    if (favicon_conn) favicon_conn.close();
+    if (reader_conn) {
+      reader_conn.close();
+    }
+    if (favicon_conn) {
+      favicon_conn.close();
+    }
   }
 }
 
@@ -55,7 +67,9 @@ export async function ral_export(title) {
     conn = await rdb.open();
     exim.export_opml(conn, title);
   } finally {
-    if (conn) conn.close();
+    if (conn) {
+      conn.close();
+    }
   }
 }
 
@@ -72,7 +86,7 @@ export async function ral_load_initial(
     await Promise.all([p1, p2]);
   } finally {
     if (conn) {
-      console.debug('Closing connection', conn.name);
+      console.debug('Closing connection to database', conn.name);
       conn.close();
     }
   }
