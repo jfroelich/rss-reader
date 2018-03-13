@@ -226,7 +226,7 @@ async function feed_list_item_onclick(event) {
 
   let feed;
   try {
-    feed = await ral.ral_find_feed_by_id(feed_id);
+    feed = await ral.find_feed_by_id(feed_id);
   } catch (error) {
     console.error(error);
     return;
@@ -323,7 +323,7 @@ async function feed_list_init() {
   const title_sort_flag = true;
   let feeds;
   try {
-    feeds = await ral.ral_get_feeds(title_sort_flag);
+    feeds = await ral.get_feeds(title_sort_flag);
   } catch (error) {
     // TODO: show an error message
     console.error(error);
@@ -386,7 +386,7 @@ function unsubscribe_button_onclick(event) {
 
 function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  return ral.ral_activate_feed(channel, feed_id)
+  return ral.activate_feed(channel, feed_id)
       .then(_ => {
         // Mark the corresponding feed element displayed in the view as active
         const item_element =
@@ -406,7 +406,7 @@ function activate_feed_button_onclick(event) {
 function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const reason = 'click';
-  ral.ral_deactivate_feed(channel, feed_id, reason)
+  ral.deactivate_feed(channel, feed_id, reason)
       .then(_ => {
         // Deactive the corresponding feed element in the view
         const item_element =

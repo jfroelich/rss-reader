@@ -385,7 +385,7 @@ function refresh_anchor_onclick(event) {
   event.preventDefault();
   if (!refresh_in_progress) {
     refresh_in_progress = true;
-    ral.ral_poll_feeds(channel, console)
+    ral.poll_feeds(channel, console)
         .then(_ => {})
         .catch(error => {
           console.error(error);
@@ -458,7 +458,7 @@ function uploader_input_onchange(event) {
     return;
   }
 
-  ral.ral_import(channel, files)
+  ral.import_opml(channel, files)
       .then(() => {
         console.log('Import completed');
       })
@@ -469,7 +469,7 @@ function uploader_input_onchange(event) {
 
 function export_menu_option_handle_click(event) {
   const title = 'Subscriptions';
-  ral.ral_export(title)
+  ral.export_opml(title)
       .then(blob => {
         const filename = 'subscriptions.xml';
         download_blob(blob, filename);
@@ -746,7 +746,7 @@ function slideshow_page_init() {
   page_style.page_style_onload();
 
   const entry_cursor_offset = 0, entry_cursor_limit = 6;
-  ral.ral_load_initial(
+  ral.load_initial_data(
          entry_cursor_offset, entry_cursor_limit, slide_append,
          feeds_container_append_feed)
       .then(loading_info_hide)
