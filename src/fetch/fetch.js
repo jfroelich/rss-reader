@@ -81,30 +81,27 @@ export async function tfetch(url, options) {
 
   if (!url_is_allowed(url)) {
     const body = null;
-    return new Response(body, {
+    const init = {
       status: STATUS_POLICY_REFUSAL,
-      statusText: STATUS_POLICY_REFUSAL_TEXT,
-      headers: response.headers
-    });
+      statusText: STATUS_POLICY_REFUSAL_TEXT
+    };
+    return new Response(body, init);
   }
 
   const method = merged_options.method.toUpperCase();
   if (method !== 'GET' && method !== 'HEAD') {
     const body = null;
-    return new Response(body, {
+    const init = {
       status: STATUS_FORBIDDEN_METHOD,
-      statusText: STATUS_FORBIDDEN_METHOD_TEXT,
-      headers: response.headers
-    });
+      statusText: STATUS_FORBIDDEN_METHOD_TEXT
+    };
+    return new Response(body, init);
   }
 
   if (!navigator.onLine) {
     const body = null;
-    return new Response(body, {
-      status: STATUS_OFFLINE,
-      statusText: STATUS_OFFLINE_TEXT,
-      headers: response.headers
-    });
+    const init = {status: STATUS_OFFLINE, statusText: STATUS_OFFLINE_TEXT};
+    return new Response(body, init);
   }
 
   const fetch_promise = fetch(url.href, merged_options);
