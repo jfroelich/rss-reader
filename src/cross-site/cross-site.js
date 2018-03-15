@@ -4,7 +4,7 @@ export const MODE_UNKNOWN = 0;
 export const MODE_STRICT = 2;
 export const MODE_SLOPPY = 1;
 
-export function url_is_external(document_url, other_url, mode) {
+export function url_is_external(document_url, other_url, mode = MODE_UNKNOWN) {
   if (!(document_url instanceof URL)) {
     throw new TypeError('document_url is not a URL');
   }
