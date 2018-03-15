@@ -21,21 +21,15 @@ function handle_archive_alarm_wakeup(alarm) {
 async function handle_lost_entries_alarm(alarm) {
   let conn;
   const channel = new BroadcastChannel('reader');
-  try {
-    await entry_store_remove_lost_entries(conn, channel, console);
-  } finally {
-    channel.close();
-  }
+  await entry_store_remove_lost_entries(conn, channel, console);
+  channel.close();
 }
 
 async function handle_orphan_entries_alarm(alarm) {
   let conn;
   const channel = new BroadcastChannel('reader');
-  try {
-    await entry_store_remove_orphans(conn, channel);
-  } finally {
-    channel.close();
-  }
+  await entry_store_remove_orphans(conn, channel);
+  channel.close();
 }
 
 async function handle_refresh_feed_icons_alarm(alarm) {
@@ -81,17 +75,9 @@ chrome.runtime.onInstalled.addListener(function(event) {
 chrome.browserAction.onClicked.addListener(show_slideshow_tab);
 
 async function badge_init() {
-  let conn;
-  try {
-    conn = await rdb.open();
-    await badge.update(conn);
-  } catch (error) {
-    console.error(error);
-  } finally {
-    if (conn) {
-      conn.close();
-    }
-  }
+  const conn = await rdb.open();
+  await badge.update(conn);
+  conn.close();
 }
 
 badge_init();
