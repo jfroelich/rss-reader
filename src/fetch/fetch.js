@@ -117,11 +117,8 @@ export async function tfetch(url, options) {
 
   if (!response) {
     const body = null;
-    return new Response(body, {
-      status: STATUS_TIMEOUT,
-      statusText: STATUS_TIMEOUT_TEXT,
-      headers: response.headers
-    });
+    const init = {status: STATUS_TIMEOUT, statusText: STATUS_TIMEOUT_TEXT};
+    return new Response(body, init);
   }
 
   return response;
