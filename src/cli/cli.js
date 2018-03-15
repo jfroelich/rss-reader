@@ -31,23 +31,17 @@ async function poll_feeds() {
 }
 
 async function remove_lost_entries(limit) {
-  const channel = new BroadcastChannel('reader');
   let conn;
-  try {
-    await entry_store_remove_lost_entries(conn, channel, console);
-  } finally {
-    channel.close();
-  }
+  const channel = new BroadcastChannel('reader');
+  await entry_store_remove_lost_entries(conn, channel, console);
+  channel.close();
 }
 
 async function remove_orphans() {
-  const channel = new BroadcastChannel('reader');
   let conn;
-  try {
-    await entry_store_remove_orphans(conn, channel);
-  } finally {
-    channel.close();
-  }
+  const channel = new BroadcastChannel('reader');
+  await entry_store_remove_orphans(conn, channel);
+  channel.close();
 }
 
 async function lookup_favicon(url, cached) {
