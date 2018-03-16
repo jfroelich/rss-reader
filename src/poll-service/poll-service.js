@@ -1,7 +1,7 @@
 import * as badge from '/src/badge.js';
 import * as color from '/src/color/color.js';
 import * as favicon_service from '/src/favicon-service/favicon-service.js';
-import feed_parse from '/src/feed-parse/feed-parse.js';
+import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as fetchlib from '/src/fetch/fetch.js';
 import {html_parse} from '/src/html/html.js';
 import notification_show from '/src/notifications/notifications.js';
@@ -201,8 +201,8 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
   const resolve_entry_urls_flag = true;
   let parsed_feed;
   try {
-    parsed_feed =
-        feed_parse(response_text, skip_entries_flag, resolve_entry_urls_flag);
+    parsed_feed = feed_parser.parse(
+        response_text, skip_entries_flag, resolve_entry_urls_flag);
   } catch (error) {
     console.debug(error);
     handle_poll_feed_error({

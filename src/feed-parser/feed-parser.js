@@ -1,6 +1,6 @@
 import {html_decode_entities} from '/src/html/html.js';
 
-export default function feed_parse(value, skip_entries, resolve_entry_urls) {
+export function parse(value, skip_entries, resolve_entry_urls) {
   const document = xml_parse(value);
   return unmarshall_xml(document, skip_entries, resolve_entry_urls);
 }

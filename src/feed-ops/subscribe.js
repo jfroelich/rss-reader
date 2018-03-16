@@ -1,5 +1,5 @@
 import * as favicon_service from '/src/favicon-service/favicon-service.js';
-import feed_parse from '/src/feed-parse/feed-parse.js';
+import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as fetchlib from '/src/fetch/fetch.js';
 import notification_show from '/src/notifications/notifications.js';
 import * as poll_service from '/src/poll-service/poll-service.js';
@@ -46,8 +46,7 @@ export default async function subscribe(context, url) {
   console.log('Subscribing to', url.href);
 
   // If this fails, throw an error
-  let contains_feed =
-      await rdb.contains_feed_with_url(context.feedConn, url);
+  let contains_feed = await rdb.contains_feed_with_url(context.feedConn, url);
 
   // If already subscribed, throw an error
   // TODO: is this really an error? This isn't an error. This just means cannot
@@ -124,8 +123,8 @@ async function subscribe_create_feed_from_response(context, response, url) {
   // and rethrown.
   const skip_entries_flag = true;
   const resolve_entry_urls_flag = false;
-  const parsed_feed =
-      feed_parse(response_text, skip_entries_flag, resolve_entry_urls_flag);
+  const parsed_feed = feed_parser.parse(
+      response_text, skip_entries_flag, resolve_entry_urls_flag);
 
   // Reformat the parsed feed object as a storable feed object, while also
   // introducing fetch information. Treat any coercion error as fatal and allow

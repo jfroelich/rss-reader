@@ -1,5 +1,5 @@
-
-feed-parse.js provides a basic feed_parse function. The feed_parse function accepts a string as input. The string should be the full text of an xml file. The xml is parsed into a Document object, and then the Document object is coerced into a basic JavaScript object. Feed properties are stored in the parsed object. The output object contains an entries property that is an array of entry objects, where each entry represents one of the xml items (or entries).
+# Overview
+The `parse` function accepts a string as input. The string should be the full text of an xml file. The xml is parsed into a Document object, and then the Document object is coerced into a basic JavaScript object. Feed properties are stored in the parsed object. The output object contains an entries property that is an array of entry objects, where each entry represents one of the xml items (or entries).
 
 // Parses the input string into a feed object. The feed object will always have
 // a defined entries array, although it may be zero length. Returns a feed
