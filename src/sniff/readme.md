@@ -7,7 +7,4 @@
 
 ### Misc todos
 
-* TODO: move all the misc todo comments and ideas and such either to readme.md or as individual github issues, then simplify all the superfluous commentary
 * TODO: in find_mime_type_in_data_url, review the use of href. This captures the href and caches it. The href getter is dynamic and a function, similar to how array.length is a function. I do not trust that that the URL implementation is smart enough to cache property access, at least for now. This admittedly may be premature optimization, but I am overlooking that as I remain ambivalent about its importance. What I am concerned about is whether this is actually slower.
-* TODO: in test.js, use console.assert rather than throw exception
-* TODO: in test.js, test other functions in sniff.js
