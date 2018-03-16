@@ -3,7 +3,7 @@ import * as color from '/src/color/color.js';
 import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as fetchlib from '/src/fetch/fetch.js';
-import {html_parse} from '/src/html-parser/html-parser.js';
+import * as html_parser from '/src/html-parser/html-parser.js';
 import notification_show from '/src/notifications/notifications.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
@@ -447,7 +447,7 @@ async function entry_parse_response(response) {
 
   try {
     const response_text = await response.text();
-    return html_parse(response_text);
+    return html_parser.parse(response_text);
   } catch (error) {
     console.debug(error);
   }
@@ -490,7 +490,7 @@ async function entry_update_content(ctx, entry, fetched_document) {
   let document = fetched_document;
   if (!document) {
     try {
-      document = html_parse(entry.content);
+      document = html_parser.parse(entry.content);
     } catch (error) {
       console.debug(error);
       entry.content =

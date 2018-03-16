@@ -1,8 +1,8 @@
 import {element_coerce} from '/src/dom/element-coerce.js';
-import {html_parse} from '/src/html-parser/html-parser.js';
+import * as html_parser from '/src/html-parser/html-parser.js';
 
 let input = '<html><head></head><body><a></a></body></html>';
-const doc = html_parse(input);
+const doc = html_parser.parse(input);
 
 let anchors = doc.querySelectorAll('a');
 for (let a of anchors) {

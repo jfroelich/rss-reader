@@ -1,4 +1,4 @@
-import {html_parse} from '/src/html-parser/html-parser.js';
+import * as html_parser from '/src/html-parser/html-parser.js';
 
 // Given an input value, if it is a string, then creates and returns a new
 // string where html entities have been decoded into corresponding values. For
@@ -52,7 +52,7 @@ export function html_replace_tags(html_string, replacement) {
 
   let document;
   try {
-    document = html_parse(html_string);
+    document = html_parser.parse(html_string);
   } catch (error) {
     console.debug(error);
     return 'Unsafe html';

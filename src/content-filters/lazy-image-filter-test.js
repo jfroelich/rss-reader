@@ -1,6 +1,6 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import {fetch_html} from '/src/fetch/fetch.js';
-import {html_parse} from '/src/html-parser/html-parser.js';
+import * as html_parser from '/src/html-parser/html-parser.js';
 
 window.test = async function(url_string) {
   const request_url = new URL(url_string);
@@ -10,7 +10,7 @@ window.test = async function(url_string) {
   }
 
   const response_text = await response.text();
-  const document = html_parse(response_text);
+  const document = html_parser.parse(response_text);
   filters.filter_lazy_images(document);
 
   // Call this subsequently because it prints out missing images

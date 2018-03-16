@@ -1,6 +1,6 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import {fetch_html} from '/src/fetch/fetch.js';
-import {html_parse} from '/src/html-parser/html-parser.js';
+import * as html_parser from '/src/html-parser/html-parser.js';
 
 // TODO: research http://exercism.io/ svg loading issue
 // Actually there is now a separate issue. It's not finding any urls. Something
@@ -18,7 +18,7 @@ window.test = async function(url_string) {
   }
 
   const html = await response.text();
-  const document = html_parse(html);
+  const document = html_parser.parse(html);
   const response_url = new URL(response.url);
   await filters.document_set_image_sizes(document, response_url);
 };
@@ -27,6 +27,6 @@ window.test2 = async function() {
   const html =
       '<html><body><img src="http://exercism.io/icons/brand-logo.svg">' +
       '</body></html>';
-  const document = html_parse(html);
+  const document = html_parser.parse(html);
   await filters.document_set_image_sizes(document);
 };
