@@ -15,3 +15,4 @@ Provides a way to get the favicon image url for a page url
 * test against icon with byte size out of bounds
 * test cacheless versus caching?
 * test compact
+* reintroduce dependency on html-parser

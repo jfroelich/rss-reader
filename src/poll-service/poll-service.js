@@ -3,7 +3,7 @@ import * as color from '/src/color/color.js';
 import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as fetchlib from '/src/fetch/fetch.js';
-import {html_parse} from '/src/html/html.js';
+import {html_parse} from '/src/html-parser/html-parser.js';
 import notification_show from '/src/notifications/notifications.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';

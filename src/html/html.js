@@ -1,3 +1,5 @@
+import {html_parse} from '/src/html-parser/html-parser.js';
+
 // Given an input value, if it is a string, then creates and returns a new
 // string where html entities have been decoded into corresponding values. For
 // example, '&lt;' becomes '<'. Adapted from
@@ -69,16 +71,7 @@ export function html_replace_tags(html_string, replacement) {
   return node_values.join(replacement);
 }
 
-export function html_parse(html_string) {
-  assert(typeof html_string === 'string');
-  const parser = new DOMParser();
-  const document = parser.parseFromString(html_string, 'text/html');
-  const error = document.querySelector('parsererror');
-  if (error) {
-    throw new Error(error.textContent.replace(/\s{2,}/g, ' '));
-  }
-  return document;
-}
+
 
 function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
