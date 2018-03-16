@@ -1,7 +1,7 @@
 import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as fetchlib from '/src/fetch/fetch.js';
-import notification_show from '/src/notifications/notifications.js';
+import * as notifications from '/src/notifications/notifications.js';
 import * as poll_service from '/src/poll-service/poll-service.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import * as rdb from '/src/rdb/rdb.js';
@@ -161,7 +161,7 @@ function subscribe_notification_show(feed) {
   const title = 'Subscribed!';
   const feed_title = feed.title || rdb.feed_peek_url(feed);
   const message = 'Subscribed to ' + feed_title;
-  notification_show(title, message, feed.faviconURLString);
+  notifications.show(title, message, feed.faviconURLString);
 }
 
 async function subscribe_feed_poll(feed) {

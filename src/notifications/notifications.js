@@ -1,6 +1,6 @@
 import show_slideshow_tab from '/src/show-slideshow-tab.js';
 
-export default function notification_show(title, message, icon_url) {
+export function show(title, message, icon_url) {
   if (typeof Notification === 'undefined') {
     return;
   }
@@ -22,10 +22,10 @@ export default function notification_show(title, message, icon_url) {
 
   // Instantiation implicitly shows the notification
   const notification = new Notification(title, details);
-  notification.addEventListener('click', notification_onclick);
+  notification.addEventListener('click', click_handler);
 }
 
-function notification_onclick(event) {
+function click_handler(event) {
   try {
     const hwnd = window.open();
     hwnd.close();

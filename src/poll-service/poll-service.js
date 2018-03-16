@@ -4,7 +4,7 @@ import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as fetchlib from '/src/fetch/fetch.js';
 import * as html_parser from '/src/html-parser/html-parser.js';
-import notification_show from '/src/notifications/notifications.js';
+import * as notifications from '/src/notifications/notifications.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
 import {coerce_entry} from '/src/rdb/coerce-entry.js';
@@ -114,7 +114,7 @@ export async function poll_service_poll_feeds(input_poll_feeds_context) {
   if (entry_add_count) {
     const title = 'Added articles';
     const message = 'Added articles';
-    notification_show(title, message);
+    notifications.show(title, message);
   }
 
   poll_feeds_context.console.log('Added %d new entries', entry_add_count);
@@ -273,7 +273,7 @@ export async function poll_service_feed_poll(input_poll_feed_context, feed) {
     const title = 'Added articles';
     const message = 'Added ' + entry_add_count_per_feed +
         ' articles for feed ' + storable_feed.title;
-    notification_show(title, message);
+    notifications.show(title, message);
   }
 
   return entry_add_count_per_feed;
