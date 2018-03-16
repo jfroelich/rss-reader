@@ -132,3 +132,7 @@ The first implementation is conservative and my attempt at being accurate. I thi
 
 // TODO: write pass/fail style tests that test various inputs
 // Consider comparing this library's output to other well known libs
+
+## TODO: make format specific
+
+Using the noun color is too abstract. This is a very particular format, ARGB8888. This module should be named argb8888 (the folder, the file name, etc).
