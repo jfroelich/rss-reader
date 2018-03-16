@@ -1,9 +1,14 @@
-
-const rules = [];
-
-export function rewrite_url(url) {
+export function rewrite_url(url, rules) {
   if (!(url instanceof URL)) {
-    throw new TypeError('Invalid url parameter', url);
+    throw new TypeError('url is not a URL ' + url);
+  }
+
+  if (!Array.isArray(rules)) {
+    throw new TypeError('rules is not an array' + rules);
+  }
+
+  if (!rules.length) {
+    return url;
   }
 
   let prev = url;
@@ -15,25 +20,3 @@ export function rewrite_url(url) {
 
   return next;
 }
-
-function google_news_rule(url) {
-  if (url.hostname === 'news.google.com' && url.pathname === '/news/url') {
-    const param = url.searchParams.get('url');
-    try {
-      return new URL(param);
-    } catch (error) {
-    }
-  }
-}
-
-rules.push(google_news_rule);
-
-function techcrunch_rule(url) {
-  if (url.hostname === 'techcrunch.com' && url.searchParams.has('ncid')) {
-    const output = new URL(url.href);
-    output.searchParams.delete('ncid');
-    return output;
-  }
-}
-
-rules.push(techcrunch_rule);

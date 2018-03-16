@@ -33,6 +33,35 @@ const default_poll_feeds_context = {
   console: null_console
 };
 
+const rewrite_url_rules = build_rewrite_rules();
+
+function build_rewrite_rules() {
+  const rules = [];
+
+  function google_news_rule(url) {
+    if (url.hostname === 'news.google.com' && url.pathname === '/news/url') {
+      const param = url.searchParams.get('url');
+      try {
+        return new URL(param);
+      } catch (error) {
+      }
+    }
+  }
+
+  rules.push(google_news_rule);
+
+  function techcrunch_rule(url) {
+    if (url.hostname === 'techcrunch.com' && url.searchParams.has('ncid')) {
+      const output = new URL(url.href);
+      output.searchParams.delete('ncid');
+      return output;
+    }
+  }
+
+  rules.push(techcrunch_rule);
+  return rules;
+}
+
 function noop() {}
 
 export async function poll_service_create_context() {
@@ -298,8 +327,7 @@ function handle_poll_feed_error(error_info) {
 
   feed.dateUpdated = new Date();
   // Call unawaited
-  rdb.feed_put(
-         error_info.context.feedConn, error_info.context.channel, feed)
+  rdb.feed_put(error_info.context.feedConn, error_info.context.channel, feed)
       .catch(console.error);
 }
 
@@ -370,7 +398,7 @@ async function poll_entry(ctx, entry) {
 
 function entry_rewrite_tail_url(entry) {
   const entry_tail_url = new URL(rdb.entry_peek_url(entry));
-  const entry_response_url = rewrite_url(entry_tail_url);
+  const entry_response_url = rewrite_url(entry_tail_url, rewrite_url_rules);
   if (!entry_response_url) {
     return false;
   }
