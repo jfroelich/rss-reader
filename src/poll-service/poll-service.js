@@ -11,7 +11,7 @@ import {coerce_entry} from '/src/rdb/coerce-entry.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import * as rdb from '/src/rdb/rdb.js';
 import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
-import {url_is_binary} from '/src/sniff/sniff.js';
+import * as sniff from '/src/sniff/sniff.js';
 
 const null_console = {
   log: noop,
@@ -511,7 +511,7 @@ async function entry_update_content(ctx, entry, fetched_document) {
 }
 
 function url_is_augmentable(url) {
-  return url_is_http(url) && !url_is_binary(url) &&
+  return url_is_http(url) && sniff.classify(url) !== sniff.BINARY_CLASS &&
       !url_is_inaccessible_content(url);
 }
 

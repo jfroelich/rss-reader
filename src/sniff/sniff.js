@@ -1,37 +1,45 @@
 import * as mime from '/src/mime/mime.js';
 import * as string from '/src/string/string.js';
 
-export function url_is_binary(url) {
+export const UNKNOWN_CLASS = 0;
+export const TEXT_CLASS = 1;
+export const BINARY_CLASS = 2;
+
+export const text_protocols = ['tel:', 'mailto:', 'javascript:'];
+
+export const application_text_types = [
+  'application/atom+xml', 'application/javascript', 'application/json',
+  'application/rdf+xml', 'application/rss+xml',
+  'application/vnd.mozilla.xul+xml', 'application/xhtml+xml', 'application/xml'
+];
+
+export function classify(url) {
   if (!(url instanceof URL)) {
-    throw new TypeError('Invalid url ' + url);
+    throw new TypeError('url is not a URL');
   }
 
   if (url.href === 'about:blank') {
-    return false;
+    return TEXT_CLASS;
   }
 
-  const text_protocols = ['tel:', 'mailto:', 'javascript:'];
   if (text_protocols.includes(url.protocol)) {
-    return false;
+    return TEXT_CLASS;
   }
 
   if (url.protocol === 'data:') {
-    const default_type = 'text/plain';
-    const mime_type = find_mime_type_in_data_url(url) || default_type;
-    return mime_type_is_binary(mime_type);
+    const mime_type = find_mime_type_in_data_url(url);
+    return mime_type ? mime_type_is_binary(mime_type) : UNKNOWN_CLASS;
   }
 
   const extension = url_get_extension(url);
-  if (!extension) {
-    return false;
+  if (extension) {
+    const mime_type = find_mime_type_for_extension(extension);
+    if (mime_type) {
+      return mime_type_is_binary(mime_type);
+    }
   }
 
-  const mime_type = find_mime_type_for_extension(extension);
-  if (!mime_type) {
-    return false;
-  }
-
-  return mime_type_is_binary(mime_type);
+  return UNKNOWN_CLASS;
 }
 
 export function find_mime_type_for_extension(extension) {
@@ -42,16 +50,19 @@ export function find_mime_type_for_extension(extension) {
 
 export function find_mime_type_in_data_url(url) {
   if (!(url instanceof URL)) {
-    throw new TypeError('Invalid url ' + url);
+    throw new TypeError('url is not a URL');
   }
 
   if (url.protocol !== 'data:') {
-    throw new TypeError('Invalid data url ' + url.href);
+    throw new TypeError('url is not a data URI');
   }
+
+  // Data URIs that do not specify a mime type default to text/plain
+  const default_type = 'text/plain';
 
   const href = url.href;
   if (href.length < mime.MIME_TYPE_MIN_LENGTH) {
-    return;
+    return default_type;
   }
 
   const PREFIX_LENGTH = 'data:'.length;
@@ -61,17 +72,15 @@ export function find_mime_type_in_data_url(url) {
 
   const sc_position = haystack.indexOf(';');
   if (sc_position < 0) {
-    return;
+    return default_type;
   }
 
   if (sc_position < mime.MIME_TYPE_MIN_LENGTH) {
-    return;
+    return default_type;
   }
 
   const mime_type = haystack.substring(0, sc_position);
-  if (mime.is_mime_type(mime_type)) {
-    return mime_type;
-  }
+  return mime.is_mime_type(mime_type) ? mime_type : default_type;
 }
 
 export function url_get_extension(url) {
@@ -91,15 +100,9 @@ export function url_get_extension(url) {
   }
 }
 
-const application_text_types = [
-  'application/atom+xml', 'application/javascript', 'application/json',
-  'application/rdf+xml', 'application/rss+xml',
-  'application/vnd.mozilla.xul+xml', 'application/xhtml+xml', 'application/xml'
-];
-
 export function mime_type_is_binary(mime_type) {
   if (!mime.is_mime_type(mime_type)) {
-    throw new TypeError('Invalid mime_type ' + mime_type);
+    throw new TypeError('Invalid mime type argument: ' + mime_type);
   }
 
   const slash_position = mime_type.indexOf('/');
@@ -107,19 +110,20 @@ export function mime_type_is_binary(mime_type) {
 
   switch (super_type) {
     case 'application':
-      return !application_text_types.includes(mime_type);
+      return application_text_types.includes(mime_type) ? TEXT_CLASS :
+                                                          BINARY_CLASS;
     case 'text':
-      return false;
+      return TEXT_CLASS;
     case 'audio':
-      return true;
+      return BINARY_CLASS;
     case 'image':
-      return true;
+      return BINARY_CLASS;
     case 'video':
-      return true;
+      return BINARY_CLASS;
     case 'multipart':
-      return true;
+      return BINARY_CLASS;
     default:
-      return false;
+      return UNKNOWN_CLASS;
   }
 }
 
@@ -138,8 +142,7 @@ export const EXTENSION_TYPE_MAP = {
   cpp: 'text/plain',
   css: 'text/css',
   doc: 'application/msword',
-  docx:
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  docx: 'application/msword',
   eml: 'message/rfc822',
   eps: 'application/postscript',
   exe: 'application/octet-stream',
@@ -186,8 +189,7 @@ export const EXTENSION_TYPE_MAP = {
   png: 'image/x-png',
   pps: 'application/vnd.ms-powerpoint',
   ppt: 'application/vnd.ms-powerpoint',
-  pptx:
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  pptx: 'application/vnd.ms-powerpoint',
   ps: 'application/postscript',
   rar: 'application/octet-stream',
   rdf: 'application/rdf+xml',
