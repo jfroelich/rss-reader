@@ -30,28 +30,5 @@ export function serialize(descriptors) {
 }
 
 export function parse(srcset) {
-  const fallback_output = [];
-
-  if (typeof srcset !== 'string') {
-    return fallback_output;
-  }
-
-  if (!srcset) {
-    return fallback_output;
-  }
-
-  // parseSrcset does not throw in the ordinary case, but avoid surprises
-  let descriptors;
-  try {
-    descriptors = parseSrcset(srcset);
-  } catch (error) {
-    console.warn(error);
-    return fallback_output;
-  }
-
-  if (!Array.isArray(descriptors)) {
-    return fallback_output;
-  }
-
-  return descriptors;
+  return (srcset && typeof srcset === 'string') ? parseSrcset(srcset) : [];
 }
