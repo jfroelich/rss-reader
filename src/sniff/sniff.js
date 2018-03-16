@@ -33,19 +33,13 @@ export function classify(url) {
 
   const extension = url_get_extension(url);
   if (extension) {
-    const mime_type = find_mime_type_for_extension(extension);
+    const mime_type = EXTENSION_TYPE_MAP[extension];
     if (mime_type) {
       return mime_type_is_binary(mime_type);
     }
   }
 
   return UNKNOWN_CLASS;
-}
-
-export function find_mime_type_for_extension(extension) {
-  if (typeof extension === 'string') {
-    return EXTENSION_TYPE_MAP[extension];
-  }
 }
 
 export function find_mime_type_in_data_url(url) {
