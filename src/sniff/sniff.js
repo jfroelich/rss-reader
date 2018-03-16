@@ -79,15 +79,15 @@ export function find_mime_type_in_data_url(url) {
 
 export function url_get_extension(url) {
   const minlen = 3;
-  const maxlen = 255;
+  const ext_max_len = 20;
   const path = url.pathname;
   const pathlen = path.length;
 
   if (pathlen >= minlen) {
-    const last_dot_pos = path.lastIndexOf('.');
-    if ((last_dot_pos >= 0) && (last_dot_pos + 1 < pathlen)) {
-      const ext = path.substring(last_dot_pos + 1);
-      if (ext.length <= maxlen && string.is_alphanumeric(ext)) {
+    const last_dot_pos_p1 = path.lastIndexOf('.') + 1;
+    if (last_dot_pos_p1 > 0 && last_dot_pos_p1 < pathlen) {
+      const ext = path.substring(last_dot_pos_p1);
+      if (ext.length <= ext_max_len && string.is_alphanumeric(ext)) {
         return ext;
       }
     }
