@@ -11,6 +11,7 @@ Notably, several of the functions just provide the response and do not go the fu
 
 * Just deprecate fetch_html and such, use a 'accepted mime types' parameter to a generic function. Or simplify the bodies of the extra helpers and move all logic to tfetch
 * rename to url-loader.js
+* create a helper function `create_error_response(status_code, status_text)` instead of repeating the body of the relevant if blocks spread throughout the module
 
 ### `url_is_allowed` notes and todos
 
