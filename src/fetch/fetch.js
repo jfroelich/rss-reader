@@ -1,14 +1,16 @@
 import {parse_content_type} from '/src/mime/mime.js';
 
-export const STATUS_UNACCEPTABLE = 801;
+// Fictional codes for responses with errors. Codes must be in the range
+// [200..599] or Chrome whines about throws a RangeError
+export const STATUS_UNACCEPTABLE = 599;
 export const STATUS_UNACCEPTABLE_TEXT = 'Unacceptable mime type';
-export const STATUS_POLICY_REFUSAL = 802;
+export const STATUS_POLICY_REFUSAL = 598;
 export const STATUS_POLICY_REFUSAL_TEXT = 'Refused to fetch';
-export const STATUS_FORBIDDEN_METHOD = 803;
+export const STATUS_FORBIDDEN_METHOD = 597;
 export const STATUS_FORBIDDEN_METHOD_TEXT = 'Forbidden request method';
-export const STATUS_OFFLINE = 804;
+export const STATUS_OFFLINE = 596;
 export const STATUS_OFFLINE_TEXT = 'Offline';
-export const STATUS_TIMEOUT = 805;
+export const STATUS_TIMEOUT = 595;
 export const STATUS_TIMEOUT_TEXT = 'Request timed out';
 
 export async function fetch_html(url, timeout) {
