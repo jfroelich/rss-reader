@@ -397,12 +397,12 @@ async function poll_entry(ctx, entry) {
 }
 
 function entry_rewrite_tail_url(entry) {
-  const entry_tail_url = new URL(rdb.entry_peek_url(entry));
-  const entry_response_url = rewrite_url(entry_tail_url, rewrite_url_rules);
-  if (!entry_response_url) {
+  const tail_url = new URL(rdb.entry_peek_url(entry));
+  const new_url = rewrite_url(tail_url, rewrite_url_rules);
+  if (!new_url) {
     return false;
   }
-  return rdb.entry_append_url(entry, entry_response_url);
+  return rdb.entry_append_url(entry, new_url);
 }
 
 function entry_exists_in_db(conn, entry) {
