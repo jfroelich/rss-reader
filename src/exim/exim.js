@@ -73,7 +73,7 @@ Exim.prototype.import_file = async function(subop, file) {
     return 0;
   }
 
-  this.console.debug(file);
+  this.console.debug('Importing file', file.name);
 
   let file_text;
   try {
@@ -95,7 +95,7 @@ Exim.prototype.import_file = async function(subop, file) {
   const promises = urls.map(subop.subscribe, subop);
   const stored_feeds = await Promise.all(promises);
   const count = stored_feeds.reduce((sum, v) => v ? sum : sum + 1, 0);
-  this.console.debug(file.name, count);
+  this.console.debug('Imported %d feeds from file', count, file.name);
   return count;
 };
 

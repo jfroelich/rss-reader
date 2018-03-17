@@ -38,7 +38,7 @@ SubscribeOperation.prototype.subscribe = async function(url) {
 
   // previously subscribe_create_feed_from_response
   // note args changed
-  const feed = this.create_feed(response, url);
+  const feed = await this.create_feed(response, url);
   if (!feed) {
     this.console.debug('Failed to create feed', url.href);
     return;
