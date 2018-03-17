@@ -19,21 +19,7 @@ const null_console = {
   debug: noop
 };
 
-const default_poll_feeds_context = {
-  feedConn: null,
-  iconConn: null,
-  channel: null,
-  ignoreRecencyCheck: false,
-  ignoreModifiedCheck: false,
-  recencyPeriod: 5 * 60 * 1000,
-  fetchFeedTimeout: 5000,
-  fetchHTMLTimeout: 5000,
-  fetchImageTimeout: 3000,
-  deactivationThreshold: 10,
-  console: null_console
-};
-
-const rewrite_url_rules = build_rewrite_rules();
+const rewrite_urls = build_rewrite_rules();
 
 function build_rewrite_rules() {
   const rules = [];
@@ -64,245 +50,194 @@ function build_rewrite_rules() {
 
 function noop() {}
 
-export async function poll_service_create_context() {
-  const context = {};
+export function PollService() {
+  this.rconn = null;
+  this.iconn = null;
+  this.channel = null;
+  this.ignore_recency_check = false;
+  this.ignore_modified_check = false;
+  this.recency_period = 5 * 60 * 1000;
+  this.fetch_feed_timeout = 5000;
+  this.fetch_html_timeout = 5000;
+  this.fetch_image_timeout = 3000;
+  this.deactivation_threshold = 10;
+  this.console = null_console;
+  this.badge_update = true;
+  this.notify = true;
+}
+
+PollService.prototype.init = async function(channel) {
   const promises = [rdb.open(), favicon_service.open()];
-  [context.feedConn, context.iconConn] = await Promise.all(promises);
-  context.channel = new BroadcastChannel('reader');
-  return context;
-}
+  [this.rconn, this.iconn] = await Promise.all(promises);
+  this.channel = channel;
+};
 
-export function poll_service_close_context(context) {
-  if (context.channel) context.channel.close();
-  if (context.feedConn) context.feedConn.close();
-  if (context.iconConn) context.iconConn.close();
-}
-
-export async function poll_service_poll_feeds(input_poll_feeds_context) {
-  const poll_feeds_context =
-      Object.assign({}, default_poll_feeds_context, input_poll_feeds_context);
-  poll_feeds_context.console.log('Polling feeds...');
-
-  assert(poll_feeds_context.feedConn instanceof IDBDatabase);
-  assert(poll_feeds_context.iconConn instanceof IDBDatabase);
-  assert(poll_feeds_context.channel instanceof BroadcastChannel);
-
-  const poll_feed_context = Object.assign({}, poll_feeds_context);
-  poll_feed_context.badge_update = false;
-  poll_feed_context.notify = false;
-
-  // Concurrently poll the feeds
-  const feeds = await rdb.find_active_feeds(poll_feeds_context.feedConn);
-  const poll_feed_promises = [];
-  for (const feed of feeds) {
-    const promise = poll_service_feed_poll(poll_feed_context, feed);
-    poll_feed_promises.push(promise);
+PollService.prototype.close = function(close_channel) {
+  if (this.rconn) {
+    this.rconn.close();
   }
 
-  const poll_feed_resolutions = await Promise.all(poll_feed_promises);
-  let entry_add_count = 0;
-  for (const entry_add_count_per_feed of poll_feed_resolutions) {
-    if (!isNaN(entry_add_count_per_feed)) {
-      entry_add_count += entry_add_count_per_feed;
-    }
+  if (this.iconn) {
+    this.iconn.close();
   }
 
-  if (entry_add_count) {
-    badge.update(poll_feeds_context.feedConn).catch(console.error);
+  if (close_channel && this.channel) {
+    this.channel.close();
+  }
+};
+
+PollService.prototype.poll_feeds = async function() {
+  this.console.log('Polling feeds...');
+
+  assert(this.rconn instanceof IDBDatabase);
+  assert(this.iconn instanceof IDBDatabase);
+
+  if (this.channel) {
+    assert(this.channel instanceof BroadcastChannel);
   }
 
-  if (entry_add_count) {
+  const feeds = await rdb.find_active_feeds(this.rconn);
+  const proms = feeds.map(this.poll_feed, this);
+  const results = await Promise.all(proms);
+  const count = results.reduce((sum, value) => {
+    return isNaN(value) ? sum : sum + value;
+  }, 0);
+
+  if (count) {
+    badge.update(this.rconn).catch(console.error);
+
     const title = 'Added articles';
     const message = 'Added articles';
     notifications.show(title, message);
   }
 
-  poll_feeds_context.console.log('Added %d new entries', entry_add_count);
-}
+  this.console.log('Run completed, added %d entries', count);
+};
 
-export async function poll_service_feed_poll(input_poll_feed_context, feed) {
-  const poll_feed_context =
-      Object.assign({}, default_poll_feeds_context, input_poll_feed_context);
 
-  assert(poll_feed_context.feedConn instanceof IDBDatabase);
-  assert(poll_feed_context.iconConn instanceof IDBDatabase);
-  assert(poll_feed_context.channel instanceof BroadcastChannel);
+PollService.prototype.poll_feed = async function(feed) {
   assert(rdb.is_feed(feed));
   assert(rdb.feed_has_url(feed));
 
-  const console = poll_feed_context.console;
-  const feed_tail_url = new URL(rdb.feed_peek_url(feed));
-  console.log('Polling feed', feed_tail_url.href);
-
+  const tail_url = new URL(rdb.feed_peek_url(feed));
+  this.console.log('Polling feed', {name: feed.title, location: tail_url.href});
   if (!feed.active) {
-    console.debug('Canceling poll feed as feed inactive', feed_tail_url.href);
     return 0;
   }
 
-  if (polled_feed_recently(poll_feed_context, feed)) {
-    console.debug(
-        'Canceling poll feed as feed polled recently', feed_tail_url.href);
+  if (this.polled_recently(feed)) {
     return 0;
   }
 
-  let response = await fetchlib.fetch_feed(
-      feed_tail_url, poll_feed_context.fetchFeedTimeout);
+  const response = await fetchlib.fetch_feed(tail_url, this.fetch_feed_timeout);
   if (!response.ok) {
-    // Now that fetch utility no longer throws and instead always returns
-    // response, this needs to translate the response status into an error.
-    // Eventually I should have handle_poll_feed_error just accept status code
-    // instead
-    let error;
-    if (response.status === fetchlib.STATUS_TIMEOUT) {
-      error = new fetchlib.TimeoutError(
-          'Timeout error fetching ' + feed_tail_url.href);
-    } else if (response.status === fetchlib.STATUS_OFFLINE) {
-      error = new fetchlib.OfflineError(
-          'Unable to fetch while offline ' + feed_tail_url.href);
-    } else {
-      error = new Error('Failed to fetch ' + feed_tail_url.href);
-    }
-
-    handle_poll_feed_error({
-      context: poll_feed_context,
-      error: error,
-      feed: feed,
-      category: 'fetch-feed'
-    });
+    const error = create_fetch_error(tail_url, response);
+    this.handle_error(error, feed, 'fetch');
     return 0;
   }
 
-  if (!detected_modification(
-          poll_feed_context.ignoreModifiedCheck, feed, response)) {
-    const state_changed = handle_fetch_feed_success(feed);
-    if (state_changed) {
+  if (!this.ignore_modified_check && !this.is_modified(feed, response)) {
+    const dirty = this.handle_fetch_success(feed);
+    if (dirty) {
       feed.dateUpdated = new Date();
-      await rdb.feed_put(
-          poll_feed_context.feedConn, poll_feed_context.channel, feed);
+      await rdb.feed_put(this.rconn, this.channel, feed);
     }
     return 0;
   }
 
-  let response_text;
-  try {
-    response_text = await response.text();
-  } catch (error) {
-    console.debug(error);
-    handle_poll_feed_error({
-      context: poll_feed_context,
-      error: error,
-      feed: feed,
-      category: 'read-response-body'
-    });
-    return 0;
-  }
+  const responses_text = await response.text();
 
-  const skip_entries_flag = false;
-  const resolve_entry_urls_flag = true;
+  const skip_entries = false, resolve_urls = true;
   let parsed_feed;
   try {
-    parsed_feed = feed_parser.parse(
-        response_text, skip_entries_flag, resolve_entry_urls_flag);
+    parsed_feed = feed_parser.parse(response_text, skip_entries, resolve_urls);
   } catch (error) {
-    console.debug(error);
-    handle_poll_feed_error({
-      context: poll_feed_context,
-      error: error,
-      feed: feed,
-      category: 'parse-feed'
-    });
+    this.handle_error(error, feed, 'parse');
     return 0;
   }
 
   const response_url = new URL(response.url);
-  const response_last_modified_date =
-      fetchlib.response_get_last_modified_date(response);
+  const response_lmd = fetchlib.response_get_last_modified_date(response);
 
   const fetch_info = {
     request_url: feed_tail_url,
     response_url: response_url,
-    response_last_modified_date: response_last_modified_date
+    response_last_modified_date: response_lmd
   };
 
   let coerced_feed;
   try {
     coerced_feed = coerce_feed(parsed_feed, fetch_info);
   } catch (error) {
-    console.debug(error);
-    handle_poll_feed_error({
-      context: poll_feed_context,
-      error: error,
-      feed: feed,
-      category: 'coerce-feed'
-    });
+    this.handle_error(error, feed, 'coerce');
     return 0;
   }
 
   const merged_feed = rdb.feed_merge(feed, coerced_feed);
-  handle_fetch_feed_success(merged_feed);
+  this.handle_fetch_success(merged_feed);
 
   const storable_feed = rdb.feed_prepare(merged_feed);
   storable_feed.dateUpdated = new Date();
-  await rdb.feed_put(
-      poll_feed_context.feedConn, poll_feed_context.channel, storable_feed);
+  await rdb.feed_put(this.rconn, this.channel, storable_feed);
 
   // Process the entries
   const coerced_entries = parsed_feed.entries.map(coerce_entry);
   const entries = dedup_entries(coerced_entries);
   cascade_feed_properties_to_entries(storable_feed, entries);
-  const poll_entry_promises = [];
-  const poll_entry_context = Object.assign({}, poll_feed_context);
-  for (const entry of entries) {
-    const promise = poll_entry(poll_entry_context, entry);
-    poll_entry_promises.push(promise);
+
+  const proms = entries.map(this.poll_entry, this);
+  const entry_ids = await Promise.all(proms);
+  const count = entry_ids.reduce((sum, value) => {
+    return isNaN(value) ? sum : sum++;
+  }, 0);
+
+  if (this.badge_update && count) {
+    badge.update(this.rconn).catch(console.error);
   }
 
-  const entry_ids = await Promise.all(poll_entry_promises);
-  let entry_add_count_per_feed = 0;
-  for (const entry_id of entry_ids) {
-    if (entry_id) {
-      entry_add_count_per_feed++;
-    }
-  }
-
-  if (poll_entry_context.badge_update && entry_add_count_per_feed) {
-    badge.update(poll_entry_context.feedConn).catch(console.error);
-  }
-
-  if (poll_entry_context.notify && entry_add_count_per_feed) {
+  if (this.notify && count) {
     const title = 'Added articles';
-    const message = 'Added ' + entry_add_count_per_feed +
-        ' articles for feed ' + storable_feed.title;
+    const message =
+        'Added ' + count + ' articles for feed ' + storable_feed.title;
     notifications.show(title, message);
   }
 
-  return entry_add_count_per_feed;
-}
+  return count;
+};
 
-function polled_feed_recently(poll_feed_context, feed) {
-  if (poll_feed_context.ignoreRecencyCheck) {
+PollService.prototype.polled_recently = function(feed) {
+  if (this.ignore_recency_check) {
     return false;
   }
-
   if (!feed.dateFetched) {
     return false;
   }
 
   const current_date = new Date();
-  const elapsed_millis = current_date - feed.dateFetched;
-  assert(elapsed_millis >= 0, 'Polled feed in future??');
+  const elapsed_ms = current_date - feed.dateFetched;
+  assert(elapsed_ms >= 0, 'Polled feed in future??');
+  return elapsed_ms < this.recency_period;
+};
 
-  return elapsed_millis < poll_feed_context.recencyPeriod;
-}
+PollService.prototype.is_modified = function(feed, response) {
+  if (!feed.dateLastModified) {
+    return true;
+  }
 
-function handle_fetch_feed_success(feed) {
+  const response_lmd = fetchlib.response_get_last_modified_date(response);
+  if (!response_lmd) {
+    return true;
+  }
+
+  return feed.dateLastModified.getTime() !== response_lmd.getTime();
+};
+
+PollService.prototype.handle_fetch_success = function(feed) {
   if ('errorCount' in feed) {
     if (typeof feed.errorCount === 'number') {
       if (feed.errorCount > 0) {
         feed.errorCount--;
         return true;
-      } else {
-        console.assert(feed.errorCount === 0);
       }
     } else {
       delete feed.errorCount;
@@ -310,44 +245,35 @@ function handle_fetch_feed_success(feed) {
     }
   }
   return false;
-}
+};
 
-function handle_poll_feed_error(error_info) {
-  if (error_is_ephemeral(error_info.error)) {
+PollService.prototype.handle_error = function(error, feed, type) {
+  if (error_is_ephemeral(error)) {
     return;
   }
 
-  const feed = error_info.feed;
   feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
-  if (feed.errorCount > error_info.context.deactivationThreshold) {
+  if (feed.errorCount > this.deactivation_threshold) {
     feed.active = false;
-    feed.deactivationReasonText = error_info.category;
+    feed.deactivationReasonText = type;
     feed.deactivationDate = new Date();
   }
 
   feed.dateUpdated = new Date();
-  // Call unawaited
-  rdb.feed_put(error_info.context.feedConn, error_info.context.channel, feed)
-      .catch(console.error);
-}
+  rdb.feed_put(this.rconn, this.channel, feed).catch(console.error);
+};
 
-function detected_modification(ignore_modified_check, feed, response) {
-  if (ignore_modified_check) {
-    return true;
+function create_fetch_error(url, response) {
+  let error;
+  if (response.status === fetchlib.STATUS_TIMEOUT) {
+    error = new fetchlib.TimeoutError('Timeout error fetching ' + url.href);
+  } else if (response.status === fetchlib.STATUS_OFFLINE) {
+    error =
+        new fetchlib.OfflineError('Unable to fetch while offline ' + url.href);
+  } else {
+    error = new Error('Failed to fetch ' + url.href);
   }
-
-  if (!feed.dateLastModified) {
-    return true;
-  }
-
-  const response_last_modified_date =
-      fetchlib.response_get_last_modified_date(response);
-  if (!response_last_modified_date) {
-    return true;
-  }
-
-  return feed.dateLastModified.getTime() !==
-      response_last_modified_date.getTime();
+  return error;
 }
 
 function cascade_feed_properties_to_entries(feed, entries) {
@@ -362,83 +288,75 @@ function cascade_feed_properties_to_entries(feed, entries) {
   }
 }
 
-async function poll_entry(ctx, entry) {
-  assert(typeof ctx === 'object');
+PollService.prototype.poll_entry = async function(entry) {
   if (!rdb.entry_has_url(entry)) {
     return;
   }
 
   entry_rewrite_tail_url(entry);
-  if (await entry_exists_in_db(ctx.feedConn, entry)) {
+  if (await this.entry_exists(entry)) {
     return;
   }
 
-  const response = await entry_fetch(entry, ctx.fetchHTMLTimeout);
-  const redirected_entry_exists =
-      await entry_handle_redirect(ctx.feedConn, response, entry);
-  if (redirected_entry_exists) {
+  const response = await this.fetch_entry(entry);
+  if (await this.handle_entry_redirect(entry, response)) {
     return;
   }
 
   const document = await entry_parse_response(response);
   entry_update_title(entry, document);
-  await entry_update_favicon(ctx, entry, document);
-  await entry_update_content(ctx, entry, document);
+  await this.update_entry_icon(entry, document);
+  await this.update_entry_content(entry, document);
 
   let stored_entry;
   try {
-    stored_entry = await rdb.entry_add(ctx.feedConn, ctx.channel, entry);
+    stored_entry = await rdb.entry_add(this.rconn, this.channel, entry);
   } catch (error) {
-    console.error(entry.urls, error);
     return;
   }
 
   return stored_entry.id;
-}
+};
 
 function entry_rewrite_tail_url(entry) {
   const tail_url = new URL(rdb.entry_peek_url(entry));
-  const new_url = rewrite_url(tail_url, rewrite_url_rules);
+  const new_url = rewrite_url(tail_url, rewrite_urls);
   if (!new_url) {
     return false;
   }
   return rdb.entry_append_url(entry, new_url);
 }
 
-function entry_exists_in_db(conn, entry) {
-  const entry_tail_url = new URL(rdb.entry_peek_url(entry));
-  return rdb.contains_entry_with_url(conn, entry_tail_url);
-}
-
-async function entry_fetch(entry, timeout) {
+PollService.prototype.entry_exists = function(entry) {
   const url = new URL(rdb.entry_peek_url(entry));
-  if (!url_is_augmentable(url)) {
-    return;
-  }
+  return rdb.contains_entry_with_url(this.rconn, url);
+};
 
-  const response = await fetchlib.fetch_html(url, timeout);
-  if (!response.ok) {
-    console.debug('Failed to fetch url ' + url.href);
-    return;  // return undefined response
+PollService.prototype.fetch_entry = async function(entry) {
+  const url = new URL(rdb.entry_peek_url(entry));
+  if (url_is_augmentable(url)) {
+    const response = await fetchlib.fetch_html(url, this.fetch_html_timeout);
+    if (response.ok) {
+      return response;
+    }
   }
-  return response;
-}
+};
 
-async function entry_handle_redirect(conn, response, entry) {
+PollService.prototype.handle_entry_redirect = async function(entry, response) {
   if (!response) {
     return false;
   }
 
-  const entry_tail_url = new URL(rdb.entry_peek_url(entry));
-  const entry_response_url = new URL(response.url);
-  if (!fetchlib.url_did_change(entry_tail_url, entry_response_url)) {
+  const request_url = new URL(rdb.entry_peek_url(entry));
+  const response_url = new URL(response.url);
+  if (!fetchlib.url_did_change(request_url, response_url)) {
     return false;
   }
 
-  rdb.entry_append_url(entry, entry_response_url);
+  rdb.entry_append_url(entry, response_url);
   entry_rewrite_tail_url(entry);
-  return await entry_exists_in_db(conn, entry);
-}
+  return await this.entry_exists(entry);
+};
 
 async function entry_parse_response(response) {
   if (!response) {
@@ -449,7 +367,6 @@ async function entry_parse_response(response) {
     const response_text = await response.text();
     return html_parser.parse(response_text);
   } catch (error) {
-    console.debug(error);
   }
 }
 
@@ -463,52 +380,43 @@ function entry_update_title(entry, document) {
   }
 }
 
-async function entry_update_favicon(ctx, entry, document) {
-  assert(typeof ctx === 'object');
-  assert(rdb.is_entry(entry));
-  assert(rdb.entry_has_url(entry));
-  const entry_tail_url = new URL(rdb.entry_peek_url(entry));
-  const favicon_service_lookup_context = {
-    conn: ctx.iconConn,
-    skipURLFetch: true,
-    url: entry_tail_url,
-    document: document
-  };
+PollService.prototype.update_entry_icon = async function(entry, document) {
+  const entry_url = new URL(rdb.entry_peek_url(entry));
+  const query = {};
+  query.conn = this.iconn;
+  query.skipURLFetch = true;
+  query.url = entry_url;
+  query.document = document;
 
   try {
-    const icon_url_string =
-        await favicon_service.lookup(favicon_service_lookup_context);
+    const icon_url_string = await favicon_service.lookup(query);
     if (icon_url_string) {
       entry.faviconURLString = icon_url_string;
     }
   } catch (error) {
-    console.debug(error);
   }
-}
+};
 
-async function entry_update_content(ctx, entry, fetched_document) {
-  let document = fetched_document;
+PollService.prototype.update_entry_content = async function(entry, document) {
   if (!document) {
     try {
       document = html_parser.parse(entry.content);
     } catch (error) {
-      console.debug(error);
-      entry.content =
-          'There was a problem with this article\'s content (unsafe HTML).';
+      entry.content = 'Bad formatting (unsafe HTML redacted)';
       return;
     }
   }
 
   const document_url = new URL(rdb.entry_peek_url(entry));
-  const filter_options = {
-    fetch_image_timeout: ctx.fetchImageTimeout,
+  const opts = {
+    fetch_image_timeout: this.fetch_image_timeout,
     matte: color.WHITE,
     min_contrast_ratio: localStorage.MIN_CONTRAST_RATIO,
     emphasis_length_max: 200
   };
-  await filter_entry_content(document, document_url, filter_options);
+  await filter_entry_content(document, document_url, opts);
   entry.content = document.documentElement.outerHTML;
-}
+};
 
 function url_is_augmentable(url) {
   return url_is_http(url) && sniff.classify(url) !== sniff.BINARY_CLASS &&

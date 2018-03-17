@@ -2,7 +2,7 @@ import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as fetchlib from '/src/fetch/fetch.js';
 import * as notifications from '/src/notifications/notifications.js';
-import * as poll_service from '/src/poll-service/poll-service.js';
+import {PollService} from '/src/poll-service/poll-service.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import * as rdb from '/src/rdb/rdb.js';
 
@@ -97,7 +97,8 @@ export default async function subscribe(context, url) {
     subscribe_notification_show(stored_feed);
   }
 
-  subscribe_feed_poll(stored_feed).catch(console.warn);  // non-blocking
+  subscribe_feed_poll(stored_feed, context.channel)
+      .catch(console.warn);  // non-blocking
   return stored_feed;
 }
 
@@ -164,13 +165,14 @@ function subscribe_notification_show(feed) {
   notifications.show(title, message, feed.faviconURLString);
 }
 
-async function subscribe_feed_poll(feed) {
-  const ctx = await poll_service.poll_service_create_context();
-  ctx.ignoreRecencyCheck = true;
-  ctx.ignoreModifiedCheck = true;
-  ctx.notify = false;
-  await poll_service.poll_service_feed_poll(ctx, feed);
-  poll_service.poll_service_close_context(ctx);
+async function subscribe_feed_poll(feed, channel) {
+  const service = new PollService();
+  service.ignore_recency_check = true;
+  service.ignore_modified_check = true;
+  service.notify = false;
+  await service.init(channel);
+  await service.poll_feed(feed);
+  service.close(/* close_channel */ false);
 }
 
 function assert(value, message) {

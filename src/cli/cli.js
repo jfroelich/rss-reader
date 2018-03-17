@@ -3,7 +3,7 @@ import archive_entries from '/src/feed-ops/archive-entries.js';
 import rdb_refresh_feed_icons from '/src/feed-ops/refresh-feed-icons.js';
 import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
 import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
-import * as poll_service from '/src/poll-service/poll-service.js';
+import {PollService} from '/src/poll-service/poll-service.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 async function cli_archive_entries() {
@@ -22,12 +22,14 @@ async function refresh_icons() {
 }
 
 async function poll_feeds() {
-  const context = await poll_service.poll_service_create_context();
-  context.ignoreRecencyCheck = true;
-  context.ignoreModifiedCheck = true;
-  context.console = console;
-  await poll_service.poll_service_poll_feeds(context);
-  poll_service.poll_service_close_context(context);
+  // channel-less poll
+  const service = new PollService();
+  service.ignore_recency_check = true;
+  service.ignore_modified_check = true;
+  service.console = console;
+  await service.init();
+  await service.poll_feeds();
+  service.close();
 }
 
 async function remove_lost_entries(limit) {

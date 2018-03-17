@@ -2,7 +2,7 @@ import * as exim from '/src/exim/exim.js';
 import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import subscribe from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
-import * as poll_service from '/src/poll-service/poll-service.js';
+import {PollService} from '/src/poll-service/poll-service.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 export async function get_feeds(title_sort_flag) {
@@ -56,20 +56,13 @@ export async function load_initial_data(
 }
 
 export async function poll_feeds(channel, console) {
-  const conn_promises = [rdb.open(), favicon_service.open()];
-  const [reader_conn, favicon_conn] = await Promise.all(conn_promises);
-
-  const ctx = {};
-  ctx.ignoreRecencyCheck = true;
-  ctx.ignoreModifiedCheck = true;
-  ctx.console = console;
-  ctx.channel = channel;
-  ctx.feedConn = reader_conn;
-  ctx.iconConn = favicon_conn;
-  await poll_service.poll_service_poll_feeds(ctx);
-
-  reader_conn.close();
-  favicon_conn.close();
+  const service = new PollService();
+  service.console = console;
+  service.ignore_recency_check = true;
+  service.ignore_modified_check = true;
+  await service.init(channel);
+  await service.poll_feeds();
+  service.close(/* close_channel */ false);
 }
 
 export async function ral_subscribe(channel, url) {
