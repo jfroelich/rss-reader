@@ -77,7 +77,13 @@ async function import_opml_file(subscriber, console, file) {
   }
 
   console.debug(file);
-  const file_text = await filelib.read_text(file);
+  let file_text;
+  try {
+    file_text = await filelib.read_text(file);
+  } catch (error) {
+    console.debug(error);
+    return 0;
+  }
 
   let document;
   try {
