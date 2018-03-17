@@ -82,12 +82,9 @@ export default async function subscribe(context, url) {
     rdb.feed_append_url(feed, url);
   }
 
-  // Set the feed's favicon
-  const query = {};
-  query.conn = context.iconConn;
-  query.skipURLFetch = true;
 
-  await subscribe_feed_set_favicon(query, feed, console);
+
+  await subscribe_feed_set_favicon(context.iconConn, feed);
 
   const stored_feed =
       await rdb.feed_add(context.feedConn, context.channel, feed);
@@ -139,23 +136,13 @@ async function subscribe_create_feed_from_response(context, response, url) {
   return coerced_feed;
 }
 
-async function subscribe_feed_set_favicon(query, feed, console) {
+async function subscribe_feed_set_favicon(conn, feed) {
   assert(rdb.is_feed(feed));
-
-  const favicon_lookup_url = rdb.feed_create_favicon_lookup_url(feed);
-
-  // Suppress lookup errors
-  let favicon_url_string;
-  try {
-    favicon_url_string = await favicon_service.lookup(query);
-  } catch (error) {
-    console.debug(error);
-    return;
-  }
-
-  if (favicon_url_string) {
-    feed.faviconURLString = favicon_url_string;
-  }
+  const query = {};
+  query.conn = conn;
+  query.skipURLFetch = true;
+  query.url = rdb.feed_create_favicon_lookup_url(feed);
+  feed.faviconURLString = await favicon_service.lookup(query);
 }
 
 function subscribe_notification_show(feed) {
