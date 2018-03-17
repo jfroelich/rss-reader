@@ -1,5 +1,6 @@
 import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
 import * as rdb from '/src/rdb/rdb.js';
+import * as xml_parser from '/src/xml-parser/xml-parser.js';
 
 // Returns an opml document as a blob that contains outlines representing the
 // feeds in the app's db
@@ -191,21 +192,8 @@ function file_read_as_text(file) {
   });
 }
 
-function xml_parse(xml_string) {
-  assert(typeof xml_string === 'string');
-  const parser = new DOMParser();
-  const document = parser.parseFromString(xml_string, 'application/xml');
-  const error = document.querySelector('parsererror');
-  if (error) {
-    const pretty_message = error.textContent.replace(/\s{2,}/g, ' ');
-    throw new Error(pretty_message);
-  }
-  return document;
-}
-
 function opml_parse(xml_string) {
-  // Rethrow xml_parse errors
-  const document = xml_parse(xml_string);
+  const document = xml_parser.parse(xml_string);
   const name = document.documentElement.localName.toLowerCase();
   if (name !== 'opml') {
     throw new Error('Document element is not opml: ' + name);
