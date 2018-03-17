@@ -81,7 +81,7 @@ async function import_opml_file(subscriber, console, file) {
 
   const promises = urls.map(subscriber.subscribe, subscriber);
   const stored_feeds = await Promise.all(promises);
-  const count = stored_feeds.filter(identity).length;
+  const count = stored_feeds.reduce((sum, v) => v ? sum : sum + 1, 0);
   console.debug(file.name, count);
   return count;
 }
@@ -92,10 +92,6 @@ function file_has_feed_type(file) {
     'application/xml', 'application/xhtml+xml', 'text/xml'
   ];
   return types.includes(file.type);
-}
-
-function identity(value) {
-  return value;
 }
 
 function dedup_urls(urls) {
