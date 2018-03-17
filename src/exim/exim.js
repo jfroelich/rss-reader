@@ -1,6 +1,6 @@
 import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
+import * as opml_parser from '/src/opml-parser/opml-parser.js';
 import * as rdb from '/src/rdb/rdb.js';
-import * as xml_parser from '/src/xml-parser/xml-parser.js';
 
 // Returns an opml document as a blob that contains outlines representing the
 // feeds in the app's db
@@ -119,7 +119,7 @@ async function import_opml_file(subscriber, console, file) {
 
   console.debug(file);
   const file_text = await file_read_as_text(file);
-  const document = opml_parse(file_text);
+  const document = opml_parser.parse(file_text);
   const urls = dedup_urls(document_find_feed_urls(document));
   if (!urls.length) {
     return 0;
@@ -190,15 +190,6 @@ function file_read_as_text(file) {
     reader.onload = () => resolve(reader.result);
     reader.onerror = () => reject(reader.error);
   });
-}
-
-function opml_parse(xml_string) {
-  const document = xml_parser.parse(xml_string);
-  const name = document.documentElement.localName.toLowerCase();
-  if (name !== 'opml') {
-    throw new Error('Document element is not opml: ' + name);
-  }
-  return document;
 }
 
 function assert(value, message) {
