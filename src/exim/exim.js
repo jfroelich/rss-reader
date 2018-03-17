@@ -48,28 +48,35 @@ export function import_opml(
   subscriber.fetch_timeout = fetch_feed_timeout;
   subscriber.notify_flag = false;
 
-  const partial = import_opml_file_noexcept.bind(null, subscriber, console);
+  const partial = import_opml_file.bind(null, subscriber, console);
   const promises = Array.prototype.map.call(files, partial);
   return Promise.all(promises);
 }
 
-async function import_opml_file_noexcept(subscriber, console, file) {
-  try {
-    return await import_opml_file(subscriber, console, file);
-  } catch (error) {
-    console.warn(error);
+async function import_opml_file(subscriber, console, file) {
+  if (!(file instanceof File)) {
+    throw new TypeError('file is not a File');
+  }
+
+  if (!file.size) {
     return 0;
   }
-}
 
-async function import_opml_file(subscriber, console, file) {
-  assert(file instanceof File);
-  assert(file.size);
-  assert(file_has_feed_type(file));
+  if (!file_has_feed_type(file)) {
+    return 0;
+  }
 
   console.debug(file);
   const file_text = await filelib.read_text(file);
-  const document = opml_parser.parse(file_text);
+
+  let document;
+  try {
+    document = opml_parser.parse(file_text);
+  } catch (error) {
+    console.debug(error);
+    return 0;
+  }
+
   const urls = dedup_urls(opml_document.find_feed_urls(document));
 
   const promises = urls.map(subscriber.subscribe, subscriber);
