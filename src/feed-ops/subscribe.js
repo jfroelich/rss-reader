@@ -6,7 +6,7 @@ import {PollService} from '/src/poll-service/poll-service.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import * as rdb from '/src/rdb/rdb.js';
 
-function SubscribeOperation() {
+export function SubscribeOperation() {
   this.rconn = null;
   this.iconn = null;
   this.channel = null;
@@ -16,7 +16,7 @@ function SubscribeOperation() {
 }
 
 // Returns undefined on error
-SubscribeOperation.prototype.subscribe = asnyc function(url) {
+SubscribeOperation.prototype.subscribe = async function(url) {
   assert(this.rconn);
   assert(this.iconn);
   assert(url instanceof URL);
