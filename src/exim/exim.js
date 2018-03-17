@@ -1,4 +1,5 @@
 import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
+import * as filelib from '/src/file/file.js';
 import * as opml_parser from '/src/opml-parser/opml-parser.js';
 import * as rdb from '/src/rdb/rdb.js';
 
@@ -106,11 +107,6 @@ async function import_opml_file_noexcept(subscriber, console, file) {
   }
 }
 
-// Reads the file, parses the opml, and then subscribes to each of the feeds
-// Returns the count of feeds subscribed.
-// @param subscriber {SubscribeOperation} instance of operation
-// @param file {File} the file to import
-// @param console {Object} a console-like object for logging
 async function import_opml_file(subscriber, console, file) {
   assert(console);
   assert(file instanceof File);
@@ -118,7 +114,7 @@ async function import_opml_file(subscriber, console, file) {
   assert(file_has_feed_type(file));
 
   console.debug(file);
-  const file_text = await file_read_as_text(file);
+  const file_text = await filelib.read_text(file);
   const document = opml_parser.parse(file_text);
   const urls = dedup_urls(document_find_feed_urls(document));
   if (!urls.length) {
@@ -144,11 +140,6 @@ function identity(value) {
   return value;
 }
 
-// Searches an OPML document for urls of feeds. Returns an array of 0 or more
-// urls found. Each element is a URL object. Only outlines that are correctly
-// typed as a representing a feed are included in the result. Only valid urls
-// are included in the result. By using URL objects, the urls are also
-// normalized. The resulting urls are not guaranteed to be distinct.
 function document_find_feed_urls(document) {
   const elements = document.querySelectorAll('opml > body > outline');
   const type_pattern = /^\s*(rss|rdf|feed)\s*$/i;
@@ -169,8 +160,6 @@ function document_find_feed_urls(document) {
   return urls;
 }
 
-// Given an array of URL objects, returns a new array where duplicate urls
-// have been removed.
 function dedup_urls(urls) {
   const unique_urls = [], seen_url_strings = [];
   for (const url of urls) {
@@ -180,16 +169,6 @@ function dedup_urls(urls) {
     }
   }
   return unique_urls;
-}
-
-// TODO: the error thrown should indicate file name
-function file_read_as_text(file) {
-  return new Promise(function executor(resolve, reject) {
-    const reader = new FileReader();
-    reader.readAsText(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error);
-  });
 }
 
 function assert(value, message) {
