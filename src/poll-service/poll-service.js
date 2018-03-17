@@ -387,13 +387,9 @@ PollService.prototype.update_entry_icon = async function(entry, document) {
   query.skipURLFetch = true;
   query.url = entry_url;
   query.document = document;
-
-  try {
-    const icon_url_string = await favicon_service.lookup(query);
-    if (icon_url_string) {
-      entry.faviconURLString = icon_url_string;
-    }
-  } catch (error) {
+  const icon_url_string = await favicon_service.lookup(query);
+  if (icon_url_string) {
+    entry.faviconURLString = icon_url_string;
   }
 };
 
