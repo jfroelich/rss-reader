@@ -1,4 +1,4 @@
-import subscribe from '/src/feed-ops/subscribe.js';
+import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 // Returns an opml document as a blob that contains outlines representing the
@@ -81,25 +81,24 @@ export function import_opml(
   assert(files instanceof FileList);
   console.log('Importing %d file(s)', files.length);
 
-  const context = {
-    feedConn: feed_conn,
-    iconConn: icon_conn,
-    channel: channel,
-    fetchFeedTimeout: fetch_feed_timeout,
-    notify: false
-  };
+  const subscriber = new SubscribeOperation();
+  subscriber.rconn = feed_conn;
+  subscriber.iconn = icon_conn;
+  subscriber.channel = channel;
+  subscriber.fetch_timeout = fetch_feed_timeout;
+  subscriber.notify_flag = false;
 
   // TODO: this should forward console parameter from import_opml rather than
   // hardcode it
 
-  const partial = import_opml_file_noexcept.bind(null, context, console);
+  const partial = import_opml_file_noexcept.bind(null, subscriber, console);
   const promises = Array.prototype.map.call(files, partial);
   return Promise.all(promises);
 }
 
-async function import_opml_file_noexcept(context, console, file) {
+async function import_opml_file_noexcept(subscriber, console, file) {
   try {
-    return await import_opml_file(context, console, file);
+    return await import_opml_file(subscriber, console, file);
   } catch (error) {
     console.warn(error);
     return 0;
@@ -108,11 +107,10 @@ async function import_opml_file_noexcept(context, console, file) {
 
 // Reads the file, parses the opml, and then subscribes to each of the feeds
 // Returns the count of feeds subscribed.
-// @param context {Object} parameters for subscribing to a feed
+// @param subscriber {SubscribeOperation} instance of operation
 // @param file {File} the file to import
 // @param console {Object} a console-like object for logging
-async function import_opml_file(context, console, file) {
-  assert(context);
+async function import_opml_file(subscriber, console, file) {
   assert(console);
   assert(file instanceof File);
   assert(file.size);
@@ -126,10 +124,9 @@ async function import_opml_file(context, console, file) {
     return 0;
   }
 
-  const partial = subscribe_noexcept.bind(null, context);
-  const promises = urls.map(partial);
-  const subscribe_return_vals = await Promise.all(promises);
-  const count = subscribe_return_vals.filter(identity).length;
+  const promises = urls.map(subscriber.subscribe, subscriber);
+  const stored_feeds = await Promise.all(promises);
+  const count = stored_feeds.filter(identity).length;
   console.debug(file.name, count);
   return count;
 }
@@ -144,15 +141,6 @@ function file_has_feed_type(file) {
 
 function identity(value) {
   return value;
-}
-
-// Call subscribe while suppressing any exceptions. Exceptions are simply logged
-async function subscribe_noexcept(subscribe_ctx, url) {
-  try {
-    return await subscribe(subscribe_ctx, url);
-  } catch (error) {
-    console.debug(error);
-  }
 }
 
 // Searches an OPML document for urls of feeds. Returns an array of 0 or more

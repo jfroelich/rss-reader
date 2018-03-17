@@ -1,6 +1,6 @@
 import * as exim from '/src/exim/exim.js';
 import * as favicon_service from '/src/favicon-service/favicon-service.js';
-import subscribe from '/src/feed-ops/subscribe.js';
+import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 import * as rdb from '/src/rdb/rdb.js';
@@ -66,18 +66,14 @@ export async function poll_feeds(channel, console) {
 }
 
 export async function ral_subscribe(channel, url) {
-  const ctx = {};
-  ctx.channel = channel;
-  ctx.notify = true;
-  ctx.fetchFeedTimeout = 2000;
-
+  const op = new SubscribeOperation();
+  op.channel = channel;
+  op.notify_flag = true;
   const conn_promises = Promise.all([rdb.open(), favicon_service.open()]);
-  const [reader_conn, favicon_conn] = await conn_promises;
-  ctx.feedConn = reader_conn;
-  ctx.iconConn = favicon_conn;
-  const result = await subscribe(ctx, url);
-  reader_conn.close();
-  favicon_conn.close();
+  [op.rconn, op.iconn] = await conn_promises;
+  const result = await op.subscribe(url);
+  op.rconn.close();
+  op.iconn.close();
   return result;
 }
 
