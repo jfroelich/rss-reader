@@ -34,7 +34,8 @@ export async function import_opml(channel, files) {
   const timeout = 10 * 1000;
   const open_promises = [rdb.open(), favicon_service.open()];
   const [reader_conn, favicon_conn] = await Promise.all(open_promises);
-  await exim.import_opml(reader_conn, favicon_conn, channel, timeout, files);
+  await exim.import_opml(
+      reader_conn, favicon_conn, channel, timeout, console, files);
   reader_conn.close();
   favicon_conn.close();
 }

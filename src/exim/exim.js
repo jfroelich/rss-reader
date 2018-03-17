@@ -37,7 +37,7 @@ export async function export_opml(conn, title) {
 }
 
 export function import_opml(
-    feed_conn, icon_conn, channel, fetch_feed_timeout, files) {
+    feed_conn, icon_conn, channel, fetch_feed_timeout, console, files) {
   assert(files instanceof FileList);
   console.log('Importing %d file(s)', files.length);
 
@@ -47,9 +47,6 @@ export function import_opml(
   subscriber.channel = channel;
   subscriber.fetch_timeout = fetch_feed_timeout;
   subscriber.notify_flag = false;
-
-  // TODO: this should forward console parameter from import_opml rather than
-  // hardcode it
 
   const partial = import_opml_file_noexcept.bind(null, subscriber, console);
   const promises = Array.prototype.map.call(files, partial);
