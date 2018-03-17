@@ -22,22 +22,13 @@ async function feed_store_feed_refresh_icons(conn, icon_conn, channel, feed) {
     throw new TypeError('Feed missing url ' + feed.id);
   }
 
-  // Throw on failure
   const favicon_lookup_url = rdb.feed_create_favicon_lookup_url(feed);
 
   const lookup_ctx = {};
   lookup_ctx.conn = icon_conn;
   lookup_ctx.url = favicon_lookup_url;
 
-  // lookup errors are not fatal
-  let icon_url;
-  try {
-    icon_url = await favicon_service.lookup(lookup_ctx);
-  } catch (error) {
-    console.debug(error);
-  }
-
-  // If state changed then update
+  const icon_url = await favicon_service.lookup(lookup_ctx);
   if (feed.faviconURLString !== icon_url) {
     if (icon_url) {
       feed.faviconURLString = icon_url;
@@ -46,11 +37,6 @@ async function feed_store_feed_refresh_icons(conn, icon_conn, channel, feed) {
     }
 
     feed.dateUpdated = new Date();
-
-    try {
-      await rdb.feed_put(conn, channel, feed);
-    } catch (error) {
-      console.error(error);
-    }
+    await rdb.feed_put(conn, channel, feed);
   }
 }
