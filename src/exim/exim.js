@@ -19,11 +19,11 @@ export function Exim() {
 
 Exim.prototype.export_opml = async function(title) {
   const feeds = await rdb.get_feeds(this.rconn);
-  const doc = opml_document.create_document(title);
+  const document = opml_document.create_document(title);
   for (const feed of feeds) {
-    this.append_feed(doc, feed);
+    this.append_feed(document, feed);
   }
-  return opml_document.to_blob(doc);
+  return opml_document.to_blob(document);
 };
 
 Exim.prototype.append_feed = function(document, feed) {
@@ -63,7 +63,6 @@ Exim.prototype.import_opml = function(files) {
   const proms = map.call(files, partial);
   return Promise.all(promises);
 };
-
 
 Exim.prototype.import_file = async function(subop, file) {
   if (!file.size) {
