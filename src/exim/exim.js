@@ -61,7 +61,7 @@ Exim.prototype.import_opml = function(files) {
   const partial = this.import_file.bind(this, subop);
   const map = Array.prototype.map;
   const proms = map.call(files, partial);
-  return Promise.all(promises);
+  return Promise.all(proms);
 };
 
 Exim.prototype.import_file = async function(subop, file) {

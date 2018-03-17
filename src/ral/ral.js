@@ -37,7 +37,7 @@ export async function import_opml(channel, files) {
   exim.console = console;
   const open_promises = [rdb.open(), favicon_service.open()];
   [exim.rconn, exim.iconn] = await Promise.all(open_promises);
-  await exim.import_opml(fies);
+  await exim.import_opml(files);
   exim.rconn.close();
   exim.iconn.close();
 }
