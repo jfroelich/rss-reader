@@ -10,7 +10,10 @@ import * as rdb from '/src/rdb/rdb.js';
 // @param title {String} optional, the value to use for the title element in the
 // document
 export async function export_opml(conn, title) {
-  assert(conn instanceof IDBDatabase);
+  if (!(conn instanceof IDBDatabase)) {
+    throw new TypeError('conn is not an IDBDatabase');
+  }
+
   const feeds = await rdb.get_feeds(conn);
   const doc = opml_document.create_document(title);
 
@@ -38,7 +41,10 @@ export async function export_opml(conn, title) {
 
 export function import_opml(
     feed_conn, icon_conn, channel, fetch_feed_timeout, console, files) {
-  assert(files instanceof FileList);
+  if (!(files instanceof FileList)) {
+    throw new TypeError('files is not a FileList');
+  }
+
   console.log('Importing %d file(s)', files.length);
 
   const subscriber = new SubscribeOperation();
@@ -99,8 +105,4 @@ function dedup_urls(urls) {
     }
   }
   return unique_urls;
-}
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
 }
