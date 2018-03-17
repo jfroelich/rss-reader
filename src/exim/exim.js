@@ -4,84 +4,83 @@ import * as opml_document from '/src/opml-document/opml-document.js';
 import * as opml_parser from '/src/opml-parser/opml-parser.js';
 import * as rdb from '/src/rdb/rdb.js';
 
-// Returns an opml document as a blob that contains outlines representing the
-// feeds in the app's db
-// @param conn {IDBDatabase} optional, an open connection to the reader database
-// @param title {String} optional, the value to use for the title element in the
-// document
-export async function export_opml(conn, title) {
-  if (!(conn instanceof IDBDatabase)) {
-    throw new TypeError('conn is not an IDBDatabase');
-  }
+const feed_mime_types = [
+  'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',
+  'application/xml', 'application/xhtml+xml', 'text/xml'
+];
 
-  const feeds = await rdb.get_feeds(conn);
-  const doc = opml_document.create_document(title);
-
-  for (const feed of feeds) {
-    const outline_element = doc.createElement('outline');
-    if (feed.type) {
-      outline_element.setAttribute('type', feed.type);
-    }
-    outline_element.setAttribute('xmlUrl', rdb.feed_peek_url(feed));
-    if (feed.title) {
-      outline_element.setAttribute('title', feed.title);
-    }
-    if (feed.description) {
-      outline_element.setAttribute('description', feed.description);
-    }
-    if (feed.link) {
-      outline_element.setAttribute('htmlUrl', feed.link);
-    }
-
-    doc.body.appendChild(outline_element);
-  }
-
-  return opml_document.to_blob(doc);
+export function Exim() {
+  this.rconn = null;
+  this.iconn = null;
+  this.channel = null;
+  this.fetch_timeout = 2000;
+  this.console = null_console;
 }
 
-export function import_opml(
-    feed_conn, icon_conn, channel, fetch_feed_timeout, console, files) {
+Exim.prototype.export_opml = async function(title) {
+  const feeds = await rdb.get_feeds(this.rconn);
+  const doc = opml_document.create_document(title);
+  for (const feed of feeds) {
+    this.append_feed(doc, feed);
+  }
+  return opml_document.to_blob(doc);
+};
+
+Exim.prototype.append_feed = function(document, feed) {
+  const outline = document.createElement('outline');
+  if (feed.type) {
+    outline.setAttribute('type', feed.type);
+  }
+  outline.setAttribute('xmlUrl', rdb.feed_peek_url(feed));
+  if (feed.title) {
+    outline.setAttribute('title', feed.title);
+  }
+  if (feed.description) {
+    outline.setAttribute('description', feed.description);
+  }
+  if (feed.link) {
+    outline.setAttribute('htmlUrl', feed.link);
+  }
+  document.body.appendChild(outline);
+};
+
+Exim.prototype.import_opml = function(files) {
   if (!(files instanceof FileList)) {
     throw new TypeError('files is not a FileList');
   }
 
-  console.log('Importing %d file(s)', files.length);
+  this.console.log('Importing %d file(s)', files.length);
 
-  const subscriber = new SubscribeOperation();
-  subscriber.rconn = feed_conn;
-  subscriber.iconn = icon_conn;
-  subscriber.channel = channel;
-  subscriber.fetch_timeout = fetch_feed_timeout;
-  subscriber.notify_flag = false;
+  const subop = new SubscribeOperation();
+  subop.rconn = this.rconn;
+  subop.iconn = this.iconn;
+  subop.channel = this.channel;
+  subop.fetch_timeout = this.fetch_timeout;
+  subop.notify_flag = false;
 
-  const partial = import_opml_file.bind(null, subscriber, console);
-  const promises = Array.prototype.map.call(files, partial);
+  const partial = this.import_file.bind(this, subop);
+  const map = Array.prototype.map;
+  const proms = map.call(files, partial);
   return Promise.all(promises);
-}
+};
 
-async function import_opml_file(subscriber, console, file) {
-  if (!(file instanceof File)) {
-    throw new TypeError('file is not a File');
-  }
 
+Exim.prototype.import_file = async function(subop, file) {
   if (!file.size) {
     return 0;
   }
 
-  const feed_mime_types = [
-    'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',
-    'application/xml', 'application/xhtml+xml', 'text/xml'
-  ];
   if (!feed_mime_types.includes(file.type)) {
     return 0;
   }
 
-  console.debug(file);
+  this.console.debug(file);
+
   let file_text;
   try {
     file_text = await filelib.read_text(file);
   } catch (error) {
-    console.debug(error);
+    this.console.debug(error);
     return 0;
   }
 
@@ -89,18 +88,25 @@ async function import_opml_file(subscriber, console, file) {
   try {
     document = opml_parser.parse(file_text);
   } catch (error) {
-    console.debug(error);
+    this.console.debug(error);
     return 0;
   }
 
   const urls = dedup_urls(opml_document.find_feed_urls(document));
-
-  const promises = urls.map(subscriber.subscribe, subscriber);
+  const promises = urls.map(subop.subscribe, subop);
   const stored_feeds = await Promise.all(promises);
   const count = stored_feeds.reduce((sum, v) => v ? sum : sum + 1, 0);
-  console.debug(file.name, count);
+  this.console.debug(file.name, count);
   return count;
-}
+};
+
+const null_console = {
+  log: noop,
+  debug: noop,
+  warn: noop
+};
+
+function noop() {}
 
 function dedup_urls(urls) {
   const unique_urls = [], seen_url_strings = [];

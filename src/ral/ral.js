@@ -1,4 +1,4 @@
-import * as exim from '/src/exim/exim.js';
+import {Exim} from '/src/exim/exim.js';
 import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
@@ -31,19 +31,22 @@ export async function find_feed_by_id(feed_id) {
 }
 
 export async function import_opml(channel, files) {
-  const timeout = 10 * 1000;
+  const exim = new Exim();
+  exim.fetch_timeout = 10 * 1000;
+  exim.channel = channel;
+  exim.console = console;
   const open_promises = [rdb.open(), favicon_service.open()];
-  const [reader_conn, favicon_conn] = await Promise.all(open_promises);
-  await exim.import_opml(
-      reader_conn, favicon_conn, channel, timeout, console, files);
-  reader_conn.close();
-  favicon_conn.close();
+  [exim.rconn, exim.iconn] = await Promise.all(open_promises);
+  await exim.import_opml(fies);
+  exim.rconn.close();
+  exim.iconn.close();
 }
 
 export async function export_opml(title) {
-  const conn = await rdb.open();
-  await exim.export_opml(conn, title);
-  conn.close();
+  const exim = new Exim();
+  exim.rconn = await rdb.open();
+  await exim.export_opml(title);
+  exim.rconn.close();
 }
 
 export async function load_initial_data(

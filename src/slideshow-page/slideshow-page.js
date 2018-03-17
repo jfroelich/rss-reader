@@ -451,33 +451,17 @@ function import_menu_option_handle_click(event) {
   uploader_input.click();
 }
 
-function uploader_input_onchange(event) {
+async function uploader_input_onchange(event) {
   const files = event.target.files;
-  if (!files) {
-    console.error('No files', event);
-    return;
-  }
-
-  ral.import_opml(channel, files)
-      .then(() => {
-        console.log('Import completed');
-      })
-      .catch(error => {
-        console.error(error);
-      });
+  await ral.import_opml(channel, files);
+  console.log('Import completed');
 }
 
-function export_menu_option_handle_click(event) {
-  const title = 'Subscriptions';
-  ral.export_opml(title)
-      .then(blob => {
-        const filename = 'subscriptions.xml';
-        download_blob(blob, filename);
-        console.log('Export completed');
-      })
-      .catch(error => {
-        console.error(error);
-      });
+async function export_menu_option_handle_click(event) {
+  const title = 'Subscriptions', filename = 'subscriptions.xml';
+  const blob = await ral.export_opml(title);
+  download_blob(blob, filename);
+  console.log('Export completed');
 }
 
 function download_blob(blob, filename) {
