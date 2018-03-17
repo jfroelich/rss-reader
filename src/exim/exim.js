@@ -62,7 +62,11 @@ async function import_opml_file(subscriber, console, file) {
     return 0;
   }
 
-  if (!file_has_feed_type(file)) {
+  const feed_mime_types = [
+    'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',
+    'application/xml', 'application/xhtml+xml', 'text/xml'
+  ];
+  if (!feed_mime_types.includes(file.type)) {
     return 0;
   }
 
@@ -84,14 +88,6 @@ async function import_opml_file(subscriber, console, file) {
   const count = stored_feeds.reduce((sum, v) => v ? sum : sum + 1, 0);
   console.debug(file.name, count);
   return count;
-}
-
-function file_has_feed_type(file) {
-  const types = [
-    'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',
-    'application/xml', 'application/xhtml+xml', 'text/xml'
-  ];
-  return types.includes(file.type);
 }
 
 function dedup_urls(urls) {
