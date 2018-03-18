@@ -127,6 +127,7 @@ PollService.prototype.poll_feed = async function(feed) {
   }
 
   if (this.polled_recently(feed)) {
+    this.console.debug('Feed polled too recently', tail_url.href);
     return 0;
   }
 
@@ -138,6 +139,7 @@ PollService.prototype.poll_feed = async function(feed) {
   }
 
   if (!this.ignore_modified_check && !this.is_modified(feed, response)) {
+    this.console.debug('No modification detected', tail_url.href);
     const dirty = this.handle_fetch_success(feed);
     if (dirty) {
       feed.dateUpdated = new Date();
@@ -227,6 +229,8 @@ PollService.prototype.is_modified = function(feed, response) {
   if (!response_lmd) {
     return true;
   }
+
+  this.console.debug(feed.dateLastModified, response_lmd);
 
   return feed.dateLastModified.getTime() !== response_lmd.getTime();
 };
