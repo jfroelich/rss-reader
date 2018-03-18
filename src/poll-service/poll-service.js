@@ -120,7 +120,8 @@ PollService.prototype.poll_feed = async function(feed) {
   assert(rdb.feed_has_url(feed));
 
   const tail_url = new URL(rdb.feed_peek_url(feed));
-  this.console.log('Polling feed', {name: feed.title, location: tail_url.href});
+  this.console.log('Polling feed', feed.title, tail_url.href);
+
   if (!feed.active) {
     return 0;
   }
@@ -145,8 +146,7 @@ PollService.prototype.poll_feed = async function(feed) {
     return 0;
   }
 
-  const responses_text = await response.text();
-
+  const response_text = await response.text();
   const skip_entries = false, resolve_urls = true;
   let parsed_feed;
   try {
@@ -160,19 +160,12 @@ PollService.prototype.poll_feed = async function(feed) {
   const response_lmd = fetchlib.response_get_last_modified_date(response);
 
   const fetch_info = {
-    request_url: feed_tail_url,
+    request_url: tail_url,
     response_url: response_url,
     response_last_modified_date: response_lmd
   };
 
-  let coerced_feed;
-  try {
-    coerced_feed = coerce_feed(parsed_feed, fetch_info);
-  } catch (error) {
-    this.handle_error(error, feed, 'coerce');
-    return 0;
-  }
-
+  const coerced_feed = coerce_feed(parsed_feed, fetch_info);
   const merged_feed = rdb.feed_merge(feed, coerced_feed);
   this.handle_fetch_success(merged_feed);
 
@@ -180,16 +173,22 @@ PollService.prototype.poll_feed = async function(feed) {
   storable_feed.dateUpdated = new Date();
   await rdb.feed_put(this.rconn, this.channel, storable_feed);
 
-  // Process the entries
   const coerced_entries = parsed_feed.entries.map(coerce_entry);
   const entries = dedup_entries(coerced_entries);
-  cascade_feed_properties_to_entries(storable_feed, entries);
+
+  for (const entry of entries) {
+    entry.feed = storable_feed.id;
+    entry.feedTitle = storable_feed.title;
+    entry.faviconURLString = storable_feed.faviconURLString;
+
+    if (storable_feed.datePublished && !entry.datePublished) {
+      entry.datePublished = storable_feed.datePublished;
+    }
+  }
 
   const proms = entries.map(this.poll_entry, this);
   const entry_ids = await Promise.all(proms);
-  const count = entry_ids.reduce((sum, value) => {
-    return isNaN(value) ? sum : sum++;
-  }, 0);
+  const count = entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
 
   if (this.badge_update && count) {
     badge.update(this.rconn).catch(console.error);
@@ -263,31 +262,6 @@ PollService.prototype.handle_error = function(error, feed, type) {
   rdb.feed_put(this.rconn, this.channel, feed).catch(console.error);
 };
 
-function create_fetch_error(url, response) {
-  let error;
-  if (response.status === fetchlib.STATUS_TIMEOUT) {
-    error = new fetchlib.TimeoutError('Timeout error fetching ' + url.href);
-  } else if (response.status === fetchlib.STATUS_OFFLINE) {
-    error =
-        new fetchlib.OfflineError('Unable to fetch while offline ' + url.href);
-  } else {
-    error = new Error('Failed to fetch ' + url.href);
-  }
-  return error;
-}
-
-function cascade_feed_properties_to_entries(feed, entries) {
-  for (const entry of entries) {
-    entry.feed = feed.id;
-    entry.feedTitle = feed.title;
-    entry.faviconURLString = feed.faviconURLString;
-
-    if (feed.datePublished && !entry.datePublished) {
-      entry.datePublished = feed.datePublished;
-    }
-  }
-}
-
 PollService.prototype.poll_entry = async function(entry) {
   if (!rdb.entry_has_url(entry)) {
     return;
@@ -317,15 +291,6 @@ PollService.prototype.poll_entry = async function(entry) {
 
   return stored_entry.id;
 };
-
-function entry_rewrite_tail_url(entry) {
-  const tail_url = new URL(rdb.entry_peek_url(entry));
-  const new_url = rewrite_url(tail_url, rewrite_urls);
-  if (!new_url) {
-    return false;
-  }
-  return rdb.entry_append_url(entry, new_url);
-}
 
 PollService.prototype.entry_exists = function(entry) {
   const url = new URL(rdb.entry_peek_url(entry));
@@ -357,28 +322,6 @@ PollService.prototype.handle_entry_redirect = async function(entry, response) {
   entry_rewrite_tail_url(entry);
   return await this.entry_exists(entry);
 };
-
-async function entry_parse_response(response) {
-  if (!response) {
-    return;
-  }
-
-  try {
-    const response_text = await response.text();
-    return html_parser.parse(response_text);
-  } catch (error) {
-  }
-}
-
-function entry_update_title(entry, document) {
-  assert(rdb.is_entry(entry));
-  if (document && !entry.title) {
-    const title_element = document.querySelector('html > head > title');
-    if (title_element) {
-      entry.title = title_element.textContent;
-    }
-  }
-}
 
 PollService.prototype.update_entry_icon = async function(entry, document) {
   const entry_url = new URL(rdb.entry_peek_url(entry));
@@ -413,6 +356,50 @@ PollService.prototype.update_entry_content = async function(entry, document) {
   await filter_entry_content(document, document_url, opts);
   entry.content = document.documentElement.outerHTML;
 };
+
+function create_fetch_error(url, response) {
+  let error;
+  if (response.status === fetchlib.STATUS_TIMEOUT) {
+    error = new fetchlib.TimeoutError('Timeout error fetching ' + url.href);
+  } else if (response.status === fetchlib.STATUS_OFFLINE) {
+    error =
+        new fetchlib.OfflineError('Unable to fetch while offline ' + url.href);
+  } else {
+    error = new Error('Failed to fetch ' + url.href);
+  }
+  return error;
+}
+
+function entry_rewrite_tail_url(entry) {
+  const tail_url = new URL(rdb.entry_peek_url(entry));
+  const new_url = rewrite_url(tail_url, rewrite_urls);
+  if (!new_url) {
+    return false;
+  }
+  return rdb.entry_append_url(entry, new_url);
+}
+
+async function entry_parse_response(response) {
+  if (!response) {
+    return;
+  }
+
+  try {
+    const response_text = await response.text();
+    return html_parser.parse(response_text);
+  } catch (error) {
+  }
+}
+
+function entry_update_title(entry, document) {
+  assert(rdb.is_entry(entry));
+  if (document && !entry.title) {
+    const title_element = document.querySelector('html > head > title');
+    if (title_element) {
+      entry.title = title_element.textContent;
+    }
+  }
+}
 
 function url_is_augmentable(url) {
   return url_is_http(url) && sniff.classify(url) !== sniff.BINARY_CLASS &&
