@@ -142,14 +142,6 @@ function url_compare_no_hash(url1, url2) {
   return modified_url1.href === modified_url2.href;
 }
 
-export function response_get_last_modified_date(response) {
-  assert(response instanceof Response);
-  const header_value = response.headers.get('Last-Modified');
-  const date = new Date(header_value);
-  // on parse error, date stores NaN
-  return isNaN(date.getTime()) ? null : date;
-}
-
 export function response_get_mime_type(response) {
   assert(response instanceof Response);
   const content_type = response.headers.get('Content-Type');

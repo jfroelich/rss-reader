@@ -139,7 +139,7 @@ PollService.prototype.poll_feed = async function(feed) {
   }
 
   const feed_lmd = feed.dateLastModified;
-  const resp_lmd = fetchlib.response_get_last_modified_date(response);
+  const resp_lmd = new Date(response.headers.get('Last-Modified'));
 
   if (!this.ignore_modified_check && feed_lmd && resp_lmd &&
       feed_lmd.getTime() !== resp_lmd.getTime()) {
@@ -167,7 +167,7 @@ PollService.prototype.poll_feed = async function(feed) {
   const fetch_info = {
     request_url: tail_url,
     response_url: response_url,
-    response_last_modified_date: lmd
+    response_last_modified_date: resp_lmd
   };
 
   const coerced_feed = coerce_feed(parsed_feed, fetch_info);

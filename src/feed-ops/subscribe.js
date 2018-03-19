@@ -82,8 +82,8 @@ SubscribeOperation.prototype.create_feed = async function(response, url) {
   const ops = {};
   ops.request_url = url;
   ops.response_url = response_url;
-  ops.response_last_modified_date =
-      fetchlib.response_get_last_modified_date(response);
+  const lmd = new Date(response.headers.get('Last-Modified'));
+  ops.response_last_modified_date = lmd.getTime() === NaN ? null : lmd;
   return coerce_feed(parsed_feed, ops);
 };
 
