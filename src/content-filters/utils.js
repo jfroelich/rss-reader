@@ -1,5 +1,5 @@
 import {element_unwrap} from '/src/dom/element-unwrap.js';
-import {url_is_allowed} from '/src/fetch/fetch.js';
+import {url_is_allowed} from '/src/fetch/policy.js';
 
 // Returns a file name without its extension (and without the '.')
 export function file_name_filter_extension(file_name) {

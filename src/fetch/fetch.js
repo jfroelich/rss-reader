@@ -1,3 +1,4 @@
+import * as policy from '/src/fetch/policy.js';
 import * as mime from '/src/mime/mime.js';
 
 // Fictional codes for responses with errors. Codes must be in the range
@@ -82,7 +83,7 @@ export async function tfetch(url, options) {
     assert(Number.isInteger(timeout) && timeout >= 0);
   }
 
-  if (!url_is_allowed(url)) {
+  if (!policy.url_is_allowed(url)) {
     return create_error_response(STATUS_POLICY_REFUSAL);
   }
 
@@ -130,40 +131,6 @@ function url_compare_no_hash(url1, url2) {
   modified_url1.hash = '';
   modified_url2.hash = '';
   return modified_url1.href === modified_url2.href;
-}
-
-export function url_is_allowed(url) {
-  assert(url instanceof URL);
-
-  const protocol = url.protocol;
-  const hostname = url.hostname;
-
-  // Quickly check for data urls and allow them before any other tests. Data
-  // URI fetches do not involve the network so there is no policy concern
-  if (protocol === 'data:') {
-    return true;
-  }
-
-  if (hostname === 'localhost') {
-    return false;
-  }
-
-
-  if (hostname === '127.0.0.1') {
-    return false;
-  }
-
-  const protocol_blacklist =
-      ['about:', 'chrome:', 'chrome-extension:', 'file:'];
-  if (protocol_blacklist.includes(protocol)) {
-    return false;
-  }
-
-  if (url.username || url.password) {
-    return false;
-  }
-
-  return true;
 }
 
 function assert(value, message) {
