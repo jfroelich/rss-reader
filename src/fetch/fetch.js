@@ -13,6 +13,10 @@ export const STATUS_OFFLINE_TEXT = 'Offline';
 export const STATUS_TIMEOUT = 595;
 export const STATUS_TIMEOUT_TEXT = 'Request timed out';
 
+function create_error_response(status, status_text) {
+  return new Response(null, {status: status, statusText: status_text});
+}
+
 export async function fetch_html(url, timeout) {
   const response = await tfetch(url, {timeout: timeout});
   if (!response.ok) {
@@ -23,10 +27,7 @@ export async function fetch_html(url, timeout) {
       mime.parse_content_type(response.headers.get('Content-Type'));
 
   if (mime_type !== 'text/html') {
-    const body = null;
-    return new Response(
-        body,
-        {status: STATUS_UNACCEPTABLE, statusText: STATUS_UNACCEPTABLE_TEXT});
+    return create_error_response(STATUS_UNACCEPTABLE, STATUS_UNACCEPTABLE_TEXT);
   }
 
   return response;
@@ -46,15 +47,8 @@ export async function fetch_feed(url, timeout) {
 
   const mime_type =
       mime.parse_content_type(response.headers.get('Content-Type'));
-
-
   if (!feed_mime_types.includes(mime_type)) {
-    const body = null;
-    return new Response(body, {
-      status: STATUS_UNACCEPTABLE,
-      statusText: STATUS_UNACCEPTABLE_TEXT,
-      headers: response.headers
-    });
+    return create_error_response(STATUS_UNACCEPTABLE, STATUS_UNACCEPTABLE_TEXT);
   }
 
   return response;
@@ -87,42 +81,25 @@ export async function tfetch(url, options) {
   }
 
   if (!url_is_allowed(url)) {
-    const body = null;
-    const init = {
-      status: STATUS_POLICY_REFUSAL,
-      statusText: STATUS_POLICY_REFUSAL_TEXT
-    };
-    return new Response(body, init);
+    return create_error_response(
+        STATUS_POLICY_REFUSAL, STATUS_POLICY_REFUSAL_TEXT);
   }
 
   const method = merged_options.method.toUpperCase();
   if (method !== 'GET' && method !== 'HEAD') {
-    const body = null;
-    const init = {
-      status: STATUS_FORBIDDEN_METHOD,
-      statusText: STATUS_FORBIDDEN_METHOD_TEXT
-    };
-    return new Response(body, init);
+    return create_error_response(
+        STATUS_FORBIDDEN_METHOD, STATUS_FORBIDDEN_METHOD_TEXT);
   }
 
   if (!navigator.onLine) {
-    const body = null;
-    const init = {status: STATUS_OFFLINE, statusText: STATUS_OFFLINE_TEXT};
-    return new Response(body, init);
+    return create_error_response(STATUS_OFFLINE, STATUS_OFFLINE_TEXT);
   }
 
   const fetch_promise = fetch(url.href, merged_options);
-
-  // If a timeout was specified, initialize a derived promise to the result of
-  // racing fetch against timeout. Otherwise, initialize a derived promise to
-  // the result of fetch. If timeout wins then response is undefined.
   const response = await (
       untimed ? fetch_promise : Promise.race([fetch_promise, sleep(timeout)]));
-
   if (!response) {
-    const body = null;
-    const init = {status: STATUS_TIMEOUT, statusText: STATUS_TIMEOUT_TEXT};
-    return new Response(body, init);
+    return create_error_response(STATUS_TIMEOUT, STATUS_TIMEOUT_TEXT);
   }
 
   return response;
