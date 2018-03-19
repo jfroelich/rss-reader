@@ -39,8 +39,7 @@ function create_error_response(status) {
 
 export async function fetch_html(url, timeout) {
   const html_mime_types = ['text/html'];
-  return response =
-             await tfetch(url, {timeout: timeout, types: html_mime_types});
+  return await tfetch(url, {timeout: timeout, types: html_mime_types});
 }
 
 export async function fetch_feed(url, timeout) {
