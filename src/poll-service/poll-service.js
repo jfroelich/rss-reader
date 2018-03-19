@@ -133,8 +133,7 @@ PollService.prototype.poll_feed = async function(feed) {
 
   const response = await fetchlib.fetch_feed(tail_url, this.fetch_feed_timeout);
   if (!response.ok) {
-    const error = create_fetch_error(tail_url, response);
-    this.handle_error(error, feed, 'fetch');
+    this.handle_error(response.status, feed, 'fetch');
     return 0;
   }
 
@@ -158,7 +157,8 @@ PollService.prototype.poll_feed = async function(feed) {
   try {
     parsed_feed = feed_parser.parse(response_text, skip_entries, resolve_urls);
   } catch (error) {
-    this.handle_error(error, feed, 'parse');
+    const status_parse_error = 1;
+    this.handle_error(status_parse_error, feed, 'parse');
     return 0;
   }
 
@@ -238,8 +238,9 @@ PollService.prototype.handle_fetch_success = function(feed) {
   return false;
 };
 
-PollService.prototype.handle_error = function(error, feed, type) {
-  if (error_is_ephemeral(error)) {
+PollService.prototype.handle_error = function(status, feed, type) {
+  if (status === fetchlib.STATUS_TIMEOUT ||
+      status === fetchlib.STATUS_OFFLINE) {
     return;
   }
 
@@ -349,19 +350,6 @@ PollService.prototype.update_entry_content = async function(entry, document) {
   entry.content = document.documentElement.outerHTML;
 };
 
-function create_fetch_error(url, response) {
-  let error;
-  if (response.status === fetchlib.STATUS_TIMEOUT) {
-    error = new fetchlib.TimeoutError('Timeout error fetching ' + url.href);
-  } else if (response.status === fetchlib.STATUS_OFFLINE) {
-    error =
-        new fetchlib.OfflineError('Unable to fetch while offline ' + url.href);
-  } else {
-    error = new Error('Failed to fetch ' + url.href);
-  }
-  return error;
-}
-
 function entry_rewrite_tail_url(entry) {
   const tail_url = new URL(rdb.entry_peek_url(entry));
   const new_url = rewrite_url(tail_url, rewrite_urls);
@@ -396,11 +384,6 @@ function entry_update_title(entry, document) {
 function url_is_augmentable(url) {
   return url_is_http(url) && sniff.classify(url) !== sniff.BINARY_CLASS &&
       !url_is_inaccessible_content(url);
-}
-
-function error_is_ephemeral(error) {
-  return error instanceof fetchlib.OfflineError ||
-      error instanceof fetchlib.TimeoutError;
 }
 
 const INACCESSIBLE_CONTENT_DESCRIPTORS = [
