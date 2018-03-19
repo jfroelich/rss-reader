@@ -138,7 +138,11 @@ PollService.prototype.poll_feed = async function(feed) {
     return 0;
   }
 
-  if (!this.ignore_modified_check && !this.is_modified(feed, response)) {
+  const feed_lmd = feed.dateLastModified;
+  const resp_lmd = fetchlib.response_get_last_modified_date(response);
+
+  if (!this.ignore_modified_check && feed_lmd && resp_lmd &&
+      feed_lmd.getTime() !== resp_lmd.getTime()) {
     this.console.debug('No modification detected', tail_url.href);
     const dirty = this.handle_fetch_success(feed);
     if (dirty) {
@@ -159,12 +163,11 @@ PollService.prototype.poll_feed = async function(feed) {
   }
 
   const response_url = new URL(response.url);
-  const response_lmd = fetchlib.response_get_last_modified_date(response);
 
   const fetch_info = {
     request_url: tail_url,
     response_url: response_url,
-    response_last_modified_date: response_lmd
+    response_last_modified_date: lmd
   };
 
   const coerced_feed = coerce_feed(parsed_feed, fetch_info);
@@ -218,21 +221,6 @@ PollService.prototype.polled_recently = function(feed) {
   const elapsed_ms = current_date - feed.dateFetched;
   assert(elapsed_ms >= 0, 'Polled feed in future??');
   return elapsed_ms < this.recency_period;
-};
-
-PollService.prototype.is_modified = function(feed, response) {
-  if (!feed.dateLastModified) {
-    return true;
-  }
-
-  const response_lmd = fetchlib.response_get_last_modified_date(response);
-  if (!response_lmd) {
-    return true;
-  }
-
-  this.console.debug(feed.dateLastModified, response_lmd);
-
-  return feed.dateLastModified.getTime() !== response_lmd.getTime();
 };
 
 PollService.prototype.handle_fetch_success = function(feed) {
