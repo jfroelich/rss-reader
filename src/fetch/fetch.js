@@ -94,6 +94,12 @@ export async function tfetch(url, options) {
     delete merged_options.timeout;
   }
 
+  let types;
+  if (Array.isArray(merged_options.types)) {
+    types = merged_options.types;
+    delete merged_options.types;
+  }
+
   const untimed = typeof timeout === 'undefined';
   if (!untimed) {
     assert(Number.isInteger(timeout) && timeout >= 0);
@@ -117,6 +123,14 @@ export async function tfetch(url, options) {
       untimed ? fetch_promise : Promise.race([fetch_promise, sleep(timeout)]));
   if (!response) {
     return create_error_response(STATUS_TIMEOUT);
+  }
+
+  if (types && response.ok) {
+    const mime_type =
+        mime.parse_content_type(response.headers.get('Content-Type'));
+    if (!types.includes(mime_type)) {
+      return create_error_response(STATUS_UNACCEPTABLE);
+    }
   }
 
   return response;
