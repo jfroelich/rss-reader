@@ -52,7 +52,9 @@ export async function fetch_feed(url, timeout) {
 }
 
 export async function tfetch(url, options) {
-  assert(url instanceof URL);
+  if ((!url instanceof URL)) {
+    throw new TypeError('url is not a URL');
+  }
 
   const default_options = {
     credentials: 'omit',
@@ -80,7 +82,9 @@ export async function tfetch(url, options) {
 
   const untimed = typeof timeout === 'undefined';
   if (!untimed) {
-    assert(Number.isInteger(timeout) && timeout >= 0);
+    if (!Number.isInteger(timeout) || timeout < 0) {
+      throw new TypeError('timeout is not a positive integer');
+    }
   }
 
   if (!policy.url_is_allowed(url)) {
@@ -131,8 +135,4 @@ function url_compare_no_hash(url1, url2) {
   modified_url1.hash = '';
   modified_url2.hash = '';
   return modified_url1.href === modified_url2.href;
-}
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
 }
