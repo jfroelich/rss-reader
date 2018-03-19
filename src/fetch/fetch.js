@@ -1,4 +1,4 @@
-import {parse_content_type} from '/src/mime/mime.js';
+import * as mime from '/src/mime/mime.js';
 
 // Fictional codes for responses with errors. Codes must be in the range
 // [200..599] or Chrome whines about throws a RangeError
@@ -19,13 +19,14 @@ export async function fetch_html(url, timeout) {
     return response;
   }
 
-  if (response_get_mime_type(response) !== 'text/html') {
+  const mime_type =
+      mime.parse_content_type(response.headers.get('Content-Type'));
+
+  if (mime_type !== 'text/html') {
     const body = null;
-    return new Response(body, {
-      status: STATUS_UNACCEPTABLE,
-      statusText: STATUS_UNACCEPTABLE_TEXT,
-      headers: response.headers
-    });
+    return new Response(
+        body,
+        {status: STATUS_UNACCEPTABLE, statusText: STATUS_UNACCEPTABLE_TEXT});
   }
 
   return response;
@@ -43,7 +44,11 @@ export async function fetch_feed(url, timeout) {
     return response;
   }
 
-  if (!feed_mime_types.includes(response_get_mime_type(response))) {
+  const mime_type =
+      mime.parse_content_type(response.headers.get('Content-Type'));
+
+
+  if (!feed_mime_types.includes(mime_type)) {
     const body = null;
     return new Response(body, {
       status: STATUS_UNACCEPTABLE,
@@ -140,14 +145,6 @@ function url_compare_no_hash(url1, url2) {
   modified_url1.hash = '';
   modified_url2.hash = '';
   return modified_url1.href === modified_url2.href;
-}
-
-export function response_get_mime_type(response) {
-  assert(response instanceof Response);
-  const content_type = response.headers.get('Content-Type');
-  if (content_type) {
-    return parse_content_type(content_type);
-  }
 }
 
 export function url_is_allowed(url) {
