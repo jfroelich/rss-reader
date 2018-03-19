@@ -37,40 +37,17 @@ function create_error_response(status) {
 }
 
 export async function fetch_html(url, timeout) {
-  const response = await tfetch(url, {timeout: timeout});
-  if (!response.ok) {
-    return response;
-  }
-
-  const mime_type =
-      mime.parse_content_type(response.headers.get('Content-Type'));
-
-  if (mime_type !== 'text/html') {
-    return create_error_response(STATUS_UNACCEPTABLE);
-  }
-
-  return response;
+  const html_mime_types = ['text/html'];
+  return response =
+             await tfetch(url, {timeout: timeout, types: html_mime_types});
 }
 
-const feed_mime_types = [
-  'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
-  'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
-];
-
 export async function fetch_feed(url, timeout) {
-  const response = await tfetch(url, {timeout: timeout});
-
-  if (!response.ok) {
-    return response;
-  }
-
-  const mime_type =
-      mime.parse_content_type(response.headers.get('Content-Type'));
-  if (!feed_mime_types.includes(mime_type)) {
-    return create_error_response(STATUS_UNACCEPTABLE);
-  }
-
-  return response;
+  const feed_mime_types = [
+    'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
+    'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
+  ];
+  return await tfetch(url, {timeout: timeout, types: feed_mime_types});
 }
 
 export async function tfetch(url, options) {
