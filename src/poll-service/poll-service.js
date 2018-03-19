@@ -157,8 +157,7 @@ PollService.prototype.poll_feed = async function(feed) {
   try {
     parsed_feed = feed_parser.parse(response_text, skip_entries, resolve_urls);
   } catch (error) {
-    const status_parse_error = 1;
-    this.handle_error(status_parse_error, feed, 'parse');
+    this.handle_error(/* status */ undefined, feed, 'parse');
     return 0;
   }
 
