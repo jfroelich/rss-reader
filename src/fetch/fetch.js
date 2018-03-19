@@ -178,15 +178,3 @@ export function url_is_allowed(url) {
 function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }
-
-export class TimeoutError extends Error {
-  constructor(message) {
-    super(message);
-  }
-}
-
-export class OfflineError extends Error {
-  constructor(message) {
-    super(message);
-  }
-}
