@@ -1,4 +1,4 @@
-import * as policy from '/src/fetch/policy.js';
+import * as policy from '/src/url-loader/policy.js';
 import * as mime from '/src/mime/mime.js';
 
 // Fictional codes for responses with errors. Codes must be in the range

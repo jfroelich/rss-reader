@@ -1,10 +1,10 @@
 import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
-import * as fetchlib from '/src/fetch/fetch.js';
 import * as notifications from '/src/notifications/notifications.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import * as rdb from '/src/rdb/rdb.js';
+import * as url_loader from '/src/url-loader/url-loader.js';
 
 export function SubscribeOperation() {
   this.rconn = null;
@@ -29,7 +29,7 @@ SubscribeOperation.prototype.subscribe = async function(url) {
     return;
   }
 
-  let response = await fetchlib.fetch_feed(url, this.fetch_timeout);
+  let response = await url_loader.fetch_feed(url, this.fetch_timeout);
   if (!response.ok) {
     this.console.debug(
         'Failed to fetch feed', url.href, response.status, response.statusText);
@@ -60,7 +60,7 @@ SubscribeOperation.prototype.create_feed = async function(response, url) {
   const response_url = new URL(response.url);
 
   // If there was a redirect, then check if subscribed to the redirect
-  if (fetchlib.url_did_change(url, response_url) &&
+  if (url_loader.url_did_change(url, response_url) &&
       await rdb.contains_feed_with_url(this.rconn, response_url)) {
     this.console.debug(
         'Already subscribed to feed redirect', url.href, response_url.href);

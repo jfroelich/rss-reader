@@ -1,4 +1,4 @@
-import {fetch_html} from '/src/fetch/fetch.js';
+import {fetch_html} from '/src/url-loader/url-loader.js';
 
 window.test = async function(url_string, timeout) {
   const request_url = new URL(url_string);

@@ -2,7 +2,6 @@ import * as badge from '/src/badge.js';
 import * as color from '/src/color/color.js';
 import * as favicon_service from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
-import * as fetchlib from '/src/fetch/fetch.js';
 import * as html_parser from '/src/html-parser/html-parser.js';
 import * as notifications from '/src/notifications/notifications.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
@@ -12,6 +11,7 @@ import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import * as rdb from '/src/rdb/rdb.js';
 import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/sniff/sniff.js';
+import * as url_loader from '/src/url-loader/url-loader.js';
 
 const null_console = {
   log: noop,
@@ -131,7 +131,8 @@ PollService.prototype.poll_feed = async function(feed) {
     return 0;
   }
 
-  const response = await fetchlib.fetch_feed(tail_url, this.fetch_feed_timeout);
+  const response =
+      await url_loader.fetch_feed(tail_url, this.fetch_feed_timeout);
   if (!response.ok) {
     this.handle_error(response.status, feed, 'fetch');
     return 0;
@@ -238,8 +239,8 @@ PollService.prototype.handle_fetch_success = function(feed) {
 };
 
 PollService.prototype.handle_error = function(status, feed, type) {
-  if (status === fetchlib.STATUS_TIMEOUT ||
-      status === fetchlib.STATUS_OFFLINE) {
+  if (status === url_loader.STATUS_TIMEOUT ||
+      status === url_loader.STATUS_OFFLINE) {
     return;
   }
 
@@ -292,7 +293,7 @@ PollService.prototype.entry_exists = function(entry) {
 PollService.prototype.fetch_entry = async function(entry) {
   const url = new URL(rdb.entry_peek_url(entry));
   if (url_is_augmentable(url)) {
-    const response = await fetchlib.fetch_html(url, this.fetch_html_timeout);
+    const response = await url_loader.fetch_html(url, this.fetch_html_timeout);
     if (response.ok) {
       return response;
     }
@@ -306,7 +307,7 @@ PollService.prototype.handle_entry_redirect = async function(entry, response) {
 
   const request_url = new URL(rdb.entry_peek_url(entry));
   const response_url = new URL(response.url);
-  if (!fetchlib.url_did_change(request_url, response_url)) {
+  if (!url_loader.url_did_change(request_url, response_url)) {
     return false;
   }
 

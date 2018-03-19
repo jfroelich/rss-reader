@@ -1,6 +1,6 @@
-import {fetch_html, tfetch, url_did_change} from '/src/fetch/fetch.js';
 import {idb_open} from '/src/idb/idb.js';
-import {parse_content_type} from '/src/mime/mime.js';
+import * as mime from '/src/mime/mime.js';
+import * as url_loader from '/src/url-loader/url-loader.js';
 
 const NAME = 'favicon-cache';
 const VERSION = 3;
@@ -121,7 +121,7 @@ export async function lookup(input_options) {
   // Try and fetch the html for the url
   let response;
   if (!document && !options.skipURLFetch) {
-    response = await fetch_html(url, options.fetchHTMLTimeout);
+    response = await url_loader.fetch_html(url, options.fetchHTMLTimeout);
     if (!response.ok) {
       options.console.debug(
           'Fetch failed', url.href, response.status, response.statusText);
@@ -133,7 +133,7 @@ export async function lookup(input_options) {
   if (response) {
     response_url = new URL(response.url);
 
-    if (url_did_change(url, response_url)) {
+    if (url_loader.url_did_change(url, response_url)) {
       // Update origin url for later
       if (response_url.origin !== url.origin) {
         origin_url = new URL(response_url.origin);
@@ -481,7 +481,7 @@ function db_put_all(conn, url_strings, iconURLString) {
 async function image_fetch_head_and_validate(
     url, timeout, min_image_size, max_image_size) {
   const options = {method: 'head', timeout: timeout};
-  const response = await tfetch(url, options);
+  const response = await url_loader.tfetch(url, options);
   assert(response.ok);
   assert(response_has_image_type(response));
   assert(response_is_in_range(response, min_image_size, max_image_size));
@@ -501,7 +501,7 @@ function response_has_image_type(response) {
   assert(response instanceof Response);
   const content_type = response.headers.get('Content-Type');
   if (content_type) {
-    const mime_type = parse_content_type(content_type);
+    const mime_type = mime.parse_content_type(content_type);
     if (mime_type) {
       return mime_type.startsWith('image/') ||
           mime_type === 'application/octet-stream';

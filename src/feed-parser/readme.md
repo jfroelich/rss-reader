@@ -36,3 +36,7 @@ So I think I handle cdata content correctly, but note the issue with title still
 # TODO:
 
 * when finding feed type, use element_get_local_name?
+
+### Test todos
+
+* Write specific tests that test various assertions, e.g. preconditions, postconditions, and make it automatic
