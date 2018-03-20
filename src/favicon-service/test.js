@@ -1,24 +1,26 @@
-import * as favicon_service from '/src/favicon-service/favicon-service.js';
-import {idb_remove} from '/src/idb/idb.js';
+import {FaviconService} from '/src/favicon-service/favicon-service.js';
+import * as idb from '/src/idb/idb.js';
 
-window.test_lookup = async function(url, cached) {
-  const test_db_name = 'test-favicon-cache';
+window.test_lookup = async function(url_string, cached) {
+  const url = new URL(url_string);
 
-  const query = {};
-  query.url = new URL(url);
+  const fs = new FaviconService();
+  fs.console = console;
+  fs.name = 'test-favicon-cache';
+
+  let conn;
   if (cached) {
-    query.conn = await favicon_service.open(test_db_name);
+    conn = await fs.open();
+    fs.conn = conn;
   }
 
-  const icon_url_string = await favicon_service.lookup(query);
+  const icon_url_string = await fs.lookup(url);
   if (cached) {
-    query.conn.close();
-
-    await db_remove(query.conn.name);
+    conn.close();
+    await idb.idb_remove(conn.name);
   }
 
   return icon_url_string;
 };
 
-window.test_compact = favicon_service.compact;
-window.test_clear = favicon_service.clear;
+window.FaviconService = FaviconService;

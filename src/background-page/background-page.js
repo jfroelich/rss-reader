@@ -1,6 +1,6 @@
 import '/src/cli/cli.js';
 import * as badge from '/src/badge.js';
-import * as favicon_service from '/src/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import archive_entries from '/src/feed-ops/archive-entries.js';
 import rdb_refresh_feed_icons from '/src/feed-ops/refresh-feed-icons.js';
 import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
@@ -9,8 +9,12 @@ import {PollService} from '/src/poll-service/poll-service.js';
 import * as rdb from '/src/rdb/rdb.js';
 import show_slideshow_tab from '/src/show-slideshow-tab.js';
 
-function handle_compact_favicons_alarm(alarm) {
-  return favicon_service.compact().catch(console.error);
+async function handle_compact_favicons_alarm(alarm) {
+  const service = new FaviconService();
+  const conn = await service.open();
+  service.conn = conn;
+  await service.compact();
+  conn.close();
 }
 
 function handle_archive_alarm_wakeup(alarm) {
@@ -33,11 +37,11 @@ async function handle_orphan_entries_alarm(alarm) {
 }
 
 async function handle_refresh_feed_icons_alarm(alarm) {
-  const [reader_conn, favicon_conn] =
-      await Promise.all([rdb.open(), favicon_service.open()]);
-  await rdb_refresh_feed_icons(reader_conn, favicon_conn);
-  reader_conn.close();
-  favicon_conn.close();
+  const fs = new FaviconService();
+  const [rconn, iconn] = await Promise.all([rdb.open(), fs.open()]);
+  await rdb_refresh_feed_icons(rconn, iconn);
+  rconn.close();
+  iconn.close();
 }
 
 async function handle_poll_feeds_alarm(alarm) {
@@ -66,11 +70,14 @@ function query_idle_state(idle_period_secs) {
 
 console.debug('Initializing background page');
 
-chrome.runtime.onInstalled.addListener(function(event) {
-  console.log('Setting up feed store database');
-  rdb.open().then(conn => conn.close()).catch(console.error);
-  console.log('Setting up favicon database');
-  favicon_service.open().then(conn => conn.close()).catch(console.error);
+chrome.runtime.onInstalled.addListener(async function(event) {
+  let conn = await rdb.open();
+  conn.close();
+
+  const fs = new FaviconService();
+  fs.console = console;
+  conn = await fs.open();
+  conn.close();
 });
 
 chrome.browserAction.onClicked.addListener(show_slideshow_tab);

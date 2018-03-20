@@ -1,8 +1,5 @@
-import * as favicon_service from '/src/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as rdb from '/src/rdb/rdb.js';
-
-// TODO: drop auto-connect support, use ral.js for that if desired
-// TODO: add docs
 
 export default async function rdb_refresh_feed_icons(
     feed_conn, icon_conn, channel) {
@@ -22,20 +19,18 @@ async function feed_store_feed_refresh_icons(conn, icon_conn, channel, feed) {
     throw new TypeError('Feed missing url ' + feed.id);
   }
 
-  const favicon_lookup_url = rdb.feed_create_favicon_lookup_url(feed);
+  const lookup_url = rdb.feed_create_favicon_lookup_url(feed);
 
-  const lookup_ctx = {};
-  lookup_ctx.conn = icon_conn;
-  lookup_ctx.url = favicon_lookup_url;
+  const fs = new FaviconService();
+  fs.conn = icon_conn;
+  const icon_url_string = await fs.lookup(lookup_url);
 
-  const icon_url = await favicon_service.lookup(lookup_ctx);
-  if (feed.faviconURLString !== icon_url) {
-    if (icon_url) {
-      feed.faviconURLString = icon_url;
+  if (feed.faviconURLString !== icon_url_string) {
+    if (icon_url_string) {
+      feed.faviconURLString = icon_url_string;
     } else {
       delete feed.faviconURLString;
     }
-
     feed.dateUpdated = new Date();
     await rdb.feed_put(conn, channel, feed);
   }

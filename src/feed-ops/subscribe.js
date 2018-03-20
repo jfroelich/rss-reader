@@ -1,4 +1,4 @@
-import * as favicon_service from '/src/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as notifications from '/src/notifications/notifications.js';
 import {PollService} from '/src/poll-service/poll-service.js';
@@ -89,11 +89,15 @@ SubscribeOperation.prototype.create_feed = async function(response, url) {
 
 SubscribeOperation.prototype.set_favicon = async function(feed) {
   assert(rdb.is_feed(feed));
-  const query = {};
-  query.conn = this.iconn;
-  query.skipURLFetch = true;
-  query.url = rdb.feed_create_favicon_lookup_url(feed);
-  feed.faviconURLString = await favicon_service.lookup(query);
+
+  // TODO: share instance across all calls
+  const fs = new FaviconService();
+  fs.conn = this.iconn;
+  fs.console = this.console;
+  fs.skip_fetch = true;
+
+  const url = rdb.feed_create_favicon_lookup_url(feed);
+  feed.faviconURLString = await fs.lookup(url);
 };
 
 SubscribeOperation.prototype.show_notification = function(feed) {

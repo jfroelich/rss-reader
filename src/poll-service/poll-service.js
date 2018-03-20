@@ -1,6 +1,6 @@
 import * as badge from '/src/badge.js';
 import * as color from '/src/color/color.js';
-import * as favicon_service from '/src/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as html_parser from '/src/html-parser/html-parser.js';
 import * as notifications from '/src/notifications/notifications.js';
@@ -67,7 +67,8 @@ export function PollService() {
 }
 
 PollService.prototype.init = async function(channel) {
-  const promises = [rdb.open(), favicon_service.open()];
+  const fs = new FaviconService();
+  const promises = [rdb.open(), fs.open()];
   [this.rconn, this.iconn] = await Promise.all(promises);
   this.channel = channel;
 };
@@ -318,12 +319,12 @@ PollService.prototype.handle_entry_redirect = async function(entry, response) {
 
 PollService.prototype.update_entry_icon = async function(entry, document) {
   const entry_url = new URL(rdb.entry_peek_url(entry));
-  const query = {};
-  query.conn = this.iconn;
-  query.skipURLFetch = true;
-  query.url = entry_url;
-  query.document = document;
-  const icon_url_string = await favicon_service.lookup(query);
+
+  const fs = new FaviconService();
+  fs.conn = this.iconn;
+  fs.skip_fetch = true;
+
+  const icon_url_string = await fs.lookup(entry_url, document);
   if (icon_url_string) {
     entry.faviconURLString = icon_url_string;
   }

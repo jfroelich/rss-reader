@@ -1,4 +1,4 @@
-import * as favicon_service from '/src/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import archive_entries from '/src/feed-ops/archive-entries.js';
 import rdb_refresh_feed_icons from '/src/feed-ops/refresh-feed-icons.js';
 import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
@@ -14,11 +14,11 @@ async function cli_archive_entries() {
 }
 
 async function refresh_icons() {
-  const open_promises = [rdb.open(), favicon_service.open()];
-  const [reader_conn, favicon_conn] = await Promise.all(open_promises);
-  await rdb_refresh_feed_icons(reader_conn, favicon_conn);
-  reader_conn.close();
-  favicon_conn.close();
+  const fs = new FaviconService();
+  const [rconn, iconn] = await Promise.all([rdb.open(), fs.open()]);
+  await rdb_refresh_feed_icons(rconn, iconn);
+  rconn.close();
+  iconn.close();
 }
 
 async function poll_feeds() {
@@ -46,25 +46,46 @@ async function remove_orphans() {
   channel.close();
 }
 
-async function lookup_favicon(url, cached) {
-  const query = {};
-  query.url = new URL(url);
+async function lookup_favicon(url_string, cached) {
+  const url = new URL(url_string);
+
+  const fs = new FaviconService();
+  fs.console = console;
+
+  let conn;
   if (cached) {
-    query.conn = await favicon_service.open();
+    conn = await fs.open();
+    fs.conn = conn;
   }
 
-  const icon_url_string = await favicon_service.lookup(query);
+  const icon_url_string = await fs.lookup(url);
   if (cached) {
-    query.conn.close();
+    conn.close();
   }
 
   return icon_url_string;
 }
 
+async function fs_clear() {
+  const fs = new FaviconService();
+  const conn = await fs.open();
+  fs.conn = conn;
+  await fs.clear();
+  conn.close();
+}
+
+async function fs_compact() {
+  const fs = new FaviconService();
+  const conn = await fs.open();
+  fs.conn = conn;
+  await fs.compact();
+  conn.close();
+}
+
 const cli = {
   archive_entries: cli_archive_entries,
-  clear_favicons: favicon_service.clear,
-  compact_favicons: favicon_service.compact,
+  clear_favicons: fs_clear,
+  compact_favicons: fs_compact,
   remove_orphans: remove_orphans,
   remove_lost_entries: remove_lost_entries,
   lookup_favicon: lookup_favicon,

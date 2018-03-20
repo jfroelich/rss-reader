@@ -1,168 +1,123 @@
+import * as html_parser from '/src/html-parser/html-parser.js';
 import * as idb from '/src/idb/idb.js';
 import * as mime from '/src/mime/mime.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
-const NAME = 'favicon-cache';
-const VERSION = 3;
-const OPEN_TIMEOUT = 500;
+function FaviconService() {
+  this.name = 'favicon-cache';
+  this.version = 3;
+  this.open_timeout = 500;
+  this.conn;
+  this.max_age = 1000 * 60 * 60 * 24 * 30;
+  this.max_failure_count = 2;
+  this.skip_fetch = false;
+  this.fetch_html_timeout = 5000;
+  this.fetch_image_timeout = 1000;
+  this.min_image_size = 50;
+  this.max_image_size = 10240;
+  this.console = null_console;
+}
 
-const MAX_AGE = 1000 * 60 * 60 * 24 * 30;
-const MAX_FAILURE_COUNT = 2;
-const SKIP_FETCH = false;
-const FETCH_HTML_TIMEOUT = 5000;
-const FETCH_IMAGE_TIMEOUT = 1000;
-const MIN_IMAGE_SIZE = 50;
-const MAX_IMAGE_SIZE = 10240;
+FaviconService.prototype.lookup = async function(url, document) {
+  if (!(url instanceof URL)) {
+    throw new TypeError('url is not a URL');
+  }
 
-function noop() {}
-
-const NULL_CONSOLE = {
-  log: noop,
-  warn: noop,
-  debug: noop
-};
-
-
-const default_options = {
-  maxFailureCount: MAX_FAILURE_COUNT,
-  maxAge: MAX_AGE,
-  skipURLFetch: SKIP_FETCH,
-  fetchHTMLTimeout: FETCH_HTML_TIMEOUT,
-  fetchImageTimeout: FETCH_IMAGE_TIMEOUT,
-  minImageSize: MIN_IMAGE_SIZE,
-  maxImageSize: MAX_IMAGE_SIZE,
-  console: NULL_CONSOLE
-};
-
-// Lookup the favicon image url according to input options
-export async function lookup(input_options) {
-  const options = Object.assign({}, default_options, input_options);
-
-  assert(options.url instanceof URL);
-  assert(
-      typeof options.document === 'undefined' ||
-      options.document instanceof Document);
-  options.console.log('Favicon lookup', options.url.href);
+  this.console.log('Lookup', url.href);
 
   const urls = [];
-  urls.push(options.url.href);
+  urls.push(url.href);
 
-  let origin_url = new URL(options.url.origin);
+  let origin_url = new URL(url.origin);
   let origin_entry;
 
   // Check the cache for the input url
-  if (options.conn) {
-    const entry = await db_find_entry(options.conn, options.url);
-    if (entry && entry.iconURLString && !entry_is_expired(entry, options)) {
+  if (this.conn) {
+    const entry = await this.find_entry(url);
+    if (entry && entry.iconURLString && !this.is_expired(entry)) {
       return entry.iconURLString;
     }
-    if (origin_url.href === options.url.href && entry &&
-        entry.failureCount >= options.maxFailureCount) {
-      options.console.debug('Too many failures', options.url.href);
+    if (origin_url.href === url.href && entry &&
+        entry.failureCount >= this.max_failure_count) {
+      this.console.debug('Too many failures', url.href);
       return;
     }
   }
 
-  // If specified, examine the pre-fetched document
-  if (options.document) {
-    // TODO: this is a string, not a url, rename var
-    const icon_url =
-        await search_document(options, options.document, options.url);
-    if (icon_url) {
-      if (options.conn) {
-        await db_put_all(options.conn, urls, icon_url);
+  if (document) {
+    const icon_url_string = await this.search_document(document, url);
+    if (icon_url_string) {
+      if (this.conn) {
+        await this.put_all(urls, icon_url_string);
       }
-      return icon_url;
+      return icon_url_string;
     }
   }
 
-  // Check if we reached the max failure count for the input url's origin (if we
-  // did not already do the check above because input itself was origin)
-  if (options.conn && origin_url.href !== options.url.href) {
-    origin_entry = await db_find_entry(options.conn, origin_url);
-    if (origin_entry && origin_entry.failureCount >= options.maxFailureCount) {
-      options.console.debug('Exceeded max lookup failures', origin_url.href);
+  if (this.conn && origin_url.href !== url.href) {
+    origin_entry = await this.find_entry(origin_url);
+    if (origin_entry && origin_entry.failureCount > this.max_failure_count) {
+      this.console.debug('Exceeded max failures', origin_url.href);
       return;
     }
   }
 
-  // Try and fetch the html for the url
   let response;
-  if (!document && !options.skipURLFetch) {
-    response = await url_loader.fetch_html(url, options.fetchHTMLTimeout);
+  if (!document && !this.skip_fetch) {
+    response = await url_loader.fetch_html(url, this.fetch_html_timeout);
     if (!response.ok) {
-      options.console.debug(
-          'Fetch failed', url.href, response.status, response.statusText);
+      this.console.debug('Fetch error', url.href, response.status);
     }
   }
 
-  // Handle redirect
   let response_url;
   if (response) {
     response_url = new URL(response.url);
-
     if (url_loader.url_did_change(url, response_url)) {
-      // Update origin url for later
       if (response_url.origin !== url.origin) {
         origin_url = new URL(response_url.origin);
       }
-
-      // Add response url to the set of distinct urls investigated
       urls.push(response_url.href);
 
-      // Check the cache for the redirected url
-      if (options.conn) {
-        let entry = await db_find_entry(options.conn, response_url);
-        if (entry && entry.iconURLString && !entry_is_expired(entry, options)) {
-          await db_put_all(options.conn, [url.href], entry.iconURLString);
+      if (this.conn) {
+        let entry = await this.find_entry(response_url);
+        if (entry && entry.iconURLString && !this.is_expired(entry)) {
+          await this.put_all([url.href], entry.iconURLString);
           return entry.iconURLString;
         }
       }
     }
   }
 
-  // We will be re-using the document variable, so avoid any ambiguity between a
-  // parse failure and whether a pre-fetched document was specified
-  options.document = null;
-
-  // Deserialize the html response. Error is not fatal.
+  document = null;
   if (response) {
+    const text = await response.text();
     try {
-      const text = await response.text();
-      options.document = html_parse(text);
+      document = html_parser.parse(text);
     } catch (error) {
-      options.console.debug(error);
+      this.console.debug(error);
     }
   }
 
-  // Search the document. Errors are not fatal.
-  if (options.document) {
-    const base_url = response_url ? response_url : options.url;
-    let icon_url;
-    try {
-      icon_url = await search_document(options, options.document, base_url);
-    } catch (error) {
-      options.console.debug(error);
-    }
-
-    if (icon_url) {
-      if (options.conn) {
-        await db_put_all(options.conn, urls, icon_url);
+  if (document) {
+    const base_url = response_url ? response_url : url;
+    const icon_url_string = await this.search_document(document, base_url);
+    if (icon_url_string) {
+      if (this.conn) {
+        await this.put_all(urls, icon_url_string);
       }
-      return icon_url;
+      return icon_url_string;
     }
   }
 
-  // Check if the origin is in the cache if it is distinct
-  if (options.conn && !urls.includes(origin_url.href)) {
-    origin_entry = await db_find_entry(options.conn, origin_url);
+  if (this.conn && !urls.includes(origin_url.href)) {
+    origin_entry = await this.find_entry(origin_url);
     if (origin_entry) {
-      if (origin_entry.iconURLString &&
-          !entry_is_expired(origin_entry, options)) {
-        await db_put_all(options.conn, urls, origin_entry.iconURLString);
+      if (origin_entry.iconURLString && !this.is_expired(origin_entry)) {
+        await this.put_all(urls, origin_entry.iconURLString);
         return origin_entry.iconURLString;
-      } else if (origin_entry.failureCount >= options.maxFailureCount) {
-        options.console.debug('Exceeded failure count', origin_url.href);
+      } else if (origin_entry.failureCount >= this.max_failure_count) {
+        this.console.debug('Failures exceeded', origin_url.href);
         return;
       }
     }
@@ -172,46 +127,38 @@ export async function lookup(input_options) {
     urls.push(origin_url.href);
   }
 
-  // Check root directory for favicon.ico
-  const base_url = response_url ? response_url : options.url;
+  const base_url = response_url ? response_url : url;
   const image_url = new URL(base_url.origin + '/favicon.ico');
-  response = null;
-  try {
-    response = await image_fetch_head_and_validate(
-        image_url, options.fetchImageTimeout, options.minImageSize,
-        options.maxImageSize);
-  } catch (error) {
-    options.console.debug(error);
-  }
+  response = await this.head_image(image_url);
 
   if (response) {
-    if (options.conn) {
-      await db_put_all(options.conn, urls, response.url);
+    const response_url = new URL(response.url);
+    if (this.conn) {
+      await this.put_all(urls, response_url.href);
     }
-    return response.url;
+    return response_url.href;
   }
 
-  // Conditionally record failed lookup
-  if (options.conn) {
-    lookup_onfailure(
-        options.conn, origin_url, origin_entry, options.maxFailureCount);
+  if (this.conn) {
+    this.on_lookup_fail(origin_url, origin_entry);
   }
-}
+};
 
-function lookup_onfailure(conn, origin_url, origin_entry, max_failure_count) {
+FaviconService.prototype.on_lookup_fail =
+    function(origin_url, origin_entry) {
   if (origin_entry) {
     const new_entry = {};
     new_entry.pageURLString = origin_entry.pageURLString;
     new_entry.dateUpdated = new Date();
     new_entry.iconURLString = origin_entry.iconURLString;
     if ('failureCount' in origin_entry) {
-      if (origin_entry.failureCount <= max_failure_count) {
+      if (origin_entry.failureCount <= this.max_failure_count) {
         new_entry.failureCount = origin_entry.failureCount + 1;
-        db_put_entry(conn, new_entry);
+        this.put_entry(new_entry);
       }
     } else {
       new_entry.failureCount = 1;
-      db_put_entry(conn, new_entry);
+      this.put_entry(new_entry);
     }
   } else {
     const new_entry = {};
@@ -219,47 +166,35 @@ function lookup_onfailure(conn, origin_url, origin_entry, max_failure_count) {
     new_entry.iconURLString = undefined;
     new_entry.dateUpdated = new Date();
     new_entry.failureCount = 1;
-    db_put_entry(conn, new_entry);
+    this.put_entry(new_entry);
   }
 }
 
-function entry_is_expired(entry, options) {
-  // Tolerate partially corrupted data
+    FaviconService.prototype.is_expired = function(entry) {
   if (!entry.dateUpdated) {
-    options.console.warn('Entry missing date updated', entry);
+    this.console.warn('Missing date updated', entry);
     return false;
   }
 
   const current_date = new Date();
   const entry_age = current_date - entry.dateUpdated;
-
-  // Tolerate partially corrupted data
   if (entry_age < 0) {
-    options.console.warn('Entry date updated is in the future', entry);
+    this.console.warn('Date updated is in the future', entry);
     return false;
   }
 
-  return entry_age > options.maxAge;
-}
+  return entry_age > this.max_age;
+};
 
-async function search_document(options, document, base_url) {
-  assert(document instanceof Document);
-
-  const candidates = find_candidate_urls(document);
-  if (!candidates.length) {
-    return;
-  }
+FaviconService.prototype.search_document = async function(document, base_url) {
+  const candidates = this.find_candidate_urls(document);
 
   let urls = [];
   for (const url of candidates) {
-    const canonical = url_string_resolve(url, base_url);
+    const canonical = this.try_resolve(url, base_url);
     if (canonical) {
       urls.push(canonical);
     }
-  }
-
-  if (!urls.length) {
-    return;
   }
 
   const seen = [];
@@ -273,30 +208,26 @@ async function search_document(options, document, base_url) {
   urls = distinct;
 
   for (const url of urls) {
-    try {
-      const response = await image_fetch_head_and_validate(
-          url, options.fetchImageTimeout, options.minImageSize,
-          options.maxImageSize);
+    const response = await this.head_image(url);
+    if (response) {
       return response.url;
-    } catch (error) {
-      // ignore
     }
   }
-}
+};
 
-function find_candidate_urls(document) {
-  const candidates = [];
-  if (!document.head) {
-    return candidates;
-  }
-
+FaviconService.prototype.find_candidate_urls = function(document) {
   const selector = [
     'link[rel="icon"][href]', 'link[rel="shortcut icon"][href]',
     'link[rel="apple-touch-icon"][href]',
     'link[rel="apple-touch-icon-precomposed"][href]'
   ].join(',');
 
+  if (!document.head) {
+    return [];
+  }
+
   const links = document.head.querySelectorAll(selector);
+  const candidates = [];
   for (const link of links) {
     const href = link.getAttribute('href');
     if (href) {
@@ -305,25 +236,14 @@ function find_candidate_urls(document) {
   }
 
   return candidates;
-}
+};
 
-export function open(name, version, timeout) {
-  if (typeof name === 'undefined') {
-    name = NAME;
-  }
+FaviconService.prototype.open = function() {
+  return idb.idb_open(
+      this.name, this.version, this.onupgradeneeded, this.open_timeout);
+};
 
-  if (typeof version === 'undefined') {
-    version = VERSION;
-  }
-
-  if (typeof timeout === 'undefined') {
-    timeout = OPEN_TIMEOUT;
-  }
-
-  return idb.idb_open(name, version, db_onupgradeneeded, timeout);
-}
-
-function db_onupgradeneeded(event) {
+FaviconService.prototype.onupgradeneeded = function(event) {
   const conn = event.target.result;
   console.log('Creating or upgrading database', conn.name);
 
@@ -340,101 +260,83 @@ function db_onupgradeneeded(event) {
     console.debug('Creating dateUpdated index');
     store.createIndex('dateUpdated', 'dateUpdated');
   }
+};
 
-  // In the transition from 2 to 3, there were no changes
-}
-
-// Clears the favicon object store. Optionally specify open params, which are
-// generally only needed for testing. The clear function returns immediately,
-// after starting the operation, but prior to the operation completing. Returns
-// a promise.
-export function clear(options = {}) {
-  return open(options.name, options.version, options.timeout).then(conn => {
-    const txn = conn.transaction('favicon-cache', 'readwrite');
-    txn.oncomplete = _ => {
-      console.log('Cleared favicon store');
-    };
-    txn.onerror = _ => {
-      throw new Error(txn.error);
-    };
-
+FaviconService.prototype.clear = function() {
+  return new Promise((resolve, reject) => {
+    this.console.log('Clearing favicon store');
+    const txn = this.conn.transaction('favicon-cache', 'readwrite');
+    txn.oncomplete = resolve;
+    txn.onerror = _ => reject(txn.error);
     const store = txn.objectStore('favicon-cache');
-    console.log('Clearing favicon store');
     store.clear();
-    console.debug('Enqueuing close request for database', conn.name);
-    conn.close();
   });
-}
+};
 
-// Remove expired entries from the database. Optionally specify open params for
-// testing, otherwise this connects to the default database. This returns
-// immediately, prior to the operation completing. Returns a promise.
-export async function compact(options = {}) {
-  console.log('Compacting favicon store...');
-  const cutoff_time = Date.now() - (options.maxAge || MAX_AGE);
-  assert(cutoff_time >= 0);
-  const cutoff_date = new Date(cutoff_time);
-
-  return open(options.name, options.version, options.timeout).then(conn => {
-    const txn = conn.transaction('favicon-cache', 'readwrite');
-    txn.oncomplete = _ => {
-      console.log('Compacted favicon store');
-    };
-    txn.onerror = _ => {
-      throw new Error(txn.error);
-    };
+FaviconService.prototype.compact = function() {
+  return new Promise((resolve, reject) => {
+    this.console.log('Compacting favicon store...');
+    const cutoff_time = Date.now() - this.max_age;
+    assert(cutoff_time >= 0);
+    const cutoff_date = new Date(cutoff_time);
+    const txn = this.conn.transaction('favicon-cache', 'readwrite');
+    txn.oncomplete = resolve;
+    txn.onerror = _ => reject(txn.error);
 
     const store = txn.objectStore('favicon-cache');
     const index = store.index('dateUpdated');
     const range = IDBKeyRange.upperBound(cutoff_date);
     const request = index.openCursor(range);
-    request.onsuccess = () => {
+    request.onsuccess = _ => {
       const cursor = request.result;
       if (cursor) {
-        console.debug('Deleting favicon entry', cursor.value);
+        this.console.debug('Deleting favicon entry', cursor.value);
         cursor.delete();
         cursor.continue();
       }
     };
-    conn.close();
   });
-}
+};
 
-function db_find_entry(conn, url) {
+FaviconService.prototype.find_entry = function(url) {
   return new Promise((resolve, reject) => {
-    assert(url instanceof URL);
-    const txn = conn.transaction('favicon-cache');
+    if (!(url instanceof URL)) {
+      reject(new TypeError('url is not a URL'));
+      return;
+    }
+
+    const txn = this.conn.transaction('favicon-cache');
     const store = txn.objectStore('favicon-cache');
     const request = store.get(url.href);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onsuccess = _ => resolve(request.result);
+    request.onerror = _ => reject(request.error);
   });
-}
+};
 
-function db_put_entry(conn, entry) {
+FaviconService.prototype.put_entry = function(entry) {
   return new Promise((resolve, reject) => {
-    const txn = conn.transaction('favicon-cache', 'readwrite');
+    const txn = this.conn.transaction('favicon-cache', 'readwrite');
     const store = txn.objectStore('favicon-cache');
     const request = store.put(entry);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
+    request.onsuccess = _ => resolve(request.result);
+    request.onerror = _ => reject(request.error);
   });
-}
+};
 
-function db_put_all(conn, url_strings, iconURLString) {
+FaviconService.prototype.put_all = function(url_strings, icon_url_string) {
   return new Promise((resolve, reject) => {
     assert(Array.isArray(url_strings));
-    assert(typeof iconURLString === 'string');
+    assert(typeof icon_url_string === 'string');
 
-    const txn = conn.transaction('favicon-cache', 'readwrite');
+    const txn = this.conn.transaction('favicon-cache', 'readwrite');
     txn.oncomplete = resolve;
-    txn.onerror = () => reject(txn.error);
+    txn.onerror = _ => reject(txn.error);
 
     const store = txn.objectStore('favicon-cache');
     const current_date = new Date();
     const entry = {
       pageURLString: null,
-      iconURLString: iconURLString,
+      iconURLString: icon_url_string,
       dateUpdated: current_date,
       failureCount: 0
     };
@@ -444,39 +346,54 @@ function db_put_all(conn, url_strings, iconURLString) {
       store.put(entry);
     }
   });
-}
+};
 
-async function image_fetch_head_and_validate(
-    url, timeout, min_image_size, max_image_size) {
-  const options = {method: 'head', timeout: timeout};
+FaviconService.prototype.head_image = async function(url) {
+  const options = {method: 'head', timeout: this.fetch_image_timeout};
   const response = await url_loader.tfetch(url, options);
-  assert(response.ok);
-  assert(response_has_image_type(response));
-  assert(response_is_in_range(response, min_image_size, max_image_size));
-  return response;
-}
+  if (!response.ok) {
+    this.console.debug('response not ok', url.href, response.status);
+    return;
+  }
 
-function response_is_in_range(response, min_size, max_size) {
-  assert(response instanceof Response);
-  assert(Number.isInteger(min_size));
-  assert(Number.isInteger(max_size));
+  const content_type = response.headers.get('Content-Type');
+  if (!content_type) {
+    this.console.debug('unknown content type', url.href);
+    return;
+  }
+
+  const mime_type = mime.parse_content_type(content_type);
+  if (!mime_type) {
+    this.console.debug('malformed content type', url.href, content_type);
+    return;
+  }
+
+  if (!mime_type.startsWith('image/') &&
+      mime_type !== 'application/octet-stream') {
+    this.console.debug('unacceptable mime type', url.href, mime_type);
+    return;
+  }
+
   const content_len = response.headers.get('Content-Length');
   const size = parseInt(content_len, 10);
-  return isNaN(size) || (size >= min_size && size <= max_size);
-}
+  if (!isNaN(size) &&
+      (size < this.min_image_size || size > this.max_image_size)) {
+    this.console.debug('image size not in range', url.href, size);
+    return;
+  }
 
-function response_has_image_type(response) {
-  assert(response instanceof Response);
-  const content_type = response.headers.get('Content-Type');
-  if (content_type) {
-    const mime_type = mime.parse_content_type(content_type);
-    if (mime_type) {
-      return mime_type.startsWith('image/') ||
-          mime_type === 'application/octet-stream';
+  return response;
+};
+
+FaviconService.prototype.try_resolve = function(url_string, base_url) {
+  assert(base_url instanceof URL);
+  if (typeof url_string === 'string' && url_string.trim()) {
+    try {
+      return new URL(url_string, base_url);
+    } catch (error) {
     }
   }
-  return false;
-}
+};
 
 function assert(value, message) {
   if (!value) {
@@ -484,24 +401,10 @@ function assert(value, message) {
   }
 }
 
-function url_string_resolve(url_string, base_url) {
-  assert(base_url instanceof URL);
-  if (typeof url_string === 'string' && url_string.trim()) {
-    try {
-      return new URL(url_string, base_url);
-    } catch (error) {
-      // ignore
-    }
-  }
-}
+function noop() {}
 
-function html_parse(text) {
-  assert(typeof text === 'string');
-  const parser = new DOMParser();
-  const document = parser.parseFromString(text, 'text/html');
-  const error = document.querySelector('parsererror');
-  if (error) {
-    throw new Error(error.textContent);
-  }
-  return document;
-}
+const null_console = {
+  log: noop,
+  warn: noop,
+  debug: noop
+};

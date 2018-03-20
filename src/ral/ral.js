@@ -1,5 +1,5 @@
 import {Exim} from '/src/exim/exim.js';
-import * as favicon_service from '/src/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
 import unsubscribe from '/src/feed-ops/unsubscribe.js';
 import {PollService} from '/src/poll-service/poll-service.js';
@@ -35,7 +35,12 @@ export async function import_opml(channel, files) {
   exim.fetch_timeout = 10 * 1000;
   exim.channel = channel;
   exim.console = console;
-  const open_promises = [rdb.open(), favicon_service.open()];
+
+
+  const fs = new FaviconService();
+
+
+  const open_promises = [rdb.open(), fs.open()];
   [exim.rconn, exim.iconn] = await Promise.all(open_promises);
   await exim.import_opml(files);
   exim.rconn.close();
@@ -73,7 +78,10 @@ export async function ral_subscribe(channel, url) {
   const op = new SubscribeOperation();
   op.channel = channel;
   op.notify_flag = true;
-  const conn_promises = Promise.all([rdb.open(), favicon_service.open()]);
+
+  const fs = new FaviconService();
+
+  const conn_promises = Promise.all([rdb.open(), fs.open()]);
   [op.rconn, op.iconn] = await conn_promises;
   const result = await op.subscribe(url);
   op.rconn.close();
