@@ -1,4 +1,4 @@
-import {idb_open} from '/src/idb/idb.js';
+import * as idb from '/src/idb/idb.js';
 import * as mime from '/src/mime/mime.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
@@ -320,7 +320,7 @@ export function open(name, version, timeout) {
     timeout = OPEN_TIMEOUT;
   }
 
-  return idb_open(name, version, db_onupgradeneeded, timeout);
+  return idb.idb_open(name, version, db_onupgradeneeded, timeout);
 }
 
 function db_onupgradeneeded(event) {
