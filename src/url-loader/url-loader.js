@@ -1,5 +1,5 @@
-import * as policy from '/src/url-loader/policy.js';
 import * as mime from '/src/mime/mime.js';
+import * as policy from '/src/url-loader/policy.js';
 
 // Fictional codes for responses with errors. Codes must be in the range
 // [200..599] or Chrome whines about throws a RangeError
@@ -13,6 +13,8 @@ export const STATUS_OFFLINE = 596;
 export const STATUS_OFFLINE_TEXT = 'Offline';
 export const STATUS_TIMEOUT = 595;
 export const STATUS_TIMEOUT_TEXT = 'Request timed out';
+export const STATUS_NETWORK_ERROR = 594;
+export const STATUS_NETWORK_ERROR_TEXT = 'Unknown network error';
 
 function lookup_status_text(status) {
   switch (status) {
@@ -100,8 +102,21 @@ export async function tfetch(url, options) {
   }
 
   const fetch_promise = fetch(url.href, merged_options);
-  const response = await (
-      untimed ? fetch_promise : Promise.race([fetch_promise, sleep(timeout)]));
+
+  // await turns rejection into exception. fetch rejects with an obtuse error
+  // message when trying to fetch a bad url. tfetch should only throw in the
+  // case of a programming error, so trap the error and return an symbolic
+  // error response.
+
+  let response;
+  try {
+    response = await (
+        untimed ? fetch_promise :
+                  Promise.race([fetch_promise, sleep(timeout)]));
+  } catch (error) {
+    return create_error_response(STATUS_NETWORK_ERROR);
+  }
+
   if (!response) {
     return create_error_response(STATUS_TIMEOUT);
   }
