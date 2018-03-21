@@ -52,12 +52,15 @@ export function fetch_feed(url, timeout) {
   return tfetch(url, {timeout: timeout, types: feed_mime_types});
 }
 
-export function fetch_image(url, timeout) {
+export function fetch_image(url, options) {
   const image_mime_types = [
     'application/octet-stream', 'image/x-icon', 'image/jpeg', 'image/gif',
     'image/png', 'image/svg+xml', 'image/tiff', 'image/webp'
   ];
-  return tfetch(url, {timeout, timeout, types: image_mime_types});
+
+  // Pretend that options is immutable, so clone
+  const clone = Object.assign({types: image_mime_types}, options);
+  return tfetch(url, clone);
 }
 
 export async function tfetch(url, options) {
@@ -133,6 +136,11 @@ export async function tfetch(url, options) {
     const mime_type =
         mime.parse_content_type(response.headers.get('Content-Type'));
     if (!types.includes(mime_type)) {
+      // TEMP: hacky logging to monitor the changes done in favicon module that
+      // now depends on this, in particular because of anxiety over
+      // non-exhaustive list of acceptable image mime types in fetch_image
+      console.debug('Unacceptable mime type', mime_type);
+
       return create_error_response(STATUS_UNACCEPTABLE);
     }
   }
