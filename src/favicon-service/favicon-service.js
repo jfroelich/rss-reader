@@ -70,8 +70,11 @@ FaviconService.prototype.lookup = async function(url, document) {
     }
   }
 
+  // on fetch failure, response.url may be undefined, so avoid passing undefined
+  // to the URL constructor
+
   let response_url;
-  if (response) {
+  if (response && response.url) {
     response_url = new URL(response.url);
     if (url_loader.url_did_change(url, response_url)) {
       if (response_url.origin !== url.origin) {
