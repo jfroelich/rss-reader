@@ -39,23 +39,23 @@ function create_error_response(status) {
   return new Response(body, init);
 }
 
-export async function fetch_html(url, timeout) {
+export function fetch_html(url, timeout) {
   const html_mime_types = ['text/html'];
-  return await tfetch(url, {timeout: timeout, types: html_mime_types});
+  return tfetch(url, {timeout: timeout, types: html_mime_types});
 }
 
-export async function fetch_feed(url, timeout) {
+export function fetch_feed(url, timeout) {
   const feed_mime_types = [
     'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
     'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
   ];
-  return await tfetch(url, {timeout: timeout, types: feed_mime_types});
+  return tfetch(url, {timeout: timeout, types: feed_mime_types});
 }
 
-export async function fetch_image(url, timeout) {
+export function fetch_image(url, timeout) {
   const image_mime_types =
       ['application/octet-stream', 'image/x-icon', 'image/jpg', 'image/gif'];
-  return await tfetch(url, {timeout, timeout, types: image_mime_types});
+  return tfetch(url, {timeout, timeout, types: image_mime_types});
 }
 
 export async function tfetch(url, options) {
