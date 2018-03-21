@@ -15,6 +15,8 @@ export const STATUS_TIMEOUT = 595;
 export const STATUS_TIMEOUT_TEXT = 'Request timed out';
 export const STATUS_NETWORK_ERROR = 594;
 export const STATUS_NETWORK_ERROR_TEXT = 'Unknown network error';
+export const STATUS_RANGE_ERROR = 593;
+export const STATUS_RANGE_ERROR_TEXT = 'Range error';
 
 function lookup_status_text(status) {
   switch (status) {
@@ -28,12 +30,14 @@ function lookup_status_text(status) {
       return STATUS_OFFLINE_TEXT;
     case STATUS_TIMEOUT:
       return STATUS_TIMEOUT_TEXT;
+    case STATUS_RANGE_ERROR:
+      return STATUS_RANGE_ERROR_TEXT;
     default:
       return undefined;
   }
 }
 
-function create_error_response(status) {
+export function create_error_response(status) {
   let body = null;
   const init = {status: status, statusText: lookup_status_text(status)};
   return new Response(body, init);

@@ -358,25 +358,13 @@ FaviconService.prototype.in_range = function(response) {
       (length >= this.min_image_size && length <= this.max_image_size);
 };
 
-// TODO: really need to define status code somewhere else, or look into whether
-// a similar status already exists
 FaviconService.prototype.head_image = async function(url) {
   const options = {method: 'head', timeout: this.fetch_image_timeout};
   const response = await url_loader.fetch_image(url, options);
-
-  const STATUS_RANGE_ERROR = 590;
-  const STATUS_RANGE_ERROR_TEXT = 'Icon out of range';
-
   if (response.ok && !this.in_range(response)) {
     this.console.debug('image size not in range', url.href, size);
-    let body = null;
-    let init = {
-      status: STATUS_RANGE_ERROR,
-      statusText: STATUS_RANGE_ERROR_TEXT
-    };
-    return new Response(body, init);
+    return url_loader.create_error_response(url_loader.STATUS_RANGE_ERROR);
   }
-
   return response;
 };
 
