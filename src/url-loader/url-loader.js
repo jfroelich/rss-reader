@@ -53,8 +53,10 @@ export function fetch_feed(url, timeout) {
 }
 
 export function fetch_image(url, timeout) {
-  const image_mime_types =
-      ['application/octet-stream', 'image/x-icon', 'image/jpg', 'image/gif'];
+  const image_mime_types = [
+    'application/octet-stream', 'image/x-icon', 'image/jpeg', 'image/gif',
+    'image/png', 'image/svg+xml', 'image/tiff', 'image/webp'
+  ];
   return tfetch(url, {timeout, timeout, types: image_mime_types});
 }
 
