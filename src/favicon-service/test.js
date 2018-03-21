@@ -16,8 +16,11 @@ window.test_lookup = async function(url_string, cached) {
 
   const icon_url_string = await fs.lookup(url);
   if (cached) {
+    console.debug('Requesting closure of database', conn.name);
     conn.close();
+    console.debug('Deleting database', conn.name);
     await idb.idb_remove(conn.name);
+    console.debug('Deleted database', conn.name);
   }
 
   return icon_url_string;
