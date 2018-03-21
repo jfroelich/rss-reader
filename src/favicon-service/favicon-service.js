@@ -35,6 +35,7 @@ FaviconService.prototype.lookup = async function(url, document) {
   if (this.conn) {
     const entry = await this.find_entry(url);
     if (entry && entry.iconURLString && !this.is_expired(entry)) {
+      this.console.debug('Found non-expired input url in cache', entry);
       return entry.iconURLString;
     }
     if (origin_url.href === url.href && entry &&
