@@ -351,6 +351,13 @@ FaviconService.prototype.put_all = function(url_strings, icon_url_string) {
   });
 };
 
+FaviconService.prototype.in_range = function(response) {
+  const length_string = response.headers.get('Content-Length');
+  const length = parseInt(length_string, 10);
+  return isNaN(length) ||
+      (length >= this.min_image_size && length <= this.max_image_size);
+};
+
 FaviconService.prototype.head_image = async function(url) {
   const options = {method: 'head', timeout: this.fetch_image_timeout};
   const response = await url_loader.fetch_image(url, options);
@@ -360,10 +367,7 @@ FaviconService.prototype.head_image = async function(url) {
     return;
   }
 
-  const content_len = response.headers.get('Content-Length');
-  const size = parseInt(content_len, 10);
-  if (!isNaN(size) &&
-      (size < this.min_image_size || size > this.max_image_size)) {
+  if (!this.in_range(response)) {
     this.console.debug('image size not in range', url.href, size);
     return;
   }
