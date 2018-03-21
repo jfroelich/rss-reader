@@ -34,6 +34,9 @@ Provides a way to get the favicon image url for a page url
 // * document {Document} optional, pre-fetched document that should be specified
 // if the page was previously fetched
 
+### head_image todo
+rather than return undefined in the event of an error, this should guarantee a defined response is returned in the non-exception case, similar to the internals of url-loader API calls. The caller should be checking response.ok and not if response defined. Furthermore, the !response.ok check here should be removed, and the range check should be modified to be within if(response.ok) block
+
 # Test todos:
 
 * actually run tests instead of command line

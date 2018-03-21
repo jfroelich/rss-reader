@@ -351,12 +351,6 @@ FaviconService.prototype.put_all = function(url_strings, icon_url_string) {
   });
 };
 
-// TODO: rather than return undefined in the event of an error, this should
-// guarantee a defiend response is returned in the non-exception case, similar
-// to the internals of url-loader API calls. The caller should be checking
-// response.ok and not if response defined. Furthermore, the !response.ok check
-// here should be removed, and the range check should be modified to be within
-// if(response.ok) block
 FaviconService.prototype.head_image = async function(url) {
   const options = {method: 'head', timeout: this.fetch_image_timeout};
   const response = await url_loader.fetch_image(url, options);
@@ -366,28 +360,6 @@ FaviconService.prototype.head_image = async function(url) {
     return;
   }
 
-  // Type validation now done by fetch_image
-  /*
-    const content_type = response.headers.get('Content-Type');
-    if (!content_type) {
-      this.console.debug('unknown content type', url.href);
-      return;
-    }
-
-    const mime_type = mime.parse_content_type(content_type);
-    if (!mime_type) {
-      this.console.debug('malformed content type', url.href, content_type);
-      return;
-    }
-
-    if (!mime_type.startsWith('image/') &&
-        mime_type !== 'application/octet-stream') {
-      this.console.debug('unacceptable mime type', url.href, mime_type);
-      return;
-    }
-  */
-
-  // Assert the response is in range
   const content_len = response.headers.get('Content-Length');
   const size = parseInt(content_len, 10);
   if (!isNaN(size) &&
