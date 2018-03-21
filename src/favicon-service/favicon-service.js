@@ -3,7 +3,7 @@ import * as idb from '/src/idb/idb.js';
 import * as mime from '/src/mime/mime.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
-function FaviconService() {
+export function FaviconService() {
   this.name = 'favicon-cache';
   this.version = 3;
   this.open_timeout = 500;
