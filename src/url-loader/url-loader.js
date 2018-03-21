@@ -52,6 +52,12 @@ export async function fetch_feed(url, timeout) {
   return await tfetch(url, {timeout: timeout, types: feed_mime_types});
 }
 
+export async function fetch_image(url, timeout) {
+  const image_mime_types =
+      ['application/octet-stream', 'image/x-icon', 'image/jpg', 'image/gif'];
+  return await tfetch(url, {timeout, timeout, types: image_mime_types});
+}
+
 export async function tfetch(url, options) {
   if ((!url instanceof URL)) {
     throw new TypeError('url is not a URL');
