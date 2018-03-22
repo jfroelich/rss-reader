@@ -1,9 +1,7 @@
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as idb from '/src/idb/idb.js';
 
-window.test_lookup = async function(url_string, cached) {
-  const url = new URL(url_string);
-
+async function test_lookup(url_string, cached) {
   const fs = new FaviconService();
   fs.console = console;
   fs.name = 'test-favicon-cache';
@@ -15,8 +13,11 @@ window.test_lookup = async function(url_string, cached) {
     fs.conn = conn;
   }
 
+  const url = new URL(url_string);
   const icon_url_string = await fs.lookup(url);
+
   if (cached) {
+    // Loosely check if cache hit occurred
     if (icon_url_string) {
       const lookup2 = await fs.lookup(url);
       console.debug('Second lookup result', lookup2);
@@ -30,6 +31,7 @@ window.test_lookup = async function(url_string, cached) {
   }
 
   return icon_url_string;
-};
+}
 
+window.test_lookup = test_lookup;
 window.FaviconService = FaviconService;
