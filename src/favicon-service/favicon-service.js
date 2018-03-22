@@ -19,7 +19,7 @@ export function FaviconService() {
 }
 
 FaviconService.prototype.lookup = async function(url, document) {
-  if (!url.hasOwnProperty('href')) {
+  if (!url['href']) {
     throw new TypeError('url is not url-like, missing href accessor');
   }
 
