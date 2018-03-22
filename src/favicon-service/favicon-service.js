@@ -19,8 +19,8 @@ export function FaviconService() {
 }
 
 FaviconService.prototype.lookup = async function(url, document) {
-  if (!(url instanceof URL)) {
-    throw new TypeError('url is not a URL');
+  if (!url.hasOwnProperty('href')) {
+    throw new TypeError('url is not url-like, missing href accessor');
   }
 
   this.console.log('Lookup', url.href);
@@ -307,11 +307,6 @@ FaviconService.prototype.compact = function() {
 
 FaviconService.prototype.find_entry = function(url) {
   return new Promise((resolve, reject) => {
-    if (!(url instanceof URL)) {
-      reject(new TypeError('url is not a URL'));
-      return;
-    }
-
     const txn = this.conn.transaction('favicon-cache');
     const store = txn.objectStore('favicon-cache');
     const request = store.get(url.href);
@@ -373,7 +368,6 @@ FaviconService.prototype.head_image = async function(url) {
 };
 
 FaviconService.prototype.try_resolve = function(url_string, base_url) {
-  assert(base_url instanceof URL);
   if (typeof url_string === 'string' && url_string.trim()) {
     try {
       return new URL(url_string, base_url);
