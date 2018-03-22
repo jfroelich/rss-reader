@@ -53,6 +53,8 @@ FaviconService.prototype.lookup = async function(url, document) {
       }
       return icon_url_string;
     }
+
+    document = null;  // Dereference for later reuse without ambiguity
   }
 
   if (this.conn && origin_url.href !== url.href) {
@@ -71,11 +73,9 @@ FaviconService.prototype.lookup = async function(url, document) {
     }
   }
 
-  // on fetch failure, response.url may be undefined, so avoid passing undefined
-  // to the URL constructor
-
+  // Check redirect url
   let response_url;
-  if (response && response.url) {
+  if (response && response.ok && response.url) {
     response_url = new URL(response.url);
     if (url_loader.url_did_change(url, response_url)) {
       if (response_url.origin !== url.origin) {
@@ -93,8 +93,8 @@ FaviconService.prototype.lookup = async function(url, document) {
     }
   }
 
-  document = null;
-  if (response) {
+
+  if (response && response.ok) {
     const text = await response.text();
     try {
       document = html_parser.parse(text);
@@ -103,6 +103,7 @@ FaviconService.prototype.lookup = async function(url, document) {
     }
   }
 
+  // Search fetched document
   if (document) {
     const base_url = response_url ? response_url : url;
     const icon_url_string = await this.search_document(document, base_url);
@@ -114,6 +115,7 @@ FaviconService.prototype.lookup = async function(url, document) {
     }
   }
 
+  // Check origin cache
   if (this.conn && !urls.includes(origin_url.href)) {
     origin_entry = await this.find_entry(origin_url);
     if (origin_entry) {
@@ -127,15 +129,16 @@ FaviconService.prototype.lookup = async function(url, document) {
     }
   }
 
-  if (!urls.includes(origin_url.href)) {
-    urls.push(origin_url.href);
-  }
-
+  // Check for favicon.ico
   const base_url = response_url ? response_url : url;
   const image_url = new URL(base_url.origin + '/favicon.ico');
   response = await this.head_image(image_url);
 
   if (response.ok) {
+    if (!urls.includes(origin_url.href)) {
+      urls.push(origin_url.href);
+    }
+
     const response_url = new URL(response.url);
     if (this.conn) {
       await this.put_all(urls, response_url.href);
