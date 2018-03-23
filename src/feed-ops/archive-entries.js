@@ -1,6 +1,11 @@
 import * as rdb from '/src/rdb/rdb.js';
 
-export default async function archive_entries(conn, channel, entry_age_max) {
+// TODO:
+// * move sizeof back to its own module
+// * revert to object
+// * remove auto connect
+
+export async function archive_entries(conn, channel, entry_age_max) {
   console.log('Archiving entries...');
 
   if (typeof entry_age_max === 'undefined') {

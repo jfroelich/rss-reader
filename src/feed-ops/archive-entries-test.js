@@ -1,4 +1,4 @@
-import archive_entries from '/src/feed-ops/archive-entries.js';
+import {archive_entries} from '/src/feed-ops/archive-entries.js';
 import {open} from '/src/rdb/rdb.js';
 
 async function test() {
