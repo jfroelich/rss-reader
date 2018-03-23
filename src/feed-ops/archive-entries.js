@@ -24,47 +24,47 @@ Archiver.prototype.archive = function() {
   return new Promise((resolve, reject) => {
     this.console.log('Archiving entries...');
     const entry_ids = [];
-    const current_date = new Date();
-
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.onerror = _ => reject(txn.error);
-    txn.oncomplete = _ => {
-      if (this.channel) {
-        for (const id of entry_ids) {
-          this.channel.postMessage({type: 'entry-archived', id: id});
-        }
-      }
-
-      this.console.debug('Archived %d entries', entry_ids.length);
-
-      resolve(entry_ids);
-    };
-
+    txn.oncomplete = this.txn_oncomplete.bind(this, entry_ids, resolve);
     const store = txn.objectStore('entry');
     const index = store.index('archiveState-readState');
     const key_path = [rdb.ENTRY_STATE_UNARCHIVED, rdb.ENTRY_STATE_READ];
     const request = index.openCursor(key_path);
-    request.onsuccess = _ => {
-      const cursor = request.result;
-      if (!cursor) {
-        return;
-      }
-
-      const entry = cursor.value;
-      if (entry.dateCreated) {
-        const age = current_date - entry.dateCreated;
-        if (age > this.max_age) {
-          const archived_entry = this.archive_entry(entry);
-          store.put(archived_entry);
-          entry_ids.push(archived_entry.id);
-        }
-      }
-
-      cursor.continue();
-    };
+    request.onsuccess = this.handle_cursor.bind(this, entry_ids);
   });
 };
 
+Archiver.prototype.txn_oncomplete = function(entry_ids, callback) {
+  if (this.channel) {
+    for (const id of entry_ids) {
+      this.channel.postMessage({type: 'entry-archived', id: id});
+    }
+  }
+
+  this.console.debug('Archived %d entries', entry_ids.length);
+  callback(entry_ids);
+};
+
+Archiver.prototype.handle_cursor = function(entry_ids, event) {
+  const cursor = event.target.result;
+  if (!cursor) {
+    return;
+  }
+
+  const entry = cursor.value;
+  if (entry.dateCreated) {
+    const current_date = new Date();
+    const age = current_date - entry.dateCreated;
+    if (age > this.max_age) {
+      const ae = this.archive_entry(entry);
+      cursor.update(ae);
+      entry_ids.push(ae.id);
+    }
+  }
+
+  cursor.continue();
+};
 
 Archiver.prototype.archive_entry = function(entry) {
   const before_sz = sizeof(entry);
