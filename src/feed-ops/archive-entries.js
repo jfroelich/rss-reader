@@ -1,50 +1,50 @@
 import * as rdb from '/src/rdb/rdb.js';
 import {sizeof} from '/src/sizeof/sizeof.js';
 
-// TODO:
-// * revert to object
-// * remove auto connect
+const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
-export async function archive_entries(conn, channel, entry_age_max) {
-  console.log('Archiving entries...');
-
-  if (typeof entry_age_max === 'undefined') {
-    const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
-    entry_age_max = TWO_DAYS_MS;
-  }
-
-  if (typeof entry_age_max !== 'undefined') {
-    if (!Number.isInteger(entry_age_max) || entry_age_max < 1) {
-      throw new TypeError('Invalid entry_age_max argument ' + entry_age_max);
-    }
-  }
-
-  const dconn = conn ? conn : await rdb.open();
-  const entry_ids = await archive_entries_promise(dconn, entry_age_max);
-  if (!conn) {
-    dconn.close();
-  }
-
-  if (channel) {
-    for (const id of entry_ids) {
-      channel.postMessage({type: 'entry-archived', id: id});
-    }
-  }
-
-  console.debug('Archived %d entries', entry_ids.length);
+export function Archiver() {
+  this.conn = null;
+  this.channel = null;
+  this.max_age = TWO_DAYS_MS;
+  this.console = null_console;
 }
 
-function archive_entries_promise(conn, entry_age_max) {
+Archiver.prototype.open = async function() {
+  this.conn = await rdb.open();
+};
+
+Archiver.prototype.close = function() {
+  if (this.conn) {
+    this.conn.close();
+  }
+};
+
+Archiver.prototype.archive = function() {
   return new Promise((resolve, reject) => {
+    this.console.log('Archiving entries...');
     const entry_ids = [];
-    const tx = conn.transaction('entry', 'readwrite');
-    tx.onerror = () => reject(tx.error);
-    tx.oncomplete = () => resolve(entry_ids);
-    const store = tx.objectStore('entry');
+    const current_date = new Date();
+
+    const txn = this.conn.transaction('entry', 'readwrite');
+    txn.onerror = _ => reject(txn.error);
+    txn.oncomplete = _ => {
+      if (this.channel) {
+        for (const id of entry_ids) {
+          this.channel.postMessage({type: 'entry-archived', id: id});
+        }
+      }
+
+      this.console.debug('Archived %d entries', entry_ids.length);
+
+      resolve(entry_ids);
+    };
+
+    const store = txn.objectStore('entry');
     const index = store.index('archiveState-readState');
     const key_path = [rdb.ENTRY_STATE_UNARCHIVED, rdb.ENTRY_STATE_READ];
     const request = index.openCursor(key_path);
-    request.onsuccess = () => {
+    request.onsuccess = _ => {
       const cursor = request.result;
       if (!cursor) {
         return;
@@ -52,10 +52,9 @@ function archive_entries_promise(conn, entry_age_max) {
 
       const entry = cursor.value;
       if (entry.dateCreated) {
-        const current_date = new Date();
         const age = current_date - entry.dateCreated;
-        if (age > entry_age_max) {
-          const archived_entry = entry_archive(entry);
+        if (age > this.max_age) {
+          const archived_entry = this.archive_entry(entry);
           store.put(archived_entry);
           entry_ids.push(archived_entry.id);
         }
@@ -64,33 +63,39 @@ function archive_entries_promise(conn, entry_age_max) {
       cursor.continue();
     };
   });
-}
+};
 
-function entry_archive(entry) {
+
+Archiver.prototype.archive_entry = function(entry) {
   const before_sz = sizeof(entry);
-  const compacted_entry = entry_compact(entry);
-  const after_sz = sizeof(compacted_entry);
-  console.debug(
-      'Changing entry %d size from ~%d to ~%d', entry.id, before_sz, after_sz);
+  const ce = this.compact_entry(entry);
+  const after_sz = sizeof(ce);
+  this.console.debug('Reduced entry size by ~%d bytes', after_sz - before_sz);
+  ce.archiveState = rdb.ENTRY_STATE_ARCHIVED;
+  ce.dateArchived = new Date();
+  ce.dateUpdated = new Date();
+  return ce;
+};
 
-  compacted_entry.archiveState = rdb.ENTRY_STATE_ARCHIVED;
-  compacted_entry.dateArchived = new Date();
-  compacted_entry.dateUpdated = new Date();
-  return compacted_entry;
-}
-
-// Create a new entry and copy over certain fields
-function entry_compact(entry) {
-  const compacted_entry = rdb.entry_create();
-  compacted_entry.dateCreated = entry.dateCreated;
+Archiver.prototype.compact_entry = function(entry) {
+  const ce = rdb.entry_create();
+  ce.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {
-    compacted_entry.dateRead = entry.dateRead;
+    ce.dateRead = entry.dateRead;
   }
 
-  compacted_entry.feed = entry.feed;
-  compacted_entry.id = entry.id;
-  compacted_entry.readState = entry.readState;
-  compacted_entry.urls = entry.urls;
-  return compacted_entry;
-}
+  ce.feed = entry.feed;
+  ce.id = entry.id;
+  ce.readState = entry.readState;
+  ce.urls = entry.urls;
+  return ce;
+};
+
+function noop() {}
+
+const null_console = {
+  log: noop,
+  warn: noop,
+  debug: noop
+};

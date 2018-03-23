@@ -1,7 +1,7 @@
 import '/src/cli/cli.js';
 import * as badge from '/src/badge.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
-import {archive_entries} from '/src/feed-ops/archive-entries.js';
+import {Archiver} from '/src/feed-ops/archive-entries.js';
 import rdb_refresh_feed_icons from '/src/feed-ops/refresh-feed-icons.js';
 import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
 import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
@@ -17,9 +17,11 @@ async function handle_compact_favicons_alarm(alarm) {
   conn.close();
 }
 
-function handle_archive_alarm_wakeup(alarm) {
-  let conn, channel, max_age;
-  return archive_entries(conn, channel, max_age).catch(console.error);
+async function handle_archive_alarm_wakeup(alarm) {
+  const arch = new Archiver();
+  await arch.open();
+  await arch.archive();
+  arch.close();
 }
 
 async function handle_lost_entries_alarm(alarm) {

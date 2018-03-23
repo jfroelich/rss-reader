@@ -1,16 +1,19 @@
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
-import {archive_entries} from '/src/feed-ops/archive-entries.js';
+import {Archiver} from '/src/feed-ops/archive-entries.js';
 import rdb_refresh_feed_icons from '/src/feed-ops/refresh-feed-icons.js';
 import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
 import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 import * as rdb from '/src/rdb/rdb.js';
 
-async function cli_archive_entries() {
-  let conn, max_age;
-  const channel = new BroadcastChannel('reader');
-  await archive_entries(conn, channel, max_age);
-  channel.close();
+async function cli_archive() {
+  const arch = new Archiver();
+  arch.console = console;
+  arch.channel = new BroadcastChannel('reader');
+  await arch.open();
+  await arch.archive();
+  arch.close();
+  arch.channel.close();
 }
 
 async function refresh_icons() {
@@ -83,7 +86,7 @@ async function fs_compact() {
 }
 
 const cli = {
-  archive_entries: cli_archive_entries,
+  archive: cli_archive,
   clear_favicons: fs_clear,
   compact_favicons: fs_compact,
   remove_orphans: remove_orphans,
