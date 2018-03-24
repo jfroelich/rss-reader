@@ -1,6 +1,6 @@
+import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
 import * as object from '/src/object/object.js';
 import * as rdb from '/src/rdb/rdb.js';
-
 
 export async function create_entry(conn, channel, entry) {
   assert(rdb.is_entry(entry));
@@ -23,8 +23,8 @@ export async function create_entry(conn, channel, entry) {
   // That required all callers to set dateUpdated and increased inconvenience,
   // but it was overall good. Should I apply the same idea here?
 
-  storable_entry.readState = rdb.ENTRY_STATE_UNREAD;
-  storable_entry.archiveState = rdb.ENTRY_STATE_UNARCHIVED;
+  storable_entry.readState = ENTRY_STATE_UNREAD;
+  storable_entry.archiveState = ENTRY_STATE_UNARCHIVED;
   storable_entry.dateCreated = new Date();
 
   // entry_put stores the value as is, and will not automatically add a

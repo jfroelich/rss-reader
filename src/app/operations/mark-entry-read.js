@@ -1,3 +1,4 @@
+import {ENTRY_STATE_READ, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
 import * as badge from '/src/badge.js';
 import * as rdb from '/src/rdb/rdb.js';
 
@@ -42,17 +43,17 @@ function request_onsuccess(store, event) {
   }
 
 
-  if (entry.readState === rdb.ENTRY_STATE_READ) {
+  if (entry.readState === ENTRY_STATE_READ) {
     console.warn('Entry %d already in read state, ignoring', entry.id);
     return;
   }
 
-  if (entry.readState !== rdb.ENTRY_STATE_UNREAD) {
+  if (entry.readState !== ENTRY_STATE_UNREAD) {
     console.warn('Entry %d not in unread state, ignoring', entry.id);
     return;
   }
 
-  entry.readState = rdb.ENTRY_STATE_READ;
+  entry.readState = ENTRY_STATE_READ;
   const currentDate = new Date();
   entry.dateUpdated = currentDate;
   entry.dateRead = currentDate;

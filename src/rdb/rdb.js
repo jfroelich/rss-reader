@@ -1,3 +1,4 @@
+import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {html_replace_tags} from '/src/html/html.js';
 import {idb_open} from '/src/idb/idb.js';
@@ -6,11 +7,6 @@ import * as string from '/src/string/string.js';
 
 const FEED_MAGIC = 0xfeedfeed;
 const ENTRY_MAGIC = 0xdeadbeef;
-
-export const ENTRY_STATE_UNREAD = 0;
-export const ENTRY_STATE_READ = 1;
-export const ENTRY_STATE_UNARCHIVED = 0;
-export const ENTRY_STATE_ARCHIVED = 1;
 
 // Open a connection to the reader database. All parameters are optional
 export function open(name = 'reader', version = 24, timeout = 500) {

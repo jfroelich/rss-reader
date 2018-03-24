@@ -1,5 +1,6 @@
 import * as rdb from '/src/rdb/rdb.js';
 import {sizeof} from '/src/sizeof/sizeof.js';
+import {ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_ARCHIVED} from '/src/app/objects/entry.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -29,7 +30,7 @@ Archiver.prototype.archive = function() {
     txn.oncomplete = this.txn_oncomplete.bind(this, entry_ids, resolve);
     const store = txn.objectStore('entry');
     const index = store.index('archiveState-readState');
-    const key_path = [rdb.ENTRY_STATE_UNARCHIVED, rdb.ENTRY_STATE_READ];
+    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
     const request = index.openCursor(key_path);
     request.onsuccess = this.handle_cursor.bind(this, entry_ids);
   });
@@ -71,7 +72,7 @@ Archiver.prototype.archive_entry = function(entry) {
   const ce = this.compact_entry(entry);
   const after_sz = sizeof(ce);
   this.console.debug('Reduced entry size by ~%d bytes', after_sz - before_sz);
-  ce.archiveState = rdb.ENTRY_STATE_ARCHIVED;
+  ce.archiveState = ENTRY_STATE_ARCHIVED;
   ce.dateArchived = new Date();
   ce.dateUpdated = new Date();
   return ce;
