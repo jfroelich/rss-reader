@@ -1,4 +1,4 @@
-import {entry_is_valid, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
+import {entry_is_valid, entry_sanitize, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
 import {update_entry} from '/src/app/operations/update-entry.js';
 import * as object from '/src/object/object.js';
 import * as rdb from '/src/rdb/rdb.js';
@@ -14,7 +14,7 @@ export async function create_entry(conn, channel, entry) {
   // I think what should happen here is that I pass a no-revalidate flag along
   // to avoid revalidation because it could end up being a heavier operation
 
-  const sanitized_entry = rdb.entry_sanitize(entry);
+  const sanitized_entry = entry_sanitize(entry);
   const storable_entry = object.filter_empty_properties(sanitized_entry);
 
   // TODO: is it correct to have this be concerned with state initialization,

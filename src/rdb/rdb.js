@@ -1,8 +1,5 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
-import {html_truncate} from '/src/html-truncate/html-truncate.js';
-import {html_replace_tags} from '/src/html/html.js';
 import {idb_open} from '/src/idb/idb.js';
-import * as object from '/src/object/object.js';
 import * as string from '/src/string/string.js';
 
 const FEED_MAGIC = 0xfeedfeed;
@@ -262,60 +259,6 @@ export function get_feeds(conn) {
 }
 
 
-
-// Returns a new entry object where fields have been sanitized. Impure. Note
-// that this assumes the entry is valid. As in, passing the entry to
-// entry_is_valid before calling this function would return true. This does
-// not revalidate. Sanitization is not validation. Here, sanitization acts more
-// like a normalizing procedure, where certain properties are modified into a
-// more preferable canonical form. A property can be perfectly valid, but
-// nevertheless have some undesirable traits. For example, a string is required,
-// but validation places no maximum length constraint on it, just requiredness,
-// but sanitization also places a max length constraint on it and does the
-// necessary changes to bring the entry into compliance via truncation.
-// TODO: now that string.filter_unprintable_characters exists, I want to also
-// filter such characters from input strings like author/title/etc. However it
-// overlaps with the call to string.filter_control_characters here. There is
-// some redundant work going on. Also, in a sense,
-// string.filter_control_characters is now inaccurate. What I want is one
-// function that strips binary characters except important ones, and then a
-// second function that replaces or removes certain important binary characters
-// (e.g. remove line breaks from author string). Something like
-// 'string_replace_formatting_characters'.
-export function entry_sanitize(
-    input_entry, author_max_length = 200, title_max_length = 1000,
-    content_max_length = 50000) {
-  // Create a shallow clone of the entry. This is partly the source of impurity.
-  const blank_entry = entry_create();
-  const output_entry = Object.assign(blank_entry, input_entry);
-
-  if (output_entry.author) {
-    let author = output_entry.author;
-    author = string.filter_control_characters(author);
-    author = html_replace_tags(author, '');
-    author = string.condense_whitespace(author);
-    author = html_truncate(author, author_max_length);
-    output_entry.author = author;
-  }
-
-  if (output_entry.content) {
-    let content = output_entry.content;
-    content = string.filter_unprintable_characters(content);
-    content = html_truncate(content, content_max_length);
-    output_entry.content = content;
-  }
-
-  if (output_entry.title) {
-    let title = output_entry.title;
-    title = string.filter_control_characters(title);
-    title = html_replace_tags(title, '');
-    title = string.condense_whitespace(title);
-    title = html_truncate(title, title_max_length);
-    output_entry.title = title;
-  }
-
-  return output_entry;
-}
 
 function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
