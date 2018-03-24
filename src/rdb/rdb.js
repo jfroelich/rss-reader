@@ -1,6 +1,5 @@
-import {entry_is_valid_id, ENTRY_MAGIC, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
-import {feed_is_valid_id, FEED_MAGIC} from '/src/app/objects/feed.js';
-import {get_feeds} from '/src/app/operations/get-feeds.js';
+import {ENTRY_MAGIC} from '/src/app/objects/entry.js';
+import {FEED_MAGIC} from '/src/app/objects/feed.js';
 import {idb_open} from '/src/idb/idb.js';
 
 // Open a connection to the reader database. All parameters are optional
@@ -108,12 +107,6 @@ function add_active_field_to_feeds(store) {
   };
 }
 
-// Returns an array of active feeds
-export async function find_active_feeds(conn) {
-  assert(conn instanceof IDBDatabase);
-  const feeds = await get_feeds(conn);
-  return feeds.filter(feed => feed.active);
-}
 
 function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');

@@ -1,4 +1,5 @@
 import {feed_create_favicon_lookup_url, feed_has_url} from '/src/app/objects/feed.js';
+import {find_active_feeds} from '/src/app/operations/find-active-feeds.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as rdb from '/src/rdb/rdb.js';
@@ -6,7 +7,7 @@ import * as rdb from '/src/rdb/rdb.js';
 export default async function rdb_refresh_feed_icons(
     feed_conn, icon_conn, channel) {
   const dconn = feed_conn ? feed_conn : await open_reader_db();
-  const feeds = await rdb.find_active_feeds(dconn);
+  const feeds = await find_active_feeds(dconn);
   const partial =
       feed_store_feed_refresh_icons.bind(null, dconn, icon_conn, channel);
   const promises = feeds.map(partial);

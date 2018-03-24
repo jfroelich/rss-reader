@@ -2,6 +2,7 @@ import {entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/ap
 import {feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/app/objects/feed.js';
 import {contains_entry_with_url} from '/src/app/operations/contains-entry-with-url.js';
 import {create_entry} from '/src/app/operations/create-entry.js';
+import {find_active_feeds} from '/src/app/operations/find-active-feeds.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import * as badge from '/src/badge.js';
 import * as color from '/src/color/color.js';
@@ -102,7 +103,7 @@ PollService.prototype.poll_feeds = async function() {
     assert(this.channel instanceof BroadcastChannel);
   }
 
-  const feeds = await rdb.find_active_feeds(this.rconn);
+  const feeds = await find_active_feeds(this.rconn);
   const proms = feeds.map(this.poll_feed, this);
   const results = await Promise.all(proms);
   const count = results.reduce((sum, value) => {
