@@ -205,47 +205,6 @@ export function find_viewable_entries(conn, offset, limit) {
   });
 }
 
-// Opens a cursor over the entry store for viewable entries starting from the
-// given offset, and iterates up to the given limit, sequentially passing each
-// deserialized entry to the per_entry_callback function. Returns a promise that
-// resolves once all appropriate entries have been iterated. The promise rejects
-// if an error occurs in indexedDB.
-// @param conn {IDBDatabase}
-// @param offset {Number}
-// @param limit {Number}
-// @param per_entry_callback {Function}
-export function viewable_entries_for_each(
-    conn, offset, limit, per_entry_callback) {
-  return new Promise((resolve, reject) => {
-    let counter = 0;
-    let advanced = false;
-    const limited = limit > 0;
-    const txn = conn.transaction('entry');
-    txn.oncomplete = resolve;
-    txn.onerror = () => reject(txn.error);
-    const store = txn.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
-    const request = index.openCursor(key_path);
-    request.onsuccess = function request_onsuccess(event) {
-      const cursor = event.target.result;
-      if (cursor) {
-        if (offset && !advanced) {
-          advanced = true;
-          cursor.advance(offset);
-        } else {
-          // Put the request on the stack prior to the callback
-          if (limited && ++counter < limit) {
-            cursor.continue();
-          }
-
-          per_entry_callback(cursor.value);
-        }
-      }
-    };
-  });
-}
-
 function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }

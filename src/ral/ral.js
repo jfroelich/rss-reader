@@ -1,6 +1,7 @@
 import {activate_feed as activate_feed_impl} from '/src/app/operations/activate-feed.js';
 import {deactivate_feed as deactivate_feed_impl} from '/src/app/operations/deactivate-feed.js';
 import {get_feeds as get_feeds_with_conn} from '/src/app/operations/get-feeds.js';
+import {viewable_entries_for_each} from '/src/app/operations/viewable-entries-for-each.js';
 import {Exim} from '/src/exim/exim.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
@@ -60,7 +61,7 @@ export async function export_opml(title) {
 export async function load_initial_data(
     entry_cursor_offset, entry_cursor_limit, entry_handler, feed_handler) {
   const conn = await rdb.open();
-  const p1 = rdb.viewable_entries_for_each(
+  const p1 = viewable_entries_for_each(
       conn, entry_cursor_offset, entry_cursor_limit, entry_handler);
   const p2 = rdb.for_each_active_feed(conn, feed_handler);
   await Promise.all([p1, p2]);
