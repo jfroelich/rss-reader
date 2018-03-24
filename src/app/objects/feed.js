@@ -27,10 +27,9 @@ export function feed_create_favicon_lookup_url(feed) {
 
   // If the feed's link is missing/invalid then use the origin of the feed's
   // xml url. Assume the feed always has a url.
-  const tail_url = new URL(rdb.feed_peek_url(feed));
+  const tail_url = new URL(feed_peek_url(feed));
   return new URL(tail_url.origin);
 }
-
 
 // Returns a shallow copy of the input feed with sanitized properties
 export function feed_sanitize(feed, title_max_length, description_max_length) {
@@ -96,7 +95,6 @@ export function feed_is_valid(feed) {
   return true;
 }
 
-
 // Returns a new object that results from merging the old feed with the new
 // feed. Fields from the new feed take precedence, except for urls, which are
 // merged to generate a distinct ordered set of oldest to newest url. Impure
@@ -139,4 +137,13 @@ export function feed_append_url(feed, url) {
   }
   feed.urls.push(href);
   return true;
+}
+
+
+// Returns the last url in the feed's url list as a string
+// @param feed {Object} a feed object
+// @returns {String} the last url in the feed's url list
+export function feed_peek_url(feed) {
+  assert(rdb.feed_has_url(feed));
+  return feed.urls[feed.urls.length - 1];
 }

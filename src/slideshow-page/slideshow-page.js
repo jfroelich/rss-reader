@@ -1,4 +1,5 @@
 import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
+import {feed_peek_url} from '/src/app/objects/feed.js';
 import {mark_entry_read} from '/src/app/operations/mark-entry-read.js';
 import {date_format} from '/src/date/date.js';
 import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
@@ -590,7 +591,7 @@ function feeds_container_append_feed(feed) {
   col.textContent = 'URL';
   row.appendChild(col);
   col = document.createElement('td');
-  col.textContent = rdb.feed_peek_url(feed);
+  col.textContent = feed_peek_url(feed);
   row.appendChild(col);
   feed_info_element.appendChild(row);
 

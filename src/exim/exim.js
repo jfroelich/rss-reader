@@ -1,3 +1,4 @@
+import {feed_peek_url} from '/src/app/objects/feed.js';
 import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
 import * as filelib from '/src/file/file.js';
 import * as opml_document from '/src/opml-document/opml-document.js';
@@ -31,7 +32,7 @@ Exim.prototype.append_feed = function(document, feed) {
   if (feed.type) {
     outline.setAttribute('type', feed.type);
   }
-  outline.setAttribute('xmlUrl', rdb.feed_peek_url(feed));
+  outline.setAttribute('xmlUrl', feed_peek_url(feed));
   if (feed.title) {
     outline.setAttribute('title', feed.title);
   }

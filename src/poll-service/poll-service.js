@@ -1,5 +1,5 @@
 import {entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
-import {feed_merge, feed_prepare} from '/src/app/objects/feed.js';
+import {feed_merge, feed_peek_url, feed_prepare} from '/src/app/objects/feed.js';
 import {create_entry} from '/src/app/operations/create-entry.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import * as badge from '/src/badge.js';
@@ -124,7 +124,7 @@ PollService.prototype.poll_feed = async function(feed) {
   assert(rdb.is_feed(feed));
   assert(rdb.feed_has_url(feed));
 
-  const tail_url = new URL(rdb.feed_peek_url(feed));
+  const tail_url = new URL(feed_peek_url(feed));
   this.console.log('Polling feed', feed.title, tail_url.href);
 
   if (!feed.active) {

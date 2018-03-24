@@ -292,11 +292,3 @@ export function feed_has_url(feed) {
   assert(is_feed(feed));
   return feed.urls && (feed.urls.length > 0);
 }
-
-// Returns the last url in the feed's url list as a string
-// @param feed {Object} a feed object
-// @returns {String} the last url in the feed's url list
-export function feed_peek_url(feed) {
-  assert(feed_has_url(feed));
-  return feed.urls[feed.urls.length - 1];
-}

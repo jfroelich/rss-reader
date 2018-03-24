@@ -1,3 +1,4 @@
+import {feed_peek_url} from '/src/app/objects/feed.js';
 import {element_fade} from '/src/dom/element-fade.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import * as perm from '/src/permissions/permissions.js';
@@ -250,7 +251,7 @@ async function feed_list_item_onclick(event) {
   }
 
   const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = rdb.feed_peek_url(feed);
+  feed_url_element.textContent = feed_peek_url(feed);
   const feed_link_element = document.getElementById('details-feed-link');
   feed_link_element.textContent = feed.link || '';
 
@@ -312,8 +313,7 @@ async function subscribe_form_onsubmit(event) {
   }
 
   feed_list_append_feed(feed);
-  subscription_monitor_append_message(
-      'Subscribed to ' + rdb.feed_peek_url(feed));
+  subscription_monitor_append_message('Subscribed to ' + feed_peek_url(feed));
   subscription_monitor_hide();
   section_show_by_id('subs-list-section');
   return false;

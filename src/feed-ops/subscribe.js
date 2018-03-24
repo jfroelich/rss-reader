@@ -1,4 +1,4 @@
-import {feed_create_favicon_lookup_url} from '/src/app/objects/feed.js';
+import {feed_create_favicon_lookup_url, feed_peek_url} from '/src/app/objects/feed.js';
 import {create_feed} from '/src/app/operations/create-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
@@ -104,7 +104,7 @@ SubscribeOperation.prototype.set_favicon = async function(feed) {
 
 SubscribeOperation.prototype.show_notification = function(feed) {
   const title = 'Subscribed!';
-  const feed_title = feed.title || rdb.feed_peek_url(feed);
+  const feed_title = feed.title || feed_peek_url(feed);
   const message = 'Subscribed to ' + feed_title;
   notifications.show(title, message, feed.faviconURLString);
 };
