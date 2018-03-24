@@ -1,3 +1,4 @@
+import {feed_create_favicon_lookup_url} from '/src/app/objects/feed.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as rdb from '/src/rdb/rdb.js';
@@ -20,7 +21,7 @@ async function feed_store_feed_refresh_icons(conn, icon_conn, channel, feed) {
     throw new TypeError('Feed missing url ' + feed.id);
   }
 
-  const lookup_url = rdb.feed_create_favicon_lookup_url(feed);
+  const lookup_url = feed_create_favicon_lookup_url(feed);
 
   const fs = new FaviconService();
   fs.conn = icon_conn;

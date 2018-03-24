@@ -1,3 +1,4 @@
+import {feed_create_favicon_lookup_url} from '/src/app/objects/feed.js';
 import {create_feed} from '/src/app/operations/create-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
@@ -97,7 +98,7 @@ SubscribeOperation.prototype.set_favicon = async function(feed) {
   fs.console = this.console;
   fs.skip_fetch = true;
 
-  const url = rdb.feed_create_favicon_lookup_url(feed);
+  const url = feed_create_favicon_lookup_url(feed);
   feed.faviconURLString = await fs.lookup(url);
 };
 

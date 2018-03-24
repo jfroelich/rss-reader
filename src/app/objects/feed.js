@@ -7,6 +7,31 @@ import * as string from '/src/string/string.js';
 const FEED_MAGIC = 0xfeedfeed;
 
 
+// Returns the url used to lookup a feed's favicon
+// @returns {URL}
+export function feed_create_favicon_lookup_url(feed) {
+  assert(rdb.is_feed(feed));
+
+  // First, prefer the link, as this is the url of the webpage that is
+  // associated with the feed. Cannot assume the link is set or valid.
+  if (feed.link) {
+    try {
+      return new URL(feed.link);
+    } catch (error) {
+      // If feed.link is set it should always be a valid URL
+      console.warn(error);
+
+      // If the url is invalid, just fall through
+    }
+  }
+
+  // If the feed's link is missing/invalid then use the origin of the feed's
+  // xml url. Assume the feed always has a url.
+  const tail_url = new URL(rdb.feed_peek_url(feed));
+  return new URL(tail_url.origin);
+}
+
+
 // Returns a shallow copy of the input feed with sanitized properties
 export function feed_sanitize(feed, title_max_length, description_max_length) {
   if (typeof title_max_length === 'undefined') {
