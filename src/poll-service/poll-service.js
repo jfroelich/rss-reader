@@ -1,3 +1,4 @@
+import {create_entry} from '/src/app/operations/create-entry.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import * as badge from '/src/badge.js';
 import * as color from '/src/color/color.js';
@@ -279,7 +280,7 @@ PollService.prototype.poll_entry = async function(entry) {
 
   let stored_entry;
   try {
-    stored_entry = await rdb.entry_add(this.rconn, this.channel, entry);
+    stored_entry = await create_entry(this.rconn, this.channel, entry);
   } catch (error) {
     return;
   }
