@@ -1,4 +1,5 @@
 import {feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/app/objects/feed.js';
+import {contains_feed_with_url} from '/src/app/operations/contains-feed-with-url.js';
 import {create_feed} from '/src/app/operations/create-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
@@ -26,7 +27,7 @@ SubscribeOperation.prototype.subscribe = async function(url) {
 
   this.console.log('Subscribing to feed', url.href);
 
-  if (await rdb.contains_feed_with_url(this.rconn, url)) {
+  if (await contains_feed_with_url(this.rconn, url)) {
     this.console.debug('Already subscribed to feed ', url.href);
     return;
   }
@@ -63,7 +64,7 @@ SubscribeOperation.prototype.create_feed = async function(response, url) {
 
   // If there was a redirect, then check if subscribed to the redirect
   if (url_loader.url_did_change(url, response_url) &&
-      await rdb.contains_feed_with_url(this.rconn, response_url)) {
+      await contains_feed_with_url(this.rconn, response_url)) {
     this.console.debug(
         'Already subscribed to feed redirect', url.href, response_url.href);
     return;

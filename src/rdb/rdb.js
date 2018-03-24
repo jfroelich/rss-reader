@@ -156,21 +156,6 @@ export function find_feed_by_id(conn, id) {
   });
 }
 
-export function contains_feed_with_url(conn, url) {
-  return new Promise((resolve, reject) => {
-    assert(url instanceof URL);
-    const txn = conn.transaction('feed');
-    const store = txn.objectStore('feed');
-    const index = store.index('urls');
-    const request = index.getKey(url.href);
-    request.onsuccess = () => {
-      const feed_id = request.result;
-      resolve(feed_is_valid_id(feed_id));
-    };
-    request.onerror = () => reject(request.error);
-  });
-}
-
 function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }
