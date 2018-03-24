@@ -1,4 +1,4 @@
-import {feed_create_favicon_lookup_url} from '/src/app/objects/feed.js';
+import {feed_create_favicon_lookup_url, feed_has_url} from '/src/app/objects/feed.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as rdb from '/src/rdb/rdb.js';
@@ -17,7 +17,7 @@ export default async function rdb_refresh_feed_icons(
 }
 
 async function feed_store_feed_refresh_icons(conn, icon_conn, channel, feed) {
-  if (!rdb.feed_has_url(feed)) {
+  if (!feed_has_url(feed)) {
     throw new TypeError('Feed missing url ' + feed.id);
   }
 

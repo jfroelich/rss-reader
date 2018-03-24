@@ -287,8 +287,3 @@ export function is_feed(value) {
 export function feed_is_valid_id(id) {
   return Number.isInteger(id) && id > 0;
 }
-
-export function feed_has_url(feed) {
-  assert(is_feed(feed));
-  return feed.urls && (feed.urls.length > 0);
-}

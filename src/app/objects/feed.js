@@ -144,6 +144,11 @@ export function feed_append_url(feed, url) {
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
 export function feed_peek_url(feed) {
-  assert(rdb.feed_has_url(feed));
+  assert(feed_has_url(feed));
   return feed.urls[feed.urls.length - 1];
+}
+
+export function feed_has_url(feed) {
+  assert(rdb.is_feed(feed));
+  return feed.urls && (feed.urls.length > 0);
 }
