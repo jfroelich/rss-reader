@@ -1,4 +1,4 @@
-import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
+import {entry_is_valid, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
 import {update_entry} from '/src/app/operations/update-entry.js';
 import * as object from '/src/object/object.js';
 import * as rdb from '/src/rdb/rdb.js';
@@ -8,7 +8,7 @@ export async function create_entry(conn, channel, entry) {
   assert(!('id' in entry) || entry.id === null || entry.id === void 0);
 
   // Validate
-  assert(rdb.entry_is_valid(entry));
+  assert(entry_is_valid(entry));
 
   // TODO: if I plan to have validation also occur in entry_sanitize, then
   // I think what should happen here is that I pass a no-revalidate flag along

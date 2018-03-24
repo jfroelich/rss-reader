@@ -261,14 +261,7 @@ export function get_feeds(conn) {
   });
 }
 
-// TODO: implement
-export function entry_is_valid(entry) {
-  if (!is_entry(entry)) {
-    return false;
-  }
 
-  return true;
-}
 
 // Returns a new entry object where fields have been sanitized. Impure. Note
 // that this assumes the entry is valid. As in, passing the entry to
