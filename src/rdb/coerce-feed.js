@@ -1,4 +1,4 @@
-import {feed_append_url} from '/src/app/objects/feed.js';
+import {feed_append_url, feed_create} from '/src/app/objects/feed.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 export function coerce_feed(parsed_feed, fetch_info) {
@@ -9,7 +9,7 @@ export function coerce_feed(parsed_feed, fetch_info) {
   assert(request_url instanceof URL);
   assert(response_url instanceof URL);
 
-  const feed = rdb.feed_create();
+  const feed = feed_create();
 
   if (parsed_feed.type) {
     feed.type = parsed_feed.type;

@@ -1,10 +1,13 @@
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {html_replace_tags} from '/src/html/html.js';
 import * as object from '/src/object/object.js';
-import * as rdb from '/src/rdb/rdb.js';
 import * as string from '/src/string/string.js';
 
-const FEED_MAGIC = 0xfeedfeed;
+export const FEED_MAGIC = 0xfeedfeed;
+
+export function feed_create() {
+  return {magic: FEED_MAGIC};
+}
 
 // Return true if the value looks like a feed object
 export function is_feed(value) {
@@ -57,7 +60,7 @@ export function feed_sanitize(feed, title_max_length, description_max_length) {
     description_max_length = 1024 * 10;
   }
 
-  const blank_feed = rdb.feed_create();
+  const blank_feed = feed_create();
   const output_feed = Object.assign(blank_feed, feed);
   const html_tag_replacement = '';
   const suffix = '';
@@ -116,7 +119,7 @@ export function feed_is_valid(feed) {
 // merged to generate a distinct ordered set of oldest to newest url. Impure
 // because of copying by reference.
 export function feed_merge(old_feed, new_feed) {
-  const merged_feed = Object.assign(rdb.feed_create(), old_feed, new_feed);
+  const merged_feed = Object.assign(feed_create(), old_feed, new_feed);
 
   // After assignment, the merged feed has only the urls from the new feed. So
   // the output feed's url list needs to be fixed. First copy over the old

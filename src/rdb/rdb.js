@@ -3,7 +3,6 @@ import {feed_is_valid_id, FEED_MAGIC} from '/src/app/objects/feed.js';
 import {idb_open} from '/src/idb/idb.js';
 import * as string from '/src/string/string.js';
 
-
 // Open a connection to the reader database. All parameters are optional
 export function open(name = 'reader', version = 24, timeout = 500) {
   return idb_open(name, version, on_upgrade_needed, timeout);
@@ -259,8 +258,4 @@ export function get_feeds(conn) {
 
 function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
-}
-
-export function feed_create() {
-  return {magic: FEED_MAGIC};
 }
