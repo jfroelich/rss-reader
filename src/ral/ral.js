@@ -1,3 +1,4 @@
+import {activate_feed as activate_feed_impl} from '/src/app/operations/activate-feed.js';
 import {Exim} from '/src/exim/exim.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
@@ -98,7 +99,7 @@ export async function ral_unsubscribe(channel, feed_id) {
 
 export async function activate_feed(channel, feed_id) {
   const conn = await rdb.open();
-  await rdb.feed_activate(conn, channel, feed_id);
+  await activate_feed_impl(conn, channel, feed_id);
   conn.close();
 }
 

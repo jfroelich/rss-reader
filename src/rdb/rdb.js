@@ -117,49 +117,6 @@ function add_active_field_to_feeds(store) {
   };
 }
 
-// Marks a feed as active. This loads the feed, changes its properties, and
-// then saves it again using a single transaction. Once the transaction
-// resolves, a message is sent to the channel. Caller should take care to not
-// close the channel before this settles. If this rejects with an error due to a
-// closed channel, the database transaction has still committed.
-// @param conn {IDBDatabase} an open database connection, required
-// @param channel {BroadcastChannel} optional, the channel to receive a message
-// about the state change
-// @param feed_id {Number} the id of the feed to modify
-// @throws {Error} database error, invalid input error, channel error, note
-// these are technically rejections unless this is awaited
-// @return {Promise} a promise that resolves
-export function feed_activate(conn, channel, feed_id) {
-  return new Promise((resolve, reject) => {
-    assert(conn instanceof IDBDatabase);
-    assert(
-        typeof channel === 'undefined' || channel === null ||
-        channel instanceof BroadcastChannel);
-    assert(feed_is_valid_id(feed_id));
-
-    const txn = conn.transaction('feed', 'readwrite');
-    txn.oncomplete = () => {
-      if (channel) {
-        channel.postMessage({type: 'feed-activated', id: feed_id});
-      }
-      resolve();
-    };
-    txn.onerror = () => reject(txn.error);
-    const store = txn.objectStore('feed');
-    const request = store.get(feed_id);
-    request.onsuccess = () => {
-      const feed = request.result;
-      assert(is_feed(feed));
-      assert(!feed.active || !('active' in feed));
-      feed.active = true;
-      delete feed.deactivationReasonText;
-      delete feed.deactivateDate;
-      feed.dateUpdated = new Date();
-      store.put(feed);
-    };
-  });
-}
-
 // TODO: rather than reject when inactive, maybe just skip?
 export function rdb_feed_deactivate(conn, channel, feed_id, reason_text) {
   return new Promise((resolve, reject) => {
