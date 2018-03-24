@@ -288,50 +288,6 @@ function entry_put(conn, channel, entry) {
   });
 }
 
-
-
-// Remove a feed any entries tied to the feed from the database
-// @param conn {IDBDatabase}
-// @param channel {BroadcastChannel} optional
-// @param feed_id {Number}
-// @param reason_text {String}
-export function feed_remove(conn, channel, feed_id, reason_text) {
-  return new Promise(function executor(resolve, reject) {
-    assert(feed_is_valid_id(feed_id));
-    let entry_ids;
-    const txn = conn.transaction(['feed', 'entry'], 'readwrite');
-    txn.oncomplete = _ => {
-      if (channel) {
-        channel.postMessage(
-            {type: 'feed-deleted', id: feed_id, reason: reason_text});
-        for (const id of entry_ids) {
-          channel.postMessage(
-              {type: 'entry-deleted', id: id, reason: reason_text});
-        }
-      }
-
-      resolve(entry_ids);
-    };
-    txn.onerror = _ => reject(txn.error);
-
-    const feed_store = txn.objectStore('feed');
-    console.debug('Deleting feed with id', feed_id);
-    feed_store.delete(feed_id);
-
-    // Delete all entries belonging to the feed
-    const entry_store = txn.objectStore('entry');
-    const feed_index = entry_store.index('feed');
-    const request = feed_index.getAllKeys(feed_id);
-    request.onsuccess = function(event) {
-      entry_ids = request.result;
-      for (const id of entry_ids) {
-        console.debug('Deleting entry', id);
-        entry_store.delete(id);
-      }
-    };
-  });
-}
-
 // Returns a shallow copy of the input feed with sanitized properties
 export function feed_sanitize(feed, title_max_length, description_max_length) {
   if (typeof title_max_length === 'undefined') {
