@@ -106,8 +106,3 @@ function add_active_field_to_feeds(store) {
     }
   };
 }
-
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
-}
