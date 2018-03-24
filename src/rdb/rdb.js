@@ -261,36 +261,8 @@ export function get_feeds(conn) {
   });
 }
 
-// Returns the new id if adding
-// This could be exported, but is not, as there is nothing that currently uses
-// this functionality directly outside of this module.
-// @param conn {IDBDatabase} required
-// @param channel {BroadcastChannel} optional
-// @param entry {object} required
-function entry_put(conn, channel, entry) {
-  return new Promise((resolve, reject) => {
-    assert(conn instanceof IDBDatabase);
-    if (channel) {
-      assert(channel instanceof BroadcastChannel);
-    }
-    assert(is_entry(entry));
-    const txn = conn.transaction('entry', 'readwrite');
-    const store = txn.objectStore('entry');
-    const request = store.put(entry);
-    request.onsuccess = () => {
-      const entry_id = request.result;
-      if (channel) {
-        channel.postMessage({type: 'entry-updated', id: entry_id});
-      }
-      resolve(entry_id);
-    };
-    request.onerror = () => reject(request.error);
-  });
-}
-
-
 // TODO: implement
-function entry_is_valid(entry) {
+export function entry_is_valid(entry) {
   if (!is_entry(entry)) {
     return false;
   }

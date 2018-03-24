@@ -1,4 +1,5 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
+import {update_entry} from '/src/app/operations/update-entry.js';
 import * as object from '/src/object/object.js';
 import * as rdb from '/src/rdb/rdb.js';
 
@@ -6,7 +7,7 @@ export async function create_entry(conn, channel, entry) {
   assert(rdb.is_entry(entry));
   assert(!('id' in entry) || entry.id === null || entry.id === void 0);
 
-  // Throw an error if the entry object has any invalid properties
+  // Validate
   assert(rdb.entry_is_valid(entry));
 
   // TODO: if I plan to have validation also occur in entry_sanitize, then
@@ -27,7 +28,7 @@ export async function create_entry(conn, channel, entry) {
   storable_entry.archiveState = ENTRY_STATE_UNARCHIVED;
   storable_entry.dateCreated = new Date();
 
-  // entry_put stores the value as is, and will not automatically add a
+  // update_entry stores the value as is, and will not automatically add a
   // dateUpdated property, so this is sensible. New entries have never been
   // dirtied, and therefore should not have a date updated. Alternatively, this
   // could even throw an error. For the time being, it is more convenient to
@@ -36,14 +37,14 @@ export async function create_entry(conn, channel, entry) {
 
   // TODO: I plan to add validate to put. I think in this case I need to pass
   // along a parameter that avoids duplicate validation. Here is where I would
-  // do something like let no_revalidate = true;
+  // do something like set validate = false;
 
   // Delegate the database work to put, because put can be used for both add and
   // put, and the two operations are nearly identical. However, do not supply
   // the input channel, so that its message is suppressed, so that add can send
   // its own message as a substitute. Rethrow any put errors as add errors.
   let void_channel;
-  const entry_id = await rdb.entry_put(conn, void_channel, storable_entry);
+  const entry_id = await update_entry(conn, void_channel, storable_entry);
 
   // Send our own message as a substitute for put's message
   if (channel) {
