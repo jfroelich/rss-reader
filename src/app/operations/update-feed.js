@@ -1,5 +1,4 @@
-import {feed_is_valid} from '/src/app/objects/feed.js';
-import * as rdb from '/src/rdb/rdb.js';
+import {feed_is_valid, is_feed} from '/src/app/objects/feed.js';
 
 // TODO: when updating, is put result still the feed id? I know
 // that result is feed id when adding, but what about updating? Review
@@ -20,7 +19,7 @@ export function update_feed(conn, channel, feed, validate = true) {
     if (validate) {
       assert(feed_is_valid(feed));
     } else {
-      assert(rdb.is_feed(feed));
+      assert(is_feed(feed));
     }
 
     const txn = conn.transaction('feed', 'readwrite');

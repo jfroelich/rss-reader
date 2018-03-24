@@ -1,4 +1,4 @@
-import {feed_create_favicon_lookup_url, feed_peek_url} from '/src/app/objects/feed.js';
+import {feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/app/objects/feed.js';
 import {create_feed} from '/src/app/operations/create-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
@@ -90,7 +90,7 @@ SubscribeOperation.prototype.create_feed = async function(response, url) {
 };
 
 SubscribeOperation.prototype.set_favicon = async function(feed) {
-  assert(rdb.is_feed(feed));
+  assert(is_feed(feed));
 
   // TODO: share instance across all calls
   const fs = new FaviconService();

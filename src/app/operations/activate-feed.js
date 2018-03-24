@@ -1,5 +1,4 @@
-import {feed_is_valid_id} from '/src/app/objects/feed.js';
-import * as rdb from '/src/rdb/rdb.js';
+import {feed_is_valid_id, is_feed} from '/src/app/objects/feed.js';
 
 export function activate_feed(conn, channel, feed_id) {
   return new Promise((resolve, reject) => {
@@ -28,7 +27,7 @@ function request_onsuccess(store, event) {
   // TODO: would it be better, instead of throwing, to just log an error message
   // and operate as a no-op or something to that effect? This is not really a
   // programming error.
-  assert(rdb.is_feed(feed));
+  assert(is_feed(feed));
   assert(!feed.active || !('active' in feed));
 
   feed.active = true;
@@ -38,7 +37,6 @@ function request_onsuccess(store, event) {
   feed.dateUpdated = new Date();
   store.put(feed);
 }
-
 
 function assert(value) {
   if (!value) throw new Error('Assertion error');

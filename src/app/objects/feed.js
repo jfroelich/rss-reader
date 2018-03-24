@@ -6,11 +6,27 @@ import * as string from '/src/string/string.js';
 
 const FEED_MAGIC = 0xfeedfeed;
 
+// Return true if the value looks like a feed object
+export function is_feed(value) {
+  // While it perenially appears like the value condition is implied in the
+  // typeof condition, this is not true. The value condition is short for value
+  // !== null, because typeof null === 'object', and not checking value
+  // definedness would cause value.magic to throw. The value condition is
+  // checked first, because presumably it is cheaper than the typeof check.
+
+  // indexedDB does not support storing Function objects, because Function
+  // objects are not serializable (aka structured-cloneable), so we store basic
+  // objects. Therefore, because instanceof is out of the question, and typeof
+  // cannot get us any additional type guarantee beyond stating the value is
+  // some object, we use a hidden property called magic to further guarantee the
+  // type.
+  return value && typeof value === 'object' && value.magic === FEED_MAGIC;
+}
 
 // Returns the url used to lookup a feed's favicon
 // @returns {URL}
 export function feed_create_favicon_lookup_url(feed) {
-  assert(rdb.is_feed(feed));
+  assert(is_feed(feed));
 
   // First, prefer the link, as this is the url of the webpage that is
   // associated with the feed. Cannot assume the link is set or valid.
@@ -82,7 +98,7 @@ export function feed_is_valid(feed) {
   // return here than throw an exception. It is, notably, generally an error to
   // ever call this function on something other than a feed, but that care is
   // left to the caller
-  if (!rdb.is_feed(feed)) {
+  if (!is_feed(feed)) {
     return false;
   }
 
@@ -120,7 +136,7 @@ export function feed_merge(old_feed, new_feed) {
 // @param feed {Object} a feed object
 // @param url {URL}
 export function feed_append_url(feed, url) {
-  if (!rdb.is_feed(feed)) {
+  if (!is_feed(feed)) {
     console.error('Invalid feed argument:', feed);
     return false;
   }
@@ -142,13 +158,16 @@ export function feed_append_url(feed, url) {
 // Returns the last url in the feed's url list as a string
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
+// TODO: revert to tolerating some bad input (e.g. calling on feed without
+// urls), review the typical peek operation api for other data structures in
+// other code bases
 export function feed_peek_url(feed) {
   assert(feed_has_url(feed));
   return feed.urls[feed.urls.length - 1];
 }
 
 export function feed_has_url(feed) {
-  assert(rdb.is_feed(feed));
+  assert(is_feed(feed));
   return feed.urls && (feed.urls.length > 0);
 }
 
