@@ -524,46 +524,6 @@ export function feed_is_valid(feed) {
   return true;
 }
 
-// Create or update a feed in the database
-// @param conn {IDBDatabase}
-// @param channel {BroadcastChannel} optional
-// @param feed {object}
-// @param validate {Boolean} optional
-export function feed_put(conn, channel, feed, validate = true) {
-  return new Promise((resolve, reject) => {
-    if (validate) {
-      // Defer is_feed call to validation in this case
-      assert(feed_is_valid(feed));
-    } else {
-      // Otherwise provide minimal validation
-      assert(is_feed(feed));
-    }
-
-    const txn = conn.transaction('feed', 'readwrite');
-    const store = txn.objectStore('feed');
-    const request = store.put(feed);
-    // TODO: when updating, is put result still the feed id? I know
-    // that result is feed id when adding, but what about updating? Review
-    // the documentation on IDBObjectStore.prototype.put
-    // So ... double check and warrant this resolves to an id
-    request.onsuccess = () => {
-      const feed_id = request.result;
-      // Suppress invalid state error when channel is closed in non-awaited call
-      // TODO: if awaited, I'd prefer to throw. How? Or, should it really just
-      // be an error, and the caller is responsible for keeping this open?
-      if (channel) {
-        try {
-          channel.postMessage({type: 'feed-updated', id: feed_id});
-        } catch (error) {
-          console.debug(error);
-        }
-      }
-      resolve(feed_id);
-    };
-    request.onerror = () => reject(request.error);
-  });
-}
-
 // Remove a feed any entries tied to the feed from the database
 // @param conn {IDBDatabase}
 // @param channel {BroadcastChannel} optional

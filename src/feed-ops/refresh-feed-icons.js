@@ -1,3 +1,4 @@
+import {update_feed} from '/src/app/operations/update-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as rdb from '/src/rdb/rdb.js';
 
@@ -32,6 +33,6 @@ async function feed_store_feed_refresh_icons(conn, icon_conn, channel, feed) {
       delete feed.faviconURLString;
     }
     feed.dateUpdated = new Date();
-    await rdb.feed_put(conn, channel, feed);
+    await update_feed(conn, channel, feed);
   }
 }
