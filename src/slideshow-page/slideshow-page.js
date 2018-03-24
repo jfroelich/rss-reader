@@ -1,5 +1,6 @@
 import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
 import {feed_peek_url} from '/src/app/objects/feed.js';
+import {find_viewable_entries} from '/src/app/operations/find-viewable-entries.js';
 import {mark_entry_read} from '/src/app/operations/mark-entry-read.js';
 import {date_format} from '/src/date/date.js';
 import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
@@ -146,7 +147,7 @@ async function slide_load_and_append_multiple(conn, limit) {
 
   let entries;
   try {
-    entries = await rdb.find_viewable_entries(conn, offset, limit);
+    entries = await find_viewable_entries(conn, offset, limit);
   } catch (error) {
     console.error(error);
     error_message_show('There was a problem loading articles from storage');
