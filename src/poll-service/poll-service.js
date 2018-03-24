@@ -1,4 +1,4 @@
-import {entry_append_url, entry_peek_url} from '/src/app/objects/entry.js';
+import {entry_append_url, entry_has_url, entry_peek_url} from '/src/app/objects/entry.js';
 import {feed_prepare} from '/src/app/objects/feed.js';
 import {create_entry} from '/src/app/operations/create-entry.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
@@ -261,7 +261,7 @@ PollService.prototype.handle_error = function(status, feed, type) {
 };
 
 PollService.prototype.poll_entry = async function(entry) {
-  if (!rdb.entry_has_url(entry)) {
+  if (!entry_has_url(entry)) {
     return;
   }
 

@@ -1,3 +1,4 @@
+import {entry_has_url} from '/src/app/objects/entry.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 // TODO: add readme
@@ -61,7 +62,7 @@ function entry_store_remove_lost_entries_promise(conn, console) {
       const cursor = request.result;
       if (cursor) {
         const entry = cursor.value;
-        if (!rdb.entry_has_url(entry)) {
+        if (!entry_has_url(entry)) {
           console.debug('Deleting lost entry', entry.id);
           cursor.delete();
           entry_ids.push(entry.id);

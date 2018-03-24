@@ -82,8 +82,14 @@ export function entry_append_url(entry, url) {
 // be called on an entry without urls.
 export function entry_peek_url(entry) {
   assert(rdb.is_entry(entry));
-  assert(rdb.entry_has_url(entry));
+  assert(entry_has_url(entry));
   return entry.urls[entry.urls.length - 1];
+}
+
+// Returns true if the entry has at least one url
+export function entry_has_url(entry) {
+  assert(rdb.is_entry(entry));
+  return entry.urls && (entry.urls.length > 0);
 }
 
 function assert(value) {

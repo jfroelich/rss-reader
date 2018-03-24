@@ -359,9 +359,3 @@ export function is_entry(value) {
 export function entry_is_valid_id(value) {
   return Number.isInteger(value) && value > 0;
 }
-
-// Returns true if the entry has at least one url
-export function entry_has_url(entry) {
-  assert(is_entry(entry));
-  return entry.urls && (entry.urls.length > 0);
-}
