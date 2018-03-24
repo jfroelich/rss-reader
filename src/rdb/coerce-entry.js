@@ -1,5 +1,4 @@
 import {entry_append_url, entry_create} from '/src/app/objects/entry.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 // Reformat a parsed entry as a storable entry
 export function coerce_entry(parsed_entry) {

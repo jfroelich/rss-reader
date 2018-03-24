@@ -1,3 +1,4 @@
+import * as rdb from '/src/app/handles/rdb.js';
 import {entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
 import {feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/app/objects/feed.js';
 import {contains_entry_with_url} from '/src/app/operations/contains-entry-with-url.js';
@@ -14,7 +15,6 @@ import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
 import {coerce_entry} from '/src/rdb/coerce-entry.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
-import * as rdb from '/src/rdb/rdb.js';
 import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/sniff/sniff.js';
 import * as url_loader from '/src/url-loader/url-loader.js';

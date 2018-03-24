@@ -1,6 +1,5 @@
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {html_replace_tags} from '/src/html/html.js';
-import * as rdb from '/src/rdb/rdb.js';
 import * as string from '/src/string/string.js';
 
 export const ENTRY_MAGIC = 0xdeadbeef;

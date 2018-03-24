@@ -6,7 +6,6 @@ import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as notifications from '/src/notifications/notifications.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 import {coerce_feed} from '/src/rdb/coerce-feed.js';
-import * as rdb from '/src/rdb/rdb.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
 export function SubscribeOperation() {

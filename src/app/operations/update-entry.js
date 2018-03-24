@@ -1,5 +1,4 @@
 import {is_entry} from '/src/app/objects/entry.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 export function update_entry(conn, channel, entry) {
   return new Promise(executor.bind(null, conn, channel, entry));

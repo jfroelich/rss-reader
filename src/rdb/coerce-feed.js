@@ -1,5 +1,4 @@
 import {feed_append_url, feed_create} from '/src/app/objects/feed.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 export function coerce_feed(parsed_feed, fetch_info) {
   const request_url = fetch_info.request_url;

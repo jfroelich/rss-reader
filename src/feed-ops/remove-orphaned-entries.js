@@ -1,5 +1,5 @@
+import * as rdb from '/src/app/handles/rdb.js';
 import {feed_is_valid_id} from '/src/app/objects/feed.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 
 // TODO: drop auto-connect support. The proper way, if at all, is to go through

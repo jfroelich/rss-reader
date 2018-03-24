@@ -1,6 +1,5 @@
 import {delete_feed} from '/src/app/operations/delete-feed.js';
 import * as badge from '/src/badge.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 // TODO: create docs
 

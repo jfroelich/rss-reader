@@ -1,5 +1,5 @@
+import * as rdb from '/src/app/handles/rdb.js';
 import {entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/app/objects/entry.js';
-import * as rdb from '/src/rdb/rdb.js';
 import {sizeof} from '/src/sizeof/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;

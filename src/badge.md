@@ -1,7 +1,6 @@
 // TODO: perhaps think of badge as a view, like the other pages or the CLI. In
 // that sense it would be reasonable to open a channel and listen for change
-// events. I am going to wait on making this change until rdb/rdb.js redesign is
-// more complete.
+// events.
 
 // TODO: even if I don't do the observer thing, thinking of badge as a page,
 // like a view, like the other pages, is probably a good idea. I don't feel like

@@ -3,7 +3,6 @@ import {element_fade} from '/src/dom/element-fade.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import * as perm from '/src/permissions/permissions.js';
 import * as ral from '/src/ral/ral.js';
-import * as rdb from '/src/rdb/rdb.js';
 import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
 
 // clang-format off

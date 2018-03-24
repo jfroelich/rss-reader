@@ -1,3 +1,4 @@
+import * as rdb from '/src/app/handles/rdb.js';
 import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
 import {feed_peek_url} from '/src/app/objects/feed.js';
 import {find_viewable_entries} from '/src/app/operations/find-viewable-entries.js';
@@ -7,7 +8,6 @@ import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {html_escape} from '/src/html/html.js';
 import * as ral from '/src/ral/ral.js';
-import * as rdb from '/src/rdb/rdb.js';
 import * as page_style from '/src/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/slideshow-page/slideshow.js';
 

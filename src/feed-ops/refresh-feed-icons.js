@@ -2,7 +2,6 @@ import {feed_create_favicon_lookup_url, feed_has_url} from '/src/app/objects/fee
 import {find_active_feeds} from '/src/app/operations/find-active-feeds.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 export default async function rdb_refresh_feed_icons(
     feed_conn, icon_conn, channel) {

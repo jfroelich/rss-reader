@@ -1,5 +1,4 @@
 import {entry_has_url} from '/src/app/objects/entry.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 export function dedup_entries(entries) {
   const distinct_entries = [];

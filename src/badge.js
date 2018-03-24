@@ -1,5 +1,4 @@
 import {count_unread_entries} from '/src/app/operations/count-unread-entries.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 let update_pending = false;
 

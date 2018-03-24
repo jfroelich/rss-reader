@@ -4,7 +4,6 @@ import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
 import * as filelib from '/src/file/file.js';
 import * as opml_document from '/src/opml-document/opml-document.js';
 import * as opml_parser from '/src/opml-parser/opml-parser.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 const feed_mime_types = [
   'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',

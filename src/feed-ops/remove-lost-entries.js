@@ -1,7 +1,9 @@
+import * as rdb from '/src/app/handles/rdb.js';
 import {entry_has_url} from '/src/app/objects/entry.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 // TODO: add readme
+// TODO: drop auto-connect ability
+// TODO: redesign as operations file
 // TODO: this potentially affects unread count
 
 // Removes entries missing urls from the database

@@ -1,6 +1,5 @@
 import {feed_is_valid, feed_prepare} from '/src/app/objects/feed.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 // TODOS
 // * documentation
@@ -14,6 +13,7 @@ import * as rdb from '/src/rdb/rdb.js';
 // folder, as helper to feed objects
 // * consider being redundant and not delegating to update_feed
 // * channel post stuff should probably be abstracted away a bit eventually
+// * probably should inline assert, deprecate helper
 
 // Create a new feed in storage
 export async function create_feed(conn, channel, feed) {

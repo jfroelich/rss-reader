@@ -1,6 +1,6 @@
+import * as rdb from '/src/app/handles/rdb.js';
 import {Archiver} from '/src/feed-ops/archive-entries.js';
 import * as idb from '/src/idb/idb.js';
-import * as rdb from '/src/rdb/rdb.js';
 
 async function test() {
   const arch = new Archiver();
