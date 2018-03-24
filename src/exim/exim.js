@@ -1,4 +1,5 @@
 import {feed_peek_url} from '/src/app/objects/feed.js';
+import {get_feeds} from '/src/app/operations/get-feeds.js';
 import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
 import * as filelib from '/src/file/file.js';
 import * as opml_document from '/src/opml-document/opml-document.js';
@@ -19,7 +20,7 @@ export function Exim() {
 }
 
 Exim.prototype.export_opml = async function(title) {
-  const feeds = await rdb.get_feeds(this.rconn);
+  const feeds = await get_feeds(this.rconn);
   const document = opml_document.create_document(title);
   for (const feed of feeds) {
     this.append_feed(document, feed);

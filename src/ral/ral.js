@@ -1,5 +1,6 @@
 import {activate_feed as activate_feed_impl} from '/src/app/operations/activate-feed.js';
 import {deactivate_feed as deactivate_feed_impl} from '/src/app/operations/deactivate-feed.js';
+import {get_feeds as get_feeds_with_conn} from '/src/app/operations/get-feeds.js';
 import {Exim} from '/src/exim/exim.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
@@ -9,7 +10,7 @@ import * as rdb from '/src/rdb/rdb.js';
 
 export async function get_feeds(title_sort_flag) {
   const conn = await rdb.open();
-  const feeds = await rdb.get_feeds(conn);
+  const feeds = await get_feeds_with_conn(conn);
   conn.close();
 
   if (title_sort_flag) {

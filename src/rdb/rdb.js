@@ -1,7 +1,7 @@
 import {entry_is_valid_id, ENTRY_MAGIC, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
 import {feed_is_valid_id, FEED_MAGIC} from '/src/app/objects/feed.js';
+import {get_feeds} from '/src/app/operations/get-feeds.js';
 import {idb_open} from '/src/idb/idb.js';
-import * as string from '/src/string/string.js';
 
 // Open a connection to the reader database. All parameters are optional
 export function open(name = 'reader', version = 24, timeout = 500) {
@@ -243,16 +243,6 @@ export function viewable_entries_for_each(
         }
       }
     };
-  });
-}
-
-export function get_feeds(conn) {
-  return new Promise((resolve, reject) => {
-    const txn = conn.transaction('feed');
-    const store = txn.objectStore('feed');
-    const request = store.getAll();
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
   });
 }
 
