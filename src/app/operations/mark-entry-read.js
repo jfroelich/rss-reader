@@ -2,24 +2,45 @@ import * as badge from '/src/badge.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 export function mark_entry_read(conn, channel, entry_id) {
-  return new Promise((resolve, reject) => {
-    assert(rdb.entry_is_valid_id(entry_id));
-    const txn = conn.transaction('entry', 'readwrite');
-    txn.oncomplete = txn_oncomplete.bind(txn, conn, channel, entry_id, resolve);
-    txn.onerror = _ => reject(txn.error);
-    const store = txn.objectStore('entry');
-    const request = store.get(entry_id);
-    request.onsuccess = request_onsuccess.bind(request, store);
-  });
+  // Rather than reject from within the promise, throw an immediate error. This
+  // constitutes a serious and permanent programmer error.
+  if (!rdb.entry_is_valid_id(entry_id)) {
+    throw new TypeError('entry_id is not a valid entry id: ' + entry_id);
+  }
+
+  return new Promise(executor.bind(null, conn, channel, entry_id));
+}
+
+function executor(conn, channel, entry_id, resolve, reject) {
+  const txn = conn.transaction('entry', 'readwrite');
+
+  // The promise settles based on the txn, not the get request, because we do
+  // some post-request operations, and because there is actually more than one
+  // request involved
+
+  txn.oncomplete = txn_oncomplete.bind(txn, conn, channel, entry_id, resolve);
+  txn.onerror = _ => reject(txn.error);
+  const store = txn.objectStore('entry');
+  const request = store.get(entry_id);
+  request.onsuccess = request_onsuccess.bind(request, store);
 }
 
 function request_onsuccess(store, event) {
   const entry = event.target.result;
 
-  // If there was no matching entry for the entry id, this is a programming
-  // error? Actually not really. The database entering into corrupted state
-  // is technically ephemeral. And just plain bad.
-  assert(entry);
+  // For whatever reason the entry is not found. Become a no-op.
+  if (!entry) {
+    console.warn('No entry found');
+    return;
+  }
+
+  // Do not trust data coming from the database because it can be modified by
+  // external means
+  if (!rdb.is_entry(entry)) {
+    console.warn('Loaded object is not an entry');
+    return;
+  }
+
 
   if (entry.readState === rdb.ENTRY_STATE_READ) {
     console.warn('Entry %d already in read state, ignoring', entry.id);
@@ -56,8 +77,4 @@ function txn_oncomplete(conn, channel, entry_id, callback, event) {
   badge.update(conn).catch(console.error);
 
   callback();
-}
-
-function assert(value) {
-  if (!value) throw new Error('Assertion error');
 }
