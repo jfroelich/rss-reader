@@ -1,3 +1,4 @@
+import {entry_peek_url} from '/src/app/objects/entry.js';
 import {mark_entry_read} from '/src/app/operations/mark-entry-read.js';
 import {date_format} from '/src/date/date.js';
 import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
@@ -164,7 +165,7 @@ function slide_append(entry) {
     return;
   }
 
-  console.debug('Appending entry', rdb.entry_peek_url(entry));
+  console.debug('Appending entry', entry_peek_url(entry));
 
   const slide = Slideshow.create();
   slide.setAttribute('entry', entry.id);
@@ -184,7 +185,7 @@ function slide_append(entry) {
 
 function create_article_title_element(entry) {
   const title_element = document.createElement('a');
-  title_element.setAttribute('href', rdb.entry_peek_url(entry));
+  title_element.setAttribute('href', entry_peek_url(entry));
   title_element.setAttribute('class', 'entry-title');
   title_element.setAttribute('rel', 'noreferrer');
 

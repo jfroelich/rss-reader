@@ -78,6 +78,14 @@ export function entry_append_url(entry, url) {
   return true;
 }
 
+// Returns the last url, as a string, in the entry's url list. This should never
+// be called on an entry without urls.
+export function entry_peek_url(entry) {
+  assert(rdb.is_entry(entry));
+  assert(rdb.entry_has_url(entry));
+  return entry.urls[entry.urls.length - 1];
+}
+
 function assert(value) {
   if (!value) throw new Error('Assertion error');
 }

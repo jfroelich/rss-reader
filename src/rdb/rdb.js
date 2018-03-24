@@ -365,13 +365,3 @@ export function entry_has_url(entry) {
   assert(is_entry(entry));
   return entry.urls && (entry.urls.length > 0);
 }
-
-// Returns the last url, as a string, in the entry's url list. This should never
-// be called on an entry without urls.
-// TODO: because this returns a string, be more explicit about it. I just caught
-// myself expecting URL.
-export function entry_peek_url(entry) {
-  assert(is_entry(entry));
-  assert(entry_has_url(entry));
-  return entry.urls[entry.urls.length - 1];
-}

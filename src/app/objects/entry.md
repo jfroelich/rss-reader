@@ -8,3 +8,4 @@ Returns a new entry object where fields have been sanitized. Impure. Note that t
 
 * I feel like this should eventually be renamed, entry is too abstract of a name
 * in entry_sanitize, now that filter_unprintable_characters exists, I want to also filter such characters from input strings like author/title/etc. However it overlaps with the call to string.filter_control_characters here. There is some redundant work going on. Also, in a sense, string.filter_control_characters is now inaccurate. What I want is one function that strips binary characters except important ones, and then a second function that replaces or removes certain important binary characters (e.g. remove line breaks from author string). Something like 'string_replace_formatting_characters'.
+* The append/peek url string list stuff, maybe move it to url_string_list helper? it would be shared by feed and entry?

@@ -1,4 +1,4 @@
-import {entry_append_url} from '/src/app/objects/entry.js';
+import {entry_append_url, entry_peek_url} from '/src/app/objects/entry.js';
 import {feed_prepare} from '/src/app/objects/feed.js';
 import {create_entry} from '/src/app/operations/create-entry.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
@@ -291,12 +291,12 @@ PollService.prototype.poll_entry = async function(entry) {
 };
 
 PollService.prototype.entry_exists = function(entry) {
-  const url = new URL(rdb.entry_peek_url(entry));
+  const url = new URL(entry_peek_url(entry));
   return rdb.contains_entry_with_url(this.rconn, url);
 };
 
 PollService.prototype.fetch_entry = async function(entry) {
-  const url = new URL(rdb.entry_peek_url(entry));
+  const url = new URL(entry_peek_url(entry));
   if (url_is_augmentable(url)) {
     const response = await url_loader.fetch_html(url, this.fetch_html_timeout);
     if (response.ok) {
@@ -310,7 +310,7 @@ PollService.prototype.handle_entry_redirect = async function(entry, response) {
     return false;
   }
 
-  const request_url = new URL(rdb.entry_peek_url(entry));
+  const request_url = new URL(entry_peek_url(entry));
   const response_url = new URL(response.url);
   if (!url_loader.url_did_change(request_url, response_url)) {
     return false;
@@ -322,7 +322,7 @@ PollService.prototype.handle_entry_redirect = async function(entry, response) {
 };
 
 PollService.prototype.update_entry_icon = async function(entry, document) {
-  const entry_url = new URL(rdb.entry_peek_url(entry));
+  const entry_url = new URL(entry_peek_url(entry));
 
   const fs = new FaviconService();
   fs.conn = this.iconn;
@@ -344,7 +344,7 @@ PollService.prototype.update_entry_content = async function(entry, document) {
     }
   }
 
-  const document_url = new URL(rdb.entry_peek_url(entry));
+  const document_url = new URL(entry_peek_url(entry));
   const opts = {
     fetch_image_timeout: this.fetch_image_timeout,
     matte: color.WHITE,
@@ -356,7 +356,7 @@ PollService.prototype.update_entry_content = async function(entry, document) {
 };
 
 function entry_rewrite_tail_url(entry) {
-  const tail_url = new URL(rdb.entry_peek_url(entry));
+  const tail_url = new URL(entry_peek_url(entry));
   const new_url = rewrite_url(tail_url, rewrite_urls);
   if (!new_url) {
     return false;
