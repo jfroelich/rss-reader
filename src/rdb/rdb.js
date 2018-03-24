@@ -145,17 +145,6 @@ export function contains_entry_with_url(conn, url) {
   });
 }
 
-export function find_feed_by_id(conn, id) {
-  return new Promise((resolve, reject) => {
-    assert(feed_is_valid_id(id));
-    const txn = conn.transaction('feed');
-    const store = txn.objectStore('feed');
-    const request = store.get(id);
-    request.onsuccess = _ => resolve(request.result);
-    request.onerror = _ => reject(request.error);
-  });
-}
-
 function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }

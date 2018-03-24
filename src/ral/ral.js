@@ -1,5 +1,6 @@
 import {activate_feed as activate_feed_impl} from '/src/app/operations/activate-feed.js';
 import {deactivate_feed as deactivate_feed_impl} from '/src/app/operations/deactivate-feed.js';
+import {find_feed_by_id as find_feed_by_id_impl} from '/src/app/operations/find-feed-by-id.js';
 import {get_feeds as get_feeds_with_conn} from '/src/app/operations/get-feeds.js';
 import {viewable_entries_for_each} from '/src/app/operations/viewable-entries-for-each.js';
 import {Exim} from '/src/exim/exim.js';
@@ -29,7 +30,7 @@ function feed_compare(a, b) {
 
 export async function find_feed_by_id(feed_id) {
   const conn = await rdb.open();
-  const feed = await rdb.find_feed_by_id(conn, feed_id);
+  const feed = await find_feed_by_id_impl(conn, feed_id);
   conn.close();
   return feed;
 }
