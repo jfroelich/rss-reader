@@ -1,4 +1,6 @@
+import {feed_is_valid_id} from '/src/app/objects/feed.js';
 import * as rdb from '/src/rdb/rdb.js';
+
 
 // TODO: drop auto-connect support. The proper way, if at all, is to go through
 // a layer similar to ral.js
@@ -6,6 +8,7 @@ import * as rdb from '/src/rdb/rdb.js';
 // interacting with badge_update_text
 // TODO: add console parameter and NULL_CONSOLE impl
 // TODO: trap postMessage errors in case channel closed when called unawaited?
+// TODO: move to app/operations as a syscall-like API
 
 // Scans the database for entries not linked to a feed and deletes them
 // conn {IDBDatabase} is optional open database connection
@@ -47,8 +50,7 @@ function entry_store_remove_orphans_promise(conn) {
         const cursor = entry_store_cursor_request.result;
         if (cursor) {
           const entry = cursor.value;
-          if (!rdb.feed_is_valid_id(entry.feed) ||
-              !feed_ids.includes(entry.feed)) {
+          if (!feed_is_valid_id(entry.feed) || !feed_ids.includes(entry.feed)) {
             entry_ids.push(entry.id);
             console.debug('Deleting orphaned entry', entry.id);
             cursor.delete();

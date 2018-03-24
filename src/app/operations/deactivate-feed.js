@@ -1,11 +1,9 @@
-import * as rdb from '/src/rdb/rdb.js';
-
-// TODO: rather than assert/reject when inactive, maybe just skip?
-
+import {feed_is_valid_id} from '/src/app/objects/feed.js';
 
 export function deactivate_feed(conn, channel, feed_id, reason_text) {
+  assert(feed_is_valid_id(feed_id));
+
   return new Promise((resolve, reject) => {
-    assert(rdb.feed_is_valid_id(feed_id));
     const txn = conn.transaction('feed', 'readwrite');
     txn.oncomplete = txn_oncomplete.bind(txn, channel, resolve, feed_id);
     txn.onerror = _ => reject(txn.error);
@@ -25,6 +23,9 @@ function txn_oncomplete(channel, callback, feed_id, event) {
 // TODO: get store from event, rather than using store parameter
 function request_onsuccess(reason_text, store, event) {
   const feed = event.target.result;
+
+  // TODO: rather than assert/reject when inactive, maybe just skip?
+
   assert(feed);
   assert(feed.active || !('active' in feed));
   feed.active = false;

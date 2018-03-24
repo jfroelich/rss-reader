@@ -1,12 +1,12 @@
-import * as rdb from '/src/rdb/rdb.js';
+import {feed_is_valid_id} from '/src/app/objects/feed.js';
 
 export function delete_feed(conn, channel, feed_id, reason_text) {
+  assert(feed_is_valid_id(feed_id));
+
   return new Promise(executor.bind(null, conn, channel, feed_id, reason_text));
 }
 
 function executor(conn, channel, feed_id, reason_text, resolve, reject) {
-  assert(rdb.feed_is_valid_id(feed_id));
-
   let entry_ids;
   const txn = conn.transaction(['feed', 'entry'], 'readwrite');
   txn.oncomplete = txn_oncomplete.bind(

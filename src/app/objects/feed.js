@@ -88,7 +88,7 @@ export function feed_is_valid(feed) {
 
   // Validate the feed's id. It may not be present in the case of validating
   // a feed that has never been stored.
-  if ('id' in feed && !rdb.feed_is_valid_id(feed.id)) {
+  if ('id' in feed && !feed_is_valid_id(feed.id)) {
     return false;
   }
 
@@ -139,7 +139,6 @@ export function feed_append_url(feed, url) {
   return true;
 }
 
-
 // Returns the last url in the feed's url list as a string
 // @param feed {Object} a feed object
 // @returns {String} the last url in the feed's url list
@@ -151,4 +150,8 @@ export function feed_peek_url(feed) {
 export function feed_has_url(feed) {
   assert(rdb.is_feed(feed));
   return feed.urls && (feed.urls.length > 0);
+}
+
+export function feed_is_valid_id(id) {
+  return Number.isInteger(id) && id > 0;
 }

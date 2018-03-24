@@ -1,5 +1,5 @@
 import {entry_is_valid_id, ENTRY_MAGIC, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
-import {FEED_MAGIC} from '/src/app/objects/feed.js';
+import {feed_is_valid_id, FEED_MAGIC} from '/src/app/objects/feed.js';
 import {idb_open} from '/src/idb/idb.js';
 import * as string from '/src/string/string.js';
 
@@ -282,8 +282,4 @@ export function is_feed(value) {
   // some object, we use a hidden property called magic to further guarantee the
   // type.
   return value && typeof value === 'object' && value.magic === FEED_MAGIC;
-}
-
-export function feed_is_valid_id(id) {
-  return Number.isInteger(id) && id > 0;
 }

@@ -1,8 +1,9 @@
+import {feed_is_valid_id} from '/src/app/objects/feed.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 export function activate_feed(conn, channel, feed_id) {
   return new Promise((resolve, reject) => {
-    assert(rdb.feed_is_valid_id(feed_id));
+    assert(feed_is_valid_id(feed_id));
     const txn = conn.transaction('feed', 'readwrite');
     txn.oncomplete = txn_oncomplete.bind(txn, channel, resolve);
     txn.onerror = _ => reject(txn.error);
