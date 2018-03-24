@@ -117,63 +117,6 @@ function add_active_field_to_feeds(store) {
   };
 }
 
-// Marks the entry corresponding to the entry_id as read in the database.
-// @param conn {IDBDatabase} required
-export function entry_mark_read(conn, channel, entry_id) {
-  return new Promise((resolve, reject) => {
-    assert(entry_is_valid_id(entry_id));
-
-    const txn = conn.transaction('entry', 'readwrite');
-    txn.oncomplete = () => {
-      if (channel) {
-        // TODO: maybe the try/catch isn't needed? If this is called unawaited,
-        // then who cares if the rejection occurs? And when called awaited, it
-        // is extremely unlikely the channel has been closed and moreover it
-        // probably signals an actual error of premature channel close. I am
-        // going to wait on that until I resolve the new non-auto-connect
-        // requirement in which entry_mark_read is called
-
-        // channel may be closed by the time this executes when
-        // entry_mark_read is not awaited, so trap the invalid state error
-        // and just log it
-        try {
-          channel.postMessage({type: 'entry-marked-read', id: entry_id});
-        } catch (error) {
-          console.debug(error);
-        }
-      }
-
-      resolve();
-    };
-    txn.onerror = () => reject(txn.error);
-    const store = txn.objectStore('entry');
-    const request = store.get(entry_id);
-    request.onsuccess = () => {
-      const entry = request.result;
-
-      // If there was no matching entry for the entry id, this is a programming
-      // error.
-      assert(entry);
-
-      if (entry.readState === ENTRY_STATE_READ) {
-        console.warn('Entry %d already in read state, ignoring', entry.id);
-        return;
-      }
-
-      if (entry.readState !== ENTRY_STATE_UNREAD) {
-        console.warn('Entry %d not in unread state, ignoring', entry.id);
-        return;
-      }
-
-      entry.readState = ENTRY_STATE_READ;
-      const currentDate = new Date();
-      entry.dateUpdated = currentDate;
-      entry.dateRead = currentDate;
-      store.put(entry);
-    };
-  });
-}
-
 // Returns an array of active feeds
 export async function find_active_feeds(conn) {
   assert(conn instanceof IDBDatabase);

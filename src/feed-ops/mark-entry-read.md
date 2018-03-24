@@ -13,7 +13,7 @@
 
 // Call unawaited. We can still pass conn because the update starts in the
 // current tick, which is prior to conn closing externally, because we know
-// conn is open or else call to entry_mark_read would have failed.
+// conn is open or else call to `mark_entry_read` would have failed.
 // TODO: actually, we don't. We await above, so it is entirely possible the
 // connection is closed by now?
 // TODO: second issue, now that I think about it, might be transactional

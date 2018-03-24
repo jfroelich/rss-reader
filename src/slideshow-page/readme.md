@@ -16,8 +16,8 @@ The creation of a slide element, and the appending of a slide element, should be
 
 # TODO: slide_mark_read notes
 
-* rather than await call to entry_mark_read, this should listen for entry-marked-read events roundtrip and handle the event when it later occurs to mark the corresponding slide. Then this can be called non-awaited
-* maybe display an error if entry_mark_read fails?
+* rather than await call to `mark_entry_read`, this should listen for entry-marked-read events roundtrip and handle the event when it later occurs to mark the corresponding slide. Then this can be called non-awaited
+* maybe display an error if `mark_entry_read` fails?
 
 ### TODO: slide_load_and_append_multiple notes
 Append slides shouldn't be responsible for loading. This should accept an array of slides as input. Something else should be doing loading.
