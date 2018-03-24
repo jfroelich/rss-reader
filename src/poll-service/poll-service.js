@@ -1,5 +1,6 @@
 import {entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
 import {feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/app/objects/feed.js';
+import {contains_entry_with_url} from '/src/app/operations/contains-entry-with-url.js';
 import {create_entry} from '/src/app/operations/create-entry.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import * as badge from '/src/badge.js';
@@ -292,7 +293,7 @@ PollService.prototype.poll_entry = async function(entry) {
 
 PollService.prototype.entry_exists = function(entry) {
   const url = new URL(entry_peek_url(entry));
-  return rdb.contains_entry_with_url(this.rconn, url);
+  return contains_entry_with_url(this.rconn, url);
 };
 
 PollService.prototype.fetch_entry = async function(entry) {

@@ -133,18 +133,6 @@ export async function for_each_active_feed(conn, per_feed_callback) {
   }
 }
 
-export function contains_entry_with_url(conn, url) {
-  return new Promise((resolve, reject) => {
-    assert(url instanceof URL);
-    const txn = conn.transaction('entry');
-    const store = txn.objectStore('entry');
-    const index = store.index('urls');
-    const request = index.getKey(url.href);
-    request.onsuccess = _ => resolve(entry_is_valid_id(request.result));
-    request.onerror = _ => reject(request.error);
-  });
-}
-
 function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }
