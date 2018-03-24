@@ -1,6 +1,6 @@
+import {entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/app/objects/entry.js';
 import * as rdb from '/src/rdb/rdb.js';
 import {sizeof} from '/src/sizeof/sizeof.js';
-import {ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_ARCHIVED} from '/src/app/objects/entry.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -79,7 +79,7 @@ Archiver.prototype.archive_entry = function(entry) {
 };
 
 Archiver.prototype.compact_entry = function(entry) {
-  const ce = rdb.entry_create();
+  const ce = entry_create();
   ce.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {

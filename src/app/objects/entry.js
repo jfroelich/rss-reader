@@ -25,7 +25,7 @@ export function entry_sanitize(
     input_entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
   // Create a shallow clone of the entry. This is partly the source of impurity.
-  const blank_entry = rdb.entry_create();
+  const blank_entry = entry_create();
   const output_entry = Object.assign(blank_entry, input_entry);
 
   if (output_entry.author) {
@@ -101,6 +101,10 @@ export function entry_is_valid_id(value) {
 export function is_entry(value) {
   // note: typeof null === 'object', hence the truthy test
   return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
+}
+
+export function entry_create() {
+  return {magic: ENTRY_MAGIC};
 }
 
 function assert(value) {

@@ -344,7 +344,3 @@ export function feed_merge(old_feed, new_feed) {
 
   return merged_feed;
 }
-
-export function entry_create() {
-  return {magic: ENTRY_MAGIC};
-}
