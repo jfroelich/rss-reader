@@ -1,10 +1,11 @@
+import * as badge from '/src/badge.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 export function mark_entry_read(conn, channel, entry_id) {
   return new Promise((resolve, reject) => {
     assert(rdb.entry_is_valid_id(entry_id));
     const txn = conn.transaction('entry', 'readwrite');
-    txn.oncomplete = txn_oncomplete.bind(txn, channel, entry_id, resolve);
+    txn.oncomplete = txn_oncomplete.bind(txn, conn, channel, entry_id, resolve);
     txn.onerror = _ => reject(txn.error);
     const store = txn.objectStore('entry');
     const request = store.get(entry_id);
@@ -37,7 +38,7 @@ function request_onsuccess(store, event) {
   store.put(entry);
 }
 
-function txn_oncomplete(channel, entry_id, callback, event) {
+function txn_oncomplete(conn, channel, entry_id, callback, event) {
   // channel may be closed by the time this executes when mark_entry_read
   // is not awaited, so trap the invalid state error and just log it
   if (channel) {
@@ -47,6 +48,12 @@ function txn_oncomplete(channel, entry_id, callback, event) {
       console.debug(error);
     }
   }
+
+  console.debug('Marked entry %d as read', entry_id);
+
+  // Update the number of unread entries displayed
+  // TODO: review whether this should be awaited
+  badge.update(conn).catch(console.error);
 
   callback();
 }

@@ -1,5 +1,5 @@
+import {mark_entry_read} from '/src/app/operations/mark-entry-read.js';
 import {date_format} from '/src/date/date.js';
-import entry_mark_read from '/src/feed-ops/mark-entry-read.js';
 import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
 import {html_truncate} from '/src/html-truncate/html-truncate.js';
 import {html_escape} from '/src/html/html.js';
@@ -126,7 +126,7 @@ async function slide_mark_read(conn, slide) {
   if (!slide.hasAttribute('read') && !slide.hasAttribute('stale')) {
     const id = parseInt(slide.getAttribute('entry'), 10);
     console.log('Marking slide with entry id %d as read', id);
-    await entry_mark_read(conn, channel, id);
+    await mark_entry_read(conn, channel, id);
     slide.setAttribute('read', '');
   }
 }
