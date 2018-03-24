@@ -288,41 +288,6 @@ function entry_put(conn, channel, entry) {
   });
 }
 
-// Returns a shallow copy of the input feed with sanitized properties
-export function feed_sanitize(feed, title_max_length, description_max_length) {
-  if (typeof title_max_length === 'undefined') {
-    title_max_length = 1024;
-  }
-
-  if (typeof description_max_length === 'undefined') {
-    description_max_length = 1024 * 10;
-  }
-
-  const blank_feed = feed_create();
-  const output_feed = Object.assign(blank_feed, feed);
-  const html_tag_replacement = '';
-  const suffix = '';
-
-  if (output_feed.title) {
-    let title = output_feed.title;
-    title = string.filter_control_characters(title);
-    title = html_replace_tags(title, html_tag_replacement);
-    title = string.condense_whitespace(title);
-    title = html_truncate(title, title_max_length, suffix);
-    output_feed.title = title;
-  }
-
-  if (output_feed.description) {
-    let desc = output_feed.description;
-    desc = string.filter_control_characters(desc);
-    desc = html_replace_tags(desc, html_tag_replacement);
-    desc = string.condense_whitespace(desc);
-    desc = html_truncate(desc, description_max_length, suffix);
-    output_feed.description = desc;
-  }
-
-  return output_feed;
-}
 
 // TODO: implement
 function entry_is_valid(entry) {
