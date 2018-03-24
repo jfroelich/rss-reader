@@ -117,37 +117,6 @@ function add_active_field_to_feeds(store) {
   };
 }
 
-// TODO: rather than reject when inactive, maybe just skip?
-export function rdb_feed_deactivate(conn, channel, feed_id, reason_text) {
-  return new Promise((resolve, reject) => {
-    assert(conn instanceof IDBDatabase);
-    assert(
-        typeof channel === 'undefined' || channel === null ||
-        channel instanceof BroadcastChannel);
-    assert(feed_is_valid_id(feed_id));
-
-    const txn = conn.transaction('feed', 'readwrite');
-    txn.oncomplete = () => {
-      if (channel) {
-        channel.postMessage({type: 'feed-deactivated', id: feed_id});
-      }
-      resolve();
-    };
-    txn.onerror = () => reject(txn.error);
-    const store = txn.objectStore('feed');
-    const request = store.get(feed_id);
-    request.onsuccess = () => {
-      const feed = request.result;
-      assert(feed.active || !('active' in feed));
-      feed.active = false;
-      feed.deactivationDate = new Date();
-      feed.deactivationReasonText = reason_text;
-      feed.dateUpdated = new Date();
-      store.put(feed);
-    };
-  });
-}
-
 export async function entry_add(conn, channel, entry) {
   assert(conn instanceof IDBDatabase);
   assert(

@@ -1,4 +1,5 @@
 import {activate_feed as activate_feed_impl} from '/src/app/operations/activate-feed.js';
+import {deactivate_feed as deactivate_feed_impl} from '/src/app/operations/deactivate-feed.js';
 import {Exim} from '/src/exim/exim.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
@@ -105,6 +106,6 @@ export async function activate_feed(channel, feed_id) {
 
 export async function deactivate_feed(channel, feed_id, reason) {
   const conn = await rdb.open();
-  await rdb.rdb_feed_deactivate(conn, channel, feed_id, reason);
+  await deactivate_feed_impl(conn, channel, feed_id, reason);
   conn.close();
 }
