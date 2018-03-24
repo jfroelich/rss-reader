@@ -300,26 +300,3 @@ export function feed_peek_url(feed) {
   assert(feed_has_url(feed));
   return feed.urls[feed.urls.length - 1];
 }
-
-// Appends a url to the feed's internal list. Lazily creates the list if needed
-// @param feed {Object} a feed object
-// @param url {URL}
-export function feed_append_url(feed, url) {
-  if (!is_feed(feed)) {
-    console.error('Invalid feed argument:', feed);
-    return false;
-  }
-
-  if (!(url instanceof URL)) {
-    console.error('Invalid url argument:', url);
-    return false;
-  }
-
-  feed.urls = feed.urls || [];
-  const href = url.href;
-  if (feed.urls.includes(href)) {
-    return false;
-  }
-  feed.urls.push(href);
-  return true;
-}

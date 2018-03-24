@@ -1,3 +1,4 @@
+import {feed_append_url} from '/src/app/objects/feed.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 export function coerce_feed(parsed_feed, fetch_info) {
@@ -14,8 +15,8 @@ export function coerce_feed(parsed_feed, fetch_info) {
     feed.type = parsed_feed.type;
   }
 
-  rdb.feed_append_url(feed, request_url);
-  rdb.feed_append_url(feed, response_url);
+  feed_append_url(feed, request_url);
+  feed_append_url(feed, response_url);
 
   if (parsed_feed.link) {
     try {
