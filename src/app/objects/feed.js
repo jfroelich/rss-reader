@@ -177,3 +177,7 @@ export function feed_has_url(feed) {
 export function feed_is_valid_id(id) {
   return Number.isInteger(id) && id > 0;
 }
+
+function assert(value) {
+  if (!value) throw new Error('Assertion error');
+}
