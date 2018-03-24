@@ -1,4 +1,4 @@
-import {feed_is_valid} from '/src/app/objects/feed.js';
+import {feed_is_valid, feed_prepare} from '/src/app/objects/feed.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import * as rdb from '/src/rdb/rdb.js';
 
@@ -19,7 +19,7 @@ import * as rdb from '/src/rdb/rdb.js';
 export async function create_feed(conn, channel, feed) {
   assert(feed_is_valid(feed));
 
-  const prepared_feed = rdb.feed_prepare(feed);
+  const prepared_feed = feed_prepare(feed);
   prepared_feed.active = true;
   prepared_feed.dateCreated = new Date();
   delete prepared_feed.dateUpdated;

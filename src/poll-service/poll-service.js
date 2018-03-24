@@ -1,3 +1,4 @@
+import {feed_prepare} from '/src/app/objects/feed.js';
 import {create_entry} from '/src/app/operations/create-entry.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import * as badge from '/src/badge.js';
@@ -177,7 +178,7 @@ PollService.prototype.poll_feed = async function(feed) {
   const merged_feed = rdb.feed_merge(feed, coerced_feed);
   this.handle_fetch_success(merged_feed);
 
-  const storable_feed = rdb.feed_prepare(merged_feed);
+  const storable_feed = feed_prepare(merged_feed);
   storable_feed.dateUpdated = new Date();
   await update_feed(this.rconn, this.channel, storable_feed);
 

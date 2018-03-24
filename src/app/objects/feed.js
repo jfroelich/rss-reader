@@ -1,4 +1,9 @@
 import * as rdb from '/src/rdb/rdb.js';
+import * as object from '/src/object/object.js';
+
+export function feed_prepare(feed) {
+  return object.filter_empty_properties(rdb.feed_sanitize(feed));
+}
 
 // TODO: implement fully
 // Return whether the feed has valid properties

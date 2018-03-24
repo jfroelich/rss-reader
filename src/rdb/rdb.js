@@ -288,9 +288,7 @@ function entry_put(conn, channel, entry) {
   });
 }
 
-export function feed_prepare(feed) {
-  return object.filter_empty_properties(feed_sanitize(feed));
-}
+
 
 // Remove a feed any entries tied to the feed from the database
 // @param conn {IDBDatabase}
