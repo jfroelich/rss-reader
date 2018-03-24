@@ -3,6 +3,8 @@ import {html_replace_tags} from '/src/html/html.js';
 import * as rdb from '/src/rdb/rdb.js';
 import * as string from '/src/string/string.js';
 
+const ENTRY_MAGIC = 0xdeadbeef;
+
 
 export const ENTRY_STATE_UNREAD = 0;
 export const ENTRY_STATE_READ = 1;

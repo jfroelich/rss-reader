@@ -4,6 +4,9 @@ import * as object from '/src/object/object.js';
 import * as rdb from '/src/rdb/rdb.js';
 import * as string from '/src/string/string.js';
 
+const FEED_MAGIC = 0xfeedfeed;
+
+
 // Returns a shallow copy of the input feed with sanitized properties
 export function feed_sanitize(feed, title_max_length, description_max_length) {
   if (typeof title_max_length === 'undefined') {
