@@ -1,3 +1,4 @@
+import {feed_is_valid} from '/src/app/objects/feed.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 // TODO: when updating, is put result still the feed id? I know
@@ -17,7 +18,7 @@ import * as rdb from '/src/rdb/rdb.js';
 export function update_feed(conn, channel, feed, validate = true) {
   return new Promise((resolve, reject) => {
     if (validate) {
-      assert(rdb.feed_is_valid(feed));
+      assert(feed_is_valid(feed));
     } else {
       assert(rdb.is_feed(feed));
     }

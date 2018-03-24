@@ -1,3 +1,4 @@
+import {feed_is_valid} from '/src/app/objects/feed.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import * as rdb from '/src/rdb/rdb.js';
 
@@ -16,7 +17,7 @@ import * as rdb from '/src/rdb/rdb.js';
 
 // Create a new feed in storage
 export async function create_feed(conn, channel, feed) {
-  assert(rdb.feed_is_valid(feed));
+  assert(feed_is_valid(feed));
 
   const prepared_feed = rdb.feed_prepare(feed);
   prepared_feed.active = true;
