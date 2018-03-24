@@ -1,4 +1,4 @@
-import {entry_append_url, entry_has_url, entry_peek_url} from '/src/app/objects/entry.js';
+import {entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
 import {feed_prepare} from '/src/app/objects/feed.js';
 import {create_entry} from '/src/app/operations/create-entry.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
@@ -377,7 +377,7 @@ async function entry_parse_response(response) {
 }
 
 function entry_update_title(entry, document) {
-  assert(rdb.is_entry(entry));
+  assert(is_entry(entry));
   if (document && !entry.title) {
     const title_element = document.querySelector('html > head > title');
     if (title_element) {

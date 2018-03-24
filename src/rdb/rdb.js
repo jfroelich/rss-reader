@@ -348,9 +348,3 @@ export function feed_merge(old_feed, new_feed) {
 export function entry_create() {
   return {magic: ENTRY_MAGIC};
 }
-
-// Return true if the first parameter looks like an entry object
-export function is_entry(value) {
-  // note: typeof null === 'object', hence the truthy test
-  return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
-}

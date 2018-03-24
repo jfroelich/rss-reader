@@ -14,7 +14,7 @@ export const ENTRY_STATE_ARCHIVED = 1;
 
 // TODO: implement
 export function entry_is_valid(entry) {
-  if (!rdb.is_entry(entry)) {
+  if (!is_entry(entry)) {
     return false;
   }
 
@@ -61,7 +61,7 @@ export function entry_sanitize(
 // urls to ensure the new url is unique. Returns true if entry was added, or
 // false if the url already exists and was therefore not added
 export function entry_append_url(entry, url) {
-  assert(rdb.is_entry(entry));
+  assert(is_entry(entry));
   assert(url instanceof URL);
 
   const normal_url_string = url.href;
@@ -81,20 +81,26 @@ export function entry_append_url(entry, url) {
 // Returns the last url, as a string, in the entry's url list. This should never
 // be called on an entry without urls.
 export function entry_peek_url(entry) {
-  assert(rdb.is_entry(entry));
+  assert(is_entry(entry));
   assert(entry_has_url(entry));
   return entry.urls[entry.urls.length - 1];
 }
 
 // Returns true if the entry has at least one url
 export function entry_has_url(entry) {
-  assert(rdb.is_entry(entry));
+  assert(is_entry(entry));
   return entry.urls && (entry.urls.length > 0);
 }
 
 // Return true if the first parameter looks like an entry id
 export function entry_is_valid_id(value) {
   return Number.isInteger(value) && value > 0;
+}
+
+// Return true if the first parameter looks like an entry object
+export function is_entry(value) {
+  // note: typeof null === 'object', hence the truthy test
+  return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
 }
 
 function assert(value) {

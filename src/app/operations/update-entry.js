@@ -1,3 +1,4 @@
+import {is_entry} from '/src/app/objects/entry.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 export function update_entry(conn, channel, entry) {
@@ -5,7 +6,7 @@ export function update_entry(conn, channel, entry) {
 }
 
 function executor(conn, channel, entry, resolve, reject) {
-  assert(rdb.is_entry(entry));
+  assert(is_entry(entry));
   const txn = conn.transaction('entry', 'readwrite');
   const store = txn.objectStore('entry');
   const request = store.put(entry);

@@ -1,4 +1,4 @@
-import {entry_is_valid_id, entry_peek_url} from '/src/app/objects/entry.js';
+import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
 import {mark_entry_read} from '/src/app/operations/mark-entry-read.js';
 import {date_format} from '/src/date/date.js';
 import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
@@ -160,7 +160,7 @@ async function slide_load_and_append_multiple(conn, limit) {
 }
 
 function slide_append(entry) {
-  if (!rdb.is_entry(entry)) {
+  if (!is_entry(entry)) {
     console.error('Invalid entry parameter', entry);
     return;
   }

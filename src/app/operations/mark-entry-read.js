@@ -1,4 +1,4 @@
-import {entry_is_valid_id, ENTRY_STATE_READ, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
+import {entry_is_valid_id, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/app/objects/entry.js';
 import * as badge from '/src/badge.js';
 import * as rdb from '/src/rdb/rdb.js';
 
@@ -37,7 +37,7 @@ function request_onsuccess(store, event) {
 
   // Do not trust data coming from the database because it can be modified by
   // external means
-  if (!rdb.is_entry(entry)) {
+  if (!is_entry(entry)) {
     console.warn('Loaded object is not an entry');
     return;
   }
