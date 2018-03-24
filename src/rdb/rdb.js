@@ -1,4 +1,4 @@
-import {ENTRY_MAGIC, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
+import {entry_is_valid_id, ENTRY_MAGIC, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
 import {FEED_MAGIC} from '/src/app/objects/feed.js';
 import {idb_open} from '/src/idb/idb.js';
 import * as string from '/src/string/string.js';
@@ -141,8 +141,8 @@ export function contains_entry_with_url(conn, url) {
     const store = txn.objectStore('entry');
     const index = store.index('urls');
     const request = index.getKey(url.href);
-    request.onsuccess = () => resolve(entry_is_valid_id(request.result));
-    request.onerror = () => reject(request.error);
+    request.onsuccess = _ => resolve(entry_is_valid_id(request.result));
+    request.onerror = _ => reject(request.error);
   });
 }
 
@@ -353,9 +353,4 @@ export function entry_create() {
 export function is_entry(value) {
   // note: typeof null === 'object', hence the truthy test
   return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
-}
-
-// Return true if the first parameter looks like an entry id
-export function entry_is_valid_id(value) {
-  return Number.isInteger(value) && value > 0;
 }

@@ -1,11 +1,11 @@
-import {ENTRY_STATE_READ, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
+import {entry_is_valid_id, ENTRY_STATE_READ, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
 import * as badge from '/src/badge.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 export function mark_entry_read(conn, channel, entry_id) {
   // Rather than reject from within the promise, throw an immediate error. This
   // constitutes a serious and permanent programmer error.
-  if (!rdb.entry_is_valid_id(entry_id)) {
+  if (!entry_is_valid_id(entry_id)) {
     throw new TypeError('entry_id is not a valid entry id: ' + entry_id);
   }
 

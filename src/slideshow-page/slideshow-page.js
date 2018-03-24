@@ -1,4 +1,4 @@
-import {entry_peek_url} from '/src/app/objects/entry.js';
+import {entry_is_valid_id, entry_peek_url} from '/src/app/objects/entry.js';
 import {mark_entry_read} from '/src/app/operations/mark-entry-read.js';
 import {date_format} from '/src/date/date.js';
 import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
@@ -93,7 +93,7 @@ async function on_entry_added_message(message) {
 }
 
 async function on_entry_expired_message(message) {
-  if (typeof message === 'object' && rdb.entry_is_valid_id(message.id)) {
+  if (typeof message === 'object' && entry_is_valid_id(message.id)) {
     const slide_name = Slideshow.element_get_name();
     const selector = slide_name + '[entry="' + message.id + '"]';
     const slide = document.querySelector(selector);

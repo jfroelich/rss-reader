@@ -92,6 +92,11 @@ export function entry_has_url(entry) {
   return entry.urls && (entry.urls.length > 0);
 }
 
+// Return true if the first parameter looks like an entry id
+export function entry_is_valid_id(value) {
+  return Number.isInteger(value) && value > 0;
+}
+
 function assert(value) {
   if (!value) throw new Error('Assertion error');
 }
