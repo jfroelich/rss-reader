@@ -1,3 +1,4 @@
+import {count_unread_entries} from '/src/app/operations/count-unread-entries.js';
 import * as rdb from '/src/rdb/rdb.js';
 
 let update_pending = false;
@@ -13,7 +14,7 @@ export async function update(conn) {
 
   let count;
   try {
-    count = await rdb.entry_count_unread(conn);
+    count = await count_unread_entries(conn);
   } catch (error) {
     console.error(error);
     return;

@@ -117,21 +117,6 @@ function add_active_field_to_feeds(store) {
   };
 }
 
-// Return the number of unread entries in the database
-// @param conn {IDBDatabase} an open database connection, required
-// @return {Promise} a promise that resolves to the number of unread entries, or
-// rejects with a database error
-export function entry_count_unread(conn) {
-  return new Promise((resolve, reject) => {
-    const txn = conn.transaction('entry');
-    const store = txn.objectStore('entry');
-    const index = store.index('readState');
-    const request = index.count(ENTRY_STATE_UNREAD);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
 // Marks the entry corresponding to the entry_id as read in the database.
 // @param conn {IDBDatabase} required
 export function entry_mark_read(conn, channel, entry_id) {

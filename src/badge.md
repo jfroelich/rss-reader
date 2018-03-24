@@ -1,9 +1,3 @@
-
-// TODO: primary todo, trying to remove auto-connect from rdb/rdb.js, this is
-// the sole caller of entry_count_unread. In order to remove auto-connect I
-// need ensure all callers of this function use a valid connection. In doing so,
-// do not forget that this can _still_ be called non-awaited with a connection.
-
 // TODO: perhaps think of badge as a view, like the other pages or the CLI. In
 // that sense it would be reasonable to open a channel and listen for change
 // events. I am going to wait on making this change until rdb/rdb.js redesign is
