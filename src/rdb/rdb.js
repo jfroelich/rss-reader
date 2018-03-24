@@ -524,37 +524,6 @@ export function feed_is_valid(feed) {
   return true;
 }
 
-// Add a feed to the database
-// @param conn {IDBDatabase} an open database connection
-// @param channel {BroadcastChannel} optional, the channel to receive a message
-// about the feed being added
-// @param feed {object} the feed to insert
-// @return {Promise} resolves the object that was stored in the database, or
-// rejects with an error (e.g. database error, invalid arguments)
-export async function feed_add(conn, channel, feed) {
-  // Delegate feed type check to feed_is_valid
-  assert(feed_is_valid(feed));
-
-  // Clone the feed, sanitize the clone, setup default props
-  const prepared_feed = feed_prepare(feed);
-  prepared_feed.active = true;
-  prepared_feed.dateCreated = new Date();
-  delete prepared_feed.dateUpdated;
-
-  // Delegate database modification to feed_put. In doing so, suppress the
-  // message from feed_put because we will post our own, and suppress
-  // validation because we did it above.
-  let void_channel;
-  const validate = false;
-  const feed_id = await feed_put(conn, void_channel, prepared_feed, validate);
-  if (channel) {
-    channel.postMessage({type: 'feed-added', id: feed_id});
-  }
-
-  prepared_feed.id = feed_id;
-  return prepared_feed;
-}
-
 // Create or update a feed in the database
 // @param conn {IDBDatabase}
 // @param channel {BroadcastChannel} optional
@@ -638,7 +607,7 @@ export function feed_remove(conn, channel, feed_id, reason_text) {
 }
 
 // Returns a shallow copy of the input feed with sanitized properties
-function feed_sanitize(feed, title_max_length, description_max_length) {
+export function feed_sanitize(feed, title_max_length, description_max_length) {
   if (typeof title_max_length === 'undefined') {
     title_max_length = 1024;
   }
@@ -701,7 +670,7 @@ function entry_is_valid(entry) {
 // second function that replaces or removes certain important binary characters
 // (e.g. remove line breaks from author string). Something like
 // 'string_replace_formatting_characters'.
-function entry_sanitize(
+export function entry_sanitize(
     input_entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
   // Create a shallow clone of the entry. This is partly the source of impurity.

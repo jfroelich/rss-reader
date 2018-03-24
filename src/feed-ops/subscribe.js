@@ -1,3 +1,4 @@
+import {create_feed} from '/src/app/operations/create-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as notifications from '/src/notifications/notifications.js';
@@ -47,7 +48,7 @@ SubscribeOperation.prototype.subscribe = async function(url) {
   // previously subscribe_feed_set_favicon, note args changed
   await this.set_favicon(feed);
 
-  const stored_feed = await rdb.feed_add(this.rconn, this.channel, feed);
+  const stored_feed = await create_feed(this.rconn, this.channel, feed);
   if (this.notify_flag) {
     this.show_notification(stored_feed);
   }
