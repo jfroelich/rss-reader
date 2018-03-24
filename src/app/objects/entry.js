@@ -55,3 +55,29 @@ export function entry_sanitize(
 
   return output_entry;
 }
+
+// Append a url to an entry's url list. Lazily creates the urls property if
+// needed. Normalizes the url. The normalized url is compared against existing
+// urls to ensure the new url is unique. Returns true if entry was added, or
+// false if the url already exists and was therefore not added
+export function entry_append_url(entry, url) {
+  assert(rdb.is_entry(entry));
+  assert(url instanceof URL);
+
+  const normal_url_string = url.href;
+  if (entry.urls) {
+    if (entry.urls.includes(normal_url_string)) {
+      return false;
+    }
+
+    entry.urls.push(normal_url_string);
+  } else {
+    entry.urls = [normal_url_string];
+  }
+
+  return true;
+}
+
+function assert(value) {
+  if (!value) throw new Error('Assertion error');
+}

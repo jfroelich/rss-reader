@@ -1,3 +1,4 @@
+import {entry_append_url} from '/src/app/objects/entry.js';
 import {feed_prepare} from '/src/app/objects/feed.js';
 import {create_entry} from '/src/app/operations/create-entry.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
@@ -315,7 +316,7 @@ PollService.prototype.handle_entry_redirect = async function(entry, response) {
     return false;
   }
 
-  rdb.entry_append_url(entry, response_url);
+  entry_append_url(entry, response_url);
   entry_rewrite_tail_url(entry);
   return await this.entry_exists(entry);
 };
@@ -360,7 +361,7 @@ function entry_rewrite_tail_url(entry) {
   if (!new_url) {
     return false;
   }
-  return rdb.entry_append_url(entry, new_url);
+  return entry_append_url(entry, new_url);
 }
 
 async function entry_parse_response(response) {
