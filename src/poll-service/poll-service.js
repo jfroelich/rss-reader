@@ -1,5 +1,5 @@
 import {entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
-import {feed_prepare} from '/src/app/objects/feed.js';
+import {feed_merge, feed_prepare} from '/src/app/objects/feed.js';
 import {create_entry} from '/src/app/operations/create-entry.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import * as badge from '/src/badge.js';
@@ -176,7 +176,7 @@ PollService.prototype.poll_feed = async function(feed) {
   };
 
   const coerced_feed = coerce_feed(parsed_feed, fetch_info);
-  const merged_feed = rdb.feed_merge(feed, coerced_feed);
+  const merged_feed = feed_merge(feed, coerced_feed);
   this.handle_fetch_success(merged_feed);
 
   const storable_feed = feed_prepare(merged_feed);

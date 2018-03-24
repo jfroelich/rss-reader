@@ -323,24 +323,3 @@ export function feed_append_url(feed, url) {
   feed.urls.push(href);
   return true;
 }
-
-// Returns a new object that results from merging the old feed with the new
-// feed. Fields from the new feed take precedence, except for urls, which are
-// merged to generate a distinct ordered set of oldest to newest url. Impure
-// because of copying by reference.
-export function feed_merge(old_feed, new_feed) {
-  const merged_feed = Object.assign(feed_create(), old_feed, new_feed);
-
-  // After assignment, the merged feed has only the urls from the new feed. So
-  // the output feed's url list needs to be fixed. First copy over the old
-  // feed's urls, then try and append each new feed url.
-  merged_feed.urls = [...old_feed.urls];
-
-  if (new_feed.urls) {
-    for (const url_string of new_feed.urls) {
-      feed_append_url(merged_feed, new URL(url_string));
-    }
-  }
-
-  return merged_feed;
-}
