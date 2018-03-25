@@ -154,8 +154,7 @@ PollService.prototype.poll_feed = async function(feed) {
     this.console.debug('No modification detected', tail_url.href);
     const dirty = this.handle_fetch_success(feed);
     if (dirty) {
-      feed.dateUpdated = new Date();
-      await update_feed(this.rconn, this.channel, feed);
+      await update_feed(this.rconn, this.channel, feed, true, true);
     }
     return 0;
   }
@@ -184,8 +183,7 @@ PollService.prototype.poll_feed = async function(feed) {
   this.handle_fetch_success(merged_feed);
 
   const storable_feed = feed_prepare(merged_feed);
-  storable_feed.dateUpdated = new Date();
-  await update_feed(this.rconn, this.channel, storable_feed);
+  await update_feed(this.rconn, this.channel, storable_feed, true, true);
 
   const coerced_entries = parsed_feed.entries.map(coerce_entry);
   const entries = dedup_entries(coerced_entries);
@@ -260,8 +258,7 @@ PollService.prototype.handle_error = function(status, feed, type) {
     feed.deactivationDate = new Date();
   }
 
-  feed.dateUpdated = new Date();
-  update_feed(this.rconn, this.channel, feed).catch(console.error);
+  update_feed(this.rconn, this.channel, feed, true, true).catch(console.error);
 };
 
 PollService.prototype.poll_entry = async function(entry) {
