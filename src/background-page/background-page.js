@@ -3,7 +3,7 @@ import '/src/cli/cli.js';
 import * as rdb from '/src/app/handles/rdb.js';
 import {refresh_feed_icons} from '/src/app/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/app/operations/remove-lost-entries.js';
-import entry_store_remove_orphans from '/src/app/operations/remove-orphaned-entries.js';
+import {entry_store_remove_orphans} from '/src/app/operations/remove-orphaned-entries.js';
 import * as badge from '/src/badge.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {Archiver} from '/src/feed-ops/archive-entries.js';
