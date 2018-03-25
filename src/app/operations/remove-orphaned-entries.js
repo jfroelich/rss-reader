@@ -13,7 +13,7 @@ import {feed_is_valid_id} from '/src/app/objects/feed.js';
 // Scans the database for entries not linked to a feed and deletes them
 // conn {IDBDatabase} is optional open database connection
 // channel {BroadcastChannel} is optional broadcast channel
-export async function entry_store_remove_orphans(conn, channel) {
+export async function remove_orphans(conn, channel) {
   const dconn = conn ? conn : await rdb.open();
   const entry_ids = await entry_store_remove_orphans_promise(dconn);
   if (!conn) {
