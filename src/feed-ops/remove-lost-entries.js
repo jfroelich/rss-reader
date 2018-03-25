@@ -13,8 +13,7 @@ import {entry_has_url} from '/src/app/objects/entry.js';
 // communicate storage change events
 // @param console {Object} optional, logging destination, if specified should
 // comply with the window.console interface
-export default async function entry_store_remove_lost_entries(
-    conn, channel, console) {
+export async function remove_lost_entries(conn, channel, console) {
   console = console || NULL_CONSOLE;
 
   const dconn = conn ? conn : await rdb.open();

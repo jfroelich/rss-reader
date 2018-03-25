@@ -5,7 +5,7 @@ import {refresh_feed_icons} from '/src/app/operations/refresh-feed-icons.js';
 import * as badge from '/src/badge.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {Archiver} from '/src/feed-ops/archive-entries.js';
-import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
+import {remove_lost_entries} from '/src/feed-ops/remove-lost-entries.js';
 import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 import show_slideshow_tab from '/src/show-slideshow-tab.js';
@@ -28,7 +28,7 @@ async function handle_archive_alarm_wakeup(alarm) {
 async function handle_lost_entries_alarm(alarm) {
   let conn;
   const channel = new BroadcastChannel('reader');
-  await entry_store_remove_lost_entries(conn, channel, console);
+  await remove_lost_entries(conn, channel, console);
   channel.close();
 }
 
