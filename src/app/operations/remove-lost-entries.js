@@ -5,7 +5,7 @@ export async function remove_lost_entries(
     conn, channel, console = NULL_CONSOLE) {
   const dconn = conn ? conn : await rdb.open();
   const entry_ids =
-      await entry_store_remove_lost_entries_promise(dconn, console);
+      await remove_lost_entries_promise(dconn, console);
   if (!conn) {
     console.debug('Closing connection to database', dconn.name);
     dconn.close();
@@ -36,7 +36,7 @@ function channel_post_message_noexcept(channel, message, console) {
 
 // Returns a promise that resolves to an array of entry ids that were deleted
 // This uses a single transaction to ensure consistency.
-function entry_store_remove_lost_entries_promise(conn, console) {
+function remove_lost_entries_promise(conn, console) {
   return new Promise((resolve, reject) => {
     const entry_ids = [];
     const tx = conn.transaction('entry', 'readwrite');
