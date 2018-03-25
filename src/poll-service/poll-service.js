@@ -130,6 +130,7 @@ PollService.prototype.poll_feed = async function(feed) {
   this.console.log('Polling feed', feed.title, tail_url.href);
 
   if (!feed.active) {
+    this.console.debug('Feed is inactive', tail_url.href);
     return 0;
   }
 
@@ -165,6 +166,7 @@ PollService.prototype.poll_feed = async function(feed) {
   try {
     parsed_feed = feed_parser.parse(response_text, skip_entries, resolve_urls);
   } catch (error) {
+    this.console.debug(error);
     this.handle_error(/* status */ undefined, feed, 'parse');
     return 0;
   }
@@ -282,13 +284,7 @@ PollService.prototype.poll_entry = async function(entry) {
   await this.update_entry_icon(entry, document);
   await this.update_entry_content(entry, document);
 
-  let stored_entry;
-  try {
-    stored_entry = await create_entry(this.rconn, this.channel, entry);
-  } catch (error) {
-    return;
-  }
-
+  const stored_entry = await create_entry(this.rconn, this.channel, entry);
   return stored_entry.id;
 };
 
