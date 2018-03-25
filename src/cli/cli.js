@@ -1,8 +1,8 @@
 import * as rdb from '/src/app/handles/rdb.js';
 import {refresh_feed_icons} from '/src/app/operations/refresh-feed-icons.js';
+import {remove_lost_entries as remove_lost_entries_impl} from '/src/app/operations/remove-lost-entries.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {Archiver} from '/src/feed-ops/archive-entries.js';
-import {remove_lost_entries as remove_lost_entries_impl} from '/src/feed-ops/remove-lost-entries.js';
 import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 
