@@ -35,10 +35,11 @@ async function handle_lost_entries_alarm(alarm) {
 }
 
 async function handle_orphan_entries_alarm(alarm) {
-  let conn;
+  const conn = await rdb.open();
   const channel = new BroadcastChannel('reader');
   await remove_orphans(conn, channel);
   channel.close();
+  conn.close();
 }
 
 async function handle_refresh_feed_icons_alarm(alarm) {

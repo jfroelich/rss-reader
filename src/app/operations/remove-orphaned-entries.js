@@ -1,12 +1,7 @@
-import * as rdb from '/src/app/handles/rdb.js';
 import {feed_is_valid_id} from '/src/app/objects/feed.js';
 
 export async function remove_orphans(conn, channel) {
-  const dconn = conn ? conn : await rdb.open();
-  const entry_ids = await entry_store_remove_orphans_promise(dconn);
-  if (!conn) {
-    dconn.close();
-  }
+  const entry_ids = await remove_orphans_promise(conn);
 
   if (channel && entry_ids.length) {
     const message = {type: 'entry-deleted', id: null, reason: 'orphan'};
@@ -17,7 +12,7 @@ export async function remove_orphans(conn, channel) {
   }
 }
 
-function entry_store_remove_orphans_promise(conn) {
+function remove_orphans_promise(conn) {
   return new Promise((resolve, reject) => {
     const entry_ids = [];
     const tx = conn.transaction(['feed', 'entry'], 'readwrite');

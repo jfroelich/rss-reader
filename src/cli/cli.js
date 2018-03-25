@@ -46,10 +46,11 @@ async function remove_lost_entries() {
 }
 
 async function remove_orphans() {
-  let conn;
+  const conn = await rdb.open();
   const channel = new BroadcastChannel('reader');
   await remove_orphans_impl(conn, channel);
   channel.close();
+  conn.close();
 }
 
 async function lookup_favicon(url_string, cached) {
