@@ -1,7 +1,6 @@
 import {feed_create_favicon_lookup_url, feed_has_url} from '/src/app/objects/feed.js';
 import {find_active_feeds} from '/src/app/operations/find-active-feeds.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
-import {FaviconService} from '/src/favicon-service/favicon-service.js';
 
 export async function refresh_feed_icons(feed_conn, favicon_service, channel) {
   const feeds = await find_active_feeds(feed_conn);
@@ -16,6 +15,10 @@ async function refresh_feed(conn, favicon_service, channel, feed) {
   }
 
   const lookup_url = feed_create_favicon_lookup_url(feed);
+  if (!lookup_url) {
+    return;
+  }
+
   const icon_url_string = await fs.lookup(lookup_url);
 
   if (feed.faviconURLString !== icon_url_string) {
@@ -24,8 +27,9 @@ async function refresh_feed(conn, favicon_service, channel, feed) {
     } else {
       delete feed.faviconURLString;
     }
-    feed.dateUpdated = new Date();
+
     const validate = false;
-    await update_feed(conn, channel, feed, validate);
+    const set_date_updated = true;
+    await update_feed(conn, channel, feed, validate, set_date_updated);
   }
 }
