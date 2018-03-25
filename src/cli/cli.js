@@ -1,7 +1,7 @@
 import * as rdb from '/src/app/handles/rdb.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {Archiver} from '/src/feed-ops/archive-entries.js';
-import rdb_refresh_feed_icons from '/src/feed-ops/refresh-feed-icons.js';
+import {refresh_feed_icons} from '/src/feed-ops/refresh-feed-icons.js';
 import entry_store_remove_lost_entries from '/src/feed-ops/remove-lost-entries.js';
 import entry_store_remove_orphans from '/src/feed-ops/remove-orphaned-entries.js';
 import {PollService} from '/src/poll-service/poll-service.js';
@@ -17,9 +17,10 @@ async function cli_archive() {
 }
 
 async function refresh_icons() {
+  let channel;
   const fs = new FaviconService();
   const [rconn, iconn] = await Promise.all([rdb.open(), fs.open()]);
-  await rdb_refresh_feed_icons(rconn, iconn);
+  await refresh_feed_icons(rconn, iconn, channel);
   rconn.close();
   iconn.close();
 }
