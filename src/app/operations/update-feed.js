@@ -8,34 +8,43 @@ export function update_feed(
     assert(is_feed(feed));
   }
 
-  return new Promise(
-      executor.bind(null, conn, channel, feed, set_date_updated));
-}
-
-function executor(conn, channel, feed, set_date_updated, resolve, reject) {
   if (set_date_updated) {
     feed.dateUpdated = new Date();
   }
 
-  const txn = conn.transaction('feed', 'readwrite');
-  const store = txn.objectStore('feed');
-  const request = store.put(feed);
-
-  request.onsuccess = _ => {
-    const feed_id = request.result;
-    // Suppress invalid state error when channel is closed in non-awaited call
-    if (channel) {
-      try {
-        channel.postMessage({type: 'feed-updated', id: feed_id});
-      } catch (error) {
-        console.debug(error);
-      }
-    }
-    resolve(feed_id);
-  };
-  request.onerror = _ => reject(request.error);
+  return new Promise(executor.bind(null, conn, channel, feed));
 }
 
+function executor(conn, channel, feed, resolve, reject) {
+  const shared = {id: undefined, callback: resolve};
+
+  const txn = conn.transaction('feed', 'readwrite');
+  txn.oncomplete = txn_oncomplete.bind(txn, shared);
+  txn.onerror = _ => reject(txn.error);
+
+  const store = txn.objectStore('feed');
+  const request = store.put(feed);
+  request.onsuccess = request_onsuccess.bind(request, shared);
+  // Do not explicitly listen for request error, it implicitly bubbles up to txn
+}
+
+function txn_oncomplete(shared, event) {
+  // Suppress invalid state error when channel is closed in non-awaited call
+  if (channel) {
+    try {
+      channel.postMessage({type: 'feed-updated', id: shared.id});
+    } catch (error) {
+      console.debug(error);
+    }
+  }
+  shared.callback(shared.id);
+}
+
+function request_onsuccess(shared, event) {
+  // On create, the result is the new value of the auto-incremented feed id
+  // Not sure what happens on update
+  shared.id = event.target.result;
+}
 
 function assert(value) {
   if (!value) throw new Error('Assertion error');
