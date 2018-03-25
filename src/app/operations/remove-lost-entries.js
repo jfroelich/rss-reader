@@ -3,15 +3,9 @@ import {entry_has_url} from '/src/app/objects/entry.js';
 
 export async function remove_lost_entries(
     conn, channel, console = NULL_CONSOLE) {
-  const dconn = conn ? conn : await rdb.open();
-  const entry_ids =
-      await remove_lost_entries_promise(dconn, console);
-  if (!conn) {
-    console.debug('Closing connection to database', dconn.name);
-    dconn.close();
-  }
+  const entry_ids = await remove_lost_entries_promise(conn, console);
 
-  console.debug('Found %d lost entries', entry_ids.length);
+  console.debug('Removed %d lost entries', entry_ids.length);
   if (channel) {
     const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
     for (const id of entry_ids) {

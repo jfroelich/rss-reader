@@ -37,11 +37,12 @@ async function poll_feeds() {
   service.close();
 }
 
-async function remove_lost_entries(limit) {
-  let conn;
+async function remove_lost_entries() {
+  const conn = await rdb.open();
   const channel = new BroadcastChannel('reader');
   await remove_lost_entries_impl(conn, channel, console);
   channel.close();
+  conn.close();
 }
 
 async function remove_orphans() {

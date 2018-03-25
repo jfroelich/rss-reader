@@ -8,5 +8,4 @@ The `remove_lost_entries` function removes entries missing urls from the databas
 
 ### TODOS
 
-* drop auto-connect ability
 * this potentially affects unread count and should be calling `badge.update`?

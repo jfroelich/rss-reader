@@ -26,10 +26,12 @@ async function handle_archive_alarm_wakeup(alarm) {
 }
 
 async function handle_lost_entries_alarm(alarm) {
-  let conn;
   const channel = new BroadcastChannel('reader');
-  await remove_lost_entries(conn, channel, console);
+  const conn = await rdb.open();
+  let null_console = undefined;
+  await remove_lost_entries(conn, channel, null_console);
   channel.close();
+  conn.close();
 }
 
 async function handle_orphan_entries_alarm(alarm) {
