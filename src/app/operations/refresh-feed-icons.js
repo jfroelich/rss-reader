@@ -7,8 +7,8 @@ export async function refresh_feed_icons(feed_conn, icon_conn, channel) {
   const fs = new FaviconService();
   fs.conn = icon_conn;
 
-  const feeds = await find_active_feeds(dconn);
-  const partial = refresh_feed.bind(null, dconn, fs, channel);
+  const feeds = await find_active_feeds(feed_conn);
+  const partial = refresh_feed.bind(null, feed_conn, fs, channel);
   const promises = feeds.map(partial);
   await Promise.all(promises);
 }
