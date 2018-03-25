@@ -52,3 +52,7 @@ export async function create_entry(conn, channel, entry) {
   storable_entry.id = entry_id;
   return storable_entry;
 }
+
+function assert(value) {
+  if (!value) throw new Error('Assertion error');
+}
