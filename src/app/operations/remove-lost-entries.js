@@ -1,4 +1,3 @@
-import * as rdb from '/src/app/handles/rdb.js';
 import {entry_has_url} from '/src/app/objects/entry.js';
 
 export async function remove_lost_entries(
