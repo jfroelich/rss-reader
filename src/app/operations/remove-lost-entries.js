@@ -1,18 +1,6 @@
 import * as rdb from '/src/app/handles/rdb.js';
 import {entry_has_url} from '/src/app/objects/entry.js';
 
-// TODO: add readme
-// TODO: drop auto-connect ability
-// TODO: redesign as operations file
-// TODO: this potentially affects unread count
-
-// Removes entries missing urls from the database
-// @param conn {IDBDatabase} an open database connection, optional, if not
-// specified this will auto-connect to the default database
-// @param channel {BroadcastChannel} optional, the channel over which to
-// communicate storage change events
-// @param console {Object} optional, logging destination, if specified should
-// comply with the window.console interface
 export async function remove_lost_entries(conn, channel, console) {
   console = console || NULL_CONSOLE;
 
