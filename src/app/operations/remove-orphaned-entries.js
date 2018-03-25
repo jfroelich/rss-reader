@@ -7,7 +7,7 @@ export function remove_orphans(conn, channel) {
 function executor(conn, channel, resolve, reject) {
   const entry_ids = [];
   const txn = conn.transaction(['feed', 'entry'], 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(txn, channel, entry_ids);
+  txn.oncomplete = txn_oncomplete.bind(txn, channel, entry_ids, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const feed_store = txn.objectStore('feed');
@@ -33,7 +33,7 @@ function executor(conn, channel, resolve, reject) {
   };
 }
 
-function txn_oncomplete(channel, entry_ids, event) {
+function txn_oncomplete(channel, entry_ids, callback, event) {
   if (channel && entry_ids.length) {
     const message = {type: 'entry-deleted', id: null, reason: 'orphan'};
     for (const id of entry_ids) {
@@ -41,4 +41,6 @@ function txn_oncomplete(channel, entry_ids, event) {
       channel.postMessage(message);
     }
   }
+
+  callback(entry_ids);
 }
