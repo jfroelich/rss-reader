@@ -3,17 +3,14 @@ import {find_active_feeds} from '/src/app/operations/find-active-feeds.js';
 import {update_feed} from '/src/app/operations/update-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 
-export async function refresh_feed_icons(feed_conn, icon_conn, channel) {
-  const fs = new FaviconService();
-  fs.conn = icon_conn;
-
+export async function refresh_feed_icons(feed_conn, favicon_service, channel) {
   const feeds = await find_active_feeds(feed_conn);
-  const partial = refresh_feed.bind(null, feed_conn, fs, channel);
+  const partial = refresh_feed.bind(null, feed_conn, favicon_service, channel);
   const promises = feeds.map(partial);
   await Promise.all(promises);
 }
 
-async function refresh_feed(conn, fs, channel, feed) {
+async function refresh_feed(conn, favicon_service, channel, feed) {
   if (!feed_has_url(feed)) {
     return;
   }

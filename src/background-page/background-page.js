@@ -43,7 +43,8 @@ async function handle_refresh_feed_icons_alarm(alarm) {
   let channel;
   const fs = new FaviconService();
   const [rconn, iconn] = await Promise.all([rdb.open(), fs.open()]);
-  await refresh_feed_icons(rconn, iconn, channel);
+  fs.conn = iconn;
+  await refresh_feed_icons(rconn, fs, channel);
   rconn.close();
   iconn.close();
 }

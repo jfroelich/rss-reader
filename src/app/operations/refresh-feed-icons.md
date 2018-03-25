@@ -1,7 +1,6 @@
 
 ### TODOs
 
-* use single instance of favicon service
 * do not construct favicon service locally, accept fs as param instead of conn
 * document
 * use cursor for scalability over N-feeds instead of getAll
