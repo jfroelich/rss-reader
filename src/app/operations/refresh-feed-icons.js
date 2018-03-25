@@ -25,6 +25,7 @@ async function refresh_feed(conn, favicon_service, channel, feed) {
       delete feed.faviconURLString;
     }
     feed.dateUpdated = new Date();
-    await update_feed(conn, channel, feed);
+    const validate = false;
+    await update_feed(conn, channel, feed, validate);
   }
 }
