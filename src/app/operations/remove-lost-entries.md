@@ -1,4 +1,6 @@
-The `remove_lost_entries` function removes entries missing urls from the database
+The `remove_lost_entries` function removes entries missing urls from the database.
+
+Internally this uses openCursor instead of getAll for scalability.
 
 ### Params
 

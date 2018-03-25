@@ -1,61 +1,53 @@
 import {entry_has_url} from '/src/app/objects/entry.js';
 
 export async function remove_lost_entries(
-    conn, channel, console = NULL_CONSOLE) {
-  const entry_ids = await remove_lost_entries_promise(conn, console);
+    conn, channel = NULL_CHANNEL, console = NULL_CONSOLE) {
+  return new Promise(executor.bind(null, conn, channel, console));
+}
 
-  console.debug('Removed %d lost entries', entry_ids.length);
-  if (channel) {
-    const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
-    for (const id of entry_ids) {
-      message.id = id;
+function executor(conn, channel, console, resolve, reject) {
+  const ids = [];
+  const txn = conn.transaction('entry', 'readwrite');
+  txn.oncomplete = txn_oncomplete.bind(txn, channel, ids, resolve);
+  txn.onerror = _ => reject(txn.error);
 
-      // If entry_store_remove_lost_entries is not awaited, channel may close
-      // before the promise settled above, which would cause postMessage to
-      // throw, but there is no way to check if channel closed, and we are
-      // forked so throwing sends an error to a place where no one is listening
-      channel_post_message_noexcept(channel, message, console);
+  const store = txn.objectStore('entry');
+  const request = store.openCursor();
+  request.onsuccess = request_onsuccess.bind(request, ids, console);
+}
+
+function request_onsuccess(ids, console, event) {
+  const cursor = request.result;
+  if (cursor) {
+    const entry = cursor.value;
+    if (!entry_has_url(entry)) {
+      console.debug('Deleting lost entry', entry.id);
+      cursor.delete();
+      ids.push(entry.id);
     }
+
+    cursor.continue();
   }
 }
 
-function channel_post_message_noexcept(channel, message, console) {
-  try {
+function txn_oncomplete(channel, ids, callback, event) {
+  console.debug('Removed %d lost entries', ids.length);
+
+  const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
+  for (const id of ids) {
+    message.id = id;
     channel.postMessage(message);
-  } catch (error) {
-    console.warn(error);
   }
-}
 
-// Returns a promise that resolves to an array of entry ids that were deleted
-// This uses a single transaction to ensure consistency.
-function remove_lost_entries_promise(conn, console) {
-  return new Promise((resolve, reject) => {
-    const entry_ids = [];
-    const tx = conn.transaction('entry', 'readwrite');
-    tx.onerror = () => reject(tx.error);
-    tx.oncomplete = () => resolve(entry_ids);
-    const store = tx.objectStore('entry');
-
-    // Use openCursor instead of getAll for scalability
-    const request = store.openCursor();
-    request.onsuccess = () => {
-      const cursor = request.result;
-      if (cursor) {
-        const entry = cursor.value;
-        if (!entry_has_url(entry)) {
-          console.debug('Deleting lost entry', entry.id);
-          cursor.delete();
-          entry_ids.push(entry.id);
-        }
-
-        cursor.continue();
-      }
-    };
-  });
+  callback();
 }
 
 function noop() {}
+
+const NULL_CHANNEL = {
+  postMessage: noop,
+  close: noop
+};
 
 // A partial stub for console that suppresses log messages
 const NULL_CONSOLE = {
