@@ -1,18 +1,6 @@
 import * as rdb from '/src/app/handles/rdb.js';
 import {feed_is_valid_id} from '/src/app/objects/feed.js';
 
-
-// TODO: drop auto-connect support. The proper way, if at all, is to go through
-// a layer similar to ral.js
-// TODO: this potentially affects unread count and therefore should be
-// interacting with badge_update_text
-// TODO: add console parameter and NULL_CONSOLE impl
-// TODO: trap postMessage errors in case channel closed when called unawaited?
-// TODO: move to app/operations as a syscall-like API
-
-// Scans the database for entries not linked to a feed and deletes them
-// conn {IDBDatabase} is optional open database connection
-// channel {BroadcastChannel} is optional broadcast channel
 export async function remove_orphans(conn, channel) {
   const dconn = conn ? conn : await rdb.open();
   const entry_ids = await entry_store_remove_orphans_promise(dconn);
@@ -20,7 +8,6 @@ export async function remove_orphans(conn, channel) {
     dconn.close();
   }
 
-  // Now that the transaction committed, notify observers
   if (channel && entry_ids.length) {
     const message = {type: 'entry-deleted', id: null, reason: 'orphan'};
     for (const id of entry_ids) {
@@ -30,7 +17,6 @@ export async function remove_orphans(conn, channel) {
   }
 }
 
-// Resolve to the array of deleted entry ids
 function entry_store_remove_orphans_promise(conn) {
   return new Promise((resolve, reject) => {
     const entry_ids = [];
@@ -43,7 +29,6 @@ function entry_store_remove_orphans_promise(conn) {
     request_get_feed_ids.onsuccess = () => {
       const feed_ids = request_get_feed_ids.result;
 
-      // Use a cursor rather than getAll for scalability
       const entry_store = tx.objectStore('entry');
       const entry_store_cursor_request = entry_store.openCursor();
       entry_store_cursor_request.onsuccess = () => {
