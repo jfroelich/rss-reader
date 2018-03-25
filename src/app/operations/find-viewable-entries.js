@@ -8,7 +8,7 @@ export function find_viewable_entries(conn, offset, limit) {
   return new Promise(executor.bind(null, conn, offset, limit));
 }
 
-function executor(resolve, reject) {
+function executor(conn, offset, limit, resolve, reject) {
   const entries = [];
   let counter = 0;
   let advanced = false;
