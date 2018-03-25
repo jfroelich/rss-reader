@@ -14,12 +14,19 @@ import {feed_is_valid, is_feed} from '/src/app/objects/feed.js';
 // @param channel {BroadcastChannel} optional
 // @param feed {object}
 // @param validate {Boolean} optional, if true then feed is validated
-export function update_feed(conn, channel, feed, validate = true) {
+// @param set_date_updated {Boolean} optional, if true then the feed's
+// dateUpdated property is implicitly set to the time this function is called
+export function update_feed(
+    conn, channel, feed, validate = true, set_date_updated = false) {
   return new Promise((resolve, reject) => {
     if (validate) {
       assert(feed_is_valid(feed));
     } else {
       assert(is_feed(feed));
+    }
+
+    if (set_date_updated) {
+      feed.dateUpdated = new Date();
     }
 
     const txn = conn.transaction('feed', 'readwrite');
