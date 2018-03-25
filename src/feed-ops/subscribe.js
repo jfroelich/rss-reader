@@ -1,11 +1,11 @@
 import {feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/app/objects/feed.js';
 import {contains_feed_with_url} from '/src/app/operations/contains-feed-with-url.js';
 import {create_feed} from '/src/app/operations/create-feed.js';
+import {coerce_feed} from '/src/coerce-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/feed-parser/feed-parser.js';
 import * as notifications from '/src/notifications/notifications.js';
 import {PollService} from '/src/poll-service/poll-service.js';
-import {coerce_feed} from '/src/rdb/coerce-feed.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
 export function SubscribeOperation() {
