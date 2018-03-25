@@ -1,9 +1,8 @@
 import * as rdb from '/src/app/handles/rdb.js';
 import {entry_has_url} from '/src/app/objects/entry.js';
 
-export async function remove_lost_entries(conn, channel, console) {
-  console = console || NULL_CONSOLE;
-
+export async function remove_lost_entries(
+    conn, channel, console = NULL_CONSOLE) {
   const dconn = conn ? conn : await rdb.open();
   const entry_ids =
       await entry_store_remove_lost_entries_promise(dconn, console);
