@@ -2,16 +2,17 @@ import {ENTRY_MAGIC} from '/src/app/objects/entry.js';
 import {FEED_MAGIC} from '/src/app/objects/feed.js';
 import {idb_open} from '/src/lib/idb/idb.js';
 
-export function close(handle) {
-  if (handle) {
-    console.debug('Closing connection to database', handle.name);
-    handle.close();
-  }
+// Create a connection to the reader database. Returns a promise.
+export function rdb_conn_create(name = 'reader', version = 24, timeout = 500) {
+  return idb_open(name, version, on_upgrade_needed, timeout);
 }
 
-// Open a connection to the reader database. All parameters are optional
-export function open(name = 'reader', version = 24, timeout = 500) {
-  return idb_open(name, version, on_upgrade_needed, timeout);
+// Close a connection to the reader database
+export function rdb_conn_close(conn) {
+  if (conn) {
+    console.debug('Closing connection to database', conn.name);
+    conn.close();
+  }
 }
 
 // Helper for open. Does the database upgrade. This should never be

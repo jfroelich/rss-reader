@@ -1,4 +1,4 @@
-import * as rdb from '/src/app/handles/rdb.js';
+import {rdr_conn_close, rdr_conn_create} from '/src/app/handles/rdr-conn.js';
 import {refresh_feed_icons} from '/src/app/operations/refresh-feed-icons.js';
 import {remove_lost_entries as remove_lost_entries_impl} from '/src/app/operations/remove-lost-entries.js';
 import {remove_orphans as remove_orphans_impl} from '/src/app/operations/remove-orphaned-entries.js';
@@ -19,10 +19,10 @@ async function cli_archive() {
 async function refresh_icons() {
   let channel;
   const fs = new FaviconService();
-  const [rconn, iconn] = await Promise.all([rdb.open(), fs.open()]);
+  const [rconn, iconn] = await Promise.all([rdr_conn_create(), fs.open()]);
   fs.conn = iconn;
   await refresh_feed_icons(rconn, fs, channel);
-  rconn.close();
+  rdr_conn_close(rconn);
   iconn.close();
 }
 
@@ -38,19 +38,19 @@ async function poll_feeds() {
 }
 
 async function remove_lost_entries() {
-  const conn = await rdb.open();
+  const conn = await rdr_conn_create();
   const channel = new BroadcastChannel('reader');
   await remove_lost_entries_impl(conn, channel, console);
   channel.close();
-  conn.close();
+  rdr_conn_close(conn);
 }
 
 async function remove_orphans() {
-  const conn = await rdb.open();
+  const conn = await rdr_conn_create();
   const channel = new BroadcastChannel('reader');
   await remove_orphans_impl(conn, channel);
   channel.close();
-  conn.close();
+  rdr_conn_close(conn);
 }
 
 async function lookup_favicon(url_string, cached) {

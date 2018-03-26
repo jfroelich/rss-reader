@@ -1,5 +1,6 @@
-import * as rdb from '/src/app/handles/rdb.js';
+import {rdr_conn_close, rdr_conn_create} from '/src/app/handles/rdr-conn.js';
 import {entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/app/objects/entry.js';
+
 import {sizeof} from '/src/lib/sizeof/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
@@ -12,13 +13,11 @@ export function Archiver() {
 }
 
 Archiver.prototype.open = async function() {
-  this.conn = await rdb.open();
+  this.conn = await rdr_conn_create();
 };
 
 Archiver.prototype.close = function() {
-  if (this.conn) {
-    this.conn.close();
-  }
+  rdr_conn_close(this.conn);
 };
 
 Archiver.prototype.archive = function() {

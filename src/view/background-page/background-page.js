@@ -1,6 +1,5 @@
 import '/src/view/cli/cli.js';
-
-import * as rdb from '/src/app/handles/rdb.js';
+import {rdr_conn_create} from '/src/app/handles/rdr-conn.js';
 import {refresh_feed_icons} from '/src/app/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/app/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/app/operations/remove-orphaned-entries.js';
@@ -27,7 +26,7 @@ async function handle_archive_alarm_wakeup(alarm) {
 
 async function handle_lost_entries_alarm(alarm) {
   const channel = new BroadcastChannel('reader');
-  const conn = await rdb.open();
+  const conn = await rdr_conn_create();
   let null_console = undefined;
   await remove_lost_entries(conn, channel, null_console);
   channel.close();
@@ -35,7 +34,7 @@ async function handle_lost_entries_alarm(alarm) {
 }
 
 async function handle_orphan_entries_alarm(alarm) {
-  const conn = await rdb.open();
+  const conn = await rdr_conn_create();
   const channel = new BroadcastChannel('reader');
   await remove_orphans(conn, channel);
   channel.close();
@@ -45,7 +44,7 @@ async function handle_orphan_entries_alarm(alarm) {
 async function handle_refresh_feed_icons_alarm(alarm) {
   let channel;
   const fs = new FaviconService();
-  const [rconn, iconn] = await Promise.all([rdb.open(), fs.open()]);
+  const [rconn, iconn] = await Promise.all([rdr_conn_create(), fs.open()]);
   fs.conn = iconn;
   await refresh_feed_icons(rconn, fs, channel);
   rconn.close();
@@ -79,7 +78,7 @@ function query_idle_state(idle_period_secs) {
 console.debug('Initializing background page');
 
 chrome.runtime.onInstalled.addListener(async function(event) {
-  let conn = await rdb.open();
+  let conn = await rdr_conn_create();
   conn.close();
 
   const fs = new FaviconService();
@@ -91,7 +90,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
 chrome.browserAction.onClicked.addListener(show_slideshow_tab);
 
 async function badge_init() {
-  const conn = await rdb.open();
+  const conn = await rdr_conn_create();
   await badge.update(conn);
   conn.close();
 }

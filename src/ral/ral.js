@@ -1,4 +1,4 @@
-import * as rdb from '/src/app/handles/rdb.js';
+import {rdr_conn_create} from '/src/app/handles/rdr-conn.js';
 import {activate_feed as activate_feed_impl} from '/src/app/operations/activate-feed.js';
 import {deactivate_feed as deactivate_feed_impl} from '/src/app/operations/deactivate-feed.js';
 import {find_feed_by_id as find_feed_by_id_impl} from '/src/app/operations/find-feed-by-id.js';
@@ -12,7 +12,7 @@ import {SubscribeOperation} from '/src/subscribe.js';
 import unsubscribe from '/src/unsubscribe.js';
 
 export async function get_feeds(title_sort_flag) {
-  const conn = await rdb.open();
+  const conn = await rdr_conn_create();
   const feeds = await get_feeds_with_conn(conn);
   conn.close();
 
@@ -30,7 +30,7 @@ function feed_compare(a, b) {
 }
 
 export async function find_feed_by_id(feed_id) {
-  const conn = await rdb.open();
+  const conn = await rdr_conn_create();
   const feed = await find_feed_by_id_impl(conn, feed_id);
   conn.close();
   return feed;
@@ -46,7 +46,7 @@ export async function import_opml(channel, files) {
   const fs = new FaviconService();
 
 
-  const open_promises = [rdb.open(), fs.open()];
+  const open_promises = [rdr_conn_create(), fs.open()];
   [exim.rconn, exim.iconn] = await Promise.all(open_promises);
   await exim.import_opml(files);
   exim.rconn.close();
@@ -55,14 +55,14 @@ export async function import_opml(channel, files) {
 
 export async function export_opml(title) {
   const exim = new Exim();
-  exim.rconn = await rdb.open();
+  exim.rconn = await rdr_conn_create();
   await exim.export_opml(title);
   exim.rconn.close();
 }
 
 export async function load_initial_data(
     entry_cursor_offset, entry_cursor_limit, entry_handler, feed_handler) {
-  const conn = await rdb.open();
+  const conn = await rdr_conn_create();
   const p1 = viewable_entries_for_each(
       conn, entry_cursor_offset, entry_cursor_limit, entry_handler);
   const p2 = for_each_active_feed(conn, feed_handler);
@@ -87,7 +87,7 @@ export async function ral_subscribe(channel, url) {
 
   const fs = new FaviconService();
 
-  const conn_promises = Promise.all([rdb.open(), fs.open()]);
+  const conn_promises = Promise.all([rdr_conn_create(), fs.open()]);
   [op.rconn, op.iconn] = await conn_promises;
   const result = await op.subscribe(url);
   op.rconn.close();
@@ -96,20 +96,20 @@ export async function ral_subscribe(channel, url) {
 }
 
 export async function ral_unsubscribe(channel, feed_id) {
-  const conn = await rdb.open();
+  const conn = await rdr_conn_create();
   const result = await unsubscribe(conn, channel, feed_id);
   conn.close();
   return result;
 }
 
 export async function activate_feed(channel, feed_id) {
-  const conn = await rdb.open();
+  const conn = await rdr_conn_create();
   await activate_feed_impl(conn, channel, feed_id);
   conn.close();
 }
 
 export async function deactivate_feed(channel, feed_id, reason) {
-  const conn = await rdb.open();
+  const conn = await rdr_conn_create();
   await deactivate_feed_impl(conn, channel, feed_id, reason);
   conn.close();
 }

@@ -1,4 +1,4 @@
-import * as rdb from '/src/app/handles/rdb.js';
+import * as rdb from '/src/app/handles/rdr-conn.js';
 import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
 import {feed_peek_url} from '/src/app/objects/feed.js';
 import {find_viewable_entries} from '/src/app/operations/find-viewable-entries.js';

@@ -1,4 +1,4 @@
-import * as rdb from '/src/app/handles/rdb.js';
+import {rdr_conn_create} from '/src/app/handles/rdr-conn.js';
 import {entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
 import {feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/app/objects/feed.js';
 import {contains_entry_with_url} from '/src/app/operations/contains-entry-with-url.js';
@@ -8,15 +8,15 @@ import {update_feed} from '/src/app/operations/update-feed.js';
 import * as badge from '/src/badge.js';
 import {coerce_entry} from '/src/coerce-entry.js';
 import {coerce_feed} from '/src/coerce-feed.js';
-import * as color from '/src/lib/color/color.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
+import * as color from '/src/lib/color/color.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
+import * as sniff from '/src/lib/sniff/sniff.js';
 import * as notifications from '/src/notifications/notifications.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
 import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
-import * as sniff from '/src/lib/sniff/sniff.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
 const null_console = {
@@ -74,7 +74,7 @@ export function PollService() {
 
 PollService.prototype.init = async function(channel) {
   const fs = new FaviconService();
-  const promises = [rdb.open(), fs.open()];
+  const promises = [rdr_conn_create(), fs.open()];
   [this.rconn, this.iconn] = await Promise.all(promises);
   this.channel = channel;
 };
