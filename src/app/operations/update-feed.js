@@ -16,7 +16,7 @@ export function update_feed(
 }
 
 function executor(conn, channel, feed, resolve, reject) {
-  const shared = {id: undefined, callback: resolve};
+  const shared = {id: undefined, channel: channel, callback: resolve};
 
   const txn = conn.transaction('feed', 'readwrite');
   txn.oncomplete = txn_oncomplete.bind(txn, shared);
@@ -30,9 +30,9 @@ function executor(conn, channel, feed, resolve, reject) {
 
 function txn_oncomplete(shared, event) {
   // Suppress invalid state error when channel is closed in non-awaited call
-  if (channel) {
+  if (shared.channel) {
     try {
-      channel.postMessage({type: 'feed-updated', id: shared.id});
+      shared.channel.postMessage({type: 'feed-updated', id: shared.id});
     } catch (error) {
       console.debug(error);
     }
