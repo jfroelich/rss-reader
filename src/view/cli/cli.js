@@ -2,8 +2,8 @@ import * as rdb from '/src/app/handles/rdb.js';
 import {refresh_feed_icons} from '/src/app/operations/refresh-feed-icons.js';
 import {remove_lost_entries as remove_lost_entries_impl} from '/src/app/operations/remove-lost-entries.js';
 import {remove_orphans as remove_orphans_impl} from '/src/app/operations/remove-orphaned-entries.js';
+import {Archiver} from '/src/archive-entries.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
-import {Archiver} from '/srcarchive-entries.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 
 async function cli_archive() {

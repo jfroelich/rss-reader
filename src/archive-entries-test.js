@@ -1,5 +1,5 @@
 import * as rdb from '/src/app/handles/rdb.js';
-import {Archiver} from '/srcarchive-entries.js';
+import {Archiver} from '/src/archive-entries.js';
 import * as idb from '/src/lib/idb/idb.js';
 
 async function test() {
