@@ -1,6 +1,6 @@
-import {rdr_conn_create} from '/src/app/handles/rdr-conn.js';
 import {entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
 import {feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/app/objects/feed.js';
+import {rdr_conn_create} from '/src/app/objects/rdr-conn.js';
 import {contains_entry_with_url} from '/src/app/operations/contains-entry-with-url.js';
 import {create_entry} from '/src/app/operations/create-entry.js';
 import {find_active_feeds} from '/src/app/operations/find-active-feeds.js';

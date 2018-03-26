@@ -1,4 +1,4 @@
-import {rdr_conn_create} from '/src/app/handles/rdr-conn.js';
+import {rdr_conn_create} from '/src/app/objects/rdr-conn.js';
 import {activate_feed as activate_feed_impl} from '/src/app/operations/activate-feed.js';
 import {deactivate_feed as deactivate_feed_impl} from '/src/app/operations/deactivate-feed.js';
 import {find_feed_by_id as find_feed_by_id_impl} from '/src/app/operations/find-feed-by-id.js';

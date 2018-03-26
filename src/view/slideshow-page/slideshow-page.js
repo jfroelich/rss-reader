@@ -1,6 +1,6 @@
-import * as rdb from '/src/app/handles/rdr-conn.js';
 import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
 import {feed_peek_url} from '/src/app/objects/feed.js';
+import {rdr_conn_create} from '/src/app/objects/rdr-conn.js';
 import {find_viewable_entries} from '/src/app/operations/find-viewable-entries.js';
 import {mark_entry_read} from '/src/app/operations/mark-entry-read.js';
 import {date_format} from '/src/lib/date/date.js';
@@ -84,7 +84,7 @@ async function on_entry_added_message(message) {
   if (slideshow_count_unread() <= 3) {
     let conn;
     try {
-      conn = await rdb.open();
+      conn = await rdr_conn_create();
       await slide_load_and_append_multiple(conn);
     } finally {
       if (conn) {
@@ -289,7 +289,7 @@ async function slide_onclick(event) {
 
   let conn;
   try {
-    conn = await rdb.open();
+    conn = await rdr_conn_create();
   } catch (error) {
     console.error(error);
     return false;
@@ -333,7 +333,7 @@ async function slide_next() {
   if (slide_unread_count > 1) {
     let conn;
     try {
-      conn = await rdb.open();
+      conn = await rdr_conn_create();
     } catch (error) {
       console.error(error);
       return;
@@ -349,7 +349,7 @@ async function slide_next() {
   let append_count = 0;
   let conn;
   try {
-    conn = await rdb.open();
+    conn = await rdr_conn_create();
   } catch (error) {
     console.error(error);
     return;
