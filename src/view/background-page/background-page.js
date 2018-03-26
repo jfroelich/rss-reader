@@ -1,4 +1,4 @@
-import '/src/cli/cli.js';
+import '/src/view/cli/cli.js';
 
 import * as rdb from '/src/app/handles/rdb.js';
 import {refresh_feed_icons} from '/src/app/operations/refresh-feed-icons.js';

@@ -8,8 +8,8 @@ import {filter_publisher} from '/src/lib/filter-publisher/filter-publisher.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import {html_escape} from '/src/lib/html/html.js';
 import * as ral from '/src/ral/ral.js';
-import * as page_style from '/src/slideshow-page/page-style-settings.js';
-import * as Slideshow from '/src/slideshow-page/slideshow.js';
+import * as page_style from '/src/view/slideshow-page/page-style-settings.js';
+import * as Slideshow from '/src/view/slideshow-page/slideshow.js';
 
 // clang-format off
 const fonts = [

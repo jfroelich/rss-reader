@@ -3,7 +3,7 @@ import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import * as perm from '/src/lib/permissions/permissions.js';
 import * as ral from '/src/ral/ral.js';
-import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
+import * as PageStyle from '/src/view/slideshow-page/page-style-settings.js';
 
 // clang-format off
 const BG_IMAGES = [
