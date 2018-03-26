@@ -7,8 +7,8 @@ import {get_feeds as get_feeds_with_conn} from '/src/app/operations/get-feeds.js
 import {viewable_entries_for_each} from '/src/app/operations/viewable-entries-for-each.js';
 import {Exim} from '/src/exim/exim.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
-import {SubscribeOperation} from '/src/feed-ops/subscribe.js';
-import unsubscribe from '/src/feed-ops/unsubscribe.js';
+import {SubscribeOperation} from '/srcsubscribe.js';
+import unsubscribe from '/srcunsubscribe.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 
 export async function get_feeds(title_sort_flag) {

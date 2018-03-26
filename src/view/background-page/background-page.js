@@ -6,7 +6,7 @@ import {remove_lost_entries} from '/src/app/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/app/operations/remove-orphaned-entries.js';
 import * as badge from '/src/badge.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
-import {Archiver} from '/src/feed-ops/archive-entries.js';
+import {Archiver} from '/srcarchive-entries.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 import show_slideshow_tab from '/src/show-slideshow-tab.js';
 
