@@ -8,15 +8,15 @@ import {update_feed} from '/src/app/operations/update-feed.js';
 import * as badge from '/src/badge.js';
 import {coerce_entry} from '/src/coerce-entry.js';
 import {coerce_feed} from '/src/coerce-feed.js';
-import * as color from '/src/color/color.js';
+import * as color from '/src/lib/color/color.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
-import * as feed_parser from '/src/feed-parser/feed-parser.js';
-import * as html_parser from '/src/html-parser/html-parser.js';
+import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
+import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import * as notifications from '/src/notifications/notifications.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
 import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
-import * as sniff from '/src/sniff/sniff.js';
+import * as sniff from '/src/lib/sniff/sniff.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
 const null_console = {

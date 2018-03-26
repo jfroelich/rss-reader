@@ -1,4 +1,4 @@
-import * as boilerplate from '/src/boilerplate/boilerplate.js';
+import * as boilerplate from '/src/lib/boilerplate/boilerplate.js';
 
 export function filter_boilerplate(document) {
   boilerplate.annotate(document);

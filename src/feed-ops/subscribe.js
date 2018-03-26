@@ -3,7 +3,7 @@ import {contains_feed_with_url} from '/src/app/operations/contains-feed-with-url
 import {create_feed} from '/src/app/operations/create-feed.js';
 import {coerce_feed} from '/src/coerce-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
-import * as feed_parser from '/src/feed-parser/feed-parser.js';
+import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as notifications from '/src/notifications/notifications.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 import * as url_loader from '/src/url-loader/url-loader.js';

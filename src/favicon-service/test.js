@@ -1,5 +1,5 @@
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
-import * as idb from '/src/idb/idb.js';
+import * as idb from '/src/lib/idb/idb.js';
 
 async function test_lookup(url_string, cached) {
   const fs = new FaviconService();

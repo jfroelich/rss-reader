@@ -3,10 +3,10 @@ import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/app/objects/entr
 import {feed_peek_url} from '/src/app/objects/feed.js';
 import {find_viewable_entries} from '/src/app/operations/find-viewable-entries.js';
 import {mark_entry_read} from '/src/app/operations/mark-entry-read.js';
-import {date_format} from '/src/date/date.js';
-import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
-import {html_truncate} from '/src/html-truncate/html-truncate.js';
-import {html_escape} from '/src/html/html.js';
+import {date_format} from '/src/lib/date/date.js';
+import {filter_publisher} from '/src/lib/filter-publisher/filter-publisher.js';
+import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
+import {html_escape} from '/src/lib/html/html.js';
 import * as ral from '/src/ral/ral.js';
 import * as page_style from '/src/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/slideshow-page/slideshow.js';

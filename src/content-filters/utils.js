@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/dom/element-unwrap.js';
+import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
 import {url_is_allowed} from '/src/url-loader/policy.js';
 
 // Returns a file name without its extension (and without the '.')

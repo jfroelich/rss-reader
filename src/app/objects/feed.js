@@ -1,7 +1,7 @@
-import {html_truncate} from '/src/html-truncate/html-truncate.js';
-import {html_replace_tags} from '/src/html/html.js';
-import * as object from '/src/object/object.js';
-import * as string from '/src/string/string.js';
+import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
+import {html_replace_tags} from '/src/lib/html/html.js';
+import * as object from '/src/lib/object/object.js';
+import * as string from '/src/lib/string/string.js';
 
 export const FEED_MAGIC = 0xfeedfeed;
 

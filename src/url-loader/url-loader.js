@@ -1,4 +1,4 @@
-import * as mime from '/src/mime/mime.js';
+import * as mime from '/src/lib/mime/mime.js';
 import * as policy from '/src/url-loader/policy.js';
 
 // Fictional codes for responses with errors. Codes must be in the range

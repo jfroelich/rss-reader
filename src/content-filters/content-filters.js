@@ -1,13 +1,13 @@
 import {filter_boilerplate} from '/src/content-filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/content-filters/color-contrast-filter/color-contrast-filter.js';
 import {element_is_hidden_inline, fetch_image_element, file_name_filter_extension, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
-import {url_is_external} from '/src/cross-site/cross-site.js';
-import {attribute_is_boolean} from '/src/dom/attribute.js';
-import {element_coerce} from '/src/dom/element-coerce.js';
-import {element_unwrap} from '/src/dom/element-unwrap.js';
-import * as imagemod from '/src/dom/image.js';
-import * as srcset from '/src/srcset/srcset.js';
-import * as string from '/src/string/string.js';
+import {url_is_external} from '/src/lib/cross-site/cross-site.js';
+import {attribute_is_boolean} from '/src/lib/dom/attribute.js';
+import {element_coerce} from '/src/lib/dom/element-coerce.js';
+import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import * as imagemod from '/src/lib/dom/image.js';
+import * as srcset from '/src/lib/srcset/srcset.js';
+import * as string from '/src/lib/string/string.js';
 
 export const cf_filter_boilerplate = filter_boilerplate;
 export const cf_filter_low_contrast = color_contrast_filter;

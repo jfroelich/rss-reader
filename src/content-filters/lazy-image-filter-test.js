@@ -1,6 +1,6 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import {fetch_html} from '/src/url-loader/url-loader.js';
-import * as html_parser from '/src/html-parser/html-parser.js';
+import * as html_parser from '/src/lib/html-parser/html-parser.js';
 
 window.test = async function(url_string) {
   const request_url = new URL(url_string);

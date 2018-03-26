@@ -1,6 +1,6 @@
 import {entry_is_valid, entry_sanitize, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry} from '/src/app/objects/entry.js';
 import {update_entry} from '/src/app/operations/update-entry.js';
-import * as object from '/src/object/object.js';
+import * as object from '/src/lib/object/object.js';
 
 export async function create_entry(conn, channel, entry) {
   assert(is_entry(entry));

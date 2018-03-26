@@ -1,6 +1,6 @@
-import * as html_parser from '/src/html-parser/html-parser.js';
-import * as idb from '/src/idb/idb.js';
-import * as mime from '/src/mime/mime.js';
+import * as html_parser from '/src/lib/html-parser/html-parser.js';
+import * as idb from '/src/lib/idb/idb.js';
+import * as mime from '/src/lib/mime/mime.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
 export function FaviconService() {
