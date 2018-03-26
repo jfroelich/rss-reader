@@ -1,4 +1,4 @@
-import {feed_is_valid_id, is_feed} from '/src/app/objects/feed.js';
+import {feed_is_valid_id, is_feed} from '/src/objects/feed.js';
 
 export function activate_feed(conn, channel, feed_id) {
   return new Promise((resolve, reject) => {

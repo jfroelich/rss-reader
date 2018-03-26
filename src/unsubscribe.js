@@ -1,4 +1,4 @@
-import {delete_feed} from '/src/app/operations/delete-feed.js';
+import {delete_feed} from '/src/operations/delete-feed.js';
 import * as badge from '/src/badge.js';
 
 // TODO: create docs

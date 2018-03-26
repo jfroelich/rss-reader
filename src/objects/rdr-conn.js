@@ -1,5 +1,5 @@
-import {ENTRY_MAGIC} from '/src/app/objects/entry.js';
-import {FEED_MAGIC} from '/src/app/objects/feed.js';
+import {ENTRY_MAGIC} from '/src/objects/entry.js';
+import {FEED_MAGIC} from '/src/objects/feed.js';
 import {idb_open} from '/src/lib/idb/idb.js';
 
 // Create a connection to the reader database. Returns a promise.

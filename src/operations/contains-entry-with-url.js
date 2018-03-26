@@ -1,4 +1,4 @@
-import {entry_is_valid_id} from '/src/app/objects/entry.js';
+import {entry_is_valid_id} from '/src/objects/entry.js';
 
 export function contains_entry_with_url(conn, url) {
   if (!(url instanceof URL)) {

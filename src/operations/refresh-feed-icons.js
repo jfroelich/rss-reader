@@ -1,6 +1,6 @@
-import {feed_create_favicon_lookup_url, feed_has_url} from '/src/app/objects/feed.js';
-import {find_active_feeds} from '/src/app/operations/find-active-feeds.js';
-import {update_feed} from '/src/app/operations/update-feed.js';
+import {feed_create_favicon_lookup_url, feed_has_url} from '/src/objects/feed.js';
+import {find_active_feeds} from '/src/operations/find-active-feeds.js';
+import {update_feed} from '/src/operations/update-feed.js';
 
 export async function refresh_feed_icons(feed_conn, favicon_service, channel) {
   const feeds = await find_active_feeds(feed_conn);

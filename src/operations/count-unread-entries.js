@@ -1,4 +1,4 @@
-import {ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
+import {ENTRY_STATE_UNREAD} from '/src/objects/entry.js';
 
 // Return the number of unread entries in the database
 // @param conn {IDBDatabase} an open database connection, required

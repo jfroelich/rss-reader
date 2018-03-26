@@ -1,4 +1,4 @@
-import {feed_is_valid_id} from '/src/app/objects/feed.js';
+import {feed_is_valid_id} from '/src/objects/feed.js';
 
 export function contains_feed_with_url(conn, url) {
   if (!(url instanceof URL)) {

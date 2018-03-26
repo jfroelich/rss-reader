@@ -1,4 +1,4 @@
-import {feed_is_valid, is_feed} from '/src/app/objects/feed.js';
+import {feed_is_valid, is_feed} from '/src/objects/feed.js';
 
 export function update_feed(
     conn, channel, feed, validate = true, set_date_updated = false) {

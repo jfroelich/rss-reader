@@ -1,4 +1,4 @@
-import {entry_append_url, entry_create} from '/src/app/objects/entry.js';
+import {entry_append_url, entry_create} from '/src/objects/entry.js';
 
 // Reformat a parsed entry as a storable entry
 export function coerce_entry(parsed_entry) {

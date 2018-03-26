@@ -1,8 +1,8 @@
 import '/src/view/cli/cli.js';
-import {rdr_conn_create} from '/src/app/objects/rdr-conn.js';
-import {refresh_feed_icons} from '/src/app/operations/refresh-feed-icons.js';
-import {remove_lost_entries} from '/src/app/operations/remove-lost-entries.js';
-import {remove_orphans} from '/src/app/operations/remove-orphaned-entries.js';
+import {rdr_conn_create} from '/src/objects/rdr-conn.js';
+import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
+import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
+import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
 import {Archiver} from '/src/archive-entries.js';
 import * as badge from '/src/badge.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';

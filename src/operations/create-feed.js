@@ -1,5 +1,5 @@
-import {feed_is_valid, feed_prepare} from '/src/app/objects/feed.js';
-import {update_feed} from '/src/app/operations/update-feed.js';
+import {feed_is_valid, feed_prepare} from '/src/objects/feed.js';
+import {update_feed} from '/src/operations/update-feed.js';
 
 export async function create_feed(conn, channel, feed) {
   if (!feed_is_valid(feed)) {

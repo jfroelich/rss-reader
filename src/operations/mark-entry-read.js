@@ -1,4 +1,4 @@
-import {entry_is_valid_id, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/app/objects/entry.js';
+import {entry_is_valid_id, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
 import * as badge from '/src/badge.js';
 
 export function mark_entry_read(conn, channel, entry_id) {

@@ -1,4 +1,4 @@
-import {entry_has_url} from '/src/app/objects/entry.js';
+import {entry_has_url} from '/src/objects/entry.js';
 
 export async function remove_lost_entries(
     conn, channel = NULL_CHANNEL, console = NULL_CONSOLE) {

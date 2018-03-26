@@ -1,5 +1,5 @@
-import {feed_peek_url} from '/src/app/objects/feed.js';
-import {get_feeds} from '/src/app/operations/get-feeds.js';
+import {feed_peek_url} from '/src/objects/feed.js';
+import {get_feeds} from '/src/operations/get-feeds.js';
 import * as filelib from '/src/lib/file/file.js';
 import * as opml_document from '/src/lib/opml-document/opml-document.js';
 import * as opml_parser from '/src/lib/opml-parser/opml-parser.js';

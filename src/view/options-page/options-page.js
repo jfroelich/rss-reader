@@ -1,4 +1,4 @@
-import {feed_peek_url} from '/src/app/objects/feed.js';
+import {feed_peek_url} from '/src/objects/feed.js';
 import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import * as perm from '/src/lib/permissions/permissions.js';

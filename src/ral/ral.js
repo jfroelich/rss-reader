@@ -1,10 +1,10 @@
-import {rdr_conn_create} from '/src/app/objects/rdr-conn.js';
-import {activate_feed as activate_feed_impl} from '/src/app/operations/activate-feed.js';
-import {deactivate_feed as deactivate_feed_impl} from '/src/app/operations/deactivate-feed.js';
-import {find_feed_by_id as find_feed_by_id_impl} from '/src/app/operations/find-feed-by-id.js';
-import {for_each_active_feed} from '/src/app/operations/for-each-active-feed.js';
-import {get_feeds as get_feeds_with_conn} from '/src/app/operations/get-feeds.js';
-import {viewable_entries_for_each} from '/src/app/operations/viewable-entries-for-each.js';
+import {rdr_conn_create} from '/src/objects/rdr-conn.js';
+import {activate_feed as activate_feed_impl} from '/src/operations/activate-feed.js';
+import {deactivate_feed as deactivate_feed_impl} from '/src/operations/deactivate-feed.js';
+import {find_feed_by_id as find_feed_by_id_impl} from '/src/operations/find-feed-by-id.js';
+import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
+import {get_feeds as get_feeds_with_conn} from '/src/operations/get-feeds.js';
+import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
 import {Exim} from '/src/exim/exim.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {PollService} from '/src/poll-service/poll-service.js';

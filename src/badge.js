@@ -1,4 +1,4 @@
-import {count_unread_entries} from '/src/app/operations/count-unread-entries.js';
+import {count_unread_entries} from '/src/operations/count-unread-entries.js';
 
 let update_pending = false;
 

@@ -1,10 +1,10 @@
-import {entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/app/objects/entry.js';
-import {feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/app/objects/feed.js';
-import {rdr_conn_create} from '/src/app/objects/rdr-conn.js';
-import {contains_entry_with_url} from '/src/app/operations/contains-entry-with-url.js';
-import {create_entry} from '/src/app/operations/create-entry.js';
-import {find_active_feeds} from '/src/app/operations/find-active-feeds.js';
-import {update_feed} from '/src/app/operations/update-feed.js';
+import {entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/objects/entry.js';
+import {feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/objects/feed.js';
+import {rdr_conn_create} from '/src/objects/rdr-conn.js';
+import {contains_entry_with_url} from '/src/operations/contains-entry-with-url.js';
+import {create_entry} from '/src/operations/create-entry.js';
+import {find_active_feeds} from '/src/operations/find-active-feeds.js';
+import {update_feed} from '/src/operations/update-feed.js';
 import * as badge from '/src/badge.js';
 import {coerce_entry} from '/src/coerce-entry.js';
 import {coerce_feed} from '/src/coerce-feed.js';

@@ -1,4 +1,4 @@
-import {get_feeds} from '/src/app/operations/get-feeds.js';
+import {get_feeds} from '/src/operations/get-feeds.js';
 
 // Calls the callback function on each feed in the store
 // TODO: currently each call to the callback is blocked by waiting for the

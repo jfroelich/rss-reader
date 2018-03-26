@@ -1,4 +1,4 @@
-import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/app/objects/entry.js';
+import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/objects/entry.js';
 
 export function find_viewable_entries(conn, offset, limit) {
   if (offset !== null && typeof offset !== 'undefined') {

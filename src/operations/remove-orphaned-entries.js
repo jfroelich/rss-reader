@@ -1,4 +1,4 @@
-import {feed_is_valid_id} from '/src/app/objects/feed.js';
+import {feed_is_valid_id} from '/src/objects/feed.js';
 
 export function remove_orphans(conn, channel) {
   return new Promise(executor.bind(null, conn, channel));

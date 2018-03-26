@@ -1,4 +1,4 @@
-import {rdr_conn_close, rdr_conn_create} from '/src/app/objects/rdr-conn.js';
+import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {Archiver} from '/src/archive-entries.js';
 import * as idb from '/src/lib/idb/idb.js';
 
