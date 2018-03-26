@@ -1,8 +1,8 @@
-import {feed_peek_url} from '/src/objects/feed.js';
-import {get_feeds} from '/src/operations/get-feeds.js';
 import * as filelib from '/src/lib/file/file.js';
 import * as opml_document from '/src/lib/opml-document/opml-document.js';
 import * as opml_parser from '/src/lib/opml-parser/opml-parser.js';
+import {feed_peek_url} from '/src/objects/feed.js';
+import {get_feeds} from '/src/operations/get-feeds.js';
 import {SubscribeOperation} from '/src/subscribe.js';
 
 const feed_mime_types = [
@@ -17,33 +17,6 @@ export function Exim() {
   this.fetch_timeout = 2000;
   this.console = null_console;
 }
-
-Exim.prototype.export_opml = async function(title) {
-  const feeds = await get_feeds(this.rconn);
-  const document = opml_document.create_document(title);
-  for (const feed of feeds) {
-    this.append_feed(document, feed);
-  }
-  return opml_document.to_blob(document);
-};
-
-Exim.prototype.append_feed = function(document, feed) {
-  const outline = document.createElement('outline');
-  if (feed.type) {
-    outline.setAttribute('type', feed.type);
-  }
-  outline.setAttribute('xmlUrl', feed_peek_url(feed));
-  if (feed.title) {
-    outline.setAttribute('title', feed.title);
-  }
-  if (feed.description) {
-    outline.setAttribute('description', feed.description);
-  }
-  if (feed.link) {
-    outline.setAttribute('htmlUrl', feed.link);
-  }
-  document.body.appendChild(outline);
-};
 
 Exim.prototype.import_opml = function(files) {
   if (!(files instanceof FileList)) {
