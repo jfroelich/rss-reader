@@ -9,4 +9,6 @@ The response type specialized helpers do not deserialize. This is because of the
 
 ### todos
 
+* separate out policy module somehow
+* move to lib folder once I separate out policy
 * abort-able/cancelable fetching
