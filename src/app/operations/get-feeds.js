@@ -1,4 +1,6 @@
 
+// TODO: deprecate in favor of an openCursor approach for scalability purposes
+
 export function get_feeds(conn) {
   return new Promise(executor.bind(null, conn));
 }
