@@ -20,6 +20,12 @@ export function rdr_import(context, files) {
   return Promise.all(proms);
 }
 
+const null_console = {
+  log: noop,
+  debug: noop,
+  warn: noop
+};
+
 const default_context = {
   rconn: null,
   iconn: null,
@@ -68,11 +74,7 @@ async function import_file(subop, file) {
   return count;
 }
 
-const null_console = {
-  log: noop,
-  debug: noop,
-  warn: noop
-};
+
 
 function noop() {}
 
