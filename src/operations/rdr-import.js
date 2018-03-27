@@ -1,44 +1,39 @@
 import * as filelib from '/src/lib/file/file.js';
 import * as opml_document from '/src/lib/opml-document/opml-document.js';
 import * as opml_parser from '/src/lib/opml-parser/opml-parser.js';
-import {feed_peek_url} from '/src/objects/feed.js';
-import {get_feeds} from '/src/operations/get-feeds.js';
 import {SubscribeOperation} from '/src/subscribe.js';
+
+export function rdr_import(context, files) {
+  const ctx = Object.assign({}, default_context, context);
+  ctx.console.log('Importing %d file(s)', files.length);
+
+  const subop = new SubscribeOperation();
+  subop.rconn = ctx.rconn;
+  subop.iconn = ctx.iconn;
+  subop.channel = ctx.channel;
+  subop.fetch_timeout = ctx.fetch_timeout;
+  subop.notify_flag = false;
+
+  const partial = import_file.bind(ctx, subop);
+  const map = Array.prototype.map;
+  const proms = map.call(files, partial);
+  return Promise.all(proms);
+}
+
+const default_context = {
+  rconn: null,
+  iconn: null,
+  channel: null,
+  fetch_timeout: 2000,
+  console: null_console
+};
 
 const feed_mime_types = [
   'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',
   'application/xml', 'application/xhtml+xml', 'text/xml'
 ];
 
-export function Exim() {
-  this.rconn = null;
-  this.iconn = null;
-  this.channel = null;
-  this.fetch_timeout = 2000;
-  this.console = null_console;
-}
-
-Exim.prototype.import_opml = function(files) {
-  if (!(files instanceof FileList)) {
-    throw new TypeError('files is not a FileList');
-  }
-
-  this.console.log('Importing %d file(s)', files.length);
-
-  const subop = new SubscribeOperation();
-  subop.rconn = this.rconn;
-  subop.iconn = this.iconn;
-  subop.channel = this.channel;
-  subop.fetch_timeout = this.fetch_timeout;
-  subop.notify_flag = false;
-
-  const partial = this.import_file.bind(this, subop);
-  const map = Array.prototype.map;
-  const proms = map.call(files, partial);
-  return Promise.all(proms);
-};
-
-Exim.prototype.import_file = async function(subop, file) {
+async function import_file(subop, file) {
   if (!file.size) {
     return 0;
   }
@@ -71,7 +66,7 @@ Exim.prototype.import_file = async function(subop, file) {
   const count = stored_feeds.reduce((sum, v) => v ? sum : sum + 1, 0);
   this.console.debug('Imported %d feeds from file', count, file.name);
   return count;
-};
+}
 
 const null_console = {
   log: noop,

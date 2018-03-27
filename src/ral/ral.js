@@ -1,4 +1,3 @@
-import {Exim} from '/src/exim/exim.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {activate_feed as activate_feed_impl} from '/src/operations/activate-feed.js';
@@ -7,6 +6,7 @@ import {find_feed_by_id as find_feed_by_id_impl} from '/src/operations/find-feed
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {get_feeds as get_feeds_with_conn} from '/src/operations/get-feeds.js';
 import {rdr_export} from '/src/operations/rdr-export.js';
+import {rdr_import} from '/src/operations/rdr-import.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 import {SubscribeOperation} from '/src/subscribe.js';
@@ -38,20 +38,17 @@ export async function find_feed_by_id(feed_id) {
 }
 
 export async function import_opml(channel, files) {
-  const exim = new Exim();
-  exim.fetch_timeout = 10 * 1000;
-  exim.channel = channel;
-  exim.console = console;
-
+  const ctx = {};
+  ctx.fetch_timeout = 10 * 100;
+  ctx.channel = channel;
+  ctx.console = console;
 
   const fs = new FaviconService();
-
-
   const open_promises = [rdr_conn_create(), fs.open()];
-  [exim.rconn, exim.iconn] = await Promise.all(open_promises);
-  await exim.import_opml(files);
-  exim.rconn.close();
-  exim.iconn.close();
+  [ctx.rconn, ctx.iconn] = await Promise.all(open_promises);
+  await rdr_import(ctx, files);
+  ctx.rconn.close();
+  ctx.iconn.close();
 }
 
 export async function export_opml(title) {
