@@ -6,15 +6,7 @@ import {SubscribeOperation} from '/src/subscribe.js';
 export function rdr_import(context, files) {
   const ctx = Object.assign({}, default_context, context);
   ctx.console.log('Importing %d file(s)', files.length);
-
-  const subop = new SubscribeOperation();
-  subop.rconn = ctx.rconn;
-  subop.iconn = ctx.iconn;
-  subop.channel = ctx.channel;
-  subop.fetch_timeout = ctx.fetch_timeout;
-  subop.notify_flag = false;
-
-  const partial = import_file.bind(ctx, subop);
+  const partial = import_file.bind(ctx);
   const map = Array.prototype.map;
   const proms = map.call(files, partial);
   return Promise.all(proms);
@@ -39,7 +31,9 @@ const feed_mime_types = [
   'application/xml', 'application/xhtml+xml', 'text/xml'
 ];
 
-async function import_file(subop, file) {
+async function import_file(file) {
+  this.console.debug('Importing file', file.name);
+
   if (!file.size) {
     return 0;
   }
@@ -47,8 +41,6 @@ async function import_file(subop, file) {
   if (!feed_mime_types.includes(file.type)) {
     return 0;
   }
-
-  this.console.debug('Importing file', file.name);
 
   let file_text;
   try {
@@ -67,14 +59,20 @@ async function import_file(subop, file) {
   }
 
   const urls = dedup_urls(opml_document.find_feed_urls(document));
-  const promises = urls.map(subop.subscribe, subop);
+
+  const op = new SubscribeOperation();
+  op.rconn = this.rconn;
+  op.iconn = this.iconn;
+  op.channel = this.channel;
+  op.fetch_timeout = this.fetch_timeout;
+  op.notify_flag = false;
+
+  const promises = urls.map(op.subscribe, op);
   const stored_feeds = await Promise.all(promises);
   const count = stored_feeds.reduce((sum, v) => v ? sum : sum + 1, 0);
   this.console.debug('Imported %d feeds from file', count, file.name);
   return count;
 }
-
-
 
 function noop() {}
 
