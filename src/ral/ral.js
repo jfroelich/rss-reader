@@ -7,10 +7,10 @@ import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {get_feeds as get_feeds_with_conn} from '/src/operations/get-feeds.js';
 import {rdr_export} from '/src/operations/rdr-export.js';
 import {rdr_import} from '/src/operations/rdr-import.js';
+import {SubscribeOperation} from '/src/operations/subscribe.js';
 import {unsubscribe} from '/src/operations/unsubscribe.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
 import {PollService} from '/src/poll-service/poll-service.js';
-import {SubscribeOperation} from '/src/subscribe.js';
 
 export async function get_feeds(title_sort_flag) {
   const conn = await rdr_conn_create();

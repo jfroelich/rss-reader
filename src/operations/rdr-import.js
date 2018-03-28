@@ -1,7 +1,7 @@
 import * as filelib from '/src/lib/file/file.js';
 import * as opml_document from '/src/lib/opml-document/opml-document.js';
 import * as opml_parser from '/src/lib/opml-parser/opml-parser.js';
-import {SubscribeOperation} from '/src/subscribe.js';
+import {SubscribeOperation} from '/src/operations/subscribe.js';
 
 export function rdr_import(context, files) {
   const ctx = Object.assign({}, default_context, context);
