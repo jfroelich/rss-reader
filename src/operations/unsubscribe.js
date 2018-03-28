@@ -1,5 +1,5 @@
-import {delete_feed} from '/src/operations/delete-feed.js';
 import * as badge from '/src/badge.js';
+import {delete_feed} from '/src/operations/delete-feed.js';
 
 // TODO: create docs
 
@@ -21,7 +21,7 @@ import * as badge from '/src/badge.js';
 // @param channel {BroadcastChannel} optional, this dispatches feed deleted and
 // entry deleted messages to the given channel
 // @param feed_id {Number} id of feed to unsubscribe
-export default async function unsubscribe(conn, channel, feed_id) {
+export async function unsubscribe(conn, channel, feed_id) {
   if (!(conn instanceof IDBDatabase)) {
     throw new TypeError('Invalid conn ' + conn);
   }
