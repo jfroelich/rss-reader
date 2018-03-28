@@ -1,11 +1,11 @@
 import '/src/view/cli/cli.js';
+import * as badge from '/src/badge.js';
+import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {rdr_conn_create} from '/src/objects/rdr-conn.js';
+import {Archiver} from '/src/operations/archive-entries/archive-entries.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
-import {Archiver} from '/src/archive-entries.js';
-import * as badge from '/src/badge.js';
-import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 import show_slideshow_tab from '/src/show-slideshow-tab.js';
 

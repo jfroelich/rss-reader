@@ -1,6 +1,6 @@
-import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
-import {Archiver} from '/src/archive-entries.js';
 import * as idb from '/src/lib/idb/idb.js';
+import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
+import {Archiver} from '/src/operations/archive-entries/archive-entries.js';
 
 async function test() {
   const arch = new Archiver();
