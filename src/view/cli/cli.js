@@ -2,8 +2,8 @@ import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {Archiver} from '/src/operations/archive-entries/archive-entries.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
-import {remove_lost_entries as remove_lost_entries_impl} from '/src/operations/remove-lost-entries.js';
-import {remove_orphans as remove_orphans_impl} from '/src/operations/remove-orphaned-entries.js';
+import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
+import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 
 async function cli_archive() {
@@ -37,7 +37,7 @@ async function poll_feeds() {
   service.close();
 }
 
-async function remove_lost_entries() {
+async function cli_remove_lost_entries() {
   const conn = await rdr_conn_create();
   const channel = new BroadcastChannel('reader');
   await remove_lost_entries_impl(conn, channel, console);
@@ -45,7 +45,7 @@ async function remove_lost_entries() {
   rdr_conn_close(conn);
 }
 
-async function remove_orphans() {
+async function cli_remove_orphans() {
   const conn = await rdr_conn_create();
   const channel = new BroadcastChannel('reader');
   await remove_orphans_impl(conn, channel);
@@ -93,8 +93,8 @@ const cli = {
   archive: cli_archive,
   clear_favicons: fs_clear,
   compact_favicons: fs_compact,
-  remove_orphans: remove_orphans,
-  remove_lost_entries: remove_lost_entries,
+  remove_orphans: cli_remove_orphans,
+  remove_lost_entries: cli_remove_lost_entries,
   lookup_favicon: lookup_favicon,
   poll_feeds: poll_feeds,
   refresh_icons: refresh_icons
