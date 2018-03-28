@@ -3,6 +3,7 @@ import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as color from '/src/lib/color/color.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
+import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/lib/sniff/sniff.js';
 import * as notifications from '/src/notifications/notifications.js';
 import {coerce_entry, entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/objects/entry.js';
@@ -14,7 +15,6 @@ import {find_active_feeds} from '/src/operations/find-active-feeds.js';
 import {update_feed} from '/src/operations/update-feed.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
-import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
 const null_console = {
