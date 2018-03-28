@@ -1,10 +1,10 @@
-import {feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
-import {contains_feed_with_url} from '/src/operations/contains-feed-with-url.js';
-import {create_feed} from '/src/operations/create-feed.js';
 import {coerce_feed} from '/src/coerce-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as notifications from '/src/notifications/notifications.js';
+import {feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
+import {contains_feed_with_url} from '/src/operations/contains-feed-with-url.js';
+import {create_feed} from '/src/operations/create-feed.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
@@ -17,7 +17,6 @@ export function SubscribeOperation() {
   this.console = null_console;
 }
 
-// Returns undefined on error
 SubscribeOperation.prototype.subscribe = async function(url) {
   assert(this.rconn);
   assert(this.iconn);
@@ -38,15 +37,12 @@ SubscribeOperation.prototype.subscribe = async function(url) {
     return;
   }
 
-  // previously subscribe_create_feed_from_response
-  // note args changed
   const feed = await this.create_feed(response, url);
   if (!feed) {
     this.console.debug('Failed to create feed', url.href);
     return;
   }
 
-  // previously subscribe_feed_set_favicon, note args changed
   await this.set_favicon(feed);
 
   const stored_feed = await create_feed(this.rconn, this.channel, feed);
@@ -54,7 +50,8 @@ SubscribeOperation.prototype.subscribe = async function(url) {
     this.show_notification(stored_feed);
   }
 
-  this.poll_feed(stored_feed).catch(this.console.warn);  // non-blocking
+  // non-blocking, subscribe completes before this completes
+  this.poll_feed(stored_feed).catch(this.console.warn);
   return stored_feed;
 };
 
@@ -92,7 +89,6 @@ SubscribeOperation.prototype.create_feed = async function(response, url) {
 SubscribeOperation.prototype.set_favicon = async function(feed) {
   assert(is_feed(feed));
 
-  // TODO: share instance across all calls
   const fs = new FaviconService();
   fs.conn = this.iconn;
   fs.console = this.console;
