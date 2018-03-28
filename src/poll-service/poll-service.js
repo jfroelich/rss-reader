@@ -1,5 +1,4 @@
 import * as badge from '/src/badge.js';
-import {coerce_feed} from '/src/coerce-feed.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as color from '/src/lib/color/color.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
@@ -7,7 +6,7 @@ import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import * as sniff from '/src/lib/sniff/sniff.js';
 import * as notifications from '/src/notifications/notifications.js';
 import {coerce_entry, entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/objects/entry.js';
-import {feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/objects/feed.js';
+import {coerce_feed, feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/objects/feed.js';
 import {rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {contains_entry_with_url} from '/src/operations/contains-entry-with-url.js';
 import {create_entry} from '/src/operations/create-entry.js';
