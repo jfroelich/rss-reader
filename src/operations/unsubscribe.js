@@ -2,10 +2,6 @@ import * as badge from '/src/badge.js';
 import {delete_feed} from '/src/operations/delete-feed.js';
 
 export async function unsubscribe(conn, channel, feed_id) {
-  if (!(conn instanceof IDBDatabase)) {
-    throw new TypeError('Invalid conn ' + conn);
-  }
-
   const reason_text = 'unsubscribe';
   await delete_feed(conn, channel, feed_id, reason_text);
 
