@@ -1,14 +1,12 @@
-import * as idb from '/src/lib/idb/idb.js';
+import {idb_remove} from '/src/lib/idb/idb.js';
 import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
-import {Archiver} from '/src/operations/archive-entries/archive-entries.js';
+import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
 
 async function test() {
-  const arch = new Archiver();
-  arch.console = console;
-  arch.conn = await rdr_conn_close('archive-entries-test');
-  await arch.archive();
-  rdr_conn_create(arch.conn);
-  await idb.idb_remove(arch.conn.name);
+  const conn = await rdr_conn_create('archive-entries-test');
+  await rdr_archive(conn, /* channel */ null, console, /* max_age */ null);
+  rdr_conn_close(conn);
+  await idb_remove(conn.name);
 }
 
 window.test = test;

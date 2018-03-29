@@ -2,7 +2,7 @@ import '/src/view/cli/cli.js';
 import * as badge from '/src/badge.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {rdr_conn_create} from '/src/objects/rdr-conn.js';
-import {Archiver} from '/src/operations/archive-entries/archive-entries.js';
+import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
@@ -18,10 +18,11 @@ async function handle_compact_favicons_alarm(alarm) {
 }
 
 async function handle_archive_alarm_wakeup(alarm) {
-  const arch = new Archiver();
-  await arch.open();
-  await arch.archive();
-  arch.close();
+  const conn = await rdr_conn_create();
+  const channel = new BroadcastChannel('reader');
+  await rdr_archive(conn, channel, /* console*/ null, /* max_age */ null);
+  channel.close();
+  conn.close();
 }
 
 async function handle_lost_entries_alarm(alarm) {

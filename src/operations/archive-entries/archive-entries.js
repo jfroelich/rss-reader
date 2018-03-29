@@ -1,82 +1,83 @@
 import {entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/objects/entry.js';
-import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {sizeof} from '/src/lib/sizeof/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
+const null_console = {
+  log: noop,
+  warn: noop,
+  debug: noop
+};
 
-export function Archiver() {
-  this.conn = null;
-  this.channel = null;
-  this.max_age = TWO_DAYS_MS;
-  this.console = null_console;
+const null_channel = {
+  postMessage: noop,
+  close: noop
+};
+
+export function rdr_archive(
+    conn, channel = null_channel, console = null_console,
+    max_age = TWO_DAYS_MS) {
+  return new Promise(executor.bind(null, conn, channel, max_age, console));
 }
 
-Archiver.prototype.open = async function() {
-  this.conn = await rdr_conn_create();
-};
+function executor(conn, channel, max_age, console, resolve, reject) {
+  console.log('Archiving entries...');
+  const entry_ids = [];
+  const txn = conn.transaction('entry', 'readwrite');
+  txn.onerror = _ => reject(txn.error);
+  txn.oncomplete =
+      txn_oncomplete.bind(txn, channel, console, entry_ids, resolve);
+  const store = txn.objectStore('entry');
+  const index = store.index('archiveState-readState');
+  const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
+  const request = index.openCursor(key_path);
+  request.onsuccess = handle_cursor.bind(request, console, entry_ids, max_age);
+}
 
-Archiver.prototype.close = function() {
-  rdr_conn_close(this.conn);
-};
-
-Archiver.prototype.archive = function() {
-  return new Promise((resolve, reject) => {
-    this.console.log('Archiving entries...');
-    const entry_ids = [];
-    const txn = this.conn.transaction('entry', 'readwrite');
-    txn.onerror = _ => reject(txn.error);
-    txn.oncomplete = this.txn_oncomplete.bind(this, entry_ids, resolve);
-    const store = txn.objectStore('entry');
-    const index = store.index('archiveState-readState');
-    const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
-    const request = index.openCursor(key_path);
-    request.onsuccess = this.handle_cursor.bind(this, entry_ids);
-  });
-};
-
-Archiver.prototype.txn_oncomplete = function(entry_ids, callback) {
-  if (this.channel) {
-    for (const id of entry_ids) {
-      this.channel.postMessage({type: 'entry-archived', id: id});
-    }
-  }
-
-  this.console.debug('Archived %d entries', entry_ids.length);
-  callback(entry_ids);
-};
-
-Archiver.prototype.handle_cursor = function(entry_ids, event) {
+function handle_cursor(console, entry_ids, max_age, event) {
   const cursor = event.target.result;
-  if (!cursor) {
-    return;
-  }
-
-  const entry = cursor.value;
-  if (entry.dateCreated) {
-    const current_date = new Date();
-    const age = current_date - entry.dateCreated;
-    if (age > this.max_age) {
-      const ae = this.archive_entry(entry);
-      cursor.update(ae);
-      entry_ids.push(ae.id);
+  if (cursor) {
+    const entry = cursor.value;
+    if (entry.dateCreated) {
+      const current_date = new Date();
+      const age = current_date - entry.dateCreated;
+      if (age > max_age) {
+        const ae = archive_entry(console, entry);
+        cursor.update(ae);
+        entry_ids.push(ae.id);
+      }
     }
+
+    cursor.continue();
+  }
+}
+
+function txn_oncomplete(channel, console, entry_ids, callback) {
+  for (const id of entry_ids) {
+    channel.postMessage({type: 'entry-archived', id: id});
   }
 
-  cursor.continue();
-};
+  console.debug('Archived %d entries', entry_ids.length);
+  callback(entry_ids);
+}
 
-Archiver.prototype.archive_entry = function(entry) {
+function archive_entry(console, entry) {
   const before_sz = sizeof(entry);
-  const ce = this.compact_entry(entry);
+  const ce = compact_entry(entry);
   const after_sz = sizeof(ce);
-  this.console.debug('Reduced entry size by ~%d bytes', after_sz - before_sz);
-  ce.archiveState = ENTRY_STATE_ARCHIVED;
-  ce.dateArchived = new Date();
-  ce.dateUpdated = new Date();
-  return ce;
-};
 
-Archiver.prototype.compact_entry = function(entry) {
+  if (after_sz > before_sz) {
+    console.warn('compact_entry increased entry size!', entry);
+  }
+
+  console.debug('Reduced entry size by ~%d bytes', after_sz - before_sz);
+  ce.archiveState = ENTRY_STATE_ARCHIVED;
+  const current_date = new Date();
+  ce.dateArchived = current_date;
+  ce.dateUpdated = current_date;
+  return ce;
+}
+
+function compact_entry(entry) {
   const ce = entry_create();
   ce.dateCreated = entry.dateCreated;
 
@@ -89,12 +90,6 @@ Archiver.prototype.compact_entry = function(entry) {
   ce.readState = entry.readState;
   ce.urls = entry.urls;
   return ce;
-};
+}
 
 function noop() {}
-
-const null_console = {
-  log: noop,
-  warn: noop,
-  debug: noop
-};

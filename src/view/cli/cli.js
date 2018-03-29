@@ -1,19 +1,17 @@
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
-import {Archiver} from '/src/operations/archive-entries/archive-entries.js';
+import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 
 async function cli_archive() {
-  const arch = new Archiver();
-  arch.console = console;
-  arch.channel = new BroadcastChannel('reader');
-  await arch.open();
-  await arch.archive();
-  arch.close();
-  arch.channel.close();
+  const channel = new BroadcastChannel('reader');
+  const conn = await rdr_conn_create();
+  await rdr_archive(conn, channel, console, /* max_age */ null);
+  channel.close();
+  conn.close();
 }
 
 async function refresh_icons() {
