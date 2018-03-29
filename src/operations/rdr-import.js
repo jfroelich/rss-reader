@@ -1,5 +1,4 @@
 import * as filelib from '/src/lib/file/file.js';
-import * as opml_document from '/src/lib/opml-document/opml-document.js';
 import * as opml_parser from '/src/lib/opml-parser/opml-parser.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
 
@@ -58,7 +57,7 @@ async function import_file(file) {
     return 0;
   }
 
-  const urls = dedup_urls(opml_document.find_feed_urls(document));
+  const urls = dedup_urls(find_feed_urls(document));
 
   const partial = rdr_subscribe.bind(
       null, this.rconn, this.iconn, this.channel, this.console,
@@ -82,4 +81,24 @@ function dedup_urls(urls) {
     }
   }
   return unique_urls;
+}
+
+function find_feed_urls(document) {
+  const elements = document.querySelectorAll('opml > body > outline');
+  const type_pattern = /^\s*(rss|rdf|feed)\s*$/i;
+  const urls = [];
+  for (const element of elements) {
+    const type = element.getAttribute('type');
+    if (type_pattern.test(type)) {
+      const value = element.getAttribute('xmlUrl');
+      if (value) {
+        try {
+          urls.push(new URL(value));
+        } catch (error) {
+        }
+      }
+    }
+  }
+
+  return urls;
 }
