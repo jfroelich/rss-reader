@@ -51,7 +51,7 @@ function handle_cursor(console, entry_ids, max_age, event) {
   }
 }
 
-function txn_oncomplete(channel, console, entry_ids, callback) {
+function txn_oncomplete(channel, console, entry_ids, callback, event) {
   for (const id of entry_ids) {
     channel.postMessage({type: 'entry-archived', id: id});
   }
