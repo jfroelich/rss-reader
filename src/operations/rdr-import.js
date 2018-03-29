@@ -1,7 +1,7 @@
 import * as filelib from '/src/lib/file/file.js';
 import * as opml_document from '/src/lib/opml-document/opml-document.js';
 import * as opml_parser from '/src/lib/opml-parser/opml-parser.js';
-import {SubscribeOperation} from '/src/operations/subscribe.js';
+import {rdr_subscribe} from '/src/operations/subscribe.js';
 
 export function rdr_import(context, files) {
   const ctx = Object.assign({}, default_context, context);
@@ -60,14 +60,11 @@ async function import_file(file) {
 
   const urls = dedup_urls(opml_document.find_feed_urls(document));
 
-  const op = new SubscribeOperation();
-  op.rconn = this.rconn;
-  op.iconn = this.iconn;
-  op.channel = this.channel;
-  op.fetch_timeout = this.fetch_timeout;
-  op.notify_flag = false;
+  const partial = rdr_subscribe.bind(
+      null, this.rconn, this.iconn, this.channel, this.console,
+      this.fetch_timeout, false);
 
-  const promises = urls.map(op.subscribe, op);
+  const promises = urls.map(partial);
   const stored_feeds = await Promise.all(promises);
   const count = stored_feeds.reduce((sum, v) => v ? sum : sum + 1, 0);
   this.console.debug('Imported %d feeds from file', count, file.name);

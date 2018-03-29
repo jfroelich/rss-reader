@@ -7,7 +7,7 @@ import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {get_feeds as get_feeds_with_conn} from '/src/operations/get-feeds.js';
 import {rdr_export} from '/src/operations/rdr-export.js';
 import {rdr_import} from '/src/operations/rdr-import.js';
-import {SubscribeOperation} from '/src/operations/subscribe.js';
+import {rdr_subscribe} from '/src/operations/subscribe.js';
 import {unsubscribe} from '/src/operations/unsubscribe.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
 import {PollService} from '/src/poll-service/poll-service.js';
@@ -78,18 +78,15 @@ export async function poll_feeds(channel, console) {
 }
 
 export async function ral_subscribe(channel, url) {
-  const op = new SubscribeOperation();
-  op.channel = channel;
-  op.notify_flag = true;
-
+  let null_console, fetch_timeout, notify_flag = true;
   const fs = new FaviconService();
-
   const conn_promises = Promise.all([rdr_conn_create(), fs.open()]);
-  [op.rconn, op.iconn] = await conn_promises;
-  const result = await op.subscribe(url);
-  op.rconn.close();
-  op.iconn.close();
-  return result;
+  const [rconn, iconn] = await conn_promises;
+  const feed = await rdr_subscribe(
+      rconn, iconn, channel, null_console, fetch_timeout, notify_flag, url);
+  rconn.close();
+  iconn.close();
+  return feed;
 }
 
 export async function ral_unsubscribe(channel, feed_id) {
