@@ -1,4 +1,4 @@
-import show_slideshow_tab from '/src/show-slideshow-tab.js';
+import {show_slideshow_tab} from '/src/show-slideshow-tab.js';
 
 export function show(title, message, icon_url) {
   if (!('SHOW_NOTIFICATIONS' in localStorage)) {

@@ -7,7 +7,7 @@ import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
 import {PollService} from '/src/poll-service/poll-service.js';
-import show_slideshow_tab from '/src/show-slideshow-tab.js';
+import {show_slideshow_tab} from '/src/show-slideshow-tab.js';
 
 async function handle_compact_favicons_alarm(alarm) {
   const service = new FaviconService();
