@@ -26,8 +26,7 @@
   ],
   "optional_permissions": [
     "background",
-    "idle",
-    "notifications"
+    "idle"
   ],
   "content_security_policy":
     "script-src 'self'; object-src 'self' https://vimeo.com https://www.youtube.com https://www.ustream.tv; frame-src http: https:"
