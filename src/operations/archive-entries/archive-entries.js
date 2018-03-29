@@ -1,6 +1,5 @@
 import {entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/objects/entry.js';
 import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
-
 import {sizeof} from '/src/lib/sizeof/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
