@@ -279,7 +279,8 @@ PollService.prototype.poll_entry = async function(entry) {
   await this.update_entry_icon(entry, document);
   await this.update_entry_content(entry, document);
 
-  const stored_entry = await create_entry(this.rconn, this.channel, entry);
+  const stored_entry =
+      await create_entry(this.rconn, this.channel, this.console, entry);
   return stored_entry.id;
 };
 
