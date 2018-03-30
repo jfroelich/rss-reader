@@ -98,7 +98,8 @@ export async function ral_unsubscribe(channel, feed_id) {
 
 export async function activate_feed(channel, feed_id) {
   const conn = await rdr_conn_create();
-  await activate_feed_impl(conn, channel, feed_id);
+  let null_console = null;
+  await activate_feed_impl(conn, channel, null_console, feed_id);
   conn.close();
 }
 
