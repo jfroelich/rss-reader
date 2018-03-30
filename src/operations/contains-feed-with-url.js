@@ -1,5 +1,7 @@
 import {feed_is_valid_id} from '/src/objects/feed.js';
 
+// TODO: deprecate in favor of find_feed_by_url
+
 export function contains_feed_with_url(conn, url) {
   if (!(url instanceof URL)) {
     throw new TypeError('url is not a URL: ' + url);
