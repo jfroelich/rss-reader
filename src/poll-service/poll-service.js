@@ -1,5 +1,5 @@
-import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as color from '/src/lib/color/color.js';
+import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';

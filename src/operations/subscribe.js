@@ -1,4 +1,4 @@
-import {FaviconService} from '/src/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
 import {contains_feed_with_url} from '/src/operations/contains-feed-with-url.js';

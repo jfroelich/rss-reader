@@ -1,6 +1,6 @@
 import '/src/views/cli/cli.js';
 
-import {FaviconService} from '/src/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import {rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';

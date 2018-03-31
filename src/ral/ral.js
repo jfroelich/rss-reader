@@ -1,4 +1,4 @@
-import {FaviconService} from '/src/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import {rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {activate_feed as activate_feed_impl} from '/src/operations/activate-feed.js';
 import {deactivate_feed as deactivate_feed_impl} from '/src/operations/deactivate-feed.js';

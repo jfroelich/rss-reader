@@ -1,4 +1,4 @@
-import {fetch_image} from '/src/favicon-service/fetch-image.js';
+import {fetch_image} from '/src/lib/favicon-service/fetch-image.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import * as idb from '/src/lib/idb/idb.js';
 import * as mime from '/src/lib/mime/mime.js';
