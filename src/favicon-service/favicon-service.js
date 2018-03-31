@@ -1,6 +1,7 @@
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import * as idb from '/src/lib/idb/idb.js';
 import * as mime from '/src/lib/mime/mime.js';
+import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
 export function FaviconService() {
@@ -67,7 +68,7 @@ FaviconService.prototype.lookup = async function(url, document) {
 
   let response;
   if (!document && !this.skip_fetch) {
-    response = await url_loader.fetch_html(url, this.fetch_html_timeout);
+    response = await rdr_fetch_html(url, this.fetch_html_timeout);
     if (!response.ok) {
       this.console.debug('Fetch error', url.href, response.status);
     }

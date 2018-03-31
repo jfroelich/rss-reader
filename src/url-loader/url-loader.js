@@ -43,11 +43,6 @@ export function create_error_response(status) {
   return new Response(body, init);
 }
 
-export function fetch_html(url, timeout) {
-  const html_mime_types = ['text/html'];
-  return tfetch(url, {timeout: timeout, types: html_mime_types});
-}
-
 export function fetch_feed(url, timeout) {
   const feed_mime_types = [
     'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',

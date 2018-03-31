@@ -1,11 +1,11 @@
-import * as boilerplate from '/src/lib/boilerplate/boilerplate.js';
 import * as filters from '/src/content-filters/content-filters.js';
-import {fetch_html} from '/src/url-loader/url-loader.js';
+import * as boilerplate from '/src/lib/boilerplate/boilerplate.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
+import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
 
-window.test = async function(url_string) {
+async function test(url_string) {
   const request_url = new URL(url_string);
-  const response = await fetch_html(request_url);
+  const response = await rdr_fetch_html(request_url);
   if (!response.ok) {
     throw new Error('Failed to fetch ' + request_url.href);
   }
@@ -24,4 +24,6 @@ window.test = async function(url_string) {
 
   const preview = window.document.getElementById('preview');
   preview.innerHTML = document.body.innerHTML;
-};
+}
+
+window.test = test;

@@ -1,6 +1,8 @@
 import * as filters from '/src/content-filters/content-filters.js';
-import {fetch_html} from '/src/url-loader/url-loader.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
+
+// TODO: this cannot depend on something in operations
+import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
 
 // TODO: research http://exercism.io/ svg loading issue
 // Actually there is now a separate issue. It's not finding any urls. Something
@@ -12,9 +14,11 @@ import * as html_parser from '/src/lib/html-parser/html-parser.js';
 
 window.test = async function(url_string) {
   const request_url = new URL(url_string);
-  const response = await fetch_html(request_url);
+  const response = await rdr_fetch_html(request_url);
   if (!response.ok) {
-    throw new Error('Failed to fetch ' + request_url.href);
+    throw new Error(
+        'Failed to fetch ' + request_url.href + ' with status ' +
+        response.status);
   }
 
   const html = await response.text();
