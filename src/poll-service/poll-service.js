@@ -4,6 +4,7 @@ import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/lib/sniff/sniff.js';
+import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_entry, entry_append_url, entry_has_url, entry_is_valid_id, entry_peek_url, is_entry} from '/src/objects/entry.js';
 import {coerce_feed, feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/objects/feed.js';
 import {create_entry} from '/src/operations/create-entry.js';
@@ -18,7 +19,6 @@ import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {update_feed} from '/src/operations/update-feed.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
-import * as url_loader from '/src/url-loader/lib/url-loader.js';
 
 const null_console = {
   log: noop,

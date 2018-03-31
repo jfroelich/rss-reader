@@ -1,12 +1,12 @@
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
+import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
 import {contains_feed_with_url} from '/src/operations/contains-feed-with-url.js';
 import {create_feed} from '/src/operations/create-feed.js';
 import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {PollService} from '/src/poll-service/poll-service.js';
-import * as url_loader from '/src/url-loader/lib/url-loader.js';
 
 export async function rdr_subscribe(
     rconn, iconn, channel, console = null_console, fetch_timeout = 2000,
