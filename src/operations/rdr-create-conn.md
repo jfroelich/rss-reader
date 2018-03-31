@@ -1,9 +1,6 @@
+The `rdr_create_conn` function opens a connection to the reader database.
 
-# Methods
-
-* rdr_conn_create - opens a connection to the reader database
-
-# rdr_conn_create notes
+### Notes
 
 * If the database does not exist, it will be created
 * Optionally specify a timeout to limit how long to wait before considering the attempt to connect to the database a failure

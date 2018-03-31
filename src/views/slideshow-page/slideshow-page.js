@@ -4,7 +4,7 @@ import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import {html_escape} from '/src/lib/html/html.js';
 import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/objects/entry.js';
 import {feed_peek_url} from '/src/objects/feed.js';
-import {rdr_conn_create} from '/src/objects/rdr-conn.js';
+import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {find_viewable_entries} from '/src/operations/find-viewable-entries.js';
 import {mark_entry_read} from '/src/operations/mark-entry-read.js';
 import * as ral from '/src/ral/ral.js';
@@ -85,7 +85,7 @@ async function on_entry_added_message(message) {
   if (slideshow_count_unread() <= 3) {
     let conn;
     try {
-      conn = await rdr_conn_create();
+      conn = await rdr_create_conn();
       await slide_load_and_append_multiple(conn);
     } finally {
       if (conn) {
@@ -290,7 +290,7 @@ async function slide_onclick(event) {
 
   let conn;
   try {
-    conn = await rdr_conn_create();
+    conn = await rdr_create_conn();
   } catch (error) {
     console.error(error);
     return false;
@@ -334,7 +334,7 @@ async function slide_next() {
   if (slide_unread_count > 1) {
     let conn;
     try {
-      conn = await rdr_conn_create();
+      conn = await rdr_create_conn();
     } catch (error) {
       console.error(error);
       return;
@@ -350,7 +350,7 @@ async function slide_next() {
   let append_count = 0;
   let conn;
   try {
-    conn = await rdr_conn_create();
+    conn = await rdr_create_conn();
   } catch (error) {
     console.error(error);
     return;

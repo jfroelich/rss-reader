@@ -1,5 +1,5 @@
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
-import {rdr_conn_create} from '/src/objects/rdr-conn.js';
+import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
@@ -8,7 +8,7 @@ import {PollService} from '/src/poll-service/poll-service.js';
 
 async function cli_archive() {
   const channel = new BroadcastChannel('reader');
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   await rdr_archive(conn, channel, console, /* max_age */ null);
   channel.close();
   conn.close();
@@ -17,7 +17,7 @@ async function cli_archive() {
 async function refresh_icons() {
   let channel;
   const fs = new FaviconService();
-  const [rconn, iconn] = await Promise.all([rdr_conn_create(), fs.open()]);
+  const [rconn, iconn] = await Promise.all([rdr_create_conn(), fs.open()]);
   fs.conn = iconn;
   await refresh_feed_icons(rconn, fs, channel);
   rconn.close();
@@ -36,7 +36,7 @@ async function poll_feeds() {
 }
 
 async function cli_remove_lost_entries() {
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   const channel = new BroadcastChannel('reader');
   await remove_lost_entries_impl(conn, channel, console);
   channel.close();
@@ -44,7 +44,7 @@ async function cli_remove_lost_entries() {
 }
 
 async function cli_remove_orphans() {
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   const channel = new BroadcastChannel('reader');
   await remove_orphans_impl(conn, channel);
   channel.close();

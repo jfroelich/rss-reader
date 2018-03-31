@@ -1,5 +1,5 @@
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
-import {rdr_conn_create} from '/src/objects/rdr-conn.js';
+import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {activate_feed as activate_feed_impl} from '/src/operations/activate-feed.js';
 import {deactivate_feed as deactivate_feed_impl} from '/src/operations/deactivate-feed.js';
 import {find_feed_by_id as find_feed_by_id_impl} from '/src/operations/find-feed-by-id.js';
@@ -12,7 +12,7 @@ import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-ea
 import {PollService} from '/src/poll-service/poll-service.js';
 
 export async function get_feeds(title_sort_flag) {
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   const feeds = await get_feeds_with_conn(conn);
   conn.close();
 
@@ -30,7 +30,7 @@ function feed_compare(a, b) {
 }
 
 export async function find_feed_by_id(feed_id) {
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   const feed = await find_feed_by_id_impl(conn, feed_id);
   conn.close();
   return feed;
@@ -43,7 +43,7 @@ export async function import_opml(channel, files) {
   ctx.console = console;
 
   const fs = new FaviconService();
-  const open_promises = [rdr_conn_create(), fs.open()];
+  const open_promises = [rdr_create_conn(), fs.open()];
   [ctx.rconn, ctx.iconn] = await Promise.all(open_promises);
   await rdr_import(ctx, files);
   ctx.rconn.close();
@@ -52,7 +52,7 @@ export async function import_opml(channel, files) {
 
 export async function load_initial_data(
     entry_cursor_offset, entry_cursor_limit, entry_handler, feed_handler) {
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   const p1 = viewable_entries_for_each(
       conn, entry_cursor_offset, entry_cursor_limit, entry_handler);
   const p2 = for_each_active_feed(conn, feed_handler);
@@ -73,7 +73,7 @@ export async function poll_feeds(channel, console) {
 export async function ral_subscribe(channel, url) {
   let null_console, fetch_timeout, notify_flag = true;
   const fs = new FaviconService();
-  const conn_promises = Promise.all([rdr_conn_create(), fs.open()]);
+  const conn_promises = Promise.all([rdr_create_conn(), fs.open()]);
   const [rconn, iconn] = await conn_promises;
   const feed = await rdr_subscribe(
       rconn, iconn, channel, null_console, fetch_timeout, notify_flag, url);
@@ -83,21 +83,21 @@ export async function ral_subscribe(channel, url) {
 }
 
 export async function ral_unsubscribe(channel, feed_id) {
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   const result = await unsubscribe(conn, channel, feed_id);
   conn.close();
   return result;
 }
 
 export async function activate_feed(channel, feed_id) {
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   let null_console = null;
   await activate_feed_impl(conn, channel, null_console, feed_id);
   conn.close();
 }
 
 export async function deactivate_feed(channel, feed_id, reason) {
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   await deactivate_feed_impl(conn, channel, feed_id, reason);
   conn.close();
 }

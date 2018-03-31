@@ -1,7 +1,7 @@
 import '/src/views/cli/cli.js';
 
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
-import {rdr_conn_create} from '/src/objects/rdr-conn.js';
+import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 import {rdr_open_view} from '/src/operations/rdr-open-view.js';
@@ -19,7 +19,7 @@ async function handle_compact_favicons_alarm(alarm) {
 }
 
 async function handle_archive_alarm_wakeup(alarm) {
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   const channel = new BroadcastChannel('reader');
   await rdr_archive(conn, channel, /* console*/ null, /* max_age */ null);
   channel.close();
@@ -28,7 +28,7 @@ async function handle_archive_alarm_wakeup(alarm) {
 
 async function handle_lost_entries_alarm(alarm) {
   const channel = new BroadcastChannel('reader');
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   let null_console = undefined;
   await remove_lost_entries(conn, channel, null_console);
   channel.close();
@@ -36,7 +36,7 @@ async function handle_lost_entries_alarm(alarm) {
 }
 
 async function handle_orphan_entries_alarm(alarm) {
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   const channel = new BroadcastChannel('reader');
   await remove_orphans(conn, channel);
   channel.close();
@@ -46,7 +46,7 @@ async function handle_orphan_entries_alarm(alarm) {
 async function handle_refresh_feed_icons_alarm(alarm) {
   let channel;
   const fs = new FaviconService();
-  const [rconn, iconn] = await Promise.all([rdr_conn_create(), fs.open()]);
+  const [rconn, iconn] = await Promise.all([rdr_create_conn(), fs.open()]);
   fs.conn = iconn;
   await refresh_feed_icons(rconn, fs, channel);
   rconn.close();
@@ -80,7 +80,7 @@ function query_idle_state(idle_period_secs) {
 console.debug('Initializing background page');
 
 chrome.runtime.onInstalled.addListener(async function(event) {
-  let conn = await rdr_conn_create();
+  let conn = await rdr_create_conn();
   conn.close();
 
   const fs = new FaviconService();
@@ -92,7 +92,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
 chrome.browserAction.onClicked.addListener(rdr_open_view);
 
 async function badge_init() {
-  const conn = await rdr_conn_create();
+  const conn = await rdr_create_conn();
   await rdr_badge_refresh(conn, void console);
   conn.close();
 }

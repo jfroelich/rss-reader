@@ -3,7 +3,7 @@ import {ENTRY_MAGIC} from '/src/objects/entry.js';
 import {FEED_MAGIC} from '/src/objects/feed.js';
 
 // Create a connection to the reader database. Returns a promise.
-export function rdr_conn_create(name = 'reader', version = 24, timeout = 500) {
+export function rdr_create_conn(name = 'reader', version = 24, timeout = 500) {
   return idb_open(name, version, on_upgrade_needed, timeout);
 }
 
