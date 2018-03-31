@@ -1,4 +1,3 @@
-// TODO: lib modules should not depend on app modules
 import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
 
 async function test(url_string, timeout) {
