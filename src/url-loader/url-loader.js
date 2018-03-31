@@ -43,14 +43,6 @@ export function create_error_response(status) {
   return new Response(body, init);
 }
 
-export function fetch_feed(url, timeout) {
-  const feed_mime_types = [
-    'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
-    'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
-  ];
-  return tfetch(url, {timeout: timeout, types: feed_mime_types});
-}
-
 export function fetch_image(url, options) {
   const image_mime_types = [
     'application/octet-stream', 'image/x-icon', 'image/jpeg', 'image/gif',

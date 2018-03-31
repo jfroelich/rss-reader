@@ -11,6 +11,7 @@ import {create_entry} from '/src/operations/create-entry.js';
 import {find_active_feeds} from '/src/operations/find-active-feeds.js';
 import {find_entry_id_by_url} from '/src/operations/find-entry-id-by-url.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
+import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
 import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {update_feed} from '/src/operations/update-feed.js';
@@ -138,8 +139,7 @@ PollService.prototype.poll_feed = async function(feed) {
     return 0;
   }
 
-  const response =
-      await url_loader.fetch_feed(tail_url, this.fetch_feed_timeout);
+  const response = await rdr_fetch_feed(tail_url, this.fetch_feed_timeout);
   if (!response.ok) {
     this.handle_error(response.status, feed, 'fetch');
     return 0;

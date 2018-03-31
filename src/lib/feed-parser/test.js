@@ -1,9 +1,10 @@
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
-import * as url_loader from '/src/url-loader/url-loader.js';
+// TODO: libs should not depend on app modules
+import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
 
 window.test = async function(url_string) {
   const request_url = new URL(url_string);
-  const response = await url_loader.fetch_feed(request_url);
+  const response = await rdr_fetch_feed(request_url);
   if (!response.ok) {
     throw new Error('Failed to fetch ' + request_url.href);
   }

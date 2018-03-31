@@ -1,8 +1,9 @@
-import {fetch_feed} from '/src/url-loader/url-loader.js';
+// TODO: lib modules should not depend on app modules
+import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
 
-window.test = async function(url_string, timeout) {
+async function test(url_string, timeout) {
   const request_url = new URL(url_string);
-  const response = await fetch_feed(request_url, timeout);
+  const response = await rdr_fetch_feed(request_url, timeout);
   console.dir(response);
 
   if (!response.ok) {
@@ -11,4 +12,6 @@ window.test = async function(url_string, timeout) {
 
   const response_text = await response.text();
   console.dir(response_text);
-};
+}
+
+window.test = test;
