@@ -2,6 +2,7 @@ import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import * as perm from '/src/lib/permissions/permissions.js';
 import {feed_peek_url} from '/src/objects/feed.js';
+import {activate_feed} from '/src/operations/activate-feed.js';
 import {deactivate_feed} from '/src/operations/deactivate-feed.js';
 import {find_feed_by_id} from '/src/operations/find-feed-by-id.js';
 import {get_feeds} from '/src/operations/get-feeds.js';
@@ -378,23 +379,20 @@ function unsubscribe_button_onclick(event) {
       });
 }
 
-function activate_feed_button_onclick(event) {
+async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  return ral.activate_feed(channel, feed_id)
-      .then(_ => {
-        // Mark the corresponding feed element displayed in the view as active
-        const item_element =
-            document.querySelector('li[feed="' + feed_id + '"]');
-        if (item_element) {
-          item_element.removeAttribute('inactive');
-        }
 
-        section_show_by_id('subs-list-section');
-      })
-      .catch(error => {
-        // TODO: show an error message
-        console.error(error);
-      });
+  const conn = await rdr_create_conn();
+  await activate_feed(conn, channel, void console, feed_id);
+  conn.close();
+
+  // Mark the corresponding feed element displayed in the view as active
+  const item_element = document.querySelector('li[feed="' + feed_id + '"]');
+  if (item_element) {
+    item_element.removeAttribute('inactive');
+  }
+
+  section_show_by_id('subs-list-section');
 }
 
 async function deactivate_feed_button_onclick(event) {

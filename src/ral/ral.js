@@ -1,4 +1,3 @@
-import {activate_feed as activate_feed_impl} from '/src/operations/activate-feed.js';
 import {find_feed_by_id as find_feed_by_id_impl} from '/src/operations/find-feed-by-id.js';
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
@@ -65,11 +64,4 @@ export async function ral_unsubscribe(channel, feed_id) {
   const result = await unsubscribe(conn, channel, feed_id);
   conn.close();
   return result;
-}
-
-export async function activate_feed(channel, feed_id) {
-  const conn = await rdr_create_conn();
-  let null_console = null;
-  await activate_feed_impl(conn, channel, null_console, feed_id);
-  conn.close();
 }
