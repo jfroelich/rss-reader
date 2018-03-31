@@ -10,7 +10,8 @@ export async function export_opml(title, filename, console) {
   const opml_document = await rdr_export_opml(conn, title, console);
   rdr_conn_close(conn);
 
-  download_blob(opml_document_to_blob(opml_document), filename);
+  download_blob_using_chrome_api(
+      opml_document_to_blob(opml_document), filename);
 
   if (console) {
     console.log('Export completed');
@@ -23,7 +24,18 @@ function opml_document_to_blob(opml_document) {
   return new Blob([xml_string], {type: 'application/xml'});
 }
 
-function download_blob(blob, filename) {
+function download_blob_using_anchor(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.setAttribute('download', filename);
+  anchor.href = url;
+  anchor.click();
+  URL.revokeObjectURL();
+}
+
+// An alternative to download_blob_using_anchor that avoids the issue introduced
+// in Chrome 65 with cross-origin download urls (see Issue #532)
+function download_blob_using_chrome_api(blob, filename) {
   const url = URL.createObjectURL(blob);
   const options = {url: url, filename: filename};
   chrome.downloads.download(options);
