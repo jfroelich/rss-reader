@@ -1,15 +1,18 @@
 import {feed_peek_url} from '/src/objects/feed.js';
 import {get_feeds} from '/src/operations/get-feeds.js';
 
-export async function rdr_export(conn, title, console = null_console) {
+export async function rdr_export_opml(conn, title, console = null_console) {
   const document = create_opml_document(title, console);
 
   const feeds = await get_feeds(conn);
+
+  console.debug('Loaded %d feeds from database', feeds.length, conn.name);
+
   for (const feed of feeds) {
     append_feed(document, feed, console);
   }
 
-  return create_blob(document);
+  return document;
 }
 
 export function create_opml_document(title, console) {
@@ -43,14 +46,7 @@ export function create_opml_document(title, console) {
 
   const body_element = doc.createElement('body');
   doc.documentElement.appendChild(body_element);
-
   return doc;
-}
-
-export function create_blob(document) {
-  const serializer = new XMLSerializer();
-  const xml_string = serializer.serializeToString(document);
-  return new Blob([xml_string], {type: 'application/xml'});
 }
 
 function append_feed(document, feed, console) {
@@ -70,7 +66,10 @@ function append_feed(document, feed, console) {
   }
 
   console.debug('Appending feed', outline.getAttribute('xmlUrl'));
-  document.body.appendChild(outline);
+
+  // No idea why, but cannot use document.body here
+  const body_element = document.querySelector('body');
+  body_element.appendChild(outline);
 }
 
 function noop() {}

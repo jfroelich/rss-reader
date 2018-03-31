@@ -1,4 +1,4 @@
-`rdr_export` creates an opml document object as a blob. The function is async.
+`rdr_export_opml` creates an opml document object as a blob. The function is async.
 
 ### Thrown errors
 

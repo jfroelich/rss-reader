@@ -5,7 +5,6 @@ import {deactivate_feed as deactivate_feed_impl} from '/src/operations/deactivat
 import {find_feed_by_id as find_feed_by_id_impl} from '/src/operations/find-feed-by-id.js';
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {get_feeds as get_feeds_with_conn} from '/src/operations/get-feeds.js';
-import {rdr_export} from '/src/operations/rdr-export.js';
 import {rdr_import} from '/src/operations/rdr-import.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
 import {unsubscribe} from '/src/operations/unsubscribe.js';
@@ -49,12 +48,6 @@ export async function import_opml(channel, files) {
   await rdr_import(ctx, files);
   ctx.rconn.close();
   ctx.iconn.close();
-}
-
-export async function export_opml(title) {
-  const conn = await rdr_conn_create();
-  await rdr_export(conn, title);
-  conn.close();
 }
 
 export async function load_initial_data(
