@@ -7,8 +7,8 @@ import {feed_peek_url} from '/src/objects/feed.js';
 import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {find_viewable_entries} from '/src/operations/find-viewable-entries.js';
 import {mark_entry_read} from '/src/operations/mark-entry-read.js';
-import {rdr_export_opml} from '/src/operations/rdr-export.js';
 import * as ral from '/src/ral/ral.js';
+import {export_opml} from '/src/view/slideshow-page/export-opml.js';
 import * as page_style from '/src/view/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/view/slideshow-page/slideshow.js';
 
@@ -461,31 +461,10 @@ async function uploader_input_onchange(event) {
   console.log('Import completed');
 }
 
-async function export_menu_option_handle_click(event) {
+function export_menu_option_handle_click(event) {
   const title = 'Subscriptions';
   const filename = 'subscriptions.xml';
-  const conn = await rdr_conn_create();
-  const opml_document = await rdr_export_opml(conn, title, void console);
-  rdr_conn_close(conn);
-
-  const blob = opml_document_to_blob(opml_document);
-  trigger_blob_download(blob, filename);
-
-  console.log('Export completed');
-}
-
-function opml_document_to_blob(opml_document) {
-  const serializer = new XMLSerializer();
-  const xml_string = serializer.serializeToString(opml_document);
-  return new Blob([xml_string], {type: 'application/xml'});
-}
-
-function trigger_blob_download(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  // CLOSED-ISSUE: #532
-  const options = {url: url, filename: filename};
-  chrome.downloads.download(options);
-  URL.revokeObjectURL(url);
+  export_opml(title, filename).catch(console.warn);
 }
 
 function error_message_container_onclick(event) {
