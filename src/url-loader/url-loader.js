@@ -5,8 +5,7 @@ import * as policy from '/src/objects/rdr-fetch-policy.js';
 // [200..599] or Chrome whines about it and throws a RangeError
 export const STATUS_UNACCEPTABLE = 599;
 export const STATUS_UNACCEPTABLE_TEXT = 'Unacceptable mime type';
-export const STATUS_POLICY_REFUSAL = 598;
-export const STATUS_POLICY_REFUSAL_TEXT = 'Refused to fetch';
+
 export const STATUS_FORBIDDEN_METHOD = 597;
 export const STATUS_FORBIDDEN_METHOD_TEXT = 'Forbidden request method';
 export const STATUS_OFFLINE = 596;
@@ -22,8 +21,6 @@ function lookup_status_text(status) {
   switch (status) {
     case STATUS_UNACCEPTABLE:
       return STATUS_UNACCEPTABLE_TEXT;
-    case STATUS_POLICY_REFUSAL:
-      return STATUS_POLICY_REFUSAL_TEXT;
     case STATUS_FORBIDDEN_METHOD:
       return STATUS_FORBIDDEN_METHOD_TEXT;
     case STATUS_OFFLINE:
@@ -77,10 +74,6 @@ export async function tfetch(url, options) {
     if (!Number.isInteger(timeout) || timeout < 0) {
       throw new TypeError('timeout is not a positive integer');
     }
-  }
-
-  if (!policy.url_is_allowed(url)) {
-    return create_error_response(STATUS_POLICY_REFUSAL);
   }
 
   const method = merged_options.method.toUpperCase();
