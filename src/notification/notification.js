@@ -1,4 +1,4 @@
-import {show_slideshow_tab} from '/src/show-slideshow-tab.js';
+import {rdr_open_view} from '/src/operations/rdr-open-view.js';
 
 export function show(title, message, icon_url) {
   if (!('SHOW_NOTIFICATIONS' in localStorage)) {
@@ -30,5 +30,5 @@ function click_handler(event) {
     return;
   }
 
-  show_slideshow_tab().catch(console.warn);
+  rdr_open_view().catch(console.warn);
 }

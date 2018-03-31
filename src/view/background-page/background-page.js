@@ -4,11 +4,11 @@ import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
+import {rdr_open_view} from '/src/operations/rdr-open-view.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
 import {PollService} from '/src/poll-service/poll-service.js';
-import {show_slideshow_tab} from '/src/show-slideshow-tab.js';
 
 async function handle_compact_favicons_alarm(alarm) {
   const service = new FaviconService();
@@ -89,7 +89,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   conn.close();
 });
 
-chrome.browserAction.onClicked.addListener(show_slideshow_tab);
+chrome.browserAction.onClicked.addListener(rdr_open_view);
 
 async function badge_init() {
   const conn = await rdr_conn_create();

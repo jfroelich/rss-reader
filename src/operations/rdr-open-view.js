@@ -1,4 +1,4 @@
-export async function show_slideshow_tab() {
+export async function rdr_open_view() {
   const slideshow_url_string = chrome.extension.getURL('slideshow.html');
   const new_tab_url_string = 'chrome://newtab/';
 
