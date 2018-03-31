@@ -1,4 +1,3 @@
-import * as badge from '/src/badge.js';
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as color from '/src/lib/color/color.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
@@ -12,6 +11,7 @@ import {rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {create_entry} from '/src/operations/create-entry.js';
 import {find_active_feeds} from '/src/operations/find-active-feeds.js';
 import {find_entry_id_by_url} from '/src/operations/find-entry-id-by-url.js';
+import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 import {update_feed} from '/src/operations/update-feed.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
@@ -109,7 +109,7 @@ PollService.prototype.poll_feeds = async function() {
   }, 0);
 
   if (count) {
-    badge.update(this.rconn).catch(console.error);
+    rdr_badge_refresh(this.rconn).catch(console.error);
 
     const title = 'Added articles';
     const message = 'Added articles';
@@ -201,7 +201,7 @@ PollService.prototype.poll_feed = async function(feed) {
   const count = entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
 
   if (this.badge_update && count) {
-    badge.update(this.rconn).catch(console.error);
+    rdr_badge_refresh(this.rconn).catch(console.error);
   }
 
   if (this.notify && count) {

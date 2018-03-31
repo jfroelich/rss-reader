@@ -1,5 +1,5 @@
 import {entry_is_valid_id, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
-import * as badge from '/src/badge.js';
+import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 
 export function mark_entry_read(conn, channel, entry_id) {
   // Rather than reject from within the promise, throw an immediate error. This
@@ -72,9 +72,7 @@ function txn_oncomplete(conn, channel, entry_id, callback, event) {
 
   console.debug('Marked entry %d as read', entry_id);
 
-  // Update the number of unread entries displayed
-  // TODO: review whether this should be awaited
-  badge.update(conn).catch(console.error);
+  rdr_badge_refresh(conn).catch(console.error);
 
   callback();
 }

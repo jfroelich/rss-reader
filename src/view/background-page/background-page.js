@@ -1,8 +1,9 @@
 import '/src/view/cli/cli.js';
-import * as badge from '/src/badge.js';
+
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
+import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
@@ -92,7 +93,7 @@ chrome.browserAction.onClicked.addListener(show_slideshow_tab);
 
 async function badge_init() {
   const conn = await rdr_conn_create();
-  await badge.update(conn);
+  await rdr_badge_refresh(conn);
   conn.close();
 }
 

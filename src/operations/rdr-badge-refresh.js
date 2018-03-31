@@ -2,7 +2,7 @@ import {count_unread_entries} from '/src/operations/count-unread-entries.js';
 
 let update_pending = false;
 
-export async function update(conn, console = null_console) {
+export async function rdr_badge_refresh(conn, console = null_console) {
   if (update_pending) {
     console.debug('Prior update pending, update request canceled');
     return;
