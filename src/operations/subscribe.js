@@ -4,9 +4,11 @@ import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
 import {contains_feed_with_url} from '/src/operations/contains-feed-with-url.js';
 import {create_feed} from '/src/operations/create-feed.js';
+import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
+import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
-import {PollService} from '/src/operations/rdr-poll-feeds/poll-service.js';
+import {rdr_poll_feed} from '/src/operations/rdr-poll-feed.js';
 
 export async function rdr_subscribe(
     rconn, iconn, channel, console = null_console, fetch_timeout = 2000,
@@ -71,19 +73,30 @@ export async function rdr_subscribe(
     rdr_notify(title, message, stored_feed.faviconURLString);
   }
 
-  poll_feed_unawaited(channel, stored_feed);
+  poll_feed_unawaited(console, stored_feed);
 
   return stored_feed;
 }
 
-async function poll_feed_unawaited(channel, feed) {
-  const ps = new PollService();
-  ps.ignore_recency_check = true;
-  ps.ignore_modified_check = true;
-  ps.notify = false;
-  await ps.init(channel);
-  await ps.poll_feed(feed);
-  ps.close(/* close_channel */ false);
+async function poll_feed_unawaited(console, feed) {
+  const rconn = await rdr_create_conn();
+  const iconn = await rdr_create_icon_conn();
+
+  // This cannot re-use caller's channel because it is called unawaited and the
+  // caller's channel may close before this eventually tries to post messages to
+  // the channel
+  const channel = rdr_create_channel();
+
+  const options = {};
+  options.ignore_recency_check = true;
+  options.ignore_modified_check = true;
+  options.notify = false;
+
+  await rdr_poll_feed(rconn, iconn, channel, console, options, feed);
+
+  channel.close();
+  rconn.close();
+  iconn.close();
 }
 
 function noop() {}

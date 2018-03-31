@@ -6,7 +6,7 @@ import {get_feeds as get_feeds_with_conn} from '/src/operations/get-feeds.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_import} from '/src/operations/rdr-import-opml.js';
-import {PollService} from '/src/operations/rdr-poll-feeds/poll-service.js';
+import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds/rdr-poll-feeds.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
 import {unsubscribe} from '/src/operations/unsubscribe.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
@@ -61,13 +61,18 @@ export async function load_initial_data(
 }
 
 export async function poll_feeds(channel, console) {
-  const service = new PollService();
-  service.console = console;
-  service.ignore_recency_check = true;
-  service.ignore_modified_check = true;
-  await service.init(channel);
-  await service.poll_feeds();
-  service.close(/* close_channel */ false);
+  const rconn = await rdr_create_conn();
+  const iconn = await rdr_create_icon_conn();
+
+  const options = {};
+  options.ignore_recency_check = true;
+  options.ignore_modified_check = true;
+
+  await rdr_poll_feeds(rconn, iconn, channel, console, options);
+
+  // channel lifetime is caller concern, leave it open
+  rconn.close();
+  iconn.close();
 }
 
 export async function ral_subscribe(channel, url) {

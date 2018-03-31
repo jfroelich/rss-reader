@@ -1,16 +1,17 @@
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
+import {rdr_create_channel} from '/src/operations/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
-import {PollService} from '/src/operations/rdr-poll-feeds/poll-service.js';
+import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds/rdr-poll-feeds.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
 
 async function cli_archive() {
-  const channel = new BroadcastChannel('reader');
+  const channel = rdr_create_channel();
   const conn = await rdr_create_conn();
-  await rdr_archive(conn, channel, console, /* max_age */ null);
+  await rdr_archive(conn, channel, console, /* max_age */ undefined);
   channel.close();
   conn.close();
 }
@@ -27,14 +28,19 @@ async function refresh_icons() {
 }
 
 async function poll_feeds() {
-  // channel-less poll
-  const service = new PollService();
-  service.ignore_recency_check = true;
-  service.ignore_modified_check = true;
-  service.console = console;
-  await service.init();
-  await service.poll_feeds();
-  service.close();
+  const rconn = await rdr_create_conn();
+  const iconn = await rdr_create_icon_conn();
+  const channel = rdr_create_channel();
+
+  const options = {};
+  options.ignore_recency_check = true;
+  options.ignore_modified_check = true;
+
+  await rdr_poll_feeds(rconn, iconn, channel, console, options);
+
+  channel.close();
+  rconn.close();
+  iconn.close();
 }
 
 async function cli_remove_lost_entries() {

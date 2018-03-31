@@ -3,10 +3,11 @@ import '/src/views/cli/cli.js';
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
+import {rdr_create_channel} from '/src/operations/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_open_view} from '/src/operations/rdr-open-view.js';
-import {PollService} from '/src/operations/rdr-poll-feeds/poll-service.js';
+import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds/rdr-poll-feeds.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
@@ -66,11 +67,20 @@ async function handle_poll_feeds_alarm(alarm) {
     }
   }
 
-  const service = new PollService();
-  service.console = console;
-  await service.init();
-  await service.poll_feeds();
-  service.close();
+  const options = {};
+  options.ignore_recency_check = false;
+  options.ignore_modified_check = false;
+  options.notify = true;
+
+  const rconn = await rdr_create_conn();
+  const iconn = await rdr_create_icon_conn();
+  const channel = rdr_create_channel();
+
+  await rdr_poll_feeds(rconn, iconn, channel, console, options);
+
+  channel.close();
+  iconn.close();
+  rconn.close();
 }
 
 window.test_handle_poll_feeds_alarm = handle_poll_feeds_alarm;
