@@ -1,20 +1,18 @@
 import * as mime from '/src/lib/mime/mime.js';
-import * as policy from '/src/objects/rdr-fetch-policy.js';
 
 // Fictional codes for responses with errors. Codes must be in the range
 // [200..599] or Chrome whines about it and throws a RangeError
 export const STATUS_UNACCEPTABLE = 599;
 export const STATUS_UNACCEPTABLE_TEXT = 'Unacceptable mime type';
-
-export const STATUS_FORBIDDEN_METHOD = 597;
+export const STATUS_FORBIDDEN_METHOD = 598;
 export const STATUS_FORBIDDEN_METHOD_TEXT = 'Forbidden request method';
-export const STATUS_OFFLINE = 596;
+export const STATUS_OFFLINE = 597;
 export const STATUS_OFFLINE_TEXT = 'Offline';
-export const STATUS_TIMEOUT = 595;
+export const STATUS_TIMEOUT = 596;
 export const STATUS_TIMEOUT_TEXT = 'Request timed out';
-export const STATUS_NETWORK_ERROR = 594;
+export const STATUS_NETWORK_ERROR = 595;
 export const STATUS_NETWORK_ERROR_TEXT = 'Unknown network error';
-export const STATUS_RANGE_ERROR = 593;
+export const STATUS_RANGE_ERROR = 594;
 export const STATUS_RANGE_ERROR_TEXT = 'Range error';
 
 function lookup_status_text(status) {

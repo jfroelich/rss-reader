@@ -1,4 +1,4 @@
-export const STATUS_POLICY_REFUSAL = 598;
+export const STATUS_POLICY_REFUSAL = 590;
 export const STATUS_POLICY_REFUSAL_TEXT = 'Refused to fetch';
 
 export function url_is_allowed(url) {
