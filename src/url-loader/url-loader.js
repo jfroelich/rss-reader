@@ -2,7 +2,7 @@ import * as mime from '/src/lib/mime/mime.js';
 import * as policy from '/src/objects/rdr-fetch-policy.js';
 
 // Fictional codes for responses with errors. Codes must be in the range
-// [200..599] or Chrome whines about throws a RangeError
+// [200..599] or Chrome whines about it and throws a RangeError
 export const STATUS_UNACCEPTABLE = 599;
 export const STATUS_UNACCEPTABLE_TEXT = 'Unacceptable mime type';
 export const STATUS_POLICY_REFUSAL = 598;
