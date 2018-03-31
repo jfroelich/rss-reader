@@ -4,7 +4,6 @@ import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/lib/sniff/sniff.js';
-import * as notification from '/src/notification/notification.js';
 import {coerce_entry, entry_append_url, entry_has_url, entry_is_valid_id, entry_peek_url, is_entry} from '/src/objects/entry.js';
 import {coerce_feed, feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/objects/feed.js';
 import {rdr_conn_create} from '/src/objects/rdr-conn.js';
@@ -12,6 +11,7 @@ import {create_entry} from '/src/operations/create-entry.js';
 import {find_active_feeds} from '/src/operations/find-active-feeds.js';
 import {find_entry_id_by_url} from '/src/operations/find-entry-id-by-url.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
+import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {update_feed} from '/src/operations/update-feed.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
@@ -113,7 +113,7 @@ PollService.prototype.poll_feeds = async function() {
 
     const title = 'Added articles';
     const message = 'Added articles';
-    notification.show(title, message);
+    rdr_notify(title, message);
   }
 
   this.console.log('Run completed, added %d entries', count);
@@ -208,7 +208,7 @@ PollService.prototype.poll_feed = async function(feed) {
     const title = 'Added articles';
     const message =
         'Added ' + count + ' articles for feed ' + storable_feed.title;
-    notification.show(title, message);
+    rdr_notify(title, message);
   }
 
   return count;

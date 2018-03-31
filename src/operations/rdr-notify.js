@@ -1,6 +1,10 @@
 import {rdr_open_view} from '/src/operations/rdr-open-view.js';
 
-export function show(title, message, icon_url) {
+const default_icon_url_string =
+    chrome.extension.getURL('/images/rss_icon_trans.gif');
+
+export function rdr_notify(
+    title, message, icon_url_string = default_icon_url_string) {
   if (!('SHOW_NOTIFICATIONS' in localStorage)) {
     return;
   }
@@ -9,12 +13,9 @@ export function show(title, message, icon_url) {
     return;
   }
 
-  const default_icon_url =
-      chrome.extension.getURL('/images/rss_icon_trans.gif');
-
   const details = {};
   details.body = message || '';
-  details.icon = icon_url || default_icon_url;
+  details.icon = icon_url_string;
 
   // Instantiation implicitly shows the notification
   const notification = new Notification(title, details);

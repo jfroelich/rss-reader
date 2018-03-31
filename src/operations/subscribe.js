@@ -1,9 +1,9 @@
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
-import * as notification from '/src/notification/notification.js';
 import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
 import {contains_feed_with_url} from '/src/operations/contains-feed-with-url.js';
 import {create_feed} from '/src/operations/create-feed.js';
+import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
@@ -67,7 +67,7 @@ export async function rdr_subscribe(
     const title = 'Subscribed!';
     const feed_title = feed.title || feed_peek_url(stored_feed);
     const message = 'Subscribed to ' + feed_title;
-    notification.show(title, message, stored_feed.faviconURLString);
+    rdr_notify(title, message, stored_feed.faviconURLString);
   }
 
   poll_feed_unawaited(channel, stored_feed);
