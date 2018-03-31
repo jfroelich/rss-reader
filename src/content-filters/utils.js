@@ -1,5 +1,7 @@
 import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
-import {url_is_allowed} from '/src/url-loader/policy.js';
+// TODO: if I want to fully move content-filters to lib then this cannot depend
+// on an app module
+import {url_is_allowed} from '/src/objects/rdr-fetch-policy.js';
 
 // Returns a file name without its extension (and without the '.')
 export function file_name_filter_extension(file_name) {

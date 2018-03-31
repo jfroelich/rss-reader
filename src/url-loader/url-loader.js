@@ -1,5 +1,5 @@
 import * as mime from '/src/lib/mime/mime.js';
-import * as policy from '/src/url-loader/policy.js';
+import * as policy from '/src/objects/rdr-fetch-policy.js';
 
 // Fictional codes for responses with errors. Codes must be in the range
 // [200..599] or Chrome whines about throws a RangeError
