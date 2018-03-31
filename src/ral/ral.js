@@ -5,7 +5,7 @@ import {deactivate_feed as deactivate_feed_impl} from '/src/operations/deactivat
 import {find_feed_by_id as find_feed_by_id_impl} from '/src/operations/find-feed-by-id.js';
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {get_feeds as get_feeds_with_conn} from '/src/operations/get-feeds.js';
-import {rdr_import} from '/src/operations/rdr-import.js';
+import {rdr_import} from '/src/operations/rdr-import-opml.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
 import {unsubscribe} from '/src/operations/unsubscribe.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
