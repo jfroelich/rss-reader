@@ -10,19 +10,11 @@ import {rdr_subscribe} from '/src/operations/subscribe.js';
 import {unsubscribe} from '/src/operations/unsubscribe.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
 
-export async function find_feed_by_id(feed_id) {
-  const conn = await rdr_create_conn();
-  const feed = await find_feed_by_id_impl(conn, feed_id);
-  conn.close();
-  return feed;
-}
-
 export async function import_opml(channel, files) {
   const ctx = {};
   ctx.fetch_timeout = 10 * 100;
   ctx.channel = channel;
   ctx.console = console;
-
 
   const open_promises = [rdr_create_conn(), rdr_create_icon_conn()];
   [ctx.rconn, ctx.iconn] = await Promise.all(open_promises);

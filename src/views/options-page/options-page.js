@@ -2,6 +2,7 @@ import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import * as perm from '/src/lib/permissions/permissions.js';
 import {feed_peek_url} from '/src/objects/feed.js';
+import {find_feed_by_id} from '/src/operations/find-feed-by-id.js';
 import {get_feeds} from '/src/operations/get-feeds.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import * as ral from '/src/ral/ral.js';
@@ -226,13 +227,9 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  let feed;
-  try {
-    feed = await ral.find_feed_by_id(feed_id);
-  } catch (error) {
-    console.error(error);
-    return;
-  }
+  const conn = await rdr_create_conn();
+  const feed = await find_feed_by_id(conn, feed_id);
+  conn.close();
 
   const title_element = document.getElementById('details-title');
   title_element.textContent = feed.title || feed.link || 'Untitled';
