@@ -9,9 +9,9 @@ import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {mark_entry_read} from '/src/operations/mark-entry-read.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
+import {rdr_import} from '/src/operations/rdr-import-opml.js';
 import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds/rdr-poll-feeds.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
-import * as ral from '/src/ral/ral.js';
 import {export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/views/slideshow-page/slideshow.js';
@@ -474,7 +474,22 @@ function import_menu_option_handle_click(event) {
 
 async function uploader_input_onchange(event) {
   const files = event.target.files;
-  await ral.import_opml(channel, files);
+
+  const open_promises = [rdr_create_conn(), rdr_create_icon_conn()];
+  const [rconn, iconn] = await Promise.all(open_promises);
+
+  const ctx = {};
+  ctx.fetch_timeout = 10 * 100;
+  ctx.channel = channel;
+  ctx.console = console;  // enable logging for now
+  ctx.rconn = rconn;
+  ctx.iconn = iconn;
+
+  await rdr_import(ctx, files);
+
+  rconn.close();
+  iconn.close();
+
   console.log('Import completed');
 }
 

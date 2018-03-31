@@ -23,9 +23,7 @@ The creation of a slide element, and the appending of a slide element, should be
 Append slides shouldn't be responsible for loading. This should accept an array of slides as input. Something else should be doing loading.
 
 ### TODO improve slide_onclick handler
-Regarding the opening of a connection to mark as read. This belongs in a helper in ral.js. The problem however is that I split up the functionality, this uses the element, I cannot use the element in ral. So really the problem is that slide_mark_read does too much. This should be able to use only those components of slide_mark_read that it cares about. But in order to break up slide_mark_read appropriately, I think I need to refactor how the element is updated after click, I think it needs to be done from message event handler instead of explicitly done, so that it no longer matters which initiator started the sequence.
-
-It really does not belong in ral.js. It belongs somewhere as a function, I am just not sure where.
+Regarding the opening of a connection to mark as read. slide_mark_read does too much. This should be able to use only those components of slide_mark_read that it cares about. But in order to break up slide_mark_read appropriately, I think I need to refactor how the element is updated after click, I think it needs to be done from message event handler instead of explicitly done, so that it no longer matters which initiator started the sequence.
 
 ### TODO: improve on_key_down
 * is the debouncing stuff with idle callback approach needed??
@@ -36,8 +34,6 @@ It really does not belong in ral.js. It belongs somewhere as a function, I am ju
 I should probably unlink loading on demand and navigation, because this causes lag. navigation would be smoother if I appended even earlier, like before even reaching the situation of its the last slide and there are no more so append. It would be better if I did something like check the number of remaining unread slides, and if that is less than some number, append more. And it would be better if I did that before even navigating. However that would cause lag. So it would be even better if I started in a separate microtask an append operation and then continued in the current task. Or, the check should happen not on append, but after doing the navigation. Or after marking the slide as read.
 
 Sharing the connection between mark as read and slide_load_and_append_multiple made sense at first but I do not like the large try/catch block. Also I think the two can be unlinked because they do not have to co-occur. Also I don't like how it has to wait for read to complete.
-
-Like the notes in the click handler, this should be calling to a helper in ral.js that deals with conn open and close
 
 # TODO: uploader_input_onchange notes
 * show operation started immediately, before doing any time-consuming work

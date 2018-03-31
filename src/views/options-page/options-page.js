@@ -10,9 +10,7 @@ import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
 import {unsubscribe} from '/src/operations/unsubscribe.js';
-import * as ral from '/src/ral/ral.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
-
 
 // clang-format off
 const BG_IMAGES = [
