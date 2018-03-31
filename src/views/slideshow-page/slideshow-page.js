@@ -8,9 +8,9 @@ import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {find_viewable_entries} from '/src/operations/find-viewable-entries.js';
 import {mark_entry_read} from '/src/operations/mark-entry-read.js';
 import * as ral from '/src/ral/ral.js';
-import {export_opml} from '/src/view/slideshow-page/export-opml.js';
-import * as page_style from '/src/view/slideshow-page/page-style-settings.js';
-import * as Slideshow from '/src/view/slideshow-page/slideshow.js';
+import {export_opml} from '/src/views/slideshow-page/export-opml.js';
+import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
+import * as Slideshow from '/src/views/slideshow-page/slideshow.js';
 
 // clang-format off
 const fonts = [

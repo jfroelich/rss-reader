@@ -1,4 +1,4 @@
-import '/src/view/cli/cli.js';
+import '/src/views/cli/cli.js';
 
 import {FaviconService} from '/src/favicon-service/favicon-service.js';
 import {rdr_conn_create} from '/src/objects/rdr-conn.js';
