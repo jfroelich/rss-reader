@@ -38,7 +38,7 @@ export function create_error_response(status) {
   return new Response(body, init);
 }
 
-export async function tfetch(url, options) {
+export async function fetch_with_timeout(url, options) {
   if ((!url instanceof URL)) {
     throw new TypeError('url is not a URL');
   }
@@ -86,7 +86,7 @@ export async function tfetch(url, options) {
   const fetch_promise = fetch(url.href, merged_options);
 
   // await turns rejection into exception. fetch rejects with an obtuse error
-  // message when trying to fetch a bad url. tfetch should only throw in the
+  // message when trying to fetch a bad url. fetch_with_timeout should only throw in the
   // case of a programming error, so trap the error and return an symbolic
   // error response.
 
@@ -107,11 +107,7 @@ export async function tfetch(url, options) {
     const mime_type =
         mime.parse_content_type(response.headers.get('Content-Type'));
     if (!types.includes(mime_type)) {
-      // TEMP: hacky logging to monitor the changes done in favicon module that
-      // now depends on this, in particular because of anxiety over
-      // non-exhaustive list of acceptable image mime types in rdr_fetch_image
       console.debug('Unacceptable mime type', mime_type);
-
       return create_error_response(STATUS_UNACCEPTABLE);
     }
   }
