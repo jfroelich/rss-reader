@@ -10,6 +10,8 @@ import {coerce_feed, feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_f
 import {create_entry} from '/src/operations/create-entry.js';
 import {find_active_feeds} from '/src/operations/find-active-feeds.js';
 import {find_entry_id_by_url} from '/src/operations/find-entry-id-by-url.js';
+import {dedup_entries} from '/src/operations/poll-service/dedup-entries.js';
+import {filter_entry_content} from '/src/operations/poll-service/filter-entry-content.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
@@ -17,8 +19,6 @@ import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
 import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {update_feed} from '/src/operations/update-feed.js';
-import {dedup_entries} from '/src/poll-service/dedup-entries.js';
-import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
 
 const null_console = {
   log: noop,

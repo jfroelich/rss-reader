@@ -1,11 +1,11 @@
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
+import {PollService} from '/src/operations/poll-service/poll-service.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
-import {PollService} from '/src/poll-service/poll-service.js';
 
 async function cli_archive() {
   const channel = new BroadcastChannel('reader');

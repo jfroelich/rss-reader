@@ -3,13 +3,13 @@ import {deactivate_feed as deactivate_feed_impl} from '/src/operations/deactivat
 import {find_feed_by_id as find_feed_by_id_impl} from '/src/operations/find-feed-by-id.js';
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {get_feeds as get_feeds_with_conn} from '/src/operations/get-feeds.js';
+import {PollService} from '/src/operations/poll-service/poll-service.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_import} from '/src/operations/rdr-import-opml.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
 import {unsubscribe} from '/src/operations/unsubscribe.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
-import {PollService} from '/src/poll-service/poll-service.js';
 
 export async function get_feeds(title_sort_flag) {
   const conn = await rdr_create_conn();

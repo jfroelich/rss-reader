@@ -2,6 +2,7 @@ import '/src/views/cli/cli.js';
 
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
+import {PollService} from '/src/operations/poll-service/poll-service.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
@@ -9,7 +10,6 @@ import {rdr_open_view} from '/src/operations/rdr-open-view.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
-import {PollService} from '/src/poll-service/poll-service.js';
 
 async function handle_compact_favicons_alarm(alarm) {
   const conn = await rdr_create_icon_conn();
