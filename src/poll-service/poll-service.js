@@ -6,12 +6,12 @@ import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/lib/sniff/sniff.js';
 import * as notification from '/src/notification/notification.js';
-import {coerce_entry, entry_append_url, entry_has_url, entry_peek_url, is_entry} from '/src/objects/entry.js';
+import {coerce_entry, entry_append_url, entry_has_url, entry_is_valid_id, entry_peek_url, is_entry} from '/src/objects/entry.js';
 import {coerce_feed, feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/objects/feed.js';
 import {rdr_conn_create} from '/src/objects/rdr-conn.js';
-import {contains_entry_with_url} from '/src/operations/contains-entry-with-url.js';
 import {create_entry} from '/src/operations/create-entry.js';
 import {find_active_feeds} from '/src/operations/find-active-feeds.js';
+import {find_entry_id_by_url} from '/src/operations/find-entry-id-by-url.js';
 import {update_feed} from '/src/operations/update-feed.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
@@ -284,11 +284,15 @@ PollService.prototype.poll_entry = async function(entry) {
   return stored_entry.id;
 };
 
-PollService.prototype.entry_exists = function(entry) {
+PollService.prototype.entry_exists = async function(entry) {
   const url = new URL(entry_peek_url(entry));
-  return contains_entry_with_url(this.rconn, url);
+  const entry_id = await find_entry_id_by_url(this.rconn, url);
+  return entry_is_valid_id(entry_id);
 };
 
+// TODO: i think this should always return a response, so instead of returning
+// undefined if not augmentable, return a stub error promise
+// TODO: undecided, but maybe augmentability is not this function's concern?
 PollService.prototype.fetch_entry = async function(entry) {
   const url = new URL(entry_peek_url(entry));
   if (url_is_augmentable(url)) {
