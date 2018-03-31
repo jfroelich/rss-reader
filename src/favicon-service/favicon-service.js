@@ -1,10 +1,10 @@
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import * as idb from '/src/lib/idb/idb.js';
 import * as mime from '/src/lib/mime/mime.js';
+import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
 // TODO: lib modules should not depend on app modules
 import {rdr_fetch_image} from '/src/operations/rdr-fetch-image.js';
-import * as url_loader from '/src/url-loader/url-loader.js';
 
 export function FaviconService() {
   this.name = 'favicon-cache';

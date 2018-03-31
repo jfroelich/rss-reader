@@ -6,7 +6,7 @@ import {create_feed} from '/src/operations/create-feed.js';
 import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {PollService} from '/src/poll-service/poll-service.js';
-import * as url_loader from '/src/url-loader/url-loader.js';
+import * as url_loader from '/src/url-loader/lib/url-loader.js';
 
 export async function rdr_subscribe(
     rconn, iconn, channel, console = null_console, fetch_timeout = 2000,

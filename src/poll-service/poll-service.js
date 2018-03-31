@@ -17,7 +17,7 @@ import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {update_feed} from '/src/operations/update-feed.js';
 import {dedup_entries} from '/src/poll-service/dedup-entries.js';
 import {filter_entry_content} from '/src/poll-service/filter-entry-content.js';
-import * as url_loader from '/src/url-loader/url-loader.js';
+import * as url_loader from '/src/url-loader/lib/url-loader.js';
 
 const null_console = {
   log: noop,

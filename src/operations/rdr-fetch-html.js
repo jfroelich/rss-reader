@@ -1,5 +1,5 @@
+import {create_error_response, tfetch} from '/src/lib/url-loader/url-loader.js';
 import {STATUS_POLICY_REFUSAL, url_is_allowed} from '/src/objects/rdr-fetch-policy.js';
-import {create_error_response, tfetch} from '/src/url-loader/url-loader.js';
 
 const html_mime_types = ['text/html'];
 
