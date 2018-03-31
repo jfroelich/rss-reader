@@ -464,7 +464,7 @@ async function uploader_input_onchange(event) {
 function export_menu_option_handle_click(event) {
   const title = 'Subscriptions';
   const filename = 'subscriptions.xml';
-  export_opml(title, filename).catch(console.warn);
+  export_opml(title, filename, void console).catch(console.warn);
 }
 
 function error_message_container_onclick(event) {
