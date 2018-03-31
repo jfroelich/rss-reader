@@ -8,7 +8,7 @@ const image_mime_types = [
   'image/vnd.microsoft.icon'
 ];
 
-export function rdr_fetch_image(url, options) {
+export function fetch_image(url, options) {
   // Pretend that options is immutable, so clone as to remain pure
   const options_clone = Object.assign({types: image_mime_types}, options);
   return fetch_with_timeout(url, options_clone);
