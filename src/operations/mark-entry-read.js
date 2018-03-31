@@ -72,7 +72,7 @@ function txn_oncomplete(conn, channel, entry_id, callback, event) {
 
   console.debug('Marked entry %d as read', entry_id);
 
-  rdr_badge_refresh(conn).catch(console.error);
+  rdr_badge_refresh(conn, void console).catch(console.error);
 
   callback();
 }

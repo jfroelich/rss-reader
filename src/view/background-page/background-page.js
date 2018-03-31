@@ -93,7 +93,7 @@ chrome.browserAction.onClicked.addListener(show_slideshow_tab);
 
 async function badge_init() {
   const conn = await rdr_conn_create();
-  await rdr_badge_refresh(conn);
+  await rdr_badge_refresh(conn, void console);
   conn.close();
 }
 

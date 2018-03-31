@@ -109,7 +109,7 @@ PollService.prototype.poll_feeds = async function() {
   }, 0);
 
   if (count) {
-    rdr_badge_refresh(this.rconn).catch(console.error);
+    rdr_badge_refresh(this.rconn, this.console).catch(console.error);
 
     const title = 'Added articles';
     const message = 'Added articles';
@@ -201,7 +201,7 @@ PollService.prototype.poll_feed = async function(feed) {
   const count = entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
 
   if (this.badge_update && count) {
-    rdr_badge_refresh(this.rconn).catch(console.error);
+    rdr_badge_refresh(this.rconn, this.console).catch(console.error);
   }
 
   if (this.notify && count) {
