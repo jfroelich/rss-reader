@@ -7,9 +7,12 @@ import {deactivate_feed} from '/src/operations/deactivate-feed.js';
 import {find_feed_by_id} from '/src/operations/find-feed-by-id.js';
 import {get_feeds} from '/src/operations/get-feeds.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
+import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
+import {rdr_subscribe} from '/src/operations/subscribe.js';
 import {unsubscribe} from '/src/operations/unsubscribe.js';
 import * as ral from '/src/ral/ral.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
+
 
 // clang-format off
 const BG_IMAGES = [
@@ -304,14 +307,15 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_show();
   subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
-  let feed;
-  try {
-    feed = await ral_subscribe(channel, subscribe_url);
-  } catch (error) {
-    console.error(error);
-    subscription_monitor_hide();
-    return;
-  }
+  let fetch_timeout, notify_flag = true;
+  const conn_promises =
+      Promise.all([rdr_create_conn(), rdr_create_icon_conn()]);
+  const [rconn, iconn] = await conn_promises;
+  const feed = await rdr_subscribe(
+      rconn, iconn, channel, void console, fetch_timeout, notify_flag,
+      subscribe_url);
+  rconn.close();
+  iconn.close();
 
   feed_list_append_feed(feed);
   subscription_monitor_append_message('Subscribed to ' + feed_peek_url(feed));

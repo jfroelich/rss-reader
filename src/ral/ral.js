@@ -4,7 +4,6 @@ import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_import} from '/src/operations/rdr-import-opml.js';
 import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds/rdr-poll-feeds.js';
-import {rdr_subscribe} from '/src/operations/subscribe.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
 
 export async function import_opml(channel, files) {
@@ -43,17 +42,4 @@ export async function poll_feeds(channel, console) {
   // channel lifetime is caller concern, leave it open
   rconn.close();
   iconn.close();
-}
-
-export async function ral_subscribe(channel, url) {
-  let null_console, fetch_timeout, notify_flag = true;
-
-  const conn_promises =
-      Promise.all([rdr_create_conn(), rdr_create_icon_conn()]);
-  const [rconn, iconn] = await conn_promises;
-  const feed = await rdr_subscribe(
-      rconn, iconn, channel, null_console, fetch_timeout, notify_flag, url);
-  rconn.close();
-  iconn.close();
-  return feed;
 }
