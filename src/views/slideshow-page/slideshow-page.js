@@ -4,9 +4,11 @@ import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import {html_escape} from '/src/lib/html/html.js';
 import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/objects/entry.js';
 import {feed_peek_url} from '/src/objects/feed.js';
-import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {find_viewable_entries} from '/src/operations/find-viewable-entries.js';
 import {mark_entry_read} from '/src/operations/mark-entry-read.js';
+import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
+import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
+import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds/rdr-poll-feeds.js';
 import * as ral from '/src/ral/ral.js';
 import {export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
@@ -385,17 +387,30 @@ function slideshow_count_unread() {
 }
 
 let refresh_in_progress = false;
-function refresh_anchor_onclick(event) {
+async function refresh_anchor_onclick(event) {
   event.preventDefault();
-  if (!refresh_in_progress) {
-    refresh_in_progress = true;
-    ral.poll_feeds(channel, console)
-        .then(_ => {})
-        .catch(error => {
-          console.error(error);
-        })
-        .finally(_ => refresh_in_progress = false);
+
+  if (refresh_in_progress) {
+    return;
   }
+
+  refresh_in_progress = true;
+
+  const rconn = await rdr_create_conn();
+  const iconn = await rdr_create_icon_conn();
+
+  const options = {};
+  options.ignore_recency_check = true;
+  options.ignore_modified_check = true;
+
+  // NOTE: temporarily enable console during dev
+  let console_arg = console;  // void console;
+
+  await rdr_poll_feeds(rconn, iconn, channel, console_arg, options);
+  rconn.close();
+  iconn.close();
+
+  refresh_in_progress = false;
 }
 
 function options_menu_show() {

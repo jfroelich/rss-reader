@@ -1,9 +1,7 @@
-import {find_feed_by_id as find_feed_by_id_impl} from '/src/operations/find-feed-by-id.js';
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_import} from '/src/operations/rdr-import-opml.js';
-import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds/rdr-poll-feeds.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
 
 export async function import_opml(channel, files) {
@@ -27,19 +25,4 @@ export async function load_initial_data(
   const p2 = for_each_active_feed(conn, feed_handler);
   await Promise.all([p1, p2]);
   conn.close();
-}
-
-export async function poll_feeds(channel, console) {
-  const rconn = await rdr_create_conn();
-  const iconn = await rdr_create_icon_conn();
-
-  const options = {};
-  options.ignore_recency_check = true;
-  options.ignore_modified_check = true;
-
-  await rdr_poll_feeds(rconn, iconn, channel, console, options);
-
-  // channel lifetime is caller concern, leave it open
-  rconn.close();
-  iconn.close();
 }
