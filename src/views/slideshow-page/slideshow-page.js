@@ -743,13 +743,14 @@ async function slideshow_page_init() {
   const entry_cursor_offset = 0, entry_cursor_limit = 6;
 
   const conn = await rdr_create_conn();
-  const p1 = viewable_entries_for_each(
+  const iterate_entries_promise = viewable_entries_for_each(
       conn, entry_cursor_offset, entry_cursor_limit, slide_append);
-  const p2 = for_each_active_feed(conn, feeds_container_append_feed);
-  await Promise.all([p1, p2]);
+  const iterate_feeds_promise =
+      for_each_active_feed(conn, feeds_container_append_feed);
+  await Promise.all([iterate_entries_promise, iterate_feeds_promise]);
   conn.close();
 
   loading_info_hide();
 }
 
-slideshow_page_init();
+slideshow_page_init().catch(console.warn);
