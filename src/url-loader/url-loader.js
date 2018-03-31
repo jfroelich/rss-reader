@@ -43,18 +43,6 @@ export function create_error_response(status) {
   return new Response(body, init);
 }
 
-export function fetch_image(url, options) {
-  const image_mime_types = [
-    'application/octet-stream', 'image/x-icon', 'image/jpeg', 'image/gif',
-    'image/png', 'image/svg+xml', 'image/tiff', 'image/webp',
-    'image/vnd.microsoft.icon'
-  ];
-
-  // Pretend that options is immutable, so clone
-  const clone = Object.assign({types: image_mime_types}, options);
-  return tfetch(url, clone);
-}
-
 export async function tfetch(url, options) {
   if ((!url instanceof URL)) {
     throw new TypeError('url is not a URL');
@@ -130,7 +118,7 @@ export async function tfetch(url, options) {
     if (!types.includes(mime_type)) {
       // TEMP: hacky logging to monitor the changes done in favicon module that
       // now depends on this, in particular because of anxiety over
-      // non-exhaustive list of acceptable image mime types in fetch_image
+      // non-exhaustive list of acceptable image mime types in rdr_fetch_image
       console.debug('Unacceptable mime type', mime_type);
 
       return create_error_response(STATUS_UNACCEPTABLE);

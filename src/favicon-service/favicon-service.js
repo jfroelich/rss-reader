@@ -2,6 +2,8 @@ import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import * as idb from '/src/lib/idb/idb.js';
 import * as mime from '/src/lib/mime/mime.js';
 import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
+// TODO: lib modules should not depend on app modules
+import {rdr_fetch_image} from '/src/operations/rdr-fetch-image.js';
 import * as url_loader from '/src/url-loader/url-loader.js';
 
 export function FaviconService() {
@@ -360,7 +362,7 @@ FaviconService.prototype.in_range = function(response) {
 
 FaviconService.prototype.head_image = async function(url) {
   const options = {method: 'head', timeout: this.fetch_image_timeout};
-  const response = await url_loader.fetch_image(url, options);
+  const response = await rdr_fetch_image(url, options);
   if (response.ok && !this.in_range(response)) {
     this.console.debug('image size not in range', url.href, size);
     return url_loader.create_error_response(url_loader.STATUS_RANGE_ERROR);
