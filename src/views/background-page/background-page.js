@@ -1,9 +1,10 @@
 import '/src/views/cli/cli.js';
 
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
-import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
+import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
+import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_open_view} from '/src/operations/rdr-open-view.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
@@ -11,8 +12,8 @@ import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
 import {PollService} from '/src/poll-service/poll-service.js';
 
 async function handle_compact_favicons_alarm(alarm) {
+  const conn = await rdr_create_icon_conn();
   const service = new FaviconService();
-  const conn = await service.open();
   service.conn = conn;
   await service.compact();
   conn.close();
@@ -45,8 +46,11 @@ async function handle_orphan_entries_alarm(alarm) {
 
 async function handle_refresh_feed_icons_alarm(alarm) {
   let channel;
+
+  const proms = [rdr_create_conn(), rdr_create_icon_conn()];
+  const [rconn, iconn] = await Promise.all(proms);
+
   const fs = new FaviconService();
-  const [rconn, iconn] = await Promise.all([rdr_create_conn(), fs.open()]);
   fs.conn = iconn;
   await refresh_feed_icons(rconn, fs, channel);
   rconn.close();
@@ -83,9 +87,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   let conn = await rdr_create_conn();
   conn.close();
 
-  const fs = new FaviconService();
-  fs.console = console;
-  conn = await fs.open();
+  conn = await rdr_create_icon_conn();
   conn.close();
 });
 

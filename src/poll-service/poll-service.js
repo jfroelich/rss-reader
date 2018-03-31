@@ -6,11 +6,12 @@ import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/lib/sniff/sniff.js';
 import {coerce_entry, entry_append_url, entry_has_url, entry_is_valid_id, entry_peek_url, is_entry} from '/src/objects/entry.js';
 import {coerce_feed, feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/objects/feed.js';
-import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {create_entry} from '/src/operations/create-entry.js';
 import {find_active_feeds} from '/src/operations/find-active-feeds.js';
 import {find_entry_id_by_url} from '/src/operations/find-entry-id-by-url.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
+import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
+import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
 import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
@@ -73,8 +74,7 @@ export function PollService() {
 }
 
 PollService.prototype.init = async function(channel) {
-  const fs = new FaviconService();
-  const promises = [rdr_create_conn(), fs.open()];
+  const promises = [rdr_create_conn(), rdr_create_icon_conn()];
   [this.rconn, this.iconn] = await Promise.all(promises);
   this.channel = channel;
 };

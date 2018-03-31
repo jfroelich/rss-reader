@@ -1,10 +1,10 @@
-import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
-import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {activate_feed as activate_feed_impl} from '/src/operations/activate-feed.js';
 import {deactivate_feed as deactivate_feed_impl} from '/src/operations/deactivate-feed.js';
 import {find_feed_by_id as find_feed_by_id_impl} from '/src/operations/find-feed-by-id.js';
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {get_feeds as get_feeds_with_conn} from '/src/operations/get-feeds.js';
+import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
+import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_import} from '/src/operations/rdr-import-opml.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
 import {unsubscribe} from '/src/operations/unsubscribe.js';
@@ -42,8 +42,8 @@ export async function import_opml(channel, files) {
   ctx.channel = channel;
   ctx.console = console;
 
-  const fs = new FaviconService();
-  const open_promises = [rdr_create_conn(), fs.open()];
+
+  const open_promises = [rdr_create_conn(), rdr_create_icon_conn()];
   [ctx.rconn, ctx.iconn] = await Promise.all(open_promises);
   await rdr_import(ctx, files);
   ctx.rconn.close();
@@ -72,8 +72,9 @@ export async function poll_feeds(channel, console) {
 
 export async function ral_subscribe(channel, url) {
   let null_console, fetch_timeout, notify_flag = true;
-  const fs = new FaviconService();
-  const conn_promises = Promise.all([rdr_create_conn(), fs.open()]);
+
+  const conn_promises =
+      Promise.all([rdr_create_conn(), rdr_create_icon_conn()]);
   const [rconn, iconn] = await conn_promises;
   const feed = await rdr_subscribe(
       rconn, iconn, channel, null_console, fetch_timeout, notify_flag, url);

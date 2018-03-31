@@ -1,6 +1,7 @@
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
-import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
+import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
+import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
@@ -16,8 +17,9 @@ async function cli_archive() {
 
 async function refresh_icons() {
   let channel;
+  const proms = [rdr_create_conn(), rdr_create_icon_conn()];
+  const [rconn, iconn] = await Promise.all(proms);
   const fs = new FaviconService();
-  const [rconn, iconn] = await Promise.all([rdr_create_conn(), fs.open()]);
   fs.conn = iconn;
   await refresh_feed_icons(rconn, fs, channel);
   rconn.close();
@@ -59,7 +61,7 @@ async function lookup_favicon(url_string, cached) {
 
   let conn;
   if (cached) {
-    conn = await fs.open();
+    conn = await rdr_create_icon_conn();
     fs.conn = conn;
   }
 
@@ -73,15 +75,15 @@ async function lookup_favicon(url_string, cached) {
 
 async function fs_clear() {
   const fs = new FaviconService();
-  const conn = await fs.open();
+  const conn = await rdr_create_icon_conn();
   fs.conn = conn;
   await fs.clear();
   conn.close();
 }
 
 async function fs_compact() {
+  const conn = await rdr_create_icon_conn();
   const fs = new FaviconService();
-  const conn = await fs.open();
   fs.conn = conn;
   await fs.compact();
   conn.close();
