@@ -1,7 +1,9 @@
-import {feed_peek_url} from '/src/objects/feed.js';
 import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import * as perm from '/src/lib/permissions/permissions.js';
+import {feed_peek_url} from '/src/objects/feed.js';
+import {get_feeds} from '/src/operations/get-feeds.js';
+import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import * as ral from '/src/ral/ral.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
 
@@ -320,14 +322,9 @@ async function subscribe_form_onsubmit(event) {
 
 async function feed_list_init() {
   const title_sort_flag = true;
-  let feeds;
-  try {
-    feeds = await ral.get_feeds(title_sort_flag);
-  } catch (error) {
-    // TODO: show an error message
-    console.error(error);
-    return;
-  }
+  const conn = await rdr_create_conn();
+  const feeds = await get_feeds(conn, title_sort_flag);
+  conn.close();
 
   for (const feed of feeds) {
     // TODO: I think this is actually a concern of feed_list_append_feed? I do
