@@ -1,1 +1,5 @@
 Resource acquisition layer (RAL). An intermediate layer between storage and the view that helps calls acquire and release needed resources, and supplies some default values. The goal is to generally boil down calls from the view to simple function calls against a simple api, and abstract away the need to open and close databases and setup other values. The functions in this layer implicitly connect to databases using the app's default settings. Therefore these functions are not easily testable, and the calls that have been wrapped should be tested instead, because those calls accept an open database connection as input, which allows for using a mock database.
+
+### todos
+
+* deprecate in favor of creating helper modules in the view-specific subfolders. I prefer that to this layer approach because it is causing some friction around the new operations-api approach.
