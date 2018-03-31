@@ -5,10 +5,12 @@ import {html_escape} from '/src/lib/html/html.js';
 import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/objects/entry.js';
 import {feed_peek_url} from '/src/objects/feed.js';
 import {find_viewable_entries} from '/src/operations/find-viewable-entries.js';
+import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {mark_entry_read} from '/src/operations/mark-entry-read.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds/rdr-poll-feeds.js';
+import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
 import * as ral from '/src/ral/ral.js';
 import {export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
@@ -707,7 +709,7 @@ function body_font_menu_init() {
   }
 }
 
-function slideshow_page_init() {
+async function slideshow_page_init() {
   loading_info_show();
 
   window.addEventListener('click', window_onclick);
@@ -739,13 +741,15 @@ function slideshow_page_init() {
   page_style.page_style_onload();
 
   const entry_cursor_offset = 0, entry_cursor_limit = 6;
-  ral.load_initial_data(
-         entry_cursor_offset, entry_cursor_limit, slide_append,
-         feeds_container_append_feed)
-      .then(loading_info_hide)
-      .catch((error) => {
-        console.error(error);
-      });
+
+  const conn = await rdr_create_conn();
+  const p1 = viewable_entries_for_each(
+      conn, entry_cursor_offset, entry_cursor_limit, slide_append);
+  const p2 = for_each_active_feed(conn, feeds_container_append_feed);
+  await Promise.all([p1, p2]);
+  conn.close();
+
+  loading_info_hide();
 }
 
 slideshow_page_init();
