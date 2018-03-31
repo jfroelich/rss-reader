@@ -4,7 +4,7 @@ import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import {html_escape} from '/src/lib/html/html.js';
 import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/objects/entry.js';
 import {feed_peek_url} from '/src/objects/feed.js';
-import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
+import {rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {find_viewable_entries} from '/src/operations/find-viewable-entries.js';
 import {mark_entry_read} from '/src/operations/mark-entry-read.js';
 import * as ral from '/src/ral/ral.js';

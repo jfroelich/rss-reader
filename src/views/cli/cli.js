@@ -1,5 +1,5 @@
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
-import {rdr_conn_close, rdr_conn_create} from '/src/objects/rdr-conn.js';
+import {rdr_conn_create} from '/src/objects/rdr-conn.js';
 import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
@@ -20,7 +20,7 @@ async function refresh_icons() {
   const [rconn, iconn] = await Promise.all([rdr_conn_create(), fs.open()]);
   fs.conn = iconn;
   await refresh_feed_icons(rconn, fs, channel);
-  rdr_conn_close(rconn);
+  rconn.close();
   iconn.close();
 }
 
@@ -40,7 +40,7 @@ async function cli_remove_lost_entries() {
   const channel = new BroadcastChannel('reader');
   await remove_lost_entries_impl(conn, channel, console);
   channel.close();
-  rdr_conn_close(conn);
+  conn.close();
 }
 
 async function cli_remove_orphans() {
@@ -48,7 +48,7 @@ async function cli_remove_orphans() {
   const channel = new BroadcastChannel('reader');
   await remove_orphans_impl(conn, channel);
   channel.close();
-  rdr_conn_close(conn);
+  conn.close();
 }
 
 async function lookup_favicon(url_string, cached) {
