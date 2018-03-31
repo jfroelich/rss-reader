@@ -7,6 +7,7 @@ import {deactivate_feed} from '/src/operations/deactivate-feed.js';
 import {find_feed_by_id} from '/src/operations/find-feed-by-id.js';
 import {get_feeds} from '/src/operations/get-feeds.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
+import {unsubscribe} from '/src/operations/unsubscribe.js';
 import * as ral from '/src/ral/ral.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
 
@@ -366,17 +367,15 @@ function feed_list_remove_feed_by_id(feed_id) {
   }
 }
 
-function unsubscribe_button_onclick(event) {
+async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  return ral.ral_unsubscribe(channel, feed_id)
-      .then(_ => {
-        feed_list_remove_feed_by_id(feed_id);
-        section_show_by_id('subs-list-section');
-      })
-      .catch(error => {
-        // TODO: show an error message
-        console.error(error);
-      });
+
+  const conn = await rdr_create_conn();
+  const result = await unsubscribe(conn, channel, feed_id);
+  conn.close();
+
+  feed_list_remove_feed_by_id(feed_id);
+  section_show_by_id('subs-list-section');
 }
 
 async function activate_feed_button_onclick(event) {

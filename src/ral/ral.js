@@ -5,7 +5,6 @@ import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_import} from '/src/operations/rdr-import-opml.js';
 import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds/rdr-poll-feeds.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
-import {unsubscribe} from '/src/operations/unsubscribe.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
 
 export async function import_opml(channel, files) {
@@ -57,11 +56,4 @@ export async function ral_subscribe(channel, url) {
   rconn.close();
   iconn.close();
   return feed;
-}
-
-export async function ral_unsubscribe(channel, feed_id) {
-  const conn = await rdr_create_conn();
-  const result = await unsubscribe(conn, channel, feed_id);
-  conn.close();
-  return result;
 }
