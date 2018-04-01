@@ -10,7 +10,7 @@ import {mark_entry_read} from '/src/operations/mark-entry-read.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_import} from '/src/operations/rdr-import-opml.js';
-import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds/rdr-poll-feeds.js';
+import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds.js';
 import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
 import {export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';

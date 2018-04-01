@@ -3,11 +3,7 @@
 
 Checks for new content
 
-# TODO: abstract away behind an operation
-
-Create an operation in the operations folder like rdr-poll-feeds.js, that provides a simple syscall to perform the operation. This could be a subfolder within the operations folder.
-
-# TODO: poll service should somehow not depend on badge
+# TODO: do not depend on badge
 
 This should not be dependent on something in the view, it should be the other way around
 

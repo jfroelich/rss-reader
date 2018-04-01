@@ -7,7 +7,7 @@ import {rdr_create_channel} from '/src/operations/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_open_view} from '/src/operations/rdr-open-view.js';
-import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds/rdr-poll-feeds.js';
+import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
 import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
