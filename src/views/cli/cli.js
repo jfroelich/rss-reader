@@ -1,5 +1,5 @@
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
-import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
+import {rdr_archive} from '/src/operations/archive-entries.js';
 import {rdr_create_channel} from '/src/operations/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';

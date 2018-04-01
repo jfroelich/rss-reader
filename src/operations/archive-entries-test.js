@@ -1,6 +1,6 @@
 import {idb_remove} from '/src/lib/idb/idb.js';
+import {rdr_archive} from '/src/operations/archive-entries.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
-import {rdr_archive} from '/src/operations/archive-entries/archive-entries.js';
 
 async function test() {
   const conn = await rdr_create_conn('archive-entries-test');
