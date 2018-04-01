@@ -10,3 +10,5 @@ Here, redirect is defined loosely to account for atypical redirection methods. F
 ### TODOs
 
 * use a serializable rule format so that rules can be stored in external settings rather than defined functions
+* what if multiple rules apply? This is wrong in that it applies the rules only once, in the order of the rules array
+* what about recursive application of rules? and what is the stopping condition if that was implemented?
