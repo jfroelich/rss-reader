@@ -3,7 +3,6 @@ import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {rdr_poll_feed} from '/src/operations/rdr-poll-feed.js';
 
-const rewrite_rules = build_rewrite_rules();
 const null_console = {
   log: noop,
   warn: noop,
@@ -24,8 +23,7 @@ const default_options = {
   fetch_image_timeout: 3000,
   deactivation_threshold: 10,
   badge_update: true,
-  notify: true,
-  rewrite_rules: rewrite_rules
+  notify: true
 };
 
 export async function rdr_poll_feeds(
@@ -51,33 +49,6 @@ export async function rdr_poll_feeds(
   }
 
   console.log('Poll feeds completed, added %d entries', count);
-}
-
-function build_rewrite_rules() {
-  const rules = [];
-
-  function google_news_rule(url) {
-    if (url.hostname === 'news.google.com' && url.pathname === '/news/url') {
-      const param = url.searchParams.get('url');
-      try {
-        return new URL(param);
-      } catch (error) {
-      }
-    }
-  }
-
-  rules.push(google_news_rule);
-
-  function techcrunch_rule(url) {
-    if (url.hostname === 'techcrunch.com' && url.searchParams.has('ncid')) {
-      const output = new URL(url.href);
-      output.searchParams.delete('ncid');
-      return output;
-    }
-  }
-
-  rules.push(techcrunch_rule);
-  return rules;
 }
 
 function noop() {}

@@ -16,6 +16,8 @@ import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {update_feed} from '/src/operations/update-feed.js';
 
+const rewrite_rules = build_rewrite_rules();
+
 
 export async function rdr_poll_feed(
     rconn, iconn, channel, console, options = {}, feed) {
@@ -223,7 +225,6 @@ function dedup_entries(entries) {
 async function poll_entry(rconn, iconn, channel, console, options, entry) {
   const fetch_html_timeout = options.fetch_html_timeout;
   const fetch_image_timeout = options.fetch_image_timeout;
-  const rewrite_rules = options.rewrite_rules;
 
   if (!entry_has_url(entry)) {
     return;
@@ -531,4 +532,32 @@ async function filter_entry_content(document, document_url, options = {}) {
   // TODO: move this up to before some of the other attribute filters, or
   // explain why it should occur later
   filters.document_filter_empty_attributes(document);
+}
+
+
+function build_rewrite_rules() {
+  const rules = [];
+
+  function google_news_rule(url) {
+    if (url.hostname === 'news.google.com' && url.pathname === '/news/url') {
+      const param = url.searchParams.get('url');
+      try {
+        return new URL(param);
+      } catch (error) {
+      }
+    }
+  }
+
+  rules.push(google_news_rule);
+
+  function techcrunch_rule(url) {
+    if (url.hostname === 'techcrunch.com' && url.searchParams.has('ncid')) {
+      const output = new URL(url.href);
+      output.searchParams.delete('ncid');
+      return output;
+    }
+  }
+
+  rules.push(techcrunch_rule);
+  return rules;
 }
