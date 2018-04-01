@@ -125,7 +125,6 @@ export function create_error_response(status) {
 }
 
 function default_allow_all_policy(url) {
-  console.debug('TEMP, TESTING default_allow_all_policy', url.href);
   return true;
 }
 
