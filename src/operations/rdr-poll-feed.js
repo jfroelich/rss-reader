@@ -120,6 +120,10 @@ export async function rdr_poll_feed(
   const storable_feed = feed_prepare(merged_feed);
   await update_feed(rconn, channel, storable_feed, true, true);
 
+  console.debug(
+      'Processing %d entries for feed', parsed_feed.entries.length,
+      tail_url.href);
+
   const coerced_entries = parsed_feed.entries.map(coerce_entry);
   const entries = dedup_entries(coerced_entries);
 
