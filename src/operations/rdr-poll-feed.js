@@ -18,7 +18,6 @@ import {update_feed} from '/src/operations/update-feed.js';
 
 const rewrite_rules = build_rewrite_rules();
 
-
 export async function rdr_poll_feed(
     rconn, iconn, channel, console, options = {}, feed) {
   const ignore_recency_check = options.ignore_recency_check;
@@ -380,7 +379,6 @@ async function update_entry_content(entry, document, fetch_image_timeout) {
   entry.content = document.documentElement.outerHTML;
 }
 
-
 // Transforms a document by removing or changing nodes for various reasons.
 // @param document {Document} the document to transform
 // @param document_url {URL} the location of the document
@@ -537,7 +535,6 @@ async function filter_entry_content(document, document_url, options = {}) {
   // explain why it should occur later
   filters.document_filter_empty_attributes(document);
 }
-
 
 function build_rewrite_rules() {
   const rules = [];
