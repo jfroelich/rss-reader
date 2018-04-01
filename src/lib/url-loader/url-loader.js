@@ -14,44 +14,28 @@ export const STATUS_NETWORK_ERROR = 595;
 export const STATUS_NETWORK_ERROR_TEXT = 'Unknown network error';
 export const STATUS_RANGE_ERROR = 594;
 export const STATUS_RANGE_ERROR_TEXT = 'Range error';
+export const STATUS_POLICY_REFUSAL = 590;
+export const STATUS_POLICY_REFUSAL_TEXT = 'Refused to fetch';
 
-function lookup_status_text(status) {
-  switch (status) {
-    case STATUS_UNACCEPTABLE:
-      return STATUS_UNACCEPTABLE_TEXT;
-    case STATUS_FORBIDDEN_METHOD:
-      return STATUS_FORBIDDEN_METHOD_TEXT;
-    case STATUS_OFFLINE:
-      return STATUS_OFFLINE_TEXT;
-    case STATUS_TIMEOUT:
-      return STATUS_TIMEOUT_TEXT;
-    case STATUS_RANGE_ERROR:
-      return STATUS_RANGE_ERROR_TEXT;
-    default:
-      return undefined;
-  }
-}
+const default_options = {
+  credentials: 'omit',
+  method: 'get',
+  mode: 'cors',
+  cache: 'default',
+  redirect: 'follow',
+  referrer: 'no-referrer',
+  referrerPolicy: 'no-referrer'
+};
 
-export function create_error_response(status) {
-  let body = null;
-  const init = {status: status, statusText: lookup_status_text(status)};
-  return new Response(body, init);
-}
-
-export async function fetch_with_timeout(url, options) {
+export async function fetch_with_timeout(
+    url, options = {}, policy_allows_url = default_allow_all_policy) {
   if ((!url instanceof URL)) {
     throw new TypeError('url is not a URL');
   }
 
-  const default_options = {
-    credentials: 'omit',
-    method: 'get',
-    mode: 'cors',
-    cache: 'default',
-    redirect: 'follow',
-    referrer: 'no-referrer',
-    referrerPolicy: 'no-referrer'
-  };
+  if (!policy_allows_url(url)) {
+    return create_error_response(STATUS_POLICY_REFUSAL);
+  }
 
   const merged_options = Object.assign({}, default_options, options);
 
@@ -86,9 +70,9 @@ export async function fetch_with_timeout(url, options) {
   const fetch_promise = fetch(url.href, merged_options);
 
   // await turns rejection into exception. fetch rejects with an obtuse error
-  // message when trying to fetch a bad url. fetch_with_timeout should only throw in the
-  // case of a programming error, so trap the error and return an symbolic
-  // error response.
+  // message when trying to fetch a bad url. fetch_with_timeout should only
+  // throw in the case of a programming error, so trap the error and return an
+  // symbolic error response.
 
   let response;
   try {
@@ -113,6 +97,36 @@ export async function fetch_with_timeout(url, options) {
   }
 
   return response;
+}
+
+function lookup_status_text(status) {
+  switch (status) {
+    case STATUS_UNACCEPTABLE:
+      return STATUS_UNACCEPTABLE_TEXT;
+    case STATUS_FORBIDDEN_METHOD:
+      return STATUS_FORBIDDEN_METHOD_TEXT;
+    case STATUS_OFFLINE:
+      return STATUS_OFFLINE_TEXT;
+    case STATUS_TIMEOUT:
+      return STATUS_TIMEOUT_TEXT;
+    case STATUS_RANGE_ERROR:
+      return STATUS_RANGE_ERROR_TEXT;
+    case STATUS_POLICY_REFUSAL:
+      return STATUS_POLICY_REFUSAL_TEXT;
+    default:
+      return undefined;
+  }
+}
+
+export function create_error_response(status) {
+  let body = null;
+  const init = {status: status, statusText: lookup_status_text(status)};
+  return new Response(body, init);
+}
+
+function default_allow_all_policy(url) {
+  console.debug('TEMP, TESTING default_allow_all_policy', url.href);
+  return true;
 }
 
 function sleep(ms) {

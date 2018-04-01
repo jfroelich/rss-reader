@@ -1,35 +1,30 @@
-export const STATUS_POLICY_REFUSAL = 590;
-export const STATUS_POLICY_REFUSAL_TEXT = 'Refused to fetch';
+
+// TODO: what about a whitelist approach, only allow http/https?
+const protocol_blacklist =
+    ['about:', 'chrome:', 'chrome-extension:', 'file:', 'tel:', 'mailto:'];
 
 export function url_is_allowed(url) {
   if ((!url instanceof URL)) {
-    throw new TypeError('url is not a URL');
+    throw new TypeError('url is not a URL ' + url);
   }
 
-  const protocol = url.protocol;
-  const hostname = url.hostname;
-
-  // Quickly check for data urls and allow them before any other tests. Data
-  // URI fetches do not involve the network so there is no policy concern
-  if (protocol === 'data:') {
+  // Permit all data uris as there is no network concern, and to simplify all
+  // later conditions to not have to deal with data uris
+  if (url.protocol === 'data:') {
     return true;
   }
 
-  if (hostname === 'localhost') {
+  // Deny certain protocols
+  if (protocol_blacklist.includes(url.protocol)) {
     return false;
   }
 
-
-  if (hostname === '127.0.0.1') {
+  // Deny local urls
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
     return false;
   }
 
-  const protocol_blacklist =
-      ['about:', 'chrome:', 'chrome-extension:', 'file:'];
-  if (protocol_blacklist.includes(protocol)) {
-    return false;
-  }
-
+  // Deny credentialed urls
   if (url.username || url.password) {
     return false;
   }
