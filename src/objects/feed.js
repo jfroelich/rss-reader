@@ -32,21 +32,22 @@ export function feed_create_favicon_lookup_url(feed) {
   assert(is_feed(feed));
 
   // First, prefer the link, as this is the url of the webpage that is
-  // associated with the feed. Cannot assume the link is set or valid.
+  // associated with the feed, and web pages have favicons.
   if (feed.link) {
-    try {
-      return new URL(feed.link);
-    } catch (error) {
-      // If feed.link is set it should always be a valid URL
-      console.warn(error);
-
-      // If the url is invalid, just fall through
-    }
+    // If feed.link is set, then assume it is valid, and throw if not. feed.link
+    // should have been validated by caller, and it is essentially a programmer
+    // error.
+    return new URL(feed.link);
   }
 
   // If the feed's link is missing/invalid then use the origin of the feed's
   // xml url. Assume the feed always has a url.
   const tail_url = new URL(feed_peek_url(feed));
+
+  // Use origin because we know the page is an xml file and therefore will not
+  // have its own specific icon source, unlike a web page, which feed.link
+  // generally points toward.
+
   return new URL(tail_url.origin);
 }
 
