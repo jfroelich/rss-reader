@@ -7,6 +7,7 @@ import {feed_peek_url} from '/src/objects/feed.js';
 import {find_viewable_entries} from '/src/operations/find-viewable-entries.js';
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {mark_entry_read} from '/src/operations/mark-entry-read.js';
+import {rdr_create_channel} from '/src/operations/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_import} from '/src/operations/rdr-import-opml.js';
@@ -36,7 +37,8 @@ const fonts = [
 ];
 // clang-format on
 
-const channel = new BroadcastChannel('reader');
+const channel = rdr_create_channel();
+
 channel.onmessage = function(event) {
   if (!event.isTrusted) {
     console.warn('Untrusted event', event);
@@ -86,16 +88,15 @@ channel.onmessageerror = function(event) {
 };
 
 async function on_entry_added_message(message) {
-  if (slideshow_count_unread() <= 3) {
-    let conn;
-    try {
-      conn = await rdr_create_conn();
-      await slide_load_and_append_multiple(conn);
-    } finally {
-      if (conn) {
-        conn.close();
-      }
-    }
+  const unread_count = slideshow_count_unread();
+
+  // TEMP: looking into why entries do not show up when polling via refresh
+  console.debug(
+      'Handling entry-added message', message, 'unread count', unread_count);
+  if (unread_count <= 3) {
+    const conn = await rdr_create_conn();
+    await slide_load_and_append_multiple(conn);
+    conn.close();
   }
 }
 
@@ -408,9 +409,14 @@ async function refresh_anchor_onclick(event) {
   // NOTE: temporarily enable console during dev
   let console_arg = console;  // void console;
 
+  // TEMP: I want to ensure that channel is defined in case the issue with
+  // feeds not showing up is that channel is somehow undefined here
+  console.debug('During refresh, channel state: %o', channel);
+
   await rdr_poll_feeds(rconn, iconn, channel, console_arg, options);
   rconn.close();
   iconn.close();
+  // Do not close channel
 
   refresh_in_progress = false;
 }
