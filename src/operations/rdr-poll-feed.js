@@ -68,6 +68,7 @@ export async function rdr_poll_feed(
 
   const response = await rdr_fetch_feed(tail_url, fetch_feed_timeout);
   if (!response.ok) {
+    console.debug('Error fetching feed', tail_url.href, response.status);
     const error_type = 'fetch';
     handle_error(
         rconn, channel, response.status, feed, error_type,
@@ -96,7 +97,7 @@ export async function rdr_poll_feed(
   try {
     parsed_feed = feed_parser.parse(response_text, skip_entries, resolve_urls);
   } catch (error) {
-    console.debug(error);
+    console.debug('Error parsing feed', tail_url.href, error);
     let status;
     const error_type = 'parse';
     handle_error(
@@ -117,7 +118,9 @@ export async function rdr_poll_feed(
   handle_fetch_success(merged_feed);
 
   const storable_feed = feed_prepare(merged_feed);
-  await update_feed(rconn, channel, storable_feed, true, true);
+  const validate = true;
+  const set_date_updated = true;
+  await update_feed(rconn, channel, storable_feed, validate, set_date_updated);
 
   console.debug(
       'Processing %d entries for feed', parsed_feed.entries.length,

@@ -1,4 +1,4 @@
-const allowed_protocols = ['data:', 'http:', 'https'];
+const allowed_protocols = ['data:', 'http:', 'https:'];
 
 // Restrict protocol to allowed protocols
 // Deny local urls

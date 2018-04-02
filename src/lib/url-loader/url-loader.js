@@ -34,6 +34,7 @@ export async function fetch_with_timeout(
   }
 
   if (!policy_allows_url(url)) {
+    console.debug('Refusing to fetch url as against policy', url.href);
     return create_error_response(STATUS_POLICY_REFUSAL);
   }
 
