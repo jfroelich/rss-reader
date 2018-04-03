@@ -4,6 +4,9 @@ import {get_feeds} from '/src/operations/get-feeds.js';
 export async function rdr_export_opml(conn, title, console = null_console) {
   const document = create_opml_document(title, console);
 
+  // TODO: implement for-each-feed operation, then use it here without buffering
+  // feeds into an array, instead write them to document per iteration
+
   const feeds = await get_feeds(conn);
 
   console.debug('Loaded %d feeds from database', feeds.length, conn.name);

@@ -2,14 +2,10 @@ import * as filelib from '/src/lib/file/file.js';
 import * as opml_parser from '/src/lib/opml-parser/opml-parser.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
 
-export function rdr_import(context, files) {
-  const ctx = Object.assign({}, default_context, context);
-  ctx.console.log('Importing %d file(s)', files.length);
-  const partial = import_file.bind(ctx);
-  const map = Array.prototype.map;
-  const proms = map.call(files, partial);
-  return Promise.all(proms);
-}
+const feed_mime_types = [
+  'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',
+  'application/xml', 'application/xhtml+xml', 'text/xml'
+];
 
 const null_console = {
   log: noop,
@@ -25,10 +21,18 @@ const default_context = {
   console: null_console
 };
 
-const feed_mime_types = [
-  'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',
-  'application/xml', 'application/xhtml+xml', 'text/xml'
-];
+export function rdr_import(context, files) {
+  const ctx = Object.assign({}, default_context, context);
+  ctx.console.log('Importing %d file(s)', files.length);
+
+  // TODO: if map.call accepts thisArg then there is no need to create the
+  // partial, and I can save a line
+
+  const partial = import_file.bind(ctx);
+  const map = Array.prototype.map;
+  const proms = map.call(files, partial);
+  return Promise.all(proms);
+}
 
 async function import_file(file) {
   this.console.debug('Importing file', file.name);
