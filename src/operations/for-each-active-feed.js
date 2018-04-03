@@ -1,19 +1,35 @@
-import {get_feeds} from '/src/operations/get-feeds.js';
+export function for_each_active_feed(conn, handle_feed) {
+  return new Promise(executor.bind(null, conn, handle_feed));
+}
 
-// Calls the callback function on each feed in the store
-// TODO: currently each call to the callback is blocked by waiting for the
-// prior callback to complete, essentially a serial progression. This should
-// directly interact with the database instead of using get_feeds and
-// pre-loading into an array, and this should walk the feed store and call the
-// callback per cursor walk, advancing the cursor PRIOR to calling the callback,
-// taking advantage of the asynchronous nature of indexedDB cursor request
-// callbacks. This will yield a minor speedup at the cost of being a mild DRY
-// violation. However, the speed is admittedly not that important. This will
-// also make the approach scalable to N feeds (until stack overflow).
+function executor(conn, handle_feed, resolve, reject) {
+  const txn = conn.transaction('feed');
+  txn.oncomplete = txn_oncomplete.bind(txn, resolve);
+  txn.onerror = _ => reject(txn.error);
 
-export async function for_each_active_feed(conn, callback) {
-  const feeds = await get_feeds(conn);
-  for (const feed of feeds) {
-    callback(feed);
+  const store = txn.objectStore('feed');
+  const request = store.openCursor();
+  request.onsuccess = request_onsuccess.bind(request, handle_feed);
+}
+
+function request_onsuccess(handle_feed, event) {
+  const cursor = event.target.result;
+  if (cursor) {
+    const feed = cursor.value;
+
+    // Because handle_feed is sync, continue before its evaluation. Here
+    // continue doesn't actually break (exit early), it merely schedules the
+    // cursor to advance. The cursor will advance at the earliest in the next
+    // tick (the next iteration of the event loop). Otherwise, continuing after
+    // the handler completes could introduce an artificial delay.
+    cursor.continue();
+
+    if (feed.active) {
+      handle_feed(feed);
+    }
   }
+}
+
+function txn_oncomplete(callback, event) {
+  callback();
 }
