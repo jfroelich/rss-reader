@@ -1,6 +1,6 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/objects/entry.js';
 
-export function viewable_entries_for_each(conn, offset, limit, callback) {
+export function for_each_viewable_entry(conn, offset, limit, callback) {
   return new Promise(executor.bind(null, conn, offset, limit, callback));
 }
 
