@@ -22,11 +22,12 @@ function executor(conn, channel, entry_id, resolve, reject) {
   txn.onerror = _ => reject(txn.error);
   const store = txn.objectStore('entry');
   const request = store.get(entry_id);
-  request.onsuccess = request_onsuccess.bind(request, store, entry_id);
+  request.onsuccess = request_onsuccess.bind(request, entry_id);
 }
 
-function request_onsuccess(store, entry_id, event) {
+function request_onsuccess(entry_id, event) {
   const entry = event.target.result;
+
 
   // For whatever reason the entry is not found. Become a no-op.
   if (!entry) {
@@ -57,7 +58,9 @@ function request_onsuccess(store, entry_id, event) {
   const currentDate = new Date();
   entry.dateUpdated = currentDate;
   entry.dateRead = currentDate;
-  store.put(entry);
+
+  const entry_store = event.target.source;
+  entry_store.put(entry);
 }
 
 function txn_oncomplete(conn, channel, entry_id, callback, event) {
