@@ -18,7 +18,7 @@ function executor(conn, channel, feed_id, console, resolve, reject) {
   txn.onerror = _ => reject(txn.error);
   const store = txn.objectStore('feed');
   const request = store.get(feed_id);
-  request.onsuccess = request_onsuccess.bind(request, store, feed_id);
+  request.onsuccess = request_onsuccess.bind(request, feed_id);
 }
 
 function txn_oncomplete(channel, feed_id, callback, event) {
@@ -26,8 +26,9 @@ function txn_oncomplete(channel, feed_id, callback, event) {
   resolve();
 }
 
-function request_onsuccess(store, feed_id, event) {
+function request_onsuccess(feed_id, event) {
   const feed = event.target.result;
+  const store = event.target.source;
 
   // The caller possibly tried to use a bad feed id
   if (!feed) {

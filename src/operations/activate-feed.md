@@ -15,7 +15,3 @@ Marks a feed as active. This loads the feed, changes its properties, and then sa
 ### Return value
 
 Returns a promise that resolves to undefined. The promise settles either when an error occurs or when the transaction completes and the channel messages have been posted.
-
-### TODOs
-
-* for `request_onsuccess`, get the store from the event rather than parameter, this is delayed because I forgot how to do so, and am not sure if it is possible
