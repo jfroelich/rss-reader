@@ -1,7 +1,9 @@
 import {feed_is_valid_id} from '/src/objects/feed.js';
 
 export function delete_feed(conn, channel, feed_id, reason_text) {
-  assert(feed_is_valid_id(feed_id));
+  if (!feed_is_valid_id(feed_id)) {
+    throw new TypeError('Invalid feed id ' + feed_id);
+  }
 
   return new Promise(executor.bind(null, conn, channel, feed_id, reason_text));
 }
@@ -41,8 +43,4 @@ function txn_oncomplete(
   }
 
   callback(entry_ids);
-}
-
-function assert(value) {
-  if (!value) throw new Error('Assertion error');
 }
