@@ -22,25 +22,26 @@ function executor(conn, channel, entry_id, resolve, reject) {
   txn.onerror = _ => reject(txn.error);
   const store = txn.objectStore('entry');
   const request = store.get(entry_id);
-  request.onsuccess = request_onsuccess.bind(request, store);
+  request.onsuccess = request_onsuccess.bind(request, entry_id, store);
 }
 
-function request_onsuccess(store, event) {
+function request_onsuccess(store, entry_id, event) {
   const entry = event.target.result;
 
   // For whatever reason the entry is not found. Become a no-op.
   if (!entry) {
-    console.warn('No entry found');
+    console.warn('No entry found for entry id', entry_id);
     return;
   }
 
   // Do not trust data coming from the database because it can be modified by
   // external means
   if (!is_entry(entry)) {
-    console.warn('Loaded object is not an entry');
+    console.warn(
+        'Matched database object for entry id %d is not an entry', entry_id,
+        entry);
     return;
   }
-
 
   if (entry.readState === ENTRY_STATE_READ) {
     console.warn('Entry %d already in read state, ignoring', entry.id);
