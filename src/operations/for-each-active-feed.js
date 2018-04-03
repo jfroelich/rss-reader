@@ -31,5 +31,6 @@ function request_onsuccess(handle_feed, event) {
 }
 
 function txn_oncomplete(callback, event) {
+  console.debug('Transaction completed');
   callback();
 }

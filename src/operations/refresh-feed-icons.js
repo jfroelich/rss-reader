@@ -1,10 +1,12 @@
 import {feed_create_favicon_lookup_url, feed_has_url} from '/src/objects/feed.js';
-import {find_active_feeds} from '/src/operations/find-active-feeds.js';
+import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {update_feed} from '/src/operations/update-feed.js';
 
-export async function refresh_feed_icons(feed_conn, favicon_service, channel) {
-  const feeds = await find_active_feeds(feed_conn);
-  const partial = refresh_feed.bind(null, feed_conn, favicon_service, channel);
+export async function refresh_feed_icons(rconn, favicon_service, channel) {
+  const feeds = [];
+  await for_each_active_feed(rconn, feed => feeds.push(feed));
+
+  const partial = refresh_feed.bind(null, rconn, favicon_service, channel);
   const promises = feeds.map(partial);
   await Promise.all(promises);
 }

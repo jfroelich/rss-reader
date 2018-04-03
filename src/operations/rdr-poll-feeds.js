@@ -1,4 +1,4 @@
-import {find_active_feeds} from '/src/operations/find-active-feeds.js';
+import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {rdr_poll_feed} from '/src/operations/rdr-poll-feed.js';
@@ -10,6 +10,7 @@ const null_console = {
 };
 
 const null_channel = {
+  name: 'null-channel',
   postMessage: noop,
   close: noop
 };
@@ -29,9 +30,12 @@ const default_options = {
 export async function rdr_poll_feeds(
     rconn, iconn, channel = null_channel, console = null_console,
     options = {}) {
-  console.log('Polling feeds...');
+  console.log('rdr_poll_feeds start');
 
-  const feeds = await find_active_feeds(rconn);
+  const feeds = [];
+  await for_each_active_feed(rconn, feed => feeds.push(feed));
+
+  console.debug('Loaded %d active feeds', feeds.length);
 
   const pfo = Object.assign({}, default_options, options);
   const pfp = rdr_poll_feed.bind(null, rconn, iconn, channel, console, pfo);
