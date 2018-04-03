@@ -6,13 +6,13 @@ import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/objects/entry.js
 import {feed_peek_url} from '/src/objects/feed.js';
 import {find_viewable_entries} from '/src/operations/find-viewable-entries.js';
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
+import {for_each_viewable_entry} from '/src/operations/for-each-viewable-entry.js';
 import {mark_entry_read} from '/src/operations/mark-entry-read.js';
 import {rdr_create_channel} from '/src/operations/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_import} from '/src/operations/rdr-import-opml.js';
 import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds.js';
-import {viewable_entries_for_each} from '/src/operations/viewable-entries-for-each.js';
 import {export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/views/slideshow-page/slideshow.js';
@@ -764,7 +764,7 @@ async function slideshow_page_init() {
   const entry_cursor_offset = 0, entry_cursor_limit = 6;
 
   const conn = await rdr_create_conn();
-  const iterate_entries_promise = viewable_entries_for_each(
+  const iterate_entries_promise = for_each_viewable_entry(
       conn, entry_cursor_offset, entry_cursor_limit, slide_append);
   const iterate_feeds_promise =
       for_each_active_feed(conn, feeds_container_append_feed);
