@@ -9,7 +9,7 @@ export function deactivate_feed(conn, channel, feed_id, reason_text) {
     txn.onerror = _ => reject(txn.error);
     const store = txn.objectStore('feed');
     const request = store.get(feed_id);
-    request.onsuccess = request_onsuccess.bind(request, reason_text, store);
+    request.onsuccess = request_onsuccess.bind(request, reason_text);
   });
 }
 
@@ -20,9 +20,9 @@ function txn_oncomplete(channel, callback, feed_id, event) {
   resolve();
 }
 
-// TODO: get store from event, rather than using store parameter
-function request_onsuccess(reason_text, store, event) {
+function request_onsuccess(reason_text, event) {
   const feed = event.target.result;
+  const store = event.target.source;
 
   // TODO: rather than assert/reject when inactive, maybe just skip?
 
