@@ -22,7 +22,7 @@ function executor(conn, channel, entry_id, resolve, reject) {
   txn.onerror = _ => reject(txn.error);
   const store = txn.objectStore('entry');
   const request = store.get(entry_id);
-  request.onsuccess = request_onsuccess.bind(request, entry_id, store);
+  request.onsuccess = request_onsuccess.bind(request, store, entry_id);
 }
 
 function request_onsuccess(store, entry_id, event) {
