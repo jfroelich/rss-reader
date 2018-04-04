@@ -1,29 +1,45 @@
 import {feed_is_valid_id} from '/src/objects/feed.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 
-// TODO: setup null_console pattern
-// TODO: setup null_channel pattern
+const null_console = {
+  warn: noop,
+  debug: noop,
+  log: noop,
+  dir: noop
+};
 
-export function delete_feed(conn, channel, feed_id, reason_text) {
+const null_channel = {
+  name: 'null-channel',
+  postMessage: noop,
+  close: noop
+};
+
+export function delete_feed(
+    conn, channel = null_channel, console = null_console, feed_id,
+    reason_text) {
   if (!feed_is_valid_id(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }
 
-  return new Promise(executor.bind(null, conn, channel, feed_id, reason_text));
+  return new Promise(
+      executor.bind(null, conn, channel, console, feed_id, reason_text));
 }
 
-function executor(conn, channel, feed_id, reason_text, resolve, reject) {
+function executor(
+    conn, channel, console, feed_id, reason_text, resolve, reject) {
   let entry_ids;
   const txn = conn.transaction(['feed', 'entry'], 'readwrite');
   txn.oncomplete = txn_oncomplete.bind(
-      conn, txn, channel, feed_id, reason_text, entry_ids, resolve);
+      conn, txn, channel, console, feed_id, reason_text, entry_ids, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const feed_store = txn.objectStore('feed');
+
+  // Delete the feed
   console.debug('Deleting feed with id', feed_id);
   feed_store.delete(feed_id);
 
-  // Find and delete all entries belonging to the feed
+  // Delete all entries belonging to the feed
   const entry_store = txn.objectStore('entry');
   const feed_index = entry_store.index('feed');
   const request = feed_index.getAllKeys(feed_id);
@@ -36,27 +52,16 @@ function executor(conn, channel, feed_id, reason_text, resolve, reject) {
   };
 }
 
-// TODO: get conn from event rather than from parameter
-
 function txn_oncomplete(
-    conn, channel, feed_id, reason_text, entry_ids, callback, event) {
-  // Temp: looking for the conn property
-  console.dir(event);
-
-  if (channel) {
-    channel.postMessage(
-        {type: 'feed-deleted', id: feed_id, reason: reason_text});
-    for (const id of entry_ids) {
-      channel.postMessage({type: 'entry-deleted', id: id, reason: reason_text});
-    }
+    conn, channel, console, feed_id, reason_text, entry_ids, callback, event) {
+  channel.postMessage({type: 'feed-deleted', id: feed_id, reason: reason_text});
+  for (const id of entry_ids) {
+    channel.postMessage({type: 'entry-deleted', id: id, reason: reason_text});
   }
 
-  // Deleting (unsubscribing) from a feed may have deleted one or more entries
-  // that were in the unread state and were contributing to the total unread
-  // count, so the badge text is out of date.
-  // Because this is unawaited it will still be pending at time of resolution
-  // of delete_feed
-  rdr_badge_refresh(conn, void console).catch(console.error);
+  rdr_badge_refresh(conn, console).catch(console.error);
 
   callback(entry_ids);
 }
+
+function noop() {}

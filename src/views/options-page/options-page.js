@@ -374,7 +374,8 @@ async function unsubscribe_button_onclick(event) {
 
   const reason_text = 'unsubscribe';
   const conn = await rdr_create_conn();
-  const result = await delete_feed(conn, channel, feed_id, reason_text);
+  const result =
+      await delete_feed(conn, channel, void console, feed_id, reason_text);
   conn.close();
 
   feed_list_remove_feed_by_id(feed_id);
