@@ -88,7 +88,7 @@ export async function fetch_with_timeout(
     return create_error_response(STATUS_TIMEOUT);
   }
 
-  if (types && response.ok) {
+  if (types && types.length && response.ok) {
     const mime_type =
         mime.parse_content_type(response.headers.get('Content-Type'));
     if (!types.includes(mime_type)) {
