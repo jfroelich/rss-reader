@@ -4,12 +4,12 @@ import * as perm from '/src/lib/permissions/permissions.js';
 import {feed_peek_url} from '/src/objects/feed.js';
 import {activate_feed} from '/src/operations/activate-feed.js';
 import {deactivate_feed} from '/src/operations/deactivate-feed.js';
+import {delete_feed} from '/src/operations/delete-feed.js';
 import {find_feed_by_id} from '/src/operations/find-feed-by-id.js';
 import {get_feeds} from '/src/operations/get-feeds.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
-import {unsubscribe} from '/src/operations/unsubscribe.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
 
 // clang-format off
@@ -372,8 +372,9 @@ function feed_list_remove_feed_by_id(feed_id) {
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
+  const reason_text = 'unsubscribe';
   const conn = await rdr_create_conn();
-  const result = await unsubscribe(conn, channel, feed_id);
+  const result = await delete_feed(conn, channel, feed_id, reason_text);
   conn.close();
 
   feed_list_remove_feed_by_id(feed_id);
