@@ -45,7 +45,10 @@ export async function rdr_poll_feeds(
       results.reduce((sum, value) => isNaN(value) ? sum : sum + value, 0);
 
   if (count) {
-    rdr_badge_refresh(rconn, console).catch(console.error);
+    // I've disabled this for now. If every call to poll-feed potentially does
+    // a badge-refresh call then there is no point to this, it is redundant with
+    // whatever promise finishes last
+    // rdr_badge_refresh(rconn, console).catch(console.error);
 
     const title = 'Added articles';
     const message = 'Added articles';
