@@ -82,8 +82,11 @@ export async function rdr_poll_feed(
   const resp_lmd = new Date(response.headers.get('Last-Modified'));
 
   if (!ignore_modified_check && feed_lmd && resp_lmd &&
+      !isNaN(response_lmd.getTime()) &&
       feed_lmd.getTime() === resp_lmd.getTime()) {
-    console.debug('Feed not modified', tail_url.href);
+    console.debug(
+        'Feed not modified', tail_url.href, feed_lmd.getTime(),
+        resp_lmd.getTime());
     const dirtied = handle_fetch_success(feed);
     if (dirtied) {
       const validate = true;
@@ -184,6 +187,10 @@ function handle_error(
       status === url_loader.STATUS_OFFLINE) {
     return;
   }
+
+  // TEMPORARY DEBUGGING
+  console.debug(
+      'Incremented error count for feed', feed.title, feed.errorCount);
 
   // Init or increment
   feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
