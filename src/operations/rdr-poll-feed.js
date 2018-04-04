@@ -68,7 +68,9 @@ export async function rdr_poll_feed(
 
   const response = await rdr_fetch_feed(tail_url, fetch_feed_timeout);
   if (!response.ok) {
-    console.debug('Error fetching feed', tail_url.href, response.status);
+    console.debug(
+        'Error fetching feed', tail_url.href, response.status,
+        response.statusText);
     const error_type = 'fetch';
     handle_error(
         rconn, channel, response.status, feed, error_type,
