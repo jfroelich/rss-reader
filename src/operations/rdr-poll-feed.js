@@ -82,8 +82,7 @@ export async function rdr_poll_feed(
   const resp_lmd = new Date(response.headers.get('Last-Modified'));
 
   if (!ignore_modified_check && feed_lmd && resp_lmd &&
-      !isNaN(response_lmd.getTime()) &&
-      feed_lmd.getTime() === resp_lmd.getTime()) {
+      !isNaN(resp_lmd.getTime()) && feed_lmd.getTime() === resp_lmd.getTime()) {
     console.debug(
         'Feed not modified', tail_url.href, feed_lmd.getTime(),
         resp_lmd.getTime());
