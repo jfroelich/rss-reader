@@ -1,5 +1,4 @@
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
-import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {rdr_poll_feed} from '/src/operations/rdr-poll-feed.js';
 
@@ -46,7 +45,6 @@ export async function rdr_poll_feeds(
 function accumulate_if_def(sum, value) {
   return isNaN(value) ? sum : sum + value;
 }
-
 
 function show_poll_notification(num_entries_added) {
   // Suppress if nothing added
