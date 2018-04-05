@@ -83,8 +83,6 @@ async function handle_poll_feeds_alarm(alarm) {
   rconn.close();
 }
 
-window.test_handle_poll_feeds_alarm = handle_poll_feeds_alarm;
-
 function query_idle_state(idle_period_secs) {
   return new Promise(function executor(resolve, reject) {
     chrome.idle.queryState(idle_period_secs, resolve);
