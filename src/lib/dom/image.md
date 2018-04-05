@@ -14,9 +14,9 @@ Internally, the initial check for whether the image has a parent node is admitte
 
 ### Why call closest on the parent element instead of the image
 
-The reason that this calls `closest` on the image's parent element rather than the image itself, despite that calling closest on the image is terser and would suffice, is because `closest` tests against itself in addition to its ancestors. We know that image is an HTMLImageElement that closest will not match. We can reduce the work done by closet by calling closest on the parent element.
+The reason that this calls `closest` on the image's parent element rather than the image itself, despite that calling closest on the image is terser and would suffice, is because `closest` tests against itself in addition to its ancestors. In other words the test is self-inclusive. Furthermore, we know that image is an HTMLImageElement that `closest` will not match. Therefore, we can reduce the work done by `closest` by calling `closest` on the parent element.
 
-Note that I never actually tested whether this calling from the parent node improves performance. It may even hurt performance, and is something I would eventually like to test.
+Note that I never actually tested whether this calling from the parent node improves performance. It may even hurt performance, and is something I would eventually like to test. It is notably marginal and really should not be concerning. This explanation exists primarily to explain the non-obviousness.
 
 ### Why figures and pictures are unwrapped instead of removed
 
@@ -28,7 +28,7 @@ Similar to figure, picture may be used as general container, so unwrap rather th
 
 * Unclear if faster or slower
 * The performance delta may be marginal anyway, unclear.
-* The result is live, so there is no issue with removing elements during iteration
+* The result is live, so there is no issue with removing elements during iteration when iterating forward (technically we could do live mutation when using getElementsByTagName but would have to iterate backward).
 
 # TODO: better ripple effects handling
 
