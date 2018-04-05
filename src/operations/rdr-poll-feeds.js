@@ -31,31 +31,32 @@ export async function rdr_poll_feeds(
     rconn, iconn, channel = null_channel, console = null_console,
     options = {}) {
   console.log('rdr_poll_feeds start');
-
   const feeds = [];
   await for_each_active_feed(rconn, feed => feeds.push(feed));
-
   console.debug('Loaded %d active feeds', feeds.length);
-
   const pfo = Object.assign({}, default_options, options);
   const pfp = rdr_poll_feed.bind(null, rconn, iconn, channel, console, pfo);
   const proms = feeds.map(pfp);
   const results = await Promise.all(proms);
-  const count =
-      results.reduce((sum, value) => isNaN(value) ? sum : sum + value, 0);
+  const count = results.reduce(accumulate_if_def, 0);
+  show_poll_notification(count);
+  console.log('rdr_poll_feeds end, added %d entries', count);
+}
 
-  if (count) {
-    // I've disabled this for now. If every call to poll-feed potentially does
-    // a badge-refresh call then there is no point to this, it is redundant with
-    // whatever promise finishes last
-    // rdr_badge_refresh(rconn, console).catch(console.error);
+function accumulate_if_def(sum, value) {
+  return isNaN(value) ? sum : sum + value;
+}
 
-    const title = 'Added articles';
-    const message = 'Added articles';
-    rdr_notify(title, message);
+
+function show_poll_notification(num_entries_added) {
+  // Suppress if nothing added
+  if (num_entries_added < 1) {
+    return;
   }
 
-  console.log('Poll feeds completed, added %d entries', count);
+  const title = 'Added articles';
+  const message = 'Added articles';
+  rdr_notify(title, message);
 }
 
 function noop() {}
