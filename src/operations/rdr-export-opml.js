@@ -1,7 +1,8 @@
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_peek_url} from '/src/objects/feed.js';
 import {get_feeds} from '/src/operations/get-feeds.js';
 
-export async function rdr_export_opml(conn, title, console = null_console) {
+export async function rdr_export_opml(conn, title, console = console_stub) {
   const document = create_opml_document(title, console);
 
   // TODO: implement for-each-feed operation, then use it here without buffering
@@ -74,12 +75,3 @@ function append_feed(document, feed, console) {
   const body_element = document.querySelector('body');
   body_element.appendChild(outline);
 }
-
-function noop() {}
-
-const null_console = {
-  debug: noop,
-  log: noop,
-  warn: noop,
-  error: noop
-};
