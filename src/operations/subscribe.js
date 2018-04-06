@@ -1,4 +1,3 @@
-import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
@@ -7,6 +6,7 @@ import {create_feed} from '/src/operations/create-feed.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
+import {rdr_lookup_icon} from '/src/operations/rdr-lookup-icon.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {rdr_poll_feed} from '/src/operations/rdr-poll-feed.js';
 
@@ -57,12 +57,11 @@ export async function rdr_subscribe(
   });
 
   // Set the favicon
-  const fs = new FaviconService();
-  fs.conn = iconn;
-  fs.console = console;
-  fs.skip_fetch = true;
+
   const lookup_url = feed_create_favicon_lookup_url(feed);
-  feed.faviconURLString = await fs.lookup(lookup_url);
+  feed.faviconURLString =
+      await rdr_lookup_icon(iconn, console, true, lookup_url);
+
 
   const stored_feed = await create_feed(rconn, channel, feed);
 

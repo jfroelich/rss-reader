@@ -3,6 +3,7 @@ import {rdr_archive} from '/src/operations/archive-entries.js';
 import {rdr_create_channel} from '/src/operations/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
+import {rdr_lookup_icon} from '/src/operations/rdr-lookup-icon.js';
 import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds.js';
 import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
@@ -62,16 +63,13 @@ async function cli_remove_orphans() {
 async function lookup_favicon(url_string, cached) {
   const url = new URL(url_string);
 
-  const fs = new FaviconService();
-  fs.console = console;
-
   let conn;
   if (cached) {
     conn = await rdr_create_icon_conn();
-    fs.conn = conn;
   }
 
-  const icon_url_string = await fs.lookup(url);
+  const skip_fetch = false;
+  const icon_url_string = await rdr_lookup_icon(conn, console, skip_fetch, url);
   if (cached) {
     conn.close();
   }

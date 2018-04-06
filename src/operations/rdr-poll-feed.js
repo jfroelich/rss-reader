@@ -1,6 +1,5 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import * as color from '/src/lib/color/color.js';
-import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
@@ -13,6 +12,7 @@ import {find_entry_id_by_url} from '/src/operations/find-entry-id-by-url.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
 import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
+import {rdr_lookup_icon} from '/src/operations/rdr-lookup-icon.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {update_feed} from '/src/operations/update-feed.js';
 
@@ -256,7 +256,7 @@ async function poll_entry(rconn, iconn, channel, console, options, entry) {
 
   const document = await entry_parse_response(response);
   entry_update_title(entry, document);
-  await update_entry_icon(iconn, entry, document);
+  await update_entry_icon(iconn, console, entry, document);
   await update_entry_content(entry, document, fetch_image_timeout);
 
   const stored_entry = await create_entry(rconn, channel, console, entry);
@@ -356,14 +356,11 @@ function entry_update_title(entry, document) {
   }
 }
 
-async function update_entry_icon(iconn, entry, document) {
-  const entry_url = new URL(entry_peek_url(entry));
-
-  const fs = new FaviconService();
-  fs.conn = iconn;
-  fs.skip_fetch = true;
-
-  const icon_url_string = await fs.lookup(entry_url, document);
+async function update_entry_icon(iconn, console, entry, document) {
+  const lookup_url = new URL(entry_peek_url(entry));
+  const skip_fetch = true;
+  const icon_url_string =
+      await rdr_lookup_icon(iconn, console, skip_fetch, lookup_url);
   if (icon_url_string) {
     entry.faviconURLString = icon_url_string;
   }
