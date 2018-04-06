@@ -1,17 +1,16 @@
+import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import {feed_create_favicon_lookup_url, feed_has_url} from '/src/objects/feed.js';
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {update_feed} from '/src/operations/update-feed.js';
 
-export async function refresh_feed_icons(rconn, favicon_service, channel) {
-  const feeds = [];
-  await for_each_active_feed(rconn, feed => feeds.push(feed));
-
-  const partial = refresh_feed.bind(null, rconn, favicon_service, channel);
-  const promises = feeds.map(partial);
+export async function refresh_feed_icons(rconn, iconn, channel) {
+  const promises = [];
+  await for_each_active_feed(
+      rconn, feed => promises.push(refresh_feed(rconn, iconn, channel, feed)));
   await Promise.all(promises);
 }
 
-async function refresh_feed(conn, favicon_service, channel, feed) {
+async function refresh_feed(rconn, iconn, channel, feed) {
   if (!feed_has_url(feed)) {
     return;
   }
@@ -20,6 +19,9 @@ async function refresh_feed(conn, favicon_service, channel, feed) {
   if (!lookup_url) {
     return;
   }
+
+  const fs = new FaviconService();
+  fs.conn = iconn;
 
   const icon_url_string = await fs.lookup(lookup_url);
 
@@ -32,6 +34,6 @@ async function refresh_feed(conn, favicon_service, channel, feed) {
 
     const validate = false;
     const set_date_updated = true;
-    await update_feed(conn, channel, feed, validate, set_date_updated);
+    await update_feed(rconn, channel, feed, validate, set_date_updated);
   }
 }

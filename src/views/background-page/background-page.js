@@ -22,14 +22,14 @@ async function handle_compact_favicons_alarm(alarm) {
 
 async function handle_archive_alarm_wakeup(alarm) {
   const conn = await rdr_create_conn();
-  const channel = new BroadcastChannel('reader');
+  const channel = rdr_create_channel();
   await rdr_archive(conn, channel, /* console*/ null, /* max_age */ null);
   channel.close();
   conn.close();
 }
 
 async function handle_lost_entries_alarm(alarm) {
-  const channel = new BroadcastChannel('reader');
+  const channel = rdr_create_channel();
   const conn = await rdr_create_conn();
   let null_console = undefined;
   await remove_lost_entries(conn, channel, null_console);
@@ -38,24 +38,21 @@ async function handle_lost_entries_alarm(alarm) {
 }
 
 async function handle_orphan_entries_alarm(alarm) {
+  const channel = rdr_create_channel();
   const conn = await rdr_create_conn();
-  const channel = new BroadcastChannel('reader');
   await remove_orphans(conn, channel);
   channel.close();
   conn.close();
 }
 
 async function handle_refresh_feed_icons_alarm(alarm) {
-  let channel;
-
+  const channel = rdr_create_channel();
   const proms = [rdr_create_conn(), rdr_create_icon_conn()];
   const [rconn, iconn] = await Promise.all(proms);
-
-  const fs = new FaviconService();
-  fs.conn = iconn;
-  await refresh_feed_icons(rconn, fs, channel);
+  await refresh_feed_icons(rconn, iconn, channel);
   rconn.close();
   iconn.close();
+  channel.close();
 }
 
 async function handle_poll_feeds_alarm(alarm) {

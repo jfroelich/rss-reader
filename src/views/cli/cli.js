@@ -18,14 +18,13 @@ async function cli_archive() {
 }
 
 async function refresh_icons() {
-  let channel;
+  const channel = rdr_create_channel();
   const proms = [rdr_create_conn(), rdr_create_icon_conn()];
   const [rconn, iconn] = await Promise.all(proms);
-  const fs = new FaviconService();
-  fs.conn = iconn;
-  await refresh_feed_icons(rconn, fs, channel);
+  await refresh_feed_icons(rconn, iconn, channel);
   rconn.close();
   iconn.close();
+  channel.close();
 }
 
 async function poll_feeds() {
