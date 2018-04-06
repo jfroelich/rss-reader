@@ -1,12 +1,7 @@
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
 import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {rdr_poll_feed} from '/src/operations/rdr-poll-feed.js';
-
-const null_console = {
-  log: noop,
-  warn: noop,
-  debug: noop
-};
 
 const null_channel = {
   name: 'null-channel',
@@ -27,7 +22,7 @@ const default_options = {
 };
 
 export async function rdr_poll_feeds(
-    rconn, iconn, channel = null_channel, console = null_console,
+    rconn, iconn, channel = null_channel, console = console_stub,
     options = {}) {
   console.log('rdr_poll_feeds start');
   const feeds = [];
