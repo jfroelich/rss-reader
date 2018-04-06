@@ -1,12 +1,6 @@
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_is_valid_id} from '/src/objects/feed.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
-
-const null_console = {
-  warn: noop,
-  debug: noop,
-  log: noop,
-  dir: noop
-};
 
 const null_channel = {
   name: 'null-channel',
@@ -15,7 +9,7 @@ const null_channel = {
 };
 
 export function delete_feed(
-    conn, channel = null_channel, console = null_console, feed_id,
+    conn, channel = null_channel, console = console_stub, feed_id,
     reason_text) {
   if (!feed_is_valid_id(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);
