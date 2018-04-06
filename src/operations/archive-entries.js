@@ -1,20 +1,17 @@
 import {entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/objects/entry.js';
 import {sizeof} from '/src/lib/sizeof/sizeof.js';
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
-const null_console = {
-  log: noop,
-  warn: noop,
-  debug: noop
-};
 
 const null_channel = {
+  name: 'null-channel',
   postMessage: noop,
   close: noop
 };
 
 export function rdr_archive(
-    conn, channel = null_channel, console = null_console,
+    conn, channel = null_channel, console = console_stub,
     max_age = TWO_DAYS_MS) {
   return new Promise(executor.bind(null, conn, channel, max_age, console));
 }
