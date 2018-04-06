@@ -98,8 +98,8 @@ export async function fetch_with_timeout(
   }
 
   if (types && types.length && response.ok) {
-    const mime_type =
-        mime.parse_content_type(response.headers.get('Content-Type'));
+    const content_type = response.headers.get('Content-Type');
+    const mime_type = mime.parse_content_type(content_type);
     if (!types.includes(mime_type)) {
       console.debug('Unacceptable mime type', mime_type, url.href);
       return create_error_response(STATUS_UNACCEPTABLE);
