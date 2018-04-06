@@ -12,9 +12,6 @@ export const rdr_fetch_policy = {
         !url.username && !url.password;
   },
   allows_method: function(raw_method) {
-    // VERY TEMPORARY:
-    console.debug('CHECKING IF METHOD ALLOWED', raw_method);
-
     const method = raw_method ? raw_method.toUpperCase() : 'GET';
     return allowed_methods.includes(method);
   }
