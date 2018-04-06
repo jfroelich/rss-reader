@@ -4,8 +4,7 @@ import * as mime from '/src/lib/mime/mime.js';
 // [200..599] or Chrome whines about it and throws a RangeError
 export const STATUS_UNACCEPTABLE = 599;
 export const STATUS_UNACCEPTABLE_TEXT = 'Unacceptable mime type';
-export const STATUS_FORBIDDEN_METHOD = 598;
-export const STATUS_FORBIDDEN_METHOD_TEXT = 'Forbidden request method';
+// 598 was forbidden method, that is now a part of policy refusal
 export const STATUS_OFFLINE = 597;
 export const STATUS_OFFLINE_TEXT = 'Offline';
 export const STATUS_TIMEOUT = 596;
@@ -14,6 +13,8 @@ export const STATUS_NETWORK_ERROR = 595;
 export const STATUS_NETWORK_ERROR_TEXT = 'Unknown network error';
 export const STATUS_RANGE_ERROR = 594;
 export const STATUS_RANGE_ERROR_TEXT = 'Range error';
+// NOTE: no valid rationale for jump to 594 to 590 here, it is just artifact of
+// legacy code
 export const STATUS_POLICY_REFUSAL = 590;
 export const STATUS_POLICY_REFUSAL_TEXT = 'Refused to fetch';
 
@@ -27,13 +28,23 @@ const default_options = {
   referrerPolicy: 'no-referrer'
 };
 
+const default_policy = {
+  allows_url: function() {
+    return true;
+  },
+  allows_method: function() {
+    return true;
+  }
+};
+
+
 export async function fetch_with_timeout(
-    url, options = {}, policy_allows_url = default_allow_all_policy) {
+    url, options = {}, policy = default_policy) {
   if ((!url instanceof URL)) {
-    throw new TypeError('url is not a URL');
+    throw new TypeError('url is not a URL: ' + url);
   }
 
-  if (!policy_allows_url(url)) {
+  if (!policy.allows_url(url)) {
     console.debug('Refusing to fetch url as against policy', url.href);
     return create_error_response(STATUS_POLICY_REFUSAL);
   }
@@ -59,9 +70,8 @@ export async function fetch_with_timeout(
     }
   }
 
-  const method = merged_options.method.toUpperCase();
-  if (method !== 'GET' && method !== 'HEAD') {
-    return create_error_response(STATUS_FORBIDDEN_METHOD);
+  if (!policy.allows_method(merged_options.method)) {
+    return create_error_response(STATUS_POLICY_REFUSAL);
   }
 
   if (!navigator.onLine) {
@@ -104,8 +114,6 @@ function lookup_status_text(status) {
   switch (status) {
     case STATUS_UNACCEPTABLE:
       return STATUS_UNACCEPTABLE_TEXT;
-    case STATUS_FORBIDDEN_METHOD:
-      return STATUS_FORBIDDEN_METHOD_TEXT;
     case STATUS_OFFLINE:
       return STATUS_OFFLINE_TEXT;
     case STATUS_TIMEOUT:
@@ -125,9 +133,7 @@ export function create_error_response(status) {
   return new Response(body, init);
 }
 
-function default_allow_all_policy(url) {
-  return true;
-}
+
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
