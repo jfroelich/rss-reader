@@ -37,8 +37,7 @@ const default_policy = {
   }
 };
 
-export async function fetch_with_timeout(
-    url, options = {}, policy = default_policy) {
+export async function load(url, options = {}, policy = default_policy) {
   if (!('href' in url)) {
     throw new TypeError('url is not a URL: ' + url);
   }
@@ -78,11 +77,6 @@ export async function fetch_with_timeout(
   }
 
   const fetch_promise = fetch(url.href, merged_options);
-
-  // await turns rejection into exception. fetch rejects with an obtuse error
-  // message when trying to fetch a bad url. fetch_with_timeout should only
-  // throw in the case of a programming error, so trap the error and return an
-  // symbolic error response.
 
   let response;
   try {
@@ -131,8 +125,6 @@ export function create_error_response(status) {
   const init = {status: status, statusText: lookup_status_text(status)};
   return new Response(body, init);
 }
-
-
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
