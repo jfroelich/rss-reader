@@ -88,11 +88,12 @@ channel.onmessageerror = function(event) {
 };
 
 async function on_entry_added_message(message) {
+  // TEMP: looking into why entries do not show up when polling via refresh
+  // NOTE: This is not even getting called for some reason
+  console.debug('on_entry_added_message', message);
+
   const unread_count = slideshow_count_unread();
 
-  // TEMP: looking into why entries do not show up when polling via refresh
-  console.debug(
-      'Handling entry-added message', message, 'unread count', unread_count);
   if (unread_count <= 3) {
     const conn = await rdr_create_conn();
     await slide_load_and_append_multiple(conn);
