@@ -1,8 +1,9 @@
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_is_valid_id, is_feed} from '/src/objects/feed.js';
 
 // Mark a feed as active in the database
 export function activate_feed(
-    conn, channel = null_channel, console = null_console, feed_id) {
+    conn, channel = null_channel, console = console_stub, feed_id) {
   // An invalid argument is a persistent programmer error, not a promise
   // rejection
   if (!feed_is_valid_id(feed_id)) {
@@ -57,14 +58,9 @@ function request_onsuccess(feed_id, event) {
 }
 
 const null_channel = {
+  name: 'null-channel',
   postMessage: noop,
   close: noop
 };
 
 function noop() {}
-
-const null_console = {
-  warn: noop,
-  log: noop,
-  debug: noop
-};
