@@ -27,8 +27,7 @@ export async function create_entry(
   storable_entry.dateCreated = new Date();
   delete storable_entry.dateUpdated;
 
-  let void_channel;
-  const entry_id = await update_entry(conn, void_channel, storable_entry);
+  const entry_id = await update_entry(conn, void channel, storable_entry);
 
   channel.postMessage({type: 'entry-added', id: entry_id});
 
