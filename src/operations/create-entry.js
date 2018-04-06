@@ -3,6 +3,12 @@ import {filter_empty_properties} from '/src/lib/object/object.js';
 import {entry_is_valid, entry_sanitize, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
 import {update_entry} from '/src/operations/update-entry.js';
 
+const null_channel = {
+  name: 'null-channel',
+  postMessage: noop,
+  close: noop
+};
+
 export async function create_entry(
     conn, channel = null_channel, console = console_stub, entry) {
   if (!is_entry(entry)) {
@@ -38,9 +44,3 @@ export async function create_entry(
 }
 
 function noop() {}
-
-const null_channel = {
-  name: 'null-channel',
-  postMessage: noop,
-  close: noop
-};
