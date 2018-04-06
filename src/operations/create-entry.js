@@ -1,9 +1,10 @@
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {filter_empty_properties} from '/src/lib/object/object.js';
 import {entry_is_valid, entry_sanitize, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
 import {update_entry} from '/src/operations/update-entry.js';
 
 export async function create_entry(
-    conn, channel = null_channel, console = null_console, entry) {
+    conn, channel = null_channel, console = console_stub, entry) {
   if (!is_entry(entry)) {
     throw new TypeError('entry argument is not an entry object: ' + entry);
   }
@@ -40,12 +41,7 @@ export async function create_entry(
 function noop() {}
 
 const null_channel = {
+  name: 'null-channel',
   postMessage: noop,
   close: noop
-};
-
-const null_console = {
-  log: noop,
-  warn: noop,
-  debug: noop
 };
