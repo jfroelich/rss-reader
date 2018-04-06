@@ -37,10 +37,9 @@ const default_policy = {
   }
 };
 
-
 export async function fetch_with_timeout(
     url, options = {}, policy = default_policy) {
-  if ((!url instanceof URL)) {
+  if (!('href' in url)) {
     throw new TypeError('url is not a URL: ' + url);
   }
 
