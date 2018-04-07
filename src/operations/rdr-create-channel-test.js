@@ -37,7 +37,7 @@ function test1() {
     console.debug('closing channels');
     a.close();
     b.close();
-  }, 1000);
+  }, 20);
 
   console.debug('test1 complete but messages may be outstanding');
 }
@@ -59,7 +59,7 @@ function test2() {
   setTimeout(_ => {
     console.debug('closing channel');
     a.close();
-  }, 3000);
+  }, 20);
   console.debug('test2 complete (still pending possible)');
 }
 
