@@ -78,8 +78,15 @@ export async function rdr_poll_feed(
     return 0;
   }
 
+
+  // BUG: something is wrong here, this is basically failing 100% of the time
+  // when ignore_modified_check is false, with both modified dates being the
+  // same value. Perhaps I am not updating the feed.dateLastModified value
+  // correctly?
+
   const feed_lmd = feed.dateLastModified;
   const resp_lmd = new Date(response.headers.get('Last-Modified'));
+
 
   if (!ignore_modified_check && feed_lmd && resp_lmd &&
       !isNaN(resp_lmd.getTime()) && feed_lmd.getTime() === resp_lmd.getTime()) {
