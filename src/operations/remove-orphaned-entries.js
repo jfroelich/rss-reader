@@ -1,11 +1,18 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_is_valid_id} from '/src/objects/feed.js';
 
-export function remove_orphans(conn, channel, console = console_stub) {
-  return new Promise(executor.bind(null, conn, channel, console_stub));
+const channel_stub = {
+  name: 'channel-stub',
+  postMessage: noop,
+  close: noop
+};
+
+export function remove_orphans(
+    conn, channel = channel_stub, console = console_stub) {
+  return new Promise(executor.bind(null, conn, channel, console));
 }
 
-function executor(conn, channel, console_stub, resolve, reject) {
+function executor(conn, channel, console, resolve, reject) {
   const entry_ids = [];
   const txn = conn.transaction(['feed', 'entry'], 'readwrite');
   txn.oncomplete = txn_oncomplete.bind(txn, channel, entry_ids, resolve);
@@ -35,12 +42,10 @@ function executor(conn, channel, console_stub, resolve, reject) {
 }
 
 function txn_oncomplete(channel, entry_ids, callback, event) {
-  if (channel && entry_ids.length) {
-    const message = {type: 'entry-deleted', id: null, reason: 'orphan'};
-    for (const id of entry_ids) {
-      message.id = id;
-      channel.postMessage(message);
-    }
+  const message = {type: 'entry-deleted', id: null, reason: 'orphan'};
+  for (const id of entry_ids) {
+    message.id = id;
+    channel.postMessage(message);
   }
 
   callback(entry_ids);
