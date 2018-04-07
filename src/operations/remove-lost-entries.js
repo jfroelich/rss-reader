@@ -15,7 +15,7 @@ export async function remove_lost_entries(
 function executor(conn, channel, console, resolve, reject) {
   const ids = [];
   const txn = conn.transaction('entry', 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(txn, channel, ids, resolve);
+  txn.oncomplete = txn_oncomplete.bind(txn, channel, console, ids, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const store = txn.objectStore('entry');
@@ -37,7 +37,7 @@ function request_onsuccess(ids, console, event) {
   }
 }
 
-function txn_oncomplete(channel, ids, callback, event) {
+function txn_oncomplete(channel, console, ids, callback, event) {
   console.debug('Removed %d lost entries', ids.length);
 
   const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
