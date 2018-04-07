@@ -1,10 +1,11 @@
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_is_valid_id} from '/src/objects/feed.js';
 
-export function remove_orphans(conn, channel) {
-  return new Promise(executor.bind(null, conn, channel));
+export function remove_orphans(conn, channel, console = console_stub) {
+  return new Promise(executor.bind(null, conn, channel, console_stub));
 }
 
-function executor(conn, channel, resolve, reject) {
+function executor(conn, channel, console_stub, resolve, reject) {
   const entry_ids = [];
   const txn = conn.transaction(['feed', 'entry'], 'readwrite');
   txn.oncomplete = txn_oncomplete.bind(txn, channel, entry_ids, resolve);

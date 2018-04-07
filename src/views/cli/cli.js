@@ -54,7 +54,7 @@ async function cli_remove_lost_entries() {
 async function cli_remove_orphans() {
   const conn = await rdr_create_conn();
   const channel = new BroadcastChannel('reader');
-  await remove_orphans_impl(conn, channel);
+  await remove_orphans_impl(conn, channel, console);
   channel.close();
   conn.close();
 }

@@ -31,8 +31,7 @@ async function handle_archive_alarm_wakeup(alarm) {
 async function handle_lost_entries_alarm(alarm) {
   const channel = rdr_create_channel();
   const conn = await rdr_create_conn();
-  let null_console = undefined;
-  await remove_lost_entries(conn, channel, null_console);
+  await remove_lost_entries(conn, channel, void console);
   channel.close();
   conn.close();
 }
@@ -40,7 +39,7 @@ async function handle_lost_entries_alarm(alarm) {
 async function handle_orphan_entries_alarm(alarm) {
   const channel = rdr_create_channel();
   const conn = await rdr_create_conn();
-  await remove_orphans(conn, channel);
+  await remove_orphans(conn, channel, void console);
   channel.close();
   conn.close();
 }
