@@ -489,12 +489,16 @@ function import_menu_option_handle_click(event) {
 async function uploader_input_onchange(event) {
   const files = event.target.files;
 
+  // Create a function-call lifetime channel and use it instead of the
+  // page-lifetime channel to avoid the no-loopback issue
+  const onchange_channel = rdr_create_channel();
+
   const open_promises = [rdr_create_conn(), rdr_create_icon_conn()];
   const [rconn, iconn] = await Promise.all(open_promises);
 
   const ctx = {};
   ctx.fetch_timeout = 10 * 100;
-  ctx.channel = channel;
+  ctx.channel = onchange_channel;
   ctx.console = console;  // enable logging for now
   ctx.rconn = rconn;
   ctx.iconn = iconn;
@@ -503,6 +507,7 @@ async function uploader_input_onchange(event) {
 
   rconn.close();
   iconn.close();
+  onchange_channel.close();
 
   console.log('Import completed');
 }
