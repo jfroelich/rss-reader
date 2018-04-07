@@ -21,7 +21,7 @@ async function refresh_icons() {
   const channel = rdr_create_channel();
   const proms = [rdr_create_conn(), rdr_create_icon_conn()];
   const [rconn, iconn] = await Promise.all(proms);
-  await refresh_feed_icons(rconn, iconn, channel);
+  await refresh_feed_icons(rconn, iconn, channel, console);
   rconn.close();
   iconn.close();
   channel.close();
