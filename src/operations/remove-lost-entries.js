@@ -1,7 +1,14 @@
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {entry_has_url} from '/src/objects/entry.js';
 
+const channel_stub = {
+  name: 'channel-stub',
+  postMessage: noop,
+  close: noop
+};
+
 export async function remove_lost_entries(
-    conn, channel = NULL_CHANNEL, console = NULL_CONSOLE) {
+    conn, channel = channel_stub, console = console_stub) {
   return new Promise(executor.bind(null, conn, channel, console));
 }
 
@@ -43,15 +50,3 @@ function txn_oncomplete(channel, ids, callback, event) {
 }
 
 function noop() {}
-
-const NULL_CHANNEL = {
-  postMessage: noop,
-  close: noop
-};
-
-// A partial stub for console that suppresses log messages
-const NULL_CONSOLE = {
-  log: noop,
-  warn: noop,
-  debug: noop
-};
