@@ -156,14 +156,7 @@ async function slide_load_and_append_multiple(conn, limit) {
   console.log('Appending slides (limit: %d)', limit);
   const offset = slideshow_count_unread();
 
-  let entries;
-  try {
-    entries = await find_viewable_entries(conn, offset, limit);
-  } catch (error) {
-    console.error(error);
-    error_message_show('There was a problem loading articles from storage');
-    return 0;
-  }
+  let entries = await find_viewable_entries(conn, offset, limit);
 
   for (const entry of entries) {
     slide_append(entry);
@@ -208,6 +201,9 @@ function create_article_title_element(entry) {
     title_element.setAttribute('title', safe_title);
 
     let filtered_safe_title = filter_publisher(safe_title);
+
+    // TODO: does html_truncate throw in the usual case? I believe it should not
+    // but I forgot. I would like to remove this try/catch
     try {
       filtered_safe_title = html_truncate(filtered_safe_title, 300);
     } catch (error) {
@@ -298,14 +294,7 @@ async function slide_onclick(event) {
     return false;
   }
 
-  let conn;
-  try {
-    conn = await rdr_create_conn();
-  } catch (error) {
-    console.error(error);
-    return false;
-  }
-
+  const conn = await rdr_create_conn();
   await slide_mark_read(conn, clicked_slide);
   conn.close();
 }
@@ -342,29 +331,15 @@ async function slide_next() {
   const slide_unread_count = slideshow_count_unread();
 
   if (slide_unread_count > 1) {
-    let conn;
-    try {
-      conn = await rdr_create_conn();
-    } catch (error) {
-      console.error(error);
-      return;
-    }
-
+    const conn = await rdr_create_conn();
     await slide_mark_read(conn, current_slide);
     conn.close();
-
     Slideshow.next();
     return;
   }
 
   let append_count = 0;
-  let conn;
-  try {
-    conn = await rdr_create_conn();
-  } catch (error) {
-    console.error(error);
-    return;
-  }
+  const conn = await rdr_create_conn();
 
   if (slide_unread_count < 2) {
     append_count = await slide_load_and_append_multiple(conn);
@@ -671,12 +646,6 @@ function feeds_container_append_feed(feed) {
   feed_element.appendChild(feed_info_element);
 
   feeds_container.appendChild(feed_element);
-}
-
-function feed_compare(a, b) {
-  const atitle = a.title ? a.title.toLowerCase() : '';
-  const btitle = b.title ? b.title.toLowerCase() : '';
-  return indexedDB.cmp(atitle, btitle);
 }
 
 function tab_open(url) {
