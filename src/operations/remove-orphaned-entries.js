@@ -50,3 +50,5 @@ function txn_oncomplete(channel, entry_ids, callback, event) {
 
   callback(entry_ids);
 }
+
+function noop() {}
