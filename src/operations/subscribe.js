@@ -1,3 +1,4 @@
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
@@ -11,7 +12,7 @@ import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {rdr_poll_feed} from '/src/operations/rdr-poll-feed.js';
 
 export async function rdr_subscribe(
-    rconn, iconn, channel, console = null_console, fetch_timeout = 2000,
+    rconn, iconn, channel, console = console_stub, fetch_timeout = 2000,
     notify_flag = false, url) {
   console.log('Subscribing to feed', url.href);
 
@@ -97,11 +98,3 @@ async function poll_feed_unawaited(console, feed) {
   rconn.close();
   iconn.close();
 }
-
-function noop() {}
-
-const null_console = {
-  log: noop,
-  warn: noop,
-  debug: noop
-};
