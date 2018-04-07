@@ -1,3 +1,4 @@
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import * as filelib from '/src/lib/file/file.js';
 import * as opml_parser from '/src/lib/opml-parser/opml-parser.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
@@ -7,18 +8,12 @@ const feed_mime_types = [
   'application/xml', 'application/xhtml+xml', 'text/xml'
 ];
 
-const null_console = {
-  log: noop,
-  debug: noop,
-  warn: noop
-};
-
 const default_context = {
   rconn: null,
   iconn: null,
   channel: null,
   fetch_timeout: 2000,
-  console: null_console
+  console: console_stub
 };
 
 export function rdr_import(context, files) {
