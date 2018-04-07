@@ -69,8 +69,6 @@ async function import_file(file) {
   return count;
 }
 
-function noop() {}
-
 function dedup_urls(urls) {
   const unique_urls = [], seen_url_strings = [];
   for (const url of urls) {
