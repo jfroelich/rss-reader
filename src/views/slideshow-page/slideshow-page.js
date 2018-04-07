@@ -88,12 +88,7 @@ channel.onmessageerror = function(event) {
 };
 
 async function on_entry_added_message(message) {
-  // TEMP: looking into why entries do not show up when polling via refresh
-  // NOTE: This is not even getting called for some reason
-  console.debug('on_entry_added_message', message);
-
   const unread_count = slideshow_count_unread();
-
   if (unread_count <= 3) {
     const conn = await rdr_create_conn();
     await slide_load_and_append_multiple(conn);
@@ -400,6 +395,10 @@ async function refresh_anchor_onclick(event) {
 
   refresh_in_progress = true;
 
+  // Create a local channel object because apparently a channel cannot notify
+  // itself (at least in Chrome 66) despite what spec states
+  const onclick_channel = rdr_create_channel();
+
   const rconn = await rdr_create_conn();
   const iconn = await rdr_create_icon_conn();
 
@@ -410,14 +409,13 @@ async function refresh_anchor_onclick(event) {
   // NOTE: temporarily enable console during dev
   let console_arg = console;  // void console;
 
-  // TEMP: I want to ensure that channel is defined in case the issue with
-  // feeds not showing up is that channel is somehow undefined here
-  console.debug('During refresh, channel state: %o', channel);
+  await rdr_poll_feeds(rconn, iconn, onclick_channel, console_arg, options);
 
-  await rdr_poll_feeds(rconn, iconn, channel, console_arg, options);
+  // Dispose of resources. Do not close page-lifetime channel, but do close the
+  // function-call-lifetime channel as it should be released asap
   rconn.close();
   iconn.close();
-  // Do not close channel
+  onclick_channel.close();
 
   refresh_in_progress = false;
 }
