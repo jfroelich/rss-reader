@@ -99,7 +99,7 @@ chrome.browserAction.onClicked.addListener(rdr_open_view);
 
 async function badge_init() {
   const conn = await rdr_create_conn();
-  await rdr_badge_refresh(conn, void console);
+  rdr_badge_refresh(conn, void console);
   conn.close();
 }
 
