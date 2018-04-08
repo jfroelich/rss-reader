@@ -24,29 +24,29 @@ const INACCESSIBLE_CONTENT_DESCRIPTORS = [
   {pattern: /ripe\.net$/i, reason: 'requires-cookies'}
 ];
 
-export async function rdr_poll_entry(
-    rconn, iconn, channel, console, options, entry) {
+export async function rdr_poll_entry(entry) {
   if (!entry_has_url(entry)) {
     return;
   }
 
   entry_rewrite_tail_url(entry, rewrite_rules);
-  if (await entry_exists(rconn, entry)) {
+  if (await entry_exists(this.rconn, entry)) {
     return;
   }
 
-  const response = await fetch_entry(entry, options.fetch_html_timeout);
-  if (await handle_entry_redirect(rconn, entry, response, rewrite_rules)) {
+  const response = await fetch_entry(entry, this.fetch_html_timeout);
+  if (await handle_entry_redirect(this.rconn, entry, response, rewrite_rules)) {
     return;
   }
 
   const document = await parse_response(response);
   update_entry_title(entry, document);
-  await update_entry_icon(iconn, console, entry, document);
+  await update_entry_icon(this.iconn, this.console, entry, document);
   await update_entry_content(
-      entry, document, console, options.fetch_image_timeout);
+      entry, document, this.console, this.fetch_image_timeout);
 
-  const stored_entry = await create_entry(rconn, channel, console, entry);
+  const stored_entry =
+      await create_entry(this.rconn, this.channel, this.console, entry);
   return stored_entry.id;
 }
 

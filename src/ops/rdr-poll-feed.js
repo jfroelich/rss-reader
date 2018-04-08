@@ -141,9 +141,15 @@ async function poll_entries(
     }
   }
 
-  const partial =
-      rdr_poll_entry.bind(null, rconn, iconn, channel, console, options);
-  const proms = entries.map(partial);
+  const pec = {};
+  pec.rconn = rconn;
+  pec.iconn = iconn;
+  pec.channel = channel;
+  pec.console = console;
+  pec.fetch_html_timeout = options.fetch_html_timeout;
+  pec.fetch_image_timeout = options.fetch_image_timeout;
+
+  const proms = entries.map(rdr_poll_entry, pec);
   const entry_ids = await Promise.all(proms);
   const count = entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
   return count;
