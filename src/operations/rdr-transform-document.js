@@ -60,7 +60,7 @@ export async function rdr_transform_document(
   // This should occur before filtering attributes because it makes decisions
   // based on attribute values.
   // This should occur after filtering hidden elements
-  filters.cf_filter_boilerplate(document);
+  filters.cf_filter_boilerplate(document, console);
 
   const condense_copy_attrs_flag = false;
   filters.cf_condense_tagnames(document, condense_copy_attrs_flag);

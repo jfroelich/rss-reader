@@ -1,7 +1,7 @@
 import * as boilerplate from '/src/lib/boilerplate/boilerplate.js';
 
-export function filter_boilerplate(document) {
-  boilerplate.annotate(document);
+export function filter_boilerplate(document, console) {
+  boilerplate.annotate(document, console);
   const best_element = document.querySelector('[data-bp-max]');
   if (!best_element) {
     return;

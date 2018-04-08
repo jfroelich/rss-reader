@@ -1,6 +1,6 @@
 import * as string from '/src/lib/string/string.js';
 
-export function annotate(document) {
+export function annotate(document, console) {
   if (!(document instanceof Document)) {
     throw new TypeError('Invalid document argument');
   }
