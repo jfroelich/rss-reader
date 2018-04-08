@@ -2,7 +2,7 @@ import {filter_empty_properties} from '/src/lib/object/object.js';
 import {entry_is_valid, entry_sanitize, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
 import {update_entry} from '/src/ops/update-entry.js';
 
-export async function create_entry(entry) {
+export async function rdr_create_entry(entry) {
   if (!is_entry(entry)) {
     throw new TypeError('entry argument is not an entry object: ' + entry);
   }

@@ -1,4 +1,4 @@
-The `create_entry` function creates a new entry within the reader database.
+The `rdr_create_entry` function creates a new entry within the reader database.
 
 Internally, the entry object is cloned before being stored. In other words, this is a *pure function*, apart from the permanent database modification side-effect, because none of the inputs are modified. The entry object must be structured-cloneable, as in, serializable.
 

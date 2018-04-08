@@ -4,8 +4,8 @@ import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/lib/sniff/sniff.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {entry_append_url, entry_has_url, entry_is_valid_id, entry_peek_url} from '/src/objects/entry.js';
-import {create_entry} from '/src/ops/create-entry.js';
 import {find_entry_id_by_url} from '/src/ops/find-entry-id-by-url.js';
+import {rdr_create_entry} from '/src/ops/rdr-create-entry.js';
 import {rdr_fetch_html} from '/src/ops/rdr-fetch-html.js';
 import {rdr_lookup_icon} from '/src/ops/rdr-lookup-icon.js';
 import {rdr_transform_document} from '/src/ops/rdr-transform-document.js';
@@ -46,8 +46,7 @@ export async function rdr_poll_entry(entry) {
   cec.conn = this.rconn;
   cec.channel = this.channel;
   cec.console = this.console;
-
-  const stored_entry = await create_entry.call(cec, entry);
+  const stored_entry = await rdr_create_entry.call(cec, entry);
   return stored_entry.id;
 }
 
