@@ -131,32 +131,9 @@ export async function rdr_poll_feed(
   const set_date_updated = true;
   await update_feed(rconn, channel, storable_feed, validate, set_date_updated);
 
-  // TODO: this epilogue should be moved into its own helper function named
-  // something like poll-entries
-
-  console.debug(
-      'Processing %d entries for feed', parsed_feed.entries.length,
-      tail_url.href);
-
-  const coerced_entries = parsed_feed.entries.map(coerce_entry);
-  const entries = dedup_entries(coerced_entries);
-
-  for (const entry of entries) {
-    entry.feed = storable_feed.id;
-    entry.feedTitle = storable_feed.title;
-    entry.faviconURLString = storable_feed.faviconURLString;
-
-    if (storable_feed.datePublished && !entry.datePublished) {
-      entry.datePublished = storable_feed.datePublished;
-    }
-  }
-
-  const poll_entry_partial =
-      rdr_poll_entry.bind(null, rconn, iconn, channel, console, options);
-
-  const proms = entries.map(poll_entry_partial);
-  const entry_ids = await Promise.all(proms);
-  const count = entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
+  const count = await poll_entries(
+      rconn, iconn, channel, console, options, parsed_feed.entries,
+      storable_feed);
 
   if (badge_update && count) {
     rdr_badge_refresh(rconn, console).catch(console.error);
@@ -169,6 +146,35 @@ export async function rdr_poll_feed(
     rdr_notify(title, message);
   }
 
+  return count;
+}
+
+async function poll_entries(
+    rconn, iconn, channel, console, options, entries, feed) {
+  const feed_url_string = feed_peek_url(feed);
+
+  console.debug(
+      'Processing %d entries for feed', entries.length, feed_url_string);
+
+  const coerced_entries = entries.map(coerce_entry);
+  entries = dedup_entries(coerced_entries);
+
+  // Propagate feed properties to entries
+  for (const entry of entries) {
+    entry.feed = feed.id;
+    entry.feedTitle = feed.title;
+    entry.faviconURLString = feed.faviconURLString;
+
+    if (feed.datePublished && !entry.datePublished) {
+      entry.datePublished = feed.datePublished;
+    }
+  }
+
+  const partial =
+      rdr_poll_entry.bind(null, rconn, iconn, channel, console, options);
+  const proms = entries.map(partial);
+  const entry_ids = await Promise.all(proms);
+  const count = entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
   return count;
 }
 
