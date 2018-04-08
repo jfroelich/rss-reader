@@ -1,6 +1,7 @@
 import * as filters from '/src/content-filters/content-filters.js';
 
-async function rdr_transform_document(document, document_url, options = {}) {
+export async function rdr_transform_document(
+    document, document_url, options = {}) {
   if (!(document instanceof Document)) {
     throw new TypeError('document is not a Document');
   }
