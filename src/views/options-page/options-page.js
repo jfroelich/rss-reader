@@ -2,11 +2,11 @@ import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import * as perm from '/src/lib/permissions/permissions.js';
 import {feed_peek_url} from '/src/objects/feed.js';
-import {activate_feed} from '/src/operations/activate-feed.js';
 import {deactivate_feed} from '/src/operations/deactivate-feed.js';
 import {delete_feed} from '/src/operations/delete-feed.js';
 import {find_feed_by_id} from '/src/operations/find-feed-by-id.js';
 import {get_feeds} from '/src/operations/get-feeds.js';
+import {rdr_activate_feed} from '/src/operations/rdr-activate-feed.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
 import {rdr_subscribe} from '/src/operations/subscribe.js';
@@ -386,7 +386,7 @@ async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const conn = await rdr_create_conn();
-  await activate_feed(conn, channel, void console, feed_id);
+  await rdr_activate_feed(conn, channel, void console, feed_id);
   conn.close();
 
   // Mark the corresponding feed element displayed in the view as active

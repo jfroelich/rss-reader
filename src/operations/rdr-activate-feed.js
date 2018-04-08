@@ -2,7 +2,7 @@ import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_is_valid_id, is_feed} from '/src/objects/feed.js';
 
 // Mark a feed as active in the database
-export function activate_feed(
+export function rdr_activate_feed(
     conn, channel = null_channel, console = console_stub, feed_id) {
   // An invalid argument is a persistent programmer error, not a promise
   // rejection
