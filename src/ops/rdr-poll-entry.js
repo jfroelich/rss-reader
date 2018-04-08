@@ -46,7 +46,8 @@ export async function rdr_poll_entry(entry) {
   cec.conn = this.rconn;
   cec.channel = this.channel;
   cec.console = this.console;
-  const stored_entry = await rdr_create_entry.call(cec, entry);
+  const validate = true;
+  const stored_entry = await rdr_create_entry.call(cec, entry, validate);
   return stored_entry.id;
 }
 
