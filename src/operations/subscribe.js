@@ -89,7 +89,6 @@ async function poll_feed_unawaited(console, feed) {
 
   const options = {};
   options.ignore_recency_check = true;
-  options.ignore_modified_check = true;
   options.notify = false;
 
   await rdr_poll_feed(rconn, iconn, channel, console, options, feed);

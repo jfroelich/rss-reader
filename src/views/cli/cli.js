@@ -34,7 +34,6 @@ async function poll_feeds() {
 
   const options = {};
   options.ignore_recency_check = true;
-  options.ignore_modified_check = true;
 
   await rdr_poll_feeds(rconn, iconn, channel, console, options);
 

@@ -65,7 +65,6 @@ async function handle_poll_feeds_alarm(alarm) {
 
   const options = {};
   options.ignore_recency_check = false;
-  options.ignore_modified_check = false;
   options.notify = true;
 
   const rconn = await rdr_create_conn();

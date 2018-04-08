@@ -388,7 +388,6 @@ async function refresh_anchor_onclick(event) {
 
   const options = {};
   options.ignore_recency_check = true;
-  options.ignore_modified_check = true;
 
   // NOTE: temporarily enable console during dev
   let console_arg = console;  // void console;

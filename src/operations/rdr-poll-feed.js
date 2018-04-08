@@ -8,11 +8,9 @@ import {rdr_notify} from '/src/operations/rdr-notify.js';
 import {rdr_poll_entry} from '/src/operations/rdr-poll-entry.js';
 import {update_feed} from '/src/operations/update-feed.js';
 
-
 export async function rdr_poll_feed(
     rconn, iconn, channel, console, options = {}, feed) {
   const ignore_recency_check = options.ignore_recency_check;
-  const ignore_modified_check = options.ignore_modified_check;
   const recency_period = options.recency_period;
   const badge_update = options.badge_update;
   const notify = options.notify;
@@ -32,8 +30,6 @@ export async function rdr_poll_feed(
 
   const tail_url = new URL(feed_peek_url(feed));
 
-  // Although this is borderline a programmer error, tolerate attempting to
-  // poll an inactive feed
   if (!feed.active) {
     console.debug('Ignoring inactive feed', tail_url.href);
     return 0;
@@ -41,7 +37,7 @@ export async function rdr_poll_feed(
 
   console.log('Polling feed "%s"', feed.title, tail_url.href);
 
-  // If the feed was polled too recently, exit
+  // Exit if the feed was checked too recently
   if (!ignore_recency_check && feed.dateFetched) {
     const current_date = new Date();
     const elapsed_ms = current_date - feed.dateFetched;
@@ -69,31 +65,6 @@ export async function rdr_poll_feed(
     return 0;
   }
 
-  const feed_lmd = feed.dateLastModified;
-  const resp_lmd = new Date(response.headers.get('Last-Modified'));
-  /*
-    if (!ignore_modified_check && feed_lmd && resp_lmd &&
-        !isNaN(resp_lmd.getTime()) && feed_lmd.getTime() === resp_lmd.getTime())
-    { console.debug( 'Feed not modified', tail_url.href, feed_lmd.getTime(),
-          resp_lmd.getTime());
-      const dirtied = handle_fetch_success(feed);
-      if (dirtied) {
-        // TODO: actually this is not using any of the fetched data, so this
-        // should not be revalidating? validate should be false here, right?
-
-        // TODO: do I even care about considering this successful? Maybe this
-        // case should just be a noop and no state modification should take
-    place
-        // and defer it until the feed actually changes?
-
-        const validate = true;
-        const set_date_updated = true;
-        await update_feed(rconn, channel, feed, validate, set_date_updated);
-      }
-      return 0;
-    }
-  */
-
   // TODO: move this block into its own function, something like
   // try-parse-feed-helper, return undefined if should exit due to error
   // TODO: there should be a way to parse without an error occurring, because
@@ -115,7 +86,7 @@ export async function rdr_poll_feed(
   }
 
   const response_url = new URL(response.url);
-
+  const resp_lmd = new Date(response.headers.get('Last-Modified'));
   const fetch_info = {
     request_url: tail_url,
     response_url: response_url,

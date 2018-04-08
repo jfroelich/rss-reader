@@ -11,7 +11,6 @@ const null_channel = {
 
 const default_options = {
   ignore_recency_check: false,
-  ignore_modified_check: false,
   recency_period: 5 * 60 * 1000,
   fetch_feed_timeout: 5000,
   fetch_html_timeout: 5000,
