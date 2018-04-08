@@ -5,18 +5,6 @@ export function rdr_activate_feed(feed_id) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }
 
-  if (!this.channel) {
-    throw new Error('channel missing from context');
-  }
-
-  if (!this.conn) {
-    throw new Error('conn missing from context');
-  }
-
-  if (!this.console) {
-    throw new Error('console missing from context');
-  }
-
   return new Promise(executor.bind(this, feed_id));
 }
 
