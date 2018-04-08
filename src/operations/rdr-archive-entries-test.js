@@ -9,13 +9,9 @@ const channel_stub = {
 };
 
 async function test() {
-  // TODO: rdr_create_conn should accept a console parameter, and this should
-  // pass along console
-
-  let max_age;
-  let version;
-  let timeout;
-  const conn = await rdr_create_conn('archive-entries-test', version, timeout);
+  let version, timeout, max_age;
+  const conn =
+      await rdr_create_conn('archive-entries-test', version, timeout, console);
   await rdr_archive(conn, channel_stub, console, max_age);
   conn.close;
   await idb_remove(conn.name);

@@ -1,16 +1,15 @@
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {idb_open} from '/src/lib/idb/idb.js';
 import {ENTRY_MAGIC} from '/src/objects/entry.js';
 import {FEED_MAGIC} from '/src/objects/feed.js';
 
-// Create a connection to the reader database. Returns a promise.
-export function rdr_create_conn(name = 'reader', version = 24, timeout = 500) {
-  return idb_open(name, version, on_upgrade_needed, timeout);
+export function rdr_create_conn(
+    name = 'reader', version = 24, timeout = 500, console = console_stub) {
+  return idb_open(
+      name, version, on_upgrade_needed.bind(null, console), timeout, console);
 }
 
-// Helper for open. Does the database upgrade. This should never be
-// called directly. To do an upgrade, call open with a higher version
-// number.
-function on_upgrade_needed(event) {
+function on_upgrade_needed(console, event) {
   const conn = event.target.result;
   const txn = event.target.transaction;
   let feed_store, entry_store;
