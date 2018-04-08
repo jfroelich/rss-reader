@@ -42,8 +42,12 @@ export async function rdr_poll_entry(entry) {
   await update_entry_content(
       entry, document, this.console, this.fetch_image_timeout);
 
-  const stored_entry =
-      await create_entry(this.rconn, this.channel, this.console, entry);
+  const cec = {};
+  cec.conn = this.rconn;
+  cec.channel = this.channel;
+  cec.console = this.console;
+
+  const stored_entry = await create_entry.call(cec, entry);
   return stored_entry.id;
 }
 

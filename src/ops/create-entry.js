@@ -1,16 +1,8 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {filter_empty_properties} from '/src/lib/object/object.js';
 import {entry_is_valid, entry_sanitize, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
 import {update_entry} from '/src/ops/update-entry.js';
 
-const null_channel = {
-  name: 'null-channel',
-  postMessage: noop,
-  close: noop
-};
-
-export async function create_entry(
-    conn, channel = null_channel, console = console_stub, entry) {
+export async function create_entry(entry) {
   if (!is_entry(entry)) {
     throw new TypeError('entry argument is not an entry object: ' + entry);
   }
@@ -33,14 +25,11 @@ export async function create_entry(
   storable_entry.dateCreated = new Date();
   delete storable_entry.dateUpdated;
 
-  const entry_id = await update_entry(conn, void channel, storable_entry);
+  const entry_id = await update_entry(this.conn, void channel, storable_entry);
 
-  channel.postMessage({type: 'entry-added', id: entry_id});
+  this.channel.postMessage({type: 'entry-added', id: entry_id});
 
-  console.log('Created entry in database %s with new id', conn.name, entry_id);
-
+  this.console.log('Created entry', entry_id);
   storable_entry.id = entry_id;
   return storable_entry;
 }
-
-function noop() {}
