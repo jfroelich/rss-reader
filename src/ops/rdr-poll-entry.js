@@ -10,9 +10,6 @@ import {rdr_fetch_html} from '/src/ops/rdr-fetch-html.js';
 import {rdr_lookup_icon} from '/src/ops/rdr-lookup-icon.js';
 import {rdr_transform_document} from '/src/ops/rdr-transform-document.js';
 
-// TODO: probably should just accept a url as input instead of an entry object,
-// and give up on handling local-content entirely
-
 const rewrite_rules = build_rewrite_rules();
 
 const INACCESSIBLE_CONTENT_DESCRIPTORS = [
