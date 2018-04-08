@@ -29,5 +29,4 @@ Returns a promise that resolves to the stored entry object. Resolution occurs af
 ### TODOs
 * if I plan to have validation also occur in `entry_sanitize`, then I think what should happen here is that I pass a `validate` flag (boolean, set to false) along to `entry_sanitize` to avoid revalidation because it could end up being a heavier operation, basically I am undecided about where validation should occur, and if I end up doing validation in multiple places I am concerned about redundant validation
 * is it correct to have `rdr_create_entry` be concerned with state initialization of the entry object, or should it be a responsibility of something earlier in the pipeline? I revised `rdr_update_entry` so that it does no property modification, because I don't like the idea of implicit modification, and was trying to be more transparent. That required all callers to set dateUpdated and increased inconvenience, but it was overall good. Should I apply the same idea here?
-* I plan to add validate to `rdr_update_entry`. I think in this case I need to pass along a parameter that avoids duplicate validation. Here is where I would do something like `validate = false` and call `rdr_update_entry` with this false flag.
-* I wonder if I should decouple create entirely from relying on `rdr_update_entry`?
+* Maybe decouple from `rdr_update_entry`?
