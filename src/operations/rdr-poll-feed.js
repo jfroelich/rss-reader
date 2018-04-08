@@ -277,7 +277,7 @@ async function poll_entry(rconn, iconn, channel, console, options, entry) {
   const document = await entry_parse_response(response);
   entry_update_title(entry, document);
   await update_entry_icon(iconn, console, entry, document);
-  await update_entry_content(entry, document, fetch_image_timeout);
+  await update_entry_content(entry, document, console, fetch_image_timeout);
 
   const stored_entry = await create_entry(rconn, channel, console, entry);
   return stored_entry.id;
@@ -386,7 +386,8 @@ async function update_entry_icon(iconn, console, entry, document) {
   }
 }
 
-async function update_entry_content(entry, document, fetch_image_timeout) {
+async function update_entry_content(
+    entry, document, console, fetch_image_timeout) {
   if (!document) {
     try {
       document = html_parser.parse(entry.content);
@@ -403,8 +404,6 @@ async function update_entry_content(entry, document, fetch_image_timeout) {
     min_contrast_ratio: localStorage.MIN_CONTRAST_RATIO,
     emphasis_length_max: 200
   };
-
-  // TODO: console should come from param
 
   await rdr_transform_document(document, document_url, console, opts);
   entry.content = document.documentElement.outerHTML;
