@@ -1,11 +1,14 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_is_valid_id, is_feed} from '/src/objects/feed.js';
 
-// Mark a feed as active in the database
+const null_channel = {
+  name: 'null-channel',
+  postMessage: noop,
+  close: noop
+};
+
 export function rdr_activate_feed(
     conn, channel = null_channel, console = console_stub, feed_id) {
-  // An invalid argument is a persistent programmer error, not a promise
-  // rejection
   if (!feed_is_valid_id(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }
@@ -31,21 +34,18 @@ function request_onsuccess(feed_id, event) {
   const feed = event.target.result;
   const store = event.target.source;
 
-  // The caller possibly tried to use a bad feed id
   if (!feed) {
-    console.warn('Failed to find feed to activate with id', feed_id);
+    console.warn('Failed to find feed by id', feed_id);
     return;
   }
 
-  // The corresponding object is invalid/corrupted
   if (!is_feed(feed)) {
-    console.warn('Matched feed object is invalid for feed id', feed_id);
+    console.warn('Matched feed object is not a feed', feed_id, feed);
     return;
   }
 
-  // The corresponding object is in an invalid state
   if (feed.active) {
-    console.warn('Tried to activate already-active feed with id', feed_id);
+    console.warn('Tried to activate already-active feed', feed_id);
     return;
   }
 
@@ -56,11 +56,5 @@ function request_onsuccess(feed_id, event) {
   feed.dateUpdated = new Date();
   store.put(feed);
 }
-
-const null_channel = {
-  name: 'null-channel',
-  postMessage: noop,
-  close: noop
-};
 
 function noop() {}
