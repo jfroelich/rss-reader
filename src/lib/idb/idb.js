@@ -1,11 +1,4 @@
-
-function noop() {}
-
-const null_console = {
-  warn: noop,
-  debug: noop,
-  log: noop
-};
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 
 function idb_context_t() {
   this.name = null;
@@ -14,11 +7,11 @@ function idb_context_t() {
   this.timeout = NaN;
   this.timed_out = false;
   this.timer = null;
-  this.console = null_console;
+  this.console = console_stub;
 }
 
 export async function idb_open(
-    name, version, upgrade_listener, timeout, console = null_console) {
+    name, version, upgrade_listener, timeout, console = console_stub) {
   if (typeof name !== 'string') {
     throw new TypeError('Invalid database name ' + name);
   }
@@ -32,6 +25,7 @@ export async function idb_open(
   context.version = version;
   context.upgrade_listener = upgrade_listener;
   context.timeout = timeout;
+  context.console = console;
 
   const open_promise = create_open_promise(context);
 
@@ -102,7 +96,7 @@ function create_open_promise(context) {
   });
 }
 
-export function idb_remove(name, console = null_console) {
+export function idb_remove(name, console = console_stub) {
   return new Promise((resolve, reject) => {
     console.debug('Deleting database', name);
     const request = indexedDB.deleteDatabase(name);
