@@ -1,8 +1,12 @@
-import {is_entry} from '/src/objects/entry.js';
+import {entry_is_valid, is_entry} from '/src/objects/entry.js';
 
-export function rdr_update_entry(entry) {
+export function rdr_update_entry(entry, validate) {
   if (!is_entry(entry)) {
     throw new TypeError('entry is not an entry ' + entry);
+  }
+
+  if (validate && !entry_is_valid(entry)) {
+    throw new TypeError('invalid entry ' + entry);
   }
 
   return new Promise(executor.bind(this, entry));

@@ -36,7 +36,10 @@ export async function rdr_create_entry(entry, validate) {
   // Redirect the update message to /dev/null basically
   uec.channel = channel_stub;
   uec.console = this.console;
-  const entry_id = await rdr_update_entry.call(uec, storable_entry);
+  // Do not revalidate
+  const update_validate = false;
+  const entry_id =
+      await rdr_update_entry.call(uec, storable_entry, update_validate);
 
   this.channel.postMessage({type: 'entry-added', id: entry_id});
 
