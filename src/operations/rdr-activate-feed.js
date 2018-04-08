@@ -49,5 +49,3 @@ function request_onsuccess(feed_id, event) {
   const store = event.target.source;
   store.put(feed);
 }
-
-// function noop() {}
