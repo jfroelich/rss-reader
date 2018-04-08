@@ -1,5 +1,5 @@
 import {feed_is_valid, feed_prepare} from '/src/objects/feed.js';
-import {update_feed} from '/src/operations/update-feed.js';
+import {update_feed} from '/src/ops/update-feed.js';
 
 const null_channel = {
   name: 'null-channel',

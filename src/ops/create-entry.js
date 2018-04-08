@@ -1,7 +1,7 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {filter_empty_properties} from '/src/lib/object/object.js';
 import {entry_is_valid, entry_sanitize, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
-import {update_entry} from '/src/operations/update-entry.js';
+import {update_entry} from '/src/ops/update-entry.js';
 
 const null_channel = {
   name: 'null-channel',

@@ -4,11 +4,11 @@ import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/lib/sniff/sniff.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {entry_append_url, entry_has_url, entry_is_valid_id, entry_peek_url} from '/src/objects/entry.js';
-import {create_entry} from '/src/operations/create-entry.js';
-import {find_entry_id_by_url} from '/src/operations/find-entry-id-by-url.js';
-import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
-import {rdr_lookup_icon} from '/src/operations/rdr-lookup-icon.js';
-import {rdr_transform_document} from '/src/operations/rdr-transform-document.js';
+import {create_entry} from '/src/ops/create-entry.js';
+import {find_entry_id_by_url} from '/src/ops/find-entry-id-by-url.js';
+import {rdr_fetch_html} from '/src/ops/rdr-fetch-html.js';
+import {rdr_lookup_icon} from '/src/ops/rdr-lookup-icon.js';
+import {rdr_transform_document} from '/src/ops/rdr-transform-document.js';
 
 // TODO: probably should just accept a url as input instead of an entry object,
 // and give up on handling local-content entirely

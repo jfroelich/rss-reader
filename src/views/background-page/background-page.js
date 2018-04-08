@@ -1,16 +1,16 @@
 import '/src/views/cli/cli.js';
 
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
-import {rdr_archive} from '/src/operations/rdr-archive-entries.js';
-import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
-import {rdr_create_channel} from '/src/operations/rdr-create-channel.js';
-import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
-import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
-import {rdr_open_view} from '/src/operations/rdr-open-view.js';
-import {rdr_poll_feeds} from '/src/operations/rdr-poll-feeds.js';
-import {refresh_feed_icons} from '/src/operations/refresh-feed-icons.js';
-import {remove_lost_entries} from '/src/operations/remove-lost-entries.js';
-import {remove_orphans} from '/src/operations/remove-orphaned-entries.js';
+import {rdr_archive} from '/src/ops/rdr-archive-entries.js';
+import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
+import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
+import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
+import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
+import {rdr_open_view} from '/src/ops/rdr-open-view.js';
+import {rdr_poll_feeds} from '/src/ops/rdr-poll-feeds.js';
+import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
+import {remove_lost_entries} from '/src/ops/remove-lost-entries.js';
+import {remove_orphans} from '/src/ops/remove-orphaned-entries.js';
 
 async function handle_compact_favicons_alarm(alarm) {
   const conn = await rdr_create_icon_conn();

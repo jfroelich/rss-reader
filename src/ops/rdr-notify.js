@@ -1,4 +1,4 @@
-import {rdr_open_view} from '/src/operations/rdr-open-view.js';
+import {rdr_open_view} from '/src/ops/rdr-open-view.js';
 
 const default_icon_url_string =
     chrome.extension.getURL('/images/rss_icon_trans.gif');

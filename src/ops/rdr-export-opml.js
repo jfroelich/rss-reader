@@ -1,6 +1,6 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_peek_url} from '/src/objects/feed.js';
-import {get_feeds} from '/src/operations/get-feeds.js';
+import {get_feeds} from '/src/ops/get-feeds.js';
 
 export async function rdr_export_opml(conn, title, console = console_stub) {
   const document = create_opml_document(title, console);

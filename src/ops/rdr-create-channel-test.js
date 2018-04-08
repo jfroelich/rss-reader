@@ -1,4 +1,4 @@
-import {rdr_create_channel} from '/src/operations/rdr-create-channel.js';
+import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 
 function test1() {
   console.debug('starting test1');

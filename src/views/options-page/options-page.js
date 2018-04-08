@@ -3,14 +3,14 @@ import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import * as perm from '/src/lib/permissions/permissions.js';
 import {feed_peek_url} from '/src/objects/feed.js';
-import {deactivate_feed} from '/src/operations/deactivate-feed.js';
-import {delete_feed} from '/src/operations/delete-feed.js';
-import {find_feed_by_id} from '/src/operations/find-feed-by-id.js';
-import {get_feeds} from '/src/operations/get-feeds.js';
-import {rdr_activate_feed} from '/src/operations/rdr-activate-feed.js';
-import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
-import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
-import {rdr_subscribe} from '/src/operations/subscribe.js';
+import {deactivate_feed} from '/src/ops/deactivate-feed.js';
+import {delete_feed} from '/src/ops/delete-feed.js';
+import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
+import {get_feeds} from '/src/ops/get-feeds.js';
+import {rdr_activate_feed} from '/src/ops/rdr-activate-feed.js';
+import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
+import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
+import {rdr_subscribe} from '/src/ops/subscribe.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
 
 // clang-format off

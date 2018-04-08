@@ -1,7 +1,7 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
-import {rdr_notify} from '/src/operations/rdr-notify.js';
-import {rdr_poll_feed} from '/src/operations/rdr-poll-feed.js';
+import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
+import {rdr_notify} from '/src/ops/rdr-notify.js';
+import {rdr_poll_feed} from '/src/ops/rdr-poll-feed.js';
 
 const null_channel = {
   name: 'null-channel',

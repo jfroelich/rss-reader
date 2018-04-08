@@ -1,4 +1,4 @@
-import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
+import {rdr_fetch_html} from '/src/ops/rdr-fetch-html.js';
 
 async function test(url_string, timeout) {
   const request_url = new URL(url_string);

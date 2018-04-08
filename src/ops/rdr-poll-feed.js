@@ -2,11 +2,11 @@ import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_entry, entry_has_url} from '/src/objects/entry.js';
 import {coerce_feed, feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/objects/feed.js';
-import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
-import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
-import {rdr_notify} from '/src/operations/rdr-notify.js';
-import {rdr_poll_entry} from '/src/operations/rdr-poll-entry.js';
-import {update_feed} from '/src/operations/update-feed.js';
+import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
+import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
+import {rdr_notify} from '/src/ops/rdr-notify.js';
+import {rdr_poll_entry} from '/src/ops/rdr-poll-entry.js';
+import {update_feed} from '/src/ops/update-feed.js';
 
 export async function rdr_poll_feed(
     rconn, iconn, channel, console, options = {}, feed) {

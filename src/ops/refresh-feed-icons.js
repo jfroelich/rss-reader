@@ -1,8 +1,8 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import {feed_create_favicon_lookup_url, feed_has_url} from '/src/objects/feed.js';
-import {for_each_active_feed} from '/src/operations/for-each-active-feed.js';
-import {update_feed} from '/src/operations/update-feed.js';
+import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
+import {update_feed} from '/src/ops/update-feed.js';
 
 export async function refresh_feed_icons(
     rconn, iconn, channel, console = console_stub) {

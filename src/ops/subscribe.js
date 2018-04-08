@@ -2,14 +2,14 @@ import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
-import {contains_feed_with_url} from '/src/operations/contains-feed-with-url.js';
-import {create_feed} from '/src/operations/create-feed.js';
-import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
-import {rdr_create_icon_conn} from '/src/operations/rdr-create-icon-conn.js';
-import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
-import {rdr_lookup_icon} from '/src/operations/rdr-lookup-icon.js';
-import {rdr_notify} from '/src/operations/rdr-notify.js';
-import {rdr_poll_feed} from '/src/operations/rdr-poll-feed.js';
+import {contains_feed_with_url} from '/src/ops/contains-feed-with-url.js';
+import {create_feed} from '/src/ops/create-feed.js';
+import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
+import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
+import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
+import {rdr_lookup_icon} from '/src/ops/rdr-lookup-icon.js';
+import {rdr_notify} from '/src/ops/rdr-notify.js';
+import {rdr_poll_feed} from '/src/ops/rdr-poll-feed.js';
 
 export async function rdr_subscribe(
     rconn, iconn, channel, console = console_stub, fetch_timeout = 2000,

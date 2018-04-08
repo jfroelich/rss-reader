@@ -1,5 +1,5 @@
-import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
-import {rdr_export_opml} from '/src/operations/rdr-export-opml.js';
+import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
+import {rdr_export_opml} from '/src/ops/rdr-export-opml.js';
 
 // Abstracts away all of the operations involved in generating and downloading
 // an opml xml file into a simple api call for the slideshow page. Also hides

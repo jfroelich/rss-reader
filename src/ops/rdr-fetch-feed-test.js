@@ -1,4 +1,4 @@
-import {rdr_fetch_feed} from '/src/operations/rdr-fetch-feed.js';
+import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
 
 async function test(url_string, timeout) {
   const request_url = new URL(url_string);

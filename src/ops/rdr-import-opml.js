@@ -1,7 +1,7 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import * as filelib from '/src/lib/file/file.js';
 import * as opml_parser from '/src/lib/opml-parser/opml-parser.js';
-import {rdr_subscribe} from '/src/operations/subscribe.js';
+import {rdr_subscribe} from '/src/ops/subscribe.js';
 
 const feed_mime_types = [
   'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',

@@ -4,7 +4,7 @@ import * as idb from '/src/lib/idb/idb.js';
 import * as mime from '/src/lib/mime/mime.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 // TODO: lib modules should not depend on app modules
-import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
+import {rdr_fetch_html} from '/src/ops/rdr-fetch-html.js';
 
 export function FaviconService() {
   this.name = 'favicon-cache';

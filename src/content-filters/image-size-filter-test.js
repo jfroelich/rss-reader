@@ -2,7 +2,7 @@ import * as filters from '/src/content-filters/content-filters.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
 
 // TODO: this cannot depend on something in operations
-import {rdr_fetch_html} from '/src/operations/rdr-fetch-html.js';
+import {rdr_fetch_html} from '/src/ops/rdr-fetch-html.js';
 
 // TODO: research http://exercism.io/ svg loading issue
 // Actually there is now a separate issue. It's not finding any urls. Something

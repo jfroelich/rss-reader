@@ -1,5 +1,5 @@
 import {entry_is_valid_id, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
-import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
+import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
 
 export function mark_entry_read(conn, channel, entry_id) {
   // Rather than reject from within the promise, throw an immediate error. This
