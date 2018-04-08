@@ -1,7 +1,7 @@
 import '/src/views/cli/cli.js';
 
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
-import {rdr_archive} from '/src/operations/archive-entries.js';
+import {rdr_archive} from '/src/operations/rdr-archive-entries.js';
 import {rdr_badge_refresh} from '/src/operations/rdr-badge-refresh.js';
 import {rdr_create_channel} from '/src/operations/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/operations/rdr-create-conn.js';
