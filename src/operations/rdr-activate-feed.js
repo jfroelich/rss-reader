@@ -1,60 +1,65 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_is_valid_id, is_feed} from '/src/objects/feed.js';
 
-const null_channel = {
-  name: 'null-channel',
-  postMessage: noop,
-  close: noop
-};
-
-export function rdr_activate_feed(
-    conn, channel = null_channel, console = console_stub, feed_id) {
+export function rdr_activate_feed(feed_id) {
   if (!feed_is_valid_id(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }
 
-  return new Promise(executor.bind(null, conn, channel, console, feed_id));
+  if (!this.channel) {
+    throw new Error('channel missing from context');
+  }
+
+  if (!this.conn) {
+    throw new Error('conn missing from context');
+  }
+
+  if (!this.console) {
+    throw new Error('console missing from context');
+  }
+
+  return new Promise(executor.bind(this, feed_id));
 }
 
-function executor(conn, channel, feed_id, console, resolve, reject) {
-  const txn = conn.transaction('feed', 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(txn, channel, feed_id, resolve);
+function executor(feed_id, resolve, reject) {
+  const txn = this.conn.transaction('feed', 'readwrite');
+  txn.oncomplete = txn_oncomplete.bind(this, feed_id, resolve);
   txn.onerror = _ => reject(txn.error);
+
   const store = txn.objectStore('feed');
   const request = store.get(feed_id);
-  request.onsuccess = request_onsuccess.bind(request, feed_id);
+  request.onsuccess = request_onsuccess.bind(this, feed_id);
 }
 
-function txn_oncomplete(channel, feed_id, callback, event) {
-  channel.postMessage({type: 'feed-activated', id: feed_id});
-  resolve();
+function txn_oncomplete(feed_id, callback, event) {
+  this.console.debug('Activated feed', feed_id);
+  this.channel.postMessage({type: 'feed-activated', id: feed_id});
+  callback();
 }
 
 function request_onsuccess(feed_id, event) {
   const feed = event.target.result;
-  const store = event.target.source;
-
   if (!feed) {
-    console.warn('Failed to find feed by id', feed_id);
+    this.console.warn('Failed to find feed by id', feed_id);
     return;
   }
 
   if (!is_feed(feed)) {
-    console.warn('Matched feed object is not a feed', feed_id, feed);
+    this.console.warn('Matched feed object is not a feed', feed_id, feed);
     return;
   }
 
   if (feed.active) {
-    console.warn('Tried to activate already-active feed', feed_id);
+    this.console.warn('Tried to activate already-active feed', feed_id);
     return;
   }
 
   feed.active = true;
   delete feed.deactivationReasonText;
   delete feed.deactivateDate;
-
   feed.dateUpdated = new Date();
+
+  const store = event.target.source;
   store.put(feed);
 }
 
-function noop() {}
+// function noop() {}
