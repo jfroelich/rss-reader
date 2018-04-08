@@ -41,5 +41,6 @@ Returns a promise that resolves to undefined or rejects when an internal error o
 
 ### TODOS
 
+* add console arg to filters to enable logging by filter
 * I need to comb through the filters and remove all app-specific functionality. It should be parameterized, where the parameters are set here, not in the filter
 * For example, for the image-size-filter, I should be passing in a fetch policy that is defined here (or uses the rdr-fetch-policy), instead of defering to the default fetch policy or hard-coding the rdr policy within the filter itself.

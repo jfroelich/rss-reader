@@ -1,7 +1,7 @@
 import * as filters from '/src/content-filters/content-filters.js';
 
 export async function rdr_transform_document(
-    document, document_url, options = {}) {
+    document, document_url, console, options = {}) {
   if (!(document instanceof Document)) {
     throw new TypeError('document is not a Document');
   }
@@ -127,7 +127,7 @@ export async function rdr_transform_document(
   // content remains, and is faster with fewer elements
   filters.document_trim(document);
 
-  // Primarily an attribute filter, so it should be caller as late as possible
+  // Primarily an attribute filter, so it should be called as late as possible
   // to reduce the number of elements visited
   filters.add_noreferrer_to_anchors(document);
   filters.remove_ping_attribute_from_all_anchors(document);

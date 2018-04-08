@@ -403,7 +403,10 @@ async function update_entry_content(entry, document, fetch_image_timeout) {
     min_contrast_ratio: localStorage.MIN_CONTRAST_RATIO,
     emphasis_length_max: 200
   };
-  await rdr_transform_document(document, document_url, opts);
+
+  // TODO: console should come from param
+
+  await rdr_transform_document(document, document_url, console, opts);
   entry.content = document.documentElement.outerHTML;
 }
 
