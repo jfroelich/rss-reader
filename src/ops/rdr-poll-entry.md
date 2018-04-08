@@ -1,5 +1,16 @@
 The `rdr-poll-entry` function processes and entry and possibly adds it to the database. The full-text html of the entry is fetched and stored as `entry.content`.
 
+### Context properties
+* rconn {IDBDatabase} required
+* iconn {IDBDatabase} required
+* channel {BroadcastChannel} required
+* console {Object} required
+* fetch_html_timeout {Number} optional
+* fetch_image_timeout {Number} optional
+
+### Params
+* entry {object}
+
 ### Misc implementation notes
 * url rewriting always occurs before checking whether a url exists. The original url is not checked. This reduces the number of checks that must occur.
 
