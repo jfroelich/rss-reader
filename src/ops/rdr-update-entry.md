@@ -1,7 +1,6 @@
-The `update_entry` function creates or overwrites an entry in the database. Returns the result of the internal put call, which is the new id of the entry when adding the entry to the database, because the database uses an auto-incremented key for new entries.
+The `rdr_update_entry` function creates or overwrites an entry in the database. Returns the result of the internal put call, which is the new id of the entry when adding the entry to the database, because the database uses an auto-incremented key for new entries.
 
 ### Params
-
 * conn {IDBDatabase} required, the handle to the database where the entry is stored
 * channel {BroadcastChannel} optional, if specified then this sends messages to the channel about updating the entry
 * entry {object} required, the entry to update, this cannot be a function object

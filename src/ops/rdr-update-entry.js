@@ -1,6 +1,6 @@
 import {is_entry} from '/src/objects/entry.js';
 
-export function update_entry(conn, channel, entry) {
+export function rdr_update_entry(conn, channel, entry) {
   return new Promise(executor.bind(null, conn, channel, entry));
 }
 
