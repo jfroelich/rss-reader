@@ -1,11 +1,14 @@
 import {is_entry} from '/src/objects/entry.js';
 
 export function rdr_update_entry(conn, channel, entry) {
+  if (!is_entry(entry)) {
+    throw new TypeError('entry is not an entry ' + entry);
+  }
+
   return new Promise(executor.bind(null, conn, channel, entry));
 }
 
 function executor(conn, channel, entry, resolve, reject) {
-  assert(is_entry(entry));
   const txn = conn.transaction('entry', 'readwrite');
   const store = txn.objectStore('entry');
   const request = store.put(entry);
@@ -19,8 +22,4 @@ function request_onsuccess(channel, callback, event) {
     channel.postMessage({type: 'entry-updated', id: entry_id});
   }
   callback(entry_id);
-}
-
-function assert(value) {
-  if (!value) throw new Error('Assertion error');
 }
