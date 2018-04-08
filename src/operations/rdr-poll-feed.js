@@ -90,27 +90,28 @@ export async function rdr_poll_feed(
 
   const feed_lmd = feed.dateLastModified;
   const resp_lmd = new Date(response.headers.get('Last-Modified'));
+  /*
+    if (!ignore_modified_check && feed_lmd && resp_lmd &&
+        !isNaN(resp_lmd.getTime()) && feed_lmd.getTime() === resp_lmd.getTime())
+    { console.debug( 'Feed not modified', tail_url.href, feed_lmd.getTime(),
+          resp_lmd.getTime());
+      const dirtied = handle_fetch_success(feed);
+      if (dirtied) {
+        // TODO: actually this is not using any of the fetched data, so this
+        // should not be revalidating? validate should be false here, right?
 
-  if (!ignore_modified_check && feed_lmd && resp_lmd &&
-      !isNaN(resp_lmd.getTime()) && feed_lmd.getTime() === resp_lmd.getTime()) {
-    console.debug(
-        'Feed not modified', tail_url.href, feed_lmd.getTime(),
-        resp_lmd.getTime());
-    const dirtied = handle_fetch_success(feed);
-    if (dirtied) {
-      // TODO: actually this is not using any of the fetched data, so this
-      // should not be revalidating? validate should be false here, right?
+        // TODO: do I even care about considering this successful? Maybe this
+        // case should just be a noop and no state modification should take
+    place
+        // and defer it until the feed actually changes?
 
-      // TODO: do I even care about considering this successful? Maybe this
-      // case should just be a noop and no state modification should take place
-      // and defer it until the feed actually changes?
-
-      const validate = true;
-      const set_date_updated = true;
-      await update_feed(rconn, channel, feed, validate, set_date_updated);
+        const validate = true;
+        const set_date_updated = true;
+        await update_feed(rconn, channel, feed, validate, set_date_updated);
+      }
+      return 0;
     }
-    return 0;
-  }
+  */
 
   const response_text = await response.text();
   const skip_entries = false, resolve_urls = true;
