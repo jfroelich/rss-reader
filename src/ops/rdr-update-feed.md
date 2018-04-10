@@ -1,4 +1,4 @@
-The `update_feed` operation creates or updates a feed in the database.
+The `rdr_update_feed` operation creates or updates a feed in the database.
 
 Other than the situation where the set_date_updated flag is true, this inserts the feed object *as-is*. It is the caller's responsibility to take care of any sanitization needs.
 

@@ -2,7 +2,7 @@ import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import {feed_create_favicon_lookup_url, feed_has_url} from '/src/objects/feed.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
-import {update_feed} from '/src/ops/update-feed.js';
+import {rdr_update_feed} from '/src/ops/rdr-update-feed.js';
 
 export async function refresh_feed_icons(
     rconn, iconn, channel, console = console_stub) {
@@ -39,6 +39,6 @@ async function refresh_feed(rconn, iconn, channel, console, feed) {
 
     const validate = false;
     const set_date_updated = true;
-    await update_feed(rconn, channel, feed, validate, set_date_updated);
+    await rdr_update_feed(rconn, channel, feed, validate, set_date_updated);
   }
 }

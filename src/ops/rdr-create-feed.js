@@ -1,5 +1,5 @@
 import {feed_is_valid, feed_prepare} from '/src/objects/feed.js';
-import {update_feed} from '/src/ops/update-feed.js';
+import {rdr_update_feed} from '/src/ops/rdr-update-feed.js';
 
 const null_channel = {
   name: 'null-channel',
@@ -20,7 +20,7 @@ export async function rdr_create_feed(conn, channel = null_channel, feed) {
   let void_channel;
   const validate = false;
   const set_date_updated = false;
-  const feed_id = await update_feed(
+  const feed_id = await rdr_update_feed(
       conn, void_channel, prepared_feed, validate, set_date_updated);
 
   channel.postMessage({type: 'feed-added', id: feed_id});

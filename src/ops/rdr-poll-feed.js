@@ -6,7 +6,7 @@ import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
 import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
 import {rdr_notify} from '/src/ops/rdr-notify.js';
 import {rdr_poll_entry} from '/src/ops/rdr-poll-entry.js';
-import {update_feed} from '/src/ops/update-feed.js';
+import {rdr_update_feed} from '/src/ops/rdr-update-feed.js';
 
 export async function rdr_poll_feed(
     rconn, iconn, channel, console, options = {}, feed) {
@@ -100,7 +100,8 @@ export async function rdr_poll_feed(
   const storable_feed = feed_prepare(merged_feed);
   const validate = true;
   const set_date_updated = true;
-  await update_feed(rconn, channel, storable_feed, validate, set_date_updated);
+  await rdr_update_feed(
+      rconn, channel, storable_feed, validate, set_date_updated);
 
   const count = await poll_entries(
       rconn, iconn, channel, console, options, parsed_feed.entries,
@@ -196,7 +197,8 @@ function handle_error(
   // TODO: should be awaited though?
   const validate = true;
   const set_date_updated = true;
-  const prom = update_feed(rconn, channel, feed, validate, set_date_updated);
+  const prom =
+      rdr_update_feed(rconn, channel, feed, validate, set_date_updated);
   prom.catch(console.error);  // avoid swallowing
 }
 
