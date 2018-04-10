@@ -274,15 +274,20 @@ async function feed_list_item_onclick(event) {
 }
 
 async function subscribe_form_onsubmit(event) {
+  console.debug('submit event');
   event.preventDefault();
 
-  const monitor_element = document.getElementById('submon');
-  if (!monitor_element) {
+  let monitor_element = document.getElementById('submon');
+  if (monitor_element && monitor_element.style.display === 'block') {
+    console.debug('subscription in progress (apparently)');
     return false;
   }
 
-  if (monitor_element.style.display === 'block') {
-    return false;
+  subscription_monitor_show();
+  monitor_element = document.getElementById('submon');
+  if (!monitor_element) {
+    console.error('failed to find subscription monitor element');
+    return;
   }
 
   const subscribe_url_input_element = document.getElementById('subscribe-url');
@@ -291,6 +296,7 @@ async function subscribe_form_onsubmit(event) {
   subscribe_url_string = subscribe_url_string.trim();
 
   if (!subscribe_url_string) {
+    console.debug('canceling submit, empty input');
     return false;
   }
 
@@ -311,7 +317,7 @@ async function subscribe_form_onsubmit(event) {
       Promise.all([rdr_create_conn(), rdr_create_icon_conn()]);
   const [rconn, iconn] = await conn_promises;
   const feed = await rdr_subscribe(
-      rconn, iconn, channel, void console, fetch_timeout, notify_flag,
+      rconn, iconn, channel, console, fetch_timeout, notify_flag,
       subscribe_url);
   rconn.close();
   iconn.close();
