@@ -24,7 +24,7 @@ function executor(
   let entry_ids;
   const txn = conn.transaction(['feed', 'entry'], 'readwrite');
   txn.oncomplete = txn_oncomplete.bind(
-      conn, txn, channel, console, feed_id, reason_text, entry_ids, resolve);
+      conn, channel, console, feed_id, reason_text, entry_ids, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const feed_store = txn.objectStore('feed');
