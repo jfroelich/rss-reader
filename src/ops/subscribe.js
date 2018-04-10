@@ -38,15 +38,8 @@ export async function rdr_subscribe(
     return;
   }
 
-  // Deserialize the response body
-  const response_text = await response.text();
-  let parsed_feed;
-  const skip_entries = true;
-  const resolve_urls = false;
-  try {
-    parsed_feed = feed_parser.parse(response_text, skip_entries, resolve_urls);
-  } catch (error) {
-    console.debug('Parse error', url.href, error);
+  const parsed_feed = await parse_response_body(response, console);
+  if (!parsed_feed) {
     return;
   }
 
@@ -59,11 +52,9 @@ export async function rdr_subscribe(
   });
 
   // Set the favicon
-
   const lookup_url = feed_create_favicon_lookup_url(feed);
   feed.faviconURLString =
       await rdr_lookup_icon(iconn, console, true, lookup_url);
-
 
   const stored_feed = await create_feed(rconn, channel, feed);
 
@@ -77,6 +68,22 @@ export async function rdr_subscribe(
   poll_feed_unawaited(console, stored_feed);
 
   return stored_feed;
+}
+
+async function parse_response_body(response, console) {
+  let parsed_feed;
+  const skip_entries = true;
+  const resolve_urls = false;
+
+  const response_text = await response.text();
+
+  try {
+    parsed_feed = feed_parser.parse(response_text, skip_entries, resolve_urls);
+  } catch (error) {
+    console.debug('Parse error', response.url, error);
+  }
+
+  return parsed_feed;
 }
 
 async function poll_feed_unawaited(console, feed) {
