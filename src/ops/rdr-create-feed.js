@@ -7,7 +7,7 @@ const null_channel = {
   close: noop
 };
 
-export async function create_feed(conn, channel = null_channel, feed) {
+export async function rdr_create_feed(conn, channel = null_channel, feed) {
   if (!feed_is_valid(feed)) {
     throw new TypeError('feed is invalid: ' + feed);
   }

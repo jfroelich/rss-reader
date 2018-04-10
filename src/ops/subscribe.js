@@ -3,9 +3,9 @@ import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
 import {contains_feed_with_url} from '/src/ops/contains-feed-with-url.js';
-import {create_feed} from '/src/ops/create-feed.js';
 import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
+import {create_feed} from '/src/ops/rdr-create-feed.js';
 import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
 import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
 import {rdr_lookup_icon} from '/src/ops/rdr-lookup-icon.js';
@@ -56,7 +56,7 @@ export async function rdr_subscribe(
   feed.faviconURLString =
       await rdr_lookup_icon(iconn, console, true, lookup_url);
 
-  const stored_feed = await create_feed(rconn, channel, feed);
+  const stored_feed = await rdr_create_feed(rconn, channel, feed);
 
   if (notify_flag) {
     const title = 'Subscribed!';
