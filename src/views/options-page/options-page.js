@@ -1,4 +1,5 @@
 import '/src/views/cli/cli.js';
+
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
@@ -9,6 +10,7 @@ import {delete_feed} from '/src/ops/delete-feed.js';
 import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
 import {get_feeds} from '/src/ops/get-feeds.js';
 import {rdr_activate_feed} from '/src/ops/rdr-activate-feed.js';
+import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
 import {rdr_subscribe} from '/src/ops/subscribe.js';
@@ -381,10 +383,15 @@ async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const reason_text = 'unsubscribe';
-  const conn = await rdr_create_conn();
-  const result =
-      await delete_feed(conn, channel, console, feed_id, reason_text);
-  conn.close();
+
+  const ctx = {};
+  ctx.conn = await rdr_create_conn();
+  ctx.channel = rdr_create_channel();
+  ctx.console = console;  // enable logging for now (temporary)
+
+  const result = await delete_feed.call(ctx, feed_id, reason_text);
+  ctx.conn.close();
+  ctx.channel.close();
 
   feed_list_remove_feed_by_id(feed_id);
   section_show_by_id('subs-list-section');

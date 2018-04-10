@@ -9,11 +9,14 @@ The `delete_feed` operation removes a feed, and any entries tied to the feed, fr
 * If the input feed-id is invalid (not well-formed) this throws an exception immediately
 * This never actually checks if the feed exists, it just deletes whatever feed object corresponds to the given id, if it exists, because it just calls `store.delete` internally, which according to the indexedDB API settles successfully regardless of whether there was an actual state change.
 
-### Params
-
+### Context params
 * conn {IDBDatabase} an open database connection
-* channel {BroadcastChannel} optional, will send messages when the feed is deleted and for each entry deleted
-* console {console object} optional, if specified then some helpful debug messages are printed to the console
+* channel {BroadcastChannel} will send messages when the feed is deleted and for each entry deleted
+* console {console object} if specified then some helpful debug messages are printed to the console
+
+All required
+
+### Params
 * feed_id {Number} the feed to delete
 * reason_text {String} optional, a categorical description of the reason for deletion, such as 'unsubscribe', or 'inactive'
 

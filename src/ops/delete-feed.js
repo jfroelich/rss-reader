@@ -2,70 +2,52 @@ import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_is_valid_id} from '/src/objects/feed.js';
 import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
 
-const null_channel = {
-  name: 'null-channel',
-  postMessage: noop,
-  close: noop
-};
-
-export function delete_feed(
-    conn, channel = null_channel, console = console_stub, feed_id,
-    reason_text) {
+export function delete_feed(feed_id, reason_text) {
   if (!feed_is_valid_id(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }
 
-  return new Promise(
-      executor.bind(null, conn, channel, console, feed_id, reason_text));
+  return new Promise(executor.bind(this, feed_id, reason_text));
 }
 
-function executor(
-    conn, channel, console, feed_id, reason_text, resolve, reject) {
+function executor(feed_id, reason_text, resolve, reject) {
   let entry_ids = [];
-  const txn = conn.transaction(['feed', 'entry'], 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(
-      txn, conn, channel, console, feed_id, reason_text, entry_ids, resolve);
+  const txn = this.conn.transaction(['feed', 'entry'], 'readwrite');
+  txn.oncomplete =
+      txn_oncomplete.bind(this, feed_id, reason_text, entry_ids, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const feed_store = txn.objectStore('feed');
 
   // Delete the feed
-  console.debug('Deleting feed with id', feed_id);
+  this.console.debug('Deleting feed with id', feed_id);
   feed_store.delete(feed_id);
 
   // Delete all entries belonging to the feed
   const entry_store = txn.objectStore('entry');
   const feed_index = entry_store.index('feed');
   const request = feed_index.getAllKeys(feed_id);
-  request.onsuccess = function(event) {
-    entry_ids = request.result;
-    for (const id of entry_ids) {
-      console.debug('Deleting entry', id);
+  request.onsuccess = event => {
+    const keys = request.result;
+
+    for (const id of keys) {
+      entry_ids.push(id);
+      this.console.debug('Deleting entry', id);
       entry_store.delete(id);
     }
   };
 }
 
-function txn_oncomplete(
-    conn, channel, console, feed_id, reason_text, entry_ids, callback, event) {
-  console.debug('Params to txn_oncomplete:');
-  console.debug('conn:', conn);
-  console.debug('channel:', channel);
-  console.debug('console?:', console);
-  console.debug('feed_id:', feed_id);
-  console.debug('reason_text:', reason_text);
-  console.debug('entry_ids:', entry_ids);
-  console.debug('callback:', callback);
-  console.debug('event:', event);
+function txn_oncomplete(feed_id, reason_text, entry_ids, callback, event) {
+  const msg = {type: 'feed-deleted', id: feed_id, reason: reason_text};
+  this.channel.postMessage(msg);
 
-  channel.postMessage({type: 'feed-deleted', id: feed_id, reason: reason_text});
+  msg.type = 'entry-deleted';
   for (const id of entry_ids) {
-    channel.postMessage({type: 'entry-deleted', id: id, reason: reason_text});
+    msg.id = id;
+    this.channel.postMessage(msg);
   }
 
-  rdr_badge_refresh(conn, console).catch(console.error);
-
+  rdr_badge_refresh(this.conn, this.console).catch(this.console.error);
   callback(entry_ids);
 }
-
-function noop() {}
