@@ -25,9 +25,6 @@ function txn_oncomplete(channel, callback, feed_id, event) {
 function request_onsuccess(reason_text, event) {
   const feed = event.target.result;
   const store = event.target.source;
-
-  // TODO: rather than assert/reject when inactive, maybe just skip?
-
   assert(feed);
   assert(feed.active || !('active' in feed));
   feed.active = false;
