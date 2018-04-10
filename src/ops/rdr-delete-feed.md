@@ -1,4 +1,4 @@
-The `delete_feed` operation removes a feed, and any entries tied to the feed, from the database.
+The `rdr_delete_feed` operation removes a feed, and any entries tied to the feed, from the database.
 
 * Returns a promise that resolves when the operation has completed, the promise return value is an array of the deleted entry ids
 * The operation resolves once the internal database transaction has committed.

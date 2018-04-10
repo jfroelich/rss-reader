@@ -2,7 +2,7 @@ import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_is_valid_id} from '/src/objects/feed.js';
 import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
 
-export function delete_feed(feed_id, reason_text) {
+export function rdr_delete_feed(feed_id, reason_text) {
   if (!feed_is_valid_id(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }
