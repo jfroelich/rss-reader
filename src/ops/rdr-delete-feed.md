@@ -22,6 +22,13 @@ All required
 * **feed_id** {Number} the feed to delete
 * **reason_text** {String} optional, a categorical description of the reason for deletion, such as 'unsubscribe', or 'inactive'
 
+### Errors
+* TypeError - if the input feed id is invalid
+* Rejection errors - database i/o errors as DOMError, InvalidStateError if channel is closed at time of call to channel.postMessage
+
+### Return value
+Returns a promise that resolves to an array of the entry ids that were deleted. The array is always defined but may be zero-length.
+
 ### Misc implementation notes
 * This uses a single database transaction to guarantee data integrity. If deleting an entry for a feed causes an error after the feed was deleted, the feed is not actually deleted.
 * This uses getAllKeys rather than getAll when finding and iterating over entries for a feed in order to avoid unnecessary deserialization of entries
