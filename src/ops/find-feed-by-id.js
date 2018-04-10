@@ -8,7 +8,7 @@ export function find_feed_by_id(conn, id) {
   return new Promise(executor.bind(null, conn, id));
 }
 
-function exector(conn, id, resolve, reject) {
+function executor(conn, id, resolve, reject) {
   const txn = conn.transaction('feed');
   const store = txn.objectStore('feed');
   const request = store.get(id);
