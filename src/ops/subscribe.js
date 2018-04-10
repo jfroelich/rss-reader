@@ -4,6 +4,7 @@ import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
 import {contains_feed_with_url} from '/src/ops/contains-feed-with-url.js';
 import {create_feed} from '/src/ops/create-feed.js';
+import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
 import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
