@@ -21,10 +21,10 @@ export function delete_feed(
 
 function executor(
     conn, channel, console, feed_id, reason_text, resolve, reject) {
-  let entry_ids;
+  let entry_ids = [];
   const txn = conn.transaction(['feed', 'entry'], 'readwrite');
   txn.oncomplete = txn_oncomplete.bind(
-      conn, channel, console, feed_id, reason_text, entry_ids, resolve);
+      txn, conn, channel, console, feed_id, reason_text, entry_ids, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const feed_store = txn.objectStore('feed');
@@ -48,6 +48,16 @@ function executor(
 
 function txn_oncomplete(
     conn, channel, console, feed_id, reason_text, entry_ids, callback, event) {
+  console.debug('Params to txn_oncomplete:');
+  console.debug('conn:', conn);
+  console.debug('channel:', channel);
+  console.debug('console?:', console);
+  console.debug('feed_id:', feed_id);
+  console.debug('reason_text:', reason_text);
+  console.debug('entry_ids:', entry_ids);
+  console.debug('callback:', callback);
+  console.debug('event:', event);
+
   channel.postMessage({type: 'feed-deleted', id: feed_id, reason: reason_text});
   for (const id of entry_ids) {
     channel.postMessage({type: 'entry-deleted', id: id, reason: reason_text});
