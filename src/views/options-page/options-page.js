@@ -1,3 +1,4 @@
+import '/src/views/cli/cli.js';
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
@@ -382,7 +383,7 @@ async function unsubscribe_button_onclick(event) {
   const reason_text = 'unsubscribe';
   const conn = await rdr_create_conn();
   const result =
-      await delete_feed(conn, channel, void console, feed_id, reason_text);
+      await delete_feed(conn, channel, console, feed_id, reason_text);
   conn.close();
 
   feed_list_remove_feed_by_id(feed_id);
