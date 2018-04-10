@@ -8,6 +8,26 @@ import {rdr_poll_feeds} from '/src/ops/rdr-poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/ops/remove-lost-entries.js';
 import {remove_orphans} from '/src/ops/remove-orphaned-entries.js';
+import {rdr_subscribe} from '/src/ops/subscribe.js';
+
+async function cli_subscribe(url_string) {
+  const url = new URL(url_string);
+
+  const channel = rdr_create_channel();
+  const proms = [rdr_create_conn(), rdr_create_icon_conn()];
+  const [rconn, iconn] = await Promise.all(proms);
+
+  let fetch_timeout = 3000;
+  let notify_flag = false;
+  const feed = await rdr_subscribe(
+      rconn, iconn, channel, console, fetch_timeout, notify_flag, url);
+
+  console.debug('Stored feed', feed);
+
+  rconn.close();
+  iconn.close();
+  channel.close();
+}
 
 async function cli_archive() {
   const channel = rdr_create_channel();
@@ -17,7 +37,7 @@ async function cli_archive() {
   conn.close();
 }
 
-async function refresh_icons() {
+async function cli_refresh_icons() {
   const channel = rdr_create_channel();
   const proms = [rdr_create_conn(), rdr_create_icon_conn()];
   const [rconn, iconn] = await Promise.all(proms);
@@ -27,7 +47,7 @@ async function refresh_icons() {
   channel.close();
 }
 
-async function poll_feeds() {
+async function cli_poll_feeds() {
   const rconn = await rdr_create_conn();
   const iconn = await rdr_create_icon_conn();
   const channel = rdr_create_channel();
@@ -58,7 +78,7 @@ async function cli_remove_orphans() {
   conn.close();
 }
 
-async function lookup_favicon(url_string, cached) {
+async function cli_lookup_favicon(url_string, cached) {
   const url = new URL(url_string);
 
   let conn;
@@ -75,7 +95,7 @@ async function lookup_favicon(url_string, cached) {
   return icon_url_string;
 }
 
-async function fs_clear() {
+async function cli_clear_icons() {
   const fs = new FaviconService();
   const conn = await rdr_create_icon_conn();
   fs.conn = conn;
@@ -83,7 +103,7 @@ async function fs_clear() {
   conn.close();
 }
 
-async function fs_compact() {
+async function cli_compact_icons() {
   const conn = await rdr_create_icon_conn();
   const fs = new FaviconService();
   fs.conn = conn;
@@ -93,13 +113,14 @@ async function fs_compact() {
 
 const cli = {
   archive: cli_archive,
-  clear_favicons: fs_clear,
-  compact_favicons: fs_compact,
+  clear_icons: cli_clear_icons,
+  compact_icons: cli_compact_icons,
   remove_orphans: cli_remove_orphans,
   remove_lost_entries: cli_remove_lost_entries,
-  lookup_favicon: lookup_favicon,
-  poll_feeds: poll_feeds,
-  refresh_icons: refresh_icons
+  lookup_favicon: cli_lookup_favicon,
+  poll_feeds: cli_poll_feeds,
+  refresh_icons: cli_refresh_icons,
+  subscribe: cli_subscribe
 };
 
 window.cli = cli;  // expose to console
