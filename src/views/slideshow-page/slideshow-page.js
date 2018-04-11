@@ -129,19 +129,15 @@ function loading_info_hide() {
 
 async function slide_mark_read(conn, slide) {
   if (!slide.hasAttribute('read') && !slide.hasAttribute('stale')) {
-    // Due to no-loopback channel, create a scoped channel resource here and
-    // do not use the page-lifetime channel, in the event slideshow-page ever
-    // listens to this event
-
-    const mark_read_channel = rdr_create_channel();
-
+    // Do not use page-lifetime channel due to no-loopback issue
+    const rmer_channel = rdr_create_channel();
     const id = parseInt(slide.getAttribute('entry'), 10);
-    console.log('Marking slide with entry id %d as read', id);
-    await rdr_mark_entry_read(conn, mark_read_channel, id);
-
-    mark_read_channel.close();
+    await rdr_mark_entry_read(conn, rmer_channel, console, id);
+    rmer_channel.close();
 
     slide.setAttribute('read', '');
+  } else {
+    console.debug('Slide already read or stale, not remarking');
   }
 }
 
