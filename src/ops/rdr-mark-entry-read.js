@@ -20,7 +20,7 @@ export function rdr_mark_entry_read(
 function executor(conn, channel, console, entry_id, resolve, reject) {
   const txn = conn.transaction('entry', 'readwrite');
   txn.oncomplete =
-      txn_oncomplete.bind(txn, conn, channel, console, entry_id, resolve);
+      txn_oncomplete.bind(txn, channel, console, entry_id, resolve);
   txn.onerror = _ => reject(txn.error);
   const store = txn.objectStore('entry');
   const request = store.get(entry_id);
@@ -58,9 +58,10 @@ function request_onsuccess(console, entry_id, event) {
   entry_store.put(entry);
 }
 
-function txn_oncomplete(conn, channel, console, entry_id, callback, event) {
+function txn_oncomplete(channel, console, entry_id, callback, event) {
   console.debug('Marked entry %d as read', entry_id);
   channel.postMessage({type: 'entry-marked-read', id: entry_id});
+  const conn = event.target.db;
   rdr_badge_refresh(conn, console).catch(console.error);  // unawaited
   callback();
 }
