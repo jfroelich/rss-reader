@@ -129,11 +129,16 @@ function loading_info_hide() {
 
 async function slide_mark_read(conn, slide) {
   if (!slide.hasAttribute('read') && !slide.hasAttribute('stale')) {
-    // Do not use page-lifetime channel due to no-loopback issue
-    const rmer_channel = rdr_create_channel();
     const id = parseInt(slide.getAttribute('entry'), 10);
-    await rdr_mark_entry_read(conn, rmer_channel, console, id);
-    rmer_channel.close();
+
+    const ctx = {};
+    ctx.conn = conn;
+    // Do not use page-lifetime channel due to no-loopback issue
+    ctx.channel = rdr_create_channel();
+    ctx.console = console;
+
+    await rdr_mark_entry_read.call(ctx, id);
+    ctx.channel.close();
 
     slide.setAttribute('read', '');
   } else {
