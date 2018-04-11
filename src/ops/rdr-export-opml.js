@@ -1,6 +1,6 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {feed_peek_url} from '/src/objects/feed.js';
-import {get_feeds} from '/src/ops/get-feeds.js';
+import {rdr_get_feeds} from '/src/ops/rdr-get-feeds.js';
 
 export async function rdr_export_opml(conn, title, console = console_stub) {
   const document = create_opml_document(title, console);
@@ -8,7 +8,7 @@ export async function rdr_export_opml(conn, title, console = console_stub) {
   // TODO: implement for-each-feed operation, then use it here without buffering
   // feeds into an array, instead write them to document per iteration
 
-  const feeds = await get_feeds(conn);
+  const feeds = await rdr_get_feeds(conn);
 
   console.debug('Loaded %d feeds from database', feeds.length, conn.name);
 

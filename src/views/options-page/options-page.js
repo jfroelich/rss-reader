@@ -7,12 +7,12 @@ import * as perm from '/src/lib/permissions/permissions.js';
 import {feed_peek_url} from '/src/objects/feed.js';
 import {deactivate_feed} from '/src/ops/deactivate-feed.js';
 import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
-import {get_feeds} from '/src/ops/get-feeds.js';
 import {rdr_activate_feed} from '/src/ops/rdr-activate-feed.js';
 import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
 import {rdr_delete_feed} from '/src/ops/rdr-delete-feed.js';
+import {rdr_get_feeds} from '/src/ops/rdr-get-feeds.js';
 import {rdr_subscribe} from '/src/ops/subscribe.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
 
@@ -335,7 +335,7 @@ async function subscribe_form_onsubmit(event) {
 async function feed_list_init() {
   const title_sort_flag = true;
   const conn = await rdr_create_conn();
-  const feeds = await get_feeds(conn, title_sort_flag);
+  const feeds = await rdr_get_feeds(conn, title_sort_flag);
   conn.close();
 
   for (const feed of feeds) {
