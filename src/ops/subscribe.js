@@ -5,7 +5,7 @@ import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} fro
 import {contains_feed_with_url} from '/src/ops/contains-feed-with-url.js';
 import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
-import {create_feed} from '/src/ops/rdr-create-feed.js';
+import {rdr_create_feed} from '/src/ops/rdr-create-feed.js';
 import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
 import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
 import {rdr_lookup_icon} from '/src/ops/rdr-lookup-icon.js';
