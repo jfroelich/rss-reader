@@ -1,6 +1,6 @@
 import {feed_is_valid, is_feed} from '/src/objects/feed.js';
 
-export function update_feed(
+export function rdr_update_feed(
     conn, channel, feed, validate = true, set_date_updated = false) {
   if (validate) {
     assert(feed_is_valid(feed));
