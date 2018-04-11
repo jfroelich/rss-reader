@@ -59,16 +59,9 @@ function request_onsuccess(console, entry_id, event) {
 }
 
 function txn_oncomplete(conn, channel, console, entry_id, callback, event) {
-  try {
-    channel.postMessage({type: 'entry-marked-read', id: entry_id});
-  } catch (error) {
-    console.debug(error);
-  }
-
   console.debug('Marked entry %d as read', entry_id);
-
-  rdr_badge_refresh(conn, void console).catch(console.error);
-
+  channel.postMessage({type: 'entry-marked-read', id: entry_id});
+  rdr_badge_refresh(conn, console).catch(console.error);  // unawaited
   callback();
 }
 
