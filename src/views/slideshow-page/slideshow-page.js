@@ -7,11 +7,11 @@ import {feed_peek_url} from '/src/objects/feed.js';
 import {find_viewable_entries} from '/src/ops/find-viewable-entries.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
 import {for_each_viewable_entry} from '/src/ops/for-each-viewable-entry.js';
-import {mark_entry_read} from '/src/ops/mark-entry-read.js';
 import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
 import {rdr_import} from '/src/ops/rdr-import-opml.js';
+import {rdr_mark_entry_read} from '/src/ops/rdr-mark-entry-read.js';
 import {rdr_poll_feeds} from '/src/ops/rdr-poll-feeds.js';
 import {export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
@@ -137,7 +137,7 @@ async function slide_mark_read(conn, slide) {
 
     const id = parseInt(slide.getAttribute('entry'), 10);
     console.log('Marking slide with entry id %d as read', id);
-    await mark_entry_read(conn, mark_read_channel, id);
+    await rdr_mark_entry_read(conn, mark_read_channel, id);
 
     mark_read_channel.close();
 
