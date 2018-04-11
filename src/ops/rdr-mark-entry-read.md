@@ -5,6 +5,12 @@ The `rdr_mark_entry_read` function marks the entry corresponding to the entry_id
 * @param channel {BroadcastChannel} optional
 * @param entry_id {Number} required
 
+### Impl note on why this throws instead of rejects on bad input
+Rather than reject from within the promise, throw an immediate error. This constitutes a serious and permanent programmer error.
+
+### Implementation note on why this uses txn completion over request completion
+The promise settles based on the txn, not the get request, because we do some post-request operations, and because there is actually more than one request involved
+
 ### TODO: Review use of try/catch around channel.postMessage
 Maybe the try/catch isn't needed around channel.postMessage? If `mark_entry_read` is called unawaited, then who cares if the rejection occurs? And when called awaited, it is extremely unlikely the channel has been closed and moreover it probably signals an actual error of premature channel close. I am going to wait on reviewing this further until I resolve the new non-auto-connect requirement in which `mark_entry_read` is called
 
