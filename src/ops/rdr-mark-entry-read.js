@@ -1,7 +1,13 @@
 import {entry_is_valid_id, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
 import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
 
-export function rdr_mark_entry_read(conn, channel, entry_id) {
+const channel_stub = {
+  name: 'stub',
+  postMessage: noop,
+  close: noop
+};
+
+export function rdr_mark_entry_read(conn, channel = channel_stub, entry_id) {
   if (!entry_is_valid_id(entry_id)) {
     throw new TypeError('entry_id is not a valid entry id: ' + entry_id);
   }
@@ -50,12 +56,10 @@ function request_onsuccess(entry_id, event) {
 }
 
 function txn_oncomplete(conn, channel, entry_id, callback, event) {
-  if (channel) {
-    try {
-      channel.postMessage({type: 'entry-marked-read', id: entry_id});
-    } catch (error) {
-      console.debug(error);
-    }
+  try {
+    channel.postMessage({type: 'entry-marked-read', id: entry_id});
+  } catch (error) {
+    console.debug(error);
   }
 
   console.debug('Marked entry %d as read', entry_id);
@@ -64,3 +68,5 @@ function txn_oncomplete(conn, channel, entry_id, callback, event) {
 
   callback();
 }
+
+function noop() {}
