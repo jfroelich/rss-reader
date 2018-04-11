@@ -1,6 +1,3 @@
-
-// TODO: deprecate in favor of an openCursor approach for scalability purposes
-
 export function rdr_get_feeds(conn, title_sort_flag = false) {
   return new Promise(executor.bind(null, conn, title_sort_flag));
 }
