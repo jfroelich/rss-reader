@@ -1,6 +1,13 @@
 import {feed_is_valid_id} from '/src/objects/feed.js';
 
-export function rdr_deactivate_feed(conn, channel, feed_id, reason_text) {
+const channel_stub = {
+  name: 'stub',
+  postMessage: noop,
+  close: noop
+};
+
+export function rdr_deactivate_feed(
+    conn, channel = channel_stub, feed_id, reason_text) {
   assert(feed_is_valid_id(feed_id));
   return new Promise(executor.bind(null, conn, channel, feed_id, reason_text));
 }
@@ -16,10 +23,8 @@ function executor(conn, channel, feed_id, reason_text, resolve, reject) {
 }
 
 function txn_oncomplete(channel, callback, feed_id, event) {
-  if (channel) {
-    channel.postMessage({type: 'feed-deactivated', id: feed_id});
-  }
-  resolve();
+  channel.postMessage({type: 'feed-deactivated', id: feed_id});
+  callback();
 }
 
 function request_onsuccess(reason_text, event) {
@@ -37,3 +42,5 @@ function request_onsuccess(reason_text, event) {
 function assert(value) {
   if (!value) throw new Error('Assertion error');
 }
+
+function noop() {}
