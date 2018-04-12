@@ -55,9 +55,10 @@ function request_onsuccess(console, feed_id, reason_text, event) {
   }
 
   feed.active = false;
-  feed.deactivationDate = new Date();
   feed.deactivationReasonText = reason_text;
-  feed.dateUpdated = new Date();
+  const current_date = new Date();
+  feed.deactivationDate = current_date;
+  feed.dateUpdated = current_date;
   store.put(feed);
 }
 
