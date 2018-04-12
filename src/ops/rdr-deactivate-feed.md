@@ -1,6 +1,12 @@
-### Todos
+### Context params
+* conn
+* channel
+* console
 
+### Params
+* feed_id
+* reason
+
+### Todos
 * documentation
 * tests
-* rather than assert/reject when inactive, maybe just skip?
-* deprecate assert?
