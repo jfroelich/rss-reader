@@ -25,7 +25,8 @@ function executor(
 
   const store = txn.objectStore('feed');
   const request = store.get(feed_id);
-  request.onsuccess = request_onsuccess.bind(request, reason_text);
+  request.onsuccess =
+      request_onsuccess.bind(request, console, feed_id, reason_text);
 }
 
 function txn_oncomplete(channel, console, callback, feed_id, event) {
@@ -34,22 +35,22 @@ function txn_oncomplete(channel, console, callback, feed_id, event) {
   callback();
 }
 
-function request_onsuccess(reason_text, event) {
+function request_onsuccess(console, feed_id, reason_text, event) {
   const feed = event.target.result;
   const store = event.target.source;
 
   if (!feed) {
-    console.warn('Failed to find feed');
+    console.warn('Failed to find feed', feed_id);
     return;
   }
 
   if (!is_feed(feed)) {
-    console.warn('Matched object not a feed', feed);
+    console.warn('Matched object not a feed', feed_id, feed);
     return;
   }
 
   if (feed.active === false) {
-    console.warn('Feed is already inactive', feed);
+    console.warn('Feed is already inactive', feed_id, feed);
     return;
   }
 
