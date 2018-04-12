@@ -2,7 +2,7 @@ import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
-import {contains_feed_with_url} from '/src/ops/contains-feed-with-url.js';
+import {rdr_contains_feed_with_url} from '/src/ops/rdr-contains-feed-with-url.js';
 import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
 import {rdr_create_feed} from '/src/ops/rdr-create-feed.js';
@@ -17,7 +17,7 @@ export async function rdr_subscribe(
     notify_flag = false, url) {
   console.log('Subscribing to feed', url.href);
 
-  if (await contains_feed_with_url(rconn, url)) {
+  if (await rdr_contains_feed_with_url(rconn, url)) {
     console.debug('Already subscribed to', url.href);
     return;
   }
@@ -32,7 +32,7 @@ export async function rdr_subscribe(
 
   // Check if subscribed to redirect
   if (url_loader.url_did_change(url, response_url) &&
-      await contains_feed_with_url(rconn, response_url)) {
+      await rdr_contains_feed_with_url(rconn, response_url)) {
     console.debug(
         'Already subscribed to feed redirect', url.href, response_url.href);
     return;
