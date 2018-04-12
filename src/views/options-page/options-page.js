@@ -5,12 +5,12 @@ import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import * as perm from '/src/lib/permissions/permissions.js';
 import {feed_peek_url} from '/src/objects/feed.js';
-import {deactivate_feed} from '/src/ops/deactivate-feed.js';
 import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
 import {rdr_activate_feed} from '/src/ops/rdr-activate-feed.js';
 import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
+import {rdr_deactivate_feed} from '/src/ops/rdr-deactivate-feed.js';
 import {rdr_delete_feed} from '/src/ops/rdr-delete-feed.js';
 import {rdr_get_feeds} from '/src/ops/rdr-get-feeds.js';
 import {rdr_subscribe} from '/src/ops/subscribe.js';
@@ -421,7 +421,7 @@ async function deactivate_feed_button_onclick(event) {
   const reason = 'click';
 
   const conn = await rdr_create_conn();
-  await deactivate_feed(conn, channel, feed_id, reason);
+  await rdr_deactivate_feed(conn, channel, feed_id, reason);
   conn.close();
 
   // Deactive the corresponding feed element in the view
