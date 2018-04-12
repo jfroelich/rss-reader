@@ -10,7 +10,9 @@ const channel_stub = {
 export function rdr_deactivate_feed(
     conn, channel = channel_stub, console = console_stub, feed_id,
     reason_text) {
-  assert(feed_is_valid_id(feed_id));
+  if (!feed_is_valid_id(feed_id)) {
+    throw new TypeError('Invalid feed id ' + feed_id);
+  }
   return new Promise(
       executor.bind(null, conn, channel, console, feed_id, reason_text));
 }
@@ -35,17 +37,27 @@ function txn_oncomplete(channel, console, callback, feed_id, event) {
 function request_onsuccess(reason_text, event) {
   const feed = event.target.result;
   const store = event.target.source;
-  assert(feed);
-  assert(feed.active || !('active' in feed));
+
+  if (!feed) {
+    console.warn('Failed to find feed');
+    return;
+  }
+
+  if (!is_feed(feed)) {
+    console.warn('Matched object not a feed', feed);
+    return;
+  }
+
+  if (feed.active === false) {
+    console.warn('Feed is already inactive', feed);
+    return;
+  }
+
   feed.active = false;
   feed.deactivationDate = new Date();
   feed.deactivationReasonText = reason_text;
   feed.dateUpdated = new Date();
   store.put(feed);
-}
-
-function assert(value) {
-  if (!value) throw new Error('Assertion error');
 }
 
 function noop() {}
