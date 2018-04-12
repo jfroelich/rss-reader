@@ -421,7 +421,7 @@ async function deactivate_feed_button_onclick(event) {
   const reason = 'click';
 
   const conn = await rdr_create_conn();
-  await rdr_deactivate_feed(conn, channel, feed_id, reason);
+  await rdr_deactivate_feed(conn, channel, console, feed_id, reason);
   conn.close();
 
   // Deactive the corresponding feed element in the view
