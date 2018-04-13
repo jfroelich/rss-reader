@@ -5,13 +5,13 @@ import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import * as perm from '/src/lib/permissions/permissions.js';
 import {feed_peek_url} from '/src/objects/feed.js';
-import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
 import {rdr_activate_feed} from '/src/ops/rdr-activate-feed.js';
 import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
 import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
 import {rdr_deactivate_feed} from '/src/ops/rdr-deactivate-feed.js';
 import {rdr_delete_feed} from '/src/ops/rdr-delete-feed.js';
+import {rdr_find_feed_by_id} from '/src/ops/rdr-find-feed-by-id.js';
 import {rdr_get_feeds} from '/src/ops/rdr-get-feeds.js';
 import {rdr_subscribe} from '/src/ops/subscribe.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
@@ -236,7 +236,7 @@ async function feed_list_item_onclick(event) {
   const feed_id = parseInt(feed_id_string, 10);
 
   const conn = await rdr_create_conn();
-  const feed = await find_feed_by_id(conn, feed_id);
+  const feed = await rdr_find_feed_by_id(conn, feed_id);
   conn.close();
 
   const title_element = document.getElementById('details-title');
