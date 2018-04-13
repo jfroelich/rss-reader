@@ -1,13 +1,13 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
-import {coerce_feed, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
+import {coerce_feed, feed_append_url, feed_create, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
+import {rdr_contains_feed} from '/src/ops/rdr-contains-feed.js';
 import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
 import {rdr_create_feed} from '/src/ops/rdr-create-feed.js';
 import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
 import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
-import {rdr_find_feed_by_url} from '/src/ops/rdr-find-feed-by-url.js';
 import {rdr_lookup_icon} from '/src/ops/rdr-lookup-icon.js';
 import {rdr_notify} from '/src/ops/rdr-notify.js';
 import {rdr_poll_feed} from '/src/ops/rdr-poll-feed.js';
@@ -17,10 +17,9 @@ export async function rdr_subscribe(
     notify_flag = false, url) {
   console.log('Subscribing to feed', url.href);
 
-  const find_key_only = true;
-  let matching_feed = await rdr_find_feed_by_url(rconn, url, find_key_only);
-  if (matching_feed) {
-    console.debug('Already subscribed to', url.href);
+  let does_feed_exist = await rdr_contains_feed(rconn, {url: url});
+  if (does_feed_exist) {
+    console.debug('url exists', url.href);
     return;
   }
 
@@ -34,11 +33,9 @@ export async function rdr_subscribe(
 
   // If redirected, check if the redirect url exists
   if (url_loader.url_did_change(url, response_url)) {
-    matching_feed =
-        await rdr_find_feed_by_url(rconn, response_url, find_key_only);
-    if (matching_feed) {
-      console.debug(
-          'Already subscribed to feed redirect', url.href, response_url.href);
+    does_feed_exist = await rdr_contains_feed(rconn, {url: response_url});
+    if (does_feed_exist) {
+      console.debug('redirect url exists', url.href, response_url.href);
       return;
     }
   }
