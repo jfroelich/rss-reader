@@ -1,8 +1,17 @@
-export function find_entry_id_by_url(conn, url) {
-  if (!(url instanceof URL)) {
-    throw new TypeError('url is not a URL: ' + url);
+import {entry_is_valid_id} from '/src/objects/entry.js';
+
+// TODO: finish up migration from find_entry_id_by_url
+
+export async function rdr_contains_entry(conn, query) {
+  if (!(query.url instanceof URL)) {
+    throw new TypeError('Invalid query ' + query);
   }
 
+  const id = await find_entry_id_by_url(conn, query.url);
+  return entry_is_valid_id(id);
+}
+
+function find_entry_id_by_url(conn, url) {
   return new Promise(executor.bind(null, conn, url));
 }
 

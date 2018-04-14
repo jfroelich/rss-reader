@@ -3,8 +3,8 @@ import * as html_parser from '/src/lib/html-parser/html-parser.js';
 import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/lib/sniff/sniff.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
-import {entry_append_url, entry_has_url, entry_is_valid_id, entry_peek_url} from '/src/objects/entry.js';
-import {find_entry_id_by_url} from '/src/ops/find-entry-id-by-url.js';
+import {entry_append_url, entry_has_url, entry_peek_url} from '/src/objects/entry.js';
+import {rdr_contains_entry} from '/src/ops/rdr-contains-entry.js';
 import {rdr_create_entry} from '/src/ops/rdr-create-entry.js';
 import {rdr_fetch_html} from '/src/ops/rdr-fetch-html.js';
 import {rdr_lookup_icon} from '/src/ops/rdr-lookup-icon.js';
@@ -78,8 +78,8 @@ function entry_rewrite_tail_url(entry, rewrite_rules) {
 
 async function entry_exists(rconn, entry) {
   const url = new URL(entry_peek_url(entry));
-  const id = await find_entry_id_by_url(rconn, url);
-  return entry_is_valid_id(id);
+  const query = {url: url};
+  return await rdr_contains_entry(rconn, query);
 }
 
 // TODO: i think this should always return a response, so instead of returning
