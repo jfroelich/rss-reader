@@ -30,11 +30,15 @@ async function cli_subscribe(url_string) {
 }
 
 async function cli_archive() {
-  const channel = rdr_create_channel();
-  const conn = await rdr_create_conn();
-  await rdr_archive(conn, channel, console, /* max_age */ undefined);
-  channel.close();
-  conn.close();
+  const ac = {};
+  ac.conn = await rdr_create_conn();
+  ac.channel = rdr_create_channel();
+  ac.console = console;
+  ac.max_age = undefined;
+
+  await rdr_archive.call(ac);
+  ac.channel.close();
+  ac.conn.close();
 }
 
 async function cli_refresh_icons() {

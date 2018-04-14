@@ -10,13 +10,17 @@ const null_channel = {
   close: noop
 };
 
-export function rdr_archive(
-    conn, channel = null_channel, console = console_stub,
-    max_age = TWO_DAYS_MS) {
-  return new Promise(executor.bind(null, conn, channel, console, max_age));
+export function rdr_archive() {
+  return new Promise(executor.bind(this));
 }
 
 function executor(conn, channel, console, max_age, resolve, reject) {
+  const conn = this.conn;
+  const channel = this.channel || null_channel;
+  const console = this.console || console_stub;
+  const max_age = this.max_age || TWO_DAYS_MS;
+
+
   console.log('Archiving entries...');
   const entry_ids = [];
   const txn = conn.transaction('entry', 'readwrite');

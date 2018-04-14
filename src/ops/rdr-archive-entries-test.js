@@ -12,8 +12,16 @@ async function test() {
   let version, timeout, max_age;
   const conn =
       await rdr_create_conn('archive-entries-test', version, timeout, console);
-  await rdr_archive(conn, channel_stub, console, max_age);
-  conn.close;
+
+  // Create and use an archive context
+  const ac = {};
+  ac.conn = conn;
+  ac.channel = channel_stub;
+  ac.console = console;
+  ac.max_age = undefined;
+  await rdr_archive.call(ac);
+
+  conn.close();
   await idb_remove(conn.name);
 }
 

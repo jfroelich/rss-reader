@@ -21,11 +21,15 @@ async function handle_compact_favicons_alarm(alarm) {
 }
 
 async function handle_archive_alarm_wakeup(alarm) {
-  const conn = await rdr_create_conn();
-  const channel = rdr_create_channel();
-  await rdr_archive(conn, channel, /* console*/ null, /* max_age */ null);
-  channel.close();
-  conn.close();
+  const ac = {};
+  ac.conn = await rdr_create_conn();
+  ac.channel = rdr_create_channel();
+  ac.console = undefined;
+  ac.max_age = undefined;
+
+  await rdr_archive.call(ac);
+  ac.channel.close();
+  ac.conn.close();
 }
 
 async function handle_lost_entries_alarm(alarm) {
