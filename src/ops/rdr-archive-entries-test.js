@@ -18,8 +18,7 @@ async function test() {
   ac.conn = conn;
   ac.channel = channel_stub;
   ac.console = console;
-  ac.max_age = undefined;
-  await rdr_archive.call(ac);
+  await rdr_archive.call(ac, max_age);
 
   conn.close();
   await idb_remove(conn.name);

@@ -1,5 +1,5 @@
 import '/src/views/cli/cli.js';
-
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import {rdr_archive} from '/src/ops/rdr-archive-entries.js';
 import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
@@ -24,10 +24,11 @@ async function handle_archive_alarm_wakeup(alarm) {
   const ac = {};
   ac.conn = await rdr_create_conn();
   ac.channel = rdr_create_channel();
-  ac.console = undefined;
-  ac.max_age = undefined;
+  ac.console = console_stub;
 
-  await rdr_archive.call(ac);
+  let max_age;
+
+  await rdr_archive.call(ac, max_age);
   ac.channel.close();
   ac.conn.close();
 }

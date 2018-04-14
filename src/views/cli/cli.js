@@ -34,9 +34,9 @@ async function cli_archive() {
   ac.conn = await rdr_create_conn();
   ac.channel = rdr_create_channel();
   ac.console = console;
-  ac.max_age = undefined;
 
-  await rdr_archive.call(ac);
+  let max_age;
+  await rdr_archive.call(ac, max_age);
   ac.channel.close();
   ac.conn.close();
 }

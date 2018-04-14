@@ -1,40 +1,27 @@
 import {entry_create, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/objects/entry.js';
 import {sizeof} from '/src/lib/sizeof/sizeof.js';
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
-const null_channel = {
-  name: 'null-channel',
-  postMessage: noop,
-  close: noop
-};
-
-export function rdr_archive() {
-  return new Promise(executor.bind(this));
+export function rdr_archive(max_age = TWO_DAYS_MS) {
+  return new Promise(executor.bind(this, max_age));
 }
 
-function executor(conn, channel, console, max_age, resolve, reject) {
-  const conn = this.conn;
-  const channel = this.channel || null_channel;
-  const console = this.console || console_stub;
-  const max_age = this.max_age || TWO_DAYS_MS;
-
-
-  console.log('Archiving entries...');
+function executor(max_age, resolve, reject) {
+  this.console.log('Archiving entries...');
   const entry_ids = [];
-  const txn = conn.transaction('entry', 'readwrite');
+  const txn = this.conn.transaction('entry', 'readwrite');
   txn.onerror = _ => reject(txn.error);
-  txn.oncomplete =
-      txn_oncomplete.bind(txn, channel, console, entry_ids, resolve);
+  txn.oncomplete = txn_oncomplete.bind(this, entry_ids, resolve);
+
   const store = txn.objectStore('entry');
   const index = store.index('archiveState-readState');
   const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
   const request = index.openCursor(key_path);
-  request.onsuccess = handle_cursor.bind(request, console, entry_ids, max_age);
+  request.onsuccess = handle_cursor.bind(this, entry_ids, max_age);
 }
 
-function handle_cursor(console, entry_ids, max_age, event) {
+function handle_cursor(entry_ids, max_age, event) {
   const cursor = event.target.result;
   if (cursor) {
     const entry = cursor.value;
@@ -42,7 +29,7 @@ function handle_cursor(console, entry_ids, max_age, event) {
       const current_date = new Date();
       const age = current_date - entry.dateCreated;
       if (age > max_age) {
-        const ae = archive_entry(console, entry);
+        const ae = archive_entry(this.console, entry);
         cursor.update(ae);
         entry_ids.push(ae.id);
       }
@@ -52,12 +39,15 @@ function handle_cursor(console, entry_ids, max_age, event) {
   }
 }
 
-function txn_oncomplete(channel, console, entry_ids, callback, event) {
+function txn_oncomplete(entry_ids, callback, event) {
+  const channel = this.channel;
+  const msg = {type: 'entry-archived', id: 0};
   for (const id of entry_ids) {
-    channel.postMessage({type: 'entry-archived', id: id});
+    msg.id = id;
+    channel.postMessage(msg);
   }
 
-  console.debug('Archived %d entries', entry_ids.length);
+  this.console.debug('Archived %d entries', entry_ids.length);
   callback(entry_ids);
 }
 
@@ -92,5 +82,3 @@ function compact_entry(entry) {
   ce.urls = entry.urls;
   return ce;
 }
-
-function noop() {}
