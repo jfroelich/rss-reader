@@ -3,7 +3,7 @@ import {filter_publisher} from '/src/lib/filter-publisher/filter-publisher.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import {html_escape} from '/src/lib/html/html.js';
 import {list_peek} from '/src/lib/list/list.js';
-import {entry_is_valid_id, is_entry} from '/src/objects/entry.js';
+import {entry_id_is_valid, is_entry} from '/src/objects/entry.js';
 import {find_viewable_entries} from '/src/ops/find-viewable-entries.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
 import {for_each_viewable_entry} from '/src/ops/for-each-viewable-entry.js';
@@ -98,7 +98,7 @@ async function on_entry_added_message(message) {
 }
 
 async function on_entry_expired_message(message) {
-  if (typeof message === 'object' && entry_is_valid_id(message.id)) {
+  if (typeof message === 'object' && entry_id_is_valid(message.id)) {
     const slide_name = Slideshow.element_get_name();
     const selector = slide_name + '[entry="' + message.id + '"]';
     const slide = document.querySelector(selector);

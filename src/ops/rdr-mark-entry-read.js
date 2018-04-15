@@ -1,8 +1,8 @@
-import {entry_is_valid_id, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
+import {entry_id_is_valid, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
 import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
 
 export function rdr_mark_entry_read(entry_id) {
-  if (!entry_is_valid_id(entry_id)) {
+  if (!entry_id_is_valid(entry_id)) {
     throw new TypeError('entry_id is not a valid entry id: ' + entry_id);
   }
 
