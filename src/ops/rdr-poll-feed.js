@@ -113,7 +113,8 @@ export async function rdr_poll_feed(
   const sanitize = false;
 
   await rdr_update_feed(
-      rconn, channel, storable_feed, validate, sanitize, set_date_updated);
+      rconn, channel, console, storable_feed, validate, sanitize,
+      set_date_updated);
 
   const count = await poll_entries(
       rconn, iconn, channel, console, options, parsed_feed.entries,
@@ -183,6 +184,7 @@ function handle_fetch_success(feed) {
   return false;
 }
 
+// TODO: should accept console param
 function handle_error(
     rconn, channel, status, feed, type, deactivation_threshold) {
   // Ignore ephemeral errors
@@ -219,7 +221,7 @@ function handle_error(
   const sanitize = false;
 
   const prom = rdr_update_feed(
-      rconn, channel, feed, validate, sanitize, set_date_updated);
+      rconn, channel, console, feed, validate, sanitize, set_date_updated);
   prom.catch(console.error);  // avoid swallowing
 }
 

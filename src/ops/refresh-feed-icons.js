@@ -36,6 +36,8 @@ async function refresh_feed(rconn, iconn, channel, console, feed) {
       delete feed.faviconURLString;
     }
 
+    // In this case we maintained control over the feed object for its lifetime
+    // so there is no need to validate
     const validate = false;
 
     // In this case we maintained control over the feed object for its lifetime
@@ -45,6 +47,6 @@ async function refresh_feed(rconn, iconn, channel, console, feed) {
 
     const set_date_updated = true;
     await rdr_update_feed(
-        rconn, channel, feed, validate, sanitize, set_date_updated);
+        rconn, channel, console, feed, validate, sanitize, set_date_updated);
   }
 }

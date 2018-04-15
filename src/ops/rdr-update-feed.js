@@ -1,3 +1,5 @@
+import {console_stub} from '/src/lib/console-stub/console-stub.js';
+import {list_peek} from '/src/lib/list/list.js';
 import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/feed.js';
 
 // TODO: simplify args, use context
@@ -12,8 +14,8 @@ const channel_stub = {
 };
 
 export function rdr_update_feed(
-    conn, channel = channel_stub, feed, validate = true, sanitize = true,
-    set_date_updated = false) {
+    conn, channel = channel_stub, console = console_stub, feed, validate = true,
+    sanitize = true, set_date_updated = false) {
   // We have two situations, because we do not need to call is_feed when calling
   // feed_is_valid because we know feed_is_valid calls is_feed
   if (validate && !feed_is_valid(feed)) {
@@ -22,6 +24,8 @@ export function rdr_update_feed(
   } else if (!is_feed(feed)) {
     throw new TypeError('Invalid feed parameter ' + feed);
   }
+
+  console.debug('Updating feed', list_peek(feed.urls));
 
   let clean_feed;
   if (sanitize) {
@@ -34,11 +38,12 @@ export function rdr_update_feed(
     clean_feed.dateUpdated = new Date();
   }
 
-  return new Promise(executor.bind(null, conn, channel, clean_feed));
+  return new Promise(executor.bind(null, conn, channel, console, clean_feed));
 }
 
-function executor(conn, channel, feed, resolve, reject) {
-  const shared = {id: undefined, channel: channel, callback: resolve};
+function executor(conn, channel, console, feed, resolve, reject) {
+  const shared =
+      {id: undefined, channel: channel, console: console, callback: resolve};
 
   const txn = conn.transaction('feed', 'readwrite');
   txn.oncomplete = txn_oncomplete.bind(txn, shared);
@@ -51,6 +56,8 @@ function executor(conn, channel, feed, resolve, reject) {
 }
 
 function txn_oncomplete(shared, event) {
+  shared.console.debug('Updated feed, id=%d', shared.id);
+
   // Suppress invalid state error when channel is closed in non-awaited call
   try {
     shared.channel.postMessage({type: 'feed-updated', id: shared.id});

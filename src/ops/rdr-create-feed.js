@@ -34,7 +34,7 @@ export async function rdr_create_feed(
   const update_sanitize = false;
 
   const feed_id = await rdr_update_feed(
-      conn, void_channel, clean_feed, validate, update_sanitize,
+      conn, void_channel, void console, clean_feed, validate, update_sanitize,
       set_date_updated);
 
   channel.postMessage({type: 'feed-added', id: feed_id});
