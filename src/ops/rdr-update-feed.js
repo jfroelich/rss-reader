@@ -43,6 +43,6 @@ function txn_oncomplete(id_holder, callback, event) {
   callback(id_holder.id);
 }
 
-function request_onsuccess(shared, event) {
+function request_onsuccess(id_holder, event) {
   id_holder.id = event.target.result;
 }
