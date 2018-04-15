@@ -21,3 +21,8 @@ Other than the situation where the set_date_updated flag is true, this inserts t
 ### TODOs
 
 * when updating, is put result still the feed id? I know that result is feed id when adding, but what about updating? Review the documentation on IDBObjectStore.prototype.put, double check and warrant this resolves to an id
+
+* simplify args, use context, and maybe an options parameter
+* return the object instead of the id, so that caller can access the sanitized instance of the input
+* attempting to update a feed with invalid properties where validation is done, should not result in an immediately-thrown exception, because failing validation is not a programmer error. This should instead result in a rejection of the returned promise, more similar to a database call error. The only error that should be immediately thrown that is related is when calling update on a value that is not a feed, because that is a programmer error.
+* i am not sure this should even reject in the case of attempting to update a feed with invalid properties, rejections should only occur generally in the case of programmer errors or other less-ephemeral errors (e.g. no database or something), but using invalid data is obviously not a programmer error. However I don't know how to differentiate nicely in the exit conditions and return value of the function. What should happen when the feed has invalid properties if I do not throw?
