@@ -59,7 +59,8 @@ export async function rdr_subscribe(
   feed.faviconURLString =
       await rdr_lookup_icon(iconn, console, true, lookup_url);
 
-  const stored_feed = await rdr_create_feed(rconn, channel, feed);
+  const sanitize = true;
+  const stored_feed = await rdr_create_feed(rconn, channel, feed, sanitize);
 
   if (notify_flag) {
     const title = 'Subscribed!';

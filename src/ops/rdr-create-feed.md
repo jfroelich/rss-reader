@@ -1,5 +1,8 @@
 The `rdr_create_feed` function creates a new feed in storage
 
+### Params
+* **sanitize** {Boolean} if true then the feed is sanitized prior to storage
+
 ### TODOS
 * documentation
 * testing that focuses exclusively on `rdr_create_feed`

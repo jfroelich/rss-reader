@@ -7,26 +7,33 @@ const null_channel = {
   close: noop
 };
 
-export async function rdr_create_feed(conn, channel = null_channel, feed) {
+export async function rdr_create_feed(
+    conn, channel = null_channel, feed, sanitize = true) {
   if (!feed_is_valid(feed)) {
     throw new TypeError('feed is invalid: ' + feed);
   }
 
-  const prepared_feed = feed_prepare(feed);
-  prepared_feed.active = true;
-  prepared_feed.dateCreated = new Date();
-  delete prepared_feed.dateUpdated;
+  let clean_feed;
+  if (sanitize) {
+    clean_feed = feed_prepare(feed);
+  } else {
+    clean_feed = Object.assing(feed_create(), feed);
+  }
+
+  clean_feed.active = true;
+  clean_feed.dateCreated = new Date();
+  delete clean_feed.dateUpdated;
 
   let void_channel;
   const validate = false;
   const set_date_updated = false;
   const feed_id = await rdr_update_feed(
-      conn, void_channel, prepared_feed, validate, set_date_updated);
+      conn, void_channel, clean_feed, validate, set_date_updated);
 
   channel.postMessage({type: 'feed-added', id: feed_id});
 
-  prepared_feed.id = feed_id;
-  return prepared_feed;
+  clean_feed.id = feed_id;
+  return clean_feed;
 }
 
 function noop() {}
