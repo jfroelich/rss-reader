@@ -1,5 +1,9 @@
 import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/feed.js';
 
+// TODO: simplify args, use context
+// TODO: return the object instead of the id, so that caller can access the
+// sanitized instance of the input
+
 export function rdr_update_feed(
     conn, channel, feed, validate = true, sanitize = true,
     set_date_updated = false) {
