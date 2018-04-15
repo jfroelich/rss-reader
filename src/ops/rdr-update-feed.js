@@ -3,14 +3,19 @@ import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/fe
 // TODO: simplify args, use context
 // TODO: return the object instead of the id, so that caller can access the
 // sanitized instance of the input
+// TODO: require channel
+// TODO: do not capture channel invalid state error
 
 export function rdr_update_feed(
     conn, channel, feed, validate = true, sanitize = true,
     set_date_updated = false) {
-  if (validate) {
-    assert(feed_is_valid(feed));
-  } else {
-    assert(is_feed(feed));
+  // We have two situations, because we do not need to call is_feed when calling
+  // feed_is_valid because we know feed_is_valid calls is_feed
+  if (validate && !feed_is_valid(feed)) {
+    throw new TypeError(
+        'Feed has invalid properties or invalid parameter ' + feed);
+  } else if (!is_feed(feed)) {
+    throw new TypeError('Invalid feed parameter ' + feed);
   }
 
   let clean_feed;
@@ -56,8 +61,4 @@ function request_onsuccess(shared, event) {
   // On create, the result is the new value of the auto-incremented feed id
   // Not sure what happens on update
   shared.id = event.target.result;
-}
-
-function assert(value) {
-  if (!value) throw new Error('Assertion error');
 }
