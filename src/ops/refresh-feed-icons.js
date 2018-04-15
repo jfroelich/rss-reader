@@ -36,17 +36,19 @@ async function refresh_feed(rconn, iconn, channel, console, feed) {
       delete feed.faviconURLString;
     }
 
-    // In this case we maintained control over the feed object for its lifetime
-    // so there is no need to validate
-    const validate = false;
+    const update_context = {};
+    update_context.conn = rconn;
+    update_context.channel = channel;
+    update_context.console = console;
 
+    const update_options = {};
     // In this case we maintained control over the feed object for its lifetime
-    // and there is little to no risk of corruption, so there is no need to
-    // re-sanitize
-    const sanitize = false;
+    // and did not introduce dangerous user-data so there is no need to validate
+    // nor sanitize
+    update_options.validate = false;
+    update_options.sanitize = false;
+    update_options.set_date_updated = true;
 
-    const set_date_updated = true;
-    await rdr_update_feed(
-        rconn, channel, console, feed, validate, sanitize, set_date_updated);
+    await rdr_update_feed.call(update_context, feed, update_options);
   }
 }

@@ -99,8 +99,15 @@ export async function rdr_poll_feed(
   handle_fetch_success(merged_feed);
 
   const storable_feed = feed_prepare(merged_feed);
-  const validate = true;
-  const set_date_updated = true;
+
+  const update_context = {};
+  update_context.conn = rconn;
+  update_context.channel = channel;
+  update_context.console = console;
+
+  const update_options = {};
+  update_options.validate = true;
+  update_options.set_date_updated = true;
 
   // In this case we do not sanitize in rdr_update_feed, because we explicitly
   // do sanitization above
@@ -108,13 +115,11 @@ export async function rdr_poll_feed(
   // sanitize explicitly here in rdr-poll-feed. Do not directly interact with
   // feed_prepare above. But in order to do that I need to change
   // rdr_update_feed to return a feed object instead of just an id, otherwise we
-  // lose access to the cleaned feed object, and we need access because we rely
-  // on the cleaned feed object after the update
-  const sanitize = false;
+  // lose access to the sanitized feed object, which we need access to because
+  // we rely on the sanitized feed object afterward
+  update_options.sanitize = false;
 
-  await rdr_update_feed(
-      rconn, channel, console, storable_feed, validate, sanitize,
-      set_date_updated);
+  await rdr_update_feed.call(update_context, storable_feed, update_options);
 
   const count = await poll_entries(
       rconn, iconn, channel, console, options, parsed_feed.entries,
@@ -207,19 +212,25 @@ async function handle_error(
     feed.deactivationDate = new Date();
   }
 
-  const validate = true;
-  const set_date_updated = true;
+  const update_context = {};
+  update_context.conn = rconn;
+  update_context.channel = channel;
+  update_context.console = console;
 
+  const update_options = {};
+  // TODO: why validate? have we not had control the entire time, and have no
+  // new user data?
+  update_options.validate = true;
   // In this situation the feed's properties were not polluted by new external
   // data, and we maintained control over of the object for its lifetime from
   // read to write, so there is no need to sanitize on storage
   // TODO: verify the claim of no-pollution, have some anxiety this is called
   // with new data, in some sense I have to make it an
   // expectation/characteristic of the handle_error function itself then
-  const sanitize = false;
+  update_options.sanitize = false;
+  update_options.set_date_updated = true;
 
-  await rdr_update_feed(
-      rconn, channel, console, feed, validate, sanitize, set_date_updated);
+  await rdr_update_feed.call(update_context, feed, update_options);
 }
 
 function dedup_entries(entries) {

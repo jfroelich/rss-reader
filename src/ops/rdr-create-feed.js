@@ -1,14 +1,14 @@
 import {feed_is_valid, feed_prepare} from '/src/objects/feed.js';
 import {rdr_update_feed} from '/src/ops/rdr-update-feed.js';
 
-const null_channel = {
-  name: 'null-channel',
+const channel_stub = {
+  name: 'stub',
   postMessage: noop,
   close: noop
 };
 
 export async function rdr_create_feed(
-    conn, channel = null_channel, feed, sanitize = true) {
+    conn, channel = channel_stub, feed, sanitize = true) {
   if (!feed_is_valid(feed)) {
     throw new TypeError('feed is invalid: ' + feed);
   }
@@ -24,18 +24,26 @@ export async function rdr_create_feed(
   clean_feed.dateCreated = new Date();
   delete clean_feed.dateUpdated;
 
-  let void_channel;
-  const validate = false;
-  const set_date_updated = false;
+  const update_context = {};
+  update_context.conn = conn;
+  // Silence the update message, we substitute our own
+  update_context.channel = channel_stub;
+  // TODO: get from parameter instead
+  update_context.console = void console;
 
-  // In this situation, we do not want to sanitize. If any sanitization is being
-  // performed, it is done explicitly above, by rdr_create_feed, so we should
-  // avoid doing it again
-  const update_sanitize = false;
+  const update_options = {};
+  // We already sanitized above
+  // TODO: delegate sanitization to update?
+  update_options.sanitize = false;
+  // Do not validate, we validate ourselves it at all
+  // TODO: should we actually be validating?
+  update_options.validate = false;
+  // Since it is a new object, it has never been updated. This is the default,
+  // but I prefer to be explicit for now
+  update_options.set_date_updated = false;
 
-  const feed_id = await rdr_update_feed(
-      conn, void_channel, void console, clean_feed, validate, update_sanitize,
-      set_date_updated);
+  const feed_id =
+      await rdr_update_feed.call(update_context, clean_feed, update_options);
 
   channel.postMessage({type: 'feed-added', id: feed_id});
 

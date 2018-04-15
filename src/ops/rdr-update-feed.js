@@ -1,19 +1,10 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {list_peek} from '/src/lib/list/list.js';
 import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/feed.js';
 
-const channel_stub = {
-  name: 'stub',
-  postMessage: noop,
-  close: noop
-};
-
-export function rdr_update_feed(
-    conn, channel = channel_stub, console = console_stub, feed, validate = true,
-    sanitize = true, set_date_updated = false) {
+export function rdr_update_feed(feed, options = {}) {
   // We have two situations, because we do not need to call is_feed when calling
   // feed_is_valid because we know feed_is_valid calls is_feed
-  if (validate && !feed_is_valid(feed)) {
+  if (options.validate && !feed_is_valid(feed)) {
     throw new TypeError(
         'Feed has invalid properties or invalid parameter ' + feed);
   } else if (!is_feed(feed)) {
@@ -23,42 +14,43 @@ export function rdr_update_feed(
   console.debug('Updating feed', list_peek(feed.urls));
 
   let clean_feed;
-  if (sanitize) {
+  if (options.sanitize) {
     clean_feed = feed_prepare(feed);
   } else {
     clean_feed = Object.assign(feed_create(), feed);
   }
 
-  if (set_date_updated) {
+  if (options.set_date_updated) {
     clean_feed.dateUpdated = new Date();
   }
 
-  return new Promise(executor.bind(null, conn, channel, console, clean_feed));
+  return new Promise(executor.bind(this, clean_feed));
 }
 
-function executor(conn, channel, console, feed, resolve, reject) {
-  const shared =
-      {id: undefined, channel: channel, console: console, callback: resolve};
+function executor(feed, resolve, reject) {
+  const conn = this.conn;
+  const channel = this.channel;
+  const console = this.console;
 
-  const txn = conn.transaction('feed', 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(txn, shared);
+  const id_holder = {id: undefined};
+
+  const txn = this.conn.transaction('feed', 'readwrite');
+  txn.oncomplete = txn_oncomplete.bind(this, id_holder, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const store = txn.objectStore('feed');
   const request = store.put(feed);
-  request.onsuccess = request_onsuccess.bind(request, shared);
+  request.onsuccess = request_onsuccess.bind(this, id_holder);
 }
 
-function txn_oncomplete(shared, event) {
-  shared.console.debug('Updated feed, id=%d', shared.id);
-  shared.channel.postMessage({type: 'feed-updated', id: shared.id});
-  shared.callback(shared.id);
+function txn_oncomplete(id_holder, callback, event) {
+  this.console.debug('Updated feed, id=%d', id_holder.id);
+  this.channel.postMessage({type: 'feed-updated', id: id_holder.id});
+  callback(id_holder.id);
 }
 
 function request_onsuccess(shared, event) {
   // On create, the result is the new value of the auto-incremented feed id
   // Not sure what happens on update
-  shared.id = event.target.result;
+  id_holder.id = event.target.result;
 }
-
-function noop() {}
