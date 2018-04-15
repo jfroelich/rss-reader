@@ -8,21 +8,10 @@ export const ENTRY_STATE_READ = 1;
 export const ENTRY_STATE_UNARCHIVED = 0;
 export const ENTRY_STATE_ARCHIVED = 1;
 
-// TODO: implement
 export function entry_is_valid(entry) {
   if (!is_entry(entry)) {
     return false;
   }
-
-  // Check required properties? This function is specifically validation for
-  // storage, so maybe I should have constraints like the urls list must have
-  // at least one entry.
-
-  // TODO: for each entry property, ensure it is either undefined/null or the
-  // proper type
-
-  // TODO: maybe ensure dates are not in the future contain NaN or things like
-  // that.
 
   return true;
 }
@@ -30,15 +19,6 @@ export function entry_is_valid(entry) {
 export function entry_sanitize(
     input_entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
-  // Create a shallow clone of the entry. This is partly the source of impurity.
-  // Here shallow refers to the fact that several of the properties are objects
-  // where the reference to the object is copied, instead of copying the entire
-  // value as a new object. Which basically means the new properties point to
-  // the old properties. Which basically means to be careful about doing things
-  // like modifying the urls property of the input entry after the sanitize
-  // call, because it will implicitly cause spooky-action-at-a-distance and
-  // modify the output entry object too. I've chosen the shallow copy because it
-  // is generally faster and I assume I can always be careful
   const blank_entry = entry_create();
   const output_entry = Object.assign(blank_entry, input_entry);
 
@@ -70,10 +50,6 @@ export function entry_sanitize(
   return output_entry;
 }
 
-// Append a url to an entry's url list. Lazily creates the urls property if
-// needed. Normalizes the url. The normalized url is compared against existing
-// urls to ensure the new url is unique. Returns true if entry was added, or
-// false if the url already exists and was therefore not added
 export function entry_append_url(entry, url) {
   assert(is_entry(entry));
   assert(url instanceof URL);
