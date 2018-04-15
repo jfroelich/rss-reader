@@ -2,7 +2,8 @@ import {date_format} from '/src/lib/date/date.js';
 import {filter_publisher} from '/src/lib/filter-publisher/filter-publisher.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import {html_escape} from '/src/lib/html/html.js';
-import {entry_is_valid_id, entry_peek_url, is_entry} from '/src/objects/entry.js';
+import {list_peek} from '/src/lib/list/list.js';
+import {entry_is_valid_id, is_entry} from '/src/objects/entry.js';
 import {feed_peek_url} from '/src/objects/feed.js';
 import {find_viewable_entries} from '/src/ops/find-viewable-entries.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
@@ -172,7 +173,7 @@ function slide_append(entry) {
     return;
   }
 
-  console.debug('Appending entry', entry_peek_url(entry));
+  console.debug('Appending entry', list_peek(entry.urls));
 
   const slide = Slideshow.create();
   slide.setAttribute('entry', entry.id);
@@ -192,7 +193,7 @@ function slide_append(entry) {
 
 function create_article_title_element(entry) {
   const title_element = document.createElement('a');
-  title_element.setAttribute('href', entry_peek_url(entry));
+  title_element.setAttribute('href', list_peek(entry.urls));
   title_element.setAttribute('class', 'entry-title');
   title_element.setAttribute('rel', 'noreferrer');
 

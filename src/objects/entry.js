@@ -3,12 +3,10 @@ import {html_replace_tags} from '/src/lib/html/html.js';
 import * as string from '/src/lib/string/string.js';
 
 export const ENTRY_MAGIC = 0xdeadbeef;
-
 export const ENTRY_STATE_UNREAD = 0;
 export const ENTRY_STATE_READ = 1;
 export const ENTRY_STATE_UNARCHIVED = 0;
 export const ENTRY_STATE_ARCHIVED = 1;
-
 
 // TODO: implement
 export function entry_is_valid(entry) {
@@ -92,14 +90,6 @@ export function entry_append_url(entry, url) {
   }
 
   return true;
-}
-
-// Returns the last url, as a string, in the entry's url list. This should never
-// be called on an entry without urls.
-export function entry_peek_url(entry) {
-  assert(is_entry(entry));
-  assert(entry_has_url(entry));
-  return entry.urls[entry.urls.length - 1];
 }
 
 // Returns true if the entry has at least one url

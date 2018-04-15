@@ -1,9 +1,10 @@
 import * as color from '/src/lib/color/color.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
+import {list_peek} from '/src/lib/list/list.js';
 import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/lib/sniff/sniff.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
-import {entry_append_url, entry_has_url, entry_peek_url} from '/src/objects/entry.js';
+import {entry_append_url, entry_has_url} from '/src/objects/entry.js';
 import {rdr_contains_entry} from '/src/ops/rdr-contains-entry.js';
 import {rdr_create_entry} from '/src/ops/rdr-create-entry.js';
 import {rdr_fetch_html} from '/src/ops/rdr-fetch-html.js';
@@ -56,7 +57,7 @@ async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {
     return false;
   }
 
-  const request_url = new URL(entry_peek_url(entry));
+  const request_url = new URL(list_peek(entry.urls));
   const response_url = new URL(response.url);
   if (!url_loader.url_did_change(request_url, response_url)) {
     return false;
@@ -68,7 +69,7 @@ async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {
 }
 
 function entry_rewrite_tail_url(entry, rewrite_rules) {
-  const tail_url = new URL(entry_peek_url(entry));
+  const tail_url = new URL(list_peek(entry.urls));
   const new_url = rewrite_url(tail_url, rewrite_rules);
   if (!new_url) {
     return false;
@@ -77,7 +78,7 @@ function entry_rewrite_tail_url(entry, rewrite_rules) {
 }
 
 async function entry_exists(rconn, entry) {
-  const url = new URL(entry_peek_url(entry));
+  const url = new URL(list_peek(entry.urls));
   const query = {url: url};
   return await rdr_contains_entry(rconn, query);
 }
@@ -86,7 +87,7 @@ async function entry_exists(rconn, entry) {
 // undefined if not augmentable, return a stub error promise
 // TODO: undecided, but maybe augmentability is not this function's concern?
 async function fetch_entry(entry, fetch_html_timeout) {
-  const url = new URL(entry_peek_url(entry));
+  const url = new URL(list_peek(entry.urls));
   if (url_is_augmentable(url)) {
     const response = await rdr_fetch_html(url, fetch_html_timeout);
     if (response.ok) {
@@ -136,7 +137,7 @@ function update_entry_title(entry, document) {
 }
 
 async function update_entry_icon(iconn, console, entry, document) {
-  const lookup_url = new URL(entry_peek_url(entry));
+  const lookup_url = new URL(list_peek(entry.urls));
   const skip_fetch = true;
   const icon_url_string =
       await rdr_lookup_icon(iconn, console, skip_fetch, lookup_url);
@@ -156,7 +157,7 @@ async function update_entry_content(
     }
   }
 
-  const document_url = new URL(entry_peek_url(entry));
+  const document_url = new URL(list_peek(entry.urls));
   const opts = {
     fetch_image_timeout: fetch_image_timeout,
     matte: color.WHITE,
