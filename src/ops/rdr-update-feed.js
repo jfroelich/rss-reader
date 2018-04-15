@@ -2,10 +2,7 @@ import {list_peek} from '/src/lib/list/list.js';
 import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/feed.js';
 
 export function rdr_update_feed(feed, options = {}) {
-  if (options.validate && !feed_is_valid(feed)) {
-    throw new TypeError(
-        'Feed has invalid properties or invalid parameter ' + feed);
-  } else if (!is_feed(feed)) {
+  if (!is_feed(feed)) {
     throw new TypeError('Invalid feed parameter ' + feed);
   }
 
@@ -25,34 +22,28 @@ export function rdr_update_feed(feed, options = {}) {
     clean_feed.dateUpdated = new Date();
   }
 
-  return new Promise(executor.bind(this, clean_feed));
+  return new Promise(executor.bind(this, clean_feed, options.validate));
 }
 
-function executor(feed, resolve, reject) {
+function executor(feed, validate, resolve, reject) {
+  if (validate && !feed_is_valid(feed)) {
+    const error = new Error('Invalid feed ' + feed);
+    reject(error);
+    return;
+  }
+
   const txn = this.conn.transaction('feed', 'readwrite');
   txn.oncomplete = txn_oncomplete.bind(this, feed, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const request = txn.objectStore('feed').put(feed);
-  request.onsuccess = request_onsuccess.bind(this, feed);
+  if (!('id' in feed)) {
+    request.onsuccess = _ => feed.id = request.result;
+  }
 }
 
 function txn_oncomplete(feed, callback, event) {
-  this.console.debug('Updated feed', feed.id);
+  this.console.debug('Updated feed', feed.id, list_peek(feed.urls));
   this.channel.postMessage({type: 'feed-updated', id: feed.id});
   callback(feed);
-}
-
-function request_onsuccess(feed, event) {
-  // TEMP: reviewing what happens in case of put where id exists
-  if ('id' in feed) {
-    // use the actual console
-    console.debug('put feed result when id exists is', event.target.result);
-  }
-
-  // Set the auto-incremented id value in the case of creation and ignore in
-  // the case of update
-  if (!('id' in feed)) {
-    feed.id = event.target.result;
-  }
 }

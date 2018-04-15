@@ -2,7 +2,7 @@ import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import {list_empty, list_peek} from '/src/lib/list/list.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_entry} from '/src/objects/entry.js';
-import {coerce_feed, feed_merge, feed_prepare, is_feed} from '/src/objects/feed.js';
+import {coerce_feed, feed_merge, is_feed} from '/src/objects/feed.js';
 import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
 import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
 import {rdr_notify} from '/src/ops/rdr-notify.js';

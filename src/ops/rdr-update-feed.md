@@ -1,29 +1,36 @@
-The `rdr_update_feed` operation creates or updates a feed in the database.
-
-Other than the situation where an options flag is true, this inserts the feed object *as-is*.
+The `rdr_update_feed` operation creates or updates a feed in the database, and broadcasts a *feed-updated* type message to the channel when finished. Other than the situation where an options flag is true, this inserts the feed object *as-is*. The input feed object is never modified.
 
 ### Context params
-* **conn** {IDBDatabase} required, an open database connection
-* **channel** {BroadcastChannel} required, a channel to send messages about a feed being updated
-* **console** {object} required, logging destination
+All context properties are required.
+* **conn** {IDBDatabase} an open database connection
+* **channel** {BroadcastChannel} a channel to send messages about a feed being updated
+* **console** {object} logging destination
 
 ### Params
-* **feed** {object} the feed object to store, required
-* **options** {object} optional, the set of options to specialize the call
+* **feed** {object} the feed object to store, required, must have the magic type property
+* **options** {object} optional, the set of options to specialize the call, see the next section
 
 ### Options
-* **validate** {Boolean} optional, if true then feed's properties are validated, and an error is thrown if the feed is invalid
-* **sanitize** {Boolean}
-* **set_date_updated** {Boolean} optional, if true then the feed's `dateUpdated` property is implicitly set to the time this function is called
+* **validate** {Boolean} defaults to false, if true then feed's properties are validated, and the returned promise rejects if the feed is invalid
+* **sanitize** {Boolean} defaults to false, if true then the feed is sanitized prior to storage
+* **set_date_updated** {Boolean} defaults to false, if true then the feed's `dateUpdated` property is set to the time this function is called
+
+### Return value
+`rdr_update_feed` is an asynchronous function that returns a promise. The promise return value is the stored feed object.
 
 ### Errors
-* **TypeError** feed is not a feed type
-* **InvalidStateError** closed channel when calling postMessage
-* **Error** validate is true and feed is invalid
+* **TypeError** feed is not a feed type, unlike the other errors this is thrown immediately and not as a promise rejection because making this mistake constitutes a permanent programmer error
+* **InvalidStateError** closed channel when calling postMessage, note that internally that channel.postMessage is called *after* the transaction has settled successfully, because it is important to not send out channel messages prematurely in case of transactional failure, meaning that even when this error is thrown the database was still updated, which means that the caller should not necessarily consider this an error
+* **Error** a general error that is thrown when the validate option is true and the input feed is invalid, note that sanitization takes place *before* validation
 * **DOMException** database interaction error
 
+### Implementation note on functional purity
+This is a mostly-pure function. Of course it is impure in that the database is permanently modified as a side effect, and a channel message is broadcast. It is pure in the sense that the context and input parameters are never modified.
+
+### Implementation note on setting new id
+The result of using `IDBObjectStore.prototype.put` is the keypath of the inserted object,
+so here it is always the new feed object's id, regardless of whether the feed is being created or overwritten.
+
 ### TODOs
-* when updating, is put result still the feed id? I know that result is feed id when adding, but what about updating? Review the documentation on IDBObjectStore.prototype.put, double check and warrant this resolves to an id
-* attempting to update a feed with invalid properties where validation is done, should not result in an immediately-thrown exception, because failing validation is not a programmer error. This should instead result in a rejection of the returned promise, more similar to a database call error. The only error that should be immediately thrown that is related is when calling update on a value that is not a feed, because that is a programmer error.
-* i am not sure this should even reject in the case of attempting to update a feed with invalid properties, rejections should only occur generally in the case of programmer errors or other less-ephemeral errors (e.g. no database or something), but using invalid data is obviously not a programmer error. However I don't know how to differentiate nicely in the exit conditions and return value of the function. What should happen when the feed has invalid properties if I do not throw?
-* in the case of creation, we probably do not need to listen for request success
+* I am not sure this should reject in the case of attempting to update a feed with invalid properties. Rejections should only occur generally in the case of programmer errors or other serious errors such as a database i/o error, but using invalid data is obviously not a programmer error. What should happen when the feed has invalid properties? For now I am rejecting the promise, but that doesn't sit well with me. I feel like javascript and promises are unfairly hoisting an error pattern on me.
+* What if purity isn't worth it and I should just modify the input object in place?
