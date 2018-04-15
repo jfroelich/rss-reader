@@ -92,12 +92,6 @@ export function entry_append_url(entry, url) {
   return true;
 }
 
-// Returns true if the entry has at least one url
-export function entry_has_url(entry) {
-  assert(is_entry(entry));
-  return entry.urls && (entry.urls.length > 0);
-}
-
 // Return true if the first parameter looks like an entry id
 export function entry_is_valid_id(value) {
   return Number.isInteger(value) && value > 0;

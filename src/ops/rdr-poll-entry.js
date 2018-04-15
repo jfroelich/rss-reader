@@ -1,10 +1,10 @@
 import * as color from '/src/lib/color/color.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
-import {list_peek} from '/src/lib/list/list.js';
+import {list_empty, list_peek} from '/src/lib/list/list.js';
 import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
 import * as sniff from '/src/lib/sniff/sniff.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
-import {entry_append_url, entry_has_url} from '/src/objects/entry.js';
+import {entry_append_url} from '/src/objects/entry.js';
 import {rdr_contains_entry} from '/src/ops/rdr-contains-entry.js';
 import {rdr_create_entry} from '/src/ops/rdr-create-entry.js';
 import {rdr_fetch_html} from '/src/ops/rdr-fetch-html.js';
@@ -23,7 +23,7 @@ const INACCESSIBLE_CONTENT_DESCRIPTORS = [
 ];
 
 export async function rdr_poll_entry(entry) {
-  if (!entry_has_url(entry)) {
+  if (list_empty(entry.urls)) {
     return;
   }
 

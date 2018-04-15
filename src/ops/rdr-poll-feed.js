@@ -1,7 +1,7 @@
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import {list_empty, list_peek} from '/src/lib/list/list.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
-import {coerce_entry, entry_has_url} from '/src/objects/entry.js';
+import {coerce_entry} from '/src/objects/entry.js';
 import {coerce_feed, feed_merge, feed_prepare, is_feed} from '/src/objects/feed.js';
 import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
 import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
@@ -208,7 +208,7 @@ function dedup_entries(entries) {
   const seen_url_strings = [];
 
   for (const entry of entries) {
-    if (!entry_has_url(entry)) {
+    if (list_empty(entry.urls)) {
       distinct_entries.push(entry);
       continue;
     }

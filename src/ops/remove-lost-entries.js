@@ -1,5 +1,5 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import {entry_has_url} from '/src/objects/entry.js';
+import {list_empty} from '/src/lib/list/list.js';
 
 const channel_stub = {
   name: 'channel-stub',
@@ -27,7 +27,7 @@ function request_onsuccess(ids, console, event) {
   const cursor = request.result;
   if (cursor) {
     const entry = cursor.value;
-    if (!entry_has_url(entry)) {
+    if (list_empty(entry.urls)) {
       console.debug('Deleting lost entry', entry.id);
       cursor.delete();
       ids.push(entry.id);
