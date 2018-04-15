@@ -4,7 +4,6 @@ import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import {html_escape} from '/src/lib/html/html.js';
 import {list_peek} from '/src/lib/list/list.js';
 import {entry_is_valid_id, is_entry} from '/src/objects/entry.js';
-import {feed_peek_url} from '/src/objects/feed.js';
 import {find_viewable_entries} from '/src/ops/find-viewable-entries.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
 import {for_each_viewable_entry} from '/src/ops/for-each-viewable-entry.js';
@@ -17,6 +16,7 @@ import {rdr_poll_feeds} from '/src/ops/rdr-poll-feeds.js';
 import {export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/views/slideshow-page/slideshow.js';
+
 
 // clang-format off
 const fonts = [
@@ -610,7 +610,7 @@ function feeds_container_append_feed(feed) {
   col.textContent = 'URL';
   row.appendChild(col);
   col = document.createElement('td');
-  col.textContent = feed_peek_url(feed);
+  col.textContent = list_peek(feed.urls);
   row.appendChild(col);
   feed_info_element.appendChild(row);
 

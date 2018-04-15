@@ -1,7 +1,8 @@
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
+import {list_peek} from '/src/lib/list/list.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_entry, entry_has_url} from '/src/objects/entry.js';
-import {coerce_feed, feed_has_url, feed_merge, feed_peek_url, feed_prepare, is_feed} from '/src/objects/feed.js';
+import {coerce_feed, feed_has_url, feed_merge, feed_prepare, is_feed} from '/src/objects/feed.js';
 import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
 import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
 import {rdr_notify} from '/src/ops/rdr-notify.js';
@@ -28,7 +29,7 @@ export async function rdr_poll_feed(
     return 0;
   }
 
-  const tail_url = new URL(feed_peek_url(feed));
+  const tail_url = new URL(list_peek(feed.urls));
 
   if (!feed.active) {
     console.debug('Ignoring inactive feed', tail_url.href);
@@ -123,7 +124,7 @@ export async function rdr_poll_feed(
 
 async function poll_entries(
     rconn, iconn, channel, console, options, entries, feed) {
-  const feed_url_string = feed_peek_url(feed);
+  const feed_url_string = list_peek(feed.urls);
 
   console.debug(
       'Processing %d entries for feed', entries.length, feed_url_string);

@@ -1,5 +1,6 @@
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import {html_replace_tags} from '/src/lib/html/html.js';
+import {list_peek} from '/src/lib/list/list.js';
 import * as object from '/src/lib/object/object.js';
 import * as string from '/src/lib/string/string.js';
 
@@ -42,7 +43,7 @@ export function feed_create_favicon_lookup_url(feed) {
 
   // If the feed's link is missing/invalid then use the origin of the feed's
   // xml url. Assume the feed always has a url.
-  const tail_url = new URL(feed_peek_url(feed));
+  const tail_url = new URL(list_peek(feed.urls));
 
   // Use origin because we know the page is an xml file and therefore will not
   // have its own specific icon source, unlike a web page, which feed.link
@@ -157,17 +158,6 @@ export function feed_append_url(feed, url) {
   }
   feed.urls.push(href);
   return true;
-}
-
-// Returns the last url in the feed's url list as a string
-// @param feed {Object} a feed object
-// @returns {String} the last url in the feed's url list
-// TODO: revert to tolerating some bad input (e.g. calling on feed without
-// urls), review the typical peek operation api for other data structures in
-// other code bases
-export function feed_peek_url(feed) {
-  assert(feed_has_url(feed));
-  return feed.urls[feed.urls.length - 1];
 }
 
 export function feed_has_url(feed) {

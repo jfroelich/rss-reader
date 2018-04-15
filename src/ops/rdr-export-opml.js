@@ -1,5 +1,5 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import {feed_peek_url} from '/src/objects/feed.js';
+import {list_peek} from '/src/lib/list/list.js';
 import {rdr_get_feeds} from '/src/ops/rdr-get-feeds.js';
 
 export async function rdr_export_opml(conn, title, console = console_stub) {
@@ -58,7 +58,7 @@ function append_feed(document, feed, console) {
   if (feed.type) {
     outline.setAttribute('type', feed.type);
   }
-  outline.setAttribute('xmlUrl', feed_peek_url(feed));
+  outline.setAttribute('xmlUrl', list_peek(feed.urls));
   if (feed.title) {
     outline.setAttribute('title', feed.title);
   }

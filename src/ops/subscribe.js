@@ -1,7 +1,8 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
+import {list_peek} from '/src/lib/list/list.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
-import {coerce_feed, feed_append_url, feed_create, feed_create_favicon_lookup_url, feed_peek_url, is_feed} from '/src/objects/feed.js';
+import {coerce_feed, feed_append_url, feed_create, feed_create_favicon_lookup_url, is_feed} from '/src/objects/feed.js';
 import {rdr_contains_feed} from '/src/ops/rdr-contains-feed.js';
 import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
 import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
@@ -62,7 +63,7 @@ export async function rdr_subscribe(
 
   if (notify_flag) {
     const title = 'Subscribed!';
-    const feed_title = feed.title || feed_peek_url(stored_feed);
+    const feed_title = feed.title || list_peek(stored_feed.urls);
     const message = 'Subscribed to ' + feed_title;
     rdr_notify(title, message, stored_feed.faviconURLString);
   }
