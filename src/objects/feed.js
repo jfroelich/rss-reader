@@ -78,23 +78,12 @@ export function feed_prepare(feed) {
   return object.filter_empty_properties(feed_sanitize(feed));
 }
 
-// TODO: implement fully
-// Return whether the feed has valid properties
-// @param feed {any} any value, this should be a feed object, but it is not
-// required
-// @return {Boolean}
+
 export function feed_is_valid(feed) {
-  // feed_is_valid is generally called in the context of an assertion, so
-  // while this could be its own assert, there is no need. It is simpler to
-  // return here than throw an exception. It is, notably, generally an error to
-  // ever call this function on something other than a feed, but that care is
-  // left to the caller
   if (!is_feed(feed)) {
     return false;
   }
 
-  // Validate the feed's id. It may not be present in the case of validating
-  // a feed that has never been stored.
   if ('id' in feed && !feed_id_is_valid(feed.id)) {
     return false;
   }
@@ -102,18 +91,9 @@ export function feed_is_valid(feed) {
   return true;
 }
 
-// Returns a new object that results from merging the old feed with the new
-// feed. Fields from the new feed take precedence, except for urls, which are
-// merged to generate a distinct ordered set of oldest to newest url. Impure
-// because of copying by reference.
 export function feed_merge(old_feed, new_feed) {
   const merged_feed = Object.assign(feed_create(), old_feed, new_feed);
-
-  // After assignment, the merged feed has only the urls from the new feed. So
-  // the output feed's url list needs to be fixed. First copy over the old
-  // feed's urls, then try and append each new feed url.
   merged_feed.urls = [...old_feed.urls];
-
   if (new_feed.urls) {
     for (const url_string of new_feed.urls) {
       feed_append_url(merged_feed, new URL(url_string));
@@ -123,9 +103,6 @@ export function feed_merge(old_feed, new_feed) {
   return merged_feed;
 }
 
-// Appends a url to the feed's internal list. Lazily creates the list if needed
-// @param feed {Object} a feed object
-// @param url {URL}
 export function feed_append_url(feed, url) {
   if (!is_feed(feed)) {
     console.error('Invalid feed argument:', feed);
@@ -150,10 +127,7 @@ export function feed_id_is_valid(id) {
   return Number.isInteger(id) && id > 0;
 }
 
-// TODO: think about fetch info parameter more, I'd prefer maybe to just accept
-// a Response object. But I don't know how to get request url.
-// TODO: think more about separating out the integration of fetch information
-// from coercion. This kind of mixes it all together and I do not like that.
+
 export function coerce_feed(parsed_feed, fetch_info) {
   const request_url = fetch_info.request_url;
   const response_url = fetch_info.response_url;
