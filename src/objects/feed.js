@@ -78,7 +78,6 @@ export function feed_prepare(feed) {
   return object.filter_empty_properties(feed_sanitize(feed));
 }
 
-
 export function feed_is_valid(feed) {
   if (!is_feed(feed)) {
     return false;
@@ -105,17 +104,22 @@ export function feed_merge(old_feed, new_feed) {
 
 export function feed_append_url(feed, url) {
   if (!is_feed(feed)) {
-    console.error('Invalid feed argument:', feed);
+    throw new TypeError('Invalid feed argument ' + feed);
     return false;
   }
 
-  if (!(url instanceof URL)) {
-    console.error('Invalid url argument:', url);
-    return false;
-  }
-
-  feed.urls = feed.urls || [];
+  // Duck-typed sanity check
   const href = url.href;
+  if (typeof href !== 'string') {
+    throw new TypeError('Invalid url argument ' + url);
+    return false;
+  }
+
+  // Lazy init
+  if (!feed.urls) {
+    feed.urls = [];
+  }
+
   if (feed.urls.includes(href)) {
     return false;
   }
@@ -126,7 +130,6 @@ export function feed_append_url(feed, url) {
 export function feed_id_is_valid(id) {
   return Number.isInteger(id) && id > 0;
 }
-
 
 export function coerce_feed(parsed_feed, fetch_info) {
   const request_url = fetch_info.request_url;
