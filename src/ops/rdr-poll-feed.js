@@ -1,8 +1,8 @@
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
-import {list_peek} from '/src/lib/list/list.js';
+import {list_empty, list_peek} from '/src/lib/list/list.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 import {coerce_entry, entry_has_url} from '/src/objects/entry.js';
-import {coerce_feed, feed_has_url, feed_merge, feed_prepare, is_feed} from '/src/objects/feed.js';
+import {coerce_feed, feed_merge, feed_prepare, is_feed} from '/src/objects/feed.js';
 import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
 import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
 import {rdr_notify} from '/src/ops/rdr-notify.js';
@@ -24,7 +24,7 @@ export async function rdr_poll_feed(
 
   // Although this is borderline a programmer error, tolerate location-less
   // feed objects and simply ignore them
-  if (!feed_has_url(feed)) {
+  if (list_empty(feed.urls)) {
     console.warn('Attempted to poll feed missing url', feed);
     return 0;
   }
