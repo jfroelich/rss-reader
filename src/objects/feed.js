@@ -95,7 +95,7 @@ export function feed_is_valid(feed) {
 
   // Validate the feed's id. It may not be present in the case of validating
   // a feed that has never been stored.
-  if ('id' in feed && !feed_is_valid_id(feed.id)) {
+  if ('id' in feed && !feed_id_is_valid(feed.id)) {
     return false;
   }
 
@@ -146,7 +146,7 @@ export function feed_append_url(feed, url) {
   return true;
 }
 
-export function feed_is_valid_id(id) {
+export function feed_id_is_valid(id) {
   return Number.isInteger(id) && id > 0;
 }
 

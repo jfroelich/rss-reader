@@ -1,7 +1,7 @@
-import {feed_is_valid_id, is_feed} from '/src/objects/feed.js';
+import {feed_id_is_valid, is_feed} from '/src/objects/feed.js';
 
 export function rdr_activate_feed(feed_id) {
-  if (!feed_is_valid_id(feed_id)) {
+  if (!feed_id_is_valid(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }
 

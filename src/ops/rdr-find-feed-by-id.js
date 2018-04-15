@@ -1,7 +1,7 @@
-import {feed_is_valid_id} from '/src/objects/feed.js';
+import {feed_id_is_valid} from '/src/objects/feed.js';
 
 export function rdr_find_feed_by_id(conn, id) {
-  if (!feed_is_valid_id(id)) {
+  if (!feed_id_is_valid(id)) {
     throw new TypeError('id is not a valid feed id: ' + id);
   }
 

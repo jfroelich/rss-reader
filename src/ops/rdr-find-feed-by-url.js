@@ -1,4 +1,4 @@
-import {feed_create, feed_is_valid_id} from '/src/objects/feed.js';
+import {feed_create, feed_id_is_valid} from '/src/objects/feed.js';
 
 // Search the database for a feed with the given url.
 // The primary use case for this function is to check if a feed exists in the
@@ -43,7 +43,7 @@ function request_onsuccess(key_only, callback, event) {
     // exposure, which is kinda something I want to pay more attn to, albeit
     // perhaps too paranoid.
 
-    if (feed_is_valid_id(feed_id)) {
+    if (feed_id_is_valid(feed_id)) {
       // Mimic a matched feed object, as if we magically loaded a feed with
       // only one property. This way the optimization of using getKey is opaque
       // to the caller. We construct using the feed.js api to ensure the magic

@@ -1,5 +1,5 @@
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import {feed_is_valid_id} from '/src/objects/feed.js';
+import {feed_id_is_valid} from '/src/objects/feed.js';
 
 const channel_stub = {
   name: 'channel-stub',
@@ -29,7 +29,7 @@ function executor(conn, channel, console, resolve, reject) {
       const cursor = entry_store_cursor_request.result;
       if (cursor) {
         const entry = cursor.value;
-        if (!feed_is_valid_id(entry.feed) || !feed_ids.includes(entry.feed)) {
+        if (!feed_id_is_valid(entry.feed) || !feed_ids.includes(entry.feed)) {
           entry_ids.push(entry.id);
           console.debug('Deleting orphaned entry', entry.id);
           cursor.delete();
