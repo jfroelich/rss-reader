@@ -3,11 +3,16 @@ import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/fe
 // TODO: simplify args, use context
 // TODO: return the object instead of the id, so that caller can access the
 // sanitized instance of the input
-// TODO: require channel
 // TODO: do not capture channel invalid state error
 
+const channel_stub = {
+  name: 'stub',
+  postMessage: noop,
+  close: noop
+};
+
 export function rdr_update_feed(
-    conn, channel, feed, validate = true, sanitize = true,
+    conn, channel = channel_stub, feed, validate = true, sanitize = true,
     set_date_updated = false) {
   // We have two situations, because we do not need to call is_feed when calling
   // feed_is_valid because we know feed_is_valid calls is_feed
@@ -47,13 +52,12 @@ function executor(conn, channel, feed, resolve, reject) {
 
 function txn_oncomplete(shared, event) {
   // Suppress invalid state error when channel is closed in non-awaited call
-  if (shared.channel) {
-    try {
-      shared.channel.postMessage({type: 'feed-updated', id: shared.id});
-    } catch (error) {
-      console.debug(error);
-    }
+  try {
+    shared.channel.postMessage({type: 'feed-updated', id: shared.id});
+  } catch (error) {
+    console.debug(error);
   }
+
   shared.callback(shared.id);
 }
 
@@ -62,3 +66,5 @@ function request_onsuccess(shared, event) {
   // Not sure what happens on update
   shared.id = event.target.result;
 }
+
+function noop() {}
