@@ -5,7 +5,6 @@ import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/fe
 // TODO: simplify args, use context
 // TODO: return the object instead of the id, so that caller can access the
 // sanitized instance of the input
-// TODO: do not capture channel invalid state error
 
 const channel_stub = {
   name: 'stub',
@@ -57,14 +56,7 @@ function executor(conn, channel, console, feed, resolve, reject) {
 
 function txn_oncomplete(shared, event) {
   shared.console.debug('Updated feed, id=%d', shared.id);
-
-  // Suppress invalid state error when channel is closed in non-awaited call
-  try {
-    shared.channel.postMessage({type: 'feed-updated', id: shared.id});
-  } catch (error) {
-    console.debug(error);
-  }
-
+  shared.channel.postMessage({type: 'feed-updated', id: shared.id});
   shared.callback(shared.id);
 }
 

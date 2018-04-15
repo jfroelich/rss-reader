@@ -60,7 +60,7 @@ export async function rdr_poll_feed(
         'Error fetching feed', tail_url.href, response.status,
         response.statusText);
     const error_type = 'fetch';
-    handle_error(
+    await handle_error(
         rconn, channel, response.status, feed, error_type,
         deactivation_threshold);
     return 0;
@@ -81,7 +81,7 @@ export async function rdr_poll_feed(
     console.debug('Error parsing feed', tail_url.href, error);
     let status;
     const error_type = 'parse';
-    handle_error(
+    await handle_error(
         rconn, channel, status, feed, error_type, deactivation_threshold);
     return 0;
   }
@@ -185,7 +185,7 @@ function handle_fetch_success(feed) {
 }
 
 // TODO: should accept console param
-function handle_error(
+async function handle_error(
     rconn, channel, status, feed, type, deactivation_threshold) {
   // Ignore ephemeral errors
   if (status === url_loader.STATUS_TIMEOUT ||
@@ -207,8 +207,6 @@ function handle_error(
     feed.deactivationDate = new Date();
   }
 
-  // update unawaited
-  // TODO: should be awaited though?
   const validate = true;
   const set_date_updated = true;
 
@@ -220,9 +218,8 @@ function handle_error(
   // expectation/characteristic of the handle_error function itself then
   const sanitize = false;
 
-  const prom = rdr_update_feed(
+  await rdr_update_feed(
       rconn, channel, console, feed, validate, sanitize, set_date_updated);
-  prom.catch(console.error);  // avoid swallowing
 }
 
 function dedup_entries(entries) {

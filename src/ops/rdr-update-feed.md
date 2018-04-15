@@ -21,4 +21,3 @@ Other than the situation where the set_date_updated flag is true, this inserts t
 ### TODOs
 
 * when updating, is put result still the feed id? I know that result is feed id when adding, but what about updating? Review the documentation on IDBObjectStore.prototype.put, double check and warrant this resolves to an id
-* if awaited, I'd prefer to throw in case of channel postMessage error. How? Or, should it really just be an error, and the caller is responsible for keeping this open?
