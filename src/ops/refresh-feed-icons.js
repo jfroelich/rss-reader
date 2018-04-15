@@ -42,9 +42,6 @@ async function refresh_feed(rconn, iconn, channel, console, feed) {
     update_context.console = console;
 
     const update_options = {};
-    // In this case we maintained control over the feed object for its lifetime
-    // and did not introduce dangerous user-data so there is no need to validate
-    // nor sanitize
     update_options.validate = false;
     update_options.sanitize = false;
     update_options.set_date_updated = true;

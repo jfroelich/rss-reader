@@ -9,5 +9,4 @@ The `rdr_create_feed` function creates a new feed in storage
 * the prep stuff and validation stuff should probably be isolated somewhere, maybe as part of an objects folder, as helper to feed objects
 * consider being redundant and not delegating to `rdr_update_feed`
 * channel post stuff should probably be abstracted away a bit eventually
-* probably should inline assert, deprecate helper
 * add console arg

@@ -9,12 +9,15 @@ export function rdr_update_feed(feed, options = {}) {
     throw new TypeError('Invalid feed parameter ' + feed);
   }
 
-  this.console.debug('Updating feed', list_peek(feed.urls));
+  this.console.debug('Creating or updating feed', list_peek(feed.urls));
 
   let clean_feed;
   if (options.sanitize) {
     clean_feed = feed_prepare(feed);
   } else {
+    // We still need to clone in the case we are creating a new feed and not
+    // sanitizing because we will be mutating the feed object by setting its new
+    // id and want to retain functional purity
     clean_feed = Object.assign(feed_create(), feed);
   }
 
@@ -26,23 +29,30 @@ export function rdr_update_feed(feed, options = {}) {
 }
 
 function executor(feed, resolve, reject) {
-  // Share the id across the functions by reference
-  const id_holder = {id: undefined};
-
   const txn = this.conn.transaction('feed', 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(this, id_holder, resolve);
+  txn.oncomplete = txn_oncomplete.bind(this, feed, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const request = txn.objectStore('feed').put(feed);
-  request.onsuccess = request_onsuccess.bind(this, id_holder);
+  request.onsuccess = request_onsuccess.bind(this, feed);
 }
 
-function txn_oncomplete(id_holder, callback, event) {
-  this.console.debug('Updated feed, id=%d', id_holder.id);
-  this.channel.postMessage({type: 'feed-updated', id: id_holder.id});
-  callback(id_holder.id);
+function txn_oncomplete(feed, callback, event) {
+  this.console.debug('Updated feed', feed.id);
+  this.channel.postMessage({type: 'feed-updated', id: feed.id});
+  callback(feed);
 }
 
-function request_onsuccess(id_holder, event) {
-  id_holder.id = event.target.result;
+function request_onsuccess(feed, event) {
+  // TEMP: reviewing what happens in case of put where id exists
+  if ('id' in feed) {
+    // use the actual console
+    console.debug('put feed result when id exists is', event.target.result);
+  }
+
+  // Set the auto-incremented id value in the case of creation and ignore in
+  // the case of update
+  if (!('id' in feed)) {
+    feed.id = event.target.result;
+  }
 }

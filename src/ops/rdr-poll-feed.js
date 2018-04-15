@@ -98,8 +98,6 @@ export async function rdr_poll_feed(
   const merged_feed = feed_merge(feed, coerced_feed);
   handle_fetch_success(merged_feed);
 
-  const storable_feed = feed_prepare(merged_feed);
-
   const update_context = {};
   update_context.conn = rconn;
   update_context.channel = channel;
@@ -107,23 +105,15 @@ export async function rdr_poll_feed(
 
   const update_options = {};
   update_options.validate = true;
+  update_options.sanitize = true;
   update_options.set_date_updated = true;
 
-  // In this case we do not sanitize in rdr_update_feed, because we explicitly
-  // do sanitization above
-  // TODO: change this to have rdr_update_feed sanitize the feed, and do not
-  // sanitize explicitly here in rdr-poll-feed. Do not directly interact with
-  // feed_prepare above. But in order to do that I need to change
-  // rdr_update_feed to return a feed object instead of just an id, otherwise we
-  // lose access to the sanitized feed object, which we need access to because
-  // we rely on the sanitized feed object afterward
-  update_options.sanitize = false;
-
-  await rdr_update_feed.call(update_context, storable_feed, update_options);
+  const stored_feed =
+      await rdr_update_feed.call(update_context, merged_feed, update_options);
 
   const count = await poll_entries(
       rconn, iconn, channel, console, options, parsed_feed.entries,
-      storable_feed);
+      stored_feed);
 
   if (badge_update && count) {
     rdr_badge_refresh(rconn, console).catch(console.error);
@@ -132,7 +122,7 @@ export async function rdr_poll_feed(
   if (notify && count) {
     const title = 'Added articles';
     const message =
-        'Added ' + count + ' articles for feed ' + storable_feed.title;
+        'Added ' + count + ' articles for feed ' + stored_feed.title;
     rdr_notify(title, message);
   }
 
