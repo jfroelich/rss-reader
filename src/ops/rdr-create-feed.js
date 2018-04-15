@@ -27,8 +27,15 @@ export async function rdr_create_feed(
   let void_channel;
   const validate = false;
   const set_date_updated = false;
+
+  // In this situation, we do not want to sanitize. If any sanitization is being
+  // performed, it is done explicitly above, by rdr_create_feed, so we should
+  // avoid doing it again
+  const update_sanitize = false;
+
   const feed_id = await rdr_update_feed(
-      conn, void_channel, clean_feed, validate, set_date_updated);
+      conn, void_channel, clean_feed, validate, update_sanitize,
+      set_date_updated);
 
   channel.postMessage({type: 'feed-added', id: feed_id});
 

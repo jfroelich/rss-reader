@@ -101,8 +101,19 @@ export async function rdr_poll_feed(
   const storable_feed = feed_prepare(merged_feed);
   const validate = true;
   const set_date_updated = true;
+
+  // In this case we do not sanitize in rdr_update_feed, because we explicitly
+  // do sanitization above
+  // TODO: change this to have rdr_update_feed sanitize the feed, and do not
+  // sanitize explicitly here in rdr-poll-feed. Do not directly interact with
+  // feed_prepare above. But in order to do that I need to change
+  // rdr_update_feed to return a feed object instead of just an id, otherwise we
+  // lose access to the cleaned feed object, and we need access because we rely
+  // on the cleaned feed object after the update
+  const sanitize = false;
+
   await rdr_update_feed(
-      rconn, channel, storable_feed, validate, set_date_updated);
+      rconn, channel, storable_feed, validate, sanitize, set_date_updated);
 
   const count = await poll_entries(
       rconn, iconn, channel, console, options, parsed_feed.entries,
@@ -198,8 +209,17 @@ function handle_error(
   // TODO: should be awaited though?
   const validate = true;
   const set_date_updated = true;
-  const prom =
-      rdr_update_feed(rconn, channel, feed, validate, set_date_updated);
+
+  // In this situation the feed's properties were not polluted by new external
+  // data, and we maintained control over of the object for its lifetime from
+  // read to write, so there is no need to sanitize on storage
+  // TODO: verify the claim of no-pollution, have some anxiety this is called
+  // with new data, in some sense I have to make it an
+  // expectation/characteristic of the handle_error function itself then
+  const sanitize = false;
+
+  const prom = rdr_update_feed(
+      rconn, channel, feed, validate, sanitize, set_date_updated);
   prom.catch(console.error);  // avoid swallowing
 }
 

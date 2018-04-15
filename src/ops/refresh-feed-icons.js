@@ -37,7 +37,14 @@ async function refresh_feed(rconn, iconn, channel, console, feed) {
     }
 
     const validate = false;
+
+    // In this case we maintained control over the feed object for its lifetime
+    // and there is little to no risk of corruption, so there is no need to
+    // re-sanitize
+    const sanitize = false;
+
     const set_date_updated = true;
-    await rdr_update_feed(rconn, channel, feed, validate, set_date_updated);
+    await rdr_update_feed(
+        rconn, channel, feed, validate, sanitize, set_date_updated);
   }
 }

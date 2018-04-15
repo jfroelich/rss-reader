@@ -1,18 +1,26 @@
-import {feed_is_valid, is_feed} from '/src/objects/feed.js';
+import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/feed.js';
 
 export function rdr_update_feed(
-    conn, channel, feed, validate = true, set_date_updated = false) {
+    conn, channel, feed, validate = true, sanitize = true,
+    set_date_updated = false) {
   if (validate) {
     assert(feed_is_valid(feed));
   } else {
     assert(is_feed(feed));
   }
 
-  if (set_date_updated) {
-    feed.dateUpdated = new Date();
+  let clean_feed;
+  if (sanitize) {
+    clean_feed = feed_prepare(feed);
+  } else {
+    clean_feed = Object.assign(feed_create(), feed);
   }
 
-  return new Promise(executor.bind(null, conn, channel, feed));
+  if (set_date_updated) {
+    clean_feed.dateUpdated = new Date();
+  }
+
+  return new Promise(executor.bind(null, conn, channel, clean_feed));
 }
 
 function executor(conn, channel, feed, resolve, reject) {
