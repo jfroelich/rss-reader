@@ -2,8 +2,6 @@ import {list_peek} from '/src/lib/list/list.js';
 import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/feed.js';
 
 export function rdr_update_feed(feed, options = {}) {
-  // We have two situations, because we do not need to call is_feed when calling
-  // feed_is_valid because we know feed_is_valid calls is_feed
   if (options.validate && !feed_is_valid(feed)) {
     throw new TypeError(
         'Feed has invalid properties or invalid parameter ' + feed);
@@ -11,7 +9,7 @@ export function rdr_update_feed(feed, options = {}) {
     throw new TypeError('Invalid feed parameter ' + feed);
   }
 
-  console.debug('Updating feed', list_peek(feed.urls));
+  this.console.debug('Updating feed', list_peek(feed.urls));
 
   let clean_feed;
   if (options.sanitize) {
@@ -28,18 +26,14 @@ export function rdr_update_feed(feed, options = {}) {
 }
 
 function executor(feed, resolve, reject) {
-  const conn = this.conn;
-  const channel = this.channel;
-  const console = this.console;
-
+  // Share the id across the functions by reference
   const id_holder = {id: undefined};
 
   const txn = this.conn.transaction('feed', 'readwrite');
   txn.oncomplete = txn_oncomplete.bind(this, id_holder, resolve);
   txn.onerror = _ => reject(txn.error);
 
-  const store = txn.objectStore('feed');
-  const request = store.put(feed);
+  const request = txn.objectStore('feed').put(feed);
   request.onsuccess = request_onsuccess.bind(this, id_holder);
 }
 
@@ -50,7 +44,5 @@ function txn_oncomplete(id_holder, callback, event) {
 }
 
 function request_onsuccess(shared, event) {
-  // On create, the result is the new value of the auto-incremented feed id
-  // Not sure what happens on update
   id_holder.id = event.target.result;
 }
