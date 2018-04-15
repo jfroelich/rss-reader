@@ -5,6 +5,12 @@ import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/fe
 // TODO: simplify args, use context
 // TODO: return the object instead of the id, so that caller can access the
 // sanitized instance of the input
+// TODO: attempting to update a feed with invalid properties where validation is
+// done, should not result in an immediately-thrown exception, because failing
+// validation is not a programmer error. This should instead result in a
+// rejection of the returned promise, more similar to a database call error. The
+// only error that should be immediately thrown that is related is when calling
+// update on a value that is not a feed, because that is a programmer error.
 
 const channel_stub = {
   name: 'stub',
@@ -51,7 +57,6 @@ function executor(conn, channel, console, feed, resolve, reject) {
   const store = txn.objectStore('feed');
   const request = store.put(feed);
   request.onsuccess = request_onsuccess.bind(request, shared);
-  // Do not explicitly listen for request error, it implicitly bubbles up to txn
 }
 
 function txn_oncomplete(shared, event) {
