@@ -1,7 +1,7 @@
 import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
 import {list_empty, list_peek} from '/src/lib/list/list.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
-import {coerce_entry} from '/src/objects/entry.js';
+import {entry_append_url, entry_create} from '/src/objects/entry.js';
 import {coerce_feed, feed_merge, is_feed} from '/src/objects/feed.js';
 import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
 import {rdr_fetch_feed} from '/src/ops/rdr-fetch-feed.js';
@@ -248,4 +248,28 @@ function dedup_entries(entries) {
   }
 
   return distinct_entries;
+}
+
+// Reformat a parsed entry as a storable entry. The input object is cloned so as
+// to avoid modification of input (purity).
+// NOTE: I moved this out of entry.js because this has knowledge of both
+// parse-format and storage-format. entry.js should be naive regarding parse
+// format. This is a cross-cutting concern so it belongs in the place where the
+// concerns meet.
+function coerce_entry(parsed_entry) {
+  const blank_entry = entry_create();
+
+  // Copy over everything
+  const clone = Object.assign(blank_entry, parsed_entry);
+
+  // Then convert the link property to a url in the urls property
+  delete clone.link;
+  if (parsed_entry.link) {
+    try {
+      entry_append_url(clone, new URL(parsed_entry.link));
+    } catch (error) {
+    }
+  }
+
+  return clone;
 }
