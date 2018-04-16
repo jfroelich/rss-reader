@@ -144,7 +144,8 @@ async function update_entry_icon(iconn, console, entry, document) {
   op.console = console;
   op.lookup_icon = rdr_lookup_icon;
 
-  const icon_url_string = await op.lookup_icon(lookup_url, /* fetch*/ false);
+  const fetch = false;
+  const icon_url_string = await op.lookup_icon(lookup_url, document, fetch);
   if (icon_url_string) {
     entry.faviconURLString = icon_url_string;
   }

@@ -83,6 +83,7 @@ async function cli_remove_orphans() {
 }
 
 async function cli_lookup_favicon(url_string, cached) {
+  let document, fetch = true;
   const url = new URL(url_string);
 
   const op = {};
@@ -90,7 +91,7 @@ async function cli_lookup_favicon(url_string, cached) {
   op.console = console;
   op.lookup = rdr_lookup_icon;
 
-  const icon_url_string = await op.lookup(url, /*fetch */ true);
+  const icon_url_string = await op.lookup(url, document, fetch);
 
   if (cached) {
     op.conn.close();
