@@ -85,15 +85,15 @@ async function cli_remove_orphans() {
 async function cli_lookup_favicon(url_string, cached) {
   const url = new URL(url_string);
 
-  let conn;
-  if (cached) {
-    conn = await rdr_create_icon_conn();
-  }
+  const op = {};
+  op.conn = cached ? await rdr_create_icon_conn() : undefined;
+  op.console = console;
+  op.lookup = rdr_lookup_icon;
 
-  const skip_fetch = false;
-  const icon_url_string = await rdr_lookup_icon(conn, console, skip_fetch, url);
+  const icon_url_string = await op.lookup(url, /*skip_fetch*/ false);
+
   if (cached) {
-    conn.close();
+    op.conn.close();
   }
 
   return icon_url_string;

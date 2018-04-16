@@ -46,7 +46,7 @@ export async function rdr_subscribe(
     return;
   }
 
-  // Convert from parsed format to storage format
+  // Convert from parsed feed format to storage feed format
   const lmd = new Date(response.headers.get('Last-Modified'));
   const feed = coerce_feed(parsed_feed, {
     request_url: url,
@@ -54,16 +54,18 @@ export async function rdr_subscribe(
     response_last_modified_date: lmd.getTime() === NaN ? null : lmd
   });
 
-  // Set the favicon
+  // Set the feed's favicon url
   const lookup_url = feed_create_favicon_lookup_url(feed);
-  feed.faviconURLString =
-      await rdr_lookup_icon(iconn, console, true, lookup_url);
+  const lio = {conn: iconn, console: console, lookup: rdr_lookup_icon};
+  feed.faviconURLString = lio.lookup(lookup_url, /* skip_fetch*/ true);
 
-  const cfo = {};
-  cfo.conn = rconn;
-  cfo.channel = channel;
-  cfo.console = console;
-  cfo.create_feed = rdr_create_feed;
+  // Store the feed within the database
+  const cfo = {
+    conn: rconn,
+    channel: channel,
+    console: console,
+    create_feed: rdr_create_feed
+  };
   const stored_feed = await cfo.create_feed(feed, /* sanitize*/ true);
 
   if (notify_flag) {
