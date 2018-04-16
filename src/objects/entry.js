@@ -9,8 +9,18 @@ export const ENTRY_STATE_UNARCHIVED = 0;
 export const ENTRY_STATE_ARCHIVED = 1;
 
 export function entry_is_valid(entry) {
+  // Type check (basically check the magic prop)
   if (!is_entry(entry)) {
     return false;
+  }
+
+  // This could be called on a new entry that does not have an id, so only
+  // check id validity when the property exists
+  if ('id' in entry) {
+    if (!entry_id_is_valid(entry.id)) {
+      console.debug('Invalid entry id', entry.id);
+      return false;
+    }
   }
 
   return true;
