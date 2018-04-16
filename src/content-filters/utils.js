@@ -1,7 +1,7 @@
 import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
 // TODO: if I want to fully move content-filters to lib then this cannot depend
 // on an app module
-import {rdr_fetch_policy} from '/src/objects/rdr-fetch-policy.js';
+import {fetch_policy} from '/src/objects/fetch-policy.js';
 
 // Returns a file name without its extension (and without the '.')
 export function file_name_filter_extension(file_name) {
@@ -113,7 +113,7 @@ function fetch_image_element_promise(url) {
     assert(url instanceof URL);
     const allowed_protocols = ['data:', 'http:', 'https:'];
     assert(allowed_protocols.includes(url.protocol));
-    assert(rdr_fetch_policy.allows_url(url));
+    assert(fetch_policy.allows_url(url));
 
     // Create a proxy element within this script's document
     const proxy = new Image();

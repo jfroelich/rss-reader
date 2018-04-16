@@ -1,7 +1,7 @@
 const allowed_protocols = ['data:', 'http:', 'https:'];
 const allowed_methods = ['GET', 'HEAD'];
 
-export const rdr_fetch_policy = {
+export const fetch_policy = {
   allows_url: function(url) {
     if ((!url instanceof URL)) {
       throw new TypeError('url is not a URL ' + url);
