@@ -90,7 +90,7 @@ async function cli_lookup_favicon(url_string, cached) {
   op.console = console;
   op.lookup = rdr_lookup_icon;
 
-  const icon_url_string = await op.lookup(url, /*skip_fetch*/ false);
+  const icon_url_string = await op.lookup(url, /*fetch */ true);
 
   if (cached) {
     op.conn.close();

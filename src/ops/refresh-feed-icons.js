@@ -25,10 +25,8 @@ async function refresh_feed(rconn, iconn, channel, console, feed) {
     return;
   }
 
-  const skip_fetch = false;
-
   const op = {conn: iconn, console: console, lookup: rdr_lookup_icon};
-  const icon_url_string = op.lookup(lookup_url, /* skip_fetch */ false);
+  const icon_url_string = op.lookup(lookup_url, /* fetch */ true);
 
   if (feed.faviconURLString !== icon_url_string) {
     if (icon_url_string) {

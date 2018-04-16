@@ -57,7 +57,7 @@ export async function rdr_subscribe(
   // Set the feed's favicon url
   const lookup_url = feed_create_favicon_lookup_url(feed);
   const lio = {conn: iconn, console: console, lookup: rdr_lookup_icon};
-  feed.faviconURLString = lio.lookup(lookup_url, /* skip_fetch*/ true);
+  feed.faviconURLString = lio.lookup(lookup_url, /* fetch*/ false);
 
   // Store the feed within the database
   const cfo = {

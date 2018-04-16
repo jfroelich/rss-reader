@@ -138,14 +138,13 @@ function update_entry_title(entry, document) {
 
 async function update_entry_icon(iconn, console, entry, document) {
   const lookup_url = new URL(list_peek(entry.urls));
-  const skip_fetch = true;
 
   const op = {};
   op.conn = iconn;
   op.console = console;
   op.lookup_icon = rdr_lookup_icon;
 
-  const icon_url_string = await op.lookup_icon(lookup_url, skip_fetch);
+  const icon_url_string = await op.lookup_icon(lookup_url, /* fetch*/ false);
   if (icon_url_string) {
     entry.faviconURLString = icon_url_string;
   }

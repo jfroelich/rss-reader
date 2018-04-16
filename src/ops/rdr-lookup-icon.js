@@ -7,10 +7,12 @@ import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 // resource, and if it is html, search for a url within the html, before
 // continuing to check other places.
 
-export function rdr_lookup_icon(url, skip_fetch) {
+// TODO: support pre-fetched document parameter
+
+export function rdr_lookup_icon(url, fetch = true) {
   const fs = new FaviconService();
   fs.conn = this.conn;
   fs.console = this.console;
-  fs.skip_fetch = skip_fetch;
+  fs.skip_fetch = !fetch;
   return fs.lookup(url);
 }
