@@ -51,8 +51,14 @@ export function entry_sanitize(
 }
 
 export function entry_append_url(entry, url) {
-  assert(is_entry(entry));
-  assert(url instanceof URL);
+  if (!is_entry(entry)) {
+    throw new TypeError('Invalid entry parameter ' + entry);
+  }
+
+  // NOTE: use duck typing over instanceof
+  if (!url.href) {
+    throw new TypeError('Invalid url parameter ' + url);
+  }
 
   const normal_url_string = url.href;
   if (entry.urls) {
@@ -81,8 +87,4 @@ export function is_entry(value) {
 
 export function entry_create() {
   return {magic: ENTRY_MAGIC};
-}
-
-function assert(value) {
-  if (!value) throw new Error('Assertion error');
 }
