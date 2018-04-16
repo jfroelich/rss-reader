@@ -1,4 +1,3 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {is_feed} from '/src/objects/feed.js';
 import {rdr_update_feed} from '/src/ops/rdr-update-feed.js';
 
@@ -7,8 +6,6 @@ const channel_stub = {
   postMessage: noop,
   close: noop
 };
-
-// conn, channel = channel_stub, console = console_stub
 
 export async function rdr_create_feed(feed, sanitize = true) {
   if (!is_feed(feed)) {
