@@ -8,23 +8,23 @@ const channel_stub = {
   close: noop
 };
 
-export async function rdr_create_feed(
-    conn, channel = channel_stub, console = console_stub, feed,
-    sanitize = true) {
+// conn, channel = channel_stub, console = console_stub
+
+export async function rdr_create_feed(feed, sanitize = true) {
   if (!is_feed(feed)) {
-    throw new TypeError('feed parameter is not a feed ' + feed);
+    throw new TypeError('Invalid feed parameter ' + feed);
   }
 
-  const clone = Object.assing(feed_create(), feed);
+  const clone = Object.assign(feed_create(), feed);
 
   clone.active = true;
   clone.dateCreated = new Date();
   delete clone.dateUpdated;
 
   const update_op = {};
-  update_op.conn = conn;
+  update_op.conn = this.conn;
   update_op.channel = channel_stub;  // suppress
-  update_op.console = console;
+  update_op.console = this.console;
   update_op.update_feed = rdr_update_feed;
 
   const update_options = {};
@@ -34,7 +34,7 @@ export async function rdr_create_feed(
 
   const stored_feed = update_op.update_feed(clone, update_options);
 
-  channel.postMessage({type: 'feed-added', id: stored_feed.id});
+  this.channel.postMessage({type: 'feed-added', id: stored_feed.id});
   return stored_feed;
 }
 
