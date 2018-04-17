@@ -58,11 +58,19 @@ async function import_file(file) {
 
   const urls = dedup_urls(find_feed_urls(document));
 
-  const partial = subscribe.bind(
-      null, this.rconn, this.iconn, this.channel, this.console,
-      this.fetch_timeout, false);
+  const sub_op = {};
+  sub_op.rconn = this.rconn;
+  sub_op.iconn = this.iconn;
+  sub_op.channel = this.channel;
+  sub_op.console = this.console;
+  sub_op.subscribe = subscribe;
+  const sub_opts = {fetch_timeout: this.fetch_timeout, notify: false};
 
-  const promises = urls.map(partial);
+  const promises = [];
+  for (const url of urls) {
+    promises.push(sub_op.subsribe(url, sub_opts));
+  }
+
   const stored_feeds = await Promise.all(promises);
   const count = stored_feeds.reduce((sum, v) => v ? sum : sum + 1, 0);
   this.console.debug('Imported %d feeds from file', count, file.name);

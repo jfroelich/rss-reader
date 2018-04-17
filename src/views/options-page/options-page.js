@@ -8,8 +8,8 @@ import * as perm from '/src/lib/permissions/permissions.js';
 import {activate_feed} from '/src/ops/activate-feed.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
-import {deactivate_feed} from '/src/ops/deactivate-feed.js';
 import {create_icon_conn} from '/src/ops/create-icon-conn.js';
+import {deactivate_feed} from '/src/ops/deactivate-feed.js';
 import {delete_feed} from '/src/ops/delete-feed.js';
 import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
 import {get_feeds} from '/src/ops/get-feeds.js';
@@ -315,14 +315,19 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_show();
   subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
-  let fetch_timeout, notify_flag = true;
   const conn_promises = Promise.all([create_conn(), create_icon_conn()]);
   const [rconn, iconn] = await conn_promises;
-  const feed = await subscribe(
-      rconn, iconn, channel, console, fetch_timeout, notify_flag,
-      subscribe_url);
+
+  const op = {};
+  op.rconn = rconn;
+  op.iconn = iconn;
+  op.channel = create_channel();
+  op.console = console;
+  op.subscribe = subscribe;
+  const feed = await op.subscribe(subscribe_url, {notify: true});
   rconn.close();
   iconn.close();
+  op.channel.close();
 
   feed_list_append_feed(feed);
   subscription_monitor_append_message('Subscribed to ' + list_peek(feed.urls));

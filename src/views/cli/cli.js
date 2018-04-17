@@ -12,21 +12,19 @@ import {subscribe} from '/src/ops/subscribe.js';
 
 async function cli_subscribe(url_string) {
   const url = new URL(url_string);
-
-  const channel = create_channel();
+  const op = {};
   const proms = [create_conn(), create_icon_conn()];
-  const [rconn, iconn] = await Promise.all(proms);
+  [op.rconn, op.iconn] = await Promise.all(proms);
 
-  let fetch_timeout = 3000;
-  let notify_flag = false;
-  const feed = await subscribe(
-      rconn, iconn, channel, console, fetch_timeout, notify_flag, url);
+  op.channel = create_channel();
+  op.console = console;
+  op.subscribe = subscribe;
+  const options = {fetch_timeout: 3000, notify: true};
+  const feed = await op.subscribe(url, options);
 
-  console.debug('Stored feed', feed);
-
-  rconn.close();
-  iconn.close();
-  channel.close();
+  op.rconn.close();
+  op.iconn.close();
+  op.channel.close();
 }
 
 async function cli_archive() {

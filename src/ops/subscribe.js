@@ -13,10 +13,15 @@ import {lookup_icon} from '/src/ops/lookup-icon.js';
 import {notify} from '/src/ops/notify.js';
 import {poll_feed} from '/src/ops/poll-feed.js';
 
-export async function subscribe(
-    rconn, iconn, channel, console = console_stub, fetch_timeout = 2000,
-    notify_flag = false, url) {
+export async function subscribe(url, options) {
   console.log('Subscribing to feed', url.href);
+
+  const rconn = this.rconn;
+  const iconn = this.iconn;
+  const channel = this.channel;
+  const console = this.console || console_stub;
+  const fetch_timeout = options.fetch_timeout || 2000;
+  const notify_flag = options.notify;
 
   let does_feed_exist = await contains_feed(rconn, {url: url});
   if (does_feed_exist) {
