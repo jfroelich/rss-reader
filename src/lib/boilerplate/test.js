@@ -1,11 +1,11 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import * as boilerplate from '/src/lib/boilerplate/boilerplate.js';
 import * as html_parser from '/src/lib/html-parser/html-parser.js';
-import {rdr_fetch_html} from '/src/ops/rdr-fetch-html.js';
+import {fetch_html} from '/src/ops/fetch-html.js';
 
 async function test(url_string) {
   const request_url = new URL(url_string);
-  const response = await rdr_fetch_html(request_url);
+  const response = await fetch_html(request_url);
   if (!response.ok) {
     throw new Error('Failed to fetch ' + request_url.href);
   }

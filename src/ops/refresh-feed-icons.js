@@ -2,8 +2,8 @@ import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {list_empty} from '/src/lib/list/list.js';
 import {feed_create_favicon_lookup_url} from '/src/objects/feed.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
-import {rdr_lookup_icon} from '/src/ops/rdr-lookup-icon.js';
-import {rdr_update_feed} from '/src/ops/rdr-update-feed.js';
+import {lookup_icon} from '/src/ops/lookup-icon.js';
+import {update_feed} from '/src/ops/update-feed.js';
 
 export async function refresh_feed_icons(
     rconn, iconn, channel, console = console_stub) {
@@ -26,7 +26,7 @@ async function refresh_feed(rconn, iconn, channel, console, feed) {
   }
 
   let doc, fetch_flag = true;
-  const op = {conn: iconn, console: console, lookup: rdr_lookup_icon};
+  const op = {conn: iconn, console: console, lookup: lookup_icon};
   const icon_url_string = op.lookup(lookup_url, doc, fetch_flag);
 
   if (feed.faviconURLString !== icon_url_string) {
@@ -46,6 +46,6 @@ async function refresh_feed(rconn, iconn, channel, console, feed) {
     update_options.sanitize = false;
     update_options.set_date_updated = true;
 
-    await rdr_update_feed.call(update_context, feed, update_options);
+    await update_feed.call(update_context, feed, update_options);
   }
 }

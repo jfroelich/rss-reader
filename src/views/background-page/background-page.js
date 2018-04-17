@@ -1,19 +1,19 @@
 import '/src/views/cli/cli.js';
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
-import {rdr_archive} from '/src/ops/rdr-archive-entries.js';
-import {rdr_badge_refresh} from '/src/ops/rdr-badge-refresh.js';
-import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
-import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
-import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
-import {rdr_open_view} from '/src/ops/rdr-open-view.js';
-import {rdr_poll_feeds} from '/src/ops/rdr-poll-feeds.js';
+import {archive_entries} from '/src/ops/archive-entries.js';
+import {refresh_badge} from '/src/ops/refresh-badge.js';
+import {create_channel} from '/src/ops/create-channel.js';
+import {create_conn} from '/src/ops/create-conn.js';
+import {create_icon_conn} from '/src/ops/create-icon-conn.js';
+import {open_view} from '/src/ops/open-view.js';
+import {poll_feeds} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/ops/remove-lost-entries.js';
 import {remove_orphans} from '/src/ops/remove-orphaned-entries.js';
 
 async function handle_compact_favicons_alarm(alarm) {
-  const conn = await rdr_create_icon_conn();
+  const conn = await create_icon_conn();
   const service = new FaviconService();
   service.conn = conn;
   await service.compact();
@@ -22,36 +22,36 @@ async function handle_compact_favicons_alarm(alarm) {
 
 async function handle_archive_alarm_wakeup(alarm) {
   const ac = {};
-  ac.conn = await rdr_create_conn();
-  ac.channel = rdr_create_channel();
+  ac.conn = await create_conn();
+  ac.channel = create_channel();
   ac.console = console_stub;
 
   let max_age;
 
-  await rdr_archive.call(ac, max_age);
+  await archive_entries.call(ac, max_age);
   ac.channel.close();
   ac.conn.close();
 }
 
 async function handle_lost_entries_alarm(alarm) {
-  const channel = rdr_create_channel();
-  const conn = await rdr_create_conn();
+  const channel = create_channel();
+  const conn = await create_conn();
   await remove_lost_entries(conn, channel, void console);
   channel.close();
   conn.close();
 }
 
 async function handle_orphan_entries_alarm(alarm) {
-  const channel = rdr_create_channel();
-  const conn = await rdr_create_conn();
+  const channel = create_channel();
+  const conn = await create_conn();
   await remove_orphans(conn, channel, void console);
   channel.close();
   conn.close();
 }
 
 async function handle_refresh_feed_icons_alarm(alarm) {
-  const channel = rdr_create_channel();
-  const proms = [rdr_create_conn(), rdr_create_icon_conn()];
+  const channel = create_channel();
+  const proms = [create_conn(), create_icon_conn()];
   const [rconn, iconn] = await Promise.all(proms);
   await refresh_feed_icons(rconn, iconn, channel, void console);
   rconn.close();
@@ -72,11 +72,11 @@ async function handle_poll_feeds_alarm(alarm) {
   options.ignore_recency_check = false;
   options.notify = true;
 
-  const rconn = await rdr_create_conn();
-  const iconn = await rdr_create_icon_conn();
-  const channel = rdr_create_channel();
+  const rconn = await create_conn();
+  const iconn = await create_icon_conn();
+  const channel = create_channel();
 
-  await rdr_poll_feeds(rconn, iconn, channel, console, options);
+  await poll_feeds(rconn, iconn, channel, console, options);
 
   channel.close();
   iconn.close();
@@ -92,18 +92,18 @@ function query_idle_state(idle_period_secs) {
 console.debug('Initializing background page');
 
 chrome.runtime.onInstalled.addListener(async function(event) {
-  let conn = await rdr_create_conn();
+  let conn = await create_conn();
   conn.close();
 
-  conn = await rdr_create_icon_conn();
+  conn = await create_icon_conn();
   conn.close();
 });
 
-chrome.browserAction.onClicked.addListener(rdr_open_view);
+chrome.browserAction.onClicked.addListener(open_view);
 
 async function badge_init() {
-  const conn = await rdr_create_conn();
-  rdr_badge_refresh(conn, void console);
+  const conn = await create_conn();
+  refresh_badge(conn, void console);
   conn.close();
 }
 

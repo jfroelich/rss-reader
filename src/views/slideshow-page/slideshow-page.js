@@ -7,13 +7,13 @@ import {entry_id_is_valid, is_entry} from '/src/objects/entry.js';
 import {find_viewable_entries} from '/src/ops/find-viewable-entries.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
 import {for_each_viewable_entry} from '/src/ops/for-each-viewable-entry.js';
-import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
-import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
-import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
-import {rdr_import} from '/src/ops/rdr-import-opml.js';
-import {rdr_mark_entry_read} from '/src/ops/rdr-mark-entry-read.js';
-import {rdr_poll_feeds} from '/src/ops/rdr-poll-feeds.js';
-import {export_opml} from '/src/views/slideshow-page/export-opml.js';
+import {create_channel} from '/src/ops/create-channel.js';
+import {create_conn} from '/src/ops/create-conn.js';
+import {create_icon_conn} from '/src/ops/create-icon-conn.js';
+import {import_opml} from '/src/ops/import-opml.js';
+import {mark_entry_read} from '/src/ops/mark-entry-read.js';
+import {poll_feeds} from '/src/ops/poll-feeds.js';
+import {slideshow_export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/views/slideshow-page/slideshow.js';
 
@@ -38,7 +38,7 @@ const fonts = [
 ];
 // clang-format on
 
-const channel = rdr_create_channel();
+const channel = create_channel();
 
 channel.onmessage = function(event) {
   if (!event.isTrusted) {
@@ -91,7 +91,7 @@ channel.onmessageerror = function(event) {
 async function on_entry_added_message(message) {
   const unread_count = slideshow_count_unread();
   if (unread_count <= 3) {
-    const conn = await rdr_create_conn();
+    const conn = await create_conn();
     await slide_load_and_append_multiple(conn);
     conn.close();
   }
@@ -135,10 +135,10 @@ async function slide_mark_read(conn, slide) {
     const ctx = {};
     ctx.conn = conn;
     // Do not use page-lifetime channel due to no-loopback issue
-    ctx.channel = rdr_create_channel();
+    ctx.channel = create_channel();
     ctx.console = console;
 
-    await rdr_mark_entry_read.call(ctx, id);
+    await mark_entry_read.call(ctx, id);
     ctx.channel.close();
 
     slide.setAttribute('read', '');
@@ -296,7 +296,7 @@ async function slide_onclick(event) {
     return false;
   }
 
-  const conn = await rdr_create_conn();
+  const conn = await create_conn();
   await slide_mark_read(conn, clicked_slide);
   conn.close();
 }
@@ -333,7 +333,7 @@ async function slide_next() {
   const slide_unread_count = slideshow_count_unread();
 
   if (slide_unread_count > 1) {
-    const conn = await rdr_create_conn();
+    const conn = await create_conn();
     await slide_mark_read(conn, current_slide);
     conn.close();
     Slideshow.next();
@@ -341,7 +341,7 @@ async function slide_next() {
   }
 
   let append_count = 0;
-  const conn = await rdr_create_conn();
+  const conn = await create_conn();
 
   if (slide_unread_count < 2) {
     append_count = await slide_load_and_append_multiple(conn);
@@ -383,10 +383,10 @@ async function refresh_anchor_onclick(event) {
 
   // Create a local channel object because apparently a channel cannot notify
   // itself (at least in Chrome 66) despite what spec states
-  const onclick_channel = rdr_create_channel();
+  const onclick_channel = create_channel();
 
-  const rconn = await rdr_create_conn();
-  const iconn = await rdr_create_icon_conn();
+  const rconn = await create_conn();
+  const iconn = await create_icon_conn();
 
   const options = {};
   options.ignore_recency_check = true;
@@ -394,7 +394,7 @@ async function refresh_anchor_onclick(event) {
   // NOTE: temporarily enable console during dev
   let console_arg = console;  // void console;
 
-  await rdr_poll_feeds(rconn, iconn, onclick_channel, console_arg, options);
+  await poll_feeds(rconn, iconn, onclick_channel, console_arg, options);
 
   // Dispose of resources. Do not close page-lifetime channel, but do close the
   // function-call-lifetime channel as it should be released asap
@@ -467,9 +467,9 @@ async function uploader_input_onchange(event) {
 
   // Create a function-call lifetime channel and use it instead of the
   // page-lifetime channel to avoid the no-loopback issue
-  const onchange_channel = rdr_create_channel();
+  const onchange_channel = create_channel();
 
-  const open_promises = [rdr_create_conn(), rdr_create_icon_conn()];
+  const open_promises = [create_conn(), create_icon_conn()];
   const [rconn, iconn] = await Promise.all(open_promises);
 
   const ctx = {};
@@ -479,7 +479,7 @@ async function uploader_input_onchange(event) {
   ctx.rconn = rconn;
   ctx.iconn = iconn;
 
-  await rdr_import(ctx, files);
+  await import_opml(ctx, files);
 
   rconn.close();
   iconn.close();
@@ -491,7 +491,7 @@ async function uploader_input_onchange(event) {
 function export_menu_option_handle_click(event) {
   const title = 'Subscriptions';
   const filename = 'subscriptions.xml';
-  export_opml(title, filename, void console).catch(console.warn);
+  slideshow_export_opml(title, filename, void console).catch(console.warn);
 }
 
 function error_message_container_onclick(event) {
@@ -746,7 +746,7 @@ async function slideshow_page_init() {
 
   const entry_cursor_offset = 0, entry_cursor_limit = 6;
 
-  const conn = await rdr_create_conn();
+  const conn = await create_conn();
   const iterate_entries_promise = for_each_viewable_entry(
       conn, entry_cursor_offset, entry_cursor_limit, slide_append);
   const iterate_feeds_promise =

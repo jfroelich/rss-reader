@@ -4,7 +4,7 @@ import * as idb from '/src/lib/idb/idb.js';
 import * as mime from '/src/lib/mime/mime.js';
 import * as url_loader from '/src/lib/url-loader/url-loader.js';
 // TODO: lib modules should not depend on app modules
-import {rdr_fetch_html} from '/src/ops/rdr-fetch-html.js';
+import {fetch_html} from '/src/ops/fetch-html.js';
 
 export function FaviconService() {
   this.name = 'favicon-cache';
@@ -70,7 +70,7 @@ FaviconService.prototype.lookup = async function(url, document) {
 
   let response;
   if (!document && !this.skip_fetch) {
-    response = await rdr_fetch_html(url, this.fetch_html_timeout);
+    response = await fetch_html(url, this.fetch_html_timeout);
     if (!response.ok) {
       this.console.debug('Fetch error', url.href, response.status);
     }

@@ -5,15 +5,15 @@ import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import {list_peek} from '/src/lib/list/list.js';
 import * as perm from '/src/lib/permissions/permissions.js';
-import {rdr_activate_feed} from '/src/ops/rdr-activate-feed.js';
-import {rdr_create_channel} from '/src/ops/rdr-create-channel.js';
-import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
-import {rdr_create_icon_conn} from '/src/ops/rdr-create-icon-conn.js';
-import {rdr_deactivate_feed} from '/src/ops/rdr-deactivate-feed.js';
-import {rdr_delete_feed} from '/src/ops/rdr-delete-feed.js';
-import {rdr_find_feed_by_id} from '/src/ops/rdr-find-feed-by-id.js';
-import {rdr_get_feeds} from '/src/ops/rdr-get-feeds.js';
-import {rdr_subscribe} from '/src/ops/subscribe.js';
+import {activate_feed} from '/src/ops/activate-feed.js';
+import {create_channel} from '/src/ops/create-channel.js';
+import {create_conn} from '/src/ops/create-conn.js';
+import {deactivate_feed} from '/src/ops/deactivate-feed.js';
+import {create_icon_conn} from '/src/ops/create-icon-conn.js';
+import {delete_feed} from '/src/ops/delete-feed.js';
+import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
+import {get_feeds} from '/src/ops/get-feeds.js';
+import {subscribe} from '/src/ops/subscribe.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
 
 // clang-format off
@@ -235,8 +235,8 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const conn = await rdr_create_conn();
-  const feed = await rdr_find_feed_by_id(conn, feed_id);
+  const conn = await create_conn();
+  const feed = await find_feed_by_id(conn, feed_id);
   conn.close();
 
   const title_element = document.getElementById('details-title');
@@ -316,10 +316,9 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
   let fetch_timeout, notify_flag = true;
-  const conn_promises =
-      Promise.all([rdr_create_conn(), rdr_create_icon_conn()]);
+  const conn_promises = Promise.all([create_conn(), create_icon_conn()]);
   const [rconn, iconn] = await conn_promises;
-  const feed = await rdr_subscribe(
+  const feed = await subscribe(
       rconn, iconn, channel, console, fetch_timeout, notify_flag,
       subscribe_url);
   rconn.close();
@@ -334,8 +333,8 @@ async function subscribe_form_onsubmit(event) {
 
 async function feed_list_init() {
   const title_sort_flag = true;
-  const conn = await rdr_create_conn();
-  const feeds = await rdr_get_feeds(conn, title_sort_flag);
+  const conn = await create_conn();
+  const feeds = await get_feeds(conn, title_sort_flag);
   conn.close();
 
   for (const feed of feeds) {
@@ -385,11 +384,11 @@ async function unsubscribe_button_onclick(event) {
   const reason_text = 'unsubscribe';
 
   const ctx = {};
-  ctx.conn = await rdr_create_conn();
-  ctx.channel = rdr_create_channel();
+  ctx.conn = await create_conn();
+  ctx.channel = create_channel();
   ctx.console = console;  // enable logging for now (temporary)
 
-  const result = await rdr_delete_feed.call(ctx, feed_id, reason_text);
+  const result = await delete_feed.call(ctx, feed_id, reason_text);
   ctx.conn.close();
   ctx.channel.close();
 
@@ -400,12 +399,11 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const ctx = {};
-  ctx.conn = await rdr_create_conn();
-  ctx.channel = channel;
-  ctx.console = console_stub;
-  await rdr_activate_feed.call(ctx, feed_id);
-  ctx.conn.close();
+  const conn = await create_conn();
+  const op =
+      {conn: conn, channel: channel, console: console, run: activate_feed};
+  await op.run(feed_id);
+  conn.close();
 
   // Mark the corresponding feed element displayed in the view as active
   const item_element = document.querySelector('li[feed="' + feed_id + '"]');
@@ -420,13 +418,14 @@ async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const reason = 'click';
 
-  const ctx = {};
-  ctx.conn = await rdr_create_conn();
-  ctx.channel = rdr_create_channel();
-  ctx.console = console;
-  await rdr_deactivate_feed.call(ctx, feed_id, reason);
-  ctx.conn.close();
-  ctx.channel.close();
+  const df_op = {};
+  df_op.conn = await create_conn();
+  df_op.channel = create_channel();
+  df_op.console = console;
+  df_op.run = deactivate_feed;
+  await df_op.run(feed_id, reason);
+  df_op.conn.close();
+  df_op.channel.close();
 
   // Deactive the corresponding feed element in the view
   const item_selector = 'li[feed="' + feed_id + '"]';

@@ -1,13 +1,13 @@
-import {rdr_create_conn} from '/src/ops/rdr-create-conn.js';
-import {rdr_export_opml} from '/src/ops/rdr-export-opml.js';
+import {create_conn} from '/src/ops/create-conn.js';
+import {export_opml} from '/src/ops/export-opml.js';
 
 // Abstracts away all of the operations involved in generating and downloading
 // an opml xml file into a simple api call for the slideshow page. Also hides
 // the helper functions in module scope
 
-export async function export_opml(title, filename, console) {
-  const conn = await rdr_create_conn();
-  const opml_document = await rdr_export_opml(conn, title, console);
+export async function slideshow_export_opml(title, filename, console) {
+  const conn = await create_conn();
+  const opml_document = await export_opml(conn, title, console);
   conn.close();
 
   download_blob_using_chrome_api(

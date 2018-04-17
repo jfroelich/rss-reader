@@ -29,7 +29,7 @@ export function entry_is_valid(entry) {
 export function entry_sanitize(
     input_entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
-  const blank_entry = entry_create();
+  const blank_entry = create_entry_object();
   const output_entry = Object.assign(blank_entry, input_entry);
 
   if (output_entry.author) {
@@ -95,6 +95,6 @@ export function is_entry(value) {
   return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
 }
 
-export function entry_create() {
+export function create_entry_object() {
   return {magic: ENTRY_MAGIC};
 }
