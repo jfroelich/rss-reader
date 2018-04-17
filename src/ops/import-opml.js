@@ -3,9 +3,9 @@ import * as filelib from '/src/lib/file/file.js';
 import * as opml_parser from '/src/lib/opml-parser/opml-parser.js';
 import {subscribe} from '/src/ops/subscribe.js';
 
-const feed_mime_types = [
-  'application/atom+xml', 'application/rdf+xml', 'application/rss+xml',
-  'application/xml', 'application/xhtml+xml', 'text/xml'
+const opml_mime_types = [
+  'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
+  'application/opml+xml'
 ];
 
 const default_context = {
@@ -36,7 +36,7 @@ async function import_file(file) {
     return 0;
   }
 
-  if (!feed_mime_types.includes(file.type)) {
+  if (!opml_mime_types.includes(file.type)) {
     return 0;
   }
 
