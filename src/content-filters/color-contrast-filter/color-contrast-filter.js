@@ -47,6 +47,9 @@ export function element_derive_background_color(element, matte) {
 }
 
 export function element_derive_background_color_inline(element) {
+  // TODO: if opacity is not a channel in the color, then should this not also
+  // consider the opacity css property?
+
   const style = element.style;
   if (style) {
     const css_bgcolor = style.backgroundColor;
