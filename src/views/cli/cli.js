@@ -1,5 +1,6 @@
 import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
 import {archive_entries} from '/src/ops/archive-entries.js';
+import {clear_icons} from '/src/ops/clear-icons.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
 import {create_icon_conn} from '/src/ops/create-icon-conn.js';
@@ -27,7 +28,7 @@ async function cli_subscribe(url_string) {
   op.channel.close();
 }
 
-async function cli_archive() {
+async function cli_archive_entries() {
   const ac = {};
   ac.conn = await create_conn();
   ac.channel = create_channel();
@@ -98,14 +99,6 @@ async function cli_lookup_favicon(url_string, cached) {
   return icon_url_string;
 }
 
-async function cli_clear_icons() {
-  const fs = new FaviconService();
-  const conn = await create_icon_conn();
-  fs.conn = conn;
-  await fs.clear();
-  conn.close();
-}
-
 async function cli_compact_icons() {
   const conn = await create_icon_conn();
   const fs = new FaviconService();
@@ -115,8 +108,8 @@ async function cli_compact_icons() {
 }
 
 const cli = {
-  archive: cli_archive,
-  clear_icons: cli_clear_icons,
+  archive: cli_archive_entries,
+  clear_icons: clear_icons,
   compact_icons: cli_compact_icons,
   remove_orphans: cli_remove_orphans,
   remove_lost_entries: cli_remove_lost_entries,
