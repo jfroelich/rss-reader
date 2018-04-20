@@ -16,3 +16,6 @@ The promise settles based on the txn, not the get request, because we do some po
 
 ### Moves old notes from feed-ops docs
 * review http://www.micheltriana.com/blog/2012/04/09/library-oriented-architecture
+
+### TODOs
+* refactor as entry_set_read_state, accept a boolean state parameter, and handle both cases (where true and where false)
