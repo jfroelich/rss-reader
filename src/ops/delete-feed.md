@@ -23,8 +23,8 @@ All required
 * **reason_text** {String} optional, a categorical description of the reason for deletion, such as 'unsubscribe', or 'inactive'
 
 ### Errors
-* TypeError - if the input feed id is invalid
-* Rejection errors - database i/o errors as DOMError, InvalidStateError if channel is closed at time of call to channel.postMessage
+* **TypeError** if the input feed id is invalid
+* **Rejection errors** database i/o errors as DOMException, InvalidStateError if channel is closed at time of call to postMessage
 
 ### Return value
 Returns a promise that resolves to an array of the entry ids that were deleted. The array is always defined but may be zero-length.

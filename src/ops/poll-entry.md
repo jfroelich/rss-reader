@@ -1,21 +1,20 @@
 The `poll-entry` function processes and entry and possibly adds it to the database. The full-text html of the entry is fetched and stored as `entry.content`.
 
 ### Context properties
-* rconn {IDBDatabase} required
-* iconn {IDBDatabase} required
-* channel {BroadcastChannel} required
-* console {Object} required
-* fetch_html_timeout {Number} optional
-* fetch_image_timeout {Number} optional
+* **rconn** {IDBDatabase} required
+* **iconn** {IDBDatabase} required
+* **channel** {BroadcastChannel} required
+* **console** {Object} required
+* **fetch_html_timeout** {Number} optional
+* **fetch_image_timeout** {Number} optional
 
 ### Params
-* entry {object}
+* **entry** {object}
 
 ### Misc implementation notes
 * url rewriting always occurs before checking whether a url exists. The original url is not checked. This reduces the number of checks that must occur.
 
 ### TODOs
-
 * There are a lot of parameters. Brainstorming, one idea would be to use thisArg, shove several of the parameters into this so-called context, access them via this.property within the function body, and then require the caller to use function.call to call the function. Basically split up the parameters into two places. This has pros/cons. It becomes more difficult to call the function because it requires the use of call. However, the calling code becomes more readable and less error-prone, because I do not have such a gigantic parameter list.
 * Revisit how existence check works regarding uniqueness errors. Basically the `create_entry` call can fail because of the uniqueness constraint placed on the url index of the entry store when the incoming entry has a url that already exists. This currently does two checks, an explicit check up front and then the implied check that happens within `create_entry` when calling `IDBObjectStore.prototype.put`. First, I do not like the duplicate functionality and prefer a design where there is only one check. Second, I would prefer to somehow do this using a single database transaction instead of multiple transactions. Third, I would prefer that I did not have to wrap the call to `create_entry` in a try/catch block, because the call should basically never fail, but it can in the current implementation so I must.
 * I would prefer to use a single transaction for all entries. Now that this function is isolated into its own module, it is ignorant of the fact that it is likely being called repeatedly for several entries coming from a feed. It creates numerous individual transactions. This can lead to integrity issues. It can also lead to the aforementioned issue with duplicate urls. I dedup urls in poll-feed but this is only a weak guarantee of uniqueness, and furthermore, this module now that it is isolated technically has no knowledge of that behavior (and correctly should not?). What if I were to do something like require a transaction as a parameter, instead of the database connection handle, and operated on that transaction? What about the issues with indexedDB timing out inactive transactions though? I have interspersed async calls.

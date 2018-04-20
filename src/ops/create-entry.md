@@ -5,18 +5,18 @@ Internally, the entry object is cloned before being stored. In other words, this
 The input object should not have an `id` property set; if it does then an error is thrown. The property should not exist in the input entry object. In the output entry object, it will have a new id property set.  The id is set according to the database's auto-increment algorithm. In general an entry id is a positive integer greater than 0.
 
 ### Content properties
-* conn {IDBDatabase} an open database connection
-* channel {BroadcastChannel} a channel to notify with a message when the entry is stored
-* console {object} logging destination
+* **conn** {IDBDatabase} an open database connection
+* **channel** {BroadcastChannel} a channel to notify with a message when the entry is stored
+* **console** {object} logging destination
 
 ### Params
-* entry {object} the entry object to store
-* validate {Boolean} whether to validate the object before storing
+* **entry** {object} the entry object to store
+* **validate** {Boolean} whether to validate the object before storing
 
 ### Errors
-* DOMException - when a database error occurs
-* TypeError - invalid inputs
-* InvalidStateError - channel is closed when posting message
+* **DOMException** when a database error occurs
+* **TypeError** invalid inputs
+* **InvalidStateError** channel is closed when posting message
 
 In the event of a database error the database stays in the state prior to the call. However in the event of a channel post error the database is still modified.
 

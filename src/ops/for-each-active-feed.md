@@ -5,8 +5,8 @@ The handler function is called *during* iteration over the feeds in the database
 `for-each-active-feed` completes when iteration over the feeds in the database completes. *Iteration may complete prior to all handlers completing*. In other words, iteration over the feeds can complete while one or more handler function calls are still in an incomplete/pending state.
 
 ### Params
-* `conn` {IDBDatabase} an open database connection to the feed database
-* `handle_feed` {Function} called for each active feed with the deserialized feed object as its sole argument, the function should be synchronous and pure (free of side effects, at least persistent state changing ones)
+* **conn** {IDBDatabase} an open database connection to the feed database
+* **handle_feed** {Function} called for each active feed with the deserialized feed object as its sole argument, the function should be synchronous and pure (free of side effects, at least persistent state changing ones)
 
 ### Return value
 Returns a promise. The return value of the promise itself is undefined, or at least, the return value of the promise should be ignored.

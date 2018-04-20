@@ -1,3 +1,10 @@
+write me
+
+### Params
+
+### Errors
+
+### Return value
 
 ### TODOs
 * perhaps think of badge as a view, like the other pages or the CLI. In that sense it would be reasonable to open a channel and listen for change events.

@@ -1,9 +1,6 @@
-# Overview
-
 Write me
 
 ### TODOs
-
 * Move these to github issues
 * Reconsider the transaction lifetime. Right now it is protected by the
 error that occurs due to violation of uniqueness constraint. But it would be
