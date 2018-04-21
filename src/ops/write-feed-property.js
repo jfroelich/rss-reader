@@ -9,11 +9,6 @@ import {feed_id_is_valid, is_feed} from '/src/objects/feed.js';
 // moreover, consider revising names of other operations in the ops folder to
 // use the read/write naming convention.
 
-// TODO: side note this no longer posts feed-activated/deactivated type
-// messages, it just overloads feed-updated with an extra property. I have to
-// take this change in behavior into account when refactoring activate-feed and
-// deactivate-feed and corresponding callers
-
 // TODO: think more about the error-like-but-not-really cases. Perhaps I am
 // using the wrong abstraction. Perhaps this should be doing something like
 // returning a value to distinguish between a successful update, a failed

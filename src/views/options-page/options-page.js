@@ -5,15 +5,14 @@ import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import {list_peek} from '/src/lib/list/list.js';
 import * as perm from '/src/lib/permissions/permissions.js';
-import {activate_feed} from '/src/ops/activate-feed.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
 import {create_icon_conn} from '/src/ops/create-icon-conn.js';
-import {deactivate_feed} from '/src/ops/deactivate-feed.js';
 import {delete_feed} from '/src/ops/delete-feed.js';
 import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
 import {get_feeds} from '/src/ops/get-feeds.js';
 import {subscribe} from '/src/ops/subscribe.js';
+import {write_feed_property} from '/src/ops/write-feed-property.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
 
 // clang-format off
@@ -47,10 +46,6 @@ let current_section;
 
 const channel = new BroadcastChannel('reader');
 channel.onmessage = function(event) {
-  if (!event) {
-    return;
-  }
-
   if (!event.isTrusted) {
     return;
   }
@@ -63,6 +58,9 @@ channel.onmessage = function(event) {
   switch (message.type) {
     case 'display-settings-changed':
       PageStyle.page_style_onchange(event);
+      break;
+    case 'feed-updated':
+      console.debug('feed updated handler not yet implemented', message);
       break;
     default:
       break;
@@ -404,11 +402,14 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const conn = await create_conn();
-  const op =
-      {conn: conn, channel: channel, console: console, run: activate_feed};
-  await op.run(feed_id);
-  conn.close();
+  const op = {};
+  op.conn = await create_conn();
+  op.channel = create_channel();
+  op.console = console;
+  op.write = write_feed_property;
+  await op.write(feed_id, 'active', true);
+  op.conn.close();
+  op.channel.close();
 
   // Mark the corresponding feed element displayed in the view as active
   const item_element = document.querySelector('li[feed="' + feed_id + '"]');
@@ -421,18 +422,17 @@ async function activate_feed_button_onclick(event) {
 
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const reason = 'click';
 
-  const df_op = {};
-  df_op.conn = await create_conn();
-  df_op.channel = create_channel();
-  df_op.console = console;
-  df_op.run = deactivate_feed;
-  await df_op.run(feed_id, reason);
-  df_op.conn.close();
-  df_op.channel.close();
+  const op = {};
+  op.conn = await create_conn();
+  op.channel = create_channel();
+  op.console = console;
+  op.write = write_feed_property;
+  await op.write(feed_id, 'active', false, {reason: 'manual'});
+  op.conn.close();
+  op.channel.close();
 
-  // Deactive the corresponding feed element in the view
+  // Deactivate the corresponding element in the view
   const item_selector = 'li[feed="' + feed_id + '"]';
   const item_element = document.querySelector(item_selector);
   item_element.setAttribute('inactive', 'true');

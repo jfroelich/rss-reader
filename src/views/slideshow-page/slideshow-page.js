@@ -4,12 +4,12 @@ import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
 import {html_escape} from '/src/lib/html/html.js';
 import {list_peek} from '/src/lib/list/list.js';
 import {entry_id_is_valid, is_entry} from '/src/objects/entry.js';
-import {find_viewable_entries} from '/src/ops/find-viewable-entries.js';
-import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
-import {for_each_viewable_entry} from '/src/ops/for-each-viewable-entry.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
 import {create_icon_conn} from '/src/ops/create-icon-conn.js';
+import {find_viewable_entries} from '/src/ops/find-viewable-entries.js';
+import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
+import {for_each_viewable_entry} from '/src/ops/for-each-viewable-entry.js';
 import {import_opml} from '/src/ops/import-opml.js';
 import {mark_entry_read} from '/src/ops/mark-entry-read.js';
 import {poll_feeds} from '/src/ops/poll-feeds.js';
@@ -40,14 +40,14 @@ const fonts = [
 
 const channel = create_channel();
 
-channel.onmessage = function(event) {
+channel.onmessage = function channel_onmessage(event) {
   if (!event.isTrusted) {
     console.warn('Untrusted event', event);
     return;
   }
 
   const message = event.data;
-  if (typeof message !== 'object' || message === null) {
+  if (!message) {
     console.warn('Invalid message', event);
     return;
   }
@@ -74,9 +74,13 @@ channel.onmessage = function(event) {
       console.warn('Unhandled entry-marked-read message', message);
       break;
     case 'feed-added':
+      break;
     case 'feed-updated':
-    case 'feed-activated':
-    case 'feed-deactivated':
+      // NOTE: this also happens when feed activated/deactivated, the message
+      // will have a property 'property' with the value 'active'
+      // TODO: just realized, no way to tell whether active or inactive as a
+      // result
+      console.debug('%s: feed updated %o', channel_onmessage.name, message);
       break;
     default:
       console.warn('Unknown message type', message);
@@ -84,8 +88,10 @@ channel.onmessage = function(event) {
   }
 };
 
-channel.onmessageerror = function(event) {
-  console.warn('Could not deserialize message from channel', event);
+channel.onmessageerror = function channel_onmessageerror(event) {
+  console.error(
+      '%s: could not deserialize message from channel',
+      channel_onmessageerror.name, event);
 };
 
 async function on_entry_added_message(message) {
