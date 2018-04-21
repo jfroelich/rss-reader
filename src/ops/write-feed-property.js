@@ -1,50 +1,5 @@
 import {feed_id_is_valid, is_feed} from '/src/objects/feed.js';
 
-// UNFINISHED
-
-// TODO: tests
-// TODO: create readme, move comments to readme or github
-// TODO: in the readme explain the rationale behind the function's name because
-// it is relatively unique and breaks from the naming convenition used thus far.
-// moreover, consider revising names of other operations in the ops folder to
-// use the read/write naming convention.
-
-// TODO: think more about the error-like-but-not-really cases. Perhaps I am
-// using the wrong abstraction. Perhaps this should be doing something like
-// returning a value to distinguish between a successful update, a failed
-// update, and a thrown error. There are really three cases but right now the
-// caller can only know about two. I could also reconsider using a status code
-// to represent categories of the outcome. I could do a mix of status and
-// exception, where I throw errors in the programmer case, but never throw in
-// the other cases. So maybe I was partially right earlier when pursuing a
-// status-return-oriented design, and wrong to fully rollback to exceptions.
-// Perhaps I want a compromise in the middle. However, the problem with that it
-// is unconventional, I mean who does this. Perhaps I need to treat all error
-// cases as actual errors, and throw even in the non-programmer-error cases,
-// because basically Javascript forces code to work that way. Perhaps I could
-// qualify that conclusion as less-awful because that is an acceptable
-// characteristic of interpreted languages. Or maybe I should review go syntax.
-// I just really dislike the current implementation because just logging is
-// awkward.
-
-// TODO: review the debate on whether to define a helper function for input
-// variable validation.
-// TODO: review the debate on whether to use an assert helper
-// TODO: review the use of function.name as a parameter to log messages
-// TODO: consider renaming feed_id_is_valid to is_valid_feed_id, I have
-// inconsistent naming patterns and I think this may be one
-
-// TODO: if I do depreate functions like activate-feed, maybe I want to
-// additionally export pre-defined helper functions from this module, right
-// here, that abstract away the boilerplate. One issue with that, is that
-// currently the way I have setup the ops folder, it is one export per module. I
-// would be breaking that convention. However I do kind of want to move in that
-// direction. I don't know, mixed feelings. Another drawback is that the set of
-// helpers exported would not be exhaustive, which might be counter-intuitive
-// and give the appearance of an incomplete API, or lead to an unexpected
-// result, a surprise, when one goes to use a helper just like the others and
-// finds it does not exist.
-
 export function write_feed_property(feed_id, name, value, extra_props = {}) {
   if (!this.console.log || !this.channel.postMessage ||
       !this.conn.transaction) {
@@ -56,16 +11,10 @@ export function write_feed_property(feed_id, name, value, extra_props = {}) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }
 
-  // TODO: maybe define a helper like is_valid_property_name that encapsulates
-  // both these checks. They are tied together so they kind of belong to the
-  // same abstraction, right? Tentative.
-
-  // name must be a string
   if (typeof name !== 'string') {
     throw new TypeError('Invalid name type ' + name);
   }
 
-  // name must be non-empty
   if (!name) {
     throw new TypeError('Empty property name');
   }
@@ -157,11 +106,7 @@ function request_onsuccess(feed_id, name, value, extra_props, event) {
 
   const run_date = new Date();
 
-  // Special case handling for the 'active' property
   if (name === 'active') {
-    // Check state sanity
-    // TODO: why? does it really matter?
-    // TODO: are these error worthy?
     if (feed.active && value) {
       this.console.warn(
           '%s: tried to activate active feed (invalid state) %d',
@@ -182,7 +127,6 @@ function request_onsuccess(feed_id, name, value, extra_props, event) {
       if (typeof extra_props.reason === 'string') {
         feed.deactivationReasonText = extra_props.reason;
       } else {
-        // Make sure it is not somehow set
         delete feed.deactivationReasonText;
       }
       feed.deactivateDate = run_date;
@@ -204,15 +148,10 @@ function request_onsuccess(feed_id, name, value, extra_props, event) {
     feed[name] = value;
   }
 
-  // This behavior depends on the entire operation in all cases but for the case
-  // where the property being updated is the date itself
   if (name !== 'dateUpdated') {
     feed.dateUpdated = run_date;
   }
 
-  // Start a put request. We let a put error bubble up to the txn, and we do
-  // not listen for the success event because we can just listen for txn
-  // completion
   const feed_object_store = event.target.source;
   feed_object_store.put(feed);
 }
