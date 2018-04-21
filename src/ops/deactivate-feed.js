@@ -11,7 +11,8 @@ export async function deactivate_feed(feed_id, reason) {
   op.write = write_feed_property;
   const prop_name = 'active';
   const prop_value = false;
-  await op.write(feed_id, prop_name, prop_value);
+  const extra_props = {reason: reason};
+  await op.write(feed_id, prop_name, prop_value, extra_props);
   this.channel.postMessage({type: 'feed-deactivated', id: feed_id});
 }
 
