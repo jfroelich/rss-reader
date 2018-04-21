@@ -1,12 +1,6 @@
 import {feed_id_is_valid, is_feed} from '/src/objects/feed.js';
 
 export function write_feed_property(feed_id, name, value, extra_props = {}) {
-  if (!this.console.log || !this.channel.postMessage ||
-      !this.conn.transaction) {
-    console.error('%s: called with invalid context', write_feed_property.name);
-    throw new Error('Invalid context ' + JSON.stringify(this));
-  }
-
   if (!feed_id_is_valid(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }

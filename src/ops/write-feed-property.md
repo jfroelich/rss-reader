@@ -30,7 +30,6 @@ Returns a promise that resolves to undefined. The promise settles either when an
 
 ### TODOs
 * after implementation, I realized an issue with the contents of the messages sent to the channel, such as for when activating or deactivating a feed, in that if I only send out the property name, the message handler does not have enough information from reading the message to discern whether a feed became active or inactive, and can only tell that active-state changed. I am not sure if it is needed yet, but I think I need the handler to be able to discern the direction of the state change.
-* I have second thoughts about sanity checking context. I do not do this in other calls, so it is strange to do it here. It is also overly-paranoid. Also js will just error out anyway when accessing a property or method of an undefined/null object or calling a member function that doesn't exist. I think I should probably remove this code
 
 // TODO: maybe define a helper like is_valid_property_name that encapsulates
 // both these checks (the name checks). They are tied together so they kind of belong to the
