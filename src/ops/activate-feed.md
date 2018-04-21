@@ -18,7 +18,3 @@ All context parameters are required
 
 ### Return value
 Returns a promise that resolves to undefined. The promise settles either when an error occurs or when the transaction completes and the channel messages have been posted.
-
-### TODOs
-* Rather than an entire module for activate and deactivate, I could use one module for set_active_state. This will reduce the amount of code and repetition without increasing complexity. Both modules share a substantial amount of similarity.
-* Possible that I should take the above todo even further, have a generic feed_set_property operation, to which activate-feed, deactivate-feed, etc all map to, yeah I like that, what i should do is implement feed set property, then refactor this to delegate to that, then eventually have caller call feed-set-property directly

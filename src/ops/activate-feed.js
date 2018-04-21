@@ -1,51 +1,28 @@
-import {feed_id_is_valid, is_feed} from '/src/objects/feed.js';
+import {write_feed_property} from '/src/ops/write-feed-property.js';
 
-export function activate_feed(feed_id) {
-  if (!feed_id_is_valid(feed_id)) {
-    throw new TypeError('Invalid feed id ' + feed_id);
-  }
+// TODO: update deactivate-feed sibling op
+// TODO: test new implementation using write_feed_property
+// TODO: let write_feed_property do the channel send, first need to change all
+// callers to listen for new message type (deprecate feed-activated type)
+// TODO: deprecate, caller should call write_feed_property directly, do this
+// after channel delegation change
+// TODO: cleanup docs now that they are out of date, but write the
+// write_feed_property docs first, since a ton is duplicated
 
-  return new Promise(executor.bind(this, feed_id));
-}
+export async function activate_feed(feed_id) {
+  // Create a dummy channel because write_feed_property requires one but we
+  // want to suppress it
+  const channel_stub = {name: 'stub', postMessage: noop, close: noop};
 
-function executor(feed_id, resolve, reject) {
-  const txn = this.conn.transaction('feed', 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(this, feed_id, resolve);
-  txn.onerror = _ => reject(txn.error);
+  const op = {};
+  op.conn = this.conn;
+  op.console = this.console;
+  // Suppress the message since we will send our own (for now)
+  op.channel = channel_stub;
+  op.write = write_feed_property;
 
-  const store = txn.objectStore('feed');
-  const request = store.get(feed_id);
-  request.onsuccess = request_onsuccess.bind(this, feed_id);
-}
-
-function txn_oncomplete(feed_id, callback, event) {
-  this.console.debug('Activated feed', feed_id);
+  await op.write(feed_id, 'active', true);
   this.channel.postMessage({type: 'feed-activated', id: feed_id});
-  callback();
 }
 
-function request_onsuccess(feed_id, event) {
-  const feed = event.target.result;
-  if (!feed) {
-    this.console.warn('Failed to find feed by id', feed_id);
-    return;
-  }
-
-  if (!is_feed(feed)) {
-    this.console.warn('Matched feed object is not a feed', feed_id, feed);
-    return;
-  }
-
-  if (feed.active) {
-    this.console.warn('Tried to activate already-active feed', feed_id);
-    return;
-  }
-
-  feed.active = true;
-  delete feed.deactivationReasonText;
-  delete feed.deactivateDate;
-  feed.dateUpdated = new Date();
-
-  const store = event.target.source;
-  store.put(feed);
-}
+function noop() {}
