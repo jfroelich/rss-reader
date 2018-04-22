@@ -68,6 +68,7 @@ function on_upgrade_needed(console, event) {
 // @param txn {IDBTransaction}
 // @return {void}
 function add_magic_to_entries(txn) {
+  console.debug('Adding entry magic');
   const store = txn.objectStore('entry');
   const request = store.openCursor();
   request.onsuccess = function() {
@@ -102,6 +103,7 @@ function add_magic_to_feeds(txn) {
 
 // TODO: use cursor rather than getAll for scalability
 function add_active_field_to_feeds(store) {
+  console.debug('Adding active property to older feeds');
   const feeds_request = store.getAll();
   feeds_request.onerror = console.error;
   feeds_request.onsuccess = function(event) {

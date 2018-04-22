@@ -6,7 +6,9 @@ export function update_feed(feed, options = {}) {
     throw new TypeError('Invalid feed parameter ' + feed);
   }
 
-  this.console.debug('Creating or updating feed', list_peek(feed.urls));
+  this.console.debug(
+      '%s: %s feed', update_feed.name, 'id' in feed ? 'updating' : 'creating',
+      list_peek(feed.urls));
 
   let clean_feed;
   if (options.sanitize) {
