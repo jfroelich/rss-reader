@@ -68,6 +68,7 @@ async function test() {
 
   // Check that the feed exists in the database by id
   const match = await find_feed_by_id(rconn, feed.id);
+  console.debug('Feed found by id', match);
   console.assert(is_feed(match), '%s: no match', find_feed_by_id.name);
   console.assert(feed_id_is_valid(match.id), 'matched feed missing id?', match);
   console.assert(

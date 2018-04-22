@@ -15,9 +15,13 @@ function on_upgrade_needed(console, event) {
   let feed_store, entry_store;
   const stores = conn.objectStoreNames;
 
-  console.log(
-      'Upgrading database %s to version %s from version', conn.name,
-      conn.version, event.oldVersion);
+  if (event.oldVersion === 0) {
+    console.log('Creating database', conn.name, conn.version, event.oldVersion);
+  } else {
+    console.log(
+        'Upgrading database %s to version %s from version', conn.name,
+        conn.version, event.oldVersion);
+  }
 
   if (event.oldVersion < 20) {
     const feed_store_props = {keyPath: 'id', autoIncrement: true};
