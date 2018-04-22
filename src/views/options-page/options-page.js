@@ -1,5 +1,6 @@
 import '/src/views/cli/cli.js';
 
+import {background_images} from '/src/background-images.js';
 import {console_stub} from '/src/lib/console-stub/console-stub.js';
 import {element_fade} from '/src/lib/dom/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
@@ -14,31 +15,6 @@ import {get_feeds} from '/src/ops/get-feeds.js';
 import {subscribe} from '/src/ops/subscribe.js';
 import {write_feed_property} from '/src/ops/write-feed-property.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
-
-// clang-format off
-const BG_IMAGES = [
-  '/images/bgfons-paper_texture318.jpg',
-  '/images/CCXXXXXXI_by_aqueous.jpg',
-  '/images/paper-backgrounds-vintage-white.jpg',
-  '/images/pickering-texturetastic-gray.png',
-  '/images/reusage-recycled-paper-white-first.png',
-  '/images/subtle-patterns-beige-paper.png',
-  '/images/subtle-patterns-cream-paper.png',
-  '/images/subtle-patterns-exclusive-paper.png',
-  '/images/subtle-patterns-groove-paper.png',
-  '/images/subtle-patterns-handmade-paper.png',
-  '/images/subtle-patterns-paper-1.png',
-  '/images/subtle-patterns-paper-2.png',
-  '/images/subtle-patterns-paper.png',
-  '/images/subtle-patterns-rice-paper-2.png',
-  '/images/subtle-patterns-rice-paper-3.png',
-  '/images/subtle-patterns-soft-wallpaper.png',
-  '/images/subtle-patterns-white-wall.png',
-  '/images/subtle-patterns-witewall-3.png',
-  '/images/thomas-zucx-noise-lines.png'
-];
-// clang-format on
-
 
 // View state
 let current_menu_item;
@@ -619,7 +595,7 @@ function options_page_init() {
 
     const current_bg_image_path = localStorage.BG_IMAGE;
     const bg_image_relative_path_offset = '/images/'.length;
-    for (const path of BG_IMAGES) {
+    for (const path of background_images) {
       let option = document.createElement('option');
       option.value = path;
       option.textContent = path.substring(bg_image_relative_path_offset);
