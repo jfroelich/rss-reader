@@ -20,10 +20,14 @@ function on_upgrade_needed(console, event) {
       conn.version, event.oldVersion);
 
   if (event.oldVersion < 20) {
-    feed_store =
-        conn.createObjectStore('feed', {key_path: 'id', autoIncrement: true});
-    entry_store =
-        conn.createObjectStore('entry', {key_path: 'id', autoIncrement: true});
+    const feed_store_props = {keyPath: 'id', autoIncrement: true};
+    console.debug('Creating feed object store with props', feed_store_props);
+    feed_store = conn.createObjectStore('feed', feed_store_props);
+
+    const entry_store_props = {keyPath: 'id', autoIncrement: true};
+    console.debug('Creating entry object store with props', entry_store_props);
+    entry_store = conn.createObjectStore('entry', entry_store_props);
+
     feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
 
     entry_store.createIndex('readState', 'readState');

@@ -60,10 +60,13 @@ export async function subscribe(url, options) {
   });
 
   // Set the feed's favicon url
-  const lookup_url = feed_create_favicon_lookup_url(feed);
-  const lio = {conn: iconn, console: console, lookup: lookup_icon};
-  let lookup_doc = undefined, fetch = false;
-  feed.faviconURLString = await lio.lookup(lookup_url, lookup_doc, fetch);
+  if (!options.skip_icon_lookup) {
+    const lookup_url = feed_create_favicon_lookup_url(feed);
+    const lio = {conn: iconn, console: console, lookup: lookup_icon};
+    let lookup_doc = undefined, fetch = false;
+    feed.faviconURLString = await lio.lookup(lookup_url, lookup_doc, fetch);
+  }
+
 
   // Store the feed within the database
   const cfo = {
@@ -81,11 +84,15 @@ export async function subscribe(url, options) {
     notify(title, message, stored_feed.faviconURLString);
   }
 
-  if (options.await_poll) {
-    await poll_feed_helper(console, stored_feed);
-  } else {
-    poll_feed_helper(console, stored_feed);
+  if (!options.skip_poll) {
+    if (options.await_poll) {
+      await poll_feed_helper(console, stored_feed);
+    } else {
+      poll_feed_helper(console, stored_feed);
+    }
   }
+
+
 
   return stored_feed;
 }

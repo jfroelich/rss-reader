@@ -41,7 +41,11 @@ function executor(feed, validate, resolve, reject) {
 
   // NOTE: always set. for some reason when creating a feed, the id property
   // may be present. it is relatively harmless so always set
-  request.onsuccess = _ => feed.id = request.result;
+  request.onsuccess = _ => {
+    console.debug('before, is id in feed?', 'id' in feed ? true : false);
+    console.debug('before %s after %s', feed.id, request.result);
+    feed.id = request.result;
+  };
 }
 
 function txn_oncomplete(feed, callback, event) {

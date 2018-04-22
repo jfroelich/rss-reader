@@ -30,16 +30,22 @@ async function test() {
   // For now test without icon connection
 
   const url = new URL('https://news.google.com/news/rss/?ned=us&gl=US&hl=en');
-  const options = {fetch_timeout: 7000, notify: false, await_poll: true};
+  const subscribe_options = {
+    fetch_timeout: 7000,
+    notify: false,
+    await_poll: true,
+    skip_poll: true,
+    skip_icon_lookup: true
+  };
 
-  const op = {
+  const subscribe_op = {
     rconn: rconn,
     channel: channel_stub,
     console: console,
     subscribe: subscribe
   };
 
-  const feed = await op.subscribe(url, options);
+  const feed = await subscribe_op.subscribe(url, subscribe_options);
   console.debug('subscribed feed: %o', feed);
   console.assert(
       typeof feed === 'object', 'no feed object produced by subscribe', feed);
@@ -63,10 +69,7 @@ async function test() {
   // Check that the feed exists in the database by id
   const match = await find_feed_by_id(rconn, feed.id);
   console.assert(is_feed(match), '%s: no match', find_feed_by_id.name);
-
-  // TODO: this is failing because somehow match.id is undefined, even though
-  // the rest of its fields are defined. I looked at the database, somehow
-  // the feed does not have an id
+  console.assert(feed_id_is_valid(match.id), 'matched feed missing id?', match);
   console.assert(
       match.id === feed.id, 'feed ids do not match, match %d feed %d', match.id,
       feed.id);
@@ -74,7 +77,6 @@ async function test() {
   // TODO: unsusbcribe, check that it completes without error
   // NOTE: what to do about the fact that the poll-operation may still be
   // outstanding
-
 
   rconn.close();
   await idb_remove(rconn.name);
