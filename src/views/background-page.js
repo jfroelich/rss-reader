@@ -1,4 +1,4 @@
-import '/src/views/cli/cli.js';
+import '/src/views/cli.js';
 
 import {console_stub} from '/src/lib/console-stub.js';
 import {FaviconService} from '/src/lib/favicon-service.js';

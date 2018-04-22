@@ -1,4 +1,4 @@
-import '/src/views/cli/cli.js';
+import '/src/views/cli.js';
 
 import {background_images} from '/src/background-images.js';
 import {console_stub} from '/src/lib/console-stub.js';
