@@ -5,7 +5,6 @@
 // All tests are run async
 // Every test should be an async function, even if it is sync
 
-
 // TODO: what does it mean to fail? not return true? throw an error?
 // I think it will be better with errors because that means the test code
 // doesn't need to concern itself with trapping everything. Also, I could define
@@ -42,6 +41,7 @@ export async function run() {
 
   const test_promises = [];
   for (const test of tests) {
+    console.log('Running test', test.name);
     test_promises.push(test());
   }
 

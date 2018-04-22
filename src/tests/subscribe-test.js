@@ -6,25 +6,17 @@ import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
 import {subscribe} from '/src/ops/subscribe.js';
 import {assert, register_test} from '/src/tests/test.js';
 
-async function basic_subscribe_test() {
-  let message_post_count = 0;
+// TODO: it is wrong to ping google, implement something that tests a local
+// file somehow (e.g. a feed that exists within the extension)
 
-  const channel_stub = {};
-  channel_stub.name = 'channel-stub';
-  channel_stub.postMessage = function channel_stub_post_message(message) {
-    console.debug(
-        '%s: fake-posting message %o', channel_stub_post_message.name, message);
-    message_post_count++;
-  };
-  channel_stub.close = noop;
+async function basic_subscribe_test() {
+  const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
 
   const rdb_name = 'subscribe-test';
-  let version = undefined;
-  let timeout = undefined;
-
+  let version, timeout;
   const rconn = await create_conn(rdb_name, version, timeout, console);
 
-  const url = new URL('https://news.google.com/news/rss/?ned=us&gl=US&hl=en');
+  const url = new URL(test_url);
   const subscribe_options = {
     fetch_timeout: 7000,
     notify: false,
@@ -33,6 +25,11 @@ async function basic_subscribe_test() {
     skip_icon_lookup: true
   };
 
+  let message_post_count = 0;
+  const channel_stub = {};
+  channel_stub.name = 'channel-stub';
+  channel_stub.postMessage = _ => message_post_count++;
+
   const subscribe_op = {
     rconn: rconn,
     channel: channel_stub,
@@ -40,19 +37,23 @@ async function basic_subscribe_test() {
     subscribe: subscribe
   };
 
+  // Test the subscription produced the desired result
   const feed = await subscribe_op.subscribe(url, subscribe_options);
-  console.debug('subscribed feed: %o', feed);
   assert(typeof feed === 'object', 'subscribe did not emit an object ' + feed);
   assert(is_feed(feed), 'subscribe did not emit object of correct type');
   assert(feed_id_is_valid(feed.id));
   assert(feed.urls.length, 'subscribe produced feed without urls');
   assert(feed.urls.includes(url.href), 'subscribed feed missing input url');
   assert(feed.active, 'subscribed feed not initially active');
+
+  // Test the subscription sent out messages
   assert(message_post_count, 'subscribed feed did not post message');
 
+  // Test the new feed is findable by url
   const query = {url: url};
   assert(await contains_feed(rconn, query), 'cannot find feed by url');
 
+  // Test the new feed is findable by id
   const match = await find_feed_by_id(rconn, feed.id);
   assert(is_feed(match), 'subscribed feed read did not emit feed type');
   assert(feed_id_is_valid(match.id), 'subscribed feed has invalid id');
@@ -62,7 +63,5 @@ async function basic_subscribe_test() {
   rconn.close();
   await idb_remove(rconn.name, console);
 }
-
-function noop() {}
 
 register_test(basic_subscribe_test);
