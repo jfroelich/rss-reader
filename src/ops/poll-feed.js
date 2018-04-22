@@ -1,12 +1,12 @@
-import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
-import {list_empty, list_peek} from '/src/lib/list/list.js';
-import * as url_loader from '/src/lib/url-loader/url-loader.js';
-import {entry_append_url, create_entry_object} from '/src/objects/entry.js';
+import * as feed_parser from '/src/lib/feed-parser.js';
+import {list_empty, list_peek} from '/src/lib/list.js';
+import * as url_loader from '/src/lib/url-loader.js';
+import {create_entry_object, entry_append_url} from '/src/objects/entry.js';
 import {coerce_feed, feed_merge, is_feed} from '/src/objects/feed.js';
-import {refresh_badge} from '/src/ops/refresh-badge.js';
 import {fetch_feed} from '/src/ops/fetch-feed.js';
 import {notify} from '/src/ops/notify.js';
 import {poll_entry} from '/src/ops/poll-entry.js';
+import {refresh_badge} from '/src/ops/refresh-badge.js';
 import {update_feed} from '/src/ops/update-feed.js';
 
 export async function poll_feed(

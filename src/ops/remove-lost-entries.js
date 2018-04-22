@@ -1,5 +1,5 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import {list_empty} from '/src/lib/list/list.js';
+import {console_stub} from '/src/lib/console-stub.js';
+import {list_empty} from '/src/lib/list.js';
 
 const channel_stub = {
   name: 'channel-stub',

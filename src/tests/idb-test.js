@@ -1,4 +1,4 @@
-import {idb_open, idb_remove} from '/src/lib/idb/idb.js';
+import {idb_open, idb_remove} from '/src/lib/idb.js';
 
 async function test() {
   const name = 'indexeddb-utils-test';

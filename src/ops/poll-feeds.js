@@ -1,4 +1,4 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
+import {console_stub} from '/src/lib/console-stub.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
 import {notify} from '/src/ops/notify.js';
 import {poll_feed} from '/src/ops/poll-feed.js';

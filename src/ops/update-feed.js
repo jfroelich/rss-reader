@@ -1,4 +1,4 @@
-import {list_peek} from '/src/lib/list/list.js';
+import {list_peek} from '/src/lib/list.js';
 import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/feed.js';
 
 export function update_feed(feed, options = {}) {

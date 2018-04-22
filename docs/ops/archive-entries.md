@@ -9,7 +9,7 @@ Compacting involves removing several fields from an entry, and in particular, th
 ### Context properties
 * **conn** {IDBDatabase} an open database connection to the reader database
 * **channel** {BroadcastChannel} an open channel, required, which receives messages for each entry that is archived in the form `{type: 'entry-archived', id: entry_id}`
-* **console** {object} a console-like object if logging is desired, required, to disable logging consider using a [console-stub](../lib/console-stub/console-stub.js)
+* **console** {object} a console-like object if logging is desired, required, to disable logging consider using a [console-stub](../lib/console-stub.js)
 
 ### Params
 * **max_age** {Number} - in milliseconds, optional, defaults to two days, how old an entry must be based on the difference between the run time and the date the entry was created in order to consider the entry as archivable

@@ -1,4 +1,4 @@
-import * as mime from '/src/lib/mime/mime.js';
+import * as mime from '/src/lib/mime.js';
 
 console.log('starting tests');
 

@@ -1,4 +1,4 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
+import {console_stub} from '/src/lib/console-stub.js';
 
 function idb_context_t() {
   this.name = null;

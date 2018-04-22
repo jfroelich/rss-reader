@@ -1,5 +1,5 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import {list_empty} from '/src/lib/list/list.js';
+import {console_stub} from '/src/lib/console-stub.js';
+import {list_empty} from '/src/lib/list.js';
 import {feed_create_favicon_lookup_url} from '/src/objects/feed.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
 import {lookup_icon} from '/src/ops/lookup-icon.js';

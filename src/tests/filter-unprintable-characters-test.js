@@ -1,4 +1,4 @@
-import {string_filter_unprintable_characters} from '/src/lib/string/string.js';
+import {string_filter_unprintable_characters} from '/src/lib/string.js';
 
 window.string_filter_unprintable_characters =
     string_filter_unprintable_characters;

@@ -1,4 +1,4 @@
-import * as css from '/src/lib/css/css.js';
+import * as css from '/src/lib/css.js';
 
 export function page_style_onchange(event) {
   page_style_entry_update();

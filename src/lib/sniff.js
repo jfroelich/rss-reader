@@ -1,5 +1,5 @@
-import * as mime from '/src/lib/mime/mime.js';
-import * as string from '/src/lib/string/string.js';
+import * as mime from '/src/lib/mime.js';
+import * as string from '/src/lib/string.js';
 
 export const UNKNOWN_CLASS = 0;
 export const TEXT_CLASS = 1;

@@ -1,13 +1,14 @@
 import '/src/views/cli/cli.js';
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
+
+import {console_stub} from '/src/lib/console-stub.js';
+import {FaviconService} from '/src/lib/favicon-service.js';
 import {archive_entries} from '/src/ops/archive-entries.js';
-import {refresh_badge} from '/src/ops/refresh-badge.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
 import {create_icon_conn} from '/src/ops/create-icon-conn.js';
 import {open_view} from '/src/ops/open-view.js';
 import {poll_feeds} from '/src/ops/poll-feeds.js';
+import {refresh_badge} from '/src/ops/refresh-badge.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/ops/remove-lost-entries.js';
 import {remove_orphans} from '/src/ops/remove-orphaned-entries.js';

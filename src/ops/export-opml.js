@@ -1,5 +1,5 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import {list_peek} from '/src/lib/list/list.js';
+import {console_stub} from '/src/lib/console-stub.js';
+import {list_peek} from '/src/lib/list.js';
 import {get_feeds} from '/src/ops/get-feeds.js';
 
 export async function export_opml(conn, title, console = console_stub) {

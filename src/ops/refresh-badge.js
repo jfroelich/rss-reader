@@ -1,4 +1,4 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
+import {console_stub} from '/src/lib/console-stub.js';
 import {ENTRY_STATE_UNREAD} from '/src/objects/entry.js';
 
 // TODO: look more into making refresh_badge easily unawaitable, because I

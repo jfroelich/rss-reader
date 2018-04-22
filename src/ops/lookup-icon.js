@@ -1,4 +1,4 @@
-import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/lib/favicon-service.js';
 
 export function lookup_icon(url, document, fetch = true) {
   const fs = new FaviconService();

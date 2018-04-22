@@ -1,9 +1,9 @@
-import * as color from '/src/lib/color/color.js';
-import * as html_parser from '/src/lib/html-parser/html-parser.js';
-import {list_empty, list_peek} from '/src/lib/list/list.js';
-import {rewrite_url} from '/src/lib/rewrite-url/rewrite-url.js';
-import * as sniff from '/src/lib/sniff/sniff.js';
-import * as url_loader from '/src/lib/url-loader/url-loader.js';
+import * as color from '/src/lib/color.js';
+import * as html_parser from '/src/lib/html-parser.js';
+import {list_empty, list_peek} from '/src/lib/list.js';
+import {rewrite_url} from '/src/lib/rewrite-url.js';
+import * as sniff from '/src/lib/sniff.js';
+import * as url_loader from '/src/lib/url-loader.js';
 import {entry_append_url} from '/src/objects/entry.js';
 import {contains_entry} from '/src/ops/contains-entry.js';
 import {create_entry} from '/src/ops/create-entry.js';

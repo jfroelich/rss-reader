@@ -1,4 +1,4 @@
-import * as mime from '/src/lib/mime/mime.js';
+import * as mime from '/src/lib/mime.js';
 
 // Fictional codes for responses with errors. Codes must be in the range
 // [200..599] or Chrome whines about it and throws a RangeError

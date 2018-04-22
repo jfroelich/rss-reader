@@ -1,4 +1,4 @@
-import {html_decode_entities} from '/src/lib/html/html.js';
+import {html_decode_entities} from '/src/lib/html.js';
 
 export function parse(value, skip_entries, resolve_entry_urls) {
   const document = xml_parse(value);

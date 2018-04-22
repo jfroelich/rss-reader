@@ -1,8 +1,8 @@
-import {fetch_image} from '/src/lib/favicon-service/fetch-image.js';
-import * as html_parser from '/src/lib/html-parser/html-parser.js';
-import * as idb from '/src/lib/idb/idb.js';
-import * as mime from '/src/lib/mime/mime.js';
-import * as url_loader from '/src/lib/url-loader/url-loader.js';
+import {fetch_image} from '/src/lib/fetch-image.js';
+import * as html_parser from '/src/lib/html-parser.js';
+import * as idb from '/src/lib/idb.js';
+import * as mime from '/src/lib/mime.js';
+import * as url_loader from '/src/lib/url-loader.js';
 // TODO: lib modules should not depend on app modules
 import {fetch_html} from '/src/ops/fetch-html.js';
 

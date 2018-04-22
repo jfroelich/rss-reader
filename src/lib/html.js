@@ -1,4 +1,4 @@
-import * as html_parser from '/src/lib/html-parser/html-parser.js';
+import * as html_parser from '/src/lib/html-parser.js';
 
 // Given an input value, if it is a string, then creates and returns a new
 // string where html entities have been decoded into corresponding values. For

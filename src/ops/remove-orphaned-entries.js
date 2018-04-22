@@ -1,4 +1,4 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
+import {console_stub} from '/src/lib/console-stub.js';
 import {feed_id_is_valid} from '/src/objects/feed.js';
 
 const channel_stub = {

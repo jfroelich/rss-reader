@@ -1,6 +1,6 @@
 import * as filters from '/src/content-filters/content-filters.js';
-import * as boilerplate from '/src/lib/boilerplate/boilerplate.js';
-import * as html_parser from '/src/lib/html-parser/html-parser.js';
+import * as boilerplate from '/src/lib/boilerplate.js';
+import * as html_parser from '/src/lib/html-parser.js';
 import {fetch_html} from '/src/ops/fetch-html.js';
 
 async function test(url_string) {

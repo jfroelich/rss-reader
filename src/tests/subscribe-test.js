@@ -1,4 +1,4 @@
-import {idb_remove} from '/src/lib/idb/idb.js';
+import {idb_remove} from '/src/lib/idb.js';
 // import {create_icon_conn} from '/src/ops/create-icon-conn.js';
 import {feed_id_is_valid, is_feed} from '/src/objects/feed.js';
 import {contains_feed} from '/src/ops/contains-feed.js';

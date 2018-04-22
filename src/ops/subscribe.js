@@ -1,7 +1,7 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
-import {list_peek} from '/src/lib/list/list.js';
-import * as url_loader from '/src/lib/url-loader/url-loader.js';
+import {console_stub} from '/src/lib/console-stub.js';
+import * as feed_parser from '/src/lib/feed-parser.js';
+import {list_peek} from '/src/lib/list.js';
+import * as url_loader from '/src/lib/url-loader.js';
 import {coerce_feed, feed_append_url, feed_create, feed_create_favicon_lookup_url, is_feed} from '/src/objects/feed.js';
 import {contains_feed} from '/src/ops/contains-feed.js';
 import {create_channel} from '/src/ops/create-channel.js';

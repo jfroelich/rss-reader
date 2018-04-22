@@ -1,5 +1,5 @@
 import '/third-party/tinycolor-min.js';
-import * as color from '/src/lib/color/color.js';
+import * as color from '/src/lib/color.js';
 
 export function parse(value) {
   if (typeof value === 'string' && value.length) {
@@ -16,7 +16,6 @@ function tinycolor_to_color(tiny_color) {
 }
 
 export function format(value) {
-  return 'rgba(' + color.get_red(value) + ', ' + color.get_green(value) +
-      ', ' + color.get_blue(value) + ', ' + color.get_alpha(value) / 255 +
-      ')';
+  return 'rgba(' + color.get_red(value) + ', ' + color.get_green(value) + ', ' +
+      color.get_blue(value) + ', ' + color.get_alpha(value) / 255 + ')';
 }

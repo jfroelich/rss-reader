@@ -1,4 +1,4 @@
-import * as feed_parser from '/src/lib/feed-parser/feed-parser.js';
+import * as feed_parser from '/src/lib/feed-parser.js';
 // TODO: libs should not depend on app modules
 import {fetch_feed} from '/src/ops/fetch-feed.js';
 

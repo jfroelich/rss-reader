@@ -1,4 +1,4 @@
-import * as url_loader from '/src/lib/url-loader/url-loader.js';
+import * as url_loader from '/src/lib/url-loader.js';
 import {fetch_policy} from '/src/objects/fetch-policy.js';
 
 const feed_mime_types = [

@@ -1,4 +1,4 @@
-import {load} from '/src/lib/url-loader/url-loader.js';
+import {load} from '/src/lib/url-loader.js';
 import {fetch_policy} from '/src/objects/fetch-policy.js';
 
 const html_mime_types = ['text/html'];

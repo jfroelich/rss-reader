@@ -1,6 +1,6 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import * as filelib from '/src/lib/file/file.js';
-import * as opml_parser from '/src/lib/opml-parser/opml-parser.js';
+import {console_stub} from '/src/lib/console-stub.js';
+import * as filelib from '/src/lib/file.js';
+import * as opml_parser from '/src/lib/opml-parser.js';
 import {subscribe} from '/src/ops/subscribe.js';
 
 const opml_mime_types = [

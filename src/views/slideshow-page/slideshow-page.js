@@ -1,8 +1,8 @@
-import {date_format} from '/src/lib/date/date.js';
-import {filter_publisher} from '/src/lib/filter-publisher/filter-publisher.js';
-import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
-import {html_escape} from '/src/lib/html/html.js';
-import {list_peek} from '/src/lib/list/list.js';
+import {date_format} from '/src/lib/date.js';
+import {filter_publisher} from '/src/lib/filter-publisher.js';
+import {html_truncate} from '/src/lib/html-truncate.js';
+import {html_escape} from '/src/lib/html.js';
+import {list_peek} from '/src/lib/list.js';
 import {entry_id_is_valid, is_entry} from '/src/objects/entry.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';

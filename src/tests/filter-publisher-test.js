@@ -1,4 +1,4 @@
-import {filter_publisher as f} from '/src/lib/filter-publisher/filter-publisher.js';
+import {filter_publisher as f} from '/src/lib/filter-publisher.js';
 
 // no delimiters found
 console.assert(f('Hello World') === 'Hello World');

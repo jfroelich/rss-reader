@@ -1,6 +1,5 @@
 import * as filters from '/src/content-filters/content-filters.js';
-import * as html_parser from '/src/lib/html-parser/html-parser.js';
-// TODO: this cannot depend on something in operations
+import * as html_parser from '/src/lib/html-parser.js';
 import {fetch_html} from '/src/ops/fetch-html.js';
 
 window.test = async function(url_string) {

@@ -1,4 +1,4 @@
-import {filter_empty_properties} from '/src/lib/object/object.js';
+import {filter_empty_properties} from '/src/lib/object.js';
 import {entry_is_valid, entry_sanitize, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
 import {update_entry} from '/src/ops/update-entry.js';
 

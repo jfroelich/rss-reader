@@ -1,4 +1,4 @@
-import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/lib/favicon-service.js';
 
 // Returns a promise that resolves to a database connection to the favicon
 // database

@@ -1,4 +1,4 @@
-import * as string from '/src/lib/string/string.js';
+import * as string from '/src/lib/string.js';
 
 export const MIME_TYPE_MIN_LENGTH = 7;
 export const MIME_TYPE_MAX_LENGTH = 100;

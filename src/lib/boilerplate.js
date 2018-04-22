@@ -1,4 +1,4 @@
-import * as string from '/src/lib/string/string.js';
+import * as string from '/src/lib/string.js';
 
 export function annotate(document, console) {
   if (!(document instanceof Document)) {

@@ -1,5 +1,5 @@
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import {idb_open} from '/src/lib/idb/idb.js';
+import {console_stub} from '/src/lib/console-stub.js';
+import {idb_open} from '/src/lib/idb.js';
 import {ENTRY_MAGIC} from '/src/objects/entry.js';
 import {FEED_MAGIC} from '/src/objects/feed.js';
 

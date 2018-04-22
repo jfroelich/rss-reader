@@ -1,4 +1,4 @@
-import * as sniff from '/src/lib/sniff/sniff.js';
+import * as sniff from '/src/lib/sniff.js';
 
 console.debug('If no other messages appear in console then all tests passed');
 

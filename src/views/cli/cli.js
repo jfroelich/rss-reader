@@ -1,4 +1,4 @@
-import {FaviconService} from '/src/lib/favicon-service/favicon-service.js';
+import {FaviconService} from '/src/lib/favicon-service.js';
 import {archive_entries} from '/src/ops/archive-entries.js';
 import {clear_icons} from '/src/ops/clear-icons.js';
 import {create_channel} from '/src/ops/create-channel.js';

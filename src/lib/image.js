@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {element_unwrap} from '/src/lib/element-unwrap.js';
 
 export function has_source(image) {
   const has = element_attribute_not_empty_after_trim;

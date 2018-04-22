@@ -1,11 +1,11 @@
 import '/src/views/cli/cli.js';
 
 import {background_images} from '/src/background-images.js';
-import {console_stub} from '/src/lib/console-stub/console-stub.js';
-import {element_fade} from '/src/lib/dom/element-fade.js';
-import {html_truncate} from '/src/lib/html-truncate/html-truncate.js';
-import {list_peek} from '/src/lib/list/list.js';
-import * as perm from '/src/lib/permissions/permissions.js';
+import {console_stub} from '/src/lib/console-stub.js';
+import {element_fade} from '/src/lib/element-fade.js';
+import {html_truncate} from '/src/lib/html-truncate.js';
+import {list_peek} from '/src/lib/list.js';
+import * as perm from '/src/lib/permissions.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
 import {create_icon_conn} from '/src/ops/create-icon-conn.js';
