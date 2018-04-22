@@ -14,7 +14,7 @@ import {notify} from '/src/ops/notify.js';
 import {poll_feed} from '/src/ops/poll-feed.js';
 
 export async function subscribe(url, options) {
-  console.log('Subscribing to feed', url.href);
+  this.console.log('Subscribing to feed', url.href);
 
   const rconn = this.rconn;
   const iconn = this.iconn;
