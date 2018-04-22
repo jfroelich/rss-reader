@@ -36,10 +36,12 @@ function executor(feed, validate, resolve, reject) {
   txn.oncomplete = txn_oncomplete.bind(this, feed, resolve);
   txn.onerror = _ => reject(txn.error);
 
-  const request = txn.objectStore('feed').put(feed);
-  if (!('id' in feed)) {
-    request.onsuccess = _ => feed.id = request.result;
-  }
+  const store = txn.objectStore('feed');
+  const request = store.put(feed);
+
+  // NOTE: always set. for some reason when creating a feed, the id property
+  // may be present. it is relatively harmless so always set
+  request.onsuccess = _ => feed.id = request.result;
 }
 
 function txn_oncomplete(feed, callback, event) {

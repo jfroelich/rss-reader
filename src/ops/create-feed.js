@@ -27,7 +27,7 @@ export async function create_feed(feed, sanitize = true) {
   update_options.validate = true;
   update_options.set_date_updated = false;
 
-  const stored_feed = update_op.update_feed(clone, update_options);
+  const stored_feed = await update_op.update_feed(clone, update_options);
 
   this.channel.postMessage({type: 'feed-added', id: stored_feed.id});
   return stored_feed;

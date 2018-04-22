@@ -63,7 +63,7 @@ export async function subscribe(url, options) {
   const lookup_url = feed_create_favicon_lookup_url(feed);
   const lio = {conn: iconn, console: console, lookup: lookup_icon};
   let lookup_doc = undefined, fetch = false;
-  feed.faviconURLString = lio.lookup(lookup_url, lookup_doc, fetch);
+  feed.faviconURLString = await lio.lookup(lookup_url, lookup_doc, fetch);
 
   // Store the feed within the database
   const cfo = {
@@ -81,7 +81,11 @@ export async function subscribe(url, options) {
     notify(title, message, stored_feed.faviconURLString);
   }
 
-  poll_feed_unawaited(console, stored_feed);
+  if (options.await_poll) {
+    await poll_feed_helper(console, stored_feed);
+  } else {
+    poll_feed_helper(console, stored_feed);
+  }
 
   return stored_feed;
 }
@@ -102,7 +106,7 @@ async function parse_response_body(response, console) {
   return parsed_feed;
 }
 
-async function poll_feed_unawaited(console, feed) {
+async function poll_feed_helper(console, feed) {
   const rconn = await create_conn();
   const iconn = await create_icon_conn();
 
