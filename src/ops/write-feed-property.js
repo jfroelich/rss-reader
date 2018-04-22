@@ -13,35 +13,10 @@ export function write_feed_property(feed_id, name, value, extra_props = {}) {
     throw new TypeError('Empty property name');
   }
 
-  // The current level of property validation is relatively weak, given that
-  // it should never occur and we are the sole users of this api call. Therefore
-  // name validation is minimal. Hereinafter, assume the name is canonical.
-  // TODO: consider a stronger check, possibly using some kind of a schema of
-  // known properties
-
-  // Always refuse calls that try to update id. The id property cannot be
-  // updated, because it is the keypath to the object. Changing the id is
-  // nonsensical here because changing the id effectively means inserting a new
-  // object or overwriting some other object, or a pointless noop in the case of
-  // updating itself. Because it is so nonsensical it is elevated to programmer
-  // error level treatment worthy of a thrown error.
-
-  // NOTE: in the previous approach of using specialized calls like
-  // activate-feed and deactivate-feed, there was no need for this check. This
-  // is an example of the drawback of using a more generic (less-specialized)
-  // approach. I did not even initially consider this drawback when deciding
-  // to move forward on implemenation. There is the possibility I
-  // over-generalized and want to reconsider something more granular (more
-  // specific to the problem) that is in between set-any-property and
-  // set-particular-property. Some kind of middle ground like
-  // set-writable-properties or something, where I qualify the subset of
-  // properties amenable to this approach.
-
   if (name === 'id') {
     throw new TypeError('Should not try to set id this way');
   }
 
-  // TODO: maybe validation is wasteful or paranoid?
   if (!is_valid_type_for_property(name, value)) {
     throw new TypeError('Invalid value type for property ' + name);
   }
@@ -49,12 +24,6 @@ export function write_feed_property(feed_id, name, value, extra_props = {}) {
   return new Promise(executor.bind(this, feed_id, name, value, extra_props));
 }
 
-// Return whether the property with the given name may contain the value
-// Not currently exhaustive, may use switch statement
-// TODO: maybe this should somehow borrow from some external
-// defined-once-in-one-place (singleton?) schema definition that has
-// per-property settings of type and allows-null(empty). I could also do a
-// check above for whether the property exists in the schema in that case
 function is_valid_type_for_property(name, value) {
   const value_type = typeof value;
   const active_value_types = ['boolean', 'undefined'];

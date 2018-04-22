@@ -28,8 +28,38 @@ All context parameters are required
 ### Return value
 Returns a promise that resolves to undefined. The promise settles either when an error occurs or when the transaction completes and the channel messages have been posted.
 
+### Internal notes on validation
+
+// The current level of property validation is relatively weak, given that
+// it should never occur and we are the sole users of this api call. Therefore
+// name validation is minimal. Hereinafter, assume the name is canonical.
+// TODO: consider a stronger check, possibly using some kind of a schema of
+// known properties
+
+// Always refuse calls that try to update id. The id property cannot be
+// updated, because it is the keypath to the object. Changing the id is
+// nonsensical here because changing the id effectively means inserting a new
+// object or overwriting some other object, or a pointless noop in the case of
+// updating itself. Because it is so nonsensical it is elevated to programmer
+// error level treatment worthy of a thrown error.
+
+// NOTE: in the previous approach of using specialized calls like
+// activate-feed and deactivate-feed, there was no need for this check. This
+// is an example of the drawback of using a more generic (less-specialized)
+// approach. I did not even initially consider this drawback when deciding
+// to move forward on implemenation. There is the possibility I
+// over-generalized and want to reconsider something more granular (more
+// specific to the problem) that is in between set-any-property and
+// set-particular-property. Some kind of middle ground like
+// set-writable-properties or something, where I qualify the subset of
+// properties amenable to this approach.
+
 ### TODOs
 * after implementation, I realized an issue with the contents of the messages sent to the channel, such as for when activating or deactivating a feed, in that if I only send out the property name, the message handler does not have enough information from reading the message to discern whether a feed became active or inactive, and can only tell that active-state changed. I am not sure if it is needed yet, but I think I need the handler to be able to discern the direction of the state change.
+* TODO: maybe validation is wasteful or paranoid?
+* is_valid_type_for_property: maybe this should somehow borrow from some external defined-once-in-one-place (singleton?) schema definition that has per-property settings of type and allows-null(empty). I could also do a check above for whether the property exists in the schema in that case
+* is_valid_type_for_property: not currently exhaustive, may use switch statement
+
 
 // TODO: maybe define a helper like is_valid_property_name that encapsulates
 // both these checks (the name checks). They are tied together so they kind of belong to the
