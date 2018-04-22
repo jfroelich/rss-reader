@@ -1,4 +1,4 @@
-import {is_feed} from '/src/objects/feed.js';
+import {feed_create, is_feed} from '/src/objects/feed.js';
 import {update_feed} from '/src/ops/update-feed.js';
 
 export async function create_feed(feed, sanitize = true) {
