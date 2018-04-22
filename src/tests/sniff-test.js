@@ -1,4 +1,5 @@
 import * as sniff from '/src/lib/sniff.js';
+import {register_test} from '/src/tests/test.js';
 
 console.debug('If no other messages appear in console then all tests passed');
 

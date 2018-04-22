@@ -6,6 +6,15 @@
 // Every test should be an async function, even if it is sync
 
 
+// TODO: what does it mean to fail? not return true? throw an error?
+// I think it will be better with errors because that means the test code
+// doesn't need to concern itself with trapping everything. Also, I could define
+// an assert helper and use it throughout the tests
+
+// TODO: the problem with local assert helper is that it masks source of error a
+// tiny bit, at least makes it less straightforward, have to look at stack each
+// time, because now all errors look like they emanate from here
+
 // TODO: issue, what about tests that create the same db, I will have to make
 // extra sure every test uses unique stuff
 // TODO: all tests will need to be rewritten to use this approach
@@ -17,6 +26,12 @@
 // TODO: should tests register with a name?
 
 const tests = [];
+
+export function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message || 'Test assertion error');
+  }
+}
 
 export function register_test(test_function) {
   tests.push(test_function);

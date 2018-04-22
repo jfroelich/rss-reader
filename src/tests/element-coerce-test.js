@@ -1,5 +1,6 @@
 import {element_coerce} from '/src/lib/element-coerce.js';
 import * as html_parser from '/src/lib/html-parser.js';
+import {register_test} from '/src/tests/test.js';
 
 let input = '<html><head></head><body><a></a></body></html>';
 const doc = html_parser.parse(input);

@@ -1,4 +1,5 @@
 import {rewrite_url} from '/src/lib/rewrite-url.js';
+import {register_test} from '/src/tests/test.js';
 
 // TODO: I've temporarily copied over the rules here for testing, but ideally
 // this should import the rules from somewhere, or, define local rules and test

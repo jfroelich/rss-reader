@@ -1,4 +1,5 @@
 import {filter_publisher as f} from '/src/lib/filter-publisher.js';
+import {register_test} from '/src/tests/test.js';
 
 // no delimiters found
 console.assert(f('Hello World') === 'Hello World');

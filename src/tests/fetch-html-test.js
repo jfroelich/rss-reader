@@ -1,4 +1,5 @@
 import {fetch_html} from '/src/ops/fetch-html.js';
+import {register_test} from '/src/tests/test.js';
 
 async function test(url_string, timeout) {
   const request_url = new URL(url_string);

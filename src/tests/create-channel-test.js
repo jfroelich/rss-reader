@@ -1,4 +1,5 @@
 import {create_channel} from '/src/ops/create-channel.js';
+import {register_test} from '/src/tests/test.js';
 
 function test1() {
   console.debug('starting test1');

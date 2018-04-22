@@ -1,6 +1,7 @@
 import {idb_remove} from '/src/lib/idb.js';
 import {archive_entries} from '/src/ops/archive-entries.js';
 import {create_conn} from '/src/ops/create-conn.js';
+import {register_test} from '/src/tests/test.js';
 
 const channel_stub = {
   name: 'channel-stub',

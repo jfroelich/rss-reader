@@ -1,4 +1,5 @@
 import {html_truncate as truncate} from '/src/lib/html-truncate.js';
+import {register_test} from '/src/tests/test.js';
 
 const ext = '...';
 const input1 = 'a<p>b</p>c';

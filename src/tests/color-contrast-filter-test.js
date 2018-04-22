@@ -1,6 +1,7 @@
 import * as ccf from '/src/content-filters/color-contrast-filter.js';
 import * as color from '/src/lib/color.js';
 import * as css_color from '/src/lib/css-color.js';
+import {register_test} from '/src/tests/test.js';
 
 window.ccf = ccf;
 window.color = color;
