@@ -1,5 +1,3 @@
-// TODO: side note, should rename feed_id_is_valid to is_valid_feed_id
-
 import {idb_remove} from '/src/lib/idb.js';
 import {feed_id_is_valid, is_feed} from '/src/objects/feed.js';
 import {contains_feed} from '/src/ops/contains-feed.js';

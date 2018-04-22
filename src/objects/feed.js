@@ -127,6 +127,7 @@ export function feed_append_url(feed, url) {
   return true;
 }
 
+// TODO: should rename feed_id_is_valid to is_valid_feed_id
 export function feed_id_is_valid(id) {
   return Number.isInteger(id) && id > 0;
 }
