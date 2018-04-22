@@ -75,15 +75,13 @@ async function test() {
       feed.id);
 
   // TODO: unsusbcribe, check that it completes without error
-  // NOTE: what to do about the fact that the poll-operation may still be
-  // outstanding
 
   rconn.close();
-  await idb_remove(rconn.name);
+  await idb_remove(rconn.name, console);
 
   // iconn.close();
   // await idb_remove(iconn.name);
-  console.debug('test complete');
+  console.debug('Test complete');
   return true;
 }
 
