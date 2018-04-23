@@ -3,6 +3,7 @@ import {boilerplate_test} from '/src/tests/boilerplate-test.js';
 import {color_contrast_filter_test1, color_contrast_filter_test2} from '/src/tests/color-contrast-filter-test.js';
 import {color_test} from '/src/tests/color-test.js';
 import {create_channel_test1, create_channel_test2} from '/src/tests/create-channel-test.js';
+import {element_coerce_test} from '/src/tests/element-coerce-test.js';
 import {subscribe_test} from '/src/tests/subscribe-test.js';
 import {url_loader_test} from '/src/tests/url-loader-test.js';
 
@@ -15,7 +16,7 @@ async function run_test_function(test_function) {
 const test_registry = [
   archive_entries_test, boilerplate_test, color_contrast_filter_test1,
   color_contrast_filter_test2, color_test, create_channel_test1,
-  create_channel_test2, subscribe_test, url_loader_test
+  create_channel_test2, element_coerce_test, subscribe_test, url_loader_test
 ];
 
 const test_promises = [];
