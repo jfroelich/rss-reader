@@ -1,4 +1,8 @@
 import * as url_loader from '/src/lib/url-loader.js';
-import {register_test} from '/src/tests/test.js';
+import {assert} from '/src/tests/assert.js';
 
-window.url_loader = url_loader;
+// TODO: implement
+
+export async function url_loader_test() {
+  return true;
+}

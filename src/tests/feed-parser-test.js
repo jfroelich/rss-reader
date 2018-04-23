@@ -1,6 +1,6 @@
 import * as feed_parser from '/src/lib/feed-parser.js';
 import {fetch_feed} from '/src/ops/fetch-feed.js';
-import {register_test} from '/src/tests/test.js';
+import {assert} from '/src/tests/assert.js';
 
 window.test = async function(url_string) {
   const request_url = new URL(url_string);

@@ -1,7 +1,15 @@
 import {create_channel} from '/src/ops/create-channel.js';
-import {register_test} from '/src/tests/test.js';
+import {assert} from '/src/tests/assert.js';
 
-function test1() {
+// TODO: these functions need to be rewritten to not complete until actually
+// complete
+// TODO: these tests should be named after what they test
+// TODO: a test should test only one thing (a unit)
+// TODO: these tests should only be testing the purpose of create-channel, not
+// other aspects of channels, that kind of testing belongs elsewhere, perhaps
+// back in experimental and not here
+
+export async function create_channel_test1() {
   console.debug('starting test1');
   // When two channgels exist, both should get the same message
   // Part two of this test, is sending a message to a channel on the same page.
@@ -11,7 +19,6 @@ function test1() {
   // or it is sent, and received, but ignored and not reported to onmessage
   // Well, if it is not sent because closed too quickly, that is one possible
   // explanation.
-
 
   // Ok now here is the weird thing. I should see 4 messages. Both receiving it
   // twice. But I am not. I am seeing b receive a and a receive b
@@ -43,7 +50,7 @@ function test1() {
   console.debug('test1 complete but messages may be outstanding');
 }
 
-function test2() {
+export async function create_channel_test2() {
   // This fails, I never see the message get printed
 
   // See
@@ -63,6 +70,3 @@ function test2() {
   }, 20);
   console.debug('test2 complete (still pending possible)');
 }
-
-window.test1 = test1;
-window.test2 = test2;

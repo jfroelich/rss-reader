@@ -1,5 +1,5 @@
 import {idb_open, idb_remove} from '/src/lib/idb.js';
-import {register_test} from '/src/tests/test.js';
+import {assert} from '/src/tests/assert.js';
 
 async function test() {
   const name = 'indexeddb-utils-test';

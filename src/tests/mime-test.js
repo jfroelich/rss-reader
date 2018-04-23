@@ -1,5 +1,5 @@
 import * as mime from '/src/lib/mime.js';
-import {register_test} from '/src/tests/test.js';
+import {assert} from '/src/tests/assert.js';
 
 console.log('starting tests');
 

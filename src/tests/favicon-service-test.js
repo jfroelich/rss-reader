@@ -1,6 +1,6 @@
 import {FaviconService} from '/src/lib/favicon-service.js';
 import * as idb from '/src/lib/idb.js';
-import {register_test} from '/src/tests/test.js';
+import {assert} from '/src/tests/assert.js';
 
 async function test_lookup(url_string, cached) {
   const fs = new FaviconService();

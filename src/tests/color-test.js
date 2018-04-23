@@ -1,4 +1,8 @@
 import * as color from '/src/lib/color.js';
-import {register_test} from '/src/tests/test.js';
+import {assert} from '/src/tests/assert.js';
 
-window.color = color;
+// TODO: implement
+
+export async function color_test() {
+  return true;
+}

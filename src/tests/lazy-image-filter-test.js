@@ -1,7 +1,7 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import * as html_parser from '/src/lib/html-parser.js';
 import {fetch_html} from '/src/ops/fetch-html.js';
-import {register_test} from '/src/tests/test.js';
+import {assert} from '/src/tests/assert.js';
 
 window.test = async function(url_string) {
   const request_url = new URL(url_string);

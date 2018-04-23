@@ -1,7 +1,7 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import * as html_parser from '/src/lib/html-parser.js';
 import {fetch_html} from '/src/ops/fetch-html.js';
-import {register_test} from '/src/tests/test.js';
+import {assert} from '/src/tests/assert.js';
 
 // TODO: research http://exercism.io/ svg loading issue
 // Actually there is now a separate issue. It's not finding any urls. Something

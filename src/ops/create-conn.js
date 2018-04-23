@@ -45,11 +45,11 @@ function on_upgrade_needed(console, event) {
   }
 
   if (event.oldVersion < 21) {
-    add_magic_to_entries(txn);
+    add_magic_to_entries(txn, console);
   }
 
   if (event.oldVersion < 22) {
-    add_magic_to_feeds(txn);
+    add_magic_to_feeds(txn, console);
   }
 
   if (event.oldVersion < 23) {
@@ -59,7 +59,7 @@ function on_upgrade_needed(console, event) {
   }
 
   if (event.oldVersion < 24) {
-    add_active_field_to_feeds(feed_store);
+    add_active_field_to_feeds(feed_store, console);
   }
 }
 
@@ -67,7 +67,7 @@ function on_upgrade_needed(console, event) {
 // each entry. This returns prior to the operation completing.
 // @param txn {IDBTransaction}
 // @return {void}
-function add_magic_to_entries(txn) {
+function add_magic_to_entries(txn, console) {
   console.debug('Adding entry magic');
   const store = txn.objectStore('entry');
   const request = store.openCursor();
@@ -86,7 +86,7 @@ function add_magic_to_entries(txn) {
 }
 
 // TODO: use cursor over getAll for scalability
-function add_magic_to_feeds(txn) {
+function add_magic_to_feeds(txn, console) {
   console.debug('Adding feed magic');
   const store = txn.objectStore('feed');
   const request = store.getAll();
@@ -102,7 +102,7 @@ function add_magic_to_feeds(txn) {
 }
 
 // TODO: use cursor rather than getAll for scalability
-function add_active_field_to_feeds(store) {
+function add_active_field_to_feeds(store, console) {
   console.debug('Adding active property to older feeds');
   const feeds_request = store.getAll();
   feeds_request.onerror = console.error;

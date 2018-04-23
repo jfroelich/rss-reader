@@ -1,5 +1,5 @@
 import {fetch_feed} from '/src/ops/fetch-feed.js';
-import {register_test} from '/src/tests/test.js';
+import {assert} from '/src/tests/assert.js';
 
 async function test(url_string, timeout) {
   const request_url = new URL(url_string);
