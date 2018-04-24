@@ -10,12 +10,6 @@ import {assert} from '/src/tests/assert.js';
 // TODO: it is wrong to ping google, implement something that tests a local
 // file somehow (e.g. a feed that exists within the extension)
 
-// TODO: there is a problem with subscribe's api design, because the poll-feed
-// call does not share connection, so its connection uses default props and
-// is therefore not easily stubbed, for now this does not poll. However that is
-// really the problem because this test has the unexpected side effect of
-// hitting up the main db
-
 export async function subscribe_test() {
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
 
@@ -23,13 +17,25 @@ export async function subscribe_test() {
   let version, timeout;
   const rconn = await create_conn(rdb_name, version, timeout, console_stub);
 
+  // If subscribe will poll, then we need to pipe through custom database info.
+  // This is not currently done because skip_poll is true in subscribe options,
+  // but I prefer to be explicit to document how it would be done in case this
+  // changes
+  const poll_feed_conn_args = {
+    name: rdb_name,
+    version: undefined,
+    timeout: undefined,
+    console: console_stub
+  };
+
   const url = new URL(test_url);
   const subscribe_options = {
     fetch_timeout: 7000,
     notify: false,
     await_poll: true,
     skip_poll: true,
-    skip_icon_lookup: true
+    skip_icon_lookup: true,
+    poll_feed_conn_args: poll_feed_conn_args
   };
 
   let message_post_count = 0;

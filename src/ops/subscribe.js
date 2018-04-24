@@ -13,6 +13,15 @@ import {lookup_icon} from '/src/ops/lookup-icon.js';
 import {notify} from '/src/ops/notify.js';
 import {poll_feed} from '/src/ops/poll-feed.js';
 
+// TODO: whether to poll or not poll really should be left up to the caller, it
+// is obvious in hind sight that attempting to couple the followup action to
+// this action leads to difficulties in testing, handling errors in a forked
+// action, etc. Basically this shouldn't poll at all. If the caller wants to
+// poll they can call poll_feed. Lesson: let the caller compose actions, and
+// do not try to make this convenient, because you cannot foresee all
+// compositions, and end up making it harder than easier. That's Unix 101
+// right?
+
 export async function subscribe(url, options) {
   this.console.log('Subscribing to feed', url.href);
 
@@ -22,6 +31,12 @@ export async function subscribe(url, options) {
   const console = this.console || console_stub;
   const fetch_timeout = options.fetch_timeout || 2000;
   const notify_flag = options.notify;
+
+  // Allow the caller to pipe through custom conn arguments to the poll_feed
+  // call, so that test users can use a different database without accidental
+  // side effects on the main database. If the args not specified then the
+  // create-conn call in the poll-feed-helper will connect using defaults
+  const poll_feed_conn_args = options.poll_feed_conn_args || {};
 
   let does_feed_exist = await contains_feed(rconn, {url: url});
   if (does_feed_exist) {
@@ -86,13 +101,11 @@ export async function subscribe(url, options) {
 
   if (!options.skip_poll) {
     if (options.await_poll) {
-      await poll_feed_helper(console, stored_feed);
+      await poll_feed_helper(console, stored_feed, poll_feed_conn_args);
     } else {
-      poll_feed_helper(console, stored_feed);
+      poll_feed_helper(console, stored_feed, poll_feed_conn_args);
     }
   }
-
-
 
   return stored_feed;
 }
@@ -113,8 +126,11 @@ async function parse_response_body(response, console) {
   return parsed_feed;
 }
 
-async function poll_feed_helper(console, feed) {
-  const rconn = await create_conn();
+async function poll_feed_helper(console, feed, conn_args = {}) {
+  // TODO: should console come from param or conn_args
+  const rconn = await create_conn(
+      conn_args.name, conn_args.version, conn_args.timeout, conn_args.console);
+
   const iconn = await create_icon_conn();
 
   // This cannot re-use caller's channel because it is called unawaited and the
