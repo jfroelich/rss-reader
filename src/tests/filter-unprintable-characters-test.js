@@ -1,6 +1,8 @@
 import {string_filter_unprintable_characters} from '/src/lib/string.js';
 import {assert} from '/src/tests/assert.js';
 
+// TODO: rewrite as one test that uses asserts
+
 window.string_filter_unprintable_characters =
     string_filter_unprintable_characters;
 

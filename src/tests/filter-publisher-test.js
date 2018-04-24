@@ -1,6 +1,8 @@
 import {filter_publisher as f} from '/src/lib/filter-publisher.js';
 import {assert} from '/src/tests/assert.js';
 
+// TODO: rewrite as one test function that uses asserts
+
 // no delimiters found
 console.assert(f('Hello World') === 'Hello World');
 

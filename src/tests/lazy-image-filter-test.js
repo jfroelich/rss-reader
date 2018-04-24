@@ -3,6 +3,8 @@ import * as html_parser from '/src/lib/html-parser.js';
 import {fetch_html} from '/src/ops/fetch-html.js';
 import {assert} from '/src/tests/assert.js';
 
+// TODO: rewrite without input, load a local file internally
+
 window.test = async function(url_string) {
   const request_url = new URL(url_string);
   const response = await fetch_html(request_url);
