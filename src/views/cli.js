@@ -5,13 +5,14 @@ import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
 import {create_icon_conn} from '/src/ops/create-icon-conn.js';
 import {lookup_icon} from '/src/ops/lookup-icon.js';
+import {poll_feed} from '/src/ops/poll-feed.js';
 import {poll_feeds} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/ops/remove-lost-entries.js';
 import {remove_orphans} from '/src/ops/remove-orphaned-entries.js';
 import {subscribe} from '/src/ops/subscribe.js';
 
-async function cli_subscribe(url_string) {
+async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
   const op = {};
   const proms = [create_conn(), create_icon_conn()];
@@ -20,8 +21,16 @@ async function cli_subscribe(url_string) {
   op.channel = create_channel();
   op.console = console;
   op.subscribe = subscribe;
+
   const options = {fetch_timeout: 3000, notify: true};
   const feed = await op.subscribe(url, options);
+
+  // Do a sequential poll of the created feed
+  if (poll) {
+    const poll_options = {ignore_recency_check: true, notify: true};
+    await poll_feed(
+        op.rconn, op.iconn, op.channel, console, poll_options, feed);
+  }
 
   op.rconn.close();
   op.iconn.close();

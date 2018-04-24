@@ -12,6 +12,7 @@ import {create_icon_conn} from '/src/ops/create-icon-conn.js';
 import {delete_feed} from '/src/ops/delete-feed.js';
 import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
 import {get_feeds} from '/src/ops/get-feeds.js';
+import {poll_feed} from '/src/ops/poll-feed.js';
 import {subscribe} from '/src/ops/subscribe.js';
 import {write_feed_property} from '/src/ops/write-feed-property.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
@@ -251,21 +252,22 @@ async function feed_list_item_onclick(event) {
 }
 
 async function subscribe_form_onsubmit(event) {
-  console.debug('submit event');
   event.preventDefault();
 
   let monitor_element = document.getElementById('submon');
   if (monitor_element && monitor_element.style.display === 'block') {
-    console.debug('subscription in progress (apparently)');
+    console.debug('prior subscription in progress');
     return false;
   }
 
   subscription_monitor_show();
   monitor_element = document.getElementById('submon');
-  if (!monitor_element) {
-    console.error('failed to find subscription monitor element');
-    return;
-  }
+
+  // fail horribly. this should never happen and is a serious error
+  // if (!monitor_element) {
+  //  console.error('failed to find subscription monitor element');
+  //  return;
+  //}
 
   const subscribe_url_input_element = document.getElementById('subscribe-url');
   let subscribe_url_string = subscribe_url_input_element.value;
@@ -299,6 +301,7 @@ async function subscribe_form_onsubmit(event) {
   op.console = console;
   op.subscribe = subscribe;
   const feed = await op.subscribe(subscribe_url, {notify: true});
+
   rconn.close();
   iconn.close();
   op.channel.close();
@@ -307,7 +310,23 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_append_message('Subscribed to ' + list_peek(feed.urls));
   subscription_monitor_hide();
   section_show_by_id('subs-list-section');
+
+  // intentionally non-blocking
+  after_subscribe_poll_feed_async(feed).catch(console.error);
   return false;
+}
+
+async function after_subscribe_poll_feed_async(feed) {
+  const conn_promises = Promise.all([create_conn(), create_icon_conn()]);
+  const [rconn, iconn] = await conn_promises;
+  const channel = create_channel();
+
+  const options = {ignore_recency_check: true, notify: true};
+  await poll_feed(rconn, iconn, channel, console_stub, feed, options);
+
+  rconn.close();
+  iconn.close();
+  channel.close();
 }
 
 async function feed_list_init() {

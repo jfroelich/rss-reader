@@ -2,28 +2,24 @@ import {console_stub} from '/src/lib/console-stub.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
 import {list_peek} from '/src/lib/list.js';
 import * as url_loader from '/src/lib/url-loader.js';
-import {coerce_feed, feed_append_url, feed_create, feed_create_favicon_lookup_url, is_feed} from '/src/objects/feed.js';
+import {coerce_feed, feed_append_url, feed_create_favicon_lookup_url} from '/src/objects/feed.js';
 import {contains_feed} from '/src/ops/contains-feed.js';
-import {create_channel} from '/src/ops/create-channel.js';
-import {create_conn} from '/src/ops/create-conn.js';
 import {create_feed} from '/src/ops/create-feed.js';
-import {create_icon_conn} from '/src/ops/create-icon-conn.js';
 import {fetch_feed} from '/src/ops/fetch-feed.js';
 import {lookup_icon} from '/src/ops/lookup-icon.js';
 import {notify} from '/src/ops/notify.js';
-import {poll_feed} from '/src/ops/poll-feed.js';
 
-// TODO: whether to poll or not poll really should be left up to the caller, it
-// is obvious in hind sight that attempting to couple the followup action to
-// this action leads to difficulties in testing, handling errors in a forked
-// action, etc. Basically this shouldn't poll at all. If the caller wants to
-// poll they can call poll_feed. Lesson: let the caller compose actions, and
-// do not try to make this convenient, because you cannot foresee all
-// compositions, and end up making it harder than easier. That's Unix 101
-// right?
+// TODO: now that this uses context, this.console is required, so there should
+// not be a need to use console stub here, nor default to it. Instead this
+// should error if console is not defined. In order to do that, double check
+// that all callers specify a console context parameter first. Also, remove the
+// import.
 
 export async function subscribe(url, options) {
   this.console.log('Subscribing to feed', url.href);
+
+  // TODO: directly access context and options instead of re-declaring here,
+  // this was a temporary implementation used to get context approach working
 
   const rconn = this.rconn;
   const iconn = this.iconn;
@@ -31,12 +27,6 @@ export async function subscribe(url, options) {
   const console = this.console || console_stub;
   const fetch_timeout = options.fetch_timeout || 2000;
   const notify_flag = options.notify;
-
-  // Allow the caller to pipe through custom conn arguments to the poll_feed
-  // call, so that test users can use a different database without accidental
-  // side effects on the main database. If the args not specified then the
-  // create-conn call in the poll-feed-helper will connect using defaults
-  const poll_feed_conn_args = options.poll_feed_conn_args || {};
 
   let does_feed_exist = await contains_feed(rconn, {url: url});
   if (does_feed_exist) {
@@ -82,7 +72,6 @@ export async function subscribe(url, options) {
     feed.faviconURLString = await lio.lookup(lookup_url, lookup_doc, fetch);
   }
 
-
   // Store the feed within the database
   const cfo = {
     conn: rconn,
@@ -97,14 +86,6 @@ export async function subscribe(url, options) {
     const feed_title = feed.title || list_peek(stored_feed.urls);
     const message = 'Subscribed to ' + feed_title;
     notify(title, message, stored_feed.faviconURLString);
-  }
-
-  if (!options.skip_poll) {
-    if (options.await_poll) {
-      await poll_feed_helper(console, stored_feed, poll_feed_conn_args);
-    } else {
-      poll_feed_helper(console, stored_feed, poll_feed_conn_args);
-    }
   }
 
   return stored_feed;
@@ -124,27 +105,4 @@ async function parse_response_body(response, console) {
   }
 
   return parsed_feed;
-}
-
-async function poll_feed_helper(console, feed, conn_args = {}) {
-  // TODO: should console come from param or conn_args
-  const rconn = await create_conn(
-      conn_args.name, conn_args.version, conn_args.timeout, conn_args.console);
-
-  const iconn = await create_icon_conn();
-
-  // This cannot re-use caller's channel because it is called unawaited and the
-  // caller's channel may close before this eventually tries to post messages to
-  // the channel
-  const channel = create_channel();
-
-  const options = {};
-  options.ignore_recency_check = true;
-  options.notify = false;
-
-  await poll_feed(rconn, iconn, channel, console, options, feed);
-
-  channel.close();
-  rconn.close();
-  iconn.close();
 }

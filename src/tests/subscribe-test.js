@@ -17,26 +17,8 @@ export async function subscribe_test() {
   let version, timeout;
   const rconn = await create_conn(rdb_name, version, timeout, console_stub);
 
-  // If subscribe will poll, then we need to pipe through custom database info.
-  // This is not currently done because skip_poll is true in subscribe options,
-  // but I prefer to be explicit to document how it would be done in case this
-  // changes
-  const poll_feed_conn_args = {
-    name: rdb_name,
-    version: undefined,
-    timeout: undefined,
-    console: console_stub
-  };
-
   const url = new URL(test_url);
-  const subscribe_options = {
-    fetch_timeout: 7000,
-    notify: false,
-    await_poll: true,
-    skip_poll: true,
-    skip_icon_lookup: true,
-    poll_feed_conn_args: poll_feed_conn_args
-  };
+  const options = {fetch_timeout: 7000, notify: false, skip_icon_lookup: true};
 
   let message_post_count = 0;
   const channel_stub = {};
@@ -50,8 +32,9 @@ export async function subscribe_test() {
     subscribe: subscribe
   };
 
+  const feed = await subscribe_op.subscribe(url, options);
+
   // Test the subscription produced the desired result
-  const feed = await subscribe_op.subscribe(url, subscribe_options);
   assert(typeof feed === 'object', 'subscribe did not emit an object ' + feed);
   assert(is_feed(feed), 'subscribe did not emit object of correct type');
   assert(feed_id_is_valid(feed.id));
