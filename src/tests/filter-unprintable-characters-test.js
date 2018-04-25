@@ -1,61 +1,34 @@
-import {string_filter_unprintable_characters} from '/src/lib/string.js';
+import {filter_unprintable_characters as f} from '/src/lib/string.js';
 import {assert} from '/src/tests/assert.js';
 
-// TODO: rewrite as one test that uses asserts
-
-window.string_filter_unprintable_characters =
-    string_filter_unprintable_characters;
-
-const d = console.debug;
-const f = string_filter_unprintable_characters;
-
-// Given string, filter it, then assert whether the filtered string length is
-// equal to the given length, and print the result to the console.
-const a = function(s, len) {
-  const result = f(s);
-  const passed = (result.length === len) ? 'passed' : 'failed';
-  d('input', escape(s), 'length', len, passed);
-};
-
-function run() {
-  console.group('Testing [0 .. 31]');
-
+export async function filter_unprintable_characters_test() {
   for (let i = 0; i < 9; i++) {
-    a(String.fromCharCode(i), 0);
+    assert(f(String.fromCharCode(i)).length === 0);
   }
 
-  a('\t', 1);  // 9
-  a('\n', 1);  // 10
-  a(String.fromCharCode(11), 0);
-  a('\f', 1);  // 12
-  a('\r', 1);  // 13
+  assert(f('\t').length === 1);  // 9
+  assert(f('\n').length === 1);  // 10
+  assert(f(String.fromCharCode(11)).length === 0);
+  assert(f('\f').length === 1);  // 12
+  assert(f('\r').length === 1);  // 13
 
-  const spaceCode = ' '.charCodeAt(0);
-
-  for (let i = 14; i < spaceCode; i++) {
-    a(String.fromCharCode(i), 0);
+  const space_code = ' '.charCodeAt(0);
+  for (let i = 14; i < space_code; i++) {
+    assert(f(String.fromCharCode(i)).length === 0);
   }
 
-  console.groupEnd();
+  assert(f(' ').length === 1);
+  assert(f('Hello').length === 5);
+  assert(f('World').length === 5);
+  assert(f('Hello\nWorld').length === 11);
+  assert(f('Hello\u0000World').length === 10);
+  assert(f('<tag>text</t\u0005ag>').length === 15);
 
-  console.group('Testing [32 .. n)');
-  a(' ', 1);
-  a('Hello', 5);
-  a('World', 5);
-  a('Hello\nWorld', 11);
-  a('Hello\u0000World', 10);
-  a('<tag>text</t\u0005ag>', 15);
-  console.groupEnd();
-
-  console.group('Testing type');
-  a('', 0);
-  d('input', null, 'length', NaN, f(null) === null ? 'passed' : 'failed');
-  d('input', void 0, 'length', NaN, f(void 0) === void 0 ? 'passed' : 'failed');
-  d('input', true, 'length', NaN, f(true) === true ? 'passed' : 'failed');
-  d('input', false, 'length', NaN, f(false) === false ? 'passed' : 'failed');
-  d('input', NaN, 'length', NaN, isNaN(f(NaN)) ? 'passed' : 'failed');
-  d('input', 0, 'length', NaN, f(0) === 0 ? 'passed' : 'failed');
-  console.groupEnd();
+  assert(f('').length === 0);
+  assert(f(null) === null);
+  assert(f(void 0) === void 0);
+  assert(f(true) === true);
+  assert(f(false) === false);
+  assert(isNaN(f(NaN)));
+  assert(f(0) === 0);
 }
-
-run();

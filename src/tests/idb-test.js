@@ -1,6 +1,8 @@
 import {idb_open, idb_remove} from '/src/lib/idb.js';
 import {assert} from '/src/tests/assert.js';
 
+// NOTE: the assert here is implied. does the function execute without rejection
+
 export async function idb_test() {
   const name = 'idb-test';
   const version = 1;

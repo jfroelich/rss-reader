@@ -3,6 +3,10 @@ import * as html_parser from '/src/lib/html-parser.js';
 import {fetch_html} from '/src/ops/fetch-html.js';
 import {assert} from '/src/tests/assert.js';
 
+// TODO: these tests must be rewritten using new approach
+
+
+// TODO: move this comment somewhere, i dunno, github issue
 // TODO: research http://exercism.io/ svg loading issue
 // Actually there is now a separate issue. It's not finding any urls. Something
 // is up with parsing. Viewing source shows stuff. Actually it might even be in

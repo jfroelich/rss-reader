@@ -2,9 +2,13 @@ import {html_truncate as truncate} from '/src/lib/html-truncate.js';
 import {assert} from '/src/tests/assert.js';
 
 export async function html_truncate_test() {
-  const ext = '...';
+  const e = '.';
   let input = 'a<p>b</p>c';
-  assert(truncate(input, 2, ext) === 'a<p>b</p>', 'bad truncate ' + input1);
+  let output = 'a<p>b.</p>';
+  assert(truncate(input, 2, e) === output);
+
+  // TODO: finish up conversion
+
   /*
     const input2 = `<html><head><title>new title</title></head><body>${input1}
       </body></html>`;

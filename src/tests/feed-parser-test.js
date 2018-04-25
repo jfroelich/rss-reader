@@ -2,6 +2,14 @@ import * as feed_parser from '/src/lib/feed-parser.js';
 import {fetch_feed} from '/src/ops/fetch-feed.js';
 import {assert} from '/src/tests/assert.js';
 
+// TODO: this needs to be run on a local resource
+// TODO: this cannot accept parameters
+
+export async function feed_parser_test() {
+  return true;
+}
+
+/*
 window.test = async function(url_string) {
   const request_url = new URL(url_string);
   const response = await fetch_feed(request_url);
@@ -14,4 +22,4 @@ window.test = async function(url_string) {
   const resolve_urls = true;
   const parsed_feed = feed_parser.parse(text, skip_entries, resolve_urls);
   console.dir(parsed_feed);
-};
+};*/

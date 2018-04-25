@@ -9,6 +9,9 @@ import {assert} from '/src/tests/assert.js';
 // the archivable data was archived, and that the non-archivable data was not
 // archived
 
+// TODO: I don't think there is a need to use explicit console parameter here,
+// just call create-conn without 4th param?
+
 export async function archive_entries_test() {
   let dbname = 'archive-entries-test', version, timeout, max_age;
   const conn = await create_conn(dbname, version, timeout, console_stub);
