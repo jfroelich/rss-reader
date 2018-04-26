@@ -2,7 +2,7 @@ import {filter_boilerplate} from '/src/content-filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/content-filters/color-contrast-filter.js';
 import {element_is_hidden_inline, fetch_image_element, file_name_filter_extension, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 import {attribute_is_boolean} from '/src/lib/attribute.js';
-import {url_is_external} from '/src/lib/cross-site.js';
+import {is_external_url} from '/src/lib/cross-site.js';
 import {element_coerce} from '/src/lib/element-coerce.js';
 import {element_unwrap} from '/src/lib/element-unwrap.js';
 import * as imagemod from '/src/lib/image.js';
@@ -1374,7 +1374,7 @@ function image_has_telemetry_source(image, document_url) {
   }
 
   // Ignore 'internal' urls.
-  if (!url_is_external(document_url, imageURL)) {
+  if (!is_external_url(document_url, imageURL)) {
     return false;
   }
 
