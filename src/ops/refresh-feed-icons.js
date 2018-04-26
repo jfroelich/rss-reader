@@ -3,7 +3,7 @@ import {list_empty} from '/src/lib/list.js';
 import {feed_create_favicon_lookup_url} from '/src/objects/feed.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
 import {lookup_icon} from '/src/ops/lookup-icon.js';
-import {update_feed} from '/src/ops/update-feed.js';
+import {write_feed} from '/src/ops/write-feed.js';
 
 export async function refresh_feed_icons(
     rconn, iconn, channel, console = console_stub) {
@@ -46,6 +46,6 @@ async function refresh_feed(rconn, iconn, channel, console, feed) {
     update_options.sanitize = false;
     update_options.set_date_updated = true;
 
-    await update_feed.call(update_context, feed, update_options);
+    await write_feed.call(update_context, feed, update_options);
   }
 }

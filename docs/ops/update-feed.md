@@ -1,4 +1,4 @@
-The `update_feed` operation creates or updates a feed in the database, and broadcasts a *feed-updated* type message to the channel when finished. Other than the situation where an options flag is true, this inserts the feed object *as-is*. The input feed object is never modified.
+The `write_feed` operation creates or updates a feed in the database, and broadcasts a *feed-updated* type message to the channel when finished. Other than the situation where an options flag is true, this inserts the feed object *as-is*. The input feed object is never modified.
 
 ### Context params
 All context properties are required.
@@ -16,7 +16,7 @@ All context properties are required.
 * **set_date_updated** {Boolean} defaults to false, if true then the feed's `dateUpdated` property is set to the time this function is called
 
 ### Return value
-`update_feed` is an asynchronous function that returns a promise. The promise return value is the stored feed object.
+`write_feed` is an asynchronous function that returns a promise. The promise return value is the stored feed object.
 
 ### Errors
 * **TypeError** feed is not a feed type, unlike the other errors this is thrown immediately and not as a promise rejection because making this mistake constitutes a permanent programmer error

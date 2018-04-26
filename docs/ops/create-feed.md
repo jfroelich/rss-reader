@@ -6,4 +6,4 @@ The `create_feed` function creates a new feed in storage
 ### TODOS
 * document
 * unit test
-* consider not delegating to `update_feed`
+* consider not delegating to `write_feed`

@@ -1,13 +1,13 @@
 import {list_peek} from '/src/lib/list.js';
 import {feed_create, feed_is_valid, feed_prepare, is_feed} from '/src/objects/feed.js';
 
-export function update_feed(feed, options = {}) {
+export function write_feed(feed, options = {}) {
   if (!is_feed(feed)) {
     throw new TypeError('Invalid feed parameter ' + feed);
   }
 
   this.console.debug(
-      '%s: %s feed', update_feed.name, 'id' in feed ? 'updating' : 'creating',
+      '%s: %s feed', write_feed.name, 'id' in feed ? 'updating' : 'creating',
       list_peek(feed.urls));
 
   let clean_feed;

@@ -1,5 +1,5 @@
 import {feed_create, is_feed} from '/src/objects/feed.js';
-import {update_feed} from '/src/ops/update-feed.js';
+import {write_feed} from '/src/ops/write-feed.js';
 
 export async function create_feed(feed, sanitize = true) {
   if (!is_feed(feed)) {
@@ -20,14 +20,14 @@ export async function create_feed(feed, sanitize = true) {
   update_op.channel = {name: 'stub', postMessage: noop, close: noop};
 
   update_op.console = this.console;
-  update_op.update_feed = update_feed;
+  update_op.write_feed = write_feed;
 
   const update_options = {};
   update_options.sanitize = sanitize;
   update_options.validate = true;
   update_options.set_date_updated = false;
 
-  const stored_feed = await update_op.update_feed(clone, update_options);
+  const stored_feed = await update_op.write_feed(clone, update_options);
 
   this.channel.postMessage({type: 'feed-added', id: stored_feed.id});
   return stored_feed;
