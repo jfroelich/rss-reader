@@ -6,15 +6,15 @@ export function write_feed_property(feed_id, name, value, extra_props = {}) {
   }
 
   if (typeof name !== 'string') {
-    throw new TypeError('Invalid name type ' + name);
+    throw new TypeError('Invalid name: ' + name);
   }
 
   if (!name) {
-    throw new TypeError('Empty property name');
+    throw new TypeError('Invalid name: (empty-string)');
   }
 
   if (name === 'id') {
-    throw new TypeError('Should not try to set id this way');
+    throw new TypeError('Unwritable property ' + name);
   }
 
   if (!is_valid_type_for_property(name, value)) {
@@ -57,13 +57,14 @@ function txn_oncomplete(feed_id, name, callback, event) {
 function request_onsuccess(feed_id, name, value, extra_props, event) {
   const feed = event.target.result;
   if (!feed) {
-    this.console.warn('%s: feed not found %d', request_onsuccess.name, feed_id);
+    this.console.warn(
+        '%s: feed not found %d', write_feed_property.name, feed_id);
     return;
   }
 
   if (!is_feed(feed)) {
     this.console.warn(
-        '%s: bad object type %d %o', request_onsuccess.name, feed_id, feed);
+        '%s: bad object type %d %o', write_feed_property.name, feed_id, feed);
     return;
   }
 
@@ -73,12 +74,12 @@ function request_onsuccess(feed_id, name, value, extra_props, event) {
     if (feed.active && value) {
       this.console.warn(
           '%s: tried to activate active feed (invalid state) %d',
-          request_onsuccess.name, feed_id);
+          write_feed_property.name, feed_id);
       return;
     } else if (!feed.active && !value) {
       this.console.warn(
           '%s: tried to deactivate inactive feed (invalid state) %d',
-          request_onsuccess.name, feed_id);
+          write_feed_property.name, feed_id);
       return;
     }
 
