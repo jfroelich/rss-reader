@@ -1,5 +1,5 @@
-# About the rewrite-url module
-This module is conceptually based on Apache's mod_rewrite module. The `rewrite_url` function changes a url based on a set of rewriting rules. A typical reason to use this is to reduce the number of urls in a list of urls where the first url redirects to each subsequent url. In other words, given a list of urls, reduce the list to a single url.
+# rewrite-url
+Based on Apache's mod_rewrite module. The `rewrite_url` function changes a url based on a set of rewriting rules. A typical reason to use this is to reduce the number of urls in a list of urls where the first url redirects to each subsequent url. In other words, given a list of urls, reduce the list to a single url.
 
 The rules parameter should be an array of rules.
 

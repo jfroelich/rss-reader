@@ -1,3 +1,4 @@
+# color
 The color module provides basic color utilities and a simple color data type.
 
 This is a rudimentary and informal explanation, just trying to write stuff down even if it is a little off.

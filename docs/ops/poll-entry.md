@@ -1,4 +1,5 @@
-The `poll-entry` function processes and entry and possibly adds it to the database. The full-text html of the entry is fetched and stored as `entry.content`.
+# poll-entry
+Processes an entry and possibly adds it to the database. The full-text html of the entry is fetched and stored as `entry.content`.
 
 ### Context properties
 * **rconn** {IDBDatabase} required

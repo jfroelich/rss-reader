@@ -1,3 +1,4 @@
+# feed
 ### is_feed notes
 Return true if the value looks like a feed object
 

@@ -1,9 +1,8 @@
+# slideshow-page
+Provides all the functionality for the main view of the app.
 
 ### TODO: fix bug in create_article_title_element
-
-this is double encoding entities somehow, so entities show up in the value
-
-i partially fixed by not escaping ampersand but that's not right.
+This is double encoding entities somehow, so entities show up in the value. I partially fixed by not escaping ampersand but that's not right.
 
 ### BUG: fix bug with mark read
 some kind of mark-read bug, possibly due to the non-blocking call. The bug is logic, there is no js error. Entries are getting marked as read, but re-appear occasionally when navigation, and sometimes next-slide key press does not advance slide.
@@ -15,7 +14,6 @@ because the click listener is done in slideshow-page instead of in the Slideshow
 The creation of a slide element, and the appending of a slide element, should be two separate tasks. This will increase flexibility and maybe clarity. slide_append should accept a slide element, not an entry.
 
 # TODO: slide_mark_read notes
-
 * rather than await call to `mark_entry_read`, this should listen for entry-marked-read events roundtrip and handle the event when it later occurs to mark the corresponding slide. Then this can be called non-awaited
 * maybe display an error if `mark_entry_read` fails?
 
@@ -65,11 +63,9 @@ Sharing the connection between mark as read and slide_load_and_append_multiple m
 ### TODO:  maybe move css back out of folder, feels kind of awkward
 
 ### TODO `slide_mark_read`
-
 // TODO: this should not need to be async and await. However, right now when it
 // does not wait the call to update badge unread count fails because the
 // subsequent conn.close call occurs too early
 
 ### TODO: `slide_onclick`
-
 if error marking as read, show an error message?

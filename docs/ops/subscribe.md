@@ -1,4 +1,5 @@
-The `subscribe` operation creates a new feed within the app's database.
+# subscribe
+Subscribes the user to a new feed.
 
 ### Context parameters
 * **rconn** {IDBDatabase} an open database connection to the feed database

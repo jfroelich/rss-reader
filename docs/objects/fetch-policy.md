@@ -1,5 +1,6 @@
-### notes and todos
+# fetch-policy
 
+### notes and todos
 * Allow various overrides through localStorage setting or some config setting?
 * Of course things like hosts file can be manipulated to whatever. This is just one of the low-hanging fruits. Prevent fetches to local host urls.
 * When checking against localhost values, again, ignores things like punycode, IPv6, host manipulation, local dns manipulation, etc. This is just a simple and typical case

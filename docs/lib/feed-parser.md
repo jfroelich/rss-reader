@@ -1,17 +1,16 @@
-# Overview
+# feed-parser
 The `parse` function accepts a string as input. The string should be the full text of an xml file. The xml is parsed into a Document object, and then the Document object is coerced into a basic JavaScript object. Feed properties are stored in the parsed object. The output object contains an entries property that is an array of entry objects, where each entry represents one of the xml items (or entries).
 
 // Parses the input string into a feed object. The feed object will always have
 // a defined entries array, although it may be zero length. Returns a feed
 // object or throws
-// @param value {String} the xml string to parse
-// @param skip_entries {Boolean} if true, entries are not processed, and an
-// empty entries array is included in the result
-// @param resolve_entry_urls {Boolean} if true, entry urls are canonicalized
-// using feed.link as the base url
 
-# element_get_local_name notes
+### Params
+* value {String} the xml string to parse
+* skip_entries {Boolean} if true, entries are not processed, and an empty entries array is included in the result
+* resolve_entry_urls {Boolean} if true, entry urls are canonicalized using feed.link as the base url
 
+### get-local-name notes
 One of the counter-intuitive things about the Document object is that it secretly holds a flag for whether the document is xml or html. Certain Document method behavior changes based on this private flag. The flag is not exposed.
 
 One of the behaviors that changes is how node names are produced. In xml-flagged documents, element.localName is case-sensitive. This function exists so that it can normalize the name to lowercase.
@@ -22,21 +21,14 @@ This function largely exists to expose this subtlety in a very clear manner, to 
 
 This uses local name to avoid dealing with qualified names.
 
-# find_entry_content note
-
+### find_entry_content note
 So I think I handle cdata content correctly, but note the issue with title still having raw entities. Or, rather, should content be not encoded in any situation?
 
-# feed_resolve_entry_urls todos
-
+### feed_resolve_entry_urls todos
 * If a feed has a link, and the link is invalid, should that actually be considered a parse error? In other words, this should not catch this error here?
 * If failing to resolve an entry, should this set entry.link to undefined or remove the property, or leave it as is like now?
 
-# TODO: not sure if this is best place to set fetch policy
-
-# TODO:
-
+### TODOS
+* not sure if this is best place to set fetch policy
 * when finding feed type, use element_get_local_name?
-
-### Test todos
-
 * Write specific tests that test various assertions, e.g. preconditions, postconditions, and make it automatic

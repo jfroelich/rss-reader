@@ -1,4 +1,5 @@
-`export_opml` generates an opml document object consisting of all of the feeds in the database. The function is async.
+# export-opml
+Generates an opml document object consisting of all of the feeds in the database. Async.
 
 ### Params
 
@@ -7,4 +8,6 @@
 * Database errors (e.g. database is unavailable)
 
 ### Todos
+* finish docs
+* write tests
 * implement for-each-feed operation, then use it here without buffering feeds into an array, instead write them per iteration

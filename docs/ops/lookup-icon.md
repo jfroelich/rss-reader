@@ -1,3 +1,4 @@
+# lookup-icon
 Lookup the favicon url for a url. Returns a promise that resolves to the url (string).
 
 ### Params

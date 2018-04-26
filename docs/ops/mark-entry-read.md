@@ -1,4 +1,5 @@
-The `mark_entry_read` function marks the entry corresponding to the entry_id as read in the database.
+# mark-entry-read
+Marks an entry as read in the database.
 
 ### Context params
 * **conn** {IDBDatabase} required
@@ -19,3 +20,4 @@ The promise settles based on the txn, not the get request, because we do some po
 
 ### TODOs
 * refactor as entry_set_read_state, accept a boolean state parameter, and handle both cases (where true and where false)
+* or, create write-entry-property, have this decorate that, or have the caller just call write-entry-property directory

@@ -1,3 +1,4 @@
+# entry
 The entry module provides functions for working with application entry objects.
 
 ### `entry_append_url` notes

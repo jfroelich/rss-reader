@@ -1,3 +1,5 @@
+# boilerplate-filter
+
 The boilerplate filter classifies elements as boilerplate and then prunes boilerplate from the document.
 
 ### TODOS

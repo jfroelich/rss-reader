@@ -1,3 +1,4 @@
+# archive-entries
 `archive_entries` transforms certain entries in the reader database with the objective of keeping the size of the database small. Certain entries that are older than a given time period are reduced in byte size.
 
 This compacts rather than deletes so as to keep track of:

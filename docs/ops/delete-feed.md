@@ -1,5 +1,7 @@
-The `delete_feed` operation removes a feed, and any entries tied to the feed, from the database.
+# delete-feed
+Removes a feed, and any entries tied to the feed, from the database.
 
+Notes:
 * Returns a promise that resolves when the operation has completed, the promise return value is an array of the deleted entry ids
 * The operation resolves once the internal database transaction has committed.
 * A message is sent to the channel when the feed is deleted

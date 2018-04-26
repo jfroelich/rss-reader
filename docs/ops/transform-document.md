@@ -1,4 +1,5 @@
-The `transform_document` function transforms a document by removing or changing nodes for various reasons, such as:
+# transform-document
+Transforms a document by removing or changing nodes for various reasons:
 * to condense the size of the document by removing extraneous content
 * to remove hidden text and hidden markup
 * to remove uninformative content
@@ -7,15 +8,6 @@ The `transform_document` function transforms a document by removing or changing 
 * anti-telemetry
 * normalization/canonicalization, such as resolving urls
 * to make the document embeddable directly in the app's view without the use of iframes or shadow roots or any of that stuff, such as by removing element ids and style elements and attributes
-
-For performance reasons, the document is mutated. In other words, the transformation is applied to the input, in-place. Ideally this would be a pure function but cloning the document is not very feasible.
-
-### Implementation notes
-This basically acts as a wrapper to all the content filters. The module adds value primarily by defining the order in which filters are applied, and by applying app-specific settings to otherwise generic modules (further specializing the filters to this app's purpose).
-
-The transform is async primarily because of one critical filter step that must occur after some filters but before others, that is async, the step where images are fetched in order to determine image sizes. Filters like telemetry removal need to occur beforehand, but some additional sanity and shrinking filters need to occur after. I am not entirely sure if this is the right design as I would rather minimize the use of async, but I have not thought of a better way. Once one function is async pretty much all callers up the stack need to be async.
-
-One of the first implementations of this module started off with a tree walker that applied transformations to each node. It turns out that repeatedly executing query selectors is substantially faster by several orders of magnitude. This lead to the breakdown of the query selectors into individual filters. However, the goal of this module is to encapsulate this implementation detail and abstract it away. Given the substantial improvements in v8 recently I still wonder if the tree-walker approach is viable.
 
 ### Params
 * **document** {Document} the document to transform
@@ -33,6 +25,15 @@ One of the first implementations of this module started off with a tree walker t
 
 ### Return value
 Returns a promise that resolves to undefined or rejects when an internal error occurs
+
+### Implementation notes
+For performance reasons, the document is mutated. In other words, the transformation is applied to the input, in-place. Ideally this would be a pure function but cloning the document is not very feasible.
+
+This basically acts as a wrapper to all the content filters. The module adds value primarily by defining the order in which filters are applied, and by applying app-specific settings to otherwise generic modules (further specializing the filters to this app's purpose).
+
+The transform is async primarily because of one critical filter step that must occur after some filters but before others, that is async, the step where images are fetched in order to determine image sizes. Filters like telemetry removal need to occur beforehand, but some additional sanity and shrinking filters need to occur after. I am not entirely sure if this is the right design as I would rather minimize the use of async, but I have not thought of a better way. Once one function is async pretty much all callers up the stack need to be async.
+
+One of the first implementations of this module started off with a tree walker that applied transformations to each node. It turns out that repeatedly executing query selectors is substantially faster by several orders of magnitude. This lead to the breakdown of the query selectors into individual filters. However, the goal of this module is to encapsulate this implementation detail and abstract it away. Given the substantial improvements in v8 recently I still wonder if the tree-walker approach is viable.
 
 ### TODOS
 * add console arg to filters to enable logging by filter

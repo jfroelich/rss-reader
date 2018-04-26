@@ -1,6 +1,6 @@
+# color-contrast-filter
+
 Filters inperceptible text nodes from a document
-
-
 
 The color contrast filter removes text nodes with a text-color to background-color contrast ratio that is less than or equal to the given minimum contrast ratio. If no contrast ratio is given then a default contrast ratio is used.
 
