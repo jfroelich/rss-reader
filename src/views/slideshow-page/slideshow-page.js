@@ -1,4 +1,5 @@
 import {fonts} from '/src/fonts.js';
+import {console_stub} from '/src/lib/console-stub.js';
 import {date_format} from '/src/lib/date.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {html_truncate} from '/src/lib/html-truncate.js';
@@ -17,7 +18,6 @@ import {poll_feeds} from '/src/ops/poll-feeds.js';
 import {slideshow_export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/views/slideshow-page/slideshow.js';
-
 
 const channel = create_channel();
 
@@ -52,7 +52,9 @@ channel.onmessage = function channel_onmessage(event) {
       break;
     case 'entry-marked-read':
       // TODO: call a mark read handler here that sets the slide element as read
-      console.warn('Unhandled entry-marked-read message', message);
+      // console.warn('Unhandled entry-marked-read message', message);
+      on_entry_marked_read_message(message).catch(console.warn);
+
       break;
     case 'feed-added':
       break;
@@ -85,53 +87,82 @@ async function on_entry_added_message(message) {
 }
 
 async function on_entry_expired_message(message) {
-  if (typeof message === 'object' && entry_id_is_valid(message.id)) {
-    const slide_name = Slideshow.element_get_name();
-    const selector = slide_name + '[entry="' + message.id + '"]';
-    const slide = document.querySelector(selector);
-    if (slide) {
-      if (Slideshow.slide_is_current(slide)) {
-        slide.setAttribute('stale', 'true');
-        return;
-      }
+  // Weak assertions simply to help debug in event of programmer error
+  console.assert(typeof message === 'object');
+  console.assert(entry_id_is_valid(message.id));
 
-      Slideshow.remove(slide);
-      slide.removeEventListener('click', slide_onclick);
+  const slide_name = Slideshow.element_get_name();
+  const selector = slide_name + '[entry="' + message.id + '"]';
+  const slide = document.querySelector(selector);
+  if (slide) {
+    if (Slideshow.slide_is_current(slide)) {
+      slide.setAttribute('stale', 'true');
+      return;
     }
+
+    Slideshow.remove(slide);
+    slide.removeEventListener('click', slide_onclick);
   }
+}
+
+// TODO: eventually this should call some helper like find_slide_by_entry_id
+// from slideshow.js but for now implement it locally
+// TODO: this should interact with slideshow.js constant for element name
+// instead of hardcoding it here.
+async function on_entry_marked_read_message(message) {
+  // Weak assertions to help debug, generally should never trigger
+  console.assert(typeof message === 'object');
+  console.assert(entry_id_is_valid(message.id));
+
+  const selector = 'slide[entry="' + message.id + '"]';
+  const slide = document.querySelector(selector);
+
+  // The slide may no longer exist, or the id may not correspond
+  if (!slide) {
+    console.warn(
+        '%s: could not find slide for id %d', on_entry_marked_read_message.name,
+        message.id);
+    return;
+  }
+
+  slide.setAttribute('read', '');
 }
 
 function loading_info_show() {
-  const loading_info_element = document.getElementById('initial-loading-panel');
-  if (loading_info_element) {
-    loading_info_element.style.display = 'block';
-  } else {
-    console.error('Could not find initial loading panel');
-  }
+  const element = document.getElementById('initial-loading-panel');
+  console.assert(element);
+  element.style.display = 'block';
 }
 
 function loading_info_hide() {
-  const loading_info_element = document.getElementById('initial-loading-panel');
-  loading_info_element.style.display = 'none';
+  const element = document.getElementById('initial-loading-panel');
+  console.assert(element);
+  element.style.display = 'none';
 }
 
+// This uses a short-lived local channel instance instead of the page-lifetime
+// channel because there is a no-loopback issue with channels in Chrome. That
+// or I don't understand how channels operate.
+// TODO: if this creates its own conn instead of trying to reuse, then could it
+// run unawaited? Or was it the channel that was causing the issue and now
+// irrelevant because this now uses local channel instance?
 async function slide_mark_read(conn, slide) {
-  if (!slide.hasAttribute('read') && !slide.hasAttribute('stale')) {
-    const id = parseInt(slide.getAttribute('entry'), 10);
+  console.assert(conn instanceof IDBDatabase);
+  console.assert(slide);
 
-    const ctx = {};
-    ctx.conn = conn;
-    // Do not use page-lifetime channel due to no-loopback issue
-    ctx.channel = create_channel();
-    ctx.console = console;
-
-    await mark_entry_read.call(ctx, id);
-    ctx.channel.close();
-
-    slide.setAttribute('read', '');
-  } else {
-    console.debug('Slide already read or stale, not remarking');
+  if (slide.hasAttribute('read') || slide.hasAttribute('stale')) {
+    console.debug('%s: ignoring stale/read slide', slide_mark_read.name, slide);
+    return;
   }
+
+  const id = parseInt(slide.getAttribute('entry'), 10);
+  const op = {};
+  op.conn = conn;
+  op.channel = create_channel();
+  op.console = console_stub;
+  op.mark_entry_read = mark_entry_read;
+  await op.mark_entry_read(id);
+  op.channel.close();
 }
 
 function error_message_show(message_text) {
@@ -452,6 +483,9 @@ function import_menu_option_handle_click(event) {
 async function uploader_input_onchange(event) {
   const files = event.target.files;
 
+  // TODO: import-opml needs to be changed to use real context, not a fake
+  // context parameter. Then this needs to use the new op syntax.
+
   // Create a function-call lifetime channel and use it instead of the
   // page-lifetime channel to avoid the no-loopback issue
   const onchange_channel = create_channel();
@@ -485,8 +519,6 @@ function error_message_container_onclick(event) {
   const container = document.getElementById('error-message-container');
   container.style.display = 'none';
 }
-
-function noop() {}
 
 function window_onclick(event) {
   const avoided_zone_ids = ['main-menu-button', 'left-panel'];
@@ -744,4 +776,4 @@ async function slideshow_page_init() {
   loading_info_hide();
 }
 
-slideshow_page_init().catch(console.warn);
+slideshow_page_init().catch(console.error);
