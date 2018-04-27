@@ -1,6 +1,13 @@
 import {entry_id_is_valid, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
 import {refresh_badge} from '/src/ops/refresh-badge.js';
 
+// TODO: create a write-entry-property module, then use that instead of this. In
+// the interim, can consider refactoring this to basically wrap a call to it,
+// maybe even keep the channel message type the same. Then slowly migrate all
+// callers to call write-entry-property directly. This will potentially reduce
+// the number of operations related to entries, and is more forward thinking in
+// case new operations are added later (e.g. star/unstar-entry).
+
 export function mark_entry_read(entry_id) {
   if (!entry_id_is_valid(entry_id)) {
     throw new TypeError('entry_id is not a valid entry id: ' + entry_id);

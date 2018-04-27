@@ -1,5 +1,7 @@
 import {entry_is_valid, is_entry} from '/src/objects/entry.js';
 
+// TODO: rename to write-entry
+
 export function update_entry(entry, validate) {
   if (!is_entry(entry)) {
     throw new TypeError('entry is not an entry ' + entry);
