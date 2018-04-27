@@ -1,3 +1,4 @@
+import {fonts} from '/src/fonts.js';
 import {date_format} from '/src/lib/date.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {html_truncate} from '/src/lib/html-truncate.js';
@@ -17,26 +18,6 @@ import {slideshow_export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/views/slideshow-page/slideshow.js';
 
-
-// clang-format off
-const fonts = [
-  'ArchivoNarrow-Regular',
-  'Arial, sans-serif',
-  'Calibri',
-  'Cambria',
-  'CartoGothicStd',
-  'Fanwood',
-  'Georgia',
-  'League Mono Regular',
-  'League Spartan',
-  'Montserrat',
-  'Noto Sans',
-  'Open Sans Regular',
-  'PathwayGothicOne',
-  'PlayfairDisplaySC',
-  'Roboto Regular'
-];
-// clang-format on
 
 const channel = create_channel();
 
