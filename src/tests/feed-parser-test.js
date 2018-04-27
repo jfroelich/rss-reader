@@ -1,5 +1,5 @@
-import * as feed_parser from '/src/lib/feed-parser.js';
-import {fetch_feed} from '/src/ops/fetch-feed.js';
+import {parse as parse_feed} from '/src/lib/feed-parser.js';
+import {fetch_feed} from '/src/ops/fetch.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: this needs to be run on a local resource
@@ -20,6 +20,6 @@ window.test = async function(url_string) {
   const text = await response.text();
   const skip_entries = false;
   const resolve_urls = true;
-  const parsed_feed = feed_parser.parse(text, skip_entries, resolve_urls);
+  const parsed_feed = parse_feed(text, skip_entries, resolve_urls);
   console.dir(parsed_feed);
 };*/

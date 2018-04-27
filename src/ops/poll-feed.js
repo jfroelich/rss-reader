@@ -3,7 +3,7 @@ import {list_empty, list_peek} from '/src/lib/list.js';
 import * as url_loader from '/src/lib/url-loader.js';
 import {create_entry_object, entry_append_url} from '/src/objects/entry.js';
 import {coerce_feed, feed_merge, is_feed} from '/src/objects/feed.js';
-import {fetch_feed} from '/src/ops/fetch-feed.js';
+import {fetch_feed} from '/src/ops/fetch.js';
 import {notify} from '/src/ops/notify.js';
 import {poll_entry} from '/src/ops/poll-entry.js';
 import {refresh_badge} from '/src/ops/refresh-badge.js';

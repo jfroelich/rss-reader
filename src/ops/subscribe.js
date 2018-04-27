@@ -4,7 +4,7 @@ import {url_did_change} from '/src/lib/url-loader.js';
 import {coerce_feed, feed_append_url, feed_create_favicon_lookup_url} from '/src/objects/feed.js';
 import {contains_feed} from '/src/ops/contains-feed.js';
 import {create_feed} from '/src/ops/create-feed.js';
-import {fetch_feed} from '/src/ops/fetch-feed.js';
+import {fetch_feed} from '/src/ops/fetch.js';
 import {lookup_icon} from '/src/ops/lookup-icon.js';
 import {notify} from '/src/ops/notify.js';
 

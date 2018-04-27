@@ -1,4 +1,4 @@
-import {fetch_feed} from '/src/ops/fetch-feed.js';
+import {fetch_feed} from '/src/ops/fetch.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: this should be run on a local resource

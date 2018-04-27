@@ -7,7 +7,7 @@ import * as url_loader from '/src/lib/url-loader.js';
 import {entry_append_url} from '/src/objects/entry.js';
 import {contains_entry} from '/src/ops/contains-entry.js';
 import {create_entry} from '/src/ops/create-entry.js';
-import {fetch_html} from '/src/ops/fetch-html.js';
+import {fetch_html} from '/src/ops/fetch.js';
 import {lookup_icon} from '/src/ops/lookup-icon.js';
 import {transform_document} from '/src/ops/transform-document.js';
 
