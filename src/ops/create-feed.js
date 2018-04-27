@@ -1,6 +1,8 @@
 import {feed_create, is_feed} from '/src/objects/feed.js';
 import {write_feed} from '/src/ops/write-feed.js';
 
+// TODO: deprecate and fold into write-feed
+
 export async function create_feed(feed, sanitize = true) {
   if (!is_feed(feed)) {
     throw new TypeError('Invalid feed parameter ' + feed);

@@ -63,7 +63,7 @@ channel.onmessage = function channel_onmessage(event) {
       // will have a property 'property' with the value 'active'
       // TODO: just realized, no way to tell whether active or inactive as a
       // result
-      console.debug('%s: feed updated %o', channel_onmessage.name, message);
+      // console.debug('%s: feed updated %o', channel_onmessage.name, message);
       break;
     default:
       console.warn('Unknown message type', message);
