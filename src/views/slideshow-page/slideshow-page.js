@@ -480,33 +480,22 @@ function import_menu_option_handle_click(event) {
   uploader_input.click();
 }
 
+// Fired when user submits file browser dialog. Uses a function-call lifetime
+// channel and use it instead of the page-lifetime channel to avoid the
+// no-loopback issue.
 async function uploader_input_onchange(event) {
-  const files = event.target.files;
-
-  // TODO: import-opml needs to be changed to use real context, not a fake
-  // context parameter. Then this needs to use the new op syntax.
-
-  // Create a function-call lifetime channel and use it instead of the
-  // page-lifetime channel to avoid the no-loopback issue
-  const onchange_channel = create_channel();
-
-  const open_promises = [create_conn(), create_icon_conn()];
-  const [rconn, iconn] = await Promise.all(open_promises);
-
-  const ctx = {};
-  ctx.fetch_timeout = 10 * 100;
-  ctx.channel = onchange_channel;
-  ctx.console = console;  // enable logging for now
-  ctx.rconn = rconn;
-  ctx.iconn = iconn;
-
-  await import_opml(ctx, files);
-
-  rconn.close();
-  iconn.close();
-  onchange_channel.close();
-
-  console.log('Import completed');
+  console.log('%s: started', uploader_input_onchange.name);
+  const op = {};
+  [op.rconn, op.iconn] = await Promise.all([create_conn(), create_icon_conn()]);
+  op.channel = create_channel();
+  op.console = console;  // temporary
+  op.fetch_timeout = 5 * 1000;
+  op.import_opml = import_opml;
+  await op.import_opml(event.target.files);
+  op.rconn.close();
+  op.iconn.close();
+  op.channel.close();
+  console.log('%s: completed', uploader_input_onchange.name);
 }
 
 function export_menu_option_handle_click(event) {

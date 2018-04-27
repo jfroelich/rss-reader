@@ -8,29 +8,26 @@ const opml_mime_types = [
   'application/opml+xml'
 ];
 
-const default_context = {
-  rconn: null,
-  iconn: null,
-  channel: null,
-  fetch_timeout: 2000,
-  console: console_stub
-};
+// Required context properties:
+// rconn
+// iconn
+// channel
+// fetch_timeout
+// console
 
-export function import_opml(context, files) {
-  const ctx = Object.assign({}, default_context, context);
-  ctx.console.log('Importing %d file(s)', files.length);
-
-  // TODO: if map.call accepts thisArg then there is no need to create the
-  // partial, and I can save a line
-
-  const partial = import_file.bind(ctx);
+export function import_opml(file_list) {
+  this.console.log(
+      '%s: importing %d file(s)', import_opml.name, file_list.length);
+  // file_list is type FileList, not array, cannot use list.map directly
   const map = Array.prototype.map;
-  const proms = map.call(files, partial);
-  return Promise.all(proms);
+  const promises = map.call(file_list, import_file, this);
+  return Promise.all(promises);
 }
 
 async function import_file(file) {
-  this.console.debug('Importing file', file.name);
+  this.console.debug(
+      '%s: name %s size %d type %s', import_file.name, file.name, file.size,
+      file.type);
 
   if (!file.size) {
     return 0;
@@ -73,7 +70,8 @@ async function import_file(file) {
 
   const stored_feeds = await Promise.all(promises);
   const count = stored_feeds.reduce((sum, v) => v ? sum : sum + 1, 0);
-  this.console.debug('Imported %d feeds from file', count, file.name);
+  this.console.debug(
+      '%s: imported %d feeds from file', import_file.name, count, file.name);
   return count;
 }
 
