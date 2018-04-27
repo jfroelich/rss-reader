@@ -1,6 +1,6 @@
 import {console_stub} from '/src/lib/console-stub.js';
-import * as filelib from '/src/lib/file.js';
-import * as opml_parser from '/src/lib/opml-parser.js';
+import {read_text as read_file_text} from '/src/lib/file.js';
+import {parse as parse_opml} from '/src/lib/opml-parser.js';
 import {subscribe} from '/src/ops/subscribe.js';
 
 const opml_mime_types = [
@@ -8,20 +8,19 @@ const opml_mime_types = [
   'application/opml+xml'
 ];
 
-// Required context properties:
-// rconn
-// iconn
-// channel
-// fetch_timeout
-// console
+// TODO: rather than resolve to array of counts, I could just resolve to array
+// of arrays of feed objects. Then import_file does not need async qualifier
+// and doesn't need to await subscribe, and this whole operation basically just
+// becomes a spawner of subscribe promises? But I need to await the file i/o,
+// so that is not quite right.
 
 export function import_opml(file_list) {
   this.console.log(
       '%s: importing %d file(s)', import_opml.name, file_list.length);
-  // file_list is type FileList, not array, cannot use list.map directly
+  // FileList does not support map so use array.map.call
   const map = Array.prototype.map;
-  const promises = map.call(file_list, import_file, this);
-  return Promise.all(promises);
+  const import_promises = map.call(file_list, import_file, this);
+  return Promise.all(import_promises);
 }
 
 async function import_file(file) {
@@ -39,7 +38,7 @@ async function import_file(file) {
 
   let file_text;
   try {
-    file_text = await filelib.read_text(file);
+    file_text = await read_file_text(file);
   } catch (error) {
     this.console.debug(error);
     return 0;
@@ -47,32 +46,36 @@ async function import_file(file) {
 
   let document;
   try {
-    document = opml_parser.parse(file_text);
+    document = parse_opml(file_text);
   } catch (error) {
     this.console.debug(error);
     return 0;
   }
 
   const urls = dedup_urls(find_feed_urls(document));
+  const feeds = await subscribe_urls.call(this, urls);
+  const count = feeds.reduce((sum, v) => v ? sum : sum + 1, 0);
+  this.console.debug(
+      '%s: imported %d feeds from %s', import_file.name, count, file.name);
+  return count;
+}
 
-  const sub_op = {};
-  sub_op.rconn = this.rconn;
-  sub_op.iconn = this.iconn;
-  sub_op.channel = this.channel;
-  sub_op.console = this.console;
-  sub_op.subscribe = subscribe;
-  const sub_opts = {fetch_timeout: this.fetch_timeout, notify: false};
+function subscribe_urls(urls) {
+  const op = {};
+  op.rconn = this.rconn;
+  op.iconn = this.iconn;
+  op.channel = this.channel;
+  op.console = this.console;
+  op.subscribe = subscribe;
+
+  const options = {fetch_timeout: this.fetch_timeout, notify: false};
 
   const promises = [];
   for (const url of urls) {
-    promises.push(sub_op.subsribe(url, sub_opts));
+    promises.push(op.subsribe(url, options));
   }
 
-  const stored_feeds = await Promise.all(promises);
-  const count = stored_feeds.reduce((sum, v) => v ? sum : sum + 1, 0);
-  this.console.debug(
-      '%s: imported %d feeds from file', import_file.name, count, file.name);
-  return count;
+  return Promise.all(promises);
 }
 
 function dedup_urls(urls) {
@@ -93,10 +96,12 @@ function find_feed_urls(document) {
   for (const element of elements) {
     const type = element.getAttribute('type');
     if (type_pattern.test(type)) {
-      const value = element.getAttribute('xmlUrl');
-      if (value) {
+      const url_string = element.getAttribute('xmlUrl');
+      if (url_string) {
         try {
-          urls.push(new URL(value));
+          // TODO: does opml support a base url that i should be considering
+          // here?
+          urls.push(new URL(url_string));
         } catch (error) {
         }
       }
