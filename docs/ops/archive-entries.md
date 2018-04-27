@@ -1,33 +1,47 @@
 # archive-entries
-`archive_entries` transforms certain entries in the reader database with the objective of keeping the size of the database small. Certain entries that are older than a given time period are reduced in byte size.
-
-This compacts rather than deletes so as to keep track of:
-* which urls have been visited, so that previously read articles are not re-downloaded and re-presented in the view.
-* stats (such as num articles read) because currently stats are setup to be recalculated from scratch, and are not stored in aggregate.
-
-Compacting involves removing several fields from an entry, and in particular, the content field. Once an entry is compacted it is no longer viewable. Only some basic fields remain. The feed-id property remains so that the entry can be removed later when unsubscribing. The urls property remains so to be able to identify the entry. Some date properties are kept for possible later use in generating statistics.
+Async. Scans the entry store for older entries and archives them. This is a viable alternative to deleting older entries so as to keep information about which entries have been seen before, and for various statistics. Archiving is done by replacing an entry object with a compacted version, where several properties are removed or reduced in size.
 
 ### Context properties
 * **conn** {IDBDatabase} an open database connection to the reader database
-* **channel** {BroadcastChannel} an open channel, required, which receives messages for each entry that is archived in the form `{type: 'entry-archived', id: entry_id}`
-* **console** {object} a console-like object if logging is desired, required, to disable logging consider using a [console-stub](../lib/console-stub.js)
+* **channel** {BroadcastChannel} an open channel to which to post messages
+* **console** {console-like-object} logging destination
+
+All context properties are required
 
 ### Params
-* **max_age** {Number} - in milliseconds, optional, defaults to two days, how old an entry must be based on the difference between the run time and the date the entry was created in order to consider the entry as archivable
+* **max_age** {Number} in milliseconds, optional, defaults to two days, how old an entry must be based on the difference between the run time and the date the entry was created in order to consider the entry as archivable
 
-### Rejection reasons
-* {ReferenceError} when any builtins missing
-* {TypeError} invalid inputs
-* {DOMException} database errors
+### Errors
+* **TypeError** invalid inputs, such as invalid max-age parameter value
+* **DOMException** database errors, such as database not open, database close pending, transaction failure, store missing
+* **InvalidStateError** if the channel is closed at the time messages are sent to the channel
 
-### One transaction implementation note
-This performs all work using a single transaction. This maintains data integrity. Because the transaction is flagged `readwrite`, and because this function overall, relative to other functions, is long-running, note that it can be a rather obtrusive lock on the entire database.
+### Return value
+Returns a promise that resolves to an array of entry ids that were archived.
+
+### Channel message format
+Messages are basic objects with properties:
+* **type** {String} entry-archived
+* **id** {Number} entry id
+
+### Implementation note regarding database transactions
+* This uses one transaction. Using one transaction ensures data integrity.
+* This involves a rather obtrusive lock on the entire database because the transaction involves writing and is relatively long-running.
+
+### Implementation note regarding how entries are selected
+Rather than load only those entries that should be archived, this loads entries that have some properties needed for archivability but are not necessarily archivable. This is largely due to the complexities of using a multipart key path for an index in indexedDB. Therefore this loads more entries than needed. I may in the future look into optimizing this aspect, and making it more correct. For now I am leaving it this way given this is intended to run untimed.
 
 ### Implementation note on using getAll vs cursor
-While getAll is substantially faster, it involves loading all data into an array, and therefore does not scale. `archive_entries` generally runs as a background task so it is not performance sensitive, but it is still somewhat data-size sensitive. Entry objects can be rather large because of the content field. If the number of articles grows very large, using getAll would require loading an absurd amount of data into memory, when in fact that memory does not need to live for very long. So, while using the cursor is slower and involves a ton of stack calls, it scales better. With the cursor, only a limited number of entry objects ever reside in memory at any one point in time.
+This uses a cursor to walk entries instead of getAll. While `getAll` is faster, `getAll` loads the entire store at once, and therefore does not scale. This operation generally runs in the background so it is not performance sensitive, but it is still data-size sensitive. Entry objects can be rather large because of the content field. While using the cursor is slower and involves a ton of stack calls, it scales better. With the cursor, only a limited number of entry objects ever reside in memory at any one point in time.
 
-### Impl note regarding entries presently loaded in view
-It is not feasible to track which entries are loaded into a view. Therefore, this interacts with a channel. This sends out a message to the channel each time an entry is archived. If the view also interacts with a channel, it will be notified by message that certain entries were archived, and should be able to react accordingly. The view is better equipped to determine whether a given entry resides in the view. It is not this operation's concern.
+### Implementation note regarding entries presently viewable
+Tracking viewable entries is possible but not very feasible. Therefore, this interacts with a channel. This sends out a message to the channel each time an entry is archived. If the view also interacts with a channel, it will be notified that certain entries were archived, and should be able to react accordingly. The view is better equipped to dynamically determine whether a given entry resides in the view and decide how to react. Therefore, whether an entry is currently viewable is not this operation's concern.
 
-### Impl note regarding message-per-entry
-There could be potentially many entries archived in any one invocation of the operation. I decided to use one message per entry rather than sending one message per operation. Using one per op would require keeping an array of entry-ids in memory, and would potentially be very large, and therefore not scalable. Instead, I assume the channel implementation is better-equipped to scale to a large number of messages.
+### Implementation note regarding messages and transaction state
+Channel messages are not posted until *after* the transaction completes successfully. In other words, messages are not posted prematurely and do not assume the transaction will be successful, to avoid having callers develop a false reliance on the state of the database. Posting a message to the channel may cause an invalid state error if the channel is closed. This will cause the operation to reject with an error. However, by this point the transaction was committed. Therefore it is possible for this function to throw an error yet still permanently modify state.
+
+### Implementation note regarding batch message posting
+This sends one message to the channel per entry archived, rather than sending a single message containing an array of archived entry ids. The number of archived entries can be very large. Sending very large messages is discouraged. This assumes that BroadcastChannels are better tuned for sending a large number of small messages than a small number of large messages.
+
+### Todos
+* There is probably no need to resolve to array of entry ids. That information is available via the channel, so the return value is redundant. It feels like the return value is an unstable part of the api. It would more stable if I just denied access to it and changed this to a void function. I do not believe any callers rely on the return value.
