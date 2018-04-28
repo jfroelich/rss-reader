@@ -85,6 +85,7 @@ export function entry_append_url(entry, url) {
 }
 
 // Return true if the first parameter looks like an entry id
+// TODO: rename to `is_valid_entry_id`
 export function entry_id_is_valid(value) {
   return Number.isInteger(value) && value > 0;
 }

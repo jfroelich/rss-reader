@@ -6,10 +6,10 @@ import * as sniff from '/src/lib/sniff.js';
 import * as url_loader from '/src/lib/url-loader.js';
 import {entry_append_url} from '/src/objects/entry.js';
 import {contains_entry} from '/src/ops/contains-entry.js';
-import {create_entry} from '/src/ops/create-entry.js';
 import {fetch_html} from '/src/ops/fetch.js';
 import {lookup_icon} from '/src/ops/lookup-icon.js';
 import {transform_document} from '/src/ops/transform-document.js';
+import {write_entry} from '/src/ops/write-entry.js';
 
 const rewrite_rules = build_rewrite_rules();
 
@@ -43,12 +43,14 @@ export async function poll_entry(entry) {
   await update_entry_content(
       entry, document, this.console, this.fetch_image_timeout);
 
-  const cec = {};
-  cec.conn = this.rconn;
-  cec.channel = this.channel;
-  cec.console = this.console;
+  const op = {};
+  op.conn = this.rconn;
+  op.channel = this.channel;
+  op.console = this.console;
+  op.write_entry = write_entry;
+
   const validate = true;
-  const stored_entry = await create_entry.call(cec, entry, validate);
+  const stored_entry = await op.write_entry(entry, validate);
   return stored_entry.id;
 }
 
