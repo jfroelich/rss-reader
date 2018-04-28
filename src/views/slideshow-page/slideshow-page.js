@@ -51,10 +51,7 @@ channel.onmessage = function channel_onmessage(event) {
       console.warn('Unhandled feed-deleted message', message);
       break;
     case 'entry-marked-read':
-      // TODO: call a mark read handler here that sets the slide element as read
-      // console.warn('Unhandled entry-marked-read message', message);
       on_entry_marked_read_message(message).catch(console.warn);
-
       break;
     case 'feed-added':
       break;
