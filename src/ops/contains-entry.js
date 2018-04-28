@@ -1,4 +1,4 @@
-import {entry_id_is_valid} from '/src/objects/entry.js';
+import {is_valid_entry_id} from '/src/objects/entry.js';
 
 // TODO: finish up migration from find_entry_id_by_url
 
@@ -8,7 +8,7 @@ export async function contains_entry(conn, query) {
   }
 
   const id = await find_entry_id_by_url(conn, query.url);
-  return entry_id_is_valid(id);
+  return is_valid_entry_id(id);
 }
 
 function find_entry_id_by_url(conn, url) {

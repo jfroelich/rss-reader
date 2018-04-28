@@ -5,7 +5,7 @@ import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {html_truncate} from '/src/lib/html-truncate.js';
 import {html_escape} from '/src/lib/html.js';
 import {list_peek} from '/src/lib/list.js';
-import {entry_id_is_valid, is_entry} from '/src/objects/entry.js';
+import {is_valid_entry_id, is_entry} from '/src/objects/entry.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
 import {create_icon_conn} from '/src/ops/create-icon-conn.js';
@@ -89,7 +89,7 @@ async function on_entry_added_message(message) {
 async function on_entry_expired_message(message) {
   // Weak assertions simply to help debug in event of programmer error
   console.assert(typeof message === 'object');
-  console.assert(entry_id_is_valid(message.id));
+  console.assert(is_valid_entry_id(message.id));
 
   const slide_name = Slideshow.element_get_name();
   const selector = slide_name + '[entry="' + message.id + '"]';
@@ -112,7 +112,7 @@ async function on_entry_expired_message(message) {
 async function on_entry_marked_read_message(message) {
   // Weak assertions to help debug, generally should never trigger
   console.assert(typeof message === 'object');
-  console.assert(entry_id_is_valid(message.id));
+  console.assert(is_valid_entry_id(message.id));
 
   const selector = 'slide[entry="' + message.id + '"]';
   const slide = document.querySelector(selector);

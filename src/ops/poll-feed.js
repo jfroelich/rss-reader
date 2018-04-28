@@ -1,7 +1,7 @@
 import * as feed_parser from '/src/lib/feed-parser.js';
 import {list_empty, list_peek} from '/src/lib/list.js';
 import * as url_loader from '/src/lib/url-loader.js';
-import {create_entry_object, entry_append_url} from '/src/objects/entry.js';
+import {create_entry, append_entry_url} from '/src/objects/entry.js';
 import {coerce_feed, feed_merge, is_feed} from '/src/objects/feed.js';
 import {fetch_feed} from '/src/ops/fetch.js';
 import {notify} from '/src/ops/notify.js';
@@ -257,7 +257,7 @@ function dedup_entries(entries) {
 // format. This is a cross-cutting concern so it belongs in the place where the
 // concerns meet.
 function coerce_entry(parsed_entry) {
-  const blank_entry = create_entry_object();
+  const blank_entry = create_entry();
 
   // Copy over everything
   const clone = Object.assign(blank_entry, parsed_entry);
@@ -266,7 +266,7 @@ function coerce_entry(parsed_entry) {
   delete clone.link;
   if (parsed_entry.link) {
     try {
-      entry_append_url(clone, new URL(parsed_entry.link));
+      append_entry_url(clone, new URL(parsed_entry.link));
     } catch (error) {
     }
   }

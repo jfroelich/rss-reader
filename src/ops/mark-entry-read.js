@@ -1,4 +1,4 @@
-import {entry_id_is_valid, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
+import {is_valid_entry_id, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
 import {refresh_badge} from '/src/ops/refresh-badge.js';
 
 // TODO: create a write-entry-property module, then use that instead of this. In
@@ -9,7 +9,7 @@ import {refresh_badge} from '/src/ops/refresh-badge.js';
 // case new operations are added later (e.g. star/unstar-entry).
 
 export function mark_entry_read(entry_id) {
-  if (!entry_id_is_valid(entry_id)) {
+  if (!is_valid_entry_id(entry_id)) {
     throw new TypeError('entry_id is not a valid entry id: ' + entry_id);
   }
 

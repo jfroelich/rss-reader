@@ -4,7 +4,7 @@ import {list_empty, list_peek} from '/src/lib/list.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
 import * as sniff from '/src/lib/sniff.js';
 import * as url_loader from '/src/lib/url-loader.js';
-import {entry_append_url} from '/src/objects/entry.js';
+import {append_entry_url} from '/src/objects/entry.js';
 import {contains_entry} from '/src/ops/contains-entry.js';
 import {fetch_html} from '/src/ops/fetch.js';
 import {lookup_icon} from '/src/ops/lookup-icon.js';
@@ -65,7 +65,7 @@ async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {
     return false;
   }
 
-  entry_append_url(entry, response_url);
+  append_entry_url(entry, response_url);
   entry_rewrite_tail_url(entry, rewrite_rules);
   return await entry_exists(rconn, entry);
 }
@@ -76,7 +76,7 @@ function entry_rewrite_tail_url(entry, rewrite_rules) {
   if (!new_url) {
     return false;
   }
-  return entry_append_url(entry, new_url);
+  return append_entry_url(entry, new_url);
 }
 
 async function entry_exists(rconn, entry) {

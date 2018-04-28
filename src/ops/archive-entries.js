@@ -1,4 +1,4 @@
-import {create_entry_object, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/objects/entry.js';
+import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/objects/entry.js';
 import {sizeof} from '/src/lib/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
@@ -69,7 +69,7 @@ function archive_entry(console, entry) {
 }
 
 function compact_entry(entry) {
-  const ce = create_entry_object();
+  const ce = create_entry();
   ce.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {
