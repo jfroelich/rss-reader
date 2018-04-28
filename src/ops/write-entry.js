@@ -2,13 +2,11 @@ import {filter_empty_properties} from '/src/lib/object.js';
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry, is_valid_entry_id, sanitize_entry} from '/src/objects/entry.js';
 
 export function write_entry(entry, validate = true) {
-  // Throw immediately in case of a programmer error. This is a programmer
-  // error.
   if (!is_entry(entry)) {
     throw new TypeError('entry is not an entry ' + entry);
   }
 
-  return new Promise(executor.bind(this, storable_entry, validate));
+  return new Promise(executor.bind(this, entry, validate));
 }
 
 function executor(entry, validate, resolve, reject) {
@@ -19,7 +17,7 @@ function executor(entry, validate, resolve, reject) {
     throw new TypeError('invalid entry ' + entry);
   }
 
-  const is_create = !is_valid_entry_id(storable_entry.id);
+  const is_create = !is_valid_entry_id(entry.id);
   let storable_entry;
 
   if (is_create) {
