@@ -1,6 +1,6 @@
 import {filter_empty_properties} from '/src/lib/object.js';
 import {entry_is_valid, entry_sanitize, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
-import {update_entry} from '/src/ops/update-entry.js';
+import {write_entry} from '/src/ops/write-entry.js';
 
 const channel_stub = {
   name: 'channel-stub',
@@ -36,10 +36,9 @@ export async function create_entry(entry, validate) {
   // Redirect the update message to /dev/null basically
   ue_op.channel = channel_stub;
   ue_op.console = this.console;
-  ue_op.run = update_entry;
-  // Do not revalidate
-  const update_validate = false;
-  const entry_id = await ue_op.run(storable_entry, update_validate);
+  ue_op.write_entry = write_entry;
+  const update_validate = false;  // do not revalidate
+  const entry_id = await ue_op.write_entry(storable_entry, update_validate);
 
   this.channel.postMessage({type: 'entry-added', id: entry_id});
 

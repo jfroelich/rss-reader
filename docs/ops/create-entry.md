@@ -27,5 +27,5 @@ Returns a promise that resolves to the stored entry object. Resolution occurs af
 
 ### TODOS
 * if I plan to have validation also occur in `entry_sanitize`, then I think what should happen here is that I pass a `validate` flag (boolean, set to false) along to `entry_sanitize` to avoid revalidation because it could end up being a heavier operation, basically I am undecided about where validation should occur, and if I end up doing validation in multiple places I am concerned about redundant validation
-* is it correct to have `create_entry` be concerned with state initialization of the entry object, or should it be a responsibility of something earlier in the pipeline? I revised `update_entry` so that it does no property modification, because I don't like the idea of implicit modification, and was trying to be more transparent. That required all callers to set dateUpdated and increased inconvenience, but it was overall good. Should I apply the same idea here?
-* Maybe decouple from `update_entry`?
+* is it correct to have `create_entry` be concerned with state initialization of the entry object, or should it be a responsibility of something earlier in the pipeline? I revised `write_entry` so that it does no property modification, because I don't like the idea of implicit modification, and was trying to be more transparent. That required all callers to set dateUpdated and increased inconvenience, but it was overall good. Should I apply the same idea here?
+* Maybe decouple from `write_entry`?

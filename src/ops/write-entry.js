@@ -1,8 +1,6 @@
 import {entry_is_valid, is_entry} from '/src/objects/entry.js';
 
-// TODO: rename to write-entry
-
-export function update_entry(entry, validate) {
+export function write_entry(entry, validate) {
   if (!is_entry(entry)) {
     throw new TypeError('entry is not an entry ' + entry);
   }
@@ -25,6 +23,6 @@ function executor(entry, resolve, reject) {
 function request_onsuccess(callback, event) {
   const entry_id = event.target.result;
   this.channel.postMessage({type: 'entry-updated', id: entry_id});
-  this.console.debug('Updated entry', entry_id);
+  this.console.debug('%s: wrote entry id %d', write_entry.name, entry_id);
   callback(entry_id);
 }
