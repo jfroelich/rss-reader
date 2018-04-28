@@ -5,7 +5,7 @@ import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {html_truncate} from '/src/lib/html-truncate.js';
 import {html_escape} from '/src/lib/html.js';
 import {list_peek} from '/src/lib/list.js';
-import {is_valid_entry_id, is_entry} from '/src/objects/entry.js';
+import {is_entry, is_valid_entry_id} from '/src/objects/entry.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
 import {create_icon_conn} from '/src/ops/create-icon-conn.js';
@@ -38,8 +38,8 @@ channel.onmessage = function channel_onmessage(event) {
       console.debug('Updating article style');
       page_style.page_style_onchange(message);
       break;
-    case 'entry-added':
-      on_entry_added_message(message).catch(console.warn);
+    case 'entry-write':
+      on_entry_write_message(message).catch(console.warn);
       break;
     case 'entry-deleted':
       on_entry_expired_message(message).catch(console.warn);
@@ -77,7 +77,13 @@ channel.onmessageerror = function channel_onmessageerror(event) {
       channel_onmessageerror.name, event);
 };
 
-async function on_entry_added_message(message) {
+async function on_entry_write_message(message) {
+  if (!message.create) {
+    // TEMP: debugging some functionality in flux
+    console.debug('Ignoring entry-write message', message);
+    return;
+  }
+
   const unread_count = slideshow_count_unread();
   if (unread_count <= 3) {
     const conn = await create_conn();

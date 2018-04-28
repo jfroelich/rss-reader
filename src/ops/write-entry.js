@@ -10,9 +10,6 @@ export function write_entry(entry, validate = true) {
 }
 
 function executor(entry, validate, resolve, reject) {
-  // We do validation in the executor so that the exception is regarded
-  // initially as a kind of promise rejection instead of an immediately thrown
-  // exception, because a validation error is not a programmer error
   if (validate && !is_valid_entry(entry)) {
     throw new TypeError('invalid entry ' + entry);
   }
@@ -29,31 +26,24 @@ function executor(entry, validate, resolve, reject) {
     storable_entry.dateCreated = new Date();
     delete storable_entry.dateUpdated;
   } else {
-    // Overwriting, just point to it
     storable_entry = entry;
   }
 
   const txn = this.conn.transaction('entry', 'readwrite');
   txn.oncomplete =
       txn_oncomplete.bind(this, storable_entry, is_create, resolve);
+  txn.onerror = _ => reject(txn.error);
 
   const store = txn.objectStore('entry');
   const request = store.put(storable_entry);
-
-  // Set the new id. For new entries this is the auto-increment value from
-  // indexedDB. For existing entries this is the prior id (the same value).
-  request.onsuccess = event => storable_entry.id = event.target.result;
-  request.onerror = _ => reject(request.error);
+  if (is_create) {
+    request.onsuccess = event => storable_entry.id = event.target.result;
+  }
 }
 
 function txn_oncomplete(entry, is_create, callback, event) {
-  // TODO: eventually just use one message type, entry-write. But for now
-  // maintain the previous protocol. Changing the message type involves a
-  // review of all listeners and for now I am focused on local changes.
-  // TODO: it should be entry-created, but the prior implementation was using
-  // entry-added, so maintain the old type for now
-  const type = is_create ? 'entry-added' : 'entry-updated';
-  this.channel.postMessage({type: type, id: entry.id});
+  this.channel.postMessage(
+      {type: 'entry-write', id: entry.id, 'create': is_create});
 
   const msg = is_create ? '%s: wrote new entry %d' : '%s: overwrote entry %d';
   this.console.debug(msg, write_entry.name, entry.id);
