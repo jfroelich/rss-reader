@@ -4,18 +4,21 @@ export async function remove_lost_entries() {
 
 function executor(resolve, reject) {
   const ids = [];
+  const stats = {visited_entry_count: 0};
   const txn = this.conn.transaction('entry', 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(this, ids, resolve);
+  txn.oncomplete = txn_oncomplete.bind(this, ids, resolve, stats);
   txn.onerror = _ => reject(txn.error);
 
   const store = txn.objectStore('entry');
   const request = store.openCursor();
-  request.onsuccess = request_onsuccess.bind(this, ids);
+  request.onsuccess = request_onsuccess.bind(this, ids, stats);
 }
 
-function request_onsuccess(ids, event) {
+function request_onsuccess(ids, stats, event) {
   const cursor = event.target.result;
   if (cursor) {
+    stats.visited_entry_count++;
+
     const entry = cursor.value;
     if (!entry.urls || !entry.urls.length) {
       this.console.debug(
@@ -28,9 +31,10 @@ function request_onsuccess(ids, event) {
   }
 }
 
-function txn_oncomplete(ids, callback, event) {
+function txn_oncomplete(ids, callback, stats, event) {
+  const name = remove_lost_entries.name, scan = stats.visited_entry_count;
   this.console.debug(
-      '%s: deleted %d entries', remove_lost_entries.name, ids.length);
+      '%s: txn completed, scanned %d, deleted %d', name, scan, ids.length);
 
   const message = {type: 'entry-deleted', id: 0, reason: 'lost'};
   for (const id of ids) {

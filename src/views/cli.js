@@ -77,11 +77,19 @@ async function cli_poll_feeds() {
 async function cli_remove_lost_entries() {
   const op = {};
   op.conn = await create_conn();
+  console.debug(
+      '%s: connected to db %s', cli_remove_lost_entries.name, op.conn.name);
   op.channel = create_channel();
+  console.debug(
+      '%s: created channel', cli_remove_lost_entries.name, op.channel.name);
   op.console = console;
   op.remove_lost_entries = remove_lost_entries;
   await op.remove_lost_entries();
+  console.debug(
+      '%s: closing db conn', cli_remove_lost_entries.name, op.conn.name);
   op.conn.close();
+  console.debug(
+      '%s: closing channel', cli_remove_lost_entries.name, op.channel.name);
   op.channel.close();
 }
 
