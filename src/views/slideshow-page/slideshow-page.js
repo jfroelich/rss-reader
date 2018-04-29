@@ -1,3 +1,5 @@
+import '/src/views/cli.js';
+
 import {fonts} from '/src/fonts.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {date_format} from '/src/lib/date.js';
