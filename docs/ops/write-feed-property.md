@@ -3,9 +3,8 @@ Async. Updates the property of a corresponding feed object in the database. When
 
 Internally, this fetches the feed object corresponding to the id, modifies the property of the feed object, and then saves it back to the database. This is done using a single transaction to guarantee data integrity. The corresponding message is not posted until the transaction resolves successfully, to avoid any premature reaction by listeners in the event of a database error. However, in the event that posting a message to the channel encounters an error, note that the database state was still permanently changed, despite the error. A typical reason for a channel error is an InvalidStateError that is thrown when calling postMessage on a closed broadcast channel. Because this is async and because the postMessage call occurs in a later event loop epoch, the channel should not be closed until after this call has resolved. In other words this call should be awaited if the channel will be closed. Given that it is almost always correct to close the channel, because channels should not be long-lived, this call should almost always be awaited.
 
-With regard to the feed-updated property, it is implicitly and automatically set to the run date of the call as a side effect, unless the feed-updated property itself is the specified property to update.
-
-The function balks with an error when attempting to set a feed's `id` property. This function should be used in attempt to change a feed's id, because technically this makes no sense.
+* Unless dateUpdated is the property specified, this sets the dateUpdated property to the current date as an implied side effect.
+* This throws an error when attempting to update the `id` property because this is not allowed.
 
 ### Context params
 * **conn** {IDBDatabase} an open database connection

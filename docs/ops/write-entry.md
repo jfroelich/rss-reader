@@ -7,7 +7,7 @@ Creates or overwrites an entry object in the database.
 
 ### Context properties
 * **conn** {IDBDatabase} an open database connection
-* **channel** {BroadcastChannel} after successful storage a message is posted to the channel with type and id properties
+* **channel** {BroadcastChannel} after successful storage a message is posted to the channel
 * **console** {Object} logging destination, anything console-like
 
 All properties required.
