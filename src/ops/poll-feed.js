@@ -1,5 +1,5 @@
 import * as feed_parser from '/src/lib/feed-parser.js';
-import {list_empty, list_peek} from '/src/lib/list.js';
+import {list_is_empty, list_peek} from '/src/lib/list.js';
 import * as url_loader from '/src/lib/url-loader.js';
 import {create_entry, append_entry_url} from '/src/objects/entry.js';
 import {coerce_feed, feed_merge, is_feed} from '/src/objects/feed.js';
@@ -24,7 +24,7 @@ export async function poll_feed(
 
   // Although this is borderline a programmer error, tolerate location-less
   // feed objects and simply ignore them
-  if (list_empty(feed.urls)) {
+  if (list_is_empty(feed.urls)) {
     console.warn('Attempted to poll feed missing url', feed);
     return 0;
   }
@@ -228,7 +228,7 @@ function dedup_entries(entries) {
   const seen_url_strings = [];
 
   for (const entry of entries) {
-    if (list_empty(entry.urls)) {
+    if (list_is_empty(entry.urls)) {
       distinct_entries.push(entry);
       continue;
     }

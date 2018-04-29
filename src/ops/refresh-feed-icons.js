@@ -1,5 +1,5 @@
 import {console_stub} from '/src/lib/console-stub.js';
-import {list_empty} from '/src/lib/list.js';
+import {list_is_empty} from '/src/lib/list.js';
 import {feed_create_favicon_lookup_url} from '/src/objects/feed.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
 import {lookup_icon} from '/src/ops/lookup-icon.js';
@@ -16,7 +16,7 @@ export async function refresh_feed_icons(
 }
 
 async function refresh_feed(rconn, iconn, channel, console, feed) {
-  if (list_empty(feed.urls)) {
+  if (list_is_empty(feed.urls)) {
     return;
   }
 

@@ -1,6 +1,6 @@
 import * as color from '/src/lib/color.js';
 import * as html_parser from '/src/lib/html-parser.js';
-import {list_empty, list_peek} from '/src/lib/list.js';
+import {list_is_empty, list_peek} from '/src/lib/list.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
 import * as sniff from '/src/lib/sniff.js';
 import * as url_loader from '/src/lib/url-loader.js';
@@ -23,7 +23,7 @@ const INACCESSIBLE_CONTENT_DESCRIPTORS = [
 ];
 
 export async function poll_entry(entry) {
-  if (list_empty(entry.urls)) {
+  if (list_is_empty(entry.urls)) {
     return;
   }
 

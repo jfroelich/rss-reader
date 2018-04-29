@@ -1,4 +1,4 @@
-import {list_empty} from '/src/lib/list.js';
+import {list_is_empty} from '/src/lib/list.js';
 
 export async function remove_lost_entries() {
   return new Promise(executor.bind(this));
@@ -19,8 +19,9 @@ function request_onsuccess(ids, event) {
   const cursor = request.result;
   if (cursor) {
     const entry = cursor.value;
-    if (list_empty(entry.urls)) {
-      this.console.debug('Deleting lost entry', entry.id);
+    if (list_is_empty(entry.urls)) {
+      this.console.debug(
+          '%s: deleting entry', remove_lost_entries.name, entry.id);
       cursor.delete();
       ids.push(entry.id);
     }

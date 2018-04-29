@@ -5,13 +5,13 @@
 // @param list {Array}
 // @throws {Error} if list is not a defined array
 export function list_peek(list) {
-  if (list_empty(list)) {
+  if (list_is_empty(list)) {
     return;
   }
 
   return list[list.length - 1];
 }
 
-export function list_empty(list) {
+export function list_is_empty(list) {
   return list && list.length > 0 ? false : true;
 }
