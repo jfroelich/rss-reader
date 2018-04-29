@@ -11,7 +11,7 @@ import {poll_feeds} from '/src/ops/poll-feeds.js';
 import {refresh_badge} from '/src/ops/refresh-badge.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/ops/remove-lost-entries.js';
-import {remove_orphans} from '/src/ops/remove-orphaned-entries.js';
+import {remove_orphaned_entries} from '/src/ops/remove-orphaned-entries.js';
 
 async function handle_compact_favicons_alarm(alarm) {
   const conn = await create_icon_conn();
@@ -35,17 +35,20 @@ async function handle_archive_alarm_wakeup(alarm) {
 }
 
 async function handle_lost_entries_alarm(alarm) {
-  const channel = create_channel();
-  const conn = await create_conn();
-  await remove_lost_entries(conn, channel, void console);
-  channel.close();
-  conn.close();
+  const op = {};
+  op.conn = await create_conn();
+  op.channel = create_channel();
+  op.console = console_stub;
+  op.remove_lost_entries = remove_lost_entries;
+  await op.remove_lost_entries();
+  op.conn.close();
+  op.channel.close();
 }
 
 async function handle_orphan_entries_alarm(alarm) {
   const channel = create_channel();
   const conn = await create_conn();
-  await remove_orphans(conn, channel, void console);
+  await remove_orphaned_entries(conn, channel, void console);
   channel.close();
   conn.close();
 }

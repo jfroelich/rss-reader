@@ -164,5 +164,6 @@ export async function transform_document(
 
   // TODO: move this up to before some of the other attribute filters, or
   // explain why it should occur later
+  // TODO: consider aggregating with other attribute filters
   filters.document_filter_empty_attributes(document);
 }

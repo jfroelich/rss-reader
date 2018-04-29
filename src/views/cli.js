@@ -9,7 +9,7 @@ import {poll_feed} from '/src/ops/poll-feed.js';
 import {poll_feeds} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/ops/remove-lost-entries.js';
-import {remove_orphans} from '/src/ops/remove-orphaned-entries.js';
+import {remove_orphaned_entries} from '/src/ops/remove-orphaned-entries.js';
 import {subscribe} from '/src/ops/subscribe.js';
 
 async function cli_subscribe(url_string, poll = true) {
@@ -75,11 +75,14 @@ async function cli_poll_feeds() {
 }
 
 async function cli_remove_lost_entries() {
-  const conn = await create_conn();
-  const channel = new BroadcastChannel('reader');
-  await remove_lost_entries_impl(conn, channel, console);
-  channel.close();
-  conn.close();
+  const op = {};
+  op.conn = await create_conn();
+  op.channel = create_channel();
+  op.console = console;
+  op.remove_lost_entries = remove_lost_entries;
+  await op.remove_lost_entries();
+  op.conn.close();
+  op.channel.close();
 }
 
 async function cli_remove_orphans() {
@@ -120,7 +123,7 @@ const cli = {
   archive: cli_archive_entries,
   clear_icons: clear_icons,
   compact_icons: cli_compact_icons,
-  remove_orphans: cli_remove_orphans,
+  remove_orphaned_entries: cli_remove_orphans,
   remove_lost_entries: cli_remove_lost_entries,
   lookup_favicon: cli_lookup_favicon,
   poll_feeds: cli_poll_feeds,

@@ -1,34 +1,26 @@
-import {console_stub} from '/src/lib/console-stub.js';
 import {list_empty} from '/src/lib/list.js';
 
-const channel_stub = {
-  name: 'channel-stub',
-  postMessage: noop,
-  close: noop
-};
-
-export async function remove_lost_entries(
-    conn, channel = channel_stub, console = console_stub) {
-  return new Promise(executor.bind(null, conn, channel, console));
+export async function remove_lost_entries() {
+  return new Promise(executor.bind(this));
 }
 
-function executor(conn, channel, console, resolve, reject) {
+function executor(resolve, reject) {
   const ids = [];
-  const txn = conn.transaction('entry', 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(txn, channel, console, ids, resolve);
+  const txn = this.conn.transaction('entry', 'readwrite');
+  txn.oncomplete = txn_oncomplete.bind(this, ids, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const store = txn.objectStore('entry');
   const request = store.openCursor();
-  request.onsuccess = request_onsuccess.bind(request, ids, console);
+  request.onsuccess = request_onsuccess.bind(this, ids);
 }
 
-function request_onsuccess(ids, console, event) {
+function request_onsuccess(ids, event) {
   const cursor = request.result;
   if (cursor) {
     const entry = cursor.value;
     if (list_empty(entry.urls)) {
-      console.debug('Deleting lost entry', entry.id);
+      this.console.debug('Deleting lost entry', entry.id);
       cursor.delete();
       ids.push(entry.id);
     }
@@ -37,16 +29,15 @@ function request_onsuccess(ids, console, event) {
   }
 }
 
-function txn_oncomplete(channel, console, ids, callback, event) {
-  console.debug('Removed %d lost entries', ids.length);
+function txn_oncomplete(ids, callback, event) {
+  this.console.debug(
+      '%s: removed %d lost entries', remove_lost_entries.name, ids.length);
 
   const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
   for (const id of ids) {
     message.id = id;
-    channel.postMessage(message);
+    this.channel.postMessage(message);
   }
 
   callback();
 }
-
-function noop() {}

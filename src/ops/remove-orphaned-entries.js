@@ -7,7 +7,7 @@ const channel_stub = {
   close: noop
 };
 
-export function remove_orphans(
+export function remove_orphaned_entries(
     conn, channel = channel_stub, console = console_stub) {
   return new Promise(executor.bind(null, conn, channel, console));
 }
