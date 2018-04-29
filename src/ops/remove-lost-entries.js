@@ -1,5 +1,3 @@
-import {list_is_empty} from '/src/lib/list.js';
-
 export async function remove_lost_entries() {
   return new Promise(executor.bind(this));
 }
@@ -16,12 +14,12 @@ function executor(resolve, reject) {
 }
 
 function request_onsuccess(ids, event) {
-  const cursor = request.result;
+  const cursor = event.target.result;
   if (cursor) {
     const entry = cursor.value;
-    if (list_is_empty(entry.urls)) {
+    if (!entry.urls || !entry.urls.length) {
       this.console.debug(
-          '%s: deleting entry', remove_lost_entries.name, entry.id);
+          '%s: deleting entry %d', remove_lost_entries.name, entry.id);
       cursor.delete();
       ids.push(entry.id);
     }
@@ -32,9 +30,9 @@ function request_onsuccess(ids, event) {
 
 function txn_oncomplete(ids, callback, event) {
   this.console.debug(
-      '%s: removed %d lost entries', remove_lost_entries.name, ids.length);
+      '%s: deleted %d entries', remove_lost_entries.name, ids.length);
 
-  const message = {type: 'entry-deleted', id: undefined, reason: 'lost'};
+  const message = {type: 'entry-deleted', id: 0, reason: 'lost'};
   for (const id of ids) {
     message.id = id;
     this.channel.postMessage(message);
