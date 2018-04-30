@@ -1,11 +1,6 @@
 import {console_stub} from '/src/lib/console-stub.js';
 import {ENTRY_STATE_UNREAD} from '/src/objects/entry.js';
 
-// TODO: look more into making refresh_badge easily unawaitable, because I
-// only need to guarantee the request is set while the connection is not
-// close-pending, so that even if the caller does close while it is pending,
-// there is no issue, because close implicitly waits for pendings to settle.
-
 let update_pending = false;
 
 export async function refresh_badge(conn, console = console_stub) {
