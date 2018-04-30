@@ -1,5 +1,6 @@
 import '/src/views/cli.js';
 
+import {favicon_create_conn} from '/src/favicon.js';
 import {fonts} from '/src/fonts.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {date_format} from '/src/lib/date.js';
@@ -10,7 +11,6 @@ import {list_peek} from '/src/lib/list.js';
 import {is_entry, is_valid_entry_id} from '/src/objects/entry.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
-import {create_icon_conn} from '/src/ops/create-icon-conn.js';
 import {find_viewable_entries} from '/src/ops/find-viewable-entries.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
 import {for_each_viewable_entry} from '/src/ops/for-each-viewable-entry.js';
@@ -409,7 +409,7 @@ async function refresh_anchor_onclick(event) {
   const onclick_channel = create_channel();
 
   const rconn = await create_conn();
-  const iconn = await create_icon_conn();
+  const iconn = await favicon_create_conn();
 
   const options = {};
   options.ignore_recency_check = true;
@@ -491,7 +491,7 @@ function import_menu_option_handle_click(event) {
 async function uploader_input_onchange(event) {
   console.log('%s: started', uploader_input_onchange.name);
   const op = {};
-  [op.rconn, op.iconn] = await Promise.all([create_conn(), create_icon_conn()]);
+  [op.rconn, op.iconn] = await Promise.all([create_conn(), favicon_create_conn()]);
   op.channel = create_channel();
   op.console = console;  // temporary
   op.fetch_timeout = 5 * 1000;

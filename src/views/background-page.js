@@ -1,24 +1,18 @@
 import '/src/views/cli.js';
 
+import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
 import {console_stub} from '/src/lib/console-stub.js';
-import {FaviconService} from '/src/lib/favicon-service.js';
 import {archive_entries} from '/src/ops/archive-entries.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
-import {create_icon_conn} from '/src/ops/create-icon-conn.js';
 import {open_view} from '/src/ops/open-view.js';
 import {poll_feeds} from '/src/ops/poll-feeds.js';
 import {refresh_badge} from '/src/ops/refresh-badge.js';
-import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 import {remove_lost_entries} from '/src/ops/remove-lost-entries.js';
 import {remove_orphaned_entries} from '/src/ops/remove-orphaned-entries.js';
 
 async function handle_compact_favicons_alarm(alarm) {
-  const conn = await create_icon_conn();
-  const service = new FaviconService();
-  service.conn = conn;
-  await service.compact();
-  conn.close();
+  await favicon_compact();
 }
 
 async function handle_archive_alarm_wakeup(alarm) {
@@ -57,10 +51,18 @@ async function handle_orphan_entries_alarm(alarm) {
 }
 
 async function handle_refresh_icons_alarm(alarm) {
-  const channel = create_channel();
-  const proms = [create_conn(), create_icon_conn()];
+  const proms = [create_conn(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
-  await refresh_feed_icons(rconn, iconn, channel, void console);
+  const channel = create_channel();
+
+  const op = {};
+  op.rconn = rconn;
+  op.iconn = iconn;
+  op.channel = channel;
+  op.console = console_stub;
+  op.favicon_refresh_feeds = favicon_refresh_feeds;
+  await op.favicon_refresh_feeds();
+
   rconn.close();
   iconn.close();
   channel.close();
@@ -80,7 +82,7 @@ async function handle_poll_feeds_alarm(alarm) {
   options.notify = true;
 
   const rconn = await create_conn();
-  const iconn = await create_icon_conn();
+  const iconn = await favicon_create_conn();
   const channel = create_channel();
 
   await poll_feeds(rconn, iconn, channel, console, options);
@@ -102,7 +104,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
   let conn = await create_conn();
   conn.close();
 
-  conn = await create_icon_conn();
+  conn = await favicon_create_conn();
   conn.close();
 });
 
@@ -137,7 +139,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
       handle_refresh_icons_alarm(alarm).catch(console.error);
       break;
     case 'compact-favicon-db':
-      handle_compact_favicons_alarm(alarm);
+      handle_compact_favicons_alarm(alarm).catch(console.error);
       break;
     default:
       console.warn('unhandled alarm', alarm.name);

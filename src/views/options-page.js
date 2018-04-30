@@ -1,6 +1,7 @@
 import '/src/views/cli.js';
 
 import {background_images} from '/src/background-images.js';
+import {favicon_create_conn} from '/src/favicon.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {element_fade} from '/src/lib/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate.js';
@@ -8,7 +9,6 @@ import {list_peek} from '/src/lib/list.js';
 import * as perm from '/src/lib/permissions.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
-import {create_icon_conn} from '/src/ops/create-icon-conn.js';
 import {delete_feed} from '/src/ops/delete-feed.js';
 import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
 import {get_feeds} from '/src/ops/get-feeds.js';
@@ -291,7 +291,7 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_show();
   subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
-  const conn_promises = Promise.all([create_conn(), create_icon_conn()]);
+  const conn_promises = Promise.all([create_conn(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
 
   const op = {};
@@ -317,7 +317,7 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises = Promise.all([create_conn(), create_icon_conn()]);
+  const conn_promises = Promise.all([create_conn(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
   const channel = create_channel();
 

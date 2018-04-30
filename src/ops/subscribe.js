@@ -1,11 +1,11 @@
+import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
 import {parse as parse_feed} from '/src/lib/feed-parser.js';
 import {list_peek} from '/src/lib/list.js';
 import {url_did_change} from '/src/lib/url-loader.js';
-import {coerce_feed, feed_append_url, feed_create_favicon_lookup_url} from '/src/objects/feed.js';
+import {coerce_feed, feed_append_url} from '/src/objects/feed.js';
 import {contains_feed} from '/src/ops/contains-feed.js';
 import {create_feed} from '/src/ops/create-feed.js';
 import {fetch_feed} from '/src/ops/fetch.js';
-import {lookup_icon} from '/src/ops/lookup-icon.js';
 import {notify} from '/src/ops/notify.js';
 
 export async function subscribe(url, options) {
@@ -52,10 +52,15 @@ export async function subscribe(url, options) {
   });
 
   if (!options.skip_icon_lookup) {
-    const lookup_url = feed_create_favicon_lookup_url(feed);
-    const lio = {conn: this.iconn, console: this.console, lookup: lookup_icon};
+    const lookup_url = favicon_create_feed_lookup_url(feed);
+    const lookup_op = {
+      conn: this.iconn,
+      console: this.console,
+      favicon_lookup: favicon_lookup
+    };
     let lookup_doc = undefined, fetch = false;
-    feed.faviconURLString = await lio.lookup(lookup_url, lookup_doc, fetch);
+    feed.faviconURLString =
+        await lookup_op.favicon_lookup(lookup_url, lookup_doc, fetch);
   }
 
   const create_op = {

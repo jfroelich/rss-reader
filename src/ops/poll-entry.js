@@ -1,3 +1,4 @@
+import {favicon_lookup} from '/src/favicon.js';
 import * as color from '/src/lib/color.js';
 import * as html_parser from '/src/lib/html-parser.js';
 import {list_is_empty, list_peek} from '/src/lib/list.js';
@@ -7,7 +8,6 @@ import * as url_loader from '/src/lib/url-loader.js';
 import {append_entry_url} from '/src/objects/entry.js';
 import {contains_entry} from '/src/ops/contains-entry.js';
 import {fetch_html} from '/src/ops/fetch.js';
-import {lookup_icon} from '/src/ops/lookup-icon.js';
 import {transform_document} from '/src/ops/transform-document.js';
 import {write_entry} from '/src/ops/write-entry.js';
 
@@ -144,10 +144,10 @@ async function update_entry_icon(iconn, console, entry, document) {
   const op = {};
   op.conn = iconn;
   op.console = console;
-  op.lookup_icon = lookup_icon;
+  op.favicon_lookup = favicon_lookup;
 
   const fetch = false;
-  const icon_url_string = await op.lookup_icon(lookup_url, document, fetch);
+  const icon_url_string = await op.favicon_lookup(lookup_url, document, fetch);
   if (icon_url_string) {
     entry.faviconURLString = icon_url_string;
   }
