@@ -46,14 +46,17 @@ async function handle_lost_entries_alarm(alarm) {
 }
 
 async function handle_orphan_entries_alarm(alarm) {
-  const channel = create_channel();
-  const conn = await create_conn();
-  await remove_orphaned_entries(conn, channel, void console);
-  channel.close();
-  conn.close();
+  const op = {};
+  op.conn = await create_conn();
+  op.channel = create_channel();
+  op.console = console_stub;
+  op.remove_orphaned_entries = remove_orphaned_entries;
+  await op.remove_orphaned_entries();
+  op.conn.close();
+  op.channel.close();
 }
 
-async function handle_refresh_feed_icons_alarm(alarm) {
+async function handle_refresh_icons_alarm(alarm) {
   const channel = create_channel();
   const proms = [create_conn(), create_icon_conn()];
   const [rconn, iconn] = await Promise.all(proms);
@@ -131,7 +134,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
       handle_orphan_entries_alarm(alarm).catch(console.error);
       break;
     case 'refresh-feed-icons':
-      handle_refresh_feed_icons_alarm(alarm).catch(console.error);
+      handle_refresh_icons_alarm(alarm).catch(console.error);
       break;
     case 'compact-favicon-db':
       handle_compact_favicons_alarm(alarm);

@@ -94,11 +94,14 @@ async function cli_remove_lost_entries() {
 }
 
 async function cli_remove_orphans() {
-  const conn = await create_conn();
-  const channel = new BroadcastChannel('reader');
-  await remove_orphans_impl(conn, channel, console);
-  channel.close();
-  conn.close();
+  const op = {};
+  op.conn = await create_conn();
+  op.channel = create_channel();
+  op.console = console;
+  op.remove_orphaned_entries = remove_orphaned_entries;
+  await op.remove_orphaned_entries();
+  op.conn.close();
+  op.channel.close();
 }
 
 async function cli_lookup_favicon(url_string, cached) {
