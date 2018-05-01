@@ -21,7 +21,7 @@ export function write_feed(feed, options = {}) {
   // sanitize_feed
   let clone;
   if (options.sanitize) {
-    clone = filter_empty_properties(sanitize_feed(feed));
+    clone = filter_empty_properties(sanitize_feed(feed, options));
   } else {
     clone = Object.assign(create_feed(), feed);
   }
@@ -87,11 +87,10 @@ function is_valid_feed(feed) {
   return true;
 }
 
-// Returns a shallow copy of the input feed with sanitized properties
-// TODO: now that this is simply a helper to write_feed, we could pass along
-// options from caller, support these extra params as options, and just set
-// defaults here. Right now the params are trapped.
-function sanitize_feed(feed, title_max_length, description_max_length) {
+function sanitize_feed(feed, options) {
+  let title_max_length = options.title_max_length,
+      description_max_length = options.description_max_length;
+
   if (typeof title_max_length === 'undefined') {
     title_max_length = 1024;
   }
