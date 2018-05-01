@@ -1,11 +1,11 @@
 # write-feed
-The `write_feed` operation creates or updates a feed in the database, and broadcasts a *feed-updated* type message to the channel when finished. Other than the situation where an options flag is true, this inserts the feed object *as-is*. The input feed object is never modified.
+The `write_feed` operation creates or updates a feed in the database, and broadcasts a *feed-updated* type message (or *feed-created*) to the channel when finished. Other than the situation where an options flag is true, this inserts the feed object *as-is*. The input feed object is never modified.
 
-### Context params
-All context properties are required.
+### Context properties
 * **conn** {IDBDatabase} an open database connection
-* **channel** {BroadcastChannel} a channel to send messages about a feed being updated
-* **console** {object} logging destination
+* **channel** {BroadcastChannel} a channel to send messages about a feed being created or updated
+* **console** {object} logging destination, any console-like object
+All properties are required.
 
 ### Params
 * **feed** {object} the feed object to store, required, must have the magic type property
@@ -35,3 +35,5 @@ so here it is always the new feed object's id, regardless of whether the feed is
 ### TODOs
 * I am not sure this should reject in the case of attempting to update a feed with invalid properties. Rejections should only occur generally in the case of programmer errors or other serious errors such as a database i/o error, but using invalid data is obviously not a programmer error. What should happen when the feed has invalid properties? For now I am rejecting the promise, but that doesn't sit well with me. I feel like javascript and promises are unfairly hoisting an error pattern on me.
 * What if purity isn't worth it and I should just modify the input object in place? On the other hand what is the difference in performance? Maybe this is nitpicking and not worth effort.
+* write tests
+* maybe validate/sanitize/set-date-updated options are dumb

@@ -13,6 +13,16 @@ To enforce that the feed parameter is a feed object loaded from the database, it
 ### note from detected_modification
 TODO: rename dateLastModified to lastModifiedDate to be more consistent in field names. I just got bit by this inconsistency.
 
+### merge_feed notes
+// Returns a new object that results from merging the old feed with the new
+// feed. Fields from the new feed take precedence, except for urls, which are
+// merged to generate a distinct ordered set of oldest to newest url. Impure
+// because of copying by reference.
+
+// Internally, After assignment, the merged feed has only the urls from the new feed. So
+// the output feed's url list needs to be fixed. First copy over the old
+// feed's urls, then try and append each new feed url.
+
 ### handle_error todo
 New kind of problem, in hindsight, is merging of count of errors for parsing and fetching. suppose a feed file which is periodically updated becomes not-well-formed, causing parsing error. This is going to on the poll period update the error count. This means that after a couple polls, the feed quickly becomes inactive. That would be desired for the fetch error count, maybe, but not for the parse error count. Because eventually the feed file will get updated again and probably become well formed again. I've actually witnessed this. So the issue is this prematurely deactivates feeds that happen to have a parsing error that is actually ephemeral (temporary) and not permanent.
 

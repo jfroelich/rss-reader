@@ -1,7 +1,7 @@
-import {feed_id_is_valid, is_feed} from '/src/objects/feed.js';
+import {is_valid_feed_id, is_feed} from '/src/objects/feed.js';
 
 export function write_feed_property(feed_id, name, value, extra_props = {}) {
-  if (!feed_id_is_valid(feed_id)) {
+  if (!is_valid_feed_id(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }
 

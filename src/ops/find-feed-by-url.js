@@ -1,4 +1,4 @@
-import {feed_create, feed_id_is_valid} from '/src/objects/feed.js';
+import {create_feed, is_valid_feed_id} from '/src/objects/feed.js';
 
 export function find_feed_by_url(conn, url, key_only = false) {
   if (!(url instanceof URL)) {
@@ -34,14 +34,14 @@ function request_onsuccess(key_only, callback, event) {
     // exposure, which is kinda something I want to pay more attn to, albeit
     // perhaps too paranoid.
 
-    if (feed_id_is_valid(feed_id)) {
+    if (is_valid_feed_id(feed_id)) {
       // Mimic a matched feed object, as if we magically loaded a feed with
       // only one property. This way the optimization of using getKey is opaque
       // to the caller. We construct using the feed.js api to ensure the magic
       // property is set implicitly.
       // We do not bother with appending the url. That is something we could do
       // but I do not currently see the use case.
-      feed = feed_create();
+      feed = create_feed();
       feed.id = feed_id;
     } else {
       // Fall through, leaving feed undefined

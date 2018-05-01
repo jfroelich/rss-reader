@@ -2,11 +2,11 @@ import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
 import {parse as parse_feed} from '/src/lib/feed-parser.js';
 import {list_peek} from '/src/lib/list.js';
 import {url_did_change} from '/src/lib/url-loader.js';
-import {coerce_feed, feed_append_url} from '/src/objects/feed.js';
+import {append_feed_url, coerce_feed} from '/src/objects/feed.js';
 import {contains_feed} from '/src/ops/contains-feed.js';
-import {create_feed} from '/src/ops/create-feed.js';
 import {fetch_feed} from '/src/ops/fetch.js';
 import {notify} from '/src/ops/notify.js';
+import {write_feed} from '/src/ops/write-feed.js';
 
 export async function subscribe(url, options) {
   this.console.log('Subscribing to feed', url.href);
@@ -63,14 +63,18 @@ export async function subscribe(url, options) {
         await lookup_op.favicon_lookup(lookup_url, lookup_doc, fetch);
   }
 
-  const create_op = {
+  const write_op = {
     conn: this.rconn,
     channel: this.channel,
     console: this.console,
-    create_feed: create_feed
+    write_feed: write_feed
   };
-  const sanitize_feed = true;
-  const stored_feed = await create_op.create_feed(feed, sanitize_feed);
+  const write_options = {
+    validate: true,
+    sanitize: true,
+    set_date_updated: false
+  };
+  const stored_feed = await write_op.write_feed(feed, write_options);
 
   if (options.notify) {
     const title = 'Subscribed!';

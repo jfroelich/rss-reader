@@ -1,8 +1,8 @@
 import * as feed_parser from '/src/lib/feed-parser.js';
 import {list_is_empty, list_peek} from '/src/lib/list.js';
 import * as url_loader from '/src/lib/url-loader.js';
-import {create_entry, append_entry_url} from '/src/objects/entry.js';
-import {coerce_feed, feed_merge, is_feed} from '/src/objects/feed.js';
+import {append_entry_url, create_entry} from '/src/objects/entry.js';
+import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/objects/feed.js';
 import {fetch_feed} from '/src/ops/fetch.js';
 import {notify} from '/src/ops/notify.js';
 import {poll_entry} from '/src/ops/poll-entry.js';
@@ -95,7 +95,7 @@ export async function poll_feed(
   };
 
   const coerced_feed = coerce_feed(parsed_feed, fetch_info);
-  const merged_feed = feed_merge(feed, coerced_feed);
+  const merged_feed = merge_feed(feed, coerced_feed);
   handle_fetch_success(merged_feed);
 
   const update_context = {};
@@ -162,6 +162,18 @@ async function poll_entries(
   const entry_ids = await Promise.all(proms);
   const count = entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
   return count;
+}
+
+function merge_feed(old_feed, new_feed) {
+  const merged_feed = Object.assign(create_feed(), old_feed, new_feed);
+  merged_feed.urls = [...old_feed.urls];
+  if (new_feed.urls) {
+    for (const url_string of new_feed.urls) {
+      append_feed_url(merged_feed, new URL(url_string));
+    }
+  }
+
+  return merged_feed;
 }
 
 function handle_fetch_success(feed) {

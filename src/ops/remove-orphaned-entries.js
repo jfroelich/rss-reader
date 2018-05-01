@@ -1,4 +1,4 @@
-import {feed_id_is_valid} from '/src/objects/feed.js';
+import {is_valid_feed_id} from '/src/objects/feed.js';
 
 export function remove_orphaned_entries() {
   return new Promise(executor.bind(this));
@@ -21,7 +21,7 @@ function executor(resolve, reject) {
       const cursor = entry_store_cursor_request.result;
       if (cursor) {
         const entry = cursor.value;
-        if (!feed_id_is_valid(entry.feed) || !feed_ids.includes(entry.feed)) {
+        if (!is_valid_feed_id(entry.feed) || !feed_ids.includes(entry.feed)) {
           entry_ids.push(entry.id);
           this.console.debug(
               '%s: deleting entry', remove_orphaned_entries.name, entry.id);

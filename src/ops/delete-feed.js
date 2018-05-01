@@ -1,8 +1,8 @@
-import {feed_id_is_valid} from '/src/objects/feed.js';
+import {is_valid_feed_id} from '/src/objects/feed.js';
 import {refresh_badge} from '/src/ops/refresh-badge.js';
 
 export function delete_feed(feed_id, reason_text) {
-  if (!feed_id_is_valid(feed_id)) {
+  if (!is_valid_feed_id(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }
 

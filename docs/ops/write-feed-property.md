@@ -54,7 +54,7 @@ characteristic of interpreted languages. Or maybe I should review go syntax. I j
 * Review the debate on whether to define a helper function for input variable validation.
 * Review the debate on whether to use an assert helper
 * Review the use of function.name as a parameter to log messages
-* Consider renaming feed_id_is_valid to is_valid_feed_id, I have inconsistent naming patterns and I think this may be one
+* Consider renaming is_valid_feed_id to is_valid_feed_id, I have inconsistent naming patterns and I think this may be one
 * If I do deprecate functions like activate-feed, maybe I want to additionally export pre-defined helper functions from this module, right here, that abstract away the boilerplate. One issue with that, is that currently the way I have setup the ops folder, it is one export per module. I would be breaking that convention. However I do kind of want to move in that direction. I don't know, mixed feelings. Another drawback is that the set of helpers exported would not be exhaustive, which might be counter-intuitive
 and give the appearance of an incomplete API, or lead to an unexpected result, a surprise, when one goes to use a helper just like the others and finds it does not exist.
 * Why check state sanity when updating active props? does it really matter? are these error worthy or is it correct to use log messages? Maybe I should allow the caller to make such mistakes.

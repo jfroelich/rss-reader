@@ -1,6 +1,6 @@
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_remove} from '/src/lib/idb.js';
-import {feed_id_is_valid, is_feed} from '/src/objects/feed.js';
+import {is_valid_feed_id, is_feed} from '/src/objects/feed.js';
 import {contains_feed} from '/src/ops/contains-feed.js';
 import {create_conn} from '/src/ops/create-conn.js';
 import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
@@ -37,7 +37,7 @@ export async function subscribe_test() {
   // Test the subscription produced the desired result
   assert(typeof feed === 'object', 'subscribe did not emit an object ' + feed);
   assert(is_feed(feed), 'subscribe did not emit object of correct type');
-  assert(feed_id_is_valid(feed.id));
+  assert(is_valid_feed_id(feed.id));
   assert(feed.urls.length, 'subscribe produced feed without urls');
   assert(feed.urls.includes(url.href), 'subscribed feed missing input url');
   assert(feed.active, 'subscribed feed not initially active');
@@ -52,7 +52,7 @@ export async function subscribe_test() {
   // Test the new feed is findable by id
   const match = await find_feed_by_id(rconn, feed.id);
   assert(is_feed(match), 'subscribed feed read did not emit feed type');
-  assert(feed_id_is_valid(match.id), 'subscribed feed has invalid id');
+  assert(is_valid_feed_id(match.id), 'subscribed feed has invalid id');
   assert(match.id === feed.id, 'subscribed feed vs stored feed id mismatch');
 
   // Cleanup
