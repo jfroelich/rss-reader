@@ -36,8 +36,8 @@ channel.onmessage = function(event) {
     case 'display-settings-changed':
       PageStyle.page_style_onchange(event);
       break;
-    case 'feed-updated':
-      console.debug('feed updated handler not yet implemented', message);
+    case 'feed-written':
+      console.debug('message handler not yet implemented', message);
       break;
     default:
       break;

@@ -55,14 +55,12 @@ channel.onmessage = function channel_onmessage(event) {
     case 'entry-marked-read':
       on_entry_marked_read_message(message).catch(console.warn);
       break;
-    case 'feed-added':
-      break;
-    case 'feed-updated':
+    case 'feed-written':
       // NOTE: this also happens when feed activated/deactivated, the message
       // will have a property 'property' with the value 'active'
       // TODO: just realized, no way to tell whether active or inactive as a
       // result
-      // console.debug('%s: feed updated %o', channel_onmessage.name, message);
+      // console.debug('%s: feed written %o', channel_onmessage.name, message);
       break;
     default:
       console.warn('Unknown message type', message);
@@ -491,7 +489,8 @@ function import_menu_option_handle_click(event) {
 async function uploader_input_onchange(event) {
   console.log('%s: started', uploader_input_onchange.name);
   const op = {};
-  [op.rconn, op.iconn] = await Promise.all([create_conn(), favicon_create_conn()]);
+  [op.rconn, op.iconn] =
+      await Promise.all([create_conn(), favicon_create_conn()]);
   op.channel = create_channel();
   op.console = console;  // temporary
   op.fetch_timeout = 5 * 1000;

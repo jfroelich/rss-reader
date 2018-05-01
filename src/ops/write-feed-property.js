@@ -1,4 +1,4 @@
-import {is_valid_feed_id, is_feed} from '/src/objects/feed.js';
+import {is_feed, is_valid_feed_id} from '/src/objects/feed.js';
 
 export function write_feed_property(feed_id, name, value, extra_props = {}) {
   if (!is_valid_feed_id(feed_id)) {
@@ -50,7 +50,7 @@ function txn_oncomplete(feed_id, name, callback, event) {
   this.console.debug(
       '%s: updated feed %d property %s', write_feed_property.name, feed_id,
       name);
-  this.channel.postMessage({type: 'feed-updated', id: feed_id, property: name});
+  this.channel.postMessage({type: 'feed-written', id: feed_id, property: name});
   callback();
 }
 

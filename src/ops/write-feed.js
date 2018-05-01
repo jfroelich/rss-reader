@@ -58,21 +58,15 @@ function executor(is_update, feed, options, resolve, reject) {
   const store = txn.objectStore('feed');
   const request = store.put(feed);
 
-  // Only bother with grabbing new id if creating
   if (!is_update) {
     request.onsuccess = _ => feed.id = request.result;
   }
 }
 
 function txn_oncomplete(is_update, feed, callback, event) {
-  const prefix = is_update ? '%s: updated feed' : '%s: created feed';
-  const info = {id: feed.id, url: list_peek(feed.urls)};
-  this.console.debug(prefix, write_feed.name, info);
-
-  // TODO: send 'feed-written' in both cases
-  const message_type = is_update ? 'feed-updated' : 'feed-added';
-  this.channel.postMessage({type: message_type, id: feed.id});
-
+  const message = {type: 'feed-written', id: feed.id, create: !is_update};
+  this.console.debug('%s: %o', write_feed.name, message);
+  this.channel.postMessage(message);
   callback(feed);
 }
 
