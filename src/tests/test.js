@@ -54,9 +54,9 @@ const test_registry = [
 
 // Wrap the call to a test function with some extra log messages
 async function run_test_function(test_function) {
-  console.debug('%s: started', test_function.name);
+  console.log('%s: started', test_function.name);
   await test_function();
-  console.debug('%s: completed', test_function.name);
+  console.log('%s: completed', test_function.name);
 }
 
 // Lookup a test function by the function's name
@@ -76,7 +76,7 @@ function find_test_by_name(test_name) {
 async function run_one(test_function_name) {
   const test_function = find_test_by_name(test_function_name);
   if (typeof test_function !== 'function') {
-    console.debug('Test not found:', test_function_name);
+    console.warn('Test not found:', test_function_name);
     return;
   }
 
@@ -84,26 +84,34 @@ async function run_one(test_function_name) {
 }
 
 async function run_parallel() {
-  console.debug('Running all tests in parallel');
+  console.log('Running all tests in parallel');
   const test_promises = [];
   for (const test of test_registry) {
     test_promises.push(run_test_function(test));
   }
 
   await Promise.all(test_promises);
-  console.debug('Completed all tests');
+  console.log('Completed all tests');
 }
 
 async function run_serial() {
-  console.debug('Running all tests serially');
+  console.log('Running all tests serially');
   for (const test of test_registry) {
     await run_test_function(test);
   }
 
-  console.debug('Completed all tests');
+  console.log('Completed all tests');
+}
+
+function print_tests() {
+  console.group('Test names');
+  const names = test_registry.map(test => test.name);
+  names.forEach(name => console.log(name));
+  console.groupEnd();
 }
 
 // Expose console commands
 window.run_parallel = run_parallel;
 window.run_serial = run_serial;
 window.run_one = run_one;
+window.print_tests = print_tests;
