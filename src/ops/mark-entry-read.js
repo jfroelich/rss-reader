@@ -1,4 +1,6 @@
-import {is_valid_entry_id, ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry} from '/src/objects/entry.js';
+// TODO: move to entry-store.js
+
+import {ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/objects/entry.js';
 import {refresh_badge} from '/src/ops/refresh-badge.js';
 
 // TODO: create a write-entry-property module, then use that instead of this. In

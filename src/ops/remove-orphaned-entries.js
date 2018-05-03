@@ -1,3 +1,5 @@
+// TODO: move to entry-store.js
+
 import {is_valid_feed_id} from '/src/objects/feed.js';
 
 export function remove_orphaned_entries() {

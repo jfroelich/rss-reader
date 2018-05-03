@@ -1,5 +1,7 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/objects/entry.js';
 
+// TODO: move to entry-store.js
+
 export function for_each_viewable_entry(conn, offset, limit, callback) {
   return new Promise(executor.bind(null, conn, offset, limit, callback));
 }

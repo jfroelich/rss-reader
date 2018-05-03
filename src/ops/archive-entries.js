@@ -1,27 +1,33 @@
 import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/objects/entry.js';
 import {sizeof} from '/src/lib/sizeof.js';
 
+// TODO: create entry-store.js, move this and all related functionality into it,
+// this should reduce the number of modules in separate files which is causing
+// some growth and making a little difficult to find functions
+
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 export function archive_entries(max_age = TWO_DAYS_MS) {
-  return new Promise(executor.bind(this, max_age));
+  return new Promise(archive_entries_executor.bind(this, max_age));
 }
 
-function executor(max_age, resolve, reject) {
+function archive_entries_executor(max_age, resolve, reject) {
   this.console.log('Archiving entries...');
   const entry_ids = [];
   const txn = this.conn.transaction('entry', 'readwrite');
   txn.onerror = _ => reject(txn.error);
-  txn.oncomplete = txn_oncomplete.bind(this, entry_ids, resolve);
+  txn.oncomplete =
+      archive_entries_txn_oncomplete.bind(this, entry_ids, resolve);
 
   const store = txn.objectStore('entry');
   const index = store.index('archiveState-readState');
   const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
   const request = index.openCursor(key_path);
-  request.onsuccess = handle_cursor.bind(this, entry_ids, max_age);
+  request.onsuccess =
+      archive_entries_handle_cursor.bind(this, entry_ids, max_age);
 }
 
-function handle_cursor(entry_ids, max_age, event) {
+function archive_entries_handle_cursor(entry_ids, max_age, event) {
   const cursor = event.target.result;
   if (cursor) {
     const entry = cursor.value;
@@ -39,7 +45,7 @@ function handle_cursor(entry_ids, max_age, event) {
   }
 }
 
-function txn_oncomplete(entry_ids, callback, event) {
+function archive_entries_txn_oncomplete(entry_ids, callback, event) {
   const channel = this.channel;
   const msg = {type: 'entry-archived', id: 0};
   for (const id of entry_ids) {

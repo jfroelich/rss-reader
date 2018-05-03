@@ -1,5 +1,7 @@
 import {find_feed_by_url} from '/src/ops/find-feed-by-url.js';
 
+// TODO: move to feed-store.js
+
 export async function contains_feed(conn, query) {
   const key_only = true;
   const match = await find_feed_by_url(conn, query.url, key_only);

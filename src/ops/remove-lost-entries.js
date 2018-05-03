@@ -1,3 +1,5 @@
+// TODO: move to entry-store.js
+
 export async function remove_lost_entries() {
   return new Promise(executor.bind(this));
 }

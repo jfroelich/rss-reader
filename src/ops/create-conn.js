@@ -3,6 +3,8 @@ import {idb_open} from '/src/lib/idb.js';
 import {ENTRY_MAGIC} from '/src/objects/entry.js';
 import {FEED_MAGIC} from '/src/objects/feed.js';
 
+// TODO: move to conn.js
+
 export function create_conn(
     name = 'reader', version = 24, timeout = 500, console = console_stub) {
   return idb_open(

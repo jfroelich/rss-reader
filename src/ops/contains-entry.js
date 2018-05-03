@@ -1,5 +1,6 @@
 import {is_valid_entry_id} from '/src/objects/entry.js';
 
+// TODO: move to entry-store.js
 // TODO: finish up migration from find_entry_id_by_url
 
 export async function contains_entry(conn, query) {

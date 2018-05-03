@@ -1,3 +1,5 @@
+// TODO: move to feed-store.js
+
 import {is_feed, is_valid_feed_id} from '/src/objects/feed.js';
 
 export function write_feed_property(feed_id, name, value, extra_props = {}) {

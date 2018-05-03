@@ -1,6 +1,8 @@
 import {is_valid_feed_id} from '/src/objects/feed.js';
 import {refresh_badge} from '/src/ops/refresh-badge.js';
 
+// TODO: move to feed-store.js
+
 export function delete_feed(feed_id, reason_text) {
   if (!is_valid_feed_id(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);

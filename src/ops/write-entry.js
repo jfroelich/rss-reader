@@ -1,3 +1,5 @@
+// TODO: move to entry-store.js
+
 import {filter_empty_properties} from '/src/lib/object.js';
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry, is_valid_entry_id, sanitize_entry} from '/src/objects/entry.js';
 

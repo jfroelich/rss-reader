@@ -1,3 +1,5 @@
+// TODO: rename to badge.js
+
 import {console_stub} from '/src/lib/console-stub.js';
 import {ENTRY_STATE_UNREAD} from '/src/objects/entry.js';
 

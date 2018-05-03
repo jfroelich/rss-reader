@@ -1,3 +1,5 @@
+// TODO: rename file to notification.js
+
 import {open_view} from '/src/ops/open-view.js';
 
 const default_icon_url_string =
