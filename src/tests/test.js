@@ -18,6 +18,7 @@ import {rewrite_url_test} from '/src/tests/rewrite-url-test.js';
 import {sniff_test} from '/src/tests/sniff-test.js';
 import {subscribe_test} from '/src/tests/subscribe-test.js';
 import {url_loader_test} from '/src/tests/url-loader-test.js';
+import {write_new_feed_test} from '/src/tests/write-new-feed-test.js';
 
 // Tests must be promise returning functions
 
@@ -46,7 +47,8 @@ const test_registry = [
   rewrite_url_test,
   sniff_test,
   subscribe_test,
-  url_loader_test
+  url_loader_test,
+  write_new_feed_test
 ];
 // clang-format on
 
@@ -74,19 +76,15 @@ function find_test_by_name(test_name) {
 async function run_one(test_function_name) {
   const test_function = find_test_by_name(test_function_name);
   if (typeof test_function !== 'function') {
-    console.debug('No test named "%s" found', test_function_name);
+    console.debug('Test not found:', test_function_name);
     return;
   }
 
   await run_test_function(test_function);
 }
 
-// Run all tests in the registry concurrently. This is useful when making a
-// change that may affect several modules and where there may be unexpected
-// ripple effects.
-// NOTE: currently the log messages from the tests are all mixed together, but
-// this might change in the future
-async function run_all() {
+async function run_parallel() {
+  console.debug('Running all tests in parallel');
   const test_promises = [];
   for (const test of test_registry) {
     test_promises.push(run_test_function(test));
@@ -96,6 +94,16 @@ async function run_all() {
   console.debug('Completed all tests');
 }
 
+async function run_serial() {
+  console.debug('Running all tests serially');
+  for (const test of test_registry) {
+    await run_test_function(test);
+  }
+
+  console.debug('Completed all tests');
+}
+
 // Expose console commands
-window.runtests = run_all;
-window.runtest = run_one;
+window.run_parallel = run_parallel;
+window.run_serial = run_serial;
+window.run_one = run_one;
