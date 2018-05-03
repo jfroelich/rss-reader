@@ -137,3 +137,14 @@ window.run_parallel = run_parallel;
 window.run_serial = run_serial;
 window.run_one = run_one;
 window.print_tests = print_tests;
+
+
+// On document load, populate the tests menu
+const test_select = document.getElementById('tests');
+for (const test of test_registry) {
+  const test_display_name = test.name.replace(/_/g, '-');
+  const test_option = document.createElement('option');
+  test_option.value = test_display_name;
+  test_option.textContent = test_display_name;
+  test_select.appendChild(test_option);
+}

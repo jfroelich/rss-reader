@@ -1,15 +1,38 @@
 <html>
 <head>
   <script type="module" src="/src/tests/test.js"></script>
+  <style>
+  #tests {
+    min-width: 200px;
+    min-height: 500px;
+    font-size: 20px;
+  }
+
+  #console {
+    min-width: 600px;
+    min-height: 500px;
+    font-size: 20px;
+  }
+
+  button {
+    font-size: 32px;
+    margin: 20px;
+  }
+
+  </style>
 </head>
 <body>
-<p>Simple test runner (view console)</p>
-<p>Commands: run_one, run_serial, run_parallel</p>
-<p>For run_one test name parameter, it is ok to use dash and wrong case</p>
-<br>
-<p>For example, open console and type:</p>
-<code>&gt; await run_one('test-name');</code>
-<p>or</p>
-<code>&gt; await run_parallel();</code>
+<table>
+  <form id="testform">
+    <tr>
+      <td valign="top"><select id="tests" multiple></select></td>
+      <td valign="top">
+        <input type="checkbox" id="parallel"><label for="parallel">Parallel</label><br>
+        <button id="runbutton">Run</button>
+      </td>
+      <td valign="top"><textarea id="console"></textarea></td>
+    </tr>
+  </form>
+</table>
 </body>
 </html>
