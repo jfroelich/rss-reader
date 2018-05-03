@@ -42,12 +42,13 @@ export async function create_channel_test1() {
   b.postMessage({hello: 'from-b-to-everyone'});
 
   setTimeout(_ => {
-    console.debug('closing channels');
+    console.debug('closing channels async');
     a.close();
     b.close();
   }, 20);
 
-  console.debug('test1 complete but messages may be outstanding');
+  console.debug(
+      'create_channel_test1 complete but messages may be outstanding');
 }
 
 export async function create_channel_test2() {
@@ -59,14 +60,17 @@ export async function create_channel_test2() {
 
   // so I think this basically means a channel cannot send a message to itself
 
+  // TODO: this is wrong, should not close channels async, the test should
+  // actually wait for the operation to complete and not return while forked
+  // code is running
 
   console.debug('test2 start');
   const a = create_channel();
   a.onmessage = e => console.debug('a', e.data);
   a.postMessage({hello: 'world'});
   setTimeout(_ => {
-    console.debug('closing channel');
+    console.debug('closing channel async');
     a.close();
   }, 20);
-  console.debug('test2 complete (still pending possible)');
+  console.debug('create_channel_test2 complete (still pending possible)');
 }

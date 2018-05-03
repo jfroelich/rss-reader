@@ -100,7 +100,10 @@ export function idb_remove(name, console = console_stub) {
   return new Promise((resolve, reject) => {
     console.debug('Deleting database', name);
     const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = resolve;
-    request.onerror = () => reject(request.error);
+    request.onsuccess = _ => {
+      console.debug('Deleted database', name);
+      resolve();
+    };
+    request.onerror = _ => reject(request.error);
   });
 }
