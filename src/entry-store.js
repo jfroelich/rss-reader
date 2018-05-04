@@ -1,7 +1,6 @@
 import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry, is_valid_entry_id, sanitize_entry} from '/src/objects/entry.js';
 // TODO: avoid circular dependency
 import {refresh_badge} from '/src/ops/refresh-badge.js';
-
 import {sizeof} from '/src/lib/sizeof.js';
 import {is_valid_feed_id} from '/src/objects/feed.js';
 import {filter_empty_properties} from '/src/lib/object.js';
@@ -202,14 +201,6 @@ function for_each_viewable_entry_executor(
     }
   };
 }
-
-
-// TODO: create a write-entry-property module, then use that instead of this. In
-// the interim, can consider refactoring this to basically wrap a call to it,
-// maybe even keep the channel message type the same. Then slowly migrate all
-// callers to call write-entry-property directly. This will potentially reduce
-// the number of operations related to entries, and is more forward thinking in
-// case new operations are added later (e.g. star/unstar-entry).
 
 export function mark_entry_read(entry_id) {
   if (!is_valid_entry_id(entry_id)) {

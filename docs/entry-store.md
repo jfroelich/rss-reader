@@ -1,9 +1,8 @@
 # entry-store
 Functions related to storing entries in the database
 
-
 ## archive-entries
-Async. Scans the entry store for older entries and archives them. This is a viable alternative to deleting older entries so as to keep information about which entries have been seen before, and for various statistics. Archiving is done by replacing an entry object with a compacted version, where several properties are removed or reduced in size.
+Async. Scans the entry store for older entries and archives them. This is an alternative to deleting older entries so as to keep information about which entries have been seen before, and for various statistics. Archiving replaces an entry object with a compacted version, where several properties are removed or reduced in size.
 
 ### Context properties
 * **conn** {IDBDatabase} an open database connection to the reader database
@@ -107,6 +106,8 @@ The promise settles based on the txn, not the get request, because we do some po
 ### TODOs
 * refactor as entry_set_read_state, accept a boolean state parameter, and handle both cases (where true and where false)
 * or, create write-entry-property, have this decorate that, or have the caller just call write-entry-property directory
+* create a write-entry-property module, then use that instead of this. In the interim, can consider refactoring this to basically wrap a call to it, maybe even keep the channel message type the same. Then slowly migrate all callers to call write-entry-property directly. This will potentially reduce the number of operations related to entries, and is more forward thinking in case new operations are added later (e.g. star/unstar-entry).
+
 
 ## remove-lost-entries
 Removes entries missing urls from the database.
