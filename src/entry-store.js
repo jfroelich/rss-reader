@@ -12,7 +12,7 @@ export function archive_entries(max_age = TWO_DAYS_MS) {
 }
 
 function archive_entries_executor(max_age, resolve, reject) {
-  this.console.log('Archiving entries...');
+  this.console.log('%s: starting', archive_entries.name);
   const entry_ids = [];
   const txn = this.conn.transaction('entry', 'readwrite');
   txn.onerror = _ => reject(txn.error);
@@ -46,6 +46,9 @@ function archive_entries_request_onsuccess(entry_ids, max_age, event) {
 }
 
 function archive_entries_txn_oncomplete(entry_ids, callback, event) {
+  this.console.debug(
+      '%s: archived %d entries', archive_entries.name, entry_ids.length);
+
   const channel = this.channel;
   const msg = {type: 'entry-archived', id: 0};
   for (const id of entry_ids) {
@@ -53,7 +56,6 @@ function archive_entries_txn_oncomplete(entry_ids, callback, event) {
     channel.postMessage(msg);
   }
 
-  this.console.debug('Archived %d entries', entry_ids.length);
   callback(entry_ids);
 }
 
@@ -63,10 +65,12 @@ function archive_entry(console, entry) {
   const after_sz = sizeof(ce);
 
   if (after_sz > before_sz) {
-    console.warn('compact_entry increased entry size!', entry);
+    console.warn('%s: increased entry size %o', archive_entries.name, entry);
   }
 
-  console.debug('Reduced entry size by ~%d bytes', after_sz - before_sz);
+  console.debug(
+      '%s: reduced entry size by ~%d bytes', archive_entries.name,
+      after_sz - before_sz);
   ce.archiveState = ENTRY_STATE_ARCHIVED;
   const current_date = new Date();
   ce.dateArchived = current_date;
@@ -251,7 +255,8 @@ function mark_entry_read_request_onsuccess(entry_id, event) {
 }
 
 function mark_entry_read_txn_oncomplete(entry_id, callback, event) {
-  this.console.debug('Marked entry as read', entry_id);
+  this.console.debug(
+      '%s: marked entry as read', mark_entry_read.name, entry_id);
   this.channel.postMessage({type: 'entry-marked-read', id: entry_id});
   const conn = event.target.db;
   refresh_badge(conn, this.console).catch(this.console.error);
@@ -294,9 +299,9 @@ function remove_lost_entries_request_onsuccess(ids, stats, event) {
 }
 
 function remove_lost_entries_txn_oncomplete(ids, callback, stats, event) {
-  const name = remove_lost_entries.name, scan = stats.visited_entry_count;
   this.console.debug(
-      '%s: txn completed, scanned %d, deleted %d', name, scan, ids.length);
+      '%s: scanned %d, deleted %d', remove_lost_entries.name,
+      stats.visited_entry_count, ids.length);
 
   const message = {type: 'entry-deleted', id: 0, reason: 'lost'};
   for (const id of ids) {
@@ -306,7 +311,6 @@ function remove_lost_entries_txn_oncomplete(ids, callback, stats, event) {
 
   callback();
 }
-
 
 export function remove_orphaned_entries() {
   return new Promise(remove_orphaned_entries_executor.bind(this));
@@ -394,12 +398,9 @@ function write_entry_executor(entry, validate, resolve, reject) {
 }
 
 function write_entry_txn_oncomplete(entry, is_create, callback, event) {
-  this.channel.postMessage(
-      {type: 'entry-write', id: entry.id, 'create': is_create});
-
-  const msg = is_create ? '%s: wrote new entry %d' : '%s: overwrote entry %d';
-  this.console.debug(msg, write_entry.name, entry.id);
-
+  const message = {type: 'entry-write', id: entry.id, 'create': is_create};
+  this.console.debug('%s: %o', write_entry.name, message);
+  this.channel.postMessage(message);
   callback(entry);
 }
 
