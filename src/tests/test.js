@@ -53,7 +53,7 @@ const test_registry = [
 // clang-format on
 
 // Wrap the call to a test function with some extra log messages
-async function run_test_function(test_function, timeout = 0) {
+async function run_timed_test(test_function, timeout = 0) {
   console.log('%s: started', test_function.name);
   // await test_function();
   if (timeout) {
@@ -88,63 +88,62 @@ function find_test_by_name(test_name) {
   }
 }
 
-// Run a particular test, based on its name
-async function run_one(test_function_name) {
-  const test_function = find_test_by_name(test_function_name);
-  if (typeof test_function !== 'function') {
-    console.warn('Test not found:', test_function_name);
-    return;
+// name - optional, string, name of test to run, if not specified all tests run
+// timeout - optional, ms, per-test timeout value
+// parallel - optional, boolean, whether to run tests in parallel or serial
+async function cli_run(name, timeout = 10000, parallel) {
+  if (!['undefined', 'string'].includes(typeof name)) {
+    throw new TypeError('Invalid name parameter ' + name);
   }
 
-  await run_test_function(test_function);
-}
-
-async function run_parallel() {
-  let timeout = 10000;
-  console.log('Running all tests in parallel');
-  const test_promises = [];
-  for (const test of test_registry) {
-    test_promises.push(run_test_function(test, timeout));
+  // Either create an array of one test, or get all tests in the registry
+  let tests;
+  if (name) {
+    const test = find_test_by_name(name);
+    if (!test) {
+      console.warn('%s: test not found', cli_run.name, name);
+      return;
+    }
+    tests = [test];
+  } else {
+    tests = test_registry;
   }
 
-  await Promise.all(test_promises);
-  console.log('Completed all tests');
-}
+  console.log('%s: spawning %d tests', cli_run.name, tests.length);
 
-async function run_serial() {
-  let timeout = 5000;
-  let counter = 0;
-  let total = test_registry.length;
-  console.log('Running all tests serially');
-  for (const test of test_registry) {
-    await run_test_function(test, timeout);
-    counter++;
-    console.debug('finished %d of %d', counter, total);
+  const start_time = new Date();
+
+  if (parallel && tests.length > 1) {
+    const promises = [];
+    for (const test of tests) {
+      promises.push(run_timed_test(test, timeout));
+    }
+    await Promise.all(promises);
+  } else {
+    for (const test of tests) {
+      await run_timed_test(test, timeout);
+    }
   }
 
-  console.log('Completed all tests');
+  const end_time = new Date();
+
+  console.log('%s: completed in %d ms', cli_run.name, end_time - start_time);
 }
 
-function print_tests() {
-  console.group('Test names');
-  const names = test_registry.map(test => test.name);
-  names.forEach(name => console.log(name));
-  console.groupEnd();
+function cli_print_tests() {
+  test_registry.forEach(test => console.log(test.name));
 }
 
 // Expose console commands
-window.run_parallel = run_parallel;
-window.run_serial = run_serial;
-window.run_one = run_one;
-window.print_tests = print_tests;
-
+window.run = cli_run;
+window.print_tests = cli_print_tests;
 
 // On document load, populate the tests menu
 const test_select = document.getElementById('tests');
 for (const test of test_registry) {
-  const test_display_name = test.name.replace(/_/g, '-');
-  const test_option = document.createElement('option');
-  test_option.value = test_display_name;
-  test_option.textContent = test_display_name;
-  test_select.appendChild(test_option);
+  const test_name = test.name.replace(/_/g, '-');
+  const option = document.createElement('option');
+  option.value = test_name;
+  option.textContent = test_name;
+  test_select.appendChild(option);
 }

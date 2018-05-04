@@ -322,7 +322,7 @@ async function after_subscribe_poll_feed_async(feed) {
   const channel = create_channel();
 
   const options = {ignore_recency_check: true, notify: true};
-  await poll_feed(rconn, iconn, channel, console_stub, feed, options);
+  await poll_feed(rconn, iconn, channel, console_stub, options, feed);
 
   rconn.close();
   iconn.close();
