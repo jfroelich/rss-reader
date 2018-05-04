@@ -1,6 +1,6 @@
+import {archive_entries} from '/src/entry-store.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_remove} from '/src/lib/idb.js';
-import {archive_entries} from '/src/ops/archive-entries.js';
 import {create_conn} from '/src/ops/create-conn.js';
 import {assert} from '/src/tests/assert.js';
 

@@ -1,5 +1,6 @@
 import '/src/views/cli.js';
 
+import {find_viewable_entries, for_each_viewable_entry, mark_entry_read} from '/src/entry-store.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {fonts} from '/src/fonts.js';
 import {console_stub} from '/src/lib/console-stub.js';
@@ -11,11 +12,8 @@ import {list_peek} from '/src/lib/list.js';
 import {is_entry, is_valid_entry_id} from '/src/objects/entry.js';
 import {create_channel} from '/src/ops/create-channel.js';
 import {create_conn} from '/src/ops/create-conn.js';
-import {find_viewable_entries} from '/src/ops/find-viewable-entries.js';
 import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
-import {for_each_viewable_entry} from '/src/ops/for-each-viewable-entry.js';
 import {import_opml} from '/src/ops/import-opml.js';
-import {mark_entry_read} from '/src/ops/mark-entry-read.js';
 import {poll_feeds} from '/src/ops/poll-feeds.js';
 import {slideshow_export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
