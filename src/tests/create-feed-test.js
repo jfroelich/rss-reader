@@ -7,7 +7,12 @@ import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
 import {write_feed} from '/src/ops/write-feed.js';
 import {assert} from '/src/tests/assert.js';
 
-export async function write_new_feed_test() {
+// This test exercises the write-feed function in the case of adding a new feed
+// object to the database. The write-feed function should properly store
+// the feed in the database, properly assign the feed its new id, and return the
+// expected output.
+
+export async function create_feed_test() {
   // Create a dummy feed with minimal properties
   const feed = create_feed();
   const feed_url = new URL('http://www.example.com/example.rss');
@@ -17,8 +22,7 @@ export async function write_new_feed_test() {
   // test failure
   assert(is_feed(feed));
 
-  // Create a dummy db. We do not pipe console through here, because this isn't
-  // the test's focus
+  // Create a dummy db
   const test_db = 'write-new-feed-test';
   const conn = await create_conn(test_db);
 
@@ -72,10 +76,9 @@ export async function write_new_feed_test() {
       'unexpected message type property ' + messages[0].type);
 
   // Assert the feed exists in the database
-  const query = {url: feed_url};
-  assert(await contains_feed(conn, query), 'cannot find feed by url');
+  assert(await contains_feed(conn, {url: feed_url}), 'cannot find feed by url');
 
-  // Read the feed from the database and assert against its properties
+  // Read the feed from the database and assert against read properties
   const match = await find_feed_by_id(conn, stored_feed.id);
   assert(is_feed(match), 'feed loaded from db is not a feed');
   assert(is_valid_feed_id(match.id), 'feed loaded from db has invalid id');
@@ -86,6 +89,5 @@ export async function write_new_feed_test() {
   // Test teardown
   conn.close();
   channel.close();  // a no-op, but guard against future changes
-
   await idb_remove(conn.name);
 }

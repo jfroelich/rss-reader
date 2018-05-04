@@ -3,6 +3,7 @@ import {boilerplate_test} from '/src/tests/boilerplate-test.js';
 import {color_contrast_filter_test1, color_contrast_filter_test2} from '/src/tests/color-contrast-filter-test.js';
 import {color_test} from '/src/tests/color-test.js';
 import {create_channel_test1, create_channel_test2} from '/src/tests/create-channel-test.js';
+import {create_feed_test} from '/src/tests/create-feed-test.js';
 import {element_coerce_test} from '/src/tests/element-coerce-test.js';
 import {empty_attribute_filter_test} from '/src/tests/empty-attribute-filter-test.js';
 import {favicon_service_test} from '/src/tests/favicon-service-test.js';
@@ -18,7 +19,6 @@ import {rewrite_url_test} from '/src/tests/rewrite-url-test.js';
 import {sniff_test} from '/src/tests/sniff-test.js';
 import {subscribe_test} from '/src/tests/subscribe-test.js';
 import {url_loader_test} from '/src/tests/url-loader-test.js';
-import {write_new_feed_test} from '/src/tests/write-new-feed-test.js';
 
 // Tests must be promise returning functions
 
@@ -48,7 +48,7 @@ const test_registry = [
   sniff_test,
   subscribe_test,
   url_loader_test,
-  write_new_feed_test
+  create_feed_test
 ];
 // clang-format on
 
