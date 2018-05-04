@@ -41,7 +41,7 @@ export async function write_new_feed_test() {
   options.sanitize = true;
   options.validate = true;
 
-  const stored_feed = await op.write_feed(feed);
+  const stored_feed = await op.write_feed(feed, options);
 
   // Make assertions about the output of the operation
   assert(typeof stored_feed === 'object', 'output not an object');
