@@ -1,13 +1,13 @@
 import '/src/views/cli.js';
 
-import {archive_entries, remove_lost_entries, remove_orphaned_entries} from '/src/entry-store.js';
+import {create_channel} from '/src/channel.js';
+import {create_conn} from '/src/db.js';
+import {archive_entries, remove_lost_entries, remove_orphaned_entries} from '/src/entry-store/entry-store.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
 import {console_stub} from '/src/lib/console-stub.js';
-import {create_channel} from '/src/ops/create-channel.js';
-import {create_conn} from '/src/ops/create-conn.js';
-import {open_view} from '/src/ops/open-view.js';
-import {poll_feeds} from '/src/ops/poll-feeds.js';
-import {refresh_badge} from '/src/ops/refresh-badge.js';
+import {open_view} from '/src/open-view.js';
+import {poll_feeds} from '/src/poll/poll-feeds.js';
+import {refresh_badge} from '/src/refresh-badge.js';
 
 async function handle_compact_favicons_alarm(alarm) {
   await favicon_compact();

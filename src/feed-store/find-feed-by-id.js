@@ -1,6 +1,5 @@
-import {is_valid_feed_id} from '/src/objects/feed.js';
+import {is_valid_feed_id} from '/src/feed-store/feed.js';
 
-// TODO: move to feed-store.js
 // TODO: create find-feed.js, merge find-feed-by-id and find-feed-by-url into
 // find-feed.js
 

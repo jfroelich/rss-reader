@@ -1,10 +1,10 @@
+import {create_conn} from '/src/db.js';
+import {contains_feed} from '/src/feed-store/feed-store.js';
+import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/feed-store/feed.js';
+import {find_feed_by_id} from '/src/feed-store/find-feed-by-id.js';
+import {write_feed} from '/src/feed-store/write-feed.js';
 import {idb_remove} from '/src/lib/idb.js';
 import {list_is_empty} from '/src/lib/list.js';
-import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/objects/feed.js';
-import {contains_feed} from '/src/ops/contains-feed.js';
-import {create_conn} from '/src/ops/create-conn.js';
-import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
-import {write_feed} from '/src/ops/write-feed.js';
 import {assert} from '/src/tests/assert.js';
 
 // This test exercises the write-feed function in the case of adding a new feed

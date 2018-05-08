@@ -1,14 +1,14 @@
-import {contains_entry, write_entry} from '/src/entry-store.js';
+import {contains_entry, write_entry} from '/src/entry-store/entry-store.js';
+import {append_entry_url} from '/src/entry-store/entry.js';
 import {favicon_lookup} from '/src/favicon.js';
+import {fetch_html} from '/src/fetch.js';
 import * as color from '/src/lib/color.js';
 import * as html_parser from '/src/lib/html-parser.js';
 import {list_is_empty, list_peek} from '/src/lib/list.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
 import * as sniff from '/src/lib/sniff.js';
 import * as url_loader from '/src/lib/url-loader.js';
-import {append_entry_url} from '/src/objects/entry.js';
-import {fetch_html} from '/src/ops/fetch.js';
-import {transform_document} from '/src/ops/transform-document.js';
+import {transform_document} from '/src/poll/transform-document.js';
 
 const rewrite_rules = build_rewrite_rules();
 

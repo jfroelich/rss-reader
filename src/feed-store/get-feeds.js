@@ -1,5 +1,3 @@
-// TODO: move to feed-store.js
-
 export function get_feeds(conn, title_sort_flag = false) {
   return new Promise(executor.bind(null, conn, title_sort_flag));
 }

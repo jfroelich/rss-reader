@@ -1,7 +1,7 @@
-import {archive_entries} from '/src/entry-store.js';
+import {create_conn} from '/src/db.js';
+import {archive_entries} from '/src/entry-store/entry-store.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_remove} from '/src/lib/idb.js';
-import {create_conn} from '/src/ops/create-conn.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: actually assert something, what am I trying to test other than 'does it

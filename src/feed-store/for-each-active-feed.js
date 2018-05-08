@@ -1,8 +1,6 @@
 // TODO: rename to find-active-feeds, it is ok to keep this api style of using
 // a handler callback function
 
-// TODO: move to feed-store.js
-
 export function for_each_active_feed(conn, handle_feed) {
   return new Promise(executor.bind(null, conn, handle_feed));
 }

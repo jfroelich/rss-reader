@@ -1,6 +1,6 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import * as html_parser from '/src/lib/html-parser.js';
-import {fetch_html} from '/src/ops/fetch.js';
+import {fetch_html} from '/src/fetch.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: rewrite without input, load a local file internally

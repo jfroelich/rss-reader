@@ -1,20 +1,20 @@
 import '/src/views/cli.js';
 
 import {background_images} from '/src/background-images.js';
+import {create_channel} from '/src/channel.js';
+import {create_conn} from '/src/db.js';
 import {favicon_create_conn} from '/src/favicon.js';
+import {delete_feed} from '/src/feed-store/feed-store.js';
+import {find_feed_by_id} from '/src/feed-store/find-feed-by-id.js';
+import {get_feeds} from '/src/feed-store/get-feeds.js';
+import {write_feed_property} from '/src/feed-store/write-feed-property.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {element_fade} from '/src/lib/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate.js';
 import {list_peek} from '/src/lib/list.js';
 import * as perm from '/src/lib/permissions.js';
-import {create_channel} from '/src/ops/create-channel.js';
-import {create_conn} from '/src/ops/create-conn.js';
-import {delete_feed} from '/src/ops/delete-feed.js';
-import {find_feed_by_id} from '/src/ops/find-feed-by-id.js';
-import {get_feeds} from '/src/ops/get-feeds.js';
-import {poll_feed} from '/src/ops/poll-feed.js';
-import {subscribe} from '/src/ops/subscribe.js';
-import {write_feed_property} from '/src/ops/write-feed-property.js';
+import {poll_feed} from '/src/poll/poll-feed.js';
+import {subscribe} from '/src/subscribe.js';
 import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
 
 // View state

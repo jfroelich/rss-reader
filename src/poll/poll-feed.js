@@ -1,13 +1,13 @@
+import {append_entry_url, create_entry} from '/src/entry-store/entry.js';
+import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed-store/feed.js';
+import {write_feed} from '/src/feed-store/write-feed.js';
+import {fetch_feed} from '/src/fetch.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
 import {list_is_empty, list_peek} from '/src/lib/list.js';
 import * as url_loader from '/src/lib/url-loader.js';
-import {append_entry_url, create_entry} from '/src/objects/entry.js';
-import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/objects/feed.js';
-import {fetch_feed} from '/src/ops/fetch.js';
-import {notify} from '/src/ops/notify.js';
-import {poll_entry} from '/src/ops/poll-entry.js';
-import {refresh_badge} from '/src/ops/refresh-badge.js';
-import {write_feed} from '/src/ops/write-feed.js';
+import {notify} from '/src/notify.js';
+import {poll_entry} from '/src/poll/poll-entry.js';
+import {refresh_badge} from '/src/refresh-badge.js';
 
 export async function poll_feed(
     rconn, iconn, channel, console, options = {}, feed) {

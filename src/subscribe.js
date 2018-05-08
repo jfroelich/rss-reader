@@ -1,12 +1,12 @@
 import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
+import {contains_feed} from '/src/feed-store/feed-store.js';
+import {append_feed_url, coerce_feed} from '/src/feed-store/feed.js';
+import {write_feed} from '/src/feed-store/write-feed.js';
+import {fetch_feed} from '/src/fetch.js';
 import {parse as parse_feed} from '/src/lib/feed-parser.js';
 import {list_peek} from '/src/lib/list.js';
 import {url_did_change} from '/src/lib/url-loader.js';
-import {append_feed_url, coerce_feed} from '/src/objects/feed.js';
-import {contains_feed} from '/src/ops/contains-feed.js';
-import {fetch_feed} from '/src/ops/fetch.js';
-import {notify} from '/src/ops/notify.js';
-import {write_feed} from '/src/ops/write-feed.js';
+import {notify} from '/src/notify.js';
 
 export async function subscribe(url, options) {
   this.console.log('Subscribing to feed', url.href);

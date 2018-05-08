@@ -1,7 +1,7 @@
+import {for_each_active_feed} from '/src/feed-store/for-each-active-feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
-import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
-import {notify} from '/src/ops/notify.js';
-import {poll_feed} from '/src/ops/poll-feed.js';
+import {notify} from '/src/notify.js';
+import {poll_feed} from '/src/poll/poll-feed.js';
 
 const null_channel = {
   name: 'null-channel',

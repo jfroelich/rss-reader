@@ -1,7 +1,7 @@
-import {element_unwrap} from '/src/lib/element-unwrap.js';
 // TODO: if I want to fully move content-filters to lib then this cannot depend
 // on an app module
-import {fetch_policy} from '/src/objects/fetch-policy.js';
+import {fetch_policy} from '/src/fetch-policy.js';
+import {element_unwrap} from '/src/lib/element-unwrap.js';
 
 // Returns a file name without its extension (and without the '.')
 export function file_name_filter_extension(file_name) {

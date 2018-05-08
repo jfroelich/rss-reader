@@ -1,5 +1,5 @@
+import {fetch_policy} from '/src/fetch-policy.js';
 import {load} from '/src/lib/url-loader.js';
-import {fetch_policy} from '/src/objects/fetch-policy.js';
 
 // TODO: maybe move to src folder?
 

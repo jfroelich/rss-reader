@@ -1,4 +1,4 @@
-import {fetch_html} from '/src/ops/fetch.js';
+import {fetch_html} from '/src/fetch.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: run on a local resource

@@ -1,4 +1,4 @@
-import {create_channel} from '/src/ops/create-channel.js';
+import {create_channel} from '/src/channel.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: these functions need to be rewritten to not complete until actually

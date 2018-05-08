@@ -1,11 +1,17 @@
-// TODO: move to feed-store.js
-
+import {create_feed, is_feed, is_valid_feed_id} from '/src/feed-store/feed.js';
 import {html_truncate} from '/src/lib/html-truncate.js';
 import {html_replace_tags} from '/src/lib/html.js';
 import {list_peek} from '/src/lib/list.js';
 import {filter_empty_properties} from '/src/lib/object.js';
 import {condense_whitespace, filter_control_characters} from '/src/lib/string.js';
-import {create_feed, is_feed, is_valid_feed_id} from '/src/objects/feed.js';
+
+// TODO: create modules for sanitize and validate, require caller to explicitly
+// call those functions as additional optional boilerplate, and then deprecate
+// the options.sanitize and options.validate arguments here. Also do a similar
+// pattern for entries. Having separate sanitize and validate functions fits
+// better with the one-function-per-file method of organization, is more
+// readily testable, less opaque, and is a better use of parameters. See also
+// note about this in the write-entry doc (or maybe its write-feed).
 
 // Creates or updates the given feed in storage
 export function write_feed(feed, options = {}) {
@@ -20,7 +26,7 @@ export function write_feed(feed, options = {}) {
 
   // TODO: if we are always going to clone and this is sole caller of
   // sanitize_feed just do the clone here in both cases and do not clone in
-  // sanitize_feed
+  // sanitize_feed. Unless I make sanitize-feed its own public method again
   let clone;
   if (options.sanitize) {
     clone = filter_empty_properties(sanitize_feed(feed, options));

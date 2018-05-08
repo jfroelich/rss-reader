@@ -1,6 +1,6 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import * as html_parser from '/src/lib/html-parser.js';
-import {fetch_html} from '/src/ops/fetch.js';
+import {fetch_html} from '/src/fetch.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: these tests must be rewritten using new approach

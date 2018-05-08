@@ -1,8 +1,10 @@
-import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry, is_valid_entry_id, sanitize_entry} from '/src/objects/entry.js';
+// TODO: break apart again into function-per-file
+
+import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry, is_valid_entry_id, sanitize_entry} from '/src/entry-store/entry.js';
 // TODO: avoid circular dependency
-import {refresh_badge} from '/src/ops/refresh-badge.js';
+import {refresh_badge} from '/src/refresh-badge.js';
 import {sizeof} from '/src/lib/sizeof.js';
-import {is_valid_feed_id} from '/src/objects/feed.js';
+import {is_valid_feed_id} from '/src/feed-store/feed.js';
 import {filter_empty_properties} from '/src/lib/object.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;

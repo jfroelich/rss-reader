@@ -1,7 +1,7 @@
+import {for_each_active_feed} from '/src/feed-store/for-each-active-feed.js';
+import {write_feed} from '/src/feed-store/write-feed.js';
 import {FaviconService} from '/src/lib/favicon-service.js';
 import {list_is_empty, list_peek} from '/src/lib/list.js';
-import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
-import {write_feed} from '/src/ops/write-feed.js';
 
 export function favicon_create_conn() {
   const service = new FaviconService();

@@ -1,7 +1,7 @@
 import {console_stub} from '/src/lib/console-stub.js';
 import {read_text as read_file_text} from '/src/lib/file.js';
 import {parse as parse_opml} from '/src/lib/opml-parser.js';
-import {subscribe} from '/src/ops/subscribe.js';
+import {subscribe} from '/src/subscribe.js';
 
 const opml_mime_types = [
   'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',

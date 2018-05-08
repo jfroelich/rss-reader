@@ -1,5 +1,5 @@
-import {create_conn} from '/src/ops/create-conn.js';
-import {export_opml} from '/src/ops/export-opml.js';
+import {create_conn} from '/src/db.js';
+import {export_opml} from '/src/export-opml.js';
 
 // Abstracts away all of the operations involved in generating and downloading
 // an opml xml file into a simple api call for the slideshow page. Also hides

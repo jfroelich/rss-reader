@@ -1,6 +1,6 @@
+import {get_feeds} from '/src/feed-store/get-feeds.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {list_peek} from '/src/lib/list.js';
-import {get_feeds} from '/src/ops/get-feeds.js';
 
 export async function export_opml(conn, title, console = console_stub) {
   const document = create_opml_document(title, console);

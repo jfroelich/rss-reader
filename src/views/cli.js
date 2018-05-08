@@ -1,10 +1,10 @@
-import {archive_entries, remove_lost_entries, remove_orphaned_entries} from '/src/entry-store.js';
+import {create_channel} from '/src/channel.js';
+import {create_conn} from '/src/db.js';
+import {archive_entries, remove_lost_entries, remove_orphaned_entries} from '/src/entry-store/entry-store.js';
 import {favicon_clear, favicon_compact, favicon_create_conn, favicon_lookup, favicon_refresh_feeds} from '/src/favicon.js';
-import {create_channel} from '/src/ops/create-channel.js';
-import {create_conn} from '/src/ops/create-conn.js';
-import {poll_feed} from '/src/ops/poll-feed.js';
-import {poll_feeds} from '/src/ops/poll-feeds.js';
-import {subscribe} from '/src/ops/subscribe.js';
+import {poll_feed} from '/src/poll/poll-feed.js';
+import {poll_feeds} from '/src/poll/poll-feeds.js';
+import {subscribe} from '/src/subscribe.js';
 
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);

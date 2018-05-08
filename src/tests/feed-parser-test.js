@@ -1,5 +1,5 @@
 import {parse as parse_feed} from '/src/lib/feed-parser.js';
-import {fetch_feed} from '/src/ops/fetch.js';
+import {fetch_feed} from '/src/fetch.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: this needs to be run on a local resource

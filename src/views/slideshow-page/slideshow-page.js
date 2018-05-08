@@ -1,20 +1,20 @@
 import '/src/views/cli.js';
 
-import {find_viewable_entries, for_each_viewable_entry, mark_entry_read} from '/src/entry-store.js';
+import {create_channel} from '/src/channel.js';
+import {create_conn} from '/src/db.js';
+import {find_viewable_entries, for_each_viewable_entry, mark_entry_read} from '/src/entry-store/entry-store.js';
+import {is_entry, is_valid_entry_id} from '/src/entry-store/entry.js';
 import {favicon_create_conn} from '/src/favicon.js';
+import {for_each_active_feed} from '/src/feed-store/for-each-active-feed.js';
 import {fonts} from '/src/fonts.js';
+import {import_opml} from '/src/import-opml.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {date_format} from '/src/lib/date.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {html_truncate} from '/src/lib/html-truncate.js';
 import {html_escape} from '/src/lib/html.js';
 import {list_peek} from '/src/lib/list.js';
-import {is_entry, is_valid_entry_id} from '/src/objects/entry.js';
-import {create_channel} from '/src/ops/create-channel.js';
-import {create_conn} from '/src/ops/create-conn.js';
-import {for_each_active_feed} from '/src/ops/for-each-active-feed.js';
-import {import_opml} from '/src/ops/import-opml.js';
-import {poll_feeds} from '/src/ops/poll-feeds.js';
+import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {slideshow_export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/views/slideshow-page/slideshow.js';
