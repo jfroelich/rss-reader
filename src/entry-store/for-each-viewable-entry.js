@@ -1,19 +1,11 @@
-// TODO: break apart again into function-per-file
-
-import {ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry, is_valid_entry_id, sanitize_entry} from '/src/entry-store/entry.js';
-import {is_valid_feed_id} from '/src/feed-store/feed.js';
-import {filter_empty_properties} from '/src/lib/object.js';
-// TODO: avoid circular dependency
-import {refresh_badge} from '/src/refresh-badge.js';
+import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/entry-store/entry.js';
 
 // TODO: use context
 export function for_each_viewable_entry(conn, offset, limit, callback) {
-  return new Promise(for_each_viewable_entry_executor.bind(
-      null, conn, offset, limit, callback));
+  return new Promise(executor.bind(null, conn, offset, limit, callback));
 }
 
-function for_each_viewable_entry_executor(
-    conn, offset, limit, callback, resolve, reject) {
+function executor(conn, offset, limit, callback, resolve, reject) {
   let counter = 0;
   let advanced = false;
   const limited = limit > 0;
