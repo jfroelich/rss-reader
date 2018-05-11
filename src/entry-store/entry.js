@@ -24,24 +24,6 @@ export function is_valid_entry_id(value) {
   return Number.isInteger(value) && value > 0;
 }
 
-// NOTE: working but incomplete
-export function is_valid_entry(entry) {
-  if (!is_entry(entry)) {
-    return false;
-  }
-
-  // This could be called on a new entry that does not have an id, so only
-  // check id validity when the property exists
-  if ('id' in entry) {
-    if (!is_valid_entry_id(entry.id)) {
-      console.debug('%s: invalid id', is_valid_entry.name, entry.id);
-      return false;
-    }
-  }
-
-  return true;
-}
-
 export function sanitize_entry(
     input_entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {

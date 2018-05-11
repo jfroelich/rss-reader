@@ -1,5 +1,6 @@
 import {contains_entry} from '/src/entry-store/contains-entry.js';
 import {append_entry_url} from '/src/entry-store/entry.js';
+import {validate_entry} from '/src/entry-store/validate-entry.js';
 import {write_entry} from '/src/entry-store/write-entry.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
@@ -43,14 +44,21 @@ export async function poll_entry(entry) {
   await update_entry_content(
       entry, document, this.console, this.fetch_image_timeout);
 
+  // Explicitly validate the entry. This was previously done via the call to
+  // write_entry, and threw a type error which was not caught here. For now,
+  // just throw a basic error to match the previous behavior. In the future,
+  // think about whether this should be throwing an error at all or doing
+  // something else.
+  if (!validate_entry(entry)) {
+    throw new Error('Invalid entry ' + entry);
+  }
+
   const op = {};
   op.conn = this.rconn;
   op.channel = this.channel;
   op.console = this.console;
   op.write_entry = write_entry;
-
-  const validate = true;
-  const stored_entry = await op.write_entry(entry, validate);
+  const stored_entry = await op.write_entry(entry);
   return stored_entry.id;
 }
 

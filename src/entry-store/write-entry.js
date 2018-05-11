@@ -1,9 +1,9 @@
-import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry, is_valid_entry_id, sanitize_entry} from '/src/entry-store/entry.js';
+import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id, sanitize_entry} from '/src/entry-store/entry.js';
 import {filter_empty_properties} from '/src/lib/object.js';
 
-// TODO: if i remove validate and sanitize and require caller to do explicit,
-// then revert this back to just returning new id
-export function write_entry(entry, validate = true) {
+// TODO: if i remove sanitize and require caller to do it explicitly, then
+// revert this back to just returning new id
+export function write_entry(entry) {
   if (!is_entry(entry)) {
     throw new TypeError('entry is not an entry ' + entry);
   }
@@ -11,11 +11,7 @@ export function write_entry(entry, validate = true) {
   return new Promise(executor.bind(this, entry, validate));
 }
 
-function executor(entry, validate, resolve, reject) {
-  if (validate && !is_valid_entry(entry)) {
-    throw new TypeError('invalid entry ' + entry);
-  }
-
+function executor(entry, resolve, reject) {
   const is_create = !is_valid_entry_id(entry.id);
   let storable_entry;
 
