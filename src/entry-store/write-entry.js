@@ -1,41 +1,39 @@
-import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id, sanitize_entry} from '/src/entry-store/entry.js';
-import {filter_empty_properties} from '/src/lib/object.js';
+import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry-store/entry.js';
 
-// TODO: if i remove sanitize and require caller to do it explicitly, then
-// revert this back to just returning new id
+// TODO: set dateUpdated in case of update?
+// TODO: now that this no longer does validation or sanitization, there is no
+// use case where the output object is needed, so revert this back to just
+// returning id
+// NOTE: no longer pure, this mutates input entry props, update docs
+// NOTE: this no longer does validation or sanitization, now a caller concern
+
 export function write_entry(entry) {
-  if (!is_entry(entry)) {
-    throw new TypeError('entry is not an entry ' + entry);
-  }
-
-  return new Promise(executor.bind(this, entry, validate));
+  return new Promise(executor.bind(this, entry));
 }
 
 function executor(entry, resolve, reject) {
-  const is_create = !is_valid_entry_id(entry.id);
-  let storable_entry;
+  if (!is_entry(entry)) {
+    throw new TypeError('Invalid entry argument ' + entry);
+  }
 
+  const is_create = !entry.id;
+
+  // Implicitly set initial storage state for new entries
   if (is_create) {
-    const sanitized_entry = sanitize_entry(entry);
-    storable_entry = filter_empty_properties(sanitized_entry);
-
-    storable_entry.readState = ENTRY_STATE_UNREAD;
-    storable_entry.archiveState = ENTRY_STATE_UNARCHIVED;
-    storable_entry.dateCreated = new Date();
-    delete storable_entry.dateUpdated;
-  } else {
-    storable_entry = entry;
+    entry.readState = ENTRY_STATE_UNREAD;
+    entry.archiveState = ENTRY_STATE_UNARCHIVED;
+    entry.dateCreated = new Date();
+    delete entry.dateUpdated;
   }
 
   const txn = this.conn.transaction('entry', 'readwrite');
-  txn.oncomplete =
-      txn_oncomplete.bind(this, storable_entry, is_create, resolve);
+  txn.oncomplete = txn_oncomplete.bind(this, entry, is_create, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const store = txn.objectStore('entry');
-  const request = store.put(storable_entry);
+  const request = store.put(entry);
   if (is_create) {
-    request.onsuccess = event => storable_entry.id = event.target.result;
+    request.onsuccess = _ => entry.id = request.result;
   }
 }
 

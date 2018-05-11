@@ -1,5 +1,6 @@
 import {contains_entry} from '/src/entry-store/contains-entry.js';
 import {append_entry_url} from '/src/entry-store/entry.js';
+import {sanitize_entry} from '/src/entry-store/sanitize-entry.js';
 import {validate_entry} from '/src/entry-store/validate-entry.js';
 import {write_entry} from '/src/entry-store/write-entry.js';
 import {favicon_lookup} from '/src/favicon.js';
@@ -52,6 +53,12 @@ export async function poll_entry(entry) {
   if (!validate_entry(entry)) {
     throw new Error('Invalid entry ' + entry);
   }
+
+  // Explicitly sanitize the entry. This was previously done by write_entry
+  // but that is no longer the case. For now, replace the parameter value with
+  // itself, even though sanitize clones. Also note that sanitize now filters
+  // empty properties implicitly
+  entry = sanitize_entry(entry);
 
   const op = {};
   op.conn = this.rconn;
