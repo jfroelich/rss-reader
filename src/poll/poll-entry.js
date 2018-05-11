@@ -65,8 +65,8 @@ export async function poll_entry(entry) {
   op.channel = this.channel;
   op.console = this.console;
   op.write_entry = write_entry;
-  const stored_entry = await op.write_entry(entry);
-  return stored_entry.id;
+  const new_entry_id = await op.write_entry(entry);
+  return new_entry_id;
 }
 
 async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {

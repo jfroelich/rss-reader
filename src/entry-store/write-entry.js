@@ -1,8 +1,5 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry-store/entry.js';
 
-// TODO: now that this no longer does validation or sanitization, there is no
-// use case where the output object is needed, so revert this back to just
-// returning id
 // NOTE: no longer pure, this mutates input entry props, update docs
 // NOTE: this no longer does validation or sanitization, now a caller concern
 // NOTE: this automatically sets dateUpdated to run date
@@ -45,5 +42,5 @@ function txn_oncomplete(entry, is_create, callback, event) {
   const message = {type: 'entry-write', id: entry.id, 'create': is_create};
   this.console.debug('%s: %o', write_entry.name, message);
   this.channel.postMessage(message);
-  callback(entry);
+  callback(entry.id);
 }
