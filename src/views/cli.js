@@ -1,6 +1,8 @@
 import {create_channel} from '/src/channel.js';
 import {create_conn} from '/src/db.js';
-import {archive_entries, remove_lost_entries, remove_orphaned_entries} from '/src/entry-store/entry-store.js';
+import {archive_entries} from '/src/entry-store/archive-entries.js';
+import {remove_lost_entries} from '/src/entry-store/remove-lost-entries.js';
+import {remove_orphaned_entries} from '/src/entry-store/remove-orphaned-entries.js';
 import {favicon_clear, favicon_compact, favicon_create_conn, favicon_lookup, favicon_refresh_feeds} from '/src/favicon.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
@@ -32,15 +34,15 @@ async function cli_subscribe(url_string, poll = true) {
 }
 
 async function cli_archive_entries() {
-  const ac = {};
-  ac.conn = await create_conn();
-  ac.channel = create_channel();
-  ac.console = console;
-
+  const op = {};
+  op.conn = await create_conn();
+  op.channel = create_channel();
+  op.console = console;
+  op.archive_entries = archive_entries;
   let max_age;
-  await archive_entries.call(ac, max_age);
-  ac.channel.close();
-  ac.conn.close();
+  await op.archive_entries(max_age);
+  op.channel.close();
+  op.conn.close();
 }
 
 async function cli_refresh_icons() {

@@ -1,5 +1,18 @@
 import {is_feed, is_valid_feed_id} from '/src/feed-store/feed.js';
 
+// TODO: merge with write-feed. I am going for rest api. I want to simulate
+// indexedDB's ability to modify a single property. So write feed will take
+// a parameter like an array of property key-value pairs to update. The array
+// will be optional. If no array, then the input feed overwrites. If array, then
+// only the id of the feed is used, and the existing feed is loaded, the new
+// properties are set, and then the modified existing feed is saved.
+// OR, instead of this extra array param, I could have a 'merge-flag' parameter.
+// If not set or false then existing feed overwritten blindly. If true, then
+// existing feed is loaded, properties from new feed are taken and replaced in
+// the existing feed, and then the existing feed is saved. So if the caller
+// wants to update one property, then they just pass in a feed object with id,
+// the property that should be changed, and it jsut works.
+
 export function write_feed_property(feed_id, name, value, extra_props = {}) {
   if (!is_valid_feed_id(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);

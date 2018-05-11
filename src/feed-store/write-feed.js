@@ -13,6 +13,9 @@ import {condense_whitespace, filter_control_characters} from '/src/lib/string.js
 // readily testable, less opaque, and is a better use of parameters. See also
 // note about this in the write-entry doc (or maybe its write-feed).
 
+// TODO: if caller must sanitize, then no longer need to return object, just
+// return id
+
 // Creates or updates the given feed in storage
 export function write_feed(feed, options = {}) {
   if (!is_feed(feed)) {

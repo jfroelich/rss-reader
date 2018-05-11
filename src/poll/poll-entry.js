@@ -1,5 +1,6 @@
-import {contains_entry, write_entry} from '/src/entry-store/entry-store.js';
+import {contains_entry} from '/src/entry-store/contains-entry.js';
 import {append_entry_url} from '/src/entry-store/entry.js';
+import {write_entry} from '/src/entry-store/write-entry.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
 import * as color from '/src/lib/color.js';

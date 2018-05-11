@@ -2,8 +2,10 @@ import '/src/views/cli.js';
 
 import {create_channel} from '/src/channel.js';
 import {create_conn} from '/src/db.js';
-import {find_viewable_entries, for_each_viewable_entry, mark_entry_read} from '/src/entry-store/entry-store.js';
 import {is_entry, is_valid_entry_id} from '/src/entry-store/entry.js';
+import {find_viewable_entries} from '/src/entry-store/find-viewable-entries.js';
+import {for_each_viewable_entry} from '/src/entry-store/for-each-viewable-entry.js';
+import {mark_entry_read} from '/src/entry-store/mark-entry-read.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {for_each_active_feed} from '/src/feed-store/for-each-active-feed.js';
 import {fonts} from '/src/fonts.js';
