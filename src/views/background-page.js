@@ -1,5 +1,6 @@
 import '/src/views/cli.js';
 
+import {refresh_badge} from '/src/badge.js';
 import {create_channel} from '/src/channel.js';
 import {create_conn} from '/src/db.js';
 import {archive_entries} from '/src/entry-store/archive-entries.js';
@@ -9,7 +10,6 @@ import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/
 import {console_stub} from '/src/lib/console-stub.js';
 import {open_view} from '/src/open-view.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
-import {refresh_badge} from '/src/refresh-badge.js';
 
 async function handle_compact_favicons_alarm(alarm) {
   await favicon_compact();

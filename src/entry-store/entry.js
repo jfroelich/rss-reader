@@ -5,11 +5,15 @@ export const ENTRY_STATE_UNARCHIVED = 0;
 export const ENTRY_STATE_ARCHIVED = 1;
 
 export function create_entry() {
+  // Entry objects cannot be function objects, so use the magic property to
+  // fake a degree of type safety
   return {magic: ENTRY_MAGIC};
 }
 
 // Return true if the first parameter looks like an entry object
 export function is_entry(value) {
+  // Function objects are not allowed, hence the pedantic tests and the duck
+  // typing
   // NOTE: typeof null === 'object', hence the preceding truthy test
   // NOTE: uses extended check in order to exclude function objects
   return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;

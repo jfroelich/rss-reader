@@ -1,46 +1,57 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry-store/entry.js';
 
-// NOTE: no longer pure, this mutates input entry props, update docs
-// NOTE: this no longer does validation or sanitization, now a caller concern
-// NOTE: this automatically sets dateUpdated to run date
-
+// Creates or overwrites an entry object in the app database. The input entry is
+// modified so this function is impure. The dateUpdated property is set
+// automatically. The entry is not sanitized nor validated. Some initial state
+// is supplied automatically, such as marking a new entry as unread. If
+// creating, then the id property should not exist. The database is modified
+// even when a post message error occurs.
+//
+// Context: conn, channel, console
+// Errors: TypeError, InvalidStateError, DOMException
+// Returns: a promise that resolves to the entry's id
 export function write_entry(entry) {
-  return new Promise(executor.bind(this, entry));
-}
+  return new Promise((resolve, reject) => {
+    if (!is_entry(entry)) {
+      throw new TypeError('Invalid entry argument ' + entry);
+    }
 
-function executor(entry, resolve, reject) {
-  if (!is_entry(entry)) {
-    throw new TypeError('Invalid entry argument ' + entry);
-  }
+    const is_create = !entry.id;
 
-  const is_create = !entry.id;
+    // Implied setup
+    if (is_create) {
+      entry.readState = ENTRY_STATE_UNREAD;
+      entry.archiveState = ENTRY_STATE_UNARCHIVED;
+      entry.dateCreated = new Date();
+      delete entry.dateUpdated;
+    } else {
+      entry.dateUpdated = new Date();
+    }
 
-  // Implicitly set initial storage state for new entries, or set the date
-  // updated property automatically
-  if (is_create) {
-    entry.readState = ENTRY_STATE_UNREAD;
-    entry.archiveState = ENTRY_STATE_UNARCHIVED;
-    entry.dateCreated = new Date();
-    delete entry.dateUpdated;
-  } else {
-    // Force to now
-    entry.dateUpdated = new Date();
-  }
+    const txn = this.conn.transaction('entry', 'readwrite');
 
-  const txn = this.conn.transaction('entry', 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(this, entry, is_create, resolve);
-  txn.onerror = _ => reject(txn.error);
+    // In order to avoid misrepresenting state, wait until the transaction
+    // completes, and not merely the request, before posting a message or
+    // resolving
+    txn.oncomplete = _ => {
+      const message = {type: 'entry-write', id: entry.id, 'create': is_create};
+      this.console.debug('%s: %o', write_entry.name, message);
+      this.channel.postMessage(message);
+      resolve(entry.id);
+    };
+    txn.onerror = _ => reject(txn.error);
 
-  const store = txn.objectStore('entry');
-  const request = store.put(entry);
-  if (is_create) {
-    request.onsuccess = _ => entry.id = request.result;
-  }
-}
+    const store = txn.objectStore('entry');
+    const request = store.put(entry);
 
-function txn_oncomplete(entry, is_create, callback, event) {
-  const message = {type: 'entry-write', id: entry.id, 'create': is_create};
-  this.console.debug('%s: %o', write_entry.name, message);
-  this.channel.postMessage(message);
-  callback(entry.id);
+    // Do not listen for request errors. Request errors bubble up to
+    // transactional errors, and we are already listening for transaction
+    // errors.
+
+    // put returns the keypath for both new and existing objects. We only care
+    // about catching it when creating a new entry
+    if (is_create) {
+      request.onsuccess = _ => entry.id = request.result;
+    }
+  });
 }

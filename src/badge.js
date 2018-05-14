@@ -1,5 +1,3 @@
-// TODO: rename to badge.js
-
 import {ENTRY_STATE_UNREAD} from '/src/entry-store/entry.js';
 import {console_stub} from '/src/lib/console-stub.js';
 
@@ -7,21 +5,17 @@ let update_pending = false;
 
 export async function refresh_badge(conn, console = console_stub) {
   if (update_pending) {
-    console.debug('Prior update pending, update request canceled');
+    console.debug('%s: update pending', refresh_badge.name);
     return;
   }
 
-  console.debug('Updating badge text...');
+  console.debug('%s: updating badge...', refresh_badge.name);
   update_pending = true;
-
   const count = await count_unread_entries(conn);
-  console.debug('Counted %d unread entries', count);
-
+  console.debug('%s: counted %d unread entries', refresh_badge.name, count);
   const text = count > 999 ? '1k+' : '' + count;
-  console.debug('Setting badge text to', text);
-
+  console.debug('%s: setting badge text to %s', refresh_badge.name, text);
   chrome.browserAction.setBadgeText({text: text});
-
   update_pending = false;
 }
 

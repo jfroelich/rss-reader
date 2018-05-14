@@ -13,6 +13,16 @@ import {is_entry, is_valid_entry_id} from '/src/entry-store/entry.js';
 // ever good? How do I differentiate between code earlier in the execution path
 // being poorly written, and bad data?
 
+// TODO: validate more properties
+
+// TODO: validate that there are no unexpected properties (expandos) that snuck
+// into the property list. This means the entire schema must be known apriori,
+// and defined/accessible here, and that this increases rigidity substantially.
+// So much that maybe I want some kind of schema-oriented organization to align
+// better with SRP.
+
+// TODO: maybe move is_valid_entry_id definition to here? This would also make
+// it easier if I add per-property validation functions.
 
 // Returns whether an entry is valid
 // NOTE: only partially implemented

@@ -1,22 +1,23 @@
 import {get_feeds} from '/src/feed-store/get-feeds.js';
-import {console_stub} from '/src/lib/console-stub.js';
 import {list_peek} from '/src/lib/list.js';
 
-export async function export_opml(conn, title, console = console_stub) {
-  const document = create_opml_document(title, console);
-  const feeds = await get_feeds(conn);
-  console.debug('Loaded %d feeds from database', feeds.length, conn.name);
+export async function export_opml(title) {
+  this.console.debug(
+      '%s: title %s database', export_opml.name, title, this.conn.name);
+  const document = create_opml_document(title);
+  const feeds = await get_feeds(this.conn);
+  this.console.debug('%s: loaded %d feeds', export_opml.name, feeds.length);
 
   for (const feed of feeds) {
-    append_feed(document, feed, console);
+    this.console.debug(
+        '%s: appending url', export_opml.name, outline.getAttribute('xmlUrl'));
+    append_feed(document, feed);
   }
 
   return document;
 }
 
-export function create_opml_document(title, console) {
-  console.debug('Creating opml document with title:', title);
-
+function create_opml_document(title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
@@ -48,7 +49,7 @@ export function create_opml_document(title, console) {
   return doc;
 }
 
-function append_feed(document, feed, console) {
+function append_feed(document, feed) {
   const outline = document.createElement('outline');
   if (feed.type) {
     outline.setAttribute('type', feed.type);
@@ -64,11 +65,10 @@ function append_feed(document, feed, console) {
     outline.setAttribute('htmlUrl', feed.link);
   }
 
-  console.debug('Appending feed', outline.getAttribute('xmlUrl'));
-
   // No idea why, but cannot use document.body here, because it will not find
   // the body element. Possibly because the document is implicitly typed as xml,
-  // and document.body does not work for such documents.
+  // and document.body does not work for secretly-xml-flagged documents, at
+  // least in Chrome
   const body_element = document.querySelector('body');
   body_element.appendChild(outline);
 }

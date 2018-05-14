@@ -9,7 +9,6 @@ export async function contains_entry(conn, query) {
   return is_valid_entry_id(id);
 }
 
-// Not exported because only used by contains-entry
 function find_entry_id_by_url(conn, url) {
   return new Promise(find_entry_id_by_url_executor.bind(null, conn, url));
 }

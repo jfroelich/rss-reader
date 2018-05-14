@@ -36,6 +36,8 @@ import * as string from '/src/lib/string.js';
 
 // TODO: update docs
 
+// TODO: i think this would read more clearly with helpers per property
+
 export function sanitize_entry(
     entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {

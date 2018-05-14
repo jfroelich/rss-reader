@@ -2,20 +2,22 @@ import {create_conn} from '/src/db.js';
 import {export_opml} from '/src/export-opml.js';
 
 // Abstracts away all of the operations involved in generating and downloading
-// an opml xml file into a simple api call for the slideshow page. Also hides
+// an opml xml file into a simple call for the slideshow page. Also hides
 // the helper functions in module scope
+export async function slideshow_export_opml(title, filename) {
+  const op = {};
+  op.conn = await create_conn();
+  op.console = console;
+  op.export_opml = export_opml;
+  const opml_document = await op.export_opml(title);
+  op.conn.close();
 
-export async function slideshow_export_opml(title, filename, console) {
-  const conn = await create_conn();
-  const opml_document = await export_opml(conn, title, console);
-  conn.close();
+  console.log('%s: downloading...', slideshow_export_opml.name);
 
   download_blob_using_chrome_api(
       opml_document_to_blob(opml_document), filename);
 
-  if (console) {
-    console.log('Export completed');
-  }
+  console.log('%s: export completed', slideshow_export_opml.name);
 }
 
 function opml_document_to_blob(opml_document) {

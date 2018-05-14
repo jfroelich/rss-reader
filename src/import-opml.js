@@ -3,16 +3,18 @@ import {read_text as read_file_text} from '/src/lib/file.js';
 import {parse as parse_opml} from '/src/lib/opml-parser.js';
 import {subscribe} from '/src/subscribe.js';
 
-const opml_mime_types = [
-  'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
-  'application/opml+xml'
-];
 
 // TODO: rather than resolve to array of counts, I could just resolve to array
 // of arrays of feed objects. Then import_file does not need async qualifier
 // and doesn't need to await subscribe, and this whole operation basically just
 // becomes a spawner of subscribe promises? But I need to await the file i/o,
 // so that is not quite right.
+
+
+const opml_mime_types = [
+  'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
+  'application/opml+xml'
+];
 
 export function import_opml(file_list) {
   this.console.log(
