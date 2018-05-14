@@ -36,7 +36,7 @@ Returns a promise that resolves to an array of the entry ids that were deleted. 
 * This uses getAllKeys rather than getAll when finding and iterating over entries for a feed in order to avoid unnecessary deserialization of entries
 
 ### Implementation note on updating unread count
-Deleting (unsubscribing) from a feed may have deleted one or more entries that were in the unread state and were contributing to the total unread count, so the badge text is out of date, so this refreshes the badge. Because the call to `refresh_badge` is un-awaited it will still be pending at time of resolution of delete_feed. The database connection can still be closed immediately on resolution of the outer promise because the refresh call occurs in the same tick, before the close-pending flag has been set, and IDBDatabase.prototype.close can be called while transactions are still pending (they still settle, the close call just waits).
+Deleting (unsubscribing) from a feed may have deleted one or more entries that were in the unread state and were contributing to the total unread count, so the badge text is out of date, so this refreshes the badge. Because the call to `refresh_badge` is un-awaited it will still be pending at time of resolution of db_delete_feed. The database connection can still be closed immediately on resolution of the outer promise because the refresh call occurs in the same tick, before the close-pending flag has been set, and IDBDatabase.prototype.close can be called while transactions are still pending (they still settle, the close call just waits).
 
 ### TODOS
 * Should get conn from event rather than from parameter in `txn_oncomplete`

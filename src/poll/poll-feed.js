@@ -1,7 +1,7 @@
 import {refresh_badge} from '/src/badge.js';
-import {append_entry_url, create_entry} from '/src/db/entry.js';
-import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/db/feed.js';
-import {write_feed} from '/src/db/write-feed.js';
+import {write_feed} from '/src/db/db-write-feed.js';
+import {append_entry_url, create_entry} from '/src/entry.js';
+import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
 import {list_is_empty, list_peek} from '/src/lib/list.js';

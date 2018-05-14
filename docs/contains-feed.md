@@ -1,8 +1,8 @@
-# feed-store
+# contains-feed
 Functionality for storing feed data in the database
 
 ## contains-feed
-Returns a promise that resolves to a boolean value indicating whether a feed exists in the database. How a feed is uniquely identified may change in the future. This is problematic for code that checks for existence because it is hard-coded to a particular approach. The purpose of `contains_feed` is to abstract away how feeds are compared for equality when testing for existence.
+Returns a promise that resolves to a boolean value indicating whether a feed exists in the database. How a feed is uniquely identified may change in the future. This is problematic for code that checks for existence because it is hard-coded to a particular approach. The purpose of `db_contains_feed` is to abstract away how feeds are compared for equality when testing for existence.
 
 ### Params
 * **conn** {IDBDatabase} an open database connection

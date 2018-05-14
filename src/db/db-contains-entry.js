@@ -1,6 +1,9 @@
-import {is_valid_entry_id} from '/src/db/entry.js';
+import {is_valid_entry_id} from '/src/entry.js';
 
-export async function contains_entry(conn, query) {
+// TODO: inline db_contains_entry into its sole callsite, revert to just
+// exporting find_entry_id_by_url
+
+export async function db_contains_entry(conn, query) {
   if (!(query.url instanceof URL)) {
     throw new TypeError('Invalid query ' + query);
   }

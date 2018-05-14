@@ -1,8 +1,8 @@
 import {CHANNEL_NAME} from '/src/config.js';
-import {create_conn} from '/src/db/db.js';
-import {archive_entries} from '/src/db/archive-entries.js';
-import {remove_lost_entries} from '/src/db/remove-lost-entries.js';
-import {remove_orphaned_entries} from '/src/db/remove-orphaned-entries.js';
+import {db_archive_entries} from '/src/db/db-archive-entries.js';
+import {db_open} from '/src/db/db-open.js';
+import {remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
+import {remove_orphaned_entries} from '/src/db/db-remove-orphaned-entries.js';
 import {favicon_clear, favicon_compact, favicon_create_conn, favicon_lookup, favicon_refresh_feeds} from '/src/favicon.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
@@ -11,7 +11,7 @@ import {subscribe} from '/src/subscribe.js';
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
   const op = {};
-  const proms = [create_conn(), favicon_create_conn()];
+  const proms = [db_open(), favicon_create_conn()];
   [op.rconn, op.iconn] = await Promise.all(proms);
 
   op.channel = new BroadcastChannel(CHANNEL_NAME);
@@ -35,18 +35,18 @@ async function cli_subscribe(url_string, poll = true) {
 
 async function cli_archive_entries() {
   const op = {};
-  op.conn = await create_conn();
+  op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;
-  op.archive_entries = archive_entries;
+  op.db_archive_entries = db_archive_entries;
   let max_age;
-  await op.archive_entries(max_age);
+  await op.db_archive_entries(max_age);
   op.channel.close();
   op.conn.close();
 }
 
 async function cli_refresh_icons() {
-  const proms = [create_conn(), favicon_create_conn()];
+  const proms = [db_open(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(CHANNEL_NAME);
 
@@ -63,7 +63,7 @@ async function cli_refresh_icons() {
 }
 
 async function cli_poll_feeds() {
-  const rconn = await create_conn();
+  const rconn = await db_open();
   const iconn = await favicon_create_conn();
   const channel = new BroadcastChannel(CHANNEL_NAME);
 
@@ -79,7 +79,7 @@ async function cli_poll_feeds() {
 
 async function cli_remove_lost_entries() {
   const op = {};
-  op.conn = await create_conn();
+  op.conn = await db_open();
   console.debug(
       '%s: connected to db %s', cli_remove_lost_entries.name, op.conn.name);
   op.channel = new BroadcastChannel(CHANNEL_NAME);
@@ -98,7 +98,7 @@ async function cli_remove_lost_entries() {
 
 async function cli_remove_orphans() {
   const op = {};
-  op.conn = await create_conn();
+  op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;
   op.remove_orphaned_entries = remove_orphaned_entries;

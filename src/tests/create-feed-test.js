@@ -1,14 +1,14 @@
-import {create_conn} from '/src/db/db.js';
-import {contains_feed} from '/src/db/feed-store.js';
-import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/db/feed.js';
-import {find_feed_by_id} from '/src/db/find-feed-by-id.js';
-import {write_feed} from '/src/db/write-feed.js';
+import {db_contains_feed} from '/src/db/db-contains-feed.js';
+import {find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
+import {db_open} from '/src/db/db-open.js';
+import {write_feed} from '/src/db/db-write-feed.js';
+import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
 import {idb_remove} from '/src/lib/idb.js';
 import {list_is_empty} from '/src/lib/list.js';
 import {assert} from '/src/tests/assert.js';
 
-// This test exercises the write-feed function in the case of adding a new feed
-// object to the database. The write-feed function should properly store
+// This test exercises the db-write-feed function in the case of adding a new
+// feed object to the database. The db-write-feed function should properly store
 // the feed in the database, properly assign the feed its new id, and return the
 // expected output.
 
@@ -24,7 +24,7 @@ export async function create_feed_test() {
 
   // Create a dummy db
   const test_db = 'write-new-feed-test';
-  const conn = await create_conn(test_db);
+  const conn = await db_open(test_db);
 
   // Mock a broadcast channel along with a way to ensure a message is broadcast
   const messages = [];
@@ -76,7 +76,8 @@ export async function create_feed_test() {
       'unexpected message type property ' + messages[0].type);
 
   // Assert the feed exists in the database
-  assert(await contains_feed(conn, {url: feed_url}), 'cannot find feed by url');
+  assert(
+      await db_contains_feed(conn, {url: feed_url}), 'cannot find feed by url');
 
   // Read the feed from the database and assert against read properties
   const match = await find_feed_by_id(conn, stored_feed.id);

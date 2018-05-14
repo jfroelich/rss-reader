@@ -1,5 +1,5 @@
-import {create_conn} from '/src/db/db.js';
-import {archive_entries} from '/src/db/archive-entries.js';
+import {db_archive_entries} from '/src/db/db-archive-entries.js';
+import {db_open} from '/src/db/db-open.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_remove} from '/src/lib/idb.js';
 import {assert} from '/src/tests/assert.js';
@@ -14,13 +14,13 @@ import {assert} from '/src/tests/assert.js';
 
 export async function archive_entries_test() {
   let dbname = 'archive-entries-test', version, timeout, max_age;
-  const conn = await create_conn(dbname, version, timeout, console_stub);
+  const conn = await db_open(dbname, version, timeout, console_stub);
   const op = {};
   op.conn = conn;
   op.channel = {name: 'stub', postMessage: noop, close: noop};
   op.console = console;
-  op.archive_entries = archive_entries;
-  await op.archive_entries(max_age);
+  op.db_archive_entries = db_archive_entries;
+  await op.db_archive_entries(max_age);
 
   conn.close();
   await idb_remove(conn.name);

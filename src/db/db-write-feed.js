@@ -1,4 +1,4 @@
-import {create_feed, is_feed, is_valid_feed_id} from '/src/db/feed.js';
+import {create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
 import {html_truncate} from '/src/lib/html-truncate.js';
 import {html_replace_tags} from '/src/lib/html.js';
 import {list_peek} from '/src/lib/list.js';
@@ -11,7 +11,7 @@ import {condense_whitespace, filter_control_characters} from '/src/lib/string.js
 // pattern for entries. Having separate sanitize and validate functions fits
 // better with the one-function-per-file method of organization, is more
 // readily testable, less opaque, and is a better use of parameters. See also
-// note about this in the write-entry doc (or maybe its write-feed).
+// note about this in the db-write-entry doc (or maybe it is db-write-feed).
 
 // TODO: if caller must sanitize, then no longer need to return object, just
 // return id

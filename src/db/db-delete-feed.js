@@ -1,16 +1,7 @@
-// TODO: break apart again into function-per-file
-
 import {refresh_badge} from '/src/badge.js';
-import {is_valid_feed_id} from '/src/db/feed.js';
-import {find_feed_by_url} from '/src/db/find-feed-by-url.js';
+import {is_valid_feed_id} from '/src/feed.js';
 
-export async function contains_feed(conn, query) {
-  const key_only = true;
-  const match = await find_feed_by_url(conn, query.url, key_only);
-  return match ? true : false;
-}
-
-export function delete_feed(feed_id, reason_text) {
+export function db_delete_feed(feed_id, reason_text) {
   if (!is_valid_feed_id(feed_id)) {
     throw new TypeError('Invalid feed id ' + feed_id);
   }
@@ -42,7 +33,7 @@ function delete_feed_executor(feed_id, reason_text, resolve, reject) {
 
     for (const id of keys) {
       entry_ids.push(id);
-      this.console.debug('%s: deleting entry %d', delete_feed.name, id);
+      this.console.debug('%s: deleting entry %d', db_delete_feed.name, id);
       entry_store.delete(id);
     }
   };
@@ -51,7 +42,7 @@ function delete_feed_executor(feed_id, reason_text, resolve, reject) {
 function delete_feed_txn_oncomplete(
     feed_id, reason_text, entry_ids, callback, event) {
   const msg = {type: 'feed-deleted', id: feed_id, reason: reason_text};
-  this.console.debug('%s: %o', delete_feed.name, msg);
+  this.console.debug('%s: %o', db_delete_feed.name, msg);
   this.channel.postMessage(msg);
 
   msg.type = 'entry-deleted';

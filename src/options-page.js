@@ -1,20 +1,20 @@
 import '/src/cli.js';
 
 import {background_images, CHANNEL_NAME} from '/src/config.js';
-import {create_conn} from '/src/db/db.js';
+import {db_delete_feed} from '/src/db/db-delete-feed.js';
+import {find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
+import {db_open} from '/src/db/db-open.js';
+import {get_feeds} from '/src/db/db-get-feeds.js';
+import {write_feed_property} from '/src/db/db-write-feed-property.js';
 import {favicon_create_conn} from '/src/favicon.js';
-import {delete_feed} from '/src/db/feed-store.js';
-import {find_feed_by_id} from '/src/db/find-feed-by-id.js';
-import {get_feeds} from '/src/db/get-feeds.js';
-import {write_feed_property} from '/src/db/write-feed-property.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {element_fade} from '/src/lib/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate.js';
 import {list_peek} from '/src/lib/list.js';
 import * as perm from '/src/lib/permissions.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
-import {subscribe} from '/src/subscribe.js';
 import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
+import {subscribe} from '/src/subscribe.js';
 
 // View state
 let current_menu_item;
@@ -209,7 +209,7 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const conn = await create_conn();
+  const conn = await db_open();
   const feed = await find_feed_by_id(conn, feed_id);
   conn.close();
 
@@ -290,7 +290,7 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_show();
   subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
-  const conn_promises = Promise.all([create_conn(), favicon_create_conn()]);
+  const conn_promises = Promise.all([db_open(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
 
   const op = {};
@@ -316,7 +316,7 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises = Promise.all([create_conn(), favicon_create_conn()]);
+  const conn_promises = Promise.all([db_open(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
   const channel = new BroadcastChannel(CHANNEL_NAME);
 
@@ -330,7 +330,7 @@ async function after_subscribe_poll_feed_async(feed) {
 
 async function feed_list_init() {
   const title_sort_flag = true;
-  const conn = await create_conn();
+  const conn = await db_open();
   const feeds = await get_feeds(conn, title_sort_flag);
   conn.close();
 
@@ -378,16 +378,14 @@ function feed_list_remove_feed_by_id(feed_id) {
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const reason_text = 'unsubscribe';
-
-  const ctx = {};
-  ctx.conn = await create_conn();
-  ctx.channel = new BroadcastChannel(CHANNEL_NAME);
-  ctx.console = console;  // enable logging for now (temporary)
-
-  const result = await delete_feed.call(ctx, feed_id, reason_text);
-  ctx.conn.close();
-  ctx.channel.close();
+  const op = {};
+  op.conn = await db_open();
+  op.channel = new BroadcastChannel(CHANNEL_NAME);
+  op.console = console;  // enable logging for now (temporary)
+  op.db_delete_feed = db_delete_feed;
+  await op.db_delete_feed(feed_id, 'unsubscribe');
+  op.conn.close();
+  op.channel.close();
 
   feed_list_remove_feed_by_id(feed_id);
   section_show_by_id('subs-list-section');
@@ -397,7 +395,7 @@ async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const op = {};
-  op.conn = await create_conn();
+  op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;
   op.write = write_feed_property;
@@ -418,7 +416,7 @@ async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const op = {};
-  op.conn = await create_conn();
+  op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;
   op.write = write_feed_property;

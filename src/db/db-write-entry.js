@@ -1,4 +1,4 @@
-import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/db/entry.js';
+import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
 
 // Creates or overwrites an entry object in the app database. The input entry is
 // modified so this function is impure. The dateUpdated property is set

@@ -70,7 +70,7 @@ Returns a promise that resolves to the matching entry id {Number}. If no matchin
 ### Todos
 * maybe deprecate and just call update-entry directly
 
-## for-each-viewable-entry
+## db-for-each-viewable-entry
 Opens a cursor over the entry store for viewable entries starting from the given offset, and iterates up to the given limit, sequentially passing each deserialized entry to the callback. Returns a promise that resolves once all appropriate entries have been iterated. The promise rejects if an error occurs in indexedDB.
 
 ### Parameters
@@ -83,7 +83,7 @@ Opens a cursor over the entry store for viewable entries starting from the given
 * create a `request_onsuccess` helper
 * do I want a separate callback for on-all-iterated?
 
-## mark-entry-read
+## db-mark-entry-read
 Marks an entry as read in the database.
 
 ### Context params
@@ -105,11 +105,11 @@ The promise settles based on the txn, not the get request, because we do some po
 
 ### TODOs
 * refactor as entry_set_read_state, accept a boolean state parameter, and handle both cases (where true and where false)
-* or, create write-entry-property, have this decorate that, or have the caller just call write-entry-property directory
-* create a write-entry-property module, then use that instead of this. In the interim, can consider refactoring this to basically wrap a call to it, maybe even keep the channel message type the same. Then slowly migrate all callers to call write-entry-property directly. This will potentially reduce the number of operations related to entries, and is more forward thinking in case new operations are added later (e.g. star/unstar-entry).
+* or, create db-write-entry-property, have this decorate that, or have the caller just call db-write-entry-property directory
+* create a db-write-entry-property module, then use that instead of this. In the interim, can consider refactoring this to basically wrap a call to it, maybe even keep the channel message type the same. Then slowly migrate all callers to call db-write-entry-property directly. This will potentially reduce the number of operations related to entries, and is more forward thinking in case new operations are added later (e.g. star/unstar-entry).
 
 
-## remove-lost-entries
+## db-remove-lost-entries
 Removes entries missing urls from the database.
 
 ### Params
@@ -130,7 +130,7 @@ Internally this uses openCursor instead of getAll for scalability.
 * improve docs
 * write tests
 
-## remove-orphaned-entries
+## db-remove-orphaned-entries
 Scans the database for entries not linked to a feed and deletes them
 
 ### Params

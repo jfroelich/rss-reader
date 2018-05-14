@@ -1,4 +1,4 @@
-import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/db/entry.js';
+import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/entry.js';
 
 // TODO: use context
 export function for_each_viewable_entry(conn, offset, limit, callback) {

@@ -1,4 +1,4 @@
-# get-feeds
+# db-get-feeds
 
 ### TODOS
 * write docs

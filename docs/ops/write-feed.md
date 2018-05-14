@@ -1,4 +1,4 @@
-# write-feed
+# db-write-feed
 The `write_feed` operation creates or updates a feed in the database, and broadcasts a *feed-written* type message to the channel when finished. Other than the situation where an options flag is true, this inserts the feed object *as-is*. The input feed object is never modified.
 
 ### Context properties

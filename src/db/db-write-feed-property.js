@@ -1,6 +1,6 @@
-import {is_feed, is_valid_feed_id} from '/src/db/feed.js';
+import {is_feed, is_valid_feed_id} from '/src/feed.js';
 
-// TODO: merge with write-feed. I am going for rest api. I want to simulate
+// TODO: merge with db-write-feed. I am going for rest api. I want to simulate
 // indexedDB's ability to modify a single property. So write feed will take
 // a parameter like an array of property key-value pairs to update. The array
 // will be optional. If no array, then the input feed overwrites. If array, then

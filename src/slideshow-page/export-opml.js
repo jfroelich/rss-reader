@@ -1,4 +1,4 @@
-import {create_conn} from '/src/db/db.js';
+import {db_open} from '/src/db/db-open.js';
 import {export_opml} from '/src/export-opml.js';
 
 // Abstracts away all of the operations involved in generating and downloading
@@ -6,7 +6,7 @@ import {export_opml} from '/src/export-opml.js';
 // the helper functions in module scope
 export async function slideshow_export_opml(title, filename) {
   const op = {};
-  op.conn = await create_conn();
+  op.conn = await db_open();
   op.console = console;
   op.export_opml = export_opml;
   const opml_document = await op.export_opml(title);

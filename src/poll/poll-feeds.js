@@ -1,4 +1,4 @@
-import {for_each_active_feed} from '/src/db/for-each-active-feed.js';
+import {for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {notify} from '/src/notify.js';
 import {poll_feed} from '/src/poll/poll-feed.js';

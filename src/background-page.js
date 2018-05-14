@@ -2,10 +2,10 @@ import '/src/cli.js';
 
 import {refresh_badge} from '/src/badge.js';
 import {CHANNEL_NAME} from '/src/config.js';
-import {create_conn} from '/src/db/db.js';
-import {archive_entries} from '/src/db/archive-entries.js';
-import {remove_lost_entries} from '/src/db/remove-lost-entries.js';
-import {remove_orphaned_entries} from '/src/db/remove-orphaned-entries.js';
+import {db_archive_entries} from '/src/db/db-archive-entries.js';
+import {db_open} from '/src/db/db-open.js';
+import {remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
+import {remove_orphaned_entries} from '/src/db/db-remove-orphaned-entries.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {open_view} from '/src/open-view.js';
@@ -17,19 +17,19 @@ async function handle_compact_favicons_alarm(alarm) {
 
 async function handle_archive_alarm_wakeup(alarm) {
   const op = {};
-  op.conn = await create_conn();
+  op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console_stub;
-  op.archive_entries = archive_entries;
+  op.db_archive_entries = db_archive_entries;
   let max_age;
-  await op.archive_entries(max_age);
+  await op.db_archive_entries(max_age);
   op.channel.close();
   op.conn.close();
 }
 
 async function handle_lost_entries_alarm(alarm) {
   const op = {};
-  op.conn = await create_conn();
+  op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console_stub;
   op.remove_lost_entries = remove_lost_entries;
@@ -40,7 +40,7 @@ async function handle_lost_entries_alarm(alarm) {
 
 async function handle_orphan_entries_alarm(alarm) {
   const op = {};
-  op.conn = await create_conn();
+  op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console_stub;
   op.remove_orphaned_entries = remove_orphaned_entries;
@@ -50,7 +50,7 @@ async function handle_orphan_entries_alarm(alarm) {
 }
 
 async function handle_refresh_icons_alarm(alarm) {
-  const proms = [create_conn(), favicon_create_conn()];
+  const proms = [db_open(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(CHANNEL_NAME);
 
@@ -80,7 +80,7 @@ async function handle_poll_feeds_alarm(alarm) {
   options.ignore_recency_check = false;
   options.notify = true;
 
-  const rconn = await create_conn();
+  const rconn = await db_open();
   const iconn = await favicon_create_conn();
   const channel = new BroadcastChannel(CHANNEL_NAME);
 
@@ -100,7 +100,7 @@ function query_idle_state(idle_period_secs) {
 console.debug('Initializing background page');
 
 chrome.runtime.onInstalled.addListener(async function(event) {
-  let conn = await create_conn();
+  let conn = await db_open();
   conn.close();
 
   conn = await favicon_create_conn();
@@ -110,7 +110,7 @@ chrome.runtime.onInstalled.addListener(async function(event) {
 chrome.browserAction.onClicked.addListener(open_view);
 
 async function badge_init() {
-  const conn = await create_conn();
+  const conn = await db_open();
   refresh_badge(conn, void console);
   conn.close();
 }
@@ -131,7 +131,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
     case 'remove-entries-missing-urls':
       handle_lost_entries_alarm(alarm).catch(console.error);
       break;
-    case 'remove-orphaned-entries':
+    case 'db-remove-orphaned-entries':
       handle_orphan_entries_alarm(alarm).catch(console.error);
       break;
     case 'refresh-feed-icons':
@@ -150,6 +150,6 @@ chrome.alarms.create('archive', {periodInMinutes: 60 * 12});
 chrome.alarms.create('poll', {periodInMinutes: 60});
 chrome.alarms.create(
     'remove-entries-missing-urls', {periodInMinutes: 60 * 24 * 7});
-chrome.alarms.create('remove-orphaned-entries', {periodInMinutes: 60 * 24 * 7});
+chrome.alarms.create('db-remove-orphaned-entries', {periodInMinutes: 60 * 24 * 7});
 chrome.alarms.create('refresh-feed-icons', {periodInMinutes: 60 * 24 * 7 * 2});
 chrome.alarms.create('compact-favicon-db', {periodInMinutes: 60 * 24 * 7});

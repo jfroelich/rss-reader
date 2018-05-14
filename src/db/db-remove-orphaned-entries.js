@@ -1,4 +1,4 @@
-import {is_valid_feed_id} from '/src/db/feed.js';
+import {is_valid_feed_id} from '/src/feed.js';
 
 export function remove_orphaned_entries() {
   return new Promise(executor.bind(this));

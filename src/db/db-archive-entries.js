@@ -1,14 +1,14 @@
-import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/db/entry.js';
+import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/entry.js';
 import {sizeof} from '/src/lib/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
-export function archive_entries(max_age = TWO_DAYS_MS) {
+export function db_archive_entries(max_age = TWO_DAYS_MS) {
   return new Promise(archive_entries_executor.bind(this, max_age));
 }
 
 function archive_entries_executor(max_age, resolve, reject) {
-  this.console.log('%s: starting', archive_entries.name);
+  this.console.log('%s: starting', db_archive_entries.name);
   const entry_ids = [];
   const txn = this.conn.transaction('entry', 'readwrite');
   txn.onerror = _ => reject(txn.error);
@@ -43,7 +43,7 @@ function request_onsuccess(entry_ids, max_age, event) {
 
 function txn_oncomplete(entry_ids, callback, event) {
   this.console.debug(
-      '%s: archived %d entries', archive_entries.name, entry_ids.length);
+      '%s: archived %d entries', db_archive_entries.name, entry_ids.length);
 
   const channel = this.channel;
   const msg = {type: 'entry-archived', id: 0};
@@ -61,11 +61,11 @@ function archive_entry(console, entry) {
   const after_sz = sizeof(ce);
 
   if (after_sz > before_sz) {
-    console.warn('%s: increased entry size %o', archive_entries.name, entry);
+    console.warn('%s: increased entry size %o', db_archive_entries.name, entry);
   }
 
   console.debug(
-      '%s: reduced entry size by ~%d bytes', archive_entries.name,
+      '%s: reduced entry size by ~%d bytes', db_archive_entries.name,
       after_sz - before_sz);
   ce.archiveState = ENTRY_STATE_ARCHIVED;
   const current_date = new Date();

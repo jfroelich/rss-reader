@@ -1,8 +1,8 @@
-import {contains_entry} from '/src/db/contains-entry.js';
-import {append_entry_url} from '/src/db/entry.js';
-import {sanitize_entry} from '/src/db/sanitize-entry.js';
-import {validate_entry} from '/src/db/validate-entry.js';
-import {write_entry} from '/src/db/write-entry.js';
+import {db_contains_entry} from '/src/db/db-contains-entry.js';
+import {append_entry_url} from '/src/entry.js';
+import {sanitize_entry} from '/src/db/db-sanitize-entry.js';
+import {validate_entry} from '/src/db/db-validate-entry.js';
+import {write_entry} from '/src/db/db-write-entry.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
 import * as color from '/src/lib/color.js';
@@ -97,7 +97,7 @@ function entry_rewrite_tail_url(entry, rewrite_rules) {
 async function entry_exists(rconn, entry) {
   const url = new URL(list_peek(entry.urls));
   const query = {url: url};
-  return await contains_entry(rconn, query);
+  return await db_contains_entry(rconn, query);
 }
 
 // TODO: i think this should always return a response, so instead of returning

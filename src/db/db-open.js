@@ -1,11 +1,11 @@
-import {ENTRY_MAGIC} from '/src/db/entry.js';
-import {FEED_MAGIC} from '/src/db/feed.js';
+import {ENTRY_MAGIC} from '/src/entry.js';
+import {FEED_MAGIC} from '/src/feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_open} from '/src/lib/idb.js';
 
 // TODO: this should be pulling default values from config.js
 
-export function create_conn(
+export function db_open(
     name = 'reader', version = 24, timeout = 500, console = console_stub) {
   return idb_open(
       name, version, on_upgrade_needed.bind(null, console), timeout, console);

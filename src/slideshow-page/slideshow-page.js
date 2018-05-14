@@ -1,13 +1,13 @@
 import '/src/cli.js';
 
 import {CHANNEL_NAME, fonts} from '/src/config.js';
-import {create_conn} from '/src/db/db.js';
-import {is_entry, is_valid_entry_id} from '/src/db/entry.js';
-import {find_viewable_entries} from '/src/db/find-viewable-entries.js';
-import {for_each_viewable_entry} from '/src/db/for-each-viewable-entry.js';
-import {mark_entry_read} from '/src/db/mark-entry-read.js';
+import {db_open} from '/src/db/db-open.js';
+import {is_entry, is_valid_entry_id} from '/src/entry.js';
+import {find_viewable_entries} from '/src/db/db-find-viewable-entries.js';
+import {for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
+import {for_each_viewable_entry} from '/src/db/db-for-each-viewable-entry.js';
+import {mark_entry_read} from '/src/db/db-mark-entry-read.js';
 import {favicon_create_conn} from '/src/favicon.js';
-import {for_each_active_feed} from '/src/db/for-each-active-feed.js';
 import {import_opml} from '/src/import-opml.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {date_format} from '/src/lib/date.js';
@@ -82,7 +82,7 @@ async function on_entry_write_message(message) {
 
   const unread_count = slideshow_count_unread();
   if (unread_count <= 3) {
-    const conn = await create_conn();
+    const conn = await db_open();
     await slide_load_and_append_multiple(conn);
     conn.close();
   }
@@ -316,7 +316,7 @@ async function slide_onclick(event) {
     return false;
   }
 
-  const conn = await create_conn();
+  const conn = await db_open();
   await slide_mark_read(conn, clicked_slide);
   conn.close();
 }
@@ -353,7 +353,7 @@ async function slide_next() {
   const slide_unread_count = slideshow_count_unread();
 
   if (slide_unread_count > 1) {
-    const conn = await create_conn();
+    const conn = await db_open();
     await slide_mark_read(conn, current_slide);
     conn.close();
     Slideshow.next();
@@ -361,7 +361,7 @@ async function slide_next() {
   }
 
   let append_count = 0;
-  const conn = await create_conn();
+  const conn = await db_open();
 
   if (slide_unread_count < 2) {
     append_count = await slide_load_and_append_multiple(conn);
@@ -405,7 +405,7 @@ async function refresh_anchor_onclick(event) {
   // itself (at least in Chrome 66) despite what spec states
   const onclick_channel = new BroadcastChannel(CHANNEL_NAME);
 
-  const rconn = await create_conn();
+  const rconn = await db_open();
   const iconn = await favicon_create_conn();
 
   const options = {};
@@ -489,7 +489,7 @@ async function uploader_input_onchange(event) {
   console.log('%s: started', uploader_input_onchange.name);
   const op = {};
   [op.rconn, op.iconn] =
-      await Promise.all([create_conn(), favicon_create_conn()]);
+      await Promise.all([db_open(), favicon_create_conn()]);
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;  // temporary
   op.fetch_timeout = 5 * 1000;
@@ -757,7 +757,7 @@ async function slideshow_page_init() {
 
   const entry_cursor_offset = 0, entry_cursor_limit = 6;
 
-  const conn = await create_conn();
+  const conn = await db_open();
   const iterate_entries_promise = for_each_viewable_entry(
       conn, entry_cursor_offset, entry_cursor_limit, slide_append);
   const iterate_feeds_promise =

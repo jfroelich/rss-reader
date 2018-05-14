@@ -1,4 +1,4 @@
-# find-feed-by-url
+# db-find-feed-by-url
 Search the database for a feed with the given url. The primary use case for this function is to check if a feed exists in the database with the given url. In that case the `key_only` parameter should be set to true.
 
 ### Params

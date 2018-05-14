@@ -1,7 +1,7 @@
-import {create_conn} from '/src/db/db.js';
-import {contains_feed} from '/src/db/feed-store.js';
-import {is_feed, is_valid_feed_id} from '/src/db/feed.js';
-import {find_feed_by_id} from '/src/db/find-feed-by-id.js';
+import {db_contains_feed} from '/src/db/db-contains-feed.js';
+import {find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
+import {db_open} from '/src/db/db-open.js';
+import {is_feed, is_valid_feed_id} from '/src/feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_remove} from '/src/lib/idb.js';
 import {subscribe} from '/src/subscribe.js';
@@ -15,7 +15,7 @@ export async function subscribe_test() {
 
   const rdb_name = 'subscribe-test';
   let version, timeout;
-  const rconn = await create_conn(rdb_name, version, timeout, console_stub);
+  const rconn = await db_open(rdb_name, version, timeout, console_stub);
 
   const url = new URL(test_url);
   const options = {fetch_timeout: 7000, notify: false, skip_icon_lookup: true};
@@ -47,7 +47,7 @@ export async function subscribe_test() {
 
   // Test the new feed is findable by url
   const query = {url: url};
-  assert(await contains_feed(rconn, query), 'cannot find feed by url');
+  assert(await db_contains_feed(rconn, query), 'cannot find feed by url');
 
   // Test the new feed is findable by id
   const match = await find_feed_by_id(rconn, feed.id);
