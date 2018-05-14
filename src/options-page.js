@@ -1,4 +1,4 @@
-import '/src/views/cli.js';
+import '/src/cli.js';
 
 import {background_images, CHANNEL_NAME} from '/src/config.js';
 import {create_conn} from '/src/db.js';
@@ -14,7 +14,7 @@ import {list_peek} from '/src/lib/list.js';
 import * as perm from '/src/lib/permissions.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {subscribe} from '/src/subscribe.js';
-import * as PageStyle from '/src/views/slideshow-page/page-style-settings.js';
+import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
 
 // View state
 let current_menu_item;

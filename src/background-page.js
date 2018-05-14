@@ -1,4 +1,4 @@
-import '/src/views/cli.js';
+import '/src/cli.js';
 
 import {refresh_badge} from '/src/badge.js';
 import {CHANNEL_NAME} from '/src/config.js';

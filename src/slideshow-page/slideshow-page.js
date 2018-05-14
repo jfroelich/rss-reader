@@ -1,4 +1,4 @@
-import '/src/views/cli.js';
+import '/src/cli.js';
 
 import {CHANNEL_NAME, fonts} from '/src/config.js';
 import {create_conn} from '/src/db.js';
@@ -16,9 +16,9 @@ import {html_truncate} from '/src/lib/html-truncate.js';
 import {html_escape} from '/src/lib/html.js';
 import {list_peek} from '/src/lib/list.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
-import {slideshow_export_opml} from '/src/views/slideshow-page/export-opml.js';
-import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
-import * as Slideshow from '/src/views/slideshow-page/slideshow.js';
+import {slideshow_export_opml} from '/src/slideshow-page/export-opml.js';
+import * as page_style from '/src/slideshow-page/page-style-settings.js';
+import * as Slideshow from '/src/slideshow-page/slideshow.js';
 
 const channel = new BroadcastChannel(CHANNEL_NAME);
 
