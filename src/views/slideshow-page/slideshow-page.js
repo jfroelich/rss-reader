@@ -1,6 +1,6 @@
 import '/src/views/cli.js';
 
-import {create_channel} from '/src/channel.js';
+import {CHANNEL_NAME, fonts} from '/src/config.js';
 import {create_conn} from '/src/db.js';
 import {is_entry, is_valid_entry_id} from '/src/entry-store/entry.js';
 import {find_viewable_entries} from '/src/entry-store/find-viewable-entries.js';
@@ -8,7 +8,6 @@ import {for_each_viewable_entry} from '/src/entry-store/for-each-viewable-entry.
 import {mark_entry_read} from '/src/entry-store/mark-entry-read.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {for_each_active_feed} from '/src/feed-store/for-each-active-feed.js';
-import {fonts} from '/src/fonts.js';
 import {import_opml} from '/src/import-opml.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {date_format} from '/src/lib/date.js';
@@ -21,7 +20,7 @@ import {slideshow_export_opml} from '/src/views/slideshow-page/export-opml.js';
 import * as page_style from '/src/views/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/views/slideshow-page/slideshow.js';
 
-const channel = create_channel();
+const channel = new BroadcastChannel(CHANNEL_NAME);
 
 channel.onmessage = function channel_onmessage(event) {
   if (!event.isTrusted) {
@@ -161,7 +160,7 @@ async function slide_mark_read(conn, slide) {
   const id = parseInt(slide.getAttribute('entry'), 10);
   const op = {};
   op.conn = conn;
-  op.channel = create_channel();
+  op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console_stub;
   op.mark_entry_read = mark_entry_read;
   await op.mark_entry_read(id);
@@ -404,7 +403,7 @@ async function refresh_anchor_onclick(event) {
 
   // Create a local channel object because apparently a channel cannot notify
   // itself (at least in Chrome 66) despite what spec states
-  const onclick_channel = create_channel();
+  const onclick_channel = new BroadcastChannel(CHANNEL_NAME);
 
   const rconn = await create_conn();
   const iconn = await favicon_create_conn();
@@ -491,7 +490,7 @@ async function uploader_input_onchange(event) {
   const op = {};
   [op.rconn, op.iconn] =
       await Promise.all([create_conn(), favicon_create_conn()]);
-  op.channel = create_channel();
+  op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;  // temporary
   op.fetch_timeout = 5 * 1000;
   op.import_opml = import_opml;

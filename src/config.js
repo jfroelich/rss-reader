@@ -1,3 +1,10 @@
+
+// The name of the channel through which app functions send messages. Intended
+// for use as the argument to a BroadcastChannel constructor.
+export const CHANNEL_NAME = 'reader';
+
+
+// Various article backgrounds
 // clang-format off
 export const background_images = [
   '/images/bgfons-paper_texture318.jpg',
@@ -19,5 +26,26 @@ export const background_images = [
   '/images/subtle-patterns-white-wall.png',
   '/images/subtle-patterns-witewall-3.png',
   '/images/thomas-zucx-noise-lines.png'
+];
+// clang-format on
+
+// Various fonts the user can select from to customize the display of content
+// clang-format off
+export const fonts = [
+  'ArchivoNarrow-Regular',
+  'Arial, sans-serif',
+  'Calibri',
+  'Cambria',
+  'CartoGothicStd',
+  'Fanwood',
+  'Georgia',
+  'League Mono Regular',
+  'League Spartan',
+  'Montserrat',
+  'Noto Sans',
+  'Open Sans Regular',
+  'PathwayGothicOne',
+  'PlayfairDisplaySC',
+  'Roboto Regular'
 ];
 // clang-format on

@@ -3,6 +3,8 @@ import {FEED_MAGIC} from '/src/feed-store/feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_open} from '/src/lib/idb.js';
 
+// TODO: this should be pulling default values from config.js
+
 export function create_conn(
     name = 'reader', version = 24, timeout = 500, console = console_stub) {
   return idb_open(
@@ -16,11 +18,13 @@ function on_upgrade_needed(console, event) {
   const stores = conn.objectStoreNames;
 
   if (event.oldVersion === 0) {
-    console.log('Creating database', conn.name, conn.version, event.oldVersion);
+    console.log(
+        '%s: creating database', on_upgrade_needed.name, conn.name,
+        conn.version, event.oldVersion);
   } else {
     console.log(
-        'Upgrading database %s to version %s from version', conn.name,
-        conn.version, event.oldVersion);
+        '%s: upgrading database %s to version %s from version',
+        on_upgrade_needed.name, conn.name, conn.version, event.oldVersion);
   }
 
   if (event.oldVersion < 20) {

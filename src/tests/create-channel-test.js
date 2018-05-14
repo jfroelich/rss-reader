@@ -1,4 +1,4 @@
-import {create_channel} from '/src/channel.js';
+import {CHANNEL_NAME} from '/src/config.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: these functions need to be rewritten to not complete until actually
@@ -9,8 +9,14 @@ import {assert} from '/src/tests/assert.js';
 // other aspects of channels, that kind of testing belongs elsewhere, perhaps
 // back in experimental and not here
 
+// TODO: these should not be using the app's real channel, that risks sending
+// real messages to the live app and causing unintended consequences. So these
+// should instead be using a mock channel name. This should be completely
+// decoupled from CHANNEL_NAME constant. Perhaps it should do a really simple
+// test that verifies the config is correct (CHANNEL_NAME is a defined string)
+
 export async function create_channel_test1() {
-  console.debug('starting test1');
+  console.debug('%s: starting...', create_channel_test1.name);
   // When two channgels exist, both should get the same message
   // Part two of this test, is sending a message to a channel on the same page.
   // Ok, same page works, but not the first part
@@ -32,10 +38,10 @@ export async function create_channel_test1() {
   // ok one thing to do would be to create one and see if it gets its own
   // message
 
-  const a = create_channel();
+  const a = new BroadcastChannel(CHANNEL_NAME);
   a.onmessage = e => console.debug('a', e.data);
 
-  const b = create_channel();
+  const b = new BroadcastChannel(CHANNEL_NAME);
   b.onmessage = e => console.debug('b', e.data);
 
   a.postMessage({hello: 'from-a-to-everyone'});
@@ -65,7 +71,7 @@ export async function create_channel_test2() {
   // code is running
 
   console.debug('test2 start');
-  const a = create_channel();
+  const a = new BroadcastChannel(CHANNEL_NAME);
   a.onmessage = e => console.debug('a', e.data);
   a.postMessage({hello: 'world'});
   setTimeout(_ => {

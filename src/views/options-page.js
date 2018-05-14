@@ -1,7 +1,6 @@
 import '/src/views/cli.js';
 
-import {background_images} from '/src/background-images.js';
-import {create_channel} from '/src/channel.js';
+import {background_images, CHANNEL_NAME} from '/src/config.js';
 import {create_conn} from '/src/db.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {delete_feed} from '/src/feed-store/feed-store.js';
@@ -297,7 +296,7 @@ async function subscribe_form_onsubmit(event) {
   const op = {};
   op.rconn = rconn;
   op.iconn = iconn;
-  op.channel = create_channel();
+  op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;
   op.subscribe = subscribe;
   const feed = await op.subscribe(subscribe_url, {notify: true});
@@ -319,7 +318,7 @@ async function subscribe_form_onsubmit(event) {
 async function after_subscribe_poll_feed_async(feed) {
   const conn_promises = Promise.all([create_conn(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
-  const channel = create_channel();
+  const channel = new BroadcastChannel(CHANNEL_NAME);
 
   const options = {ignore_recency_check: true, notify: true};
   await poll_feed(rconn, iconn, channel, console_stub, options, feed);
@@ -383,7 +382,7 @@ async function unsubscribe_button_onclick(event) {
 
   const ctx = {};
   ctx.conn = await create_conn();
-  ctx.channel = create_channel();
+  ctx.channel = new BroadcastChannel(CHANNEL_NAME);
   ctx.console = console;  // enable logging for now (temporary)
 
   const result = await delete_feed.call(ctx, feed_id, reason_text);
@@ -399,7 +398,7 @@ async function activate_feed_button_onclick(event) {
 
   const op = {};
   op.conn = await create_conn();
-  op.channel = create_channel();
+  op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;
   op.write = write_feed_property;
   await op.write(feed_id, 'active', true);
@@ -420,7 +419,7 @@ async function deactivate_feed_button_onclick(event) {
 
   const op = {};
   op.conn = await create_conn();
-  op.channel = create_channel();
+  op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;
   op.write = write_feed_property;
   await op.write(feed_id, 'active', false, {reason: 'manual'});

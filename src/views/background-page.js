@@ -1,7 +1,7 @@
 import '/src/views/cli.js';
 
 import {refresh_badge} from '/src/badge.js';
-import {create_channel} from '/src/channel.js';
+import {CHANNEL_NAME} from '/src/config.js';
 import {create_conn} from '/src/db.js';
 import {archive_entries} from '/src/entry-store/archive-entries.js';
 import {remove_lost_entries} from '/src/entry-store/remove-lost-entries.js';
@@ -16,22 +16,21 @@ async function handle_compact_favicons_alarm(alarm) {
 }
 
 async function handle_archive_alarm_wakeup(alarm) {
-  const ac = {};
-  ac.conn = await create_conn();
-  ac.channel = create_channel();
-  ac.console = console_stub;
-
+  const op = {};
+  op.conn = await create_conn();
+  op.channel = new BroadcastChannel(CHANNEL_NAME);
+  op.console = console_stub;
+  op.archive_entries = archive_entries;
   let max_age;
-
-  await archive_entries.call(ac, max_age);
-  ac.channel.close();
-  ac.conn.close();
+  await op.archive_entries(max_age);
+  op.channel.close();
+  op.conn.close();
 }
 
 async function handle_lost_entries_alarm(alarm) {
   const op = {};
   op.conn = await create_conn();
-  op.channel = create_channel();
+  op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console_stub;
   op.remove_lost_entries = remove_lost_entries;
   await op.remove_lost_entries();
@@ -42,7 +41,7 @@ async function handle_lost_entries_alarm(alarm) {
 async function handle_orphan_entries_alarm(alarm) {
   const op = {};
   op.conn = await create_conn();
-  op.channel = create_channel();
+  op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console_stub;
   op.remove_orphaned_entries = remove_orphaned_entries;
   await op.remove_orphaned_entries();
@@ -53,7 +52,7 @@ async function handle_orphan_entries_alarm(alarm) {
 async function handle_refresh_icons_alarm(alarm) {
   const proms = [create_conn(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
-  const channel = create_channel();
+  const channel = new BroadcastChannel(CHANNEL_NAME);
 
   const op = {};
   op.rconn = rconn;
@@ -83,7 +82,7 @@ async function handle_poll_feeds_alarm(alarm) {
 
   const rconn = await create_conn();
   const iconn = await favicon_create_conn();
-  const channel = create_channel();
+  const channel = new BroadcastChannel(CHANNEL_NAME);
 
   await poll_feeds(rconn, iconn, channel, console, options);
 
