@@ -1,4 +1,4 @@
-import {for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
+import {db_for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {notify} from '/src/notify.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
@@ -25,7 +25,7 @@ export async function poll_feeds(
     options = {}) {
   console.log('poll_feeds start');
   const feeds = [];
-  await for_each_active_feed(rconn, feed => feeds.push(feed));
+  await db_for_each_active_feed(rconn, feed => feeds.push(feed));
   console.debug('Loaded %d active feeds', feeds.length);
   const pfo = Object.assign({}, default_options, options);
   const pfp = poll_feed.bind(null, rconn, iconn, channel, console, pfo);

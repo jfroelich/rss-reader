@@ -1,5 +1,5 @@
-import {for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
-import {write_feed} from '/src/db/db-write-feed.js';
+import {db_for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
+import {db_write_feed} from '/src/db/db-write-feed.js';
 import {FaviconService} from '/src/lib/favicon-service.js';
 import {list_is_empty, list_peek} from '/src/lib/list.js';
 
@@ -43,7 +43,7 @@ export function favicon_create_feed_lookup_url(feed) {
 export async function favicon_refresh_feeds() {
   const promises = [];
   const refresh_feed_bound = refresh_feed.bind(this);
-  await for_each_active_feed(
+  await db_for_each_active_feed(
       this.rconn, feed => promises.push(refresh_feed_bound(feed)));
   return Promise.all(promises);
 }
@@ -78,9 +78,9 @@ async function refresh_feed(feed) {
       conn: this.rconn,
       channel: this.channel,
       console: this.console,
-      write_feed: write_feed
+      db_write_feed: db_write_feed
     };
-    await update_op.write_feed(
+    await update_op.db_write_feed(
         feed, {validate: false, sanitize: false, set_date_updated: true});
   }
 }

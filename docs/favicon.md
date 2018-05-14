@@ -29,5 +29,5 @@ TODOs:
 * document
 * test
 * use cursor for scalability over N-feeds instead of getAll
-* in fact, should probably use cursor.update, and should not even re-use `get_feeds` or some cursor walk helper, should directly interact with database without an intermediate layer
+* in fact, should probably use cursor.update, and should not even re-use `db_get_feeds` or some cursor walk helper, should directly interact with database without an intermediate layer
 * this should be using a single transaction, not sure how to handle the issue with transaction timeout during lookup. Probably should be doing two passes. One preload all feeds, saves just the most basic information (feed id, link, urls), then lookup favicons in mem, then second pass iterates feed store and updates. If a new feed created in between the two txns it will be missed, that's fine. If a feed is deleted in between the two txns, it will never try to interact with the intermediate lookup table so that's fine. If a feed is mutated in between, not really sure what to do. Also: what if this is called concurrently? what if a second call starts while first is running?

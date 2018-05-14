@@ -1,4 +1,4 @@
-export function get_feeds(conn, title_sort_flag = false) {
+export function db_get_feeds(conn, title_sort_flag = false) {
   return new Promise(executor.bind(null, conn, title_sort_flag));
 }
 

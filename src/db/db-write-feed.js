@@ -17,7 +17,7 @@ import {condense_whitespace, filter_control_characters} from '/src/lib/string.js
 // return id
 
 // Creates or updates the given feed in storage
-export function write_feed(feed, options = {}) {
+export function db_write_feed(feed, options = {}) {
   if (!is_feed(feed)) {
     throw new TypeError('Invalid feed parameter type ' + feed);
   }
@@ -25,7 +25,7 @@ export function write_feed(feed, options = {}) {
   const is_update = 'id' in feed;
   const prefix = is_update ? 'updating' : 'creating';
   this.console.debug(
-      '%s: %s feed', write_feed.name, prefix, list_peek(feed.urls));
+      '%s: %s feed', db_write_feed.name, prefix, list_peek(feed.urls));
 
   // TODO: if we are always going to clone and this is sole caller of
   // sanitize_feed just do the clone here in both cases and do not clone in
@@ -76,7 +76,7 @@ function executor(is_update, feed, options, resolve, reject) {
 
 function txn_oncomplete(is_update, feed, callback, event) {
   const message = {type: 'feed-written', id: feed.id, create: !is_update};
-  this.console.debug('%s: %o', write_feed.name, message);
+  this.console.debug('%s: %o', db_write_feed.name, message);
   this.channel.postMessage(message);
   callback(feed);
 }

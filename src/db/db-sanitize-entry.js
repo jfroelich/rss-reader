@@ -38,7 +38,7 @@ import * as string from '/src/lib/string.js';
 
 // TODO: i think this would read more clearly with helpers per property
 
-export function sanitize_entry(
+export function db_sanitize_entry(
     entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
   const blank_entry = create_entry();

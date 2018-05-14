@@ -26,7 +26,7 @@ import {is_entry, is_valid_entry_id} from '/src/entry.js';
 
 // Returns whether an entry is valid
 // NOTE: only partially implemented
-export function validate_entry(entry) {
+export function db_validate_entry(entry) {
   if (!is_entry(entry)) {
     return false;
   }
@@ -35,7 +35,7 @@ export function validate_entry(entry) {
   // check id validity when the property exists
   if ('id' in entry) {
     if (!is_valid_entry_id(entry.id)) {
-      console.debug('%s: invalid id', validate_entry.name, entry.id);
+      console.debug('%s: invalid id', db_validate_entry.name, entry.id);
       return false;
     }
   }

@@ -1,5 +1,5 @@
 import {db_contains_feed} from '/src/db/db-contains-feed.js';
-import {write_feed} from '/src/db/db-write-feed.js';
+import {db_write_feed} from '/src/db/db-write-feed.js';
 import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
 import {append_feed_url, coerce_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
@@ -67,14 +67,14 @@ export async function subscribe(url, options) {
     conn: this.rconn,
     channel: this.channel,
     console: this.console,
-    write_feed: write_feed
+    db_write_feed: db_write_feed
   };
   const write_options = {
     validate: true,
     sanitize: true,
     set_date_updated: false
   };
-  const stored_feed = await write_op.write_feed(feed, write_options);
+  const stored_feed = await write_op.db_write_feed(feed, write_options);
 
   if (options.notify) {
     const title = 'Subscribed!';

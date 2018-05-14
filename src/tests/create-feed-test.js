@@ -1,7 +1,7 @@
 import {db_contains_feed} from '/src/db/db-contains-feed.js';
-import {find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
+import {db_find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
 import {db_open} from '/src/db/db-open.js';
-import {write_feed} from '/src/db/db-write-feed.js';
+import {db_write_feed} from '/src/db/db-write-feed.js';
 import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
 import {idb_remove} from '/src/lib/idb.js';
 import {list_is_empty} from '/src/lib/list.js';
@@ -37,7 +37,7 @@ export async function create_feed_test() {
   op.conn = conn;
   op.channel = channel;
   op.console = console;
-  op.write_feed = write_feed;
+  op.db_write_feed = db_write_feed;
 
   // TODO: probably should do tests with different combinations of options. For
   // now just do a test that exercises the true cases to cause the most work
@@ -45,7 +45,7 @@ export async function create_feed_test() {
   options.sanitize = true;
   options.validate = true;
 
-  const stored_feed = await op.write_feed(feed, options);
+  const stored_feed = await op.db_write_feed(feed, options);
 
   // Make assertions about the output of the operation
   assert(typeof stored_feed === 'object', 'output not an object');
@@ -80,7 +80,7 @@ export async function create_feed_test() {
       await db_contains_feed(conn, {url: feed_url}), 'cannot find feed by url');
 
   // Read the feed from the database and assert against read properties
-  const match = await find_feed_by_id(conn, stored_feed.id);
+  const match = await db_find_feed_by_id(conn, stored_feed.id);
   assert(is_feed(match), 'feed loaded from db is not a feed');
   assert(is_valid_feed_id(match.id), 'feed loaded from db has invalid id');
   assert(

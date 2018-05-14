@@ -3,10 +3,10 @@ import '/src/cli.js';
 import {CHANNEL_NAME, fonts} from '/src/config.js';
 import {db_open} from '/src/db/db-open.js';
 import {is_entry, is_valid_entry_id} from '/src/entry.js';
-import {find_viewable_entries} from '/src/db/db-find-viewable-entries.js';
-import {for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
-import {for_each_viewable_entry} from '/src/db/db-for-each-viewable-entry.js';
-import {mark_entry_read} from '/src/db/db-mark-entry-read.js';
+import {db_find_viewable_entries} from '/src/db/db-find-viewable-entries.js';
+import {db_for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
+import {db_for_each_viewable_entry} from '/src/db/db-for-each-viewable-entry.js';
+import {db_mark_entry_read} from '/src/db/db-mark-entry-read.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {import_opml} from '/src/import-opml.js';
 import {console_stub} from '/src/lib/console-stub.js';
@@ -162,8 +162,8 @@ async function slide_mark_read(conn, slide) {
   op.conn = conn;
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console_stub;
-  op.mark_entry_read = mark_entry_read;
-  await op.mark_entry_read(id);
+  op.db_mark_entry_read = db_mark_entry_read;
+  await op.db_mark_entry_read(id);
   op.channel.close();
 }
 
@@ -178,7 +178,7 @@ async function slide_load_and_append_multiple(conn, limit) {
   console.log('Appending slides (limit: %d)', limit);
   const offset = slideshow_count_unread();
 
-  let entries = await find_viewable_entries(conn, offset, limit);
+  let entries = await db_find_viewable_entries(conn, offset, limit);
 
   for (const entry of entries) {
     slide_append(entry);
@@ -758,10 +758,10 @@ async function slideshow_page_init() {
   const entry_cursor_offset = 0, entry_cursor_limit = 6;
 
   const conn = await db_open();
-  const iterate_entries_promise = for_each_viewable_entry(
+  const iterate_entries_promise = db_for_each_viewable_entry(
       conn, entry_cursor_offset, entry_cursor_limit, slide_append);
   const iterate_feeds_promise =
-      for_each_active_feed(conn, feeds_container_append_feed);
+      db_for_each_active_feed(conn, feeds_container_append_feed);
   await Promise.all([iterate_entries_promise, iterate_feeds_promise]);
   conn.close();
 

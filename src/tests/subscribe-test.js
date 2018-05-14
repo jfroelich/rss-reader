@@ -1,5 +1,5 @@
 import {db_contains_feed} from '/src/db/db-contains-feed.js';
-import {find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
+import {db_find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
 import {db_open} from '/src/db/db-open.js';
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
@@ -50,7 +50,7 @@ export async function subscribe_test() {
   assert(await db_contains_feed(rconn, query), 'cannot find feed by url');
 
   // Test the new feed is findable by id
-  const match = await find_feed_by_id(rconn, feed.id);
+  const match = await db_find_feed_by_id(rconn, feed.id);
   assert(is_feed(match), 'subscribed feed read did not emit feed type');
   assert(is_valid_feed_id(match.id), 'subscribed feed has invalid id');
   assert(match.id === feed.id, 'subscribed feed vs stored feed id mismatch');

@@ -1,6 +1,6 @@
 import {is_valid_feed_id} from '/src/feed.js';
 
-export function remove_orphaned_entries() {
+export function db_remove_orphaned_entries() {
   return new Promise(executor.bind(this));
 }
 
@@ -25,7 +25,7 @@ function executor(resolve, reject) {
         if (!is_valid_feed_id(entry.feed) || !feed_ids.includes(entry.feed)) {
           entry_ids.push(entry.id);
           this.console.debug(
-              '%s: deleting entry', remove_orphaned_entries.name, entry.id);
+              '%s: deleting entry', db_remove_orphaned_entries.name, entry.id);
           cursor.delete();
         }
 

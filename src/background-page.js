@@ -4,8 +4,8 @@ import {refresh_badge} from '/src/badge.js';
 import {CHANNEL_NAME} from '/src/config.js';
 import {db_archive_entries} from '/src/db/db-archive-entries.js';
 import {db_open} from '/src/db/db-open.js';
-import {remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
-import {remove_orphaned_entries} from '/src/db/db-remove-orphaned-entries.js';
+import {db_remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
+import {db_remove_orphaned_entries} from '/src/db/db-remove-orphaned-entries.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {open_view} from '/src/open-view.js';
@@ -32,8 +32,8 @@ async function handle_lost_entries_alarm(alarm) {
   op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console_stub;
-  op.remove_lost_entries = remove_lost_entries;
-  await op.remove_lost_entries();
+  op.db_remove_lost_entries = db_remove_lost_entries;
+  await op.db_remove_lost_entries();
   op.conn.close();
   op.channel.close();
 }
@@ -43,8 +43,8 @@ async function handle_orphan_entries_alarm(alarm) {
   op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console_stub;
-  op.remove_orphaned_entries = remove_orphaned_entries;
-  await op.remove_orphaned_entries();
+  op.db_remove_orphaned_entries = db_remove_orphaned_entries;
+  await op.db_remove_orphaned_entries();
   op.conn.close();
   op.channel.close();
 }

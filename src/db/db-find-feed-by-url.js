@@ -1,6 +1,6 @@
 import {create_feed, is_valid_feed_id} from '/src/feed.js';
 
-export function find_feed_by_url(conn, url, key_only = false) {
+export function db_find_feed_by_url(conn, url, key_only = false) {
   if (!(url instanceof URL)) {
     throw new TypeError('url is not a URL: ' + url);
   }

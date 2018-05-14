@@ -1,7 +1,7 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/entry.js';
 
 // TODO: use context?
-export function find_viewable_entries(conn, offset, limit) {
+export function db_find_viewable_entries(conn, offset, limit) {
   if (offset !== null && typeof offset !== 'undefined') {
     assert(Number.isInteger(offset) && offset >= 0);
   }

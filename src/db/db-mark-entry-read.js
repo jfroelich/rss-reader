@@ -3,7 +3,7 @@ import {ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from 
 
 // TODO: use db-write-entry-property instead
 
-export function mark_entry_read(entry_id) {
+export function db_mark_entry_read(entry_id) {
   if (!is_valid_entry_id(entry_id)) {
     throw new TypeError('entry_id is not a valid entry id: ' + entry_id);
   }
@@ -53,7 +53,7 @@ function request_onsuccess(entry_id, event) {
 
 function txn_oncomplete(entry_id, callback, event) {
   this.console.debug(
-      '%s: marked entry as read', mark_entry_read.name, entry_id);
+      '%s: marked entry as read', db_mark_entry_read.name, entry_id);
   this.channel.postMessage({type: 'entry-marked-read', id: entry_id});
   const conn = event.target.db;
   refresh_badge(conn, this.console).catch(this.console.error);

@@ -1,11 +1,11 @@
-import {get_feeds} from '/src/db/db-get-feeds.js';
+import {db_get_feeds} from '/src/db/db-get-feeds.js';
 import {list_peek} from '/src/lib/list.js';
 
 export async function export_opml(title) {
   this.console.debug(
       '%s: title %s database', export_opml.name, title, this.conn.name);
   const document = create_opml_document(title);
-  const feeds = await get_feeds(this.conn);
+  const feeds = await db_get_feeds(this.conn);
   this.console.debug('%s: loaded %d feeds', export_opml.name, feeds.length);
 
   for (const feed of feeds) {

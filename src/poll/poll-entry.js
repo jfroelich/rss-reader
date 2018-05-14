@@ -1,8 +1,8 @@
-import {db_contains_entry} from '/src/db/db-contains-entry.js';
-import {append_entry_url} from '/src/entry.js';
-import {sanitize_entry} from '/src/db/db-sanitize-entry.js';
-import {validate_entry} from '/src/db/db-validate-entry.js';
-import {write_entry} from '/src/db/db-write-entry.js';
+import {db_find_entry_id_by_url} from '/src/db/db-find-entry-id-by-url.js';
+import {db_sanitize_entry} from '/src/db/db-sanitize-entry.js';
+import {db_validate_entry} from '/src/db/db-validate-entry.js';
+import {db_write_entry} from '/src/db/db-write-entry.js';
+import {append_entry_url, is_valid_entry_id} from '/src/entry.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
 import * as color from '/src/lib/color.js';
@@ -46,26 +46,26 @@ export async function poll_entry(entry) {
       entry, document, this.console, this.fetch_image_timeout);
 
   // Explicitly validate the entry. This was previously done via the call to
-  // write_entry, and threw a type error which was not caught here. For now,
+  // db_write_entry, and threw a type error which was not caught here. For now,
   // just throw a basic error to match the previous behavior. In the future,
   // think about whether this should be throwing an error at all or doing
   // something else.
-  if (!validate_entry(entry)) {
+  if (!db_validate_entry(entry)) {
     throw new Error('Invalid entry ' + entry);
   }
 
-  // Explicitly sanitize the entry. This was previously done by write_entry
+  // Explicitly sanitize the entry. This was previously done by db_write_entry
   // but that is no longer the case. For now, replace the parameter value with
   // itself, even though sanitize clones. Also note that sanitize now filters
   // empty properties implicitly
-  entry = sanitize_entry(entry);
+  entry = db_sanitize_entry(entry);
 
   const op = {};
   op.conn = this.rconn;
   op.channel = this.channel;
   op.console = this.console;
-  op.write_entry = write_entry;
-  const new_entry_id = await op.write_entry(entry);
+  op.db_write_entry = db_write_entry;
+  const new_entry_id = await op.db_write_entry(entry);
   return new_entry_id;
 }
 
@@ -96,8 +96,9 @@ function entry_rewrite_tail_url(entry, rewrite_rules) {
 
 async function entry_exists(rconn, entry) {
   const url = new URL(list_peek(entry.urls));
-  const query = {url: url};
-  return await db_contains_entry(rconn, query);
+  const op = {conn: rconn, db_find_entry_id_by_url: db_find_entry_id_by_url};
+  const id = await op.db_find_entry_id_by_url(url);
+  return is_valid_entry_id(id);
 }
 
 // TODO: i think this should always return a response, so instead of returning

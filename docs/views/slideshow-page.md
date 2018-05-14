@@ -14,8 +14,8 @@ because the click listener is done in slideshow-page instead of in the Slideshow
 The creation of a slide element, and the appending of a slide element, should be two separate tasks. This will increase flexibility and maybe clarity. slide_append should accept a slide element, not an entry.
 
 # TODO: slide_mark_read notes
-* rather than await call to `mark_entry_read`, this should listen for entry-marked-read events roundtrip and handle the event when it later occurs to mark the corresponding slide. Then this can be called non-awaited
-* maybe display an error if `mark_entry_read` fails?
+* rather than await call to `db_mark_entry_read`, this should listen for entry-marked-read events roundtrip and handle the event when it later occurs to mark the corresponding slide. Then this can be called non-awaited
+* maybe display an error if `db_mark_entry_read` fails?
 
 ### TODO: slide_load_and_append_multiple notes
 Append slides shouldn't be responsible for loading. This should accept an array of slides as input. Something else should be doing loading.

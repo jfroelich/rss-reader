@@ -1,14 +1,12 @@
 import {is_valid_feed_id} from '/src/feed.js';
 
-// TODO: create find-feed.js, merge db-find-feed-by-id and db-find-feed-by-url into
-// find-feed.js
-
+// TODO: create find-feed.js, merge db-find-feed-by-id and db-find-feed-by-url
+// into find-feed.js
 // TODO: actually, create read-feed.js, and read-feeds.js. All related
 // functionality should be merged into these two functions. This is essentially
 // an attempt at a REST-style API. Should do similar to entries
 
-
-export function find_feed_by_id(conn, id) {
+export function db_find_feed_by_id(conn, id) {
   if (!is_valid_feed_id(id)) {
     throw new TypeError('Invalid feed id ' + id);
   }

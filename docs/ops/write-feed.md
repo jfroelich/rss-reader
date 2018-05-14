@@ -1,5 +1,5 @@
 # db-write-feed
-The `write_feed` operation creates or updates a feed in the database, and broadcasts a *feed-written* type message to the channel when finished. Other than the situation where an options flag is true, this inserts the feed object *as-is*. The input feed object is never modified.
+The `db_write_feed` operation creates or updates a feed in the database, and broadcasts a *feed-written* type message to the channel when finished. Other than the situation where an options flag is true, this inserts the feed object *as-is*. The input feed object is never modified.
 
 ### Context properties
 * **conn** {IDBDatabase} an open database connection
@@ -17,7 +17,7 @@ All properties are required.
 * **set_date_updated** {Boolean} defaults to false, if true then the feed's `dateUpdated` property is set to the time this function is called
 
 ### Return value
-`write_feed` is an asynchronous function that returns a promise. The promise return value is the stored feed object.
+`db_write_feed` is an asynchronous function that returns a promise. The promise return value is the stored feed object.
 
 ### Errors
 * **TypeError** feed is not a feed type, unlike the other errors this is thrown immediately and not as a promise rejection because making this mistake constitutes a permanent programmer error

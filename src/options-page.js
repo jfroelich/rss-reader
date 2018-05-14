@@ -2,10 +2,10 @@ import '/src/cli.js';
 
 import {background_images, CHANNEL_NAME} from '/src/config.js';
 import {db_delete_feed} from '/src/db/db-delete-feed.js';
-import {find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
+import {db_find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
 import {db_open} from '/src/db/db-open.js';
-import {get_feeds} from '/src/db/db-get-feeds.js';
-import {write_feed_property} from '/src/db/db-write-feed-property.js';
+import {db_get_feeds} from '/src/db/db-get-feeds.js';
+import {db_write_feed_property} from '/src/db/db-write-feed-property.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {element_fade} from '/src/lib/element-fade.js';
@@ -210,7 +210,7 @@ async function feed_list_item_onclick(event) {
   const feed_id = parseInt(feed_id_string, 10);
 
   const conn = await db_open();
-  const feed = await find_feed_by_id(conn, feed_id);
+  const feed = await db_find_feed_by_id(conn, feed_id);
   conn.close();
 
   const title_element = document.getElementById('details-title');
@@ -331,7 +331,7 @@ async function after_subscribe_poll_feed_async(feed) {
 async function feed_list_init() {
   const title_sort_flag = true;
   const conn = await db_open();
-  const feeds = await get_feeds(conn, title_sort_flag);
+  const feeds = await db_get_feeds(conn, title_sort_flag);
   conn.close();
 
   for (const feed of feeds) {
@@ -398,7 +398,7 @@ async function activate_feed_button_onclick(event) {
   op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;
-  op.write = write_feed_property;
+  op.write = db_write_feed_property;
   await op.write(feed_id, 'active', true);
   op.conn.close();
   op.channel.close();
@@ -419,7 +419,7 @@ async function deactivate_feed_button_onclick(event) {
   op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;
-  op.write = write_feed_property;
+  op.write = db_write_feed_property;
   await op.write(feed_id, 'active', false, {reason: 'manual'});
   op.conn.close();
   op.channel.close();

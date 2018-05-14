@@ -1,5 +1,5 @@
 import {refresh_badge} from '/src/badge.js';
-import {write_feed} from '/src/db/db-write-feed.js';
+import {db_write_feed} from '/src/db/db-write-feed.js';
 import {append_entry_url, create_entry} from '/src/entry.js';
 import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
@@ -109,7 +109,7 @@ export async function poll_feed(
   update_options.set_date_updated = true;
 
   const stored_feed =
-      await write_feed.call(update_context, merged_feed, update_options);
+      await db_write_feed.call(update_context, merged_feed, update_options);
 
   const count = await poll_entries(
       rconn, iconn, channel, console, options, parsed_feed.entries,
@@ -232,7 +232,7 @@ async function handle_error(
   update_options.sanitize = false;
   update_options.set_date_updated = true;
 
-  await write_feed.call(update_context, feed, update_options);
+  await db_write_feed.call(update_context, feed, update_options);
 }
 
 function dedup_entries(entries) {

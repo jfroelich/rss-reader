@@ -8,7 +8,7 @@ import {idb_open} from '/src/lib/idb.js';
 export function db_open(
     name = 'reader', version = 24, timeout = 500, console = console_stub) {
   return idb_open(
-      name, version, on_upgrade_needed.bind(null, console), timeout, console);
+      name, version, on_upgrade_needed.bind(this, console), timeout, console);
 }
 
 function on_upgrade_needed(console, event) {

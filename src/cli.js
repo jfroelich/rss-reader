@@ -1,8 +1,8 @@
 import {CHANNEL_NAME} from '/src/config.js';
 import {db_archive_entries} from '/src/db/db-archive-entries.js';
 import {db_open} from '/src/db/db-open.js';
-import {remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
-import {remove_orphaned_entries} from '/src/db/db-remove-orphaned-entries.js';
+import {db_remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
+import {db_remove_orphaned_entries} from '/src/db/db-remove-orphaned-entries.js';
 import {favicon_clear, favicon_compact, favicon_create_conn, favicon_lookup, favicon_refresh_feeds} from '/src/favicon.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
@@ -86,8 +86,8 @@ async function cli_remove_lost_entries() {
   console.debug(
       '%s: created channel', cli_remove_lost_entries.name, op.channel.name);
   op.console = console;
-  op.remove_lost_entries = remove_lost_entries;
-  await op.remove_lost_entries();
+  op.db_remove_lost_entries = db_remove_lost_entries;
+  await op.db_remove_lost_entries();
   console.debug(
       '%s: closing db conn', cli_remove_lost_entries.name, op.conn.name);
   op.conn.close();
@@ -101,8 +101,8 @@ async function cli_remove_orphans() {
   op.conn = await db_open();
   op.channel = new BroadcastChannel(CHANNEL_NAME);
   op.console = console;
-  op.remove_orphaned_entries = remove_orphaned_entries;
-  await op.remove_orphaned_entries();
+  op.db_remove_orphaned_entries = db_remove_orphaned_entries;
+  await op.db_remove_orphaned_entries();
   op.conn.close();
   op.channel.close();
 }
@@ -129,8 +129,8 @@ const cli = {
   archive: cli_archive_entries,
   clear_icons: favicon_clear,
   compact_icons: favicon_compact,
-  remove_orphaned_entries: cli_remove_orphans,
-  remove_lost_entries: cli_remove_lost_entries,
+  db_remove_orphaned_entries: cli_remove_orphans,
+  db_remove_lost_entries: cli_remove_lost_entries,
   lookup_favicon: cli_lookup_favicon,
   poll_feeds: cli_poll_feeds,
   refresh_icons: cli_refresh_icons,

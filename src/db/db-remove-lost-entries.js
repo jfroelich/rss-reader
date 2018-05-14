@@ -1,4 +1,4 @@
-export async function remove_lost_entries() {
+export async function db_remove_lost_entries() {
   return new Promise(executor.bind(this));
 }
 
@@ -22,7 +22,7 @@ function request_onsuccess(ids, stats, event) {
     const entry = cursor.value;
     if (!entry.urls || !entry.urls.length) {
       this.console.debug(
-          '%s: deleting entry %d', remove_lost_entries.name, entry.id);
+          '%s: deleting entry %d', db_remove_lost_entries.name, entry.id);
       cursor.delete();
       ids.push(entry.id);
     }
@@ -33,7 +33,7 @@ function request_onsuccess(ids, stats, event) {
 
 function txn_oncomplete(ids, callback, stats, event) {
   this.console.debug(
-      '%s: scanned %d, deleted %d', remove_lost_entries.name,
+      '%s: scanned %d, deleted %d', db_remove_lost_entries.name,
       stats.visited_entry_count, ids.length);
 
   const message = {type: 'entry-deleted', id: 0, reason: 'lost'};
