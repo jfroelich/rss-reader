@@ -1,8 +1,8 @@
 import {CHANNEL_NAME} from '/src/config.js';
-import {create_conn} from '/src/db.js';
-import {archive_entries} from '/src/entry-store/archive-entries.js';
-import {remove_lost_entries} from '/src/entry-store/remove-lost-entries.js';
-import {remove_orphaned_entries} from '/src/entry-store/remove-orphaned-entries.js';
+import {create_conn} from '/src/db/db.js';
+import {archive_entries} from '/src/db/archive-entries.js';
+import {remove_lost_entries} from '/src/db/remove-lost-entries.js';
+import {remove_orphaned_entries} from '/src/db/remove-orphaned-entries.js';
 import {favicon_clear, favicon_compact, favicon_create_conn, favicon_lookup, favicon_refresh_feeds} from '/src/favicon.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';

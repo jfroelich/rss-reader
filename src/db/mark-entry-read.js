@@ -1,5 +1,5 @@
 import {refresh_badge} from '/src/badge.js';
-import {ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry-store/entry.js';
+import {ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/db/entry.js';
 
 // TODO: use write-entry-property instead
 

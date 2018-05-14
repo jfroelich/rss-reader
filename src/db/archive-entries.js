@@ -1,4 +1,4 @@
-import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/entry-store/entry.js';
+import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/db/entry.js';
 import {sizeof} from '/src/lib/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;

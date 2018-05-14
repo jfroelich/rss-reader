@@ -1,13 +1,13 @@
 import '/src/cli.js';
 
 import {CHANNEL_NAME, fonts} from '/src/config.js';
-import {create_conn} from '/src/db.js';
-import {is_entry, is_valid_entry_id} from '/src/entry-store/entry.js';
-import {find_viewable_entries} from '/src/entry-store/find-viewable-entries.js';
-import {for_each_viewable_entry} from '/src/entry-store/for-each-viewable-entry.js';
-import {mark_entry_read} from '/src/entry-store/mark-entry-read.js';
+import {create_conn} from '/src/db/db.js';
+import {is_entry, is_valid_entry_id} from '/src/db/entry.js';
+import {find_viewable_entries} from '/src/db/find-viewable-entries.js';
+import {for_each_viewable_entry} from '/src/db/for-each-viewable-entry.js';
+import {mark_entry_read} from '/src/db/mark-entry-read.js';
 import {favicon_create_conn} from '/src/favicon.js';
-import {for_each_active_feed} from '/src/feed-store/for-each-active-feed.js';
+import {for_each_active_feed} from '/src/db/for-each-active-feed.js';
 import {import_opml} from '/src/import-opml.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {date_format} from '/src/lib/date.js';

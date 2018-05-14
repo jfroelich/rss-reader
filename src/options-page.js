@@ -1,12 +1,12 @@
 import '/src/cli.js';
 
 import {background_images, CHANNEL_NAME} from '/src/config.js';
-import {create_conn} from '/src/db.js';
+import {create_conn} from '/src/db/db.js';
 import {favicon_create_conn} from '/src/favicon.js';
-import {delete_feed} from '/src/feed-store/feed-store.js';
-import {find_feed_by_id} from '/src/feed-store/find-feed-by-id.js';
-import {get_feeds} from '/src/feed-store/get-feeds.js';
-import {write_feed_property} from '/src/feed-store/write-feed-property.js';
+import {delete_feed} from '/src/db/feed-store.js';
+import {find_feed_by_id} from '/src/db/find-feed-by-id.js';
+import {get_feeds} from '/src/db/get-feeds.js';
+import {write_feed_property} from '/src/db/write-feed-property.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {element_fade} from '/src/lib/element-fade.js';
 import {html_truncate} from '/src/lib/html-truncate.js';

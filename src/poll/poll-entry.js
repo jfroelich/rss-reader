@@ -1,8 +1,8 @@
-import {contains_entry} from '/src/entry-store/contains-entry.js';
-import {append_entry_url} from '/src/entry-store/entry.js';
-import {sanitize_entry} from '/src/entry-store/sanitize-entry.js';
-import {validate_entry} from '/src/entry-store/validate-entry.js';
-import {write_entry} from '/src/entry-store/write-entry.js';
+import {contains_entry} from '/src/db/contains-entry.js';
+import {append_entry_url} from '/src/db/entry.js';
+import {sanitize_entry} from '/src/db/sanitize-entry.js';
+import {validate_entry} from '/src/db/validate-entry.js';
+import {write_entry} from '/src/db/write-entry.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
 import * as color from '/src/lib/color.js';

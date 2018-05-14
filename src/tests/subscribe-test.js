@@ -1,7 +1,7 @@
-import {create_conn} from '/src/db.js';
-import {contains_feed} from '/src/feed-store/feed-store.js';
-import {is_feed, is_valid_feed_id} from '/src/feed-store/feed.js';
-import {find_feed_by_id} from '/src/feed-store/find-feed-by-id.js';
+import {create_conn} from '/src/db/db.js';
+import {contains_feed} from '/src/db/feed-store.js';
+import {is_feed, is_valid_feed_id} from '/src/db/feed.js';
+import {find_feed_by_id} from '/src/db/find-feed-by-id.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_remove} from '/src/lib/idb.js';
 import {subscribe} from '/src/subscribe.js';

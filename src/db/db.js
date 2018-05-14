@@ -1,5 +1,5 @@
-import {ENTRY_MAGIC} from '/src/entry-store/entry.js';
-import {FEED_MAGIC} from '/src/feed-store/feed.js';
+import {ENTRY_MAGIC} from '/src/db/entry.js';
+import {FEED_MAGIC} from '/src/db/feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_open} from '/src/lib/idb.js';
 

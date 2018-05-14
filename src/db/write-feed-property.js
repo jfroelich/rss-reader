@@ -1,4 +1,4 @@
-import {is_feed, is_valid_feed_id} from '/src/feed-store/feed.js';
+import {is_feed, is_valid_feed_id} from '/src/db/feed.js';
 
 // TODO: merge with write-feed. I am going for rest api. I want to simulate
 // indexedDB's ability to modify a single property. So write feed will take

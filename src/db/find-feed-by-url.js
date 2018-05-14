@@ -1,4 +1,4 @@
-import {create_feed, is_valid_feed_id} from '/src/feed-store/feed.js';
+import {create_feed, is_valid_feed_id} from '/src/db/feed.js';
 
 export function find_feed_by_url(conn, url, key_only = false) {
   if (!(url instanceof URL)) {

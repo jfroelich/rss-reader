@@ -1,4 +1,4 @@
-import {ENTRY_STATE_UNREAD} from '/src/entry-store/entry.js';
+import {ENTRY_STATE_UNREAD} from '/src/db/entry.js';
 import {console_stub} from '/src/lib/console-stub.js';
 
 let update_pending = false;

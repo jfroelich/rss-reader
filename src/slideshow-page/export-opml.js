@@ -1,4 +1,4 @@
-import {create_conn} from '/src/db.js';
+import {create_conn} from '/src/db/db.js';
 import {export_opml} from '/src/export-opml.js';
 
 // Abstracts away all of the operations involved in generating and downloading

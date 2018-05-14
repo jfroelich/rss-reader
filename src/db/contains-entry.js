@@ -1,4 +1,4 @@
-import {is_valid_entry_id} from '/src/entry-store/entry.js';
+import {is_valid_entry_id} from '/src/db/entry.js';
 
 export async function contains_entry(conn, query) {
   if (!(query.url instanceof URL)) {

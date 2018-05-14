@@ -1,4 +1,4 @@
-import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/entry-store/entry.js';
+import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/db/entry.js';
 
 // TODO: use context?
 export function find_viewable_entries(conn, offset, limit) {

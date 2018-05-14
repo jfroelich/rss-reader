@@ -2,10 +2,10 @@ import '/src/cli.js';
 
 import {refresh_badge} from '/src/badge.js';
 import {CHANNEL_NAME} from '/src/config.js';
-import {create_conn} from '/src/db.js';
-import {archive_entries} from '/src/entry-store/archive-entries.js';
-import {remove_lost_entries} from '/src/entry-store/remove-lost-entries.js';
-import {remove_orphaned_entries} from '/src/entry-store/remove-orphaned-entries.js';
+import {create_conn} from '/src/db/db.js';
+import {archive_entries} from '/src/db/archive-entries.js';
+import {remove_lost_entries} from '/src/db/remove-lost-entries.js';
+import {remove_orphaned_entries} from '/src/db/remove-orphaned-entries.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {open_view} from '/src/open-view.js';

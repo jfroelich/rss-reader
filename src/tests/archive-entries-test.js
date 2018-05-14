@@ -1,5 +1,5 @@
-import {create_conn} from '/src/db.js';
-import {archive_entries} from '/src/entry-store/archive-entries.js';
+import {create_conn} from '/src/db/db.js';
+import {archive_entries} from '/src/db/archive-entries.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_remove} from '/src/lib/idb.js';
 import {assert} from '/src/tests/assert.js';

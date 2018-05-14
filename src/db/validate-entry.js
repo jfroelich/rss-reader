@@ -1,4 +1,4 @@
-import {is_entry, is_valid_entry_id} from '/src/entry-store/entry.js';
+import {is_entry, is_valid_entry_id} from '/src/db/entry.js';
 
 // TODO: the problem now is that I have no idea of what causes invalidity
 // outside of logging something. I need to distinguish between the reasons

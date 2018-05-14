@@ -1,7 +1,7 @@
 import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
-import {contains_feed} from '/src/feed-store/feed-store.js';
-import {append_feed_url, coerce_feed} from '/src/feed-store/feed.js';
-import {write_feed} from '/src/feed-store/write-feed.js';
+import {contains_feed} from '/src/db/feed-store.js';
+import {append_feed_url, coerce_feed} from '/src/db/feed.js';
+import {write_feed} from '/src/db/write-feed.js';
 import {fetch_feed} from '/src/fetch.js';
 import {parse as parse_feed} from '/src/lib/feed-parser.js';
 import {list_peek} from '/src/lib/list.js';

@@ -1,4 +1,4 @@
-import {create_entry} from '/src/entry-store/entry.js';
+import {create_entry} from '/src/db/entry.js';
 import {html_truncate} from '/src/lib/html-truncate.js';
 import {html_replace_tags} from '/src/lib/html.js';
 import {filter_empty_properties} from '/src/lib/object.js';

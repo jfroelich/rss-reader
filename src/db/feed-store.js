@@ -1,8 +1,8 @@
 // TODO: break apart again into function-per-file
 
 import {refresh_badge} from '/src/badge.js';
-import {is_valid_feed_id} from '/src/feed-store/feed.js';
-import {find_feed_by_url} from '/src/feed-store/find-feed-by-url.js';
+import {is_valid_feed_id} from '/src/db/feed.js';
+import {find_feed_by_url} from '/src/db/find-feed-by-url.js';
 
 export async function contains_feed(conn, query) {
   const key_only = true;

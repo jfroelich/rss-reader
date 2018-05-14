@@ -1,4 +1,4 @@
-import {get_feeds} from '/src/feed-store/get-feeds.js';
+import {get_feeds} from '/src/db/get-feeds.js';
 import {list_peek} from '/src/lib/list.js';
 
 export async function export_opml(title) {
