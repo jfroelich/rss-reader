@@ -1,6 +1,7 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
+import {filter_base_elements} from '/src/lib/filters/filter-base-elements.js';
 import {filter_comments} from '/src/lib/filters/filter-comments.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-elements.js';
@@ -107,8 +108,8 @@ export async function transform_document(
   // resolved to reduce the work done by that filter.
   // TODO: actually, this should be done only after canonicalizing urls, and
   // the canonicalizer should consider base elements. By doing it after and
-  // having canon consider it, then we support base element properly
-  filters.cf_filter_base_elements(document);
+  // having canon consider it, then we support base element more properly
+  filter_base_elements(document);
 
   // This should occur earlier on in the pipeline. It will reduce the amount of
   // work done by later filters. It should occur before processing boilerplate,
@@ -154,6 +155,12 @@ export async function transform_document(
   filters.cf_condense_tagnames(document, condense_copy_attrs_flag);
 
   // This should occur before trying to set image sizes
+  // TODO: rename to canonicalize_urls or something like that
+  // TODO: support base elements more correctly?
+  // TODO: if a url cannot be resolved, it should be replaced with empty-string.
+  // in other words, empty-string is the canonical form of an invalid-url.
+  // TODO: rather that using getAttribute and base url, try a by-property
+  // walk over elements that applies document.baseURI
   filters.cf_resolve_document_urls(document, document_url);
 
   // This should occur prior to filtering lazily-loaded images

@@ -81,13 +81,6 @@ export function cf_filter_misnested_elements(document) {
   }
 }
 
-export function cf_filter_base_elements(document) {
-  const bases = document.querySelectorAll('base');
-  for (const base of bases) {
-    base.remove();
-  }
-}
-
 export function cf_filter_br_elements(document) {
   if (document.body) {
     const brs = document.body.querySelectorAll('br + br');
