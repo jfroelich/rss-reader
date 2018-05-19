@@ -1023,14 +1023,6 @@ function url_string_has_script_protocol(url_string) {
       /^\s*javascript:/i.test(url_string);
 }
 
-// Removes script elements from document content
-export function filter_script_elements(document) {
-  const scripts = document.querySelectorAll('script');
-  for (const script of scripts) {
-    script.remove();
-  }
-}
-
 export function filter_small_images(document) {
   if (document.body) {
     const images = document.body.querySelectorAll('img');

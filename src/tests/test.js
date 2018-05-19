@@ -21,6 +21,10 @@ import {sniff_test} from '/src/tests/sniff-test.js';
 import {subscribe_test} from '/src/tests/subscribe-test.js';
 import {url_loader_test} from '/src/tests/url-loader-test.js';
 
+// TODO: all tests should more carefully test error paths. That is where the
+// greatest number of bugs tends to occur. See, e.g.,
+// https://www.usenix.org/system/files/login/articles/03_lu_010-017_final.pdf
+
 // Tests must be promise returning functions
 
 // The test registry is basically the set of all tests. For simplicity it is
@@ -34,6 +38,7 @@ const test_registry = [
   color_test,
   create_channel_test1,
   create_channel_test2,
+  create_feed_test,
   element_coerce_test,
   empty_attribute_filter_test,
   favicon_service_test,
@@ -49,15 +54,15 @@ const test_registry = [
   rewrite_url_test,
   sniff_test,
   subscribe_test,
-  url_loader_test,
-  create_feed_test
+  url_loader_test
 ];
 // clang-format on
 
 // Wrap the call to a test function with some extra log messages
+// Timeout the test if a timeout is specified
 async function run_timed_test(test_function, timeout = 0) {
   console.log('%s: started', test_function.name);
-  // await test_function();
+
   if (timeout) {
     const test_promise = test_function();
     const timeout_promise = deferred_rejection(test_function, timeout);

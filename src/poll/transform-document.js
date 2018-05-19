@@ -1,6 +1,7 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
+import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense the size of the document by removing extraneous content
@@ -98,7 +99,6 @@ import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
 // fetch-policy), instead of deferring to the default fetch policy or
 // hard-coding the app policy within the filter itself.
 
-
 export async function transform_document(
     document, document_url, console, options = {}) {
   // Filtering frames should be one of the first, if not the actual first,
@@ -118,7 +118,7 @@ export async function transform_document(
   // This filter is a primary security concern.
   // It could occur later but doing it earlier means later filters visit fewer
   // elements.
-  filters.filter_script_elements(document);
+  filter_script_elements(document);
 
   filters.filter_iframe_elements(document);
   filters.cf_filter_comments(document);
