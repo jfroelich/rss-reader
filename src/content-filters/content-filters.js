@@ -421,16 +421,6 @@ export function filter_hr_elements(document) {
   }
 }
 
-// Removes iframe elements
-export function filter_iframe_elements(document) {
-  if (document.body) {
-    const frames = document.body.querySelectorAll('iframe');
-    for (const frame of frames) {
-      frame.remove();
-    }
-  }
-}
-
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.

@@ -1,6 +1,7 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
+import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
@@ -113,6 +114,9 @@ export async function transform_document(
   // more that I do not see the point of creating a body if it will not be
   // used. Also note that I will have to make the consumers of the document,
   // such as the view, more cautious.
+  // TODO: another issue is that this filter is poorly named. This filter
+  // currently also has the responsibility of adding the message that displayed
+  // for empty documents. That should probably be done elsewhere.
   ensure_document_body(document);
 
   // This filter is a primary security concern.
@@ -120,7 +124,7 @@ export async function transform_document(
   // elements.
   filter_script_elements(document);
 
-  filters.filter_iframe_elements(document);
+  filter_iframes(document);
   filters.cf_filter_comments(document);
 
   // This should generally occur earlier, because of websites that use an
