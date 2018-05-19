@@ -14,6 +14,7 @@ import {filter_publisher_test} from '/src/tests/filter-publisher-test.js';
 import {filter_unprintable_characters_test} from '/src/tests/filter-unprintable-characters-test.js';
 import {html_truncate_test} from '/src/tests/html-truncate-test.js';
 import {idb_test} from '/src/tests/idb-test.js';
+import {import_opml_test} from '/src/tests/import-opml-test.js';
 import {mime_test} from '/src/tests/mime-test.js';
 import {rewrite_url_test} from '/src/tests/rewrite-url-test.js';
 import {sniff_test} from '/src/tests/sniff-test.js';
@@ -43,6 +44,7 @@ const test_registry = [
   filter_unprintable_characters_test,
   html_truncate_test,
   idb_test,
+  import_opml_test,
   mime_test,
   rewrite_url_test,
   sniff_test,
@@ -73,7 +75,6 @@ function deferred_rejection(test_function, time_ms) {
     setTimeout(reject, time_ms, error);
   });
 }
-
 
 // Lookup a test function by the function's name
 function find_test_by_name(test_name) {

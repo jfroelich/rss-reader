@@ -1,21 +1,119 @@
 import * as filters from '/src/content-filters/content-filters.js';
 
+// Transforms a document by removing or changing nodes for various reasons:
+// * to condense the size of the document by removing extraneous content
+// * to remove hidden text and hidden markup
+// * to remove uninformative content
+// * security reasons such as removing scripts
+// * to preload images
+// * anti-telemetry
+// * normalization/canonicalization, such as resolving urls
+// * to make the document embeddable directly in the app's view without the use
+// of iframes or shadow roots or any of that stuff, such as by removing element
+// ids and style elements and attributes
+
+// ### Params
+// * **document** {Document} the document to transform
+// * **document_url** {URL} the location of the document
+// * **options** {Object} various options, all of which are optional
+
+// ### Options
+// * **fetch_image_timeout** {Number} optional, the number of milliseconds to
+// wait before timing out when fetching an image
+// * **matte** {color} the default background color to use when determining an
+// element's background
+// * **min_contrast_ratio** {Number} the ratio to use when determining whether
+// an element's content is visible
+// * **emphasis_length_max** {Number} the maximum number of characters in a
+// section of emphasized text before the emphasis is removed
+
+// ### Errors
+// * type errors (invalid input)
+
+// ### Return value
+// Returns a promise that resolves to undefined or rejects when an internal
+// error occurs
+
+// ### Implementation notes
+// For performance reasons, the document is mutated. In other words, the
+// transformation is applied to the input, in-place. Ideally this would be a
+// pure function but cloning the document is not very feasible. This basically
+// acts as a wrapper to all the content filters. The module adds value primarily
+// by defining the order in which filters are applied, and by applying
+// app-specific settings to otherwise generic modules (further specializing the
+// filters to this app's purpose). The transform is async primarily because of
+// one critical filter step that must occur after some filters but before
+// others, that is async, the step where images are fetched in order to
+// determine image sizes. Filters like telemetry removal need to occur
+// beforehand, but some additional sanity and shrinking filters need to occur
+// after. I am not entirely sure if this is the right design as I would rather
+// minimize the use of async, but I have not thought of a better way. Once one
+// function is async pretty much all callers up the stack need to be async. One
+// of the first implementations of this module started off with a tree walker
+// that applied transformations to each node. It turns out that repeatedly
+// executing query selectors is substantially faster by several orders of
+// magnitude. This lead to the breakdown of the query selectors into individual
+// filters. However, the goal of this module is to encapsulate this
+// implementation detail and abstract it away. Given the substantial
+// improvements in v8 recently I still wonder if the tree-walker approach is
+// viable.
+
+// TODO: content filters should be generic independent libraries, then this
+// parameterizes calls to those with app-specific-preferences, and basically
+// is just responsible for assembly of filter components
+// Because this becomes the app-specific composition of those filter modules,
+// this no longer needs an options object, because the preferences can be
+// hard coded here, or even be read from config.js
+// It was a mistake to try and merge the filters into a single file.
+
+
+// TODO: instead of hard coding, this should basically just iterate over an
+// array of filter functions. Functions should be registered, along with
+// parameters to them other than the document. Registration basically just
+// stores the filter and its arguments in an array of parameterized filter
+// objects. Then transform-document is simply an iteration over the registered
+// filters, calling each one with a document and its preset arguments
+// But what to do about things like document_url? Pass it to every filter? Or
+// maybe focus first on using document.baseURI so that there is no need for an
+// additional explicit parameter because it becomes implicit in the document
+// parameter?
+// Also, probably need priority (a number) property per entry, so as to be able
+// to specify order. Should probably not use registration order. Or maybe
+// registration order is fine?
+
+// TODO: so basically the order of steps is:
+// 1. Migrate content filters to separate independent libraries, one at a time.
+// 2. Remove the options parameter. Hardcode default settings in config.js
+// 3. Create a function registry, register filters, and revise
+// transform_document to iterate over the registry.
+
+// ### TODOS
+// * add console arg to all filters to enable logging by filter
+// * I need to comb through the filters and remove all app-specific
+// functionality. It should be parameterized, where the parameters are set here,
+// not in the filter. For example, for the image-size-filter, I should be
+// passing in a fetch policy that is defined here (or uses the app's
+// fetch-policy), instead of deferring to the default fetch policy or
+// hard-coding the app policy within the filter itself.
+
+
 export async function transform_document(
     document, document_url, console, options = {}) {
-  if (!(document instanceof Document)) {
-    throw new TypeError('document is not a Document');
-  }
-
-  if (!(document_url instanceof URL)) {
-    throw new TypeError('document_url is not a URL');
-  }
-
   // These filters related to document.body should occur near the start, because
   // most of the other content filters pertain to document.body.
   filters.filter_frame_elements(document);
+
+  // TODO: reconsider the use of this filter here. Maybe none of the filters
+  // should assume body is present and each should approach the document
+  // structure more cautiously. This would decrease inter-dependence and
+  // reliance across filters, which makes it easier to reason about filters,
+  // write new filters, and care less about filter order. The second reason is
+  // more that I do not see the point of creating a body if it will not be
+  // used. Also note that I will have to make the consumers of the document,
+  // such as the view, more cautious.
   filters.cf_ensure_body(document);
 
-  // This filter does not apply only to body, and is a primary security concern.
+  // This filter is a primary security concern.
   // It could occur later but doing it earlier means later filters visit fewer
   // elements.
   filters.filter_script_elements(document);
