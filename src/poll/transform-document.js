@@ -1,6 +1,7 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
+import {filter_comments} from '/src/lib/filters/filter-comments.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
 
@@ -56,20 +57,18 @@ import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js
 // of the first implementations of this module started off with a tree walker
 // that applied transformations to each node. It turns out that repeatedly
 // executing query selectors is substantially faster by several orders of
-// magnitude. This lead to the breakdown of the query selectors into individual
+// magnitude. This led to the breakdown of the query selectors into individual
 // filters. However, the goal of this module is to encapsulate this
 // implementation detail and abstract it away. Given the substantial
 // improvements in v8 recently I still wonder if the tree-walker approach is
 // viable.
 
-// TODO: content filters should be generic independent libraries, then this
+// TODO: it was a mistake to try and merge the filters into a single file.
+// Content filters should be generic independent libraries, then this
 // parameterizes calls to those with app-specific-preferences, and basically
-// is just responsible for assembly of filter components
-// Because this becomes the app-specific composition of those filter modules,
-// this no longer needs an options object, because the preferences can be
-// hard coded here, or even be read from config.js
-// It was a mistake to try and merge the filters into a single file.
-
+// is just responsible for assembly of filter components. Because this becomes
+// the app-specific composition of those filter modules, this no longer needs an
+// options object, because the preferences can be hard coded here.
 
 // TODO: instead of hard coding, this should basically just iterate over an
 // array of filter functions. Functions should be registered, along with
@@ -125,7 +124,8 @@ export async function transform_document(
   filter_script_elements(document);
 
   filter_iframes(document);
-  filters.cf_filter_comments(document);
+
+  filter_comments(document);
 
   // This should generally occur earlier, because of websites that use an
   // information-revealing technique with noscript.

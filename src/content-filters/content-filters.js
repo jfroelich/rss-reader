@@ -97,14 +97,6 @@ export function cf_filter_br_elements(document) {
   }
 }
 
-export function cf_filter_comments(document) {
-  const it = document.createNodeIterator(
-      document.documentElement, NodeFilter.SHOW_COMMENT);
-  for (let node = it.nextNode(); node; node = it.nextNode()) {
-    node.remove();
-  }
-}
-
 export function filter_container_elements(document) {
   if (document.body) {
     const elements = document.body.querySelectorAll('div, ilayer, layer');
