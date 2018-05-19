@@ -1,5 +1,4 @@
 import {filter_boilerplate} from '/src/content-filters/boilerplate-filter.js';
-import {color_contrast_filter} from '/src/content-filters/color-contrast-filter.js';
 import {element_is_hidden_inline, fetch_image_element, file_name_filter_extension, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 import {attribute_is_boolean} from '/src/lib/attribute.js';
 import {is_external_url} from '/src/lib/cross-site.js';
@@ -10,7 +9,6 @@ import * as srcset from '/src/lib/srcset.js';
 import * as string from '/src/lib/string.js';
 
 export const cf_filter_boilerplate = filter_boilerplate;
-export const cf_filter_low_contrast = color_contrast_filter;
 
 // @param whitelist {Object} each property is element name, each value is array
 // of retainable attribute names
@@ -352,19 +350,6 @@ export function filter_formatting_elements(document) {
   }
 }
 
-export function filter_hidden_elements(document) {
-  const body = document.body;
-  if (!body) {
-    return;
-  }
-
-  const elements = body.querySelectorAll('*');
-  for (const element of elements) {
-    if (body.contains(element) && element_is_hidden_inline(element)) {
-      element_unwrap(element);
-    }
-  }
-}
 
 // @param document {Document}
 // @param url {URL}

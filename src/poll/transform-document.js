@@ -1,8 +1,10 @@
 import * as filters from '/src/content-filters/content-filters.js';
+import {color_contrast_filter} from '/src/lib/filters/color-contrast-filter.js';
 import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
 import {filter_base_elements} from '/src/lib/filters/filter-base-elements.js';
 import {filter_comments} from '/src/lib/filters/filter-comments.js';
+import {filter_hidden_elements} from '/src/lib/filters/filter-hidden-elements.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-elements.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
@@ -95,6 +97,35 @@ import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js
 // registration order. Or maybe registration order is fine?
 // 4. Add console arg to all filters
 
+// TODO: perhaps all filters should return a document. They could return the
+// same input document, or a new document. It would be semi-opaque to the caller
+// and allow for easier transition to immutable treatment of document.
+
+/*
+# content-filters
+
+Content filters deal with an HTML DOM document. Filters are focused on removing
+various content from the document, for a variety of reasons, such as whether the
+content is not-informative, invisible, or hard to see. Other filters are focused
+on security, or reducing document size, or cleaning up bad formatting.
+
+Most of the filters are located in content-filters.js, with some of the more
+complicated filters in separate files.
+
+# todo for emphasis filter
+* change max length input to be max length per emphasis type, have separate
+maxes for bold, italics. then also add a new max length for block quotes and
+also limit the size of block quotes (e.g. when it is almost the entire page that
+is too much).
+* consider looking at css of all tags and not just tag name
+// TODO: i should possibly have this consult style attribute instead of just
+// element type (e.g. look at font-weight)
+
+# todo new filter idea
+add a filter that condenses by doing this like replacing &amp;copy; with the
+equivalent single utf8/unicode character.
+*/
+
 export async function transform_document(
     document, document_url, console, options = {}) {
   deframe(document);
@@ -109,12 +140,25 @@ export async function transform_document(
   // TODO: actually, this should be done only after canonicalizing urls, and
   // the canonicalizer should consider base elements. By doing it after and
   // having canon consider it, then we support base element more properly
+  // Actually it should be merged into the end of canonical. Instead, what
+  // should happen here is an insertion of the document-url as a new base
+  // element, if another base element does not exist, so as to have the desired
+  // side effect of mutating the otherwise immutable document.baseURI. In fact
+  // it should probably be a filter like set_base_uri(document, document_url).
+  // And, in fact, it maybe should not even be a filter, but a concern of the
+  // caller, and transform-document's input requirements should adapt to assume
+  // every element's href-like getter or whatever will yield a canonical url.
   filter_base_elements(document);
 
-  // This should occur earlier on in the pipeline. It will reduce the amount of
-  // work done by later filters. It should occur before processing boilerplate,
-  // because the boilerplate filter is naive about hidden elements.
-  filters.filter_hidden_elements(document);
+  // This should occur earlier in the pipeline because it tends to reduce the
+  // amount of work done by later filters. It should occur before processing
+  // boilerplate, because the boilerplate filter is naive about hidden elements.
+  // This is done before the blacklist filter because of the idea that this
+  // filter will tend to remove large branches where as the blacklist filter
+  // more likely removes small branches, and there is a decent chance many of
+  // those small branches live on the large and hidden branches, so less work is
+  // done this way in the normal/typical case.
+  filter_hidden_elements(document);
 
   // Do this after filtering hidden elements so that it does less work
   // This should be done prior to removing style information (either style
@@ -122,9 +166,7 @@ export async function transform_document(
   // done before or after boilerplate filter, but my instinct is that spam
   // techniques are boilerplate, and the boilerplate filter is naive with regard
   // to spam, so it is preferable to do it before.
-  // TODO: this should be merged with filter_hidden_elements
-  filters.cf_filter_low_contrast(
-      document, options.matte, options.min_contrast_ratio);
+  color_contrast_filter(document, options.matte, options.min_contrast_ratio);
 
   filters.filter_blacklisted_elements(document);
 
@@ -161,6 +203,7 @@ export async function transform_document(
   // in other words, empty-string is the canonical form of an invalid-url.
   // TODO: rather that using getAttribute and base url, try a by-property
   // walk over elements that applies document.baseURI
+  // TODO: this should strip base elements at the end if updating attributes.
   filters.cf_resolve_document_urls(document, document_url);
 
   // This should occur prior to filtering lazily-loaded images
