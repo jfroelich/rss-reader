@@ -377,44 +377,6 @@ export function filter_formatting_elements(document) {
   }
 }
 
-// Removes frame content from a document
-// @param document {Document} the document to inspect and modify
-export function filter_frame_elements(document) {
-  // If a document is framed then the root frame is its body, and document.body
-  // points to it and not some <body> element
-  const original_body = document.body;
-  if (!original_body) {
-    return;
-  }
-
-  if (original_body.localName !== 'frameset') {
-    return;
-  }
-
-  const new_body = document.createElement('body');
-
-  const noframes_element = document.querySelector('noframes');
-  if (noframes_element) {
-    for (let node = noframes_element.firstChild; node;
-         node = noframes_element.firstChild) {
-      new_body.appendChild(node);
-    }
-  }
-
-  if (!new_body.firstChild) {
-    const error_node =
-        document.createTextNode('Unable to display framed document');
-    new_body.appendChild(error_node);
-  }
-
-  document.documentElement.replaceChild(new_body, original_body);
-
-  const frames = document.querySelectorAll('frame, frameset');
-  for (const frame of frames) {
-    frame.remove();
-  }
-}
-
 export function filter_hidden_elements(document) {
   const body = document.body;
   if (!body) {

@@ -1,7 +1,8 @@
 import * as filters from '/src/content-filters/content-filters.js';
-import * as boilerplate from '/src/lib/boilerplate.js';
-import * as html_parser from '/src/lib/html-parser.js';
 import {fetch_html} from '/src/fetch.js';
+import * as boilerplate from '/src/lib/boilerplate.js';
+import {deframe} from '/src/lib/filters/deframe.js';
+import * as html_parser from '/src/lib/html-parser.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: assert stuff, use a known test url
@@ -26,7 +27,7 @@ export async function boilerplate_test() {
   const response_text = await response.text();
   const document = html_parser.parse(response_text);
 
-  filters.filter_frame_elements(document);
+  deframe(document);
   filters.filter_iframe_elements(document);
   filters.filter_script_elements(document);
   filters.filter_blacklisted_elements(document);

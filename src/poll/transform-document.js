@@ -1,4 +1,5 @@
 import * as filters from '/src/content-filters/content-filters.js';
+import {deframe} from '/src/lib/filters/deframe.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense the size of the document by removing extraneous content
@@ -99,9 +100,9 @@ import * as filters from '/src/content-filters/content-filters.js';
 
 export async function transform_document(
     document, document_url, console, options = {}) {
-  // These filters related to document.body should occur near the start, because
-  // most of the other content filters pertain to document.body.
-  filters.filter_frame_elements(document);
+  // Filtering frames should be one of the first, if not the actual first,
+  // filters applied.
+  deframe(document);
 
   // TODO: reconsider the use of this filter here. Maybe none of the filters
   // should assume body is present and each should approach the document
