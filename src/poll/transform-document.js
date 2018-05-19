@@ -1,5 +1,6 @@
 import * as filters from '/src/content-filters/content-filters.js';
 import {deframe} from '/src/lib/filters/deframe.js';
+import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense the size of the document by removing extraneous content
@@ -112,12 +113,13 @@ export async function transform_document(
   // more that I do not see the point of creating a body if it will not be
   // used. Also note that I will have to make the consumers of the document,
   // such as the view, more cautious.
-  filters.cf_ensure_body(document);
+  ensure_document_body(document);
 
   // This filter is a primary security concern.
   // It could occur later but doing it earlier means later filters visit fewer
   // elements.
   filters.filter_script_elements(document);
+
   filters.filter_iframe_elements(document);
   filters.cf_filter_comments(document);
 

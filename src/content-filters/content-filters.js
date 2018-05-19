@@ -152,16 +152,6 @@ export function cf_filter_figures(document) {
   }
 }
 
-export function cf_ensure_body(document) {
-  if (!document.body) {
-    const message = 'This document has no content';
-    const error_node = document.createTextNode(message);
-    const body_element = document.createElement('body');
-    body_element.appendChild(error_node);
-    document.documentElement.appendChild(body_element);
-  }
-}
-
 const element_url_attribute_map = {
   a: 'href',
   applet: 'codebase',
@@ -1032,7 +1022,6 @@ function url_string_has_script_protocol(url_string) {
   return typeof url_string === 'string' && url_string.length > JS_PREFIX_LEN &&
       /^\s*javascript:/i.test(url_string);
 }
-
 
 // Removes script elements from document content
 export function filter_script_elements(document) {
