@@ -889,15 +889,6 @@ export function add_noreferrer_to_anchors(document) {
   }
 }
 
-// Transforms noscript elements
-export function filter_noscript_elements(document) {
-  if (document.body) {
-    const noscripts = document.body.querySelectorAll('noscript');
-    for (const noscript of noscripts) {
-      element_unwrap(noscript);
-    }
-  }
-}
 
 // Removes ping attributes from anchor elements in document content
 export function remove_ping_attribute_from_all_anchors(document) {

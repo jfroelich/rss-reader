@@ -3,6 +3,9 @@
 // Assumes the document is not somehow modified concurrently.
 // Mutation is done in place because cloning the document is cost-prohibitive.
 
+// Filtering frames should be one of the first, if not the actual first,
+// filters applied.
+
 // TODO: a Document object may be internally flagged as xml or html, and
 // browsers tend not to expose this fact. I cannot use an extra parameter to
 // indicate whether the document is flagged one way or another, because this

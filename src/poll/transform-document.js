@@ -3,6 +3,7 @@ import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
 import {filter_comments} from '/src/lib/filters/filter-comments.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
+import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-elements.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
@@ -63,74 +64,44 @@ import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js
 // improvements in v8 recently I still wonder if the tree-walker approach is
 // viable.
 
-// TODO: it was a mistake to try and merge the filters into a single file.
-// Content filters should be generic independent libraries, then this
-// parameterizes calls to those with app-specific-preferences, and basically
-// is just responsible for assembly of filter components. Because this becomes
-// the app-specific composition of those filter modules, this no longer needs an
-// options object, because the preferences can be hard coded here.
-
-// TODO: instead of hard coding, this should basically just iterate over an
-// array of filter functions. Functions should be registered, along with
-// parameters to them other than the document. Registration basically just
-// stores the filter and its arguments in an array of parameterized filter
-// objects. Then transform-document is simply an iteration over the registered
-// filters, calling each one with a document and its preset arguments
-// But what to do about things like document_url? Pass it to every filter? Or
-// maybe focus first on using document.baseURI so that there is no need for an
-// additional explicit parameter because it becomes implicit in the document
-// parameter?
-// Also, probably need priority (a number) property per entry, so as to be able
-// to specify order. Should probably not use registration order. Or maybe
-// registration order is fine?
-
-// TODO: so basically the order of steps is:
+// TODO:
 // 1. Migrate content filters to separate independent libraries, one at a time.
-// 2. Remove the options parameter. Hardcode default settings in config.js
+// It was a mistake to try and merge the filters into a single file. Content
+// filters should be generic independent libraries, then this parameterizes
+// calls to those with app-specific-preferences, and basically is just
+// responsible for assembly of filter components. Because this becomes the
+// app-specific composition of those filter modules, this no longer needs an
+// options object, because the preferences can be hard coded here.
+// 2. Remove the options parameter. Hardcode default settings in config.js. comb
+// through the filters and remove all app-specific functionality. It should be
+// parameterized, where the parameters are set here, not in the filter. For
+// example, for the image-size-filter, I should be passing in a fetch policy
+// that is defined here (or uses the app's fetch-policy), instead of deferring
+// to the default fetch policy or hard-coding the app policy within the filter
+// itself.
 // 3. Create a function registry, register filters, and revise
-// transform_document to iterate over the registry.
-
-// ### TODOS
-// * add console arg to all filters to enable logging by filter
-// * I need to comb through the filters and remove all app-specific
-// functionality. It should be parameterized, where the parameters are set here,
-// not in the filter. For example, for the image-size-filter, I should be
-// passing in a fetch policy that is defined here (or uses the app's
-// fetch-policy), instead of deferring to the default fetch policy or
-// hard-coding the app policy within the filter itself.
+// transform_document to iterate over the registry. Instead of hard coding, this
+// should basically just iterate over an array of filter functions. Functions
+// should be registered, along with parameters to them other than the document.
+// Registration basically just stores the filter and its arguments in an array
+// of parameterized filter objects. Then transform-document is simply an
+// iteration over the registered filters, calling each one with a document and
+// its preset arguments But what to do about things like document_url? Pass it
+// to every filter? Or maybe focus first on using document.baseURI so that there
+// is no need for an additional explicit parameter because it becomes implicit
+// in the document parameter? Also, probably need priority (a number) property
+// per entry, so as to be able to specify order. Should probably not use
+// registration order. Or maybe registration order is fine?
+// 4. Add console arg to all filters
 
 export async function transform_document(
     document, document_url, console, options = {}) {
-  // Filtering frames should be one of the first, if not the actual first,
-  // filters applied.
   deframe(document);
-
-  // TODO: reconsider the use of this filter here. Maybe none of the filters
-  // should assume body is present and each should approach the document
-  // structure more cautiously. This would decrease inter-dependence and
-  // reliance across filters, which makes it easier to reason about filters,
-  // write new filters, and care less about filter order. The second reason is
-  // more that I do not see the point of creating a body if it will not be
-  // used. Also note that I will have to make the consumers of the document,
-  // such as the view, more cautious.
-  // TODO: another issue is that this filter is poorly named. This filter
-  // currently also has the responsibility of adding the message that displayed
-  // for empty documents. That should probably be done elsewhere.
   ensure_document_body(document);
-
-  // This filter is a primary security concern.
-  // It could occur later but doing it earlier means later filters visit fewer
-  // elements.
   filter_script_elements(document);
-
   filter_iframes(document);
-
   filter_comments(document);
-
-  // This should generally occur earlier, because of websites that use an
-  // information-revealing technique with noscript.
-  // TODO: this is revealing a ton of garbage
-  filters.filter_noscript_elements(document);
+  filter_noscript_elements(document);
 
   // This can occur at any point. It should generally be done before urls are
   // resolved to reduce the work done by that filter.
