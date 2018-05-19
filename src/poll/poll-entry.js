@@ -1,3 +1,4 @@
+import {config_inaccessible_content_descriptors} from '/src/config.js';
 import {db_find_entry_id_by_url} from '/src/db/db-find-entry-id-by-url.js';
 import {db_sanitize_entry} from '/src/db/db-sanitize-entry.js';
 import {db_validate_entry} from '/src/db/db-validate-entry.js';
@@ -15,15 +16,7 @@ import {transform_document} from '/src/poll/transform-document.js';
 
 const rewrite_rules = build_rewrite_rules();
 
-const INACCESSIBLE_CONTENT_DESCRIPTORS = [
-  {pattern: /forbes\.com$/i, reason: 'interstitial-advert'},
-  {pattern: /productforums\.google\.com/i, reason: 'script-generated'},
-  {pattern: /groups\.google\.com/i, reason: 'script-generated'},
-  {pattern: /nytimes\.com$/i, reason: 'paywall'},
-  {pattern: /heraldsun\.com\.au$/i, reason: 'requires-cookies'},
-  {pattern: /ripe\.net$/i, reason: 'requires-cookies'},
-  {pattern: /foxnews.com$/i, reason: 'fake'}
-];
+
 
 export async function poll_entry(entry) {
   if (list_is_empty(entry.urls)) {
@@ -121,7 +114,7 @@ function url_is_augmentable(url) {
 }
 
 function url_is_inaccessible_content(url) {
-  for (const desc of INACCESSIBLE_CONTENT_DESCRIPTORS) {
+  for (const desc of config_inaccessible_content_descriptors) {
     if (desc.pattern && desc.pattern.test(url.hostname)) {
       return true;
     }

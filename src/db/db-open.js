@@ -1,14 +1,25 @@
+import {config_db_name, config_db_open_timeout, config_db_version} from '/src/config.js';
 import {ENTRY_MAGIC} from '/src/entry.js';
 import {FEED_MAGIC} from '/src/feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_open} from '/src/lib/idb.js';
 
-// TODO: this should be pulling default values from config.js
+// TODO: rather than default to config, maybe I should just export the
+// on_upgrade_needed handler too? The only alternate user other than the normal
+// app usage is the test context, and the test context is privy too using
+// idb_open, it just cannot use the upgrade handler here, for now, because it is
+// module-private.
 
-export function db_open(
-    name = 'reader', version = 24, timeout = 500, console = console_stub) {
-  return idb_open(
-      name, version, on_upgrade_needed.bind(this, console), timeout, console);
+export function db_open(name, version, timeout, console = console_stub) {
+  // Default to config values. These are not fully hardcoded so that the
+  // function can still be easily overloaded in order to reuse the
+  // on_upgrade_needed handler with a different database name and version.
+  name = name || config_db_name;
+  version = isNaN(version) ? config_db_version : version;
+  timeout = isNaN(timeout) ? config_db_open_timeout : timeout;
+
+  const upgrade_bound = on_upgrade_needed.bind(this, console);
+  return idb_open(name, version, upgrade_bound, timeout, console);
 }
 
 function on_upgrade_needed(console, event) {

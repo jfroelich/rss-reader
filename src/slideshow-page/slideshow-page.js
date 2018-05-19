@@ -1,12 +1,12 @@
 import '/src/cli.js';
 
-import {CHANNEL_NAME, fonts} from '/src/config.js';
-import {db_open} from '/src/db/db-open.js';
-import {is_entry, is_valid_entry_id} from '/src/entry.js';
+import {config_channel_name, config_fonts} from '/src/config.js';
 import {db_find_viewable_entries} from '/src/db/db-find-viewable-entries.js';
 import {db_for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
 import {db_for_each_viewable_entry} from '/src/db/db-for-each-viewable-entry.js';
 import {db_mark_entry_read} from '/src/db/db-mark-entry-read.js';
+import {db_open} from '/src/db/db-open.js';
+import {is_entry, is_valid_entry_id} from '/src/entry.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {import_opml} from '/src/import-opml.js';
 import {console_stub} from '/src/lib/console-stub.js';
@@ -20,7 +20,7 @@ import {slideshow_export_opml} from '/src/slideshow-page/export-opml.js';
 import * as page_style from '/src/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/slideshow-page/slideshow.js';
 
-const channel = new BroadcastChannel(CHANNEL_NAME);
+const channel = new BroadcastChannel(config_channel_name);
 
 channel.onmessage = function channel_onmessage(event) {
   if (!event.isTrusted) {
@@ -160,7 +160,7 @@ async function slide_mark_read(conn, slide) {
   const id = parseInt(slide.getAttribute('entry'), 10);
   const op = {};
   op.conn = conn;
-  op.channel = new BroadcastChannel(CHANNEL_NAME);
+  op.channel = new BroadcastChannel(config_channel_name);
   op.console = console_stub;
   op.db_mark_entry_read = db_mark_entry_read;
   await op.db_mark_entry_read(id);
@@ -403,7 +403,7 @@ async function refresh_anchor_onclick(event) {
 
   // Create a local channel object because apparently a channel cannot notify
   // itself (at least in Chrome 66) despite what spec states
-  const onclick_channel = new BroadcastChannel(CHANNEL_NAME);
+  const onclick_channel = new BroadcastChannel(config_channel_name);
 
   const rconn = await db_open();
   const iconn = await favicon_create_conn();
@@ -488,9 +488,8 @@ function import_menu_option_handle_click(event) {
 async function uploader_input_onchange(event) {
   console.log('%s: started', uploader_input_onchange.name);
   const op = {};
-  [op.rconn, op.iconn] =
-      await Promise.all([db_open(), favicon_create_conn()]);
-  op.channel = new BroadcastChannel(CHANNEL_NAME);
+  [op.rconn, op.iconn] = await Promise.all([db_open(), favicon_create_conn()]);
+  op.channel = new BroadcastChannel(config_channel_name);
   op.console = console;  // temporary
   op.fetch_timeout = 5 * 1000;
   op.import_opml = import_opml;
@@ -694,7 +693,7 @@ function header_font_menu_init() {
   default_option.value = '';
   default_option.textContent = 'Header Font';
   menu.appendChild(default_option);
-  for (const font_name of fonts) {
+  for (const font_name of config_fonts) {
     const option = document.createElement('option');
     option.value = font_name;
     option.textContent = font_name;
@@ -713,7 +712,7 @@ function body_font_menu_init() {
   default_option.value = '';
   default_option.textContent = 'Body Font';
   menu.appendChild(default_option);
-  for (const font_name of fonts) {
+  for (const font_name of config_fonts) {
     const option = document.createElement('option');
     option.value = font_name;
     option.textContent = font_name;
