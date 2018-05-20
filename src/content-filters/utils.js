@@ -26,25 +26,9 @@ export function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// Resolve a url
-// @param url_string {String} a relative or absolute url string
-// @param base_url {URL} a base url to use for resolution
-// @returns {URL} the resolved url or undefined
-export function url_string_resolve(url_string, base_url) {
-  // Guard against passing empty string to URL constructor as that simply
-  // clones the base url
-  if (typeof url_string === 'string' && url_string && url_string.trim()) {
-    try {
-      return new URL(url_string, base_url);
-    } catch (error) {
-    }
-  }
-}
-
 function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }
-
 
 // Returns true if an element is hidden according to its inline style
 export function element_is_hidden_inline(element) {

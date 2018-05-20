@@ -1,4 +1,4 @@
-import {element_is_hidden_inline, fetch_image_element, file_name_filter_extension, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
+import {element_is_hidden_inline, fetch_image_element, url_string_is_valid} from '/src/content-filters/utils.js';
 import {attribute_is_boolean} from '/src/lib/attribute.js';
 import {is_external_url} from '/src/lib/cross-site.js';
 import {element_unwrap} from '/src/lib/element-unwrap.js';
@@ -16,8 +16,7 @@ export function cf_filter_non_whitelisted_attributes(document, whitelist) {
   }
 }
 
-export function cf_element_filter_non_whitelisted_attributes(
-    element, whitelist) {
+function cf_element_filter_non_whitelisted_attributes(element, whitelist) {
   const attr_names = element.getAttributeNames();
   if (attr_names.length) {
     const whitelisted_names = whitelist[element.localName] || [];
@@ -113,107 +112,6 @@ export function cf_filter_figures(document) {
   }
 }
 
-const element_url_attribute_map = {
-  a: 'href',
-  applet: 'codebase',
-  area: 'href',
-  audio: 'src',
-  base: 'href',
-  blockquote: 'cite',
-  body: 'background',
-  button: 'formaction',
-  del: 'cite',
-  embed: 'src',
-  frame: 'src',
-  head: 'profile',
-  html: 'manifest',
-  iframe: 'src',
-  form: 'action',
-  img: 'src',
-  input: 'src',
-  ins: 'cite',
-  link: 'href',
-  object: 'data',
-  q: 'cite',
-  script: 'src',
-  source: 'src',
-  track: 'src',
-  video: 'src'
-};
-
-// Initialize the selector once on module load
-const element_url_attribute_selector = build_resolver_selector();
-
-function build_resolver_selector() {
-  const keys = Object.keys(element_url_attribute_map);
-  const parts = [];
-  for (const key of keys) {
-    parts.push(`${key}[${element_url_attribute_map[key]}]`);
-  }
-  return parts.join(',');
-}
-
-// Resolves all attribute values that contain urls
-// @param document {Document}
-// @param base_url {URL}
-export function cf_resolve_document_urls(document, base_url) {
-  assert(base_url instanceof URL);
-
-  const src_elements =
-      document.querySelectorAll(element_url_attribute_selector);
-  for (const src_element of src_elements) {
-    element_resolve_attribute(src_element, base_url);
-  }
-
-  if (document.body) {
-    const elements_with_srcset =
-        document.body.querySelectorAll('img[srcset], source[srcset]');
-    for (const element_with_srcset of elements_with_srcset) {
-      srcset_resolve(element_with_srcset, base_url);
-    }
-  }
-}
-
-function element_resolve_attribute(element, base_url) {
-  const attribute_name = element_url_attribute_map[element.localName];
-  if (!attribute_name) {
-    return;
-  }
-
-  const original_url_string = element.getAttribute(attribute_name);
-  if (!original_url_string) {
-    return;
-  }
-
-  const resolved_url = url_string_resolve(original_url_string, base_url);
-  if (!resolved_url) {
-    return;
-  }
-
-  if (resolved_url.href.length !== original_url_string.length) {
-    element.setAttribute(attribute_name, resolved_url.href);
-  }
-}
-
-function srcset_resolve(element, base_url) {
-  const descriptors = srcset.parse(element.getAttribute('srcset'));
-
-  let change_count = 0;
-  for (const descriptor of descriptors) {
-    const resolved_url = url_string_resolve(descriptor.url, base_url);
-    if (resolved_url && resolved_url.href.length !== descriptor.url.length) {
-      descriptor.url = resolved_url.href;
-      change_count++;
-    }
-  }
-
-  if (change_count) {
-    const new_value = srcset.serialize(descriptors);
-    if (new_value) {
-      element.setAttribute('srcset', new_value);
-    }
-  }
-}
 
 export function document_filter_empty_attributes(document) {
   if (document.body) {

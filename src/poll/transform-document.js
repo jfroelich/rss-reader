@@ -14,6 +14,8 @@ import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-elements.js';
 import {filter_script_anchors} from '/src/lib/filters/filter-script-anchors.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
+import {resolve_document_urls} from '/src/lib/filters/resolve-document-urls.js';
+
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense content
@@ -197,7 +199,7 @@ export async function transform_document(
   // walk over elements that applies document.baseURI
   // TODO: this should strip base elements at the end if updating
   // attributes.
-  filters.cf_resolve_document_urls(document, document_url);
+  resolve_document_urls(document, document_url);
 
   // This should occur prior to filtering lazily-loaded images
   // This should occur prior to setting image sizes
