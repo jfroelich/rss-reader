@@ -16,6 +16,7 @@ import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-element
 import {filter_responsive_images} from '/src/lib/filters/filter-responsive-images.js';
 import {filter_script_anchors} from '/src/lib/filters/filter-script-anchors.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
+import {filter_telemetry_elements} from '/src/lib/filters/filter-telemetry-elements.js';
 import {resolve_document_urls} from '/src/lib/filters/resolve-document-urls.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
@@ -204,7 +205,7 @@ export async function transform_document(
 
   // This should occur before setting image sizes to avoid unwanted network
   // requests
-  filters.filter_telemetry_elements(document, document_url);
+  filter_telemetry_elements(document, document_url);
 
   // This should occur before trying to set image sizes simply because it
   // potentially reduces the number of images processed later. However it
