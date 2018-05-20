@@ -16,6 +16,7 @@ import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-element
 import {filter_responsive_images} from '/src/lib/filters/filter-responsive-images.js';
 import {filter_script_anchors} from '/src/lib/filters/filter-script-anchors.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
+import {filter_sourceless_images} from '/src/lib/filters/filter-sourceless-images.js';
 import {filter_telemetry_elements} from '/src/lib/filters/filter-telemetry-elements.js';
 import {resolve_document_urls} from '/src/lib/filters/resolve-document-urls.js';
 
@@ -207,11 +208,7 @@ export async function transform_document(
   // requests
   filter_telemetry_elements(document, document_url);
 
-  // This should occur before trying to set image sizes simply because it
-  // potentially reduces the number of images processed later. However it
-  // does not truly matter because the set-image-size filter can skip over
-  // sourcless images.
-  filters.filter_sourceless_images(document);
+  filter_sourceless_images(document);
 
   // It does not matter if this occurs before or after resolving urls. This
   // now accepts a base url parameter and dynamically canonicalizes image

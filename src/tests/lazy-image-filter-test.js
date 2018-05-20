@@ -1,6 +1,7 @@
 import {fetch_html} from '/src/fetch.js';
 import {filter_lazy_images} from '/src/lib/filters/filter-lazy-images.js';
-import * as html_parser from '/src/lib/html-parser.js';
+import {filter_sourceless_images} from '/src/lib/filters/filter-sourceless-images.js';
+import {parse as parse_html} from '/src/lib/html-parser.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: rewrite in new test format
@@ -14,7 +15,7 @@ window.test = async function(url_string) {
   }
 
   const response_text = await response.text();
-  const document = html_parser.parse(response_text);
+  const document = parse_html(response_text);
   filter_lazy_images(document);
 
   // Call this subsequently because it prints out missing images

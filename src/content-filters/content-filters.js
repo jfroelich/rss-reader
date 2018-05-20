@@ -725,17 +725,6 @@ export function filter_semantic_elements(document) {
   }
 }
 
-// Removes images without src attribute
-export function filter_sourceless_images(document) {
-  if (document.body) {
-    const images = document.body.querySelectorAll('img');
-    for (const image of images) {
-      if (!imagemod.has_source(image)) {
-        imagemod.remove(image);
-      }
-    }
-  }
-}
 
 // Remove whitespace and whitespace-like content from the start and end of a
 // document's body.
