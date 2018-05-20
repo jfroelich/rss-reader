@@ -12,10 +12,10 @@ import {filter_emphasis} from '/src/lib/filters/filter-emphasis.js';
 import {filter_hidden_elements} from '/src/lib/filters/filter-hidden-elements.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-elements.js';
+import {filter_responsive_images} from '/src/lib/filters/filter-responsive-images.js';
 import {filter_script_anchors} from '/src/lib/filters/filter-script-anchors.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
 import {resolve_document_urls} from '/src/lib/filters/resolve-document-urls.js';
-
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense content
@@ -190,22 +190,13 @@ export async function transform_document(
   condense_tagnames(document, condense_copy_attrs_flag);
 
   // This should occur before trying to set image sizes
-  // TODO: rename to canonicalize_urls or something like that
-  // TODO: support base elements more correctly?
-  // TODO: if a url cannot be resolved, it should be replaced with
-  // empty-string. in other words, empty-string is the canonical form of an
-  // invalid-url.
-  // TODO: rather that using getAttribute and base url, try a by-property
-  // walk over elements that applies document.baseURI
-  // TODO: this should strip base elements at the end if updating
-  // attributes.
   resolve_document_urls(document, document_url);
 
   // This should occur prior to filtering lazily-loaded images
   // This should occur prior to setting image sizes
   // Does not matter if before or after canonicalizing urls (commutative or
   // whatever the term is)
-  filters.filter_responsive_images(document);
+  filter_responsive_images(document);
 
   // This should occur before removing images that are missing a src value,
   // because lazily-loaded images often are missign a source value but are

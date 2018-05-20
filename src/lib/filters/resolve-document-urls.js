@@ -1,5 +1,15 @@
 import * as srcset from '/src/lib/srcset.js';
 
+// TODO: rename to canonicalize_urls or something like that
+// TODO: support base elements more correctly?
+// TODO: if a url cannot be resolved, it should be replaced with
+// empty-string. in other words, empty-string is the canonical form of an
+// invalid-url.
+// TODO: rather that using getAttribute and base url, try a by-property
+// walk over elements that applies document.baseURI
+// TODO: this should strip base elements at the end if updating
+// attributes.
+
 const element_url_attribute_map = {
   a: 'href',
   applet: 'codebase',
