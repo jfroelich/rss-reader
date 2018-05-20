@@ -6,6 +6,7 @@ import {filter_base_elements} from '/src/lib/filters/filter-base-elements.js';
 import {filter_blacklisted_elements} from '/src/lib/filters/filter-blacklisted-elements.js';
 import {filter_by_host_template} from '/src/lib/filters/filter-by-host-template.js';
 import {filter_comments} from '/src/lib/filters/filter-comments.js';
+import {filter_emphasis} from '/src/lib/filters/filter-emphasis.js';
 import {filter_hidden_elements} from '/src/lib/filters/filter-hidden-elements.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-elements.js';
@@ -177,15 +178,14 @@ export async function transform_document(
   // names, and pass this as a parameter.
   filter_blacklisted_elements(document);
 
-
   // This should occur prior to removing boilerplate content because it has
   // express knowledge of content organization
   filter_by_host_template(document, document_url);
 
   // This should occur before the boilerplate filter, because the boilerplate
   // filter may make decisions based on the hierarchical position of content
-  // TODO: or should the bp filter account for emphasis?
-  filters.cf_filter_emphasis(document, options.emphasis_length_max);
+  // TODO: or should it occur after?
+  filter_emphasis(document, options.emphasis_length_max);
 
   // This should occur before filtering attributes because it makes decisions
   // based on attribute values.
@@ -199,7 +199,6 @@ export async function transform_document(
   // not too concerning given that the Content Security Policy prevents such
   // links from working. This is more of a paranoid pass.
   filters.filter_script_anchors(document);
-
 
   // This should occur after bp-filter because certain condensed names may be
   // factors in the bp-filter (we don't know, not our concern). Otherwise it

@@ -97,25 +97,9 @@ export function filter_container_elements(document) {
   }
 }
 
-export function cf_filter_emphasis(document, text_length_max) {
-  assert(Number.isInteger(text_length_max) && text_length_max > 0);
-  if (document.body) {
-    const elements = document.body.querySelectorAll('b, big, em, i, strong');
-    for (const element of elements) {
-      if (cf_get_emphasis_length(element) > text_length_max) {
-        element_unwrap(element);
-      }
-    }
-  }
-}
 
-function cf_get_emphasis_length(element) {
-  return cf_string_filter_whitespace(element.textContent).length;
-}
 
-function cf_string_filter_whitespace(value) {
-  return value.replace(/\s+/, '');
-}
+
 
 export function cf_filter_figures(document) {
   if (document.body) {
