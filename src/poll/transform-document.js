@@ -11,6 +11,7 @@ import {filter_comments} from '/src/lib/filters/filter-comments.js';
 import {filter_emphasis} from '/src/lib/filters/filter-emphasis.js';
 import {filter_hidden_elements} from '/src/lib/filters/filter-hidden-elements.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
+import {filter_lazy_images} from '/src/lib/filters/filter-lazy-images.js';
 import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-elements.js';
 import {filter_responsive_images} from '/src/lib/filters/filter-responsive-images.js';
 import {filter_script_anchors} from '/src/lib/filters/filter-script-anchors.js';
@@ -198,10 +199,8 @@ export async function transform_document(
   // whatever the term is)
   filter_responsive_images(document);
 
-  // This should occur before removing images that are missing a src value,
-  // because lazily-loaded images often are missign a source value but are
-  // still useful
-  filters.filter_lazy_images(document);
+  // This should occur before removing src-less images
+  filter_lazy_images(document);
 
   // This should occur before setting image sizes to avoid unwanted network
   // requests

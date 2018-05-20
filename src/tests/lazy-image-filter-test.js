@@ -1,8 +1,9 @@
-import * as filters from '/src/content-filters/content-filters.js';
-import * as html_parser from '/src/lib/html-parser.js';
 import {fetch_html} from '/src/fetch.js';
+import {filter_lazy_images} from '/src/lib/filters/filter-lazy-images.js';
+import * as html_parser from '/src/lib/html-parser.js';
 import {assert} from '/src/tests/assert.js';
 
+// TODO: rewrite in new test format
 // TODO: rewrite without input, load a local file internally
 
 window.test = async function(url_string) {
@@ -14,8 +15,8 @@ window.test = async function(url_string) {
 
   const response_text = await response.text();
   const document = html_parser.parse(response_text);
-  filters.filter_lazy_images(document);
+  filter_lazy_images(document);
 
   // Call this subsequently because it prints out missing images
-  // filters.filter_sourceless_images(document);
+  // filter_sourceless_images(document);
 };
