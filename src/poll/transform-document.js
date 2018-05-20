@@ -3,6 +3,7 @@ import {color_contrast_filter} from '/src/lib/filters/color-contrast-filter.js';
 import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
 import {filter_base_elements} from '/src/lib/filters/filter-base-elements.js';
+import {filter_blacklisted_elements} from '/src/lib/filters/filter-blacklisted-elements.js';
 import {filter_comments} from '/src/lib/filters/filter-comments.js';
 import {filter_hidden_elements} from '/src/lib/filters/filter-hidden-elements.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
@@ -168,7 +169,12 @@ export async function transform_document(
   // to spam, so it is preferable to do it before.
   color_contrast_filter(document, options.matte, options.min_contrast_ratio);
 
-  filters.filter_blacklisted_elements(document);
+  // TODO: which elements are in the blacklist is app-policy, not lib policy.
+  // The lib function should accept a blacklist parameter and modify the
+  // document accordingly, not decide on its own using a hardcoded internal
+  // list. Therefore, I should define an array here of blacklisted element
+  // names, and pass this as a parameter.
+  filter_blacklisted_elements(document);
 
   // This should occur before the boilerplate filter
   // TODO: actually menu links might be scripted, so this should typically

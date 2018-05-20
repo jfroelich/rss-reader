@@ -2,6 +2,7 @@ import * as filters from '/src/content-filters/content-filters.js';
 import {fetch_html} from '/src/fetch.js';
 import * as boilerplate from '/src/lib/boilerplate.js';
 import {deframe} from '/src/lib/filters/deframe.js';
+import {filter_blacklisted_elements} from '/src/lib/filters/filter-blacklisted-elements.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
 import * as html_parser from '/src/lib/html-parser.js';
@@ -33,8 +34,8 @@ export async function legacy_boilerplate_test(url_string) {
   deframe(document);
   filter_script_elements(document);
   filter_iframes(document);
+  filter_blacklisted_elements(document);
 
-  filters.filter_blacklisted_elements(document);
   filters.cf_resolve_document_urls(document, response_url);
   await filters.document_set_image_sizes(document, response_url);
   boilerplate.annotate(document);
