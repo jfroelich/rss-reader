@@ -1,4 +1,5 @@
 import * as filters from '/src/content-filters/content-filters.js';
+import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/lib/filters/color-contrast-filter.js';
 import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
@@ -191,7 +192,7 @@ export async function transform_document(
   // based on attribute values.
   // This should occur after filtering hidden elements because it is naive with
   // regard to content visibility
-  filters.cf_filter_boilerplate(document, console);
+  filter_boilerplate(document, console);
 
   // This is a followup security sweep to the script element filter. It occurs
   // after boilerplate filtering so that scripted links are still considered as

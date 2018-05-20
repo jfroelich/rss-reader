@@ -1,4 +1,3 @@
-import {filter_boilerplate} from '/src/content-filters/boilerplate-filter.js';
 import {element_is_hidden_inline, fetch_image_element, file_name_filter_extension, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 import {attribute_is_boolean} from '/src/lib/attribute.js';
 import {is_external_url} from '/src/lib/cross-site.js';
@@ -7,8 +6,6 @@ import {element_unwrap} from '/src/lib/element-unwrap.js';
 import * as imagemod from '/src/lib/image.js';
 import * as srcset from '/src/lib/srcset.js';
 import * as string from '/src/lib/string.js';
-
-export const cf_filter_boilerplate = filter_boilerplate;
 
 // @param whitelist {Object} each property is element name, each value is array
 // of retainable attribute names
@@ -96,8 +93,6 @@ export function filter_container_elements(document) {
     }
   }
 }
-
-
 
 
 
