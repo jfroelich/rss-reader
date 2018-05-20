@@ -1,7 +1,6 @@
 import {element_is_hidden_inline, fetch_image_element, file_name_filter_extension, url_get_filename, url_string_is_valid, url_string_resolve} from '/src/content-filters/utils.js';
 import {attribute_is_boolean} from '/src/lib/attribute.js';
 import {is_external_url} from '/src/lib/cross-site.js';
-import {element_coerce} from '/src/lib/element-coerce.js';
 import {element_unwrap} from '/src/lib/element-unwrap.js';
 import * as imagemod from '/src/lib/image.js';
 import * as srcset from '/src/lib/srcset.js';
@@ -213,25 +212,6 @@ function srcset_resolve(element, base_url) {
     if (new_value) {
       element.setAttribute('srcset', new_value);
     }
-  }
-}
-
-// Replace certain elements with alternative elements that have names with
-// fewer characters
-// @param copy_attrs_flag {Boolean} optional, if true then copy attributes
-export function cf_condense_tagnames(document, copy_attrs_flag) {
-  if (!document.body) {
-    return;
-  }
-
-  const bold_elements = document.body.querySelectorAll('strong');
-  for (const element of bold_elements) {
-    element_coerce(element, 'b', copy_attrs_flag);
-  }
-
-  const italics_elements = document.body.querySelectorAll('em');
-  for (const element of italics_elements) {
-    element_coerce(element, 'i', copy_attrs_flag);
   }
 }
 
