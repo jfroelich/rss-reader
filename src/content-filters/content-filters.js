@@ -881,31 +881,6 @@ function image_transform_to_descriptor(image, descriptor) {
   }
 }
 
-
-// Unwraps anchor elements containing href attribute values that are javascript
-export function filter_script_anchors(document) {
-  if (document.body) {
-    const anchors = document.body.querySelectorAll('a[href]');
-    for (const anchor of anchors) {
-      if (url_string_has_script_protocol(anchor.getAttribute('href'))) {
-        element_unwrap(anchor);
-      }
-    }
-  }
-}
-
-// TODO: inline
-// Returns true if the url has the 'javascript:' protocol. Does not throw in
-// the case of bad input. Tolerates leading whitespace.
-function url_string_has_script_protocol(url_string) {
-  // For a url string to have the script protocol it must be longer than this
-  const JS_PREFIX_LEN = 'javascript:'.length;
-  // The type check is done to allow for bad inputs for caller convenience. The
-  // length check is an attempt to reduce the number of regex calls.
-  return typeof url_string === 'string' && url_string.length > JS_PREFIX_LEN &&
-      /^\s*javascript:/i.test(url_string);
-}
-
 export function filter_small_images(document) {
   if (document.body) {
     const images = document.body.querySelectorAll('img');

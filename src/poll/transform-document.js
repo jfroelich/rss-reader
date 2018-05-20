@@ -11,6 +11,7 @@ import {filter_emphasis} from '/src/lib/filters/filter-emphasis.js';
 import {filter_hidden_elements} from '/src/lib/filters/filter-hidden-elements.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-elements.js';
+import {filter_script_anchors} from '/src/lib/filters/filter-script-anchors.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
@@ -199,7 +200,7 @@ export async function transform_document(
   // independent variables by the boilerplate filter. The correctness of this is
   // not too concerning given that the Content Security Policy prevents such
   // links from working. This is more of a paranoid pass.
-  filters.filter_script_anchors(document);
+  filter_script_anchors(document);
 
   // This should occur after bp-filter because certain condensed names may be
   // factors in the bp-filter (we don't know, not our concern). Otherwise it
