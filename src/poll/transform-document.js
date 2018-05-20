@@ -4,6 +4,7 @@ import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
 import {filter_base_elements} from '/src/lib/filters/filter-base-elements.js';
 import {filter_blacklisted_elements} from '/src/lib/filters/filter-blacklisted-elements.js';
+import {filter_by_host_template} from '/src/lib/filters/filter-by-host-template.js';
 import {filter_comments} from '/src/lib/filters/filter-comments.js';
 import {filter_hidden_elements} from '/src/lib/filters/filter-hidden-elements.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
@@ -176,14 +177,10 @@ export async function transform_document(
   // names, and pass this as a parameter.
   filter_blacklisted_elements(document);
 
-  // This should occur before the boilerplate filter
-  // TODO: actually menu links might be scripted, so this should typically
-  // occur after.
-  filters.filter_script_anchors(document);
 
   // This should occur prior to removing boilerplate content because it has
   // express knowledge of content organization
-  filters.filter_by_host_template(document, document_url);
+  filter_by_host_template(document, document_url);
 
   // This should occur before the boilerplate filter, because the boilerplate
   // filter may make decisions based on the hierarchical position of content
@@ -195,6 +192,14 @@ export async function transform_document(
   // This should occur after filtering hidden elements because it is naive with
   // regard to content visibility
   filters.cf_filter_boilerplate(document, console);
+
+  // This is a followup security sweep to the script element filter. It occurs
+  // after boilerplate filtering so that scripted links are still considered as
+  // independent variables by the boilerplate filter. The correctness of this is
+  // not too concerning given that the Content Security Policy prevents such
+  // links from working. This is more of a paranoid pass.
+  filters.filter_script_anchors(document);
+
 
   // This should occur after bp-filter because certain condensed names may be
   // factors in the bp-filter (we don't know, not our concern). Otherwise it

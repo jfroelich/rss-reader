@@ -332,35 +332,6 @@ export function filter_formatting_elements(document) {
   }
 }
 
-
-// @param document {Document}
-// @param url {URL}
-export function filter_by_host_template(document, url) {
-  if (!url) {
-    return;
-  }
-
-  const host_selector_map = {};
-  host_selector_map['www.washingtonpost.com'] = [
-    'header#wp-header', 'div.top-sharebar-wrapper',
-    'div.newsletter-inline-unit', 'div.moat-trackable'
-  ];
-  host_selector_map['theweek.com'] = ['div#head-wrap'];
-  host_selector_map['www.usnews.com'] = ['header.header'];
-
-  const hostname = url.hostname;
-  const selectors = host_selector_map[hostname];
-  if (!selectors) {
-    return;
-  }
-
-  const selector = selectors.join(',');
-  const elements = document.querySelectorAll(selector);
-  for (const element of elements) {
-    element.remove();
-  }
-}
-
 // Filters certain horizontal rule elements from document content
 // Look for all <hr><hr> sequences and remove the second one. Naive in that it
 // does not fully account for new document state as hrs removed.
