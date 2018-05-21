@@ -11,6 +11,7 @@ import {filter_comments} from '/src/lib/filters/filter-comments.js';
 import {filter_emphasis} from '/src/lib/filters/filter-emphasis.js';
 import {filter_hidden_elements} from '/src/lib/filters/filter-hidden-elements.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
+import {filter_invalid_anchors} from '/src/lib/filters/filter-invalid-anchors.js';
 import {filter_lazy_images} from '/src/lib/filters/filter-lazy-images.js';
 import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-elements.js';
 import {filter_responsive_images} from '/src/lib/filters/filter-responsive-images.js';
@@ -225,7 +226,8 @@ export async function transform_document(
   // knowledge of image size
   filter_small_images(document);
 
-  filters.filter_invalid_anchors(document);
+  filter_invalid_anchors(document);
+
   filters.filter_formatting_anchors(document);
   filters.filter_form_elements(document);
   filters.cf_filter_br_elements(document);

@@ -197,21 +197,6 @@ export function filter_hr_elements(document) {
   }
 }
 
-export function filter_invalid_anchors(document) {
-  if (document.body) {
-    const anchors = document.body.querySelectorAll('a');
-    for (const anchor of anchors) {
-      if (anchor_is_invalid(anchor)) {
-        anchor.remove();
-      }
-    }
-  }
-}
-
-function anchor_is_invalid(anchor) {
-  const hrefValue = anchor.getAttribute('href');
-  return hrefValue && /^\s*https?:\/\/#/i.test(hrefValue);
-}
 
 export function filter_large_image_attributes(document) {
   if (document.body) {
