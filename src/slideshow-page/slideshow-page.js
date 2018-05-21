@@ -20,6 +20,18 @@ import {slideshow_export_opml} from '/src/slideshow-page/export-opml.js';
 import * as page_style from '/src/slideshow-page/page-style-settings.js';
 import * as Slideshow from '/src/slideshow-page/slideshow.js';
 
+// TODO: better support of browser back/forward buttons
+// TODO: navigation occassionally pauses. This shouldn't happen. Should
+// immediately navigate to something like an empty div, show a 'loading'
+// message, then load, then hide the loading message.
+// TODO: similar to the manner in which I structured the db folder, I would
+// prefer I break up this very large module into smaller coordinating modules.
+// This has grown large enough and incoherent enough that it is slightly
+// unweildy.
+
+
+// Declare a page-lifetime channel that will listen for messages so long as the
+// page is open.
 const channel = new BroadcastChannel(config_channel_name);
 
 channel.onmessage = function channel_onmessage(event) {

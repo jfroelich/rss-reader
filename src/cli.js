@@ -8,6 +8,19 @@ import {poll_feed} from '/src/poll/poll-feed.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {subscribe} from '/src/subscribe.js';
 
+// The cli module exports several functions to the global window object in order
+// to make those functions available in the browser's console. This module is
+// not intended for use by testing modules or to be called by other code.
+//
+// The cli exists because:
+// * it provides direct developer access to functions
+// * it is more stable than the view (for now)
+// * it leads to better design by providing a calling context other than normal
+// dom event handlers in a view, which helps avoid view-dependent code from
+// appearing where it should not
+// * it ensures headless support
+
+
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
   const op = {};
@@ -46,6 +59,8 @@ async function cli_archive_entries() {
 }
 
 async function cli_refresh_icons() {
+  // TODO: no need for extra vars here, assign directly into op
+
   const proms = [db_open(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(config_channel_name);
@@ -63,6 +78,8 @@ async function cli_refresh_icons() {
 }
 
 async function cli_poll_feeds() {
+  // TODO: open both and await Promise.all
+
   const rconn = await db_open();
   const iconn = await favicon_create_conn();
   const channel = new BroadcastChannel(config_channel_name);
@@ -80,19 +97,11 @@ async function cli_poll_feeds() {
 async function cli_remove_lost_entries() {
   const op = {};
   op.conn = await db_open();
-  console.debug(
-      '%s: connected to db %s', cli_remove_lost_entries.name, op.conn.name);
   op.channel = new BroadcastChannel(config_channel_name);
-  console.debug(
-      '%s: created channel', cli_remove_lost_entries.name, op.channel.name);
   op.console = console;
   op.db_remove_lost_entries = db_remove_lost_entries;
   await op.db_remove_lost_entries();
-  console.debug(
-      '%s: closing db conn', cli_remove_lost_entries.name, op.conn.name);
   op.conn.close();
-  console.debug(
-      '%s: closing channel', cli_remove_lost_entries.name, op.channel.name);
   op.channel.close();
 }
 
@@ -108,15 +117,19 @@ async function cli_remove_orphans() {
 }
 
 async function cli_lookup_favicon(url_string, cached) {
-  let document, fetch = true;
+  let document, fetch_flag = true;
   const url = new URL(url_string);
 
   const op = {};
-  op.conn = cached ? await favicon_create_conn() : undefined;
+
+  if (cached) {
+    op.conn = await favicon_create_conn();
+  }
+
   op.console = console;
   op.favicon_lookup = favicon_lookup;
 
-  const icon_url_string = await op.favicon_lookup(url, document, fetch);
+  const icon_url_string = await op.favicon_lookup(url, document, fetch_flag);
 
   if (cached) {
     op.conn.close();

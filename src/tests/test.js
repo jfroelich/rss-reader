@@ -21,11 +21,32 @@ import {sniff_test} from '/src/tests/sniff-test.js';
 import {subscribe_test} from '/src/tests/subscribe-test.js';
 import {url_loader_test} from '/src/tests/url-loader-test.js';
 
+// Tests must be promise returning functions
+
 // TODO: all tests should more carefully test error paths. That is where the
 // greatest number of bugs tends to occur. See, e.g.,
 // https://www.usenix.org/system/files/login/articles/03_lu_010-017_final.pdf
+// TODO: many of the tests are logging things that they are not testing, I
+// should silence those messages for those tests. For example most of the tests
+// are logging opening and creating a test database but those tests are not
+// testing the creation of a database so that aspect should be muted
+// TODO: note the horrible requirement of requiring a unique database. Maybe to
+// coordinate, if I want to continue async, is that each test's first parameter
+// is a test database name. Then I can simply do things like use test0, test1,
+// etc, and the counter guarantees each db name is unique. On the other hand, I
+// could run tests serially.
+// TODO: each test could take a custom console parameter, then i could do things
+// like implement a bufferedlogger, then queue messages per logger (per test),
+// then flush on test complete together with using console.group and groupEnd,
+// to get a cleaner console when running tests in parallel. Alternatively I
+// could use an html-based logger that appends log messages to the test view so
+// that there is no need to even open the console area and instead just view the
+// page to run tests
+// TODO: maybe enable tests to declare their own custom timeout
+// TODO: re-introduce a register-test function instead of hardcoding the
+// array. Managing the array is tedious. Performance is irrelevant, ergonomics
+// trumps.
 
-// Tests must be promise returning functions
 
 // The test registry is basically the set of all tests. For simplicity it is
 // implemented as an array, but it should be treated as a set.
