@@ -16,9 +16,11 @@ import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-element
 import {filter_responsive_images} from '/src/lib/filters/filter-responsive-images.js';
 import {filter_script_anchors} from '/src/lib/filters/filter-script-anchors.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
+import {filter_small_images} from '/src/lib/filters/filter-small-images.js';
 import {filter_sourceless_images} from '/src/lib/filters/filter-sourceless-images.js';
 import {filter_telemetry_elements} from '/src/lib/filters/filter-telemetry-elements.js';
 import {resolve_document_urls} from '/src/lib/filters/resolve-document-urls.js';
+import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense content
@@ -217,14 +219,11 @@ export async function transform_document(
   // the telemetry filter thinks should be avoided. Allow exceptions to
   // bubble
   const fetch_image_timeout = options.fetch_image_timeout;
-  // TODO: use a better name
-  await filters.document_set_image_sizes(
-      document, document_url, fetch_image_timeout);
+  await set_image_sizes(document, document_url, fetch_image_timeout);
 
   // This should occur after setting image sizes because it requires
   // knowledge of image size
-  // TODO: this should be merged with filter-large-images
-  filters.filter_small_images(document);
+  filter_small_images(document);
 
   filters.filter_invalid_anchors(document);
   filters.filter_formatting_anchors(document);

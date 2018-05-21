@@ -1,10 +1,9 @@
-import * as filters from '/src/content-filters/content-filters.js';
-import * as html_parser from '/src/lib/html-parser.js';
 import {fetch_html} from '/src/fetch.js';
+import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
+import {parse as parse_html} from '/src/lib/html-parser.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: these tests must be rewritten using new approach
-
 
 // TODO: move this comment somewhere, i dunno, github issue
 // TODO: research http://exercism.io/ svg loading issue
@@ -25,15 +24,15 @@ window.test = async function(url_string) {
   }
 
   const html = await response.text();
-  const document = html_parser.parse(html);
+  const document = parse_html(html);
   const response_url = new URL(response.url);
-  await filters.document_set_image_sizes(document, response_url);
+  await set_image_sizes(document, response_url);
 };
 
 window.test2 = async function() {
   const html =
       '<html><body><img src="http://exercism.io/icons/brand-logo.svg">' +
       '</body></html>';
-  const document = html_parser.parse(html);
-  await filters.document_set_image_sizes(document);
+  const document = parse_html(html);
+  await set_image_sizes(document);
 };
