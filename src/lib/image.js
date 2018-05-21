@@ -1,13 +1,11 @@
 import {element_unwrap} from '/src/lib/element-unwrap.js';
 
 export function has_source(image) {
-  const has = element_attribute_not_empty_after_trim;
-
   if (!(image instanceof Element)) {
     throw new TypeError('image not an element');
   }
 
-  if (has(image, 'src') || has(image, 'srcset')) {
+  if (has_value(image, 'src') || has_value(image, 'srcset')) {
     return true;
   }
 
@@ -15,7 +13,7 @@ export function has_source(image) {
   if (picture) {
     const sources = picture.getElementsByTagName('source');
     for (const source of sources) {
-      if (has(source, 'src') || has(source, 'srcset')) {
+      if (has_value(source, 'src') || has_value(source, 'srcset')) {
         return true;
       }
     }
@@ -52,7 +50,7 @@ export function remove(image) {
   image.remove();
 }
 
-function element_attribute_not_empty_after_trim(element, attr_name) {
+function has_value(element, attr_name) {
   const value = element.getAttribute(attr_name);
   return (value && value.trim()) ? true : false;
 }
