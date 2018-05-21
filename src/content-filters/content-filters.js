@@ -130,34 +130,6 @@ export function element_filter_empty_attributes(element) {
   }
 }
 
-// Filters or transforms certain form elements and form-related elements from
-// document content
-export function filter_form_elements(document) {
-  if (!document.body) {
-    return;
-  }
-
-  const forms = document.body.querySelectorAll('form');
-  for (const form of forms) {
-    element_unwrap(form);
-  }
-
-  const labels = document.body.querySelectorAll('label');
-  for (const label of labels) {
-    element_unwrap(label);
-  }
-
-  const selector =
-      'button, fieldset, input, optgroup, option, select, textarea';
-  const inputs = document.body.querySelectorAll(selector);
-  const body = document.body;
-  for (const input of inputs) {
-    if (body.contains(input)) {
-      input.remove();
-    }
-  }
-}
-
 
 const formatting_elements_selector = [
   'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend',
