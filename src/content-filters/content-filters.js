@@ -158,16 +158,6 @@ export function filter_form_elements(document) {
   }
 }
 
-export function filter_formatting_anchors(document) {
-  if (document.body) {
-    const anchors = document.body.querySelectorAll('a');
-    for (const anchor of anchors) {
-      if (!anchor.hasAttribute('href')) {
-        element_unwrap(anchor);
-      }
-    }
-  }
-}
 
 const formatting_elements_selector = [
   'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend',

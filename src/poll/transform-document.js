@@ -9,6 +9,7 @@ import {filter_blacklisted_elements} from '/src/lib/filters/filter-blacklisted-e
 import {filter_by_host_template} from '/src/lib/filters/filter-by-host-template.js';
 import {filter_comments} from '/src/lib/filters/filter-comments.js';
 import {filter_emphasis} from '/src/lib/filters/filter-emphasis.js';
+import {filter_formatting_anchors} from '/src/lib/filters/filter-formatting-anchors.js';
 import {filter_hidden_elements} from '/src/lib/filters/filter-hidden-elements.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_invalid_anchors} from '/src/lib/filters/filter-invalid-anchors.js';
@@ -227,8 +228,8 @@ export async function transform_document(
   filter_small_images(document);
 
   filter_invalid_anchors(document);
+  filter_formatting_anchors(document);
 
-  filters.filter_formatting_anchors(document);
   filters.filter_form_elements(document);
   filters.cf_filter_br_elements(document);
   filters.filter_hr_elements(document);
