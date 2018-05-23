@@ -18,28 +18,15 @@ export function set_document_base_uri(document, document_url) {
   // So we use querySelector which matches in document order.
 
   let href_value;
+  let canonical_base_url;
   let base_element = document.querySelector('base[href]');
   if (base_element) {
     href_value = base_element.getAttribute('href');
     if (href_value) {
       href_value = href_value.trim();
-
-      // TEMP DEBUG
-      console.debug('Found base href', href_value);
-    }
-  }
-
-  // If there is a base href, then keep in mind it may be relative. In this
-  // case we want to canonicalize it.
-  let canonical_base_url;
-  if (href_value) {
-    try {
-      canonical_base_url = new URL(href_value, document_url);
-
-      // TEMP DEBUG
-      console.debug('created canonical url', canonical_base_url.href);
-
-    } catch (error) {
+      if (href_value) {
+        canonical_base_url = new URL(href_value, document_url);
+      }
     }
   }
 
