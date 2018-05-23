@@ -1,5 +1,5 @@
-import {element_is_hidden_inline} from '/src/content-filters/utils.js';
 import {is_external_url} from '/src/lib/cross-site.js';
+import {element_is_hidden_inline} from '/src/lib/element-is-hidden-inline.js';
 import {remove as remove_image} from '/src/lib/image.js';
 
 const telemetry_host_patterns = [

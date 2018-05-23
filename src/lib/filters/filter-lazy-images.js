@@ -1,4 +1,3 @@
-import {url_string_is_valid} from '/src/content-filters/utils.js';
 import {has_source} from '/src/lib/image.js';
 
 const lazy_image_attribute_names = [
@@ -17,7 +16,7 @@ export function filter_lazy_images(document) {
         for (const attr_name of lazy_image_attribute_names) {
           if (attr_names.includes(attr_name)) {
             const lazy_attr_value = image.getAttribute(attr_name);
-            if (url_string_is_valid(lazy_attr_value)) {
+            if (is_valid_url_string(lazy_attr_value)) {
               image.removeAttribute(attr_name);
               image.setAttribute('src', lazy_attr_value);
               break;
@@ -27,4 +26,17 @@ export function filter_lazy_images(document) {
       }
     }
   }
+}
+
+// Only minor validation for speed. Tolerates bad input. This isn't intended to
+// be the most accurate classification. Instead, it is intended to easily find
+// bad urls and rule them out as invalid, even though some slip through, and not
+// unintentionally rule out good urls.
+// @param value {Any} should be a string but this tolerates bad input
+// @returns {Boolean}
+function is_valid_url_string(value) {
+  // The upper bound on len is an estimate, kind of a safeguard, hopefully never
+  // causes a problem
+  return typeof value === 'string' && value.length > 1 &&
+      value.length <= 3000 && !value.trim().includes(' ');
 }

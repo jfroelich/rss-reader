@@ -1,4 +1,4 @@
-import {fetch_image_element} from '/src/content-filters/utils.js';
+import {fetch_image_element} from '/src/lib/fetch-image-element.js';
 
 // TODO: do not assume that if an image has a source attribute that it is a
 // valid url. urls may not have been validated by other filters. This has to

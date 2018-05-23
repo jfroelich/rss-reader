@@ -1,4 +1,3 @@
-import * as filters from '/src/content-filters/content-filters.js';
 import * as color from '/src/lib/color.js';
 import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/lib/filters/color-contrast-filter.js';

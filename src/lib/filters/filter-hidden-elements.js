@@ -1,4 +1,4 @@
-import {element_is_hidden_inline} from '/src/content-filters/utils.js';
+import {element_is_hidden_inline} from '/src/lib/element-is-hidden-inline.js';
 import {element_unwrap} from '/src/lib/element-unwrap.js';
 
 // Removes elements that are hidden.
