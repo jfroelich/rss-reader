@@ -1,15 +1,15 @@
 import {attribute_is_boolean} from '/src/lib/attribute.js';
 
-export function document_filter_empty_attributes(document) {
+export function filter_empty_attrs(document) {
   if (document.body) {
     const elements = document.body.getElementsByTagName('*');
     for (const element of elements) {
-      element_filter_empty_attributes(element);
+      filter_element(element);
     }
   }
 }
 
-export function element_filter_empty_attributes(element) {
+function filter_element(element) {
   const names = element.getAttributeNames();
   for (const name of names) {
     if (!attribute_is_boolean(element, name)) {

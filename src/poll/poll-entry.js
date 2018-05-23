@@ -6,7 +6,6 @@ import {db_write_entry} from '/src/db/db-write-entry.js';
 import {append_entry_url, is_valid_entry_id} from '/src/entry.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
-import * as color from '/src/lib/color.js';
 import * as html_parser from '/src/lib/html-parser.js';
 import {list_is_empty, list_peek} from '/src/lib/list.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
@@ -175,14 +174,7 @@ async function update_entry_content(
   }
 
   const document_url = new URL(list_peek(entry.urls));
-  const opts = {
-    fetch_image_timeout: fetch_image_timeout,
-    matte: color.WHITE,
-    min_contrast_ratio: localStorage.MIN_CONTRAST_RATIO,
-    emphasis_length_max: 200
-  };
-
-  await transform_document(document, document_url, console, opts);
+  await transform_document(document, document_url, console);
   entry.content = document.documentElement.outerHTML;
 }
 

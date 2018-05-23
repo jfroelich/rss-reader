@@ -17,6 +17,7 @@ import {idb_test} from '/src/tests/idb-test.js';
 import {import_opml_test} from '/src/tests/import-opml-test.js';
 import {mime_test} from '/src/tests/mime-test.js';
 import {rewrite_url_test} from '/src/tests/rewrite-url-test.js';
+import {set_document_base_uri_test} from '/src/tests/set-document-base-uri-test.js';
 import {sniff_test} from '/src/tests/sniff-test.js';
 import {subscribe_test} from '/src/tests/subscribe-test.js';
 import {url_loader_test} from '/src/tests/url-loader-test.js';
@@ -73,6 +74,7 @@ const test_registry = [
   import_opml_test,
   mime_test,
   rewrite_url_test,
+  set_document_base_uri_test,
   sniff_test,
   subscribe_test,
   url_loader_test

@@ -1,29 +1,47 @@
 import * as filters from '/src/content-filters/content-filters.js';
+import * as color from '/src/lib/color.js';
 import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
 import {color_contrast_filter} from '/src/lib/filters/color-contrast-filter.js';
 import {condense_tagnames} from '/src/lib/filters/condense-tagnames.js';
 import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
+import {filter_anchor_noref} from '/src/lib/filters/filter-anchor-noref.js';
 import {filter_base_elements} from '/src/lib/filters/filter-base-elements.js';
 import {filter_blacklisted_elements} from '/src/lib/filters/filter-blacklisted-elements.js';
+import {filter_brs} from '/src/lib/filters/filter-brs.js';
 import {filter_by_host_template} from '/src/lib/filters/filter-by-host-template.js';
 import {filter_comments} from '/src/lib/filters/filter-comments.js';
+import {filter_container_elements} from '/src/lib/filters/filter-container-elements.js';
 import {filter_emphasis} from '/src/lib/filters/filter-emphasis.js';
+import {filter_empty_attrs} from '/src/lib/filters/filter-empty-attrs.js';
+import {filter_figures} from '/src/lib/filters/filter-figures.js';
 import {filter_form_elements} from '/src/lib/filters/filter-form-elements.js';
 import {filter_formatting_anchors} from '/src/lib/filters/filter-formatting-anchors.js';
+import {filter_formatting_elements} from '/src/lib/filters/filter-formatting-elements.js';
 import {filter_hidden_elements} from '/src/lib/filters/filter-hidden-elements.js';
+import {filter_hrs} from '/src/lib/filters/filter-hrs.js';
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_invalid_anchors} from '/src/lib/filters/filter-invalid-anchors.js';
+import {filter_large_images} from '/src/lib/filters/filter-large-images.js';
 import {filter_lazy_images} from '/src/lib/filters/filter-lazy-images.js';
+import {filter_leaf_nodes} from '/src/lib/filters/filter-leaf-nodes.js';
+import {filter_lists} from '/src/lib/filters/filter-lists.js';
+import {filter_misnested_elements} from '/src/lib/filters/filter-misnested-elements.js';
+import {filter_node_whitespace} from '/src/lib/filters/filter-node-whitespace.js';
 import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-elements.js';
+import {filter_pings} from '/src/lib/filters/filter-pings.js';
 import {filter_responsive_images} from '/src/lib/filters/filter-responsive-images.js';
 import {filter_script_anchors} from '/src/lib/filters/filter-script-anchors.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
+import {filter_semantic_elements} from '/src/lib/filters/filter-semantic-elements.js';
 import {filter_small_images} from '/src/lib/filters/filter-small-images.js';
 import {filter_sourceless_images} from '/src/lib/filters/filter-sourceless-images.js';
+import {filter_tables} from '/src/lib/filters/filter-tables.js';
 import {filter_telemetry_elements} from '/src/lib/filters/filter-telemetry-elements.js';
+import {filter_unknown_attrs} from '/src/lib/filters/filter-unknown-attrs.js';
 import {resolve_document_urls} from '/src/lib/filters/resolve-document-urls.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
+import {trim_document} from '/src/lib/filters/trim-document.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense content
@@ -80,21 +98,7 @@ import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 // viable.
 
 // TODO:
-// 1. Migrate content filters to separate independent libraries, one at a time.
-// It was a mistake to try and merge the filters into a single file. Content
-// filters should be generic independent libraries, then this parameterizes
-// calls to those with app-specific-preferences, and basically is just
-// responsible for assembly of filter components. Because this becomes the
-// app-specific composition of those filter modules, this no longer needs an
-// options object, because the preferences can be hard coded here, because this
-// compositional layer is a part of the app and not the libs it accesses.
-// 2. Remove the options parameter. Hardcode default settings in config.js. Comb
-// through the filters and remove all app-specific functionality. It should be
-// parameterized, where the parameters are set here, not in the filter. For
-// example, for the image-size-filter, I should be passing in a fetch policy
-// that is defined here (or uses the app's fetch-policy), instead of deferring
-// to the default fetch policy or hard-coding the app policy within the filter
-// itself.
+// 1. Set options in config.js and read them here, instead of hardcoding here
 // 3. Create a function registry, register filters, and revise
 // transform_document to iterate over the registry. Instead of hard coding, this
 // should basically just iterate over an array of filter functions. Functions
@@ -109,6 +113,12 @@ import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 // per entry, so as to be able to specify order. Should probably not use
 // registration order. Or maybe registration order is fine?
 // 4. Add console arg to all filters
+// 5. drop document-url parameter. implement set-base-uri(document) as a
+// standalone independent library. require all callers to set it. refactor all
+// filters to operate with the assumption that the base uri is set. note that
+// canonicalize-urls still needs to strip the base-uri later, because that is
+// the only way to make the document 'embeddable' in a multi-document view
+// without causing base-uri conflicts.
 
 // TODO: perhaps all filters should return a document. They could return the
 // same input document, or a new document. It would be semi-opaque to the caller
@@ -118,29 +128,20 @@ import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 // like replacing &amp;copy; with the equivalent single utf8 / unicode
 // character.
 
-export async function transform_document(
-    document, document_url, console, options = {}) {
+// TODO: improve anti-image-hotlink handling, because we are not hotlinking, so
+// review why there is a problem. http://www.javalemmings.com/DMA/Lem_1.htm
+
+export async function transform_document(document, document_url, console) {
+  // TODO: step 1 here should be to verify the document has a base-uri and
+  // that the base-uri is not somehow the uri of the page that includes this
+  // script that is running (which may be the default??)
+
   deframe(document);
   ensure_document_body(document);
   filter_script_elements(document);
   filter_iframes(document);
   filter_comments(document);
   filter_noscript_elements(document);
-
-  // This can occur at any point. It should generally be done before urls
-  // are resolved to reduce the work done by that filter.
-  // TODO: actually, this should be done only after canonicalizing urls, and
-  // the canonicalizer should consider base elements. By doing it after and
-  // having canon consider it, then we support base element more properly
-  // Actually it should be merged into the end of canonical. Instead, what
-  // should happen here is an insertion of the document-url as a new base
-  // element, if another base element does not exist, so as to have the
-  // desired side effect of mutating the otherwise immutable
-  // document.baseURI. In fact it should probably be a filter like
-  // set_base_uri(document, document_url). And, in fact, it maybe should not
-  // even be a filter, but a concern of the caller, and transform-document's
-  // input requirements should adapt to assume every element's href-like
-  // getter or whatever will yield a canonical url.
   filter_base_elements(document);
 
   // This should occur earlier in the pipeline because it tends to reduce
@@ -159,7 +160,10 @@ export async function transform_document(
   // be done before or after boilerplate filter, but my instinct is that
   // spam techniques are boilerplate, and the boilerplate filter is naive
   // with regard to spam, so it is preferable to do it before.
-  color_contrast_filter(document, options.matte, options.min_contrast_ratio);
+
+  const matte = color.WHITE;
+  const mcr = localStorage.MIN_CONTRAST_RATIO;
+  color_contrast_filter(document, matte, mcr);
 
   // TODO: which elements are in the blacklist is app-policy, not lib
   // policy. The lib function should accept a blacklist parameter and modify
@@ -176,7 +180,8 @@ export async function transform_document(
   // boilerplate filter may make decisions based on the hierarchical
   // position of content
   // TODO: or should it occur after?
-  filter_emphasis(document, options.emphasis_length_max);
+  const emphasis_length_max = 200;
+  filter_emphasis(document, emphasis_length_max);
 
   // This should occur before filtering attributes because it makes
   // decisions based on attribute values. This should occur after filtering
@@ -213,6 +218,8 @@ export async function transform_document(
   // requests
   filter_telemetry_elements(document, document_url);
 
+  // TODO: revise as filter-invalid-image-urls, where empty source is one case
+  // of invalidity, other case is malformed url
   filter_sourceless_images(document);
 
   // It does not matter if this occurs before or after resolving urls. This
@@ -221,7 +228,8 @@ export async function transform_document(
   // removing telemetry, because this involves network requests that perhaps
   // the telemetry filter thinks should be avoided. Allow exceptions to
   // bubble
-  const fetch_image_timeout = options.fetch_image_timeout;
+  // TODO: set this in config.js and get from config.js
+  const fetch_image_timeout = 3000;
   await set_image_sizes(document, document_url, fetch_image_timeout);
 
   // This should occur after setting image sizes because it requires
@@ -231,41 +239,41 @@ export async function transform_document(
   filter_invalid_anchors(document);
   filter_formatting_anchors(document);
   filter_form_elements(document);
+  filter_brs(document);
+  filter_hrs(document);
+  filter_formatting_elements(document);
+  filter_misnested_elements(document);
+  filter_semantic_elements(document);
+  filter_figures(document);
+  filter_container_elements(document);
 
-  filters.cf_filter_br_elements(document);
-  filters.filter_hr_elements(document);
-  filters.filter_formatting_elements(document);
-  filters.cf_filter_misnested_elements(document);
-  filters.filter_semantic_elements(document);
-  filters.cf_filter_figures(document);
-  filters.filter_container_elements(document);
-  filters.filter_list_elements(document);
+  filter_lists(document);
 
   const table_row_scan_max = 20;
-  filters.filter_table_elements(document, table_row_scan_max);
+  filter_tables(document, table_row_scan_max);
 
-  // Better to call later than earlier to reduce number of text nodes
-  // visited
-  // TODO: should this occur before boilerplate filter?
-  filters.filter_node_whitespace(document);
+  // It does not matter whether this is before or after the boilerplate filter,
+  // because the boilerplate filter considers whitespace in its algorithm, and
+  // in particular it considers excess whitespace
+  filter_node_whitespace(document);
 
   // This should be called after most of the other filters. Most of the
   // other filters are naive in how they leave ancestor elements meaningless
   // or empty, and simply remove elements without considering ripple
   // effects. So this is like an additional pass now that several holes have
   // been made.
-  filters.filter_leaf_nodes(document);
+  filter_leaf_nodes(document);
 
   // Should be called near end because its behavior changes based on what
   // content remains, and is faster with fewer elements
-  filters.document_trim(document);
+  trim_document(document);
 
   // Primarily an attribute filter, so it should be called as late as
   // possible to reduce the number of elements visited
-  filters.add_noreferrer_to_anchors(document);
-  filters.remove_ping_attribute_from_all_anchors(document);
+  filter_anchor_noref(document);
+  filter_pings(document);
 
-  filters.filter_large_image_attributes(document);
+  filter_large_images(document);
 
   // Filter attributes close to last because it is so slow and is sped up
   // by processing fewer elements.
@@ -275,10 +283,10 @@ export async function transform_document(
     source: ['media', 'sizes', 'srcset', 'src', 'type'],
     img: ['src', 'alt', 'title', 'srcset', 'width', 'height']
   };
-  filters.cf_filter_non_whitelisted_attributes(document, attribute_whitelist);
+  filter_unknown_attrs(document, attribute_whitelist);
 
   // TODO: move this up to before some of the other attribute filters, or
   // explain why it should occur later
   // TODO: consider aggregating with other attribute filters
-  filters.document_filter_empty_attributes(document);
+  filter_empty_attrs(document);
 }
