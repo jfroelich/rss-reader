@@ -2,6 +2,22 @@ import {is_external_url} from '/src/lib/cross-site.js';
 import {element_is_hidden_inline} from '/src/lib/element-is-hidden-inline.js';
 import {remove as remove_image} from '/src/lib/image.js';
 
+// TODO: the ping attribute filter should probably become an implicit component
+// of this filter. Both filters have the same objective.
+
+// TODO: I would like to remove reliance on base-uri. This would allow the
+// canonical url filter to strip base elements, which would destroy the
+// base uri, and if that filter is called before this one, leave this one
+// not working. So basically this would have to be changed to operate under
+// the presumption that all document urls are canonical. The thing is, I am
+// not sure I want to impose that requirement. The req imposes more order on
+// filter composition, which is not wanted. On the other hand, I would get
+// to remove the explicit remove-base-elements call in tranform document, and
+// the anxiety over whether the requirement that base-elements are removed AFTER
+// this is reduced.
+
+
+// Regular expressions applied to urls that indicate telemetry presence
 const telemetry_host_patterns = [
   /\/\/.*2o7\.net\//i,
   /\/\/ad\.doubleclick\.net\//i,
@@ -30,17 +46,66 @@ const telemetry_host_patterns = [
   /\/\/www\.facebook\.com\/tr/i
 ];
 
+// NOTE: this now assumes that the document's baseURI is properly setup. This
+// derives the document's canonical location from its base uri property. This
+// means, for example, that base elements should still exist in the document by
+// this point so that the base uri is not the url of the page that is running
+// this script.
+
 // Removes some telemetry data from a document.
 // @param document {Document}
-// @param document_url {URL} canonical document url
-export function filter_telemetry_elements(document, document_url) {
-  // TODO: deprecate use of assert, just throw a type error?
-  assert(document_url instanceof URL);
-
-  // Analysis is limited to descendants of body
+export function filter_telemetry_elements(document) {
+  // Telemetry analysis is limited to descendants of body. This is a relatively
+  // fast check so it is performed first so that most of the time the function
+  // exits quickly in the path where body is missing.
   if (!document.body) {
     return;
   }
+
+  // This filter now relies on having a baseURI in order to properly determine a
+  // document's canonical location. This no longer has access to an explicit
+  // document url parameter.
+  //
+  // NOTE: I think that baseURI is pretty much always defined, even when no base
+  // elements are present, but this is a paranoid check that clearly exposes
+  // whatever rare/impossible case could happen. This currently has the added
+  // effect of triggering an error when document is undefied or does not have
+  // properties.
+  //
+  // This is exception worthy because this indicates a programmer error, not
+  // simply a bad data error. The programmer is responsible for calling this
+  // filter correctly, with a document object in the correct state.
+  if (!document.baseURI) {
+    throw new TypeError('document missing baseURI');
+  }
+
+  // This is a hackish fix to ensure that baseURI, if defined, is not set to
+  // url of the page that is executing this script. If a base element exists,
+  // then we can pretty much assume it is safe. The alternate method of
+  // comparing baseURI to chrome.extension.getURL would cause tight coupling of
+  // this library to the chrome extension context, which I do not want.
+  // TODO: this is obviously not performant and should eventually be revised, I
+  // just do not know of a better solution right now
+  if (!document.querySelector('base')) {
+    throw new TypeError('no base element found so baseURI invalid');
+  }
+
+  // TODO: this is a simple hack to keep the behavior stable, back when
+  // document_url was a parameter to this function. This internal implementation
+  // could probably be redesigned to avoid passing this along, and/or instead
+  // only instantiating it later when needed. If it even is needed? On the other
+  // hand, only creating it once is also preferable. Also keep in mind the
+  // possibility of an error, now that this is done here, if url is not
+  // well-formed/canonical.
+  const document_url = new URL(document.baseURI);
+
+
+
+  // This filter currently only focuses on images. Stylesheets are assumed to be
+  // removed by other filters. Scripts are assumed to be removed by other
+  // filters. Objects and pretty much any other type of resource are presumed
+  // removed. Ping attributes are separately removed by another filter. So the
+  // only surface still exposed is image requests.
 
   // Telemetry images are usually hidden, so treat visibility as an indicator.
   // False positives are probably not too harmful. Removing images based on
@@ -56,30 +121,50 @@ export function filter_telemetry_elements(document, document_url) {
 }
 
 // Returns true if an image is a pixel-sized image
+// NOTE: the document is presumed inert. Properties like naturalWidth and
+// naturalHeight are not yet initialized.
 function image_is_pixel(image) {
   return image.hasAttribute('src') && image.hasAttribute('width') &&
       image.width < 2 && image.hasAttribute('height') && image.height < 2;
 }
 
+// Returns whether the given image is a telemetry image, where the url of the
+// image indicates that fetching it is primarily for the purpose of telemetry
+// and not content.
+//
 // This test only considers the src attribute. Using srcset or picture source
 // is exceedingly rare mechanism for telemetry so ignore those channels.
+//
 // @param image {Image}
 // @param document_url {URL}
 function image_has_telemetry_source(image, document_url) {
   let src = image.getAttribute('src');
+
+  // An image without a src value will not involve the network, so it cannot
+  // possibly be a telemetry risk
   if (!src) {
     return false;
   }
 
+  // An image with an empty src value similarly is not a risk
   src = src.trim();
   if (!src) {
     return false;
   }
 
-  // Very short urls are probably not telemetry
+  // Very short urls are probably not telemetry. This check assumes the src
+  // attribute value is not yet transformed into a canonical value. This check
+  // is also done to reduce the number of calls to new URL later.
+  //
+  // Min length is an approximation. Obviously even a single character could
+  // constitute a valid image url. But that is rarely the case.
+
   // TODO: actually this might produce too many false negatives?
-  const MIN_IMAGE_URL_LENGTH = 's.gif'.length;
-  if (src.length < MIN_IMAGE_URL_LENGTH) {
+  // TODO: actually, is this a bad assumption? It seems like several short
+  // paths could be telemetry. They may not have explicit GET params, but a
+  // GET request without parameters still sends along client data.
+  const image_url_min_length = 's.gif'.length;
+  if (src.length < image_url_min_length) {
     return false;
   }
 
@@ -121,7 +206,10 @@ function image_has_telemetry_source(image, document_url) {
     return false;
   }
 
-  // Ignore 'internal' urls.
+  // Ignore 'internal' urls. We only care about external urls as risks.
+  // This occurs before the host pattern, because we want to allow hosts to
+  // include their own images.
+
   if (!is_external_url(document_url, image_url)) {
     return false;
   }
@@ -132,6 +220,7 @@ function image_has_telemetry_source(image, document_url) {
     }
   }
 
+  // Nothing indicated telemetry.
   return false;
 }
 

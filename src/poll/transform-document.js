@@ -169,14 +169,18 @@ export async function transform_document(document, console) {
   const mcr = localStorage.MIN_CONTRAST_RATIO;
   color_contrast_filter(document, matte, mcr);
 
+  // NOTE: now that I've reworked how baseURI is used instead of document-url,
+  // base elements need to persist throughout the filter calls up until the
+  // filter-base-elements call. Removing head elements would conflict, so this
+  // no longer removes head elements. Previously 'head' was a member of this
+  // blacklist array.
   const general_blacklist = [
-    'applet', 'audio',  'basefont', 'bgsound', 'command', 'datalist',
-    'dialog', 'embed',  'head',     'isindex', 'link',    'math',
-    'meta',   'object', 'output',   'param',   'path',    'progress',
-    'spacer', 'style',  'svg',      'title',   'video',   'xmp'
+    'applet', 'audio',  'basefont', 'bgsound', 'command',  'datalist',
+    'dialog', 'embed',  'isindex',  'link',    'math',     'meta',
+    'object', 'output', 'param',    'path',    'progress', 'spacer',
+    'style',  'svg',    'title',    'video',   'xmp'
   ];
   filter_blacklisted_elements(document, general_blacklist);
-
 
   // This should occur prior to removing boilerplate content because it has
   // express knowledge of content organization
@@ -226,8 +230,9 @@ export async function transform_document(document, console) {
   filter_lazy_images(document);
 
   // This should occur before setting image sizes to avoid unwanted network
-  // requests
-  filter_telemetry_elements(document, document_url);
+  // requests. Note this requires baseURI to still be valid, so base elements
+  // should still exist.
+  filter_telemetry_elements(document);
 
   // TODO: revise as filter-invalid-image-urls, where empty source is one case
   // of invalidity, other case is malformed url
