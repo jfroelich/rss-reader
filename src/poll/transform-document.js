@@ -249,6 +249,7 @@ export async function transform_document(document, console) {
   // This should occur after setting image sizes because it requires
   // knowledge of image size
   filter_small_images(document);
+  filter_large_images(document);
 
   filter_invalid_anchors(document);
   filter_formatting_anchors(document);
@@ -287,7 +288,6 @@ export async function transform_document(document, console) {
   filter_anchor_noref(document);
   filter_pings(document);
 
-  filter_large_images(document);
 
   // We have to do this at the very end, after all filters that expect a
   // valid base uri are complete. This makes the document readily embeddable
