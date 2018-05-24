@@ -147,7 +147,6 @@ export async function transform_document(document, console) {
   filter_iframes(document);
   filter_comments(document);
   filter_noscript_elements(document);
-  filter_base_elements(document);
 
   // This should occur earlier in the pipeline because it tends to reduce
   // the amount of work done by later filters. It should occur before
@@ -285,6 +284,11 @@ export async function transform_document(document, console) {
   filter_pings(document);
 
   filter_large_images(document);
+
+  // We have to do this at the very end, after all filters that expect a
+  // valid base uri are complete. This makes the document readily embeddable
+  // along with other documents in the view.
+  filter_base_elements(document);
 
   // Filter attributes close to last because it is so slow and is sped up
   // by processing fewer elements.
