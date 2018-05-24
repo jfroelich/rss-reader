@@ -9,13 +9,12 @@ import {fetch_html} from '/src/fetch.js';
 import * as html_parser from '/src/lib/html-parser.js';
 import {list_is_empty, list_peek} from '/src/lib/list.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
+import {set_document_base_uri} from '/src/lib/set-document-base-uri.js';
 import * as sniff from '/src/lib/sniff.js';
 import * as url_loader from '/src/lib/url-loader.js';
 import {transform_document} from '/src/poll/transform-document.js';
 
 const rewrite_rules = build_rewrite_rules();
-
-
 
 export async function poll_entry(entry) {
   if (list_is_empty(entry.urls)) {
@@ -173,8 +172,12 @@ async function update_entry_content(
     }
   }
 
+  // transform_document requires the document have document.baseURI set.
   const document_url = new URL(list_peek(entry.urls));
-  await transform_document(document, document_url, console);
+  set_document_base_uri(document, document_url);
+
+
+  await transform_document(document, console);
   entry.content = document.documentElement.outerHTML;
 }
 

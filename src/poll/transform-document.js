@@ -112,12 +112,6 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 // per entry, so as to be able to specify order. Should probably not use
 // registration order. Or maybe registration order is fine?
 // 4. Add console arg to all filters
-// 5. drop document-url parameter. implement set-base-uri(document) as a
-// standalone independent library. require all callers to set it. refactor all
-// filters to operate with the assumption that the base uri is set. note that
-// canonicalize-urls still needs to strip the base-uri later, because that is
-// the only way to make the document 'embeddable' in a multi-document view
-// without causing base-uri conflicts.
 
 // TODO: perhaps all filters should return a document. They could return the
 // same input document, or a new document. It would be semi-opaque to the caller
@@ -130,10 +124,22 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 // TODO: improve anti-image-hotlink handling, because we are not hotlinking, so
 // review why there is a problem. http://www.javalemmings.com/DMA/Lem_1.htm
 
-export async function transform_document(document, document_url, console) {
+export async function transform_document(document, console) {
   // TODO: step 1 here should be to verify the document has a base-uri and
   // that the base-uri is not somehow the uri of the page that includes this
   // script that is running (which may be the default??)
+
+  // Verify the document has a baseURI set
+  if (!document.baseURI) {
+    throw new TypeError('document missing baseURI');
+  }
+
+  // Further verify the document's baseURI is not the baseURI of the page that
+  // is running this script. getURL throws on undefined, hence the empty string
+  const script_base_uri = chrome.extension.getURL('');
+  if (script_base_uri === document.baseURI) {
+    throw new TypeError('document.baseURI cannot be set to script host url');
+  }
 
   deframe(document);
   ensure_document_body(document);
@@ -170,6 +176,10 @@ export async function transform_document(document, document_url, console) {
   // internal list. Therefore, I should define an array here of blacklisted
   // element names, and pass this as a parameter.
   filter_blacklisted_elements(document);
+
+  // TEMPORARY. Until the filters are revised to expect baseURI, this continues
+  // as before, where {URL} document_url was an explicit parameter
+  const document_url = new URL(document.baseURI);
 
   // This should occur prior to removing boilerplate content because it has
   // express knowledge of content organization
