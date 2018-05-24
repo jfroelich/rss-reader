@@ -169,12 +169,13 @@ export async function transform_document(document, console) {
   const mcr = localStorage.MIN_CONTRAST_RATIO;
   color_contrast_filter(document, matte, mcr);
 
-  // TODO: which elements are in the blacklist is app-policy, not lib
-  // policy. The lib function should accept a blacklist parameter and modify
-  // the document accordingly, not decide on its own using a hardcoded
-  // internal list. Therefore, I should define an array here of blacklisted
-  // element names, and pass this as a parameter.
-  filter_blacklisted_elements(document);
+  const general_blacklist = [
+    'applet', 'audio',  'basefont', 'bgsound', 'command', 'datalist',
+    'dialog', 'embed',  'head',     'isindex', 'link',    'math',
+    'meta',   'object', 'output',   'param',   'path',    'progress',
+    'spacer', 'style',  'svg',      'title',   'video',   'xmp'
+  ];
+  filter_blacklisted_elements(document, general_blacklist);
 
 
   // This should occur prior to removing boilerplate content because it has
