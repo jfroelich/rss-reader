@@ -1,4 +1,5 @@
 
+// TODO: tests
 // TODO: return if no document.body
 // TODO: restrict selectors to body
 // TODO: move docs back to here as comments or write new ones
@@ -10,25 +11,27 @@
 // TODO: it may be worth it to define a nice data structure object to represent
 // the map, rather than require explicit knowledge of its internal structure
 
-
-const host_selector_map = {};
-host_selector_map['www.washingtonpost.com'] = [
+// This is a basic map from host to an array of selectors
+const hsm = {};
+hsm['www.washingtonpost.com'] = [
   'header#wp-header', 'div.top-sharebar-wrapper', 'div.newsletter-inline-unit',
   'div.moat-trackable'
 ];
-host_selector_map['theweek.com'] = ['div#head-wrap'];
-host_selector_map['www.usnews.com'] = ['header.header'];
+hsm['theweek.com'] = ['div#head-wrap'];
+hsm['www.usnews.com'] = ['header.header'];
 
 
-export function filter_by_host_template(document, url) {
-  // document-url is currently an optional parameter but technically required
-  // for this to avoid being a no-op, so for now this is a dumb fix
+export function filter_by_host_template(document) {
+  // Grab the document's url from its baseURI.
+  const url = new URL(document.baseURI);
+
+  // Basic sanity check as url is required
   if (!url) {
     return;
   }
 
   const hostname = url.hostname;
-  const selectors = host_selector_map[hostname];
+  const selectors = hsm[hostname];
   if (!selectors) {
     return;
   }

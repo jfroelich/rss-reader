@@ -177,13 +177,10 @@ export async function transform_document(document, console) {
   // element names, and pass this as a parameter.
   filter_blacklisted_elements(document);
 
-  // TEMPORARY. Until the filters are revised to expect baseURI, this continues
-  // as before, where {URL} document_url was an explicit parameter
-  const document_url = new URL(document.baseURI);
 
   // This should occur prior to removing boilerplate content because it has
   // express knowledge of content organization
-  filter_by_host_template(document, document_url);
+  filter_by_host_template(document);
 
   // This should occur before the boilerplate filter, because the
   // boilerplate filter may make decisions based on the hierarchical
@@ -210,6 +207,11 @@ export async function transform_document(document, console) {
   // it does not matter too much. This could occur even later.
   const condense_copy_attrs_flag = false;
   condense_tagnames(document, condense_copy_attrs_flag);
+
+  // TEMPORARY. Until the filters are revised to expect baseURI, this continues
+  // as before, where {URL} document_url was an explicit parameter
+  const document_url = new URL(document.baseURI);
+
 
   // This should occur before trying to set image sizes
   resolve_document_urls(document, document_url);
