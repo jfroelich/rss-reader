@@ -53,7 +53,7 @@ function build_resolver_selector() {
 // Resolves all attribute values that contain urls
 // @param document {Document}
 // @param base_url {URL}
-export function resolve_document_urls(document, base_url) {
+export function canonicalize_urls(document, base_url) {
   // TODO: deprecase use of assert
   assert(base_url instanceof URL);
 

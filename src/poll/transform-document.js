@@ -1,5 +1,6 @@
 import * as color from '/src/lib/color.js';
 import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
+import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
 import {color_contrast_filter} from '/src/lib/filters/color-contrast-filter.js';
 import {condense_tagnames} from '/src/lib/filters/condense-tagnames.js';
 import {deframe} from '/src/lib/filters/deframe.js';
@@ -38,7 +39,6 @@ import {filter_sourceless_images} from '/src/lib/filters/filter-sourceless-image
 import {filter_tables} from '/src/lib/filters/filter-tables.js';
 import {filter_telemetry_elements} from '/src/lib/filters/filter-telemetry-elements.js';
 import {filter_unknown_attrs} from '/src/lib/filters/filter-unknown-attrs.js';
-import {resolve_document_urls} from '/src/lib/filters/resolve-document-urls.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {trim_document} from '/src/lib/filters/trim-document.js';
 
@@ -214,7 +214,7 @@ export async function transform_document(document, console) {
 
 
   // This should occur before trying to set image sizes
-  resolve_document_urls(document, document_url);
+  canonicalize_urls(document, document_url);
 
   // This should occur prior to filtering lazily-loaded images
   // This should occur prior to setting image sizes
