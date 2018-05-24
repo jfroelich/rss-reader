@@ -1,3 +1,4 @@
+import {config_image_size_fetch_timeout} from '/src/config.js';
 import * as color from '/src/lib/color.js';
 import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
@@ -244,9 +245,8 @@ export async function transform_document(document, console) {
   // removing telemetry, because this involves network requests that perhaps
   // the telemetry filter thinks should be avoided. Allow exceptions to
   // bubble
-  // TODO: set this in config.js and get from config.js
-  const fetch_image_timeout = 3000;
-  await set_image_sizes(document, document_url, fetch_image_timeout);
+  await set_image_sizes(
+      document, document_url, config_image_size_fetch_timeout);
 
   // This should occur after setting image sizes because it requires
   // knowledge of image size

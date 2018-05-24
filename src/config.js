@@ -46,3 +46,7 @@ export const config_inaccessible_content_descriptors = [
   {pattern: /ripe\.net$/i, reason: 'requires-cookies'},
   {pattern: /foxnews.com$/i, reason: 'fake'}
 ];
+
+// This controls the fetch timeout used by the set-image-sizes filter when
+// transforming fetching documents
+export const config_image_size_fetch_timeout = 3000;
