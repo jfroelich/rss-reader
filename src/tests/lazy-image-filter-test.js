@@ -1,6 +1,6 @@
 import {fetch_html} from '/src/fetch.js';
 import {filter_lazy_images} from '/src/lib/filters/filter-lazy-images.js';
-import {filter_sourceless_images} from '/src/lib/filters/filter-sourceless-images.js';
+import {filter_dead_images} from '/src/lib/filters/filter-dead-images.js';
 import {parse as parse_html} from '/src/lib/html-parser.js';
 import {assert} from '/src/tests/assert.js';
 
@@ -19,5 +19,5 @@ window.test = async function(url_string) {
   filter_lazy_images(document);
 
   // Call this subsequently because it prints out missing images
-  // filter_sourceless_images(document);
+  // filter_dead_images(document);
 };

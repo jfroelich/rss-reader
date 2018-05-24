@@ -1,7 +1,9 @@
 import {has_source as image_has_source, remove as remove_image} from '/src/lib/image.js';
 
-// Removes images without src attribute
-export function filter_sourceless_images(document) {
+// An image is 'dead' if it is unfetchable. One reason that an image is
+// unfetchable is when an image does not have an associated url.
+
+export function filter_dead_images(document) {
   if (document.body) {
     const images = document.body.querySelectorAll('img');
     for (const image of images) {

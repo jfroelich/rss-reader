@@ -13,6 +13,7 @@ import {filter_brs} from '/src/lib/filters/filter-brs.js';
 import {filter_by_host_template} from '/src/lib/filters/filter-by-host-template.js';
 import {filter_comments} from '/src/lib/filters/filter-comments.js';
 import {filter_container_elements} from '/src/lib/filters/filter-container-elements.js';
+import {filter_dead_images} from '/src/lib/filters/filter-dead-images.js';
 import {filter_emphasis} from '/src/lib/filters/filter-emphasis.js';
 import {filter_empty_attrs} from '/src/lib/filters/filter-empty-attrs.js';
 import {filter_figures} from '/src/lib/filters/filter-figures.js';
@@ -36,7 +37,6 @@ import {filter_script_anchors} from '/src/lib/filters/filter-script-anchors.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
 import {filter_semantic_elements} from '/src/lib/filters/filter-semantic-elements.js';
 import {filter_small_images} from '/src/lib/filters/filter-small-images.js';
-import {filter_sourceless_images} from '/src/lib/filters/filter-sourceless-images.js';
 import {filter_tables} from '/src/lib/filters/filter-tables.js';
 import {filter_telemetry_elements} from '/src/lib/filters/filter-telemetry-elements.js';
 import {filter_unknown_attrs} from '/src/lib/filters/filter-unknown-attrs.js';
@@ -235,9 +235,7 @@ export async function transform_document(document, console) {
   // should still exist.
   filter_telemetry_elements(document);
 
-  // TODO: revise as filter-invalid-image-urls, where empty source is one case
-  // of invalidity, other case is malformed url
-  filter_sourceless_images(document);
+  filter_dead_images(document);
 
   // It does not matter if this occurs before or after resolving urls. This
   // now accepts a base url parameter and dynamically canonicalizes image
