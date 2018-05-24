@@ -36,16 +36,10 @@ export function set_document_base_uri(document, document_url) {
       // relative or in some way not canonical (e.g. whitespace or whatever).
       // Overwrite the value.
 
-      // TEMP: DEBUG
-      console.debug(
-          'Setting existing base element href to', canonical_base_url.href);
-
       base_element.setAttribute('href', canonical_base_url.href);
       // And now we are done
       return;
     } else {
-      console.debug('Leaving existing base element as is (no-op)');
-
       // The document came with a base element with a canonical url. Leave it
       // as is.
       return;
@@ -68,12 +62,7 @@ export function set_document_base_uri(document, document_url) {
   if (!head_element) {
     head_element = document.createElement('head');
     document.documentElement.appendChild(head_element);
-  } else {
-    console.debug('Found existing head element', head_element.outerHTML);
   }
-
-  console.debug(
-      'Appending new base element with href value', document_url.href);
 
   // We removed all the other bases, just append as last element without any
   // anxiety over any 'early in document order' conflicting bases
