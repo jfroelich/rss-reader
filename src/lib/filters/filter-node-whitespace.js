@@ -1,3 +1,4 @@
+import {condense_whitespace} from '/src/lib/string.js';
 
 // Filters certain whitespace from a document. This scans the text nodes of a
 // document and modifies certain text nodes.
@@ -13,7 +14,7 @@ export function filter_node_whitespace(document) {
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
     if (value.length > node_value_length_min && !node_is_ws_sensitive(node)) {
-      const new_value = string.condense_whitespace(value);
+      const new_value = condense_whitespace(value);
       if (new_value.length !== value.length) {
         node.nodeValue = new_value;
       }
