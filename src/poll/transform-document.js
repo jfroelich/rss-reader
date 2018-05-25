@@ -294,6 +294,14 @@ export async function transform_document(document, console) {
   // along with other documents in the view.
   filter_base_elements(document);
 
+  // TODO: "head" should now be removed explicitly as a blacklisted element,
+  // after removing the base elements. We could not remove earlier because we
+  // had to retain the base element in the head in order to retain the proper
+  // baseURI value. Previously head was removed at the time of removing
+  // blacklisted elements, and now that is no longer the case. This is not an
+  // urgent todo as head is really only a space occupier without functional
+  // effect. Technically the functionality has changed though.
+
   // Filter attributes close to last because it is so slow and is sped up
   // by processing fewer elements.
   const attribute_whitelist = {

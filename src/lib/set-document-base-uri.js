@@ -1,15 +1,25 @@
-// Set the baseURI property of a document
+// Set the baseURI property of a document. baseURI is readonly. However, its
+// value is derived from base elements, which are manipulable. Therefore baseURI
+// indirectly manipulable.
+//
+// We could blindly ignore any existing base elements, but this tries to
+// respect it a little bit. If the author set a custom canonical base url, try
+// and use it, so long as it is valid.
+//
+// Note that this does not guarantee a document's baseURI is constant for all
+// time. For example, if a base element in the DOM is somehow changed or removed
+// at any later time, that will affect the baseURI. In particular, as was the
+// case with a previous bug, if you later remove the <head> element from a
+// document, and that head element was the ancestor of one or more base
+// elements, you strip the custom baseURI from the document and it reverts to
+// yielding its original default baseURI.
+
 export function set_document_base_uri(document, document_url) {
-  if (!document_url || !document_url.href) {
+  // Loosely verify document_url instanceof URL. This will also throw an error
+  // when document_url is undefined at the time of trying to access a prop.
+  if (!document_url.href) {
     throw new TypeError('document_url is not an URL');
   }
-
-  // document.baseURI is readonly. However, it is derived from base elements,
-  // and therefore is indirectly manipulatable.
-
-  // We could blindly ignore the base elements, but this tries to respect it
-  // a little bit. If the author set a custom canonical base url, try and use
-  // it.
 
   // The baseURI property is determined according to the presence of any base
   // elements. Look for an existing base element.
@@ -46,7 +56,7 @@ export function set_document_base_uri(document, document_url) {
     }
   }
 
-  // If we failed to find a canonical base url, let's create our own.
+  // If we failed to find a canonical base url, let's create our own base.
   // For safety, just clean up any existing ones.
   const base_elements = document.querySelectorAll('base');
   for (const old_base_element of base_elements) {
