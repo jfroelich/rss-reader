@@ -119,22 +119,6 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 // review why there is a problem. http://www.javalemmings.com/DMA/Lem_1.htm
 
 export async function transform_document(document, console) {
-  // TODO: step 1 here should be to verify the document has a base-uri and
-  // that the base-uri is not somehow the uri of the page that includes this
-  // script that is running (which may be the default??)
-
-  // Verify the document has a baseURI set
-  if (!document.baseURI) {
-    throw new TypeError('document missing baseURI');
-  }
-
-  // Further verify the document's baseURI is not the baseURI of the page that
-  // is running this script. getURL throws on undefined, hence the empty string
-  const script_base_uri = chrome.extension.getURL('');
-  if (script_base_uri === document.baseURI) {
-    throw new TypeError('document.baseURI cannot be set to script host url');
-  }
-
   deframe(document);
   ensure_document_body(document);
   filter_script_elements(document);
