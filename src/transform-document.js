@@ -121,7 +121,6 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 export async function transform_document(document, console) {
   deframe(document);
   ensure_document_body(document);
-  filter_script_elements(document);
   filter_iframes(document);
   filter_comments(document);
   filter_noscript_elements(document);
@@ -162,7 +161,7 @@ export async function transform_document(document, console) {
   // This should occur before the boilerplate filter, because the
   // boilerplate filter may make decisions based on the hierarchical
   // position of content
-  // TODO: or should it occur after?
+  // TODO: or should it occur after? Or does it not matter.
   const emphasis_length_max = 200;
   filter_emphasis(document, emphasis_length_max);
 
@@ -171,17 +170,17 @@ export async function transform_document(document, console) {
   // hidden elements because it is naive with regard to content visibility
   filter_boilerplate(document, console);
 
-  // This is a followup security sweep to the script element filter. It
-  // occurs after boilerplate filtering so that scripted links are still
-  // considered as independent variables by the boilerplate filter. The
-  // correctness of this is not too concerning given that the Content
-  // Security Policy prevents such links from working. This is more of a
-  // paranoid pass.
+  // TODO: now that script filtering happens after boilerplate filtering, there
+  // is no longer a problem with affecting the boilerplate algorithm by removing
+  // links. There is no need to remove script elements earlier, it can happen
+  // pretty much whenever. I think it makes more sense to make the script-anchor
+  // filter implicit within the script filter, and abstract it away from here.
+  filter_script_elements(document);
   filter_script_anchors(document);
 
-  // This should occur after bp-filter because certain condensed names may
-  // be factors in the bp-filter (we don't know, not our concern). Otherwise
-  // it does not matter too much. This could occur even later.
+  // This should occur after filtering boilerplate because certain condensed
+  // names may be factors in the bp-filter (we don't know, not our concern).
+  // Otherwise it does not matter too much. This could occur even later.
   const condense_copy_attrs_flag = false;
   condense_tagnames(document, condense_copy_attrs_flag);
 

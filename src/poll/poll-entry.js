@@ -12,7 +12,7 @@ import {rewrite_url} from '/src/lib/rewrite-url.js';
 import {set_document_base_uri} from '/src/lib/set-document-base-uri.js';
 import * as sniff from '/src/lib/sniff.js';
 import * as url_loader from '/src/lib/url-loader.js';
-import {transform_document} from '/src/poll/transform-document.js';
+import {transform_document} from '/src/transform-document.js';
 
 const rewrite_rules = build_rewrite_rules();
 
