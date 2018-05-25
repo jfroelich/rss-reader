@@ -215,8 +215,9 @@ export async function transform_document(document, console) {
 
   // TEMPORARY. Until the filters are revised to expect baseURI, this continues
   // as before, where {URL} document_url was an explicit parameter
+  // TODO: delete once canonicalize_urls no longer expects document_url, that
+  // is the only one left
   const document_url = new URL(document.baseURI);
-
 
   // This should occur before trying to set image sizes
   canonicalize_urls(document, document_url);
@@ -243,8 +244,7 @@ export async function transform_document(document, console) {
   // removing telemetry, because this involves network requests that perhaps
   // the telemetry filter thinks should be avoided. Allow exceptions to
   // bubble
-  await set_image_sizes(
-      document, document_url, config_image_size_fetch_timeout);
+  await set_image_sizes(document, config_image_size_fetch_timeout);
 
   // This should occur after setting image sizes because it requires
   // knowledge of image size

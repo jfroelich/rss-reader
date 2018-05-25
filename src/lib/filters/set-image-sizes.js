@@ -4,6 +4,9 @@ import {fetch_image_element} from '/src/lib/fetch-image-element.js';
 // valid url. urls may not have been validated by other filters. This has to
 // operate independently of those filters.
 
+// TODO: now that this expects document to have document.baseURI set, I can
+// work directly from image.src, instead of image.getAttribute('src')
+
 // TODO: re-introduce console parameter
 
 // Scans the images of a document and ensures the width and height attributes
@@ -11,18 +14,17 @@ import {fetch_image_element} from '/src/lib/fetch-image-element.js';
 // and modifies each image element's attributes.
 // Assumes that if an image has a src attribute value that is a url, that the
 // url is absolute.
-// @param document {Document}
-// @param allowedProtocols {Array} optional, if not provided then defaults
-// data/http/https
-// @param timeout {Number} optional, if undefined or 0 then no timeout
-// @returns {Number} the number of images modified
-export async function set_image_sizes(document, base_url, timeout) {
-  assert(
-      base_url === null || typeof base_url === 'undefined' ||
-      base_url instanceof URL);
+export async function set_image_sizes(document, timeout) {
   if (!document.body) {
     return;
   }
+
+  if (!document.baseURI) {
+    throw new TypeError('document missing baseURI');
+  }
+
+  const document_url = new URL(document.baseURI);
+
 
   const images = document.body.getElementsByTagName('img');
   if (!images.length) {
@@ -32,7 +34,7 @@ export async function set_image_sizes(document, base_url, timeout) {
   // Concurrently get dimensions for each image then wait for all to complete
   const promises = [];
   for (const image of images) {
-    promises.push(image_get_dimensions(image, base_url, timeout));
+    promises.push(get_image_dims(image, document_url, timeout));
   }
   const results = await Promise.all(promises);
 
@@ -45,12 +47,12 @@ export async function set_image_sizes(document, base_url, timeout) {
   }
 }
 
-async function image_get_dimensions(image, base_url, timeout) {
+async function get_image_dims(image, base_url, timeout) {
   if (image.hasAttribute('width') && image.hasAttribute('height')) {
     return {image: image, reason: 'has-attributes'};
   }
 
-  let dims = element_get_inline_style_dimensions(image);
+  let dims = get_style_dims(image);
   if (dims) {
     return {
       image: image,
@@ -65,7 +67,7 @@ async function image_get_dimensions(image, base_url, timeout) {
     return {image: image, reason: 'missing-src'};
   }
 
-  // Parsing the url can throw an error. image_get_dimensions should not throw
+  // Parsing the url can throw an error. get_image_dims should not throw
   // except in the case of a programming error.
   let source_url;
   try {
@@ -76,7 +78,7 @@ async function image_get_dimensions(image, base_url, timeout) {
     return {image: image, reason: 'invalid-src'};
   }
 
-  dims = url_sniff_dimensions(source_url);
+  dims = get_url_dims(source_url);
   if (dims) {
     return {
       image: image,
@@ -86,7 +88,7 @@ async function image_get_dimensions(image, base_url, timeout) {
     };
   }
 
-  // Failure to fetch should be trapped, because image_get_dimensions should
+  // Failure to fetch should be trapped, because get_image_dims should
   // only throw in case of a programming error, so that it can be used together
   // with Promise.all
   try {
@@ -104,7 +106,7 @@ async function image_get_dimensions(image, base_url, timeout) {
 }
 
 // Try and find image dimensions from the characters of its url
-function url_sniff_dimensions(source_url) {
+function get_url_dims(source_url) {
   // Ignore data urls (will be handled later by fetching)
   if (source_url.protocol === 'data:') {
     return;
@@ -135,7 +137,7 @@ function url_sniff_dimensions(source_url) {
   }
 }
 
-function element_get_inline_style_dimensions(element) {
+function get_style_dims(element) {
   if (element.hasAttribute('style') && element.style) {
     const width = parseInt(element.style.width, 10);
     if (!isNaN(width)) {
@@ -145,8 +147,4 @@ function element_get_inline_style_dimensions(element) {
       }
     }
   }
-}
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
 }
