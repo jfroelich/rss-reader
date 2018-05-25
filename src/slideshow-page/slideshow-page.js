@@ -201,11 +201,11 @@ async function slide_load_and_append_multiple(conn, limit) {
 
 function slide_append(entry) {
   if (!is_entry(entry)) {
-    console.error('Invalid entry parameter', entry);
+    console.error('%s: invalid entry parameter', slide_append.name, entry);
     return;
   }
 
-  console.debug('Appending entry', list_peek(entry.urls));
+  console.debug('%s: entry', slide_append.name, list_peek(entry.urls));
 
   const slide = Slideshow.create();
   slide.setAttribute('entry', entry.id);

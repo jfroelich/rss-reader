@@ -21,12 +21,12 @@ export function FaviconService() {
   this.console = null_console;
 }
 
-FaviconService.prototype.lookup = async function(url, document) {
+FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   if (!url['href']) {
     throw new TypeError('url is not url-like, missing href accessor');
   }
 
-  this.console.log('Lookup', url.href);
+  this.console.log('%s: lookup', favicon_lookup.name, url.href);
 
   const urls = [];
   urls.push(url.href);
@@ -38,7 +38,7 @@ FaviconService.prototype.lookup = async function(url, document) {
   if (this.conn) {
     const entry = await this.find_entry(url);
     if (entry && entry.iconURLString && !this.is_expired(entry)) {
-      this.console.debug('Found non-expired input url in cache', entry);
+      this.console.debug('%s: hit', favicon_lookup.name, entry.iconURLString);
       return entry.iconURLString;
     }
     if (origin_url.href === url.href && entry &&
@@ -126,7 +126,8 @@ FaviconService.prototype.lookup = async function(url, document) {
         await this.put_all(urls, origin_entry.iconURLString);
         return origin_entry.iconURLString;
       } else if (origin_entry.failureCount >= this.max_failure_count) {
-        this.console.debug('Failures exceeded', origin_url.href);
+        this.console.debug(
+            '%s: failures exceeded', favicon_lookup.name, origin_url.href);
         return;
       }
     }

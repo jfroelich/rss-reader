@@ -23,10 +23,10 @@ const default_options = {
 export async function poll_feeds(
     rconn, iconn, channel = null_channel, console = console_stub,
     options = {}) {
-  console.log('poll_feeds start');
+  console.log('%s: starting...', poll_feeds.name);
   const feeds = [];
   await db_for_each_active_feed(rconn, feed => feeds.push(feed));
-  console.debug('Loaded %d active feeds', feeds.length);
+  console.debug('%s: loaded %d active feeds', poll_feeds.name, feeds.length);
   const pfo = Object.assign({}, default_options, options);
   const pfp = poll_feed.bind(null, rconn, iconn, channel, console, pfo);
   const proms = feeds.map(pfp);

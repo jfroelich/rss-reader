@@ -36,7 +36,7 @@ export async function poll_feed(
     return 0;
   }
 
-  console.log('Polling feed "%s"', feed.title, tail_url.href);
+  console.log('%s: polling "%s"', poll_feed.name, feed.title, tail_url.href);
 
   // Exit if the feed was checked too recently
   if (!ignore_recency_check && feed.dateFetched) {
@@ -134,7 +134,8 @@ async function poll_entries(
   const feed_url_string = list_peek(feed.urls);
 
   console.debug(
-      'Processing %d entries for feed', entries.length, feed_url_string);
+      '%s: processing %d entries', poll_entries.name, entries.length,
+      feed_url_string);
 
   const coerced_entries = entries.map(coerce_entry);
   entries = dedup_entries(coerced_entries);
