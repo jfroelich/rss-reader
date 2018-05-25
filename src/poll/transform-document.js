@@ -106,17 +106,10 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 // Registration basically just stores the filter and its arguments in an array
 // of parameterized filter objects. Then transform-document is simply an
 // iteration over the registered filters, calling each one with a document and
-// its preset arguments But what to do about things like document_url? Pass it
-// to every filter? Or maybe focus first on using document.baseURI so that there
-// is no need for an additional explicit parameter because it becomes implicit
-// in the document parameter? Also, probably need priority (a number) property
+// its preset arguments. Also, probably need priority (a number) property
 // per entry, so as to be able to specify order. Should probably not use
 // registration order. Or maybe registration order is fine?
 // 4. Add console arg to all filters
-
-// TODO: perhaps all filters should return a document. They could return the
-// same input document, or a new document. It would be semi-opaque to the caller
-// and allow for easier transition to immutable treatment of document.
 
 // TODO: new filter idea, add a filter that condenses text nodes by doing things
 // like replacing &amp;copy; with the equivalent single utf8 / unicode
@@ -159,13 +152,8 @@ export async function transform_document(document, console) {
   // branches, so less work is done this way in the normal/typical case.
   filter_hidden_elements(document);
 
-  // Do this after filtering hidden elements so that it does less work
-  // This should be done prior to removing style information (either style
-  // elements or inline style attributes). I am not sure whether this should
-  // be done before or after boilerplate filter, but my instinct is that
-  // spam techniques are boilerplate, and the boilerplate filter is naive
-  // with regard to spam, so it is preferable to do it before.
-
+  // TODO: this should be implicit in filter_hidden_elements, call it there
+  // instead of here. This also means I need to pass along params
   const matte = color.WHITE;
   const mcr = localStorage.MIN_CONTRAST_RATIO;
   color_contrast_filter(document, matte, mcr);
@@ -213,14 +201,8 @@ export async function transform_document(document, console) {
   const condense_copy_attrs_flag = false;
   condense_tagnames(document, condense_copy_attrs_flag);
 
-  // TEMPORARY. Until the filters are revised to expect baseURI, this continues
-  // as before, where {URL} document_url was an explicit parameter
-  // TODO: delete once canonicalize_urls no longer expects document_url, that
-  // is the only one left
-  const document_url = new URL(document.baseURI);
-
   // This should occur before trying to set image sizes
-  canonicalize_urls(document, document_url);
+  canonicalize_urls(document);
 
   // This should occur prior to filtering lazily-loaded images
   // This should occur prior to setting image sizes

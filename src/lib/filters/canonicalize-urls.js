@@ -1,14 +1,10 @@
 import * as srcset from '/src/lib/srcset.js';
 
-// TODO: rename to canonicalize_urls or something like that
-// TODO: support base elements more correctly?
-// TODO: if a url cannot be resolved, it should be replaced with
-// empty-string. in other words, empty-string is the canonical form of an
-// invalid-url.
-// TODO: rather that using getAttribute and base url, try a by-property
-// walk over elements that applies document.baseURI
-// TODO: this should strip base elements at the end if updating
-// attributes.
+// TODO: if a url cannot be resolved, it should be replaced with empty-string.
+// In other words, empty-string is the canonical form of an invalid-url.
+// TODO: use element.src and such instead of using element.getAttribute now that
+// baseURI is set as expected
+// TODO: reintroduce console parameter
 
 const element_url_attribute_map = {
   a: 'href',
@@ -52,9 +48,16 @@ function build_resolver_selector() {
 
 // Resolves all attribute values that contain urls
 // @param document {Document}
-// @param base_url {URL}
-export function canonicalize_urls(document, base_url) {
-  // TODO: deprecase use of assert
+export function canonicalize_urls(document) {
+  if (!document.baseURI) {
+    throw new TypeError('document missing baseURI');
+  }
+
+  const base_url = new URL(document.baseURI);
+
+
+
+  // TODO: deprecase use of assert, also this assert is now pointless
   assert(base_url instanceof URL);
 
   const src_elements = document.querySelectorAll(element_url_attr_selector);

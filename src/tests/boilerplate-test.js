@@ -6,7 +6,7 @@ import {filter_blacklisted_elements} from '/src/lib/filters/filter-blacklisted-e
 import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
-import * as html_parser from '/src/lib/html-parser.js';
+import {parse as parse_html} from '/src/lib/html-parser.js';
 import {set_document_base_uri} from '/src/lib/set-document-base-uri.js';
 import {assert} from '/src/tests/assert.js';
 
@@ -31,24 +31,21 @@ export async function boilerplate_test() {
 export async function legacy_boilerplate_test(url_string) {
   const request_url = new URL(url_string);
   const response = await fetch_html(request_url);
-  if (!response.ok) {
-    throw new Error('Failed to fetch ' + request_url.href);
-  }
-
-  const response_url = new URL(response.url);
+  assert(response.ok, 'Failed to fetch ' + request_url.href);
 
   const response_text = await response.text();
-  const document = html_parser.parse(response_text);
+  const document = parse_html(response_text);
 
+  // Filters such as canonicalize_urls and set_image_sizes expect a valid
+  // baseURI
+  const response_url = new URL(response.url);
   set_document_base_uri(document, response_url);
-
 
   deframe(document);
   filter_script_elements(document);
   filter_iframes(document);
   filter_blacklisted_elements(document);
-  canonicalize_urls(document, response_url);
-
+  canonicalize_urls(document);
   await set_image_sizes(document);
   boilerplate.annotate(document);
 }
