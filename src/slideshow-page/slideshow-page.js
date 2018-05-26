@@ -12,7 +12,7 @@ import {import_opml} from '/src/import-opml.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {date_format} from '/src/lib/lang/date.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
-import {html_truncate} from '/src/lib/html/html-truncate.js';
+import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {html_escape} from '/src/lib/html/html.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
@@ -358,10 +358,10 @@ function create_article_title_element(entry) {
 
     let filtered_safe_title = filter_publisher(safe_title);
 
-    // TODO: does html_truncate throw in the usual case? I believe it should not
+    // TODO: does truncate_html throw in the usual case? I believe it should not
     // but I forgot. I would like to remove this try/catch
     try {
-      filtered_safe_title = html_truncate(filtered_safe_title, 300);
+      filtered_safe_title = truncate_html(filtered_safe_title, 300);
     } catch (error) {
       console.warn(error);
     }

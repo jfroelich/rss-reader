@@ -1,5 +1,5 @@
 import {create_entry} from '/src/entry.js';
-import {html_truncate} from '/src/lib/html/html-truncate.js';
+import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {html_replace_tags} from '/src/lib/html/html.js';
 import {filter_empty_properties} from '/src/lib/lang/object.js';
 import * as string from '/src/lib/lang/string.js';
@@ -49,14 +49,14 @@ export function db_sanitize_entry(
     author = string.filter_control_characters(author);
     author = html_replace_tags(author, '');
     author = string.condense_whitespace(author);
-    author = html_truncate(author, author_max_length);
+    author = truncate_html(author, author_max_length);
     output_entry.author = author;
   }
 
   if (output_entry.content) {
     let content = output_entry.content;
     content = string.filter_unprintable_characters(content);
-    content = html_truncate(content, content_max_length);
+    content = truncate_html(content, content_max_length);
     output_entry.content = content;
   }
 
@@ -65,7 +65,7 @@ export function db_sanitize_entry(
     title = string.filter_control_characters(title);
     title = html_replace_tags(title, '');
     title = string.condense_whitespace(title);
-    title = html_truncate(title, title_max_length);
+    title = truncate_html(title, title_max_length);
     output_entry.title = title;
   }
 

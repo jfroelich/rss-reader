@@ -1,5 +1,5 @@
 import {create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
-import {html_truncate} from '/src/lib/html/html-truncate.js';
+import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {html_replace_tags} from '/src/lib/html/html.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {filter_empty_properties} from '/src/lib/lang/object.js';
@@ -120,7 +120,7 @@ function sanitize_feed(feed, options) {
     title = filter_control_characters(title);
     title = html_replace_tags(title, html_tag_replacement);
     title = condense_whitespace(title);
-    title = html_truncate(title, title_max_length, suffix);
+    title = truncate_html(title, title_max_length, suffix);
     output_feed.title = title;
   }
 
@@ -129,7 +129,7 @@ function sanitize_feed(feed, options) {
     desc = filter_control_characters(desc);
     desc = html_replace_tags(desc, html_tag_replacement);
     desc = condense_whitespace(desc);
-    desc = html_truncate(desc, description_max_length, suffix);
+    desc = truncate_html(desc, description_max_length, suffix);
     output_feed.description = desc;
   }
 

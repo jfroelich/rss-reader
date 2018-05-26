@@ -9,7 +9,7 @@ import {db_write_feed_property} from '/src/db/db-write-feed-property.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {element_fade} from '/src/lib/dom/element-fade.js';
-import {html_truncate} from '/src/lib/html/html-truncate.js';
+import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import * as perm from '/src/lib/permissions.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
@@ -49,7 +49,7 @@ else should happen here?
 # TODO: feed_list_append_feed
 * maybe stop using custom feed attribute? it is used on unsubscribe event to
 find the LI again, but is there an alternative?
-* if html_truncate throws the error should be handled and suppressed
+* if truncate_html throws the error should be handled and suppressed
 
 # TODO: feed_list_item_onclick
 * if feed not found in db then show an error message
@@ -224,7 +224,7 @@ function feed_list_append_feed(feed) {
 
   const title_element = document.createElement('span');
   let feed_title = feed.title || 'Untitled';
-  feed_title = html_truncate(feed_title, 300);
+  feed_title = truncate_html(feed_title, 300);
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
   const feed_list_element = document.getElementById('feedlist');
