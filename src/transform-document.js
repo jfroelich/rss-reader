@@ -92,8 +92,8 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 // registration order. Or maybe registration order is fine?
 
 // TODO: new filter idea, add a filter that condenses text nodes by doing things
-// like replacing &amp;copy; with the equivalent single utf8 / unicode
-// character.
+// like replacing named or numbered encoded entities (such as copy) with the
+// equivalent single utf8 / unicode character.
 
 // TODO: improve anti-image-hotlink handling, because we are not hotlinking, so
 // review why there is a problem. http://www.javalemmings.com/DMA/Lem_1.htm
@@ -159,6 +159,7 @@ export async function transform_document(document, console) {
   await set_image_sizes(document, config.config_image_size_fetch_timeout);
 
   // This should occur after setting image sizes
+  // TODO: compose into filter-images-by-size
   filter_small_images(document);
   filter_large_images(document);
 

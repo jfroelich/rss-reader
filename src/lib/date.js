@@ -1,3 +1,15 @@
+/*
+
+# date
+
+Provides various date utility functions.
+
+### TODOs
+* probably should deprecate, too simple
+
+
+*/
+
 export function date_format(date) {
   if (!(date instanceof Date)) {
     return 'Invalid date';

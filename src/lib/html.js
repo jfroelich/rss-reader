@@ -1,5 +1,27 @@
 import * as html_parser from '/src/lib/html-parser.js';
 
+/*
+
+# html
+HTML utility functions. These functions generally accept an html string as input
+and do something to or with that input string.
+
+### Security issue with html_decode_entities
+This function currently sets element.innerHTML, where element is a detached
+element that is owned by the same document as the document that included the
+html.js module. This is extremely unsafe.
+
+### html_decode_entities notes and todos
+* why innerText? probably should just use textContent? Wait until I implement a
+testing lib to change.
+* do not use the dom for entity encoding. I'd eventually like to not involve the
+dom but for now just get something working
+
+
+*/
+
+// TODO: split into separate files within an html folder that is within lib
+
 // Given an input value, if it is a string, then creates and returns a new
 // string where html entities have been decoded into corresponding values. For
 // example, '&lt;' becomes '<'. Adapted from

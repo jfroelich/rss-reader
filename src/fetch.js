@@ -1,7 +1,20 @@
 import {fetch_policy} from '/src/fetch-policy.js';
 import {load} from '/src/lib/url-loader.js';
 
-// TODO: maybe move to src folder?
+/*
+# fetch
+Provides utilities for fetching a resource of a particular type.
+
+## fetch-html
+todo
+
+## fetch-feed
+todo
+
+### Todos
+* allow text/plain for fetch_html?
+
+*/
 
 const html_mime_types = ['text/html'];
 

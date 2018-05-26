@@ -4,6 +4,24 @@ import {FEED_MAGIC} from '/src/feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {idb_open} from '/src/lib/idb.js';
 
+/*
+# create-conn
+Opens a connection to the reader database.
+
+### Notes
+* If the database does not exist, it will be created
+* Optionally specify a timeout to limit how long to wait before considering the
+attempt to connect to the database a failure
+* The name and version parameters are both optional. If not specified, then the
+call connects to the hardcoded default database. About the only reason to ever
+specify non-default values is for testing.
+
+### TODOs
+* write docs
+* write tests
+
+*/
+
 // TODO: rather than default to config, maybe I should just export the
 // on_upgrade_needed handler too? The only alternate user other than the normal
 // app usage is the test context, and the test context is privy too using

@@ -1,6 +1,25 @@
 import {db_get_feeds} from '/src/db/db-get-feeds.js';
 import {list_peek} from '/src/lib/list.js';
 
+/*
+# export-opml
+Generates an opml document object consisting of all of the feeds in the
+database. Async.
+
+### Params
+
+### Errors
+* Invalid inputs (e.g. title is not a string, connection is undefined)
+* Database errors (e.g. database is unavailable)
+
+### Todos
+* finish docs
+* write tests
+* implement for-each-feed operation, then use it here without buffering feeds
+into an array, instead write them per iteration
+
+*/
+
 export async function export_opml(title) {
   this.console.debug(
       '%s: title %s database', export_opml.name, title, this.conn.name);

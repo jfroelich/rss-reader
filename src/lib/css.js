@@ -1,4 +1,16 @@
 
+/*
+
+# css
+
+General css utilities
+
+### TODOs
+* maybe deprecate, this is just too simple for a module
+
+
+*/
+
 // Returns the first matching css rule or undefined
 // @param selector_text {String}
 // @returns rule {CSSStyleRule}
