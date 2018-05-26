@@ -1,45 +1,9 @@
 import * as html_parser from '/src/lib/html/html-parser.js';
 
-/*
-
-# html
-HTML utility functions. These functions generally accept an html string as input
-and do something to or with that input string.
-
-### Security issue with html_decode_entities
-This function currently sets element.innerHTML, where element is a detached
-element that is owned by the same document as the document that included the
-html.js module. This is extremely unsafe.
-
-### html_decode_entities notes and todos
-* why innerText? probably should just use textContent? Wait until I implement a
-testing lib to change.
-* do not use the dom for entity encoding. I'd eventually like to not involve the
-dom but for now just get something working
-
-
-*/
+// HTML utility functions. These functions generally accept an html string as
+// input and do something to or with that input string.
 
 // TODO: split into separate files within an html folder that is within lib
-
-// Given an input value, if it is a string, then creates and returns a new
-// string where html entities have been decoded into corresponding values. For
-// example, '&lt;' becomes '<'. Adapted from
-// https://stackoverflow.com/questions/1912501
-const UNSAFE_PERSISTENT_WORKER_ELEMENT = document.createElement('div');
-export function html_decode_entities(value) {
-  const entity_pattern = /&[#0-9A-Za-z]+;/g;
-  return typeof value === 'string' ?
-      value.replace(
-          entity_pattern,
-          function replacer(entity) {
-            UNSAFE_PERSISTENT_WORKER_ELEMENT.innerHTML = entity;
-            const text = UNSAFE_PERSISTENT_WORKER_ELEMENT.innerText;
-            UNSAFE_PERSISTENT_WORKER_ELEMENT.innerHTML = '';
-            return text;
-          }) :
-      value;
-}
 
 // Returns a new string where certain 'unsafe' characters in the input string
 // have been replaced with html entities. If input is not a string returns

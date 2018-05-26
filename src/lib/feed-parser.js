@@ -1,4 +1,4 @@
-import {html_decode_entities} from '/src/lib/html/html.js';
+import {decode_entities} from '/src/lib/html/decode-entities.js';
 
 /*
 
@@ -352,7 +352,7 @@ function find_entry_content(entry_element) {
     for (let node of nodes) {
       if (node.nodeType === Node.CDATA_SECTION_NODE) {
         let node_value = node.nodeValue;
-        node_value = html_decode_entities(node_value);
+        node_value = decode_entities(node_value);
         texts.push(node_value);
       } else if (node.nodeType === Node.TEXT_NODE) {
         const node_text = node.textContent;
