@@ -1,4 +1,4 @@
-import * as css from '/src/lib/css.js';
+import * as css from '/src/lib/dom/css.js';
 
 /*
 

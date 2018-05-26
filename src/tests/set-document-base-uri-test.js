@@ -1,4 +1,4 @@
-import {set_document_base_uri} from '/src/lib/set-document-base-uri.js';
+import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import {assert} from '/src/tests/assert.js';
 
 export async function set_document_base_uri_test() {

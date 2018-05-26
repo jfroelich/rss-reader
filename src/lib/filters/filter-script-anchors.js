@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/element-unwrap.js';
+import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
 
 // TODO: HTMLAnchorElement supports element.protocol. I wonder if accessing
 // protocol by property is faster than using a regex on the attribute value.

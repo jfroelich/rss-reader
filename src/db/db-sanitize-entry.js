@@ -1,8 +1,8 @@
 import {create_entry} from '/src/entry.js';
-import {html_truncate} from '/src/lib/html-truncate.js';
-import {html_replace_tags} from '/src/lib/html.js';
-import {filter_empty_properties} from '/src/lib/object.js';
-import * as string from '/src/lib/string.js';
+import {html_truncate} from '/src/lib/html/html-truncate.js';
+import {html_replace_tags} from '/src/lib/html/html.js';
+import {filter_empty_properties} from '/src/lib/lang/object.js';
+import * as string from '/src/lib/lang/string.js';
 
 // TODO: review whether filtering empty properties should be implicit in
 // sanitization or instead an explicit concern of the caller that is reframed as

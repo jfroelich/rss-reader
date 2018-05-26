@@ -1,7 +1,7 @@
 import {db_for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
 import {db_write_feed} from '/src/db/db-write-feed.js';
 import {FaviconService} from '/src/lib/favicon-service.js';
-import {list_is_empty, list_peek} from '/src/lib/list.js';
+import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 
 // TODO: the lib shouldn't know about database names and such, or at least,
 // the app layer here should be the one specifying database name and version

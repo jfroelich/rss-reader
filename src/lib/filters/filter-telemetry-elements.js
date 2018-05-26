@@ -1,6 +1,6 @@
 import {is_external_url} from '/src/lib/cross-site.js';
-import {element_is_hidden_inline} from '/src/lib/element-is-hidden-inline.js';
-import {remove as remove_image} from '/src/lib/image.js';
+import {element_is_hidden_inline} from '/src/lib/dom/element-is-hidden-inline.js';
+import {remove as remove_image} from '/src/lib/dom/image.js';
 
 // TODO: the ping attribute filter should probably become an implicit component
 // of this filter. Both filters have the same objective.

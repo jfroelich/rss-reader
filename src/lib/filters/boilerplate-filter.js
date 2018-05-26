@@ -1,4 +1,4 @@
-import * as boilerplate from '/src/lib/boilerplate.js';
+import * as boilerplate from '/src/lib/filters/boilerplate.js';
 
 // The boilerplate filter classifies elements as boilerplate and then prunes
 // boilerplate from the document.

@@ -1,5 +1,5 @@
 import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/entry.js';
-import {sizeof} from '/src/lib/sizeof.js';
+import {sizeof} from '/src/lib/lang/sizeof.js';
 
 /*
 

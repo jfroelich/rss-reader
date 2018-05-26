@@ -1,4 +1,4 @@
-import {element_coerce} from '/src/lib/element-coerce.js';
+import {element_coerce} from '/src/lib/dom/element-coerce.js';
 
 // TODO: add console parameter
 // TODO: add tests. Or at least state why test not needed

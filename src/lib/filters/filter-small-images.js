@@ -1,4 +1,4 @@
-import * as imagemod from '/src/lib/image.js';
+import * as imagemod from '/src/lib/dom/image.js';
 
 // TODO: merge filter_small_images and filter_large_images into a single filter
 // filter_image_by_size

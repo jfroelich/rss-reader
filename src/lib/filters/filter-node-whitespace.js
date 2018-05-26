@@ -1,4 +1,4 @@
-import {condense_whitespace} from '/src/lib/string.js';
+import {condense_whitespace} from '/src/lib/lang/string.js';
 
 // Filters certain whitespace from a document. This scans the text nodes of a
 // document and modifies certain text nodes.

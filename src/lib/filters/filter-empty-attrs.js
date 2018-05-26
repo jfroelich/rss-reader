@@ -1,4 +1,4 @@
-import {attribute_is_boolean} from '/src/lib/attribute.js';
+import {attribute_is_boolean} from '/src/lib/dom/attribute.js';
 
 export function filter_empty_attrs(document) {
   if (document.body) {

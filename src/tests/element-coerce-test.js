@@ -1,5 +1,5 @@
-import {element_coerce} from '/src/lib/element-coerce.js';
-import * as html_parser from '/src/lib/html-parser.js';
+import {element_coerce} from '/src/lib/dom/element-coerce.js';
+import * as html_parser from '/src/lib/html/html-parser.js';
 import {assert} from '/src/tests/assert.js';
 
 export async function element_coerce_test() {

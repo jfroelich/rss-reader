@@ -1,4 +1,4 @@
-import * as string from '/src/lib/string.js';
+import * as string from '/src/lib/lang/string.js';
 
 /*
 

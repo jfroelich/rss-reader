@@ -1,4 +1,4 @@
-import {has_source as image_has_source, remove as remove_image} from '/src/lib/image.js';
+import {has_source as image_has_source, remove as remove_image} from '/src/lib/dom/image.js';
 
 // An image is 'dead' if it is unfetchable. One reason that an image is
 // unfetchable is when an image does not have an associated url.

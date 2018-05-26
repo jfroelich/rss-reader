@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/element-unwrap.js';
+import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
 
 // TODO: this is revealing a ton of garbage and generally not helping, maybe it
 // is better to go back to removal? But if I do removal how do I still support

@@ -1,7 +1,7 @@
 import {fetch_html} from '/src/fetch.js';
 import {filter_lazy_images} from '/src/lib/filters/filter-lazy-images.js';
 import {filter_dead_images} from '/src/lib/filters/filter-dead-images.js';
-import {parse as parse_html} from '/src/lib/html-parser.js';
+import {parse as parse_html} from '/src/lib/html/html-parser.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: rewrite in new test format

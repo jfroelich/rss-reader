@@ -1,7 +1,7 @@
 import {fetch_html} from '/src/fetch.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
-import {parse as parse_html} from '/src/lib/html-parser.js';
-import {set_document_base_uri} from '/src/lib/set-document-base-uri.js';
+import {parse as parse_html} from '/src/lib/html/html-parser.js';
+import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: these tests must be rewritten using new approach

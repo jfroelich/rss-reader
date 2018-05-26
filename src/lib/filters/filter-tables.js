@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/element-unwrap.js';
+import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
 import {is_leaf_node} from '/src/lib/filters/node-is-leaf.js';
 
 

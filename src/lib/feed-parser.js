@@ -1,4 +1,4 @@
-import {html_decode_entities} from '/src/lib/html.js';
+import {html_decode_entities} from '/src/lib/html/html.js';
 
 /*
 

@@ -1,4 +1,4 @@
-import * as html_parser from '/src/lib/html-parser.js';
+import * as html_parser from '/src/lib/html/html-parser.js';
 
 /*
 

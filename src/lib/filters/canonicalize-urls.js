@@ -1,4 +1,4 @@
-import * as srcset from '/src/lib/srcset.js';
+import * as srcset from '/src/lib/dom/srcset.js';
 
 // TODO: if a url cannot be resolved, it should be replaced with empty-string.
 // In other words, empty-string is the canonical form of an invalid-url.

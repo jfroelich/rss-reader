@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/element-unwrap.js';
+import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
 
 // TODO: deprecate assert helper for now
 // TODO: maybe remove the assertion all together as it is too paranoid

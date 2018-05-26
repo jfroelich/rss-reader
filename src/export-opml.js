@@ -1,5 +1,5 @@
 import {db_get_feeds} from '/src/db/db-get-feeds.js';
-import {list_peek} from '/src/lib/list.js';
+import {list_peek} from '/src/lib/lang/list.js';
 
 /*
 # export-opml

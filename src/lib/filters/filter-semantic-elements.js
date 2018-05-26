@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/element-unwrap.js';
+import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
 
 // TODO: this is over-specialization. This should be using some generic
 // unwrap-elements-matching-selector helper. Right now this is akin to creating
