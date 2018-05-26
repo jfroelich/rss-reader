@@ -33,7 +33,7 @@ other lib components), this has to wait.
 // TODO: lib modules should not depend on app modules
 import {fetch_html} from '/src/fetch.js';
 import {fetch_image} from '/src/lib/fetch-image.js';
-import * as html_parser from '/src/lib/html/html-parser.js';
+import {parse_html} from '/src/lib/html/parse-html.js';
 import * as idb from '/src/lib/idb.js';
 import * as mime from '/src/lib/mime.js';
 import * as url_loader from '/src/lib/url-loader.js';
@@ -132,7 +132,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   if (response && response.ok) {
     const text = await response.text();
     try {
-      document = html_parser.parse(text);
+      document = parse_html(text);
     } catch (error) {
       this.console.debug(error);
     }

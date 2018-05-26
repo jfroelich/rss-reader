@@ -1,5 +1,5 @@
 import {filter_empty_attrs} from '/src/lib/filters/filter-empty-attrs.js';
-import {parse as parse_html} from '/src/lib/html/html-parser.js';
+import {parse_html} from '/src/lib/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
 
 export async function empty_attribute_filter_test() {

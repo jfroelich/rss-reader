@@ -1,4 +1,4 @@
-import * as html_parser from '/src/lib/html/html-parser.js';
+import {parse_html} from '/src/lib/html/parse-html.js';
 
 // HTML utility functions. These functions generally accept an html string as
 // input and do something to or with that input string.
@@ -38,7 +38,7 @@ export function html_replace_tags(html_string, replacement) {
 
   let document;
   try {
-    document = html_parser.parse(html_string);
+    document = parse_html(html_string);
   } catch (error) {
     console.debug(error);
     return 'Unsafe html';

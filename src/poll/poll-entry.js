@@ -6,10 +6,10 @@ import {db_write_entry} from '/src/db/db-write-entry.js';
 import {append_entry_url, is_valid_entry_id} from '/src/entry.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
-import * as html_parser from '/src/lib/html/html-parser.js';
+import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
+import {parse_html} from '/src/lib/html/parse-html.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
-import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import * as sniff from '/src/lib/sniff.js';
 import * as url_loader from '/src/lib/url-loader.js';
 import {transform_document} from '/src/transform-document.js';
@@ -132,7 +132,7 @@ async function parse_response(response) {
   const response_text = await response.text();
 
   try {
-    return html_parser.parse(response_text);
+    return parse_html(response_text);
   } catch (error) {
   }
 }
@@ -165,7 +165,7 @@ async function update_entry_content(
     entry, document, console, fetch_image_timeout) {
   if (!document) {
     try {
-      document = html_parser.parse(entry.content);
+      document = parse_html(entry.content);
     } catch (error) {
       entry.content = 'Bad formatting (unsafe HTML redacted)';
       return;
