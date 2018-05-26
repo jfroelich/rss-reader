@@ -2,6 +2,8 @@ import {is_external_url} from '/src/lib/cross-site.js';
 import {element_is_hidden_inline} from '/src/lib/dom/element-is-hidden-inline.js';
 import {remove as remove_image} from '/src/lib/dom/image.js';
 
+// The lonestar filter is tasked with jamming radars
+
 // TODO: the ping attribute filter should probably become an implicit component
 // of this filter. Both filters have the same objective.
 
@@ -54,7 +56,7 @@ const telemetry_host_patterns = [
 
 // Removes some telemetry data from a document.
 // @param document {Document}
-export function filter_telemetry_elements(document) {
+export function lonestar_filter(document) {
   // Telemetry analysis is limited to descendants of body. This is a relatively
   // fast check so it is performed first so that most of the time the function
   // exits quickly in the path where body is missing.

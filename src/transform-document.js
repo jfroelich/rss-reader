@@ -36,7 +36,7 @@ import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js
 import {filter_semantic_elements} from '/src/lib/filters/filter-semantic-elements.js';
 import {filter_small_images} from '/src/lib/filters/filter-small-images.js';
 import {filter_tables} from '/src/lib/filters/filter-tables.js';
-import {filter_telemetry_elements} from '/src/lib/filters/filter-telemetry-elements.js';
+import {lonestar_filter} from '/src/lib/filters/lonestar-filter.js';
 import {filter_unknown_attrs} from '/src/lib/filters/filter-unknown-attrs.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {trim_document} from '/src/lib/filters/trim-document.js';
@@ -151,7 +151,7 @@ export async function transform_document(document, console) {
   filter_lazy_images(document);
 
   // This should occur before setting image sizes. baseURI must be valid.
-  filter_telemetry_elements(document);
+  lonestar_filter(document);
 
   filter_dead_images(document);
 
