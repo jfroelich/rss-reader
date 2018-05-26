@@ -10,10 +10,10 @@ import {is_entry, is_valid_entry_id} from '/src/entry.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {import_opml} from '/src/import-opml.js';
 import {console_stub} from '/src/lib/console-stub.js';
-import {date_format} from '/src/lib/lang/date.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
+import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
-import {html_escape} from '/src/lib/html/html.js';
+import {date_format} from '/src/lib/lang/date.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {slideshow_export_opml} from '/src/slideshow-page/export-opml.js';
@@ -353,7 +353,7 @@ function create_article_title_element(entry) {
 
   if (entry.title) {
     let title = entry.title;
-    let safe_title = html_escape(title);
+    let safe_title = escape_html(title);
     title_element.setAttribute('title', safe_title);
 
     let filtered_safe_title = filter_publisher(safe_title);
