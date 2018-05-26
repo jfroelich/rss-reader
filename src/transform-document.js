@@ -1,5 +1,4 @@
-import {config_image_size_fetch_timeout} from '/src/config.js';
-import * as color from '/src/lib/color.js';
+import * as config from '/src/config.js';
 import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
 import {color_contrast_filter} from '/src/lib/filters/color-contrast-filter.js';
@@ -56,23 +55,6 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 // style information, global attribute issues such as element ids, removing
 // frames, removing script
 
-// ### Options
-// fetch_image_timeout {Number} optional, the number of milliseconds to
-// wait before timing out when fetching an image
-// matte {color} the default background color to use when determining an
-// element's background
-// min_contrast_ratio {Number} the ratio to use when determining whether
-// an element's content is visible
-// emphasis_length_max {Number} the maximum number of characters in a
-// section of emphasized text before the emphasis is removed
-
-// ### Errors
-// * type errors (invalid input)
-
-// ### Return value
-// Returns a promise that resolves to undefined or rejects when an internal
-// error occurs
-
 // ### Implementation notes
 // For performance reasons, the document is mutated. In other words, the
 // transformation is applied to the input, in-place. Ideally this would be a
@@ -97,9 +79,9 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 // improvements in v8 recently I still wonder if the tree-walker approach is
 // viable.
 
-// TODO:
-// 1. Set options in config.js and read them here, instead of hardcoding here
-// 3. Create a function registry, register filters, and revise
+// TODO: Add console arg to all filters
+
+// TODO: Create a function registry, register filters, and revise
 // transform_document to iterate over the registry. Instead of hard coding, this
 // should basically just iterate over an array of filter functions. Functions
 // should be registered, along with parameters to them other than the document.
@@ -109,7 +91,6 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 // its preset arguments. Also, probably need priority (a number) property
 // per entry, so as to be able to specify order. Should probably not use
 // registration order. Or maybe registration order is fine?
-// 4. Add console arg to all filters
 
 // TODO: new filter idea, add a filter that condenses text nodes by doing things
 // like replacing &amp;copy; with the equivalent single utf8 / unicode
@@ -125,27 +106,15 @@ export async function transform_document(document, console) {
   filter_comments(document);
   filter_noscript_elements(document);
 
-  // This should occur earlier in the pipeline because it tends to reduce
-  // the amount of work done by later filters. It should occur before
-  // processing boilerplate, because the boilerplate filter is naive about
-  // hidden elements. This is done before the blacklist filter because of
-  // the idea that this filter will tend to remove large branches where as
-  // the blacklist filter more likely removes small branches, and there is a
-  // decent chance many of those small branches live on the large and hidden
-  // branches, so less work is done this way in the normal/typical case.
+  // Should occur before the boilerplate filter (logic)
+  // Should occur before most filters (performance)
   filter_hidden_elements(document);
 
   // TODO: this should be implicit in filter_hidden_elements, call it there
   // instead of here. This also means I need to pass along params
-  const matte = color.WHITE;
-  const mcr = localStorage.MIN_CONTRAST_RATIO;
-  color_contrast_filter(document, matte, mcr);
+  color_contrast_filter(
+      document, config.contrast_default_matte, localStorage.MIN_CONTRAST_RATIO);
 
-  // NOTE: now that I've reworked how baseURI is used instead of document-url,
-  // base elements need to persist throughout the filter calls up until the
-  // filter-base-elements call. Removing head elements would conflict, so this
-  // no longer removes head elements. Previously 'head' was a member of this
-  // blacklist array.
   const general_blacklist = [
     'applet', 'audio',  'basefont', 'bgsound', 'command',  'datalist',
     'dialog', 'embed',  'isindex',  'link',    'math',     'meta',
@@ -154,20 +123,9 @@ export async function transform_document(document, console) {
   ];
   filter_blacklisted_elements(document, general_blacklist);
 
-  // This should occur prior to removing boilerplate content because it has
-  // express knowledge of content organization
+  // Pre-boilerplate because this knows express structure
   filter_by_host_template(document);
 
-  // This should occur before the boilerplate filter, because the
-  // boilerplate filter may make decisions based on the hierarchical
-  // position of content
-  // TODO: or should it occur after? Or does it not matter.
-  const emphasis_length_max = 200;
-  filter_emphasis(document, emphasis_length_max);
-
-  // This should occur before filtering attributes because it makes
-  // decisions based on attribute values. This should occur after filtering
-  // hidden elements because it is naive with regard to content visibility
   filter_boilerplate(document, console);
 
   // TODO: now that script filtering happens after boilerplate filtering, there
@@ -178,41 +136,28 @@ export async function transform_document(document, console) {
   filter_script_elements(document);
   filter_script_anchors(document);
 
-  // This should occur after filtering boilerplate because certain condensed
-  // names may be factors in the bp-filter (we don't know, not our concern).
-  // Otherwise it does not matter too much. This could occur even later.
   const condense_copy_attrs_flag = false;
   condense_tagnames(document, condense_copy_attrs_flag);
 
-  // This should occur before trying to set image sizes
+  // This should occur before setting image sizes
+  // TODO: actually the above comment is no longer true, right? Reverify.
   canonicalize_urls(document);
 
-  // This should occur prior to filtering lazily-loaded images
-  // This should occur prior to setting image sizes
-  // Does not matter if before or after canonicalizing urls (commutative or
-  // whatever the term is)
+  // This should occur before filtering lazy images and setting image sizes
   filter_responsive_images(document);
 
-  // This should occur before removing src-less images
+  // This should occur before removing dead images
   filter_lazy_images(document);
 
-  // This should occur before setting image sizes to avoid unwanted network
-  // requests. Note this requires baseURI to still be valid, so base elements
-  // should still exist.
+  // This should occur before setting image sizes. baseURI must be valid.
   filter_telemetry_elements(document);
 
   filter_dead_images(document);
 
-  // It does not matter if this occurs before or after resolving urls. This
-  // now accepts a base url parameter and dynamically canonicalizes image
-  // urls (without writing back to document). This should occur after
-  // removing telemetry, because this involves network requests that perhaps
-  // the telemetry filter thinks should be avoided. Allow exceptions to
-  // bubble
-  await set_image_sizes(document, config_image_size_fetch_timeout);
+  // This should occur after removing telemetry and other images
+  await set_image_sizes(document, config.config_image_size_fetch_timeout);
 
-  // This should occur after setting image sizes because it requires
-  // knowledge of image size
+  // This should occur after setting image sizes
   filter_small_images(document);
   filter_large_images(document);
 
@@ -226,37 +171,25 @@ export async function transform_document(document, console) {
   filter_semantic_elements(document);
   filter_figures(document);
   filter_container_elements(document);
-
   filter_lists(document);
-
-  const table_row_scan_max = 20;
-  filter_tables(document, table_row_scan_max);
-
-  // It does not matter whether this is before or after the boilerplate filter,
-  // because the boilerplate filter considers whitespace in its algorithm, and
-  // in particular it considers excess whitespace
+  filter_tables(document, config.table_scan_max_rows);
+  filter_emphasis(document, config.emphasis_max_length);
   filter_node_whitespace(document);
 
-  // This should be called after most of the other filters. Most of the
-  // other filters are naive in how they leave ancestor elements meaningless
-  // or empty, and simply remove elements without considering ripple
-  // effects. So this is like an additional pass now that several holes have
-  // been made.
+  // This should occur after most filters
   filter_leaf_nodes(document);
 
-  // Should be called near end because its behavior changes based on what
-  // content remains, and is faster with fewer elements
+  // This should occur after most filters
   trim_document(document);
 
   // Primarily an attribute filter, so it should be called as late as
   // possible to reduce the number of elements visited
+  // TODO: this should be moved to telemetry filter
   filter_anchor_noref(document);
+  // TODO: this should be moved to telemetry filter
   filter_pings(document);
 
-
-  // We have to do this at the very end, after all filters that expect a
-  // valid base uri are complete. This makes the document readily embeddable
-  // along with other documents in the view.
+  // This should occur after all filters that expect a valid base URI
   filter_base_elements(document);
 
   // TODO: "head" should now be removed explicitly as a blacklisted element,
