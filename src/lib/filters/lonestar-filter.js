@@ -57,13 +57,6 @@ const telemetry_host_patterns = [
 // Removes some telemetry data from a document.
 // @param document {Document}
 export function lonestar_filter(document) {
-  // Telemetry analysis is limited to descendants of body. This is a relatively
-  // fast check so it is performed first so that most of the time the function
-  // exits quickly in the path where body is missing.
-  if (!document.body) {
-    return;
-  }
-
   // This filter now relies on having a baseURI in order to properly determine a
   // document's canonical location. This no longer has access to an explicit
   // document url parameter.
@@ -90,6 +83,11 @@ export function lonestar_filter(document) {
   // just do not know of a better solution right now
   if (!document.querySelector('base')) {
     throw new TypeError('no base element found so baseURI invalid');
+  }
+
+  // Telemetry analysis is limited to descendants of body.
+  if (!document.body) {
+    return;
   }
 
   // TODO: this is a simple hack to keep the behavior stable, back when
@@ -224,9 +222,4 @@ function image_has_telemetry_source(image, document_url) {
 
   // Nothing indicated telemetry.
   return false;
-}
-
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
 }
