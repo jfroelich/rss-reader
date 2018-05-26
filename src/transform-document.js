@@ -36,8 +36,8 @@ import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js
 import {filter_semantic_elements} from '/src/lib/filters/filter-semantic-elements.js';
 import {filter_small_images} from '/src/lib/filters/filter-small-images.js';
 import {filter_tables} from '/src/lib/filters/filter-tables.js';
-import {lonestar_filter} from '/src/lib/filters/lonestar-filter.js';
 import {filter_unknown_attrs} from '/src/lib/filters/filter-unknown-attrs.js';
+import {lonestar_filter} from '/src/lib/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {trim_document} from '/src/lib/filters/trim-document.js';
 
@@ -194,13 +194,16 @@ export async function transform_document(document, console) {
   // This should occur after all filters that expect a valid base URI
   filter_base_elements(document);
 
-  // TODO: "head" should now be removed explicitly as a blacklisted element,
-  // after removing the base elements. We could not remove earlier because we
-  // had to retain the base element in the head in order to retain the proper
-  // baseURI value. Previously head was removed at the time of removing
-  // blacklisted elements, and now that is no longer the case. This is not an
-  // urgent todo as head is really only a space occupier without functional
-  // effect. Technically the functionality has changed though.
+  // Strip head elements. Head elements used to be blacklisted and stripped
+  // earlier but that changed when switching to using baseURI in order to
+  // maintain base elements.
+  // TODO: make this into a filter of some sort
+  // TODO: clarify whether a document can have multiple head elements by
+  // locating and citing the spec
+  const head_elements = document.querySelectorAll('head');
+  for (const head_element of head_elements) {
+    head_element.remove();
+  }
 
   // Filter attributes close to last because it is so slow and is sped up
   // by processing fewer elements.
