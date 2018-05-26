@@ -4,7 +4,6 @@ import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
 import {condense_tagnames} from '/src/lib/filters/condense-tagnames.js';
 import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
-import {filter_anchor_noref} from '/src/lib/filters/filter-anchor-noref.js';
 import {filter_base_elements} from '/src/lib/filters/filter-base-elements.js';
 import {filter_blacklisted_elements} from '/src/lib/filters/filter-blacklisted-elements.js';
 import {filter_brs} from '/src/lib/filters/filter-brs.js';
@@ -184,10 +183,8 @@ export async function transform_document(document, console) {
   // This should occur after most filters
   trim_document(document);
 
-  // Primarily an attribute filter, so it should be called as late as
-  // possible to reduce the number of elements visited
+
   // TODO: this should be moved to telemetry filter
-  filter_anchor_noref(document);
   // TODO: this should be moved to telemetry filter
   filter_pings(document);
 

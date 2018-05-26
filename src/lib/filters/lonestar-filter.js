@@ -1,23 +1,13 @@
 import {is_external_url} from '/src/lib/cross-site.js';
 import {element_is_hidden_inline} from '/src/lib/dom/element-is-hidden-inline.js';
 import {remove as remove_image} from '/src/lib/dom/image.js';
+import {filter_anchor_noref} from '/src/lib/filters/filter-anchor-noref.js';
 
-// The lonestar filter is tasked with jamming radars
+// The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
+// can be found here: https://youtu.be/rGvblGCD7qM
 
 // TODO: the ping attribute filter should probably become an implicit component
 // of this filter. Both filters have the same objective.
-
-// TODO: I would like to remove reliance on base-uri. This would allow the
-// canonical url filter to strip base elements, which would destroy the
-// base uri, and if that filter is called before this one, leave this one
-// not working. So basically this would have to be changed to operate under
-// the presumption that all document urls are canonical. The thing is, I am
-// not sure I want to impose that requirement. The req imposes more order on
-// filter composition, which is not wanted. On the other hand, I would get
-// to remove the explicit remove-base-elements call in tranform document, and
-// the anxiety over whether the requirement that base-elements are removed AFTER
-// this is reduced.
-
 
 // Regular expressions applied to urls that indicate telemetry presence
 const telemetry_host_patterns = [
@@ -116,6 +106,12 @@ export function lonestar_filter(document) {
       remove_image(image);
     }
   }
+
+  // TODO: now that this is here, this is pretty much the sole caller. Given
+  // its simplicity I think it would be better as a local helper function. It
+  // will probably not be accessed independently, and its purpose is central
+  // to this module, and it is coherent.
+  filter_anchor_noref(document);
 }
 
 // Returns true if an image is a pixel-sized image
