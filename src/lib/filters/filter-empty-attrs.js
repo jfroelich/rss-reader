@@ -1,4 +1,4 @@
-import {attribute_is_boolean} from '/src/lib/dom/attribute.js';
+import {is_boolean_attribute} from '/src/lib/dom/is-boolean-attribute.js';
 
 export function filter_empty_attrs(document) {
   if (document.body) {
@@ -12,7 +12,7 @@ export function filter_empty_attrs(document) {
 function filter_element(element) {
   const names = element.getAttributeNames();
   for (const name of names) {
-    if (!attribute_is_boolean(element, name)) {
+    if (!is_boolean_attribute(element, name)) {
       const value = element.getAttribute(name);
       if (typeof value !== 'string' || !value.trim()) {
         element.removeAttribute(name);

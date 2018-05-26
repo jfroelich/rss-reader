@@ -1,6 +1,6 @@
 
 // Adapted from https://github.com/kangax/html-minifier/issues/63
-export const boolean_attribute_names = [
+const attr_names = [
   'allowfullscreen', 'async',          'autofocus',     'autoplay',
   'checked',         'compact',        'controls',      'declare',
   'default',         'defaultchecked', 'defaultmuted',  'defaultselected',
@@ -19,6 +19,6 @@ export const boolean_attribute_names = [
 // in, in the case that in the future I decide to vary the outcome of the
 // boolean determination based on the type of element in addition to attribute
 // name.
-export function attribute_is_boolean(element, attribute_name) {
-  return boolean_attribute_names.includes(attribute_name);
+export function is_boolean_attribute(element, attribute_name) {
+  return attr_names.includes(attribute_name);
 }
