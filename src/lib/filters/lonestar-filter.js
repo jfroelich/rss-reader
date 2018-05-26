@@ -99,8 +99,6 @@ export function lonestar_filter(document) {
   // well-formed/canonical.
   const document_url = new URL(document.baseURI);
 
-
-
   // This filter currently only focuses on images. Stylesheets are assumed to be
   // removed by other filters. Scripts are assumed to be removed by other
   // filters. Objects and pretty much any other type of resource are presumed
