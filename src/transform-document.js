@@ -28,7 +28,6 @@ import {filter_lists} from '/src/lib/filters/filter-lists.js';
 import {filter_misnested_elements} from '/src/lib/filters/filter-misnested-elements.js';
 import {filter_node_whitespace} from '/src/lib/filters/filter-node-whitespace.js';
 import {filter_noscript_elements} from '/src/lib/filters/filter-noscript-elements.js';
-import {filter_pings} from '/src/lib/filters/filter-pings.js';
 import {filter_responsive_images} from '/src/lib/filters/filter-responsive-images.js';
 import {filter_script_anchors} from '/src/lib/filters/filter-script-anchors.js';
 import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
@@ -52,30 +51,12 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 // * to make the document embeddable such as by canonicalizing urls, removing
 // style information, global attribute issues such as element ids, removing
 // frames, removing script
-
-// ### Implementation notes
-// For performance reasons, the document is mutated. In other words, the
-// transformation is applied to the input, in-place. Ideally this would be a
-// pure function but cloning the document is not very feasible. This basically
-// acts as a wrapper to all the content filters. The module adds value primarily
-// by defining the order in which filters are applied, and by applying
-// app-specific settings to otherwise generic modules (further specializing the
-// filters to this app's purpose). The transform is async primarily because of
-// one critical filter step that must occur after some filters but before
-// others, that is async, the step where images are fetched in order to
-// determine image sizes. Filters like telemetry removal need to occur
-// beforehand, but some additional sanity and shrinking filters need to occur
-// after. I am not entirely sure if this is the right design as I would rather
-// minimize the use of async, but I have not thought of a better way. Once one
-// function is async pretty much all callers up the stack need to be async. One
-// of the first implementations of this module started off with a tree walker
-// that applied transformations to each node. It turns out that repeatedly
-// executing query selectors is substantially faster by several orders of
-// magnitude. This led to the breakdown of the query selectors into individual
-// filters. However, the goal of this module is to encapsulate this
-// implementation detail and abstract it away. Given the substantial
-// improvements in v8 recently I still wonder if the tree-walker approach is
-// viable.
+//
+// The document is modified in place because it is too expensive to clone.
+// The function works by applying several filters. Its value comes from how it
+// calls the filters in a programmed order.
+// It is async primarily just because of a middle step related to setting sizes
+// of images that is also async.
 
 // TODO: Add console arg to all filters
 
@@ -101,7 +82,6 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 // filter reliance on image area. but i relaxed that, right? so why do it? if
 // i don't need it the function would no longer need to be async, and would be
 // substantially faster.
-
 
 export async function transform_document(document, console) {
   deframe(document);
@@ -182,11 +162,6 @@ export async function transform_document(document, console) {
 
   // This should occur after most filters
   trim_document(document);
-
-
-  // TODO: this should be moved to telemetry filter
-  // TODO: this should be moved to telemetry filter
-  filter_pings(document);
 
   // This should occur after all filters that expect a valid base URI
   filter_base_elements(document);

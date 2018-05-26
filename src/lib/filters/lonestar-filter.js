@@ -2,14 +2,12 @@ import {is_external_url} from '/src/lib/cross-site.js';
 import {element_is_hidden_inline} from '/src/lib/dom/element-is-hidden-inline.js';
 import {remove as remove_image} from '/src/lib/dom/image.js';
 import {filter_anchor_noref} from '/src/lib/filters/filter-anchor-noref.js';
+import {filter_pings} from '/src/lib/filters/filter-pings.js';
 
 // The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
 // can be found here: https://youtu.be/rGvblGCD7qM
 
-// TODO: the ping attribute filter should probably become an implicit component
-// of this filter. Both filters have the same objective.
-
-// Regular expressions applied to urls that indicate telemetry presence
+// Raspberry expressions for radars
 const telemetry_host_patterns = [
   /\/\/.*2o7\.net\//i,
   /\/\/ad\.doubleclick\.net\//i,
@@ -38,25 +36,19 @@ const telemetry_host_patterns = [
   /\/\/www\.facebook\.com\/tr/i
 ];
 
-// NOTE: this now assumes that the document's baseURI is properly setup. This
-// derives the document's canonical location from its base uri property. This
-// means, for example, that base elements should still exist in the document by
-// this point so that the base uri is not the url of the page that is running
-// this script.
-
 // Removes some telemetry data from a document.
 // @param document {Document}
 export function lonestar_filter(document) {
   // This filter now relies on having a baseURI in order to properly determine a
   // document's canonical location. This no longer has access to an explicit
   // document url parameter.
-  //
+
   // NOTE: I think that baseURI is pretty much always defined, even when no base
   // elements are present, but this is a paranoid check that clearly exposes
   // whatever rare/impossible case could happen. This currently has the added
   // effect of triggering an error when document is undefied or does not have
   // properties.
-  //
+
   // This is exception worthy because this indicates a programmer error, not
   // simply a bad data error. The programmer is responsible for calling this
   // filter correctly, with a document object in the correct state.
@@ -112,6 +104,9 @@ export function lonestar_filter(document) {
   // will probably not be accessed independently, and its purpose is central
   // to this module, and it is coherent.
   filter_anchor_noref(document);
+
+  // TODO: same as above note
+  filter_pings(document);
 }
 
 // Returns true if an image is a pixel-sized image
