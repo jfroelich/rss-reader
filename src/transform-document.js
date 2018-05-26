@@ -1,7 +1,6 @@
 import * as config from '/src/config.js';
 import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
-import {color_contrast_filter} from '/src/lib/filters/color-contrast-filter.js';
 import {condense_tagnames} from '/src/lib/filters/condense-tagnames.js';
 import {deframe} from '/src/lib/filters/deframe.js';
 import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
@@ -99,6 +98,12 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 // TODO: improve anti-image-hotlink handling, because we are not hotlinking, so
 // review why there is a problem. http://www.javalemmings.com/DMA/Lem_1.htm
 
+// TODO: why set image sizes again? i think this was because of boilerplate
+// filter reliance on image area. but i relaxed that, right? so why do it? if
+// i don't need it the function would no longer need to be async, and would be
+// substantially faster.
+
+
 export async function transform_document(document, console) {
   deframe(document);
   ensure_document_body(document);
@@ -108,11 +113,7 @@ export async function transform_document(document, console) {
 
   // Should occur before the boilerplate filter (logic)
   // Should occur before most filters (performance)
-  filter_hidden_elements(document);
-
-  // TODO: this should be implicit in filter_hidden_elements, call it there
-  // instead of here. This also means I need to pass along params
-  color_contrast_filter(
+  filter_hidden_elements(
       document, config.contrast_default_matte, localStorage.MIN_CONTRAST_RATIO);
 
   const general_blacklist = [
