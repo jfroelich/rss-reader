@@ -13,7 +13,6 @@
 // document, and that head element was the ancestor of one or more base
 // elements, you strip the custom baseURI from the document and it reverts to
 // yielding its original default baseURI.
-
 export function set_document_base_uri(document, document_url) {
   // Loosely verify document_url instanceof URL. This will also throw an error
   // when document_url is undefined at the time of trying to access a prop.

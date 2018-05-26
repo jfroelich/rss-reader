@@ -1,17 +1,14 @@
 import '/third-party/parse-srcset.js';
 
-/*
+// Provides utilities for working with html srcset attributes. The `parse`
+// function parses a srcset value into an array of descriptors. If the input is
+// bad, or an error occurs, or no descriptors found, returns an empty array.
+// This function makes use of third-party code. The srcset param may be any
+// value, but should generally be a string containing the value of the srcset
+// attribute of an html element.
 
-# srcset
-Provides utilities for working with html srcset attributes. The `parse` function
-parses a srcset value into an array of descriptors. If the input is bad, or an
-error occurs, or no descriptors found, returns an empty array. This function
-makes use of third-party code. The srcset param may be any value, but should
-generally be a string containing the value of the srcset attribute of an html
-element.
-
-
-*/
+// TODO: these functions have very low coherency, i think it would be better
+// to use two modules
 
 export function serialize(descriptors) {
   if (!Array.isArray(descriptors)) {

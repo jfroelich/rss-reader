@@ -1,15 +1,6 @@
-
-/*
-
-# css
-
-General css utilities
-
-### TODOs
-* maybe deprecate, this is just too simple for a module
-
-
-*/
+// General css utilities
+// TODO: maybe deprecate, this is just too simple for a module
+// TODO: rename file to function name?
 
 // Returns the first matching css rule or undefined
 // @param selector_text {String}
