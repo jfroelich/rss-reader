@@ -38,6 +38,7 @@ import {filter_unknown_attrs} from '/src/lib/filters/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/lib/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {trim_document} from '/src/lib/filters/trim-document.js';
+import {fetch_policy} from '/src/fetch-policy.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense content
@@ -135,7 +136,8 @@ export async function transform_document(document, console) {
   filter_dead_images(document);
 
   // This should occur after removing telemetry and other images
-  await set_image_sizes(document, config.config_image_size_fetch_timeout);
+  await set_image_sizes(
+      document, config.config_image_size_fetch_timeout, fetch_policy);
 
   // This should occur after setting image sizes
   // TODO: compose into filter-images-by-size

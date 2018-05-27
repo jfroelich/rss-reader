@@ -1,3 +1,4 @@
+import {fetch_policy} from '/src/fetch-policy.js';
 import {fetch_html} from '/src/fetch.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import * as boilerplate from '/src/lib/filters/boilerplate.js';
@@ -46,6 +47,6 @@ export async function legacy_boilerplate_test(url_string) {
   filter_iframes(document);
   filter_blacklisted_elements(document);
   canonicalize_urls(document);
-  await set_image_sizes(document);
+  await set_image_sizes(document, undefined, fetch_policy);
   boilerplate.annotate(document);
 }

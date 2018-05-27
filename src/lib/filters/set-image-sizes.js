@@ -1,6 +1,4 @@
-import {fetch_policy} from '/src/fetch-policy.js';
 import {fetch_image_element} from '/src/lib/net/fetch-image-element.js';
-
 
 // TODO: do not assume that if an image has a source attribute that it is a
 // valid url. urls may not have been validated by other filters. This has to
@@ -16,7 +14,7 @@ import {fetch_image_element} from '/src/lib/net/fetch-image-element.js';
 // and modifies each image element's attributes.
 // Assumes that if an image has a src attribute value that is a url, that the
 // url is absolute.
-export async function set_image_sizes(document, timeout) {
+export async function set_image_sizes(document, timeout, fetch_policy) {
   if (!document.body) {
     return;
   }
@@ -36,7 +34,7 @@ export async function set_image_sizes(document, timeout) {
   // Concurrently get dimensions for each image then wait for all to complete
   const promises = [];
   for (const image of images) {
-    promises.push(get_image_dims(image, document_url, timeout));
+    promises.push(get_image_dims(image, document_url, timeout, fetch_policy));
   }
   const results = await Promise.all(promises);
 
@@ -49,7 +47,7 @@ export async function set_image_sizes(document, timeout) {
   }
 }
 
-async function get_image_dims(image, base_url, timeout) {
+async function get_image_dims(image, base_url, timeout, fetch_policy) {
   if (image.hasAttribute('width') && image.hasAttribute('height')) {
     return {image: image, reason: 'has-attributes'};
   }

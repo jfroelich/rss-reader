@@ -1,3 +1,4 @@
+import {fetch_policy} from '/src/fetch-policy.js';
 import {fetch_html} from '/src/fetch.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
@@ -28,7 +29,7 @@ window.test = async function(url_string) {
   const document = parse_html(html);
   const response_url = new URL(response.url);
   set_document_base_uri(document, response_url);
-  await set_image_sizes(document);
+  await set_image_sizes(document, undefined, fetch_policy);
 };
 
 window.test2 = async function() {
@@ -39,5 +40,5 @@ window.test2 = async function() {
 
   set_document_base_uri(document, new URL('http://exercism.io'));
 
-  await set_image_sizes(document);
+  await set_image_sizes(document, undefined, fetch_policy);
 };
