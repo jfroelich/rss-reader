@@ -1,4 +1,4 @@
-import * as url_loader from '/src/lib/url-loader.js';
+import * as url_loader from '/src/lib/net/url-loader.js';
 
 const image_mime_types = [
   'application/octet-stream', 'image/x-icon', 'image/jpeg', 'image/gif',

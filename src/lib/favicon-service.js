@@ -4,7 +4,7 @@ import {parse_html} from '/src/lib/html/parse-html.js';
 import {indexeddb_open} from '/src/lib/indexeddb-open.js';
 import * as mime from '/src/lib/mime.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
-import * as url_loader from '/src/lib/url-loader.js';
+import * as url_loader from '/src/lib/net/url-loader.js';
 
 // TODO: lib modules should not depend on app modules
 

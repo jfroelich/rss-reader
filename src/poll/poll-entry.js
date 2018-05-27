@@ -10,9 +10,9 @@ import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
+import * as url_loader from '/src/lib/net/url-loader.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
 import * as sniff from '/src/lib/sniff.js';
-import * as url_loader from '/src/lib/url-loader.js';
 import {transform_document} from '/src/transform-document.js';
 
 const rewrite_rules = build_rewrite_rules();

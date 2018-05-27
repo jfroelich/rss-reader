@@ -4,8 +4,8 @@ import {append_entry_url, create_entry} from '/src/entry.js';
 import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
+import * as url_loader from '/src/lib/net/url-loader.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
-import * as url_loader from '/src/lib/url-loader.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
 
