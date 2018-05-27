@@ -8,7 +8,7 @@ import {db_open} from '/src/db/db-open.js';
 import {db_write_feed_property} from '/src/db/db-write-feed-property.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {console_stub} from '/src/lib/console-stub.js';
-import {element_fade} from '/src/lib/dom/element-fade.js';
+import {element_fade} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import * as perm from '/src/lib/permissions.js';

@@ -1,4 +1,4 @@
-import {element_coerce} from '/src/lib/dom/element-coerce.js';
+import {element_coerce} from '/src/lib/dom/coerce-element.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
 
