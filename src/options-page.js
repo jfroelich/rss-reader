@@ -13,9 +13,9 @@ import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import * as perm from '/src/lib/permissions.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
-import * as PageStyle from '/src/slideshow-page/page-style-settings.js';
+import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
+import {page_style_onload} from '/src/slideshow-page/page-style-onload.js' l
 import {subscribe} from '/src/subscribe.js';
-
 
 /*
 # options-page
@@ -79,7 +79,7 @@ channel.onmessage = function(event) {
 
   switch (message.type) {
     case 'display-settings-changed':
-      PageStyle.page_style_onchange(event);
+      page_style_onchange(event);
       break;
     case 'feed-written':
       console.debug('message handler not yet implemented', message);
@@ -609,7 +609,7 @@ function body_line_height_input_oninput(event) {
 }
 
 function options_page_init() {
-  PageStyle.page_style_onload();
+  page_style_onload();
 
   // Attach click handlers to menu items
   // TODO: use single event listener on list itself instead

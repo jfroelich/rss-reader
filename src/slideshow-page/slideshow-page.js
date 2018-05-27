@@ -17,7 +17,8 @@ import {format_date} from '/src/lib/lang/format-date.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {slideshow_export_opml} from '/src/slideshow-page/export-opml.js';
-import * as page_style from '/src/slideshow-page/page-style-settings.js';
+import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
+import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
 import * as Slideshow from '/src/slideshow-page/slideshow.js';
 
 /*
@@ -171,7 +172,7 @@ channel.onmessage = function channel_onmessage(event) {
   switch (message.type) {
     case 'display-settings-changed':
       console.debug('Updating article style');
-      page_style.page_style_onchange(message);
+      page_style_onchange(message);
       break;
     case 'entry-write':
       on_entry_write_message(message).catch(console.warn);
@@ -805,7 +806,7 @@ function header_font_menu_onchange(event) {
     delete localStorage.HEADER_FONT_FAMILY;
   }
 
-  page_style.page_style_onchange();
+  page_style_onchange();
 }
 
 function body_font_menu_onchange(event) {
@@ -816,7 +817,7 @@ function body_font_menu_onchange(event) {
     delete localStorage.BODY_FONT_FAMILY;
   }
 
-  page_style.page_style_onchange();
+  page_style_onchange();
 }
 
 function header_font_menu_init() {
@@ -886,7 +887,7 @@ async function slideshow_page_init() {
   header_font_menu_init();
   body_font_menu_init();
 
-  page_style.page_style_onload();
+  page_style_onload();
 
   const entry_cursor_offset = 0, entry_cursor_limit = 6;
 
