@@ -3,7 +3,7 @@ import {db_find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
 import {db_open} from '/src/db/db-open.js';
 import {db_write_feed} from '/src/db/db-write-feed.js';
 import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
-import {idb_remove} from '/src/lib/idb.js';
+import {indexeddb_remove} from '/src/lib/indexeddb-remove.js';
 import {list_is_empty} from '/src/lib/lang/list.js';
 import {assert} from '/src/tests/assert.js';
 
@@ -90,5 +90,5 @@ export async function create_feed_test() {
   // Test teardown
   conn.close();
   channel.close();  // a no-op, but guard against future changes
-  await idb_remove(conn.name);
+  await indexeddb_remove(conn.name);
 }

@@ -1,25 +1,17 @@
 import {console_stub} from '/src/lib/console-stub.js';
 
-/*
-
-# idb
-Provides some basic utilities for indexedDB. The principal function is
-`idb_open`. This function opens a connection to an indexedDB database. The
-important additions to the normal functionality of indexedDB.open are that you
-can optionally specify a timeout after which to consider the connection a
-failure, and that a blocked connection is treated as an error (and the
-connection is automatically closed should it ever open later).
-
-### Note about upgrade behavior
-An upgrade can still happen in the event of a rejection. I am not trying to
-prevent that as an implicit side effect, although it is possible to abort the
-versionchange transaction from within the upgrade listener. If I wanted to do
-that I would wrap the call to the listener here with a function that first
-checks if blocked/timed_out and if so aborts the transaction and closes,
-otherwise forwards to the listener.
-
-
-*/
+// This function opens a connection to an indexedDB database. The important
+// additions to the normal functionality of indexedDB.open are that you
+// can optionally specify a timeout after which to consider the connection a
+// failure, and that a blocked connection is treated as an error (and the
+// connection is automatically closed should it ever open later).
+//
+// An upgrade can still happen in the event of a rejection. I am not trying to
+// prevent that as an implicit side effect, although it is possible to abort the
+// versionchange transaction from within the upgrade listener. If I wanted to do
+// that I would wrap the call to the listener here with a function that first
+// checks if blocked/timed_out and if so aborts the transaction and closes,
+// otherwise forwards to the listener.
 
 function idb_context_t() {
   this.name = null;
@@ -114,17 +106,5 @@ function create_open_promise(context) {
 
     request.onerror = () => reject(request.error);
     request.onupgradeneeded = context.upgrade_listener;
-  });
-}
-
-export function idb_remove(name, console = console_stub) {
-  return new Promise((resolve, reject) => {
-    console.debug('Deleting database', name);
-    const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = _ => {
-      console.debug('Deleted database', name);
-      resolve();
-    };
-    request.onerror = _ => reject(request.error);
   });
 }

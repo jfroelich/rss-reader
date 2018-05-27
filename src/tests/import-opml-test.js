@@ -1,6 +1,6 @@
 import {db_open} from '/src/db/db-open.js';
 import {import_opml} from '/src/import-opml.js';
-import {idb_remove} from '/src/lib/idb.js';
+import {indexeddb_remove} from '/src/lib/indexeddb-remove.js';
 import {parse_opml} from '/src/lib/parse-opml.js';
 import {assert} from '/src/tests/assert.js';
 
@@ -67,5 +67,5 @@ export async function import_opml_test() {
   op.rconn.close();
   op.channel.close();
 
-  await idb_remove(op.rconn.name);
+  await indexeddb_remove(op.rconn.name);
 }

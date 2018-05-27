@@ -3,7 +3,7 @@ import {db_find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
 import {db_open} from '/src/db/db-open.js';
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
-import {idb_remove} from '/src/lib/idb.js';
+import {indexeddb_remove} from '/src/lib/indexeddb-remove.js';
 import {subscribe} from '/src/subscribe.js';
 import {assert} from '/src/tests/assert.js';
 
@@ -57,5 +57,5 @@ export async function subscribe_test() {
 
   // Cleanup
   rconn.close();
-  await idb_remove(rconn.name);
+  await indexeddb_remove(rconn.name);
 }

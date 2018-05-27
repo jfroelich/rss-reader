@@ -1,7 +1,7 @@
 import {db_archive_entries} from '/src/db/db-archive-entries.js';
 import {db_open} from '/src/db/db-open.js';
 import {console_stub} from '/src/lib/console-stub.js';
-import {idb_remove} from '/src/lib/idb.js';
+import {indexeddb_remove} from '/src/lib/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: actually assert something, what am I trying to test other than 'does it
@@ -23,7 +23,7 @@ export async function archive_entries_test() {
   await op.db_archive_entries(max_age);
 
   conn.close();
-  await idb_remove(conn.name);
+  await indexeddb_remove(conn.name);
 }
 
 function noop() {}

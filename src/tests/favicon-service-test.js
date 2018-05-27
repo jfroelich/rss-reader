@@ -1,5 +1,6 @@
 import {FaviconService} from '/src/lib/favicon-service.js';
 import * as idb from '/src/lib/idb.js';
+import {indexeddb_remove} from '/src/lib/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: this needs to be implemented using local files
@@ -37,7 +38,7 @@ async function test_lookup(url_string, cached) {
     console.debug('Requesting closure of database', conn.name);
     conn.close();
     console.debug('Deleting database', conn.name);
-    await idb.idb_remove(conn.name);
+    await indexeddb_remove(conn.name);
     console.debug('Deleted database', conn.name);
   }
 
