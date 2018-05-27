@@ -19,6 +19,12 @@ export async function fetch_image_element(url, timeout, fetch_policy) {
 function fetch_image_element_promise(url, fetch_policy) {
   return new Promise((resolve, reject) => {
     assert(url instanceof URL);
+
+
+    // TODO: now that this no longer depends on the app fetch policy, i should
+    // be using the fetch policy parameter here. At the moment it is NOT USED!
+    // This can lead to very unexpected results.
+
     const allowed_protocols = ['data:', 'http:', 'https:'];
     assert(allowed_protocols.includes(url.protocol));
 
