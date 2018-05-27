@@ -1,3 +1,8 @@
+// TODO: move this back into slideshow-page, and then break up slideshow-page
+// appropriately into sectioned modules. This has cross-cutting concerns and
+// there are concept-alignment problems, such as with click handling. It is also
+// a rather leaky abstraction.
+
 export const SLIDE_ELEMENT_NAME = 'slide';
 const container = document.getElementById('slideshow-container');
 let cursor;
