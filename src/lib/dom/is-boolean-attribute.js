@@ -1,4 +1,3 @@
-
 // Adapted from https://github.com/kangax/html-minifier/issues/63
 const attr_names = [
   'allowfullscreen', 'async',          'autofocus',     'autoplay',

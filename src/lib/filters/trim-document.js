@@ -1,4 +1,3 @@
-
 // Remove whitespace and whitespace-like content from the start and end of a
 // document's body.
 export function trim_document(document) {

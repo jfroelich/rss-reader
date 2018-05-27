@@ -1,24 +1,21 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/entry.js';
 
-/*
+// Opens a cursor over the entry store for viewable entries starting from the
+// given offset, and iterates up to the given limit, sequentially passing each
+// deserialized entry to the callback. Returns a promise that resolves once all
+// appropriate entries have been iterated. The promise rejects if an error
+// occurs in indexedDB.
 
-## db-for-each-viewable-entry
-Opens a cursor over the entry store for viewable entries starting from the given
-offset, and iterates up to the given limit, sequentially passing each
-deserialized entry to the callback. Returns a promise that resolves once all
-appropriate entries have been iterated. The promise rejects if an error occurs
-in indexedDB.
+// ### Parameters
+// * **conn** {IDBDatabase}
+// * **offset** {Number}
+// * **limit** {Number}
+// * **callback** {Function}
 
-### Parameters
-* **conn** {IDBDatabase}
-* **offset** {Number}
-* **limit** {Number}
-* **callback** {Function}
+// ### TODOs
+// * create a `request_onsuccess` helper
+// * do I want a separate callback for on-all-iterated?
 
-### TODOs
-* create a `request_onsuccess` helper
-* do I want a separate callback for on-all-iterated?
-*/
 
 // TODO: use context
 export function db_for_each_viewable_entry(conn, offset, limit, callback) {

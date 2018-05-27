@@ -2,6 +2,8 @@ import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
 
+// TODO: rename to indexeddb-test.js to match with library file name
+
 // NOTE: the assert here is implied. does the function execute without rejection
 
 // TODO: this test is failing, indexeddb_remove never resolves. On applications

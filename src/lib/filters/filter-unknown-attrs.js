@@ -1,4 +1,3 @@
-
 // Removes certain attributes from all elements in a document.
 // This applies to the whole document, not just body.
 

@@ -6,6 +6,29 @@ import {filter_control_characters} from '/src/lib/lang/filter-control-characters
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import {filter_unprintable_characters} from '/src/lib/lang/filter-unprintable-characters.js';
 
+// Returns a new entry object where fields have been sanitized. Impure. Note
+// that this assumes the entry is valid. As in, passing the entry to
+// is_valid_entry before calling this function would return true. This does not
+// revalidate. Sanitization is not validation. Here, sanitization acts more like
+// a normalizing procedure, where certain properties are modified into a more
+// preferable canonical form. A property can be perfectly valid, but
+// nevertheless have some undesirable traits. For example, a string is required,
+// but validation places no maximum length constraint on it, just required-ness,
+// but sanitization also places a max length constraint on it and does the
+// necessary changes to bring the entry into compliance via truncation.
+
+// Internal implementation note:  Create a shallow clone of the entry. This is
+// partly the source of impurity. Here shallow refers to the fact that several
+// of the properties are objects where the reference to the object is copied,
+// instead of copying the entire value as a new object. Which basically means
+// the new properties point to the old properties. Which basically means to be
+// careful about doing things like modifying the urls property of the input
+// entry after the sanitize call, because it will implicitly cause
+// spooky-action-at-a-distance and modify the output entry object too. I've
+// chosen the shallow copy because it is generally faster and I assume I can
+// always be careful
+
+
 // TODO: review whether filtering empty properties should be implicit in
 // sanitization or instead an explicit concern of the caller that is reframed as
 // some more general concern of reducing object storage size. Answer the

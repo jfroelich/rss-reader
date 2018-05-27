@@ -1,4 +1,3 @@
-
 export function filter_large_images(document) {
   if (document.body) {
     const images = document.body.querySelectorAll('img');

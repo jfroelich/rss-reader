@@ -3,6 +3,19 @@ import {console_stub} from '/src/lib/console-stub.js';
 import {notify} from '/src/notify.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 
+// # poll-feeds
+// Checks for new content
+
+// ### Params
+
+// ### Errors
+
+// ### Return value
+
+// ### TODOS
+// * All database queries in poll-feeds should use a single database transaction
+// so as to guarantee data integrity.
+
 const null_channel = {
   name: 'null-channel',
   postMessage: noop,
@@ -52,19 +65,3 @@ function show_poll_notification(num_entries_added) {
 }
 
 function noop() {}
-
-/*
-# poll-feeds
-Checks for new content
-
-### Params
-
-### Errors
-
-### Return value
-
-### TODOS
-* All database queries in poll-feeds should use a single database transaction so
-as to guarantee data integrity.
-
-*/

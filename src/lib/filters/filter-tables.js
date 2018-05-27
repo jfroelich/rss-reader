@@ -1,7 +1,6 @@
 import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 import {is_leaf_node} from '/src/lib/filters/node-is-leaf.js';
 
-
 // Filters certain table elements from document content
 export function filter_tables(document, table_row_scan_max) {
   if (document.body) {

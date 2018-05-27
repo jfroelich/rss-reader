@@ -1,4 +1,3 @@
-
 export function filter_invalid_anchors(document) {
   if (document.body) {
     const anchors = document.body.querySelectorAll('a');

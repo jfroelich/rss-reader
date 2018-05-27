@@ -18,7 +18,6 @@ import {decode_entities} from '/src/lib/html/decode-entities.js';
 // * resolve_entry_urls {Boolean} if true, entry urls are canonicalized using
 // feed.link as the base url
 
-
 // ## #feed_resolve_entry_urls todos
 // * If a feed has a link, and the link is invalid, should that actually be
 // considered a parse error ? In other words, this should not catch this error

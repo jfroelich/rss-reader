@@ -1,44 +1,39 @@
 import {refresh_badge} from '/src/badge.js';
 import {ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
 
-/*
-## db-mark-entry-read
-Marks an entry as read in the database.
+// Marks an entry as read in the database.
 
-### Context params
-* **conn** {IDBDatabase} required
-* **channel** {BroadcastChannel} required
-* **console** {object} required
+// ### Context params
+// * **conn** {IDBDatabase} required
+// * **channel** {BroadcastChannel} required
+// * **console** {object} required
 
-### Params
-* **entry_id** {Number} required
+// ### Params
+// * **entry_id** {Number} required
 
-### Impl note on why this throws instead of rejects on bad input
-Rather than reject from within the promise, throw an immediate error. This
-constitutes a serious and permanent programmer error.
+// ### Impl note on why this throws instead of rejects on bad input
+// Rather than reject from within the promise, throw an immediate error. This
+// constitutes a serious and permanent programmer error.
 
-### Implementation note on why this uses txn completion over request completion
-The promise settles based on the txn, not the get request, because we do some
-post-request operations, and because there is actually more than one request
-involved
+// ### Implementation note on why this uses txn completion over request
+// completion The promise settles based on the txn, not the get request, because
+// we do some post-request operations, and because there is actually more than
+// one request involved
 
-### Moves old notes from feed-ops docs
-* review
-http://www.micheltriana.com/blog/2012/04/09/library-oriented-architecture
+// ### Moves old notes from feed-ops docs
+// * review
+// http://www.micheltriana.com/blog/2012/04/09/library-oriented-architecture
 
-### TODOs
-* refactor as entry_set_read_state, accept a boolean state parameter, and handle
-both cases (where true and where false)
-* or, create db-write-entry-property, have this decorate that, or have the
-caller just call db-write-entry-property directory
-* create a db-write-entry-property module, then use that instead of this. In the
-interim, can consider refactoring this to basically wrap a call to it, maybe
-even keep the channel message type the same. Then slowly migrate all callers to
-call db-write-entry-property directly. This will potentially reduce the number
-of operations related to entries, and is more forward thinking in case new
-operations are added later (e.g. star/unstar-entry).
-*/
-
+// TODO: refactor as entry_set_read_state, accept a boolean state parameter, and
+// handle both cases (where true and where false)
+// TODO: or, create db-write-entry-property, have this decorate that, or have
+// the caller just call db-write-entry-property directory
+// TODO: create a db-write-entry-property module, then use that instead of this.
+// In the interim, can consider refactoring this to basically wrap a call to it,
+// maybe even keep the channel message type the same. Then slowly migrate all
+// callers to call db-write-entry-property directly. This will potentially
+// reduce the number of operations related to entries, and is more forward
+// thinking in case new operations are added later (e.g. star/unstar-entry).
 // TODO: use db-write-entry-property instead
 
 export function db_mark_entry_read(entry_id) {

@@ -1,4 +1,3 @@
-
 // TODO: tests
 // TODO: return if no document.body
 // TODO: restrict selectors to body

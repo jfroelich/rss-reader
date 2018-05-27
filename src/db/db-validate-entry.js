@@ -1,5 +1,11 @@
 import {is_entry, is_valid_entry_id} from '/src/entry.js';
 
+// TODO: implement `db_validate_entry`. Check required properties? This function
+// is specifically validation for storage, so maybe I should have constraints
+// like the urls list must have at least one entry. In addition, for each entry
+// property, ensure it is either undefined/null or the proper type. In addition,
+// maybe ensure dates are not in the future contain NaN or things like that.
+
 // TODO: the problem now is that I have no idea of what causes invalidity
 // outside of logging something. I need to distinguish between the reasons
 // something is invalid. Maybe return a code, 0 being valid, -1 being invalid

@@ -1,20 +1,9 @@
 import {fetch_policy} from '/src/fetch-policy.js';
 import {load_url} from '/src/lib/net/load-url.js';
 
-/*
-# fetch
-Provides utilities for fetching a resource of a particular type.
-
-## fetch-html
-todo
-
-## fetch-feed
-todo
-
-### Todos
-* allow text/plain for fetch_html?
-
-*/
+// Provides utilities for fetching a resource of a particular type.
+// TODO: allow text/plain for fetch_html?
+// TODO: break apart into individual files again
 
 const html_mime_types = ['text/html'];
 

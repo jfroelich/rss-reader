@@ -1,4 +1,3 @@
-
 // Duration and delay can be integer or floats and are required.
 export function fade_element(element, duration_secs, delay_secs) {
   return new Promise(function executor(resolve, reject) {
