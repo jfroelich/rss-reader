@@ -1,24 +1,14 @@
 import {db_get_feeds} from '/src/db/db-get-feeds.js';
 import {list_peek} from '/src/lib/lang/list.js';
 
-/*
-# export-opml
-Generates an opml document object consisting of all of the feeds in the
-database. Async.
-
-### Params
-
-### Errors
-* Invalid inputs (e.g. title is not a string, connection is undefined)
-* Database errors (e.g. database is unavailable)
-
-### Todos
-* finish docs
-* write tests
-* implement for-each-feed operation, then use it here without buffering feeds
-into an array, instead write them per iteration
-
-*/
+// Generates an opml document object consisting of all of the feeds in the
+// database. Async.
+// Throws an error if title is not a string
+// Throws an error if this.conn is undefined or not an IDBDatabase
+// Throws an error if a database error occurs
+// TODO: write tests
+// TODO: consider iterating over feeds without first buffering all feeds into an
+// in memory array, this will be more scalable
 
 export async function export_opml(title) {
   this.console.debug(
@@ -28,8 +18,8 @@ export async function export_opml(title) {
   this.console.debug('%s: loaded %d feeds', export_opml.name, feeds.length);
 
   for (const feed of feeds) {
-    this.console.debug(
-        '%s: appending url', export_opml.name, outline.getAttribute('xmlUrl'));
+    const feed_url = list_peek(feed.urls);
+    this.console.debug('%s: appending url', export_opml.name, feed_url);
     append_feed(document, feed);
   }
 
