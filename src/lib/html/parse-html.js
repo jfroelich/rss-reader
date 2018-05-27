@@ -19,6 +19,7 @@ export function parse_html(html_string) {
   return document;
 }
 
+// TODO: use the function defined in /lib/lang/condense-whitespace.js
 function condense_whitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
 }

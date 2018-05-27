@@ -1,4 +1,4 @@
-import * as string from '/src/lib/lang/string.js';
+import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 
 /*
 
@@ -122,7 +122,7 @@ export function deannotate(document) {
 }
 
 function derive_text_bias(element) {
-  const text = string.condense_whitespace(element.textContent);
+  const text = condense_whitespace(element.textContent);
   return 0.25 * text.length - 0.7 * derive_anchor_length(element);
 }
 
@@ -130,7 +130,7 @@ function derive_anchor_length(element) {
   const anchors = element.querySelectorAll('a[href]');
   let anchor_length = 0;
   for (const anchor of anchors) {
-    const text = string.condense_whitespace(anchor.textContent);
+    const text = condense_whitespace(anchor.textContent);
     anchor_length += text.length;
   }
   return anchor_length;

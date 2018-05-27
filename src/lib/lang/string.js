@@ -29,10 +29,6 @@ rare.
 // http://stackoverflow.com/questions/24229262
 */
 
-export function condense_whitespace(string) {
-  return string.replace(/\s{2,}/g, ' ');
-}
-
 export function filter_unprintable_characters(value) {
   const pattern = /[\u0000-\u0008\u000b\u000e-\u001F]+/g;
   return typeof value === 'string' && value.length ?

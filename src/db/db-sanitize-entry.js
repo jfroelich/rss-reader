@@ -1,6 +1,7 @@
 import {create_entry} from '/src/entry.js';
-import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {replace_tags} from '/src/lib/html/replace-tags.js';
+import {truncate_html} from '/src/lib/html/truncate-html.js';
+import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import * as string from '/src/lib/lang/string.js';
 
@@ -48,7 +49,7 @@ export function db_sanitize_entry(
     let author = output_entry.author;
     author = string.filter_control_characters(author);
     author = replace_tags(author, '');
-    author = string.condense_whitespace(author);
+    author = condense_whitespace(author);
     author = truncate_html(author, author_max_length);
     output_entry.author = author;
   }
@@ -64,7 +65,7 @@ export function db_sanitize_entry(
     let title = output_entry.title;
     title = string.filter_control_characters(title);
     title = replace_tags(title, '');
-    title = string.condense_whitespace(title);
+    title = condense_whitespace(title);
     title = truncate_html(title, title_max_length);
     output_entry.title = title;
   }
