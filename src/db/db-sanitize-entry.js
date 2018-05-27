@@ -2,6 +2,7 @@ import {create_entry} from '/src/entry.js';
 import {replace_tags} from '/src/lib/html/replace-tags.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
+import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import * as string from '/src/lib/lang/string.js';
 
@@ -21,10 +22,20 @@ import * as string from '/src/lib/lang/string.js';
 
 // TODO: this should assert against the input entry, checking is_entry
 
-// TODO: review again the todos in string lib, note the similarity between
+// TODO: note the similarity between
 // filtering filter_unprintable_characters and filter_control_characters, it
 // really seems strange here and unclear why there is a distinction. At least
 // describe the distinction, and then think about doing away with it.
+
+// TODO: (similar as above, moved from other file) in db_sanitize_entry, now
+// that filter_unprintable_characters exists, I want to also filter such
+// characters from input strings like author/title/etc. However it overlaps with
+// the call to filter_control_characters here. There is some redundant work
+// going on. Also, in a sense, string.filter_control_characters is now
+// inaccurate. What I want is one function that strips binary characters except
+// important ones, and then a second function that replaces or removes certain
+// important binary characters (e.g. remove line breaks from author string).
+// Something like 'string_replace_formatting_characters'.
 
 // TODO: maybe this should not clone, and become impure. Then the caller can
 // decide to call this on a clone, so the caller can decide whether to clone,
@@ -47,7 +58,7 @@ export function db_sanitize_entry(
 
   if (output_entry.author) {
     let author = output_entry.author;
-    author = string.filter_control_characters(author);
+    author = filter_control_characters(author);
     author = replace_tags(author, '');
     author = condense_whitespace(author);
     author = truncate_html(author, author_max_length);
@@ -63,7 +74,7 @@ export function db_sanitize_entry(
 
   if (output_entry.title) {
     let title = output_entry.title;
-    title = string.filter_control_characters(title);
+    title = filter_control_characters(title);
     title = replace_tags(title, '');
     title = condense_whitespace(title);
     title = truncate_html(title, title_max_length);

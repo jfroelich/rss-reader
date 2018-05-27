@@ -2,9 +2,9 @@ import {create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
 import {replace_tags} from '/src/lib/html/replace-tags.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
+import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import {list_peek} from '/src/lib/lang/list.js';
-import {filter_control_characters} from '/src/lib/lang/string.js';
 
 // TODO: create modules for sanitize and validate, require caller to explicitly
 // call those functions as additional optional boilerplate, and then deprecate
@@ -99,6 +99,7 @@ function is_valid_feed(feed) {
   return true;
 }
 
+// TODO: this function should probably still be defined in its own module
 function sanitize_feed(feed, options) {
   let title_max_length = options.title_max_length,
       description_max_length = options.description_max_length;

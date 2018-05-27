@@ -38,14 +38,6 @@ generally faster and I assume I can always be careful
 
 ### TODOs
 * I feel like this should eventually be renamed, entry is too abstract of a name
-* in db_sanitize_entry, now that filter_unprintable_characters exists, I want to
-also filter such characters from input strings like author/title/etc. However it
-overlaps with the call to string.filter_control_characters here. There is some
-redundant work going on. Also, in a sense, string.filter_control_characters is
-now inaccurate. What I want is one function that strips binary characters except
-important ones, and then a second function that replaces or removes certain
-important binary characters (e.g. remove line breaks from author string).
-Something like 'string_replace_formatting_characters'.
 * Implement `db_validate_entry`. Check required properties? This function is
 specifically validation for storage, so maybe I should have constraints like the
 urls list must have at least one entry. In addition, for each entry property,
