@@ -1,7 +1,7 @@
 import {create_entry} from '/src/entry.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {replace_tags} from '/src/lib/html/replace-tags.js';
-import {filter_empty_properties} from '/src/lib/lang/object.js';
+import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import * as string from '/src/lib/lang/string.js';
 
 // TODO: review whether filtering empty properties should be implicit in
