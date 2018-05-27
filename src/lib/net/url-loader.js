@@ -1,4 +1,4 @@
-import * as mime from '/src/lib/mime.js';
+import {parse_content_type} from '/src/lib/mime.js';
 
 // Provides functionality for loading a resource via its URL. This module exists
 // primarily because:
@@ -6,7 +6,6 @@ import * as mime from '/src/lib/mime.js';
 // * The native `response.redirected` property is weird
 // * Stricter mime type checking of `Accept` header (which seems to be ignored)
 // TODO: abort-able/cancelable fetching
-
 
 // Fictional codes for responses with errors. Codes must be in the range
 // [200..599] or Chrome whines about it and throws a RangeError
@@ -101,7 +100,7 @@ export async function load(url, options = {}, policy = default_policy) {
 
   if (types && types.length && response.ok) {
     const content_type = response.headers.get('Content-Type');
-    const mime_type = mime.parse_content_type(content_type);
+    const mime_type = parse_content_type(content_type);
     if (!types.includes(mime_type)) {
       console.debug('Unacceptable mime type', mime_type, url.href);
       return create_error_response(STATUS_UNACCEPTABLE);
