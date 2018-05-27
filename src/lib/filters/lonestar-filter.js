@@ -1,8 +1,8 @@
-import {is_external_url} from '/src/lib/is-external-url.js';
 import {element_is_hidden_inline} from '/src/lib/dom/element-is-hidden-inline.js';
 import {remove_image} from '/src/lib/dom/remove-image.js';
 import {filter_anchor_noref} from '/src/lib/filters/filter-anchor-noref.js';
 import {filter_pings} from '/src/lib/filters/filter-pings.js';
+import {is_external_url} from '/src/lib/net/is-external-url.js';
 
 // The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
 // can be found here: https://youtu.be/rGvblGCD7qM
