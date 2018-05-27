@@ -1,4 +1,4 @@
-import {element_coerce} from '/src/lib/dom/coerce-element.js';
+import {coerce_element} from '/src/lib/dom/coerce-element.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
 
@@ -9,7 +9,7 @@ export async function element_coerce_test() {
   // Replace the as with bs
   const anchors = doc.querySelectorAll('a');
   for (const a of anchors) {
-    element_coerce(a, 'b', true);
+    coerce_element(a, 'b', true);
   }
 
   // Assert that a was replaced with b and that no extra junk was inserted
@@ -22,7 +22,7 @@ export async function element_coerce_test() {
   // fictional elements, as c is not a standard element.
   const bolds = doc.querySelectorAll('b');
   for (const b of bolds) {
-    element_coerce(b, 'c', true);
+    coerce_element(b, 'c', true);
   }
   expected = '<html><head></head><body><p></p><c></c></body></html>';
   assert(doc.documentElement.outerHTML === expected);

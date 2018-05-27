@@ -1,4 +1,4 @@
-import {element_coerce} from '/src/lib/dom/coerce-element.js';
+import {coerce_element} from '/src/lib/dom/coerce-element.js';
 
 // TODO: add console parameter
 // TODO: add tests. Or at least state why test not needed
@@ -55,7 +55,7 @@ export function condense_tagnames(document, copy_attrs_flag) {
   // Note that this uses querySelectorAll over getElementsByTagName because of
   // how much simpler it is to iterate forward over the collection and perform
   // mutations during iteration. I get to use for-of, which is terse and
-  // convenient. element_coerce implicitly does things like remove and create
+  // convenient. coerce_element implicitly does things like remove and create
   // elements in the dom tree, and this totally screws up the 'static' nature of
   // getElementsByTagName. I am not even sure if querySelectorAll is much slower
   // than getElementsByTagName because the relative performance of each seems to
@@ -64,12 +64,12 @@ export function condense_tagnames(document, copy_attrs_flag) {
   // strong => b
   const strong_elements = document.body.querySelectorAll('strong');
   for (const element of strong_elements) {
-    element_coerce(element, 'b', copy_attrs_flag);
+    coerce_element(element, 'b', copy_attrs_flag);
   }
 
   // em => i
   const em_elements = document.body.querySelectorAll('em');
   for (const element of em_elements) {
-    element_coerce(element, 'i', copy_attrs_flag);
+    coerce_element(element, 'i', copy_attrs_flag);
   }
 }

@@ -1,4 +1,4 @@
-// `element_coerce` renames an element. An element's name indicates the
+// `coerce_element` renames an element. An element's name indicates the
 // element's type. Hence the name of this function, because this effectively
 // changes the type of the element. The element's child nodes are retained,
 // generally without regard to whether the new parent-child relations are
@@ -32,7 +32,7 @@
 // TODO: add console parameter?
 // TODO: rename to coerce-element (both file and function)
 
-export function element_coerce(element, new_name, copy_attributes = true) {
+export function coerce_element(element, new_name, copy_attributes = true) {
   if (!(element instanceof Element)) {
     throw new TypeError('element is not an Element');
   }
