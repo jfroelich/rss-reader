@@ -1,4 +1,4 @@
-import * as srcset from '/src/lib/dom/srcset.js';
+import {parse_srcset} from '/src/lib/dom/parse-srcset.js';
 
 // Transforms responsive images in document content. An image is 'responsive' if
 // it uses a srcset instead of a src, such that the actual image used is derived
@@ -28,7 +28,7 @@ function image_find_best_srcset_descriptor(image) {
     return;
   }
 
-  const descriptors = srcset.parse(srcset_attr_value);
+  const descriptors = parse_srcset(srcset_attr_value);
 
   // For the time being, the preference is whatever is first, no special
   // handling of descriptor.d, and only one dimension needed

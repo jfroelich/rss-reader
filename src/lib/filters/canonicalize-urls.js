@@ -1,4 +1,5 @@
-import * as srcset from '/src/lib/dom/srcset.js';
+import {parse_srcset} from '/src/lib/dom/parse-srcset.js';
+import {serialize_srcset} from '/src/lib/dom/serialize-srcset.js';
 
 // TODO: if a url cannot be resolved, it should be replaced with empty-string.
 // In other words, empty-string is the canonical form of an invalid-url.
@@ -96,7 +97,7 @@ function resolve_attr(element, base_url) {
 }
 
 function resolve_srcset(element, base_url) {
-  const descriptors = srcset.parse(element.getAttribute('srcset'));
+  const descriptors = parse_srcset(element.getAttribute('srcset'));
 
   let change_count = 0;
   for (const descriptor of descriptors) {
@@ -108,7 +109,7 @@ function resolve_srcset(element, base_url) {
   }
 
   if (change_count) {
-    const new_value = srcset.serialize(descriptors);
+    const new_value = serialize_srcset(descriptors);
     if (new_value) {
       element.setAttribute('srcset', new_value);
     }
