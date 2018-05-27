@@ -1,7 +1,7 @@
 import {db_open} from '/src/db/db-open.js';
 import {import_opml} from '/src/import-opml.js';
 import {idb_remove} from '/src/lib/idb.js';
-import {parse as parse_opml} from '/src/lib/opml-parser.js';
+import {parse_opml} from '/src/lib/parse-opml.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: finish implementation. at the moment this basically just tests if this

@@ -1,4 +1,4 @@
-import {parse as parse_opml} from '/src/lib/opml-parser.js';
+import {parse_opml} from '/src/lib/parse-opml.js';
 import {subscribe} from '/src/subscribe.js';
 
 // TODO: test, or write a test, a real one this time
