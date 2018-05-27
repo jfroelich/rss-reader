@@ -4,7 +4,7 @@ import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
-import * as string from '/src/lib/lang/string.js';
+import {filter_unprintable_characters} from '/src/lib/lang/filter-unprintable-characters.js';
 
 // TODO: review whether filtering empty properties should be implicit in
 // sanitization or instead an explicit concern of the caller that is reframed as
@@ -31,7 +31,7 @@ import * as string from '/src/lib/lang/string.js';
 // that filter_unprintable_characters exists, I want to also filter such
 // characters from input strings like author/title/etc. However it overlaps with
 // the call to filter_control_characters here. There is some redundant work
-// going on. Also, in a sense, string.filter_control_characters is now
+// going on. Also, in a sense, filter_control_characters is now
 // inaccurate. What I want is one function that strips binary characters except
 // important ones, and then a second function that replaces or removes certain
 // important binary characters (e.g. remove line breaks from author string).
@@ -67,7 +67,7 @@ export function db_sanitize_entry(
 
   if (output_entry.content) {
     let content = output_entry.content;
-    content = string.filter_unprintable_characters(content);
+    content = filter_unprintable_characters(content);
     content = truncate_html(content, content_max_length);
     output_entry.content = content;
   }
