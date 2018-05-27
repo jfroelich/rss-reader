@@ -3,8 +3,8 @@ import {db_write_feed} from '/src/db/db-write-feed.js';
 import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
 import {append_feed_url, coerce_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
-import {parse as parse_feed} from '/src/lib/feed-parser.js';
 import {list_peek} from '/src/lib/lang/list.js';
+import {parse_feed} from '/src/lib/parse-feed.js';
 import {url_did_change} from '/src/lib/url-loader.js';
 import {notify} from '/src/notify.js';
 

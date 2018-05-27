@@ -3,8 +3,8 @@ import {db_write_feed} from '/src/db/db-write-feed.js';
 import {append_entry_url, create_entry} from '/src/entry.js';
 import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
-import * as feed_parser from '/src/lib/feed-parser.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
+import {parse_feed} from '/src/lib/parse-feed.js';
 import * as url_loader from '/src/lib/url-loader.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
@@ -76,7 +76,7 @@ export async function poll_feed(
   const skip_entries = false, resolve_urls = true;
   let parsed_feed;
   try {
-    parsed_feed = feed_parser.parse(response_text, skip_entries, resolve_urls);
+    parsed_feed = parse_feed(response_text, skip_entries, resolve_urls);
   } catch (error) {
     console.debug('Error parsing feed', tail_url.href, error);
     let status;
