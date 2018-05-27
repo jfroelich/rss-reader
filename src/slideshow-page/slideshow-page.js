@@ -13,7 +13,7 @@ import {console_stub} from '/src/lib/console-stub.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
-import {date_format} from '/src/lib/lang/date.js';
+import {format_date} from '/src/lib/lang/format-date.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {slideshow_export_opml} from '/src/slideshow-page/export-opml.js';
@@ -408,7 +408,7 @@ function create_feed_source_element(entry) {
   buffer.push(entry.author || 'Unknown author');
   if (entry.datePublished) {
     buffer.push(' on ');
-    buffer.push(date_format(entry.datePublished));
+    buffer.push(format_date(entry.datePublished));
   }
   details.textContent = buffer.join('');
   source_element.appendChild(details);

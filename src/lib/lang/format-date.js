@@ -1,16 +1,8 @@
-/*
-
-# date
-
-Provides various date utility functions.
-
-### TODOs
-* probably should deprecate, too simple
-
-
-*/
-
-export function date_format(date) {
+// Return a date as a formatted string. This is an opinionated implementation
+// that is intended to be very simple
+// TODO: perhaps it is too simple and should exist in the app view and not as a
+// general lib
+export function format_date(date) {
   if (!(date instanceof Date)) {
     return 'Invalid date';
   }
