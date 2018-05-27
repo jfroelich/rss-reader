@@ -4,7 +4,7 @@ import {append_entry_url, create_entry} from '/src/entry.js';
 import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
-import * as url_loader from '/src/lib/net/url-loader.js';
+import {STATUS_OFFLINE, STATUS_TIMEOUT} from '/src/lib/net/load-url.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
@@ -196,8 +196,7 @@ function handle_fetch_success(feed) {
 async function handle_error(
     rconn, channel, status, feed, type, deactivation_threshold) {
   // Ignore ephemeral errors
-  if (status === url_loader.STATUS_TIMEOUT ||
-      status === url_loader.STATUS_OFFLINE) {
+  if (status === STATUS_TIMEOUT || status === STATUS_OFFLINE) {
     return;
   }
 

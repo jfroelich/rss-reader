@@ -1,4 +1,4 @@
-import * as url_loader from '/src/lib/net/url-loader.js';
+import {load_url} from '/src/lib/net/load-url.js';
 
 const image_mime_types = [
   'application/octet-stream', 'image/x-icon', 'image/jpeg', 'image/gif',
@@ -17,5 +17,5 @@ export function fetch_image(url, options) {
   // fetch_image and then forward it?
   let undefined_policy;
 
-  return url_loader.load(url, options_clone, undefined_policy);
+  return load_url(url, options_clone, undefined_policy);
 }

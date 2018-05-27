@@ -1,5 +1,5 @@
 import {fetch_policy} from '/src/fetch-policy.js';
-import {load} from '/src/lib/net/url-loader.js';
+import {load_url} from '/src/lib/net/load-url.js';
 
 /*
 # fetch
@@ -20,7 +20,7 @@ const html_mime_types = ['text/html'];
 
 export function fetch_html(url, timeout) {
   const options = {timeout: timeout, types: html_mime_types};
-  return load(url, options, fetch_policy);
+  return load_url(url, options, fetch_policy);
 }
 
 const feed_mime_types = [
@@ -30,5 +30,5 @@ const feed_mime_types = [
 
 export function fetch_feed(url, timeout) {
   const options = {timeout: timeout, types: feed_mime_types};
-  return load(url, options, fetch_policy);
+  return load_url(url, options, fetch_policy);
 }

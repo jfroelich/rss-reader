@@ -3,8 +3,8 @@ import {parse_html} from '/src/lib/html/parse-html.js';
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 import * as mime from '/src/lib/mime.js';
 import {fetch_image} from '/src/lib/net/fetch-image.js';
+import {create_error_response, load_url, STATUS_RANGE_ERROR} from '/src/lib/net/load-url.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
-import * as url_loader from '/src/lib/net/url-loader.js';
 
 // TODO: lib modules should not depend on app modules
 
@@ -401,7 +401,7 @@ FaviconService.prototype.head_image = async function(url) {
   const response = await fetch_image(url, options);
   if (response.ok && !this.in_range(response)) {
     this.console.debug('image size not in range', url.href, size);
-    return url_loader.create_error_response(url_loader.STATUS_RANGE_ERROR);
+    return create_error_response(STATUS_RANGE_ERROR);
   }
   return response;
 };

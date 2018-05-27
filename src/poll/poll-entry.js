@@ -11,7 +11,6 @@ import {parse_html} from '/src/lib/html/parse-html.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
-import * as url_loader from '/src/lib/net/url-loader.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
 import {transform_document} from '/src/transform-document.js';
 

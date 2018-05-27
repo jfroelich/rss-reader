@@ -15,12 +15,12 @@ import {filter_unprintable_characters_test} from '/src/tests/filter-unprintable-
 import {html_truncate_test} from '/src/tests/html-truncate-test.js';
 import {idb_test} from '/src/tests/idb-test.js';
 import {import_opml_test} from '/src/tests/import-opml-test.js';
+import {load_url_test} from '/src/tests/load-url-test.js';
 import {mime_test} from '/src/tests/mime-test.js';
 import {rewrite_url_test} from '/src/tests/rewrite-url-test.js';
 import {set_document_base_uri_test} from '/src/tests/set-document-base-uri-test.js';
 import {sniff_test} from '/src/tests/sniff-test.js';
 import {subscribe_test} from '/src/tests/subscribe-test.js';
-import {url_loader_test} from '/src/tests/url-loader-test.js';
 
 // Tests must be promise returning functions
 
@@ -77,7 +77,7 @@ const test_registry = [
   set_document_base_uri_test,
   sniff_test,
   subscribe_test,
-  url_loader_test
+  load_url_test
 ];
 // clang-format on
 

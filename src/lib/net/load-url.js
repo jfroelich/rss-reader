@@ -44,7 +44,7 @@ const default_policy = {
   }
 };
 
-export async function load(url, options = {}, policy = default_policy) {
+export async function load_url(url, options = {}, policy = default_policy) {
   if (!('href' in url)) {
     throw new TypeError('url is not a URL: ' + url);
   }
