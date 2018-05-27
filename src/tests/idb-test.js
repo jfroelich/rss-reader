@@ -1,5 +1,5 @@
-import {indexeddb_open} from '/src/lib/indexeddb-open.js';
-import {indexeddb_remove} from '/src/lib/indexeddb-remove.js';
+import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
+import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
 
 // NOTE: the assert here is implied. does the function execute without rejection

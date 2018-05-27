@@ -2,7 +2,7 @@ import {config_db_name, config_db_open_timeout, config_db_version} from '/src/co
 import {ENTRY_MAGIC} from '/src/entry.js';
 import {FEED_MAGIC} from '/src/feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
-import {indexeddb_open} from '/src/lib/indexeddb-open.js';
+import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 
 // Opens a connection to the reader database.
 //

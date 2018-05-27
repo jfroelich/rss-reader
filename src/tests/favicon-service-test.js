@@ -1,5 +1,5 @@
 import {FaviconService} from '/src/lib/favicon-service.js';
-import {indexeddb_remove} from '/src/lib/indexeddb-remove.js';
+import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: this needs to be implemented using local files

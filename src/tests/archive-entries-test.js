@@ -1,7 +1,7 @@
 import {db_archive_entries} from '/src/db/db-archive-entries.js';
 import {db_open} from '/src/db/db-open.js';
 import {console_stub} from '/src/lib/console-stub.js';
-import {indexeddb_remove} from '/src/lib/indexeddb-remove.js';
+import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: actually assert something, what am I trying to test other than 'does it

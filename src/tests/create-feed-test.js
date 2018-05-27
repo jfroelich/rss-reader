@@ -3,7 +3,7 @@ import {db_find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
 import {db_open} from '/src/db/db-open.js';
 import {db_write_feed} from '/src/db/db-write-feed.js';
 import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
-import {indexeddb_remove} from '/src/lib/indexeddb-remove.js';
+import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {list_is_empty} from '/src/lib/lang/list.js';
 import {assert} from '/src/tests/assert.js';
 
