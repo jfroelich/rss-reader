@@ -8,7 +8,7 @@ import {db_open} from '/src/db/db-open.js';
 import {db_write_feed_property} from '/src/db/db-write-feed-property.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {console_stub} from '/src/lib/console-stub.js';
-import {element_fade} from '/src/lib/dom/fade-element.js';
+import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import * as perm from '/src/lib/permissions.js';
@@ -33,11 +33,11 @@ I plan to have options page no longer provide configurable display settings
 
 # TODO: submonitor
 * instead of removing and re-adding, reset and reuse
-* when showing the submonitor why not just rely on element_fade's ability to
+* when showing the submonitor why not just rely on fade_element's ability to
 handle the situation of an element without an explicit opacity? My instinct is
-that this was a leftover setting from back when I was developing element_fade
+that this was a leftover setting from back when I was developing fade_element
 and was running into the unexpected situation of an element that did not have an
-opacity set, but I know that I've since rectified element_fade to handle that
+opacity set, but I know that I've since rectified fade_element to handle that
 case, so I do not think this is needed. In fact I am relying on that behavior in
 several other places so this is rather inconsistent. Inconsistency is bad
 
@@ -123,7 +123,7 @@ async function subscription_monitor_hide() {
   }
 
   const duration_secs = 2, delay_secs = 1;
-  await element_fade(monitor_element, duration_secs, delay_secs);
+  await fade_element(monitor_element, duration_secs, delay_secs);
   monitor_element.remove();
 }
 
@@ -147,7 +147,7 @@ export function error_message_show(message, fade) {
     error_element.style.opacity = '0';
     document.body.appendChild(error_element);
     const duration = 1, delay = 0;
-    element_fade(container, duration, delay);
+    fade_element(container, duration, delay);
   } else {
     error_element.style.opacity = '1';
     error_element.style.display = 'block';
