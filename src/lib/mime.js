@@ -1,4 +1,4 @@
-import * as string from '/src/lib/lang/string.js';
+import {filter_whitespace} from '/src/lib/lang/filter-whitespace.js';
 
 /*
 # mime
@@ -63,7 +63,7 @@ export function parse_content_type(content_type) {
 }
 
 function normalize(mime_type) {
-  return string.filter_whitespace(mime_type).toLowerCase();
+  return filter_whitespace(mime_type).toLowerCase();
 }
 
 export function is_mime_type(value) {

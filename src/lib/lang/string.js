@@ -1,8 +1,4 @@
 /*
-
-# string
-String utilities.
-
 ### filter_unprintable_characters notes
 * \t \u0009 9, \n \u000a 10, \f \u000c 12, \r \u000d 13
 * The regex matches 0-8, 11, and 14-31
@@ -31,13 +27,7 @@ rare.
 // http://stackoverflow.com/questions/4324790
 // http://stackoverflow.com/questions/21284228
 // http://stackoverflow.com/questions/24229262
-
 */
-
-
-export function filter_whitespace(string) {
-  return string.replace(/\s+/g, '');
-}
 
 export function condense_whitespace(string) {
   return string.replace(/\s{2,}/g, ' ');
