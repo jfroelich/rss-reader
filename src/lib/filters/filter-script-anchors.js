@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 
 // TODO: HTMLAnchorElement supports element.protocol. I wonder if accessing
 // protocol by property is faster than using a regex on the attribute value.
@@ -76,7 +76,7 @@ export function filter_script_anchors(document) {
   for (const anchor of anchors) {
     const href = anchor.getAttribute('href');
     if (href && href.length > js_protocol_len && pattern.test(href)) {
-      element_unwrap(anchor);
+      unwrap_element(anchor);
     }
   }
 }

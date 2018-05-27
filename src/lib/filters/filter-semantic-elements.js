@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 
 // TODO: this is over-specialization. This should be using some generic
 // unwrap-elements-matching-selector helper. Right now this is akin to creating
@@ -10,7 +10,7 @@ export function filter_semantic_elements(document) {
     const selector = 'article, aside, footer, header, main, section';
     const elements = document.body.querySelectorAll(selector);
     for (const element of elements) {
-      element_unwrap(element);
+      unwrap_element(element);
     }
   }
 }

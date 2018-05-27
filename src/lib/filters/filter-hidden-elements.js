@@ -1,5 +1,5 @@
 import {element_is_hidden_inline} from '/src/lib/dom/element-is-hidden-inline.js';
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 import {color_contrast_filter} from '/src/lib/filters/color-contrast-filter.js';
 
 // Removes hidden elements from a document. This filter is impure in that it
@@ -68,7 +68,7 @@ export function filter_hidden_elements(document, matte, mcr) {
   const elements = body.querySelectorAll('*');
   for (const element of elements) {
     if (body.contains(element) && element_is_hidden_inline(element)) {
-      element_unwrap(element);
+      unwrap_element(element);
     }
   }
 

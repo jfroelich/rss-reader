@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 
 // TODO: deprecate assert helper for now
 // TODO: maybe remove the assertion all together as it is too paranoid
@@ -20,7 +20,7 @@ export function filter_emphasis(document, text_length_max) {
     const elements = document.body.querySelectorAll('b, big, em, i, strong');
     for (const element of elements) {
       if (get_emphasis_length(element) > text_length_max) {
-        element_unwrap(element);
+        unwrap_element(element);
       }
     }
   }

@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 
 export function filter_misnested_elements(document) {
   if (!document.body) {
@@ -13,7 +13,7 @@ export function filter_misnested_elements(document) {
 
   const descendant_anchors_of_anchors = document.body.querySelectorAll('a a');
   for (const descendant_anchor of descendant_anchors_of_anchors) {
-    element_unwrap(descendant_anchor);
+    unwrap_element(descendant_anchor);
   }
 
   const captions = document.body.querySelectorAll('figcaption');

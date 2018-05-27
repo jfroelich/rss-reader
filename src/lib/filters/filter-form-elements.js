@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 
 // Removes or changes form-related elements from the document
 export function filter_form_elements(document) {
@@ -18,7 +18,7 @@ export function filter_form_elements(document) {
   // real content, so removing it would be data loss. So unwrap instead.
   const forms = body.querySelectorAll('form');
   for (const form of forms) {
-    element_unwrap(form);
+    unwrap_element(form);
   }
 
   // It isn't really clear to me whether labels should stay or go, but for now,
@@ -27,7 +27,7 @@ export function filter_form_elements(document) {
   // thing they correspond to no longer exists.
   const labels = body.querySelectorAll('label');
   for (const label of labels) {
-    element_unwrap(label);
+    unwrap_element(label);
   }
 
   // TODO: I should also consider removing label-like elements that an author

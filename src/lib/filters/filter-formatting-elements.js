@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 
 const formatting_elements_selector = [
   'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend',
@@ -11,7 +11,7 @@ export function filter_formatting_elements(document) {
     const elements =
         document.body.querySelectorAll(formatting_elements_selector);
     for (const element of elements) {
-      element_unwrap(element);
+      unwrap_element(element);
     }
   }
 }

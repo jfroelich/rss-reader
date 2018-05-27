@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 import {is_leaf_node} from '/src/lib/filters/node-is-leaf.js';
 
 
@@ -8,7 +8,7 @@ export function filter_tables(document, table_row_scan_max) {
     const elements = document.body.querySelectorAll(
         'colgroup, hgroup, multicol, tbody, tfoot, thead');
     for (const element of elements) {
-      element_unwrap(element);
+      unwrap_element(element);
     }
 
     const tables = document.body.querySelectorAll('table');

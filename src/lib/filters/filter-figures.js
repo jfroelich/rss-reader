@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 
 export function filter_figures(document) {
   if (document.body) {
@@ -9,10 +9,10 @@ export function filter_figures(document) {
         if (figure.firstElementChild.localName === 'figcaption') {
           figure.remove();
         } else {
-          element_unwrap(figure);
+          unwrap_element(figure);
         }
       } else if (child_count === 0) {
-        element_unwrap(figure);
+        unwrap_element(figure);
       }
     }
   }

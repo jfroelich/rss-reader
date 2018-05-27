@@ -1,11 +1,11 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 
 export function filter_formatting_anchors(document) {
   if (document.body) {
     const anchors = document.body.querySelectorAll('a');
     for (const anchor of anchors) {
       if (!anchor.hasAttribute('href')) {
-        element_unwrap(anchor);
+        unwrap_element(anchor);
       }
     }
   }

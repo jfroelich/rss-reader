@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 
 // The remove function detaches an image element from its containing document,
 // and in addition, possibly affects other elements that lose purpose as a
@@ -86,7 +86,7 @@ export function remove_image(image) {
       caption.remove();
     }
 
-    element_unwrap(figure);
+    unwrap_element(figure);
   }
 
   // Similar to figure, picture may be used as general container, so unwrap
@@ -99,7 +99,7 @@ export function remove_image(image) {
       source.remove();
     }
 
-    element_unwrap(picture);
+    unwrap_element(picture);
   }
 
   image.remove();

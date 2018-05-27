@@ -1,4 +1,4 @@
-import {element_unwrap} from '/src/lib/dom/element-unwrap.js';
+import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 
 // TODO: this is revealing a ton of garbage and generally not helping, maybe it
 // is better to go back to removal? But if I do removal how do I still support
@@ -12,7 +12,7 @@ export function filter_noscript_elements(document) {
   if (document.body) {
     const noscripts = document.body.querySelectorAll('noscript');
     for (const noscript of noscripts) {
-      element_unwrap(noscript);
+      unwrap_element(noscript);
     }
   }
 }
