@@ -3,6 +3,7 @@ import {fetch_image} from '/src/lib/fetch-image.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import {indexeddb_open} from '/src/lib/indexeddb-open.js';
 import * as mime from '/src/lib/mime.js';
+import {url_did_change} from '/src/lib/net/url-did-change.js';
 import * as url_loader from '/src/lib/url-loader.js';
 
 // TODO: lib modules should not depend on app modules
@@ -114,7 +115,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   let response_url;
   if (response && response.ok && response.url) {
     response_url = new URL(response.url);
-    if (url_loader.url_did_change(url, response_url)) {
+    if (url_did_change(url, response_url)) {
       if (response_url.origin !== url.origin) {
         origin_url = new URL(response_url.origin);
       }

@@ -9,6 +9,7 @@ import {fetch_html} from '/src/fetch.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
+import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
 import * as sniff from '/src/lib/sniff.js';
 import * as url_loader from '/src/lib/url-loader.js';
@@ -68,7 +69,7 @@ async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {
 
   const request_url = new URL(list_peek(entry.urls));
   const response_url = new URL(response.url);
-  if (!url_loader.url_did_change(request_url, response_url)) {
+  if (!url_did_change(request_url, response_url)) {
     return false;
   }
 

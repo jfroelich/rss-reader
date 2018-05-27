@@ -5,7 +5,7 @@ import {append_feed_url, coerce_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
-import {url_did_change} from '/src/lib/url-loader.js';
+import {url_did_change} from '/src/lib/url-did-change.js';
 import {notify} from '/src/notify.js';
 
 export async function subscribe(url, options) {
