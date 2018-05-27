@@ -1,4 +1,6 @@
+import {fetch_policy} from '/src/fetch-policy.js';
 import {fetch_image_element} from '/src/lib/net/fetch-image-element.js';
+
 
 // TODO: do not assume that if an image has a source attribute that it is a
 // valid url. urls may not have been validated by other filters. This has to
@@ -92,7 +94,7 @@ async function get_image_dims(image, base_url, timeout) {
   // only throw in case of a programming error, so that it can be used together
   // with Promise.all
   try {
-    dims = await fetch_image_element(source_url, timeout);
+    dims = await fetch_image_element(source_url, timeout, fetch_policy);
   } catch (error) {
     return {image: image, reason: 'fetch-error'};
   }

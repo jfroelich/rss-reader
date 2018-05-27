@@ -1,17 +1,14 @@
-import {fetch_policy} from '/src/fetch-policy.js';
-
-// TODO: fetch policy has to be a parameter, cannot import app into libs
-
 // Fetches an image element. Returns a promise that resolves to a fetched image
 // element. Data URIs are accepted.
 // @param url {URL}
 // @param timeout {Number}
+// @param fetch_policy {object}
 // @returns {Promise}
-export async function fetch_image_element(url, timeout) {
+export async function fetch_image_element(url, timeout, fetch_policy) {
   assert(
       typeof timeout === 'undefined' || timeout === null ||
       (Number.isInteger(timeout) && timeout >= 0));
-  const fetch_promise = fetch_image_element_promise(url);
+  const fetch_promise = fetch_image_element_promise(url, fetch_policy);
   const contestants =
       timeout ? [fetch_promise, sleep(timeout)] : [fetch_promise];
   const image = await Promise.race(contestants);
@@ -19,12 +16,11 @@ export async function fetch_image_element(url, timeout) {
   return image;
 }
 
-function fetch_image_element_promise(url) {
+function fetch_image_element_promise(url, fetch_policy) {
   return new Promise((resolve, reject) => {
     assert(url instanceof URL);
     const allowed_protocols = ['data:', 'http:', 'https:'];
     assert(allowed_protocols.includes(url.protocol));
-    assert(fetch_policy.allows_url(url));
 
     // Create a proxy element within this script's document
     const proxy = new Image();
