@@ -1,4 +1,4 @@
-import * as sniff from '/src/lib/sniff.js';
+import * as sniff from '/src/lib/net/sniff.js';
 import {assert} from '/src/tests/assert.js';
 
 export async function sniff_test() {
