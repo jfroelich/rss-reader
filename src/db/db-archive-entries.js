@@ -84,13 +84,6 @@ single message containing an array of archived entry ids. The number of archived
 entries can be very large. Sending very large messages is discouraged. This
 assumes that BroadcastChannels are better tuned for sending a large number of
 small messages than a small number of large messages.
-
-### Todos
-* There is probably no need to resolve to array of entry ids. That information
-is available via the channel, so the return value is redundant. It feels like
-the return value is an unstable part of the api. It would more stable if I just
-denied access to it and changed this to a void function. I do not believe any
-callers rely on the return value.
 */
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
@@ -144,7 +137,7 @@ function txn_oncomplete(entry_ids, callback, event) {
     channel.postMessage(msg);
   }
 
-  callback(entry_ids);
+  callback();
 }
 
 function archive_entry(console, entry) {
