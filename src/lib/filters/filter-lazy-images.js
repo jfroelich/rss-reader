@@ -1,4 +1,4 @@
-import {has_source} from '/src/lib/dom/image.js';
+import {image_has_source} from '/src/lib/dom/image-has-source.js';
 
 const lazy_image_attribute_names = [
   'load-src', 'data-src', 'data-src-full16x9', 'data-src-large',
@@ -11,7 +11,7 @@ export function filter_lazy_images(document) {
   if (document.body) {
     const images = document.body.getElementsByTagName('img');
     for (const image of images) {
-      if (!has_source(image)) {
+      if (!image_has_source(image)) {
         const attr_names = image.getAttributeNames();
         for (const attr_name of lazy_image_attribute_names) {
           if (attr_names.includes(attr_name)) {

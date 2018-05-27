@@ -1,6 +1,6 @@
 import {is_external_url} from '/src/lib/cross-site.js';
 import {element_is_hidden_inline} from '/src/lib/dom/element-is-hidden-inline.js';
-import {remove as remove_image} from '/src/lib/dom/image.js';
+import {remove_image} from '/src/lib/dom/remove-image.js';
 import {filter_anchor_noref} from '/src/lib/filters/filter-anchor-noref.js';
 import {filter_pings} from '/src/lib/filters/filter-pings.js';
 

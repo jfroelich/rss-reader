@@ -54,7 +54,7 @@ export function parse_content_type(content_type) {
 
   const scpos = content_type.indexOf(';');
   let mime_type = scpos > -1 ? content_type.substring(0, scpos) : content_type;
-  if (mime_type.length > MIME_TYPE_MIN_LENGTH) {
+  if (mime_type.length >= MIME_TYPE_MIN_LENGTH) {
     mime_type = normalize(mime_type);
     if (is_mime_type(mime_type)) {
       return mime_type;

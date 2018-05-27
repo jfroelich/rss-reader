@@ -1,4 +1,4 @@
-import * as imagemod from '/src/lib/dom/image.js';
+import {remove_image} from '/src/lib/dom/remove-image.js';
 
 // TODO: merge filter_small_images and filter_large_images into a single filter
 // filter_image_by_size
@@ -9,7 +9,7 @@ export function filter_small_images(document) {
     const images = document.body.querySelectorAll('img');
     for (const image of images) {
       if (image_is_small(image)) {
-        imagemod.remove(image);
+        remove_image(image);
       }
     }
   }
