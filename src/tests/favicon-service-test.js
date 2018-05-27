@@ -1,5 +1,4 @@
 import {FaviconService} from '/src/lib/favicon-service.js';
-import * as idb from '/src/lib/idb.js';
 import {indexeddb_remove} from '/src/lib/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
 

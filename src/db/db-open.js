@@ -2,31 +2,23 @@ import {config_db_name, config_db_open_timeout, config_db_version} from '/src/co
 import {ENTRY_MAGIC} from '/src/entry.js';
 import {FEED_MAGIC} from '/src/feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
-import {idb_open} from '/src/lib/idb.js';
+import {indexeddb_open} from '/src/lib/indexeddb-open.js';
 
-/*
-# create-conn
-Opens a connection to the reader database.
-
-### Notes
-* If the database does not exist, it will be created
-* Optionally specify a timeout to limit how long to wait before considering the
-attempt to connect to the database a failure
-* The name and version parameters are both optional. If not specified, then the
-call connects to the hardcoded default database. About the only reason to ever
-specify non-default values is for testing.
-
-### TODOs
-* write docs
-* write tests
-
-*/
-
+// Opens a connection to the reader database.
+//
+// Notes:
+// * If the database does not exist, it will be created
+// * Optionally specify a timeout to limit how long to wait before considering
+// the attempt to connect to the database a failure
+// * The name and version parameters are both optional. If not specified, then
+// the call connects to the hardcoded default database. About the only reason to
+// ever specify non-default values is for testing.
+// TODO: tests
 // TODO: rather than default to config, maybe I should just export the
 // on_upgrade_needed handler too? The only alternate user other than the normal
 // app usage is the test context, and the test context is privy too using
-// idb_open, it just cannot use the upgrade handler here, for now, because it is
-// module-private.
+// indexeddb_open, it just cannot use the upgrade handler here, for now, because
+// it is module-private.
 
 export function db_open(name, version, timeout, console = console_stub) {
   // Default to config values. These are not fully hardcoded so that the
@@ -37,7 +29,7 @@ export function db_open(name, version, timeout, console = console_stub) {
   timeout = isNaN(timeout) ? config_db_open_timeout : timeout;
 
   const upgrade_bound = on_upgrade_needed.bind(this, console);
-  return idb_open(name, version, upgrade_bound, timeout, console);
+  return indexeddb_open(name, version, upgrade_bound, timeout, console);
 }
 
 function on_upgrade_needed(console, event) {

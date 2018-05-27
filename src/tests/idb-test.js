@@ -1,4 +1,4 @@
-import {idb_open} from '/src/lib/idb.js';
+import {indexeddb_open} from '/src/lib/indexeddb-open.js';
 import {indexeddb_remove} from '/src/lib/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
 
@@ -16,10 +16,9 @@ export async function idb_test() {
   const db_name = 'idb-test-foo';
   const version = 1;
   let conn, timeout, upgrade_listener;
-  conn = await idb_open(db_name, version, upgrade_listener, timeout, console);
-  console.debug('Opened database', conn.name);
-  await indexeddb_remove(db_name, console);
-  console.debug('idb_test reached completion and should not timeout');
-  return true;
+  conn = await indexeddb_open(db_name, version, upgrade_listener, timeout,
+  console); console.debug('Opened database', conn.name); await
+  indexeddb_remove(db_name, console); console.debug('idb_test reached completion
+  and should not timeout'); return true;
   */
 }

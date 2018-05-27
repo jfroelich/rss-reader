@@ -1,3 +1,12 @@
+import {fetch_html} from '/src/fetch.js';
+import {fetch_image} from '/src/lib/fetch-image.js';
+import {parse_html} from '/src/lib/html/parse-html.js';
+import {indexeddb_open} from '/src/lib/indexeddb-open.js';
+import * as mime from '/src/lib/mime.js';
+import * as url_loader from '/src/lib/url-loader.js';
+
+// TODO: lib modules should not depend on app modules
+
 
 /*
 
@@ -30,13 +39,6 @@ other lib components), this has to wait.
 
 */
 
-// TODO: lib modules should not depend on app modules
-import {fetch_html} from '/src/fetch.js';
-import {fetch_image} from '/src/lib/fetch-image.js';
-import {parse_html} from '/src/lib/html/parse-html.js';
-import * as idb from '/src/lib/idb.js';
-import * as mime from '/src/lib/mime.js';
-import * as url_loader from '/src/lib/url-loader.js';
 
 export function FaviconService() {
   this.name = 'favicon-cache';
@@ -282,7 +284,7 @@ FaviconService.prototype.find_candidate_urls = function(document) {
 };
 
 FaviconService.prototype.open = function() {
-  return idb.idb_open(
+  return indexeddb_open(
       this.name, this.version, this.onupgradeneeded, this.open_timeout);
 };
 

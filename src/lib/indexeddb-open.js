@@ -23,7 +23,7 @@ function idb_context_t() {
   this.console = console_stub;
 }
 
-export async function idb_open(
+export async function indexeddb_open(
     name, version, upgrade_listener, timeout, console = console_stub) {
   if (typeof name !== 'string') {
     throw new TypeError('Invalid database name ' + name);
