@@ -1,4 +1,4 @@
-import {is_external_url} from '/src/lib/cross-site.js';
+import {is_external_url} from '/src/lib/is-external-url.js';
 import {element_is_hidden_inline} from '/src/lib/dom/element-is-hidden-inline.js';
 import {remove_image} from '/src/lib/dom/remove-image.js';
 import {filter_anchor_noref} from '/src/lib/filters/filter-anchor-noref.js';
