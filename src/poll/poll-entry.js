@@ -12,7 +12,7 @@ import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
-import {transform_document} from '/src/transform-document.js';
+import {sanitize_document} from '/src/sanitize-document.js';
 
 // Processes an entry and possibly adds it to the database. The full-text html
 // of the entry is fetched and stored as `entry.content`.
@@ -243,12 +243,12 @@ async function update_entry_content(
     }
   }
 
-  // transform_document requires the document have document.baseURI set.
+  // sanitize_document requires the document have document.baseURI set.
   const document_url = new URL(list_peek(entry.urls));
   set_document_base_uri(document, document_url);
 
 
-  await transform_document(document, console);
+  await sanitize_document(document, console);
   entry.content = document.documentElement.outerHTML;
 }
 

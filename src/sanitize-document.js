@@ -62,7 +62,7 @@ import {fetch_policy} from '/src/fetch-policy.js';
 // TODO: Add console arg to all filters
 
 // TODO: Create a function registry, register filters, and revise
-// transform_document to iterate over the registry. Instead of hard coding, this
+// sanitize_document to iterate over the registry. Instead of hard coding, this
 // should basically just iterate over an array of filter functions. Functions
 // should be registered, along with parameters to them other than the document.
 // Registration basically just stores the filter and its arguments in an array
@@ -84,7 +84,7 @@ import {fetch_policy} from '/src/fetch-policy.js';
 // i don't need it the function would no longer need to be async, and would be
 // substantially faster.
 
-export async function transform_document(document, console) {
+export async function sanitize_document(document, console) {
   deframe(document);
   ensure_document_body(document);
   filter_iframes(document);
