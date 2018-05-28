@@ -14,7 +14,7 @@ import {list_peek} from '/src/lib/lang/list.js';
 import * as perm from '/src/lib/permissions.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
-import {page_style_onload} from '/src/slideshow-page/page-style-onload.js' l
+import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
 import {subscribe} from '/src/subscribe.js';
 
 // **Intend to deprecate**. I plan to deprecate the options page and move to a
@@ -62,7 +62,8 @@ import {subscribe} from '/src/subscribe.js';
 let current_menu_item;
 let current_section;
 
-const channel = new BroadcastChannel('reader');
+const channel = new BroadcastChannel(config.channel.name);
+console.debug('Created channel:', channel.name);
 channel.onmessage = function(event) {
   if (!event.isTrusted) {
     return;
@@ -580,6 +581,7 @@ function body_font_size_slider_onchange(event) {
     delete localStorage.BODY_FONT_SIZE;
   }
 
+  console.debug('setting body font size changed message');
   channel.postMessage({type: 'display-settings-changed'});
 }
 
@@ -691,6 +693,9 @@ function options_page_init() {
   const justify_text_checkbox = document.getElementById('justify-text');
   justify_text_checkbox.checked = 'JUSTIFY_TEXT' in localStorage;
   justify_text_checkbox.onchange = justify_text_checkbox_onchange;
+
+  const body_font_size_slider = document.getElementById('body-font-size');
+  body_font_size_slider.onchange = body_font_size_slider_onchange;
 
   const body_line_height_input = document.getElementById('body-line-height');
   body_line_height_input.oninput = body_line_height_input_oninput;
