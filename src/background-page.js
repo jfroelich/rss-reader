@@ -141,7 +141,7 @@ async function badge_init() {
 badge_init();
 
 chrome.alarms.onAlarm.addListener(function(alarm) {
-  console.debug('Alarm awoke:', alarm.name);
+  console.debug('onalarm: alarm name', alarm.name);
   localStorage.LAST_ALARM = alarm.name;
 
   switch (alarm.name) {
@@ -154,7 +154,7 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
     case 'remove-entries-missing-urls':
       handle_lost_entries_alarm(alarm).catch(console.error);
       break;
-    case 'db-remove-orphaned-entries':
+    case 'remove-orphaned-entries':
       handle_orphan_entries_alarm(alarm).catch(console.error);
       break;
     case 'refresh-feed-icons':

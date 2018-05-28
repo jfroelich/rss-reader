@@ -1,4 +1,3 @@
-import * as config from '/src/config.js';
 import {fetch_policy} from '/src/fetch-policy.js';
 import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
@@ -39,6 +38,8 @@ import {filter_unknown_attrs} from '/src/lib/filters/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/lib/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {trim_document} from '/src/lib/filters/trim-document.js';
+import {localstorage_read_float} from '/src/lib/localstorage-read-float.js';
+import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense content
@@ -91,11 +92,31 @@ export async function sanitize_document(document, console) {
   filter_comments(document);
   filter_noscript_elements(document);
 
+  // I am not doing either of these todos immediately because the current task
+  // is to transition to local storage.
+
+  // TODO: i think the sanitize_document for some of the local storage values
+  // might be overly cautious. Instead I could treat these as default settings
+  // of the filter itself. Still loaded in app, and sent from app to the lib
+  // filter. Because libs shouldn't directly interact with local storage
+  // (right?). I think so. Because that makes them difficult to reuse and test.
+  // They shouldn't interact with app settings. Really this is just how the
+  // app is choosing to persist the values. The libs can use local storage but
+  // not for app settings. Therefore the todo really is to rename
+  // sanitize_document_low_contrast_default_matte to something like
+  // filter_hidden_elements_default_matte. I use filter-hidden because this is
+  // a parameter to filter-hidden now because that encapsulates the low-contrast
+  // filter.
+
+  // TODO: the min-contrast-ratio setting name should be lowercased, and it
+  // should also be set on install
+
   // Should occur before the boilerplate filter (logic)
   // Should occur before most filters (performance)
-  filter_hidden_elements(
-      document, config.sanitize_document.contrast_default_matte,
-      localStorage.MIN_CONTRAST_RATIO);
+  const matte =
+      localstorage_read_int('sanitize_document_low_contrast_default_matte');
+  const mcr = localstorage_read_float('MIN_CONTRAST_RATIO');
+  filter_hidden_elements(document, matte, mcr);
 
   const general_blacklist = [
     'applet', 'audio',  'basefont', 'bgsound', 'command',  'datalist',
@@ -137,9 +158,9 @@ export async function sanitize_document(document, console) {
   filter_dead_images(document);
 
   // This should occur after removing telemetry and other images
-  await set_image_sizes(
-      document, config.sanitize_document.image_size_fetch_timeout,
-      fetch_policy);
+  const image_size_fetch_timeout =
+      localstorage_read_int('sanitize_document_image_size_fetch_timeout');
+  await set_image_sizes(document, image_size_fetch_timeout, fetch_policy);
 
   // This should occur after setting image sizes
   // TODO: compose into filter-images-by-size
@@ -157,8 +178,14 @@ export async function sanitize_document(document, console) {
   filter_figures(document);
   filter_container_elements(document);
   filter_lists(document);
-  filter_tables(document, config.sanitize_document.table_scan_max_rows);
-  filter_emphasis(document, config.sanitize_document.emphasis_max_length);
+
+  const table_scan_max_rows =
+      localstorage_read_int('sanitize_document_table_scan_max_rows');
+  filter_tables(document, table_scan_max_rows);
+
+  const emphasis_max_length =
+      localstorage_read_int('sanitize_document_emphasis_max_length');
+  filter_emphasis(document, emphasis_max_length);
   filter_node_whitespace(document);
 
   // This should occur after most filters
