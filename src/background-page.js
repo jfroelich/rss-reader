@@ -7,6 +7,7 @@ import {db_open} from '/src/db/db-open.js';
 import {db_remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
 import {db_remove_orphaned_entries} from '/src/db/db-remove-orphaned-entries.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
+import {register_install_listener} from '/src/install.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {open_view} from '/src/open-view.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
@@ -34,6 +35,10 @@ import {poll_feeds} from '/src/poll/poll-feeds.js';
 // * Spend some time thinking more about testing
 // * Configurable cron settings
 // TODO: move alarms back its own module, maybe call it cron.js
+
+console.debug('Initializing background page...');
+
+
 
 async function handle_compact_favicons_alarm(alarm) {
   await favicon_compact();
@@ -121,15 +126,9 @@ function query_idle_state(idle_period_secs) {
   });
 }
 
-console.debug('Initializing background page');
-
-chrome.runtime.onInstalled.addListener(async function(event) {
-  let conn = await db_open();
-  conn.close();
-
-  conn = await favicon_create_conn();
-  conn.close();
-});
+// On module load, register the install listener
+// TODO: somehow do not do this on every page load, no idea how though
+register_install_listener();
 
 chrome.browserAction.onClicked.addListener(open_view);
 
