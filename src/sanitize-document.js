@@ -1,4 +1,5 @@
 import * as config from '/src/config.js';
+import {fetch_policy} from '/src/fetch-policy.js';
 import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
 import {condense_tagnames} from '/src/lib/filters/condense-tagnames.js';
@@ -38,7 +39,6 @@ import {filter_unknown_attrs} from '/src/lib/filters/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/lib/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {trim_document} from '/src/lib/filters/trim-document.js';
-import {fetch_policy} from '/src/fetch-policy.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense content
@@ -94,7 +94,8 @@ export async function sanitize_document(document, console) {
   // Should occur before the boilerplate filter (logic)
   // Should occur before most filters (performance)
   filter_hidden_elements(
-      document, config.contrast_default_matte, localStorage.MIN_CONTRAST_RATIO);
+      document, config.sanitize_document.contrast_default_matte,
+      localStorage.MIN_CONTRAST_RATIO);
 
   const general_blacklist = [
     'applet', 'audio',  'basefont', 'bgsound', 'command',  'datalist',
@@ -137,7 +138,8 @@ export async function sanitize_document(document, console) {
 
   // This should occur after removing telemetry and other images
   await set_image_sizes(
-      document, config.config_image_size_fetch_timeout, fetch_policy);
+      document, config.sanitize_document.image_size_fetch_timeout,
+      fetch_policy);
 
   // This should occur after setting image sizes
   // TODO: compose into filter-images-by-size
@@ -155,8 +157,8 @@ export async function sanitize_document(document, console) {
   filter_figures(document);
   filter_container_elements(document);
   filter_lists(document);
-  filter_tables(document, config.table_scan_max_rows);
-  filter_emphasis(document, config.emphasis_max_length);
+  filter_tables(document, config.sanitize_document.table_scan_max_rows);
+  filter_emphasis(document, config.sanitize_document.emphasis_max_length);
   filter_node_whitespace(document);
 
   // This should occur after most filters

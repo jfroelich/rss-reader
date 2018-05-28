@@ -1,4 +1,4 @@
-import {config_channel_name} from '/src/config.js';
+import * as config from '/src/config.js';
 import {db_archive_entries} from '/src/db/db-archive-entries.js';
 import {db_open} from '/src/db/db-open.js';
 import {db_remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
@@ -27,7 +27,7 @@ async function cli_subscribe(url_string, poll = true) {
   const proms = [db_open(), favicon_create_conn()];
   [op.rconn, op.iconn] = await Promise.all(proms);
 
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console;
   op.subscribe = subscribe;
 
@@ -49,7 +49,7 @@ async function cli_subscribe(url_string, poll = true) {
 async function cli_archive_entries() {
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console;
   op.db_archive_entries = db_archive_entries;
   let max_age;
@@ -63,7 +63,7 @@ async function cli_refresh_icons() {
 
   const proms = [db_open(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
-  const channel = new BroadcastChannel(config_channel_name);
+  const channel = new BroadcastChannel(config.channel.name);
 
   const op = {};
   op.rconn = rconn;
@@ -82,7 +82,7 @@ async function cli_poll_feeds() {
 
   const rconn = await db_open();
   const iconn = await favicon_create_conn();
-  const channel = new BroadcastChannel(config_channel_name);
+  const channel = new BroadcastChannel(config.channel.name);
 
   const options = {};
   options.ignore_recency_check = true;
@@ -97,7 +97,7 @@ async function cli_poll_feeds() {
 async function cli_remove_lost_entries() {
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console;
   op.db_remove_lost_entries = db_remove_lost_entries;
   await op.db_remove_lost_entries();
@@ -108,7 +108,7 @@ async function cli_remove_lost_entries() {
 async function cli_remove_orphans() {
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console;
   op.db_remove_orphaned_entries = db_remove_orphaned_entries;
   await op.db_remove_orphaned_entries();

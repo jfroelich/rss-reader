@@ -1,4 +1,4 @@
-import {config_channel_name} from '/src/config.js';
+import * as config from '/src/config.js';
 import {assert} from '/src/tests/assert.js';
 
 // TODO: these functions need to be rewritten to not complete until actually
@@ -12,8 +12,8 @@ import {assert} from '/src/tests/assert.js';
 // TODO: these should not be using the app's real channel, that risks sending
 // real messages to the live app and causing unintended consequences. So these
 // should instead be using a mock channel name. This should be completely
-// decoupled from config_channel_name constant. Perhaps it should do a really simple
-// test that verifies the config is correct (config_channel_name is a defined string)
+// decoupled from channel_name constant. Perhaps it should do a really simple
+// test that verifies the config is correct (channel_name is a defined string)
 
 export async function create_channel_test1() {
   console.debug('%s: starting...', create_channel_test1.name);
@@ -38,10 +38,10 @@ export async function create_channel_test1() {
   // ok one thing to do would be to create one and see if it gets its own
   // message
 
-  const a = new BroadcastChannel(config_channel_name);
+  const a = new BroadcastChannel(config.channel.name);
   a.onmessage = e => console.debug('a', e.data);
 
-  const b = new BroadcastChannel(config_channel_name);
+  const b = new BroadcastChannel(config.channel.name);
   b.onmessage = e => console.debug('b', e.data);
 
   a.postMessage({hello: 'from-a-to-everyone'});
@@ -71,7 +71,7 @@ export async function create_channel_test2() {
   // code is running
 
   console.debug('test2 start');
-  const a = new BroadcastChannel(config_channel_name);
+  const a = new BroadcastChannel(config.channel.name);
   a.onmessage = e => console.debug('a', e.data);
   a.postMessage({hello: 'world'});
   setTimeout(_ => {

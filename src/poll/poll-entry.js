@@ -1,4 +1,4 @@
-import {config_inaccessible_content_descriptors} from '/src/config.js';
+import {inaccessible_content_descriptors} from '/src/config.js';
 import {db_find_entry_id_by_url} from '/src/db/db-find-entry-id-by-url.js';
 import {db_sanitize_entry} from '/src/db/db-sanitize-entry.js';
 import {db_validate_entry} from '/src/db/db-validate-entry.js';
@@ -183,7 +183,7 @@ function url_is_augmentable(url) {
 }
 
 function url_is_inaccessible_content(url) {
-  for (const desc of config_inaccessible_content_descriptors) {
+  for (const desc of inaccessible_content_descriptors) {
     if (desc.pattern && desc.pattern.test(url.hostname)) {
       return true;
     }

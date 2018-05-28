@@ -1,6 +1,6 @@
 import '/src/cli.js';
 
-import {config_channel_name, config_fonts} from '/src/config.js';
+import * as config from '/src/config.js';
 import {db_find_viewable_entries} from '/src/db/db-find-viewable-entries.js';
 import {db_for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
 import {db_for_each_viewable_entry} from '/src/db/db-for-each-viewable-entry.js';
@@ -33,7 +33,7 @@ import * as Slideshow from '/src/slideshow-page/slideshow.js';
 
 // Declare a page-lifetime channel that will listen for messages so long as the
 // page is open.
-const channel = new BroadcastChannel(config_channel_name);
+const channel = new BroadcastChannel(config.channel.name);
 
 channel.onmessage = function channel_onmessage(event) {
   if (!event.isTrusted) {
@@ -190,7 +190,7 @@ async function slide_mark_read(conn, slide) {
   const id = parseInt(slide.getAttribute('entry'), 10);
   const op = {};
   op.conn = conn;
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console_stub;
   op.db_mark_entry_read = db_mark_entry_read;
   await op.db_mark_entry_read(id);
@@ -475,7 +475,7 @@ async function refresh_anchor_onclick(event) {
 
   // Create a local channel object because apparently a channel cannot notify
   // itself (at least in Chrome 66) despite what spec states
-  const onclick_channel = new BroadcastChannel(config_channel_name);
+  const onclick_channel = new BroadcastChannel(config.channel.name);
 
   const rconn = await db_open();
   const iconn = await favicon_create_conn();
@@ -571,7 +571,7 @@ async function uploader_input_onchange(event) {
   console.log('%s: started', uploader_input_onchange.name);
   const op = {};
   [op.rconn, op.iconn] = await Promise.all([db_open(), favicon_create_conn()]);
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console;  // temporary
   op.fetch_timeout = 5 * 1000;
   op.import_opml = import_opml;
@@ -785,7 +785,7 @@ function header_font_menu_init() {
   default_option.value = '';
   default_option.textContent = 'Header Font';
   menu.appendChild(default_option);
-  for (const font_name of config_fonts) {
+  for (const font_name of config.fonts) {
     const option = document.createElement('option');
     option.value = font_name;
     option.textContent = font_name;
@@ -804,7 +804,7 @@ function body_font_menu_init() {
   default_option.value = '';
   default_option.textContent = 'Body Font';
   menu.appendChild(default_option);
-  for (const font_name of config_fonts) {
+  for (const font_name of config.fonts) {
     const option = document.createElement('option');
     option.value = font_name;
     option.textContent = font_name;

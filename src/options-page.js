@@ -1,6 +1,6 @@
 import '/src/cli.js';
 
-import {config_background_images, config_channel_name} from '/src/config.js';
+import * as config from '/src/config.js';
 import {db_delete_feed} from '/src/db/db-delete-feed.js';
 import {db_find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
 import {db_get_feeds} from '/src/db/db-get-feeds.js';
@@ -338,7 +338,7 @@ async function subscribe_form_onsubmit(event) {
   const op = {};
   op.rconn = rconn;
   op.iconn = iconn;
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console;
   op.subscribe = subscribe;
   const feed = await op.subscribe(subscribe_url, {notify: true});
@@ -360,7 +360,7 @@ async function subscribe_form_onsubmit(event) {
 async function after_subscribe_poll_feed_async(feed) {
   const conn_promises = Promise.all([db_open(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
-  const channel = new BroadcastChannel(config_channel_name);
+  const channel = new BroadcastChannel(config.channel.name);
 
   const options = {ignore_recency_check: true, notify: true};
   await poll_feed(rconn, iconn, channel, console_stub, options, feed);
@@ -422,7 +422,7 @@ async function unsubscribe_button_onclick(event) {
 
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console;  // enable logging for now (temporary)
   op.db_delete_feed = db_delete_feed;
   await op.db_delete_feed(feed_id, 'unsubscribe');
@@ -438,7 +438,7 @@ async function activate_feed_button_onclick(event) {
 
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console;
   op.write = db_write_feed_property;
   await op.write(feed_id, 'active', true);
@@ -459,7 +459,7 @@ async function deactivate_feed_button_onclick(event) {
 
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console;
   op.write = db_write_feed_property;
   await op.write(feed_id, 'active', false, {reason: 'manual'});
@@ -653,7 +653,7 @@ function options_page_init() {
 
     const current_bg_image_path = localStorage.BG_IMAGE;
     const bg_image_relative_path_offset = '/images/'.length;
-    for (const path of config_background_images) {
+    for (const path of config.background_images) {
       let option = document.createElement('option');
       option.value = path;
       option.textContent = path.substring(bg_image_relative_path_offset);

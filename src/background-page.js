@@ -1,7 +1,7 @@
 import '/src/cli.js';
 
 import {refresh_badge} from '/src/badge.js';
-import {config_channel_name} from '/src/config.js';
+import * as config from '/src/config.js';
 import {db_archive_entries} from '/src/db/db-archive-entries.js';
 import {db_open} from '/src/db/db-open.js';
 import {db_remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
@@ -42,7 +42,7 @@ async function handle_compact_favicons_alarm(alarm) {
 async function handle_archive_alarm_wakeup(alarm) {
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console_stub;
   op.db_archive_entries = db_archive_entries;
   let max_age;
@@ -54,7 +54,7 @@ async function handle_archive_alarm_wakeup(alarm) {
 async function handle_lost_entries_alarm(alarm) {
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console_stub;
   op.db_remove_lost_entries = db_remove_lost_entries;
   await op.db_remove_lost_entries();
@@ -65,7 +65,7 @@ async function handle_lost_entries_alarm(alarm) {
 async function handle_orphan_entries_alarm(alarm) {
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config_channel_name);
+  op.channel = new BroadcastChannel(config.channel.name);
   op.console = console_stub;
   op.db_remove_orphaned_entries = db_remove_orphaned_entries;
   await op.db_remove_orphaned_entries();
@@ -76,7 +76,7 @@ async function handle_orphan_entries_alarm(alarm) {
 async function handle_refresh_icons_alarm(alarm) {
   const proms = [db_open(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
-  const channel = new BroadcastChannel(config_channel_name);
+  const channel = new BroadcastChannel(config.channel.name);
 
   const op = {};
   op.rconn = rconn;
@@ -106,7 +106,7 @@ async function handle_poll_feeds_alarm(alarm) {
 
   const rconn = await db_open();
   const iconn = await favicon_create_conn();
-  const channel = new BroadcastChannel(config_channel_name);
+  const channel = new BroadcastChannel(config.channel.name);
 
   await poll_feeds(rconn, iconn, channel, console, options);
 
