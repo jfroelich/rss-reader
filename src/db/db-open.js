@@ -3,6 +3,7 @@ import {ENTRY_MAGIC} from '/src/entry.js';
 import {FEED_MAGIC} from '/src/feed.js';
 import {console_stub} from '/src/lib/console-stub.js';
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
+import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 
 // Opens a connection to the reader database.
 //
@@ -25,8 +26,8 @@ import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 // on_upgrade_needed handler with a different database name and version.
 export function db_open(name, version, timeout, console = console_stub) {
   name = typeof name === 'string' ? name : localStorage.db_name;
-  version = isNaN(version) ? localStorage.db_version : version;
-  timeout = isNaN(timeout) ? localStorage.db_open_timeout : timeout;
+  version = isNaN(version) ? localstorage_read_int('db_version') : version;
+  timeout = isNaN(timeout) ? localstorage_read_int('db_open_timeout') : timeout;
 
   const upgrade_bound = on_upgrade_needed.bind(this, console);
   return indexeddb_open(name, version, upgrade_bound, timeout, console);
