@@ -30,8 +30,7 @@ async function oninstalled(event) {
 function init_localstorage() {
   console.debug('Initializing local storage...');
 
-  // NOTE: local storage uses strings. The setter still works with other types
-  // however, other types are coerced to strings implicitly.
+  // NOTE: local storage values are strings. This relies on implicit coercion
 
   // The default background color used by the low-contrast pass
   localStorage.sanitize_document_low_contrast_default_matte = color.WHITE;
@@ -50,4 +49,19 @@ function init_localstorage() {
 
   // App broadcast channel settings
   localStorage.channel_name = 'reader';
+
+
+  // TODO: the following display configuration properties should also be
+  // initialized at this time
+
+  // localStorage.PADDING
+  // localStorage.BG_IMAGE
+  // localStorage.BG_COLOR
+  // localStorage.HEADER_FONT_FAMILY
+  // localStorage.HEADER_FONT_SIZE
+  // localStorage.BODY_FONT_FAMILY
+  // localStorage.BODY_FONT_SIZE
+  // localStorage.JUSTIFY_TEXT
+  // localStorage.BODY_LINE_HEIGHT
+  // localStorage.COLUMN_COUNT
 }
