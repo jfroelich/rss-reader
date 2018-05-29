@@ -1,6 +1,9 @@
 // TODO: rename to find-active-feeds, it is ok to keep this api style of using
 // a handler callback function
 
+// TODO: actually merge it into find-feeds, with an is-active parameter to the
+// query
+
 // Async. Queries the database for active feeds and then calls the `handle_feed`
 // function argument on each feed. The handler function is called *during*
 // iteration over the feeds in the database as each feed is visited; not later.

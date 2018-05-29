@@ -1,19 +1,13 @@
 import {create_feed, is_valid_feed_id} from '/src/feed.js';
 
-// # db-find-feed-by-url
 // Search the database for a feed with the given url. The primary use case for
 // this function is to check if a feed exists in the database with the given
 // url. In that case the `key_only` parameter should be set to true.
-
-// ### Params
-// * **conn** {IDBDatabase} an open database connection
-// * **url** {URL} the url to query
-// * **key_only** {Boolean} if true then the returned feed only contains the
+// @param conn {IDBDatabase} an open database connection
+// @param url {URL} the url to query
+// @param key_only {Boolean} if true then the returned feed only contains the
 // hidden feed magic property and the matched feed id.
-
-// ### Todos
-// * write tests
-
+// TODO: write tests
 export function db_find_feed_by_url(conn, url, key_only = false) {
   if (!(url instanceof URL)) {
     throw new TypeError('url is not a URL: ' + url);
