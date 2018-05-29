@@ -15,6 +15,7 @@ export function register_test(test_function) {
   test_registry.push(test_function);
 }
 
+// Returns an array of registered tests
 export function get_registry() {
   return test_registry;
 }

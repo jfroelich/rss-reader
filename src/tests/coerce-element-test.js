@@ -3,9 +3,7 @@ import {parse_html} from '/src/lib/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 
-// TODO: rename to coerce-element-test (file and function)
-
-async function element_coerce_test() {
+async function coerce_element_test() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';
   const doc = parse_html(input);
 
@@ -31,10 +29,12 @@ async function element_coerce_test() {
   assert(doc.documentElement.outerHTML === expected);
 
   // TODO: assert that p still exists to test that coerce does not affect
-  // elements it shouldn't affect
+  // elements it shouldn't affect (surprise side effects)
 
   // TODO: test that child nodes remain in the expected place, including both
-  // elements and text nodes
+  // elements and text nodes (surprises side effects)
+
+  // TODO: test error cases? what errors? invalid input?
 }
 
-register_test(element_coerce_test);
+register_test(coerce_element_test);

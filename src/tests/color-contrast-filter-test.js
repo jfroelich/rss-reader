@@ -6,8 +6,6 @@ import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: these tests were written to work off a live document. Instead, create
 // a local fake document, and test against it
-// NOTE: test functions must be async, but these are not async, but that is why
-// the functions are qualified as async
 
 async function color_contrast_filter_test1() {
   /*
@@ -31,7 +29,7 @@ async function color_contrast_filter_test1() {
   }*/
 }
 
-export async function color_contrast_filter_test2() {
+async function color_contrast_filter_test2() {
   /*
   const matte = color.WHITE;
 

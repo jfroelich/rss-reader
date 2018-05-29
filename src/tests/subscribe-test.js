@@ -9,7 +9,7 @@ import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: it is wrong to ping google, implement something that tests a local
-// file somehow (e.g. a feed that exists within the extension)
+// file somehow (e.g. a feed that exists within the extension folder)
 
 async function subscribe_test() {
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
@@ -25,6 +25,7 @@ async function subscribe_test() {
   const channel_stub = {};
   channel_stub.name = 'channel-stub';
   channel_stub.postMessage = _ => message_post_count++;
+  channel_stub.close = noop;
 
   const subscribe_op = {
     rconn: rconn,
@@ -43,14 +44,14 @@ async function subscribe_test() {
   assert(feed.urls.includes(url.href), 'subscribed feed missing input url');
   assert(feed.active, 'subscribed feed not initially active');
 
-  // Test the subscription sent out messages
-  assert(message_post_count, 'no message posted');
+  // Assert that the subscription sent out messages
+  assert(message_post_count > 0, 'no message posted');
 
-  // Test the new feed is findable by url
+  // Assert that the new feed is findable by url in the database
   const query = {url: url};
   assert(await db_contains_feed(rconn, query), 'cannot find feed by url');
 
-  // Test the new feed is findable by id
+  // Assert that the new feed is findable by id
   const match = await db_find_feed_by_id(rconn, feed.id);
   assert(is_feed(match), 'subscribed feed read did not emit feed type');
   assert(is_valid_feed_id(match.id), 'subscribed feed has invalid id');
@@ -58,7 +59,10 @@ async function subscribe_test() {
 
   // Cleanup
   rconn.close();
+  channel_stub.close();
   await indexeddb_remove(rconn.name);
 }
+
+function noop() {}
 
 register_test(subscribe_test);
