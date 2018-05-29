@@ -16,7 +16,7 @@ import '/src/tests/fetch-html-test.js';
 import '/src/tests/filter-publisher-test.js';
 import '/src/tests/filter-unprintable-characters-test.js';
 import '/src/tests/html-truncate-test.js';
-import '/src/tests/idb-test.js';
+import '/src/tests/indexeddb-test.js';
 import '/src/tests/import-opml-test.js';
 import '/src/tests/load-url-test.js';
 import '/src/tests/mime-test.js';
