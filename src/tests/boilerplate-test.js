@@ -10,6 +10,7 @@ import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: assert stuff, use a known test url
 // TODO: build a document in memory and test against it, don't bother with
@@ -25,11 +26,11 @@ import {assert} from '/src/tests/assert.js';
 // input that lets me paste in a url and view the result. This doesn't need to
 // cli exposed.
 
-export async function boilerplate_test() {
+async function boilerplate_test() {
   console.warn('boilerplate-test not implemented');
 }
 
-export async function legacy_boilerplate_test(url_string) {
+async function legacy_boilerplate_test(url_string) {
   const request_url = new URL(url_string);
   const response = await fetch_html(request_url);
   assert(response.ok, 'Failed to fetch ' + request_url.href);
@@ -50,3 +51,5 @@ export async function legacy_boilerplate_test(url_string) {
   await set_image_sizes(document, undefined, fetch_policy);
   boilerplate.annotate(document);
 }
+
+register_test(boilerplate_test);

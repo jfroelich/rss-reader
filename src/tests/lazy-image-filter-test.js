@@ -3,6 +3,7 @@ import {filter_dead_images} from '/src/lib/filters/filter-dead-images.js';
 import {filter_lazy_images} from '/src/lib/filters/filter-lazy-images.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: rewrite in new test format
 // TODO: rewrite without input, load a local file internally
@@ -21,3 +22,5 @@ window.test = async function(url_string) {
   // Call this subsequently because it prints out missing images
   // filter_dead_images(document);
 };
+
+// register_test(???);

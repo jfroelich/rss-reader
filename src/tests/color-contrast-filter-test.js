@@ -2,13 +2,14 @@ import * as color from '/src/lib/color.js';
 import * as css_color from '/src/lib/dom/css-color.js';
 import * as ccf from '/src/lib/filters/color-contrast-filter.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: these tests were written to work off a live document. Instead, create
 // a local fake document, and test against it
 // NOTE: test functions must be async, but these are not async, but that is why
 // the functions are qualified as async
 
-export async function color_contrast_filter_test1() {
+async function color_contrast_filter_test1() {
   /*
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
 
@@ -48,3 +49,6 @@ export async function color_contrast_filter_test2() {
   }
 */
 };
+
+register_test(color_contrast_filter_test1);
+register_test(color_contrast_filter_test2);

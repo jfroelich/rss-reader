@@ -1,7 +1,8 @@
 import {filter_unprintable_characters as f} from '/src/lib/lang/filter-unprintable-characters.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
-export async function filter_unprintable_characters_test() {
+async function filter_unprintable_characters_test() {
   for (let i = 0; i < 9; i++) {
     assert(f(String.fromCharCode(i)).length === 0);
   }
@@ -32,3 +33,5 @@ export async function filter_unprintable_characters_test() {
   assert(isNaN(f(NaN)));
   assert(f(0) === 0);
 }
+
+register_test(filter_unprintable_characters_test);

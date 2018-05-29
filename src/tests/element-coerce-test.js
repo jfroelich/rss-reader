@@ -1,8 +1,11 @@
 import {coerce_element} from '/src/lib/dom/coerce-element.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
-export async function element_coerce_test() {
+// TODO: rename to coerce-element-test (file and function)
+
+async function element_coerce_test() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';
   const doc = parse_html(input);
 
@@ -33,3 +36,5 @@ export async function element_coerce_test() {
   // TODO: test that child nodes remain in the expected place, including both
   // elements and text nodes
 }
+
+register_test(element_coerce_test);

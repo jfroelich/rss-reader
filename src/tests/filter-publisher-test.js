@@ -1,7 +1,8 @@
 import {filter_publisher as f} from '/src/lib/filter-publisher.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
-export async function filter_publisher_test() {
+async function filter_publisher_test() {
   // no delimiters found
   assert(f('Hello World') === 'Hello World');
 
@@ -51,3 +52,5 @@ export async function filter_publisher_test() {
       f('Hello World Hello World - Big News Org') ===
       'Hello World Hello World');
 }
+
+register_test(filter_publisher_test);

@@ -1,10 +1,11 @@
 import {fetch_html} from '/src/fetch.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: run on a local resource
 // TODO: cannot accept param
 
-export async function fetch_html_test() {
+async function fetch_html_test() {
   return true;
 }
 
@@ -18,3 +19,5 @@ async function test(url_string, timeout) {
   return response;
 }
 */
+
+register_test(fetch_html_test);

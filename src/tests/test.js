@@ -1,26 +1,5 @@
-import {archive_entries_test} from '/src/tests/archive-entries-test.js';
-import {boilerplate_test} from '/src/tests/boilerplate-test.js';
-import {color_contrast_filter_test1, color_contrast_filter_test2} from '/src/tests/color-contrast-filter-test.js';
-import {color_test} from '/src/tests/color-test.js';
-import {create_channel_test1, create_channel_test2} from '/src/tests/create-channel-test.js';
-import {create_feed_test} from '/src/tests/create-feed-test.js';
-import {element_coerce_test} from '/src/tests/element-coerce-test.js';
-import {empty_attribute_filter_test} from '/src/tests/empty-attribute-filter-test.js';
-import {favicon_service_test} from '/src/tests/favicon-service-test.js';
-import {feed_parser_test} from '/src/tests/feed-parser-test.js';
-import {fetch_feed_test} from '/src/tests/fetch-feed-test.js';
-import {fetch_html_test} from '/src/tests/fetch-html-test.js';
-import {filter_publisher_test} from '/src/tests/filter-publisher-test.js';
-import {filter_unprintable_characters_test} from '/src/tests/filter-unprintable-characters-test.js';
-import {html_truncate_test} from '/src/tests/html-truncate-test.js';
-import {idb_test} from '/src/tests/idb-test.js';
-import {import_opml_test} from '/src/tests/import-opml-test.js';
-import {load_url_test} from '/src/tests/load-url-test.js';
-import {mime_test} from '/src/tests/mime-test.js';
-import {rewrite_url_test} from '/src/tests/rewrite-url-test.js';
-import {set_document_base_uri_test} from '/src/tests/set-document-base-uri-test.js';
-import {sniff_test} from '/src/tests/sniff-test.js';
-import {subscribe_test} from '/src/tests/subscribe-test.js';
+import '/src/tests/test-loader.js';
+import {get_registry} from '/src/tests/test-registry.js';
 
 // Tests must be promise returning functions
 
@@ -44,42 +23,6 @@ import {subscribe_test} from '/src/tests/subscribe-test.js';
 // that there is no need to even open the console area and instead just view the
 // page to run tests
 // TODO: maybe enable tests to declare their own custom timeout
-// TODO: re-introduce a register-test function instead of hardcoding the
-// array. Managing the array is tedious. Performance is irrelevant, ergonomics
-// trumps.
-
-
-// The test registry is basically the set of all tests. For simplicity it is
-// implemented as an array, but it should be treated as a set.
-// clang-format off
-const test_registry = [
-  archive_entries_test,
-  boilerplate_test,
-  color_contrast_filter_test1,
-  color_contrast_filter_test2,
-  color_test,
-  create_channel_test1,
-  create_channel_test2,
-  create_feed_test,
-  element_coerce_test,
-  empty_attribute_filter_test,
-  favicon_service_test,
-  feed_parser_test,
-  fetch_feed_test,
-  fetch_html_test,
-  filter_publisher_test,
-  filter_unprintable_characters_test,
-  html_truncate_test,
-  idb_test,
-  import_opml_test,
-  mime_test,
-  rewrite_url_test,
-  set_document_base_uri_test,
-  sniff_test,
-  subscribe_test,
-  load_url_test
-];
-// clang-format on
 
 // Wrap the call to a test function with some extra log messages
 // Timeout the test if a timeout is specified
@@ -105,11 +48,11 @@ function deferred_rejection(test_function, time_ms) {
 }
 
 // Lookup a test function by the function's name
-function find_test_by_name(test_name) {
-  // Allow for either - or _ as separator
-  // Allow for non-normal case
-  let normal_test_name = test_name.replace(/-/g, '_').toLowerCase();
+function find_test_by_name(name) {
+  // Allow for either - or _ as separator and mixed case
+  let normal_test_name = name.replace(/-/g, '_').toLowerCase();
 
+  const test_registry = get_registry();
   for (const test_function of test_registry) {
     if (test_function.name === normal_test_name) {
       return test_function;
@@ -117,9 +60,13 @@ function find_test_by_name(test_name) {
   }
 }
 
-// name - optional, string, name of test to run, if not specified all tests run
-// timeout - optional, ms, per-test timeout value
-// parallel - optional, boolean, whether to run tests in parallel or serial
+// Run one or more tests
+//
+// @param name {String} optional, name of test to run, if not specified all
+// tests run
+// @param timeout {Number} optional, ms, per-test timeout value
+// @param parallel {Boolean} optional, whether to run tests in parallel or
+// serial, defaults to false
 async function cli_run(name, timeout = 10000, parallel) {
   if (!['undefined', 'string'].includes(typeof name)) {
     throw new TypeError('Invalid name parameter ' + name);
@@ -135,7 +82,7 @@ async function cli_run(name, timeout = 10000, parallel) {
     }
     tests = [test];
   } else {
-    tests = test_registry;
+    tests = get_registry();
   }
 
   console.log('%s: spawning %d tests', cli_run.name, tests.length);
@@ -160,19 +107,26 @@ async function cli_run(name, timeout = 10000, parallel) {
 }
 
 function cli_print_tests() {
+  const test_registry = get_registry();
   test_registry.forEach(test => console.log(test.name));
 }
 
-// Expose console commands
+function populate_test_menu() {
+  const test_registry = get_registry();
+  const test_select = document.getElementById('tests');
+  for (const test of test_registry) {
+    const option = document.createElement('option');
+    option.value = test.name;
+
+    const display_name = test.name.replace(/_/g, '-').toLowerCase();
+    option.textContent = display_name;
+    test_select.appendChild(option);
+  }
+}
+
+// On module load, expose console commands
 window.run = cli_run;
 window.print_tests = cli_print_tests;
 
-// On document load, populate the tests menu
-const test_select = document.getElementById('tests');
-for (const test of test_registry) {
-  const test_name = test.name.replace(/_/g, '-');
-  const option = document.createElement('option');
-  option.value = test_name;
-  option.textContent = test_name;
-  test_select.appendChild(option);
-}
+// On module load, populate the tests menu
+populate_test_menu();

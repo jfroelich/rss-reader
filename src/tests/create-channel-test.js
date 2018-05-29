@@ -1,5 +1,6 @@
 import * as config from '/src/config.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: these functions need to be rewritten to not complete until actually
 // complete
@@ -15,7 +16,7 @@ import {assert} from '/src/tests/assert.js';
 // decoupled from channel_name constant. Perhaps it should do a really simple
 // test that verifies the config is correct (channel_name is a defined string)
 
-export async function create_channel_test1() {
+async function create_channel_test1() {
   console.debug('%s: starting...', create_channel_test1.name);
   // When two channgels exist, both should get the same message
   // Part two of this test, is sending a message to a channel on the same page.
@@ -57,7 +58,7 @@ export async function create_channel_test1() {
       'create_channel_test1 complete but messages may be outstanding');
 }
 
-export async function create_channel_test2() {
+async function create_channel_test2() {
   // This fails, I never see the message get printed
 
   // See
@@ -80,3 +81,6 @@ export async function create_channel_test2() {
   }, 20);
   console.debug('create_channel_test2 complete (still pending possible)');
 }
+
+register_test(create_channel_test1);
+register_test(create_channel_test2);

@@ -1,10 +1,11 @@
 import {fetch_feed} from '/src/fetch.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: this should be run on a local resource
 // TODO: this cannot accept parameters
 
-export async function fetch_feed_test() {
+async function fetch_feed_test() {
   return true;
 }
 
@@ -21,3 +22,5 @@ async function test(url_string, timeout) {
   const response_text = await response.text();
   console.dir(response_text);
 }*/
+
+register_test(fetch_feed_test);

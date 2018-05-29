@@ -4,6 +4,7 @@ import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: these tests must be rewritten using new approach
 
@@ -32,6 +33,7 @@ window.test = async function(url_string) {
   await set_image_sizes(document, undefined, fetch_policy);
 };
 
+
 window.test2 = async function() {
   const html =
       '<html><body><img src="http://exercism.io/icons/brand-logo.svg">' +
@@ -42,3 +44,6 @@ window.test2 = async function() {
 
   await set_image_sizes(document, undefined, fetch_policy);
 };
+
+// register_test();
+// register_test();

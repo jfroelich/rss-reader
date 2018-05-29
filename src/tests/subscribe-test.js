@@ -6,11 +6,12 @@ import {console_stub} from '/src/lib/console-stub.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {subscribe} from '/src/subscribe.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: it is wrong to ping google, implement something that tests a local
 // file somehow (e.g. a feed that exists within the extension)
 
-export async function subscribe_test() {
+async function subscribe_test() {
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
 
   const rdb_name = 'subscribe-test';
@@ -59,3 +60,5 @@ export async function subscribe_test() {
   rconn.close();
   await indexeddb_remove(rconn.name);
 }
+
+register_test(subscribe_test);

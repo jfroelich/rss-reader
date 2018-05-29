@@ -1,6 +1,7 @@
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: rename to indexeddb-test.js to match with library file name
 
@@ -13,7 +14,7 @@ import {assert} from '/src/tests/assert.js';
 
 // NOTE: disabled this test while trying to test other things
 
-export async function idb_test() {
+async function idb_test() {
   /*
   const db_name = 'idb-test-foo';
   const version = 1;
@@ -24,3 +25,5 @@ export async function idb_test() {
   and should not timeout'); return true;
   */
 }
+
+register_test(idb_test);

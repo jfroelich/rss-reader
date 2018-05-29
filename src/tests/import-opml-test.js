@@ -3,6 +3,7 @@ import {import_opml} from '/src/import-opml.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {parse_opml} from '/src/lib/parse-opml.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: finish implementation. at the moment this basically just tests if this
 // can even run, and the subscribe always fails so cannot test results
@@ -27,7 +28,7 @@ import {assert} from '/src/tests/assert.js';
 
 // todo: use try/finally and ensure db cleaned up, maybe use a helper
 
-export async function import_opml_test() {
+async function import_opml_test() {
   // mock file, blobs 'implement' the File interface
   const opml_string = '<opml version="2.0"> <body><outline type="feed" ' +
       'xmlUrl="http://www.example.com/example.rss"/></body></opml>';
@@ -69,3 +70,5 @@ export async function import_opml_test() {
 
   await indexeddb_remove(op.rconn.name);
 }
+
+register_test(import_opml_test);

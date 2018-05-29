@@ -1,7 +1,8 @@
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
-export async function set_document_base_uri_test() {
+async function set_document_base_uri_test() {
   // If a document has no base elements, then this should add a base element
   // and that should become the baseURI value
   let title = 'no existing base';
@@ -68,3 +69,5 @@ export async function set_document_base_uri_test() {
   // TODO: test for multiple existing bases? when multiple, first one with
   // href should be the one used
 }
+
+register_test(set_document_base_uri_test);

@@ -1,7 +1,11 @@
 import {rewrite_url} from '/src/lib/rewrite-url.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
-export async function rewrite_url_test() {
+// TODO: regiser 4 independent tests instead of a single test that runs 4
+// tests. It is just 4 tests that happen to be defined in the same file.
+
+async function rewrite_url_test() {
   norewrite_test();
   google_news_test();
   techcrunch_test();
@@ -60,3 +64,5 @@ function cyclical_test() {
   let b = rewrite_url(a, rules);
   assert(b.href === 'https://techcrunch.com/foo', 'cyclical ' + b.href);
 }
+
+register_test(rewrite_url_test);

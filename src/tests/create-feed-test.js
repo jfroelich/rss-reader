@@ -6,13 +6,14 @@ import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/feed
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {list_is_empty} from '/src/lib/lang/list.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // This test exercises the db-write-feed function in the case of adding a new
 // feed object to the database. The db-write-feed function should properly store
 // the feed in the database, properly assign the feed its new id, and return the
 // expected output.
 
-export async function create_feed_test() {
+async function create_feed_test() {
   // Create a dummy feed with minimal properties
   const feed = create_feed();
   const feed_url = new URL('http://www.example.com/example.rss');
@@ -92,3 +93,5 @@ export async function create_feed_test() {
   channel.close();  // a no-op, but guard against future changes
   await indexeddb_remove(conn.name);
 }
+
+register_test(create_feed_test);

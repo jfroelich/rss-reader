@@ -1,8 +1,11 @@
 import * as color from '/src/lib/color.js';
 import {assert} from '/src/tests/assert.js';
+import {register_test} from '/src/tests/test-registry.js';
 
 // TODO: implement
 
-export async function color_test() {
+async function color_test() {
   return true;
 }
+
+register_test(color_test);
