@@ -24,9 +24,9 @@ import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 // function can still be easily overloaded in order to reuse the
 // on_upgrade_needed handler with a different database name and version.
 export function db_open(name, version, timeout, console = console_stub) {
-  name = typeof name === 'string' ? name : config.db.name;
-  version = isNaN(version) ? config.db.version : version;
-  timeout = isNaN(timeout) ? config.db.open_timeout : timeout;
+  name = typeof name === 'string' ? name : localStorage.db_name;
+  version = isNaN(version) ? localStorage.db_version : version;
+  timeout = isNaN(timeout) ? localStorage.db_open_timeout : timeout;
 
   const upgrade_bound = on_upgrade_needed.bind(this, console);
   return indexeddb_open(name, version, upgrade_bound, timeout, console);

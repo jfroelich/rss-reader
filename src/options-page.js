@@ -62,7 +62,7 @@ import {subscribe} from '/src/subscribe.js';
 let current_menu_item;
 let current_section;
 
-const channel = new BroadcastChannel(config.channel.name);
+const channel = new BroadcastChannel(localStorage.channel_name);
 console.debug('Created channel:', channel.name);
 channel.onmessage = function(event) {
   if (!event.isTrusted) {
@@ -339,7 +339,7 @@ async function subscribe_form_onsubmit(event) {
   const op = {};
   op.rconn = rconn;
   op.iconn = iconn;
-  op.channel = new BroadcastChannel(config.channel.name);
+  op.channel = new BroadcastChannel(localStorage.channel_name);
   op.console = console;
   op.subscribe = subscribe;
   const feed = await op.subscribe(subscribe_url, {notify: true});
@@ -361,7 +361,7 @@ async function subscribe_form_onsubmit(event) {
 async function after_subscribe_poll_feed_async(feed) {
   const conn_promises = Promise.all([db_open(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
-  const channel = new BroadcastChannel(config.channel.name);
+  const channel = new BroadcastChannel(localStorage.channel_name);
 
   const options = {ignore_recency_check: true, notify: true};
   await poll_feed(rconn, iconn, channel, console_stub, options, feed);
@@ -423,7 +423,7 @@ async function unsubscribe_button_onclick(event) {
 
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config.channel.name);
+  op.channel = new BroadcastChannel(localStorage.channel_name);
   op.console = console;  // enable logging for now (temporary)
   op.db_delete_feed = db_delete_feed;
   await op.db_delete_feed(feed_id, 'unsubscribe');
@@ -439,7 +439,7 @@ async function activate_feed_button_onclick(event) {
 
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config.channel.name);
+  op.channel = new BroadcastChannel(localStorage.channel_name);
   op.console = console;
   op.write = db_write_feed_property;
   await op.write(feed_id, 'active', true);
@@ -460,7 +460,7 @@ async function deactivate_feed_button_onclick(event) {
 
   const op = {};
   op.conn = await db_open();
-  op.channel = new BroadcastChannel(config.channel.name);
+  op.channel = new BroadcastChannel(localStorage.channel_name);
   op.console = console;
   op.write = db_write_feed_property;
   await op.write(feed_id, 'active', false, {reason: 'manual'});

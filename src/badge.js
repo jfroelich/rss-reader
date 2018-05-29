@@ -1,7 +1,6 @@
 import {db_count_unread_entries} from '/src/db/db-count-unread-entries.js';
 import {console_stub} from '/src/lib/console-stub.js';
 
-// TODO: rename again, go back to refresh-badge.js
 // TODO: Perhaps think of badge as a view, like the other pages or the CLI. In
 // that sense it would be reasonable to open a channel and listen for change
 // events.

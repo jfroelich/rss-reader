@@ -6,36 +6,7 @@ import * as color from '/src/lib/color.js';
 // hunting down settings dispersed among many files. In other words this design
 // is easier to maintain over time.
 
-// TODO: it is possible that this module should be redesigned to store values
-// within localStorage. At the moment this is just something to ponder. Reading
-// numbers would become less convenient. Initialization and lifetime management
-// is also unclear. I think I would initialize on app-install?
-
-// Document-filters settings
-export const sanitize_document = {
-  // The default background color used by the low-contrast pass
-  contrast_default_matte: color.WHITE,
-  // The maximum number of characters emphasized before unwrapping emphasis
-  emphasis_max_length: 200,
-  // The maximum number of rows to scan ahead when analyzing tables
-  table_scan_max_rows: 20,
-  // How long to wait (in ms) before failing when fetching images when setting
-  // image sizes
-  image_size_fetch_timeout: 3000
-};
-
-// App database settings
-export const db = {
-  name: 'reader',
-  version: 24,
-  open_timeout: 500
-};
-
-// The name of the broadcast channel through which the app sends and receives
-// messages.
-export const channel = {
-  name: 'reader'
-};
+// TODO: use local storage instead and deprecate this partially
 
 // Article backgrounds
 // TODO: the path should not be a part of the value?
