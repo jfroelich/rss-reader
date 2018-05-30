@@ -5,7 +5,8 @@ import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 // database.
 // @context-param {conn} an open database connection
 // @context-param {console} logging destination
-// @param title {String} the desired value of the opml title element
+// @param title {String} optional, the desired value of the opml title element,
+// caller is responsible for ensuring it is either falsy or a valid string
 // @throws {Error} when any context property is undefined or wrong type
 // @throws {DOMException} when a database error occurs
 // @returns {Document} returns a promise that resolves to the generated xml
@@ -19,6 +20,20 @@ import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 // loading. Rather, Do I want loading feeds to be abstracted away? Maybe the one
 // extra line is insignificant. Food for thought. It might also make more sense
 // to have this basically be completely decoupled from the database.
+//
+// Continuning that thought, if i make feeds a parameter, then this is
+// effectively no longer doing a real export. In fact this is basically just a
+// create-opml-document function in which case I should consider renaming the
+// file and the public function, and also rename the private helper that
+// currently occupies that name. Furthermore, consider that because I already
+// removed the download-file trigger in some commit several months ago, this
+// really has lost much of its original meaning. The export-opml verb concept
+// now belongs to the button click handler that is located in a higher layer
+// closer to the view. And even further more, if I make feeds param, then I no
+// longer need this.conn, so now the only context variable is this.console, and
+// now it would make more sense to have console as a parameter (defaulting to
+// console-stub), and this would obviate the need to use the function-as-object
+// approach because the parameter complexity drops substantially.
 
 // TODO: I dislike how much knowledge create_outline_element has of feed
 // structure. I want to introduce a layer of indirection that does something
@@ -35,10 +50,11 @@ import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 // calling syntax is easier to read. The approach I use now is creative, and
 // kind of cool, but it is on the idiosyncratic side. I think I should use the
 // more conventional approach. Holding off on this, because this would be a
-// sweeping change to several modules that use the same pattern.
+// sweeping change to several modules that use the same pattern. Also holding
+// off because of the recently added notes about decoupling the feed lookup.
 
 export async function export_opml(title) {
-  this.console.log('Creating opml from database', this.conn.name);
+  this.console.log('Creating opml document from database', this.conn.name);
 
   const feeds = await db_get_feeds(this.conn);
   this.console.debug('Loaded %d feeds', feeds.length);
@@ -48,7 +64,7 @@ export async function export_opml(title) {
 
   for (const feed of feeds) {
     if (list_is_empty(feed.urls)) {
-      console.warn('Skipping feed that is missing url', feed);
+      this.console.warn('Skipping feed that is missing url', feed);
     } else {
       this.console.debug('Appending feed', list_peek(feed.urls));
       body_element.appendChild(create_outline_element(feed));
@@ -58,7 +74,9 @@ export async function export_opml(title) {
   return document;
 }
 
-// implicitly-xml-flagged docs do not support document.body shorcut
+// The behavior of the builtin Document type unexpectedly changes based on a
+// secret flag denoting whether the document is xml or html. In particular,
+// the document.body getter shortcut yields undefined for xml.
 function get_xml_document_body(document) {
   return document.querySelector('body');
 }
@@ -95,9 +113,22 @@ function create_opml_document(title) {
   return doc;
 }
 
+// Uses host_document, not window.document, to avoid XSS issues
+function securely_create_outline(host_document) {
+  return host_document.createElement('outline');
+}
+
 function create_outline_element(document, feed) {
-  // SECURITY: this uses the document parameter, not window.document
-  const outline = document.createElement('outline');
+  const outline = securely_create_outline(document);
+
+  // TODO: if feed is missing xmlUrl, maybe just exit early with a useless
+  // outline object. Or just create the outline as normal but missing the
+  // xmlUrl attribute. Basically, remove the expectation it is defined here,
+  // so that this tolerates malformed data better. Doing so shifts the problem
+  // to the app user who will see a useless outline element in their xml file,
+  // but at least an actual programming exception is no longer thrown here.
+  // Outlines "should" have an xmlUrl, so it is in some sense required, but
+  // that is someone else's problem.
 
   if (feed.type) {
     outline.setAttribute('type', feed.type);
