@@ -40,7 +40,7 @@ function init_localstorage() {
   localStorage.sanitize_document_table_scan_max_rows = 20;
   // How long to wait (in ms) before failing when fetching images when setting
   // image sizes
-  localStorage.sanitize_document_image_size_fetch_timeout = 3000;
+  localStorage.set_image_sizes_timeout = 3000;
 
   // Database settings
   localStorage.db_name = 'reader';

@@ -92,29 +92,12 @@ export async function sanitize_document(document, console) {
   filter_comments(document);
   filter_noscript_elements(document);
 
-  // I am not doing either of these todos immediately because the current task
-  // is to transition to local storage.
-
-  // TODO: i think the sanitize_document for some of the local storage values
-  // might be overly cautious. Instead I could treat these as default settings
-  // of the filter itself. Still loaded in app, and sent from app to the lib
-  // filter. Because libs shouldn't directly interact with local storage
-  // (right?). I think so. Because that makes them difficult to reuse and test.
-  // They shouldn't interact with app settings. Really this is just how the
-  // app is choosing to persist the values. The libs can use local storage but
-  // not for app settings. Therefore the todo really is to rename
-  // sanitize_document_low_contrast_default_matte to something like
-  // filter_hidden_elements_default_matte. I use filter-hidden because this is
-  // a parameter to filter-hidden now because that encapsulates the low-contrast
-  // filter.
-
-  // TODO: the min-contrast-ratio setting name should be lowercased, and it
-  // should also be set on install
-
-  // Should occur before the boilerplate filter (logic)
-  // Should occur before most filters (performance)
+  // TODO: shorten name, drop sandoc prefix
   const matte =
       localstorage_read_int('sanitize_document_low_contrast_default_matte');
+
+  // TODO: lowercase
+  // TODO: init on install
   const mcr = localstorage_read_float('MIN_CONTRAST_RATIO');
   filter_hidden_elements(document, matte, mcr);
 
@@ -126,9 +109,9 @@ export async function sanitize_document(document, console) {
   ];
   filter_blacklisted_elements(document, general_blacklist);
 
-  // Pre-boilerplate because this knows express structure
+  // TODO: maybe host-aware logic should just be a facet of the boilerplate
+  // filter and this filter should be merged
   filter_by_host_template(document);
-
   filter_boilerplate(document, console);
 
   // TODO: now that script filtering happens after boilerplate filtering, there
@@ -143,35 +126,29 @@ export async function sanitize_document(document, console) {
   condense_tagnames(document, condense_copy_attrs_flag);
 
   // This should occur before setting image sizes
-  // TODO: actually the above comment is no longer true, right? Reverify.
+  // TODO: actually the above comment is no longer true, right? Reverify. If
+  // I am using baseURI now, and set-image-sizes uses baseURI, then technically
+  // I do not need to do this earlier any longer. In fact I can re-imagine this
+  // entirely, where this does in fact strip base elements. This could happen
+  // at the end.
   canonicalize_urls(document);
 
-  // This should occur before filtering lazy images and setting image sizes
   filter_responsive_images(document);
-
-  // This should occur before removing dead images
   filter_lazy_images(document);
-
-  // This should occur before setting image sizes. baseURI must be valid.
   lonestar_filter(document);
-
   filter_dead_images(document);
 
-  // This should occur after removing telemetry and other images
   const image_size_fetch_timeout =
-      localstorage_read_int('sanitize_document_image_size_fetch_timeout');
+      localstorage_read_int('set_image_sizes_timeout');
   await set_image_sizes(document, image_size_fetch_timeout, fetch_policy);
 
-  // This should occur after setting image sizes
+
   // TODO: compose into filter-images-by-size
   filter_small_images(document);
   filter_large_images(document);
 
-  // This should occur after all filters that expect a valid base URI
   filter_head_elements(document);
-  // This should occur after all filters that expect a valid base URI
   filter_base_elements(document);
-
   filter_invalid_anchors(document);
   filter_formatting_anchors(document);
   filter_form_elements(document);
@@ -193,14 +170,9 @@ export async function sanitize_document(document, console) {
   filter_emphasis(document, emphasis_max_length);
   filter_node_whitespace(document);
 
-  // This should occur after most filters
   filter_leaf_nodes(document);
-
-  // This should occur after most filters
   trim_document(document);
 
-  // Filter attributes close to last because it is so slow and is sped up
-  // by processing fewer elements.
   const attribute_whitelist = {
     a: ['href', 'name', 'title', 'rel'],
     iframe: ['src'],
