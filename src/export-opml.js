@@ -1,5 +1,5 @@
 import {db_get_feeds} from '/src/db/db-get-feeds.js';
-import {list_peek} from '/src/lib/lang/list.js';
+import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 
 // Generates an opml document object consisting of all of the feeds in the
 // database.
@@ -20,10 +20,11 @@ import {list_peek} from '/src/lib/lang/list.js';
 // extra line is insignificant. Food for thought. It might also make more sense
 // to have this basically be completely decoupled from the database.
 
-// TODO: this is responsible for generating valid opml. Therefore, it actually
-// should be concerned with validating the input feeds, and not assume the input
-// data is valid. Currently this makes the implicit assumption that the input
-// is well-formed.
+// TODO: I dislike how much knowledge create_outline_element has of feed
+// structure. I want to introduce a layer of indirection that does something
+// like coerce feed data loaded from the database into a more generic feed-info
+// data object, and have this operate on that generic object, with no coupled
+// knowledge of the db feed format.
 
 // TODO: revisit the concept of function-as-object. This might be better than
 // the implicit context approach. That is pretty much what objects are after
@@ -43,13 +44,23 @@ export async function export_opml(title) {
   this.console.debug('Loaded %d feeds', feeds.length);
 
   const document = create_opml_document(title);
+  const body_element = get_xml_document_body(document);
+
   for (const feed of feeds) {
-    const feed_url = list_peek(feed.urls);
-    this.console.debug('Appending feed', feed_url);
-    append_feed(document, feed);
+    if (list_is_empty(feed.urls)) {
+      console.warn('Skipping feed that is missing url', feed);
+    } else {
+      this.console.debug('Appending feed', list_peek(feed.urls));
+      body_element.appendChild(create_outline_element(feed));
+    }
   }
 
   return document;
+}
+
+// implicitly-xml-flagged docs do not support document.body shorcut
+function get_xml_document_body(document) {
+  return document.querySelector('body');
 }
 
 function create_opml_document(title) {
@@ -84,26 +95,8 @@ function create_opml_document(title) {
   return doc;
 }
 
-// Append the feed to the opml document as an outline element. Missing
-// properties are skipped.
-// TODO: reintroduce validation that the feed has a url. It is incorrect to
-// write a feed without a url to the document. This is an invariant
-// precondition, and it is this function's concern.
-// TODO: revisit whether it made more sense to have a mapping function that just
-// returns a new outline element. Then this feed does not need the body-append
-// section, and it becomes oblivious to body structure, or how the output
-// element will be used. This would also solve the problem about the repeated
-// body lookup that I discuss in a comment below.
-// TODO: I dislike how much knowledge this has of feed structure. I want to
-// introduce a layer of indirection that does something like coerce feed data
-// loaded from the database into a more generic feed-info data object, and have
-// this operate on that generic object, with no coupled knowledge of the db
-// feed format.
-function append_feed(document, feed) {
-  // Create the outline from the parameter document, not the document running
-  // this script. This is important with regard to XSS. Theoretically, bad data
-  // could get written into the database, then read from the database, then get
-  // input here.
+function create_outline_element(document, feed) {
+  // SECURITY: this uses the document parameter, not window.document
   const outline = document.createElement('outline');
 
   if (feed.type) {
@@ -124,15 +117,5 @@ function append_feed(document, feed) {
     outline.setAttribute('htmlUrl', feed.link);
   }
 
-  // TODO: this lookup per call feels wasteful considering the presence of the
-  // body element is expected to be invariant. I think this could be easily
-  // solved by making body a parameter. Despite the obvious functional
-  // dependency of body on the document parameter. I think it is acceptable to
-  // break that rule when there is a substantial performance benefit or
-  // something that just feels more correct.
-
-  // In case it is unclear, implicitly-xml-flagged documents do not support the
-  // document.body shortcut, so use querySelector. At least in Chrome.
-  const body_element = document.querySelector('body');
-  body_element.appendChild(outline);
+  return outline;
 }
