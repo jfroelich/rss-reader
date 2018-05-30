@@ -16,9 +16,9 @@ import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {format_date} from '/src/lib/lang/format-date.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
-import {slideshow_export_opml} from '/src/slideshow-page/export-opml.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
+import {slideshow_export_opml} from '/src/slideshow-page/slideshow-export-opml.js';
 import * as Slideshow from '/src/slideshow-page/slideshow.js';
 
 // Provides all the functionality for the main view of the app.
