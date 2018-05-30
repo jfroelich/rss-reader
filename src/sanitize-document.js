@@ -167,6 +167,11 @@ export async function sanitize_document(document, console) {
   filter_small_images(document);
   filter_large_images(document);
 
+  // This should occur after all filters that expect a valid base URI
+  filter_head_elements(document);
+  // This should occur after all filters that expect a valid base URI
+  filter_base_elements(document);
+
   filter_invalid_anchors(document);
   filter_formatting_anchors(document);
   filter_form_elements(document);
@@ -194,20 +199,6 @@ export async function sanitize_document(document, console) {
   // This should occur after most filters
   trim_document(document);
 
-  // This should occur after all filters that expect a valid base URI
-  filter_base_elements(document);
-
-  // Strip head elements. Head elements used to be blacklisted and stripped
-  // earlier but that changed when switching to using baseURI in order to
-  // maintain base elements.
-  // TODO: make this into a filter of some sort
-  // TODO: clarify whether a document can have multiple head elements by
-  // locating and citing the spec
-  const head_elements = document.querySelectorAll('head');
-  for (const head_element of head_elements) {
-    head_element.remove();
-  }
-
   // Filter attributes close to last because it is so slow and is sped up
   // by processing fewer elements.
   const attribute_whitelist = {
@@ -222,4 +213,13 @@ export async function sanitize_document(document, console) {
   // explain why it should occur later
   // TODO: consider aggregating with other attribute filters
   filter_empty_attrs(document);
+}
+
+function filter_head_elements(document) {
+  // TODO: clarify whether a document can have multiple head elements by
+  // locating and citing the spec
+  const head_elements = document.querySelectorAll('head');
+  for (const head_element of head_elements) {
+    head_element.remove();
+  }
 }
