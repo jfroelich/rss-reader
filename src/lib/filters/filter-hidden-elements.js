@@ -10,10 +10,6 @@ import {color_contrast_filter} from '/src/lib/filters/color-contrast-filter.js';
 // @param mcr {number} see color contrast filter docs
 // @error {Error} if document is undefined or not a document
 // @return {void}
-
-// TODO: reintroduce console parameter as a part of the general redesign of
-// having all filters do some optional logging
-
 export function filter_hidden_elements(document, matte, mcr) {
   // Assume this works because the document is implicitly html-flagged and not
   // xml-flagged. This is naively preferred to querySelector for terseness and

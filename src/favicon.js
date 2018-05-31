@@ -16,7 +16,6 @@ import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 // class, and it may be dumb to cram it all into one file
 // TODO: should probably give up on the full lookup and just do origin lookups
 // only, this is a library concern though
-// TODO: use console everywhere
 
 export function favicon_create_conn() {
   const service = new FaviconService();
@@ -48,7 +47,6 @@ export async function favicon_compact() {
 export function favicon_lookup(url, document, fetch = true) {
   const fs = new FaviconService();
   fs.conn = this.conn;
-  fs.console = this.console;
   fs.skip_fetch = !fetch;
   return fs.lookup(url, document);
 }
@@ -98,11 +96,7 @@ async function refresh_feed(feed) {
   }
 
   let doc, fetch_flag = true;
-  const lookup_op = {
-    conn: this.iconn,
-    console: this.console,
-    favicon_lookup: favicon_lookup
-  };
+  const lookup_op = {conn: this.iconn, favicon_lookup: favicon_lookup};
   const icon_url_string =
       await lookup_op.favicon_lookup(lookup_url, doc, fetch_flag);
 
@@ -116,7 +110,6 @@ async function refresh_feed(feed) {
     const update_op = {
       conn: this.rconn,
       channel: this.channel,
-      console: this.console,
       db_write_feed: db_write_feed
     };
     await update_op.db_write_feed(

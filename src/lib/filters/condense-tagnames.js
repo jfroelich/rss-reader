@@ -1,6 +1,5 @@
 import {coerce_element} from '/src/lib/dom/coerce-element.js';
 
-// TODO: add console parameter
 // TODO: add tests. Or at least state why test not needed
 // TODO: rename element-coerce to coerce-element, I changed my mind again about
 // naming convention, this todo belongs whereever its defined

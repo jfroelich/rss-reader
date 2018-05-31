@@ -1,5 +1,6 @@
 import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED} from '/src/entry.js';
 import {sizeof} from '/src/lib/lang/sizeof.js';
+import {log} from '/src/log.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -25,7 +26,6 @@ const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 // Required context properties
 // @param conn {IDBDatabase} an open database connection to the reader database
 // @param channel {BroadcastChannel} an open channel to which to post messages
-// @param console {console-like-object} logging destination
 
 // @param max_age {Number} in milliseconds, optional, defaults to two days, how
 // old an entry must be based on the difference between the run time and the
@@ -42,7 +42,7 @@ export function db_archive_entries(max_age = TWO_DAYS_MS) {
 }
 
 function archive_entries_executor(max_age, resolve, reject) {
-  this.console.log('%s: starting', db_archive_entries.name);
+  log('%s: starting', db_archive_entries.name);
   const entry_ids = [];
 
   // Using one transaction ensures data integrity. However, this involves a
@@ -88,7 +88,7 @@ function request_onsuccess(entry_ids, max_age, event) {
       const current_date = new Date();
       const age = current_date - entry.dateCreated;
       if (age > max_age) {
-        const ae = archive_entry(this.console, entry);
+        const ae = archive_entry(entry);
         cursor.update(ae);
         entry_ids.push(ae.id);
       }
@@ -99,8 +99,7 @@ function request_onsuccess(entry_ids, max_age, event) {
 }
 
 function txn_oncomplete(entry_ids, callback, event) {
-  this.console.debug(
-      '%s: archived %d entries', db_archive_entries.name, entry_ids.length);
+  log('%s: archived %d entries', db_archive_entries.name, entry_ids.length);
 
   // This sends one message to the channel per entry archived, rather than
   // sending a single message containing an array of archived entry ids. The
@@ -129,17 +128,16 @@ function txn_oncomplete(entry_ids, callback, event) {
   callback();
 }
 
-function archive_entry(console, entry) {
+function archive_entry(entry) {
   const before_sz = sizeof(entry);
   const ce = compact_entry(entry);
   const after_sz = sizeof(ce);
 
   if (after_sz > before_sz) {
-    console.warn('%s: increased entry size %o', db_archive_entries.name, entry);
+    log('%s: increased entry size %o', db_archive_entries.name, entry);
   }
 
-  console.debug(
-      '%s: reduced entry size by ~%d bytes', db_archive_entries.name,
+  log('%s: reduced entry size by ~%d bytes', db_archive_entries.name,
       after_sz - before_sz);
   ce.archiveState = ENTRY_STATE_ARCHIVED;
   const current_date = new Date();

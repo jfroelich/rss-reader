@@ -39,7 +39,7 @@ import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 // * Add a references section. Maybe I can find some of the original literature
 // I was reading that inspired this approach.
 
-export function annotate(document, console) {
+export function annotate(document) {
   if (!(document instanceof Document)) {
     throw new TypeError('Invalid document argument');
   }

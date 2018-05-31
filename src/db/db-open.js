@@ -1,9 +1,9 @@
 import * as config from '/src/config.js';
 import {ENTRY_MAGIC} from '/src/entry.js';
 import {FEED_MAGIC} from '/src/feed.js';
-import {console_stub} from '/src/lib/console-stub.js';
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
+import {log} from '/src/log.js';
 
 // Opens a connection to the reader database.
 //
@@ -24,38 +24,36 @@ import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 // Default to config values. These are not fully hardcoded so that the
 // function can still be easily overloaded in order to reuse the
 // on_upgrade_needed handler with a different database name and version.
-export function db_open(name, version, timeout, console = console_stub) {
+export function db_open(name, version, timeout) {
   name = typeof name === 'string' ? name : localStorage.db_name;
   version = isNaN(version) ? localstorage_read_int('db_version') : version;
   timeout = isNaN(timeout) ? localstorage_read_int('db_open_timeout') : timeout;
 
-  const upgrade_bound = on_upgrade_needed.bind(this, console);
-  return indexeddb_open(name, version, upgrade_bound, timeout, console);
+  const upgrade_bound = on_upgrade_needed.bind(this);
+  return indexeddb_open(name, version, upgrade_bound, timeout);
 }
 
-function on_upgrade_needed(console, event) {
+function on_upgrade_needed(event) {
   const conn = event.target.result;
   const txn = event.target.transaction;
   let feed_store, entry_store;
   const stores = conn.objectStoreNames;
 
   if (event.oldVersion === 0) {
-    console.log(
-        '%s: creating database', on_upgrade_needed.name, conn.name,
+    log('%s: creating database', on_upgrade_needed.name, conn.name,
         conn.version, event.oldVersion);
   } else {
-    console.log(
-        '%s: upgrading database %s to version %s from version',
+    log('%s: upgrading database %s to version %s from version',
         on_upgrade_needed.name, conn.name, conn.version, event.oldVersion);
   }
 
   if (event.oldVersion < 20) {
     const feed_store_props = {keyPath: 'id', autoIncrement: true};
-    console.debug('Creating feed object store with props', feed_store_props);
+    log('Creating feed object store with props', feed_store_props);
     feed_store = conn.createObjectStore('feed', feed_store_props);
 
     const entry_store_props = {keyPath: 'id', autoIncrement: true};
-    console.debug('Creating entry object store with props', entry_store_props);
+    log('Creating entry object store with props', entry_store_props);
     entry_store = conn.createObjectStore('entry', entry_store_props);
 
     feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
@@ -71,11 +69,11 @@ function on_upgrade_needed(console, event) {
   }
 
   if (event.oldVersion < 21) {
-    add_magic_to_entries(txn, console);
+    add_magic_to_entries(txn);
   }
 
   if (event.oldVersion < 22) {
-    add_magic_to_feeds(txn, console);
+    add_magic_to_feeds(txn);
   }
 
   if (event.oldVersion < 23) {
@@ -85,7 +83,7 @@ function on_upgrade_needed(console, event) {
   }
 
   if (event.oldVersion < 24) {
-    add_active_field_to_feeds(feed_store, console);
+    add_active_field_to_feeds(feed_store);
   }
 }
 
@@ -93,8 +91,8 @@ function on_upgrade_needed(console, event) {
 // each entry. This returns prior to the operation completing.
 // @param txn {IDBTransaction}
 // @return {void}
-function add_magic_to_entries(txn, console) {
-  console.debug('Adding entry magic');
+function add_magic_to_entries(txn) {
+  log('Adding entry magic');
   const store = txn.objectStore('entry');
   const request = store.openCursor();
   request.onsuccess = function() {
@@ -108,15 +106,15 @@ function add_magic_to_entries(txn, console) {
       }
     }
   };
-  request.onerror = () => console.error(request.error);
+  request.onerror = _ => log(request.error);
 }
 
 // TODO: use cursor over getAll for scalability
-function add_magic_to_feeds(txn, console) {
-  console.debug('Adding feed magic');
+function add_magic_to_feeds(txn) {
+  log('Adding feed magic');
   const store = txn.objectStore('feed');
   const request = store.getAll();
-  request.onerror = console.error;
+  request.onerror = log;
   request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
@@ -128,10 +126,10 @@ function add_magic_to_feeds(txn, console) {
 }
 
 // TODO: use cursor rather than getAll for scalability
-function add_active_field_to_feeds(store, console) {
-  console.debug('Adding active property to older feeds');
+function add_active_field_to_feeds(store) {
+  log('Adding active property to older feeds');
   const feeds_request = store.getAll();
-  feeds_request.onerror = console.error;
+  feeds_request.onerror = log;
   feeds_request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {

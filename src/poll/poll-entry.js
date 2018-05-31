@@ -12,6 +12,7 @@ import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
+import {log} from '/src/log.js';
 import {sanitize_document} from '/src/sanitize-document.js';
 
 // Processes an entry and possibly adds it to the database. The full-text html
@@ -21,7 +22,6 @@ import {sanitize_document} from '/src/sanitize-document.js';
 // * **rconn** {IDBDatabase} required
 // * **iconn** {IDBDatabase} required
 // * **channel** {BroadcastChannel} required
-// * **console** {Object} required
 // * **fetch_html_timeout** {Number} optional
 // * **fetch_image_timeout** {Number} optional
 
@@ -104,9 +104,8 @@ export async function poll_entry(entry) {
 
   const document = await parse_response(response);
   update_entry_title(entry, document);
-  await update_entry_icon(this.iconn, this.console, entry, document);
-  await update_entry_content(
-      entry, document, this.console, this.fetch_image_timeout);
+  await update_entry_icon(this.iconn, entry, document);
+  await update_entry_content(entry, document, this.fetch_image_timeout);
 
   // Explicitly validate the entry. This was previously done via the call to
   // db_write_entry, and threw a type error which was not caught here. For now,
@@ -126,7 +125,6 @@ export async function poll_entry(entry) {
   const op = {};
   op.conn = this.rconn;
   op.channel = this.channel;
-  op.console = this.console;
   op.db_write_entry = db_write_entry;
   const new_entry_id = await op.db_write_entry(entry);
   return new_entry_id;
@@ -217,12 +215,11 @@ function update_entry_title(entry, document) {
   }
 }
 
-async function update_entry_icon(iconn, console, entry, document) {
+async function update_entry_icon(iconn, entry, document) {
   const lookup_url = new URL(list_peek(entry.urls));
 
   const op = {};
   op.conn = iconn;
-  op.console = console;
   op.favicon_lookup = favicon_lookup;
 
   const fetch = false;
@@ -232,8 +229,7 @@ async function update_entry_icon(iconn, console, entry, document) {
   }
 }
 
-async function update_entry_content(
-    entry, document, console, fetch_image_timeout) {
+async function update_entry_content(entry, document, fetch_image_timeout) {
   if (!document) {
     try {
       document = parse_html(entry.content);
@@ -248,7 +244,7 @@ async function update_entry_content(
   set_document_base_uri(document, document_url);
 
 
-  await sanitize_document(document, console);
+  await sanitize_document(document);
   entry.content = document.documentElement.outerHTML;
 }
 

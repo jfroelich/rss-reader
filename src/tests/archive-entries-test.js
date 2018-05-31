@@ -9,16 +9,12 @@ import {register_test} from '/src/tests/test-registry.js';
 // the archivable data was archived, and that the non-archivable data was not
 // archived
 
-// TODO: I don't think there is a need to use explicit console parameter here,
-// just call create-conn without 4th param?
-
 async function archive_entries_test() {
   let dbname = 'archive-entries-test', version, timeout, max_age;
   const conn = await db_open(dbname, version, timeout);
   const op = {};
   op.conn = conn;
   op.channel = {name: 'stub', postMessage: noop, close: noop};
-  op.console = console;
   op.db_archive_entries = db_archive_entries;
   await op.db_archive_entries(max_age);
 

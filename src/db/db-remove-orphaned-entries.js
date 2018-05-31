@@ -1,4 +1,5 @@
 import {is_valid_feed_id} from '/src/feed.js';
+import {log} from '/src/log.js';
 
 // Scans the database for entries not linked to a feed and deletes them
 // ### Params
@@ -9,7 +10,6 @@ import {is_valid_feed_id} from '/src/feed.js';
 // * write tests
 // * this potentially affects unread count and therefore should be interacting
 // with `badge.update`
-// * add console parameter and NULL_CONSOLE impl
 
 export function db_remove_orphaned_entries() {
   return new Promise(executor.bind(this));
@@ -34,8 +34,7 @@ function executor(resolve, reject) {
         const entry = cursor.value;
         if (!is_valid_feed_id(entry.feed) || !feed_ids.includes(entry.feed)) {
           entry_ids.push(entry.id);
-          this.console.debug(
-              '%s: deleting entry', db_remove_orphaned_entries.name, entry.id);
+          log('%s: deleting entry', db_remove_orphaned_entries.name, entry.id);
           cursor.delete();
         }
 

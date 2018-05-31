@@ -1,4 +1,5 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
+import {log} from '/src/log.js';
 
 // Creates or overwrites an entry object in the app database. The input entry is
 // modified so this function is impure. The dateUpdated property is set
@@ -7,7 +8,7 @@ import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id}
 // creating, then the id property should not exist. The database is modified
 // even when a post message error occurs.
 //
-// Context: conn, channel, console
+// Context: conn, channel
 // Errors: TypeError, InvalidStateError, DOMException
 // Returns: a promise that resolves to the entry's id
 export function db_write_entry(entry) {
@@ -35,7 +36,7 @@ export function db_write_entry(entry) {
     // resolving
     txn.oncomplete = _ => {
       const message = {type: 'entry-write', id: entry.id, 'create': is_create};
-      this.console.debug('%s: %o', db_write_entry.name, message);
+      log('%s: %o', db_write_entry.name, message);
       this.channel.postMessage(message);
       resolve(entry.id);
     };

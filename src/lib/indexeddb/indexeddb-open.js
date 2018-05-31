@@ -1,5 +1,3 @@
-import {console_stub} from '/src/lib/console-stub.js';
-
 // This function opens a connection to an indexedDB database. The important
 // additions to the normal functionality of indexedDB.open are that you
 // can optionally specify a timeout after which to consider the connection a
@@ -20,11 +18,9 @@ function idb_context_t() {
   this.timeout = NaN;
   this.timed_out = false;
   this.timer = null;
-  this.console = console_stub;
 }
 
-export async function indexeddb_open(
-    name, version, upgrade_listener, timeout, console = console_stub) {
+export async function indexeddb_open(name, version, upgrade_listener, timeout) {
   if (typeof name !== 'string') {
     throw new TypeError('Invalid database name ' + name);
   }
@@ -38,7 +34,6 @@ export async function indexeddb_open(
   context.version = version;
   context.upgrade_listener = upgrade_listener;
   context.timeout = timeout;
-  context.console = console;
 
   const open_promise = create_open_promise(context);
 
@@ -80,21 +75,25 @@ function create_timeout_promise(context) {
 
 function create_open_promise(context) {
   return new Promise((resolve, reject) => {
-    context.console.debug('Connecting to database', context.name);
+    console.debug(
+        '%s: connecting to database', indexeddb_open.name, context.name);
     let blocked = false;
     const request = indexedDB.open(context.name, context.version);
     request.onsuccess = function(event) {
       const conn = event.target.result;
       if (blocked) {
-        context.console.debug(
-            'Closing connection %s that unblocked', conn.name);
+        console.debug(
+            '%s: closing connection %s that unblocked', indexeddb_open.name,
+            conn.name);
         conn.close();
       } else if (context.timed_out) {
-        context.console.debug(
-            'Closing connection %s opened after timeout', conn.name);
+        console.debug(
+            '%s: closing connection %s opened after timeout',
+            indexeddb_open.name, conn.name);
         conn.close();
       } else {
-        context.console.debug('Connected to database', conn.name);
+        console.debug(
+            '%s: connected to database', indexeddb_open.name, conn.name);
         resolve(conn);
       }
     };

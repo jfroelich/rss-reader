@@ -1,4 +1,5 @@
 import {is_entry, is_valid_entry_id} from '/src/entry.js';
+import {log} from '/src/log.js';
 
 // TODO: implement `db_validate_entry`. Check required properties? This function
 // is specifically validation for storage, so maybe I should have constraints
@@ -41,7 +42,7 @@ export function db_validate_entry(entry) {
   // check id validity when the property exists
   if ('id' in entry) {
     if (!is_valid_entry_id(entry.id)) {
-      console.debug('%s: invalid id', db_validate_entry.name, entry.id);
+      log('%s: invalid id', db_validate_entry.name, entry.id);
       return false;
     }
   }

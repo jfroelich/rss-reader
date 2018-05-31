@@ -1,3 +1,5 @@
+import {log} from '/src/log.js';
+
 // ## db-remove-lost-entries
 // Removes entries missing urls from the database.
 // ### Params
@@ -5,8 +7,6 @@
 // specified this will auto-connect to the default database
 // * **channel** {BroadcastChannel} optional, the channel over which to
 // communicate storage change events
-// * **console** {Object} optional, logging destination, if specified should
-// comply with the window.console interface
 
 // ### Errors
 
@@ -44,8 +44,7 @@ function request_onsuccess(ids, stats, event) {
 
     const entry = cursor.value;
     if (!entry.urls || !entry.urls.length) {
-      this.console.debug(
-          '%s: deleting entry %d', db_remove_lost_entries.name, entry.id);
+      log('%s: deleting entry %d', db_remove_lost_entries.name, entry.id);
       cursor.delete();
       ids.push(entry.id);
     }
@@ -55,8 +54,7 @@ function request_onsuccess(ids, stats, event) {
 }
 
 function txn_oncomplete(ids, callback, stats, event) {
-  this.console.debug(
-      '%s: scanned %d, deleted %d', db_remove_lost_entries.name,
+  log('%s: scanned %d, deleted %d', db_remove_lost_entries.name,
       stats.visited_entry_count, ids.length);
 
   const message = {type: 'entry-deleted', id: 0, reason: 'lost'};

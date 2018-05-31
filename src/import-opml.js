@@ -1,4 +1,5 @@
 import {parse_opml} from '/src/lib/parse-opml.js';
+import {log} from '/src/log.js';
 import {subscribe} from '/src/subscribe.js';
 
 // TODO: test, or write a test, a real one this time
@@ -16,11 +17,11 @@ const opml_mime_types = [
 // Concurrently reads in the files from the file list and subscribes to the
 // feeds in all of the files. Returns a promise that resolves to an array of
 // subscribe promise results. The input file list is not modified.
-// Expected context properties: rconn, iconn, channel, console
+// Expected context properties: rconn, iconn, channel
 // @param files {array-like} an array-like collection of file objects, such as
 // a FileList, or an array
 export async function import_opml(files, options) {
-  this.console.log('%s: importing %d file(s)', import_opml.name, files.length);
+  log('%s: importing %d file(s)', import_opml.name, files.length);
 
   const subscribe_promises = [];
   const import_file_promises = [];
@@ -60,8 +61,7 @@ export async function import_opml(files, options) {
 // more than one concurrent subscribe operation to the same feed, one will
 // eventually succeed and the rest will fail.
 async function import_file(subscribe_promises, file, options) {
-  this.console.debug(
-      '%s: name %s size %d type %s', import_file.name, file.name, file.size,
+  log('%s: name %s size %d type %s', import_file.name, file.name, file.size,
       file.type);
 
   if (!file.size || !opml_mime_types.includes(file.type)) {
@@ -75,7 +75,7 @@ async function import_file(subscribe_promises, file, options) {
   try {
     file_text = await file_read_text(file);
   } catch (error) {
-    this.console.debug(error);
+    log(error);
     return;
   }
 
@@ -85,7 +85,7 @@ async function import_file(subscribe_promises, file, options) {
   try {
     document = parse_opml(file_text);
   } catch (error) {
-    this.console.debug(error);
+    log(error);
     return;
   }
 
@@ -100,7 +100,6 @@ async function import_file(subscribe_promises, file, options) {
   op.rconn = this.rconn;
   op.iconn = this.iconn;
   op.channel = this.channel;
-  op.console = this.console;
   op.subscribe = subscribe;
 
   const sub_options = {};

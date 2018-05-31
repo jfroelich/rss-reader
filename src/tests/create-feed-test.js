@@ -37,7 +37,6 @@ async function create_feed_test() {
   const op = {};
   op.conn = conn;
   op.channel = channel;
-  op.console = console;
   op.db_write_feed = db_write_feed;
 
   // TODO: probably should do tests with different combinations of options. For

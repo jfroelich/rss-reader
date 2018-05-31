@@ -1,3 +1,5 @@
+import {log} from '/src/log.js';
+
 // TODO: rename to find-active-feeds, it is ok to keep this api style of using
 // a handler callback function
 
@@ -65,6 +67,6 @@ function request_onsuccess(handle_feed, event) {
 }
 
 function txn_oncomplete(callback, event) {
-  // console.debug('Transaction completed');
+  // log('Transaction completed');
   callback();
 }

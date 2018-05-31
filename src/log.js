@@ -30,20 +30,8 @@
 // is the first step, to change all the console params into 'log' methods, and
 // just pass around the log function. I could deprecate console-stub too.
 
-export const log = {
-  debug: noop
-};
-
-export function enable_logging() {
-  log.debug = log_debug;
+export function log(...args) {
+  if (localStorage.debug) {
+    console.debug(...args);
+  }
 }
-
-export function disable_logging() {
-  log.debug = noop;
-}
-
-function log_debug(...args) {
-  console.log(...args);
-}
-
-function noop() {}

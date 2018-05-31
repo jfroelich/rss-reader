@@ -6,9 +6,6 @@ import {fetch_image_element} from '/src/lib/net/fetch-image-element.js';
 
 // TODO: now that this expects document to have document.baseURI set, I can
 // work directly from image.src, instead of image.getAttribute('src')
-
-// TODO: re-introduce console parameter
-
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.

@@ -1,19 +1,20 @@
 import {db_open} from '/src/db/db-open.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import * as color from '/src/lib/color.js';
+import {log} from '/src/log.js';
 
 // Bind the install event listener to the browser so that it can hear install
 // events
 export function register_install_listener() {
-  console.debug('Binding app install listener:', oninstalled.name);
+  log('Binding app install listener:', oninstalled.name);
   chrome.runtime.onInstalled.addListener(oninstalled);
 }
 
 // Handle an install event
 async function oninstalled(event) {
-  console.debug('Received oninstalled event, installing...');
-  console.debug('Previous version (?):', event.previousVersion);
-  console.debug('Install reason:', event.reason);
+  log('Received oninstalled event, installing...');
+  log('Previous version (?):', event.previousVersion);
+  log('Install reason:', event.reason);
 
   init_localstorage();
 
@@ -28,9 +29,14 @@ async function oninstalled(event) {
 
 // Write default values to localStorage
 function init_localstorage() {
-  console.debug('Initializing local storage...');
+  log('Initializing local storage...');
 
   // NOTE: local storage values are strings. This relies on implicit coercion
+
+  // Logging is disabled by default, this may be an upgrade and the value
+  // may exist.
+  // actually leave as is
+  // delete localStorage.debug;
 
   // The default background color used by the low-contrast pass
   localStorage.sanitize_document_low_contrast_default_matte = color.WHITE;

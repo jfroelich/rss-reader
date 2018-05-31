@@ -9,12 +9,12 @@ import {db_open} from '/src/db/db-open.js';
 import {is_entry, is_valid_entry_id} from '/src/entry.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {import_opml} from '/src/import-opml.js';
-import {console_stub} from '/src/lib/console-stub.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {format_date} from '/src/lib/lang/format-date.js';
 import {list_peek} from '/src/lib/lang/list.js';
+import {log} from '/src/log.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
@@ -37,59 +37,57 @@ const channel = new BroadcastChannel(localStorage.channel_name);
 
 channel.onmessage = function channel_onmessage(event) {
   if (!event.isTrusted) {
-    console.warn('Untrusted event', event);
+    log('Untrusted event', event);
     return;
   }
 
   const message = event.data;
   if (!message) {
-    console.warn('Invalid message', event);
+    log('Invalid message', event);
     return;
   }
 
   switch (message.type) {
     case 'display-settings-changed':
-      console.debug('Updating article style');
+      log('Updating article style');
       page_style_onchange(message);
       break;
     case 'entry-write':
-      on_entry_write_message(message).catch(console.warn);
+      on_entry_write_message(message).catch(log);
       break;
     case 'entry-deleted':
-      on_entry_expired_message(message).catch(console.warn);
+      on_entry_expired_message(message).catch(log);
       break;
     case 'entry-archived':
-      on_entry_expired_message(message).catch(console.warn);
+      on_entry_expired_message(message).catch(log);
       break;
     case 'feed-deleted':
-      console.warn('Unhandled feed-deleted message', message);
+      log('Unhandled feed-deleted message', message);
       break;
     case 'entry-marked-read':
-      on_entry_marked_read_message(message).catch(console.warn);
+      on_entry_marked_read_message(message).catch(log);
       break;
     case 'feed-written':
       // NOTE: this also happens when feed activated/deactivated, the message
       // will have a property 'property' with the value 'active'
       // TODO: just realized, no way to tell whether active or inactive as a
       // result
-      // console.debug('%s: feed written %o', channel_onmessage.name, message);
+      // log('%s: feed written %o', channel_onmessage.name, message);
       break;
     default:
-      console.warn('Unknown message type', message);
+      log('Unknown message type', message);
       break;
   }
 };
 
 channel.onmessageerror = function channel_onmessageerror(event) {
-  console.error(
-      '%s: could not deserialize message from channel',
+  log('%s: could not deserialize message from channel',
       channel_onmessageerror.name, event);
 };
 
 async function on_entry_write_message(message) {
   if (!message.create) {
-    // TEMP: debugging some functionality in flux
-    console.debug('Ignoring entry-write message', message);
+    log('Ignoring entry-write message', message);
     return;
   }
 
@@ -140,8 +138,7 @@ async function on_entry_marked_read_message(message) {
 
   // The slide may no longer exist, or the id may not correspond
   if (!slide) {
-    console.warn(
-        '%s: could not find slide for id %d', on_entry_marked_read_message.name,
+    log('%s: could not find slide for id %d', on_entry_marked_read_message.name,
         message.id);
     return;
   }
@@ -183,7 +180,8 @@ async function slide_mark_read(conn, slide) {
   console.assert(slide);
 
   if (slide.hasAttribute('read') || slide.hasAttribute('stale')) {
-    console.debug('%s: ignoring stale/read slide', slide_mark_read.name, slide);
+    const entry_id_string = slide.getAttribute('entry');
+    log('%s: ignoring stale/read slide', slide_mark_read.name, entry_id_string);
     return;
   }
 
@@ -191,7 +189,6 @@ async function slide_mark_read(conn, slide) {
   const op = {};
   op.conn = conn;
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.console = console_stub;
   op.db_mark_entry_read = db_mark_entry_read;
   await op.db_mark_entry_read(id);
   op.channel.close();
@@ -207,7 +204,7 @@ function error_message_show(message_text) {
 // an array of slides as input. Something else should be doing loading.
 async function slide_load_and_append_multiple(conn, limit) {
   limit = typeof limit === 'undefined' ? 3 : limit;
-  console.log('Appending slides (limit: %d)', limit);
+  log('Appending slides (limit: %d)', limit);
   const offset = slideshow_count_unread();
 
   let entries = await db_find_viewable_entries(conn, offset, limit);
@@ -224,11 +221,11 @@ async function slide_load_and_append_multiple(conn, limit) {
 // clarity. slide_append should accept a slide element, not an entry.
 function slide_append(entry) {
   if (!is_entry(entry)) {
-    console.error('%s: invalid entry parameter', slide_append.name, entry);
+    log('%s: invalid entry parameter', slide_append.name, entry);
     return;
   }
 
-  console.debug('%s: entry', slide_append.name, list_peek(entry.urls));
+  log('%s: entry', slide_append.name, list_peek(entry.urls));
 
   const slide = Slideshow.create();
   slide.setAttribute('entry', entry.id);
@@ -266,7 +263,7 @@ function create_article_title_element(entry) {
     try {
       filtered_safe_title = truncate_html(filtered_safe_title, 300);
     } catch (error) {
-      console.warn(error);
+      log(error);
     }
 
     // Allow entities
@@ -482,11 +479,7 @@ async function refresh_anchor_onclick(event) {
 
   const options = {};
   options.ignore_recency_check = true;
-
-  // NOTE: temporarily enable console during dev
-  let console_arg = console;  // void console;
-
-  await poll_feeds(rconn, iconn, onclick_channel, console_arg, options);
+  await poll_feeds(rconn, iconn, onclick_channel, options);
 
   // Dispose of resources. Do not close page-lifetime channel, but do close the
   // function-call-lifetime channel as it should be released asap
@@ -528,7 +521,7 @@ function options_menu_onclick(event) {
 
   switch (option.id) {
     case 'menu-option-subscribe':
-      console.warn('Not yet implemented');
+      log('Not yet implemented');
       break;
     case 'menu-option-import':
       import_menu_option_handle_click(event);
@@ -541,7 +534,7 @@ function options_menu_onclick(event) {
     case 'menu-option-body-font':
       break;
     default:
-      console.debug('Unhandled menu option click', option.id);
+      log('Unhandled menu option click', option.id);
       break;
   }
 }
@@ -568,18 +561,17 @@ function import_menu_option_handle_click(event) {
 // as the number of subscriptions added
 // TODO: on import error, show a friendly error message
 async function uploader_input_onchange(event) {
-  console.log('%s: started', uploader_input_onchange.name);
+  log('%s: started', uploader_input_onchange.name);
   const op = {};
   [op.rconn, op.iconn] = await Promise.all([db_open(), favicon_create_conn()]);
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.console = console;  // temporary
   op.fetch_timeout = 5 * 1000;
   op.import_opml = import_opml;
   await op.import_opml(event.target.files);
   op.rconn.close();
   op.iconn.close();
   op.channel.close();
-  console.log('%s: completed', uploader_input_onchange.name);
+  log('%s: completed', uploader_input_onchange.name);
 }
 
 // TODO: visual feedback on completion
@@ -587,7 +579,7 @@ async function uploader_input_onchange(event) {
 function export_menu_option_handle_click(event) {
   const title = 'Subscriptions';
   const filename = 'subscriptions.xml';
-  slideshow_export_opml(title, filename).catch(console.warn);
+  slideshow_export_opml(title, filename).catch(log);
 }
 
 function error_message_container_onclick(event) {
@@ -655,7 +647,7 @@ function reader_button_onclick(event) {
 }
 
 function unsubscribe_button_onclick(event) {
-  console.debug('Unsubscribe (not yet implemented)', event.target);
+  log('Unsubscribe (not yet implemented)', event.target);
 }
 
 // TODO: create helper function feed_element_create that then is passed to this,
@@ -865,4 +857,4 @@ async function slideshow_page_init() {
   loading_info_hide();
 }
 
-slideshow_page_init().catch(console.error);
+slideshow_page_init().catch(log);

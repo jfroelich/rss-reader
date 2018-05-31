@@ -6,6 +6,7 @@ import {fetch_feed} from '/src/fetch.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
+import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
 
 // Subscribes the user to a new feed.
@@ -16,9 +17,6 @@ import {notify} from '/src/notify.js';
 // optional
 // * **channel** {BroadcastChannel} a channel that will receive messages such as
 // the feed being created within the database
-// * **console** {object} a logging destination, any console-like object
-// including the builtin console, required, consider using console-stub to call
-// non-verbose
 
 // ### Parameters
 // * **url** {URL} the url of the feed to subscribe to
@@ -67,17 +65,16 @@ import {notify} from '/src/notify.js';
 // cannot be abstracted away if I need to use it again for non-fetch purposes.
 
 export async function subscribe(url, options) {
-  this.console.log('Subscribing to feed', url.href);
+  log('Subscribing to feed', url.href);
 
   if (await db_contains_feed(this.rconn, {url: url})) {
-    this.console.debug('url exists', url.href);
+    log('url exists', url.href);
     return;
   }
 
   const response = await fetch_feed(url, options.fetch_timeout);
   if (!response.ok) {
-    this.console.debug(
-        '%s: fetch error', subscribe.name, url.href, response.status);
+    log('%s: fetch error', subscribe.name, url.href, response.status);
     return;
   }
 
@@ -85,8 +82,7 @@ export async function subscribe(url, options) {
   if (url_did_change(url, response_url)) {
     const redirect_query = {url: response_url};
     if (await db_contains_feed(this.rconn, redirect_query)) {
-      this.console.debug(
-          '%s: redirect url exists', subscribe.name, url.href,
+      log('%s: redirect url exists', subscribe.name, url.href,
           response_url.href);
       return;
     }
@@ -98,7 +94,7 @@ export async function subscribe(url, options) {
   try {
     parsed_feed = parse_feed(response_text, skip_entries, resolve_urls);
   } catch (error) {
-    this.console.debug('%s: parse error', subscribe.name, response.url, error);
+    log('%s: parse error', subscribe.name, response.url, error);
     return;
   }
 
@@ -111,11 +107,7 @@ export async function subscribe(url, options) {
 
   if (!options.skip_icon_lookup) {
     const lookup_url = favicon_create_feed_lookup_url(feed);
-    const lookup_op = {
-      conn: this.iconn,
-      console: this.console,
-      favicon_lookup: favicon_lookup
-    };
+    const lookup_op = {conn: this.iconn, favicon_lookup: favicon_lookup};
     let lookup_doc = undefined, fetch = false;
     feed.faviconURLString =
         await lookup_op.favicon_lookup(lookup_url, lookup_doc, fetch);
@@ -124,7 +116,6 @@ export async function subscribe(url, options) {
   const write_op = {
     conn: this.rconn,
     channel: this.channel,
-    console: this.console,
     db_write_feed: db_write_feed
   };
   const write_options = {

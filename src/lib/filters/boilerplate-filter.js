@@ -11,8 +11,8 @@ import * as boilerplate from '/src/lib/filters/boilerplate.js';
 // and then scoring doesn't need to do any special tests per element, it could
 // just find and remove all disconnected elements using querySelectorAll
 
-export function filter_boilerplate(document, console) {
-  boilerplate.annotate(document, console);
+export function filter_boilerplate(document) {
+  boilerplate.annotate(document);
   const best_element = document.querySelector('[data-bp-max]');
   if (!best_element) {
     return;

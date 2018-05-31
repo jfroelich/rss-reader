@@ -45,7 +45,6 @@ async function import_opml_test() {
   op.rconn = await db_open(db_name, db_version, db_timeout);
   op.iconn = undefined;  // test without favicon caching support
   op.channel = new BroadcastChannel('import-opml-test');
-  op.console = console;
   op.import_opml = import_opml;
 
   const options = {};

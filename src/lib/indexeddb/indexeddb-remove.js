@@ -1,7 +1,6 @@
-import {console_stub} from '/src/lib/console-stub.js';
 
 // Remove an indexedDB database from the browser (for this origin)
-export function indexeddb_remove(name, console = console_stub) {
+export function indexeddb_remove(name) {
   return new Promise((resolve, reject) => {
     console.debug('Deleting database', name);
     const request = indexedDB.deleteDatabase(name);

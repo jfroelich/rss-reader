@@ -45,7 +45,6 @@ export function FaviconService() {
   this.fetch_image_timeout = 1000;
   this.min_image_size = 50;
   this.max_image_size = 10240;
-  this.console = null_console;
 }
 
 FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
@@ -53,7 +52,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
     throw new TypeError('url is not url-like, missing href accessor');
   }
 
-  this.console.log('%s: lookup', favicon_lookup.name, url.href);
+  console.log('%s: lookup', favicon_lookup.name, url.href);
 
   const urls = [];
   urls.push(url.href);
@@ -65,12 +64,12 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   if (this.conn) {
     const entry = await this.find_entry(url);
     if (entry && entry.iconURLString && !this.is_expired(entry)) {
-      this.console.debug('%s: hit', favicon_lookup.name, entry.iconURLString);
+      console.debug('%s: hit', favicon_lookup.name, entry.iconURLString);
       return entry.iconURLString;
     }
     if (origin_url.href === url.href && entry &&
         entry.failureCount >= this.max_failure_count) {
-      this.console.debug('Too many failures', url.href);
+      console.debug('Too many failures', url.href);
       return;
     }
   }
@@ -90,7 +89,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   if (this.conn && origin_url.href !== url.href) {
     origin_entry = await this.find_entry(origin_url);
     if (origin_entry && origin_entry.failureCount > this.max_failure_count) {
-      this.console.debug('Exceeded max failures', origin_url.href);
+      console.debug('Exceeded max failures', origin_url.href);
       return;
     }
   }
@@ -99,7 +98,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   if (!document && !this.skip_fetch) {
     response = await fetch_html(url, this.fetch_html_timeout);
     if (!response.ok) {
-      this.console.debug('Fetch error', url.href, response.status);
+      console.debug('Fetch error', url.href, response.status);
     }
   }
 
@@ -129,7 +128,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
     try {
       document = parse_html(text);
     } catch (error) {
-      this.console.debug(error);
+      console.debug(error);
     }
   }
 
@@ -153,7 +152,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
         await this.put_all(urls, origin_entry.iconURLString);
         return origin_entry.iconURLString;
       } else if (origin_entry.failureCount >= this.max_failure_count) {
-        this.console.debug(
+        console.debug(
             '%s: failures exceeded', favicon_lookup.name, origin_url.href);
         return;
       }
@@ -210,14 +209,14 @@ FaviconService.prototype.on_lookup_fail =
 
     FaviconService.prototype.is_expired = function(entry) {
   if (!entry.dateUpdated) {
-    this.console.warn('Missing date updated', entry);
+    console.warn('Missing date updated', entry);
     return false;
   }
 
   const current_date = new Date();
   const entry_age = current_date - entry.dateUpdated;
   if (entry_age < 0) {
-    this.console.warn('Date updated is in the future', entry);
+    console.warn('Date updated is in the future', entry);
     return false;
   }
 
@@ -302,7 +301,7 @@ FaviconService.prototype.onupgradeneeded = function(event) {
 
 FaviconService.prototype.clear = function() {
   return new Promise((resolve, reject) => {
-    this.console.log('Clearing favicon store');
+    console.log('Clearing favicon store');
     const txn = this.conn.transaction('favicon-cache', 'readwrite');
     txn.oncomplete = resolve;
     txn.onerror = _ => reject(txn.error);
@@ -313,7 +312,7 @@ FaviconService.prototype.clear = function() {
 
 FaviconService.prototype.compact = function() {
   return new Promise((resolve, reject) => {
-    this.console.log('Compacting favicon store...');
+    console.log('Compacting favicon store...');
     const cutoff_time = Date.now() - this.max_age;
     assert(cutoff_time >= 0);
     const cutoff_date = new Date(cutoff_time);
@@ -328,7 +327,7 @@ FaviconService.prototype.compact = function() {
     request.onsuccess = _ => {
       const cursor = request.result;
       if (cursor) {
-        this.console.debug('Deleting favicon entry', cursor.value);
+        console.debug('Deleting favicon entry', cursor.value);
         cursor.delete();
         cursor.continue();
       }
@@ -392,7 +391,7 @@ FaviconService.prototype.head_image = async function(url) {
   const options = {method: 'head', timeout: this.fetch_image_timeout};
   const response = await fetch_image(url, options);
   if (response.ok && !this.in_range(response)) {
-    this.console.debug('image size not in range', url.href, size);
+    console.debug('image size not in range', url.href, size);
     return create_error_response(STATUS_RANGE_ERROR);
   }
   return response;
@@ -412,11 +411,3 @@ function assert(value, message) {
     throw new Error(message || 'Assertion error');
   }
 }
-
-function noop() {}
-
-const null_console = {
-  log: noop,
-  warn: noop,
-  debug: noop
-};

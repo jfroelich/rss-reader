@@ -5,6 +5,7 @@ import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import {list_peek} from '/src/lib/lang/list.js';
+import {log} from '/src/log.js';
 
 // TODO: create modules for sanitize and validate, require caller to explicitly
 // call those functions as additional optional boilerplate, and then deprecate
@@ -25,8 +26,7 @@ export function db_write_feed(feed, options = {}) {
 
   const is_update = 'id' in feed;
   const prefix = is_update ? 'updating' : 'creating';
-  this.console.debug(
-      '%s: %s feed', db_write_feed.name, prefix, list_peek(feed.urls));
+  log('%s: %s feed', db_write_feed.name, prefix, list_peek(feed.urls));
 
   // TODO: if we are always going to clone and this is sole caller of
   // sanitize_feed just do the clone here in both cases and do not clone in
@@ -77,7 +77,7 @@ function executor(is_update, feed, options, resolve, reject) {
 
 function txn_oncomplete(is_update, feed, callback, event) {
   const message = {type: 'feed-written', id: feed.id, create: !is_update};
-  this.console.debug('%s: %o', db_write_feed.name, message);
+  log('%s: %o', db_write_feed.name, message);
   this.channel.postMessage(message);
   callback(feed);
 }
@@ -149,7 +149,6 @@ than the situation where an options flag is true, this inserts the feed object
 * **conn** {IDBDatabase} an open database connection
 * **channel** {BroadcastChannel} a channel to send messages about a feed being
 created or updated
-* **console** {object} logging destination, any console-like object
 All properties are required.
 
 ### Params

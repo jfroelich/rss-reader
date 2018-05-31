@@ -60,8 +60,6 @@ import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 // It is async primarily just because of a middle step related to setting sizes
 // of images that is also async.
 
-// TODO: Add console arg to all filters
-
 // TODO: Create a function registry, register filters, and revise
 // sanitize_document to iterate over the registry. Instead of hard coding, this
 // should basically just iterate over an array of filter functions. Functions
@@ -85,7 +83,7 @@ import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 // i don't need it the function would no longer need to be async, and would be
 // substantially faster.
 
-export async function sanitize_document(document, console) {
+export async function sanitize_document(document) {
   deframe(document);
   ensure_document_body(document);
   filter_iframes(document);
@@ -112,7 +110,7 @@ export async function sanitize_document(document, console) {
   // TODO: maybe host-aware logic should just be a facet of the boilerplate
   // filter and this filter should be merged
   filter_by_host_template(document);
-  filter_boilerplate(document, console);
+  filter_boilerplate(document);
 
   // TODO: now that script filtering happens after boilerplate filtering, there
   // is no longer a problem with affecting the boilerplate algorithm by removing

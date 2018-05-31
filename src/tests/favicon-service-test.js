@@ -18,7 +18,6 @@ register_test(favicon_service_test);
 /*
 async function test_lookup(url_string, cached) {
   const fs = new FaviconService();
-  fs.console = console;
   fs.name = 'test-favicon-cache';
 
   let conn;

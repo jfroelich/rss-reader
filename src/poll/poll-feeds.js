@@ -1,17 +1,9 @@
 import {db_for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
-import {console_stub} from '/src/lib/console-stub.js';
+import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 
-// # poll-feeds
 // Checks for new content
-
-// ### Params
-
-// ### Errors
-
-// ### Return value
-
 // ### TODOS
 // * All database queries in poll-feeds should use a single database transaction
 // so as to guarantee data integrity.
@@ -34,19 +26,18 @@ const default_options = {
 };
 
 export async function poll_feeds(
-    rconn, iconn, channel = null_channel, console = console_stub,
-    options = {}) {
-  console.log('%s: starting...', poll_feeds.name);
+    rconn, iconn, channel = null_channel, options = {}) {
+  log('%s: starting...', poll_feeds.name);
   const feeds = [];
   await db_for_each_active_feed(rconn, feed => feeds.push(feed));
   console.debug('%s: loaded %d active feeds', poll_feeds.name, feeds.length);
   const pfo = Object.assign({}, default_options, options);
-  const pfp = poll_feed.bind(null, rconn, iconn, channel, console, pfo);
+  const pfp = poll_feed.bind(null, rconn, iconn, channel, pfo);
   const proms = feeds.map(pfp);
   const results = await Promise.all(proms);
   const count = results.reduce(accumulate_if_def, 0);
   show_poll_notification(count);
-  console.log('poll_feeds end, added %d entries', count);
+  log('%s: completed, added %d entries', poll_feeds.name, count);
 }
 
 function accumulate_if_def(sum, value) {

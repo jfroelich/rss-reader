@@ -1,4 +1,5 @@
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
+import {log} from '/src/log.js';
 
 // TODO: merge with db-write-feed. I am going for rest api. I want to simulate
 // indexedDB's ability to modify a single property. So write feed will take
@@ -60,8 +61,7 @@ function executor(feed_id, name, value, extra_props, resolve, reject) {
 }
 
 function txn_oncomplete(feed_id, name, callback, event) {
-  this.console.debug(
-      '%s: updated feed %d property %s', db_write_feed_property.name, feed_id,
+  log('%s: updated feed %d property %s', db_write_feed_property.name, feed_id,
       name);
   this.channel.postMessage({type: 'feed-written', id: feed_id, property: name});
   callback();
@@ -70,14 +70,12 @@ function txn_oncomplete(feed_id, name, callback, event) {
 function request_onsuccess(feed_id, name, value, extra_props, event) {
   const feed = event.target.result;
   if (!feed) {
-    this.console.warn(
-        '%s: feed not found %d', db_write_feed_property.name, feed_id);
+    log('%s: feed not found %d', db_write_feed_property.name, feed_id);
     return;
   }
 
   if (!is_feed(feed)) {
-    this.console.warn(
-        '%s: bad object type %d %o', db_write_feed_property.name, feed_id,
+    log('%s: bad object type %d %o', db_write_feed_property.name, feed_id,
         feed);
     return;
   }
@@ -86,13 +84,11 @@ function request_onsuccess(feed_id, name, value, extra_props, event) {
 
   if (name === 'active') {
     if (feed.active && value) {
-      this.console.warn(
-          '%s: tried to activate active feed (invalid state) %d',
+      log('%s: tried to activate active feed (invalid state) %d',
           db_write_feed_property.name, feed_id);
       return;
     } else if (!feed.active && !value) {
-      this.console.warn(
-          '%s: tried to deactivate inactive feed (invalid state) %d',
+      log('%s: tried to deactivate inactive feed (invalid state) %d',
           db_write_feed_property.name, feed_id);
       return;
     }
@@ -164,7 +160,6 @@ is not allowed.
 * **conn** {IDBDatabase} an open database connection
 * **channel** {BroadcastChannel} the channel to receive a message about the
 state change
-* **console** {object} the logging destination
 
 All context parameters are required
 

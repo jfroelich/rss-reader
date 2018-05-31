@@ -12,8 +12,6 @@ import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 // I assume the protocol is normalized to its canonical form, but I did not see
 // any immediate mention of this in docs. Would be simple to test.
 
-// TODO: add console parameter
-
 // For a url string to have the script protocol it must be longer than this
 // 'javascript:'.length
 // Javascript does not have const-expr so it is worth pre-computing despite the

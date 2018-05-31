@@ -27,8 +27,6 @@
 // function, or is that over-organization? Would it increase or decrease
 // readability or maintenance-difficulty or debugability?
 
-// TODO: add support for console parameter and add some logging
-
 // TODO: the check for remaining frames at the end feels unclear, given that
 // the function appears to have handled all such cases already. Perhaps it is
 // worthy of a comment. Or moreso a review of how it actually works, because it

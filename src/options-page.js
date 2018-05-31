@@ -7,11 +7,11 @@ import {db_get_feeds} from '/src/db/db-get-feeds.js';
 import {db_open} from '/src/db/db-open.js';
 import {db_write_feed_property} from '/src/db/db-write-feed-property.js';
 import {favicon_create_conn} from '/src/favicon.js';
-import {console_stub} from '/src/lib/console-stub.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import * as perm from '/src/lib/permissions.js';
+import {log} from '/src/log.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
@@ -63,7 +63,7 @@ let current_menu_item;
 let current_section;
 
 const channel = new BroadcastChannel(localStorage.channel_name);
-console.debug('Created channel:', channel.name);
+log('Created channel:', channel.name);
 channel.onmessage = function(event) {
   if (!event.isTrusted) {
     return;
@@ -79,7 +79,7 @@ channel.onmessage = function(event) {
       page_style_onchange(event);
       break;
     case 'feed-written':
-      console.debug('message handler not yet implemented', message);
+      log('message handler not yet implemented', message);
       break;
     default:
       break;
@@ -87,7 +87,7 @@ channel.onmessage = function(event) {
 };
 
 channel.onmessageerror = function(event) {
-  console.warn(event);
+  log(event);
 };
 
 function subscription_monitor_show() {
@@ -115,7 +115,7 @@ function subscription_monitor_append_message(message) {
 async function subscription_monitor_hide() {
   const monitor_element = document.getElementById('submon');
   if (!monitor_element) {
-    console.error('Cannot find element #submon');
+    log('Cannot find element #submon');
     return;
   }
 
@@ -298,7 +298,7 @@ async function subscribe_form_onsubmit(event) {
 
   let monitor_element = document.getElementById('submon');
   if (monitor_element && monitor_element.style.display === 'block') {
-    console.debug('prior subscription in progress');
+    log('prior subscription in progress');
     return false;
   }
 
@@ -307,7 +307,7 @@ async function subscribe_form_onsubmit(event) {
 
   // fail horribly. this should never happen and is a serious error
   // if (!monitor_element) {
-  //  console.error('failed to find subscription monitor element');
+  //  log('failed to find subscription monitor element');
   //  return;
   //}
 
@@ -317,7 +317,7 @@ async function subscribe_form_onsubmit(event) {
   subscribe_url_string = subscribe_url_string.trim();
 
   if (!subscribe_url_string) {
-    console.debug('canceling submit, empty input');
+    log('canceling submit, empty input');
     return false;
   }
 
@@ -325,7 +325,7 @@ async function subscribe_form_onsubmit(event) {
   try {
     subscribe_url = new URL(subscribe_url_string);
   } catch (exception) {
-    console.warn(exception);
+    log(exception);
     return false;
   }
 
@@ -340,7 +340,6 @@ async function subscribe_form_onsubmit(event) {
   op.rconn = rconn;
   op.iconn = iconn;
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.console = console;
   op.subscribe = subscribe;
   const feed = await op.subscribe(subscribe_url, {notify: true});
 
@@ -354,7 +353,7 @@ async function subscribe_form_onsubmit(event) {
   section_show_by_id('subs-list-section');
 
   // intentionally non-blocking
-  after_subscribe_poll_feed_async(feed).catch(console.error);
+  after_subscribe_poll_feed_async(feed).catch(log);
   return false;
 }
 
@@ -401,7 +400,7 @@ function feed_list_remove_feed_by_id(feed_id) {
       document.querySelector(`#feedlist li[feed="${feed_id}"]`);
 
   if (!feed_element) {
-    console.error('Could not find feed element with feed id', feed_id);
+    log('Could not find feed element with feed id', feed_id);
     return;
   }
 
@@ -424,7 +423,6 @@ async function unsubscribe_button_onclick(event) {
   const op = {};
   op.conn = await db_open();
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.console = console;  // enable logging for now (temporary)
   op.db_delete_feed = db_delete_feed;
   await op.db_delete_feed(feed_id, 'unsubscribe');
   op.conn.close();
@@ -440,7 +438,6 @@ async function activate_feed_button_onclick(event) {
   const op = {};
   op.conn = await db_open();
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.console = console;
   op.write = db_write_feed_property;
   await op.write(feed_id, 'active', true);
   op.conn.close();
@@ -461,7 +458,6 @@ async function deactivate_feed_button_onclick(event) {
   const op = {};
   op.conn = await db_open();
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.console = console;
   op.write = db_write_feed_property;
   await op.write(feed_id, 'active', false, {reason: 'manual'});
   op.conn.close();
@@ -551,7 +547,7 @@ function entry_bg_color_input_oninput(event) {
 
 function entry_margin_slider_onchange(event) {
   const margin = event.target.value;
-  console.log('entry_margin_slider_onchange new value', margin);
+  log('entry_margin_slider_onchange new value', margin);
 
   if (margin) {
     localStorage.PADDING = margin;
@@ -581,7 +577,7 @@ function body_font_size_slider_onchange(event) {
     delete localStorage.BODY_FONT_SIZE;
   }
 
-  console.debug('setting body font size changed message');
+  log('setting body font size changed message');
   channel.postMessage({type: 'display-settings-changed'});
 }
 

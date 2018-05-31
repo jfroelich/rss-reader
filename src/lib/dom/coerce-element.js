@@ -29,7 +29,6 @@
 // is very minimal and not spec compliant.
 // @return returns the new element that replaced the old one
 
-// TODO: add console parameter?
 // TODO: rename to coerce-element (both file and function)
 
 export function coerce_element(element, new_name, copy_attributes = true) {

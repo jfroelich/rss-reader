@@ -1,5 +1,6 @@
 import {refresh_badge} from '/src/badge.js';
 import {is_valid_feed_id} from '/src/feed.js';
+import {log} from '/src/log.js';
 
 // Removes a feed, and any entries tied to the feed, from the database. The
 // operation resolves once the internal database transaction has committed. A
@@ -10,8 +11,6 @@ import {is_valid_feed_id} from '/src/feed.js';
 // * conn {IDBDatabase} an open database connection
 // * channel {BroadcastChannel} will send messages when the feed is deleted
 // and for each entry deleted
-// * console {object} logging destination, typically `console` or a console
-// stub
 
 // @param feed_id {Number} the feed to delete
 // @param reason_text {String} optional, a categorical description of the reason
@@ -47,7 +46,7 @@ function delete_feed_executor(feed_id, reason_text, resolve, reject) {
   const feed_store = txn.objectStore('feed');
 
   // Delete the feed
-  this.console.debug('Deleting feed with id', feed_id);
+  log('Deleting feed with id', feed_id);
   feed_store.delete(feed_id);
 
   // Delete all entries belonging to the feed
@@ -73,7 +72,7 @@ function delete_feed_executor(feed_id, reason_text, resolve, reject) {
 
     for (const id of keys) {
       entry_ids.push(id);
-      this.console.debug('%s: deleting entry %d', db_delete_feed.name, id);
+      log('%s: deleting entry %d', db_delete_feed.name, id);
       entry_store.delete(id);
     }
   };
@@ -85,7 +84,7 @@ function delete_feed_txn_oncomplete(
   // transaction has actually committed successfully
 
   const msg = {type: 'feed-deleted', id: feed_id, reason: reason_text};
-  this.console.debug('%s: %o', db_delete_feed.name, msg);
+  log('%s: %o', db_delete_feed.name, msg);
   this.channel.postMessage(msg);
 
   msg.type = 'entry-deleted';
@@ -110,7 +109,7 @@ function delete_feed_txn_oncomplete(
   // TODO: should get conn from event rather than from context? This is
   // stylistic issue and I do not know which is better
 
-  refresh_badge(this.conn, this.console).catch(this.console.error);
+  refresh_badge(this.conn).catch(log);
 
   // TODO: if entry ids are posted to the channel then resolving with this
   // array is redundant. It would be better then to resolve with undefined.

@@ -6,6 +6,7 @@ import {fetch_feed} from '/src/fetch.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {STATUS_OFFLINE, STATUS_TIMEOUT} from '/src/lib/net/load-url.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
+import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
 
@@ -50,8 +51,7 @@ import {poll_entry} from '/src/poll/poll-entry.js';
 // encountering a closed database or closed channel at the time of the call to
 // `db_write_feed`, and maintains the non-blocking characteristic.
 
-export async function poll_feed(
-    rconn, iconn, channel, console, options = {}, feed) {
+export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const ignore_recency_check = options.ignore_recency_check;
   const recency_period = options.recency_period;
   const badge_update = options.badge_update;
@@ -73,11 +73,11 @@ export async function poll_feed(
   const tail_url = new URL(list_peek(feed.urls));
 
   if (!feed.active) {
-    console.debug('Ignoring inactive feed', tail_url.href);
+    log('Ignoring inactive feed', tail_url.href);
     return 0;
   }
 
-  console.log('%s: polling "%s"', poll_feed.name, feed.title, tail_url.href);
+  log('%s: polling "%s"', poll_feed.name, feed.title, tail_url.href);
 
   // Exit if the feed was checked too recently
   if (!ignore_recency_check && feed.dateFetched) {
@@ -90,15 +90,14 @@ export async function poll_feed(
     }
 
     if (elapsed_ms < recency_period) {
-      console.debug('Feed polled too recently', tail_url.href);
+      log('Feed polled too recently', tail_url.href);
       return 0;
     }
   }
 
   const response = await fetch_feed(tail_url, fetch_feed_timeout);
   if (!response.ok) {
-    console.debug(
-        'Error fetching feed', tail_url.href, response.status,
+    log('Error fetching feed', tail_url.href, response.status,
         response.statusText);
     const error_type = 'fetch';
     await handle_error(
@@ -119,7 +118,7 @@ export async function poll_feed(
   try {
     parsed_feed = parse_feed(response_text, skip_entries, resolve_urls);
   } catch (error) {
-    console.debug('Error parsing feed', tail_url.href, error);
+    log('Error parsing feed', tail_url.href, error);
     let status;
     const error_type = 'parse';
     await handle_error(
@@ -142,7 +141,6 @@ export async function poll_feed(
   const update_context = {};
   update_context.conn = rconn;
   update_context.channel = channel;
-  update_context.console = console;
 
   const update_options = {};
   update_options.validate = true;
@@ -153,11 +151,10 @@ export async function poll_feed(
       await db_write_feed.call(update_context, merged_feed, update_options);
 
   const count = await poll_entries(
-      rconn, iconn, channel, console, options, parsed_feed.entries,
-      stored_feed);
+      rconn, iconn, channel, options, parsed_feed.entries, stored_feed);
 
   if (badge_update && count) {
-    refresh_badge(rconn, console).catch(console.error);
+    refresh_badge(rconn).catch(console.error);
   }
 
   if (notify_flag && count) {
@@ -170,12 +167,10 @@ export async function poll_feed(
   return count;
 }
 
-async function poll_entries(
-    rconn, iconn, channel, console, options, entries, feed) {
+async function poll_entries(rconn, iconn, channel, options, entries, feed) {
   const feed_url_string = list_peek(feed.urls);
 
-  console.debug(
-      '%s: processing %d entries', poll_entries.name, entries.length,
+  log('%s: processing %d entries', poll_entries.name, entries.length,
       feed_url_string);
 
   const coerced_entries = entries.map(coerce_entry);
@@ -196,7 +191,6 @@ async function poll_entries(
   pec.rconn = rconn;
   pec.iconn = iconn;
   pec.channel = channel;
-  pec.console = console;
   pec.fetch_html_timeout = options.fetch_html_timeout;
   pec.fetch_image_timeout = options.fetch_image_timeout;
 
@@ -233,7 +227,6 @@ function handle_fetch_success(feed) {
   return false;
 }
 
-// TODO: should accept console param
 async function handle_error(
     rconn, channel, status, feed, type, deactivation_threshold) {
   // Ignore ephemeral errors
@@ -241,9 +234,7 @@ async function handle_error(
     return;
   }
 
-  // TEMPORARY DEBUGGING
-  console.debug(
-      'Incremented error count for feed', feed.title, feed.errorCount);
+  log('Incremented error count for feed', feed.title, feed.errorCount);
 
   // Init or increment
   feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
@@ -258,7 +249,6 @@ async function handle_error(
   const update_context = {};
   update_context.conn = rconn;
   update_context.channel = channel;
-  update_context.console = console;
 
   const update_options = {};
   // TODO: why validate? have we not had control the entire time, and have no

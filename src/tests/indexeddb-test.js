@@ -27,9 +27,10 @@ async function indexeddb_test() {
   const db_name = 'idb-test-foo';
   const version = 1;
   let conn, timeout, upgrade_listener;
-  conn = await indexeddb_open(db_name, version, upgrade_listener, timeout,
-  console); console.debug('Opened database', conn.name); await
-  indexeddb_remove(db_name, console); console.debug('indexeddb_test reached
+  conn = await indexeddb_open(db_name, version, upgrade_listener, timeout);
+  console.debug('Opened database', conn.name); await
+  indexeddb_remove(db_name);
+  console.debug('indexeddb_test reached
   completion and should not timeout'); return true;
   */
 }

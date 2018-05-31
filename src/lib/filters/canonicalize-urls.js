@@ -5,7 +5,6 @@ import {serialize_srcset} from '/src/lib/dom/serialize-srcset.js';
 // In other words, empty-string is the canonical form of an invalid-url.
 // TODO: use element.src and such instead of using element.getAttribute now that
 // baseURI is set as expected
-// TODO: reintroduce console parameter
 
 const element_url_attribute_map = {
   a: 'href',

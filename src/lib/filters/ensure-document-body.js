@@ -1,5 +1,3 @@
-// TODO: add console parameter
-
 // TODO: reconsider the use of this filter. Maybe none of the filters
 // should assume body is present and each should approach the document
 // structure more cautiously. This would decrease inter-dependence and

@@ -1,3 +1,4 @@
+import {log} from '/src/log.js';
 import {open_view} from '/src/open-view.js';
 
 // Notification service. Provides the ability to show a desktop notification.
@@ -37,9 +38,9 @@ function click_handler(event) {
     const hwnd = window.open();
     hwnd.close();
   } catch (error) {
-    console.warn(error);
+    log(error);
     return;
   }
 
-  open_view().catch(console.warn);
+  open_view().catch(log);
 }

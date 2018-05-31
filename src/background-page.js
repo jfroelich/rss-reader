@@ -7,9 +7,9 @@ import {db_remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
 import {db_remove_orphaned_entries} from '/src/db/db-remove-orphaned-entries.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
 import {register_install_listener} from '/src/install.js';
-import {console_stub} from '/src/lib/console-stub.js';
 import {open_view} from '/src/open-view.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
+import {log} from '/src/log.js';
 
 // Loaded exclusively by the background page. This page is loaded via the
 // background page instead of directly via the scripts property in the manifest.
@@ -43,7 +43,6 @@ async function handle_archive_alarm_wakeup(alarm) {
   const op = {};
   op.conn = await db_open();
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.console = console_stub;
   op.db_archive_entries = db_archive_entries;
   let max_age;
   await op.db_archive_entries(max_age);
@@ -55,7 +54,6 @@ async function handle_lost_entries_alarm(alarm) {
   const op = {};
   op.conn = await db_open();
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.console = console_stub;
   op.db_remove_lost_entries = db_remove_lost_entries;
   await op.db_remove_lost_entries();
   op.conn.close();
@@ -66,7 +64,6 @@ async function handle_orphan_entries_alarm(alarm) {
   const op = {};
   op.conn = await db_open();
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.console = console_stub;
   op.db_remove_orphaned_entries = db_remove_orphaned_entries;
   await op.db_remove_orphaned_entries();
   op.conn.close();
@@ -82,7 +79,6 @@ async function handle_refresh_icons_alarm(alarm) {
   op.rconn = rconn;
   op.iconn = iconn;
   op.channel = channel;
-  op.console = console_stub;
   op.favicon_refresh_feeds = favicon_refresh_feeds;
   await op.favicon_refresh_feeds();
 
@@ -108,7 +104,7 @@ async function handle_poll_feeds_alarm(alarm) {
   const iconn = await favicon_create_conn();
   const channel = new BroadcastChannel(localStorage.channel_name);
 
-  await poll_feeds(rconn, iconn, channel, console, options);
+  await poll_feeds(rconn, iconn, channel, options);
 
   channel.close();
   iconn.close();
@@ -130,37 +126,37 @@ chrome.browserAction.onClicked.addListener(open_view);
 // TODO: move this function definition to badge.js?
 async function badge_init() {
   const conn = await db_open();
-  refresh_badge(conn, void console);
+  refresh_badge(conn).catch(log);
   conn.close();
 }
 
 badge_init();
 
 chrome.alarms.onAlarm.addListener(function(alarm) {
-  console.debug('onalarm: alarm name', alarm.name);
+  log('onalarm: alarm name', alarm.name);
   localStorage.LAST_ALARM = alarm.name;
 
   switch (alarm.name) {
     case 'archive':
-      handle_archive_alarm_wakeup(alarm).catch(console.error);
+      handle_archive_alarm_wakeup(alarm).catch(log);
       break;
     case 'poll':
-      handle_poll_feeds_alarm(alarm).catch(console.error);
+      handle_poll_feeds_alarm(alarm).catch(log);
       break;
     case 'remove-entries-missing-urls':
-      handle_lost_entries_alarm(alarm).catch(console.error);
+      handle_lost_entries_alarm(alarm).catch(log);
       break;
     case 'remove-orphaned-entries':
-      handle_orphan_entries_alarm(alarm).catch(console.error);
+      handle_orphan_entries_alarm(alarm).catch(log);
       break;
     case 'refresh-feed-icons':
-      handle_refresh_icons_alarm(alarm).catch(console.error);
+      handle_refresh_icons_alarm(alarm).catch(log);
       break;
     case 'compact-favicon-db':
-      handle_compact_favicons_alarm(alarm).catch(console.error);
+      handle_compact_favicons_alarm(alarm).catch(log);
       break;
     default:
-      console.warn('unhandled alarm', alarm.name);
+      log('unhandled alarm', alarm.name);
       break;
   }
 });

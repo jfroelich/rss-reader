@@ -1,12 +1,12 @@
 import {refresh_badge} from '/src/badge.js';
 import {ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
+import {log} from '/src/log.js';
 
 // Marks an entry as read in the database.
 
 // ### Context params
 // * **conn** {IDBDatabase} required
 // * **channel** {BroadcastChannel} required
-// * **console** {object} required
 
 // ### Params
 // * **entry_id** {Number} required
@@ -56,22 +56,22 @@ function executor(entry_id, resolve, reject) {
 function request_onsuccess(entry_id, event) {
   const entry = event.target.result;
   if (!entry) {
-    this.console.warn('No entry found', entry_id);
+    log('No entry found', entry_id);
     return;
   }
 
   if (!is_entry(entry)) {
-    this.console.warn('Invalid matched object type', entry_id, entry);
+    log('Invalid matched object type', entry_id, entry);
     return;
   }
 
   if (entry.readState === ENTRY_STATE_READ) {
-    this.console.warn('Entry already read', entry.id);
+    log('Entry already read', entry.id);
     return;
   }
 
   if (entry.readState !== ENTRY_STATE_UNREAD) {
-    this.console.warn('Entry not unread', entry.id);
+    log('Entry not unread', entry.id);
     return;
   }
 
@@ -85,10 +85,9 @@ function request_onsuccess(entry_id, event) {
 }
 
 function txn_oncomplete(entry_id, callback, event) {
-  this.console.debug(
-      '%s: marked entry as read', db_mark_entry_read.name, entry_id);
+  log('%s: marked entry as read', db_mark_entry_read.name, entry_id);
   this.channel.postMessage({type: 'entry-marked-read', id: entry_id});
   const conn = event.target.db;
-  refresh_badge(conn, this.console).catch(this.console.error);
+  refresh_badge(conn).catch(log);
   callback();
 }

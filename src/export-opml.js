@@ -1,10 +1,10 @@
 import {db_get_feeds} from '/src/db/db-get-feeds.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
+import {log} from '/src/log.js';
 
 // Generates an opml document object consisting of all of the feeds in the
 // database.
 // @context-param {conn} an open database connection
-// @context-param {console} logging destination
 // @param title {String} optional, the desired value of the opml title element,
 // caller is responsible for ensuring it is either falsy or a valid string
 // @throws {Error} when any context property is undefined or wrong type
@@ -30,10 +30,9 @@ import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 // really has lost much of its original meaning. The export-opml verb concept
 // now belongs to the button click handler that is located in a higher layer
 // closer to the view. And even further more, if I make feeds param, then I no
-// longer need this.conn, so now the only context variable is this.console, and
-// now it would make more sense to have console as a parameter (defaulting to
-// console-stub), and this would obviate the need to use the function-as-object
-// approach because the parameter complexity drops substantially.
+// longer need this.conn, and this would obviate the need to use the
+// function-as-object approach because the parameter complexity drops
+// substantially.
 
 // TODO: I dislike how much knowledge create_outline_element has of feed
 // structure. I want to introduce a layer of indirection that does something
@@ -54,19 +53,19 @@ import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 // off because of the recently added notes about decoupling the feed lookup.
 
 export async function export_opml(title) {
-  this.console.log('Creating opml document from database', this.conn.name);
+  log('Creating opml document from database', this.conn.name);
 
   const feeds = await db_get_feeds(this.conn);
-  this.console.debug('Loaded %d feeds', feeds.length);
+  log('Loaded %d feeds', feeds.length);
 
   const document = create_opml_document(title);
   const body_element = get_xml_document_body(document);
 
   for (const feed of feeds) {
     if (list_is_empty(feed.urls)) {
-      this.console.warn('Skipping feed that is missing url', feed);
+      log('Skipping feed that is missing url', feed);
     } else {
-      this.console.debug('Appending feed', list_peek(feed.urls));
+      log('Appending feed', list_peek(feed.urls));
       body_element.appendChild(create_outline_element(feed));
     }
   }
