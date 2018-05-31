@@ -1,5 +1,5 @@
-import {db_contains_feed} from '/src/db/db-contains-feed.js';
 import {db_find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
+import {db_find_feed_by_url} from '/src/db/db-find-feed-by-url.js';
 import {db_open} from '/src/db/db-open.js';
 import {db_write_feed} from '/src/db/db-write-feed.js';
 import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
@@ -75,9 +75,9 @@ async function create_feed_test() {
       messages[0].type === 'feed-written',
       'unexpected message type property ' + messages[0].type);
 
-  // Assert the feed exists in the database
-  assert(
-      await db_contains_feed(conn, {url: feed_url}), 'cannot find feed by url');
+  // Assert the feed exists in the database with the given url
+  const read_key_only = true;
+  assert(await db_find_feed_by_url(conn, feed_url, read_key_only));
 
   // Read the feed from the database and assert against read properties
   const match = await db_find_feed_by_id(conn, stored_feed.id);
@@ -87,9 +87,9 @@ async function create_feed_test() {
       match.id === stored_feed.id,
       'feed id loaded from db does not match output id');
 
-  // Test teardown
+  // Teardown the test
+  channel.close();
   conn.close();
-  channel.close();  // a no-op, but guard against future changes
   await indexeddb_remove(conn.name);
 }
 

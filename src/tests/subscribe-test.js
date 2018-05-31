@@ -1,11 +1,12 @@
-import {db_contains_feed} from '/src/db/db-contains-feed.js';
 import {db_find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
+import {db_find_feed_by_url} from '/src/db/db-find-feed-by-url.js';
 import {db_open} from '/src/db/db-open.js';
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {subscribe} from '/src/subscribe.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
+
 
 // TODO: it is wrong to ping google, implement something that tests a local
 // file somehow (e.g. a feed that exists within the extension folder)
@@ -46,8 +47,8 @@ async function subscribe_test() {
   assert(message_post_count > 0, 'no message posted');
 
   // Assert that the new feed is findable by url in the database
-  const query = {url: url};
-  assert(await db_contains_feed(rconn, query), 'cannot find feed by url');
+  const read_key_only = true;
+  assert(await db_find_feed_by_url(rconn, url, read_key_only));
 
   // Assert that the new feed is findable by id
   const match = await db_find_feed_by_id(rconn, feed.id);
