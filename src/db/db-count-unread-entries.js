@@ -6,13 +6,10 @@ import {ENTRY_STATE_UNREAD} from '/src/entry.js';
 // @return {Promise} returns a promise that resolves to a count of unread
 // entries in the entry object store
 export function db_count_unread_entries(conn) {
-  return new Promise(count_executor.bind(null, conn));
+  return new Promise(executor.bind(null, conn));
 }
 
-function count_executor(conn, resolve, reject) {
-  // Counting unread entries is presumed to be a frequently performed operation,
-  // so it is sensible to incur the storage cost of an index.
-
+function executor(conn, resolve, reject) {
   const txn = conn.transaction('entry');
   const store = txn.objectStore('entry');
   const index = store.index('readState');
