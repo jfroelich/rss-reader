@@ -1,5 +1,6 @@
 import {db_sanitize_feed} from '/src/db/db-sanitize-feed.js';
-import {is_feed, is_valid_feed_id} from '/src/feed.js';
+import {db_validate_feed} from '/src/db/db-validate-feed.js';
+import {is_feed} from '/src/feed.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {log} from '/src/log.js';
@@ -94,21 +95,4 @@ function txn_oncomplete(is_update, feed, callback, event) {
   log('%s: %o', db_write_feed.name, message);
   this.channel.postMessage(message);
   callback(feed);
-}
-
-// TODO: finish all checks
-function db_validate_feed(feed) {
-  if ('id' in feed && !is_valid_feed_id(feed.id)) {
-    return false;
-  }
-
-  if (!['undefined', 'string'].includes(typeof feed.title)) {
-    return false;
-  }
-
-  if ('urls' in feed && !Array.isArray(feed.urls)) {
-    return false;
-  }
-
-  return true;
 }
