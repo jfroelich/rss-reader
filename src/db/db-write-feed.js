@@ -4,7 +4,7 @@ import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
-import {list_peek} from '/src/lib/lang/list.js';
+import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {log} from '/src/log.js';
 
 // Creates or updates a feed in the database. Broadcasts a message to the
@@ -72,10 +72,12 @@ function executor(is_update, feed, options, resolve, reject) {
     return;
   }
 
-  // is-valid-feed just checks feed.urls type, but all stored feeds must
-  // have at least one url.
-  // TODO: add a check that feed.urls is not empty
-
+  // This is not caught by validation, but it is important to prevent storing
+  // location-less feeds in the data
+  if (list_is_empty(feed.urls)) {
+    throw new TypeError(
+        'At least one feed url is required ' + JSON.stringify(feed));
+  }
 
   if (is_update) {
     if (options.set_date_updated) {
