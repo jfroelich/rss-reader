@@ -39,37 +39,29 @@ import {log} from '/src/log.js';
 // better with the one-function-per-file method of organization, is more
 // readily testable, less opaque, and is a better use of parameters. See also
 // note about this in the db-write-entry doc (or maybe it is db-write-feed).
+// TODO: the sanitize impl does not need to clone, the caller can clone the
+// input if they want
 // TODO: if caller must sanitize, then no longer need to return object, just
 // return id
 
 // Creates or updates the given feed in storage
 export function db_write_feed(feed, options = {}) {
+  return new Promise(executor.bind(this, feed, options));
+}
+
+function executor(feed, options, resolve, reject) {
   if (!is_feed(feed)) {
     throw new TypeError('Invalid feed parameter type ' + feed);
   }
 
-  const is_update = 'id' in feed;
-  const prefix = is_update ? 'updating' : 'creating';
-  log('%s: %s feed', db_write_feed.name, prefix, list_peek(feed.urls));
-
-  // TODO: if we are always going to clone and this is sole caller of
-  // sanitize_feed just do the clone here in both cases and do not clone in
-  // sanitize_feed. Unless I make sanitize-feed its own public method again
-  let clone;
-  if (options.sanitize) {
-    clone = filter_empty_properties(sanitize_feed(feed, options));
-  } else {
-    clone = Object.assign(create_feed(), feed);
-  }
-
-  return new Promise(executor.bind(this, is_update, clone, options));
-}
-
-function executor(is_update, feed, options, resolve, reject) {
-  if (options.validate && !is_valid_feed(feed)) {
+  if (options.validate && !db_validate_feed(feed)) {
     const error = new Error('Invalid feed ' + JSON.stringify(feed));
     reject(error);
     return;
+  }
+
+  if (options.sanitize) {
+    feed = filter_empty_properties(sanitize_feed(feed, options));
   }
 
   // This is not caught by validation, but it is important to prevent storing
@@ -78,6 +70,10 @@ function executor(is_update, feed, options, resolve, reject) {
     throw new TypeError(
         'At least one feed url is required ' + JSON.stringify(feed));
   }
+
+  const is_update = 'id' in feed;
+  const prefix = is_update ? 'updating' : 'creating';
+  log('%s: %s feed', db_write_feed.name, prefix, list_peek(feed.urls));
 
   if (is_update) {
     if (options.set_date_updated) {
@@ -112,7 +108,7 @@ function txn_oncomplete(is_update, feed, callback, event) {
 }
 
 // TODO: finish all checks
-function is_valid_feed(feed) {
+function db_validate_feed(feed) {
   if ('id' in feed && !is_valid_feed_id(feed.id)) {
     return false;
   }
