@@ -30,6 +30,4 @@ function db_sanitize_feed(feed, options) {
     desc = truncate_html(desc, desc_max_len, repl_suffix);
     feed.description = desc;
   }
-
-  return feed;
 }

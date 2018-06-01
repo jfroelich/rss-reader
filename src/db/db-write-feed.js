@@ -42,6 +42,13 @@ function executor(feed, options, resolve, reject) {
     throw new TypeError('Invalid feed parameter ' + JSON.stringify(feed));
   }
 
+  // This is not caught by validation, but it is important to prevent storing
+  // location-less feeds in the data
+  if (list_is_empty(feed.urls)) {
+    throw new TypeError(
+        'At least one feed url is required ' + JSON.stringify(feed));
+  }
+
   if (options.validate && !db_validate_feed(feed)) {
     const error = new Error('Invalid feed ' + JSON.stringify(feed));
     reject(error);
@@ -49,15 +56,11 @@ function executor(feed, options, resolve, reject) {
   }
 
   if (options.sanitize) {
-    feed = filter_empty_properties(db_sanitize_feed(feed, options));
+    db_sanitize_feed(feed, options);
   }
 
-  // This is not caught by validation, but it is important to prevent storing
-  // location-less feeds in the data
-  if (list_is_empty(feed.urls)) {
-    throw new TypeError(
-        'At least one feed url is required ' + JSON.stringify(feed));
-  }
+  // Always filter empty properties
+  feed = filter_empty_properties(feed);
 
   const is_update = 'id' in feed;
   const prefix = is_update ? 'updating' : 'creating';
