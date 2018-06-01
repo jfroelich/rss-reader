@@ -1,8 +1,5 @@
-import {create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
-import {replace_tags} from '/src/lib/html/replace-tags.js';
-import {truncate_html} from '/src/lib/html/truncate-html.js';
-import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
-import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
+import {db_sanitize_feed} from '/src/db/db-sanitize-feed.js';
+import {is_feed, is_valid_feed_id} from '/src/feed.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {log} from '/src/log.js';
@@ -26,21 +23,12 @@ import {log} from '/src/log.js';
 // note this occurs after internal transaction committed
 // @throws {DOMException} database errors
 // @return {Promise} resolves to the stored feed
-// TODO: is invalid data really a programmer error worthy of an exception?
-// TODO: is purity worth the perf cost?
 // TODO: tests
-// TODO: deprecate validate, just have the caller call it explicitly
-// TODO: deprecate sanitize, caller should call explicitly
-// TODO: deprecate set-date-updated, caller should call it explicitly
-// TODO: create modules for sanitize and validate, require caller to explicitly
-// call those functions as additional optional boilerplate, and then deprecate
-// the options.sanitize and options.validate arguments here. Also do a similar
-// pattern for entries. Having separate sanitize and validate functions fits
-// better with the one-function-per-file method of organization, is more
-// readily testable, less opaque, and is a better use of parameters. See also
-// note about this in the db-write-entry doc (or maybe it is db-write-feed).
-// TODO: the sanitize impl does not need to clone, the caller can clone the
-// input if they want
+// TODO: deprecate validate option, just have the caller call it explicitly
+// TODO: deprecate sanitize option, caller should call explicitly
+// TODO: deprecate set-date-updated option, caller should call it explicitly
+// TODO: create module validate, require caller to explicitly call it as
+// additional optional boilerplate.
 // TODO: if caller must sanitize, then no longer need to return object, just
 // return id
 
@@ -51,7 +39,7 @@ export function db_write_feed(feed, options = {}) {
 
 function executor(feed, options, resolve, reject) {
   if (!is_feed(feed)) {
-    throw new TypeError('Invalid feed parameter type ' + feed);
+    throw new TypeError('Invalid feed parameter ' + JSON.stringify(feed));
   }
 
   if (options.validate && !db_validate_feed(feed)) {
@@ -61,7 +49,7 @@ function executor(feed, options, resolve, reject) {
   }
 
   if (options.sanitize) {
-    feed = filter_empty_properties(sanitize_feed(feed, options));
+    feed = filter_empty_properties(db_sanitize_feed(feed, options));
   }
 
   // This is not caught by validation, but it is important to prevent storing
@@ -122,43 +110,4 @@ function db_validate_feed(feed) {
   }
 
   return true;
-}
-
-// TODO: this function should probably still be defined in its own module
-function sanitize_feed(feed, options) {
-  let title_max_length = options.title_max_length,
-      description_max_length = options.description_max_length;
-
-  if (typeof title_max_length === 'undefined') {
-    title_max_length = 1024;
-  }
-
-  if (typeof description_max_length === 'undefined') {
-    description_max_length = 1024 * 10;
-  }
-
-  const blank_feed = create_feed();
-  const output_feed = Object.assign(blank_feed, feed);
-  const html_tag_replacement = '';
-  const suffix = '';
-
-  if (output_feed.title) {
-    let title = output_feed.title;
-    title = filter_control_characters(title);
-    title = replace_tags(title, html_tag_replacement);
-    title = condense_whitespace(title);
-    title = truncate_html(title, title_max_length, suffix);
-    output_feed.title = title;
-  }
-
-  if (output_feed.description) {
-    let desc = output_feed.description;
-    desc = filter_control_characters(desc);
-    desc = replace_tags(desc, html_tag_replacement);
-    desc = condense_whitespace(desc);
-    desc = truncate_html(desc, description_max_length, suffix);
-    output_feed.description = desc;
-  }
-
-  return output_feed;
 }
