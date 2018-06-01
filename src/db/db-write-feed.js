@@ -50,9 +50,7 @@ function executor(feed, options, resolve, reject) {
   }
 
   if (options.validate && !db_validate_feed(feed)) {
-    const error = new Error('Invalid feed ' + JSON.stringify(feed));
-    reject(error);
-    return;
+    throw new Error('Invalid feed ' + JSON.stringify(feed));
   }
 
   if (options.sanitize) {
