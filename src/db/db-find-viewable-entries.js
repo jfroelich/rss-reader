@@ -1,16 +1,16 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/entry.js';
 
-// TODO: use context?
-export function db_find_viewable_entries(conn, offset, limit) {
-  if (offset !== null && typeof offset !== 'undefined') {
-    assert(Number.isInteger(offset) && offset >= 0);
-  }
+// TODO: make a helper for request_onsuccess
+// TODO: merge into something like db-read-entries that accepts a query of some
+// sort like {criteria-category: viewable}.
 
-  return new Promise(
-      find_viewable_entries_executor.bind(null, conn, offset, limit));
+export function db_find_viewable_entries(conn, offset, limit) {
+  return new Promise(executor.bind(null, conn, offset, limit));
 }
 
-function find_viewable_entries_executor(conn, offset, limit, resolve, reject) {
+function executor(conn, offset, limit, resolve, reject) {
+  assert(is_valid_offset(offset));
+
   const entries = [];
   let counter = 0;
   let advanced = false;
@@ -36,6 +36,11 @@ function find_viewable_entries_executor(conn, offset, limit, resolve, reject) {
       }
     }
   };
+}
+
+function is_valid_offset(offset) {
+  return offset === null || typeof offset === 'undefined' ||
+      (Number.isInteger(offset) && offset >= 0);
 }
 
 function assert(value) {
