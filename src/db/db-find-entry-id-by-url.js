@@ -1,3 +1,6 @@
+// TODO: maybe deprecate and just call update-entry directly
+// TODO: revert to resolve on request success, the delay until txn is pointless
+
 // Searches the entry store in the database for an entry that contains the given
 // url. This is not the same as the similarly-named `find_entry_by_url` function
 // (which happens to not exist because there is no need for it at the moment).
@@ -13,11 +16,10 @@
 // does not exist, bad state)
 // @return {Promise} returns a promise that resolves to the matching entry id
 // {Number}. If no matching entry is found, resolves to undefined.
-// TODO: maybe deprecate and just call update-entry directly
-export function db_find_entry_id_by_url(url) {
+export function db_find_entry_id_by_url(conn, url) {
   return new Promise((resolve, reject) => {
     let entry_id;
-    const txn = this.conn.transaction('entry');
+    const txn = conn.transaction('entry');
     txn.oncomplete = _ => resolve(entry_id);
     txn.onerror = _ => reject(txn.error);
 

@@ -157,8 +157,7 @@ function entry_rewrite_tail_url(entry, rewrite_rules) {
 
 async function entry_exists(rconn, entry) {
   const url = new URL(list_peek(entry.urls));
-  const op = {conn: rconn, db_find_entry_id_by_url: db_find_entry_id_by_url};
-  const id = await op.db_find_entry_id_by_url(url);
+  const id = await db_find_entry_id_by_url(rconn, url);
   return is_valid_entry_id(id);
 }
 
