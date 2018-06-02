@@ -14,8 +14,6 @@ import {list_is_empty} from '/src/lib/lang/list.js';
 // @throws {DOMException} database errors
 // @return {Promise} resolves to the stored feed
 // TODO: tests
-// TODO: consider setting dateUpdated in updated case automatically, always, and
-// not allowing custom dateUpdated
 export function db_write_feed(conn, channel, feed) {
   return new Promise(executor.bind(null, conn, channel, feed));
 }

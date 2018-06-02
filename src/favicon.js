@@ -107,7 +107,6 @@ async function refresh_feed(feed) {
       delete feed.faviconURLString;
     }
 
-    feed.dateUpdated = new Date();
     await db_write_feed(this.rconn, this.channel, feed);
   }
 }

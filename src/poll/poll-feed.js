@@ -147,7 +147,6 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   }
 
   db_sanitize_feed(merged_feed);
-  merged_feed.dateUpdated = new Date();
   await db_write_feed(rconn, channel, merged_feed);
 
   const count = await poll_entries(
@@ -255,8 +254,6 @@ async function handle_error(
 
   // TODO: is sanitization needed here?
   db_sanitize_feed(feed);
-
-  feed.dateUpdated = new Date();
   await db_write_feed(rconn, channel, feed);
 }
 
