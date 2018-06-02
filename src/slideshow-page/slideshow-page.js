@@ -367,12 +367,16 @@ async function slide_onclick(event) {
 let keydown_timer_id = null;
 
 // TODO: is the debouncing stuff with idle callback approach needed??
-// TODO: do not handle key press if target is input/textarea
-// TODO: where is it bound? should be named something like window_onkeydown to
-// be consistent with other handler names
-function on_key_down(event) {
-  const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32;
+function window_onkeydown(event) {
+  const LEFT = 37, RIGHT = 39, N = 78, P = 80, SPACE = 32, DOWN = 40, UP = 38;
   const code = event.keyCode;
+
+  // TODO: test, this has never been tested and just a guess
+  if (event.target.localName === 'input' ||
+      event.target.localName === 'textarea') {
+    console.debug('Ignoring key down while in input');
+    return;
+  }
 
   switch (code) {
     case RIGHT:
@@ -391,10 +395,32 @@ function on_key_down(event) {
       keydown_timer_id = requestIdleCallback(Slideshow.prev);
       break;
     }
+
+    case DOWN: {
+      // TODO: I want to animate a scrollTop change I think?
+      // with ease in?
+
+      // For reference check out this:
+      // https://github.com/ariya/kinetic/blob/master/2/scroll.js
+
+      // See also -webkit-overflow-scrolling: touch;
+
+      break;
+    }
+
+    case UP: {
+      // I want to animate a scrollTop change I think?
+      break;
+    }
+
+    default: {
+      console.debug('Key code:', code);
+      break;
+    }
   }
 }
 
-window.addEventListener('keydown', on_key_down);
+window.addEventListener('keydown', window_onkeydown);
 
 // TODO: I should probably unlink loading on demand and navigation, because this
 // causes lag. navigation would be smoother if I appended even earlier, like

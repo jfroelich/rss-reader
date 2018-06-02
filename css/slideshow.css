@@ -9,6 +9,9 @@ slide {
   overflow-x: hidden;
   overflow-y: auto;
 
+  /* Try for flick scroll */
+  -webkit-overflow-scrolling: touch;
+
   /* For some reason non-0 padding makes width larger than page */
   padding: 0 !important;
 
