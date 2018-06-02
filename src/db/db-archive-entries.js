@@ -1,6 +1,6 @@
 import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, is_entry} from '/src/entry.js';
 import {sizeof} from '/src/lib/lang/sizeof.js';
-import {log} from '/src/log.js';
+import {warn} from '/src/log.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -45,7 +45,7 @@ function request_onsuccess(entry_ids, max_age, event) {
   }
 
   if (!is_entry(entry)) {
-    log('%s: bad entry read from db', db_archive_entries.name, entry);
+    warn('%s: bad entry read from db', db_archive_entries.name, entry);
     cursor.continue();
     return;
   }
@@ -53,7 +53,7 @@ function request_onsuccess(entry_ids, max_age, event) {
   const entry = cursor.value;
 
   if (!entry.dateCreated) {
-    log('%s: entry missing date created', db_archive_entries.name, entry);
+    warn('%s: entry missing date created', db_archive_entries.name, entry);
     cursor.continue();
     return;
   }
@@ -62,7 +62,7 @@ function request_onsuccess(entry_ids, max_age, event) {
   const age = current_date - entry.dateCreated;
 
   if (age < 0) {
-    log('%s: entry created in future', db_archive_entries.name, entry);
+    warn('%s: entry created in future', db_archive_entries.name, entry);
     cursor.continue();
     return;
   }
@@ -92,7 +92,7 @@ function archive_entry(entry) {
   const after_size = sizeof(ce);
 
   if (after_size > before_size) {
-    log('%s: increased size', db_archive_entries.name, entry);
+    warn('%s: increased size', db_archive_entries.name, entry);
   }
 
   ce.archiveState = ENTRY_STATE_ARCHIVED;
