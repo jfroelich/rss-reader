@@ -60,6 +60,13 @@ function request_onsuccess(entry_ids, max_age, event) {
 
   const current_date = new Date();
   const age = current_date - entry.dateCreated;
+
+  if (age < 0) {
+    log('%s: entry created in future', db_archive_entries.name, entry);
+    cursor.continue();
+    return;
+  }
+
   if (age > max_age) {
     const ae = archive_entry(entry);
     cursor.update(ae);
