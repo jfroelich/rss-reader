@@ -44,13 +44,12 @@ function request_onsuccess(entry_ids, max_age, event) {
     return;
   }
 
+  const entry = cursor.value;
   if (!is_entry(entry)) {
     warn('%s: bad entry read from db', db_archive_entries.name, entry);
     cursor.continue();
     return;
   }
-
-  const entry = cursor.value;
 
   if (!entry.dateCreated) {
     warn('%s: entry missing date created', db_archive_entries.name, entry);
