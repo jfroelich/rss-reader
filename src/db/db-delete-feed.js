@@ -43,13 +43,8 @@ import {warn} from '/src/log.js';
 // transaction commits. A message is sent to the channel when the feed is
 // deleted, and for each associated entry that is deleted.
 //
-// This checks that the input feed id is valid in the sense that it is
-// well-formed, but this never actually checks if the feed id corresponds to a
-// feed object in the database, so be forewarned it is possible to call this and
-// produce no effect. I anticipate that most of the time the caller should know
-// that the feed id corresponds, so this correspondence is not validated because
-// it would be pointless overhead to perform an extra lookup by id before
-// deleting.
+// Calling this on a well-formed feed id that does not point to an existing feed
+// in the database is a noop.
 //
 // @param conn {IDBDatabase} an open database connection
 // @param channel {BroadcastChannel} receives messages when the feed is
