@@ -7,9 +7,9 @@ import {db_remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
 import {db_remove_orphaned_entries} from '/src/db/db-remove-orphaned-entries.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
 import {register_install_listener} from '/src/install.js';
+import {log} from '/src/log.js';
 import {open_view} from '/src/open-view.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
-import {log} from '/src/log.js';
 
 // Loaded exclusively by the background page. This page is loaded via the
 // background page instead of directly via the scripts property in the manifest.
@@ -40,14 +40,11 @@ async function handle_compact_favicons_alarm(alarm) {
 }
 
 async function handle_archive_alarm_wakeup(alarm) {
-  const op = {};
-  op.conn = await db_open();
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.db_archive_entries = db_archive_entries;
-  let max_age;
-  await op.db_archive_entries(max_age);
-  op.channel.close();
-  op.conn.close();
+  const conn = await db_open();
+  const channel = new BroadcastChannel(localStorage.channel_name);
+  await db_archive_entries(conn, channel);
+  channel.close();
+  conn.close();
 }
 
 async function handle_lost_entries_alarm(alarm) {

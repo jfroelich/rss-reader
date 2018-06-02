@@ -45,14 +45,11 @@ async function cli_subscribe(url_string, poll = true) {
 }
 
 async function cli_archive_entries() {
-  const op = {};
-  op.conn = await db_open();
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.db_archive_entries = db_archive_entries;
-  let max_age;
-  await op.db_archive_entries(max_age);
-  op.channel.close();
-  op.conn.close();
+  const conn = await db_open();
+  const channel = new BroadcastChannel(localStorage.channel_name);
+  await db_archive_entries(conn, channel);
+  channel.close();
+  conn.close();
 }
 
 async function cli_refresh_icons() {

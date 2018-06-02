@@ -10,16 +10,13 @@ import {register_test} from '/src/tests/test-registry.js';
 // archived
 
 async function archive_entries_test() {
-  let dbname = 'archive-entries-test', version, timeout, max_age;
-  const conn = await db_open(dbname, version, timeout);
-  const op = {};
-  op.conn = conn;
-  op.channel = {name: 'stub', postMessage: noop, close: noop};
-  op.db_archive_entries = db_archive_entries;
-  await op.db_archive_entries(max_age);
-
+  const dbname = 'archive-entries-test';
+  let dbversion, dbtimeout;
+  const conn = await db_open(dbname, dbversion, dbtimeout);
+  const channel = {name: 'stub', postMessage: noop, close: noop};
+  await db_archive_entries(conn, channel);
   conn.close();
-  op.channel.close();
+  channel.close();
   await indexeddb_remove(conn.name);
 }
 
