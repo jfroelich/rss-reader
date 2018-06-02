@@ -107,12 +107,13 @@ async function refresh_feed(feed) {
       delete feed.faviconURLString;
     }
 
+    feed.dateUpdated = new Date();
+
     const update_op = {
       conn: this.rconn,
       channel: this.channel,
       db_write_feed: db_write_feed
     };
-    await update_op.db_write_feed(
-        feed, {validate: false, sanitize: false, set_date_updated: true});
+    await update_op.db_write_feed(feed);
   }
 }

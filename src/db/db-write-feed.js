@@ -32,8 +32,6 @@ import {log} from '/src/log.js';
 // additional optional boilerplate.
 // TODO: if caller must sanitize, then no longer need to return object, just
 // return id
-
-// Creates or updates the given feed in storage
 export function db_write_feed(feed, options = {}) {
   return new Promise(executor.bind(this, feed, options));
 }
@@ -41,11 +39,7 @@ export function db_write_feed(feed, options = {}) {
 function executor(feed, options, resolve, reject) {
   if (!is_feed(feed)) {
     throw new TypeError('Invalid feed parameter ' + JSON.stringify(feed));
-  }
-
-  // This is not caught by validation, but it is important to prevent storing
-  // location-less feeds in the data
-  if (list_is_empty(feed.urls)) {
+  } else if (list_is_empty(feed.urls)) {
     throw new TypeError(
         'At least one feed url is required ' + JSON.stringify(feed));
   }

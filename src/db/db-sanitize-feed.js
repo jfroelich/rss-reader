@@ -5,7 +5,7 @@ import {filter_control_characters} from '/src/lib/lang/filter-control-characters
 
 // NOTE: no longer clones! docs and such may be out of date
 
-function db_sanitize_feed(feed, options) {
+export function db_sanitize_feed(feed, options) {
   options = options || {};
   let title_max_len = options.title_max_len || 1024;
   let desc_max_len = options.desc_max_len || 1024 * 10;

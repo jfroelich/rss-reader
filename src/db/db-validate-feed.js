@@ -1,7 +1,7 @@
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
 
 // TODO: finish all checks
-function db_validate_feed(feed) {
+export function db_validate_feed(feed) {
   if (!is_feed(feed)) {
     return false;
   }

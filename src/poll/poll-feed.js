@@ -1,4 +1,6 @@
 import {refresh_badge} from '/src/badge.js';
+import {db_sanitize_feed} from '/src/db/db-sanitize-feed.js';
+import {db_validate_feed} from '/src/db/db-validate-feed.js';
 import {db_write_feed} from '/src/db/db-write-feed.js';
 import {append_entry_url, create_entry} from '/src/entry.js';
 import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed.js';
@@ -138,17 +140,16 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const merged_feed = merge_feed(feed, coerced_feed);
   handle_fetch_success(merged_feed);
 
-  const update_context = {};
-  update_context.conn = rconn;
-  update_context.channel = channel;
+  const update_op = {conn: rconn, channel: channel};
+  // Do not throw if invalid, just exit
+  if (!db_validate_feed(merged_feed)) {
+    console.warn('Invalid feed', merged_feed);
+    return 0;
+  }
 
-  const update_options = {};
-  update_options.validate = true;
-  update_options.sanitize = true;
-  update_options.set_date_updated = true;
-
-  const stored_feed =
-      await db_write_feed.call(update_context, merged_feed, update_options);
+  db_sanitize_feed(merged_feed);
+  merged_feed.dateUpdated = new Date();
+  const stored_feed = await db_write_feed.call(update_op, merged_feed);
 
   const count = await poll_entries(
       rconn, iconn, channel, options, parsed_feed.entries, stored_feed);
@@ -253,16 +254,13 @@ async function handle_error(
   const update_options = {};
   // TODO: why validate? have we not had control the entire time, and have no
   // new user data?
-  update_options.validate = true;
-  // In this situation the feed's properties were not polluted by new external
-  // data, and we maintained control over of the object for its lifetime from
-  // read to write, so there is no need to sanitize on storage
-  // TODO: verify the claim of no-pollution, have some anxiety this is called
-  // with new data, in some sense I have to make it an
-  // expectation/characteristic of the handle_error function itself then
-  update_options.sanitize = false;
-  update_options.set_date_updated = true;
+  if (!db_validate_feed(feed)) {
+    console.warn('Invalid feed', feed);
+    return;
+  }
 
+  // TODO: sanitize?
+  feed.dateUpdated = new Date();
   await db_write_feed.call(update_context, feed, update_options);
 }
 
