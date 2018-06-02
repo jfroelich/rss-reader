@@ -117,17 +117,14 @@ export async function subscribe(url, options) {
     db_write_feed: db_write_feed
   };
 
-  // We are creating a new feed, so there is no need to set dateUpdated, in
-  // fact it is preferred that it is not set (it will be deleted)
-
-  const stored_feed = await write_op.db_write_feed(feed);
+  await write_op.db_write_feed(feed);
 
   if (options.notify) {
     const title = 'Subscribed!';
-    const feed_title = feed.title || list_peek(stored_feed.urls);
+    const feed_title = feed.title || list_peek(feed.urls);
     const message = 'Subscribed to ' + feed_title;
-    notify(title, message, stored_feed.faviconURLString);
+    notify(title, message, feed.faviconURLString);
   }
 
-  return stored_feed;
+  return feed;
 }

@@ -46,23 +46,38 @@ async function create_feed_test() {
   const op = {conn: conn, channel: channel, db_write_feed: db_write_feed};
   const stored_feed_id = await op.db_write_feed(feed);
 
-  // Make assertions about the output of the operation
-  assert(is_valid_feed_id(stored_feed_id));
+  // Make assertions about the output
 
+  // db_write_feed both returns the new id, and sets the id of the input. They
+  // should be the same value
+  assert(feed.id === stored_feed_id);
+
+  // Given that now we know there the same, validate one of them to validate
+  // both as valid
+  assert(is_valid_feed_id(feed.id));
 
   // Make assertions about channel communications
+
+  // There should be one message
   assert(messages.length > 0);
   assert(messages.length < 2);
+
+  // The message is an object
   assert(typeof messages[0] === 'object');
-  assert(messages[0].id === stored_feed_id);
+
+  // The message has the correct properties
+  assert(messages[0].id === feed.id);
   assert(messages[0].type === 'feed-written');
 
   // Assert the feed exists in the database with the given url
   const read_key_only = true;
   assert(await db_find_feed_by_url(conn, feed_url, read_key_only));
 
+  // TODO: could just store above result, and assert against it. we know it
+  // will be findable by id, i think?
+
   // Read the feed from the database and assert against read properties
-  const match = await db_find_feed_by_id(conn, stored_feed_id);
+  const match = await db_find_feed_by_id(conn, feed.id);
   assert(is_feed(match));
   assert(match.active === true);
   assert('dateCreated' in match);

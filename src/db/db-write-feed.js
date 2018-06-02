@@ -25,7 +25,7 @@ function executor(feed, resolve, reject) {
   assert(is_feed(feed));
   assert(!list_is_empty(feed.urls));
 
-  feed = filter_empty_properties(feed);
+  filter_empty_properties(feed);
 
   const is_create = !('id' in feed);
   if (is_create) {

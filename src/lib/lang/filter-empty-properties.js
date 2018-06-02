@@ -1,22 +1,29 @@
 const has_own = Object.prototype.hasOwnProperty;
 
-// Returns a new object that is a copy of the input less empty properties. A
-// property is empty if it is null, undefined, or an empty string. Ignores
-// prototype, deep objects, getters, etc. Shallow copy by reference and therefore
-// impure.
-export function filter_empty_properties(object) {
-  const output = {};
-  let undef;
-  if (typeof object === 'object' && object !== null) {
-    for (const key in object) {
-      if (has_own.call(object, key)) {
-        const value = object[key];
-        if (value !== undef && value !== null && value !== '') {
-          output[key] = value;
+// TODO: look into getOwnProperties or whatever it is called
+
+// NOTE: value is returned to keep some legacy compat, but now this filters in
+// place, there is no need to use ret val
+// TODO: this no longer clones! double check caller
+
+export function filter_empty_properties(value) {
+  if (value && typeof value === 'object') {
+    for (const key in value) {
+      if (has_own.call(value, key)) {
+        const pv = value[key];
+
+        // Most properties have values. This leads to fewer operations on
+        // average. I think.
+        if (pv) {
+          continue;
+        }
+
+        if (pv === null || pv === '' || typeof pv === 'undefined') {
+          delete value[key];
         }
       }
     }
   }
 
-  return output;
+  return value;
 }
