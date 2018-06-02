@@ -7,8 +7,8 @@ import {filter_control_characters} from '/src/lib/lang/filter-control-characters
 
 export function db_sanitize_feed(feed, options) {
   options = options || {};
-  let title_max_len = options.title_max_len || 1024;
-  let desc_max_len = options.desc_max_len || 1024 * 10;
+  const title_max_len = options.title_max_len || 1024;
+  const desc_max_len = options.desc_max_len || 1024 * 10;
 
   const html_tag_replacement = '';
   const repl_suffix = '';

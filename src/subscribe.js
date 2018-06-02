@@ -1,4 +1,6 @@
 import {db_find_feed_by_url} from '/src/db/db-find-feed-by-url.js';
+import {db_sanitize_feed} from '/src/db/db-sanitize-feed.js';
+import {db_validate_feed} from '/src/db/db-validate-feed.js';
 import {db_write_feed} from '/src/db/db-write-feed.js';
 import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
 import {coerce_feed} from '/src/feed.js';
@@ -103,19 +105,22 @@ export async function subscribe(url, options) {
         await lookup_op.favicon_lookup(lookup_url, lookup_doc, fetch);
   }
 
+  if (!db_validate_feed(feed)) {
+    throw new Error('Invalid feed ' + JSON.stringify(feed));
+  }
+
+  db_sanitize_feed(feed);
+
   const write_op = {
     conn: this.rconn,
     channel: this.channel,
     db_write_feed: db_write_feed
   };
 
-  const write_options = {
-    validate: true,
-    sanitize: true,
-    set_date_updated: false
-  };
+  // We are creating a new feed, so there is no need to set dateUpdated, in
+  // fact it is preferred that it is not set (it will be deleted)
 
-  const stored_feed = await write_op.db_write_feed(feed, write_options);
+  const stored_feed = await write_op.db_write_feed(feed);
 
   if (options.notify) {
     const title = 'Subscribed!';

@@ -140,7 +140,12 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const merged_feed = merge_feed(feed, coerced_feed);
   handle_fetch_success(merged_feed);
 
-  const update_op = {conn: rconn, channel: channel};
+  const update_op = {
+    conn: rconn,
+    channel: channel,
+    db_write_feed: db_write_feed
+  };
+
   // Do not throw if invalid, just exit
   if (!db_validate_feed(merged_feed)) {
     console.warn('Invalid feed', merged_feed);
@@ -149,7 +154,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 
   db_sanitize_feed(merged_feed);
   merged_feed.dateUpdated = new Date();
-  const stored_feed = await db_write_feed.call(update_op, merged_feed);
+  const stored_feed = await update_op.db_write_feed(merged_feed);
 
   const count = await poll_entries(
       rconn, iconn, channel, options, parsed_feed.entries, stored_feed);
@@ -250,8 +255,8 @@ async function handle_error(
   const update_context = {};
   update_context.conn = rconn;
   update_context.channel = channel;
+  update_context.db_write_feed = db_write_feed;
 
-  const update_options = {};
   // TODO: why validate? have we not had control the entire time, and have no
   // new user data?
   if (!db_validate_feed(feed)) {
@@ -259,9 +264,11 @@ async function handle_error(
     return;
   }
 
-  // TODO: sanitize?
+  // TODO: is sanitization needed here?
+  db_sanitize_feed(feed);
+
   feed.dateUpdated = new Date();
-  await db_write_feed.call(update_context, feed, update_options);
+  await update_context.db_write_feed(feed);
 }
 
 function dedup_entries(entries) {

@@ -109,6 +109,9 @@ async function refresh_feed(feed) {
 
     feed.dateUpdated = new Date();
 
+    // Unlike in other contexts, we do not revalidate the feed here because we
+    // had control of it over its entire lifetime, from database read to write
+
     const update_op = {
       conn: this.rconn,
       channel: this.channel,
