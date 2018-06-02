@@ -99,12 +99,13 @@ export function feeds_container_append_feed(feed) {
   feeds_container.appendChild(feed_element);
 }
 
-
-export function feeds_container_onclick(event) {
+function feeds_container_onclick(event) {
   if (event.target.localName === 'div' && event.target.id) {
     toggle_details(event.target);
   }
 }
+
+
 
 // TODO: do not hardcode css, instead do something like toggle defined class
 
@@ -129,3 +130,7 @@ function toggle_details(feed_element) {
     table.style.display = 'block';
   }
 }
+
+// Initialize the feeds container click handler on module load
+const feeds_container = document.getElementById('feeds-container');
+feeds_container.onclick = feeds_container_onclick;

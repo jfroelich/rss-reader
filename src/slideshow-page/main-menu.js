@@ -1,8 +1,52 @@
-import {fonts} from '/src/config.js';
+import {db_open} from '/src/db/db-open.js';
+import {favicon_create_conn} from '/src/favicon.js';
+import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {options_menu_hide, options_menu_show} from '/src/slideshow-page/options-menu.js';
-import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 
-export function main_menu_button_onclick(event) {
+// TODO: this module should be responsible for initializing itself where
+// possible. There is no need to export things and separately initialize them
+// in init-slideshow-page. The problem with that module is that it uses temporal
+// coherency, which is a rather low form of coherency. Slowly migrate stuff
+// out of init-slideshow-page that belongs here, and initialize it here as a
+// side effect of loading the module itself.
+
+let refresh_in_progress = false;
+
+
+// TODO: show a completed message on refresh complete?
+// TODO: show an error message on refresh error?
+async function refresh_button_onclick(event) {
+  event.preventDefault();
+
+  if (refresh_in_progress) {
+    return;
+  }
+
+  refresh_in_progress = true;
+
+  // Create a local channel object because apparently a channel cannot notify
+  // itself (at least in Chrome 66) despite what spec states
+  const onclick_channel = new BroadcastChannel(localStorage.channel_name);
+
+  const rconn = await db_open();
+  const iconn = await favicon_create_conn();
+
+  const options = {};
+  options.ignore_recency_check = true;
+  await poll_feeds(rconn, iconn, onclick_channel, options);
+
+  // Dispose of resources
+  rconn.close();
+  iconn.close();
+  onclick_channel.close();
+
+  refresh_in_progress = false;
+}
+
+
+function toggle_left_pannel_button_onclick(event) {
+  console.debug('toggling left panel');
+
   const menu_options = document.getElementById('left-panel');
   if (menu_options.style.marginLeft === '0px') {
     options_menu_hide();
@@ -13,64 +57,49 @@ export function main_menu_button_onclick(event) {
   }
 }
 
-// TODO: oops, these all belong in options menu
+export function reader_button_onclick(event) {
+  const feeds_button = document.getElementById('feeds-button');
+  feeds_button.disabled = false;
 
-export function header_font_menu_onchange(event) {
-  const font_name = event.target.value;
-  if (font_name) {
-    localStorage.HEADER_FONT_FAMILY = font_name;
-  } else {
-    delete localStorage.HEADER_FONT_FAMILY;
-  }
+  const reader_button = document.getElementById('reader-button');
+  reader_button.disabled = true;
 
-  page_style_onchange();
+  const slideshow_container = document.getElementById('slideshow-container');
+  slideshow_container.style.display = 'block';
+
+  const feeds_container = document.getElementById('feeds-container');
+  feeds_container.style.display = 'none';
 }
 
-export function body_font_menu_onchange(event) {
-  const font_name = event.target.value;
-  if (font_name) {
-    localStorage.BODY_FONT_FAMILY = font_name;
-  } else {
-    delete localStorage.BODY_FONT_FAMILY;
-  }
+// TODO: clarify by renaming to something like view_feeds_button_onclick?
+function feeds_button_onclick(event) {
+  const feeds_button = document.getElementById('feeds-button');
+  feeds_button.disabled = true;
 
-  page_style_onchange();
+  const reader_button = document.getElementById('reader-button');
+  reader_button.disabled = false;
+
+  const slideshow_container = document.getElementById('slideshow-container');
+  slideshow_container.style.display = 'none';
+
+  const feeds_container = document.getElementById('feeds-container');
+  feeds_container.style.display = 'block';
 }
 
-export function header_font_menu_init() {
-  const menu = document.getElementById('header-font-menu');
-  menu.onchange = header_font_menu_onchange;
-  const current_header_font = localStorage.HEADER_FONT_FAMILY;
-  const default_option = document.createElement('option');
-  default_option.value = '';
-  default_option.textContent = 'Header Font';
-  menu.appendChild(default_option);
-  for (const font_name of fonts) {
-    const option = document.createElement('option');
-    option.value = font_name;
-    option.textContent = font_name;
-    if (font_name === current_header_font) {
-      option.selected = true;
-    }
-    menu.appendChild(option);
-  }
-}
 
-export function body_font_menu_init() {
-  const menu = document.getElementById('body-font-menu');
-  menu.onchange = body_font_menu_onchange;
-  const current_body_font = localStorage.BODY_FONT_FAMILY;
-  const default_option = document.createElement('option');
-  default_option.value = '';
-  default_option.textContent = 'Body Font';
-  menu.appendChild(default_option);
-  for (const font_name of fonts) {
-    const option = document.createElement('option');
-    option.value = font_name;
-    option.textContent = font_name;
-    if (font_name === current_body_font) {
-      option.selected = true;
-    }
-    menu.appendChild(option);
-  }
-}
+
+// Initialize things on module load. Note how modules become ready only after
+// the dom is ready, so elements should be findable.
+
+console.debug('binding main menu click handler');
+const toggle_left_panel_button = document.getElementById('main-menu-button');
+toggle_left_panel_button.onclick = toggle_left_pannel_button_onclick;
+
+const refresh_button = document.getElementById('refresh');
+refresh_button.onclick = refresh_button_onclick;
+
+const feeds_button = document.getElementById('feeds-button');
+feeds_button.onclick = feeds_button_onclick;
+
+const reader_button = document.getElementById('reader-button');
+reader_button.onclick = reader_button_onclick;
