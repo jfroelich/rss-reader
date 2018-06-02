@@ -108,15 +108,6 @@ async function refresh_feed(feed) {
     }
 
     feed.dateUpdated = new Date();
-
-    // Unlike in other contexts, we do not revalidate the feed here because we
-    // had control of it over its entire lifetime, from database read to write
-
-    const update_op = {
-      conn: this.rconn,
-      channel: this.channel,
-      db_write_feed: db_write_feed
-    };
-    await update_op.db_write_feed(feed);
+    await db_write_feed(this.rconn, this.channel, feed);
   }
 }

@@ -42,9 +42,7 @@ async function create_feed_test() {
   channel.postMessage = message => messages.push(message);
   channel.close = function() {};
 
-  // Carry out the operation
-  const op = {conn: conn, channel: channel, db_write_feed: db_write_feed};
-  const stored_feed_id = await op.db_write_feed(feed);
+  const stored_feed_id = await db_write_feed(conn, channel, feed);
 
   // Make assertions about the output
 

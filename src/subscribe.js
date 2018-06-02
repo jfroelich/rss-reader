@@ -110,14 +110,7 @@ export async function subscribe(url, options) {
   }
 
   db_sanitize_feed(feed);
-
-  const write_op = {
-    conn: this.rconn,
-    channel: this.channel,
-    db_write_feed: db_write_feed
-  };
-
-  await write_op.db_write_feed(feed);
+  await db_write_feed(this.rconn, this.channel, feed);
 
   if (options.notify) {
     const title = 'Subscribed!';

@@ -4,8 +4,8 @@ import {list_is_empty} from '/src/lib/lang/list.js';
 
 // Creates or updates a feed in the database. Broadcasts a message to the
 // channel when finished
-// @context-param conn {IDBDatabase} an open database connection
-// @context-param channel {BroadcastChannel} a channel to send messages about a
+// @param conn {IDBDatabase} an open database connection
+// @param channel {BroadcastChannel} a channel to send messages about a
 // feed being stored
 // @param feed {object} the feed object to store
 // @throws {TypeError} when feed is not a feed type
@@ -14,14 +14,13 @@ import {list_is_empty} from '/src/lib/lang/list.js';
 // @throws {DOMException} database errors
 // @return {Promise} resolves to the stored feed
 // TODO: tests
-// TODO: revert to not using context, just use params again
 // TODO: consider setting dateUpdated in updated case automatically, always, and
 // not allowing custom dateUpdated
-export function db_write_feed(feed) {
-  return new Promise(executor.bind(this, feed));
+export function db_write_feed(conn, channel, feed) {
+  return new Promise(executor.bind(null, conn, channel, feed));
 }
 
-function executor(feed, resolve, reject) {
+function executor(conn, channel, feed, resolve, reject) {
   assert(is_feed(feed));
   assert(!list_is_empty(feed.urls));
 
@@ -32,10 +31,13 @@ function executor(feed, resolve, reject) {
     feed.active = true;
     feed.dateCreated = new Date();
     delete feed.dateUpdated;
+  } else {
+    feed.dateUpdated = new Date();
   }
 
-  const txn = this.conn.transaction('feed', 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(this, is_create, feed, resolve);
+  const txn = conn.transaction('feed', 'readwrite');
+  txn.oncomplete =
+      txn_oncomplete.bind(null, channel, is_create, feed.id, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const store = txn.objectStore('feed');
@@ -48,10 +50,10 @@ function executor(feed, resolve, reject) {
   }
 }
 
-function txn_oncomplete(is_create, feed, callback, event) {
-  const message = {type: 'feed-written', id: feed.id, create: is_create};
-  this.channel.postMessage(message);
-  callback(feed.id);
+function txn_oncomplete(channel, is_create, feed_id, callback, event) {
+  const message = {type: 'feed-written', id: feed_id, create: is_create};
+  channel.postMessage(message);
+  callback(feed_id);
 }
 
 function assert(condition, message) {
