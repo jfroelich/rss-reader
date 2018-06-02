@@ -419,15 +419,11 @@ function feed_list_remove_feed_by_id(feed_id) {
 
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-
-  const op = {};
-  op.conn = await db_open();
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.db_delete_feed = db_delete_feed;
-  await op.db_delete_feed(feed_id, 'unsubscribe');
-  op.conn.close();
-  op.channel.close();
-
+  const conn = await db_open();
+  const channel = new BroadcastChannel(localStorage.channel_name);
+  await db_delete_feed(conn, channel, feed_id, 'unsubscribe');
+  conn.close();
+  channel.close();
   feed_list_remove_feed_by_id(feed_id);
   section_show_by_id('subs-list-section');
 }
