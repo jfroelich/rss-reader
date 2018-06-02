@@ -1,26 +1,14 @@
-// TODO: move this back into slideshow-page, and then break up slideshow-page
-// appropriately into sectioned modules. This has cross-cutting concerns and
-// there are concept-alignment problems, such as with click handling. It is also
-// a rather leaky abstraction.
+import {get_current_slide, set_current_slide} from '/src/slideshow-page/slideshow-state.js';
+
+// TODO: break up into modules
 
 export const SLIDE_ELEMENT_NAME = 'slide';
-const container = document.getElementById('slideshow-container');
-let cursor;
+
+
 let active_transition_count = 0;
 
-export function element_get_name() {
-  return SLIDE_ELEMENT_NAME;
-}
-
-export function get_current_slide() {
-  return cursor;
-}
-
-export function slide_is_current(slide) {
-  return slide === cursor;
-}
-
 export function slide_get_first() {
+  const container = document.getElementById('slideshow-container');
   return container.firstElementChild;
 }
 
@@ -29,17 +17,17 @@ export function next() {
     return false;
   }
 
-  if (!cursor) {
+  if (!get_current_slide()) {
     return false;
   }
 
-  const nextSlide = cursor.nextElementSibling;
-  if (!nextSlide) {
+  const next_slide = get_current_slide().nextElementSibling;
+  if (!next_slide) {
     return false;
   }
 
   active_transition_count++;
-  cursor.style.left = '-100%';
+  get_current_slide().style.left = '-100%';
 
   // NOTE: in process of creating this lib I noticed the source of the strange
   // behavior with why count is only 1 despite two transitions, it was here
@@ -48,8 +36,8 @@ export function next() {
 
   // active_transition_count++;
 
-  nextSlide.style.left = '0';
-  cursor = nextSlide;
+  next_slide.style.left = '0';
+  set_current_slide(next_slide);
 
   return true;
 }
@@ -59,108 +47,30 @@ export function prev() {
     return;
   }
 
-  if (!cursor) {
+  if (!get_current_slide()) {
     return;
   }
 
-  const previousSlide = cursor.previousElementSibling;
-  if (!previousSlide) {
+  const previous_slide = get_current_slide().previousElementSibling;
+  if (!previous_slide) {
     return;
   }
 
   active_transition_count++;
-  cursor.style.left = '100%';
+  get_current_slide().style.left = '100%';
   // active_transition_count++;
-  previousSlide.style.left = '0';
-  cursor = previousSlide;
+  previous_slide.style.left = '0';
+  set_current_slide(previous_slide);
 }
 
-export function count() {
-  return container.childElementCount;
-}
 
-export function slide_get_all() {
-  return container.querySelectorAll(SLIDE_ELEMENT_NAME);
-}
-
-export function slide_is_slide(element) {
-  return element instanceof Element && element.localName === SLIDE_ELEMENT_NAME;
-}
-
-let duration = 0.35;
-
-function is_valid_transition_duration(duration) {
-  return !isNaN(duration) && isFinite(duration) && duration >= 0;
-}
-
-export function set_transition_duration(input_duration) {
-  if (!is_valid_transition_duration(input_duration)) {
-    throw new TypeError('Invalid duration parameter', input_duration);
-  }
-
-  duration = input_duration;
-}
-
-export function create() {
-  return document.createElement(SLIDE_ELEMENT_NAME);
-}
-
-export function append(slide) {
-  if (!slide_is_slide(slide)) {
-    throw new TypeError('Invalid slide parameter', slide);
-  }
-
-  // Caller handles slide clicks
-  // slide.addEventListener('click', onClick);
-
-  // Setup s ide scroll handling. The listener is bound to the slide itself,
-  // because it is the slide itself that scrolls, and not window. Also, in order
-  // for scrolling to react to keyboard shortcuts, the element must be focused,
-  // and in order to focus an element, it must have the tabindex attribute.
-  slide.setAttribute('tabindex', '-1');
-
-  // Set the position of the slide. Slides are positioned absolutely. Setting
-  // left to 100% places the slide off the right side of the view. Setting left
-  // to 0 places the slide in the view. The initial value must be defined here
-  // and not via css, before adding the slide to the page. Otherwise, changing
-  // the style for the first slide causes an unwanted transition, and I have to
-  // change the style for the first slide because it is not set in css.
-  slide.style.left = container.childElementCount === 0 ? '0' : '100%';
-
-  // In order for scrolling a slide element with keyboard keys to work, the
-  // slide must be focused. But calling element.focus() while a transition is
-  // active, such as what happens when a slide is moved, interrupts the
-  // transition. Therefore, schedule a call to focus the slide for when the
-  // transition completes.
-  slide.addEventListener('webkitTransitionEnd', transition_onend);
-
-  // Define the animation effect that will occur when moving the slide. Slides
-  // are moved by changing a slide's css left property, which is basically its
-  // offset from the left side of window. This will also trigger a transition
-  // event. The transition property must be defined here in code, and not via
-  // css, in order to have the transition only apply to a slide when it is in a
-  // certain state. If set in css then this causes an immediate transition on
-  // the first slide, which I want to avoid.
-  slide.style.transition = `left ${duration}s ease-in-out`;
-
-  // Initialize the cursor if needed
-  if (!cursor) {
-    cursor = slide;
-
-    // TODO: is this right? I think it is because there is no transition for
-    // first slide, so there is no focus call. But maybe not needed?
-    cursor.focus();
-  }
-
-  container.appendChild(slide);
-}
 
 // Remove a slide from the dom
 export function remove(slide) {
   slide.remove();
 }
 
-function transition_onend(event) {
+export function transition_onend(event) {
   // The slide that the transition occured upon (event.target) is not guaranteed
   // to be equal to the current slide. We fire off two transitions per
   // animation, one for the slide being moved out of view, and one for the slide
@@ -169,7 +79,7 @@ function transition_onend(event) {
   // the state where after both transitions complete, the new slide (which is
   // the current slide at this point) is now focused. Therefore we ignore
   // event.target and directly affect the current slide only.
-  cursor.focus();
+  get_current_slide().focus();
 
   // There may be more than one transition effect occurring at the moment. Point
   // out that this transition completed. This provides a method for checking if
