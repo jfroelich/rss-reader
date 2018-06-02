@@ -66,7 +66,7 @@ export async function export_opml(title) {
       log('Skipping feed that is missing url', feed);
     } else {
       log('Appending feed', list_peek(feed.urls));
-      body_element.appendChild(create_outline_element(feed));
+      body_element.appendChild(create_outline_element(document, feed));
     }
   }
 
