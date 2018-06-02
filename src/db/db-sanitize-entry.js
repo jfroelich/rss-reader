@@ -3,7 +3,6 @@ import {replace_tags} from '/src/lib/html/replace-tags.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
-import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import {filter_unprintable_characters} from '/src/lib/lang/filter-unprintable-characters.js';
 
 // Returns a new entry object where fields have been sanitized. Impure. Note
@@ -104,5 +103,5 @@ export function db_sanitize_entry(
     output_entry.title = title;
   }
 
-  return filter_empty_properties(output_entry);
+  return output_entry;
 }
