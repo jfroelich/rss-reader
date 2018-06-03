@@ -57,3 +57,7 @@ export async function init_badge() {
 
   conn.close();
 }
+
+export function register_badge_click_listener(listener) {
+  chrome.browserAction.onClicked.addListener(listener);
+}
