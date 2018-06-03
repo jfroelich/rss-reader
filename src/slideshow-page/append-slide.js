@@ -3,7 +3,7 @@ import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {format_date} from '/src/lib/lang/format-date.js';
-import {list_peek} from '/src/lib/lang/list.js';
+import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 import {log, warn} from '/src/log.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
