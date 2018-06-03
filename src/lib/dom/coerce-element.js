@@ -1,47 +1,32 @@
-// `coerce_element` renames an element. An element's name indicates the
-// element's type. Hence the name of this function, because this effectively
-// changes the type of the element. The element's child nodes are retained,
-// generally without regard to whether the new parent-child relations are
-// sensible. However, if the new name is a known void element, then the child
-// nodes of the element are removed (the child nodes from the old node are not
-// moved to the new node).
-
+// Renames an element. This effectively changes the type of the element, so this
+// is named after the verb for changing types (coerce/cast).
+//
+// Child nodes are generally retained. When the new type is a known void type,
+// all child nodes are implicitly dropped.
+//
 // Event listeners are not retained. See
-// https://stackoverflow.com/questions/15408394. This generally is not a concern
-// in the case of content filtering because attributes that would cause binding
-// are filtered prior to binding. However, this should be kept in mind if
-// operating on a live document.
-
-// This does not validate whether the result is correct, except in the case of
-// renaming an element to a known void element. It is the caller's
-// responsibility to ensure that the coercion makes sense and that the resulting
-// document is still *well-formed*, supposing that is a requirement. Do not
-// forget, the new element may not belong under its parent, or its children may
-// not belong under it. There is also the possibility of a hierarchy error being
-// thrown by the DOM but so far I have not encountered it.
-
+// https://stackoverflow.com/questions/15408394.
+//
+// The state of the dom hierarchy after the change is not validated, so it is
+// entirely possible to cause misnesting and/or produce a nonsensical state.
+//
 // @param element {Element} the element to change
 // @param new_name {String} the name of the element's new type
 // @param copy_attributes_flag {Boolean} optional, if true then attributes are
 // maintained, defaults to true.
 // @error if the input element is not a type of Element, such as when it is
-// undefined, or if the new name is not valid. Note that the name validity check
-// is very minimal and not spec compliant.
+// undefined
+// @error if the new name seems invalid (not fully spec-compliant)
 // @return returns the new element that replaced the old one
-
-// TODO: rename to coerce-element (both file and function)
-
 export function coerce_element(element, new_name, copy_attributes = true) {
   if (!(element instanceof Element)) {
     throw new TypeError('element is not an Element');
   }
 
-  // Document.prototype.createElement is very forgiving regarding a new
-  // element's name. For example, if you pass a null value, it will create an
-  // element named "null". This is misleading. To avoid this, treat any attempt
-  // to use an invalid name as a programming error. Specifically disallow
-  // createElement(null) working like createElement("null").
-
+  // createElement is very forgiving regarding a new element's name. For
+  // example, if you pass a null value, it will create an element named "null".
+  // This is misleading because I think that should be an error. To avoid this,
+  // treat any attempt to use an invalid name as a programming error.
   if (!is_valid_element_name(new_name)) {
     throw new TypeError('Invalid new name ' + new_name);
   }
@@ -63,7 +48,8 @@ export function coerce_element(element, new_name, copy_attributes = true) {
     return element;
   }
 
-  // cache pre removal
+  // Before detaching, cache the reference so we can use for positioning the
+  // new element later.
   const next_sibling = element.nextSibling;
 
   // Detach the existing node prior to performing other dom operations so that
@@ -72,14 +58,33 @@ export function coerce_element(element, new_name, copy_attributes = true) {
   // element.nextSibling to undefined.
   element.remove();
 
-  // A detached element is still 'owned' by a document, so there is no problem
-  // using element.ownerDocument here, and no need to cache it, unlike parent
-  // and sibling properties. This is comment worthy because I found it
-  // surprising.
+  // In DOM parlance, removing a node distinguishes between a change of
+  // ownership and detachment. A change of ownership occurs when a node is moved
+  // from one document to another document (the destination document is said to
+  // adopt the node). Detachment retains ownership, but unlinks the node from
+  // its parent and siblings. It is impossible to have an unowned node, the only
+  // way to truly remove the node is to re-attach it to another document. Which
+  // we will avoid. Therefore, element.ownerDocument is not affected by
+  // element.remove(). Therefore, unlike element.parentNode or
+  // element.nextSibling, there is no need to cache element.ownerDocument prior
+  // to calling element.remove() in order to use element.ownerDocument after
+  // calling element.remove().
 
-  // This uses the document in which the element resides, not the document
-  // executing this function. This would otherwise be an XSS issue, and possibly
-  // trigger adoption (which is slow).
+  // One additional point is that there is no point to removing a node if
+  // planning on changing ownership. Any function that can change ownership such
+  // as insertBefore or appendChild will implicitly do adoption, which
+  // implicitly involves a removal step. All calling element.remove beforehand
+  // does in that situation is make the removal explicit. This is not useful.
+  // So the fact that element.remove() is called above should be read as a
+  // signal that no adoption is expected.
+
+  // SECURITY: Create a new element using the document in which the existing
+  // element resides, not the document executing this function. This would
+  // otherwise be an XSS issue.
+
+  // PERF: Create a new element using the document in which the existing element
+  // resides, otherwise this triggers cross-document node adoption, which would
+  // be needless overhead.
 
   const new_element = element.ownerDocument.createElement(new_name);
 
@@ -87,7 +92,9 @@ export function coerce_element(element, new_name, copy_attributes = true) {
     copy_element_attributes(element, new_element);
   }
 
-  move_child_nodes(element, new_element);
+  if (!is_void_element(to_element)) {
+    move_child_nodes(element, new_element);
+  }
 
   // If the nextSibling parameter to insertBefore is undefined then insertBefore
   // simply appends (it basically devolves into appendChild). This has the
@@ -96,29 +103,16 @@ export function coerce_element(element, new_name, copy_attributes = true) {
   return parent_element.insertBefore(new_element, next_sibling);
 }
 
-// The helper moves all child nodes of `from_element` to `to_element`,
-// maintaining order. If `to_element` has existing children, the new elements
-// are appended at the end.
-// * I've looked for ways of doing this faster, but nothing seems to work. There
-// is no batch move operation in native dom.
-// * One possible speedup might be using a document fragment? See what I did for
-// unwrap
-// * Maybe the helper should not be exported
-// * If the target is a void element then this is a no-op.
-// * This assumes the source element is detached. The result in this case is the
-// child nodes are effectively deleted.
-// * The `appendChild` loop looks confusing at first. That is because
-// `appendChild` is a *move* operation, which involves both node creation and
-// node deletion. In each iteration of the loop, the next accessing of the old
-// parent's `firstChild` points to the old parent's new first child, if any
-// children are left, because its internal reference is implicitly updated by
-// the delete part of the `appendChild` call, because all child nodes are
-// shifted.
-export function move_child_nodes(from_element, to_element) {
-  if (is_void_element(to_element)) {
-    return;
-  }
+// TODO: revisit using document fragment to see if it speeds this up?
 
+// Move child nodes from src to destination, maintaining order. Child nodes are
+// appended after any existing nodes in the destination. For better performance,
+// the src element should be detached beforehand.
+// NOTE: from an old benchmark, getting and setting innerHTML is substantially
+// slower than this
+function move_child_nodes(from_element, to_element) {
+  // If this loop looks confusing at first, it is because appendChild moves the
+  // node, which causes firstChild to then point to the next node.
   let node = from_element.firstChild;
   while (node) {
     to_element.appendChild(node);
@@ -150,11 +144,9 @@ function is_valid_element_name(value) {
 }
 
 // Copies the attributes of an element to another element. Overwrites any
-// existing attributes in the other element. Throws an error if either element
-// is not an Element. Notably this uses `getAttributeNames` in preference to
-// `element.attributes` due to performance issues with `element.attributes`, and
-// to allow unencumbered use of the `for..of` syntax (I had issues with
-// `NamedNodeMap` and `for..of`).
+// existing attributes in the other element. Notably this uses getAttributeNames
+// in preference to element.attributes due to performance issues, and to allow
+// unencumbered use of the for-of syntax (I had issues with NamedNodeMap).
 export function copy_element_attributes(from_element, to_element) {
   const names = from_element.getAttributeNames();
   for (const name of names) {
