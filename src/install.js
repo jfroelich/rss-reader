@@ -57,6 +57,10 @@ function init_localstorage() {
   localStorage.channel_name = 'reader';
 
 
+  // Configure the default for the article title maximum length when displayed
+  localStorage.article_title_display_max_length = 300;
+
+
   // TODO: the following display configuration properties should also be
   // initialized at this time
 

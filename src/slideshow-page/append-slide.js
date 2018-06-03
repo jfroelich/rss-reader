@@ -4,6 +4,7 @@ import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {format_date} from '/src/lib/lang/format-date.js';
 import {list_peek} from '/src/lib/lang/list.js';
+import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 import {log, warn} from '/src/log.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
 import {decrement_active_transition_count, get_current_slide, set_current_slide} from '/src/slideshow-page/slideshow-state.js';
@@ -23,13 +24,23 @@ export function append_slide(entry) {
     return;
   }
 
-  log('%s: entry', append_slide.name, list_peek(entry.urls));
+  if (list_is_empty(entry.urls)) {
+    warn('%s: skipping entry without url', append_slide.name, entry);
+    return;
+  }
 
-  const slide = create_slide_element();
+  log('%s: appending', append_slide.name, list_peek(entry.urls));
+
+  const slide = create_slide(entry);
+  append_slide_element(slide);
+}
+
+function create_slide(entry) {
+  const slide = document.createElement('slide');
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
   slide.setAttribute('class', 'entry');
-  slide.addEventListener('click', slide_onclick);
+
 
   const slide_pad_wrap = document.createElement('div');
   slide_pad_wrap.className = 'slide-padding-wrapper';
@@ -37,8 +48,7 @@ export function append_slide(entry) {
   slide_pad_wrap.appendChild(create_article_content_element(entry));
   slide_pad_wrap.appendChild(create_feed_source_element(entry));
   slide.appendChild(slide_pad_wrap);
-
-  append_slide_element(slide);
+  return slide;
 }
 
 
@@ -52,22 +62,19 @@ function create_article_title_element(entry) {
 
   if (entry.title) {
     let title = entry.title;
-    let safe_title = escape_html(title);
-    title_element.setAttribute('title', safe_title);
+    title = escape_html(title);
+    title_element.setAttribute('title', title);
 
-    let filtered_safe_title = filter_publisher(safe_title);
+    title = filter_publisher(title);
 
-    // TODO: does truncate_html throw in the usual case? I believe it should not
-    // but I forgot. I would like to remove this try/catch
-    try {
-      filtered_safe_title = truncate_html(filtered_safe_title, 300);
-    } catch (error) {
-      log(error);
+    const max_length =
+        localstorage_read_int(localStorage.article_title_display_max_length);
+    if (!isNaN(max_length)) {
+      title = truncate_html(title, max_length);
     }
 
-    // Allow entities
-    title_element.innerHTML = filtered_safe_title;
-
+    // Use innerHTML to allow entities
+    title_element.innerHTML = title;
   } else {
     title_element.setAttribute('title', 'Untitled');
     title_element.textContent = 'Untitled';
@@ -114,45 +121,43 @@ function create_feed_source_element(entry) {
   return source_element;
 }
 
-export function create_slide_element() {
-  return document.createElement('slide');
-}
-
 function append_slide_element(slide) {
   const container = document.getElementById('slideshow-container');
 
+  // Defer binding event listener until appending here, not earlier when
+  // creating the element
+  slide.addEventListener('click', slide_onclick);
 
-  // Caller handles slide clicks
-  // slide.addEventListener('click', onClick);
-
-  // Setup side scroll handling. The listener is bound to the slide itself,
-  // because it is the slide itself that scrolls, and not window. Also, in order
-  // for scrolling to react to keyboard shortcuts, the element must be focused,
-  // and in order to focus an element, it must have the tabindex attribute.
+  // In order for scrolling to react to keyboard shortcuts such as pressing
+  // the down arrow key, the element must be focused, and in order to focus an
+  // element, it must have the tabindex attribute.
   slide.setAttribute('tabindex', '-1');
 
-  // Set the position of the slide. Slides are positioned absolutely. Setting
-  // left to 100% places the slide off the right side of the view. Setting left
-  // to 0 places the slide in the view. The initial value must be defined here
-  // and not via css, before adding the slide to the page. Otherwise, changing
-  // the style for the first slide causes an unwanted transition, and I have to
-  // change the style for the first slide because it is not set in css.
+  // Slides are positioned absolutely. Setting left to 100% places the slide off
+  // the right side of the view. Setting left to 0 places the slide in the view.
+  // The initial value must be defined here and not via css, before adding the
+  // slide to the page. Otherwise, changing the style for the first slide causes
+  // an unwanted transition, and I have to change the style for the first slide
+  // because it is not set in css.
   slide.style.left = container.childElementCount === 0 ? '0' : '100%';
+
+  // TODO: review if prefix was dropped
 
   // In order for scrolling a slide element with keyboard keys to work, the
   // slide must be focused. But calling element.focus() while a transition is
   // active, such as what happens when a slide is moved, interrupts the
-  // transition. Therefore, schedule a call to focus the slide for when the
-  // transition completes.
+  // transition. Therefore, schedule focus for when the transition completes.
   slide.addEventListener('webkitTransitionEnd', transition_onend);
 
+  // The value of the duration variable is defined external to this function,
+  // because it is mutable by other functions.
+
   // Define the animation effect that will occur when moving the slide. Slides
-  // are moved by changing a slide's css left property, which is basically its
-  // offset from the left side of window. This will also trigger a transition
-  // event. The transition property must be defined here in code, and not via
-  // css, in order to have the transition only apply to a slide when it is in a
-  // certain state. If set in css then this causes an immediate transition on
-  // the first slide, which I want to avoid.
+  // are moved by changing a slide's css left property. This triggers a
+  // transition. The transition property must be defined dynamically in order to
+  // have the transition only apply to a slide when it is in a certain state. If
+  // set in css then this causes an undesirable immediate transition on the
+  // first slide.
   slide.style.transition = `left ${duration}s ease-in-out`;
 
   // Initialize the current slide if needed
@@ -167,8 +172,6 @@ function append_slide_element(slide) {
   container.appendChild(slide);
 }
 
-
-
 function is_valid_transition_duration(duration) {
   return !isNaN(duration) && isFinite(duration) && duration >= 0;
 }
@@ -181,20 +184,21 @@ export function set_transition_duration(input_duration) {
   duration = input_duration;
 }
 
-
-export function transition_onend(event) {
+// Handle the end of a transaction. Not meant to be called directly.
+function transition_onend(event) {
   // The slide that the transition occured upon (event.target) is not guaranteed
-  // to be equal to the current slide. We fire off two transitions per
-  // animation, one for the slide being moved out of view, and one for the slide
-  // being moved into view. Both transitions result in call to this listener,
-  // but we only want to call focus on one of the two elements. We want to be in
-  // the state where after both transitions complete, the new slide (which is
-  // the current slide at this point) is now focused. Therefore we ignore
-  // event.target and directly affect the current slide only.
+  // to be equal to the current slide. We want to affect the current slide.
+
+  // We fire off two transitions per animation, one for the slide being moved
+  // out of view, and one for the slide being moved into view. Both transitions
+  // result in call to this listener, but we only want to call focus on one of
+  // the two elements. We want to be in the state where after both transitions
+  // complete, the new slide (which is the current slide at this point) is now
+  // focused. Therefore we ignore event.target and directly affect the current
+  // slide only.
   get_current_slide().focus();
 
-  // There may be more than one transition effect occurring at the moment. Point
-  // out that this transition completed. This provides a method for checking if
-  // any transitions are outstanding.
+  // There may be more than one transition effect occurring at the moment.
+  // Inform others via global slideshow state that this transition completed.
   decrement_active_transition_count();
 }
