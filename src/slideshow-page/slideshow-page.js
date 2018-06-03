@@ -18,8 +18,6 @@ import {loading_info_hide, loading_info_show} from '/src/slideshow-page/splash.j
 // TODO: support back/forward browser buttons
 // TODO: if loading initial feed list fails with an error, then show a friendly
 // error message?
-// TODO: if articles are displayed by default, I do not need to wait for feeds
-// to load before hiding the loading info panel
 
 const entry_load_limit = 6;
 
@@ -29,11 +27,22 @@ async function load_data_into_view() {
 
   const entry_load_offset = 0;
   const conn = await db_open();
-  const p1 = db_for_each_viewable_entry(
+
+  // Fire off both queries concurrently, without waiting for completion.
+  const load_entries_promise = db_for_each_viewable_entry(
       conn, entry_load_offset, entry_load_limit, append_slide);
-  const p2 = db_for_each_active_feed(conn, feeds_container_append_feed);
-  await Promise.all([p1, p2]);
+  const load_feeds_promise =
+      db_for_each_active_feed(conn, feeds_container_append_feed);
+
+  // Promise.all waiting for both is not ideal, because we want to show content
+  // asap, so only wait for the first query to complete before hiding the splash
+  // screen.
+  await load_entries_promise;
   loading_info_hide();
+
+  // This does not need to be awaited in order to close the connection, but it
+  // is awaited so that any exception is not swallowed.
+  await load_feeds_promise;
   conn.close();
 }
 
