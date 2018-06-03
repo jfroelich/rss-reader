@@ -1,8 +1,10 @@
 import {fonts} from '/src/config.js';
+import {db_get_feeds} from '/src/db/db-get-feeds.js';
 import {db_open} from '/src/db/db-open.js';
-import {export_opml} from '/src/export-opml.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {import_opml} from '/src/import-opml.js';
+import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
+import {create_opml_document} from '/src/lib/opml-document.js';
 import {log} from '/src/log.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 
@@ -20,8 +22,6 @@ import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 // TODO: anywhere i use css to set something to 0, do not use units, units are
 // superfluous when setting to 0
 
-
-
 function import_opml_button_onclick(event) {
   const uploader_input = document.createElement('input');
   uploader_input.setAttribute('type', 'file');
@@ -29,8 +29,6 @@ function import_opml_button_onclick(event) {
   uploader_input.onchange = uploader_input_onchange;
   uploader_input.click();
 }
-
-
 
 // Fired when user submits file browser dialog
 //
@@ -61,8 +59,6 @@ async function uploader_input_onchange(event) {
   log('%s: completed', uploader_input_onchange.name);
 }
 
-
-
 // TODO: visual feedback on completion
 // TODO: show an error message on error
 async function export_button_onclick(event) {
@@ -70,21 +66,40 @@ async function export_button_onclick(event) {
   const filename = 'subscriptions.xml';
 
   const conn = await db_open();
-  const opml_document = await export_opml(conn, title);
+  const feeds = await db_get_feeds(conn);
   conn.close();
+  log('%s: loaded %d feeds', export_button_onclick.name, feeds.length);
 
-  log('%s: downloading...', export_button_onclick.name);
+  const outlines = feeds.map(create_outline).filter(outline_has_xml_url);
+  const opml_document = create_opml_document(outlines, title);
 
   // TODO: create a 'download-blob' module that exports the helpers defined here
   // and remove them from here. This could be a general library.
-
   // TODO: using the downloads api might be the source of the current bug. try
   // reverting to the download-by-anchor method.
 
+  log('%s: downloading file', export_button_onclick.name, filename);
   download_blob_using_chrome_api(
       opml_document_to_blob(opml_document), filename);
-
   log('%s: export completed', export_button_onclick.name);
+}
+
+function outline_has_xml_url(outline) {
+  return !!outline.xml_url;
+}
+
+// Convert a feed format into an outline object
+function create_outline(feed) {
+  const outline = {};
+  outline.type = feed.type;
+  if (!list_is_empty(feed.urls)) {
+    outline.xml_url = list_peek(feed.urls);
+  }
+
+  outline.title = feed.title;
+  outline.description = feed.description;
+  outline.html_url = feed.link;
+  return outline;
 }
 
 function opml_document_to_blob(opml_document) {
