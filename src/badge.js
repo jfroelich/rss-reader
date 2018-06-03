@@ -1,4 +1,5 @@
 import {db_count_unread_entries} from '/src/db/db-count-unread-entries.js';
+import {db_open} from '/src/db/db-open.js';
 import {log} from '/src/log.js';
 
 // TODO: Perhaps think of badge as a view, like the other pages or the CLI. In
@@ -41,4 +42,18 @@ export async function refresh_badge(conn) {
   log('%s: setting badge text to %s', refresh_badge.name, text);
   chrome.browserAction.setBadgeText({text: text});
   update_pending = false;
+}
+
+export async function init_badge() {
+  const conn = await db_open();
+  refresh_badge(conn).catch(console.error);
+
+  // We can enqueue the close immediately before refresh has completed, which
+  // is why above line not awaited. close implicitly waits for pending
+  // transactions to settle instead of aborting them.
+
+  // Not using promise.finally() because there is no point to graceful
+  // recovery
+
+  conn.close();
 }

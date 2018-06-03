@@ -1,13 +1,8 @@
 import '/src/cli.js';
 import '/src/cron.js';
-import {refresh_badge} from '/src/badge.js';
-import {db_open} from '/src/db/db-open.js';
+import {init_badge} from '/src/badge.js';
 import {register_install_listener} from '/src/install.js';
-import {log} from '/src/log.js';
 import {open_view} from '/src/open-view.js';
-
-// TODO: just use console.log directly and decouple from log library, logging
-// here does not need to be toggleable
 
 // Loaded exclusively by the background page. This page is loaded via the
 // background page instead of directly via the scripts property in the manifest.
@@ -29,11 +24,4 @@ register_install_listener();
 
 chrome.browserAction.onClicked.addListener(open_view);
 
-// TODO: move this function definition to badge.js?
-async function badge_init() {
-  const conn = await db_open();
-  refresh_badge(conn).catch(log);
-  conn.close();
-}
-
-badge_init();
+init_badge();
