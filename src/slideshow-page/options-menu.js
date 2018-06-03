@@ -69,13 +69,11 @@ async function export_button_onclick(event) {
   const title = 'Subscriptions';
   const filename = 'subscriptions.xml';
 
-  const op = {};
-  op.conn = await db_open();
-  op.export_opml = export_opml;
-  const opml_document = await op.export_opml(title);
-  op.conn.close();
+  const conn = await db_open();
+  const opml_document = await export_opml(conn, title);
+  conn.close();
 
-  log('%s: downloading...', do_opml_export.name);
+  log('%s: downloading...', export_button_onclick.name);
 
   // TODO: create a 'download-blob' module that exports the helpers defined here
   // and remove them from here. This could be a general library.
@@ -86,7 +84,7 @@ async function export_button_onclick(event) {
   download_blob_using_chrome_api(
       opml_document_to_blob(opml_document), filename);
 
-  log('%s: export completed', do_opml_export.name);
+  log('%s: export completed', export_button_onclick.name);
 }
 
 function opml_document_to_blob(opml_document) {

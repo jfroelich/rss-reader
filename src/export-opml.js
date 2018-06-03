@@ -52,10 +52,10 @@ import {log} from '/src/log.js';
 // sweeping change to several modules that use the same pattern. Also holding
 // off because of the recently added notes about decoupling the feed lookup.
 
-export async function export_opml(title) {
-  log('Creating opml document from database', this.conn.name);
+export async function export_opml(conn, title) {
+  log('Creating opml document from database', conn.name);
 
-  const feeds = await db_get_feeds(this.conn);
+  const feeds = await db_get_feeds(conn);
   log('Loaded %d feeds', feeds.length);
 
   const document = create_opml_document(title);
