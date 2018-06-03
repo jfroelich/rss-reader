@@ -11,7 +11,7 @@ import {warn} from '/src/log.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
-import {loading_info_hide, loading_info_show} from '/src/slideshow-page/splash.js';
+import {hide_splash, show_splash} from '/src/slideshow-page/splash.js';
 
 // Loads slideshow modules
 
@@ -22,7 +22,7 @@ import {loading_info_hide, loading_info_show} from '/src/slideshow-page/splash.j
 const entry_load_limit = 6;
 
 async function load_data_into_view() {
-  loading_info_show();
+  show_splash();
   page_style_onload();
 
   const entry_load_offset = 0;
@@ -38,7 +38,7 @@ async function load_data_into_view() {
   // asap, so only wait for the first query to complete before hiding the splash
   // screen.
   await load_entries_promise;
-  loading_info_hide();
+  hide_splash();
 
   // This does not need to be awaited in order to close the connection, but it
   // is awaited so that any exception is not swallowed.

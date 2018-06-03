@@ -1,9 +1,11 @@
-export function loading_info_show() {
-  const element = document.getElementById('initial-loading-panel');
+// Simple control for splash-panel in UI
+
+const element = document.getElementById('initial-loading-panel');
+
+export function show_splash() {
   element.style.display = 'block';
 }
 
-export function loading_info_hide() {
-  const element = document.getElementById('initial-loading-panel');
+export function hide_splash() {
   element.style.display = 'none';
 }
