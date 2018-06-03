@@ -1,3 +1,7 @@
+@font-face {
+  font-family: Edward Tufte Roman;
+  src: url('/fonts/et-book-roman-line-figures.ttf') format('truetype');
+}
 
 @font-face {
   font-family: Fanwood;

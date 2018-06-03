@@ -30,6 +30,7 @@ Third-party code license information:
 
 Font license information:
 
+* Edward Tufte Roman https://github.com/edwardtufte/et-book (MIT Licensed)
 * Fanwood https://www.theleagueofmoveabletype.com/
 * League Mono Regular https://www.theleagueofmoveabletype.com/
 * League Spartan https://www.theleagueofmoveabletype.com/

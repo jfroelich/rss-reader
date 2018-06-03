@@ -33,9 +33,9 @@ export const background_images = [
 // Fonts the user can select from to customize the display of content
 export const fonts = [
   'ArchivoNarrow-Regular', 'Arial, sans-serif', 'Calibri', 'Cambria',
-  'CartoGothicStd', 'Fanwood', 'Georgia', 'League Mono Regular',
-  'League Spartan', 'Montserrat', 'Noto Sans', 'Open Sans Regular',
-  'PathwayGothicOne', 'PlayfairDisplaySC', 'Roboto Regular'
+  'CartoGothicStd', 'Edward Tufte Roman', 'Fanwood', 'Georgia',
+  'League Mono Regular', 'League Spartan', 'Montserrat', 'Noto Sans',
+  'Open Sans Regular', 'PathwayGothicOne', 'PlayfairDisplaySC', 'Roboto Regular'
 ];
 
 // These descriptors represent hosts that should be excluded when fetching new
