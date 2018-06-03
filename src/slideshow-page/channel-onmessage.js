@@ -4,9 +4,8 @@ import {log, warn} from '/src/log.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {load_and_append_slides} from '/src/slideshow-page/load-and-append-slides.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
-import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
+import {remove_slide} from '/src/slideshow-page/remove-slide.js';
 import {is_current_slide} from '/src/slideshow-page/slideshow-state.js';
-import {remove as remove_slide} from '/src/slideshow-page/slideshow.js';
 
 async function channel_onmessage(event) {
   if (!event.isTrusted) {
@@ -107,11 +106,7 @@ async function on_entry_expired(message) {
     return;
   }
 
-  // TODO: now that I finally breaking up slideshow, I think the remove event
-  // listener should eventually become implicit in the remove-slide call
-
   remove_slide(slide);
-  slide.removeEventListener('click', slide_onclick);
 }
 
 

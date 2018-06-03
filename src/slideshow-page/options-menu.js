@@ -1,12 +1,117 @@
 import {fonts} from '/src/config.js';
+import {db_open} from '/src/db/db-open.js';
+import {export_opml} from '/src/export-opml.js';
+import {favicon_create_conn} from '/src/favicon.js';
+import {import_opml} from '/src/import-opml.js';
 import {log} from '/src/log.js';
-import {export_menu_option_handle_click} from '/src/slideshow-page/export-menu-option-onclick.js';
-import {import_menu_option_onclick} from '/src/slideshow-page/import-menu-option-onclick.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
+
+// BUG: something is completely wrong again with the export-opml experience,
+// perhaps because of chrome.downloads api usage, but this is somehow producing
+// a network error. The file name that appears in the file browser dialog is
+// complete garbage; it almost looks like base64 encoding. And the downloaded
+// file does not download. This worked in chrome 66 and then stopped working in
+// 67 or 68 beta.
+
+// TODO: this module might need to be renamed, this is the left-panel control,
+// not really clear what options-menu means
 
 // TODO: should not be hardcoding styles
 // TODO: anywhere i use css to set something to 0, do not use units, units are
 // superfluous when setting to 0
+
+
+
+function import_opml_button_onclick(event) {
+  const uploader_input = document.createElement('input');
+  uploader_input.setAttribute('type', 'file');
+  uploader_input.setAttribute('accept', 'text/xml');
+  uploader_input.onchange = uploader_input_onchange;
+  uploader_input.click();
+}
+
+
+
+// Fired when user submits file browser dialog
+//
+// Uses a function-call lifetime channel instead of the page-lifetime channel to
+// avoid the no-loopback issue.
+//
+// TODO: show operation started immediately, before doing any time-consuming
+// work
+// TODO: after import, visually inform the user that the operation completed
+// successfully
+// TODO: after import, refresh feed list so that it displays any new feeds, if
+// feed list is visible
+// TODO: after import, switch to feed list section or at least show a message
+// about how the import completed successfully, and perhaps other details such
+// as the number of subscriptions added
+// TODO: on import error, show a friendly error message
+async function uploader_input_onchange(event) {
+  log('%s: started', uploader_input_onchange.name);
+  const op = {};
+  [op.rconn, op.iconn] = await Promise.all([db_open(), favicon_create_conn()]);
+  op.channel = new BroadcastChannel(localStorage.channel_name);
+  op.fetch_timeout = 5 * 1000;
+  op.import_opml = import_opml;
+  await op.import_opml(event.target.files);
+  op.rconn.close();
+  op.iconn.close();
+  op.channel.close();
+  log('%s: completed', uploader_input_onchange.name);
+}
+
+
+
+// TODO: visual feedback on completion
+// TODO: show an error message on error
+async function export_button_onclick(event) {
+  const title = 'Subscriptions';
+  const filename = 'subscriptions.xml';
+
+  const op = {};
+  op.conn = await db_open();
+  op.export_opml = export_opml;
+  const opml_document = await op.export_opml(title);
+  op.conn.close();
+
+  log('%s: downloading...', do_opml_export.name);
+
+  // TODO: create a 'download-blob' module that exports the helpers defined here
+  // and remove them from here. This could be a general library.
+
+  // TODO: using the downloads api might be the source of the current bug. try
+  // reverting to the download-by-anchor method.
+
+  download_blob_using_chrome_api(
+      opml_document_to_blob(opml_document), filename);
+
+  log('%s: export completed', do_opml_export.name);
+}
+
+function opml_document_to_blob(opml_document) {
+  const serializer = new XMLSerializer();
+  const xml_string = serializer.serializeToString(opml_document);
+  return new Blob([xml_string], {type: 'application/xml'});
+}
+
+function download_blob_using_anchor(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.setAttribute('download', filename);
+  anchor.href = url;
+  anchor.click();
+  URL.revokeObjectURL();
+}
+
+// An alternative to download_blob_using_anchor that avoids the issue introduced
+// in Chrome 65 with cross-origin download urls (see Issue #532)
+function download_blob_using_chrome_api(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const options = {url: url, filename: filename};
+  chrome.downloads.download(options);
+  URL.revokeObjectURL(url);
+}
 
 export function options_menu_show() {
   const menu_options = document.getElementById('left-panel');
@@ -24,6 +129,9 @@ export function options_menu_hide() {
   menu_options.style.boxShadow = '';
 }
 
+// TODO: handling all clicks and then forwarding them to click handler seems
+// dumb. I should be ignoring clicks on such buttons. Let them continue
+// progation. The buttons should instead have their own handlers.
 function options_menu_onclick(event) {
   const option = event.target;
   if (option.localName !== 'li') {
@@ -35,10 +143,10 @@ function options_menu_onclick(event) {
       log('Not yet implemented');
       break;
     case 'menu-option-import':
-      import_menu_option_onclick(event);
+      import_opml_button_onclick(event);
       break;
     case 'menu-option-export':
-      export_menu_option_handle_click(event);
+      export_button_onclick(event);
       break;
     case 'menu-option-header-font':
       break;

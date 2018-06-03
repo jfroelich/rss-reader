@@ -2,14 +2,16 @@ import '/src/cli.js';
 import '/src/slideshow-page/channel-onmessage.js';
 import '/src/slideshow-page/onkeydown.js';
 import '/src/slideshow-page/main-menu.js';
+import '/src/slideshow-page/options-menu.js';
+
 import {db_for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
 import {db_for_each_viewable_entry} from '/src/db/db-for-each-viewable-entry.js';
 import {db_open} from '/src/db/db-open.js';
 import {warn} from '/src/log.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';
-import {loading_info_hide, loading_info_show} from '/src/slideshow-page/loading-info.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
+import {loading_info_hide, loading_info_show} from '/src/slideshow-page/splash.js';
 
 // Loads slideshow modules
 

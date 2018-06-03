@@ -1,17 +1,20 @@
 import {list_peek} from '/src/lib/lang/list.js';
-import {unsubscribe_button_onclick} from '/src/slideshow-page/unsubscribe-button.js';
+import {log} from '/src/log.js';
 
+// TODO: break up element creation and element appending into two functions
 
-// TODO: for feeds_container_append_feed, create helper function
-// feed_element_create that then is passed to this, rename this to
-// feed_element_append and change its parameter
+// TODO: do not hardcode css, instead do something like toggle defined class
 
-// TODO: at end, feeds_container_append_feed needs to find the proper place to
-// append the feed using feed_compare. This needs to iterate over the existing
-// feeds and compare each one to the feed and find where to insert, and fall
-// back to append. I no longer am pre-sorting an array and then iterating over
-// it, I am using a callback that loads feeds from the db in natural order.
+// TODO: toggle_details should not be doing a lookup of a table element, there
+// could be other tables, this table should have a unique id, and this should
+// instead use getElementById
 
+// TODO: at end of feeds_container_append_feed, feeds_container_append_feed
+// needs to find the proper place to append the feed using feed_compare. This
+// needs to iterate over the existing feeds and compare each one to the feed and
+// find where to insert, and fall back to append. I no longer am pre-sorting an
+// array and then iterating over it, I am using a callback that loads feeds from
+// the db in natural order.
 
 export function feeds_container_append_feed(feed) {
   const feeds_container = document.getElementById('feeds-container');
@@ -105,15 +108,6 @@ function feeds_container_onclick(event) {
   }
 }
 
-
-
-// TODO: do not hardcode css, instead do something like toggle defined class
-
-
-// TODO: should not be doing a lookup by table, there could be other tables,
-// this table should have a unique id, and this should instead use
-// getElementById
-
 function toggle_details(feed_element) {
   const table = feed_element.querySelector('table');
   if (feed_element.hasAttribute('expanded')) {
@@ -131,6 +125,10 @@ function toggle_details(feed_element) {
   }
 }
 
-// Initialize the feeds container click handler on module load
+function unsubscribe_button_onclick(event) {
+  log('Unsubscribe (not yet implemented)', event.target);
+}
+
+// Initialize things on module load
 const feeds_container = document.getElementById('feeds-container');
 feeds_container.onclick = feeds_container_onclick;

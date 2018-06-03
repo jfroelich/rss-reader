@@ -3,15 +3,7 @@ import {favicon_create_conn} from '/src/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {options_menu_hide, options_menu_show} from '/src/slideshow-page/options-menu.js';
 
-// TODO: this module should be responsible for initializing itself where
-// possible. There is no need to export things and separately initialize them
-// in init-slideshow-page. The problem with that module is that it uses temporal
-// coherency, which is a rather low form of coherency. Slowly migrate stuff
-// out of init-slideshow-page that belongs here, and initialize it here as a
-// side effect of loading the module itself.
-
 let refresh_in_progress = false;
-
 
 // TODO: show a completed message on refresh complete?
 // TODO: show an error message on refresh error?
@@ -86,12 +78,9 @@ function feeds_button_onclick(event) {
   feeds_container.style.display = 'block';
 }
 
-
-
 // Initialize things on module load. Note how modules become ready only after
 // the dom is ready, so elements should be findable.
 
-console.debug('binding main menu click handler');
 const toggle_left_panel_button = document.getElementById('main-menu-button');
 toggle_left_panel_button.onclick = toggle_left_pannel_button_onclick;
 

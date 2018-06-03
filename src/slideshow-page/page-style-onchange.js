@@ -1,7 +1,8 @@
 import * as css from '/src/lib/dom/css.js';
 
 // TODO: use px instead of em everywhere
-// TODO: store units in localStorage along with value
+// TODO: store units in localStorage along with value when appropriate
+// TODO: do not use units for 0
 
 export function page_style_onchange(event) {
   page_style_entry_update();

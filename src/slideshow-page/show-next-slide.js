@@ -1,11 +1,9 @@
 import {db_open} from '/src/db/db-open.js';
-import {count_slides} from '/src/slideshow-page/count-slides.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {load_and_append_slides} from '/src/slideshow-page/load-and-append-slides.js';
 import {mark_slide_read} from '/src/slideshow-page/mark-slide-read.js';
-import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
-import {get_current_slide} from '/src/slideshow-page/slideshow-state.js';
-import {next, remove as remove_slide, slide_get_first} from '/src/slideshow-page/slideshow.js';
+import {remove_slide} from '/src/slideshow-page/remove-slide.js';
+import {get_active_transition_count, get_current_slide, increment_active_transition_count, set_current_slide} from '/src/slideshow-page/slideshow-state.js';
 
 // TODO: I should probably unlink loading on demand and navigation, because this
 // causes lag. navigation would be smoother if I appended even earlier, like
@@ -17,15 +15,16 @@ import {next, remove as remove_slide, slide_get_first} from '/src/slideshow-page
 // microtask an append operation and then continued in the current task. Or, the
 // check should happen not on append, but after doing the navigation. Or after
 // marking the slide as read.
-// Sharing the connection between mark as read and
+
+// TODO: sharing the connection between mark as read and
 // load_and_append_slides made sense at first but I do not like the
 // large try/catch block. Also I think the two can be unlinked because they do
 // not have to co-occur. Also I don't like how it has to wait for read to
 // complete.
 
-// TODO: view should not interact directly with db
 
-// TODO: max_load_count should come from somewhere else like config
+// TODO: max_load_count should come from somewhere else like config or
+// local storage
 const max_load_count = 6;
 
 
@@ -58,10 +57,41 @@ export async function show_next_slide() {
     return;
   }
 
-  let first_slide = slide_get_first();
-  while (count_slides() > max_load_count && first_slide !== current_slide) {
+  const container = document.getElementById('slideshow-container');
+
+  let first_slide = container.firstElementChild;
+  while (container.childElementCount > max_load_count &&
+         first_slide !== current_slide) {
     remove_slide(first_slide);
-    first_slide.removeEventListener('click', slide_onclick);
-    first_slide = slide_get_first();
+    first_slide = container.firstElementChild;
   }
+}
+
+function next() {
+  if (get_active_transition_count() > 0) {
+    return false;
+  }
+
+  if (!get_current_slide()) {
+    return false;
+  }
+
+  const next_slide = get_current_slide().nextElementSibling;
+  if (!next_slide) {
+    return false;
+  }
+
+  increment_active_transition_count();
+  get_current_slide().style.left = '-100%';
+
+  // NOTE: in process of creating this lib I noticed the source of the strange
+  // behavior with why count is only 1 despite two transitions, it was here
+  // because I forgot to increment again. But it is working like I want so I am
+  // hesitant to change it at the moment. Not a bug, but a feature. Ew.
+  // active_transition_count++;
+
+  next_slide.style.left = '0';
+  set_current_slide(next_slide);
+
+  return true;
 }

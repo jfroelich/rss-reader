@@ -9,6 +9,7 @@ import {get_current_slide} from '/src/slideshow-page/slideshow-state.js';
 // click, I think it needs to be done from message event handler instead of
 // explicitly done, so that it no longer matters which initiator started the
 // sequence.
+
 // TODO: if error marking as read, show an error message?
 
 // Handle clicking on a slide

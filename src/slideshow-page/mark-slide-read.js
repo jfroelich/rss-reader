@@ -1,9 +1,12 @@
 import {db_mark_entry_read} from '/src/db/db-mark-entry-read.js';
 import {log} from '/src/log.js';
 
-// This uses a short-lived local channel instance instead of the page-lifetime
-// channel because there is a no-loopback issue with channels in Chrome. That
-// or I don't understand how channels operate.
+// BUG: some kind of bug, possibly due to the non-blocking call. The bug is
+// logic, there is no js error. Entries are getting marked as read, but
+// re-appear occasionally when navigation, and sometimes next-slide key press
+// does not advance slide. Note this is an old bug and may have been fixed but
+// I did not properly track things and have not since reviewed.
+
 // TODO: if this creates its own conn instead of trying to reuse, then could it
 // run unawaited? Or was it the channel that was causing the issue and now
 // irrelevant because this now uses local channel instance?
@@ -14,10 +17,13 @@ import {log} from '/src/log.js';
 // entry-marked-read events roundtrip and handle the event when it later occurs
 // to mark the corresponding slide. Then this can be called non-awaited
 // TODO: maybe display an error if `db_mark_entry_read` fails?
-// BUG: some kind of bug, possibly due to the non-blocking call. The bug is
-// logic, there is no js error. Entries are getting marked as read, but
-// re-appear occasionally when navigation, and sometimes next-slide key press
-// does not advance slide.
+// TODO: using console.assert is dumb, should just exit early, or not assert
+// at all
+
+// This uses a short-lived local channel instance instead of the page-lifetime
+// channel because there is a no-loopback issue with channels in Chrome. That
+// or I don't understand how channels operate.
+
 export async function mark_slide_read(conn, slide) {
   console.assert(conn instanceof IDBDatabase);
   console.assert(slide);
