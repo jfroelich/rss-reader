@@ -75,8 +75,6 @@ function create_timeout_promise(context) {
 
 function create_open_promise(context) {
   return new Promise((resolve, reject) => {
-    console.debug(
-        '%s: connecting to database', indexeddb_open.name, context.name);
     let blocked = false;
     const request = indexedDB.open(context.name, context.version);
     request.onsuccess = function(event) {
@@ -92,8 +90,6 @@ function create_open_promise(context) {
             indexeddb_open.name, conn.name);
         conn.close();
       } else {
-        console.debug(
-            '%s: connected to database', indexeddb_open.name, conn.name);
         resolve(conn);
       }
     };
