@@ -3,8 +3,7 @@ import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
 
-// NOTE: no longer clones! docs and such may be out of date
-
+// Cleans/normalizes certain properties of the feed
 export function db_sanitize_feed(feed, options) {
   options = options || {};
   const title_max_len = options.title_max_len || 1024;

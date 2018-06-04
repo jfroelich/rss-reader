@@ -1,26 +1,14 @@
 import {log} from '/src/log.js';
 
-// ## db-remove-lost-entries
+// TODO: this potentially affects unread count and should be calling
+// refresh_badge?
+// TODO: test
+
 // Removes entries missing urls from the database.
-// ### Params
-// * **conn** {IDBDatabase} an open database connection, optional, if not
+// @param conn {IDBDatabase} an open database connection, optional, if not
 // specified this will auto-connect to the default database
-// * **channel** {BroadcastChannel} optional, the channel over which to
+// @param channel {BroadcastChannel} optional, the channel over which to
 // communicate storage change events
-
-// ### Errors
-
-// ### Return value
-
-// ### Implementation notes
-// Internally this uses openCursor instead of getAll for scalability.
-
-// ### TODOS
-// * this potentially affects unread count and should be calling `badge.update`?
-// * use context
-// * improve docs
-// * write tests
-
 export async function db_remove_lost_entries() {
   return new Promise(executor.bind(this));
 }
@@ -32,6 +20,7 @@ function executor(resolve, reject) {
   txn.oncomplete = txn_oncomplete.bind(this, ids, resolve, stats);
   txn.onerror = _ => reject(txn.error);
 
+  // Use openCursor instead of getAll for scalability.
   const store = txn.objectStore('entry');
   const request = store.openCursor();
   request.onsuccess = request_onsuccess.bind(this, ids, stats);

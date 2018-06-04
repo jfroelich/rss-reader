@@ -68,8 +68,6 @@ import {filter_unprintable_characters} from '/src/lib/lang/filter-unprintable-ch
 // we know the caller does not need to clone in the sole use case of this
 // function at the moment, so this cloning concern here is truly pedantic.
 
-// TODO: update docs
-
 // TODO: i think this would read more clearly with helpers per property
 
 export function db_sanitize_entry(

@@ -1,16 +1,13 @@
 import {is_valid_feed_id} from '/src/feed.js';
 import {log} from '/src/log.js';
 
-// Scans the database for entries not linked to a feed and deletes them
-// ### Params
-// * **conn** {IDBDatabase} open database connection
-// * **channel** {BroadcastChannel} optional, broadcast channel
-// ### TODOS
-// * improve docs
-// * write tests
-// * this potentially affects unread count and therefore should be interacting
-// with `badge.update`
+// TODO: this potentially affects unread count and should be calling
+// refresh_badge?
+// TODO: test
 
+// Scans the database for entries not linked to a feed and deletes them
+// @param conn {IDBDatabase} open database connection
+// @param channel {BroadcastChannel} optional, broadcast channel
 export function db_remove_orphaned_entries() {
   return new Promise(executor.bind(this));
 }
