@@ -1,5 +1,4 @@
-import {db_find_feed_by_id} from '/src/db/db-find-feed-by-id.js';
-import {db_find_feed_by_url} from '/src/db/db-find-feed-by-url.js';
+import {db_get_feed} from '/src/db/db-get-feed.js';
 import {db_open} from '/src/db/db-open.js';
 import {db_validate_feed} from '/src/db/db-validate-feed.js';
 import {db_write_feed} from '/src/db/db-write-feed.js';
@@ -68,14 +67,13 @@ async function create_feed_test() {
   assert(messages[0].type === 'feed-written');
 
   // Assert the feed exists in the database with the given url
-  const read_key_only = true;
-  assert(await db_find_feed_by_url(conn, feed_url, read_key_only));
+  assert(await db_get_feed(conn, {mode: 'url', url: feed_url, key_only: true}));
 
-  // TODO: could just store above result, and assert against it. we know it
-  // will be findable by id, i think?
+  // TODO: could just store above result (not keyonly), and assert against it.
+  // We know it will be findable by id, i think?
 
   // Read the feed from the database and assert against read properties
-  const match = await db_find_feed_by_id(conn, feed.id);
+  const match = await db_get_feed(conn, {id: feed.id});
   assert(is_feed(match));
   assert(match.active === true);
   assert('dateCreated' in match);

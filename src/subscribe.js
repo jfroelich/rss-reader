@@ -1,4 +1,4 @@
-import {db_find_feed_by_url} from '/src/db/db-find-feed-by-url.js';
+import {db_get_feed} from '/src/db/db-get-feed.js';
 import {db_sanitize_feed} from '/src/db/db-sanitize-feed.js';
 import {db_validate_feed} from '/src/db/db-validate-feed.js';
 import {db_write_feed} from '/src/db/db-write-feed.js';
@@ -55,8 +55,11 @@ import {notify} from '/src/notify.js';
 export async function subscribe(url, options) {
   log('Subscribing to feed', url.href);
 
-  const key_only = true;
-  let prior_feed = await db_find_feed_by_url(this.rconn, url, key_only);
+  // TODO: create a local helper that wraps this call and takes a conn and url
+  // parameter, use it for both cases
+
+  let prior_feed =
+      await db_get_feed(this.rconn, {mode: 'url', url: url, key_only: true});
 
   if (prior_feed) {
     log('%s: url exists', subscribe.name, url.href);
@@ -71,7 +74,8 @@ export async function subscribe(url, options) {
 
   const response_url = new URL(response.url);
   if (url_did_change(url, response_url)) {
-    prior_feed = await db_find_feed_by_url(this.rconn, response_url, key_only);
+    prior_feed = await db_get_feed(
+        this.rconn, {mode: 'url', url: response_url, key_only: true});
 
     if (prior_feed) {
       log('%s: redirect url exists', subscribe.name, url.href,
