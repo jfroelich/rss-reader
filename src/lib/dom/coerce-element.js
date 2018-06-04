@@ -92,7 +92,7 @@ export function coerce_element(element, new_name, copy_attributes = true) {
     copy_element_attributes(element, new_element);
   }
 
-  if (!is_void_element(to_element)) {
+  if (!is_void_element(new_element)) {
     move_child_nodes(element, new_element);
   }
 
