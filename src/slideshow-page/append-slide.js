@@ -5,13 +5,23 @@ import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {format_date} from '/src/lib/lang/format-date.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
-import {log, warn} from '/src/log.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
 import {decrement_active_transition_count, get_current_slide, set_current_slide} from '/src/slideshow-page/slideshow-state.js';
 
 // TODO: the creation of a slide element, and the appending of a slide element,
 // should be two separate tasks. This will increase flexibility and maybe
 // clarity. append_slide should accept a slide element, not an entry.
+
+// TODO: to add to the above, it is clearly confusing that this function is
+// named append_slide, but it accepts an entry, not a slide, which is just plain
+// bad naming.
+
+// TODO: create a new module in slideshow-page folder called create-slide,
+// that accepts an entry and returns a new slide element.
+// Change callers of append_slide to first call create_slide.
+// Change this to accept a slide element as input.
+// Pass the element from create_slide to this.
+// Consider deprecating this because it barely does anything.
 
 // TODO: duration should come from localStorage?
 
@@ -20,16 +30,14 @@ let duration = 0.35;
 
 export function append_slide(entry) {
   if (!is_entry(entry)) {
-    warn('%s: invalid entry parameter', append_slide.name, entry);
+    console.warn('%s: invalid entry parameter', append_slide.name, entry);
     return;
   }
 
   if (list_is_empty(entry.urls)) {
-    warn('%s: skipping entry without url', append_slide.name, entry);
+    console.warn('%s: skipping entry without url', append_slide.name, entry);
     return;
   }
-
-  log('%s: appending', append_slide.name, list_peek(entry.urls));
 
   const slide = create_slide(entry);
   append_slide_element(slide);
