@@ -373,7 +373,7 @@ async function after_subscribe_poll_feed_async(feed) {
 async function feed_list_init() {
   const title_sort_flag = true;
   const conn = await db_open();
-  const feeds = await db_get_feeds(conn, title_sort_flag);
+  const feeds = await db_get_feeds(conn, {mode: 'all', sort: true});
   conn.close();
 
   for (const feed of feeds) {

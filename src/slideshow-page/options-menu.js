@@ -66,7 +66,7 @@ async function export_button_onclick(event) {
   const filename = 'subscriptions.xml';
 
   const conn = await db_open();
-  const feeds = await db_get_feeds(conn);
+  const feeds = await db_get_feeds(conn, {mode: 'all', sort: false});
   conn.close();
   log('%s: loaded %d feeds', export_button_onclick.name, feeds.length);
 

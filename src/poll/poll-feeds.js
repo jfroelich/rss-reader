@@ -1,7 +1,8 @@
-import {db_for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
+import {db_get_feeds} from '/src/db/db-get-feeds.js';
 import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
+
 
 // Checks for new content
 // ### TODOS
@@ -28,8 +29,8 @@ const default_options = {
 export async function poll_feeds(
     rconn, iconn, channel = null_channel, options = {}) {
   log('%s: starting...', poll_feeds.name);
-  const feeds = [];
-  await db_for_each_active_feed(rconn, feed => feeds.push(feed));
+  const feeds = await db_get_feeds(rconn, {mode: 'active', sort: false});
+
   console.debug('%s: loaded %d active feeds', poll_feeds.name, feeds.length);
   const pfo = Object.assign({}, default_options, options);
   const pfp = poll_feed.bind(null, rconn, iconn, channel, pfo);

@@ -49,7 +49,6 @@ function create_slide(entry) {
   slide.setAttribute('feed', entry.feed);
   slide.setAttribute('class', 'entry');
 
-
   const slide_pad_wrap = document.createElement('div');
   slide_pad_wrap.className = 'slide-padding-wrapper';
   slide_pad_wrap.appendChild(create_article_title_element(entry));

@@ -1,4 +1,4 @@
-import {db_for_each_active_feed} from '/src/db/db-for-each-active-feed.js';
+import {db_get_feeds} from '/src/db/db-get-feeds.js';
 import {db_write_feed} from '/src/db/db-write-feed.js';
 import {FaviconService} from '/src/lib/favicon-service.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
@@ -78,10 +78,14 @@ export function favicon_create_feed_lookup_url(feed) {
 // mutated in between, not really sure what to do. Also: what if this is called
 // concurrently? what if a second call starts while first is running?
 export async function favicon_refresh_feeds() {
+  const feeds = await db_get_feeds(this.rconn, {mode: 'active'});
+
   const promises = [];
   const refresh_feed_bound = refresh_feed.bind(this);
-  await db_for_each_active_feed(
-      this.rconn, feed => promises.push(refresh_feed_bound(feed)));
+  for (const feed of feeds) {
+    promises.push(refresh_feed_bound(feed));
+  }
+
   return Promise.all(promises);
 }
 
