@@ -3,12 +3,12 @@ import '/src/slideshow-page/channel-onmessage.js';
 import '/src/slideshow-page/onkeydown.js';
 import '/src/slideshow-page/main-menu.js';
 import '/src/slideshow-page/options-menu.js';
-
 import {db_get_entries} from '/src/db/db-get-entries.js';
 import {db_get_feeds} from '/src/db/db-get-feeds.js';
 import {db_open} from '/src/db/db-open.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';
+import {show_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
 import {hide_splash, show_splash} from '/src/slideshow-page/splash.js';
 
@@ -43,6 +43,11 @@ async function load_data_into_view() {
 
   // Wait for entries to finish loading (without regard to feeds loading)
   const entries = await get_entries_promise;
+
+  if (!entries.length) {
+    show_no_articles_message();
+  }
+
   for (const entry of entries) {
     append_slide(entry);
   }
