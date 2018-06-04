@@ -2,7 +2,7 @@ import '/src/cli.js';
 import '/src/slideshow-page/channel-onmessage.js';
 import '/src/slideshow-page/onkeydown.js';
 import '/src/slideshow-page/main-menu.js';
-import '/src/slideshow-page/options-menu.js';
+import '/src/slideshow-page/left-panel.js';
 import {db_get_entries} from '/src/db/db-get-entries.js';
 import {db_get_feeds} from '/src/db/db-get-feeds.js';
 import {db_open} from '/src/db/db-open.js';

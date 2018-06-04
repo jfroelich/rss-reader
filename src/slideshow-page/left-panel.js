@@ -5,7 +5,6 @@ import {favicon_create_conn} from '/src/favicon.js';
 import {import_opml} from '/src/import-opml.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
-import {log} from '/src/log.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 
 // BUG: something is completely wrong again with the export-opml experience,
@@ -14,9 +13,6 @@ import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 // complete garbage; it almost looks like base64 encoding. And the downloaded
 // file does not download. This worked in chrome 66 and then stopped working in
 // 67 or 68 beta.
-
-// TODO: this module might need to be renamed, this is the left-panel control,
-// not really clear what options-menu means
 
 // TODO: should not be hardcoding styles
 // TODO: anywhere i use css to set something to 0, do not use units, units are
@@ -46,7 +42,7 @@ function import_opml_button_onclick(event) {
 // as the number of subscriptions added
 // TODO: on import error, show a friendly error message
 async function uploader_input_onchange(event) {
-  log('%s: started', uploader_input_onchange.name);
+  console.debug('Received input change event');
   const op = {};
   [op.rconn, op.iconn] = await Promise.all([db_open(), favicon_create_conn()]);
   op.channel = new BroadcastChannel(localStorage.channel_name);
@@ -56,7 +52,7 @@ async function uploader_input_onchange(event) {
   op.rconn.close();
   op.iconn.close();
   op.channel.close();
-  log('%s: completed', uploader_input_onchange.name);
+  console.debug('Completed opml import');
 }
 
 // TODO: visual feedback on completion
@@ -68,7 +64,7 @@ async function export_button_onclick(event) {
   const conn = await db_open();
   const feeds = await db_get_feeds(conn, {mode: 'all', sort: false});
   conn.close();
-  log('%s: loaded %d feeds', export_button_onclick.name, feeds.length);
+  console.debug('Loaded %d feeds', feeds.length);
 
   const outlines = feeds.map(create_outline).filter(outline_has_xml_url);
   const opml_document = create_opml_document(outlines, title);
@@ -78,10 +74,10 @@ async function export_button_onclick(event) {
   // TODO: using the downloads api might be the source of the current bug. try
   // reverting to the download-by-anchor method.
 
-  log('%s: downloading file', export_button_onclick.name, filename);
+  console.debug('Downloading file', filename);
   download_blob_using_chrome_api(
       opml_document_to_blob(opml_document), filename);
-  log('%s: export completed', export_button_onclick.name);
+  console.debug('Export completed');
 }
 
 function outline_has_xml_url(outline) {
@@ -153,7 +149,7 @@ function options_menu_onclick(event) {
 
   switch (option.id) {
     case 'menu-option-subscribe':
-      log('Not yet implemented');
+      alert('Not yet implemented, subscribe using options page');
       break;
     case 'menu-option-import':
       import_opml_button_onclick(event);
@@ -166,7 +162,7 @@ function options_menu_onclick(event) {
     case 'menu-option-body-font':
       break;
     default:
-      log('Unhandled menu option click', option.id);
+      console.warn('Unhandled menu option click', option.id);
       break;
   }
 }

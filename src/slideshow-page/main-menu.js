@@ -1,7 +1,7 @@
 import {db_open} from '/src/db/db-open.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
-import {options_menu_hide, options_menu_show} from '/src/slideshow-page/options-menu.js';
+import {options_menu_hide, options_menu_show} from '/src/slideshow-page/left-panel.js';
 
 let refresh_in_progress = false;
 
