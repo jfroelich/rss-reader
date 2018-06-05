@@ -36,7 +36,7 @@ export async function refresh_badge(conn) {
 
   log('%s: updating badge...', refresh_badge.name);
   update_pending = true;
-  const count = await db_count_entries(conn);
+  const count = await db_count_entries(conn, 'unread');
   log('%s: counted %d unread entries', refresh_badge.name, count);
   const text = count > 999 ? '1k+' : '' + count;
   log('%s: setting badge text to %s', refresh_badge.name, text);
