@@ -1,8 +1,7 @@
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
 import {log} from '/src/log.js';
 
-// TODO: revert to using assert helper, the pros outweigh the cons, I think
-// TODO: stop using content, revert to explicit parameters
+// TODO: stop using context parameters, revert to explicit parameters
 // TODO: decouple from log module
 // TODO: use rest-api or basic crud terminology, revert to using a name such as
 // db_update_feed_property
@@ -75,27 +74,11 @@ export function db_write_feed_property(feed_id, name, value, extra_props = {}) {
   // The current level of property validation is relatively weak, given that it
   // should never occur and we are the sole users of this api call. Therefore
   // name validation is minimal. Hereinafter, assume the name is canonical.
-
-  if (!is_valid_feed_id(feed_id)) {
-    throw new TypeError('Invalid feed id ' + feed_id);
-  }
-
-  if (typeof name !== 'string') {
-    throw new TypeError('Invalid name: ' + name);
-  }
-
-  if (!name) {
-    throw new TypeError('Invalid name: (empty-string)');
-  }
-
-  // Refuse to update id, treat as a programmer error
-  if (name === 'id') {
-    throw new TypeError('Unwritable property ' + name);
-  }
-
-  if (!is_valid_type_for_property(name, value)) {
-    throw new TypeError('Invalid value type for property ' + name);
-  }
+  assert(is_valid_feed_id(feed_id));
+  assert(typeof name === 'string');
+  assert(name.length > 0);
+  assert(name !== 'id');  // refuse setting this particular prop
+  assert(is_valid_type_for_property(name, value));
 
   return new Promise(executor.bind(this, feed_id, name, value, extra_props));
 }
@@ -194,4 +177,8 @@ function is_valid_type_for_property(name, value) {
   }
 
   return true;
+}
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message || 'Assertion error');
 }
