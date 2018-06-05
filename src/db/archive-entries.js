@@ -2,8 +2,10 @@ import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCH
 import {sizeof} from '/src/lib/lang/sizeof.js';
 import {warn} from '/src/log.js';
 
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
+// TODO: decouple from log.js, just directly log to console in the error path
+
+// TODO: load only only those entries that are archivable by also considering
+// entry dates in the index open cursor request
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -21,9 +23,8 @@ const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 // @throws {InvalidStateError} occurs when the channel is closed at the time
 // messages are sent to the channel, note the transaction still committed
 // @return {Promise} resolves to undefined
-// TODO: eventually load only only those entries that are archivable by also
-// considering entry dates
-export function db_archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
+
+export function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
   return new Promise(executor.bind(null, conn, channel, max_age));
 }
 
@@ -49,13 +50,13 @@ function request_onsuccess(entry_ids, max_age, event) {
 
   const entry = cursor.value;
   if (!is_entry(entry)) {
-    warn('%s: bad entry read from db', db_archive_entries.name, entry);
+    warn('%s: bad entry read from db', archive_entries.name, entry);
     cursor.continue();
     return;
   }
 
   if (!entry.dateCreated) {
-    warn('%s: entry missing date created', db_archive_entries.name, entry);
+    warn('%s: entry missing date created', archive_entries.name, entry);
     cursor.continue();
     return;
   }
@@ -64,7 +65,7 @@ function request_onsuccess(entry_ids, max_age, event) {
   const age = current_date - entry.dateCreated;
 
   if (age < 0) {
-    warn('%s: entry created in future', db_archive_entries.name, entry);
+    warn('%s: entry created in future', archive_entries.name, entry);
     cursor.continue();
     return;
   }
@@ -94,7 +95,7 @@ function archive_entry(entry) {
   const after_size = sizeof(ce);
 
   if (after_size > before_size) {
-    warn('%s: increased size', db_archive_entries.name, entry);
+    warn('%s: increased size', archive_entries.name, entry);
   }
 
   ce.archiveState = ENTRY_STATE_ARCHIVED;

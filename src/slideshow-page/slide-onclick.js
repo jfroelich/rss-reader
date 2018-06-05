@@ -1,4 +1,4 @@
-import {db_open} from '/src/db/db-open.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
 import {mark_slide_read} from '/src/slideshow-page/mark-slide-read.js';
 import {get_current_slide} from '/src/slideshow-page/slideshow-state.js';
 
@@ -48,7 +48,7 @@ export async function slide_onclick(event) {
     return false;
   }
 
-  const conn = await db_open();
+  const conn = await open_feed_db();
   await mark_slide_read(conn, clicked_slide);
   conn.close();
 }

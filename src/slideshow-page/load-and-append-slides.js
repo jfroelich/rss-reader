@@ -1,4 +1,4 @@
-import {db_get_entries} from '/src/db/db-get-entries.js';
+import {get_entries} from '/src/db/get-entries.js';
 import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
@@ -16,8 +16,8 @@ export async function load_and_append_slides(conn, limit) {
     limit = default_limit;
   }
   const offset = count_unread_slides();
-  const entries = await db_get_entries(conn, 'viewable', offset, limit);
 
+  const entries = await get_entries(conn, 'viewable', offset, limit);
   for (const entry of entries) {
     append_slide(entry);
   }

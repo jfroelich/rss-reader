@@ -1,5 +1,5 @@
-import {db_count_entries} from '/src/db/db-count-entries.js';
-import {db_open} from '/src/db/db-open.js';
+import {count_entries} from '/src/db/count-entries.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
 import {log} from '/src/log.js';
 
 // TODO: Perhaps think of badge as a view, like the other pages or the CLI. In
@@ -36,7 +36,7 @@ export async function refresh_badge(conn) {
 
   log('%s: updating badge...', refresh_badge.name);
   update_pending = true;
-  const count = await db_count_entries(conn, 'unread');
+  const count = await count_entries(conn, 'unread');
   log('%s: counted %d unread entries', refresh_badge.name, count);
   const text = count > 999 ? '1k+' : '' + count;
   log('%s: setting badge text to %s', refresh_badge.name, text);
@@ -45,7 +45,7 @@ export async function refresh_badge(conn) {
 }
 
 export async function init_badge() {
-  const conn = await db_open();
+  const conn = await open_feed_db();
   refresh_badge(conn).catch(console.error);
 
   // We can enqueue the close immediately before refresh has completed, which

@@ -1,13 +1,10 @@
-import * as config from '/src/config.js';
 import {ENTRY_MAGIC} from '/src/entry.js';
 import {FEED_MAGIC} from '/src/feed.js';
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 import {log} from '/src/log.js';
 
-
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
+// TODO: decouple from log.js, only log in the error cases, directly to console
 
 // TODO: test
 // TODO: rather than default to config, maybe I should just export the
@@ -28,7 +25,7 @@ import {log} from '/src/log.js';
 // @param version {Number} optional, defaults to local storage value
 // @param timeout {Number} optional, limit how long to wait before considering
 // the attempt to connect to the database a failure
-export function db_open(name, version, timeout) {
+export function open_feed_db(name, version, timeout) {
   // Default to config values. These are not fully hardcoded so that the
   // function can still be easily overloaded in order to reuse the
   // on_upgrade_needed handler with a different database name and version.

@@ -1,7 +1,7 @@
-import {db_archive_entries} from '/src/db/db-archive-entries.js';
-import {db_open} from '/src/db/db-open.js';
-import {db_remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
-import {db_remove_orphaned_entries} from '/src/db/db-remove-orphaned-entries.js';
+import {archive_entries} from '/src/db/archive-entries.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
+import {remove_lost_entries} from '/src/db/remove-lost-entries.js';
+import {remove_orphaned_entries} from '/src/db/remove-orphaned-entries.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
 import {log} from '/src/log.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
@@ -22,35 +22,35 @@ async function handle_compact_favicons_alarm(alarm) {
 }
 
 async function handle_archive_alarm_wakeup(alarm) {
-  const conn = await db_open();
+  const conn = await open_feed_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await db_archive_entries(conn, channel);
+  await archive_entries(conn, channel);
   channel.close();
   conn.close();
 }
 
 async function handle_lost_entries_alarm(alarm) {
   const op = {};
-  op.conn = await db_open();
+  op.conn = await open_feed_db();
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.db_remove_lost_entries = db_remove_lost_entries;
-  await op.db_remove_lost_entries();
+  op.remove_lost_entries = remove_lost_entries;
+  await op.remove_lost_entries();
   op.conn.close();
   op.channel.close();
 }
 
 async function handle_orphan_entries_alarm(alarm) {
   const op = {};
-  op.conn = await db_open();
+  op.conn = await open_feed_db();
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.db_remove_orphaned_entries = db_remove_orphaned_entries;
-  await op.db_remove_orphaned_entries();
+  op.remove_orphaned_entries = remove_orphaned_entries;
+  await op.remove_orphaned_entries();
   op.conn.close();
   op.channel.close();
 }
 
 async function handle_refresh_icons_alarm(alarm) {
-  const proms = [db_open(), favicon_create_conn()];
+  const proms = [open_feed_db(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
 
@@ -79,7 +79,7 @@ async function handle_poll_feeds_alarm(alarm) {
   options.ignore_recency_check = false;
   options.notify = true;
 
-  const rconn = await db_open();
+  const rconn = await open_feed_db();
   const iconn = await favicon_create_conn();
   const channel = new BroadcastChannel(localStorage.channel_name);
 

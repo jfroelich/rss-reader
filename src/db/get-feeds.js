@@ -1,7 +1,3 @@
-
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
-
 // TODO: test
 // TODO: consider using title sort key in database instead of sorting in memory
 
@@ -11,10 +7,13 @@
 // moment, if 'active' then only active feeds returned, note this may support
 // other modes in the future I do not have a clear idea right now, trying to be
 // flexible
-// @param sort {Boolean} if true then returned array sorted by feed title
-// normalized ascending
+// @param sort {Boolean} if true then returned array sorted by feed title, the
+// title is first lowercased, sort is ascending order, alphanumeric, note that
+// the sorting is done in memory after loading data from the database, this is
+// suboptimal but simpler because it assumes that there is not a material
+// performance gap
 // @return {Promise} resolves to array of feeds
-export function db_get_feeds(conn, mode = 'all', sort = false) {
+export function get_feeds(conn, mode = 'all', sort = false) {
   return new Promise(executor.bind(null, conn, mode, sort));
 }
 

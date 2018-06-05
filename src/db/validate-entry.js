@@ -1,15 +1,13 @@
 import {is_entry, is_valid_entry_id} from '/src/entry.js';
 import {log} from '/src/log.js';
 
+// TODO: decouple from log.js
 
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
-
-// TODO: implement `db_validate_entry`. Check required properties? This function
-// is specifically validation for storage, so maybe I should have constraints
-// like the urls list must have at least one entry. In addition, for each entry
-// property, ensure it is either undefined/null or the proper type. In addition,
-// maybe ensure dates are not in the future contain NaN or things like that.
+// TODO: implement. Check required properties? This function is specifically
+// validation for storage, so maybe I should have constraints like the urls list
+// must have at least one entry. In addition, for each entry property, ensure it
+// is either undefined/null or the proper type. In addition, maybe ensure dates
+// are not in the future contain NaN or things like that.
 
 // TODO: the problem now is that I have no idea of what causes invalidity
 // outside of logging something. I need to distinguish between the reasons
@@ -37,7 +35,7 @@ import {log} from '/src/log.js';
 
 // Returns whether an entry is valid
 // NOTE: only partially implemented
-export function db_validate_entry(entry) {
+export function validate_entry(entry) {
   if (!is_entry(entry)) {
     return false;
   }
@@ -46,7 +44,7 @@ export function db_validate_entry(entry) {
   // check id validity when the property exists
   if ('id' in entry) {
     if (!is_valid_entry_id(entry.id)) {
-      log('%s: invalid id', db_validate_entry.name, entry.id);
+      log('%s: invalid id', validate_entry.name, entry.id);
       return false;
     }
   }

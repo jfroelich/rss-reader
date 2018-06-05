@@ -1,4 +1,4 @@
-import {db_mark_entry_read} from '/src/db/db-mark-entry-read.js';
+import {mark_entry_read} from '/src/db/mark-entry-read.js';
 import {log} from '/src/log.js';
 
 // BUG: some kind of bug, possibly due to the non-blocking call. The bug is
@@ -13,10 +13,10 @@ import {log} from '/src/log.js';
 // TODO: this should not need to be async and await. However, right now when it
 // does not wait the call to update badge unread count fails because the
 // subsequent conn.close call occurs too early
-// TODO: rather than await call to `db_mark_entry_read`, this should listen for
+// TODO: rather than await call to `mark_entry_read`, this should listen for
 // entry-marked-read events roundtrip and handle the event when it later occurs
 // to mark the corresponding slide. Then this can be called non-awaited
-// TODO: maybe display an error if `db_mark_entry_read` fails?
+// TODO: maybe display an error if `mark_entry_read` fails?
 // TODO: using console.assert is dumb, should just exit early, or not assert
 // at all
 
@@ -35,6 +35,6 @@ export async function mark_slide_read(conn, slide) {
 
   const id = parseInt(slide.getAttribute('entry'), 10);
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await db_mark_entry_read(conn, channel, id);
+  await mark_entry_read(conn, channel, id);
   channel.close();
 }

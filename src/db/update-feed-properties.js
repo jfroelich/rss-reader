@@ -1,9 +1,5 @@
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
 
-
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
-
 // TODO: differentiating between name/value and extra_props is, in hindsight,
 // dumb. It would make more sense to have a props object containing all of the
 // properties to modify. Which of those properties is primary reason for the
@@ -72,7 +68,7 @@ import {is_feed, is_valid_feed_id} from '/src/feed.js';
 // @error {Error} when attempting to update the 'id' property, because this is
 // not permitted
 // @return {Promise} resolves to undefined
-export function db_update_feed_properties(
+export function update_feed_properties(
     conn, channel, feed_id, name, value, extra_props = {}) {
   return new Promise(
       executor.bind(null, conn, channel, feed_id, name, value, extra_props));

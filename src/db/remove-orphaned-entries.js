@@ -1,10 +1,7 @@
 import {is_valid_feed_id} from '/src/feed.js';
 import {log} from '/src/log.js';
 
-
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
-
+// TODO: decouple from log.js, only log in the error path, directly to console
 // TODO: this potentially affects unread count and should be calling
 // refresh_badge?
 // TODO: test
@@ -12,7 +9,7 @@ import {log} from '/src/log.js';
 // Scans the database for entries not linked to a feed and deletes them
 // @param conn {IDBDatabase} open database connection
 // @param channel {BroadcastChannel} optional, broadcast channel
-export function db_remove_orphaned_entries() {
+export function remove_orphaned_entries() {
   return new Promise(executor.bind(this));
 }
 
@@ -35,7 +32,7 @@ function executor(resolve, reject) {
         const entry = cursor.value;
         if (!is_valid_feed_id(entry.feed) || !feed_ids.includes(entry.feed)) {
           entry_ids.push(entry.id);
-          log('%s: deleting entry', db_remove_orphaned_entries.name, entry.id);
+          log('%s: deleting entry', remove_orphaned_entries.name, entry.id);
           cursor.delete();
         }
 

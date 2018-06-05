@@ -1,4 +1,4 @@
-import {db_open} from '/src/db/db-open.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {load_and_append_slides} from '/src/slideshow-page/load-and-append-slides.js';
 import {mark_slide_read} from '/src/slideshow-page/mark-slide-read.js';
@@ -35,7 +35,7 @@ export async function show_next_slide() {
   // TODO: I no longer understand this condition, it seems redundant
 
   if (slide_unread_count > 1) {
-    const conn = await db_open();
+    const conn = await open_feed_db();
     await mark_slide_read(conn, current_slide);
     conn.close();
     next();
@@ -43,7 +43,7 @@ export async function show_next_slide() {
   }
 
   let append_count = 0;
-  const conn = await db_open();
+  const conn = await open_feed_db();
 
   if (slide_unread_count < 2) {
     append_count = await load_and_append_slides(conn);

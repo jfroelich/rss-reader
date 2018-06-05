@@ -1,5 +1,5 @@
-import {db_get_feed} from '/src/db/db-get-feed.js';
-import {db_open} from '/src/db/db-open.js';
+import {get_feed} from '/src/db/get-feed.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {subscribe} from '/src/subscribe.js';
@@ -15,7 +15,7 @@ async function subscribe_test() {
 
   const rdb_name = 'subscribe-test';
   let version, timeout;
-  const rconn = await db_open(rdb_name, version, timeout, console_stub);
+  const rconn = await open_feed_db(rdb_name, version, timeout, console_stub);
 
   const url = new URL(test_url);
   const options = {fetch_timeout: 7000, notify: false, skip_icon_lookup: true};
@@ -46,10 +46,10 @@ async function subscribe_test() {
   assert(message_post_count > 0, 'no message posted');
 
   // Assert that the new feed is findable by url
-  assert(await db_get_feed(rconn, 'url', url, true));
+  assert(await get_feed(rconn, 'url', url, true));
 
   // Assert that the new feed is findable by id
-  const match = await db_get_feed(rconn, 'id', feed.id);
+  const match = await get_feed(rconn, 'id', feed.id);
   assert(is_feed(match), 'subscribed feed read did not emit feed type');
   assert(is_valid_feed_id(match.id), 'subscribed feed has invalid id');
   assert(match.id === feed.id, 'subscribed feed vs stored feed id mismatch');

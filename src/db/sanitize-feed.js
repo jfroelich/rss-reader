@@ -3,12 +3,8 @@ import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
 
-
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
-
 // Cleans/normalizes certain properties of the feed
-export function db_sanitize_feed(feed, options) {
+export function sanitize_feed(feed, options) {
   options = options || {};
   const title_max_len = options.title_max_len || 1024;
   const desc_max_len = options.desc_max_len || 1024 * 10;

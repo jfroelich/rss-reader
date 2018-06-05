@@ -3,9 +3,10 @@ import '/src/slideshow-page/channel-onmessage.js';
 import '/src/slideshow-page/onkeydown.js';
 import '/src/slideshow-page/main-menu.js';
 import '/src/slideshow-page/left-panel.js';
-import {db_get_entries} from '/src/db/db-get-entries.js';
-import {db_get_feeds} from '/src/db/db-get-feeds.js';
-import {db_open} from '/src/db/db-open.js';
+
+import {get_feeds} from '/src/db/get-feeds.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
+import {get_entries} from '/src/db/get-entries.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';
 import {show_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
@@ -14,19 +15,18 @@ import {hide_splash, show_splash} from '/src/slideshow-page/splash.js';
 
 // TODO: support back/forward browser buttons
 // TODO: if loading fails, then show a friendly error message?
-// TODO: look more into startup jank
+// TODO: look more into startup jank, note that I mave just fixed it when i
+// fixed get-entries ignoring the limit parameter bug
+// TODO: entry load limit should come from localStorage or something
 
 async function load_view() {
   show_splash();
   page_style_onload();
 
-  // TODO: this should come from localStorage or something
-  const entry_load_limit = 6;
-
-  const conn = await db_open();
-  const get_entries_promise =
-      db_get_entries(conn, 'viewable', 0, entry_load_limit);
-  const get_feeds_promise = db_get_feeds(conn, 'all', true);
+  const offset = 0, limit = 6;
+  const conn = await open_feed_db();
+  const get_entries_promise = get_entries(conn, 'viewable', offset, limit);
+  const get_feeds_promise = get_feeds(conn, 'all', true);
   conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)

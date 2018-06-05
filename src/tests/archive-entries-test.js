@@ -1,5 +1,5 @@
-import {db_archive_entries} from '/src/db/db-archive-entries.js';
-import {db_open} from '/src/db/db-open.js';
+import {archive_entries} from '/src/db/archive-entries.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
@@ -12,9 +12,9 @@ import {register_test} from '/src/tests/test-registry.js';
 async function archive_entries_test() {
   const dbname = 'archive-entries-test';
   let dbversion, dbtimeout;
-  const conn = await db_open(dbname, dbversion, dbtimeout);
+  const conn = await open_feed_db(dbname, dbversion, dbtimeout);
   const channel = {name: 'stub', postMessage: noop, close: noop};
-  await db_archive_entries(conn, channel);
+  await archive_entries(conn, channel);
   conn.close();
   channel.close();
   await indexeddb_remove(conn.name);

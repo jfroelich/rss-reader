@@ -1,5 +1,5 @@
-import {db_get_feeds} from '/src/db/db-get-feeds.js';
-import {db_write_feed} from '/src/db/db-write-feed.js';
+import {get_feeds} from '/src/db/get-feeds.js';
+import {write_feed} from '/src/db/write-feed.js';
 import {FaviconService} from '/src/lib/favicon-service.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 
@@ -66,7 +66,7 @@ export function favicon_create_feed_lookup_url(feed) {
 // * test
 // * use cursor for scalability over N-feeds instead of getAll
 // * in fact, should probably use cursor.update, and should not even re-use
-// `db_get_feeds` or some cursor walk helper, should directly interact with
+// `get_feeds` or some cursor walk helper, should directly interact with
 // database without an intermediate layer
 // * this should be using a single transaction, not sure how to handle the issue
 // with transaction timeout during lookup. Probably should be doing two passes.
@@ -78,7 +78,7 @@ export function favicon_create_feed_lookup_url(feed) {
 // mutated in between, not really sure what to do. Also: what if this is called
 // concurrently? what if a second call starts while first is running?
 export async function favicon_refresh_feeds() {
-  const feeds = await db_get_feeds(this.rconn, 'active');
+  const feeds = await get_feeds(this.rconn, 'active');
 
   const promises = [];
   const refresh_feed_bound = refresh_feed.bind(this);
@@ -111,6 +111,6 @@ async function refresh_feed(feed) {
       delete feed.faviconURLString;
     }
 
-    await db_write_feed(this.rconn, this.channel, feed);
+    await write_feed(this.rconn, this.channel, feed);
   }
 }

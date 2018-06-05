@@ -1,7 +1,7 @@
-import {db_get_feed} from '/src/db/db-get-feed.js';
-import {db_open} from '/src/db/db-open.js';
-import {db_validate_feed} from '/src/db/db-validate-feed.js';
-import {db_write_feed} from '/src/db/db-write-feed.js';
+import {get_feed} from '/src/db/get-feed.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
+import {validate_feed} from '/src/db/validate-feed.js';
+import {write_feed} from '/src/db/write-feed.js';
 import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {list_is_empty} from '/src/lib/lang/list.js';
@@ -24,15 +24,15 @@ async function create_feed_test() {
   // sanitization. For now do a test where both are done.
   // TODO: or maybe this is dumb, and I shouldn't test this here at all
   // actually? I am starting to think this should not be here.
-  assert(db_validate_feed(feed));
-  db_sanitize_feed(feed);
+  assert(validate_feed(feed));
+  sanitize_feed(feed);
 
   // Intentionally do not set dateUpdated. The property should not exist when
   // storing a new feed. It is allowed to exist, though. It will get deleted.
 
   // Create a dummy db
   const test_db = 'write-new-feed-test';
-  const conn = await db_open(test_db);
+  const conn = await open_feed_db(test_db);
 
   // Mock a broadcast channel along with a way to monitor messages
   const messages = [];
@@ -41,11 +41,11 @@ async function create_feed_test() {
   channel.postMessage = message => messages.push(message);
   channel.close = function() {};
 
-  const stored_feed_id = await db_write_feed(conn, channel, feed);
+  const stored_feed_id = await write_feed(conn, channel, feed);
 
-  // Make assertions about the output
+  // Make assertions about the function output
 
-  // db_write_feed both returns the new id, and sets the id of the input. They
+  // write_feed both returns the new id, and sets the id of the input. They
   // should be the same value
   assert(feed.id === stored_feed_id);
 
@@ -67,13 +67,13 @@ async function create_feed_test() {
   assert(messages[0].type === 'feed-written');
 
   // Assert the feed exists in the database with the given url
-  assert(await db_get_feed(conn, 'url', feed_url, true));
+  assert(await get_feed(conn, 'url', feed_url, true));
 
   // TODO: could just store above result (not keyonly), and assert against it.
   // We know it will be findable by id, i think?
 
   // Read the feed from the database and assert against read properties
-  const match = await db_get_feed(conn, 'id', feed.id, false);
+  const match = await get_feed(conn, 'id', feed.id, false);
   assert(is_feed(match));
   assert(match.active === true);
   assert('dateCreated' in match);

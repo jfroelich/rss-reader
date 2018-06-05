@@ -1,7 +1,7 @@
-import {db_get_feed} from '/src/db/db-get-feed.js';
-import {db_sanitize_feed} from '/src/db/db-sanitize-feed.js';
-import {db_validate_feed} from '/src/db/db-validate-feed.js';
-import {db_write_feed} from '/src/db/db-write-feed.js';
+import {get_feed} from '/src/db/get-feed.js';
+import {sanitize_feed} from '/src/db/sanitize-feed.js';
+import {validate_feed} from '/src/db/validate-feed.js';
+import {write_feed} from '/src/db/write-feed.js';
 import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
 import {coerce_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
@@ -58,7 +58,7 @@ export async function subscribe(url, options) {
   // TODO: create a local helper that wraps this call and takes a conn and url
   // parameter, use it for both cases
 
-  let prior_feed = await db_get_feed(this.rconn, 'url', url, true);
+  let prior_feed = await get_feed(this.rconn, 'url', url, true);
 
   if (prior_feed) {
     log('%s: url exists', subscribe.name, url.href);
@@ -73,7 +73,7 @@ export async function subscribe(url, options) {
 
   const response_url = new URL(response.url);
   if (url_did_change(url, response_url)) {
-    prior_feed = await db_get_feed(this.rconn, 'url', response_url, true);
+    prior_feed = await get_feed(this.rconn, 'url', response_url, true);
 
     if (prior_feed) {
       log('%s: redirect url exists', subscribe.name, url.href,
@@ -107,12 +107,12 @@ export async function subscribe(url, options) {
         await lookup_op.favicon_lookup(lookup_url, lookup_doc, fetch);
   }
 
-  if (!db_validate_feed(feed)) {
+  if (!validate_feed(feed)) {
     throw new Error('Invalid feed ' + JSON.stringify(feed));
   }
 
-  db_sanitize_feed(feed);
-  await db_write_feed(this.rconn, this.channel, feed);
+  sanitize_feed(feed);
+  await write_feed(this.rconn, this.channel, feed);
 
   if (options.notify) {
     const title = 'Subscribed!';

@@ -2,9 +2,7 @@ import {is_feed} from '/src/feed.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import {list_is_empty} from '/src/lib/lang/list.js';
 
-
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
+// TODO: tests
 
 // Creates or updates a feed in the database. Broadcasts a message to the
 // channel when finished
@@ -17,8 +15,7 @@ import {list_is_empty} from '/src/lib/lang/list.js';
 // note this occurs after internal transaction committed
 // @throws {DOMException} database errors
 // @return {Promise} resolves to the stored feed
-// TODO: tests
-export function db_write_feed(conn, channel, feed) {
+export function write_feed(conn, channel, feed) {
   return new Promise(executor.bind(null, conn, channel, feed));
 }
 

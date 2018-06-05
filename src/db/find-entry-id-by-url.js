@@ -1,8 +1,5 @@
-
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
-
-// TODO: maybe deprecate and just call update-entry directly
+// TODO: deprecate, create and use get-entry(mode:url, url, key-only:true)
+// instead
 // TODO: revert to resolve on request success, the delay until txn is pointless
 
 // Searches the entry store in the database for an entry that contains the given
@@ -20,7 +17,7 @@
 // does not exist, bad state)
 // @return {Promise} returns a promise that resolves to the matching entry id
 // {Number}. If no matching entry is found, resolves to undefined.
-export function db_find_entry_id_by_url(conn, url) {
+export function find_entry_id_by_url(conn, url) {
   return new Promise((resolve, reject) => {
     let entry_id;
     const txn = conn.transaction('entry');

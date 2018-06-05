@@ -1,9 +1,7 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
 import {log} from '/src/log.js';
 
-
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
+// TODO: decouple from log.js
 
 // Creates or overwrites an entry object in the app database. The input entry is
 // modified so this function is impure. The dateUpdated property is set
@@ -15,7 +13,7 @@ import {log} from '/src/log.js';
 // Context: conn, channel
 // Errors: TypeError, InvalidStateError, DOMException
 // Returns: a promise that resolves to the entry's id
-export function db_write_entry(entry) {
+export function write_entry(entry) {
   return new Promise((resolve, reject) => {
     if (!is_entry(entry)) {
       throw new TypeError('Invalid entry argument ' + entry);
@@ -40,7 +38,7 @@ export function db_write_entry(entry) {
     // resolving
     txn.oncomplete = _ => {
       const message = {type: 'entry-write', id: entry.id, 'create': is_create};
-      log('%s: %o', db_write_entry.name, message);
+      log('%s: %o', write_entry.name, message);
       this.channel.postMessage(message);
       resolve(entry.id);
     };

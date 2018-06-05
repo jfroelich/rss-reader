@@ -1,11 +1,11 @@
 import '/src/cli.js';
 
 import * as config from '/src/config.js';
-import {db_delete_feed} from '/src/db/db-delete-feed.js';
-import {db_get_feed} from '/src/db/db-get-feed.js';
-import {db_get_feeds} from '/src/db/db-get-feeds.js';
-import {db_open} from '/src/db/db-open.js';
-import {db_update_feed_properties} from '/src/db/db-update-feed-properties.js';
+import {delete_feed} from '/src/db/delete-feed.js';
+import {get_feed} from '/src/db/get-feed.js';
+import {get_feeds} from '/src/db/get-feeds.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
+import {update_feed_properties} from '/src/db/update-feed-properties.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
@@ -252,8 +252,8 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const conn = await db_open();
-  const feed = await db_get_feed(conn, 'id', feed_id);
+  const conn = await open_feed_db();
+  const feed = await get_feed(conn, 'id', feed_id);
   conn.close();
 
   const title_element = document.getElementById('details-title');
@@ -333,7 +333,7 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_show();
   subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
-  const conn_promises = Promise.all([db_open(), favicon_create_conn()]);
+  const conn_promises = Promise.all([open_feed_db(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
 
   const op = {};
@@ -358,7 +358,7 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises = Promise.all([db_open(), favicon_create_conn()]);
+  const conn_promises = Promise.all([open_feed_db(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
 
@@ -372,8 +372,8 @@ async function after_subscribe_poll_feed_async(feed) {
 
 async function feed_list_init() {
   const title_sort_flag = true;
-  const conn = await db_open();
-  const feeds = await db_get_feeds(conn, 'all', true);
+  const conn = await open_feed_db();
+  const feeds = await get_feeds(conn, 'all', true);
   conn.close();
 
   for (const feed of feeds) {
@@ -419,9 +419,9 @@ function feed_list_remove_feed_by_id(feed_id) {
 
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const conn = await db_open();
+  const conn = await open_feed_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await db_delete_feed(conn, channel, feed_id, 'unsubscribe');
+  await delete_feed(conn, channel, feed_id, 'unsubscribe');
   conn.close();
   channel.close();
   feed_list_remove_feed_by_id(feed_id);
@@ -431,9 +431,9 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const conn = await db_open();
+  const conn = await open_feed_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await db_update_feed_properties(conn, channel, feed_id, 'active', true);
+  await update_feed_properties(conn, channel, feed_id, 'active', true);
   channel.close();
   conn.close();
 
@@ -449,9 +449,9 @@ async function activate_feed_button_onclick(event) {
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const conn = await db_open();
+  const conn = await open_feed_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await db_update_feed_properties(
+  await update_feed_properties(
       conn, channel, feed_id, 'active', false, {reason: 'manual'});
   channel.close();
   conn.close();

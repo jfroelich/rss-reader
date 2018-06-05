@@ -1,30 +1,31 @@
-import {db_archive_entries} from '/src/db/db-archive-entries.js';
-import {db_open} from '/src/db/db-open.js';
-import {db_remove_lost_entries} from '/src/db/db-remove-lost-entries.js';
-import {db_remove_orphaned_entries} from '/src/db/db-remove-orphaned-entries.js';
+import {archive_entries} from '/src/db/archive-entries.js';
+import {remove_lost_entries} from '/src/db/remove-lost-entries.js';
+import {remove_orphaned_entries} from '/src/db/remove-orphaned-entries.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
 import {favicon_clear, favicon_compact, favicon_create_conn, favicon_lookup, favicon_refresh_feeds} from '/src/favicon.js';
 import {log} from '/src/log.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {subscribe} from '/src/subscribe.js';
 
-// The cli module exports several functions to the global window object in order
-// to make those functions available in the browser's console. This module is
-// not intended for use by testing modules or to be called by other code.
+// The command-line-interface (CLI) module creates a cli object within the
+// global window object in order to make certain app functionality accessible
+// via the browser's console. This module is not intended for use by testing
+// modules or to be called by other code so it does not export anything.
 //
 // The cli exists because:
 // * it provides direct developer access to functions
 // * it is more stable than the view (for now)
 // * it leads to better design by providing a calling context other than normal
-// dom event handlers in a view, which helps avoid view-dependent code from
-// appearing where it should not
+// dom event handlers in an html view, which helps avoid view-dependent code
+// from appearing where it should not
 // * it ensures headless support
-
+// * hacky testing convenience
 
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
   const op = {};
-  const proms = [db_open(), favicon_create_conn()];
+  const proms = [open_feed_db(), favicon_create_conn()];
   [op.rconn, op.iconn] = await Promise.all(proms);
 
   op.channel = new BroadcastChannel(localStorage.channel_name);
@@ -45,9 +46,9 @@ async function cli_subscribe(url_string, poll = true) {
 }
 
 async function cli_archive_entries() {
-  const conn = await db_open();
+  const conn = await open_feed_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await db_archive_entries(conn, channel);
+  await archive_entries(conn, channel);
   channel.close();
   conn.close();
 }
@@ -55,7 +56,7 @@ async function cli_archive_entries() {
 async function cli_refresh_icons() {
   // TODO: no need for extra vars here, assign directly into op
 
-  const proms = [db_open(), favicon_create_conn()];
+  const proms = [open_feed_db(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
 
@@ -73,7 +74,7 @@ async function cli_refresh_icons() {
 async function cli_poll_feeds() {
   // TODO: open both and await Promise.all
 
-  const rconn = await db_open();
+  const rconn = await open_feed_db();
   const iconn = await favicon_create_conn();
   const channel = new BroadcastChannel(localStorage.channel_name);
 
@@ -89,20 +90,20 @@ async function cli_poll_feeds() {
 
 async function cli_remove_lost_entries() {
   const op = {};
-  op.conn = await db_open();
+  op.conn = await open_feed_db();
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.db_remove_lost_entries = db_remove_lost_entries;
-  await op.db_remove_lost_entries();
+  op.remove_lost_entries = remove_lost_entries;
+  await op.remove_lost_entries();
   op.conn.close();
   op.channel.close();
 }
 
 async function cli_remove_orphans() {
   const op = {};
-  op.conn = await db_open();
+  op.conn = await open_feed_db();
   op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.db_remove_orphaned_entries = db_remove_orphaned_entries;
-  await op.db_remove_orphaned_entries();
+  op.remove_orphaned_entries = remove_orphaned_entries;
+  await op.remove_orphaned_entries();
   op.conn.close();
   op.channel.close();
 }
@@ -140,8 +141,8 @@ const cli = {
   archive: cli_archive_entries,
   clear_icons: favicon_clear,
   compact_icons: favicon_compact,
-  db_remove_orphaned_entries: cli_remove_orphans,
-  db_remove_lost_entries: cli_remove_lost_entries,
+  remove_orphaned_entries: cli_remove_orphans,
+  remove_lost_entries: cli_remove_lost_entries,
   lookup_favicon: cli_lookup_favicon,
   poll_feeds: cli_poll_feeds,
   refresh_icons: cli_refresh_icons,

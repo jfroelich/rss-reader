@@ -1,8 +1,5 @@
 import {ENTRY_STATE_UNREAD} from '/src/entry.js';
 
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
-
 // Counts the number of entries in the entries object store. If mode is
 // 'unread', then this is a count of unread entries only.
 // @param conn {IDBDatabase} an open connection to the app's feed database
@@ -10,7 +7,7 @@ import {ENTRY_STATE_UNREAD} from '/src/entry.js';
 // unread entries are counted
 // @throws {DOMException} when a database error occurs
 // @return {Promise} returns a promise that resolves to a number of entries
-export function db_count_entries(conn, mode = 'all') {
+export function count_entries(conn, mode = 'all') {
   return new Promise(executor.bind(null, conn, mode));
 }
 

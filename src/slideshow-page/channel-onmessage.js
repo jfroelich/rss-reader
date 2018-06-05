@@ -1,4 +1,4 @@
-import {db_open} from '/src/db/db-open.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
 import {is_valid_entry_id} from '/src/entry.js';
 import {log, warn} from '/src/log.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
@@ -76,7 +76,7 @@ async function on_entry_written(message) {
 
   // TODO: the view shouldn't be directly interacting with the database
 
-  const conn = await db_open();
+  const conn = await open_feed_db();
   await load_and_append_slides(conn);
   conn.close();
 }

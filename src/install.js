@@ -1,4 +1,4 @@
-import {db_open} from '/src/db/db-open.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import * as color from '/src/lib/color.js';
 import {log} from '/src/log.js';
@@ -19,7 +19,7 @@ async function oninstalled(event) {
   init_localstorage();
 
   // Initialize the app database
-  let conn = await db_open();
+  let conn = await open_feed_db();
   conn.close();
 
   // Initialize the favicon cache

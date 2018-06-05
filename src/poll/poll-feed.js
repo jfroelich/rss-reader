@@ -1,7 +1,7 @@
 import {refresh_badge} from '/src/badge.js';
-import {db_sanitize_feed} from '/src/db/db-sanitize-feed.js';
-import {db_validate_feed} from '/src/db/db-validate-feed.js';
-import {db_write_feed} from '/src/db/db-write-feed.js';
+import {sanitize_feed} from '/src/db/sanitize-feed.js';
+import {validate_feed} from '/src/db/validate-feed.js';
+import {write_feed} from '/src/db/write-feed.js';
 import {append_entry_url, create_entry} from '/src/entry.js';
 import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
@@ -51,7 +51,7 @@ import {poll_entry} from '/src/poll/poll-entry.js';
 // generate an event with feed id and some basic error information, and let some
 // error handler handle the event at a later time. This removes all concern over
 // encountering a closed database or closed channel at the time of the call to
-// `db_write_feed`, and maintains the non-blocking characteristic.
+// write_feed, and maintains the non-blocking characteristic.
 
 export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const ignore_recency_check = options.ignore_recency_check;
@@ -141,13 +141,13 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   handle_fetch_success(merged_feed);
 
   // Do not throw if invalid, just exit
-  if (!db_validate_feed(merged_feed)) {
+  if (!validate_feed(merged_feed)) {
     console.warn('Invalid feed', merged_feed);
     return 0;
   }
 
-  db_sanitize_feed(merged_feed);
-  await db_write_feed(rconn, channel, merged_feed);
+  sanitize_feed(merged_feed);
+  await write_feed(rconn, channel, merged_feed);
 
   const count = await poll_entries(
       rconn, iconn, channel, options, parsed_feed.entries, merged_feed);
@@ -247,14 +247,14 @@ async function handle_error(
 
   // TODO: why validate? have we not had control the entire time, and have no
   // new user data?
-  if (!db_validate_feed(feed)) {
+  if (!validate_feed(feed)) {
     console.warn('Invalid feed', feed);
     return;
   }
 
   // TODO: is sanitization needed here?
-  db_sanitize_feed(feed);
-  await db_write_feed(rconn, channel, feed);
+  sanitize_feed(feed);
+  await write_feed(rconn, channel, feed);
 }
 
 function dedup_entries(entries) {

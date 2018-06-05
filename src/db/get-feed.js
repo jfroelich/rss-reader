@@ -1,9 +1,5 @@
 import {create_feed, is_valid_feed_id} from '/src/feed.js';
 
-
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
-
 // TODO: write tests
 
 // TODO: what if instead I use two different request_onsuccess handlers,
@@ -17,7 +13,7 @@ import {create_feed, is_valid_feed_id} from '/src/feed.js';
 // @param value {any} the value of the key to look for
 // @option key_only {Boolean} if true then only the matching key is loaded
 // @return {Promise} resolve to the matching feed or undefined
-export async function db_get_feed(conn, mode = 'id', value, key_only) {
+export async function get_feed(conn, mode = 'id', value, key_only) {
   return new Promise(executor.bind(null, conn, mode, value, key_only));
 }
 
@@ -42,7 +38,6 @@ function executor(conn, mode, value, key_only, resolve, reject) {
   request.onsuccess = request_onsuccess.bind(request, key_only, resolve);
 }
 
-// Handle the result of the get request
 function request_onsuccess(key_only, callback, event) {
   let feed;
   if (key_only) {

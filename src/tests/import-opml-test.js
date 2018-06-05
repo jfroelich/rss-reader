@@ -1,4 +1,4 @@
-import {db_open} from '/src/db/db-open.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
 import {import_opml} from '/src/import-opml.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {parse_opml} from '/src/lib/parse-opml.js';
@@ -42,7 +42,7 @@ async function import_opml_test() {
   const db_timeout = 3000;
 
   const op = {};
-  op.rconn = await db_open(db_name, db_version, db_timeout);
+  op.rconn = await open_feed_db(db_name, db_version, db_timeout);
   op.iconn = undefined;  // test without favicon caching support
   op.channel = new BroadcastChannel('import-opml-test');
   op.import_opml = import_opml;

@@ -1,9 +1,6 @@
 import {log} from '/src/log.js';
 
-
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
-
+// TODO: decouple from log.js, only log in the error path, directly to console
 // TODO: this potentially affects unread count and should be calling
 // refresh_badge?
 // TODO: test
@@ -13,7 +10,7 @@ import {log} from '/src/log.js';
 // specified this will auto-connect to the default database
 // @param channel {BroadcastChannel} optional, the channel over which to
 // communicate storage change events
-export async function db_remove_lost_entries() {
+export async function remove_lost_entries() {
   return new Promise(executor.bind(this));
 }
 
@@ -37,7 +34,7 @@ function request_onsuccess(ids, stats, event) {
 
     const entry = cursor.value;
     if (!entry.urls || !entry.urls.length) {
-      log('%s: deleting entry %d', db_remove_lost_entries.name, entry.id);
+      log('%s: deleting entry %d', remove_lost_entries.name, entry.id);
       cursor.delete();
       ids.push(entry.id);
     }
@@ -47,7 +44,7 @@ function request_onsuccess(ids, stats, event) {
 }
 
 function txn_oncomplete(ids, callback, stats, event) {
-  log('%s: scanned %d, deleted %d', db_remove_lost_entries.name,
+  log('%s: scanned %d, deleted %d', remove_lost_entries.name,
       stats.visited_entry_count, ids.length);
 
   const message = {type: 'entry-deleted', id: 0, reason: 'lost'};

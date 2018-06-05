@@ -2,8 +2,7 @@ import {refresh_badge} from '/src/badge.js';
 import {is_valid_feed_id} from '/src/feed.js';
 import {warn} from '/src/log.js';
 
-// TODO: drop the db prefix, the name is a concern of an importing module and
-// not a concern of the exporting module, and the prefix is an overqualification
+// TODO: decouple from log.js, just use console directly, only log error cases
 
 // TODO: should consider de-optimizing by removing the feed index from the
 // entry store. Deletes are rare events. There is not a great need for this
@@ -13,7 +12,9 @@ import {warn} from '/src/log.js';
 // requires a schema change, so I have to further complicate db-open.
 
 // TODO: conn should not be an explicit parameter to txn_oncomplete, get it from
-// the event
+// the event, look at what i did in one other other db modules, it is something
+// like event.target.transaction.db, or if on txn then event.target.db, see what
+// i did in mark-entry-read.js
 
 // TODO: entry_store should not be an explicit parameter to request_onsuccess,
 // recreate it from transaction, get transaction from event
@@ -60,7 +61,7 @@ import {warn} from '/src/log.js';
 // @throws {InvalidStateError} if channel is closed when posting message, but
 // note that db still modified
 // @return {Promise} resolves to undefined
-export function db_delete_feed(conn, channel, feed_id, reason) {
+export function delete_feed(conn, channel, feed_id, reason) {
   return new Promise(executor.bind(null, conn, channel, feed_id, reason));
 }
 
