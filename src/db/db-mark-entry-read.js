@@ -1,12 +1,13 @@
 import {refresh_badge} from '/src/badge.js';
 import {ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
-import {log} from '/src/log.js';
 
 // TODO: drop the db prefix, the name is a concern of an importing module and
 // not a concern of the exporting module, and the prefix is an overqualification
 
-// TODO: decouple from log module, use console.warn/error in error path and do
-// not log in success path
+// TODO: the on-load checks of object validity are weird. Why not just use
+// basic assert and treat as errors? I don't remember how the code got into this
+// state. I am bit concerned if I change these back to throwing error instead
+// of just logging error and exiting, it will break stuff.
 
 // TODO: refactor as db-set-entry-read-state, accept a boolean state parameter,
 // and handle both cases (where true and where false)? Alternatively, create
@@ -52,22 +53,22 @@ function executor(conn, channel, entry_id, resolve, reject) {
 function request_onsuccess(entry_id, event) {
   const entry = event.target.result;
   if (!entry) {
-    log('No entry found', entry_id);
+    console.error('No entry found', entry_id);
     return;
   }
 
   if (!is_entry(entry)) {
-    log('Invalid matched object type', entry_id, entry);
+    console.error('Invalid matched object type', entry_id, entry);
     return;
   }
 
   if (entry.readState === ENTRY_STATE_READ) {
-    log('Entry already read', entry.id);
+    console.error('Entry already read', entry.id);
     return;
   }
 
   if (entry.readState !== ENTRY_STATE_UNREAD) {
-    log('Entry not unread', entry.id);
+    console.error('Entry not unread', entry.id);
     return;
   }
 
@@ -81,9 +82,8 @@ function request_onsuccess(entry_id, event) {
 }
 
 function txn_oncomplete(channel, entry_id, callback, event) {
-  log('%s: marked entry as read', db_mark_entry_read.name, entry_id);
   channel.postMessage({type: 'entry-marked-read', id: entry_id});
   const conn = event.target.db;
-  refresh_badge(conn).catch(log);
+  refresh_badge(conn).catch(console.error);
   callback();
 }
