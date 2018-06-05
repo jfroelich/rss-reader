@@ -12,6 +12,10 @@ import {log} from '/src/log.js';
 // indexeddb_open, it just cannot use the upgrade handler here, for now, because
 // it is module-private.
 
+// TODO: what if I grouped the 3 props for active in the schema. So change the
+// feed schema to have a sub-object, active-props, with 3 properties: active,
+// reason, date. Then I could things like feed.active_props.date = new Date(),
+// if(feed.active_props.active)...
 
 // Asynchronously opens a connection to the app database. If the database does
 // not exist, it will be created. Returns a promise that resolves to an open
