@@ -1,5 +1,5 @@
 import {get_feeds} from '/src/db/get-feeds.js';
-import {write_feed} from '/src/db/write-feed.js';
+import {update_feed} from '/src/db/update-feed.js';
 import {FaviconService} from '/src/lib/favicon-service.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 
@@ -111,6 +111,6 @@ async function refresh_feed(feed) {
       delete feed.faviconURLString;
     }
 
-    await write_feed(this.rconn, this.channel, feed);
+    await update_feed(this.rconn, this.channel, feed);
   }
 }

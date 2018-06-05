@@ -13,7 +13,7 @@ import {log} from '/src/log.js';
 // Context: conn, channel
 // Errors: TypeError, InvalidStateError, DOMException
 // Returns: a promise that resolves to the entry's id
-export function write_entry(entry) {
+export function update_entry(entry) {
   return new Promise((resolve, reject) => {
     if (!is_entry(entry)) {
       throw new TypeError('Invalid entry argument ' + entry);
@@ -38,7 +38,7 @@ export function write_entry(entry) {
     // resolving
     txn.oncomplete = _ => {
       const message = {type: 'entry-write', id: entry.id, 'create': is_create};
-      log('%s: %o', write_entry.name, message);
+      log('%s: %o', update_entry.name, message);
       this.channel.postMessage(message);
       resolve(entry.id);
     };

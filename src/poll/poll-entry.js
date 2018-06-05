@@ -2,7 +2,7 @@ import {inaccessible_content_descriptors} from '/src/config.js';
 import {find_entry_id_by_url} from '/src/db/find-entry-id-by-url.js';
 import {sanitize_entry} from '/src/db/sanitize-entry.js';
 import {validate_entry} from '/src/db/validate-entry.js';
-import {write_entry} from '/src/db/write-entry.js';
+import {update_entry} from '/src/db/update-entry.js';
 import {append_entry_url, is_valid_entry_id} from '/src/entry.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
@@ -43,15 +43,15 @@ import {sanitize_document} from '/src/sanitize-document.js';
 // becomes more readable and less error-prone, because I do not have such a
 // gigantic parameter list.
 // * Revisit how existence check works regarding uniqueness errors. Basically
-// the `write_entry` call can fail because of the uniqueness constraint
+// the `update_entry` call can fail because of the uniqueness constraint
 // placed on the url index of the entry store when the incoming entry has a url
 // that already exists. This currently does two checks, an explicit check up
-// front and then the implied check that happens within `write_entry` when
+// front and then the implied check that happens within `update_entry` when
 // calling `IDBObjectStore.prototype.put`. First, I do not like the duplicate
 // functionality and prefer a design where there is only one check. Second, I
 // would prefer to somehow do this using a single database transaction instead
 // of multiple transactions. Third, I would prefer that I did not have to wrap
-// the call to `write_entry` in a try/catch block, because the call should
+// the call to `update_entry` in a try/catch block, because the call should
 // basically never fail, but it can in the current implementation so I must.
 // * I would prefer to use a single transaction for all entries. Now that this
 // function is isolated into its own module, it is ignorant of the fact that it
@@ -108,7 +108,7 @@ export async function poll_entry(entry) {
   await update_entry_content(entry, document, this.fetch_image_timeout);
 
   // Explicitly validate the entry. This was previously done via the call to
-  // write_entry, and threw a type error which was not caught here. For now,
+  // update_entry, and threw a type error which was not caught here. For now,
   // just throw a basic error to match the previous behavior. In the future,
   // think about whether this should be throwing an error at all or doing
   // something else.
@@ -116,7 +116,7 @@ export async function poll_entry(entry) {
     throw new Error('Invalid entry ' + entry);
   }
 
-  // Explicitly sanitize the entry. This was previously done by write_entry
+  // Explicitly sanitize the entry. This was previously done by update_entry
   // but that is no longer the case. For now, replace the parameter value with
   // itself, even though sanitize clones. Also note that sanitize now filters
   // empty properties implicitly
@@ -125,8 +125,8 @@ export async function poll_entry(entry) {
   const op = {};
   op.conn = this.rconn;
   op.channel = this.channel;
-  op.write_entry = write_entry;
-  const new_entry_id = await op.write_entry(entry);
+  op.update_entry = update_entry;
+  const new_entry_id = await op.update_entry(entry);
   return new_entry_id;
 }
 

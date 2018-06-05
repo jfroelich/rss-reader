@@ -1,7 +1,7 @@
 import {get_feed} from '/src/db/get-feed.js';
 import {sanitize_feed} from '/src/db/sanitize-feed.js';
 import {validate_feed} from '/src/db/validate-feed.js';
-import {write_feed} from '/src/db/write-feed.js';
+import {update_feed} from '/src/db/update-feed.js';
 import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
 import {coerce_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
@@ -112,7 +112,7 @@ export async function subscribe(url, options) {
   }
 
   sanitize_feed(feed);
-  await write_feed(this.rconn, this.channel, feed);
+  await update_feed(this.rconn, this.channel, feed);
 
   if (options.notify) {
     const title = 'Subscribed!';

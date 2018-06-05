@@ -1,7 +1,7 @@
 import {refresh_badge} from '/src/badge.js';
 import {sanitize_feed} from '/src/db/sanitize-feed.js';
 import {validate_feed} from '/src/db/validate-feed.js';
-import {write_feed} from '/src/db/write-feed.js';
+import {update_feed} from '/src/db/update-feed.js';
 import {append_entry_url, create_entry} from '/src/entry.js';
 import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
@@ -51,7 +51,7 @@ import {poll_entry} from '/src/poll/poll-entry.js';
 // generate an event with feed id and some basic error information, and let some
 // error handler handle the event at a later time. This removes all concern over
 // encountering a closed database or closed channel at the time of the call to
-// write_feed, and maintains the non-blocking characteristic.
+// update_feed, and maintains the non-blocking characteristic.
 
 export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const ignore_recency_check = options.ignore_recency_check;
@@ -147,7 +147,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   }
 
   sanitize_feed(merged_feed);
-  await write_feed(rconn, channel, merged_feed);
+  await update_feed(rconn, channel, merged_feed);
 
   const count = await poll_entries(
       rconn, iconn, channel, options, parsed_feed.entries, merged_feed);
@@ -254,7 +254,7 @@ async function handle_error(
 
   // TODO: is sanitization needed here?
   sanitize_feed(feed);
-  await write_feed(rconn, channel, feed);
+  await update_feed(rconn, channel, feed);
 }
 
 function dedup_entries(entries) {

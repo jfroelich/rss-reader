@@ -15,7 +15,7 @@ import {list_is_empty} from '/src/lib/lang/list.js';
 // note this occurs after internal transaction committed
 // @throws {DOMException} database errors
 // @return {Promise} resolves to the stored feed
-export function write_feed(conn, channel, feed) {
+export function update_feed(conn, channel, feed) {
   return new Promise(executor.bind(null, conn, channel, feed));
 }
 
