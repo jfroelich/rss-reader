@@ -20,10 +20,6 @@ import {log} from '/src/log.js';
 // TODO: using console.assert is dumb, should just exit early, or not assert
 // at all
 
-// This uses a short-lived local channel instance instead of the page-lifetime
-// channel because there is a no-loopback issue with channels in Chrome. That
-// or I don't understand how channels operate.
-
 export async function mark_slide_read(conn, slide) {
   console.assert(conn instanceof IDBDatabase);
   console.assert(slide);
@@ -34,11 +30,11 @@ export async function mark_slide_read(conn, slide) {
     return;
   }
 
+  // This uses a short-lived local channel instance instead of the page-lifetime
+  // channel because there is a no-loopback issue with channels in Chrome.
+
   const id = parseInt(slide.getAttribute('entry'), 10);
-  const op = {};
-  op.conn = conn;
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.db_mark_entry_read = db_mark_entry_read;
-  await op.db_mark_entry_read(id);
-  op.channel.close();
+  const channel = new BroadcastChannel(localStorage.channel_name);
+  await db_mark_entry_read(conn, channel, id);
+  channel.close();
 }
