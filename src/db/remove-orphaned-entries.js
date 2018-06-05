@@ -1,7 +1,5 @@
 import {is_valid_feed_id} from '/src/feed.js';
-import {log} from '/src/log.js';
 
-// TODO: decouple from log.js, only log in the error path, directly to console
 // TODO: this potentially affects unread count and should be calling
 // refresh_badge?
 // TODO: test
@@ -32,7 +30,8 @@ function executor(resolve, reject) {
         const entry = cursor.value;
         if (!is_valid_feed_id(entry.feed) || !feed_ids.includes(entry.feed)) {
           entry_ids.push(entry.id);
-          log('%s: deleting entry', remove_orphaned_entries.name, entry.id);
+          console.debug(
+              '%s: deleting entry', remove_orphaned_entries.name, entry.id);
           cursor.delete();
         }
 

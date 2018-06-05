@@ -1,8 +1,5 @@
 import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, is_entry} from '/src/entry.js';
 import {sizeof} from '/src/lib/lang/sizeof.js';
-import {warn} from '/src/log.js';
-
-// TODO: decouple from log.js, just directly log to console in the error path
 
 // TODO: load only only those entries that are archivable by also considering
 // entry dates in the index open cursor request
@@ -50,13 +47,13 @@ function request_onsuccess(entry_ids, max_age, event) {
 
   const entry = cursor.value;
   if (!is_entry(entry)) {
-    warn('%s: bad entry read from db', archive_entries.name, entry);
+    console.warn('Bad entry read from db', entry);
     cursor.continue();
     return;
   }
 
   if (!entry.dateCreated) {
-    warn('%s: entry missing date created', archive_entries.name, entry);
+    console.warn('Entry missing date created', entry);
     cursor.continue();
     return;
   }
@@ -65,7 +62,7 @@ function request_onsuccess(entry_ids, max_age, event) {
   const age = current_date - entry.dateCreated;
 
   if (age < 0) {
-    warn('%s: entry created in future', archive_entries.name, entry);
+    console.warn('Entry created in future', entry);
     cursor.continue();
     return;
   }
@@ -95,7 +92,7 @@ function archive_entry(entry) {
   const after_size = sizeof(ce);
 
   if (after_size > before_size) {
-    warn('%s: increased size', archive_entries.name, entry);
+    console.warn('Entry increased size', entry);
   }
 
   ce.archiveState = ENTRY_STATE_ARCHIVED;

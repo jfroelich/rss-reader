@@ -1,8 +1,5 @@
 import {refresh_badge} from '/src/badge.js';
 import {is_valid_feed_id} from '/src/feed.js';
-import {warn} from '/src/log.js';
-
-// TODO: decouple from log.js, just use console directly, only log error cases
 
 // TODO: should consider de-optimizing by removing the feed index from the
 // entry store. Deletes are rare events. There is not a great need for this
@@ -113,7 +110,7 @@ function txn_oncomplete(
     channel.postMessage(entry_msg);
   }
 
-  refresh_badge(conn).catch(warn);
+  refresh_badge(conn).catch(console.error);
 
   callback();
 }

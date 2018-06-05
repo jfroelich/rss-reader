@@ -1,6 +1,3 @@
-import {log} from '/src/log.js';
-
-// TODO: decouple from log.js, only log in the error path, directly to console
 // TODO: this potentially affects unread count and should be calling
 // refresh_badge?
 // TODO: test
@@ -34,7 +31,8 @@ function request_onsuccess(ids, stats, event) {
 
     const entry = cursor.value;
     if (!entry.urls || !entry.urls.length) {
-      log('%s: deleting entry %d', remove_lost_entries.name, entry.id);
+      console.debug(
+          '%s: deleting entry %d', remove_lost_entries.name, entry.id);
       cursor.delete();
       ids.push(entry.id);
     }
@@ -44,8 +42,8 @@ function request_onsuccess(ids, stats, event) {
 }
 
 function txn_oncomplete(ids, callback, stats, event) {
-  log('%s: scanned %d, deleted %d', remove_lost_entries.name,
-      stats.visited_entry_count, ids.length);
+  console.debug(
+      'Scanned %d, deleted %d', stats.visited_entry_count, ids.length);
 
   const message = {type: 'entry-deleted', id: 0, reason: 'lost'};
   for (const id of ids) {

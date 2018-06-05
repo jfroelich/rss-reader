@@ -2,9 +2,6 @@ import {ENTRY_MAGIC} from '/src/entry.js';
 import {FEED_MAGIC} from '/src/feed.js';
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
-import {log} from '/src/log.js';
-
-// TODO: decouple from log.js, only log in the error cases, directly to console
 
 // TODO: test
 // TODO: rather than default to config, maybe I should just export the
@@ -44,20 +41,21 @@ function on_upgrade_needed(event) {
   const stores = conn.objectStoreNames;
 
   if (event.oldVersion === 0) {
-    log('%s: creating database', on_upgrade_needed.name, conn.name,
-        conn.version, event.oldVersion);
+    console.debug(
+        'Creating database', conn.name, conn.version, event.oldVersion);
   } else {
-    log('%s: upgrading database %s to version %s from version',
-        on_upgrade_needed.name, conn.name, conn.version, event.oldVersion);
+    console.debug(
+        'Upgrading database %s to version %s from version', conn.name,
+        conn.version, event.oldVersion);
   }
 
   if (event.oldVersion < 20) {
     const feed_store_props = {keyPath: 'id', autoIncrement: true};
-    log('Creating feed object store with props', feed_store_props);
+    console.debug('Creating feed object store with props', feed_store_props);
     feed_store = conn.createObjectStore('feed', feed_store_props);
 
     const entry_store_props = {keyPath: 'id', autoIncrement: true};
-    log('Creating entry object store with props', entry_store_props);
+    console.debug('Creating entry object store with props', entry_store_props);
     entry_store = conn.createObjectStore('entry', entry_store_props);
 
     feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
@@ -96,7 +94,7 @@ function on_upgrade_needed(event) {
 // @param txn {IDBTransaction}
 // @return {void}
 function add_magic_to_entries(txn) {
-  log('Adding entry magic');
+  console.debug('Adding entry magic');
   const store = txn.objectStore('entry');
   const request = store.openCursor();
   request.onsuccess = function() {
@@ -110,15 +108,15 @@ function add_magic_to_entries(txn) {
       }
     }
   };
-  request.onerror = _ => log(request.error);
+  request.onerror = _ => console.error(request.error);
 }
 
 // TODO: use cursor over getAll for scalability
 function add_magic_to_feeds(txn) {
-  log('Adding feed magic');
+  console.debug('Adding feed magic');
   const store = txn.objectStore('feed');
   const request = store.getAll();
-  request.onerror = log;
+  request.onerror = _ => console.error(request.error);
   request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
@@ -131,9 +129,9 @@ function add_magic_to_feeds(txn) {
 
 // TODO: use cursor rather than getAll for scalability
 function add_active_field_to_feeds(store) {
-  log('Adding active property to older feeds');
+  console.debug('Adding active property to older feeds');
   const feeds_request = store.getAll();
-  feeds_request.onerror = log;
+  feeds_request.onerror = _ => console.error(feeds_request.error);
   feeds_request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {

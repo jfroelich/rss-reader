@@ -1,7 +1,4 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
-import {log} from '/src/log.js';
-
-// TODO: decouple from log.js
 
 // Creates or overwrites an entry object in the app database. The input entry is
 // modified so this function is impure. The dateUpdated property is set
@@ -38,7 +35,7 @@ export function update_entry(entry) {
     // resolving
     txn.oncomplete = _ => {
       const message = {type: 'entry-write', id: entry.id, 'create': is_create};
-      log('%s: %o', update_entry.name, message);
+      console.debug(message);
       this.channel.postMessage(message);
       resolve(entry.id);
     };

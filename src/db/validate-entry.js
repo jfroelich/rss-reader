@@ -1,7 +1,4 @@
 import {is_entry, is_valid_entry_id} from '/src/entry.js';
-import {log} from '/src/log.js';
-
-// TODO: decouple from log.js
 
 // TODO: implement. Check required properties? This function is specifically
 // validation for storage, so maybe I should have constraints like the urls list
@@ -44,7 +41,7 @@ export function validate_entry(entry) {
   // check id validity when the property exists
   if ('id' in entry) {
     if (!is_valid_entry_id(entry.id)) {
-      log('%s: invalid id', validate_entry.name, entry.id);
+      console.warn('Invalid id', entry.id);
       return false;
     }
   }
