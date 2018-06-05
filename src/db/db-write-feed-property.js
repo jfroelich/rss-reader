@@ -1,8 +1,6 @@
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
-import {log} from '/src/log.js';
 
 // TODO: stop using context parameters, revert to explicit parameters
-// TODO: decouple from log module
 // TODO: use rest-api or basic crud terminology, revert to using a name such as
 // db_update_feed_property
 // TODO: this potentially updates multiple properties, not just one, so the name
@@ -71,19 +69,15 @@ import {log} from '/src/log.js';
 // not permitted
 // @return {Promise} resolves to undefined
 export function db_write_feed_property(feed_id, name, value, extra_props = {}) {
-  // The current level of property validation is relatively weak, given that it
-  // should never occur and we are the sole users of this api call. Therefore
-  // name validation is minimal. Hereinafter, assume the name is canonical.
-  assert(is_valid_feed_id(feed_id));
-  assert(typeof name === 'string');
-  assert(name.length > 0);
-  assert(name !== 'id');  // refuse setting this particular prop
-  assert(is_valid_type_for_property(name, value));
-
   return new Promise(executor.bind(this, feed_id, name, value, extra_props));
 }
 
 function executor(feed_id, name, value, extra_props, resolve, reject) {
+  assert(is_valid_feed_id(feed_id));
+  assert(typeof name === 'string' && name);
+  assert(name !== 'id');  // refuse setting this particular prop
+  assert(is_valid_type_for_property(name, value));
+
   const txn = this.conn.transaction('feed', 'readwrite');
   txn.oncomplete = txn_oncomplete.bind(this, feed_id, name, resolve);
   txn.onerror = _ => reject(txn.error);
@@ -95,34 +89,27 @@ function executor(feed_id, name, value, extra_props, resolve, reject) {
 }
 
 function txn_oncomplete(feed_id, name, callback, event) {
-  log('%s: updated feed %d property %s', db_write_feed_property.name, feed_id,
-      name);
   this.channel.postMessage({type: 'feed-written', id: feed_id, property: name});
   callback();
 }
 
 function request_onsuccess(feed_id, name, value, extra_props, event) {
   const feed = event.target.result;
-  if (!feed) {
-    log('%s: feed not found %d', db_write_feed_property.name, feed_id);
-    return;
-  }
-
-  if (!is_feed(feed)) {
-    log('%s: bad object type %d %o', db_write_feed_property.name, feed_id,
-        feed);
-    return;
-  }
+  assert(feed);           // indicates bad id or unexpected state
+  assert(is_feed(feed));  // corrupted state
 
   const run_date = new Date();
 
   if (name === 'active') {
+    // TODO: use asserts here
     if (feed.active && value) {
-      log('%s: tried to activate active feed (invalid state) %d',
+      console.error(
+          '%s: tried to activate active feed (invalid state) %d',
           db_write_feed_property.name, feed_id);
       return;
     } else if (!feed.active && !value) {
-      log('%s: tried to deactivate inactive feed (invalid state) %d',
+      console.error(
+          '%s: tried to deactivate inactive feed (invalid state) %d',
           db_write_feed_property.name, feed_id);
       return;
     }
