@@ -431,13 +431,11 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const op = {};
-  op.conn = await db_open();
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.write = db_write_feed_property;
-  await op.write(feed_id, 'active', true);
-  op.conn.close();
-  op.channel.close();
+  const conn = await db_open();
+  const channel = new BroadcastChannel(localStorage.channel_name);
+  await db_write_feed_property(conn, channel, feed_id, 'active', true);
+  channel.close();
+  conn.close();
 
   // Mark the corresponding feed element displayed in the view as active
   const item_element = document.querySelector('li[feed="' + feed_id + '"]');
@@ -451,13 +449,12 @@ async function activate_feed_button_onclick(event) {
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const op = {};
-  op.conn = await db_open();
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.write = db_write_feed_property;
-  await op.write(feed_id, 'active', false, {reason: 'manual'});
-  op.conn.close();
-  op.channel.close();
+  const conn = await db_open();
+  const channel = new BroadcastChannel(localStorage.channel_name);
+  await db_write_feed_property(
+      conn, channel, feed_id, 'active', false, {reason: 'manual'});
+  channel.close();
+  conn.close();
 
   // Deactivate the corresponding element in the view
   const item_selector = 'li[feed="' + feed_id + '"]';

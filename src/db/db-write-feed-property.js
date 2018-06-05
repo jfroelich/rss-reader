@@ -1,6 +1,5 @@
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
 
-// TODO: stop using context parameters, revert to explicit parameters
 // TODO: use rest-api or basic crud terminology, revert to using a name such as
 // db_update_feed_property
 // TODO: this potentially updates multiple properties, not just one, so the name
@@ -68,28 +67,31 @@ import {is_feed, is_valid_feed_id} from '/src/feed.js';
 // @error {Error} when attempting to update the 'id' property, because this is
 // not permitted
 // @return {Promise} resolves to undefined
-export function db_write_feed_property(feed_id, name, value, extra_props = {}) {
-  return new Promise(executor.bind(this, feed_id, name, value, extra_props));
+export function db_write_feed_property(
+    conn, channel, feed_id, name, value, extra_props = {}) {
+  return new Promise(
+      executor.bind(null, conn, channel, feed_id, name, value, extra_props));
 }
 
-function executor(feed_id, name, value, extra_props, resolve, reject) {
+function executor(
+    conn, channel, feed_id, name, value, extra_props, resolve, reject) {
   assert(is_valid_feed_id(feed_id));
   assert(typeof name === 'string' && name);
   assert(name !== 'id');  // refuse setting this particular prop
   assert(is_valid_type_for_property(name, value));
 
-  const txn = this.conn.transaction('feed', 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(this, feed_id, name, resolve);
+  const txn = conn.transaction('feed', 'readwrite');
+  txn.oncomplete = txn_oncomplete.bind(txn, channel, feed_id, name, resolve);
   txn.onerror = _ => reject(txn.error);
 
   const store = txn.objectStore('feed');
   const request = store.get(feed_id);
   request.onsuccess =
-      request_onsuccess.bind(this, feed_id, name, value, extra_props);
+      request_onsuccess.bind(request, feed_id, name, value, extra_props);
 }
 
-function txn_oncomplete(feed_id, name, callback, event) {
-  this.channel.postMessage({type: 'feed-written', id: feed_id, property: name});
+function txn_oncomplete(channel, feed_id, name, callback, event) {
+  channel.postMessage({type: 'feed-written', id: feed_id, property: name});
   callback();
 }
 
