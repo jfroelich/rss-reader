@@ -1,19 +1,16 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/entry.js';
 
-export async function db_get_entries(conn, options = {}) {
-  return new Promise(db_get_entries_executor.bind(null, conn, options));
+export async function db_get_entries(conn, mode, offset = 0, limit = -1) {
+  return new Promise(
+      db_get_entries_executor.bind(null, conn, mode, offset, limit));
 }
 
-function db_get_entries_executor(conn, options, resolve, reject) {
-  assert(is_valid_offset(options.offset));
-  assert(is_valid_limit(options.limit));
+function db_get_entries_executor(conn, mode, offset, limit, resolve, reject) {
+  assert(is_valid_offset(offset));
+  assert(is_valid_limit(limit));
 
-  const shared_state = {
-    entries: [],
-    advanced: false,
-    limit: options.limit,
-    offset: options.offset
-  };
+  const shared_state =
+      {entries: [], advanced: false, limit: limit, offset: offset};
 
   const txn = conn.transaction('entry');
   txn.oncomplete = _ => resolve(shared_state.entries);
@@ -21,7 +18,7 @@ function db_get_entries_executor(conn, options, resolve, reject) {
   const store = txn.objectStore('entry');
 
   let request;
-  if (options.mode === 'viewable') {
+  if (mode === 'viewable') {
     const index = store.index('archiveState-readState');
     const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
     request = index.openCursor(key_path);

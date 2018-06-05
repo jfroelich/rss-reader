@@ -24,8 +24,8 @@ async function load_view() {
   const entry_load_limit = 6;
 
   const conn = await db_open();
-  const get_entries_promise = db_get_entries(
-      conn, {limit: entry_load_limit, offset: 0, mode: 'viewable'});
+  const get_entries_promise =
+      db_get_entries(conn, 'viewable', 0, entry_load_limit);
   const get_feeds_promise = db_get_feeds(conn, {mode: 'all', sort: true});
   conn.close();
 
