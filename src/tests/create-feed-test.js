@@ -67,13 +67,13 @@ async function create_feed_test() {
   assert(messages[0].type === 'feed-written');
 
   // Assert the feed exists in the database with the given url
-  assert(await db_get_feed(conn, {mode: 'url', url: feed_url, key_only: true}));
+  assert(await db_get_feed(conn, 'url', feed_url, true));
 
   // TODO: could just store above result (not keyonly), and assert against it.
   // We know it will be findable by id, i think?
 
   // Read the feed from the database and assert against read properties
-  const match = await db_get_feed(conn, {id: feed.id});
+  const match = await db_get_feed(conn, 'id', feed.id, false);
   assert(is_feed(match));
   assert(match.active === true);
   assert('dateCreated' in match);

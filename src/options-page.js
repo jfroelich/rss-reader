@@ -253,7 +253,7 @@ async function feed_list_item_onclick(event) {
   const feed_id = parseInt(feed_id_string, 10);
 
   const conn = await db_open();
-  const feed = await db_get_feed(conn, {id: feed_id});
+  const feed = await db_get_feed(conn, 'id', feed_id);
   conn.close();
 
   const title_element = document.getElementById('details-title');

@@ -58,8 +58,7 @@ export async function subscribe(url, options) {
   // TODO: create a local helper that wraps this call and takes a conn and url
   // parameter, use it for both cases
 
-  let prior_feed =
-      await db_get_feed(this.rconn, {mode: 'url', url: url, key_only: true});
+  let prior_feed = await db_get_feed(this.rconn, 'url', url, true);
 
   if (prior_feed) {
     log('%s: url exists', subscribe.name, url.href);
@@ -74,8 +73,7 @@ export async function subscribe(url, options) {
 
   const response_url = new URL(response.url);
   if (url_did_change(url, response_url)) {
-    prior_feed = await db_get_feed(
-        this.rconn, {mode: 'url', url: response_url, key_only: true});
+    prior_feed = await db_get_feed(this.rconn, 'url', response_url, true);
 
     if (prior_feed) {
       log('%s: redirect url exists', subscribe.name, url.href,

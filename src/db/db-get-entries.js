@@ -1,11 +1,22 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/entry.js';
 
-export async function db_get_entries(conn, mode, offset = 0, limit = -1) {
+// Asynchronously loads entries from the database into an array of entry objects
+// @param conn {IDBDatabase} an open database connection
+// @param mode {String} defaults to 'all', supports 'viewable', which entries
+// are loaded
+// @param offset {Number} optional, how many entries to skip past from the start
+// @param limit {Number} optional, upper bound on number of entries to load
+// @error {Error} invalid inputs
+// @error {DOMException} database error
+// @return {Promise} resolves to an array of entry objects
+export async function db_get_entries(
+    conn, mode = 'all', offset = 0, limit = -1) {
   return new Promise(
       db_get_entries_executor.bind(null, conn, mode, offset, limit));
 }
 
 function db_get_entries_executor(conn, mode, offset, limit, resolve, reject) {
+  assert(mode && typeof mode === 'string');
   assert(is_valid_offset(offset));
   assert(is_valid_limit(limit));
 
@@ -22,8 +33,10 @@ function db_get_entries_executor(conn, mode, offset, limit, resolve, reject) {
     const index = store.index('archiveState-readState');
     const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
     request = index.openCursor(key_path);
-  } else {
+  } else if (mode === 'all') {
     request = store.openCursor();
+  } else {
+    throw new TypeError('Invalid mode ' + mode);
   }
 
   request.onsuccess = request_onsuccess.bind(request, shared_state);
