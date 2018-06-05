@@ -5,7 +5,7 @@ import {db_delete_feed} from '/src/db/db-delete-feed.js';
 import {db_get_feed} from '/src/db/db-get-feed.js';
 import {db_get_feeds} from '/src/db/db-get-feeds.js';
 import {db_open} from '/src/db/db-open.js';
-import {db_write_feed_property} from '/src/db/db-write-feed-property.js';
+import {db_update_feed_properties} from '/src/db/db-update-feed-properties.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
@@ -433,7 +433,7 @@ async function activate_feed_button_onclick(event) {
 
   const conn = await db_open();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await db_write_feed_property(conn, channel, feed_id, 'active', true);
+  await db_update_feed_properties(conn, channel, feed_id, 'active', true);
   channel.close();
   conn.close();
 
@@ -451,7 +451,7 @@ async function deactivate_feed_button_onclick(event) {
 
   const conn = await db_open();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await db_write_feed_property(
+  await db_update_feed_properties(
       conn, channel, feed_id, 'active', false, {reason: 'manual'});
   channel.close();
   conn.close();
