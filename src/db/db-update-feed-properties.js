@@ -155,7 +155,8 @@ function request_onsuccess(feed_id, name, value, extra_props, event) {
 // TODO: maybe this should somehow borrow from some external schema definition
 // that has per-property settings of type and allows-null(empty). I could also
 // do a check above for whether the property exists in the schema in that case
-// TODO: not currently exhaustive, may use switch statement
+// TODO: make exhaustive
+// TODO: maybe use a switch statement for clearer syntax
 function is_valid_type_for_property(name, value) {
   const value_type = typeof value;
   const active_value_types = ['boolean', 'undefined'];
