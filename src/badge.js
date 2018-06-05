@@ -1,4 +1,4 @@
-import {db_count_unread_entries} from '/src/db/db-count-unread-entries.js';
+import {db_count_entries} from '/src/db/db-count-entries.js';
 import {db_open} from '/src/db/db-open.js';
 import {log} from '/src/log.js';
 
@@ -36,7 +36,7 @@ export async function refresh_badge(conn) {
 
   log('%s: updating badge...', refresh_badge.name);
   update_pending = true;
-  const count = await db_count_unread_entries(conn);
+  const count = await db_count_entries(conn);
   log('%s: counted %d unread entries', refresh_badge.name, count);
   const text = count > 999 ? '1k+' : '' + count;
   log('%s: setting badge text to %s', refresh_badge.name, text);
