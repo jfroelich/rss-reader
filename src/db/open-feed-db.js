@@ -30,8 +30,7 @@ export function open_feed_db(name, version, timeout) {
   version = isNaN(version) ? localstorage_read_int('db_version') : version;
   timeout = isNaN(timeout) ? localstorage_read_int('db_open_timeout') : timeout;
 
-  const upgrade_bound = on_upgrade_needed.bind(this);
-  return indexeddb_open(name, version, upgrade_bound, timeout);
+  return indexeddb_open(name, version, on_upgrade_needed, timeout);
 }
 
 function on_upgrade_needed(event) {

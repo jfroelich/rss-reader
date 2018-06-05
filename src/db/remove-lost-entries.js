@@ -1,3 +1,5 @@
+// TODO: stop using context
+
 // TODO: this potentially affects unread count and should be calling
 // refresh_badge?
 // TODO: test
