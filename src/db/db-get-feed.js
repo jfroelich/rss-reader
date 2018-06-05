@@ -8,8 +8,8 @@ import {create_feed, is_valid_feed_id} from '/src/feed.js';
 
 // Asynchronously finds a feed in the database
 // @param conn {IDBDatabase} an open database connection
-// @param mode the type of query, if mode is undefined then it is query by id,
-// modes are 'url', 'id', lowercase only
+// @param mode {String} the type of query, if mode is undefined then it is query
+// by id, modes are 'url', 'id', lowercase only
 // @param value {any} the value of the key to look for
 // @option key_only {Boolean} if true then only the matching key is loaded
 // @return {Promise} resolve to the matching feed or undefined
