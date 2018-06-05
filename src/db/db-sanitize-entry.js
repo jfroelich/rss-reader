@@ -5,6 +5,10 @@ import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
 import {filter_unprintable_characters} from '/src/lib/lang/filter-unprintable-characters.js';
 
+
+// TODO: drop the db prefix, the name is a concern of an importing module and
+// not a concern of the exporting module, and the prefix is an overqualification
+
 // Returns a new entry object where fields have been sanitized. Impure. Note
 // that this assumes the entry is valid. As in, passing the entry to
 // is_valid_entry before calling this function would return true. This does not

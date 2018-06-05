@@ -1,6 +1,10 @@
 import {is_entry, is_valid_entry_id} from '/src/entry.js';
 import {log} from '/src/log.js';
 
+
+// TODO: drop the db prefix, the name is a concern of an importing module and
+// not a concern of the exporting module, and the prefix is an overqualification
+
 // TODO: implement `db_validate_entry`. Check required properties? This function
 // is specifically validation for storage, so maybe I should have constraints
 // like the urls list must have at least one entry. In addition, for each entry

@@ -1,3 +1,7 @@
+
+// TODO: drop the db prefix, the name is a concern of an importing module and
+// not a concern of the exporting module, and the prefix is an overqualification
+
 // TODO: test
 // TODO: consider using title sort key in database instead of sorting in memory
 

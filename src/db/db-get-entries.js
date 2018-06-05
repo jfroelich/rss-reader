@@ -1,5 +1,9 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/entry.js';
 
+
+// TODO: drop the db prefix, the name is a concern of an importing module and
+// not a concern of the exporting module, and the prefix is an overqualification
+
 // Asynchronously loads entries from the database into an array of entry objects
 // @param conn {IDBDatabase} an open database connection
 // @param mode {String} defaults to 'all', supports 'viewable', which entries

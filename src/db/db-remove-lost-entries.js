@@ -1,5 +1,9 @@
 import {log} from '/src/log.js';
 
+
+// TODO: drop the db prefix, the name is a concern of an importing module and
+// not a concern of the exporting module, and the prefix is an overqualification
+
 // TODO: this potentially affects unread count and should be calling
 // refresh_badge?
 // TODO: test

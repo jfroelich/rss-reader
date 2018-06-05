@@ -1,5 +1,9 @@
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
 
+
+// TODO: drop the db prefix, the name is a concern of an importing module and
+// not a concern of the exporting module, and the prefix is an overqualification
+
 // TODO: differentiating between name/value and extra_props is, in hindsight,
 // dumb. It would make more sense to have a props object containing all of the
 // properties to modify. Which of those properties is primary reason for the

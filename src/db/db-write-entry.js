@@ -1,6 +1,10 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
 import {log} from '/src/log.js';
 
+
+// TODO: drop the db prefix, the name is a concern of an importing module and
+// not a concern of the exporting module, and the prefix is an overqualification
+
 // Creates or overwrites an entry object in the app database. The input entry is
 // modified so this function is impure. The dateUpdated property is set
 // automatically. The entry is not sanitized nor validated. Some initial state

@@ -2,6 +2,9 @@ import {refresh_badge} from '/src/badge.js';
 import {is_valid_feed_id} from '/src/feed.js';
 import {warn} from '/src/log.js';
 
+// TODO: drop the db prefix, the name is a concern of an importing module and
+// not a concern of the exporting module, and the prefix is an overqualification
+
 // TODO: should consider de-optimizing by removing the feed index from the
 // entry store. Deletes are rare events. There is not a great need for this
 // operation to be fast. Maintaining the feed index on the entry store is

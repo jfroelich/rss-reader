@@ -2,6 +2,22 @@ import {refresh_badge} from '/src/badge.js';
 import {ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
 import {log} from '/src/log.js';
 
+// TODO: revert to no-context
+// TODO: decouple from log module, use console.warn/error in error path and do
+// not log in success path
+// TODO: refactor as db-set-entry-read-state, accept a boolean state parameter,
+// and handle both cases (where true and where false)? Alternatively, create
+// db-write-entry-property, have this decorate that. Alternatively, have the
+// caller just call db-write-entry-property directly.
+// TODO: create a db-write-entry-property module, then use that instead of this.
+// In the interim, can consider refactoring this to basically wrap a call to it,
+// maybe even keep the channel message type the same. Then slowly migrate all
+// callers to call db-write-entry-property directly. This will potentially
+// reduce the number of operations related to entries, and is more forward
+// thinking in case new operations are added later (e.g. star/unstar-entry).
+// TODO: use db-write-entry-property instead
+
+
 // Marks an entry as read in the database.
 
 // ### Context params
@@ -24,17 +40,7 @@ import {log} from '/src/log.js';
 // * review
 // http://www.micheltriana.com/blog/2012/04/09/library-oriented-architecture
 
-// TODO: refactor as entry_set_read_state, accept a boolean state parameter, and
-// handle both cases (where true and where false)
-// TODO: or, create db-write-entry-property, have this decorate that, or have
-// the caller just call db-write-entry-property directory
-// TODO: create a db-write-entry-property module, then use that instead of this.
-// In the interim, can consider refactoring this to basically wrap a call to it,
-// maybe even keep the channel message type the same. Then slowly migrate all
-// callers to call db-write-entry-property directly. This will potentially
-// reduce the number of operations related to entries, and is more forward
-// thinking in case new operations are added later (e.g. star/unstar-entry).
-// TODO: use db-write-entry-property instead
+
 
 export function db_mark_entry_read(entry_id) {
   if (!is_valid_entry_id(entry_id)) {

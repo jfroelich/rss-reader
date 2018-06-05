@@ -1,3 +1,7 @@
+
+// TODO: drop the db prefix, the name is a concern of an importing module and
+// not a concern of the exporting module, and the prefix is an overqualification
+
 // TODO: maybe deprecate and just call update-entry directly
 // TODO: revert to resolve on request success, the delay until txn is pointless
 

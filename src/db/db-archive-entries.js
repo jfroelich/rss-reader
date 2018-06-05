@@ -2,6 +2,9 @@ import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCH
 import {sizeof} from '/src/lib/lang/sizeof.js';
 import {warn} from '/src/log.js';
 
+// TODO: drop the db prefix, the name is a concern of an importing module and
+// not a concern of the exporting module, and the prefix is an overqualification
+
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 // Compacts older read entries in the database. Dispatches entry-archived

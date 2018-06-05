@@ -5,6 +5,10 @@ import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 import {log} from '/src/log.js';
 
+
+// TODO: drop the db prefix, the name is a concern of an importing module and
+// not a concern of the exporting module, and the prefix is an overqualification
+
 // TODO: test
 // TODO: rather than default to config, maybe I should just export the
 // on_upgrade_needed handler too? The only alternate user other than the normal
