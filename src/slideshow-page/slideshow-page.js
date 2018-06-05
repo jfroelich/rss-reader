@@ -26,7 +26,7 @@ async function load_view() {
   const conn = await db_open();
   const get_entries_promise =
       db_get_entries(conn, 'viewable', 0, entry_load_limit);
-  const get_feeds_promise = db_get_feeds(conn, {mode: 'all', sort: true});
+  const get_feeds_promise = db_get_feeds(conn, 'all', true);
   conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)

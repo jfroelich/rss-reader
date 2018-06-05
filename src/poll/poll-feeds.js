@@ -29,7 +29,7 @@ const default_options = {
 export async function poll_feeds(
     rconn, iconn, channel = null_channel, options = {}) {
   log('%s: starting...', poll_feeds.name);
-  const feeds = await db_get_feeds(rconn, {mode: 'active', sort: false});
+  const feeds = await db_get_feeds(rconn, 'active', false);
 
   console.debug('%s: loaded %d active feeds', poll_feeds.name, feeds.length);
   const pfo = Object.assign({}, default_options, options);

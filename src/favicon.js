@@ -78,7 +78,7 @@ export function favicon_create_feed_lookup_url(feed) {
 // mutated in between, not really sure what to do. Also: what if this is called
 // concurrently? what if a second call starts while first is running?
 export async function favicon_refresh_feeds() {
-  const feeds = await db_get_feeds(this.rconn, {mode: 'active'});
+  const feeds = await db_get_feeds(this.rconn, 'active');
 
   const promises = [];
   const refresh_feed_bound = refresh_feed.bind(this);
