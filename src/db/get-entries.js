@@ -9,7 +9,7 @@ import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD} from '/src/entry.js';
 // @error {Error} invalid inputs
 // @error {DOMException} database error
 // @return {Promise} resolves to an array of entry objects
-export async function get_entries(conn, mode = 'all', offset = 0, limit = -1) {
+export function get_entries(conn, mode = 'all', offset = 0, limit = -1) {
   return new Promise(executor.bind(null, conn, mode, offset, limit));
 }
 
