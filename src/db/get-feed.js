@@ -13,7 +13,7 @@ import {create_feed, is_valid_feed_id} from '/src/feed.js';
 // @param value {any} the value of the key to look for
 // @option key_only {Boolean} if true then only the matching key is loaded
 // @return {Promise} resolve to the matching feed or undefined
-export async function get_feed(conn, mode = 'id', value, key_only) {
+export function get_feed(conn, mode = 'id', value, key_only) {
   return new Promise(executor.bind(null, conn, mode, value, key_only));
 }
 
