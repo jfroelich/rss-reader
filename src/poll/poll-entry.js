@@ -1,8 +1,8 @@
 import {inaccessible_content_descriptors} from '/src/config.js';
-import {find_entry_id_by_url} from '/src/db/find-entry-id-by-url.js';
+import {get_entry} from '/src/db/get-entry.js';
 import {sanitize_entry} from '/src/db/sanitize-entry.js';
-import {validate_entry} from '/src/db/validate-entry.js';
 import {update_entry} from '/src/db/update-entry.js';
+import {validate_entry} from '/src/db/validate-entry.js';
 import {append_entry_url, is_valid_entry_id} from '/src/entry.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
@@ -157,8 +157,9 @@ function entry_rewrite_tail_url(entry, rewrite_rules) {
 
 async function entry_exists(rconn, entry) {
   const url = new URL(list_peek(entry.urls));
-  const id = await find_entry_id_by_url(rconn, url);
-  return is_valid_entry_id(id);
+  const mode_url = 'url', key_only = true;
+  const existing_entry = await get_entry(rconn, mode_url, url, key_only);
+  return existing_entry ? true : false;
 }
 
 // TODO: i think this should always return a response, so instead of returning
