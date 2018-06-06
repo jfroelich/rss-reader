@@ -9,7 +9,7 @@
 // specified this will auto-connect to the default database
 // @param channel {BroadcastChannel} optional, the channel over which to
 // communicate storage change events
-export async function remove_lost_entries() {
+export function remove_lost_entries() {
   return new Promise(executor.bind(this));
 }
 
