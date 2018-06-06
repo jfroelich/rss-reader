@@ -1,7 +1,5 @@
 import {create_entry, is_valid_entry_id} from '/src/entry.js';
 
-// TODO: replace calls to find-entry-id-by-url with this, then deprecate
-// find-entry-id-by-url
 // TODO: this shares an eerily large amount of code with get-feed, maybe I
 // create a common helper.
 

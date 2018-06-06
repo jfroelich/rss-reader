@@ -30,13 +30,11 @@ async function handle_archive_alarm_wakeup(alarm) {
 }
 
 async function handle_lost_entries_alarm(alarm) {
-  const op = {};
-  op.conn = await open_feed_db();
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.remove_lost_entries = remove_lost_entries;
-  await op.remove_lost_entries();
-  op.conn.close();
-  op.channel.close();
+  const conn = await open_feed_db();
+  const channel = new BroadcastChannel(localStorage.channel_name);
+  await remove_lost_entries(conn, channel);
+  conn.close();
+  channel.close();
 }
 
 async function handle_orphan_entries_alarm(alarm) {

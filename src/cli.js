@@ -1,7 +1,7 @@
 import {archive_entries} from '/src/db/archive-entries.js';
+import {open_feed_db} from '/src/db/open-feed-db.js';
 import {remove_lost_entries} from '/src/db/remove-lost-entries.js';
 import {remove_orphaned_entries} from '/src/db/remove-orphaned-entries.js';
-import {open_feed_db} from '/src/db/open-feed-db.js';
 import {favicon_clear, favicon_compact, favicon_create_conn, favicon_lookup, favicon_refresh_feeds} from '/src/favicon.js';
 import {log} from '/src/log.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
@@ -89,14 +89,33 @@ async function cli_poll_feeds() {
 }
 
 async function cli_remove_lost_entries() {
-  const op = {};
-  op.conn = await open_feed_db();
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.remove_lost_entries = remove_lost_entries;
-  await op.remove_lost_entries();
-  op.conn.close();
-  op.channel.close();
+  const conn = await open_feed_db();
+  const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
+  await remove_lost_entries(conn, mbc);
+  console.debug('Removed %d entries', channel.message_count);
+  conn.close();
+  channel.close();
 }
+
+// A proxy for a BroadcastChannel that logs each message to the console and
+// keeps a count of sent messages.
+// TODO: is there where an ES6 Proxy would be appropriate? For better or worse?
+class MonitoredBroadcastChannel {
+  constructor(name) {
+    this.channel = new BroadcastChannel(name);
+    this.message_count = 0;
+  }
+
+  postMessage(message) {
+    console.debug(message);
+    this.channel.postMessage(message);
+  }
+
+  close() {
+    this.channel.close();
+  }
+}
+
 
 async function cli_remove_orphans() {
   const op = {};
