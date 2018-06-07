@@ -1,7 +1,3 @@
-import {get_feed} from '/src/db/get-feed.js';
-import {sanitize_feed} from '/src/db/sanitize-feed.js';
-import {update_feed} from '/src/db/update-feed.js';
-import {validate_feed} from '/src/db/validate-feed.js';
 import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
 import {coerce_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
@@ -10,6 +6,9 @@ import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
 import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
+import {get_feed, sanitize_feed, update_feed, is_valid_feed} from '/src/reader-db.js';
+
+
 
 // Subscribe to a feed
 // @context-param rconn {IDBDatabase} an open database connection to the feed
@@ -90,7 +89,7 @@ export async function subscribe(url, options) {
         await lookup_op.favicon_lookup(lookup_url, lookup_doc, fetch);
   }
 
-  if (!validate_feed(feed)) {
+  if (!is_valid_feed(feed)) {
     throw new Error('Invalid feed ' + JSON.stringify(feed));
   }
 

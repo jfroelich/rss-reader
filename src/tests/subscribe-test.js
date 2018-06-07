@@ -1,7 +1,6 @@
-import {get_feed} from '/src/db/get-feed.js';
-import {open_feed_db} from '/src/db/open-feed-db.js';
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
+import {get_feed, open_reader_db} from '/src/reader-db.js';
 import {subscribe} from '/src/subscribe.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
@@ -15,7 +14,7 @@ async function subscribe_test() {
 
   const rdb_name = 'subscribe-test';
   let version, timeout;
-  const rconn = await open_feed_db(rdb_name, version, timeout, console_stub);
+  const rconn = await open_reader_db(rdb_name, version, timeout, console_stub);
 
   const url = new URL(test_url);
   const options = {fetch_timeout: 7000, notify: false, skip_icon_lookup: true};

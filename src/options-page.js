@@ -1,11 +1,6 @@
 import '/src/cli.js';
 
 import * as config from '/src/config.js';
-import {delete_feed} from '/src/db/delete-feed.js';
-import {get_feed} from '/src/db/get-feed.js';
-import {get_feeds} from '/src/db/get-feeds.js';
-import {open_feed_db} from '/src/db/open-feed-db.js';
-import {update_feed_properties} from '/src/db/update-feed-properties.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
@@ -13,6 +8,7 @@ import {list_peek} from '/src/lib/lang/list.js';
 import * as perm from '/src/lib/permissions.js';
 import {log} from '/src/log.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
+import {delete_feed, get_feed, get_feeds, open_reader_db, update_feed_properties} from '/src/reader-db.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
 import {subscribe} from '/src/subscribe.js';
@@ -211,7 +207,7 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const conn = await open_feed_db();
+  const conn = await open_reader_db();
   const feed = await get_feed(conn, 'id', feed_id);
   conn.close();
 
@@ -292,7 +288,7 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_show();
   subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
-  const conn_promises = Promise.all([open_feed_db(), favicon_create_conn()]);
+  const conn_promises = Promise.all([open_reader_db(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
 
   const op = {};
@@ -317,7 +313,7 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises = Promise.all([open_feed_db(), favicon_create_conn()]);
+  const conn_promises = Promise.all([open_reader_db(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
 
@@ -331,7 +327,7 @@ async function after_subscribe_poll_feed_async(feed) {
 
 async function feed_list_init() {
   const title_sort_flag = true;
-  const conn = await open_feed_db();
+  const conn = await open_reader_db();
   const feeds = await get_feeds(conn, 'all', true);
   conn.close();
 
@@ -378,7 +374,7 @@ function feed_list_remove_feed_by_id(feed_id) {
 
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const conn = await open_feed_db();
+  const conn = await open_reader_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
   await delete_feed(conn, channel, feed_id, 'unsubscribe');
   conn.close();
@@ -390,7 +386,7 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const conn = await open_feed_db();
+  const conn = await open_reader_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
   await update_feed_properties(conn, channel, feed_id, 'active', true);
   channel.close();
@@ -408,7 +404,7 @@ async function activate_feed_button_onclick(event) {
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const conn = await open_feed_db();
+  const conn = await open_reader_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
   await update_feed_properties(
       conn, channel, feed_id, 'active', false, {reason: 'manual'});

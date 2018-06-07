@@ -1,27 +1,26 @@
-import {open_feed_db} from '/src/db/open-feed-db.js';
 import {ENTRY_STATE_UNREAD} from '/src/entry.js';
-import {log} from '/src/log.js';
+import {open_reader_db} from '/src/reader-db.js';
+
+// TODO: somehow remove cyclical dep with reader-db
 
 let update_pending = false;
 
 export async function refresh_badge(conn) {
   if (update_pending) {
-    log('%s: update pending', refresh_badge.name);
+    console.debug('Badge update still pending');
     return;
   }
 
-  log('%s: updating badge...', refresh_badge.name);
   update_pending = true;
   const count = await count_entries(conn, 'unread');
-  log('%s: counted %d unread entries', refresh_badge.name, count);
   const text = count > 999 ? '1k+' : '' + count;
-  log('%s: setting badge text to %s', refresh_badge.name, text);
+  console.debug('Setting badge text to', text);
   chrome.browserAction.setBadgeText({text: text});
   update_pending = false;
 }
 
 export async function init_badge() {
-  const conn = await open_feed_db();
+  const conn = await open_reader_db();
   refresh_badge(conn).catch(console.error);
 
   // We can enqueue the close immediately before refresh has completed, which

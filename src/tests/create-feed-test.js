@@ -1,10 +1,7 @@
-import {get_feed} from '/src/db/get-feed.js';
-import {open_feed_db} from '/src/db/open-feed-db.js';
-import {validate_feed} from '/src/db/validate-feed.js';
-import {update_feed} from '/src/db/update-feed.js';
 import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {list_is_empty} from '/src/lib/lang/list.js';
+import {get_feed, open_reader_db, sanitize_feed, update_feed, is_valid_feed} from '/src/reader-db.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 
@@ -24,7 +21,7 @@ async function create_feed_test() {
   // sanitization. For now do a test where both are done.
   // TODO: or maybe this is dumb, and I shouldn't test this here at all
   // actually? I am starting to think this should not be here.
-  assert(validate_feed(feed));
+  assert(is_valid_feed(feed));
   sanitize_feed(feed);
 
   // Intentionally do not set dateUpdated. The property should not exist when
@@ -32,7 +29,7 @@ async function create_feed_test() {
 
   // Create a dummy db
   const test_db = 'write-new-feed-test';
-  const conn = await open_feed_db(test_db);
+  const conn = await open_reader_db(test_db);
 
   // Mock a broadcast channel along with a way to monitor messages
   const messages = [];

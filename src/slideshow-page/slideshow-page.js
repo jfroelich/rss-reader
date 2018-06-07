@@ -4,9 +4,7 @@ import '/src/slideshow-page/onkeydown.js';
 import '/src/slideshow-page/main-menu.js';
 import '/src/slideshow-page/left-panel.js';
 
-import {get_entries} from '/src/db/get-entries.js';
-import {get_feeds} from '/src/db/get-feeds.js';
-import {open_feed_db} from '/src/db/open-feed-db.js';
+import {get_entries, get_feeds, open_reader_db} from '/src/reader-db.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';
 import {show_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
@@ -19,7 +17,7 @@ async function load_view() {
   page_style_onload();
 
   const offset = 0, limit = 6;
-  const conn = await open_feed_db();
+  const conn = await open_reader_db();
   const get_entries_promise = get_entries(conn, 'viewable', offset, limit);
   const get_feeds_promise = get_feeds(conn, 'all', true);
   conn.close();

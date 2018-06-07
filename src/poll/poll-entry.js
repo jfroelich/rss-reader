@@ -1,8 +1,4 @@
 import {inaccessible_content_descriptors} from '/src/config.js';
-import {get_entry} from '/src/db/get-entry.js';
-import {sanitize_entry} from '/src/db/sanitize-entry.js';
-import {update_entry} from '/src/db/update-entry.js';
-import {validate_entry} from '/src/db/validate-entry.js';
 import {append_entry_url, is_valid_entry_id} from '/src/entry.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
@@ -13,6 +9,7 @@ import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
 import {log} from '/src/log.js';
+import {get_entry, sanitize_entry, update_entry, is_valid_entry} from '/src/reader-db.js';
 import {sanitize_document} from '/src/sanitize-document.js';
 
 // Processes an entry and possibly adds it to the database. The full-text html
@@ -60,7 +57,7 @@ export async function poll_entry(entry) {
   // just throw a basic error to match the previous behavior. In the future,
   // think about whether this should be throwing an error at all or doing
   // something else.
-  if (!validate_entry(entry)) {
+  if (!is_valid_entry(entry)) {
     throw new Error('Invalid entry ' + entry);
   }
 

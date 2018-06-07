@@ -1,6 +1,6 @@
-import {open_feed_db} from '/src/db/open-feed-db.js';
 import {is_valid_entry_id} from '/src/entry.js';
 import {log, warn} from '/src/log.js';
+import {open_reader_db} from '/src/reader-db.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {load_and_append_slides} from '/src/slideshow-page/load-and-append-slides.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
@@ -76,7 +76,7 @@ async function on_entry_written(message) {
 
   // TODO: the view shouldn't be directly interacting with the database
 
-  const conn = await open_feed_db();
+  const conn = await open_reader_db();
   await load_and_append_slides(conn);
   conn.close();
 }

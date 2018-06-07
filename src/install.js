@@ -1,7 +1,7 @@
-import {open_feed_db} from '/src/db/open-feed-db.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import * as color from '/src/lib/color.js';
 import {log} from '/src/log.js';
+import {open_reader_db} from '/src/reader-db.js';
 
 // Bind the install event listener to the browser so that it can hear install
 // events
@@ -19,7 +19,7 @@ async function oninstalled(event) {
   init_localstorage();
 
   // Initialize the app database
-  let conn = await open_feed_db();
+  let conn = await open_reader_db();
   conn.close();
 
   // Initialize the favicon cache

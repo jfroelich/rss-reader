@@ -1,7 +1,4 @@
 import {refresh_badge} from '/src/badge.js';
-import {sanitize_feed} from '/src/db/sanitize-feed.js';
-import {update_feed} from '/src/db/update-feed.js';
-import {validate_feed} from '/src/db/validate-feed.js';
 import {append_entry_url, create_entry} from '/src/entry.js';
 import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
@@ -11,6 +8,7 @@ import {parse_feed} from '/src/lib/parse-feed.js';
 import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
+import {sanitize_feed, update_feed, is_valid_feed} from '/src/reader-db.js';
 
 // Checks for updates to a particular feed.
 export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
@@ -101,7 +99,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   handle_fetch_success(merged_feed);
 
   // Do not throw if invalid, just exit
-  if (!validate_feed(merged_feed)) {
+  if (!is_valid_feed(merged_feed)) {
     console.warn('Invalid feed', merged_feed);
     return 0;
   }
@@ -214,7 +212,7 @@ async function handle_error(
 
   // TODO: why validate? have we not had control the entire time, and have no
   // new user data?
-  if (!validate_feed(feed)) {
+  if (!is_valid_feed(feed)) {
     console.warn('Invalid feed', feed);
     return;
   }

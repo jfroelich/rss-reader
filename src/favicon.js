@@ -1,7 +1,6 @@
-import {get_feeds} from '/src/db/get-feeds.js';
-import {update_feed} from '/src/db/update-feed.js';
 import {FaviconService} from '/src/lib/favicon-service.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
+import {get_feeds, update_feed} from '/src/reader-db.js';
 
 export function favicon_create_conn() {
   const service = new FaviconService();
