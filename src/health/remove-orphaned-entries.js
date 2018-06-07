@@ -19,7 +19,7 @@ export async function remove_orphaned_entries(conn, channel) {
 
   // Walk the entry store in write mode
   const txn_writable = true;
-  await iterate_entries(conn, txn_writable, cursor => {
+  await iterate_entries(conn, 'all', txn_writable, cursor => {
     const entry = cursor.value;
 
     // If the entry object type is invalid, ignore it

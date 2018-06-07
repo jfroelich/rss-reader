@@ -6,7 +6,7 @@ export async function remove_lost_entries(conn, channel) {
   // Track ids so they are available after txn commits
   const deleted_entry_ids = [];
   const txn_writable = true;
-  await iterate_entries(conn, txn_writable, cursor => {
+  await iterate_entries(conn, 'all', txn_writable, cursor => {
     const entry = cursor.value;
     if (!entry.urls || !entry.urls.length) {
       cursor.delete();
