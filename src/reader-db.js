@@ -614,9 +614,9 @@ export function update_feed(conn, channel, feed) {
 
     const txn = conn.transaction('feed', 'readwrite');
     txn.oncomplete = _ => {
-      const message = {type: 'feed-written', id: feed_id, create: is_create};
+      const message = {type: 'feed-written', id: feed.id, create: is_create};
       channel.postMessage(message);
-      resolve(feed_id);
+      resolve(feed.id);
     };
     txn.onerror = _ => reject(txn.error);
 
