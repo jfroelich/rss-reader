@@ -1,4 +1,4 @@
-import {archive_entries} from '/src/db/archive-entries.js';
+import {archive_entries} from '/src/archive/archive-entries.js';
 import {open_feed_db} from '/src/db/open-feed-db.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
 import {remove_lost_entries} from '/src/health/remove-lost-entries.js';

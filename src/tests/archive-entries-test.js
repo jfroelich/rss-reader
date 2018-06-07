@@ -1,4 +1,4 @@
-import {archive_entries} from '/src/db/archive-entries.js';
+import {archive_entries} from '/src/archive/archive-entries.js';
 import {open_feed_db} from '/src/db/open-feed-db.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
