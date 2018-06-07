@@ -6,4 +6,4 @@
 experimental/
 
 # internal documentation methods should be ignored
-.txt
+*.txt
