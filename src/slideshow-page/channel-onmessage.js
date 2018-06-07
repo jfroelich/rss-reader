@@ -1,4 +1,3 @@
-import {log, warn} from '/src/log.js';
 import {is_valid_entry_id, open_reader_db} from '/src/reader-db.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {load_and_append_slides} from '/src/slideshow-page/load-and-append-slides.js';
@@ -8,19 +7,17 @@ import {is_current_slide} from '/src/slideshow-page/slideshow-state.js';
 
 async function channel_onmessage(event) {
   if (!event.isTrusted) {
-    console.warn('%s: untrusted event:', channel_onmessage.name, event);
+    console.warn('Untrusted event:', event);
     return;
   }
 
   const message = event.data;
   if (!message) {
-    console.warn(
-        '%s: received channel message event without any data?',
-        channel_onmessage.name, event);
+    console.warn('Event without data:', event);
     return;
   }
 
-  log('%s: handling message type:', channel_onmessage.name, message.type);
+  console.debug('Message type:', message.type);
 
   switch (message.type) {
     case 'display-settings-changed':
@@ -45,23 +42,20 @@ async function channel_onmessage(event) {
       // will have a property 'property' with the value 'active'
       // TODO: just realized, no way to tell whether active or inactive as a
       // result
-      // log('%s: feed written %o', channel_onmessage.name, message);
+      // console.log('%s: feed written %o', channel_onmessage.name, message);
       break;
     default:
-      log('%s: unknown message type', channel_onmessage.name, message);
+      console.warn('Unknown message type', message);
       break;
   }
 }
 
 function channel_onmessageerror(event) {
-  log('%s: could not deserialize message from channel',
-      channel_onmessageerror.name, event);
+  console.warn('Could not deserialize message from channel', event);
 }
 
 async function on_entry_written(message) {
   if (!message.create) {
-    // TEMP: eventually delete once confirmed to work
-    log('%s: ignoring message', on_entry_written.name, message);
     return;
   }
 
