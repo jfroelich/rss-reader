@@ -11,6 +11,12 @@ export function create_feed() {
   return {magic: FEED_MAGIC};
 }
 
+// A setter utility that encapsulates access to feed data format. The caller
+// should not have to be aware of the format.
+export function set_date_updated(feed, date_updated) {
+  feed.dateUpdated = date_updated;
+}
+
 // Return true if the value looks like a feed object. While it perenially
 // appears like the value condition is implied in the typeof condition, this is
 // not true. The value condition is short for `value !== null`, because `typeof

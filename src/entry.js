@@ -13,6 +13,11 @@ export function create_entry() {
   return {magic: ENTRY_MAGIC};
 }
 
+// The idea here is encapsulation, so caller does not know about properties
+export function set_date_updated(entry, date_updated) {
+  entry.dateUpdated = date_updated;
+}
+
 // Return true if the first parameter looks like an entry object
 export function is_entry(value) {
   // Function objects are not allowed, hence the pedantic tests and the duck
