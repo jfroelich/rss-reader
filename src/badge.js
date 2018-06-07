@@ -1,5 +1,4 @@
-import {ENTRY_STATE_UNREAD} from '/src/entry.js';
-import {open_reader_db} from '/src/reader-db.js';
+import {ENTRY_STATE_UNREAD, open_reader_db} from '/src/reader-db.js';
 
 // TODO: somehow remove cyclical dep with reader-db
 

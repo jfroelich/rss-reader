@@ -1,5 +1,4 @@
 import {inaccessible_content_descriptors} from '/src/config.js';
-import {append_entry_url, is_valid_entry_id} from '/src/entry.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
@@ -9,7 +8,7 @@ import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
 import {log} from '/src/log.js';
-import {get_entry, sanitize_entry, update_entry, is_valid_entry} from '/src/reader-db.js';
+import {append_entry_url, get_entry, is_valid_entry, is_valid_entry_id, sanitize_entry, update_entry} from '/src/reader-db.js';
 import {sanitize_document} from '/src/sanitize-document.js';
 
 // Processes an entry and possibly adds it to the database. The full-text html

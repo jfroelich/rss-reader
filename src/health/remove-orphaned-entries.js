@@ -1,5 +1,4 @@
-import {is_entry} from '/src/entry.js';
-import {is_valid_feed_id} from '/src/feed.js';
+import {is_entry, is_valid_feed_id} from '/src/reader-db.js';
 
 // Scans the database for entries not linked to a feed and deletes them
 // @param conn {IDBDatabase} open database connection

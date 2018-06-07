@@ -1,6 +1,5 @@
 import {refresh_badge} from '/src/badge.js';
-import {append_entry_url, create_entry} from '/src/entry.js';
-import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed.js';
+import {coerce_feed} from '/src/coerce-feed.js';
 import {fetch_feed} from '/src/fetch.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {STATUS_OFFLINE, STATUS_TIMEOUT} from '/src/lib/net/load-url.js';
@@ -8,7 +7,7 @@ import {parse_feed} from '/src/lib/parse-feed.js';
 import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
-import {sanitize_feed, update_feed, is_valid_feed} from '/src/reader-db.js';
+import {append_entry_url, append_feed_url, create_entry, create_feed, is_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-db.js';
 
 // Checks for updates to a particular feed.
 export async function poll_feed(rconn, iconn, channel, options = {}, feed) {

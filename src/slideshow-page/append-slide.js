@@ -1,10 +1,10 @@
-import {is_entry} from '/src/entry.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {format_date} from '/src/lib/lang/format-date.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
+import {is_entry} from '/src/reader-db.js';
 import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
 import {decrement_active_transition_count, get_current_slide, set_current_slide} from '/src/slideshow-page/slideshow-state.js';

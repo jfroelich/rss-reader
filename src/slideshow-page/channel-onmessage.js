@@ -1,6 +1,5 @@
-import {is_valid_entry_id} from '/src/entry.js';
 import {log, warn} from '/src/log.js';
-import {open_reader_db} from '/src/reader-db.js';
+import {is_valid_entry_id, open_reader_db} from '/src/reader-db.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {load_and_append_slides} from '/src/slideshow-page/load-and-append-slides.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';

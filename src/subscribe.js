@@ -1,12 +1,12 @@
+import {coerce_feed} from '/src/coerce-feed.js';
 import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
-import {coerce_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
 import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
-import {get_feed, sanitize_feed, update_feed, is_valid_feed} from '/src/reader-db.js';
+import {get_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-db.js';
 
 
 

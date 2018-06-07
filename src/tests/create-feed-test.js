@@ -1,7 +1,6 @@
-import {append_feed_url, create_feed, is_feed, is_valid_feed_id} from '/src/feed.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
 import {list_is_empty} from '/src/lib/lang/list.js';
-import {get_feed, open_reader_db, sanitize_feed, update_feed, is_valid_feed} from '/src/reader-db.js';
+import {append_feed_url, create_feed, get_feed, is_feed, is_valid_feed, is_valid_feed_id, open_reader_db, sanitize_feed, update_feed} from '/src/reader-db.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

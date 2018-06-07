@@ -1,4 +1,4 @@
-import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, is_entry} from '/src/entry.js';
+import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, is_entry} from '/src/reader-db.js';
 import {sizeof} from '/src/lib/lang/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;

@@ -1,6 +1,5 @@
-import {is_feed, is_valid_feed_id} from '/src/feed.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
-import {get_feed, open_reader_db} from '/src/reader-db.js';
+import {get_feed, is_feed, is_valid_feed_id, open_reader_db} from '/src/reader-db.js';
 import {subscribe} from '/src/subscribe.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';

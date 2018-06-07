@@ -1,6 +1,4 @@
 import {refresh_badge} from '/src/badge.js';
-import {create_entry, ENTRY_MAGIC, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
-import {create_feed, FEED_MAGIC, is_feed, is_valid_feed_id} from '/src/feed.js';
 import {replace_tags} from '/src/lib/html/replace-tags.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
@@ -12,6 +10,30 @@ import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 
 // The reader-db.js module encapsulates database storage operations and formats
 // for the app.
+
+
+// indexedDB does not support storing Function objects, because Function objects
+// are not serializable (aka structured-cloneable). Therefore, because
+// instanceof is out of the question, and typeof is not useful, we use a hidden
+// property to partially guarantee the type.
+const FEED_MAGIC = 0xfeedfeed;
+const ENTRY_MAGIC = 0xdeadbeef;
+
+export const ENTRY_STATE_UNREAD = 0;
+export const ENTRY_STATE_READ = 1;
+export const ENTRY_STATE_UNARCHIVED = 0;
+export const ENTRY_STATE_ARCHIVED = 1;
+
+// This does not involve the database, but it does involve deep knowledge of the
+// storage format. This creates an in memory object. Entry objects cannot be
+// function objects, so set a magic property to fake a degree of type safety.
+export function create_entry() {
+  return {magic: ENTRY_MAGIC};
+}
+
+export function create_feed() {
+  return {magic: FEED_MAGIC};
+}
 
 // Remove a feed and its entries, send a message to channel for each removal.
 // If feed id does not exist then no error is thrown this is just a noop. reason
@@ -667,6 +689,119 @@ export function is_valid_feed(feed) {
   }
 
   return true;
+}
+
+// Return true if the first parameter looks like an entry object
+export function is_entry(value) {
+  // Function objects are not allowed, hence the pedantic tests and the duck
+  // typing
+  // NOTE: typeof null === 'object', hence the preceding truthy test
+  // NOTE: uses extended check in order to exclude function objects
+  return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
+}
+
+// Return true if the first parameter looks like an entry id
+export function is_valid_entry_id(value) {
+  return Number.isInteger(value) && value > 0;
+}
+
+// Append a url to an entry's url list. Lazily creates the urls property if
+// needed. Normalizes the url. The normalized url is compared against existing
+// urls to ensure the new url is unique. Returns true if entry was added, or
+// false if the url already exists and was therefore not added.
+export function append_entry_url(entry, url) {
+  if (!is_entry(entry)) {
+    throw new TypeError('Invalid entry parameter ' + entry);
+  }
+
+  // Prefer duck typing over instanceof, assume string
+  if (!url.href) {
+    throw new TypeError('Invalid url parameter ' + url);
+  }
+
+  const normal_url_string = url.href;
+  if (entry.urls) {
+    if (entry.urls.includes(normal_url_string)) {
+      return false;
+    }
+
+    entry.urls.push(normal_url_string);
+  } else {
+    entry.urls = [normal_url_string];
+  }
+
+  return true;
+}
+
+// Return true if the value looks like a feed object. While it perenially
+// appears like the value condition is implied in the typeof condition, this is
+// not true. The value condition is short for `value !== null`, because `typeof
+// null === 'object'`, and not checking value defined-ness would cause
+// value.magic to throw. The value condition is checked first, because
+// presumably it is cheaper than the typeof check.
+export function is_feed(value) {
+  return value && typeof value === 'object' && value.magic === FEED_MAGIC;
+}
+
+// Appends a url to the feed's internal list. Lazily creates the list if needed
+// * @param feed {Object} a feed object
+// * @param url {URL}
+export function append_feed_url(feed, url) {
+  if (!is_feed(feed)) {
+    throw new TypeError('Invalid feed argument ' + feed);
+    return false;
+  }
+
+  // Duck-typed sanity check
+  const href = url.href;
+  if (typeof href !== 'string') {
+    throw new TypeError('Invalid url argument ' + url);
+    return false;
+  }
+
+  // Lazy init
+  if (!feed.urls) {
+    feed.urls = [];
+  }
+
+  if (feed.urls.includes(href)) {
+    return false;
+  }
+  feed.urls.push(href);
+  return true;
+}
+
+export function set_feed_date_fetched(feed, date) {
+  feed.dateFetched = date;
+}
+
+export function set_feed_date_last_modified(feed, date) {
+  feed.dateLastModifed = date;
+}
+
+export function set_feed_date_published(feed, date) {
+  feed.datePublished = date;
+}
+
+export function set_feed_description(feed, description) {
+  feed.description = description;
+}
+
+export function set_feed_link(feed, url_string) {
+  feed.link = url_string;
+}
+
+export function set_feed_title(feed, title) {
+  feed.title = title;
+}
+
+// Set the type property, which indicates whether the feed is rss/atom/etc
+export function set_feed_type(feed, feed_type_string) {
+  feed.type = feed_type_string;
+}
+
+export function is_valid_feed_id(id) {
+  return Number.isInteger(id) && id > 0;
 }
 
 function assert(condition, message) {
