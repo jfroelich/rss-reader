@@ -1,4 +1,9 @@
 # Mac crap
 .DS_Store
 .icloud
+
+# local experiment files that should be ignored
 experimental/
+
+# internal documentation methods should be ignored
+.txt
