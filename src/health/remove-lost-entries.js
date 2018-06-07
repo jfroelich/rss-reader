@@ -14,11 +14,9 @@ export async function remove_lost_entries(conn, channel) {
     }
   });
 
-  // Wait till txn completes before dispatch
-  const message = {type: 'entry-deleted', id: 0, reason: 'lost'};
+  // Wait till txn commits before dispatch
   for (const id of deleted_entry_ids) {
-    message.id = id;
-    channel.postMessage(message);
+    channel.postMessage({type: 'entry-deleted', id: id, reason: 'lost'});
   }
 
   refresh_badge(conn).catch(console.error);  // non-blocking
