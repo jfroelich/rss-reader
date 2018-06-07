@@ -38,13 +38,11 @@ async function handle_lost_entries_alarm(alarm) {
 }
 
 async function handle_orphan_entries_alarm(alarm) {
-  const op = {};
-  op.conn = await open_feed_db();
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.remove_orphaned_entries = remove_orphaned_entries;
-  await op.remove_orphaned_entries();
-  op.conn.close();
-  op.channel.close();
+  const conn = await open_feed_db();
+  const channel = new BroadcastChannel(localStorage.channel_name);
+  await remove_orphaned_entries(conn, channel);
+  conn.close();
+  channel.close();
 }
 
 async function handle_refresh_icons_alarm(alarm) {

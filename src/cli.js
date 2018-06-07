@@ -77,7 +77,6 @@ async function cli_refresh_icons() {
 
 async function cli_poll_feeds() {
   // TODO: open both and await Promise.all
-
   const rconn = await open_feed_db();
   const iconn = await favicon_create_conn();
   const channel = new BroadcastChannel(localStorage.channel_name);
@@ -101,34 +100,13 @@ async function cli_remove_lost_entries() {
   channel.close();
 }
 
-// A proxy for a BroadcastChannel that logs each message to the console and
-// keeps a count of sent messages.
-// TODO: is there where an ES6 Proxy would be appropriate? For better or worse?
-class MonitoredBroadcastChannel {
-  constructor(name) {
-    this.channel = new BroadcastChannel(name);
-    this.message_count = 0;
-  }
-
-  postMessage(message) {
-    console.debug(message);
-    this.channel.postMessage(message);
-  }
-
-  close() {
-    this.channel.close();
-  }
-}
-
-
 async function cli_remove_orphans() {
-  const op = {};
-  op.conn = await open_feed_db();
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.remove_orphaned_entries = remove_orphaned_entries;
-  await op.remove_orphaned_entries();
-  op.conn.close();
-  op.channel.close();
+  const conn = await open_feed_db();
+  const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
+  await remove_orphaned_entries(conn, channel);
+  console.debug('Deleted %d entries', channel.message_count);
+  conn.close();
+  channel.close();
 }
 
 async function cli_lookup_favicon(url_string, cached) {
@@ -158,6 +136,25 @@ function cli_enable_logging() {
 
 function cli_disable_logging() {
   delete localStorage.debug;
+}
+
+// A proxy for a BroadcastChannel that logs each message to the console and
+// keeps a count of sent messages.
+// TODO: is there where an ES6 Proxy would be appropriate? For better or worse?
+class MonitoredBroadcastChannel {
+  constructor(name) {
+    this.channel = new BroadcastChannel(name);
+    this.message_count = 0;
+  }
+
+  postMessage(message) {
+    console.debug(message);
+    this.channel.postMessage(message);
+  }
+
+  close() {
+    this.channel.close();
+  }
 }
 
 const cli = {
