@@ -19,14 +19,6 @@
 // fast.
 //
 // Adapted from https://stackoverflow.com/questions/1912501
-//
-// TODO: security issue. This function currently sets element.innerHTML, where
-// element is a detached element that is owned by the same document as the
-// document that included the module. This is extremely unsafe.
-// TODO: do not use the dom for entity encoding. I'd eventually like to not
-// involve the dom but for now just get something working
-// TODO: benchmarking
-// TODO: tests
 
 // The actual translation work is delegated to the native dom. Note this sticks
 // around permanently in memory. This is better for performance than creating

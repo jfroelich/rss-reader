@@ -1,7 +1,5 @@
 // The entry module provides functions for working with application entry
 // objects.
-// TODO: I feel like this should eventually be renamed, entry is too abstract of
-// a name
 
 export const ENTRY_MAGIC = 0xdeadbeef;
 export const ENTRY_STATE_UNREAD = 0;

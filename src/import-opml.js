@@ -2,12 +2,6 @@ import {parse_opml} from '/src/lib/parse-opml.js';
 import {log} from '/src/log.js';
 import {subscribe} from '/src/subscribe.js';
 
-// TODO: test, or write a test, a real one this time
-// TODO: I somehow want to use a single transaction across all subscribe
-// operations. Somehow subscribe would need to be refactored to accept a
-// transaction as a parameter, and a transaction would need to be a public part
-// of the api.
-
 // Supported opml file mime types
 const opml_mime_types = [
   'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',

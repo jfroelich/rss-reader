@@ -1,8 +1,5 @@
 import {create_entry, is_valid_entry_id} from '/src/entry.js';
 
-// TODO: this shares an eerily large amount of code with get-feed, maybe I
-// create a common helper.
-
 // Asynchronously finds an entry in the database
 // @param conn {IDBDatabase} an open database connection
 // @param mode {String} the type of query, if mode is undefined then it is query

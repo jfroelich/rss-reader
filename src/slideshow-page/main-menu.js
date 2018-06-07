@@ -5,8 +5,6 @@ import {options_menu_hide, options_menu_show} from '/src/slideshow-page/left-pan
 
 let refresh_in_progress = false;
 
-// TODO: show a completed message on refresh complete?
-// TODO: show an error message on refresh error?
 async function refresh_button_onclick(event) {
   event.preventDefault();
 

@@ -1,12 +1,10 @@
-// TODO: this potentially affects unread count and should be calling
-// refresh_badge?
-// TODO: implement tests
-
 // Removes entries missing urls from the database.
 // @param conn {IDBDatabase} an open database connection, optional, if not
 // specified this will auto-connect to the default database
 // @param channel {BroadcastChannel} optional, the channel over which to
 // communicate storage change events
+// @error {DOMException} database error
+// @return {Promise} resolves to undefined
 export function remove_lost_entries(conn, channel) {
   return new Promise(executor.bind(null, conn, channel));
 }
@@ -18,7 +16,7 @@ function executor(conn, channel, resolve, reject) {
   txn.oncomplete = txn_oncomplete.bind(txn, channel, ids, resolve, stats);
   txn.onerror = _ => reject(txn.error);
 
-  // Use openCursor instead of getAll for scalability.
+  // Cursors scale better than getAll array
   const store = txn.objectStore('entry');
   const request = store.openCursor();
   request.onsuccess = request_onsuccess.bind(request, ids, stats);

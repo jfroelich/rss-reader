@@ -1,9 +1,6 @@
 import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, is_entry} from '/src/entry.js';
 import {sizeof} from '/src/lib/lang/sizeof.js';
 
-// TODO: load only only those entries that are archivable by also considering
-// entry dates in the index open cursor request
-
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 // Compacts older read entries in the database. Dispatches entry-archived
@@ -20,7 +17,6 @@ const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 // @throws {InvalidStateError} occurs when the channel is closed at the time
 // messages are sent to the channel, note the transaction still committed
 // @return {Promise} resolves to undefined
-
 export function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
   return new Promise(executor.bind(null, conn, channel, max_age));
 }

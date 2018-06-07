@@ -1,11 +1,6 @@
 import {parse_srcset} from '/src/lib/dom/parse-srcset.js';
 import {serialize_srcset} from '/src/lib/dom/serialize-srcset.js';
 
-// TODO: if a url cannot be resolved, it should be replaced with empty-string.
-// In other words, empty-string is the canonical form of an invalid-url.
-// TODO: use element.src and such instead of using element.getAttribute now that
-// baseURI is set as expected
-
 const element_url_attribute_map = {
   a: 'href',
   applet: 'codebase',
@@ -54,8 +49,6 @@ export function canonicalize_urls(document) {
   }
 
   const base_url = new URL(document.baseURI);
-
-
 
   // TODO: deprecase use of assert, also this assert is now pointless
   assert(base_url instanceof URL);
@@ -114,7 +107,6 @@ function resolve_srcset(element, base_url) {
     }
   }
 }
-
 
 // Resolve a url
 // @param url_string {String} a relative or absolute url string

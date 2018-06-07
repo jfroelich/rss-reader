@@ -1,17 +1,5 @@
 import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 
-// TODO: HTMLAnchorElement supports element.protocol. I wonder if accessing
-// protocol by property is faster than using a regex on the attribute value.
-// https://developer.mozilla.org/en-US/docs/Web/API/HTMLHyperlinkElementUtils/protocol
-// Using the builtin functionality would better guarantee matching of browser
-// behavior, and matching of browser behavior is probably more secure.
-// See also
-// https://html.spec.whatwg.org/multipage/links.html#dom-hyperlink-protocol That
-// is interesting to look at too, because even a null protocol yields ':'. That
-// means the test is as simple as (anchor.protocol === 'javascript:')
-// I assume the protocol is normalized to its canonical form, but I did not see
-// any immediate mention of this in docs. Would be simple to test.
-
 // For a url string to have the script protocol it must be longer than this
 // 'javascript:'.length
 // Javascript does not have const-expr so it is worth pre-computing despite the

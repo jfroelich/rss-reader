@@ -1,7 +1,5 @@
 import {ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
 
-// TODO: stop using context
-
 // Creates or overwrites an entry object in the app database. The input entry is
 // modified so this function is impure. The dateUpdated property is set
 // automatically. The entry is not sanitized nor validated. Some initial state

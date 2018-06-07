@@ -1,7 +1,3 @@
-// TODO: rename this to something like is_redirected_response or is_redirect,
-// and operate off of the response as a parameter (and maybe the request object
-// or the request url).
-
 // Return whether the response url is "different" than the request url,
 // indicating a redirect, regardless of the value of response.redirected
 export function url_did_change(request_url, response_url) {

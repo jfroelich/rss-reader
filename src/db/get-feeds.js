@@ -1,6 +1,3 @@
-// TODO: test
-// TODO: consider using title sort key in database instead of sorting in memory
-
 // Asynchronously load an array of feeds from the database
 // @param conn {IDBDatabase} an open db conn
 // @param mode {String} optional, either 'active' or anything else at the

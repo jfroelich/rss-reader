@@ -7,17 +7,6 @@ import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 
-// BUG: something is completely wrong again with the export-opml experience,
-// perhaps because of chrome.downloads api usage, but this is somehow producing
-// a network error. The file name that appears in the file browser dialog is
-// complete garbage; it almost looks like base64 encoding. And the downloaded
-// file does not download. This worked in chrome 66 and then stopped working in
-// 67 or 68 beta.
-
-// TODO: should not be hardcoding styles
-// TODO: anywhere i use css to set something to 0, do not use units, units are
-// superfluous when setting to 0
-
 function import_opml_button_onclick(event) {
   const uploader_input = document.createElement('input');
   uploader_input.setAttribute('type', 'file');
@@ -27,24 +16,11 @@ function import_opml_button_onclick(event) {
 }
 
 // Fired when user submits file browser dialog
-//
-// Uses a function-call lifetime channel instead of the page-lifetime channel to
-// avoid the no-loopback issue.
-//
-// TODO: show operation started immediately, before doing any time-consuming
-// work
-// TODO: after import, visually inform the user that the operation completed
-// successfully
-// TODO: after import, refresh feed list so that it displays any new feeds, if
-// feed list is visible
-// TODO: after import, switch to feed list section or at least show a message
-// about how the import completed successfully, and perhaps other details such
-// as the number of subscriptions added
-// TODO: on import error, show a friendly error message
 async function uploader_input_onchange(event) {
   console.debug('Received input change event');
   const op = {};
-  [op.rconn, op.iconn] = await Promise.all([open_feed_db(), favicon_create_conn()]);
+  [op.rconn, op.iconn] =
+      await Promise.all([open_feed_db(), favicon_create_conn()]);
   op.channel = new BroadcastChannel(localStorage.channel_name);
   op.fetch_timeout = 5 * 1000;
   op.import_opml = import_opml;
@@ -55,8 +31,6 @@ async function uploader_input_onchange(event) {
   console.debug('Completed opml import');
 }
 
-// TODO: visual feedback on completion
-// TODO: show an error message on error
 async function export_button_onclick(event) {
   const title = 'Subscriptions';
   const filename = 'subscriptions.xml';
@@ -68,11 +42,6 @@ async function export_button_onclick(event) {
 
   const outlines = feeds.map(create_outline).filter(outline_has_xml_url);
   const opml_document = create_opml_document(outlines, title);
-
-  // TODO: create a 'download-blob' module that exports the helpers defined here
-  // and remove them from here. This could be a general library.
-  // TODO: using the downloads api might be the source of the current bug. try
-  // reverting to the download-by-anchor method.
 
   console.debug('Downloading file', filename);
   download_blob_using_chrome_api(

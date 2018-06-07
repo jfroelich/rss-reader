@@ -1,8 +1,6 @@
 import {parse_xml} from '/src/lib/parse-xml.js';
 
-// Provides opml parsing functionality. `parse` parses a string containing opml
-// into a Document object.
-
+// Parses a string containing opml into a Document object.
 export function parse_opml(xml_string) {
   const document = parse_xml(xml_string);
   const name = document.documentElement.localName.toLowerCase();

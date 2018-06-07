@@ -2,8 +2,6 @@ import {is_feed} from '/src/feed.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import {list_is_empty} from '/src/lib/lang/list.js';
 
-// TODO: tests
-
 // Creates or updates a feed in the database. Broadcasts a message to the
 // channel when finished
 // @param conn {IDBDatabase} an open database connection
@@ -42,8 +40,7 @@ function executor(conn, channel, feed, resolve, reject) {
   const store = txn.objectStore('feed');
   const request = store.put(feed);
 
-  // request.result is the feed id in both create and update cases, but it only
-  // matters in the create case
+  // result is id in both cases, but only care about create
   if (is_create) {
     request.onsuccess = _ => feed.id = request.result;
   }

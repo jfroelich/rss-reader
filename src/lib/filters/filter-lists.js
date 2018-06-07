@@ -1,7 +1,3 @@
-// TODO: restrict children of list to proper child type. E.g. only allow li or
-// form within ul/ol, and dd/dt/form within dl. Do some type of transform like
-// move such items to within a new child
-
 // Filters certain list elements from document content
 export function filter_lists(document) {
   if (!document.body) {

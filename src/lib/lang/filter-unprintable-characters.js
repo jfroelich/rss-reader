@@ -4,9 +4,6 @@
 // line, carriage return and form feed. In the case of bad input the input
 // itself is returned. To test if characters were replaced, check if the output
 // string length is less than the input string length.
-// TODO: look into how much this overlaps with filter_control_characters
-// TODO: review why I decided to allow form-feed? I'm not sure why.
-
 export function filter_unprintable_characters(value) {
   // \t \u0009 9, \n \u000a 10, \f \u000c 12, \r \u000d 13
   // The regex matches 0-8, 11, and 14-31

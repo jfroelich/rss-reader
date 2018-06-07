@@ -2,10 +2,6 @@ import '/third-party/tinycolor-min.js';
 import * as color from '/src/lib/color.js';
 
 // Helpers for working with css color values
-// TODO: implement my own css color value parser, decouple from third-party
-// tinycolor.js
-// TODO: limit alpha to two significant digits
-// TODO: write tests
 
 export function parse(value) {
   if (typeof value === 'string' && value.length) {

@@ -4,20 +4,15 @@ import '/src/slideshow-page/onkeydown.js';
 import '/src/slideshow-page/main-menu.js';
 import '/src/slideshow-page/left-panel.js';
 
+import {get_entries} from '/src/db/get-entries.js';
 import {get_feeds} from '/src/db/get-feeds.js';
 import {open_feed_db} from '/src/db/open-feed-db.js';
-import {get_entries} from '/src/db/get-entries.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';
 import {show_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
 import {hide_splash, show_splash} from '/src/slideshow-page/splash.js';
 
-// TODO: support back/forward browser buttons
-// TODO: if loading fails, then show a friendly error message?
-// TODO: look more into startup jank, note that I mave just fixed it when i
-// fixed get-entries ignoring the limit parameter bug
-// TODO: entry load limit should come from localStorage or something
 
 async function load_view() {
   show_splash();

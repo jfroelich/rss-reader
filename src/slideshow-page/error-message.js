@@ -1,4 +1,5 @@
 const container = document.getElementById('error-message-container');
+container.onclick = error_message_onclick;
 
 export function error_message_show(message_text) {
   container.textContent = message_text;
@@ -8,6 +9,3 @@ export function error_message_show(message_text) {
 function error_message_onclick(event) {
   container.style.display = 'none';
 }
-
-// On module load
-container.onclick = error_message_onclick;

@@ -1,16 +1,4 @@
-// TODO: tests
-// TODO: return if no document.body
-// TODO: restrict selectors to body
-// TODO: move docs back to here as comments or write new ones
-// TODO: rename url parameter to document-url or something that clarifies its
-// role/purpose, the word by itself is too generic
-// TODO: templates should come from the app and not be hardcoded here. So the
-// map should be a parameter to the function, and defined externally (this
-// doesn't care where or how, but probably in transform-document).
-// TODO: it may be worth it to define a nice data structure object to represent
-// the map, rather than require explicit knowledge of its internal structure
-
-// This is a basic map from host to an array of selectors
+// A basic map from host to an array of selectors
 const hsm = {};
 hsm['www.washingtonpost.com'] = [
   'header#wp-header', 'div.top-sharebar-wrapper', 'div.newsletter-inline-unit',

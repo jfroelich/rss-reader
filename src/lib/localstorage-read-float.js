@@ -1,3 +1,4 @@
+// TODO: create lib localstorage.js, merge this into there along with read-int
 export function localstorage_read_float(property_name) {
   const string_value = localStorage[property_name];
   if (string_value) {

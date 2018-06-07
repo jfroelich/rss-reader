@@ -1,11 +1,6 @@
 import {is_entry} from '/src/entry.js';
 import {is_valid_feed_id} from '/src/feed.js';
 
-// TODO: this potentially affects unread count and should be calling
-// refresh_badge?
-
-// TODO: implement tests
-
 // Scans the database for entries not linked to a feed and deletes them
 // @param conn {IDBDatabase} open database connection
 // @param channel {BroadcastChannel} optional, broadcast channel

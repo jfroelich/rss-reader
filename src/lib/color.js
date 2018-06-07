@@ -118,64 +118,6 @@
 // an efficient way to avoid the divide-by-zero error if either luminance is 0
 // when it is the denominator.
 
-// # About luminance calc
-
-// Based on the spec, which provides the formula.
-// http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
-
-// Calculating luminance is needed to calculate contrast.
-
-// # Misc references and research
-
-// * https://en.wikipedia.org/wiki/Painter%27s_algorithm
-// * https://en.wikipedia.org/wiki/Linear_interpolation
-// * https://en.wikipedia.org/wiki/Alpha_compositing
-// * Processing.js lerpColor
-// * Unity documentation on vectors and lerp
-// * https://www.alanzucconi.com/2016/01/06/colour-interpolation/
-// * https://github.com/gka/chroma.js/tree/master/src
-// * https://github.com/deanm/css-color-parser-js/blob/master/csscolorparser.js
-// * https://github.com/substack/parse-color
-// * https://github.com/bgrins/TinyColor
-// * https://stackoverflow.com/questions/1855884
-// * http://jxnblk.com/colorable/
-// * https://snook.ca/technical/colour_contrast/colour.html#fg=33FF33,bg=333333
-// * https://en.wikipedia.org/wiki/List_of_color_palettes
-// *
-// https://www.theimagingsource.com/support/documentation/ic-imaging-control-cpp/PixelformatRGB565.htm
-// * https://stackoverflow.com/questions/25467682
-
-// # TODO: remove the alpha check from get_luminance
-
-// Remove this once I am more confident
-
-// # TODO: optimize lerp
-
-// Eventually optimize. This is currently prioritizing clarity. But I probably
-// could use fewer function calls, and I could modify a color value in place
-// instead of packing from four variables.
-
-// # TODO: Vary contrast based on text size
-
-// * See https://www.w3.org/TR/WCAG20/
-// * See TinyColor's isReadable function
-
-// # TODO: improve performance of is_valid
-
-// The first implementation is conservative and my attempt at being accurate. I
-// think there is a faster way of implementing this function.
-
-// # Test todo
-
-// TODO: write pass/fail style tests that test various inputs
-// Consider comparing this library's output to other well known libs
-
-// ## TODO: make format specific
-
-// Using the noun color is too abstract. This is a very particular format,
-// ARGB8888. This module should be named argb8888 (the folder, the file name,
-// etc).
-
 export const WHITE = pack(255, 255, 255, 255);
 export const BLACK = pack(0, 0, 0, 255);
 export const TRANSPARENT = 0;
@@ -227,6 +169,10 @@ export function get_blue(c) {
   return c & 0xff;
 }
 
+
+// Based on the spec, which provides the formula.
+// http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+// Calculating luminance is needed to calculate contrast.
 export function get_luminance(color) {
   const rr = get_red(color) / 255;
   const rg = get_green(color) / 255;
@@ -236,13 +182,10 @@ export function get_luminance(color) {
   // Using ** operator instead of Math.pow call
   // ** is supported in at least Chrome 66, maybe earlier, not sure
   // At the moment I have mixed feelings. I dunno maybe I will warm up to it
-
   // const r = rr <= 0.03928 ? rr / 12.92 : Math.pow((rr + 0.055) / 1.055, 2.4);
   // const g = rg <= 0.03928 ? rg / 12.92 : Math.pow((rg + 0.055) / 1.055, 2.4);
   // const b = rb <= 0.03928 ? rb / 12.92 : Math.pow((rb + 0.055) / 1.055, 2.4);
-
   // TODO: are the extra parentheses necessary? What is the operator precedence?
-
   const r = rr <= 0.03928 ? rr / 12.92 : ((rr + 0.055) / 1.055) ** 2.4;
   const g = rg <= 0.03928 ? rg / 12.92 : ((rg + 0.055) / 1.055) ** 2.4;
   const b = rb <= 0.03928 ? rb / 12.92 : ((rb + 0.055) / 1.055) ** 2.4;

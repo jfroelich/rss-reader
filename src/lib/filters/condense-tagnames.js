@@ -1,18 +1,5 @@
 import {coerce_element} from '/src/lib/dom/coerce-element.js';
 
-// TODO: add tests. Or at least state why test not needed
-// TODO: rename element-coerce to coerce-element, I changed my mind again about
-// naming convention, this todo belongs whereever its defined
-// TODO: if this is the sole user of coerce it should probably be a private
-// helper here? Part of larger goal of reducing number of libraries, and design
-// goal of not creating separate libraries when there is only one call site. For
-// example I just deleted the file lib because its one function,
-// read-file-as-text, was only in use by import-opml. I did not do this
-// immediately because the current commit is more concerned with separating out
-// the function into its own lib, and this is a separate concern.
-// TODO: make this more exhaustive. There may be other obvious savings that are
-// low hanging fruit. For now I implemented a couple off the top of my head.
-
 // Replace certain elements with alternative elements that have names with
 // fewer characters. This helps reduce the number of characters in the document
 // content when serialized. It also normalizes tags by basically choosing that

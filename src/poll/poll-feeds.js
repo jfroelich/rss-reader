@@ -3,12 +3,6 @@ import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 
-
-// Checks for new content
-// ### TODOS
-// * All database queries in poll-feeds should use a single database transaction
-// so as to guarantee data integrity.
-
 const null_channel = {
   name: 'null-channel',
   postMessage: noop,
@@ -26,6 +20,7 @@ const default_options = {
   notify: true
 };
 
+// Checks for new content
 export async function poll_feeds(
     rconn, iconn, channel = null_channel, options = {}) {
   log('%s: starting...', poll_feeds.name);

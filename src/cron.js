@@ -6,17 +6,6 @@ import {remove_orphaned_entries} from '/src/health/remove-orphaned-entries.js';
 import {log} from '/src/log.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 
-// TODO: configurable cron settings?
-// TODO: decouple from log module, just use console.log directly
-// TODO: shove the on-load stuff into a function so that it is more configurable
-// regarding when the binding occurs as opposed to being tightly coupled to the
-// onload event? maybe even export it and have importing module call it, so that
-// concern is shifted somewhere else? Or maybe the concern is fine to hide here?
-// Part of the issue is also that onload stuff should not happen every module
-// load, it should only happen on app update
-// TODO: invent a method of cleaning up outdated alarms, because simply using
-// a new name for an alarm does not de-register its old listener from Chrome
-
 async function handle_compact_favicons_alarm(alarm) {
   await favicon_compact();
 }

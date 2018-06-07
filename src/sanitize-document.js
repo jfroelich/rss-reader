@@ -59,30 +59,6 @@ import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 // calls the filters in a programmed order.
 // It is async primarily just because of a middle step related to setting sizes
 // of images that is also async.
-
-// TODO: Create a function registry, register filters, and revise
-// sanitize_document to iterate over the registry. Instead of hard coding, this
-// should basically just iterate over an array of filter functions. Functions
-// should be registered, along with parameters to them other than the document.
-// Registration basically just stores the filter and its arguments in an array
-// of parameterized filter objects. Then transform-document is simply an
-// iteration over the registered filters, calling each one with a document and
-// its preset arguments. Also, probably need priority (a number) property
-// per entry, so as to be able to specify order. Should probably not use
-// registration order. Or maybe registration order is fine?
-
-// TODO: new filter idea, add a filter that condenses text nodes by doing things
-// like replacing named or numbered encoded entities (such as copy) with the
-// equivalent single utf8 / unicode character.
-
-// TODO: improve anti-image-hotlink handling, because we are not hotlinking, so
-// review why there is a problem. http://www.javalemmings.com/DMA/Lem_1.htm
-
-// TODO: why set image sizes again? i think this was because of boilerplate
-// filter reliance on image area. but i relaxed that, right? so why do it? if
-// i don't need it the function would no longer need to be async, and would be
-// substantially faster.
-
 export async function sanitize_document(document) {
   deframe(document);
   ensure_document_body(document);

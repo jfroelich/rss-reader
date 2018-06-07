@@ -1,11 +1,5 @@
 import {fetch_image_element} from '/src/lib/net/fetch-image-element.js';
 
-// TODO: do not assume that if an image has a source attribute that it is a
-// valid url. urls may not have been validated by other filters. This has to
-// operate independently of those filters.
-
-// TODO: now that this expects document to have document.baseURI set, I can
-// work directly from image.src, instead of image.getAttribute('src')
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.

@@ -1,7 +1,7 @@
 import {refresh_badge} from '/src/badge.js';
 import {sanitize_feed} from '/src/db/sanitize-feed.js';
-import {validate_feed} from '/src/db/validate-feed.js';
 import {update_feed} from '/src/db/update-feed.js';
+import {validate_feed} from '/src/db/validate-feed.js';
 import {append_entry_url, create_entry} from '/src/entry.js';
 import {append_feed_url, coerce_feed, create_feed, is_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
@@ -13,46 +13,6 @@ import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
 
 // Checks for updates to a particular feed.
-// ### TODO: consider changing `poll_feed` to accept feed_id instead of feed
-// object To enforce that the feed parameter is a feed object loaded from the
-// database, it is possible that poll_service_feed_poll would be better
-// implemented if it instead accepted a feedId as a parameter rather than an
-// in-mem feed. That would guarantee the feed it works with is more trusted
-// regarding the locally loaded issue.
-
-// ### note from detected_modification
-// TODO: rename dateLastModified to lastModifiedDate to be more consistent in
-// field names. I just got bit by this inconsistency.
-
-// ### merge_feed notes
-// Returns a new object that results from merging the old feed with the new
-// feed. Fields from the new feed take precedence, except for urls, which are
-// merged to generate a distinct ordered set of oldest to newest url. Impure
-// because of copying by reference.
-
-// Internally, After assignment, the merged feed has only the urls from the new
-// feed. So
-// the output feed's url list needs to be fixed. First copy over the old
-// feed's urls, then try and append each new feed url.
-
-// ### handle_error todo
-// New kind of problem, in hindsight, is merging of count of errors for parsing
-// and fetching. suppose a feed file which is periodically updated becomes
-// not-well-formed, causing parsing error. This is going to on the poll period
-// update the error count. This means that after a couple polls, the feed
-// quickly becomes inactive. That would be desired for the fetch error count,
-// maybe, but not for the parse error count. Because eventually the feed file
-// will get updated again and probably become well formed again. I've actually
-// witnessed this. So the issue is this prematurely deactivates feeds that
-// happen to have a parsing error that is actually ephemeral (temporary) and not
-// permanent.
-
-// Rather than try and update the database, perhaps it would be better to simply
-// generate an event with feed id and some basic error information, and let some
-// error handler handle the event at a later time. This removes all concern over
-// encountering a closed database or closed channel at the time of the call to
-// update_feed, and maintains the non-blocking characteristic.
-
 export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const ignore_recency_check = options.ignore_recency_check;
   const recency_period = options.recency_period;
@@ -199,6 +159,13 @@ async function poll_entries(rconn, iconn, channel, options, entries, feed) {
   return count;
 }
 
+// Returns a new object that results from merging the old feed with the new
+// feed. Fields from the new feed take precedence, except for urls, which are
+// merged to generate a distinct ordered set of oldest to newest url. Impure
+// because of copying by reference. Internally, after assignment, the merged
+// feed has only the urls from the new feed. So the output feed's url list needs
+// to be fixed. First copy over the old feed's urls, then try and append each
+// new feed url.
 function merge_feed(old_feed, new_feed) {
   const merged_feed = Object.assign(create_feed(), old_feed, new_feed);
   merged_feed.urls = [...old_feed.urls];

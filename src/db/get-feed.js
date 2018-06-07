@@ -1,11 +1,5 @@
 import {create_feed, is_valid_feed_id} from '/src/feed.js';
 
-// TODO: write tests
-
-// TODO: what if instead I use two different request_onsuccess handlers,
-// one for getKey and one for get. This reduces the branching in the handler.
-// Would it be clearer? More or less performant?
-
 // Asynchronously finds a feed in the database
 // @param conn {IDBDatabase} an open database connection
 // @param mode {String} the type of query, if mode is undefined then it is query

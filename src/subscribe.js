@@ -1,7 +1,7 @@
 import {get_feed} from '/src/db/get-feed.js';
 import {sanitize_feed} from '/src/db/sanitize-feed.js';
-import {validate_feed} from '/src/db/validate-feed.js';
 import {update_feed} from '/src/db/update-feed.js';
+import {validate_feed} from '/src/db/validate-feed.js';
 import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
 import {coerce_feed} from '/src/feed.js';
 import {fetch_feed} from '/src/fetch.js';
@@ -35,23 +35,6 @@ import {notify} from '/src/notify.js';
 // was stored in the database. If an error occurred, then the promise rejects.
 // If the feed, or the redirected url of the feed, exist in the database, then
 // resolves to undefined (not an error).
-
-// TODO: Reconsider the transaction lifetime. Right now it is protected by the
-// error that occurs due to violation of uniqueness constraint. But it would be
-// better if both reads and writes occurred on same transaction.
-// TODO: I have mixed feelings about treating already-subscribed as an error. It
-// isn't a programming error. But the subscribe in some sense failed. Right now
-// this returns undefined. But maybe it should be an error. Or maybe I need a
-// more complicated type of return value. Returning undefined is unclear.
-// TODO: Currently the redirect url is not validated as to whether it is a
-// fetch-able url according to the app's fetch policy. It is just assumed. I am
-// not quite sure what to do about it at the moment. Maybe I could create a
-// second policy that controls what urls are allowed by the app to be stored in
-// the database? Or maybe I should just call `url_is_allowed` here explicitly?
-// This is partly a caveat of attempting to abstract it away behind the call to
-// the fetch helper, which checks the policy internally. The issue is that it
-// cannot be abstracted away if I need to use it again for non-fetch purposes.
-
 export async function subscribe(url, options) {
   log('Subscribing to feed', url.href);
 

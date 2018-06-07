@@ -1,16 +1,7 @@
-// TODO: tests
-
 // Generates an opml document object populated with the given outlines. Only
-// outlines with an html_url value are included.
-//
-// Outline objects have the following properties (all strings):
-//
-// * type
-// * xml_url
-// * title
-// * description
-// * html_url
-//
+// outlines with an html_url value are included. Outline objects have the
+// following properties (all strings): type, xml_url, title, description, and
+// html_url.
 // @param outlines {Array} optional, an array of outline objects to append
 // @param title {String} optional, value of title element (not validated)
 // @return {Document}
@@ -62,7 +53,7 @@ function create_template(title) {
 
 // Create an xml element from an outline object
 function create_outline_element(document, outline) {
-  // Make sure to use host document, not script container
+  // SEC: use host document, not script container
   const elm = document.createElement('outline');
   set_attr_if_defined(elm, 'type', outline.type);
   set_attr_if_defined(elm, 'xmlUrl', outline.xml_url);

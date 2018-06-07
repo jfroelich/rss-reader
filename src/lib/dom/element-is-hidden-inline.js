@@ -14,13 +14,6 @@ export function element_is_hidden_inline(element) {
 
 // Returns true if the element's opacity is too close to 0
 // Throws error is style is undefined
-// TODO: support other formats of the opacity property more accurately
-// TODO: how does negative opacity work, or other invalid opacities?
-// TODO: https://stackoverflow.com/questions/1887104 specifically
-// window.getComputedStyle(element, null).getPropertyValue('opacity');
-// https://developer.mozilla.org/en-US/docs/Web/API/CSSStyleDeclaration/getPropertyValue
-// The CSSStyleDeclaration.getPropertyValue() method interface returns a
-// DOMString containing the value of a specified CSS property.
 function element_is_near_transparent(style) {
   if (style.opacity) {
     const visibility_threshold = 0.3;

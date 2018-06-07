@@ -1,7 +1,3 @@
-// TODO: allow various overrides through localStorage setting or some config
-// setting? Of course things like hosts file can be manipulated to whatever.
-// This is just one of the low-hanging fruits.
-
 const allowed_protocols = ['data:', 'http:', 'https:'];
 const allowed_methods = ['GET', 'HEAD'];
 

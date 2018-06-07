@@ -9,25 +9,7 @@ import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
 import {decrement_active_transition_count, get_current_slide, set_current_slide} from '/src/slideshow-page/slideshow-state.js';
 
-// TODO: the creation of a slide element, and the appending of a slide element,
-// should be two separate tasks. This will increase flexibility and maybe
-// clarity. append_slide should accept a slide element, not an entry.
-
-// TODO: to add to the above, it is clearly confusing that this function is
-// named append_slide, but it accepts an entry, not a slide, which is just plain
-// bad naming.
-
-// TODO: create a new module in slideshow-page folder called create-slide,
-// that accepts an entry and returns a new slide element.
-// Change callers of append_slide to first call create_slide.
-// Change this to accept a slide element as input.
-// Pass the element from create_slide to this.
-// Consider deprecating this because it barely does anything.
-
-// TODO: duration should come from localStorage?
-
 let duration = 0.35;
-
 
 export function append_slide(entry) {
   if (!is_entry(entry)) {

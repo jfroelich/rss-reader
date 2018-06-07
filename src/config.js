@@ -6,10 +6,7 @@ import * as color from '/src/lib/color.js';
 // hunting down settings dispersed among many files. In other words this design
 // is easier to maintain over time.
 
-// TODO: use local storage instead and deprecate this partially
-
 // Article backgrounds
-// TODO: the path should not be a part of the value?
 export const background_images = [
   '/images/bgfons-paper_texture318.jpg', '/images/CCXXXXXXI_by_aqueous.jpg',
   '/images/paper-backgrounds-vintage-white.jpg',

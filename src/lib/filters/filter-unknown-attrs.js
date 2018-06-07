@@ -23,7 +23,6 @@ function filter_element_attrs(element, whitelist) {
   }
 }
 
-// TODO: deprecate
 function assert(value, message) {
   if (!value) throw new Error(message || 'Assertion error');
 }

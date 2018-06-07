@@ -1,23 +1,6 @@
 import {refresh_badge} from '/src/badge.js';
 import {ENTRY_STATE_READ, ENTRY_STATE_UNREAD, is_entry, is_valid_entry_id} from '/src/entry.js';
 
-// TODO: the on-load checks of object validity are weird. Why not just use
-// basic assert and treat as errors? I don't remember how the code got into this
-// state. I am bit concerned if I change these back to throwing error instead
-// of just logging error and exiting, it will break stuff.
-
-// TODO: refactor as set-entry-read-state, accept a boolean state parameter,
-// and handle both cases (where true and where false)? Alternatively, create
-// db-write-entry-property, have this decorate that. Alternatively, have the
-// caller just call db-write-entry-property directly.
-
-// TODO: create a write-entry-property module, then use that instead of this.
-// In the interim, can consider refactoring this to basically wrap a call to it,
-// maybe even keep the channel message type the same. Then slowly migrate all
-// callers to call write-entry-property directly. This will potentially
-// reduce the number of operations related to entries, and is more forward
-// thinking in case new operations are added later (e.g. star/unstar-entry).
-
 // Asynchronously marks an entry as read in the database.
 // @param conn {IDBDatabase}
 // @param channel {BroadcastChannel}

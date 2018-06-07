@@ -3,18 +3,6 @@ import {FEED_MAGIC} from '/src/feed.js';
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 
-// TODO: test
-// TODO: rather than default to config, maybe I should just export the
-// on_upgrade_needed handler too? The only alternate user other than the normal
-// app usage is the test context, and the test context is privy too using
-// indexeddb_open, it just cannot use the upgrade handler here, for now, because
-// it is module-private.
-
-// TODO: what if I grouped the 3 props for active in the schema. So change the
-// feed schema to have a sub-object, active-props, with 3 properties: active,
-// reason, date. Then I could things like feed.active_props.date = new Date(),
-// if(feed.active_props.active)...
-
 // Asynchronously opens a connection to the app database. If the database does
 // not exist, it will be created. Returns a promise that resolves to an open
 // database connection.
@@ -126,7 +114,6 @@ function add_magic_to_feeds(txn) {
   }
 }
 
-// TODO: use cursor rather than getAll for scalability
 function add_active_field_to_feeds(store) {
   console.debug('Adding active property to older feeds');
   const feeds_request = store.getAll();

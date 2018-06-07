@@ -1,4 +1,3 @@
-
 // Remove an indexedDB database from the browser (for this origin)
 export function indexeddb_remove(name) {
   return new Promise((resolve, reject) => {

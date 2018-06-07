@@ -1,21 +1,6 @@
 import {list_peek} from '/src/lib/lang/list.js';
 import {log} from '/src/log.js';
 
-// TODO: break up element creation and element appending into two functions
-
-// TODO: do not hardcode css, instead do something like toggle defined class
-
-// TODO: toggle_details should not be doing a lookup of a table element, there
-// could be other tables, this table should have a unique id, and this should
-// instead use getElementById
-
-// TODO: at end of feeds_container_append_feed, feeds_container_append_feed
-// needs to find the proper place to append the feed using feed_compare. This
-// needs to iterate over the existing feeds and compare each one to the feed and
-// find where to insert, and fall back to append. I no longer am pre-sorting an
-// array and then iterating over it, I am using a callback that loads feeds from
-// the db in natural order.
-
 export function feeds_container_append_feed(feed) {
   const feeds_container = document.getElementById('feeds-container');
   const feed_element = document.createElement('div');

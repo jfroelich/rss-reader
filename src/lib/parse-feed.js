@@ -18,20 +18,6 @@ import {decode_entities} from '/src/lib/html/decode-entities.js';
 // * resolve_entry_urls {Boolean} if true, entry urls are canonicalized using
 // feed.link as the base url
 
-// ## #feed_resolve_entry_urls todos
-// * If a feed has a link, and the link is invalid, should that actually be
-// considered a parse error ? In other words, this should not catch this error
-// here ?
-// * If failing to resolve an entry, should this set entry.link to undefined or
-// remove the property, or leave it as is like now ?
-
-// #TODOS
-// * not sure if this is best place to set fetch policy
-// * when finding feed type, use element_get_local_name ?
-// * Write specific tests that test various assertions, e.g.preconditions,
-// postconditions, and make it automatic
-
-
 export function parse_feed(value, skip_entries, resolve_entry_urls) {
   const document = xml_parse(value);
   return unmarshall_xml(document, skip_entries, resolve_entry_urls);

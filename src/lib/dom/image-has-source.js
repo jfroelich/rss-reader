@@ -3,7 +3,6 @@
 // or more source elements that has a src or srcset attribute. This does not
 // check whether the urls are syntactically correct, but this does check that an
 // attribue value is not empty after trimming.
-
 export function image_has_source(image) {
   if (!(image instanceof Element)) {
     throw new TypeError('image not an element');

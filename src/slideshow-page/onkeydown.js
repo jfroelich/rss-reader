@@ -1,14 +1,6 @@
 import {show_next_slide} from '/src/slideshow-page/show-next-slide.js';
 import {get_active_transition_count, get_current_slide, increment_active_transition_count, set_current_slide} from '/src/slideshow-page/slideshow-state.js';
 
-// TODO: navigation occassionally pauses. This shouldn't happen. Should
-// immediately navigate to something like an empty div, show a 'loading'
-// message, then load, then hide the loading message.
-
-// TODO: is the debouncing stuff with idle callback approach still needed? I
-// did not document why it is there now unfortunately. I cannot remember what
-// problem was being solved by it.
-
 const LEFT = 37;
 const RIGHT = 39;
 const N = 78;
@@ -94,8 +86,5 @@ function prev() {
   previous_slide.style.left = '0';
   set_current_slide(previous_slide);
 }
-
-// TODO: do I need window? is addEventListener without qualification available
-// in module scope?
 
 window.addEventListener('keydown', onkeydown);

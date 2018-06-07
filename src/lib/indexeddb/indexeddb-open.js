@@ -1,3 +1,12 @@
+function idb_context_t() {
+  this.name = null;
+  this.version = null;
+  this.upgrade_listener = null;
+  this.timeout = NaN;
+  this.timed_out = false;
+  this.timer = null;
+}
+
 // This function opens a connection to an indexedDB database. The important
 // additions to the normal functionality of indexedDB.open are that you
 // can optionally specify a timeout after which to consider the connection a
@@ -10,16 +19,6 @@
 // that I would wrap the call to the listener here with a function that first
 // checks if blocked/timed_out and if so aborts the transaction and closes,
 // otherwise forwards to the listener.
-
-function idb_context_t() {
-  this.name = null;
-  this.version = null;
-  this.upgrade_listener = null;
-  this.timeout = NaN;
-  this.timed_out = false;
-  this.timer = null;
-}
-
 export async function indexeddb_open(name, version, upgrade_listener, timeout) {
   if (typeof name !== 'string') {
     throw new TypeError('Invalid database name ' + name);

@@ -3,11 +3,6 @@ import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 
-// TODO: break this up. I named it verb-and-verb to highlight how it is poorly
-// designed.
-// TODO: append slides shouldn't be responsible for loading. This should accept
-// an array of slides as input. Something else should be doing loading.
-
 export async function load_and_append_slides(conn, limit) {
   // TODO: if the default isn't available then default to unlimited by leaving
   // the value as NaN?

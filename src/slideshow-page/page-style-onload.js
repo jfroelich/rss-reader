@@ -1,6 +1,3 @@
-// TODO: use px instead of em everywhere
-// TODO: store units in localStorage along with value
-
 export function page_style_onload() {
   const sheet = document.styleSheets[0];
   sheet.addRule('.entry', page_style_entry_rule_create());
@@ -64,8 +61,6 @@ function page_style_content_rule_create(sheet) {
       buffer.push(`line-height: ${(line_height / 10).toFixed(2)};`);
     }
   }
-
-  // TODO: did column-count become standard css yet? if so drop prefix
 
   const column_count = localStorage.COLUMN_COUNT;
   if (column_count === '2' || column_count === '3') {

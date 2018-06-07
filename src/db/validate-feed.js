@@ -1,7 +1,5 @@
 import {is_feed, is_valid_feed_id} from '/src/feed.js';
 
-// TODO: finish all checks
-
 // Returns whether the feed is valid
 export function validate_feed(feed) {
   if (!is_feed(feed)) {

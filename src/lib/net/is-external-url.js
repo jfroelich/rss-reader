@@ -19,16 +19,6 @@
 // for and removes telemetry features may consider an element with an external
 // url as an telemetry indicator.
 
-// ### Notes and todos
-// * Does origin include port? Maybe I should be doing port comparison at
-// certain points in the logic
-// * If I ever get around to trying to make the is_geographical_domain test more
-// accurate, a good resource is
-// https://publicsuffix.org/list/public_suffix_list.dat
-// * If I want to handle urls more accurately, review punycode issues
-// * Consider making an ip address module for more accurate ip address handling
-// * Cite research
-
 const local_protocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
 
 export const MODE_UNKNOWN = 0;
