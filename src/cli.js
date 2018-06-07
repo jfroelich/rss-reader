@@ -1,8 +1,8 @@
 import {archive_entries} from '/src/db/archive-entries.js';
 import {open_feed_db} from '/src/db/open-feed-db.js';
-import {remove_lost_entries} from '/src/db/remove-lost-entries.js';
-import {remove_orphaned_entries} from '/src/db/remove-orphaned-entries.js';
 import {favicon_clear, favicon_compact, favicon_create_conn, favicon_lookup, favicon_refresh_feeds} from '/src/favicon.js';
+import {remove_lost_entries} from '/src/health/remove-lost-entries.js';
+import {remove_orphaned_entries} from '/src/health/remove-orphaned-entries.js';
 import {log} from '/src/log.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
