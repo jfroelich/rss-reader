@@ -1,5 +1,5 @@
-import {count_entries} from '/src/db/count-entries.js';
 import {open_feed_db} from '/src/db/open-feed-db.js';
+import {ENTRY_STATE_UNREAD} from '/src/entry.js';
 import {log} from '/src/log.js';
 
 // TODO: Perhaps think of badge as a view, like the other pages or the CLI. In
@@ -60,4 +60,15 @@ export async function init_badge() {
 
 export function register_badge_click_listener(listener) {
   chrome.browserAction.onClicked.addListener(listener);
+}
+
+function count_entries(conn) {
+  return new Promise((resolve, reject) => {
+    const txn = conn.transaction('entry');
+    const store = txn.objectStore('entry');
+    const index = store.index('readState');
+    const request = index.count(ENTRY_STATE_UNREAD);
+    request.onsuccess = _ => resolve(request.result);
+    request.onerror = _ => reject(request.error);
+  });
 }
