@@ -220,6 +220,16 @@ export function get_feed(conn, mode = 'id', value, key_only) {
   });
 }
 
+export function get_feed_ids(conn) {
+  return new Promise((resolve, reject) => {
+    const txn = conn.transaction('feed');
+    txn.onerror = _ => reject(txn.error);
+    const store = txn.objectStore('feed');
+    const request = store.getAllKeys();
+    request.onsuccess = _ => resolve(request.result);
+  });
+}
+
 export function get_feeds(conn, mode = 'all', sort = false) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('feed');
@@ -292,6 +302,27 @@ export function mark_entry_read(conn, channel, entry_id) {
       entry.dateRead = currentDate;
 
       request.source.put(entry);
+    };
+  });
+}
+
+export function iterate_entries(conn, writable, handle_entry) {
+  return new Promise((resolve, reject) => {
+    const txn = conn.transaction('entry', writable ? 'readwrite' : 'readonly');
+    txn.oncomplete = resolve;
+    txn.onerror = _ => reject(txn.error);
+
+    const store = txn.objectStore('entry');
+    const request = store.openCursor();
+
+    request.onsuccess = _ => {
+      const cursor = request.result;
+      if (!cursor) {
+        return;
+      }
+
+      handle_entry(cursor);
+      cursor.continue();
     };
   });
 }

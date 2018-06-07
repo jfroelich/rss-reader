@@ -1,48 +1,25 @@
-// Removes entries missing urls from the database.
-// @param conn {IDBDatabase} an open database connection, optional, if not
-// specified this will auto-connect to the default database
-// @param channel {BroadcastChannel} optional, the channel over which to
-// communicate storage change events
-// @error {DOMException} database error
-// @return {Promise} resolves to undefined
-export function remove_lost_entries(conn, channel) {
-  return new Promise(executor.bind(null, conn, channel));
-}
+import {refresh_badge} from '/src/badge.js';
+import {iterate_entries} from '/src/reader-db.js';
 
-function executor(conn, channel, resolve, reject) {
-  const ids = [];
-  const stats = {visited_entry_count: 0};
-  const txn = conn.transaction('entry', 'readwrite');
-  txn.oncomplete = txn_oncomplete.bind(txn, channel, ids, resolve, stats);
-  txn.onerror = _ => reject(txn.error);
-
-  // Cursors scale better than getAll array
-  const store = txn.objectStore('entry');
-  const request = store.openCursor();
-  request.onsuccess = request_onsuccess.bind(request, ids, stats);
-}
-
-function request_onsuccess(ids, stats, event) {
-  const cursor = event.target.result;
-  if (cursor) {
-    stats.visited_entry_count++;
-
+// Removes entries missing urls from the database
+export async function remove_lost_entries(conn, channel) {
+  // Track ids so they are available after txn commits
+  const deleted_entry_ids = [];
+  const txn_writable = true;
+  await iterate_entries(conn, txn_writable, cursor => {
     const entry = cursor.value;
     if (!entry.urls || !entry.urls.length) {
       cursor.delete();
-      ids.push(entry.id);
+      deleted_entry_ids.push(entry.id);
     }
+  });
 
-    cursor.continue();
-  }
-}
-
-function txn_oncomplete(channel, ids, callback, stats, event) {
+  // Wait till txn completes before dispatch
   const message = {type: 'entry-deleted', id: 0, reason: 'lost'};
-  for (const id of ids) {
+  for (const id of deleted_entry_ids) {
     message.id = id;
     channel.postMessage(message);
   }
 
-  callback();
+  refresh_badge(conn).catch(console.error);  // non-blocking
 }
