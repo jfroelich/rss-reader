@@ -94,7 +94,7 @@ async function cli_poll_feeds() {
 async function cli_remove_lost_entries() {
   const conn = await open_reader_db();
   const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
-  await remove_lost_entries(conn, mbc);
+  await remove_lost_entries(conn, channel);
   console.debug('Removed %d entries', channel.message_count);
   conn.close();
   channel.close();
