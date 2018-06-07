@@ -19,5 +19,7 @@ export async function remove_lost_entries(conn, channel) {
     channel.postMessage({type: 'entry-deleted', id: id, reason: 'lost'});
   }
 
-  refresh_badge(conn).catch(console.error);  // non-blocking
+  if (deleted_entry_ids.length) {
+    refresh_badge(conn).catch(console.error);  // non-blocking
+  }
 }
