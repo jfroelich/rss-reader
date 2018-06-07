@@ -21,6 +21,10 @@ import {subscribe} from '/src/subscribe.js';
 // from appearing where it should not
 // * it ensures headless support
 // * hacky testing convenience
+// * another way of saying this, is that I am trying to keep separation between
+// model and view. Having a second style of view ensures that important model
+// things do not end up in the view. For a refresher review the following
+// article: http://read.humanjavascript.com/ch04-organizing-your-code.html
 
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
