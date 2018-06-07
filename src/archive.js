@@ -1,85 +1,47 @@
-import {create_entry, ENTRY_STATE_ARCHIVED, ENTRY_STATE_READ, ENTRY_STATE_UNARCHIVED, is_entry} from '/src/reader-db.js';
+import {create_entry, ENTRY_STATE_ARCHIVED, is_entry} from '/src/reader-db.js';
 import {sizeof} from '/src/lib/lang/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 // Compacts older read entries in the database. Dispatches entry-archived
-// messages once the internal transaction completes.
-// @param conn {IDBDatabase} an open database connection to the reader
-// database
-// @param channel {BroadcastChannel} an open channel to which to post
-// messages
-// @param max_age {Number} in ms, optional, defaults to two days, how old an
-// entry must be based on the difference between the run time and the date the
-// entry was created in order to consider the entry as archivable
-// @throws {TypeError} invalid parameters
-// @throws {DOMException} database errors
-// @throws {InvalidStateError} occurs when the channel is closed at the time
-// messages are sent to the channel, note the transaction still committed
-// @return {Promise} resolves to undefined
-export function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
-  return new Promise(executor.bind(null, conn, channel, max_age));
-}
+// messages once the internal transaction completes. max_age is in ms, optional,
+// defaults to two days, how old an entry must be based on the difference
+// between the run time and the date the entry was created in order to consider
+// the entry as archivable
+export async function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
+  const entry_ids = [];
+  const txn_writable = true;
+  await iterate_entries(conn, 'archive', txn_writable, cursor => {
+    const entry = cursor.value;
+    if (!is_entry(entry)) {
+      console.warn('Bad entry read from db', entry);
+      return;
+    }
 
-function executor(conn, channel, max_age, resolve, reject) {
-  const entry_ids = [];  // track archived to keep around until txn completes
-  const txn = conn.transaction('entry', 'readwrite');
-  txn.onerror = _ => reject(txn.error);
-  txn.oncomplete = txn_oncomplete.bind(null, channel, entry_ids, resolve);
+    if (!entry.dateCreated) {
+      console.warn('Entry missing date created', entry);
+      return;
+    }
 
-  const store = txn.objectStore('entry');
-  const index = store.index('archiveState-readState');
-  const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
-  const request = index.openCursor(key_path);
-  request.onsuccess = request_onsuccess.bind(null, entry_ids, max_age);
-}
+    const current_date = new Date();
+    const age = current_date - entry.dateCreated;
 
-// Process one entry loaded from db
-function request_onsuccess(entry_ids, max_age, event) {
-  const cursor = event.target.result;
-  if (!cursor) {
-    return;
-  }
+    if (age < 0) {
+      console.warn('Entry created in future', entry);
+      return;
+    }
 
-  const entry = cursor.value;
-  if (!is_entry(entry)) {
-    console.warn('Bad entry read from db', entry);
-    cursor.continue();
-    return;
-  }
+    if (age > max_age) {
+      const ae = archive_entry(entry);
+      cursor.update(ae);
+      entry_ids.push(ae.id);
+    }
+  });
 
-  if (!entry.dateCreated) {
-    console.warn('Entry missing date created', entry);
-    cursor.continue();
-    return;
-  }
-
-  const current_date = new Date();
-  const age = current_date - entry.dateCreated;
-
-  if (age < 0) {
-    console.warn('Entry created in future', entry);
-    cursor.continue();
-    return;
-  }
-
-  if (age > max_age) {
-    const ae = archive_entry(entry);
-    cursor.update(ae);
-    entry_ids.push(ae.id);
-  }
-
-  cursor.continue();
-}
-
-function txn_oncomplete(channel, entry_ids, callback, event) {
-  const msg = {type: 'entry-archived', id: 0};
+  // Now that txn committed, let everyone know of mutated state
   for (const id of entry_ids) {
-    msg.id = id;
-    channel.postMessage(msg);
+    channel.postMessage({type: 'entry-archived', id: id});
   }
-
-  callback();
 }
 
 function archive_entry(entry) {
