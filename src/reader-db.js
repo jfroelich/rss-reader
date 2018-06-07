@@ -11,7 +11,6 @@ import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 // The reader-db.js module encapsulates database storage operations and formats
 // for the app.
 
-
 // indexedDB does not support storing Function objects, because Function objects
 // are not serializable (aka structured-cloneable). Therefore, because
 // instanceof is out of the question, and typeof is not useful, we use a hidden
@@ -31,6 +30,7 @@ export function create_entry() {
   return {magic: ENTRY_MAGIC};
 }
 
+// Does not involve the database
 export function create_feed() {
   return {magic: FEED_MAGIC};
 }
