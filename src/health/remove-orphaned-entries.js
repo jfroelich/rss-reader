@@ -1,4 +1,3 @@
-import {refresh_badge} from '/src/badge.js';
 import {get_feed_ids, is_entry, is_valid_feed_id, iterate_entries} from '/src/reader-db.js';
 
 // Scans the database for entries not linked to a feed and deletes them
@@ -47,9 +46,5 @@ export async function remove_orphaned_entries(conn, channel) {
   // Now that txn committed, let everyone know of state changes
   for (const id of deleted_entry_ids) {
     channel.postMessage({type: 'entry-deleted', id: id, reason: 'orphan'});
-  }
-
-  if (deleted_entry_ids.length) {
-    refresh_badge(conn).catch(console.error);  // non-blocking
   }
 }

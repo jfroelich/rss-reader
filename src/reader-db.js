@@ -1,4 +1,3 @@
-import {refresh_badge} from '/src/badge.js';
 import {replace_tags} from '/src/lib/html/replace-tags.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
@@ -74,8 +73,6 @@ export function delete_feed(conn, channel, feed_id, reason) {
         entry_msg.id = id;
         channel.postMessage(entry_msg);
       }
-
-      refresh_badge(conn).catch(console.error);
 
       resolve();
     };
@@ -278,7 +275,6 @@ export function mark_entry_read(conn, channel, entry_id) {
     const txn = conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
       channel.postMessage({type: 'entry-marked-read', id: entry_id});
-      refresh_badge(conn).catch(console.error);  // non-blocking
       resolve();
     };
     txn.onerror = _ => reject(txn.error);

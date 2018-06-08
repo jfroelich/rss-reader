@@ -1,3 +1,4 @@
+import {refresh_badge} from '/src/badge.js';
 import {get_entries, is_valid_entry_id, open_reader_db} from '/src/reader-db.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
@@ -16,6 +17,13 @@ async function channel_onmessage(event) {
   if (!message) {
     console.warn('Event without data:', event);
     return;
+  }
+
+  const badge_types = ['entry-write', 'entry-deleted', 'entry-marked-read'];
+  if (badge_types.includes(message.type)) {
+    // TEMP: debugging to monitor new functionality
+    console.debug('Refreshing badge from slideshow page', message.type);
+    refresh_badge();
   }
 
   // NOTE: some of the handlers are async because they do async things. we

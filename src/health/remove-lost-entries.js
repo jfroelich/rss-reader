@@ -1,4 +1,3 @@
-import {refresh_badge} from '/src/badge.js';
 import {iterate_entries} from '/src/reader-db.js';
 
 // Removes entries missing urls from the database
@@ -17,9 +16,5 @@ export async function remove_lost_entries(conn, channel) {
   // Wait till txn commits before dispatch
   for (const id of deleted_entry_ids) {
     channel.postMessage({type: 'entry-deleted', id: id, reason: 'lost'});
-  }
-
-  if (deleted_entry_ids.length) {
-    refresh_badge(conn).catch(console.error);  // non-blocking
   }
 }

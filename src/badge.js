@@ -1,36 +1,65 @@
-import {count_unread_entries} from '/src/reader-db.js';
+import {count_unread_entries, open_reader_db} from '/src/reader-db.js';
 
-// TODO: somehow remove cyclical dep with reader-db
+// So, no more update_pending fake mutex thing. Instead, we debounce by having
+// multiple things call this, and each one cancels any pending before scheduling
+// a refresh. So if multiple calls, the later one always wins because it cancels
+// the earlier one.
 
-// One way. The db ops should not be calling refresh badge. Instead, channel
-// messages listeners should be doing in response to messages for other reasons.
-// One issue with that, is extremely weak coupling of a required followup
-// action. A second issue is that we don't know which view will be loaded at
-// any one point in time. Ops take place in multiple views, calls get sent out
-// all over the place.
+// BUG: it isn't debouncing. Everything is getting scheduled and nothing is
+// getting canceled, because they all get scheduled too quickly. I am only
+// setting the 'schedule without debounce' message in the console.
 
-// Second way. Some kind of side channel. Basically a secondary callback for
-// each database operation. Then every call can pass in an extra callback that
-// does the badge refresh. The badge call is then only bound to the function
-// callback definition defined in the caller, and not in the db. But this also
-// has problems. One, it should not be caller's concern. Two, ton of
-// boilerplate. Three, awkwardness of multi-channel.
+// BENCH NOTES: performance.now() showed approximately 1-3ms delay in the
+// zero-delay configuration, seems fine in that case.
 
+let debounce_timer_id = undefined;
 
-let update_pending = false;
-
-export async function refresh_badge(conn) {
-  if (update_pending) {
-    console.debug('Badge update still pending');
-    return;
+export function refresh_badge() {
+  if (typeof debounce_timer_id !== 'undefined') {
+    console.debug('Clearning refresh-badge debounce timer', debounce_timer_id);
+    clearTimeout(debounce_timer_id);
+    debounce_timer_id = undefined;
+  } else {
+    // TEMP
+    console.debug('Scheduling refresh-badge without clearing debounce timer');
   }
 
-  update_pending = true;
-  const count = await count_unread_entries(conn);
-  const text = count > 999 ? '1k+' : '' + count;
-  console.debug('Setting badge text to', text);
-  chrome.browserAction.setBadgeText({text: text});
-  update_pending = false;
+  // Using a longer delay than near-0 to increase cancelation frequency. The
+  // delay is in milliseconds. Using asap delay (setting delay to 0 or
+  // undefined) was leading to obverably nothing getting canceled and everything
+  // getting scheduled too quickly and reaching its end of deferrment and
+  // starting and therefore everything was running concurrently. So now this
+  // imposes a fake delay on unread count updating that is probably higher than
+  // the default near-0 delay. I don't think it will be noticeable but not sure.
+  // It turns out that the cross-tab channel messages get sent faster than I
+  // expected. Comp specs and load might be a factor I am not accounting for.
+  let delay = 20;
+
+  debounce_timer_id = setTimeout(do_scheduled_refresh, delay);
+}
+
+async function do_scheduled_refresh() {
+  // The try/catch is to log the error. This is an async so exceptions will
+  // be promise-swallowed, but it is funky to catch when this function itself
+  // is a parameter to setTimeout, so use local catch here to print out error
+
+  let conn;
+  try {
+    conn = await open_reader_db();
+    const count = await count_unread_entries(conn);
+    const text = count > 999 ? '1k+' : '' + count;
+    console.debug('Setting badge text to', text);
+    chrome.browserAction.setBadgeText({text: text});
+  } catch (error) {
+    console.error(error);
+  } finally {
+    // Just help with the logging in the scheduler
+    debounce_timer_id = undefined;
+
+    if (conn) {
+      conn.close();
+    }
+  }
 }
 
 export function register_badge_click_listener(listener) {

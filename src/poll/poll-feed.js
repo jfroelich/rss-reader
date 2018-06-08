@@ -1,4 +1,3 @@
-import {refresh_badge} from '/src/badge.js';
 import {coerce_feed} from '/src/coerce-feed.js';
 import {fetch_feed} from '/src/fetch.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
@@ -108,10 +107,6 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 
   const count = await poll_entries(
       rconn, iconn, channel, options, parsed_feed.entries, merged_feed);
-
-  if (badge_update && count) {
-    refresh_badge(rconn).catch(console.error);
-  }
 
   if (notify_flag && count) {
     const title = 'Added articles';

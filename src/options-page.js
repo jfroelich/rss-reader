@@ -1,5 +1,5 @@
 import '/src/cli.js';
-
+import {refresh_badge} from '/src/badge.js';
 import * as config from '/src/config.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
@@ -27,6 +27,17 @@ channel.onmessage = function(event) {
   const message = event.data;
   if (!message) {
     return;
+  }
+
+  // We also listen here for now, because we can do things like unsubscribe
+  // from here, and that could affect unread count. If unsubscribing from here
+  // then slideshow may not be loaded, and also background page may not be
+  // loaded.
+  const badge_types = ['entry-write', 'entry-deleted', 'entry-marked-read'];
+  if (badge_types.includes(message.type)) {
+    // TEMP: debugging to monitor new functionality
+    console.debug('Refreshing badge from options page', message.type);
+    refresh_badge();
   }
 
   switch (message.type) {

@@ -7,10 +7,35 @@ import {open_reader_db} from '/src/reader-db.js';
 
 // Loaded by background.html, focuses on initialization and binding things
 
+// This channel persists for the lifetime of the background page. Note that I
+// verified this opening of a persistent page-lifetime channel does not prevent
+// the page from unloading and becoming inactive.
+const channel = new BroadcastChannel(localStorage.channel_name);
+channel.onmessage = background_page_channel_onmessage;
+
+async function background_page_channel_onmessage(event) {
+  if (!event.isTrusted) {
+    return;
+  }
+
+  const message = event.data;
+  if (!message) {
+    return;
+  }
+
+  // Look for any messages that may affect the displayed unread count, and if
+  // one is found, request the unread count to be updated.
+
+  const badge_types = ['entry-write', 'entry-deleted', 'entry-marked-read'];
+  if (badge_types.includes(message.type)) {
+    // TEMP: debugging to monitor new functionality
+    console.debug('Refreshing badge from background page', message.type);
+    refresh_badge();
+  }
+}
+
 async function init_badge() {
-  const conn = await open_reader_db();
-  refresh_badge(conn).catch(console.error);  // non-blocking
-  conn.close();
+  refresh_badge();
 }
 
 // On module load, register the install listener
