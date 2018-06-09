@@ -35,6 +35,8 @@ async function init_badge() {
   refresh_badge(window.location.pathname);
 }
 
+// TODO: somehow do not rebind every page load when not needed
+
 // On module load, register the install listener
 register_install_listener();
 
