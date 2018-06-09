@@ -1,7 +1,7 @@
-import {fonts} from '/src/config.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {import_opml} from '/src/import-opml.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
+import {localstorage_read_array} from '/src/lib/localstorage.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
 import {get_feeds, open_reader_db} from '/src/reader-db.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
@@ -135,7 +135,7 @@ function options_menu_onclick(event) {
   }
 }
 
-function header_font_menu_init() {
+function header_font_menu_init(fonts) {
   const menu = document.getElementById('header-font-menu');
   menu.onchange = header_font_menu_onchange;
   const current_header_font = localStorage.HEADER_FONT_FAMILY;
@@ -143,6 +143,9 @@ function header_font_menu_init() {
   default_option.value = '';
   default_option.textContent = 'Header Font';
   menu.appendChild(default_option);
+
+
+
   for (const font_name of fonts) {
     const option = document.createElement('option');
     option.value = font_name;
@@ -154,7 +157,7 @@ function header_font_menu_init() {
   }
 }
 
-function body_font_menu_init() {
+function body_font_menu_init(fonts) {
   const menu = document.getElementById('body-font-menu');
   menu.onchange = body_font_menu_onchange;
   const current_body_font = localStorage.BODY_FONT_FAMILY;
@@ -162,6 +165,7 @@ function body_font_menu_init() {
   default_option.value = '';
   default_option.textContent = 'Body Font';
   menu.appendChild(default_option);
+
   for (const font_name of fonts) {
     const option = document.createElement('option');
     option.value = font_name;
@@ -218,12 +222,17 @@ function window_onclick(event) {
   return true;
 }
 
+function leftpanel_init() {
+  const menu_options = document.getElementById('left-panel');
+  menu_options.onclick = options_menu_onclick;
+
+  // Load fonts from local storage once for both init helpers
+  const fonts = localstorage_read_array('fonts');
+  header_font_menu_init(fonts);
+  body_font_menu_init(fonts);
+
+  window.addEventListener('click', window_onclick);
+}
+
 // Initialize things on module load
-const menu_options = document.getElementById('left-panel');
-menu_options.onclick = options_menu_onclick;
-
-header_font_menu_init();
-
-body_font_menu_init();
-
-window.addEventListener('click', window_onclick);
+leftpanel_init();

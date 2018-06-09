@@ -17,6 +17,15 @@ const background_images = [
   'thomas-zucx-noise-lines.png'
 ];
 
+// The default set of fonts the user can select from to customize the display of
+// text in slides
+const fonts = [
+  'ArchivoNarrow-Regular', 'Arial', 'Calibri', 'Cambria', 'CartoGothicStd',
+  'Edward Tufte Roman', 'Fanwood', 'Georgia', 'League Mono Regular',
+  'League Spartan', 'Montserrat', 'Noto Sans', 'Open Sans Regular',
+  'PathwayGothicOne', 'PlayfairDisplaySC', 'Roboto Regular'
+];
+
 // Bind the install event listener to the browser so that it can hear install
 // events
 export function register_install_listener() {
@@ -105,6 +114,11 @@ function init_localstorage(previousVersion) {
   // NOTE: from now on, if images change, this has to also remove/update/etc
   if (typeof localStorage.background_images === 'undefined') {
     localStorage.background_images = JSON.stringify(background_images);
+  }
+
+  // Initialize or update font settings
+  if (typeof localStorage.fonts === 'undefined') {
+    localStorage.fonts = JSON.stringify(fonts);
   }
 }
 
