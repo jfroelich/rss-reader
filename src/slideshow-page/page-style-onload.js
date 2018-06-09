@@ -12,10 +12,18 @@ export function page_style_onload() {
 
 function page_style_entry_rule_create() {
   const buffer = [];
-  const path = localStorage.BG_IMAGE;
+
+  let path = localStorage.BG_IMAGE;
+
+  // Support for legacy path that included folder
+  if (path && path.startsWith('/images/')) {
+    path = path.substring('/images/'.length);
+  }
+
   const color = localStorage.BG_COLOR;
+
   if (path) {
-    buffer.push(`background: url("${path}");`);
+    buffer.push(`background: url("/images/${path}");`);
   } else if (color) {
     buffer.push(`background: ${color};`);
   }

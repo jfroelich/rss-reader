@@ -604,13 +604,18 @@ function options_page_init() {
     option.textContent = 'Use background color';
     bg_image_menu.appendChild(option);
 
-    const current_bg_image_path = localStorage.BG_IMAGE;
-    const bg_image_relative_path_offset = '/images/'.length;
+    let current_path = localStorage.BG_IMAGE;
+
+    // Support for legacy path value
+    if (current_path && current_path.startsWith('/images/')) {
+      current_path = current_path.substring('/images/'.length);
+    }
+
     for (const path of config.background_images) {
       let option = document.createElement('option');
       option.value = path;
-      option.textContent = path.substring(bg_image_relative_path_offset);
-      option.selected = current_bg_image_path === path;
+      option.textContent = path;
+      option.selected = current_path === path;
       bg_image_menu.appendChild(option);
     }
   }

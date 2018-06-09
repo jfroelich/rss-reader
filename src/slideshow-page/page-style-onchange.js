@@ -18,12 +18,18 @@ function page_style_entry_update() {
   }
 
   const style = rule.style;
-  const path = localStorage.BG_IMAGE;
+  let path = localStorage.BG_IMAGE;
+
+  // Support for legacy path values
+  if (path && path.startsWith('/images/')) {
+    path = path.substring('/images/'.length);
+  }
+
   const color = localStorage.BG_COLOR;
 
   if (path) {
     style.backgroundColor = '';
-    style.backgroundImage = `url("${path}")`;
+    style.backgroundImage = `url("/images/${path}")`;
   } else if (color) {
     style.backgroundColor = color;
     style.backgroundImage = '';
