@@ -38,11 +38,7 @@ import {get_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-d
 export async function subscribe(rconn, iconn, channel, url, options) {
   console.log('Subscribing to feed', url.href);
 
-  // TODO: create a local helper that wraps this call and takes a conn and url
-  // parameter, use it for both cases
-  let prior_feed = await get_feed(rconn, 'url', url, true);
-
-  if (prior_feed) {
+  if (await feed_exists(rconn, url)) {
     console.debug('Url exists', url.href);
     return;
   }
@@ -55,9 +51,7 @@ export async function subscribe(rconn, iconn, channel, url, options) {
 
   const response_url = new URL(response.url);
   if (url_did_change(url, response_url)) {
-    prior_feed = await get_feed(rconn, 'url', response_url, true);
-
-    if (prior_feed) {
+    if (await feed_exists(rconn, response_url)) {
       console.debug('Redirect url exists', url.href, response_url.href);
       return;
     }
@@ -103,4 +97,12 @@ export async function subscribe(rconn, iconn, channel, url, options) {
   }
 
   return feed;
+}
+
+// Returns a promise that resolves to whether a feed with the given url exists
+// in the database
+function feed_exists(conn, url) {
+  const query_mode = 'url';
+  const load_key_only = true;
+  return get_feed(conn, query_mode, url, load_key_only);
 }
