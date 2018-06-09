@@ -71,7 +71,6 @@ export async function sanitize_document(document) {
       localstorage_read_int('sanitize_document_low_contrast_default_matte');
 
   // TODO: lowercase
-  // TODO: init on install
   const mcr = localstorage_read_float('MIN_CONTRAST_RATIO');
   filter_hidden_elements(document, matte, mcr);
 
