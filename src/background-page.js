@@ -25,17 +25,14 @@ async function background_page_channel_onmessage(event) {
 
   // Look for any messages that may affect the displayed unread count, and if
   // one is found, request the unread count to be updated.
-
   const badge_types = ['entry-write', 'entry-deleted', 'entry-marked-read'];
   if (badge_types.includes(message.type)) {
-    // TEMP: debugging to monitor new functionality
-    console.debug('Refreshing badge from background page', message.type);
-    refresh_badge();
+    refresh_badge(window.location.pathname);
   }
 }
 
 async function init_badge() {
-  refresh_badge();
+  refresh_badge(window.location.pathname);
 }
 
 // On module load, register the install listener

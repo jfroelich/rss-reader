@@ -81,6 +81,13 @@ function query_idle_state(idle_period_secs) {
   });
 }
 
+// This is just a precaution that deletes the lock periodically, so that due to
+// error a user is not left with an unread count that permanently stops
+// updating. Now if it gets into bad state it will only last until this alarm.
+function handle_cleanup_refresh_badge_lock(alarm) {
+  delete localStorage.refresh_badge_cross_page_lock;
+}
+
 chrome.alarms.onAlarm.addListener(function(alarm) {
   log('onalarm: alarm name', alarm.name);
   localStorage.LAST_ALARM = alarm.name;
@@ -104,12 +111,15 @@ chrome.alarms.onAlarm.addListener(function(alarm) {
     case 'compact-favicon-db':
       handle_compact_favicons_alarm(alarm).catch(log);
       break;
+    case 'cleanup-refresh-badge-lock':
+      handle_cleanup_refresh_badge_lock(alarm);
     default:
       log('unhandled alarm', alarm.name);
       break;
   }
 });
 
+chrome.alarms.create('cleanup-refresh-badge-lock', {periodInMinutes: 60 * 12});
 chrome.alarms.create('archive', {periodInMinutes: 60 * 12});
 chrome.alarms.create('poll', {periodInMinutes: 60});
 chrome.alarms.create(

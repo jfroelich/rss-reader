@@ -7,7 +7,7 @@ import {remove_slide} from '/src/slideshow-page/remove-slide.js';
 import {is_current_slide} from '/src/slideshow-page/slideshow-state.js';
 
 // React to an incoming message event to the channel
-async function channel_onmessage(event) {
+async function slideshow_channel_onmessage(event) {
   if (!event.isTrusted) {
     console.warn('Untrusted event:', event);
     return;
@@ -21,9 +21,7 @@ async function channel_onmessage(event) {
 
   const badge_types = ['entry-write', 'entry-deleted', 'entry-marked-read'];
   if (badge_types.includes(message.type)) {
-    // TEMP: debugging to monitor new functionality
-    console.debug('Refreshing badge from slideshow page', message.type);
-    refresh_badge();
+    refresh_badge(window.location.pathname);
   }
 
   // NOTE: some of the handlers are async because they do async things. we
@@ -216,5 +214,5 @@ function find_slide_by_entry_id(entry_id) {
 // because it needs to listen for messages indefinitely so long as the page is
 // loaded.
 const channel = new BroadcastChannel(localStorage.channel_name);
-channel.onmessage = channel_onmessage;
+channel.onmessage = slideshow_channel_onmessage;
 channel.onmessageerror = channel_onmessageerror;

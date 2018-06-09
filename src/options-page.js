@@ -19,7 +19,7 @@ let current_section;
 
 const channel = new BroadcastChannel(localStorage.channel_name);
 log('Created channel:', channel.name);
-channel.onmessage = function(event) {
+channel.onmessage = function options_page_onmessage(event) {
   if (!event.isTrusted) {
     return;
   }
@@ -35,9 +35,7 @@ channel.onmessage = function(event) {
   // loaded.
   const badge_types = ['entry-write', 'entry-deleted', 'entry-marked-read'];
   if (badge_types.includes(message.type)) {
-    // TEMP: debugging to monitor new functionality
-    console.debug('Refreshing badge from options page', message.type);
-    refresh_badge();
+    refresh_badge(window.location.pathname);
   }
 
   switch (message.type) {
