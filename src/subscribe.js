@@ -7,32 +7,16 @@ import {parse_feed} from '/src/lib/parse-feed.js';
 import {notify} from '/src/notify.js';
 import {get_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-db.js';
 
-// TODO: revert to throwing an exception in any non-success path. This means
-// that callers will need to use try/catch. The code is just so ugly now, and
-// is unconventional. I am forced into exception syntax.
-
 // Subscribe to a feed
-// @context-param rconn {IDBDatabase} an open database connection to the feed
-// database
-// @context-param iconn {IDBDatabase} an open database connection to the icon
-// database for caching favicon lookups, optional
-// @context-param channel {BroadcastChannel} an open channel that will receive
-// messages such as the feed being created within the database
-// @param url {URL} the url of the feed to subscribe
-// @param notify {Boolean} whether to send a notification on successful
-// subscription, defaults to true
-// @param fetch_timeout {Number} should be a positive integer, optional, how
-// many milliseconds to wait before considering a fetch of the url a failure
-// @param skip_icon_lookup {Boolean} whether to skip the favicon lookup for the
-// new feed, default false
-// @error {TypeError} if the input url is not a url
-// @error {DOMException} database errors
-// @error {InvalidStateError} if the channel is closed at the time a message is
-// posted
-// @return {Promise} if successful, the promise resolves to the feed object that
-// was stored in the database. If an error occurred, then the promise rejects.
-// If the feed, or the redirected url of the feed, exist in the database, then
-// resolves to undefined (not an error).
+// @param rconn {IDBDatabase} an open feed database connection
+// @param iconn {IDBDatabase} an open icon database connection
+// @param channel {BroadcastChannel} where to send messages
+// @param url {URL} the url to subscribe
+// @param notify {Boolean} whether to send a notification
+// @param fetch_timeout {Number} fetch timeout
+// @param skip_icon_lookup {Boolean}
+// @error database errors, type errors, fetch errors, etc
+// @return {Promise} resolves to the feed stored in the database
 export async function subscribe(
     rconn, iconn, channel, url, fetch_timeout, should_notify = true,
     skip_icon_lookup) {
