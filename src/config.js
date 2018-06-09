@@ -1,12 +1,11 @@
 import * as color from '/src/lib/color.js';
 
-// The config module is a global app module depended upon by several other app
-// modules. It provides constant settings. The module exists because it provides
-// a single point of access to modify settings, which is simpler to change than
-// hunting down settings dispersed among many files. In other words this design
-// is easier to maintain over time.
+// The config module provides a single point of access to configure the app,
+// which is simpler to maintain and tweak than hunting down settings dispersed
+// across files.
 
-// Article backgrounds
+// Slideshow slide background images
+// TODO: the base path should not be a part of the value
 export const background_images = [
   '/images/bgfons-paper_texture318.jpg', '/images/CCXXXXXXI_by_aqueous.jpg',
   '/images/paper-backgrounds-vintage-white.jpg',
