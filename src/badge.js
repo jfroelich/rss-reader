@@ -1,40 +1,29 @@
+import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
 import {count_unread_entries, open_reader_db} from '/src/reader-db.js';
-
-// So, no more update_pending fake mutex thing. Instead, we debounce by having
-// multiple things call this, and each one cancels any pending before scheduling
-// a refresh. So if multiple calls, the later one always wins because it cancels
-// the earlier one.
-
-// BUG: it isn't debouncing. Everything is getting scheduled and nothing is
-// getting canceled, because they all get scheduled too quickly. I am only
-// setting the 'schedule without debounce' message in the console.
-
-// BENCH NOTES: performance.now() showed approximately 1-3ms delay in the
-// zero-delay configuration, seems fine in that case.
 
 let debounce_timer_id = undefined;
 
+// Refreshes the unread articles count displayed in the extension's browser
+// action in the Chrome chrome. Operations that affect the unread count,
+// actually or potentially, should follow up with a call to this function so as
+// to update the view state to match the model state.
+//
+// The update is not immediate but is instead scheduled to occur shortly after
+// refresh is called. If there is a concurrent request that occurs during the
+// initial request delay, then it cancels the prior request. The latter request
+// wins. The latter request generally implies that data changed after the prior
+// request, so the latter request will be more accurate.
 export function refresh_badge() {
   if (typeof debounce_timer_id !== 'undefined') {
-    console.debug('Clearning refresh-badge debounce timer', debounce_timer_id);
+    console.debug('Clearning timer', debounce_timer_id);
     clearTimeout(debounce_timer_id);
     debounce_timer_id = undefined;
   } else {
     // TEMP
-    console.debug('Scheduling refresh-badge without clearing debounce timer');
+    console.debug('Not clearing timer');
   }
 
-  // Using a longer delay than near-0 to increase cancelation frequency. The
-  // delay is in milliseconds. Using asap delay (setting delay to 0 or
-  // undefined) was leading to obverably nothing getting canceled and everything
-  // getting scheduled too quickly and reaching its end of deferrment and
-  // starting and therefore everything was running concurrently. So now this
-  // imposes a fake delay on unread count updating that is probably higher than
-  // the default near-0 delay. I don't think it will be noticeable but not sure.
-  // It turns out that the cross-tab channel messages get sent faster than I
-  // expected. Comp specs and load might be a factor I am not accounting for.
-  let delay = 20;
-
+  let delay = localstorage_read_int(localStorage.refresh_badge_delay);
   debounce_timer_id = setTimeout(do_scheduled_refresh, delay);
 }
 
