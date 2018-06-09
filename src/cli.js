@@ -26,25 +26,21 @@ import {subscribe} from '/src/subscribe.js';
 
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
-  const op = {};
   const proms = [open_reader_db(), favicon_create_conn()];
-  [op.rconn, op.iconn] = await Promise.all(proms);
-
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.subscribe = subscribe;
-
+  const [rconn, iconn] = await Promise.all(proms);
+  const channel = new BroadcastChannel(localStorage.channel_name);
   const options = {fetch_timeout: 3000, notify: true};
-  const feed = await op.subscribe(url, options);
+  const feed = await subscribe(rconn, iconn, channel, url, options);
 
   // Do a sequential poll of the created feed
   if (poll) {
     const poll_options = {ignore_recency_check: true, notify: true};
-    await poll_feed(op.rconn, op.iconn, op.channel, poll_options, feed);
+    await poll_feed(rconn, iconn, channel, poll_options, feed);
   }
 
-  op.rconn.close();
-  op.iconn.close();
-  op.channel.close();
+  rconn.close();
+  iconn.close();
+  channel.close();
 }
 
 async function cli_archive_entries() {

@@ -7,7 +7,9 @@ import {parse_feed} from '/src/lib/parse-feed.js';
 import {notify} from '/src/notify.js';
 import {get_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-db.js';
 
-
+// TODO: revert to throwing an exception in any non-success path. This means
+// that callers will need to use try/catch. The code is just so ugly now, and
+// is unconventional. I am forced into exception syntax.
 
 // Subscribe to a feed
 // @context-param rconn {IDBDatabase} an open database connection to the feed
@@ -33,12 +35,12 @@ import {get_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-d
 // was stored in the database. If an error occurred, then the promise rejects.
 // If the feed, or the redirected url of the feed, exist in the database, then
 // resolves to undefined (not an error).
-export async function subscribe(url, options) {
+export async function subscribe(rconn, iconn, channel, url, options) {
   console.log('Subscribing to feed', url.href);
 
   // TODO: create a local helper that wraps this call and takes a conn and url
   // parameter, use it for both cases
-  let prior_feed = await get_feed(this.rconn, 'url', url, true);
+  let prior_feed = await get_feed(rconn, 'url', url, true);
 
   if (prior_feed) {
     console.debug('Url exists', url.href);
@@ -53,7 +55,7 @@ export async function subscribe(url, options) {
 
   const response_url = new URL(response.url);
   if (url_did_change(url, response_url)) {
-    prior_feed = await get_feed(this.rconn, 'url', response_url, true);
+    prior_feed = await get_feed(rconn, 'url', response_url, true);
 
     if (prior_feed) {
       console.debug('Redirect url exists', url.href, response_url.href);
@@ -78,19 +80,20 @@ export async function subscribe(url, options) {
     response_last_modified_date: lmd.getTime() === NaN ? null : lmd
   });
 
-  if (!options.skip_icon_lookup) {
-    const lookup_url = favicon_create_feed_lookup_url(feed);
-    let lookup_doc = undefined, fetch = false;
-    feed.faviconURLString =
-        await favicon_lookup(this.iconn, lookup_url, lookup_doc, fetch);
-  }
-
   if (!is_valid_feed(feed)) {
     throw new Error('Invalid feed ' + JSON.stringify(feed));
   }
 
+  // TODO: use a helper here that is a wrapper
+  if (!options.skip_icon_lookup) {
+    const lookup_url = favicon_create_feed_lookup_url(feed);
+    let lookup_doc = undefined, fetch = false;
+    feed.faviconURLString =
+        await favicon_lookup(iconn, lookup_url, lookup_doc, fetch);
+  }
+
   sanitize_feed(feed);
-  await update_feed(this.rconn, this.channel, feed);
+  await update_feed(rconn, channel, feed);
 
   if (options.notify) {
     const title = 'Subscribed!';

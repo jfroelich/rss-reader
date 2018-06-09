@@ -24,13 +24,7 @@ async function subscribe_test() {
   channel_stub.postMessage = _ => message_post_count++;
   channel_stub.close = noop;
 
-  const subscribe_op = {
-    rconn: rconn,
-    channel: channel_stub,
-    subscribe: subscribe
-  };
-
-  const feed = await subscribe_op.subscribe(url, options);
+  const feed = await subscribe(rconn, undefined, channel_stub, url, options);
 
   // Test the subscription produced the desired result
   assert(typeof feed === 'object', 'subscribe did not emit an object ' + feed);

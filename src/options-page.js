@@ -299,16 +299,12 @@ async function subscribe_form_onsubmit(event) {
   const conn_promises = Promise.all([open_reader_db(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
 
-  const op = {};
-  op.rconn = rconn;
-  op.iconn = iconn;
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.subscribe = subscribe;
-  const feed = await op.subscribe(subscribe_url, {notify: true});
-
+  const channel = new BroadcastChannel(localStorage.channel_name);
+  const feed =
+      await subscribe(rconn, iconn, channel, subscribe_url, {notify: true});
   rconn.close();
   iconn.close();
-  op.channel.close();
+  channel.close();
 
   feed_list_append_feed(feed);
   subscription_monitor_append_message('Subscribed to ' + list_peek(feed.urls));

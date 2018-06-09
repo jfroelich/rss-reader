@@ -83,15 +83,6 @@ async function import_file(subscribe_promises, file, options) {
   // urls is a defined array.
   const urls = dedup_urls(find_feed_urls(document));
 
-  // Setup a generic subscribe operation context that we will reuse for each
-  // subscribe operation. This is safe for reuse because subscribe warrants
-  // treatment of context as immutable.
-  const op = {};
-  op.rconn = this.rconn;
-  op.iconn = this.iconn;
-  op.channel = this.channel;
-  op.subscribe = subscribe;
-
   const sub_options = {};
   sub_options.fetch_timeout = options.fetch_timeout;
   sub_options.skip_icon_lookup = options.skip_icon_lookup;
@@ -100,9 +91,8 @@ async function import_file(subscribe_promises, file, options) {
   // For each feed url, subscribe. Store a reference to the subscribe promise
   // in the promises array.
   for (const url of urls) {
-    // subscribe returns a promise, and we want the promise here, since we are
-    // doing concurrent subscription operations, so we do not await
-    const subscribe_promise = op.subscribe(url, sub_options);
+    const subscribe_promise =
+        subscribe(this.rconn, this.iconn, this.channel, url, sub_options);
     subscribe_promises.push(subscribe_promise);
   }
 }
