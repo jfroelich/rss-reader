@@ -45,19 +45,16 @@ export function favicon_create_feed_lookup_url(feed) {
   return new URL(tail_url.origin);
 }
 
-export async function favicon_refresh_feeds() {
-  const feeds = await get_feeds(this.rconn, 'active');
-
+export async function favicon_refresh_feeds(rconn, iconn, channel) {
+  const feeds = await get_feeds(rconn, 'active');
   const promises = [];
-  const refresh_feed_bound = refresh_feed.bind(this);
   for (const feed of feeds) {
-    promises.push(refresh_feed_bound(feed));
+    promises.push(refresh_feed(rconn, iconn, channel, feed));
   }
-
   return Promise.all(promises);
 }
 
-async function refresh_feed(feed) {
+async function refresh_feed(rconn, iconn, channel, feed) {
   if (list_is_empty(feed.urls)) {
     return;
   }
@@ -68,7 +65,7 @@ async function refresh_feed(feed) {
   }
 
   let doc, fetch_flag = true;
-  const lookup_op = {conn: this.iconn, favicon_lookup: favicon_lookup};
+  const lookup_op = {conn: iconn, favicon_lookup: favicon_lookup};
   const icon_url_string =
       await lookup_op.favicon_lookup(lookup_url, doc, fetch_flag);
 
@@ -79,6 +76,6 @@ async function refresh_feed(feed) {
       delete feed.faviconURLString;
     }
 
-    await update_feed(this.rconn, this.channel, feed);
+    await update_feed(rconn, channel, feed);
   }
 }

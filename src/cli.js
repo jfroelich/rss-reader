@@ -56,18 +56,10 @@ async function cli_archive_entries() {
 }
 
 async function cli_refresh_icons() {
-  // TODO: no need for extra vars here, assign directly into op
-
   const proms = [open_reader_db(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
-
-  const op = {};
-  op.rconn = rconn;
-  op.iconn = iconn;
-  op.channel = channel;
-  op.favicon_refresh_feeds = favicon_refresh_feeds;
-  await op.favicon_refresh_feeds();
+  await favicon_refresh_feeds(rconn, iconn, channel);
   rconn.close();
   iconn.close();
   channel.close();
