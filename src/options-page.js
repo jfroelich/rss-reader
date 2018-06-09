@@ -1,7 +1,6 @@
 import '/src/cli.js';
 
 import {refresh_badge} from '/src/badge.js';
-import * as config from '/src/config.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';

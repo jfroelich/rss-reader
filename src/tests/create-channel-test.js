@@ -1,4 +1,3 @@
-import * as config from '/src/config.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 
