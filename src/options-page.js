@@ -6,7 +6,6 @@ import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import * as perm from '/src/lib/permissions.js';
-import {log} from '/src/log.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {delete_feed, get_feed, get_feeds, open_reader_db, update_feed_properties} from '/src/reader-db.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
@@ -18,7 +17,6 @@ let current_menu_item;
 let current_section;
 
 const channel = new BroadcastChannel(localStorage.channel_name);
-log('Created channel:', channel.name);
 channel.onmessage = function options_page_onmessage(event) {
   if (!event.isTrusted) {
     return;
@@ -43,7 +41,7 @@ channel.onmessage = function options_page_onmessage(event) {
       page_style_onchange(event);
       break;
     case 'feed-written':
-      log('message handler not yet implemented', message);
+      console.warn('message handler not yet implemented', message);
       break;
     default:
       break;
@@ -51,7 +49,7 @@ channel.onmessage = function options_page_onmessage(event) {
 };
 
 channel.onmessageerror = function(event) {
-  log(event);
+  console.warn(event);
 };
 
 function subscription_monitor_show() {
@@ -79,7 +77,7 @@ function subscription_monitor_append_message(message) {
 async function subscription_monitor_hide() {
   const monitor_element = document.getElementById('submon');
   if (!monitor_element) {
-    log('Cannot find element #submon');
+    console.error('Cannot find element #submon');
     return;
   }
 
@@ -262,7 +260,7 @@ async function subscribe_form_onsubmit(event) {
 
   let monitor_element = document.getElementById('submon');
   if (monitor_element && monitor_element.style.display === 'block') {
-    log('prior subscription in progress');
+    console.debug('prior subscription in progress');
     return false;
   }
 
@@ -271,7 +269,7 @@ async function subscribe_form_onsubmit(event) {
 
   // fail horribly. this should never happen and is a serious error
   // if (!monitor_element) {
-  //  log('failed to find subscription monitor element');
+  //  console.error('failed to find subscription monitor element');
   //  return;
   //}
 
@@ -281,7 +279,7 @@ async function subscribe_form_onsubmit(event) {
   subscribe_url_string = subscribe_url_string.trim();
 
   if (!subscribe_url_string) {
-    log('canceling submit, empty input');
+    console.debug('canceling submit, empty input');
     return false;
   }
 
@@ -289,7 +287,7 @@ async function subscribe_form_onsubmit(event) {
   try {
     subscribe_url = new URL(subscribe_url_string);
   } catch (exception) {
-    log(exception);
+    console.debug(exception);
     return false;
   }
 
@@ -317,7 +315,7 @@ async function subscribe_form_onsubmit(event) {
   section_show_by_id('subs-list-section');
 
   // intentionally non-blocking
-  after_subscribe_poll_feed_async(feed).catch(log);
+  after_subscribe_poll_feed_async(feed).catch(console.error);
   return false;
 }
 
@@ -364,7 +362,7 @@ function feed_list_remove_feed_by_id(feed_id) {
       document.querySelector(`#feedlist li[feed="${feed_id}"]`);
 
   if (!feed_element) {
-    log('Could not find feed element with feed id', feed_id);
+    console.error('Could not find feed element with feed id', feed_id);
     return;
   }
 
@@ -504,7 +502,7 @@ function entry_bg_color_input_oninput(event) {
 
 function entry_margin_slider_onchange(event) {
   const margin = event.target.value;
-  log('entry_margin_slider_onchange new value', margin);
+  console.debug('entry_margin_slider_onchange new value', margin);
 
   if (margin) {
     localStorage.PADDING = margin;
@@ -534,7 +532,7 @@ function body_font_size_slider_onchange(event) {
     delete localStorage.BODY_FONT_SIZE;
   }
 
-  log('setting body font size changed message');
+  console.debug('setting body font size changed message');
   channel.postMessage({type: 'display-settings-changed'});
 }
 

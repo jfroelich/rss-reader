@@ -7,7 +7,6 @@ import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
-import {log} from '/src/log.js';
 import {append_entry_url, get_entry, is_valid_entry, is_valid_entry_id, sanitize_entry, update_entry} from '/src/reader-db.js';
 import {sanitize_document} from '/src/sanitize-document.js';
 

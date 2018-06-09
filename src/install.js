@@ -1,20 +1,19 @@
 import {favicon_create_conn} from '/src/favicon.js';
 import * as color from '/src/lib/color.js';
-import {log} from '/src/log.js';
 import {open_reader_db} from '/src/reader-db.js';
 
 // Bind the install event listener to the browser so that it can hear install
 // events
 export function register_install_listener() {
-  log('Binding app install listener:', oninstalled.name);
+  console.debug('Adding onInstalled listener');
   chrome.runtime.onInstalled.addListener(oninstalled);
 }
 
 // Handle an install event
 async function oninstalled(event) {
-  log('Received oninstalled event, installing...');
-  log('Previous version (?):', event.previousVersion);
-  log('Install reason:', event.reason);
+  console.debug(
+      'Received oninstalled event: previous version %s install reason %s',
+      event.previousVersion, event.reason);
 
   init_localstorage();
 
@@ -29,8 +28,6 @@ async function oninstalled(event) {
 
 // Write default values to localStorage
 function init_localstorage() {
-  log('Initializing local storage...');
-
   // NOTE: local storage values are strings. This relies on implicit coercion
 
   // Logging is disabled by default, this may be an upgrade and the value

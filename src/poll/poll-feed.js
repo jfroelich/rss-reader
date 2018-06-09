@@ -3,7 +3,6 @@ import {fetch_feed} from '/src/fetch.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {STATUS_OFFLINE, STATUS_TIMEOUT} from '/src/lib/net/load-url.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
-import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
 import {append_entry_url, append_feed_url, create_entry, create_feed, is_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-db.js';
@@ -31,11 +30,11 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const tail_url = new URL(list_peek(feed.urls));
 
   if (!feed.active) {
-    log('Ignoring inactive feed', tail_url.href);
+    console.debug('Ignoring inactive feed', tail_url.href);
     return 0;
   }
 
-  log('%s: polling "%s"', poll_feed.name, feed.title, tail_url.href);
+  console.debug('%s: polling "%s"', poll_feed.name, feed.title, tail_url.href);
 
   // Exit if the feed was checked too recently
   if (!ignore_recency_check && feed.dateFetched) {
@@ -48,14 +47,15 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
     }
 
     if (elapsed_ms < recency_period) {
-      log('Feed polled too recently', tail_url.href);
+      console.debug('Feed polled too recently', tail_url.href);
       return 0;
     }
   }
 
   const response = await fetch_feed(tail_url, fetch_feed_timeout);
   if (!response.ok) {
-    log('Error fetching feed', tail_url.href, response.status,
+    console.debug(
+        'Error fetching feed', tail_url.href, response.status,
         response.statusText);
     const error_type = 'fetch';
     await handle_error(
@@ -76,7 +76,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   try {
     parsed_feed = parse_feed(response_text, skip_entries, resolve_urls);
   } catch (error) {
-    log('Error parsing feed', tail_url.href, error);
+    console.debug('Error parsing feed', tail_url.href, error);
     let status;
     const error_type = 'parse';
     await handle_error(
@@ -121,7 +121,8 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 async function poll_entries(rconn, iconn, channel, options, entries, feed) {
   const feed_url_string = list_peek(feed.urls);
 
-  log('%s: processing %d entries', poll_entries.name, entries.length,
+  console.debug(
+      '%s: processing %d entries', poll_entries.name, entries.length,
       feed_url_string);
 
   const coerced_entries = entries.map(coerce_entry);
@@ -192,7 +193,8 @@ async function handle_error(
     return;
   }
 
-  log('Incremented error count for feed', feed.title, feed.errorCount);
+  console.debug(
+      'Incremented error count for feed', feed.title, feed.errorCount);
 
   // Init or increment
   feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;

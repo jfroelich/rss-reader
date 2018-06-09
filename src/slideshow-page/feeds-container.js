@@ -1,5 +1,4 @@
 import {list_peek} from '/src/lib/lang/list.js';
-import {log} from '/src/log.js';
 
 export function feeds_container_append_feed(feed) {
   const feeds_container = document.getElementById('feeds-container');
@@ -111,7 +110,7 @@ function toggle_details(feed_element) {
 }
 
 function unsubscribe_button_onclick(event) {
-  log('Unsubscribe (not yet implemented)', event.target);
+  console.warn('Unsubscribe (not yet implemented)', event.target);
 }
 
 // Initialize things on module load

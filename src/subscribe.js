@@ -4,7 +4,6 @@ import {fetch_feed} from '/src/fetch.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
-import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
 import {get_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-db.js';
 
@@ -35,7 +34,7 @@ import {get_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-d
 // If the feed, or the redirected url of the feed, exist in the database, then
 // resolves to undefined (not an error).
 export async function subscribe(url, options) {
-  log('Subscribing to feed', url.href);
+  console.log('Subscribing to feed', url.href);
 
   // TODO: create a local helper that wraps this call and takes a conn and url
   // parameter, use it for both cases
@@ -43,13 +42,13 @@ export async function subscribe(url, options) {
   let prior_feed = await get_feed(this.rconn, 'url', url, true);
 
   if (prior_feed) {
-    log('%s: url exists', subscribe.name, url.href);
+    console.debug('%s: url exists', subscribe.name, url.href);
     return;
   }
 
   const response = await fetch_feed(url, options.fetch_timeout);
   if (!response.ok) {
-    log('%s: fetch error', subscribe.name, url.href, response.status);
+    console.debug('%s: fetch error', subscribe.name, url.href, response.status);
     return;
   }
 
@@ -58,8 +57,7 @@ export async function subscribe(url, options) {
     prior_feed = await get_feed(this.rconn, 'url', response_url, true);
 
     if (prior_feed) {
-      log('%s: redirect url exists', subscribe.name, url.href,
-          response_url.href);
+      console.debug('Redirect url exists', url.href, response_url.href);
       return;
     }
   }
@@ -70,7 +68,7 @@ export async function subscribe(url, options) {
   try {
     parsed_feed = parse_feed(response_text, skip_entries, resolve_urls);
   } catch (error) {
-    log('%s: parse error', subscribe.name, response.url, error);
+    console.debug('%s: parse error', subscribe.name, response.url, error);
     return;
   }
 

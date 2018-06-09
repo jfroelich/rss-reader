@@ -1,4 +1,3 @@
-import {log} from '/src/log.js';
 import {notify} from '/src/notify.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {get_feeds} from '/src/reader-db.js';
@@ -23,7 +22,7 @@ const default_options = {
 // Checks for new content
 export async function poll_feeds(
     rconn, iconn, channel = null_channel, options = {}) {
-  log('%s: starting...', poll_feeds.name);
+  console.debug('Starting...');
   const feeds = await get_feeds(rconn, 'active', false);
 
   console.debug('%s: loaded %d active feeds', poll_feeds.name, feeds.length);
@@ -33,7 +32,7 @@ export async function poll_feeds(
   const results = await Promise.all(proms);
   const count = results.reduce(accumulate_if_def, 0);
   show_poll_notification(count);
-  log('%s: completed, added %d entries', poll_feeds.name, count);
+  console.debug('Added %d entries', count);
 }
 
 function accumulate_if_def(sum, value) {

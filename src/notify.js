@@ -1,4 +1,3 @@
-import {log} from '/src/log.js';
 import {open_view} from '/src/open-view.js';
 
 const default_icon_url_string =
@@ -30,9 +29,9 @@ function click_handler(event) {
     const hwnd = window.open();
     hwnd.close();
   } catch (error) {
-    log(error);
+    console.error(error);
     return;
   }
 
-  open_view().catch(log);
+  open_view().catch(console.error);
 }
