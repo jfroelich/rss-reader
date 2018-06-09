@@ -11,6 +11,10 @@ const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 export async function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
   const entry_ids = [];
   const txn_writable = true;
+
+  // TODO: only load archivable entries to improve perf, currently this loads
+  // some non-archivable because it ignores date
+
   await iterate_entries(conn, 'archive', txn_writable, cursor => {
     const entry = cursor.value;
     if (!is_entry(entry)) {
@@ -44,6 +48,8 @@ export async function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
   }
 }
 
+// TODO: given deep knowledge of entry field structure, should this be partly
+// in reader-db.js? Or calling settings and getters instead?
 function archive_entry(entry) {
   const before_size = sizeof(entry);
   const ce = compact_entry(entry);
