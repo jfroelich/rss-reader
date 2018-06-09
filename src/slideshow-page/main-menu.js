@@ -33,10 +33,7 @@ async function refresh_button_onclick(event) {
   refresh_in_progress = false;
 }
 
-
 function toggle_left_pannel_button_onclick(event) {
-  console.debug('toggling left panel');
-
   const menu_options = document.getElementById('left-panel');
   if (menu_options.style.marginLeft === '0px') {
     options_menu_hide();
