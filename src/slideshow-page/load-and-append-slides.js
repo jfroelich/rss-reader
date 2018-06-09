@@ -1,4 +1,4 @@
-import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
+import {localstorage_read_int} from '/src/lib/localstorage.js';
 import {get_entries} from '/src/reader-db.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';

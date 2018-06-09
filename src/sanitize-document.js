@@ -38,8 +38,7 @@ import {filter_unknown_attrs} from '/src/lib/filters/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/lib/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {trim_document} from '/src/lib/filters/trim-document.js';
-import {localstorage_read_float} from '/src/lib/localstorage-read-float.js';
-import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
+import {localstorage_read_float, localstorage_read_int} from '/src/lib/localstorage.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense content

@@ -5,7 +5,7 @@ import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import {filter_unprintable_characters} from '/src/lib/lang/filter-unprintable-characters.js';
-import {localstorage_read_int} from '/src/lib/localstorage-read-int.js';
+import {localstorage_read_int} from '/src/lib/localstorage.js';
 
 // The reader-db.js module encapsulates database storage operations and formats
 // for the app.

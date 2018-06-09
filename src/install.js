@@ -1,5 +1,6 @@
 import {favicon_create_conn} from '/src/favicon.js';
 import * as color from '/src/lib/color.js';
+import {localstorage_set_if_undefined} from '/src/lib/localstorage.js';
 import {open_reader_db} from '/src/reader-db.js';
 
 // Bind the install event listener to the browser so that it can hear install
@@ -90,14 +91,4 @@ function remove_legacy_localstorage_keys() {
   delete localStorage.debug;
   delete localStorage.refresh_badge_delay;
   delete localStorage.sanitize_document_image_size_fetch_timeout;
-}
-
-// Values should generally be strings. If using a non-string, be wary of how
-// it gets coerced to a string.
-// TODO: create localstorage lib, move this there
-function localstorage_set_if_undefined(key, value) {
-  const old_value = localStorage[key];
-  if (typeof old_value === 'undefined') {
-    localStorage[key] = value;
-  }
 }
