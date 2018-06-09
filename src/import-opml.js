@@ -151,8 +151,7 @@ function find_feed_urls(document) {
   return urls;
 }
 
-// Read in the full text of a file
-export function file_read_text(file) {
+function file_read_text(file) {
   return new Promise(function executor(resolve, reject) {
     const reader = new FileReader();
     reader.readAsText(file);
