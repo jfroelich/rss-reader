@@ -31,6 +31,8 @@ async function cli_subscribe(url_string, poll = true) {
   const channel = new BroadcastChannel(localStorage.channel_name);
   const fetch_timeout = 3000;
   const notify = true;
+
+  // Bubble up errors to console
   const feed = await subscribe(
       rconn, iconn, channel, url, options, fetch_timeout, notify);
 

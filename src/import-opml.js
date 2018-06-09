@@ -87,7 +87,12 @@ async function import_file(subscribe_promises, file, options) {
     const subscribe_promise = subscribe(
         this.rconn, this.iconn, this.channel, url, options.fetch_timeout, false,
         options.skip_icon_lookup);
-    subscribe_promises.push(subscribe_promise);
+
+    // subscribe_promises will eventually be used with Promise.all, this avoids
+    // the shortcircuiting behavior when an error occurs (untested)
+    const catch_promise = subscribe_promise.catch(e => console.warn(e));
+
+    subscribe_promises.push(catch_promise);
   }
 }
 

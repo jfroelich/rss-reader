@@ -296,6 +296,8 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_show();
   subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
+  // TODO: subscribe can now throw an error, this should catch the error and
+  // show a nice error message or something instead of panic
   // TODO: move this to a helper
   const conn_promises = Promise.all([open_reader_db(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;

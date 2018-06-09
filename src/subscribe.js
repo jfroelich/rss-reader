@@ -34,69 +34,71 @@ import {get_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-d
 // If the feed, or the redirected url of the feed, exist in the database, then
 // resolves to undefined (not an error).
 export async function subscribe(
-    rconn, iconn, channel, url, fetch_timeout, notify = true,
+    rconn, iconn, channel, url, fetch_timeout, should_notify = true,
     skip_icon_lookup) {
-  console.log('Subscribing to feed', url.href);
-
   if (await feed_exists(rconn, url)) {
-    console.debug('Url exists', url.href);
-    return;
+    throw new Error('Already subscribed ' + url.href);
   }
 
   const response = await fetch_feed(url, fetch_timeout);
   if (!response.ok) {
-    console.debug('Fetch error', url.href, response.status);
-    return;
+    throw new Error(
+        'Fetching ' + url.href + ' failed with status ' + response.status);
   }
 
-  const response_url = new URL(response.url);
-  if (url_did_change(url, response_url)) {
-    if (await feed_exists(rconn, response_url)) {
-      console.debug('Redirect url exists', url.href, response_url.href);
-      return;
-    }
+  const res_url = new URL(response.url);
+  if (url_did_change(url, res_url) && await feed_exists(rconn, res_url)) {
+    throw new Error('Already subscribed ' + res_url.href);
   }
 
-  const skip_entries = true, resolve_urls = false;
-  const response_text = await response.text();
-  let parsed_feed;
-  try {
-    parsed_feed = parse_feed(response_text, skip_entries, resolve_urls);
-  } catch (error) {
-    console.debug('Parse error', response.url, error);
-    return;
-  }
-
-  const lmd = new Date(response.headers.get('Last-Modified'));
-  const feed = coerce_feed(parsed_feed, {
-    request_url: url,
-    response_url: response_url,
-    response_last_modified_date: lmd.getTime() === NaN ? null : lmd
-  });
-
+  const feed = await get_feed_from_response(response);
   if (!is_valid_feed(feed)) {
     throw new Error('Invalid feed ' + JSON.stringify(feed));
   }
 
-  // TODO: use a helper here that is a wrapper
   if (!skip_icon_lookup) {
-    const lookup_url = favicon_create_feed_lookup_url(feed);
-    let lookup_doc = undefined, fetch = false;
-    feed.faviconURLString =
-        await favicon_lookup(iconn, lookup_url, lookup_doc, fetch);
+    await set_favicon(iconn, feed);
   }
 
   sanitize_feed(feed);
   await update_feed(rconn, channel, feed);
 
-  if (notify) {
-    const title = 'Subscribed!';
-    const feed_title = feed.title || list_peek(feed.urls);
-    const message = 'Subscribed to ' + feed_title;
-    notify(title, message, feed.faviconURLString);
+  if (should_notify) {
+    show_success_notification(feed);
   }
 
   return feed;
+}
+
+async function get_feed_from_response(response) {
+  const skip_entries = true, resolve_urls = false;
+  const response_text = await response.text();
+  const parsed_feed = parse_feed(response_text, skip_entries, resolve_urls);
+
+  const res_url = new URL(response.url);
+  const lmd = new Date(response.headers.get('Last-Modified'));
+  const feed = coerce_feed(parsed_feed, {
+    request_url: url,
+    response_url: res_url,
+    response_last_modified_date: lmd.getTime() === NaN ? null : lmd
+  });
+
+  return feed;
+}
+
+async function set_favicon(conn, feed) {
+  const lookup_url = favicon_create_feed_lookup_url(feed);
+  let lookup_doc = undefined;
+  const fetch = false;
+  feed.faviconURLString =
+      await favicon_lookup(conn, lookup_url, lookup_doc, fetch);
+}
+
+function show_success_notification(feed) {
+  const title = 'Subscribed!';
+  const feed_title = feed.title || list_peek(feed.urls);
+  const message = 'Subscribed to ' + feed_title;
+  notify(title, message, feed.faviconURLString);
 }
 
 // Returns a promise that resolves to whether a feed with the given url exists

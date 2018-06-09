@@ -25,6 +25,9 @@ async function subscribe_test() {
   const fetch_timeout = 7000;
   const notify = false;
   const skip_icon_lookup = true;
+
+  // Rethrow subscribe exceptions just like assertion failures by omitting
+  // try/catch here.
   const feed = await subscribe(
       rconn, undefined, chan_stub, url, fetch_timeout, notify,
       skip_icon_lookup);
