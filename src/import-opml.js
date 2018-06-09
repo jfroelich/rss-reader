@@ -83,16 +83,10 @@ async function import_file(subscribe_promises, file, options) {
   // urls is a defined array.
   const urls = dedup_urls(find_feed_urls(document));
 
-  const sub_options = {};
-  sub_options.fetch_timeout = options.fetch_timeout;
-  sub_options.skip_icon_lookup = options.skip_icon_lookup;
-  sub_options.notify = false;  // Never notify
-
-  // For each feed url, subscribe. Store a reference to the subscribe promise
-  // in the promises array.
   for (const url of urls) {
-    const subscribe_promise =
-        subscribe(this.rconn, this.iconn, this.channel, url, sub_options);
+    const subscribe_promise = subscribe(
+        this.rconn, this.iconn, this.channel, url, options.fetch_timeout, false,
+        options.skip_icon_lookup);
     subscribe_promises.push(subscribe_promise);
   }
 }

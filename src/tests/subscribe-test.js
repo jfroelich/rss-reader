@@ -4,7 +4,6 @@ import {subscribe} from '/src/subscribe.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 
-
 // TODO: it is wrong to ping google, implement something that tests a local
 // file somehow (e.g. a feed that exists within the extension folder)
 
@@ -16,39 +15,43 @@ async function subscribe_test() {
   const rconn = await open_reader_db(rdb_name, version, timeout, console_stub);
 
   const url = new URL(test_url);
-  const options = {fetch_timeout: 7000, notify: false, skip_icon_lookup: true};
 
   let message_post_count = 0;
-  const channel_stub = {};
-  channel_stub.name = 'channel-stub';
-  channel_stub.postMessage = _ => message_post_count++;
-  channel_stub.close = noop;
+  const chan_stub = {};
+  chan_stub.name = 'channel-stub';
+  chan_stub.postMessage = _ => message_post_count++;
+  chan_stub.close = noop;
 
-  const feed = await subscribe(rconn, undefined, channel_stub, url, options);
+  const fetch_timeout = 7000;
+  const notify = false;
+  const skip_icon_lookup = true;
+  const feed = await subscribe(
+      rconn, undefined, chan_stub, url, fetch_timeout, notify,
+      skip_icon_lookup);
 
   // Test the subscription produced the desired result
-  assert(typeof feed === 'object', 'subscribe did not emit an object ' + feed);
-  assert(is_feed(feed), 'subscribe did not emit object of correct type');
+  assert(typeof feed === 'object');
+  assert(is_feed(feed));
   assert(is_valid_feed_id(feed.id));
-  assert(feed.urls.length, 'subscribe produced feed without urls');
-  assert(feed.urls.includes(url.href), 'subscribed feed missing input url');
-  assert(feed.active, 'subscribed feed not initially active');
+  assert(feed.urls.length);
+  assert(feed.urls.includes(url.href));
+  assert(feed.active);
 
   // Assert that the subscription sent out messages
-  assert(message_post_count > 0, 'no message posted');
+  assert(message_post_count > 0);
 
   // Assert that the new feed is findable by url
   assert(await get_feed(rconn, 'url', url, true));
 
   // Assert that the new feed is findable by id
   const match = await get_feed(rconn, 'id', feed.id);
-  assert(is_feed(match), 'subscribed feed read did not emit feed type');
-  assert(is_valid_feed_id(match.id), 'subscribed feed has invalid id');
-  assert(match.id === feed.id, 'subscribed feed vs stored feed id mismatch');
+  assert(is_feed(match));
+  assert(is_valid_feed_id(match.id));
+  assert(match.id === feed.id);
 
   // Cleanup
   rconn.close();
-  channel_stub.close();
+  chan_stub.close();
   await indexeddb_remove(rconn.name);
 }
 

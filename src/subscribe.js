@@ -19,13 +19,11 @@ import {get_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-d
 // @context-param channel {BroadcastChannel} an open channel that will receive
 // messages such as the feed being created within the database
 // @param url {URL} the url of the feed to subscribe
-// @param options {object} various options to customize the behavior of the
-// subscribe operation, optional
-// @option notify {Boolean} whether to send a notification on successful
-// subscription, defaults to false
-// @option fetch_timeout {Number} should be a positive integer, optional, how
+// @param notify {Boolean} whether to send a notification on successful
+// subscription, defaults to true
+// @param fetch_timeout {Number} should be a positive integer, optional, how
 // many milliseconds to wait before considering a fetch of the url a failure
-// @option skip_icon_lookup {Boolean} whether to skip the favicon lookup for the
+// @param skip_icon_lookup {Boolean} whether to skip the favicon lookup for the
 // new feed, default false
 // @error {TypeError} if the input url is not a url
 // @error {DOMException} database errors
@@ -35,7 +33,9 @@ import {get_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-d
 // was stored in the database. If an error occurred, then the promise rejects.
 // If the feed, or the redirected url of the feed, exist in the database, then
 // resolves to undefined (not an error).
-export async function subscribe(rconn, iconn, channel, url, options) {
+export async function subscribe(
+    rconn, iconn, channel, url, fetch_timeout, notify = true,
+    skip_icon_lookup) {
   console.log('Subscribing to feed', url.href);
 
   if (await feed_exists(rconn, url)) {
@@ -43,7 +43,7 @@ export async function subscribe(rconn, iconn, channel, url, options) {
     return;
   }
 
-  const response = await fetch_feed(url, options.fetch_timeout);
+  const response = await fetch_feed(url, fetch_timeout);
   if (!response.ok) {
     console.debug('Fetch error', url.href, response.status);
     return;
@@ -79,7 +79,7 @@ export async function subscribe(rconn, iconn, channel, url, options) {
   }
 
   // TODO: use a helper here that is a wrapper
-  if (!options.skip_icon_lookup) {
+  if (!skip_icon_lookup) {
     const lookup_url = favicon_create_feed_lookup_url(feed);
     let lookup_doc = undefined, fetch = false;
     feed.faviconURLString =
@@ -89,7 +89,7 @@ export async function subscribe(rconn, iconn, channel, url, options) {
   sanitize_feed(feed);
   await update_feed(rconn, channel, feed);
 
-  if (options.notify) {
+  if (notify) {
     const title = 'Subscribed!';
     const feed_title = feed.title || list_peek(feed.urls);
     const message = 'Subscribed to ' + feed_title;

@@ -29,8 +29,10 @@ async function cli_subscribe(url_string, poll = true) {
   const proms = [open_reader_db(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
-  const options = {fetch_timeout: 3000, notify: true};
-  const feed = await subscribe(rconn, iconn, channel, url, options);
+  const fetch_timeout = 3000;
+  const notify = true;
+  const feed = await subscribe(
+      rconn, iconn, channel, url, options, fetch_timeout, notify);
 
   // Do a sequential poll of the created feed
   if (poll) {

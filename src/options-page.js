@@ -296,12 +296,15 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_show();
   subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
+  // TODO: move this to a helper
   const conn_promises = Promise.all([open_reader_db(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
-
   const channel = new BroadcastChannel(localStorage.channel_name);
-  const feed =
-      await subscribe(rconn, iconn, channel, subscribe_url, {notify: true});
+  let subscribe_fetch_timeout;
+  const subscribe_notify = true;
+  const feed = await subscribe(
+      rconn, iconn, channel, subscribe_url, subscribe_fetch_timeout,
+      subscribe_notify);
   rconn.close();
   iconn.close();
   channel.close();
