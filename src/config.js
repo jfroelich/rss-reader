@@ -1,5 +1,3 @@
-import * as color from '/src/lib/color.js';
-
 // The config module provides a single point of access to configure the app,
 // which is simpler to maintain and tweak than hunting down settings dispersed
 // across files.
