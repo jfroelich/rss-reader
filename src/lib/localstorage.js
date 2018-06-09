@@ -8,6 +8,15 @@ export function localstorage_read_int(property_name) {
   }
 }
 
+export function localstorage_read_array(key) {
+  const value = localStorage[key];
+  return value ? JSON.parse(string_value) : [];
+}
+
+export function localstroage_set_array(key, array) {
+  localStorage[key] = JSON.stringify(array);
+}
+
 export function localstorage_read_float(property_name) {
   const string_value = localStorage[property_name];
   if (string_value) {
