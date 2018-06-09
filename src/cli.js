@@ -102,19 +102,13 @@ async function cli_remove_orphans() {
 async function cli_lookup_favicon(url_string, cached) {
   let document, fetch_flag = true;
   const url = new URL(url_string);
-
-  const op = {};
-
+  let conn;
   if (cached) {
-    op.conn = await favicon_create_conn();
+    conn = await favicon_create_conn();
   }
-
-  op.favicon_lookup = favicon_lookup;
-
-  const icon_url_string = await op.favicon_lookup(url, document, fetch_flag);
-
-  if (cached) {
-    op.conn.close();
+  const icon_url_string = await favicon_lookup(conn, url, document, fetch_flag);
+  if (cached && conn) {
+    conn.close();
   }
 
   return icon_url_string;

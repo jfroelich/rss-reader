@@ -38,17 +38,16 @@ export async function subscribe(url, options) {
 
   // TODO: create a local helper that wraps this call and takes a conn and url
   // parameter, use it for both cases
-
   let prior_feed = await get_feed(this.rconn, 'url', url, true);
 
   if (prior_feed) {
-    console.debug('%s: url exists', subscribe.name, url.href);
+    console.debug('Url exists', url.href);
     return;
   }
 
   const response = await fetch_feed(url, options.fetch_timeout);
   if (!response.ok) {
-    console.debug('%s: fetch error', subscribe.name, url.href, response.status);
+    console.debug('Fetch error', url.href, response.status);
     return;
   }
 
@@ -68,7 +67,7 @@ export async function subscribe(url, options) {
   try {
     parsed_feed = parse_feed(response_text, skip_entries, resolve_urls);
   } catch (error) {
-    console.debug('%s: parse error', subscribe.name, response.url, error);
+    console.debug('Parse error', response.url, error);
     return;
   }
 
@@ -81,10 +80,9 @@ export async function subscribe(url, options) {
 
   if (!options.skip_icon_lookup) {
     const lookup_url = favicon_create_feed_lookup_url(feed);
-    const lookup_op = {conn: this.iconn, favicon_lookup: favicon_lookup};
     let lookup_doc = undefined, fetch = false;
     feed.faviconURLString =
-        await lookup_op.favicon_lookup(lookup_url, lookup_doc, fetch);
+        await favicon_lookup(this.iconn, lookup_url, lookup_doc, fetch);
   }
 
   if (!is_valid_feed(feed)) {

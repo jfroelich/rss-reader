@@ -160,13 +160,9 @@ function update_entry_title(entry, document) {
 
 async function update_entry_icon(iconn, entry, document) {
   const lookup_url = new URL(list_peek(entry.urls));
-
-  const op = {};
-  op.conn = iconn;
-  op.favicon_lookup = favicon_lookup;
-
   const fetch = false;
-  const icon_url_string = await op.favicon_lookup(lookup_url, document, fetch);
+  const icon_url_string =
+      await favicon_lookup(iconn, lookup_url, document, fetch);
   if (icon_url_string) {
     entry.faviconURLString = icon_url_string;
   }

@@ -29,9 +29,9 @@ export async function favicon_compact() {
 // * skip_fetch {Boolean} whether to attempt to fetch the full text of the
 // resource, and if it is html, search for a url within the html, before
 // continuing to check other places.
-export function favicon_lookup(url, document, fetch = true) {
+export function favicon_lookup(conn, url, document, fetch = true) {
   const fs = new FaviconService();
-  fs.conn = this.conn;
+  fs.conn = conn;
   fs.skip_fetch = !fetch;
   return fs.lookup(url, document);
 }
@@ -65,9 +65,8 @@ async function refresh_feed(rconn, iconn, channel, feed) {
   }
 
   let doc, fetch_flag = true;
-  const lookup_op = {conn: iconn, favicon_lookup: favicon_lookup};
   const icon_url_string =
-      await lookup_op.favicon_lookup(lookup_url, doc, fetch_flag);
+      await favicon_lookup(iconn, lookup_url, doc, fetch_flag);
 
   if (feed.faviconURLString !== icon_url_string) {
     if (icon_url_string) {
