@@ -10,7 +10,7 @@ export function localstorage_read_int(property_name) {
 
 export function localstorage_read_array(key) {
   const value = localStorage[key];
-  return value ? JSON.parse(string_value) : [];
+  return value ? JSON.parse(value) : [];
 }
 
 export function localstroage_set_array(key, array) {

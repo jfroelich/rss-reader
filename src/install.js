@@ -3,6 +3,20 @@ import * as color from '/src/lib/color.js';
 import {localstorage_set_if_undefined} from '/src/lib/localstorage.js';
 import {open_reader_db} from '/src/reader-db.js';
 
+// The default set of background images for slides
+const background_images = [
+  'bgfons-paper_texture318.jpg', 'CCXXXXXXI_by_aqueous.jpg',
+  'paper-backgrounds-vintage-white.jpg', 'pickering-texturetastic-gray.png',
+  'reusage-recycled-paper-white-first.png', 'subtle-patterns-beige-paper.png',
+  'subtle-patterns-cream-paper.png', 'subtle-patterns-exclusive-paper.png',
+  'subtle-patterns-groove-paper.png', 'subtle-patterns-handmade-paper.png',
+  'subtle-patterns-paper-1.png', 'subtle-patterns-paper-2.png',
+  'subtle-patterns-paper.png', 'subtle-patterns-rice-paper-2.png',
+  'subtle-patterns-rice-paper-3.png', 'subtle-patterns-soft-wallpaper.png',
+  'subtle-patterns-white-wall.png', 'subtle-patterns-witewall-3.png',
+  'thomas-zucx-noise-lines.png'
+];
+
 // Bind the install event listener to the browser so that it can hear install
 // events
 export function register_install_listener() {
@@ -85,6 +99,13 @@ function init_localstorage(previousVersion) {
   // localStorage.JUSTIFY_TEXT
   // localStorage.BODY_LINE_HEIGHT
   // localStorage.COLUMN_COUNT
+
+
+  // Background images
+  // NOTE: from now on, if images change, this has to also remove/update/etc
+  if (typeof localStorage.background_images === 'undefined') {
+    localStorage.background_images = JSON.stringify(background_images);
+  }
 }
 
 function remove_legacy_localstorage_keys() {

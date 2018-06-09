@@ -2,20 +2,6 @@
 // which is simpler to maintain and tweak than hunting down settings dispersed
 // across files.
 
-// Slideshow slide background images
-export const background_images = [
-  'bgfons-paper_texture318.jpg', 'CCXXXXXXI_by_aqueous.jpg',
-  'paper-backgrounds-vintage-white.jpg', 'pickering-texturetastic-gray.png',
-  'reusage-recycled-paper-white-first.png', 'subtle-patterns-beige-paper.png',
-  'subtle-patterns-cream-paper.png', 'subtle-patterns-exclusive-paper.png',
-  'subtle-patterns-groove-paper.png', 'subtle-patterns-handmade-paper.png',
-  'subtle-patterns-paper-1.png', 'subtle-patterns-paper-2.png',
-  'subtle-patterns-paper.png', 'subtle-patterns-rice-paper-2.png',
-  'subtle-patterns-rice-paper-3.png', 'subtle-patterns-soft-wallpaper.png',
-  'subtle-patterns-white-wall.png', 'subtle-patterns-witewall-3.png',
-  'thomas-zucx-noise-lines.png'
-];
-
 // Fonts the user can select from to customize the display of content
 export const fonts = [
   'ArchivoNarrow-Regular', 'Arial', 'Calibri', 'Cambria', 'CartoGothicStd',

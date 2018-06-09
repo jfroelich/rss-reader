@@ -1,10 +1,12 @@
 import '/src/cli.js';
+
 import {refresh_badge} from '/src/badge.js';
 import * as config from '/src/config.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {list_peek} from '/src/lib/lang/list.js';
+import {localstorage_read_array} from '/src/lib/localstorage.js';
 import * as perm from '/src/lib/permissions.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {delete_feed, get_feed, get_feeds, open_reader_db, update_feed_properties} from '/src/reader-db.js';
@@ -611,7 +613,9 @@ function options_page_init() {
       current_path = current_path.substring('/images/'.length);
     }
 
-    for (const path of config.background_images) {
+    const background_images = localstorage_read_array('background_images');
+
+    for (const path of background_images) {
       let option = document.createElement('option');
       option.value = path;
       option.textContent = path;
