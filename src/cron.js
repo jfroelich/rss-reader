@@ -2,7 +2,6 @@ import {archive_entries} from '/src/archive.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
 import {remove_lost_entries} from '/src/health/remove-lost-entries.js';
 import {remove_orphaned_entries} from '/src/health/remove-orphaned-entries.js';
-import {log} from '/src/log.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {open_reader_db} from '/src/reader-db.js';
 
@@ -89,32 +88,32 @@ function handle_cleanup_refresh_badge_lock(alarm) {
 }
 
 chrome.alarms.onAlarm.addListener(function(alarm) {
-  log('onalarm: alarm name', alarm.name);
+  console.debug('Wakeup', alarm.name);
   localStorage.LAST_ALARM = alarm.name;
 
   switch (alarm.name) {
     case 'archive':
-      handle_archive_alarm_wakeup(alarm).catch(log);
+      handle_archive_alarm_wakeup(alarm).catch(console.error);
       break;
     case 'poll':
-      handle_poll_feeds_alarm(alarm).catch(log);
+      handle_poll_feeds_alarm(alarm).catch(console.error);
       break;
     case 'remove-entries-missing-urls':
-      handle_lost_entries_alarm(alarm).catch(log);
+      handle_lost_entries_alarm(alarm).catch(console.error);
       break;
     case 'remove-orphaned-entries':
-      handle_orphan_entries_alarm(alarm).catch(log);
+      handle_orphan_entries_alarm(alarm).catch(console.error);
       break;
     case 'refresh-feed-icons':
-      handle_refresh_icons_alarm(alarm).catch(log);
+      handle_refresh_icons_alarm(alarm).catch(console.error);
       break;
     case 'compact-favicon-db':
-      handle_compact_favicons_alarm(alarm).catch(log);
+      handle_compact_favicons_alarm(alarm).catch(console.error);
       break;
     case 'cleanup-refresh-badge-lock':
       handle_cleanup_refresh_badge_lock(alarm);
     default:
-      log('unhandled alarm', alarm.name);
+      console.warn('Unhandled alarm', alarm.name);
       break;
   }
 });
