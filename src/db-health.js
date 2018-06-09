@@ -1,6 +1,29 @@
 import {get_feed_ids, is_entry, is_valid_feed_id, iterate_entries} from '/src/reader-db.js';
 
+// Removes entries missing urls from the database
+// TODO: test
+export async function remove_lost_entries(conn, channel) {
+  // Track ids so they are available after txn commits
+  const deleted_entry_ids = [];
+  const txn_writable = true;
+  await iterate_entries(conn, 'all', txn_writable, cursor => {
+    const entry = cursor.value;
+    // TODO: accessing entry.urls still means too much knowledge of feed
+    // structure
+    if (!entry.urls || !entry.urls.length) {
+      cursor.delete();
+      deleted_entry_ids.push(entry.id);
+    }
+  });
+
+  // Wait till txn commits before dispatch
+  for (const id of deleted_entry_ids) {
+    channel.postMessage({type: 'entry-deleted', id: id, reason: 'lost'});
+  }
+}
+
 // Scans the database for entries not linked to a feed and deletes them
+// TODO: test
 export async function remove_orphaned_entries(conn, channel) {
   // Query for all feed ids. We load just the ids so that it is faster and more
   // scalable than actually loading all feed info.
@@ -47,4 +70,10 @@ export async function remove_orphaned_entries(conn, channel) {
   for (const id of deleted_entry_ids) {
     channel.postMessage({type: 'entry-deleted', id: id, reason: 'orphan'});
   }
+}
+
+// TODO: scan the feed store and the entry store and look for any objects
+// missing their hidden magic property and delete them.
+export function remove_untyped_objects(conn, channel) {
+  throw new Error('Not yet implemented');
 }

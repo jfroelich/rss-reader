@@ -1,7 +1,6 @@
 import {archive_entries} from '/src/archive.js';
+import {remove_lost_entries, remove_orphaned_entries} from '/src/db-health.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
-import {remove_lost_entries} from '/src/health/remove-lost-entries.js';
-import {remove_orphaned_entries} from '/src/health/remove-orphaned-entries.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {open_reader_db} from '/src/reader-db.js';
 
