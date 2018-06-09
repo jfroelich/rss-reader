@@ -15,7 +15,7 @@ async function oninstalled(event) {
       'Received oninstalled event: previous version %s install reason %s',
       event.previousVersion, event.reason);
 
-  init_localstorage();
+  init_localstorage(event.previousVersion);
 
   // Initialize the app database
   let conn = await open_reader_db();
@@ -26,15 +26,19 @@ async function oninstalled(event) {
   conn.close();
 }
 
+// TODO: this should respect current values. This gets called both on first time
+// install, and on upgrade. Currently this always assumes first time install,
+// and overwrites everything. Note that this for now would only focus on setting
+// a value if not set, not fixing corrupted values. Assume that if a value is
+// set it is valid.
+
+// TODO: this should be responsible for handling changes like deprecation of
+// an old setting. Old settings should be removed if they exist. Eventually this
+// should be based on previousVersion and current version, but for now this can
+// be done using lookups.
+
 // Write default values to localStorage
-function init_localstorage() {
-  // NOTE: local storage values are strings. This relies on implicit coercion
-
-  // Logging is disabled by default, this may be an upgrade and the value
-  // may exist.
-  // actually leave as is
-  // delete localStorage.debug;
-
+function init_localstorage(previousVersion) {
   // The default background color used by the low-contrast pass
   localStorage.sanitize_document_low_contrast_default_matte = color.WHITE;
   // The maximum number of characters emphasized before unwrapping emphasis
