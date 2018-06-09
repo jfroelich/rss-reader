@@ -5,73 +5,77 @@ import {remove_orphaned_entries} from '/src/health/remove-orphaned-entries.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {open_reader_db} from '/src/reader-db.js';
 
-async function handle_compact_favicons_alarm(alarm) {
-  await favicon_compact();
-}
+async function cron_alarm_listener(alarm) {
+  console.debug('Wakeup', alarm.name);
+  localStorage.LAST_ALARM = alarm.name;
 
-async function handle_archive_alarm_wakeup(alarm) {
-  const conn = await open_reader_db();
-  const channel = new BroadcastChannel(localStorage.channel_name);
-  await archive_entries(conn, channel);
-  channel.close();
-  conn.close();
-}
-
-async function handle_lost_entries_alarm(alarm) {
-  const conn = await open_reader_db();
-  const channel = new BroadcastChannel(localStorage.channel_name);
-  await remove_lost_entries(conn, channel);
-  conn.close();
-  channel.close();
-}
-
-async function handle_orphan_entries_alarm(alarm) {
-  const conn = await open_reader_db();
-  const channel = new BroadcastChannel(localStorage.channel_name);
-  await remove_orphaned_entries(conn, channel);
-  conn.close();
-  channel.close();
-}
-
-async function handle_refresh_icons_alarm(alarm) {
-  const proms = [open_reader_db(), favicon_create_conn()];
-  const [rconn, iconn] = await Promise.all(proms);
-  const channel = new BroadcastChannel(localStorage.channel_name);
-
-  const op = {};
-  op.rconn = rconn;
-  op.iconn = iconn;
-  op.channel = channel;
-  op.favicon_refresh_feeds = favicon_refresh_feeds;
-  await op.favicon_refresh_feeds();
-
-  rconn.close();
-  iconn.close();
-  channel.close();
-}
-
-async function handle_poll_feeds_alarm(alarm) {
-  if ('ONLY_POLL_IF_IDLE' in localStorage) {
-    const idle_period_secs = 30;
-    const state = await query_idle_state(idle_period_secs);
-    if (state !== 'locked' || state !== 'idle') {
-      return;
+  if (alarm.name === 'archive') {
+    const conn = await open_reader_db();
+    const channel = new BroadcastChannel(localStorage.channel_name);
+    await archive_entries(conn, channel);
+    channel.close();
+    conn.close();
+  } else if (alarm.name === 'poll') {
+    if (localStorage.ONLY_POLL_IF_IDLE) {
+      // TODO: this value should come from local storage
+      const idle_period_secs = 30;
+      const state = await query_idle_state(idle_period_secs);
+      if (state !== 'locked' || state !== 'idle') {
+        return;
+      }
     }
+
+    const options = {};
+    options.ignore_recency_check = false;
+    options.notify = true;
+
+    const rconn = await open_reader_db();
+    const iconn = await favicon_create_conn();
+    const channel = new BroadcastChannel(localStorage.channel_name);
+
+    await poll_feeds(rconn, iconn, channel, options);
+
+    channel.close();
+    iconn.close();
+    rconn.close();
+  } else if (alarm.name === 'remove-entries-missing-urls') {
+    const conn = await open_reader_db();
+    const channel = new BroadcastChannel(localStorage.channel_name);
+    await remove_lost_entries(conn, channel);
+    conn.close();
+    channel.close();
+  } else if (alarm.name === 'remove-orphaned-entries') {
+    const conn = await open_reader_db();
+    const channel = new BroadcastChannel(localStorage.channel_name);
+    await remove_orphaned_entries(conn, channel);
+    conn.close();
+    channel.close();
+  } else if (alarm.name === 'refresh-feed-icons') {
+    const proms = [open_reader_db(), favicon_create_conn()];
+    const [rconn, iconn] = await Promise.all(proms);
+    const channel = new BroadcastChannel(localStorage.channel_name);
+
+    const op = {};
+    op.rconn = rconn;
+    op.iconn = iconn;
+    op.channel = channel;
+    op.favicon_refresh_feeds = favicon_refresh_feeds;
+    await op.favicon_refresh_feeds();
+
+    rconn.close();
+    iconn.close();
+    channel.close();
+  } else if (alarm.name === 'compact-favicon-db') {
+    await favicon_compact();
+  } else if (alarm.name === 'cleanup-refresh-badge-lock') {
+    // This is just a precaution that deletes the lock periodically, so that due
+    // to error a user is not left with an unread count that permanently stops
+    // updating. Now if it gets into bad state it will only last until this
+    // alarm.
+    delete localStorage.refresh_badge_cross_page_lock;
+  } else {
+    console.warn('Unhandled alarm', alarm.name);
   }
-
-  const options = {};
-  options.ignore_recency_check = false;
-  options.notify = true;
-
-  const rconn = await open_reader_db();
-  const iconn = await favicon_create_conn();
-  const channel = new BroadcastChannel(localStorage.channel_name);
-
-  await poll_feeds(rconn, iconn, channel, options);
-
-  channel.close();
-  iconn.close();
-  rconn.close();
 }
 
 function query_idle_state(idle_period_secs) {
@@ -80,43 +84,8 @@ function query_idle_state(idle_period_secs) {
   });
 }
 
-// This is just a precaution that deletes the lock periodically, so that due to
-// error a user is not left with an unread count that permanently stops
-// updating. Now if it gets into bad state it will only last until this alarm.
-function handle_cleanup_refresh_badge_lock(alarm) {
-  delete localStorage.refresh_badge_cross_page_lock;
-}
-
-chrome.alarms.onAlarm.addListener(function(alarm) {
-  console.debug('Wakeup', alarm.name);
-  localStorage.LAST_ALARM = alarm.name;
-
-  switch (alarm.name) {
-    case 'archive':
-      handle_archive_alarm_wakeup(alarm).catch(console.error);
-      break;
-    case 'poll':
-      handle_poll_feeds_alarm(alarm).catch(console.error);
-      break;
-    case 'remove-entries-missing-urls':
-      handle_lost_entries_alarm(alarm).catch(console.error);
-      break;
-    case 'remove-orphaned-entries':
-      handle_orphan_entries_alarm(alarm).catch(console.error);
-      break;
-    case 'refresh-feed-icons':
-      handle_refresh_icons_alarm(alarm).catch(console.error);
-      break;
-    case 'compact-favicon-db':
-      handle_compact_favicons_alarm(alarm).catch(console.error);
-      break;
-    case 'cleanup-refresh-badge-lock':
-      handle_cleanup_refresh_badge_lock(alarm);
-    default:
-      console.warn('Unhandled alarm', alarm.name);
-      break;
-  }
-});
+// TODO: do not bind on every page load somehow
+chrome.alarms.onAlarm.addListener(cron_alarm_listener);
 
 chrome.alarms.create('cleanup-refresh-badge-lock', {periodInMinutes: 60 * 12});
 chrome.alarms.create('archive', {periodInMinutes: 60 * 12});
