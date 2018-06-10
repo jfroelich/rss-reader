@@ -2,6 +2,7 @@ import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {options_menu_hide, options_menu_show} from '/src/slideshow-page/left-panel.js';
+import {hide_no_articles_message, show_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 
 let refresh_in_progress = false;
 
@@ -44,18 +45,34 @@ function toggle_left_pannel_button_onclick(event) {
   }
 }
 
-export function reader_button_onclick(event) {
+function view_articles_button_onclick(event) {
+  // First toggle button states.
+
+  // We are switching to the view-articles state. The view-feeds button may
+  // have been disabled. Ensure it is enabled.
   const feeds_button = document.getElementById('feeds-button');
   feeds_button.disabled = false;
 
+  // We are switch to the view-articles state. Disable the view-articles button
+  // in the new state.
   const reader_button = document.getElementById('reader-button');
   reader_button.disabled = true;
 
+  // Hide the view-feeds panel.
+  const feeds_container = document.getElementById('feeds-container');
+  feeds_container.style.display = 'none';
+
+  // Show the view-articles panel.
   const slideshow_container = document.getElementById('slideshow-container');
   slideshow_container.style.display = 'block';
 
-  const feeds_container = document.getElementById('feeds-container');
-  feeds_container.style.display = 'none';
+  // The visibility of the no-articles-to-display message is independent of
+  // the slideshow-container. It must be manually made visible again if there
+  // are no articles.
+  const num_slides = slideshow_container.childElementCount;
+  if (!num_slides) {
+    show_no_articles_message();
+  }
 }
 
 // TODO: clarify by renaming to something like view_feeds_button_onclick?
@@ -68,6 +85,10 @@ function feeds_button_onclick(event) {
 
   const slideshow_container = document.getElementById('slideshow-container');
   slideshow_container.style.display = 'none';
+
+  // The 'no articles to display' message is not contained within the slideshow
+  // container, so it must be independently hidden
+  hide_no_articles_message();
 
   const feeds_container = document.getElementById('feeds-container');
   feeds_container.style.display = 'block';
@@ -86,4 +107,4 @@ const feeds_button = document.getElementById('feeds-button');
 feeds_button.onclick = feeds_button_onclick;
 
 const reader_button = document.getElementById('reader-button');
-reader_button.onclick = reader_button_onclick;
+reader_button.onclick = view_articles_button_onclick;
