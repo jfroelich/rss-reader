@@ -74,7 +74,3 @@ export async function refresh_badge(locker_name = 'unknown') {
   clearTimeout(auto_unlock_timer);
   delete localStorage.refresh_badge_cross_page_lock;
 }
-
-export function register_badge_click_listener(listener) {
-  chrome.browserAction.onClicked.addListener(listener);
-}

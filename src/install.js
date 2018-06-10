@@ -1,7 +1,9 @@
+import * as badge from '/src/badge.js';
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import * as color from '/src/lib/color.js';
 import {localstorage_set_if_undefined} from '/src/lib/localstorage.js';
+import {open_view} from '/src/open-view.js';
 
 // The default set of background images for slides
 const background_images = [
@@ -26,24 +28,30 @@ const fonts = [
   'PathwayGothicOne', 'PlayfairDisplaySC', 'Roboto Regular'
 ];
 
-// Bind the install event listener to the browser so that it can hear install
-// events
-export function register_install_listener() {
-  console.debug('Adding onInstalled listener');
-  chrome.runtime.onInstalled.addListener(oninstalled);
-}
-
 // Handle an install event
-async function oninstalled(event) {
-  console.debug('previousVersion-reason', event.previousVersion, event.reason);
+export async function oninstalled(event) {
+  console.debug('Received install event %o', event);
 
+  // NOTE: this has to be here, at least during development stages, otherwise
+  // reloading without restarting Chrome somehow does not retain the binding
+  // that occured on startup.
+  console.debug(
+      'Registering browser action click listener in install listener');
+  chrome.browserAction.onClicked.addListener(open_view);
+
+  console.debug('Refreshing badge from install listener');
+  badge.refresh_badge(location.pathname);
+
+  console.debug('Initializing local storage values');
   init_localstorage(event.previousVersion);
 
   // Initialize the app database
+  console.debug('Initializing indexedDB feed database');
   let conn = await db.open_db();
   conn.close();
 
   // Initialize the favicon cache
+  console.debug('Initializing indexedDB favicon database');
   conn = await favicon.open();
   conn.close();
 }
