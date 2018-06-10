@@ -86,13 +86,8 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 
   const response_url = new URL(response.url);
   const resp_lmd = new Date(response.headers.get('Last-Modified'));
-  const fetch_info = {
-    request_url: tail_url,
-    response_url: response_url,
-    response_last_modified_date: resp_lmd
-  };
-
-  const coerced_feed = coerce_feed(parsed_feed, fetch_info);
+  const coerced_feed =
+      coerce_feed(parsed_feed, tail_url, response_url, resp_lmd);
   const merged_feed = merge_feed(feed, coerced_feed);
   handle_fetch_success(merged_feed);
 

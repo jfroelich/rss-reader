@@ -3,16 +3,8 @@ import * as db from '/src/db.js';
 // Coerce a feed in the parse format (e.g. one that was fetched) into a database
 // formatted feed object. This module is cross cutting because it involves
 // deeper knowledge of multiple feed object formats.
-
-// TODO: not sure I like the fetch_info parameter. Perhaps I should just accept
-// a Response object. The problem is how to get the request url. Maybe I should
-// de-aggregate this parameter.
-
-export function coerce_feed(parsed_feed, fetch_info) {
-  const request_url = fetch_info.request_url;
-  const response_url = fetch_info.response_url;
-  const response_last_modified_date = fetch_info.response_last_modified_date;
-
+export function coerce_feed(
+    parsed_feed, request_url, response_url, response_last_modified_date) {
   assert(request_url instanceof URL);
   assert(response_url instanceof URL);
 

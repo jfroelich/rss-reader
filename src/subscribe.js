@@ -61,13 +61,8 @@ async function get_feed_from_response(response) {
 
   const res_url = new URL(response.url);
   const lmd = new Date(response.headers.get('Last-Modified'));
-  const feed = coerce_feed(parsed_feed, {
-    request_url: url,
-    response_url: res_url,
-    response_last_modified_date: lmd.getTime() === NaN ? null : lmd
-  });
-
-  return feed;
+  return coerce_feed(
+      parsed_feed, url, res_url, lmd.getTime() === NaN ? null : lmd);
 }
 
 async function set_favicon(conn, feed) {
