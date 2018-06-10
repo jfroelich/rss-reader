@@ -1,11 +1,11 @@
 import {coerce_feed} from '/src/coerce-feed.js';
+import * as db from '/src/db.js';
 import {fetch_feed} from '/src/fetch.js';
-import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
+import * as list from '/src/lib/lang/list.js';
 import {STATUS_OFFLINE, STATUS_TIMEOUT} from '/src/lib/net/load-url.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
-import * a db from '/src/db.js';
 
 // Checks for updates to a particular feed.
 export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
@@ -22,12 +22,12 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 
   // Although this is borderline a programmer error, tolerate location-less
   // feed objects and simply ignore them
-  if (list_is_empty(feed.urls)) {
+  if (list.list_is_empty(feed.urls)) {
     console.warn('Attempted to poll feed missing url', feed);
     return 0;
   }
 
-  const tail_url = new URL(list_peek(feed.urls));
+  const tail_url = new URL(list.list_peek(feed.urls));
 
   if (!feed.active) {
     console.debug('Ignoring inactive feed', tail_url.href);
@@ -119,7 +119,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 }
 
 async function poll_entries(rconn, iconn, channel, options, entries, feed) {
-  const feed_url_string = list_peek(feed.urls);
+  const feed_url_string = list.list_peek(feed.urls);
 
   console.debug(
       '%s: processing %d entries', poll_entries.name, entries.length,
@@ -223,7 +223,7 @@ function dedup_entries(entries) {
   const seen_url_strings = [];
 
   for (const entry of entries) {
-    if (list_is_empty(entry.urls)) {
+    if (list.list_is_empty(entry.urls)) {
       distinct_entries.push(entry);
       continue;
     }

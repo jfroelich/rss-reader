@@ -1,5 +1,5 @@
 import {show_next_slide} from '/src/slideshow-page/show-next-slide.js';
-import {get_active_transition_count, get_current_slide, increment_active_transition_count, set_current_slide} from '/src/slideshow-page/slideshow-state.js';
+import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
 
 const LEFT = 37;
 const RIGHT = 39;
@@ -67,24 +67,25 @@ function is_edit_intent(event) {
 }
 
 function prev() {
-  if (get_active_transition_count() > 0) {
+  if (slideshow_state.get_active_transition_count() > 0) {
     return;
   }
 
-  if (!get_current_slide()) {
+  if (!slideshow_state.get_current_slide()) {
     return;
   }
 
-  const previous_slide = get_current_slide().previousElementSibling;
+  const previous_slide =
+      slideshow_state.get_current_slide().previousElementSibling;
   if (!previous_slide) {
     return;
   }
 
-  increment_active_transition_count();
-  get_current_slide().style.left = '100%';
+  slideshow_state.increment_active_transition_count();
+  slideshow_state.get_current_slide().style.left = '100%';
   // active_transition_count++;
   previous_slide.style.left = '0';
-  set_current_slide(previous_slide);
+  slideshow_state.set_current_slide(previous_slide);
 }
 
 window.addEventListener('keydown', onkeydown);

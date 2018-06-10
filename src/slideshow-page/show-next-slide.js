@@ -3,12 +3,12 @@ import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {load_and_append_slides} from '/src/slideshow-page/load-and-append-slides.js';
 import {mark_slide_read} from '/src/slideshow-page/mark-slide-read.js';
 import {remove_slide} from '/src/slideshow-page/remove-slide.js';
-import {get_active_transition_count, get_current_slide, increment_active_transition_count, set_current_slide} from '/src/slideshow-page/slideshow-state.js';
+import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
 
 const max_load_count = 6;
 
 export async function show_next_slide() {
-  const current_slide = get_current_slide();
+  const current_slide = slideshow_state.get_current_slide();
   const slide_unread_count = count_unread_slides();
 
   // TODO: I no longer understand this condition, it seems redundant
@@ -46,21 +46,21 @@ export async function show_next_slide() {
 }
 
 function next() {
-  if (get_active_transition_count() > 0) {
+  if (slideshow_state.get_active_transition_count() > 0) {
     return false;
   }
 
-  if (!get_current_slide()) {
+  if (!slideshow_state.get_current_slide()) {
     return false;
   }
 
-  const next_slide = get_current_slide().nextElementSibling;
+  const next_slide = slideshow_state.get_current_slide().nextElementSibling;
   if (!next_slide) {
     return false;
   }
 
-  increment_active_transition_count();
-  get_current_slide().style.left = '-100%';
+  slideshow_state.increment_active_transition_count();
+  slideshow_state.get_current_slide().style.left = '-100%';
 
   // NOTE: in process of creating this lib I noticed the source of the strange
   // behavior with why count is only 1 despite two transitions, it was here
@@ -68,7 +68,7 @@ function next() {
   // hesitant to change it at the moment. Not a bug, but a feature. Ew.
   // active_transition_count++;
   next_slide.style.left = '0';
-  set_current_slide(next_slide);
+  slideshow_state.set_current_slide(next_slide);
 
   return true;
 }

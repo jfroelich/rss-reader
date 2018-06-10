@@ -1,30 +1,14 @@
-// **WARNING**: This is insecure because it uses approximations that are not
-// guaranteed to be correct.
-
-// The module principally exports the function `is_external_url`. The
-// `is_external_url` function returns `true` when the `other_url` parameter is
-// *external* to the `document_url` parameter.
-
-// A url is external when it comes from a different website. This could be
-// because the origin is different. However, this may allow for ignoring
-// differences in the subdomain, by only looking at the top domain. In other
-// words, http://subdomain.domain.com and http://www.domain.com could be
-// considered the same website, so, for example, a document from the domain that
-// contains an embedded resource, such as an image, that comes from the
-// subdomain, would still consider the image as internal.
-
-// Classifying a url as internal/external is useful for determining whether
-// fetching an embedded resource (e.g. an image) would probably involve a
-// network request to a different website. For example, a module that searches
-// for and removes telemetry features may consider an element with an external
-// url as an telemetry indicator.
-
 const local_protocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
 
 export const MODE_UNKNOWN = 0;
 export const MODE_STRICT = 2;
 export const MODE_SLOPPY = 1;
 
+// WARNING: this is insecure because it is approximate
+// Returns true when the other_url is external to the document_url. A url is
+// external when it comes from a different website. This could be because the
+// origin is different. However, this may allow for ignoring differences in the
+// subdomain, by only looking at the top domain.
 export function is_external_url(document_url, other_url, mode = MODE_UNKNOWN) {
   if (!(document_url instanceof URL)) {
     throw new TypeError('document_url is not a URL');
@@ -47,27 +31,26 @@ export function is_external_url(document_url, other_url, mode = MODE_UNKNOWN) {
   return doc_domain !== other_domain;
 }
 
-function url_get_upper_domain(url) {
-  // NOTE: ignores port
+// NOTE: ignores port
+export function url_get_upper_domain(url) {
   if (hostname_is_ipv4(url.hostname) || hostname_is_ipv6(url.hostname)) {
     return url.hostname;
   }
 
   const levels = url.hostname.split('.');
 
-  // Handle the simple cases of 'localhost' or 'example.com'
-  // NOTE: ignores port
+  // Handle the simple case of localhost or example.com
   if (levels.length < 3) {
     return url.hostname;
   }
 
-  // Using the full suffix list is overkill so use tld character length
+  // Using a full geo-suffix list is overkill so use tld length to guess
   const top_level = levels[levels.length - 1];
   const reverse_offset = top_level.length === 2 ? -3 : -2;
   return levels.slice(reverse_offset).join('.');
 }
 
-function hostname_is_ipv4(string) {
+export function hostname_is_ipv4(string) {
   if (typeof string !== 'string') {
     return false;
   }
@@ -87,6 +70,6 @@ function hostname_is_ipv4(string) {
   return true;
 }
 
-function hostname_is_ipv6(value) {
+export function hostname_is_ipv6(value) {
   return typeof value === 'string' && value.includes(':');
 }

@@ -37,7 +37,6 @@ export async function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
     }
   });
 
-  // Now that txn committed, let everyone know of mutated state
   for (const id of entry_ids) {
     channel.postMessage({type: 'entry-archived', id: id});
   }

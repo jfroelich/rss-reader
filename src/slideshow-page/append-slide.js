@@ -1,13 +1,13 @@
+import {is_entry} from '/src/db.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {format_date} from '/src/lib/lang/format-date.js';
-import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
+import * as list from '/src/lib/lang/list.js';
 import {localstorage_read_int} from '/src/lib/localstorage.js';
-import {is_entry} from '/src/db.js';
 import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
-import {decrement_active_transition_count, get_current_slide, set_current_slide} from '/src/slideshow-page/slideshow-state.js';
+import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
 
 let duration = 0.35;
 
@@ -17,7 +17,7 @@ export function append_slide(entry) {
     return;
   }
 
-  if (list_is_empty(entry.urls)) {
+  if (list.list_is_empty(entry.urls)) {
     console.warn('%s: skipping entry without url', append_slide.name, entry);
     return;
   }
@@ -50,7 +50,7 @@ function create_slide(entry) {
 // value. I partially fixed by not escaping ampersand but that's not right.
 function create_article_title_element(entry) {
   const title_element = document.createElement('a');
-  title_element.setAttribute('href', list_peek(entry.urls));
+  title_element.setAttribute('href', list.list_peek(entry.urls));
   title_element.setAttribute('class', 'entry-title');
   title_element.setAttribute('rel', 'noreferrer');
 
@@ -155,12 +155,12 @@ function append_slide_element(slide) {
   slide.style.transition = `left ${duration}s ease-in-out`;
 
   // Initialize the current slide if needed
-  if (!get_current_slide()) {
+  if (!slideshow_state.get_current_slide()) {
     // TODO: is this right? I think it is because there is no transition for
     // first slide, so there is no focus call. But maybe not needed?
     slide.focus();
 
-    set_current_slide(slide);
+    slideshow_state.set_current_slide(slide);
   }
 
   container.appendChild(slide);
@@ -190,9 +190,9 @@ function transition_onend(event) {
   // complete, the new slide (which is the current slide at this point) is now
   // focused. Therefore we ignore event.target and directly affect the current
   // slide only.
-  get_current_slide().focus();
+  slideshow_state.get_current_slide().focus();
 
   // There may be more than one transition effect occurring at the moment.
   // Inform others via global slideshow state that this transition completed.
-  decrement_active_transition_count();
+  slideshow_state.decrement_active_transition_count();
 }

@@ -1,9 +1,9 @@
+import {get_feeds} from '/src/db.js';
 import {notify} from '/src/notify.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
-import {get_feeds} from '/src/db.js';
 
-const null_channel = {
-  name: 'null-channel',
+const chan_stub = {
+  name: 'channel-stub',
   postMessage: noop,
   close: noop
 };
@@ -21,26 +21,23 @@ const default_options = {
 
 // Checks for new content
 export async function poll_feeds(
-    rconn, iconn, channel = null_channel, options = {}) {
-  console.debug('Starting...');
+    rconn, iconn, channel = chan_stub, options = {}) {
   const feeds = await get_feeds(rconn, 'active', false);
-
-  console.debug('%s: loaded %d active feeds', poll_feeds.name, feeds.length);
+  console.debug('Loaded %d active feeds', feeds.length);
   const pfo = Object.assign({}, default_options, options);
   const pfp = poll_feed.bind(null, rconn, iconn, channel, pfo);
   const proms = feeds.map(pfp);
   const results = await Promise.all(proms);
-  const count = results.reduce(accumulate_if_def, 0);
+  const count = results.reduce(acc_if_def, 0);
   show_poll_notification(count);
   console.debug('Added %d entries', count);
 }
 
-function accumulate_if_def(sum, value) {
+function acc_if_def(sum, value) {
   return isNaN(value) ? sum : sum + value;
 }
 
 function show_poll_notification(num_entries_added) {
-  // Suppress if nothing added
   if (num_entries_added < 1) {
     return;
   }

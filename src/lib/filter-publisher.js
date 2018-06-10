@@ -1,4 +1,4 @@
-// The `filter_publisher` function provides a way to strip publisher information
+// Provides a way to strip publisher information
 // from an article title. The input title variable is a `DOMString` and an
 // optional options object. The function returns a new string where the
 // publisher information has been stripped.

@@ -1,15 +1,11 @@
 import '/src/cli.js';
 import '/src/cron.js';
-
-import {refresh_badge, register_badge_click_listener} from '/src/badge.js';
+import * as badge from '/src/badge.js';
 import {register_install_listener} from '/src/install.js';
 import {open_view} from '/src/open-view.js';
 
-// Loaded by background.html, focuses on initialization and binding things
-
-// This channel persists for the lifetime of the background page. Note that I
-// verified this opening of a persistent page-lifetime channel does not prevent
-// the page from unloading and becoming inactive.
+// Persists for the lifetime of the page. Will not prevent the page from
+// unloading.
 const channel = new BroadcastChannel(localStorage.channel_name);
 channel.onmessage = background_page_channel_onmessage;
 
@@ -24,15 +20,17 @@ async function background_page_channel_onmessage(event) {
   }
 
   // Look for any messages that may affect the displayed unread count, and if
-  // one is found, request the unread count to be updated.
+  // one is found, request the unread count to be updated. This is needed
+  // because actions that occur in the background while no views are open would
+  // otherwise cause messages to go unheard.
   const badge_types = ['entry-write', 'entry-deleted', 'entry-marked-read'];
   if (badge_types.includes(message.type)) {
-    refresh_badge(window.location.pathname);
+    badge.refresh_badge(location.pathname);
   }
 }
 
 async function init_badge() {
-  refresh_badge(window.location.pathname);
+  badge.refresh_badge(location.pathname);
 }
 
 // TODO: somehow do not rebind every page load when not needed
@@ -41,7 +39,7 @@ async function init_badge() {
 register_install_listener();
 
 // On module load, register the badge click listener
-register_badge_click_listener(open_view);
+badge.register_badge_click_listener(open_view);
 
 // On module load, initialize the unread count
 init_badge();
