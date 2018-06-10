@@ -68,8 +68,8 @@ export async function poll_entry(entry) {
   const op = {};
   op.conn = this.rconn;
   op.channel = this.channel;
-  op.db.update_entry = db.update_entry;
-  const new_entry_id = await op.db.update_entry(entry);
+  op.update_entry = db.update_entry;
+  const new_entry_id = await op.update_entry(entry);
   return new_entry_id;
 }
 
