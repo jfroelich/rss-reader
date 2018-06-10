@@ -2,14 +2,14 @@ import {archive_entries} from '/src/archive.js';
 import {remove_lost_entries, remove_orphaned_entries} from '/src/db-health.js';
 import {favicon_compact, favicon_create_conn, favicon_refresh_feeds} from '/src/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
-import {open_reader_db} from '/src/reader-db.js';
+import {open_db} from '/src/db.js';
 
 async function cron_alarm_listener(alarm) {
   console.debug('Wakeup', alarm.name);
   localStorage.LAST_ALARM = alarm.name;
 
   if (alarm.name === 'archive') {
-    const conn = await open_reader_db();
+    const conn = await open_db();
     const channel = new BroadcastChannel(localStorage.channel_name);
     await archive_entries(conn, channel);
     channel.close();
@@ -28,7 +28,7 @@ async function cron_alarm_listener(alarm) {
     options.ignore_recency_check = false;
     options.notify = true;
 
-    const rconn = await open_reader_db();
+    const rconn = await open_db();
     const iconn = await favicon_create_conn();
     const channel = new BroadcastChannel(localStorage.channel_name);
 
@@ -38,19 +38,19 @@ async function cron_alarm_listener(alarm) {
     iconn.close();
     rconn.close();
   } else if (alarm.name === 'remove-entries-missing-urls') {
-    const conn = await open_reader_db();
+    const conn = await open_db();
     const channel = new BroadcastChannel(localStorage.channel_name);
     await remove_lost_entries(conn, channel);
     conn.close();
     channel.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
-    const conn = await open_reader_db();
+    const conn = await open_db();
     const channel = new BroadcastChannel(localStorage.channel_name);
     await remove_orphaned_entries(conn, channel);
     conn.close();
     channel.close();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const proms = [open_reader_db(), favicon_create_conn()];
+    const proms = [open_db(), favicon_create_conn()];
     const [rconn, iconn] = await Promise.all(proms);
     const channel = new BroadcastChannel(localStorage.channel_name);
     await favicon_refresh_feeds(rconn, iconn, channel);

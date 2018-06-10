@@ -5,7 +5,7 @@ import {STATUS_OFFLINE, STATUS_TIMEOUT} from '/src/lib/net/load-url.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
-import {append_entry_url, append_feed_url, create_entry, create_feed, is_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-db.js';
+import * a db from '/src/db.js';
 
 // Checks for updates to a particular feed.
 export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
@@ -16,7 +16,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const deactivation_threshold = options.deactivation_threshold;
   const fetch_feed_timeout = options.fetch_feed_timeout;
 
-  if (!is_feed(feed)) {
+  if (!db.is_feed(feed)) {
     throw new TypeError('feed is not a feed type ' + feed);
   }
 
@@ -97,13 +97,13 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   handle_fetch_success(merged_feed);
 
   // Do not throw if invalid, just exit
-  if (!is_valid_feed(merged_feed)) {
+  if (!db.is_valid_feed(merged_feed)) {
     console.warn('Invalid feed', merged_feed);
     return 0;
   }
 
-  sanitize_feed(merged_feed);
-  await update_feed(rconn, channel, merged_feed);
+  db.sanitize_feed(merged_feed);
+  await db.update_feed(rconn, channel, merged_feed);
 
   const count = await poll_entries(
       rconn, iconn, channel, options, parsed_feed.entries, merged_feed);
@@ -160,11 +160,11 @@ async function poll_entries(rconn, iconn, channel, options, entries, feed) {
 // to be fixed. First copy over the old feed's urls, then try and append each
 // new feed url.
 function merge_feed(old_feed, new_feed) {
-  const merged_feed = Object.assign(create_feed(), old_feed, new_feed);
+  const merged_feed = Object.assign(db.create_feed(), old_feed, new_feed);
   merged_feed.urls = [...old_feed.urls];
   if (new_feed.urls) {
     for (const url_string of new_feed.urls) {
-      append_feed_url(merged_feed, new URL(url_string));
+      db.append_feed_url(merged_feed, new URL(url_string));
     }
   }
 
@@ -208,14 +208,14 @@ async function handle_error(
 
   // TODO: why validate? have we not had control the entire time, and have no
   // new user data?
-  if (!is_valid_feed(feed)) {
+  if (!db.is_valid_feed(feed)) {
     console.warn('Invalid feed', feed);
     return;
   }
 
   // TODO: is sanitization needed here?
-  sanitize_feed(feed);
-  await update_feed(rconn, channel, feed);
+  db.sanitize_feed(feed);
+  await db.update_feed(rconn, channel, feed);
 }
 
 function dedup_entries(entries) {
@@ -252,7 +252,7 @@ function dedup_entries(entries) {
 // format. This is a cross-cutting concern so it belongs in the place where the
 // concerns meet.
 function coerce_entry(parsed_entry) {
-  const blank_entry = create_entry();
+  const blank_entry = db.create_entry();
 
   // Copy over everything
   const clone = Object.assign(blank_entry, parsed_entry);
@@ -261,7 +261,7 @@ function coerce_entry(parsed_entry) {
   delete clone.link;
   if (parsed_entry.link) {
     try {
-      append_entry_url(clone, new URL(parsed_entry.link));
+      db.append_entry_url(clone, new URL(parsed_entry.link));
     } catch (error) {
     }
   }

@@ -1,9 +1,9 @@
+import * as db from '/src/db.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {import_opml} from '/src/import-opml.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {localstorage_read_array} from '/src/lib/localstorage.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
-import {get_feeds, open_reader_db} from '/src/reader-db.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 
 function import_opml_button_onclick(event) {
@@ -19,7 +19,7 @@ async function uploader_input_onchange(event) {
   console.debug('Received input change event');
   const op = {};
   [op.rconn, op.iconn] =
-      await Promise.all([open_reader_db(), favicon_create_conn()]);
+      await Promise.all([db.open_db(), favicon_create_conn()]);
   op.channel = new BroadcastChannel(localStorage.channel_name);
   op.fetch_timeout = 5 * 1000;
   op.import_opml = import_opml;
@@ -34,8 +34,8 @@ async function export_button_onclick(event) {
   const title = 'Subscriptions';
   const filename = 'subscriptions.xml';
 
-  const conn = await open_reader_db();
-  const feeds = await get_feeds(conn, 'all', false);
+  const conn = await db.open_db();
+  const feeds = await db.get_feeds(conn, 'all', false);
   conn.close();
   console.debug('Loaded %d feeds', feeds.length);
 

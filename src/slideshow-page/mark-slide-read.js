@@ -1,4 +1,4 @@
-import {mark_entry_read} from '/src/reader-db.js';
+import {mark_entry_read} from '/src/db.js';
 
 export async function mark_slide_read(conn, slide) {
   console.assert(conn instanceof IDBDatabase);

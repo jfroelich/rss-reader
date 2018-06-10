@@ -1,4 +1,5 @@
 import {inaccessible_content_descriptors} from '/src/config.js';
+import * as db from '/src/db.js';
 import {favicon_lookup} from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
@@ -7,7 +8,6 @@ import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
-import {append_entry_url, get_entry, is_valid_entry, is_valid_entry_id, sanitize_entry, update_entry} from '/src/reader-db.js';
 import {sanitize_document} from '/src/sanitize-document.js';
 
 // Processes an entry and possibly adds it to the database. The full-text html
@@ -51,25 +51,25 @@ export async function poll_entry(entry) {
   await update_entry_content(entry, document, this.fetch_image_timeout);
 
   // Explicitly validate the entry. This was previously done via the call to
-  // update_entry, and threw a type error which was not caught here. For now,
+  // db.update_entry, and threw a type error which was not caught here. For now,
   // just throw a basic error to match the previous behavior. In the future,
   // think about whether this should be throwing an error at all or doing
   // something else.
-  if (!is_valid_entry(entry)) {
+  if (!db.is_valid_entry(entry)) {
     throw new Error('Invalid entry ' + entry);
   }
 
-  // Explicitly sanitize the entry. This was previously done by update_entry
+  // Explicitly sanitize the entry. This was previously done by db.update_entry
   // but that is no longer the case. For now, replace the parameter value with
   // itself, even though sanitize clones. Also note that sanitize now filters
   // empty properties implicitly
-  entry = sanitize_entry(entry);
+  entry = db.sanitize_entry(entry);
 
   const op = {};
   op.conn = this.rconn;
   op.channel = this.channel;
-  op.update_entry = update_entry;
-  const new_entry_id = await op.update_entry(entry);
+  op.db.update_entry = db.update_entry;
+  const new_entry_id = await op.db.update_entry(entry);
   return new_entry_id;
 }
 
@@ -84,7 +84,7 @@ async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {
     return false;
   }
 
-  append_entry_url(entry, response_url);
+  db.append_entry_url(entry, response_url);
   entry_rewrite_tail_url(entry, rewrite_rules);
   return await entry_exists(rconn, entry);
 }
@@ -95,13 +95,13 @@ function entry_rewrite_tail_url(entry, rewrite_rules) {
   if (!new_url) {
     return false;
   }
-  return append_entry_url(entry, new_url);
+  return db.append_entry_url(entry, new_url);
 }
 
 async function entry_exists(rconn, entry) {
   const url = new URL(list_peek(entry.urls));
   const mode_url = 'url', key_only = true;
-  const existing_entry = await get_entry(rconn, mode_url, url, key_only);
+  const existing_entry = await db.get_entry(rconn, mode_url, url, key_only);
   return existing_entry ? true : false;
 }
 

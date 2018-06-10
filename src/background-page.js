@@ -1,9 +1,9 @@
 import '/src/cli.js';
 import '/src/cron.js';
+
 import {refresh_badge, register_badge_click_listener} from '/src/badge.js';
 import {register_install_listener} from '/src/install.js';
 import {open_view} from '/src/open-view.js';
-import {open_reader_db} from '/src/reader-db.js';
 
 // Loaded by background.html, focuses on initialization and binding things
 

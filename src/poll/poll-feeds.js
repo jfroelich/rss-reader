@@ -1,6 +1,6 @@
 import {notify} from '/src/notify.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
-import {get_feeds} from '/src/reader-db.js';
+import {get_feeds} from '/src/db.js';
 
 const null_channel = {
   name: 'null-channel',

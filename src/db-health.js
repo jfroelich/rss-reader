@@ -1,4 +1,4 @@
-import {get_feed_ids, is_entry, is_valid_feed_id, iterate_entries} from '/src/reader-db.js';
+import * as db from '/src/db.js';
 
 // Removes entries missing urls from the database
 // TODO: test
@@ -6,7 +6,7 @@ export async function remove_lost_entries(conn, channel) {
   // Track ids so they are available after txn commits
   const deleted_entry_ids = [];
   const txn_writable = true;
-  await iterate_entries(conn, 'all', txn_writable, cursor => {
+  await db.iterate_entries(conn, 'all', txn_writable, cursor => {
     const entry = cursor.value;
     // TODO: accessing entry.urls still means too much knowledge of feed
     // structure
@@ -27,7 +27,7 @@ export async function remove_lost_entries(conn, channel) {
 export async function remove_orphaned_entries(conn, channel) {
   // Query for all feed ids. We load just the ids so that it is faster and more
   // scalable than actually loading all feed info.
-  const feed_ids = await get_feed_ids(conn);
+  const feed_ids = await db.get_feed_ids(conn);
 
   // Technically we could continue and let the next transaction do nothing, but
   // it is better for performance to preemptively exit.
@@ -42,16 +42,16 @@ export async function remove_orphaned_entries(conn, channel) {
 
   // Walk the entry store in write mode
   const txn_writable = true;
-  await iterate_entries(conn, 'all', txn_writable, cursor => {
+  await db.iterate_entries(conn, 'all', txn_writable, cursor => {
     const entry = cursor.value;
 
     // If the entry object type is invalid, ignore it
-    if (!is_entry(entry)) {
+    if (!db.is_entry(entry)) {
       return;
     }
 
     // If the entry has a valid feed id, ignore it
-    if (is_valid_feed_id(entry.feed)) {
+    if (db.is_valid_feed_id(entry.feed)) {
       return;
     }
 

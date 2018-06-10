@@ -1,23 +1,18 @@
-import {create_entry, ENTRY_STATE_ARCHIVED, is_entry, iterate_entries} from '/src/reader-db.js';
+import * as db from '/src/db.js';
 import {sizeof} from '/src/lib/lang/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 // Compacts older read entries in the database. Dispatches entry-archived
 // messages once the internal transaction completes. max_age is in ms, optional,
-// defaults to two days, how old an entry must be based on the difference
-// between the run time and the date the entry was created in order to consider
-// the entry as archivable
+// defaults to two days, how old an entry must be in order to archive it.
 export async function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
   const entry_ids = [];
   const txn_writable = true;
 
-  // TODO: only load archivable entries to improve perf, currently this loads
-  // some non-archivable because it ignores date
-
-  await iterate_entries(conn, 'archive', txn_writable, cursor => {
+  await db.iterate_entries(conn, 'archive', txn_writable, cursor => {
     const entry = cursor.value;
-    if (!is_entry(entry)) {
+    if (!db.is_entry(entry)) {
       console.warn('Bad entry read from db', entry);
       return;
     }
@@ -48,8 +43,6 @@ export async function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
   }
 }
 
-// TODO: given deep knowledge of entry field structure, should this be partly
-// in reader-db.js? Or calling settings and getters instead?
 function archive_entry(entry) {
   const before_size = sizeof(entry);
   const ce = compact_entry(entry);
@@ -59,7 +52,7 @@ function archive_entry(entry) {
     console.warn('Entry increased size', entry);
   }
 
-  ce.archiveState = ENTRY_STATE_ARCHIVED;
+  ce.archiveState = db.ENTRY_STATE_ARCHIVED;
   const current_date = new Date();
   ce.dateArchived = current_date;
   ce.dateUpdated = current_date;
@@ -67,7 +60,7 @@ function archive_entry(entry) {
 }
 
 function compact_entry(entry) {
-  const ce = create_entry();
+  const ce = db.create_entry();
   ce.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {

@@ -1,4 +1,4 @@
-import {count_unread_entries, open_reader_db} from '/src/reader-db.js';
+import * as db from '/src/db.js';
 
 // Refreshes the unread articles count displayed in the extension's browser
 // action in the Chrome chrome. Operations that affect the unread count,
@@ -57,8 +57,8 @@ export async function refresh_badge(locker_name = 'unknown') {
     delete localStorage.refresh_badge_cross_page_lock;
   }, 5000);
 
-  const conn = await open_reader_db();
-  const count = await count_unread_entries(conn);
+  const conn = await db.open_db();
+  const count = await db.count_unread_entries(conn);
   conn.close();
 
   const text = count > 999 ? '1k+' : '' + count;

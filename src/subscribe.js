@@ -1,11 +1,11 @@
 import {coerce_feed} from '/src/coerce-feed.js';
+import * as db from '/src/db.js';
 import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
 import {fetch_feed} from '/src/fetch.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
 import {notify} from '/src/notify.js';
-import {get_feed, is_valid_feed, sanitize_feed, update_feed} from '/src/reader-db.js';
 
 // Subscribe to a feed
 // @param rconn {IDBDatabase} an open feed database connection
@@ -36,7 +36,7 @@ export async function subscribe(
   }
 
   const feed = await get_feed_from_response(response);
-  if (!is_valid_feed(feed)) {
+  if (!db.is_valid_feed(feed)) {
     throw new Error('Invalid feed ' + JSON.stringify(feed));
   }
 
@@ -44,8 +44,8 @@ export async function subscribe(
     await set_favicon(iconn, feed);
   }
 
-  sanitize_feed(feed);
-  await update_feed(rconn, channel, feed);
+  db.sanitize_feed(feed);
+  await db.update_feed(rconn, channel, feed);
 
   if (should_notify) {
     show_success_notification(feed);
@@ -90,5 +90,5 @@ function show_success_notification(feed) {
 function feed_exists(conn, url) {
   const query_mode = 'url';
   const load_key_only = true;
-  return get_feed(conn, query_mode, url, load_key_only);
+  return db.get_feed(conn, query_mode, url, load_key_only);
 }

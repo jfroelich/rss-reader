@@ -1,6 +1,7 @@
 import '/src/cli.js';
 
 import {refresh_badge} from '/src/badge.js';
+import * as db from '/src/db.js';
 import {favicon_create_conn} from '/src/favicon.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
@@ -8,7 +9,6 @@ import {list_peek} from '/src/lib/lang/list.js';
 import {localstorage_read_array} from '/src/lib/localstorage.js';
 import * as perm from '/src/lib/permissions.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
-import {delete_feed, get_feed, get_feeds, open_reader_db, update_feed_properties} from '/src/reader-db.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
 import {subscribe} from '/src/subscribe.js';
@@ -215,8 +215,8 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const conn = await open_reader_db();
-  const feed = await get_feed(conn, 'id', feed_id);
+  const conn = await db.open_db();
+  const feed = await db.get_feed(conn, 'id', feed_id);
   conn.close();
 
   const title_element = document.getElementById('details-title');
@@ -299,7 +299,7 @@ async function subscribe_form_onsubmit(event) {
   // TODO: subscribe can now throw an error, this should catch the error and
   // show a nice error message or something instead of panic
   // TODO: move this to a helper
-  const conn_promises = Promise.all([open_reader_db(), favicon_create_conn()]);
+  const conn_promises = Promise.all([db.open_db(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
   let subscribe_fetch_timeout;
@@ -322,7 +322,7 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises = Promise.all([open_reader_db(), favicon_create_conn()]);
+  const conn_promises = Promise.all([db.open_db(), favicon_create_conn()]);
   const [rconn, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
 
@@ -336,8 +336,8 @@ async function after_subscribe_poll_feed_async(feed) {
 
 async function feed_list_init() {
   const title_sort_flag = true;
-  const conn = await open_reader_db();
-  const feeds = await get_feeds(conn, 'all', true);
+  const conn = await db.open_db();
+  const feeds = await db.get_feeds(conn, 'all', true);
   conn.close();
 
   for (const feed of feeds) {
@@ -383,9 +383,9 @@ function feed_list_remove_feed_by_id(feed_id) {
 
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const conn = await open_reader_db();
+  const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await delete_feed(conn, channel, feed_id, 'unsubscribe');
+  await db.delete_feed(conn, channel, feed_id, 'unsubscribe');
   conn.close();
   channel.close();
   feed_list_remove_feed_by_id(feed_id);
@@ -395,9 +395,9 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const conn = await open_reader_db();
+  const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await update_feed_properties(conn, channel, feed_id, 'active', true);
+  await db.update_feed_properties(conn, channel, feed_id, 'active', true);
   channel.close();
   conn.close();
 
@@ -413,9 +413,9 @@ async function activate_feed_button_onclick(event) {
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const conn = await open_reader_db();
+  const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await update_feed_properties(
+  await db.update_feed_properties(
       conn, channel, feed_id, 'active', false, {reason: 'manual'});
   channel.close();
   conn.close();

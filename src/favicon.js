@@ -1,6 +1,6 @@
+import * as db from '/src/db.js';
 import {FaviconService} from '/src/lib/favicon-service.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
-import {get_feeds, update_feed} from '/src/reader-db.js';
 
 export function favicon_create_conn() {
   const service = new FaviconService();
@@ -46,7 +46,7 @@ export function favicon_create_feed_lookup_url(feed) {
 }
 
 export async function favicon_refresh_feeds(rconn, iconn, channel) {
-  const feeds = await get_feeds(rconn, 'active');
+  const feeds = await db.get_feeds(rconn, 'active');
   const promises = [];
   for (const feed of feeds) {
     promises.push(refresh_feed(rconn, iconn, channel, feed));
@@ -75,6 +75,6 @@ async function refresh_feed(rconn, iconn, channel, feed) {
       delete feed.faviconURLString;
     }
 
-    await update_feed(rconn, channel, feed);
+    await db.update_feed(rconn, channel, feed);
   }
 }

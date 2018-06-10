@@ -1,5 +1,5 @@
 import {refresh_badge} from '/src/badge.js';
-import {get_entries, is_valid_entry_id, open_reader_db} from '/src/reader-db.js';
+import * a db from '/src/db.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
@@ -130,8 +130,8 @@ async function on_entry_written(message) {
 
   let offset = unread_count;
   let limit = undefined;
-  const conn = await open_reader_db();
-  const entries = await get_entries(conn, 'viewable', offset, limit);
+  const conn = await db.open_db();
+  const entries = await db.get_entries(conn, 'viewable', offset, limit);
   conn.close();
   for (const entry of entries) {
     append_slide(entry);
@@ -148,7 +148,7 @@ async function on_entry_expired(message) {
   // an error here though. This error goes nowhere but the console. Really this
   // is just to make a message show up in the console to aid in debugging by
   // console, and to exit so as to prevent later errors.
-  if (!is_valid_entry_id(entry_id)) {
+  if (!db.is_valid_entry_id(entry_id)) {
     throw new Error('Invalid entry id ' + entry_id);
   }
 
@@ -178,7 +178,7 @@ async function on_entry_marked_read(message) {
   const entry_id = message.id;
 
   // Exit early, and show something in the console. Should never happen.
-  if (!is_valid_entry_id(entry_id)) {
+  if (!db.is_valid_entry_id(entry_id)) {
     throw new Error('Invalid entry id' + entry_id);
   }
 

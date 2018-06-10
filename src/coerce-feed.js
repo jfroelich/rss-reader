@@ -1,4 +1,4 @@
-import {append_feed_url, create_feed, set_feed_date_fetched, set_feed_date_last_modified, set_feed_date_published, set_feed_description, set_feed_link, set_feed_title, set_feed_type} from '/src/reader-db.js';
+import * as db from '/src/db.js';
 
 // Coerce a feed in the parse format (e.g. one that was fetched) into a database
 // formatted feed object. This module is cross cutting because it involves
@@ -16,14 +16,14 @@ export function coerce_feed(parsed_feed, fetch_info) {
   assert(request_url instanceof URL);
   assert(response_url instanceof URL);
 
-  const feed = create_feed();
+  const feed = db.create_feed();
 
   if (parsed_feed.type) {
-    set_feed_type(feed, parsed_feed.type);
+    db.set_feed_type(feed, parsed_feed.type);
   }
 
-  append_feed_url(feed, request_url);
-  append_feed_url(feed, response_url);
+  db.append_feed_url(feed, request_url);
+  db.append_feed_url(feed, response_url);
 
   if (parsed_feed.link) {
     let link_url;
@@ -33,26 +33,26 @@ export function coerce_feed(parsed_feed, fetch_info) {
     }
 
     if (link_url) {
-      set_feed_link(feed, link_url.href);
+      db.set_feed_link(feed, link_url.href);
     }
   }
 
   if (parsed_feed.title) {
-    set_feed_title(feed, parsed_feed.title);
+    db.set_feed_title(feed, parsed_feed.title);
   }
 
   if (parsed_feed.description) {
-    set_feed_description(feed, parsed_feed.description);
+    db.set_feed_description(feed, parsed_feed.description);
   }
 
   if (parsed_feed.datePublished) {
-    set_feed_date_published(feed, parsed_feed.datePublished);
+    db.set_feed_date_published(feed, parsed_feed.datePublished);
   } else {
-    set_feed_date_published(feed, new Date());
+    db.set_feed_date_published(feed, new Date());
   }
 
-  set_feed_date_fetched(feed, new Date());
-  set_feed_date_last_modified(feed, response_last_modified_date);
+  db.set_feed_date_fetched(feed, new Date());
+  db.set_feed_date_last_modified(feed, response_last_modified_date);
   return feed;
 }
 

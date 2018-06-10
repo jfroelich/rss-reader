@@ -3,23 +3,21 @@ import '/src/slideshow-page/channel-onmessage.js';
 import '/src/slideshow-page/onkeydown.js';
 import '/src/slideshow-page/main-menu.js';
 import '/src/slideshow-page/left-panel.js';
-
-import {get_entries, get_feeds, open_reader_db} from '/src/reader-db.js';
+import * as db from '/src/db.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';
 import {show_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
 import {hide_splash, show_splash} from '/src/slideshow-page/splash.js';
 
-
 async function load_view() {
   show_splash();
   page_style_onload();
 
   const offset = 0, limit = 6;
-  const conn = await open_reader_db();
-  const get_entries_promise = get_entries(conn, 'viewable', offset, limit);
-  const get_feeds_promise = get_feeds(conn, 'all', true);
+  const conn = await db.open_db();
+  const get_entries_promise = db.get_entries(conn, 'viewable', offset, limit);
+  const get_feeds_promise = db.get_feeds(conn, 'all', true);
   conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)

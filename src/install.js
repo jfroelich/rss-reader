@@ -1,7 +1,7 @@
 import {favicon_create_conn} from '/src/favicon.js';
 import * as color from '/src/lib/color.js';
 import {localstorage_set_if_undefined} from '/src/lib/localstorage.js';
-import {open_reader_db} from '/src/reader-db.js';
+import {open_db} from '/src/db.js';
 
 // The default set of background images for slides
 const background_images = [
@@ -40,7 +40,7 @@ async function oninstalled(event) {
   init_localstorage(event.previousVersion);
 
   // Initialize the app database
-  let conn = await open_reader_db();
+  let conn = await open_db();
   conn.close();
 
   // Initialize the favicon cache

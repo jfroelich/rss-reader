@@ -7,7 +7,7 @@ import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js'
 import {filter_unprintable_characters} from '/src/lib/lang/filter-unprintable-characters.js';
 import {localstorage_read_int} from '/src/lib/localstorage.js';
 
-// The reader-db.js module encapsulates database storage operations and formats
+// The db.js module encapsulates database storage operations and formats
 // for the app.
 
 // indexedDB does not support storing Function objects, because Function objects
@@ -344,7 +344,7 @@ export function iterate_entries(conn, mode = 'all', writable, handle_entry) {
   });
 }
 
-export function open_reader_db(name, version, timeout) {
+export function open_db(name, version, timeout) {
   // Default to config values. These are not fully hardcoded so that the
   // function can still be easily overloaded in order to reuse the
   // on_upgrade_needed handler with a different database name and version.

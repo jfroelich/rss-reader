@@ -3,7 +3,7 @@ import {remove_lost_entries, remove_orphaned_entries} from '/src/db-health.js';
 import {favicon_clear, favicon_compact, favicon_create_conn, favicon_lookup, favicon_refresh_feeds} from '/src/favicon.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
-import {open_reader_db} from '/src/reader-db.js';
+import {open_db} from '/src/db.js';
 import {subscribe} from '/src/subscribe.js';
 
 // The command-line-interface (CLI) module creates a cli object within the
@@ -26,7 +26,7 @@ import {subscribe} from '/src/subscribe.js';
 
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
-  const proms = [open_reader_db(), favicon_create_conn()];
+  const proms = [open_db(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
   const fetch_timeout = 3000;
@@ -48,7 +48,7 @@ async function cli_subscribe(url_string, poll = true) {
 }
 
 async function cli_archive_entries() {
-  const conn = await open_reader_db();
+  const conn = await open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
   await archive_entries(conn, channel);
   channel.close();
@@ -56,7 +56,7 @@ async function cli_archive_entries() {
 }
 
 async function cli_refresh_icons() {
-  const proms = [open_reader_db(), favicon_create_conn()];
+  const proms = [open_db(), favicon_create_conn()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
   await favicon_refresh_feeds(rconn, iconn, channel);
@@ -67,7 +67,7 @@ async function cli_refresh_icons() {
 
 async function cli_poll_feeds() {
   // TODO: open both and await Promise.all
-  const rconn = await open_reader_db();
+  const rconn = await open_db();
   const iconn = await favicon_create_conn();
   const channel = new BroadcastChannel(localStorage.channel_name);
 
@@ -82,7 +82,7 @@ async function cli_poll_feeds() {
 }
 
 async function cli_remove_lost_entries() {
-  const conn = await open_reader_db();
+  const conn = await open_db();
   const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
   await remove_lost_entries(conn, channel);
   console.debug('Removed %d entries', channel.message_count);
@@ -91,7 +91,7 @@ async function cli_remove_lost_entries() {
 }
 
 async function cli_remove_orphans() {
-  const conn = await open_reader_db();
+  const conn = await open_db();
   const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
   await remove_orphaned_entries(conn, channel);
   console.debug('Deleted %d entries', channel.message_count);
