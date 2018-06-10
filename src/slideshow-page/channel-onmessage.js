@@ -1,5 +1,5 @@
 import {refresh_badge} from '/src/badge.js';
-import * a db from '/src/db.js';
+import * as db from '/src/db.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';

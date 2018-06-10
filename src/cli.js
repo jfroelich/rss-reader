@@ -1,5 +1,5 @@
 import {archive_entries} from '/src/archive.js';
-import * as db from '/src/db-health.js';
+import * as dbhealth from '/src/db-health.js';
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
@@ -145,8 +145,8 @@ const cli = {
   archive: cli_archive_entries,
   clear_icons: favicon.clear,
   compact_icons: favicon.compact,
-  dbhealth.remove_orphaned_entries: cli_remove_orphans,
-  dbhealth.remove_lost_entries: cli_remove_lost_entries,
+  remove_orphaned_entries: cli_remove_orphans,
+  remove_lost_entries: cli_remove_lost_entries,
   lookup_favicon: cli_lookup_favicon,
   poll_feeds: cli_poll_feeds,
   refresh_icons: cli_refresh_icons,
