@@ -38,6 +38,13 @@ export async function slide_onclick(event) {
   }
 
   const conn = await open_db();
+
+  // There is no need to await here for logical purposes because this is a click
+  // listener where it is irrelevant when this ever completes, and because an
+  // indexedDB IDBDatabase instance can be closed while transactions are
+  // pending. However, awaiting here is an eloquent and terse style of ensuring
+  // an error is explicitly forwarded to the console instead of being muted
+  // within a promise.
   await mark_slide_read(conn, clicked_slide);
   conn.close();
 }

@@ -23,11 +23,16 @@ export async function show_next_slide() {
   let append_count = 0;
   const conn = await open_db();
 
+  // TODO: if this is the sole caller of load_and_append_slides, I think I want
+  // to inline it here. This will simplify later refactoring of this function.
+
   if (slide_unread_count < 2) {
     append_count = await load_and_append_slides(conn);
   }
 
   next();
+
+  // TODO: this actually does not need to be awaited
   await mark_slide_read(conn, current_slide);
   conn.close();
 
