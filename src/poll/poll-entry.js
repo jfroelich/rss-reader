@@ -1,6 +1,6 @@
 import {inaccessible_content_descriptors} from '/src/config.js';
 import * as db from '/src/db.js';
-import {favicon_lookup} from '/src/favicon.js';
+import * as favicon from '/src/favicon.js';
 import {fetch_html} from '/src/fetch.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
@@ -162,7 +162,7 @@ async function update_entry_icon(iconn, entry, document) {
   const lookup_url = new URL(list_peek(entry.urls));
   const fetch = false;
   const icon_url_string =
-      await favicon_lookup(iconn, lookup_url, document, fetch);
+      await favicon.lookup(iconn, lookup_url, document, fetch);
   if (icon_url_string) {
     entry.faviconURLString = icon_url_string;
   }

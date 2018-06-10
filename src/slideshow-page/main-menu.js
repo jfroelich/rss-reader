@@ -1,6 +1,6 @@
-import {favicon_create_conn} from '/src/favicon.js';
+import * as db from '/src/db.js';
+import * as favicon from '/src/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
-import {open_db} from '/src/db.js';
 import {options_menu_hide, options_menu_show} from '/src/slideshow-page/left-panel.js';
 
 let refresh_in_progress = false;
@@ -18,8 +18,8 @@ async function refresh_button_onclick(event) {
   // itself (at least in Chrome 66) despite what spec states
   const onclick_channel = new BroadcastChannel(localStorage.channel_name);
 
-  const rconn = await open_db();
-  const iconn = await favicon_create_conn();
+  const rconn = await db.open_db();
+  const iconn = await favicon.open();
 
   const options = {};
   options.ignore_recency_check = true;

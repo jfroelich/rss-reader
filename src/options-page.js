@@ -2,7 +2,7 @@ import '/src/cli.js';
 
 import {refresh_badge} from '/src/badge.js';
 import * as db from '/src/db.js';
-import {favicon_create_conn} from '/src/favicon.js';
+import * as favicon from '/src/favicon.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {list_peek} from '/src/lib/lang/list.js';
@@ -299,7 +299,8 @@ async function subscribe_form_onsubmit(event) {
   // TODO: subscribe can now throw an error, this should catch the error and
   // show a nice error message or something instead of panic
   // TODO: move this to a helper
-  const conn_promises = Promise.all([db.open_db(), favicon_create_conn()]);
+  const conn_promises =
+      Promise.all([db.open_db(), favicon.open()]);
   const [rconn, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
   let subscribe_fetch_timeout;
@@ -322,7 +323,8 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises = Promise.all([db.open_db(), favicon_create_conn()]);
+  const conn_promises =
+      Promise.all([db.open_db(), favicon.open()]);
   const [rconn, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
 

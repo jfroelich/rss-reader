@@ -1,6 +1,6 @@
 import {coerce_feed} from '/src/coerce-feed.js';
 import * as db from '/src/db.js';
-import {favicon_create_feed_lookup_url, favicon_lookup} from '/src/favicon.js';
+import * as favicon from '/src/favicon.js';
 import {fetch_feed} from '/src/fetch.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
@@ -71,11 +71,10 @@ async function get_feed_from_response(response) {
 }
 
 async function set_favicon(conn, feed) {
-  const lookup_url = favicon_create_feed_lookup_url(feed);
-  let lookup_doc = undefined;
+  const url = favicon.create_lookup_url(feed);
+  let doc = undefined;
   const fetch = false;
-  feed.faviconURLString =
-      await favicon_lookup(conn, lookup_url, lookup_doc, fetch);
+  feed.faviconURLString = await favicon.lookup(conn, url, doc, fetch);
 }
 
 function show_success_notification(feed) {

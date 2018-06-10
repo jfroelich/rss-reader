@@ -1,9 +1,9 @@
 import {archive_entries} from '/src/archive.js';
-import {remove_lost_entries, remove_orphaned_entries} from '/src/db-health.js';
-import {favicon_clear, favicon_compact, favicon_create_conn, favicon_lookup, favicon_refresh_feeds} from '/src/favicon.js';
+import * as db from '/src/db-health.js';
+import * as db from '/src/db.js';
+import * as favicon from '/src/favicon.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
-import {open_db} from '/src/db.js';
 import {subscribe} from '/src/subscribe.js';
 
 // The command-line-interface (CLI) module creates a cli object within the
@@ -26,7 +26,7 @@ import {subscribe} from '/src/subscribe.js';
 
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
-  const proms = [open_db(), favicon_create_conn()];
+  const proms = [db.open_db(), favicon.open()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
   const fetch_timeout = 3000;
@@ -48,7 +48,7 @@ async function cli_subscribe(url_string, poll = true) {
 }
 
 async function cli_archive_entries() {
-  const conn = await open_db();
+  const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
   await archive_entries(conn, channel);
   channel.close();
@@ -56,10 +56,10 @@ async function cli_archive_entries() {
 }
 
 async function cli_refresh_icons() {
-  const proms = [open_db(), favicon_create_conn()];
+  const proms = [db.open_db(), favicon.open()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await favicon_refresh_feeds(rconn, iconn, channel);
+  await favicon.refresh_feeds(rconn, iconn, channel);
   rconn.close();
   iconn.close();
   channel.close();
@@ -67,8 +67,8 @@ async function cli_refresh_icons() {
 
 async function cli_poll_feeds() {
   // TODO: open both and await Promise.all
-  const rconn = await open_db();
-  const iconn = await favicon_create_conn();
+  const rconn = await db.open_db();
+  const iconn = await favicon.open();
   const channel = new BroadcastChannel(localStorage.channel_name);
 
   const options = {};
@@ -82,18 +82,18 @@ async function cli_poll_feeds() {
 }
 
 async function cli_remove_lost_entries() {
-  const conn = await open_db();
+  const conn = await db.open_db();
   const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
-  await remove_lost_entries(conn, channel);
+  await dbhealth.remove_lost_entries(conn, channel);
   console.debug('Removed %d entries', channel.message_count);
   conn.close();
   channel.close();
 }
 
 async function cli_remove_orphans() {
-  const conn = await open_db();
+  const conn = await db.open_db();
   const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
-  await remove_orphaned_entries(conn, channel);
+  await dbhealth.remove_orphaned_entries(conn, channel);
   console.debug('Deleted %d entries', channel.message_count);
   conn.close();
   channel.close();
@@ -104,9 +104,9 @@ async function cli_lookup_favicon(url_string, cached) {
   const url = new URL(url_string);
   let conn;
   if (cached) {
-    conn = await favicon_create_conn();
+    conn = await favicon.open();
   }
-  const icon_url_string = await favicon_lookup(conn, url, document, fetch_flag);
+  const icon_url_string = await favicon.lookup(conn, url, document, fetch_flag);
   if (cached && conn) {
     conn.close();
   }
@@ -143,10 +143,10 @@ class MonitoredBroadcastChannel {
 
 const cli = {
   archive: cli_archive_entries,
-  clear_icons: favicon_clear,
-  compact_icons: favicon_compact,
-  remove_orphaned_entries: cli_remove_orphans,
-  remove_lost_entries: cli_remove_lost_entries,
+  clear_icons: favicon.clear,
+  compact_icons: favicon.compact,
+  dbhealth.remove_orphaned_entries: cli_remove_orphans,
+  dbhealth.remove_lost_entries: cli_remove_lost_entries,
   lookup_favicon: cli_lookup_favicon,
   poll_feeds: cli_poll_feeds,
   refresh_icons: cli_refresh_icons,

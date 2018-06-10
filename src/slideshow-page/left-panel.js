@@ -1,5 +1,5 @@
 import * as db from '/src/db.js';
-import {favicon_create_conn} from '/src/favicon.js';
+import * as favicon from '/src/favicon.js';
 import {import_opml} from '/src/import-opml.js';
 import {list_is_empty, list_peek} from '/src/lib/lang/list.js';
 import {localstorage_read_array} from '/src/lib/localstorage.js';
@@ -19,7 +19,7 @@ async function uploader_input_onchange(event) {
   console.debug('Received input change event');
   const op = {};
   [op.rconn, op.iconn] =
-      await Promise.all([db.open_db(), favicon_create_conn()]);
+      await Promise.all([db.open_db(), favicon.open()]);
   op.channel = new BroadcastChannel(localStorage.channel_name);
   op.fetch_timeout = 5 * 1000;
   op.import_opml = import_opml;
