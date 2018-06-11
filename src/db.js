@@ -283,23 +283,19 @@ export function mark_entry_read(conn, channel, entry_id) {
     const request = store.get(entry_id);
     request.onsuccess = _ => {
       const entry = request.result;
+
       if (!entry) {
-        console.error('No entry found', entry_id);
+        reject(new Error('No entry found with id ' + entry_id));
         return;
       }
 
       if (!is_entry(entry)) {
-        console.error('Invalid data type', entry);
+        reject(new Error('Not an entry object for entry id ' + entry_id));
         return;
       }
 
       if (entry.readState === ENTRY_STATE_READ) {
-        console.error('Invalid state for entry', entry_id);
-        return;
-      }
-
-      if (entry.readState !== ENTRY_STATE_UNREAD) {
-        console.error('Invalid state for entry', entry_id);
+        reject(new Error('Entry is already in read state for id ' + entry_id));
         return;
       }
 

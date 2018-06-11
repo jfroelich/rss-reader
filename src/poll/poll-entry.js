@@ -68,9 +68,7 @@ export async function poll_entry(entry) {
   const op = {};
   op.conn = this.rconn;
   op.channel = this.channel;
-  op.update_entry = db.update_entry;
-  const new_entry_id = await op.update_entry(entry);
-  return new_entry_id;
+  return await db.update_entry.call(op, entry);
 }
 
 async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {

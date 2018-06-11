@@ -66,7 +66,8 @@ export async function show_next_slide() {
   // unread articles queued up, then just cleanup and exit.
   if (slide_unread_count > 1) {
     // TEMP: just for monitoring recent changes to this function
-    console.debug('Not loading additional slides');
+    console.debug(
+        'Not loading additional slides (more than one unread slide still present)');
 
     // Cleanup
     conn.close();
@@ -112,7 +113,8 @@ export async function show_next_slide() {
   // during this invocation).
   next();
 
-  // If no new entries were loaded DURING this invocation, we are done
+  // If no new entries were loaded DURING this invocation, there is no need to
+  // do any more cleanup
   if (!entries.length) {
     return;
   }
