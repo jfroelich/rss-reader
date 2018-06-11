@@ -3,12 +3,14 @@ import {fetch_policy} from '/src/fetch-policy.js';
 import {load_url, STATUS_OFFLINE, STATUS_TIMEOUT} from '/src/lib/net/load-url.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
 
-// Fetches a remote feed xml file
+// Fetches a remote feed xml file. Note that this is not a generic library, this
+// applies app-specific behavior. To get generic functionality, directly
+// interact with the components that compose this function.
 //
-// This operation is an aggregation of the following steps:
-// * Fetching the bytes of the remote file
-// * Parsing the bytes into a parsed-feed object
-// * Coercing the parsed-feed format into the stored-feed format
+// This function is a composition of the following functions:
+// * Fetching the contents of the remote file
+// * Parsing the contents into a generic parsed-feed object
+// * Coercing the generic format into the app's stored-feed format
 export async function fetch_feed(
     url, timeout, skip_entries = true, resolve_entry_urls = false) {
   const feed_mime_types = [
