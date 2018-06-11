@@ -1,5 +1,5 @@
+import {fetch_html} from '/src/fetch-html.js';
 import {fetch_policy} from '/src/fetch-policy.js';
-import {fetch_html} from '/src/fetch.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {parse_html} from '/src/lib/html/parse-html.js';

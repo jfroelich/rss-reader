@@ -1,5 +1,5 @@
+import {fetch_html} from '/src/fetch-html.js';
 import {fetch_policy} from '/src/fetch-policy.js';
-import {fetch_html} from '/src/fetch.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import * as boilerplate from '/src/lib/filters/boilerplate.js';
 import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';

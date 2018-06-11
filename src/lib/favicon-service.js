@@ -1,4 +1,4 @@
-import {fetch_html} from '/src/fetch.js';
+import {fetch_html} from '/src/fetch-html.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 import * as mime from '/src/lib/mime.js';

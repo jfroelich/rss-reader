@@ -1,7 +1,7 @@
 import {inaccessible_content_descriptors} from '/src/config.js';
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
-import {fetch_html} from '/src/fetch.js';
+import {fetch_html} from '/src/fetch-html.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import * as list from '/src/lib/lang/list.js';

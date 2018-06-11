@@ -1,10 +1,8 @@
-import {coerce_feed} from '/src/coerce-feed.js';
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
-import {fetch_feed} from '/src/fetch.js';
+import {fetch_feed} from '/src/fetch-feed.js';
 import {list_peek} from '/src/lib/lang/list.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
-import {parse_feed} from '/src/lib/parse-feed.js';
 import {notify} from '/src/notify.js';
 
 // Subscribe to a feed
@@ -24,24 +22,33 @@ export async function subscribe(
     throw new Error('Already subscribed ' + url.href);
   }
 
-  const response = await fetch_feed(url, fetch_timeout);
-  if (!response.ok) {
-    throw new Error(
-        'Fetching ' + url.href + ' failed with status ' + response.status);
-  }
+  // Fetch and parse and coerce the remote feed. Rethrow any errors
+  const skip_entries = true;
+  const resolve_entry_urls = false;
+  const feed =
+      await fetch_feed(url, fetch_timeout, skip_entries, resolve_entry_urls);
 
-  const res_url = new URL(response.url);
-  if (url_did_change(url, res_url) && await feed_exists(rconn, res_url)) {
-    throw new Error('Already subscribed ' + res_url.href);
-  }
-
-  const feed = await get_feed_from_response(response);
-  if (!db.is_valid_feed(feed)) {
-    throw new Error('Invalid feed ' + JSON.stringify(feed));
+  // Detect if a redirect occurred based on whether the feed has multiple urls.
+  // Having multiple urls does not indicate a redirect. The algorithm for
+  // appending urls that happens within fetch_feed avoids duplicates but is
+  // otherwise ignorant of redirection concerns. So we still need to do the
+  // extended check. If a redirect occurred, then check if the redirect url
+  // exists in the database. If the database query fails then throw an error.
+  // If the redirect url exists then throw an error.
+  if (feed.urls.length > 1) {
+    const res_url = new URL(list_peek(feed.urls));
+    if (url_did_change(url, res_url) && await feed_exists(rconn, res_url)) {
+      throw new Error('Already subscribed ' + res_url.href);
+    }
   }
 
   if (!skip_icon_lookup) {
-    await set_favicon(iconn, feed);
+    await set_feed_favicon(iconn, feed);
+  }
+
+  // Validate and sanitize the feed's properties prior to storage
+  if (!db.is_valid_feed(feed)) {
+    throw new Error('Invalid feed ' + JSON.stringify(feed));
   }
 
   db.sanitize_feed(feed);
@@ -54,27 +61,8 @@ export async function subscribe(
   return feed;
 }
 
-async function get_feed_from_response(response) {
-  const skip_entries = true, resolve_urls = false;
-  const response_text = await response.text();
-  const parsed_feed = parse_feed(response_text, skip_entries, resolve_urls);
 
-  const res_url = new URL(response.url);
-  const lmd = new Date(response.headers.get('Last-Modified'));
-
-  // Convert the feed from the parse format to the storage format
-  const feed = coerce_feed(parsed_feed);
-
-  // Integrate the net-related data into the storage-formatted feed
-  db.append_feed_url(coerced_feed, url);
-  db.append_feed_url(coerced_feed, res_url);
-  db.set_feed_date_last_modified(
-      coerced_feed, lmd.getTime() === NaN ? null : lmd);
-
-  return feed;
-}
-
-async function set_favicon(conn, feed) {
+async function set_feed_favicon(conn, feed) {
   const url = favicon.create_lookup_url(feed);
   let doc = undefined;
   const fetch = false;

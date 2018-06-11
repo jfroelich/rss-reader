@@ -1,13 +1,10 @@
-import {coerce_feed} from '/src/coerce-feed.js';
 import * as db from '/src/db.js';
-import {fetch_feed} from '/src/fetch.js';
+import {fetch_feed, OfflineError, TimeoutError} from '/src/fetch-feed.js';
 import * as list from '/src/lib/lang/list.js';
-import {STATUS_OFFLINE, STATUS_TIMEOUT} from '/src/lib/net/load-url.js';
-import {parse_feed} from '/src/lib/parse-feed.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
 
-// Checks for updates to a particular feed.
+// Check if a remote feed has new data and store it in the database
 export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const ignore_recency_check = options.ignore_recency_check;
   const recency_period = options.recency_period;
@@ -52,54 +49,23 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
     }
   }
 
-  const response = await fetch_feed(tail_url, fetch_feed_timeout);
-  if (!response.ok) {
-    console.debug(
-        'Error fetching feed', tail_url.href, response.status,
-        response.statusText);
-    const error_type = 'fetch';
-    await handle_error(
-        rconn, channel, response.status, feed, error_type,
-        deactivation_threshold);
-    return 0;
-  }
-
-  // TODO: move this block into its own function, something like
-  // try-parse-feed-helper, return undefined if should exit due to error
-  // TODO: there should be a way to parse without an error occurring, because
-  // parse errors are not programming errors just bad data, this requires
-  // overhauling parse-feed though
-
-  const response_text = await response.text();
-  const skip_entries = false, resolve_urls = true;
-  let parsed_feed;
+  // Fetch the feed. Trap non-programmer errors.
+  const skip_entries = false;
+  const resolve_entry_urls = true;
+  let fetched_feed;
   try {
-    parsed_feed = parse_feed(response_text, skip_entries, resolve_urls);
+    fetched_feed = await fetch_feed(
+        tail_url, fetch_feed_timeout, skip_entries, resolve_entry_urls);
   } catch (error) {
-    console.debug('Error parsing feed', tail_url.href, error);
-    let status;
-    const error_type = 'parse';
-    await handle_error(
-        rconn, channel, status, feed, error_type, deactivation_threshold);
+    // NOTE: in the error case, we only write the loaded feed back to the
+    // database, and ignore any new info from the fetched feed.
+    await handle_fetch_error(
+        rconn, channel, error, feed, deactivation_threshold);
     return 0;
   }
 
-  // Convert the feed from the parse format into the storage format
-  const coerced_feed = coerce_feed(parsed_feed);
-
-  // Integrate the net-related data into the feed, starting with the request
-  // url, in order to keep the url chain in the correct order
-  db.append_feed_url(coerced_feed, tail_url);
-
-  const response_url = new URL(response.url);
-  db.append_feed_url(coerced_feed, response_url);
-
-  const resp_lmd = new Date(response.headers.get('Last-Modified'));
-  db.set_feed_date_last_modified(coerced_feed, resp_lmd);
-
-  // Integrate the previous feed data with the new feed data, preferring the
-  // new feed data over the old most of the time
-  const merged_feed = merge_feed(feed, coerced_feed);
+  // Integrate the previous feed data with the new feed data
+  const merged_feed = merge_feed(feed, fetched_feed);
 
   // Denote the fetch was successful. This is important to counteract error
   // counters that would lead to eventual deactivation
@@ -195,10 +161,11 @@ function handle_fetch_success(feed) {
   return false;
 }
 
-async function handle_error(
-    rconn, channel, status, feed, type, deactivation_threshold) {
-  // Ignore ephemeral errors
-  if (status === STATUS_TIMEOUT || status === STATUS_OFFLINE) {
+async function handle_fetch_error(
+    rconn, channel, error, feed, deactivation_threshold) {
+  // Ignore ephemeral fetch errors
+  if (error instanceof TimeoutError || error instanceof OfflineError) {
+    console.debug('Ignoring ephemeral fetch error', error);
     return;
   }
 
@@ -211,19 +178,17 @@ async function handle_error(
   // Auto-deactivate on threshold breach
   if (feed.errorCount > deactivation_threshold) {
     feed.active = false;
-    feed.deactivationReasonText = type;
+    feed.deactivationReasonText = 'fetch';
     feed.deactivationDate = new Date();
   }
 
-  // TODO: why validate? have we not had control the entire time, and have no
-  // new user data?
-  if (!db.is_valid_feed(feed)) {
-    console.warn('Invalid feed', feed);
-    return;
-  }
-
-  // TODO: is sanitization needed here?
-  db.sanitize_feed(feed);
+  // NOTE: there is no need to validate or sanitize before update in this
+  // particular case. In this case we are udpating the feed that was loaded from
+  // the database, not the fetched feed. We have had control of the in memory
+  // object for its lifetime, and only our code is modifying it, and our
+  // modifications are well-known. If a feed is invalid or needs sanitization
+  // as this point, that is a serious programming error (perhaps worthy of an
+  // pre-condition assert here but it borders on paranoia)
   await db.update_feed(rconn, channel, feed);
 }
 
