@@ -8,7 +8,7 @@
 // When checking for username/pass, prevent fetches of urls containing
 // credentials. Although fetch implicitly throws in this case, I prefer to
 // explicit.
-export const is_allowed_request(method = 'GET', url) {
+export function is_allowed_request(method = 'GET', url) {
   const allowed_protocols = ['data:', 'http:', 'https:'];
   const allowed_methods = ['GET', 'HEAD'];
   return allowed_protocols.includes(url.protocol) &&

@@ -1,6 +1,7 @@
 import * as db from '/src/db.js';
-import {fetch_feed, OfflineError, TimeoutError} from '/src/fetch-feed.js';
+import {fetch_feed} from '/src/fetch-feed.js';
 import * as list from '/src/lib/lang/list.js';
+import {OfflineError, TimeoutError} from '/src/lib/net/fetch2.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
 
