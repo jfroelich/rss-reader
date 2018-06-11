@@ -103,15 +103,15 @@ async function entry_exists(rconn, entry) {
   return existing_entry ? true : false;
 }
 
-// TODO: i think this should always return a response, so instead of returning
-// undefined if not augmentable, return a stub error promise
+// TODO: this should just bubble up the error
 // TODO: undecided, but maybe augmentability is not this function's concern?
 async function fetch_entry(entry, fetch_html_timeout) {
   const url = new URL(list.list_peek(entry.urls));
   if (url_is_augmentable(url)) {
-    const response = await fetch_html(url, fetch_html_timeout);
-    if (response.ok) {
-      return response;
+    try {
+      return await fetch_html(url, fetch_html_timeout);
+    } catch (error) {
+      return undefined;
     }
   }
 }

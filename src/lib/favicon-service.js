@@ -3,7 +3,6 @@ import {parse_html} from '/src/lib/html/parse-html.js';
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 import * as mime from '/src/lib/mime.js';
 import {fetch_image} from '/src/lib/net/fetch-image.js';
-import {create_error_response, load_url, STATUS_RANGE_ERROR} from '/src/lib/net/load-url.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 
 export function FaviconService() {
@@ -69,9 +68,11 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
 
   let response;
   if (!document && !this.skip_fetch) {
-    response = await fetch_html(url, this.fetch_html_timeout);
-    if (!response.ok) {
-      console.debug('Fetch error', url.href, response.status);
+    try {
+      response = await fetch_html(url, this.fetch_html_timeout);
+    } catch (error) {
+      // not fatal error
+      console.debug('Fetch error', url.href, error);
     }
   }
 
@@ -94,7 +95,6 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
       }
     }
   }
-
 
   if (response && response.ok) {
     const text = await response.text();
@@ -135,9 +135,14 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   // Check for favicon.ico
   const base_url = response_url ? response_url : url;
   const image_url = new URL(base_url.origin + '/favicon.ico');
-  response = await this.head_image(image_url);
 
-  if (response.ok) {
+  try {
+    response = await this.head_image(image_url);
+  } catch (error) {
+  }
+
+
+  if (response && response.ok) {
     if (!urls.includes(origin_url.href)) {
       urls.push(origin_url.href);
     }
@@ -218,9 +223,10 @@ FaviconService.prototype.search_document = async function(document, base_url) {
   urls = distinct;
 
   for (const url of urls) {
-    const response = await this.head_image(url);
-    if (response.ok) {
+    try {
+      const response = await this.head_image(url);
       return response.url;
+    } catch (error) {
     }
   }
 };
@@ -363,10 +369,10 @@ FaviconService.prototype.in_range = function(response) {
 FaviconService.prototype.head_image = async function(url) {
   const options = {method: 'head', timeout: this.fetch_image_timeout};
   const response = await fetch_image(url, options);
-  if (response.ok && !this.in_range(response)) {
-    console.debug('image size not in range', url.href, size);
-    return create_error_response(STATUS_RANGE_ERROR);
+  if (!this.in_range(response)) {
+    throw new Error('response not in range');
   }
+
   return response;
 };
 

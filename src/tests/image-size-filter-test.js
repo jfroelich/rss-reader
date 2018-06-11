@@ -20,12 +20,6 @@ import {register_test} from '/src/tests/test-registry.js';
 window.test = async function(url_string) {
   const request_url = new URL(url_string);
   const response = await fetch_html(request_url);
-  if (!response.ok) {
-    throw new Error(
-        'Failed to fetch ' + request_url.href + ' with status ' +
-        response.status);
-  }
-
   const html = await response.text();
   const document = parse_html(html);
   const response_url = new URL(response.url);
@@ -41,7 +35,6 @@ window.test2 = async function() {
   const document = parse_html(html);
 
   set_document_base_uri(document, new URL('http://exercism.io'));
-
   await set_image_sizes(document, undefined, fetch_policy);
 };
 

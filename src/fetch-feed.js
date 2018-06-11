@@ -1,6 +1,6 @@
 import * as db from '/src/db.js';
 import {fetch_policy} from '/src/fetch-policy.js';
-import {load_url, STATUS_OFFLINE, STATUS_TIMEOUT} from '/src/lib/net/load-url.js';
+import {fetch2} from '/src/lib/net/fetch2.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
 
 // Fetches a remote feed xml file. Note that this is not a generic library, this
@@ -18,27 +18,9 @@ export async function fetch_feed(
     'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
   ];
 
-  // Get the response
+  // Get the response, rethrow any fetch errors
   const options = {timeout: timeout, types: feed_mime_types};
-  const response = await load_url(url, options, fetch_policy);
-
-  // Distinguish this error response as its own exception so that callers can
-  // easily differentiate by error type
-  if (response.status === STATUS_OFFLINE) {
-    throw new OfflineError('Failed to fetch ' + url.href);
-  }
-
-  // Distinguish this error response as its own exception so that callers can
-  // easily differentiate by error type
-  if (response.status === STATUS_TIMEOUT) {
-    throw new TimeoutError('Timed out fetching ' + url.href)
-  }
-
-  // Catch all for other fetch errors using generic Error type
-  if (!response.ok) {
-    throw new Error(
-        'Fetching feed ' + url.href + ' failed with status ' + response.status);
-  }
+  const response = await fetch2(url, options, fetch_policy);
 
   // Get the response full text. Rethrow i/o errors
   const res_text = await response.text();
@@ -101,16 +83,4 @@ export async function fetch_feed(
   output_response.feed = feed;
   output_response.entries = parsed_feed.entries;
   return output_response;
-}
-
-export class OfflineError extends Error {
-  constructor(message = 'Failed to fetch while offline') {
-    super(message);
-  }
-}
-
-export class TimeoutError extends Error {
-  constructor(message = 'Failed to fetch due to timeout') {
-    super(message);
-  }
 }

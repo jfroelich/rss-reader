@@ -12,10 +12,6 @@ async function lazy_image_filter_test(url_string) {
   /*
     const request_url = new URL(url_string);
     const response = await fetch_html(request_url);
-    if (!response.ok) {
-      throw new Error('Failed to fetch ' + request_url.href);
-    }
-
     const response_text = await response.text();
     const document = parse_html(response_text);
     filter_lazy_images(document);
