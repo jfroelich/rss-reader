@@ -1,4 +1,5 @@
 import {archive_entries} from '/src/archive.js';
+import {create_alarms} from '/src/cron.js';
 import * as dbhealth from '/src/db-health.js';
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
@@ -141,7 +142,29 @@ class MonitoredBroadcastChannel {
   }
 }
 
+function cli_print_alarms() {
+  chrome.alarms.getAll(alarms => {
+    for (const alarm of alarms) {
+      console.debug('Alarm:', alarm.name);
+    }
+  });
+}
+
+function cli_clear_alarms() {
+  chrome.alarms.clearAll(cleared => {
+    console.debug('Cleared all alarms');
+  });
+}
+
+function cli_create_alarms() {
+  create_alarms();
+  console.debug('Created alarms');
+}
+
 const cli = {
+  create_alarms: cli_create_alarms,
+  clear_alarms: cli_clear_alarms,
+  print_alarms: cli_print_alarms,
   archive: cli_archive_entries,
   clear_icons: favicon.clear,
   compact_icons: favicon.compact,

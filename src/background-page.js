@@ -31,7 +31,6 @@ async function background_page_channel_onmessage(event) {
 
 function onstartup() {
   console.debug('Received startup event');
-
   console.debug('Initializing badge text in startup listener');
   badge.refresh_badge(location.pathname);
 }

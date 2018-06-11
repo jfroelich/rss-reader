@@ -1,5 +1,5 @@
 import * as badge from '/src/badge.js';
-import {create_alarms} from '/src/cron.js';
+import {create_alarms, remove_legacy_alarms} from '/src/cron.js';
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import * as color from '/src/lib/color.js';
@@ -31,7 +31,7 @@ const fonts = [
 
 // Handle an install event
 export async function oninstalled(event) {
-  console.debug('Received install event %o', event);
+  console.debug('Received install event', JSON.stringify(event));
 
   // NOTE: this has to be here, at least during development stages, otherwise
   // reloading without restarting Chrome somehow does not retain the binding
@@ -56,10 +56,11 @@ export async function oninstalled(event) {
   conn = await favicon.open();
   conn.close();
 
-  // TEMP: disabled while testing
-  // remove_legacy_alarms();
+  console.debug('Removing legacy alarms from install listener');
+  remove_legacy_alarms(event.previousVersion);
 
   // Bind alarms
+  console.debug('Registering alarms from install listener');
   create_alarms();
 }
 
