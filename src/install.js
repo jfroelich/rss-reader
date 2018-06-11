@@ -1,4 +1,5 @@
 import * as badge from '/src/badge.js';
+import {create_alarms} from '/src/cron.js';
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import * as color from '/src/lib/color.js';
@@ -54,6 +55,12 @@ export async function oninstalled(event) {
   console.debug('Initializing indexedDB favicon database');
   conn = await favicon.open();
   conn.close();
+
+  // TEMP: disabled while testing
+  // remove_legacy_alarms();
+
+  // Bind alarms
+  create_alarms();
 }
 
 function init_localstorage(previousVersion) {

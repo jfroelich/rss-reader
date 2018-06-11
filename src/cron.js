@@ -79,12 +79,28 @@ function query_idle_state(idle_period_secs) {
 // TODO: do not bind on every page load somehow
 chrome.alarms.onAlarm.addListener(cron_alarm_listener);
 
-chrome.alarms.create('cleanup-refresh-badge-lock', {periodInMinutes: 60 * 12});
-chrome.alarms.create('archive', {periodInMinutes: 60 * 12});
-chrome.alarms.create('poll', {periodInMinutes: 60});
-chrome.alarms.create(
-    'remove-entries-missing-urls', {periodInMinutes: 60 * 24 * 7});
-chrome.alarms.create(
-    'db-remove-orphaned-entries', {periodInMinutes: 60 * 24 * 7});
-chrome.alarms.create('refresh-feed-icons', {periodInMinutes: 60 * 24 * 7 * 2});
-chrome.alarms.create('compact-favicon-db', {periodInMinutes: 60 * 24 * 7});
+export function create_alarms() {
+  chrome.alarms.create('test-install-binding-alarms', {periodInMinutes: 1});
+
+  chrome.alarms.create(
+      'cleanup-refresh-badge-lock', {periodInMinutes: 60 * 12});
+  chrome.alarms.create('archive', {periodInMinutes: 60 * 12});
+  chrome.alarms.create('poll', {periodInMinutes: 60});
+  chrome.alarms.create(
+      'remove-entries-missing-urls', {periodInMinutes: 60 * 24 * 7});
+  chrome.alarms.create(
+      'db-remove-orphaned-entries', {periodInMinutes: 60 * 24 * 7});
+  chrome.alarms.create(
+      'refresh-feed-icons', {periodInMinutes: 60 * 24 * 7 * 2});
+  chrome.alarms.create('compact-favicon-db', {periodInMinutes: 60 * 24 * 7});
+}
+
+export function remove_legacy_alarms() {
+  const legacy_alarm_names = ['test-install-binding-alarms'];
+
+  // See https://developer.chrome.com/extensions/alarms#method-clear
+
+  for (const alarm of legacy_alarm_names) {
+    chrome.alarms.clear(alarm);
+  }
+}
