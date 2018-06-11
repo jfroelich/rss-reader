@@ -97,7 +97,10 @@ export async function fetch_feed(
   // Set the date the feed was fetched to now
   db.set_feed_date_fetched(feed, new Date());
 
-  return feed;
+  const output_response = {};
+  output_response.feed = feed;
+  output_response.entries = parsed_feed.entries;
+  return output_response;
 }
 
 export class OfflineError extends Error {

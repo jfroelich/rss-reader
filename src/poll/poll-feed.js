@@ -31,7 +31,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
     return 0;
   }
 
-  console.debug('%s: polling "%s"', poll_feed.name, feed.title, tail_url.href);
+  console.debug('Polling feed %s', tail_url.href);
 
   // Exit if the feed was checked too recently
   if (!ignore_recency_check && feed.dateFetched) {
@@ -52,12 +52,12 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   // Fetch the feed. Trap non-programmer errors.
   const skip_entries = false;
   const resolve_entry_urls = true;
-  let fetched_feed;
+  let response;
   try {
-    fetched_feed = await fetch_feed(
+    response = await fetch_feed(
         tail_url, fetch_feed_timeout, skip_entries, resolve_entry_urls);
   } catch (error) {
-    // NOTE: in the error case, we only write the loaded feed back to the
+    // NOTE: in the error case, we only write the db-loaded feed back to the
     // database, and ignore any new info from the fetched feed.
     await handle_fetch_error(
         rconn, channel, error, feed, deactivation_threshold);
@@ -65,7 +65,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   }
 
   // Integrate the previous feed data with the new feed data
-  const merged_feed = merge_feed(feed, fetched_feed);
+  const merged_feed = merge_feed(feed, response.feed);
 
   // Denote the fetch was successful. This is important to counteract error
   // counters that would lead to eventual deactivation
@@ -81,7 +81,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   await db.update_feed(rconn, channel, merged_feed);
 
   const count = await poll_entries(
-      rconn, iconn, channel, options, parsed_feed.entries, merged_feed);
+      rconn, iconn, channel, options, response.entries, merged_feed);
 
   if (notify_flag && count) {
     const title = 'Added articles';
@@ -97,8 +97,7 @@ async function poll_entries(rconn, iconn, channel, options, entries, feed) {
   const feed_url_string = list.list_peek(feed.urls);
 
   console.debug(
-      '%s: processing %d entries', poll_entries.name, entries.length,
-      feed_url_string);
+      'Processing %d entries for feed', entries.length, feed_url_string);
 
   const coerced_entries = entries.map(coerce_entry);
   entries = dedup_entries(coerced_entries);

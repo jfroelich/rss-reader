@@ -22,11 +22,10 @@ export async function subscribe(
     throw new Error('Already subscribed ' + url.href);
   }
 
-  // Fetch and parse and coerce the remote feed. Rethrow any errors
-  const skip_entries = true;
-  const resolve_entry_urls = false;
-  const feed =
-      await fetch_feed(url, fetch_timeout, skip_entries, resolve_entry_urls);
+  // Fetch and parse and coerce the remote feed without entries. Rethrow any
+  // errors
+  const response = await fetch_feed(url, fetch_timeout, true, false);
+  const feed = response.feed;
 
   // Detect if a redirect occurred based on whether the feed has multiple urls.
   // Having multiple urls does not indicate a redirect. The algorithm for
