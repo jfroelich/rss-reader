@@ -1,5 +1,5 @@
 import * as db from '/src/db.js';
-import {fetch_policy} from '/src/fetch-policy.js';
+import {is_allowed_request} from '/src/fetch-policy.js';
 import {fetch2} from '/src/lib/net/fetch2.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
 
@@ -20,7 +20,7 @@ export async function fetch_feed(
 
   // Get the response, rethrow any fetch errors
   const options = {timeout: timeout, types: feed_mime_types};
-  const response = await fetch2(url, options, fetch_policy);
+  const response = await fetch2(url, options, is_allowed_request);
 
   // Get the response full text. Rethrow i/o errors
   const res_text = await response.text();

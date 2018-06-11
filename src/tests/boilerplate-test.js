@@ -1,5 +1,5 @@
 import {fetch_html} from '/src/fetch-html.js';
-import {fetch_policy} from '/src/fetch-policy.js';
+import {is_allowed_request} from '/src/fetch-policy.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import * as boilerplate from '/src/lib/filters/boilerplate.js';
 import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
@@ -48,7 +48,7 @@ async function legacy_boilerplate_test(url_string) {
   filter_iframes(document);
   filter_blacklisted_elements(document);
   canonicalize_urls(document);
-  await set_image_sizes(document, undefined, fetch_policy);
+  await set_image_sizes(document, undefined, is_allowed_request);
   boilerplate.annotate(document);
 }
 

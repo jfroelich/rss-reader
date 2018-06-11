@@ -5,7 +5,7 @@ import {fetch_image_element} from '/src/lib/net/fetch-image-element.js';
 // and modifies each image element's attributes.
 // Assumes that if an image has a src attribute value that is a url, that the
 // url is absolute.
-export async function set_image_sizes(document, timeout, fetch_policy) {
+export async function set_image_sizes(document, timeout, is_allowed_request) {
   if (!document.body) {
     return;
   }
@@ -25,7 +25,8 @@ export async function set_image_sizes(document, timeout, fetch_policy) {
   // Concurrently get dimensions for each image then wait for all to complete
   const promises = [];
   for (const image of images) {
-    promises.push(get_image_dims(image, document_url, timeout, fetch_policy));
+    promises.push(
+        get_image_dims(image, document_url, timeout, is_allowed_request));
   }
   const results = await Promise.all(promises);
 
@@ -38,7 +39,7 @@ export async function set_image_sizes(document, timeout, fetch_policy) {
   }
 }
 
-async function get_image_dims(image, base_url, timeout, fetch_policy) {
+async function get_image_dims(image, base_url, timeout, is_allowed_request) {
   if (image.hasAttribute('width') && image.hasAttribute('height')) {
     return {image: image, reason: 'has-attributes'};
   }
@@ -82,8 +83,14 @@ async function get_image_dims(image, base_url, timeout, fetch_policy) {
   // Failure to fetch should be trapped, because get_image_dims should
   // only throw in case of a programming error, so that it can be used together
   // with Promise.all
+
+  function local_policy_check(method, url) {
+    const allowed_protocols = ['data:', 'http:', 'https:'];
+    return allowed_protocols.includes(url.protocol);
+  }
+
   try {
-    dims = await fetch_image_element(source_url, timeout, fetch_policy);
+    dims = await fetch_image_element(source_url, timeout, local_policy_check);
   } catch (error) {
     return {image: image, reason: 'fetch-error'};
   }

@@ -1,4 +1,4 @@
-import {fetch_policy} from '/src/fetch-policy.js';
+import {is_allowed_request} from '/src/fetch-policy.js';
 import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
 import {condense_tagnames} from '/src/lib/filters/condense-tagnames.js';
@@ -112,7 +112,7 @@ export async function sanitize_document(document) {
 
   const image_size_fetch_timeout =
       localstorage_read_int('set_image_sizes_timeout');
-  await set_image_sizes(document, image_size_fetch_timeout, fetch_policy);
+  await set_image_sizes(document, image_size_fetch_timeout, is_allowed_request);
 
 
   // TODO: compose into filter-images-by-size

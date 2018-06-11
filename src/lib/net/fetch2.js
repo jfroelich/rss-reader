@@ -10,21 +10,14 @@ const default_options = {
   referrerPolicy: 'no-referrer'
 };
 
-const default_policy = {
-  allows_url: function() {
-    return true;
-  },
-  allows_method: function() {
-    return true;
-  }
-};
-
 // Extends the builtin fetch with timeout, response type checking, and a way to
 // explicitly reject certain urls for policy reasons. Either returns a response,
 // or throws an error of some kind.
 // options.timeout - specify timeout in ms
 // options.types - optional array of strings of mime types to check against
-export async function fetch2(url, options = {}, policy = default_policy) {
+// is_allowed_url - function given method and url, return whether url is
+// fetchable, optional
+export async function fetch2(url, options = {}, is_allowed_request) {
   if (!('href' in url)) {
     throw new TypeError('url is not a URL: ' + url);
   }
@@ -33,9 +26,10 @@ export async function fetch2(url, options = {}, policy = default_policy) {
     throw new OfflineError('Failed to fetch url while offline ' + url.href);
   }
 
-  if (!policy.allows_url(url)) {
+  const method = options.method || 'get';
+  if (is_allowed_request && !is_allowed_request(method, url)) {
     throw new PolicyError(
-        'Refusing to fetch url as against policy ' + url.href);
+        'Refusing to request url ' + url.href + ' with method ' + method);
   }
 
   const merged_options = Object.assign({}, default_options, options);
@@ -59,11 +53,6 @@ export async function fetch2(url, options = {}, policy = default_policy) {
     if (!Number.isInteger(timeout) || timeout < 0) {
       throw new TypeError('timeout is not a positive integer');
     }
-  }
-
-  if (!policy.allows_method(merged_options.method)) {
-    throw new PolicyError(
-        'Refusing to fetch url as against policy ' + url.href);
   }
 
   const fetch_promise = fetch(url.href, merged_options);

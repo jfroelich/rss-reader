@@ -1,30 +1,18 @@
-const allowed_protocols = ['data:', 'http:', 'https:'];
-const allowed_methods = ['GET', 'HEAD'];
-
-export const fetch_policy = {
-  allows_url: allows_url,
-  allows_method: allows_method
-};
-
-function allows_url(url) {
-  if ((!url instanceof URL)) {
-    throw new TypeError('url is not a URL ' + url);
-  }
-
-  // When checking against localhost values, again, ignores things like
-  // punycode, IPv6, host manipulation, local dns manipulation, etc. This is
-  // just a simple and typical case
-
-  // When checking for username/pass, prevent fetches of urls containing
-  // credentials. Although fetch implicitly throws in this case, I prefer to
-  // explicit.
-
+// Return whether the url is fetchable based on app-policy. This hardcodes
+// the app policy.
+//
+// When checking against localhost values, again, ignores things like
+// punycode, IPv6, host manipulation, local dns manipulation, etc. This is
+// just a simple and typical case
+//
+// When checking for username/pass, prevent fetches of urls containing
+// credentials. Although fetch implicitly throws in this case, I prefer to
+// explicit.
+export const is_allowed_request(method = 'GET', url) {
+  const allowed_protocols = ['data:', 'http:', 'https:'];
+  const allowed_methods = ['GET', 'HEAD'];
   return allowed_protocols.includes(url.protocol) &&
       url.hostname !== 'localhost' && url.hostname !== '127.0.0.1' &&
-      !url.username && !url.password;
-}
-
-function allows_method(raw_method) {
-  const method = raw_method ? raw_method.toUpperCase() : 'GET';
-  return allowed_methods.includes(method);
+      !url.username && !url.password &&
+      allowed_methods.includes(method.toUpperCase());
 }

@@ -1,32 +1,25 @@
 // Fetches an image element. Returns a promise that resolves to a fetched image
-// element. Data URIs are accepted.
+// element.
 // @param url {URL}
 // @param timeout {Number}
-// @param fetch_policy {object}
+// @param is_allowed_request {Function}
 // @returns {Promise}
-export async function fetch_image_element(url, timeout, fetch_policy) {
+export async function fetch_image_element(url, timeout, is_allowed_request) {
   assert(
       typeof timeout === 'undefined' || timeout === null ||
       (Number.isInteger(timeout) && timeout >= 0));
-  const fetch_promise = fetch_image_element_promise(url, fetch_policy);
+  const fetch_promise = executor(url, is_allowed_request);
   const contestants =
       timeout ? [fetch_promise, sleep(timeout)] : [fetch_promise];
   const image = await Promise.race(contestants);
-  assert(image, 'Fetched timed out ' + url.href);
+  assert(image, 'Timed out fetching image url ' + url.href);
   return image;
 }
 
-function fetch_image_element_promise(url, fetch_policy) {
+function executor(url, is_allowed_request) {
   return new Promise((resolve, reject) => {
     assert(url instanceof URL);
-
-
-    // TODO: now that this no longer depends on the app fetch policy, i should
-    // be using the fetch policy parameter here. At the moment it is NOT USED!
-    // This can lead to very unexpected results.
-
-    const allowed_protocols = ['data:', 'http:', 'https:'];
-    assert(allowed_protocols.includes(url.protocol));
+    assert(is_allowed_request('get', url));
 
     // Create a proxy element within this script's document
     const proxy = new Image();
