@@ -115,14 +115,6 @@ async function cli_lookup_favicon(url_string, cached) {
   return icon_url_string;
 }
 
-function cli_enable_logging() {
-  localStorage.debug = '1';
-}
-
-function cli_disable_logging() {
-  delete localStorage.debug;
-}
-
 // A proxy for a BroadcastChannel that logs each message to the console and
 // keeps a count of sent messages.
 // TODO: is there where an ES6 Proxy would be appropriate? For better or worse?
@@ -173,9 +165,7 @@ const cli = {
   lookup_favicon: cli_lookup_favicon,
   poll_feeds: cli_poll_feeds,
   refresh_icons: cli_refresh_icons,
-  subscribe: cli_subscribe,
-  enable_logging: cli_enable_logging,
-  disable_logging: cli_disable_logging
+  subscribe: cli_subscribe
 };
 
 window.cli = cli;  // expose to console
