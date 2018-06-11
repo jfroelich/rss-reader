@@ -3,36 +3,36 @@ import {fetch_policy} from '/src/fetch-policy.js';
 import {load_url, STATUS_OFFLINE, STATUS_TIMEOUT} from '/src/lib/net/load-url.js';
 import {parse_feed} from '/src/lib/parse-feed.js';
 
-// TODO: poll-feed wants to distinguish between offline/timeout errors and other
-// kinds of fetch errors, so this needs to check and throw a particular error
-
-const feed_mime_types = [
-  'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
-  'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
-];
-
 // Fetches a remote feed xml file
-
+//
 // This operation is an aggregation of the following steps:
 // * Fetching the bytes of the remote file
 // * Parsing the bytes into a parsed-feed object
 // * Coercing the parsed-feed format into the stored-feed format
-
 export async function fetch_feed(
     url, timeout, skip_entries = true, resolve_entry_urls = false) {
-  // Get the response. Convert bad status into exception
+  const feed_mime_types = [
+    'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
+    'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
+  ];
+
+  // Get the response
   const options = {timeout: timeout, types: feed_mime_types};
   const response = await load_url(url, options, fetch_policy);
 
+  // Distinguish this error response as its own exception so that callers can
+  // easily differentiate by error type
   if (response.status === STATUS_OFFLINE) {
     throw new OfflineError('Failed to fetch ' + url.href);
   }
 
+  // Distinguish this error response as its own exception so that callers can
+  // easily differentiate by error type
   if (response.status === STATUS_TIMEOUT) {
     throw new TimeoutError('Timed out fetching ' + url.href)
   }
 
-  // Catch all for other fetch errors
+  // Catch all for other fetch errors using generic Error type
   if (!response.ok) {
     throw new Error(
         'Fetching feed ' + url.href + ' failed with status ' + response.status);
