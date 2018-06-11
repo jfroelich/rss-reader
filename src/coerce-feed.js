@@ -3,19 +3,12 @@ import * as db from '/src/db.js';
 // Coerce a feed in the parse format (e.g. one that was fetched) into a database
 // formatted feed object. This module is cross cutting because it involves
 // deeper knowledge of multiple feed object formats.
-export function coerce_feed(
-    parsed_feed, request_url, response_url, response_last_modified_date) {
-  assert(request_url instanceof URL);
-  assert(response_url instanceof URL);
-
+export function coerce_feed(parsed_feed) {
   const feed = db.create_feed();
 
   if (parsed_feed.type) {
     db.set_feed_type(feed, parsed_feed.type);
   }
-
-  db.append_feed_url(feed, request_url);
-  db.append_feed_url(feed, response_url);
 
   if (parsed_feed.link) {
     let link_url;
@@ -44,7 +37,6 @@ export function coerce_feed(
   }
 
   db.set_feed_date_fetched(feed, new Date());
-  db.set_feed_date_last_modified(feed, response_last_modified_date);
   return feed;
 }
 

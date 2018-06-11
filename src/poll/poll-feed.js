@@ -84,11 +84,25 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
     return 0;
   }
 
+  // Convert the feed from the parse format into the storage format
+  const coerced_feed = coerce_feed(parsed_feed);
+
+  // Integrate the net-related data into the feed, starting with the request
+  // url, in order to keep the url chain in the correct order
+  db.append_feed_url(coerced_feed, tail_url);
+
   const response_url = new URL(response.url);
+  db.append_feed_url(coerced_feed, response_url);
+
   const resp_lmd = new Date(response.headers.get('Last-Modified'));
-  const coerced_feed =
-      coerce_feed(parsed_feed, tail_url, response_url, resp_lmd);
+  db.set_feed_date_last_modified(coerced_feed, resp_lmd);
+
+  // Integrate the previous feed data with the new feed data, preferring the
+  // new feed data over the old most of the time
   const merged_feed = merge_feed(feed, coerced_feed);
+
+  // Denote the fetch was successful. This is important to counteract error
+  // counters that would lead to eventual deactivation
   handle_fetch_success(merged_feed);
 
   // Do not throw if invalid, just exit

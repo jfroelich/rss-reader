@@ -61,8 +61,17 @@ async function get_feed_from_response(response) {
 
   const res_url = new URL(response.url);
   const lmd = new Date(response.headers.get('Last-Modified'));
-  return coerce_feed(
-      parsed_feed, url, res_url, lmd.getTime() === NaN ? null : lmd);
+
+  // Convert the feed from the parse format to the storage format
+  const feed = coerce_feed(parsed_feed);
+
+  // Integrate the net-related data into the storage-formatted feed
+  db.append_feed_url(coerced_feed, url);
+  db.append_feed_url(coerced_feed, res_url);
+  db.set_feed_date_last_modified(
+      coerced_feed, lmd.getTime() === NaN ? null : lmd);
+
+  return feed;
 }
 
 async function set_favicon(conn, feed) {
