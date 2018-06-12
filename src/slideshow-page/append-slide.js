@@ -2,7 +2,6 @@ import {is_entry} from '/src/db.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
-import {format_date} from '/src/lib/lang/format-date.js';
 import * as array from '/src/lib/lang/array.js';
 import {localstorage_read_int} from '/src/lib/localstorage.js';
 import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
@@ -195,4 +194,33 @@ function transition_onend(event) {
   // There may be more than one transition effect occurring at the moment.
   // Inform others via global slideshow state that this transition completed.
   slideshow_state.decrement_active_transition_count();
+}
+
+// Return a date as a formatted string. This is an opinionated implementation
+// that is intended to be very simple
+function format_date(date) {
+  if (!(date instanceof Date)) {
+    return 'Invalid date';
+  }
+
+  // When using native date parsing and encountering an error, rather than throw
+  // that error, a date object is created with a NaN time property.
+  //
+  // Which would be ok but the format call below then throws if the time
+  // property is NaN
+
+  if (isNaN(date.getTime())) {
+    return 'Invalid date';
+  }
+
+  // The try/catch is just paranoia for now. This previously threw when date
+  // contained time NaN.
+
+  const formatter = new Intl.DateTimeFormat();
+  try {
+    return formatter.format(date);
+  } catch (error) {
+    console.debug(error);
+    return 'Invalid date';
+  }
 }
