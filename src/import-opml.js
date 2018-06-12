@@ -15,26 +15,20 @@ export async function import_opml(
     const import_file_promise = import_file(
         subscribe_promises, rconn, iconn, channel, file, fetch_timeout,
         skip_icon_lookup);
-    import_file_promises.push(import_file_promise);
+    const catch_promise = import_file_promise.catch(console.warn);
+    import_file_promises.push(catch_promise);
   }
 
-  // Wait for all import promises to settle. This ensures that we properly
-  // spawned all subscribe promises before returning. Note that at this point
-  // the subscribe promises may be outstanding. Completing a single file
-  // import just means we basically read in the file and spawned promises, not
-  // also that those promises settled. If we did not block here, then it would
-  // be possible that we return an incomplete list of promises to await.
+  // Wait for all import file promises to settle to ensure that we spawned all
+  // of the subscribe promises from each file. Note that we only wait until
+  // those promises are spawned, not settled.
   await Promise.all(import_file_promises);
 
-  // Now actually wait for all subscribe promises to settle.
-  // TODO: what about Promise.all short-circuiting here in the case of a
-  // subscribe promise rejection? What is the desired behavior? Should
-  // everything fail, or should failures be skipped?
-  // TODO: we don't actually need to await, right? Because if we return
-  // a promise from an async function, that becomes the async function's
-  // return value (I think). Review async.
-  return await Promise.all(subscribe_promises);
+  // Construct and return a promise that settles when all of the subscribe
+  // promises settle
+  return Promise.all(subscribe_promises);
 }
+
 
 // Reads a file, parses its contents, finds all feeds in the parsed file, and
 // then spawns subscribe promises for all feeds in the file. Returns prior to
@@ -50,55 +44,38 @@ export async function import_opml(
 async function import_file(
     subscribe_promises, rconn, iconn, channel, file, fetch_timeout,
     skip_icon_lookup) {
-  const opml_mime_types = [
-    'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
-    'application/opml+xml'
-  ];
-
-  if (!file.size || !opml_mime_types.includes(file.type)) {
-    console.debug(
-        'Empty or bad mime type for file', file.name, file.size, file.type);
+  // Not an error. Just noop.
+  if (!file.size) {
     return;
   }
 
-  // TODO: I hate this try/catch block. i/o errors are not programmer errors,
-  // just plain old errors that are typical when performing i/o. Need to
-  // rethink.
-  let file_text;
-  try {
-    file_text = await file_read_text(file);
-  } catch (error) {
-    console.warn(error);
-    return;
+  // Tried to import a non-opml file. Error
+  if (!file_is_opml(file)) {
+    throw new Error(
+        'Unaccepted mime type ' + file.type + ' for file ' + file.name);
   }
 
-  // TODO: I hate this try/catch block. parsing errors are not exceptions, just
-  // bad data. Need to rethink the parse_opml signature.
-  let document;
-  try {
-    document = parse_opml(file_text);
-  } catch (error) {
-    console.warn(error);
-    return;
-  }
+  // If any i/o error occurs, rethrow it
+  const file_text = await file_read_text(file);
+  // If any parse error occurs, rethrow it
+  const document = parse_opml(file_text);
 
-  // Find all unique feed urls in the opml document. Even if none are found,
-  // urls is a defined array.
   const urls = dedup_urls(find_feed_urls(document));
 
+  // Create subscribe promises for each of the urls. Use promise.catch to
+  // suppress errors to avoid any one subscription error causing the entire
+  // import to fail when later using Promise.all on the promises array.
+  const should_notify = false;
   for (const url of urls) {
     const subscribe_promise = subscribe(
-        rconn, iconn, channel, url, fetch_timeout, false, skip_icon_lookup);
-
-    // subscribe_promises will eventually be used with Promise.all, this avoids
-    // the shortcircuiting behavior when an error occurs (untested)
+        rconn, iconn, channel, url, fetch_timeout, should_notify,
+        skip_icon_lookup);
     const catch_promise = subscribe_promise.catch(e => console.warn(e));
-
     subscribe_promises.push(catch_promise);
   }
 }
 
-// Never returns undefined
+// Return a new array of distinct URLs. The output array is always defined.
 function dedup_urls(urls) {
   const unique_urls = [], seen_url_strings = [];
   for (const url of urls) {
@@ -110,8 +87,8 @@ function dedup_urls(urls) {
   return unique_urls;
 }
 
-// Searches the nodes of the document for feed urls. Returns an array of
-// feed url objects (not strings!). Never returns undefined.
+// Searches the nodes of the document for feed urls. Returns an array of URL
+// objects (not strings). Never returns undefined.
 function find_feed_urls(document) {
   // Using the descendant selector to try and be somewhat strict here. Really
   // the strictness does not matter too much but I want to use some semblance of
@@ -126,8 +103,6 @@ function find_feed_urls(document) {
       const url_string = element.getAttribute('xmlUrl');
       if (url_string) {
         try {
-          // TODO: does opml support a base url that i should be considering
-          // here?
           urls.push(new URL(url_string));
         } catch (error) {
         }
@@ -136,6 +111,14 @@ function find_feed_urls(document) {
   }
 
   return urls;
+}
+
+function file_is_opml(file) {
+  const opml_mime_types = [
+    'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
+    'application/opml+xml'
+  ];
+  return opml_mime_types.includes(file.type);
 }
 
 function file_read_text(file) {
